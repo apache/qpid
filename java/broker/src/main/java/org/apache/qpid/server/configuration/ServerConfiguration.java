@@ -88,7 +88,6 @@ public class ServerConfiguration extends ConfigurationPlugin
 
     {
         envVarMap.put("QPID_PORT", "connector.port");
-        envVarMap.put("QPID_ENABLEDIRECTBUFFERS", "advanced.enableDirectBuffers");
         envVarMap.put("QPID_SSLPORT", "connector.ssl.port");
         envVarMap.put("QPID_JMXPORT_REGISTRYSERVER", MGMT_JMXPORT_REGISTRYSERVER);
         envVarMap.put("QPID_JMXPORT_CONNECTORSERVER", MGMT_JMXPORT_CONNECTORSERVER);
@@ -109,7 +108,6 @@ public class ServerConfiguration extends ConfigurationPlugin
         envVarMap.put("QPID_SOCKETRECEIVEBUFFER", "connector.socketReceiveBuffer");
         envVarMap.put("QPID_SOCKETWRITEBUFFER", "connector.socketWriteBuffer");
         envVarMap.put("QPID_TCPNODELAY", "connector.tcpNoDelay");
-        envVarMap.put("QPID_ENABLEPOOLEDALLOCATOR", "advanced.enablePooledAllocator");
         envVarMap.put("QPID_STATUS-UPDATES", "status-updates");
     }
 
@@ -178,7 +176,7 @@ public class ServerConfiguration extends ConfigurationPlugin
      */
     public ServerConfiguration(Configuration conf)
     {
-        _configuration = conf;        
+        _configuration = conf;
     }
 
     /**
@@ -473,7 +471,7 @@ public class ServerConfiguration extends ConfigurationPlugin
             {
                 VirtualHost vhost = vhostRegistry.getVirtualHost(hostName);
                 Configuration vhostConfig = newVhosts.subset("virtualhost." + hostName);
-                vhost.getConfiguration().setConfiguration("virtualhosts.virtualhost", vhostConfig); // XXX
+                vhost.getConfiguration().setConfiguration("virtualhosts.virtualhost", vhostConfig);
                 vhost.getSecurityManager().configureGlobalPlugins(this);
                 vhost.getSecurityManager().configureHostPlugins(vhost.getConfiguration());
             }
@@ -609,11 +607,6 @@ public class ServerConfiguration extends ConfigurationPlugin
         return getDoubleValue("heartbeat.timeoutFactor", 2.0);
     }
 
-    public int getDeliveryPoolSize()
-    {
-        return getIntValue("delivery.poolsize");
-    }
-
     public long getMaximumMessageAge()
     {
         return getLongValue("maximumMessageAge");
@@ -697,11 +690,6 @@ public class ServerConfiguration extends ConfigurationPlugin
     public boolean getTcpNoDelay()
     {
         return getBooleanValue("connector.tcpNoDelay", true);
-    }
-
-    public boolean getEnableExecutorPool()
-    {
-        return getBooleanValue("advanced.filterchain[@enableExecutorPool]");
     }
 
     public boolean getEnableSSL()
