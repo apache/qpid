@@ -19,11 +19,12 @@
 #
 
 # Parse arguements taking all - prefixed args as JAVA_OPTS
+declare -a ARGS
 for arg in "$@"; do
     if [[ $arg == -java:* ]]; then
         JAVA_OPTS="${JAVA_OPTS}-`echo $arg|cut -d ':' -f 2`  "
     else
-        ARGS="${ARGS}$arg "
+        ARGS[${#ARGS[@]}]="$arg"
     fi
 done
 
@@ -34,6 +35,7 @@ fi
 
 VERSION=0.15
 
-LIBS=$QPID_HOME/lib/opt/je-5.0.34.jar:$QPID_HOME/lib/qpid-bdbstore-$VERSION.jar:$QPID_HOME/lib/qpid-all.jar
+# BDB's je JAR expected to be found in lib/opt
+LIBS="$QPID_HOME/lib/opt/*:$QPID_HOME/lib/qpid-bdbstore-${VERSION}.jar:$QPID_HOME/lib/qpid-all.jar"
 
-java -Xms256m -Dlog4j.configuration=BDBStoreUpgrade.log4j.xml -Xmx256m -Damqj.logging.level=warn ${JAVA_OPTS} -cp $LIBS org.apache.qpid.server.store.berkeleydb.BDBStoreUpgrade  ${ARGS} 
+java -Xms256m -Dlog4j.configuration=BDBStoreUpgrade.log4j.xml -Xmx256m -Damqj.logging.level=warn ${JAVA_OPTS} -cp "${LIBS}" org.apache.qpid.server.store.berkeleydb.BDBStoreUpgrade "${ARGS[@]}"
