@@ -37,7 +37,7 @@ import java.util.List;
  *
  * BRK-1001 : Startup : Version: <Version> Build: <Build>
  * BRK-1002 : Starting : Listening on <Transport> port <Port>
- * BRK-1003 : Shuting down : <Transport> port <Port>
+ * BRK-1003 : Shutting down : <Transport> port <Port>
  * BRK-1004 : Ready
  * BRK-1005 : Stopped
  * BRK-1006 : Using configuration : <path>
@@ -807,7 +807,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
             setConfigurationProperty("connector.ssl.keyStorePath", getConfigurationStringProperty("management.ssl.keyStorePath"));
             setConfigurationProperty("connector.ssl.keyStorePassword", getConfigurationStringProperty("management.ssl.keyStorePassword"));
 
-            Integer sslPort = Integer.parseInt(getConfigurationStringProperty("connector.sslport"));
+            Integer sslPort = Integer.parseInt(getConfigurationStringProperty("connector.ssl.port"));
 
             startBroker();
 

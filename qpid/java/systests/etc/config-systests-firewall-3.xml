@@ -31,12 +31,12 @@
              To disable Non-SSL port set sslOnly to true -->
         <ssl>
             <enabled>false</enabled>
+            <port>8672</port>
             <sslOnly>false</sslOnly>
             <keyStorePath>/path/to/keystore.ks</keyStorePath>
             <keyStorePassword>keystorepass</keyStorePassword>
         </ssl>
         <port>5672</port>
-        <sslport>8672</sslport>
         <socketReceiveBuffer>262144</socketReceiveBuffer>
         <socketSendBuffer>262144</socketSendBuffer>
     </connector>
@@ -44,12 +44,7 @@
         <enabled>false</enabled>
     </management>
     <advanced>
-        <filterchain enableExecutorPool="true"/>
-        <enablePooledAllocator>false</enablePooledAllocator>
-        <enableDirectBuffers>false</enableDirectBuffers>
         <framesize>65535</framesize>
-        <compressBufferOnQueue>false</compressBufferOnQueue>
-        <enableJMSXUserID>false</enableJMSXUserID>
         <locale>en_US</locale>	
     </advanced>
 
