@@ -491,19 +491,6 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals(false, _serverConfig.getTcpNoDelay());
     }
 
-    public void testGetEnableExecutorPool() throws ConfigurationException
-    {
-        // Check default
-        _serverConfig.initialise();
-        assertEquals(false, _serverConfig.getEnableExecutorPool());
-
-        // Check value we set
-        _config.setProperty("advanced.filterchain[@enableExecutorPool]", true);
-        _serverConfig = new ServerConfiguration(_config);
-        _serverConfig.initialise();
-        assertEquals(true, _serverConfig.getEnableExecutorPool());
-    }
-
     public void testGetEnableSSL() throws ConfigurationException
     {
         // Check default
