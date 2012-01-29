@@ -64,7 +64,7 @@ public class FirewallConfiguration extends ConfigurationPlugin
 
     public Result getDefaultAction()
     {
-        String defaultAction = _configuration.getString("[@default-action]");
+        String defaultAction = getConfig().getString("[@default-action]");
         if (defaultAction == null)
         {
             return Result.ABSTAIN;
@@ -85,8 +85,8 @@ public class FirewallConfiguration extends ConfigurationPlugin
     public void validateConfiguration() throws ConfigurationException
     {
         // Valid Configuration either has xml links to new files
-        _finalConfig = new CompositeConfiguration(_configuration);
-        List subFiles = _configuration.getList("xml[@fileName]");
+        _finalConfig = new CompositeConfiguration(getConfig());
+        List subFiles = getConfig().getList("xml[@fileName]");
         for (Object subFile : subFiles)
         {
             _finalConfig.addConfiguration(new XMLConfiguration((String) subFile));
@@ -94,7 +94,7 @@ public class FirewallConfiguration extends ConfigurationPlugin
 
         // all rules must have an access attribute or a default value
         if (_finalConfig.getList("rule[@access]").size() == 0 &&
-            _configuration.getString("[@default-action]") == null)
+            getConfig().getString("[@default-action]") == null)
         {
             throw new ConfigurationException("No rules or default-action found in firewall configuration.");
         }

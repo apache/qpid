@@ -51,7 +51,6 @@ public class JCAProvider extends Provider
         super("AMQSASLProvider-Client", 1.0, "A JCA provider that registers all "
             + "AMQ SASL providers that want to be registered");
         register(providerMap);
-//        Security.addProvider(this);
     }
 
     /**

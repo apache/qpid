@@ -176,7 +176,7 @@ public class ServerConfiguration extends ConfigurationPlugin
      */
     public ServerConfiguration(Configuration conf)
     {
-        _configuration = conf;
+        setConfig(conf);
     }
 
     /**
@@ -196,8 +196,8 @@ public class ServerConfiguration extends ConfigurationPlugin
      */
     public void initialise() throws ConfigurationException
     {	
-        setConfiguration("", _configuration);
-        setupVirtualHosts(_configuration);
+        setConfiguration("", getConfig());
+        setupVirtualHosts(getConfig());
     }
 
     public String[] getElementsProcessed()
@@ -302,7 +302,7 @@ public class ServerConfiguration extends ConfigurationPlugin
 
                 // save the default virtualhost name
                 String defaultVirtualHost = vhostConfiguration.getString("default");
-                _configuration.setProperty("virtualhosts.default", defaultVirtualHost);
+                getConfig().setProperty("virtualhosts.default", defaultVirtualHost);
             }
         }
 

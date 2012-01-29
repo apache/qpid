@@ -66,14 +66,14 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
         public Object evaluate(Filterable message)
         {
 
-            Boolean lv = (Boolean) left.evaluate(message);
+            Boolean lv = (Boolean) getLeft().evaluate(message);
             // Can we do an OR shortcut??
             if ((lv != null) && lv.booleanValue())
             {
                 return Boolean.TRUE;
             }
 
-            Boolean rv = (Boolean) right.evaluate(message);
+            Boolean rv = (Boolean) getRight().evaluate(message);
 
             return (rv == null) ? null : rv;
         }
@@ -94,7 +94,7 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
         public Object evaluate(Filterable message)
         {
 
-            Boolean lv = (Boolean) left.evaluate(message);
+            Boolean lv = (Boolean) getLeft().evaluate(message);
 
             // Can we do an AND shortcut??
             if (lv == null)
@@ -107,7 +107,7 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
                 return Boolean.FALSE;
             }
 
-            Boolean rv = (Boolean) right.evaluate(message);
+            Boolean rv = (Boolean) getRight().evaluate(message);
 
             return (rv == null) ? null : rv;
         }

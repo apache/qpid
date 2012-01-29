@@ -62,6 +62,10 @@ public class DynamicSaslRegistrar
     /** The default name of the SASL properties file resource. */
     public static final String DEFAULT_RESOURCE_NAME = "org/apache/qpid/client/security/DynamicSaslRegistrar.properties";
 
+    private DynamicSaslRegistrar()
+    {
+    }
+
     /** Reads the properties file, and creates a dynamic security provider to register the SASL implementations with. */
     public static void registerSaslProviders()
     {
@@ -119,47 +123,6 @@ public class DynamicSaslRegistrar
             }
         }
     }
-
-    /**
-     * Either attempts to open the specified filename as an input stream, or uses the default SASL configuration
-     * resource.
-     *
-     * @param filename The name of the file to get the SASL properties from, null to use the default.
-     *
-     * @return An input stream to read the dynamic SASL configuration from, or null if one could not be opened.
-     */
-    /*private static InputStream openPropertiesInputStream(String filename)
-    {
-        InputStream is = null;
-
-        // Flag to indicate whether the default resource should be used. By default this is true, so that the default
-        // is used when opening the file fails.
-        boolean useDefault = true;
-
-        // Try to open the file if one was specified.
-        if (filename != null)
-        {
-            try
-            {
-                is = new BufferedInputStream(new FileInputStream(new File(filename)));
-
-                // Clear the default flag because the file was succesfully opened.
-                useDefault = false;
-            }
-            catch (FileNotFoundException e)
-            {
-                _logger.error("Unable to read from file " + filename + ": " + e, e);
-            }
-        }
-
-        // Load the default resource if a file was not specified, or if opening the file failed.
-        if (useDefault)
-        {
-            is = CallbackHandlerRegistry.class.getResourceAsStream(DEFAULT_RESOURCE_NAME);
-        }
-
-        return is;
-    }*/
 
     /**
      * Parses the specified properties as a mapping from IANA registered SASL mechanism names to implementing client

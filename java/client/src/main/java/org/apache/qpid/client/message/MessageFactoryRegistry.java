@@ -44,7 +44,7 @@ public class MessageFactoryRegistry
     /**
      * This class logger
      */
-    protected final Logger _logger = LoggerFactory.getLogger(getClass());
+    private final Logger _logger = LoggerFactory.getLogger(getClass());
 
     private final Map<String, MessageFactory> _mimeStringToFactoryMap = new HashMap<String, MessageFactory>();
     private final Map<AMQShortString, MessageFactory> _mimeShortStringToFactoryMap =

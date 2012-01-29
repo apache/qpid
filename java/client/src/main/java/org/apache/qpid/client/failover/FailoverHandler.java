@@ -231,14 +231,7 @@ public class FailoverHandler implements Runnable
                 {
                     _logger.info("Failover process failed - exception being propagated by protocol handler");
                     _amqProtocolHandler.setFailoverState(FailoverState.FAILED);
-                    /*try
-                    {*/
                     _amqProtocolHandler.exception(e);
-                    /*}
-                    catch (Exception ex)
-                    {
-                        _logger.error("Error notifying protocol session of error: " + ex, ex);
-                    }*/
                 }
             }
         }

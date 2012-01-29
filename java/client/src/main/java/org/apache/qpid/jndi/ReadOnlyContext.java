@@ -65,9 +65,9 @@ public class ReadOnlyContext implements Context, Serializable
     private static final long serialVersionUID = -5754338187296859149L;
     protected static final NameParser nameParser = new NameParserImpl();
 
-    protected final Hashtable environment; // environment for this context
-    protected final Map bindings; // bindings at my level
-    protected final Map treeBindings; // all bindings under me
+    private final Hashtable environment; // environment for this context
+    private final Map bindings; // bindings at my level
+    private final Map treeBindings; // all bindings under me
 
     private boolean frozen = false;
     private String nameInNamespace = "";

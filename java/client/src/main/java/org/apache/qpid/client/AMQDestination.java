@@ -622,7 +622,6 @@ public abstract class AMQDestination implements Destination, Referenceable
         int result;
         result = _exchangeName == null ? "".hashCode() : _exchangeName.hashCode();
         result = 29 * result + (_exchangeClass == null ? "".hashCode() :_exchangeClass.hashCode());
-        //result = 29 * result + _destinationName.hashCode();
         if (_queueName != null)
         {
             result = 29 * result + _queueName.hashCode();

@@ -52,10 +52,6 @@ public interface AMQMethodBody extends AMQBody
 
     public void writePayload(DataOutput buffer) throws IOException;
 
-    //public abstract void populateMethodBodyFromBuffer(ByteBuffer buffer) throws AMQFrameDecodingException;
-
-    //public void populateFromBuffer(ByteBuffer buffer, long size) throws AMQFrameDecodingException;
-
     public AMQFrame generateFrame(int channelId);
 
     public String toString();

@@ -31,7 +31,7 @@ public class MessageMetaDataTupleBindingFactory extends TupleBindingFactory<Obje
 
     public TupleBinding<Object> getInstance()
     {
-        switch (_version)
+        switch (getVersion())
         {
             default:
             case 5:

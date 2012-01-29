@@ -329,9 +329,6 @@ public class CommandLineParser
                         expectingArgs = true;
                         optionExpectingArgs = matchedOption;
 
-                        // In the mean time set this options argument to the empty string in case no argument is ever
-                        // supplied.
-                        // options.put(matchedOption, "");
                     }
 
                     // Check if the option was matched on its own and is a flag in which case set that flag.

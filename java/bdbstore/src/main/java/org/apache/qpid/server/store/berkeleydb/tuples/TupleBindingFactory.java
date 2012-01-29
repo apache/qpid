@@ -24,7 +24,7 @@ import com.sleepycat.bind.tuple.TupleBinding;
 
 public abstract class TupleBindingFactory<E>
 {
-    protected int _version;
+    private final int _version;
 
     public TupleBindingFactory(int version)
     {
@@ -32,4 +32,9 @@ public abstract class TupleBindingFactory<E>
     }
 
     public abstract TupleBinding<E> getInstance();
+
+    public int getVersion()
+    {
+        return _version;
+    }
 }

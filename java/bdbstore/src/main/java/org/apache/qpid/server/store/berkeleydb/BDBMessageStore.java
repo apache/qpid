@@ -151,7 +151,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
      * messageId (long) - bodySize (integer), metaData (MessageMetaData encoded as binary)
      *
      * Message (Content):
-     * messageId (long), byteOffset (integer) - dataLength(integer), data(binary);
+     * messageId (long), byteOffset (integer) - dataLength(integer), data(binary)
      */
 
     private LogSubject _logSubject;
@@ -428,9 +428,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         envConfig.setAllowCreate(true);
         envConfig.setTransactional(true);
         envConfig.setConfigParam("je.lock.nLockTables", "7");
-
-        // Restore 500,000 default timeout.
-        //envConfig.setLockTimeout(15000);
 
         // Added to help diagnosis of Deadlock issue
         // http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#23
@@ -903,7 +900,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     public void removeMessage(long messageId, boolean sync) throws AMQStoreException
     {
 
-        // _log.debug("public void removeMessage(Long messageId = " + messageId): called");
         boolean complete = false;
         com.sleepycat.je.Transaction tx = null;
 
@@ -1116,9 +1112,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
      */
     public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
     {
-        // _log.debug("public void bindQueue(Exchange exchange = " + exchange + ", AMQShortString routingKey = " + routingKey
-        // + ", AMQQueue queue = " + queue + ", FieldTable args = " + args + "): called");
-
         if (_state != State.RECOVERING)
         {
             BindingKey bindingRecord = new BindingKey(exchange.getNameShortString(),
@@ -1408,8 +1401,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     public void enqueueMessage(final com.sleepycat.je.Transaction tx, final TransactionLogResource queue,
                                long messageId) throws AMQStoreException
     {
-        // _log.debug("public void enqueueMessage(Transaction tx = " + tx + ", AMQShortString name = " + name + ", Long messageId): called");
-
         AMQShortString name = AMQShortString.valueOf(queue.getResourceName());
 
         DatabaseEntry key = new DatabaseEntry();
@@ -1498,11 +1489,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
      */
     private StoreFuture commitTranImpl(final com.sleepycat.je.Transaction tx, boolean syncCommit) throws AMQStoreException
     {
-        //if (_log.isDebugEnabled())
-        //{
-        //    _log.debug("public void commitTranImpl() called with (Transaction=" + tx + ", syncCommit= "+ syncCommit + ")");
-        //}
-
         if (tx == null)
         {
             throw new AMQStoreException("Fatal internal error: transactional is null at commitTran");
@@ -1969,8 +1955,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
     private StoreFuture commit(com.sleepycat.je.Transaction tx, boolean syncCommit) throws DatabaseException
     {
-        // _log.debug("void commit(Transaction tx = " + tx + ", sync = " + syncCommit + "): called");
-
         tx.commitNoSync();
 
         BDBCommitFuture commitFuture = new BDBCommitFuture(_commitThread, tx, syncCommit);
@@ -1986,8 +1970,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
     private static final class BDBCommitFuture implements StoreFuture
     {
-        // private static final Logger _log = Logger.getLogger(BDBCommitFuture.class);
-
         private final CommitThread _commitThread;
         private final com.sleepycat.je.Transaction _tx;
         private DatabaseException _databaseException;
@@ -1996,9 +1978,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
         public BDBCommitFuture(CommitThread commitThread, com.sleepycat.je.Transaction tx, boolean syncCommit)
         {
-            // _log.debug("public Commit(CommitThread commitThread = " + commitThread + ", Transaction tx = " + tx
-            // + "): called");
-
             _commitThread = commitThread;
             _tx = tx;
             _syncCommit = syncCommit;
@@ -2017,9 +1996,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
         public synchronized void abort(DatabaseException databaseException)
         {
-            // _log.debug("public synchronized void abort(DatabaseException databaseException = " + databaseException
-            // + "): called");
-
             _complete = true;
             _databaseException = databaseException;
 
@@ -2028,8 +2004,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
         public void commit() throws DatabaseException
         {
-            //_log.debug("public void commit(): called");
-
             _commitThread.addJob(this, _syncCommit);
 
             if(!_syncCommit)
@@ -2039,7 +2013,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             }
 
             waitForCompletion();
-            // _log.debug("Commit completed, _databaseException = " + _databaseException);
 
             if (_databaseException != null)
             {
@@ -2081,8 +2054,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
      */
     private class CommitThread extends Thread
     {
-        // private final Logger _log = Logger.getLogger(CommitThread.class);
-
         private final AtomicBoolean _stopped = new AtomicBoolean(false);
         private final Queue<BDBCommitFuture> _jobQueue = new ConcurrentLinkedQueue<BDBCommitFuture>();
         private final CheckpointConfig _config = new CheckpointConfig();
@@ -2119,7 +2090,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
                         }
                         catch (InterruptedException e)
                         {
-                            // _log.info(getName() + " interrupted. ");
                         }
                     }
                 }
@@ -2129,8 +2099,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
         private void processJobs()
         {
-            // _log.debug("private void processJobs(): called");
-
             int size = _jobQueue.size();
 
             try

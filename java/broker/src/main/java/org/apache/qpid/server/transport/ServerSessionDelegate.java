@@ -155,7 +155,12 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void messageSubscribe(Session session, MessageSubscribe method)
     {
-        //TODO - work around broken Python tests
+        /*
+          TODO - work around broken Python tests
+          Correct code should read like
+          if not hasAcceptMode() exception ILLEGAL_ARGUMENT "Accept-mode not supplied"
+          else if not method.hasAcquireMode() exception ExecutionErrorCode.ILLEGAL_ARGUMENT, "Acquire-mode not supplied"
+        */
         if(!method.hasAcceptMode())
         {
             method.setAcceptMode(MessageAcceptMode.EXPLICIT);
@@ -166,15 +171,7 @@ public class ServerSessionDelegate extends SessionDelegate
 
         }
 
-       /* if(!method.hasAcceptMode())
-        {
-            exception(session,method,ExecutionErrorCode.ILLEGAL_ARGUMENT, "Accept-mode not supplied");
-        }
-        else if(!method.hasAcquireMode())
-        {
-            exception(session,method,ExecutionErrorCode.ILLEGAL_ARGUMENT, "Acquire-mode not supplied");
-        }
-        else */if(!method.hasQueue())
+        if(!method.hasQueue())
         {
             exception(session,method,ExecutionErrorCode.ILLEGAL_ARGUMENT, "queue not supplied");
         }
@@ -711,15 +708,10 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             exception(session, method, ExecutionErrorCode.INVALID_ARGUMENT, "Bind not allowed for default exchange");
         }
-/*
-        else if (!method.hasBindingKey())
-        {
-            exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "binding-key not set");
-        }
-*/
         else
         {
             //TODO - here because of non-compiant python tests
+            // should raise exception ILLEGAL_ARGUMENT "binding-key not set"
             if (!method.hasBindingKey())
             {
                 method.setBindingKey(method.getQueue());

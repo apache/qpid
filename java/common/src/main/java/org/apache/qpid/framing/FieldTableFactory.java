@@ -25,6 +25,10 @@ import java.io.IOException;
 
 public class FieldTableFactory
 {
+    private FieldTableFactory()
+    {
+    }
+
     public static FieldTable newFieldTable()
     {
         return new FieldTable();

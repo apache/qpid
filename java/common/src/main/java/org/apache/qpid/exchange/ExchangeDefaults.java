@@ -36,6 +36,10 @@ import org.apache.qpid.framing.AMQShortString;
  */
 public class ExchangeDefaults
 {
+    private ExchangeDefaults()
+    {
+    }
+
     /** The default direct exchange, which is a special internal exchange that cannot be explicitly bound to. */
     public static final AMQShortString DEFAULT_EXCHANGE_NAME = new AMQShortString("<<default>>");
 

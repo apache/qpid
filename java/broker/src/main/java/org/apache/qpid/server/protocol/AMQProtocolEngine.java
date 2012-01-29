@@ -119,7 +119,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
 
     private Object _lastSent;
 
-    protected volatile boolean _closed;
+    private volatile boolean _closed;
 
     // maximum number of channels this session should have
     private long _maxNoOfChannels = ApplicationRegistry.getInstance().getConfiguration().getMaxChannelCount();
@@ -721,7 +721,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
         // However, due to the poor exception handling on the client. The client-user will be notified of the
         // InvalidArgument and if they then decide to close the session/connection then the there will be time
         // for that to occur i.e. a new close method be sent before the exeption handling can mark the session closed.
-        //removeChannel(channelId);
+
         _closingChannelsList.remove(channelId);
     }
 

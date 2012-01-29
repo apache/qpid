@@ -41,7 +41,7 @@ public class ConflationQueue extends SimpleAMQQueue
 
     public String getConflationKey()
     {
-        return ((ConflationQueueList) _entries).getConflationKey();
+        return ((ConflationQueueList) getEntries()).getConflationKey();
     }
 
 }

@@ -76,7 +76,7 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
         {
             CompositeConfiguration mungedConf = new CompositeConfiguration();
             mungedConf.addConfiguration(config.subset("exchanges.exchange(" + count++ + ")"));
-            mungedConf.addConfiguration(_configuration.subset("exchanges"));
+            mungedConf.addConfiguration(getConfig().subset("exchanges"));
             String exchName = (String) i.next();
             _exchanges.put(exchName, new ExchangeConfiguration(exchName, mungedConf));
         }
@@ -104,7 +104,7 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
 
     public Configuration getStoreConfiguration()
     {
-        return _configuration.subset("store");
+        return getConfig().subset("store");
     }
 
     public String getMessageStoreClass()
@@ -114,7 +114,7 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
 
     public void setMessageStoreClass(String storeClass)
     {
-        _configuration.setProperty("store.class", storeClass);
+        getConfig().setProperty("store.class", storeClass);
     }
 
     public List getExchanges()

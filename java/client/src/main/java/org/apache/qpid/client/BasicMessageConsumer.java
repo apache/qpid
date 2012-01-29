@@ -536,7 +536,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         }
         else if (o instanceof CloseConsumerMessage)
         {
-            _closed.set(true);
+            setClosed();
             deregisterConsumer();
             return null;
         }
@@ -558,9 +558,9 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
             _logger.info("Closing consumer:" + debugIdentity());
         }
 
-        if (!_closed.getAndSet(true))
+        if (!setClosed())
         {
-            _closing.set(true);
+            setClosing(true);
             if (_logger.isDebugEnabled())
             {
                 StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
@@ -606,12 +606,8 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
             }
             else
             {
-            	// FIXME: wow this is ugly
-                // //fixme this probably is not right
-                // if (!isNoConsume())
-                { // done in BasicCancelOK Handler but not sending one so just deregister.
-                    deregisterConsumer();
-                }
+            	// FIXME?
+                deregisterConsumer();
             }
 
             // This will occur if session.close is called closing all consumers we may be blocked waiting for a receive
@@ -640,7 +636,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     {
         // synchronized (_closed)
         {
-            _closed.set(true);
+            setClosed();
 
             if (_logger.isDebugEnabled())
             {
@@ -817,7 +813,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     {
         // synchronized (_closed)
         {
-            _closed.set(true);
+            setClosed();
             if (_logger.isDebugEnabled())
             {
                 StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
@@ -1002,8 +998,6 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     public void failedOverPre()
     {
         clearReceiveQueue();
-        // TGM FIXME: think this should just be removed
-        // clearUnackedMessages();
     }
 
     public void failedOverPost() {}

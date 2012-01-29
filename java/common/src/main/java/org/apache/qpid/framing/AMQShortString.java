@@ -321,7 +321,6 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
     {
 
         final int size = length();
-        //buffer.setAutoExpand(true);
         buffer.writeByte(size);
         buffer.write(_data, _offset, size);
 

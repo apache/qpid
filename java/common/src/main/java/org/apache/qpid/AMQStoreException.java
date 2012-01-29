@@ -20,10 +20,8 @@
  */
 package org.apache.qpid;
 
-import java.sql.SQLException;
-
 /**
- * StoreException is a specific type of internal error relating to errors in the message store, such as {@link SQLException}.
+ * StoreException is a specific type of internal error relating to errors in the message store, such as {@link java.sql.SQLException}.
  */
 public class AMQStoreException extends AMQInternalException
 {

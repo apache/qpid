@@ -50,6 +50,10 @@ class MBeanIntrospector {
     private static final String _defaultConstructorDescription = "MBean constructor";
     private static final String _defaultMbeanDescription = "Management interface of the MBean";
 
+    private MBeanIntrospector()
+    {
+    }
+
     /**
      * Introspects the management interface class for MBean attributes.
      * @param interfaceClass
@@ -347,7 +351,6 @@ class MBeanIntrospector {
         for (Constructor cons : implClass.getConstructors())
         {
             MBeanConstructorInfo constructorInfo = getMBeanConstructorInfo(cons);
-            //MBeanConstructorInfo constructorInfo = new MBeanConstructorInfo("desc", cons);
             if (constructorInfo != null)
             {
                 constructors.add(constructorInfo);
@@ -374,9 +377,6 @@ class MBeanIntrospector {
                 desc = _defaultConstructorDescription;
             }
         }
-
-        //MBeanParameterInfo[] paramsInfo = getParametersInfo(cons.getParameterAnnotations(),
-        //                                                    cons.getParameterTypes());
 
         return new MBeanConstructorInfo(cons.getName(), desc, null);
     }

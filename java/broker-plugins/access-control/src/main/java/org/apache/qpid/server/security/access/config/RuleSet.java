@@ -312,9 +312,9 @@ public class RuleSet
         return true;
     }
 
-    // C++ broker authorise function prototype
+    // CPP broker authorise function prototype
     // virtual bool authorise(const std::string& id, const Action& action, const ObjectType& objType,
-    //        const std::string& name, std::map<Property, std::string>* params=0);
+    //        const std::string& name, std::map<Property, std::string>* params=0)
 
     // Possibly add a String name paramater?
 

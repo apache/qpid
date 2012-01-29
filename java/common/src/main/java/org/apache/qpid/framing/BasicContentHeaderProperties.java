@@ -294,85 +294,83 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     private void decode(ByteArrayDataInput buffer) throws IOException, AMQFrameDecodingException
     {
-        // ByteBuffer buffer = ByteBuffer.wrap(_encodedForm);
+        int headersOffset = 0;
 
-            int headersOffset = 0;
+        if ((_propertyFlags & (CONTENT_TYPE_MASK)) != 0)
+        {
+            _contentType = buffer.readAMQShortString();
+            headersOffset += EncodingUtils.encodedShortStringLength(_contentType);
+        }
 
-            if ((_propertyFlags & (CONTENT_TYPE_MASK)) != 0)
-            {
-                _contentType = buffer.readAMQShortString();
-                headersOffset += EncodingUtils.encodedShortStringLength(_contentType);
-            }
+        if ((_propertyFlags & ENCODING_MASK) != 0)
+        {
+            _encoding = buffer.readAMQShortString();
+            headersOffset += EncodingUtils.encodedShortStringLength(_encoding);
+        }
 
-            if ((_propertyFlags & ENCODING_MASK) != 0)
-            {
-                _encoding = buffer.readAMQShortString();
-                headersOffset += EncodingUtils.encodedShortStringLength(_encoding);
-            }
+        if ((_propertyFlags & HEADERS_MASK) != 0)
+        {
+            long length = EncodingUtils.readUnsignedInteger(buffer);
 
-            if ((_propertyFlags & HEADERS_MASK) != 0)
-            {
-                long length = EncodingUtils.readUnsignedInteger(buffer);
+            _headers = new FieldTable(_encodedForm, headersOffset+4, (int)length);
 
-                _headers = new FieldTable(_encodedForm, headersOffset+4, (int)length);
+            buffer.skipBytes((int)length);
+        }
 
-                buffer.skipBytes((int)length);
-            }
+        if ((_propertyFlags & DELIVERY_MODE_MASK) != 0)
+        {
+            _deliveryMode = buffer.readByte();
+        }
 
-            if ((_propertyFlags & DELIVERY_MODE_MASK) != 0)
-            {
-                _deliveryMode = buffer.readByte();
-            }
+        if ((_propertyFlags & PRIORITY_MASK) != 0)
+        {
+            _priority = buffer.readByte();
+        }
 
-            if ((_propertyFlags & PRIORITY_MASK) != 0)
-            {
-                _priority = buffer.readByte();
-            }
+        if ((_propertyFlags & CORRELATION_ID_MASK) != 0)
+        {
+            _correlationId = buffer.readAMQShortString();
+        }
 
-            if ((_propertyFlags & CORRELATION_ID_MASK) != 0)
-            {
-                _correlationId = buffer.readAMQShortString();
-            }
+        if ((_propertyFlags & REPLY_TO_MASK) != 0)
+        {
+            _replyTo = buffer.readAMQShortString();
+        }
 
-            if ((_propertyFlags & REPLY_TO_MASK) != 0)
-            {
-                _replyTo = buffer.readAMQShortString();
-            }
+        if ((_propertyFlags & EXPIRATION_MASK) != 0)
+        {
+            _expiration = EncodingUtils.readLongAsShortString(buffer);
+        }
 
-            if ((_propertyFlags & EXPIRATION_MASK) != 0)
-            {
-                _expiration = EncodingUtils.readLongAsShortString(buffer);
-            }
+        if ((_propertyFlags & MESSAGE_ID_MASK) != 0)
+        {
+            _messageId = buffer.readAMQShortString();
+        }
 
-            if ((_propertyFlags & MESSAGE_ID_MASK) != 0)
-            {
-                _messageId = buffer.readAMQShortString();
-            }
+        if ((_propertyFlags & TIMESTAMP_MASK) != 0)
+        {
+            _timestamp = EncodingUtils.readTimestamp(buffer);
+        }
 
-            if ((_propertyFlags & TIMESTAMP_MASK) != 0)
-            {
-                _timestamp = EncodingUtils.readTimestamp(buffer);
-            }
+        if ((_propertyFlags & TYPE_MASK) != 0)
+        {
+            _type = buffer.readAMQShortString();
+        }
 
-            if ((_propertyFlags & TYPE_MASK) != 0)
-            {
-                _type = buffer.readAMQShortString();
-            }
+        if ((_propertyFlags & USER_ID_MASK) != 0)
+        {
+            _userId = buffer.readAMQShortString();
+        }
 
-            if ((_propertyFlags & USER_ID_MASK) != 0)
-            {
-                _userId = buffer.readAMQShortString();
-            }
+        if ((_propertyFlags & APPLICATION_ID_MASK) != 0)
+        {
+            _appId = buffer.readAMQShortString();
+        }
 
-            if ((_propertyFlags & APPLICATION_ID_MASK) != 0)
-            {
-                _appId = buffer.readAMQShortString();
-            }
-
-            if ((_propertyFlags & CLUSTER_ID_MASK) != 0)
-            {
-                _clusterId = buffer.readAMQShortString();
-            }
+        if ((_propertyFlags & CLUSTER_ID_MASK) != 0)
+        {
+            _clusterId = buffer.readAMQShortString();
+        }
 
 
     }

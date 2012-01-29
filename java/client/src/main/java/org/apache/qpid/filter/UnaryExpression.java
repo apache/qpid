@@ -33,7 +33,7 @@ public abstract class UnaryExpression implements Expression
 {
 
     private static final BigDecimal BD_LONG_MIN_VALUE = BigDecimal.valueOf(Long.MIN_VALUE);
-    protected Expression right;
+    private final Expression right;
 
     public static Expression createNegate(Expression left)
     {
@@ -41,7 +41,7 @@ public abstract class UnaryExpression implements Expression
         {
             public Object evaluate(AbstractJMSMessage message) throws AMQInternalException
             {
-                Object rvalue = right.evaluate(message);
+                Object rvalue = getRight().evaluate(message);
                 if (rvalue == null)
                 {
                     return null;
@@ -87,7 +87,7 @@ public abstract class UnaryExpression implements Expression
             public Object evaluate(AbstractJMSMessage message) throws AMQInternalException
             {
 
-                Object rvalue = right.evaluate(message);
+                Object rvalue = getRight().evaluate(message);
                 if (rvalue == null)
                 {
                     return null;
@@ -112,7 +112,7 @@ public abstract class UnaryExpression implements Expression
             public String toString()
             {
                 StringBuffer answer = new StringBuffer();
-                answer.append(right);
+                answer.append(getRight());
                 answer.append(" ");
                 answer.append(getExpressionSymbol());
                 answer.append(" ( ");
@@ -172,7 +172,7 @@ public abstract class UnaryExpression implements Expression
         {
             public Object evaluate(AbstractJMSMessage message) throws AMQInternalException
             {
-                Boolean lvalue = (Boolean) right.evaluate(message);
+                Boolean lvalue = (Boolean) getRight().evaluate(message);
                 if (lvalue == null)
                 {
                     return null;
@@ -193,7 +193,7 @@ public abstract class UnaryExpression implements Expression
         {
             public Object evaluate(AbstractJMSMessage message) throws AMQInternalException
             {
-                Object rvalue = right.evaluate(message);
+                Object rvalue = getRight().evaluate(message);
                 if (rvalue == null)
                 {
                     return null;
@@ -209,7 +209,7 @@ public abstract class UnaryExpression implements Expression
 
             public String toString()
             {
-                return right.toString();
+                return getRight().toString();
             }
 
             public String getExpressionSymbol()
@@ -270,17 +270,12 @@ public abstract class UnaryExpression implements Expression
         return right;
     }
 
-    public void setRight(Expression expression)
-    {
-        right = expression;
-    }
-
     /**
      * @see Object#toString()
      */
     public String toString()
     {
-        return "(" + getExpressionSymbol() + " " + right.toString() + ")";
+        return "(" + getExpressionSymbol() + " " + getRight().toString() + ")";
     }
 
     /**

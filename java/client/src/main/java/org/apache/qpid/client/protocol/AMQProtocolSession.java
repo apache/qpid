@@ -90,8 +90,6 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     private final Object _queueIdLock = new Object();
 
     private ProtocolVersion _protocolVersion;
-//    private VersionSpecificRegistry _registry =
-//        MainRegistry.getVersionSpecificRegistry(ProtocolVersion.getLatestSupportedVersion());
 
     private MethodRegistry _methodRegistry =
             MethodRegistry.getMethodRegistry(ProtocolVersion.getLatestSupportedVersion());

@@ -27,6 +27,10 @@ import org.apache.qpid.framing.AMQShortString;
 
 public class AMQShortStringEncoding
 {
+    private AMQShortStringEncoding()
+    {
+    }
+
     public static AMQShortString readShortString(TupleInput tupleInput)
     {
         int length = (int) tupleInput.readShort();

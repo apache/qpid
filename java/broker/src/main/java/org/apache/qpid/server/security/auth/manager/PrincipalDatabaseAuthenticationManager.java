@@ -95,9 +95,9 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
      */
     private final Map<String, Map<String, ?>> _serverCreationProperties = new HashMap<String, Map<String, ?>>();
 
-    protected PrincipalDatabase _principalDatabase = null;
+    private PrincipalDatabase _principalDatabase = null;
 
-    protected AMQUserManagementMBean _mbean = null;
+    private AMQUserManagementMBean _mbean = null;
 
     public static final AuthenticationManagerPluginFactory<PrincipalDatabaseAuthenticationManager> FACTORY = new AuthenticationManagerPluginFactory<PrincipalDatabaseAuthenticationManager>()
     {
@@ -160,13 +160,13 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
   
         public String getPrincipalDatabaseClass()
         {
-            return _configuration.getString("principal-database.class");
+            return getConfig().getString("principal-database.class");
         }
   
         public Map<String,String> getPdClassAttributeMap() throws ConfigurationException
         {
-            final List<String> argumentNames = _configuration.getList("principal-database.attributes.attribute.name");
-            final List<String> argumentValues = _configuration.getList("principal-database.attributes.attribute.value");
+            final List<String> argumentNames = getConfig().getList("principal-database.attributes.attribute.name");
+            final List<String> argumentValues = getConfig().getList("principal-database.attributes.attribute.value");
             final Map<String,String> attributes = new HashMap<String,String>(argumentNames.size());
 
             for (int i = 0; i < argumentNames.size(); i++)

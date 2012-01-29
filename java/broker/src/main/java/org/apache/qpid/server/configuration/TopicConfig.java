@@ -29,7 +29,7 @@ public class TopicConfig extends ConfigurationPlugin
 {
     public TopicConfig()
     {
-        _configuration = new PropertiesConfiguration();
+        setConfig(new PropertiesConfiguration());
     }
 
     @Override
@@ -51,7 +51,7 @@ public class TopicConfig extends ConfigurationPlugin
 
     public void validateConfiguration() throws ConfigurationException
     {
-        if (_configuration.isEmpty())
+        if (getConfig().isEmpty())
         {
             throw new ConfigurationException("Topic section cannot be empty.");
         }

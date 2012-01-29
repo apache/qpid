@@ -72,8 +72,6 @@ class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
     public boolean acquire()
     {
         boolean acquired = _entry.acquire(getSubscription());
-        //TODO - why acknowledge here??? seems bizarre...
-      //  getSubscription().getSession().acknowledge(getSubscription(), _entry);
         return acquired;
 
     }

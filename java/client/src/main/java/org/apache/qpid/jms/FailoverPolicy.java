@@ -74,12 +74,6 @@ public class FailoverPolicy
         {
             String failoverMethod = connectionDetails.getFailoverMethod();
 
-            /*
-                        if (failoverMethod.equals(FailoverMethod.RANDOM))
-                        {
-                            //todo write a random connection Failover
-                        }
-             */
             if (failoverMethod.equals(FailoverMethod.SINGLE_BROKER))
             {
                 method = new FailoverSingleServer(connectionDetails);

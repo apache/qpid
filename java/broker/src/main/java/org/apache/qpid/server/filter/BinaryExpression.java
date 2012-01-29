@@ -25,8 +25,8 @@ package org.apache.qpid.server.filter;
  */
 public abstract class BinaryExpression implements Expression
 {
-    protected Expression left;
-    protected Expression right;
+    private final Expression left;
+    private final Expression right;
 
     public BinaryExpression(Expression left, Expression right)
     {
@@ -86,21 +86,5 @@ public abstract class BinaryExpression implements Expression
      * @return
      */
     public abstract String getExpressionSymbol();
-
-    /**
-     * @param expression
-     */
-    public void setRight(Expression expression)
-    {
-        right = expression;
-    }
-
-    /**
-     * @param expression
-     */
-    public void setLeft(Expression expression)
-    {
-        left = expression;
-    }
 
 }

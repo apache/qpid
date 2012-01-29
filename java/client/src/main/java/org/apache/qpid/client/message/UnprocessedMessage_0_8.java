@@ -44,7 +44,7 @@ public class UnprocessedMessage_0_8 extends UnprocessedMessage
     private AMQShortString _exchange;
     private AMQShortString _routingKey;
     private final long _deliveryId;
-    protected boolean _redelivered;
+    private boolean _redelivered;
 
     private BasicDeliverBody _deliverBody;
     private ContentHeaderBody _contentHeader;

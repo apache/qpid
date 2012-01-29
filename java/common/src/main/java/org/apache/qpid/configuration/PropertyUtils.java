@@ -40,6 +40,10 @@ import java.util.Iterator;
  */
 public class PropertyUtils
 {
+    private PropertyUtils()
+    {
+    }
+
     /**
      * Given a string that contains substrings of the form <code>${xxx}</code>, looks up the valuea of 'xxx' as a
      * system properties and substitutes tham back into the original string, to provide a property value expanded

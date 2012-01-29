@@ -54,6 +54,10 @@ public class Transport
         OUTGOING_PROTOCOL_TO_IMPLDEFAULTS_MAP = Collections.unmodifiableMap(map);
     }
 
+    private Transport()
+    {
+    }
+
     public static IncomingNetworkTransport getIncomingTransportInstance()
     {
         return (IncomingNetworkTransport) loadTransportClass(

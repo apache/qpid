@@ -276,7 +276,8 @@ public class AMQConnectionURL implements ConnectionURL
         if (_failoverMethod != null)
         {
             sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
-            sb.append(OPTIONS_FAILOVER + "='");
+            sb.append(OPTIONS_FAILOVER);
+            sb.append("='");
             sb.append(_failoverMethod);
             sb.append(URLHelper.printOptions(_failoverOptions));
             sb.append("'");

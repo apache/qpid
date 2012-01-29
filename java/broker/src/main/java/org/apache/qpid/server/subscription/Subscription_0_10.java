@@ -559,36 +559,8 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
                 messageProps.setCorrelationId(serverMsg.getMessageHeader().getCorrelationId().getBytes());
             }
 
-
             // TODO - ReplyTo
 
-
-            final Map<String, Object> appHeaders = new HashMap<String, Object>();
-
-            /*properties.getHeaders().processOverElements(
-                    new FieldTable.FieldTableElementProcessor()
-                    {
-
-                        public boolean processElement(String propertyName, AMQTypedValue value)
-                        {
-                            Object val = value.getValue();
-                            if(val instanceof AMQShortString)
-                            {
-                                val = val.toString();
-                            }
-                            appHeaders.put(propertyName, val);
-                            return true;
-                        }
-
-                        public Object getResult()
-                        {
-                            return appHeaders;
-                        }
-                    });
-
-
-            messageProps.setApplicationHeaders(appHeaders);
-*/
             Header header = new Header(deliveryProps, messageProps, null);
             xfr = batch ? new MessageTransfer(_destination,_acceptMode,_acquireMode,header, body, BATCHED)
                         : new MessageTransfer(_destination,_acceptMode,_acquireMode,header, body);

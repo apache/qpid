@@ -49,6 +49,10 @@ public class AMQQueueFactory
     public static final String X_QPID_MAXIMUM_DELIVERY_COUNT = "x-qpid-maximum-delivery-count";
     public static final String DEFAULT_DLQ_NAME_SUFFIX = "_DLQ";
 
+    private AMQQueueFactory()
+    {
+    }
+
     private abstract static class QueueProperty
     {
 

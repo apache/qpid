@@ -35,6 +35,9 @@ import java.util.List;
 
 public class JAddr
 {
+    private JAddr()
+    {
+    }
 
     public static final void main(String[] args) throws Exception
     {

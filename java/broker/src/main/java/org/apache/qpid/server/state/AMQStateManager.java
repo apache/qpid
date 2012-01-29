@@ -50,16 +50,6 @@ public class AMQStateManager implements AMQMethodListener
     /** The current state */
     private AMQState _currentState;
 
-    /**
-     * Maps from an AMQState instance to a Map from Class to StateTransitionHandler. The class must be a subclass of
-     * AMQFrame.
-     */
-/*    private final EnumMap<AMQState, Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>> _state2HandlersMap =
-        new EnumMap<AMQState, Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>>(
-            AMQState.class);
-  */
-
-
     private CopyOnWriteArraySet<StateListener> _stateListeners = new CopyOnWriteArraySet<StateListener>();
 
     public AMQStateManager(VirtualHostRegistry virtualHostRegistry, AMQProtocolSession protocolSession)
@@ -70,64 +60,6 @@ public class AMQStateManager implements AMQMethodListener
         _currentState = AMQState.CONNECTION_NOT_STARTED;
 
     }
-
-    /*
-    protected void registerListeners()
-    {
-        Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>> frame2handlerMap;
-
-        frame2handlerMap = new HashMap<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>();
-        _state2HandlersMap.put(AMQState.CONNECTION_NOT_STARTED, frame2handlerMap);
-
-        frame2handlerMap = new HashMap<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>();
-        _state2HandlersMap.put(AMQState.CONNECTION_NOT_AUTH, frame2handlerMap);
-
-        frame2handlerMap = new HashMap<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>();
-        _state2HandlersMap.put(AMQState.CONNECTION_NOT_TUNED, frame2handlerMap);
-
-        frame2handlerMap = new HashMap<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>();
-        frame2handlerMap.put(ConnectionOpenBody.class, ConnectionOpenMethodHandler.getInstance());
-        _state2HandlersMap.put(AMQState.CONNECTION_NOT_OPENED, frame2handlerMap);
-
-        //
-        // ConnectionOpen handlers
-        //
-        frame2handlerMap = new HashMap<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>();
-        ChannelOpenHandler.getInstance();
-        ChannelCloseHandler.getInstance();
-        ChannelCloseOkHandler.getInstance();
-        ConnectionCloseMethodHandler.getInstance();
-        ConnectionCloseOkMethodHandler.getInstance();
-        ConnectionTuneOkMethodHandler.getInstance();
-        ConnectionSecureOkMethodHandler.getInstance();
-        ConnectionStartOkMethodHandler.getInstance();
-        ExchangeDeclareHandler.getInstance();
-        ExchangeDeleteHandler.getInstance();
-        ExchangeBoundHandler.getInstance();
-        BasicAckMethodHandler.getInstance();
-        BasicRecoverMethodHandler.getInstance();
-        BasicConsumeMethodHandler.getInstance();
-        BasicGetMethodHandler.getInstance();
-        BasicCancelMethodHandler.getInstance();
-        BasicPublishMethodHandler.getInstance();
-        BasicQosHandler.getInstance();
-        QueueBindHandler.getInstance();
-        QueueDeclareHandler.getInstance();
-        QueueDeleteHandler.getInstance();
-        QueuePurgeHandler.getInstance();
-        ChannelFlowHandler.getInstance();
-        TxSelectHandler.getInstance();
-        TxCommitHandler.getInstance();
-        TxRollbackHandler.getInstance();
-        BasicRejectMethodHandler.getInstance();
-
-        _state2HandlersMap.put(AMQState.CONNECTION_OPEN, frame2handlerMap);
-
-        frame2handlerMap = new HashMap<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>();
-
-        _state2HandlersMap.put(AMQState.CONNECTION_CLOSING, frame2handlerMap);
-
-    } */
 
     public AMQState getCurrentState()
     {
@@ -188,30 +120,6 @@ public class AMQStateManager implements AMQMethodListener
             throw evt.getMethod().getChannelNotFoundException(evt.getChannelId());
         }
     }
-
-/*
-    protected <B extends AMQMethodBody> StateAwareMethodListener<B> findStateTransitionHandler(AMQState currentState,
-        B frame)
-    // throws IllegalStateTransitionException
-    {
-        final Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>> classToHandlerMap =
-            _state2HandlersMap.get(currentState);
-
-        final StateAwareMethodListener<B> handler =
-            (classToHandlerMap == null) ? null : (StateAwareMethodListener<B>) classToHandlerMap.get(frame.getClass());
-
-        if (handler == null)
-        {
-            _logger.debug("No state transition handler defined for receiving frame " + frame);
-
-            return null;
-        }
-        else
-        {
-            return handler;
-        }
-    }
-*/
 
     public void addStateListener(StateListener listener)
     {

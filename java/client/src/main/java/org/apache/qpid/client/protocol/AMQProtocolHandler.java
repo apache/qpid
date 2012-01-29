@@ -299,7 +299,6 @@ public class AMQProtocolHandler implements ProtocolEngine
     {
         if (_failoverState == FailoverState.NOT_STARTED)
         {
-            // if (!(cause instanceof AMQUndeliveredException) && (!(cause instanceof AMQAuthenticationException)))
             if ((cause instanceof AMQConnectionClosedException) || cause instanceof IOException)
             {
                 _logger.info("Exception caught therefore going to attempt failover: " + cause, cause);
@@ -313,7 +312,7 @@ public class AMQProtocolHandler implements ProtocolEngine
             }
 
             // FIXME Need to correctly handle other exceptions. Things like ...
-            // if (cause instanceof AMQChannelClosedException)
+            // AMQChannelClosedException
             // which will cause the JMSSession to end due to a channel close and so that Session needs
             // to be removed from the map so we can correctly still call close without an exception when trying to close
             // the server closed session.  See also CloseChannelMethodHandler as the sessionClose is never called on exception

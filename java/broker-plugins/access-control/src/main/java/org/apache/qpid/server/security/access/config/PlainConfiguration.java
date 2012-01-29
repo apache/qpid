@@ -78,7 +78,7 @@ public class PlainConfiguration extends AbstractConfiguration
         
         try
         {
-            _st = new StreamTokenizer(new BufferedReader(new FileReader(_file)));
+            _st = new StreamTokenizer(new BufferedReader(new FileReader(getFile())));
             _st.resetSyntax(); // setup the tokenizer
                 
             _st.commentChar(COMMENT); // single line comments

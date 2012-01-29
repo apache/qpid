@@ -144,7 +144,6 @@ public class WindowCreditManager extends AbstractFlowCreditManager implements Fl
                 }
                 else
                 {
-                    //setSuspended(true);
                     return false;
                 }
             }
@@ -164,7 +163,6 @@ public class WindowCreditManager extends AbstractFlowCreditManager implements Fl
             }
             else
             {
-                //setSuspended(true);
                 return false;
             }
 

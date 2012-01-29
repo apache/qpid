@@ -67,7 +67,7 @@ public class AMQPEncodedMapMessage extends JMSMapMessage
                 || (value instanceof Double) || (value instanceof String) || (value instanceof byte[])
                 || (value instanceof List) || (value instanceof Map) || (value instanceof UUID) || (value == null))
         {
-            _map.put(propName, value);
+            getMap().put(propName, value);
         }
         else
         {
@@ -81,7 +81,7 @@ public class AMQPEncodedMapMessage extends JMSMapMessage
     public ByteBuffer getData()
     {
         BBEncoder encoder = new BBEncoder(1024);
-        encoder.writeMap(_map);
+        encoder.writeMap(getMap());
         return encoder.segment();
     }
     
@@ -93,22 +93,18 @@ public class AMQPEncodedMapMessage extends JMSMapMessage
             data.rewind();
             BBDecoder decoder = new BBDecoder();
             decoder.init(data);
-            _map = decoder.readMap();
+            setMap(decoder.readMap());
         }
         else
         {
-            _map.clear();
+            getMap().clear();
         }
     }
 
     // for testing
     public Map<String,Object> getMap()
     {
-        return _map;
+        return super.getMap();
     }
-    
-    void setMap(Map<String,Object> map)
-    {
-        _map = map;
-    }
+
 }

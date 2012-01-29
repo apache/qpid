@@ -45,6 +45,10 @@ public class SystemInfo
             "os.arch", "os.name", "os.version", "sun.arch.data.model",
             "user.home", "user.dir", "user.name", "user.timezone");
 
+    private SystemInfo()
+    {
+    }
+
     /**
      * getInfo collects all the properties specified in sysprops list
      * @return A Map<String,String>

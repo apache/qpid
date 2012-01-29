@@ -27,9 +27,9 @@ import org.apache.qpid.server.logging.RootMessageLogger;
 
 public abstract class AbstractActor implements LogActor
 {
-    public final String _msgPrefix = System.getProperty("qpid.logging.prefix","");
+    private final String _msgPrefix = System.getProperty("qpid.logging.prefix","");
 
-    protected RootMessageLogger _rootLogger;
+    private RootMessageLogger _rootLogger;
 
     public AbstractActor(RootMessageLogger rootLogger)
     {

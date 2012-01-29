@@ -39,7 +39,7 @@ public class JMSMapMessage extends AbstractJMSMessage implements javax.jms.MapMe
 
     public static final String MIME_TYPE = "jms/map-message";
 
-    protected Map<String, Object> _map = new HashMap<String, Object>();
+    private Map<String, Object> _map = new HashMap<String, Object>();
 
     public JMSMapMessage(AMQMessageDelegateFactory delegateFactory) throws JMSException
     {
@@ -483,4 +483,13 @@ public class JMSMapMessage extends AbstractJMSMessage implements javax.jms.MapMe
         return writer.getData();
     }
 
+    protected Map<String, Object> getMap()
+    {
+        return _map;
+    }
+
+    protected void setMap(Map<String, Object> map)
+    {
+        _map = map;
+    }
 }

@@ -34,6 +34,10 @@ public class FilterManagerFactory
  
     private final static Logger _logger = Logger.getLogger(FilterManagerFactory.class);
 
+    private FilterManagerFactory()
+    {
+    }
+
     //fixme move to a common class so it can be refered to from client code.
 
     public static FilterManager createManager(FieldTable filters) throws AMQException

@@ -25,6 +25,9 @@ package org.apache.qpid.client.message;
  */
 public class QpidMessageProperties 
 {
+    private QpidMessageProperties()
+    {
+    }
 
     public static final String QPID_SUBJECT = "qpid.subject";
     

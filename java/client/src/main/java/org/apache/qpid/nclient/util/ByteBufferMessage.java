@@ -45,7 +45,7 @@ import java.util.List;
  */
 public class ByteBufferMessage implements Message
 {
-    private List<ByteBuffer> _data;// = new ArrayList<ByteBuffer>();
+    private List<ByteBuffer> _data;
     private ByteBuffer _readBuffer;
     private int _dataSize;
     private DeliveryProperties _currentDeliveryProps;
