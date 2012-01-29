@@ -40,9 +40,4 @@ public class PropertyUtilsTest extends QpidTestCase
         String expandedProperty = PropertyUtils.replaceProperties("${banana}xyz${concrete}");
         assertEquals(expandedProperty, "fruityxyzhorrible");
     }
-
-    public static junit.framework.Test suite()
-    {
-        return new junit.framework.TestSuite(PropertyUtilsTest.class);
-    }
 }

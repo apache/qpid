@@ -3841,22 +3841,28 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 	              <entry>qpid.ssl_timeout</entry>
 	              <entry>long</entry>
 	              <entry>60000</entry>
-                  <entry><para>Timeout value used by the Java SSL engine when waiting on operations.</para></entry>
-                </row>
+                      <entry><para>Timeout value used by the Java SSL engine when waiting on operations.</para></entry>
+                    </row>
 
 	            <row>
-	              <entry>qpid.ssl.keyStoreCertType</entry>
+	              <entry>qpid.ssl.KeyManagerFactory.algorithm</entry>
 	              <entry>string</entry>
-	              <entry>SunX509</entry>
-                  <entry><para>The certificate type.</para><para>This could also be set per connection as well (see connection paramters).</para></entry>
-                </row>
+	              <entry>-</entry>
+                      <entry>
+                        <para>The key manager factory algorithm name. If not set, defaults to the value returned from the Java runtime call <literal>KeyManagerFactory.getDefaultAlgorithm()</literal></para>
+                        <para>For compatibility with older clients, the synonym <varname>qpid.ssl.keyStoreCertType</varname> is supported.</para>
+                      </entry>
+                    </row>
 
 	            <row>
-	              <entry>qpid.ssl.trustStoreCertType</entry>
+	              <entry>qpid.ssl.TrustManagerFactory.algorithm</entry>
 	              <entry>string</entry>
-	              <entry>SunX509</entry>
-                  <entry><para>The certificate type.</para><para>This could also be set per connection as well (see connection paramters).</para></entry>
-                </row>
+	              <entry>-</entry>
+                      <entry>
+                        <para>The trust manager factory algorithm name. If not set, defaults to the value returned from the Java runtime call <literal>TrustManagerFactory.getDefaultAlgorithm()</literal></para>
+                        <para>For compatibility with older clients, the synonym <varname>qpid.ssl.trustStoreCertType</varname> is supported.</para>
+                      </entry>
+                    </row>
               </tbody>
             </tgroup>
           </table>

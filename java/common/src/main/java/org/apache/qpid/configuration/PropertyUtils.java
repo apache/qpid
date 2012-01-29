@@ -70,13 +70,13 @@ public class PropertyUtils
         parsePropertyString(value, fragments, propertyRefs);
 
         StringBuffer sb = new StringBuffer();
-        Iterator j = propertyRefs.iterator();
+        Iterator<String> j = propertyRefs.iterator();
 
         for (String fragment : fragments)
         {
             if (fragment == null)
             {
-                String propertyName = (String) j.next();
+                String propertyName = j.next();
 
                 // try to get it from the project or keys
                 // Backward compatibility
