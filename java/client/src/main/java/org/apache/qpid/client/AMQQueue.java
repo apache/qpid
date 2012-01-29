@@ -171,4 +171,10 @@ public class AMQQueue extends AMQDestination implements Queue
         //remain valid if we failover (see BLZ-24)
         return getQueueName() == null;
     }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        return super.equals(o) && o instanceof Queue;
+    }
 }
