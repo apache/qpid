@@ -43,9 +43,6 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
     private final byte _protocolMajor;
     private final byte _protocolMinor;
 
-
-//    public ProtocolInitiation() {}
-
     public ProtocolInitiation(byte[] protocolHeader, byte protocolClass, byte protocolInstance, byte protocolMajor, byte protocolMinor)
     {
         _protocolHeader = protocolHeader;

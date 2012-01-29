@@ -359,7 +359,7 @@ abstract class AbstractEncoder implements Encoder
             Object value = entry.getValue();
             Type type = encoding(value);
             writeStr8(key);
-            put(type.code);
+            put(type.getCode());
             write(type, value);
         }
     }
@@ -380,7 +380,7 @@ abstract class AbstractEncoder implements Encoder
         for (Object value : list)
         {
             Type type = encoding(value);
-            put(type.code);
+            put(type.getCode());
             write(type, value);
         }
     }
@@ -408,7 +408,7 @@ abstract class AbstractEncoder implements Encoder
             type = encoding(array.get(0));
         }
 
-        put(type.code);
+        put(type.getCode());
 
         writeUint32(array.size());
 
@@ -420,18 +420,18 @@ abstract class AbstractEncoder implements Encoder
 
     private void writeSize(Type t, int size)
     {
-        if (t.fixed)
+        if (t.isFixed())
         {
-            if (size != t.width)
+            if (size != t.getWidth())
             {
                 throw new IllegalArgumentException
-                    ("size does not match fixed width " + t.width + ": " +
+                    ("size does not match fixed width " + t.getWidth() + ": " +
                      size);
             }
         }
         else
         {
-            writeSize(t.width, size);
+            writeSize(t.getWidth(), size);
         }
     }
 

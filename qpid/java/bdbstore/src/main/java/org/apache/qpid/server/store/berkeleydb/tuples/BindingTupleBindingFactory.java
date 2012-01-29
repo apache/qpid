@@ -33,7 +33,7 @@ public class BindingTupleBindingFactory extends TupleBindingFactory<BindingKey>
 
     public TupleBinding<BindingKey> getInstance()
     {
-        switch (_version)
+        switch (getVersion())
         {
             default:
             case 5:

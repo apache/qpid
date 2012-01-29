@@ -25,7 +25,6 @@ import org.apache.qpid.server.configuration.plugins.SlowConsumerDetectionConfigu
 import org.apache.qpid.server.configuration.plugins.SlowConsumerDetectionQueueConfiguration;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.plugins.Plugin;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.plugins.logging.SlowConsumerDetectionMessages;
@@ -61,7 +60,7 @@ public class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
      * virtual host to record all the configured queues in a cache for processing by the housekeeping
      * thread.
      * 
-     * @see Plugin#configure(ConfigurationPlugin)
+     * @see org.apache.qpid.server.plugins.Plugin#configure(ConfigurationPlugin)
      */
     public void configure(ConfigurationPlugin config)
     {        
@@ -98,7 +97,7 @@ public class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
                     if (policy == null)
                     {
                         // We would only expect to see this during shutdown
-                        _logger.warn("No slow consumer policy for queue " + q.getName());
+                        getLogger().warn("No slow consumer policy for queue " + q.getName());
                     }
                     else
                     {
@@ -110,7 +109,7 @@ public class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
             catch (Exception e)
             {
                 // Don't throw exceptions as this will stop the house keeping task from running.
-                _logger.error("Exception in SlowConsumersDetection for queue: " + q.getName(), e);
+                getLogger().error("Exception in SlowConsumersDetection for queue: " + q.getName(), e);
             }
         }
 
@@ -139,9 +138,9 @@ public class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
     {
         if (config != null)
         {
-            if (_logger.isInfoEnabled())
+            if (getLogger().isInfoEnabled())
             {
-                _logger.info("Retrieved Queue(" + q.getName() + ") Config:" + config);
+                getLogger().info("Retrieved Queue(" + q.getName() + ") Config:" + config);
             }
 
             int count = q.getMessageCount();
@@ -157,12 +156,12 @@ public class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
                  ((count > 0) && q.getOldestMessageArrivalTime() >= config.getMessageAge())))
             {
                 
-                if (_logger.isDebugEnabled())
+                if (getLogger().isDebugEnabled())
                 {
-                    _logger.debug("Detected Slow Consumer on Queue(" + q.getName() + ")");
-                    _logger.debug("Queue Count:" + q.getMessageCount() + ":" + config.getMessageCount());
-                    _logger.debug("Queue Depth:" + q.getQueueDepth() + ":" + config.getDepth());
-                    _logger.debug("Queue Arrival:" + q.getOldestMessageArrivalTime() + ":" + config.getMessageAge());
+                    getLogger().debug("Detected Slow Consumer on Queue(" + q.getName() + ")");
+                    getLogger().debug("Queue Count:" + q.getMessageCount() + ":" + config.getMessageCount());
+                    getLogger().debug("Queue Depth:" + q.getQueueDepth() + ":" + config.getDepth());
+                    getLogger().debug("Queue Arrival:" + q.getOldestMessageArrivalTime() + ":" + config.getMessageAge());
                 }
 
                 return true;

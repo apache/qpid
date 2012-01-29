@@ -809,13 +809,13 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     public void close(List<AMQSession> sessions, long timeout) throws JMSException
     {
-        if (!_closed.getAndSet(true))
+        if (!setClosed())
         {
-            _closing.set(true);
+            setClosing(true);
             try{
                 doClose(sessions, timeout);
             }finally{
-                _closing.set(false);
+                setClosing(false);
             }
         }
     }
@@ -1241,8 +1241,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         if (cause instanceof IOException || cause instanceof AMQDisconnectedException)
         {
             // If we have an IOE/AMQDisconnect there is no connection to close on.
-            _closing.set(false);
-            closer = !_closed.getAndSet(true);
+            setClosing(false);
+            closer = !setClosed();
 
             _protocolHandler.getProtocolSession().notifyError(je);
         }
@@ -1253,7 +1253,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             // decide if we are going to close the session
             if (hardError(cause))
             {
-                closer = (!_closed.getAndSet(true)) || closer;
+                closer = (!setClosed()) || closer;
                 {
                     _logger.info("Closing AMQConnection due to :" + cause);
                 }

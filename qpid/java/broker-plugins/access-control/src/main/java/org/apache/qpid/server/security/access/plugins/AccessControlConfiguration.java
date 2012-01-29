@@ -58,7 +58,7 @@ public class AccessControlConfiguration extends ConfigurationPlugin
 
     public String getFileName()
     {
-        return _configuration.getString("");
+        return getConfig().getString("");
     }
 
     public void validateConfiguration() throws ConfigurationException

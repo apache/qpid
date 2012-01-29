@@ -20,7 +20,7 @@ public abstract class OutOfOrderQueue extends SimpleAMQQueue
     protected void checkSubscriptionsNotAheadOfDelivery(final QueueEntry entry)
     {
         // check that all subscriptions are not in advance of the entry
-        SubscriptionList.SubscriptionNodeIterator subIter = _subscriptionList.iterator();
+        SubscriptionList.SubscriptionNodeIterator subIter = getSubscriptionList().iterator();
         while(subIter.advance() && !entry.isAcquired())
         {
             final Subscription subscription = subIter.getNode().getSubscription();

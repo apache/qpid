@@ -111,7 +111,6 @@ public class AMQStateManager implements AMQMethodListener
     {
         B method = evt.getMethod();
 
-        //    StateAwareMethodListener handler = findStateTransitionHandler(_currentState, evt.getMethod());
         method.execute(_protocolSession.getMethodDispatcher(), evt.getChannelId());
         return true;
     }

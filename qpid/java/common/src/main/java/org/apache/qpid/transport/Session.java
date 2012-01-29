@@ -410,7 +410,6 @@ public class Session extends SessionInvoker
             log.debug("ID: [%s] %s", this.channel, id);
         }
 
-        //if ((id % 65536) == 0)
         if ((id & 0xff) == 0)
         {
             flushProcessed(TIMELY_REPLY);

@@ -126,11 +126,11 @@ public class HeadersParser
     {
         // DFAs for "all" matches have a "success" state, a "fail" state, and states for every subset of
         // matches which are possible, starting with the empty subset.  For example if we have a binding
-        //  { x-match="all"
+        //   x-match="all"
         //          a=1
         //          b=1
         //          c=1
-        //          d=1 }
+        //          d=1
         // Then we would have the following states
         // (1) Seen none of a, b, c, or d
         // (2) Seen a=1 ; none of b,c, or d

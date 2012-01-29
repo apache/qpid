@@ -33,8 +33,8 @@ import javax.jms.QueueReceiver;
  */
 public class QueueReceiverAdaptor implements QueueReceiver {
 
-    protected MessageConsumer _consumer;
-    protected Queue _queue;
+    private MessageConsumer _consumer;
+    private Queue _queue;
 
     protected QueueReceiverAdaptor(Queue queue, MessageConsumer consumer)
     {

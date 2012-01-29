@@ -45,7 +45,6 @@ import static org.apache.qpid.server.security.access.Operation.UNBIND;
 
 import javax.security.auth.Subject;
 import java.net.SocketAddress;
-import java.security.Principal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -66,7 +65,7 @@ public class SecurityManager
 {
     private static final Logger _logger = Logger.getLogger(SecurityManager.class);
     
-    /** Container for the {@link Principal} that is using to this thread. */
+    /** Container for the {@link java.security.Principal} that is using to this thread. */
     private static final ThreadLocal<Subject> _subject = new ThreadLocal<Subject>();
     private static final ThreadLocal<Boolean> _accessChecksDisabled = new ThreadLocal<Boolean>()
     {
@@ -106,7 +105,7 @@ public class SecurityManager
 
         public void validateConfiguration() throws ConfigurationException
         {
-            if (_configuration.isEmpty())
+            if (getConfig().isEmpty())
             {
                 throw new ConfigurationException("security section is incomplete, no elements found.");
             }

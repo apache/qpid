@@ -31,8 +31,11 @@ import static java.lang.Math.min;
  * @author Rafael H. Schloming
  */
 
-public class Functions
+public final class Functions
 {
+    private Functions()
+    {
+    }
 
     public static final int mod(int n, int m)
     {

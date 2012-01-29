@@ -32,7 +32,10 @@ package org.apache.qpid.server.logging.subjects;
 
 public class LogSubjectFormat
 {
-    
+    private LogSubjectFormat()
+    {
+    }
+
     /**
      * LOG FORMAT for the Subscription Log Subject
      * 0 - Subscription ID

@@ -32,6 +32,10 @@ import java.io.IOException;
 
 public class FieldTableEncoding
 {
+    private FieldTableEncoding()
+    {
+    }
+
     public static FieldTable readFieldTable(TupleInput tupleInput) throws DatabaseException
     {
         long length = tupleInput.readLong();

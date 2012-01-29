@@ -100,13 +100,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     private Exchange _alternateExchange;
 
-    /** Used to track bindings to exchanges so that on deletion they can easily be cancelled. */
 
+    private final QueueEntryList _entries;
 
-
-    protected final QueueEntryList _entries;
-
-    protected final SubscriptionList _subscriptionList = new SubscriptionList();
+    private final SubscriptionList _subscriptionList = new SubscriptionList();
 
     private volatile Subscription _exclusiveSubscriber;
 
@@ -138,19 +135,19 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     private final AtomicInteger _bindingCountHigh = new AtomicInteger();
 
     /** max allowed size(KB) of a single message */
-    public long _maximumMessageSize = ApplicationRegistry.getInstance().getConfiguration().getMaximumMessageSize();
+    private long _maximumMessageSize = ApplicationRegistry.getInstance().getConfiguration().getMaximumMessageSize();
 
     /** max allowed number of messages on a queue. */
-    public long _maximumMessageCount = ApplicationRegistry.getInstance().getConfiguration().getMaximumMessageCount();
+    private long _maximumMessageCount = ApplicationRegistry.getInstance().getConfiguration().getMaximumMessageCount();
 
     /** max queue depth for the queue */
-    public long _maximumQueueDepth = ApplicationRegistry.getInstance().getConfiguration().getMaximumQueueDepth();
+    private long _maximumQueueDepth = ApplicationRegistry.getInstance().getConfiguration().getMaximumQueueDepth();
 
     /** maximum message age before alerts occur */
-    public long _maximumMessageAge = ApplicationRegistry.getInstance().getConfiguration().getMaximumMessageAge();
+    private long _maximumMessageAge = ApplicationRegistry.getInstance().getConfiguration().getMaximumMessageAge();
 
     /** the minimum interval between sending out consecutive alerts of the same type */
-    public long _minimumAlertRepeatGap = ApplicationRegistry.getInstance().getConfiguration().getMinimumAlertRepeatGap();
+    private long _minimumAlertRepeatGap = ApplicationRegistry.getInstance().getConfiguration().getMinimumAlertRepeatGap();
 
     private long _capacity = ApplicationRegistry.getInstance().getConfiguration().getCapacity();
 
@@ -1075,6 +1072,17 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         return _stateChangeCount.get();
     }
 
+    /** Used to track bindings to exchanges so that on deletion they can easily be cancelled. */
+    protected QueueEntryList getEntries()
+    {
+        return _entries;
+    }
+
+    protected SubscriptionList getSubscriptionList()
+    {
+        return _subscriptionList;
+    }
+
 
     public static interface QueueEntryFilter
     {
@@ -1676,7 +1684,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     public void deliverAsync(Subscription sub)
     {
-        //_stateChangeCount.incrementAndGet();
         if(_exclusiveSubscriber == null)
         {
             deliverAsync();
@@ -2215,8 +2222,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
         public boolean equals(Object o)
         {
-            return o != null
-                    && o instanceof SimpleAMQQueue.QueueEntryListener
+            return o instanceof SimpleAMQQueue.QueueEntryListener
                     && _sub == ((QueueEntryListener) o)._sub;
         }
 

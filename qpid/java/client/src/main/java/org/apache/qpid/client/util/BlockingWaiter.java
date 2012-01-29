@@ -184,11 +184,7 @@ public abstract class BlockingWaiter<T>
                     {
                         _logger.error(e.getMessage(), e);
                         // IGNORE    -- //fixme this isn't ideal as being interrupted isn't equivellant to sucess
-                        // if (!_ready && timeout != -1)
-                        // {
-                        // _error = new AMQException("Server did not respond timely");
-                        // _ready = true;
-                        // }
+
                     }
                 }
             }

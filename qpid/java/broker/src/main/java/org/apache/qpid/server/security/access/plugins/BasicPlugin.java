@@ -22,13 +22,12 @@ package org.apache.qpid.server.security.access.plugins;
 
 import org.apache.qpid.server.security.AbstractPlugin;
 import org.apache.qpid.server.security.Result;
-import org.apache.qpid.server.security.SecurityPlugin;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
 
 /**
- * This {@link SecurityPlugin} simply abstains from all authorisation requests and ignores configuration.
+ * This {@link org.apache.qpid.server.security.SecurityPlugin} simply abstains from all authorisation requests and ignores configuration.
  */
 public abstract class BasicPlugin extends AbstractPlugin
 {

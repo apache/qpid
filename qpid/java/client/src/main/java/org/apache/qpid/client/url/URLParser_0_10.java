@@ -57,7 +57,6 @@ public class URLParser_0_10
     private static final char PROPERTY_SEPARATOR_CHAR = ';';
     private static final char ADDRESS_SEPERATOR_CHAR = ',';
 
-    //private static final char CLIENT_ID_TRANSPORT_SEPARATOR_CHAR = ':';
     private static final char TRANSPORT_HOST_SEPARATOR_CHAR = ':';
     private static final char HOST_PORT_SEPARATOR_CHAR = ':';
     private static final char AT_CHAR = '@';

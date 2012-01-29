@@ -46,6 +46,10 @@ import java.util.List;
  */
 public class FileUtils
 {
+    private FileUtils()
+    {
+    }
+
     /**
      * Reads a text file as a string.
      *

@@ -1111,11 +1111,7 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
                                     insertStmt.setString(3, routingKey == null ? null : routingKey.toString());
                                     if(args != null)
                                     {
-                                        /* This would be the Java 6 way of setting a Blob
-                                        Blob blobArgs = conn.createBlob();
-                                        blobArgs.setBytes(0, args.getDataAsBytes());
-                                        stmt.setBlob(4, blobArgs);
-                                        */
+                                        // TODO - In Java 6 we could use create/set Blob
                                         byte[] bytes = args.getDataAsBytes();
                                         ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
                                         insertStmt.setBinaryStream(4, bis, bytes.length);
@@ -1713,7 +1709,7 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
 
                 if (_logger.isDebugEnabled())
                 {
-                    _logger.debug("Dequeuing message " + messageId + " on queue " + name );//+ "[Connection" + conn + "]");
+                    _logger.debug("Dequeuing message " + messageId + " on queue " + name );
                 }
             }
             finally
@@ -2032,11 +2028,8 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
             stmt.setInt(3, offset+chunkData.length);
 
 
-            /* this would be the Java 6 way of doing things
-            Blob dataAsBlob = conn.createBlob();
-            dataAsBlob.setBytes(1L, chunkData);
-            stmt.setBlob(3, dataAsBlob);
-            */
+            // TODO in Java 6 we could just use blobs
+
             ByteArrayInputStream bis = new ByteArrayInputStream(chunkData);
             stmt.setBinaryStream(4, bis, chunkData.length);
             stmt.executeUpdate();

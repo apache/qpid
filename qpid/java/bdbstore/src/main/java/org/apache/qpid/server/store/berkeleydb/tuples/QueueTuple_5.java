@@ -33,9 +33,7 @@ import org.apache.qpid.server.store.berkeleydb.records.QueueRecord;
 
 public class QueueTuple_5 extends QueueTuple_4
 {
-    protected static final Logger _logger = Logger.getLogger(QueueTuple_5.class);
-
-    protected FieldTable _arguments;
+    private static final Logger _logger = Logger.getLogger(QueueTuple_5.class);
 
     public QueueTuple_5()
     {

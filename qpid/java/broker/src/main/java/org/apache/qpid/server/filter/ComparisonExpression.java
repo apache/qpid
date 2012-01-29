@@ -150,7 +150,6 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
             {
                 return
                     Boolean.FALSE;
-                    // throw new RuntimeException("LIKE can only operate on String identifiers.  LIKE attemped on: '" + rv.getClass());
             }
 
             return likePattern.matcher((String) rv).matches() ? Boolean.TRUE : Boolean.FALSE;
@@ -388,13 +387,13 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
 
     public Object evaluate(Filterable message)
     {
-        Comparable lv = (Comparable) left.evaluate(message);
+        Comparable lv = (Comparable) getLeft().evaluate(message);
         if (lv == null)
         {
             return null;
         }
 
-        Comparable rv = (Comparable) right.evaluate(message);
+        Comparable rv = (Comparable) getRight().evaluate(message);
         if (rv == null)
         {
             return null;
@@ -564,8 +563,8 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
 
         public Object evaluate(Filterable message)
         {
-            Object lv = left.evaluate(message);
-            Object rv = right.evaluate(message);
+            Object lv = getLeft().evaluate(message);
+            Object rv = getRight().evaluate(message);
 
             // Iff one of the values is null
             if ((lv == null) ^ (rv == null))

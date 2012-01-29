@@ -68,12 +68,12 @@ public class OptionParser
             String.class);
     
     
-    protected Map<String,Object> optMap = new HashMap<String,Object>();
-    protected static final List<Option> optDefs = new ArrayList<Option>();
+    private Map<String,Object> optMap = new HashMap<String,Object>();
+    private static final List<Option> optDefs = new ArrayList<Option>();
     
-    protected String usage;
-    protected String desc;
-    protected String address;
+    private String usage;
+    private String desc;
+    private String address;
     
     public OptionParser(String[] args, String usage, String desc)
     {   
@@ -283,7 +283,17 @@ public class OptionParser
         Connection con = new AMQConnection(buf.toString());
         return con;
     }
-    
+
+    public static void addOption(Option opt)
+    {
+        optDefs.add(opt);
+    }
+
+    protected String getAddress()
+    {
+        return address;
+    }
+
     static class Option
     {
         private final String shortForm;

@@ -28,7 +28,6 @@ import org.apache.qpid.client.AMQSession_0_8;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.CustomJMSXProperty;
 import org.apache.qpid.client.JMSAMQException;
-import org.apache.qpid.collections.ReferenceMap;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderProperties;
@@ -41,12 +40,28 @@ import javax.jms.MessageNotWriteableException;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
+
 public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
 {
-    private static final Map _destinationCache = Collections.synchronizedMap(new ReferenceMap());
+    private static final float DESTINATION_CACHE_LOAD_FACTOR = 0.75f;
+    private static final int DESTINATION_CACHE_SIZE = 500;
+    private static final int DESTINATION_CACHE_CAPACITY = (int) (DESTINATION_CACHE_SIZE / DESTINATION_CACHE_LOAD_FACTOR);
+
+    private static final Map<String, Destination> _destinationCache =
+            Collections.synchronizedMap(new LinkedHashMap<String,Destination>(DESTINATION_CACHE_CAPACITY,
+                                                                              DESTINATION_CACHE_LOAD_FACTOR,
+                                                                              true)
+    {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, Destination> eldest)
+        {
+            return size() >= DESTINATION_CACHE_SIZE;
+        }
+    });
 
     public static final String JMS_TYPE = "x-jms-type";
 
@@ -234,7 +249,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
         }
         else
         {
-            Destination dest = (Destination) _destinationCache.get(replyToEncoding);
+            Destination dest = _destinationCache.get(replyToEncoding);
             if (dest == null)
             {
                 try
@@ -271,7 +286,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
         final AMQDestination amqd = (AMQDestination) destination;
 
         final AMQShortString encodedDestination = amqd.getEncodedName();
-        _destinationCache.put(encodedDestination, destination);
+        _destinationCache.put(encodedDestination.asString(), destination);
         getContentHeaderProperties().setReplyTo(encodedDestination);
     }
 

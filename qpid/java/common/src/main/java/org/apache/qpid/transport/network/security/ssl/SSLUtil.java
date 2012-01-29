@@ -38,7 +38,11 @@ import java.security.cert.X509Certificate;
 public class SSLUtil
 {
     private static final Logger log = Logger.get(SSLUtil.class);
-    
+
+    private SSLUtil()
+    {
+    }
+
     public static void verifyHostname(SSLEngine engine,String hostnameExpected)
     {
         try

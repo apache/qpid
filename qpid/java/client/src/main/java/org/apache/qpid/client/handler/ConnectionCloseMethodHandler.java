@@ -54,9 +54,6 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener<Co
     {
         _logger.info("ConnectionClose frame received");
 
-        // does it matter
-        // stateManager.changeState(AMQState.CONNECTION_CLOSING);
-
         AMQConstant errorCode = AMQConstant.getConstant(method.getReplyCode());
         AMQShortString reason = method.getReplyText();
 

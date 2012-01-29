@@ -24,7 +24,11 @@ package org.apache.qpid.thread;
 public final class Threading
 {
     private static ThreadFactory threadFactory;
-    
+
+    private Threading()
+    {
+    }
+
     static {
         try
         {

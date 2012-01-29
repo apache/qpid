@@ -947,7 +947,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
 //          apply when a property is used in a message selector expression. For
 //          example, suppose you set a property as a string value, as in the
 //          following:
-//              myMessage.setStringProperty("NumberOfOrders", "2");
+//              myMessage.setStringProperty("NumberOfOrders", "2")
 //          The following expression in a message selector would evaluate to false,
 //          because a string cannot be used in an arithmetic expression:
 //          "NumberOfOrders > 1"

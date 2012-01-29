@@ -28,27 +28,31 @@ import java.util.Map;
 
 public class FieldTableSupport
 {
-  public static FieldTable convertToFieldTable(Map<String,?> props)
-  {
-      FieldTable ft = new FieldTable();
-      if (props != null)
-      {
-          for (String key : props.keySet())
-          {
-              ft.setObject(key, props.get(key));
-          }
-      }
-      return ft;
-  }
+    private FieldTableSupport()
+    {
+    }
 
-  public static Map<String,Object> convertToMap(FieldTable ft)
-  {
-     Map<String,Object> map = new HashMap<String,Object>();
-     for (AMQShortString key: ft.keySet() )
-     {
-         map.put(key.asString(), ft.getObject(key));
-     }
+    public static FieldTable convertToFieldTable(Map<String,?> props)
+    {
+        FieldTable ft = new FieldTable();
+        if (props != null)
+        {
+            for (String key : props.keySet())
+            {
+                ft.setObject(key, props.get(key));
+            }
+        }
+        return ft;
+    }
 
-     return map;
-  }
+    public static Map<String,Object> convertToMap(FieldTable ft)
+    {
+        Map<String,Object> map = new HashMap<String,Object>();
+        for (AMQShortString key: ft.keySet() )
+        {
+            map.put(key.asString(), ft.getObject(key));
+        }
+
+        return map;
+    }
 }

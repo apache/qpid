@@ -205,7 +205,7 @@ public class QueueConfiguration extends ConfigurationPlugin
 
         public void validateConfiguration() throws ConfigurationException
         {
-            if (_configuration.isEmpty())
+            if (getConfig().isEmpty())
             {
                 throw new ConfigurationException("Queue section cannot be empty.");
             }

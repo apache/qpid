@@ -28,6 +28,10 @@ public class URLHelper
     public static final char ALTERNATIVE_OPTION_SEPARATOR = ',';
     public static final char BROKER_SEPARATOR = ';';
 
+    private URLHelper()
+    {
+    }
+
     public static void parseOptions(Map<String, String> optionMap, String options) throws URLSyntaxException
     {
         if ((options == null) || (options.indexOf('=') == -1))

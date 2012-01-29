@@ -212,7 +212,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     {
         // TODO
         // Check if the exchange is in use.
-        // boolean inUse = false;
+
         // Check if there are queue-bindings with the exchange and unregister
         // when there are no bindings.
         CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));

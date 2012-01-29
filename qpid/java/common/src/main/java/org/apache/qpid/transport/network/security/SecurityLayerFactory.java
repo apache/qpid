@@ -37,6 +37,10 @@ import java.nio.ByteBuffer;
 
 public class SecurityLayerFactory
 {
+    private SecurityLayerFactory()
+    {
+    }
+
     public static SecurityLayer newInstance(ConnectionSettings settings)
     {
 

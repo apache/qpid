@@ -104,8 +104,8 @@ public abstract class Node
     
     public static class QueueNode extends Node 
     {
-       protected boolean _isExclusive;      
-       protected QpidQueueOptions _queueOptions = new QpidQueueOptions();
+       private boolean _isExclusive;
+       private QpidQueueOptions _queueOptions = new QpidQueueOptions();
        
        public QueueNode()
        {
@@ -125,8 +125,8 @@ public abstract class Node
     
     public static class ExchangeNode extends Node 
     {
-       protected QpidExchangeOptions _exchangeOptions = new QpidExchangeOptions();
-       protected String _exchangeType;
+       private QpidExchangeOptions _exchangeOptions = new QpidExchangeOptions();
+       private String _exchangeType;
        
        public ExchangeNode()
        {

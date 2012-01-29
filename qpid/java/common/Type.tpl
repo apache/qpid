@@ -56,15 +56,30 @@ for t in types:
   out("    $name((byte) $code, $width, $fixed)")
 };
 
-    public byte code;
-    public int width;
-    public boolean fixed;
+    private final byte code;
+    private final int width;
+    private final boolean fixed;
 
     Type(byte code, int width, boolean fixed)
     {
         this.code = code;
         this.width = width;
         this.fixed = fixed;
+    }
+
+    public byte getCode()
+    {
+        return code;
+    }
+
+    public int getWidth()
+    {
+        return width;
+    }
+
+    public boolean isFixed()
+    {
+        return fixed;
     }
 
     public static Type get(byte code)

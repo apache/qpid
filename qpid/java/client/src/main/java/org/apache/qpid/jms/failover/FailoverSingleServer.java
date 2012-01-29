@@ -37,10 +37,10 @@ public class FailoverSingleServer implements FailoverMethod
     private BrokerDetails _brokerDetail;
 
     /** The number of times to retry connecting to the sever */
-    protected int _retries;
+    private int _retries;
 
     /** The current number of attempts made to the server */
-    protected int _currentRetries = 0;
+    private int _currentRetries = 0;
 
 
     public FailoverSingleServer(ConnectionURL connectionDetails)
@@ -63,6 +63,11 @@ public class FailoverSingleServer implements FailoverMethod
     public void reset()
     {
         _currentRetries = 0;
+    }
+
+    protected void setCurrentRetries(int currentRetries)
+    {
+        _currentRetries = currentRetries;
     }
 
     public boolean failoverAllowed()
@@ -149,6 +154,11 @@ public class FailoverSingleServer implements FailoverMethod
     public void setRetries(int retries)
     {
         _retries = retries;
+    }
+
+    public int getRetries()
+    {
+        return _retries;
     }
 
     public String methodName()

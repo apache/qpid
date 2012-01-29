@@ -20,9 +20,6 @@
  */
 package org.apache.qpid.server.security;
 
-import org.apache.qpid.server.security.auth.sasl.GroupPrincipal;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
-
 import javax.security.auth.Subject;
 import java.security.Principal;
 
@@ -34,8 +31,8 @@ public interface AuthorizationHolder
 {
     /** 
      * Returns the {@link Subject} of the authorized user.  This is guaranteed to
-     * contain at least one {@link UsernamePrincipal}, representing the the identity
-     * used when the user logged on to the application, and zero or more {@link GroupPrincipal}
+     * contain at least one {@link org.apache.qpid.server.security.auth.sasl.UsernamePrincipal}, representing the the identity
+     * used when the user logged on to the application, and zero or more {@link org.apache.qpid.server.security.auth.sasl.GroupPrincipal}
      * representing the group(s) to which the user belongs.
      *
      * @return the Subject

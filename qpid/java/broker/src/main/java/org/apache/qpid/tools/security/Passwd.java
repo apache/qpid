@@ -30,6 +30,10 @@ import java.security.NoSuchAlgorithmException;
 
 public class Passwd
 {
+    private Passwd()
+    {
+    }
+
     public static void main(String args[]) throws NoSuchAlgorithmException, DigestException, IOException
     {
         if (args.length != 2)

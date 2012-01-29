@@ -53,8 +53,8 @@ public class AuthenticationResult
         ERROR
     }
 
-    public final AuthenticationStatus _status;
-    public final byte[] _challenge;
+    private final AuthenticationStatus _status;
+    private final byte[] _challenge;
     private final Exception _cause;
     private final Subject _subject;
 

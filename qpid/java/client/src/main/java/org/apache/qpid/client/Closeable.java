@@ -48,14 +48,14 @@ public abstract class Closeable
      * We use an atomic boolean so that we do not have to synchronized access to this flag. Synchronizing access to this
      * flag would mean have a synchronized block in every method.
      */
-    protected final AtomicBoolean _closed = new AtomicBoolean(false);
+    private final AtomicBoolean _closed = new AtomicBoolean(false);
 
     /**
      * Are we in the process of closing. We have this distinction so we can
      * still signal we are in the process of closing so other objects can tell
      * the difference and tidy up.
      */
-    protected final AtomicBoolean _closing = new AtomicBoolean(false);
+    private final AtomicBoolean _closing = new AtomicBoolean(false);
 
     /**
      * Checks if this is closed, and raises a JMSException if it is.
@@ -90,6 +90,15 @@ public abstract class Closeable
         return _closing.get();
     }
 
+    protected boolean setClosed()
+    {
+        return _closed.getAndSet(true);
+    }
+
+    protected void setClosing(boolean closing)
+    {
+        _closing.set(closing);
+    }
 
     /**
      * Closes this object.

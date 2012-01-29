@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class VirtualHostHouseKeepingPlugin extends HouseKeepingTask implements VirtualHostPlugin
 {
-    protected final Logger _logger = Logger.getLogger(getClass());
+    private final Logger _logger = Logger.getLogger(getClass());
 
     public VirtualHostHouseKeepingPlugin(VirtualHost vhost)
     {
@@ -52,4 +52,10 @@ public abstract class VirtualHostHouseKeepingPlugin extends HouseKeepingTask imp
      * @see java.util.concurrent.TimeUnit for valid value.
      */
     public abstract TimeUnit getTimeUnit();
+
+
+    protected Logger getLogger()
+    {
+        return _logger;
+    }
 }

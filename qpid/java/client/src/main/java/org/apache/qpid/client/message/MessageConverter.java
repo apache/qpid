@@ -41,7 +41,7 @@ public class MessageConverter
     /**
      * Log4J logger
      */
-    protected final Logger _logger = LoggerFactory.getLogger(getClass());
+    private final Logger _logger = LoggerFactory.getLogger(getClass());
 
     /**
      * AbstractJMSMessage which will hold the converted message

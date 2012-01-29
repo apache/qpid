@@ -34,7 +34,7 @@ public class QueueTupleBindingFactory extends TupleBindingFactory<QueueRecord>
 
     public TupleBinding<QueueRecord> getInstance()
     {
-        switch (_version)
+        switch (getVersion())
         {
             default:
             case 5:

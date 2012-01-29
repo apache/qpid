@@ -327,7 +327,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
     public void close() throws JMSException
     {
-        _closed.set(true);
+        setClosed();
         _session.deregisterProducer(_producerId);
     }
 

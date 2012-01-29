@@ -33,7 +33,7 @@ public class MessageContentKeyTupleBindingFactory extends TupleBindingFactory<Me
 
     public TupleBinding<MessageContentKey> getInstance()
     {
-        switch (_version)
+        switch (getVersion())
         {
             default:
             case 5:

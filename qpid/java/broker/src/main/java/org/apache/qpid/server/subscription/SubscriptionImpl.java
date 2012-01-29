@@ -490,7 +490,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             {
                 _logger.debug("Subscription:" + this + " rejected message:" + entry);
             }
-//            return false;
         }
 
         if (_noLocal)
@@ -585,7 +584,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     public boolean wouldSuspend(QueueEntry msg)
     {
-        return !_creditManager.useCreditForMessage(msg.getMessage().getSize());//_channel.wouldSuspend(msg.getMessage());
+        return !_creditManager.useCreditForMessage(msg.getMessage().getSize());
     }
 
     public boolean trySendLock()

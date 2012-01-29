@@ -155,7 +155,6 @@ public class Pre0_10CreditManager extends AbstractFlowCreditManager implements F
                     }
                     else
                     {
-                        //setSuspended(true);
                         return false;
                     }
                 }
@@ -183,7 +182,6 @@ public class Pre0_10CreditManager extends AbstractFlowCreditManager implements F
                 }
                 else
                 {
-                    //setSuspended(true);
                     return false;
                 }
             }

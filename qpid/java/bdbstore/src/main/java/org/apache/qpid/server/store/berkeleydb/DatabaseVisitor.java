@@ -28,13 +28,18 @@ import org.apache.qpid.AMQStoreException;
 /** Visitor Interface so that each DatabaseEntry for a database can easily be processed. */
 public abstract class DatabaseVisitor
 {
-    protected int _count;
+    private int _count;
 
     abstract public void visit(DatabaseEntry entry, DatabaseEntry value) throws AMQStoreException, DatabaseException;
 
-    public int getVisitedCount()
+    public final int getVisitedCount()
     {
         return _count;
+    }
+
+    protected final void incrementCount()
+    {
+        _count++;
     }
 
     public void resetVisitCount()

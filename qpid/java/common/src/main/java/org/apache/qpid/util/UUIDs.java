@@ -28,6 +28,9 @@ package org.apache.qpid.util;
 
 public final class UUIDs
 {
+    private UUIDs()
+    {
+    }
 
     public static final UUIDGen newGenerator()
     {

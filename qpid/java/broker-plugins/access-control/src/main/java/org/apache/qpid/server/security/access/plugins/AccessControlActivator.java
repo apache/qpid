@@ -23,10 +23,9 @@ package org.apache.qpid.server.security.access.plugins;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.security.SecurityPluginActivator;
 import org.apache.qpid.server.security.SecurityPluginFactory;
-import org.osgi.framework.BundleActivator;
 
 /**
- * The OSGi {@link BundleActivator} for {@link AccessControl}.
+ * The OSGi {@link org.osgi.framework.BundleActivator} for {@link AccessControl}.
  */
 public class AccessControlActivator extends SecurityPluginActivator
 {

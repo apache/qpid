@@ -53,7 +53,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class PropertiesFileInitialContextFactory implements InitialContextFactory
 {
-    protected final Logger _logger = LoggerFactory.getLogger(PropertiesFileInitialContextFactory.class);
+    private final Logger _logger = LoggerFactory.getLogger(PropertiesFileInitialContextFactory.class);
 
     private String CONNECTION_FACTORY_PREFIX = "connectionfactory.";
     private String DESTINATION_PREFIX = "destination.";

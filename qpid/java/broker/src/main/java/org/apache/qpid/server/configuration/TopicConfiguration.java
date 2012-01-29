@@ -68,17 +68,17 @@ public class TopicConfiguration extends ConfigurationPlugin implements ExchangeC
     @Override
     public void validateConfiguration() throws ConfigurationException
     {
-        if (_configuration.isEmpty())
+        if (getConfig().isEmpty())
         {
             throw new ConfigurationException("Topics section cannot be empty.");
         }
 
-        int topics = _configuration.getList("topic.name").size() +
-                     _configuration.getList("topic.subscriptionName").size();
+        int topics = getConfig().getList("topic.name").size() +
+                     getConfig().getList("topic.subscriptionName").size();
 
         for (int index = 0; index < topics; index++)
         {
-            Configuration topicSubset = _configuration.subset("topic(" + index + ")");
+            Configuration topicSubset = getConfig().subset("topic(" + index + ")");
 
             // This will occur when we have a subscriptionName that is bound to a
             // topic.
@@ -91,8 +91,8 @@ public class TopicConfiguration extends ConfigurationPlugin implements ExchangeC
 
             topic.setConfiguration(VIRTUALHOSTS_VIRTUALHOST_TOPICS + ".topic", topicSubset );
 
-            String name = _configuration.getString("topic(" + index + ").name");
-            String subscriptionName = _configuration.getString("topic(" + index + ").subscriptionName");
+            String name = getConfig().getString("topic(" + index + ").name");
+            String subscriptionName = getConfig().getString("topic(" + index + ").subscriptionName");
 
             // Record config if subscriptionName is there
             if (subscriptionName != null)

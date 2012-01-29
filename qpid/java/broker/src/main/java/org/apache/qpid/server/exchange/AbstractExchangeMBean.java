@@ -23,7 +23,6 @@ package org.apache.qpid.server.exchange;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.management.common.mbeans.ManagedExchange;
-import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.management.AMQManagedObject;
@@ -45,7 +44,7 @@ import javax.management.openmbean.OpenType;
 import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.TabularType;
 import java.util.Collections;
-import java.util.Map;
+
 
 /**
      * Abstract MBean class. This has some of the methods implemented from
@@ -159,7 +158,7 @@ public abstract class AbstractExchangeMBean<T extends AbstractExchange> extends 
     /**
      * Removes a queue binding from the exchange.
      *
-     * @see BindingFactory#removeBinding(String, AMQQueue, Exchange, Map)
+     * @see org.apache.qpid.server.binding.BindingFactory#removeBinding(String, AMQQueue, Exchange, java.util.Map)
      */
     public void removeBinding(String queueName, String binding) throws JMException
     {

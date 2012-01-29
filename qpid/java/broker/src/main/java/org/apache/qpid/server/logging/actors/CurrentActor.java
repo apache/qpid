@@ -68,6 +68,10 @@ public class CurrentActor
 
     private static LogActor _defaultActor;
 
+    private CurrentActor()
+    {
+    }
+
     /**
      * Set a new {@link LogActor} to be the Current Actor
      * <p/>

@@ -120,57 +120,7 @@ public class Configuration
             _devlog.debug("Using configuration file " + _configFile.getAbsolutePath());
         }
 
-//        String logConfig = _commandLine.getOptionValue("l");
-//        String logWatchConfig = _commandLine.getOptionValue("w", "0");
-//        if (logConfig != null)
-//        {
-//            File logConfigFile = new File(logConfig);
-//            configureLogging(logConfigFile, logWatchConfig);
-//        }
-//        else
-//        {
-//            File configFileDirectory = _configFile.getParentFile();
-//            File logConfigFile = new File(configFileDirectory, DEFAULT_LOG_CONFIG_FILENAME);
-//            configureLogging(logConfigFile, logWatchConfig);
-//        }
     }
-
-
-//    private void configureLogging(File logConfigFile, String logWatchConfig)
-//    {
-//        int logWatchTime = 0;
-//        try
-//        {
-//            logWatchTime = Integer.parseInt(logWatchConfig);
-//        }
-//        catch (NumberFormatException e)
-//        {
-//            _devlog.error("Log watch configuration value of " + logWatchConfig + " is invalid. Must be "
-//                          + "a non-negative integer. Using default of zero (no watching configured");
-//        }
-//
-//        if (logConfigFile.exists() && logConfigFile.canRead())
-//        {
-//            _devlog.info("Configuring logger using configuration file " + logConfigFile.getAbsolutePath());
-//            if (logWatchTime > 0)
-//            {
-//                _devlog.info("log file " + logConfigFile.getAbsolutePath() + " will be checked for changes every "
-//                             + logWatchTime + " seconds");
-//                // log4j expects the watch interval in milliseconds
-//                DOMConfigurator.configureAndWatch(logConfigFile.getAbsolutePath(), logWatchTime * 1000);
-//            }
-//            else
-//            {
-//                DOMConfigurator.configure(logConfigFile.getAbsolutePath());
-//            }
-//        }
-//        else
-//        {
-//            System.err.println("Logging configuration error: unable to read file " + logConfigFile.getAbsolutePath());
-//            System.err.println("Using basic log4j configuration");
-//            BasicConfigurator.configure();
-//        }
-//    }
 
     public File getConfigFile()
     {

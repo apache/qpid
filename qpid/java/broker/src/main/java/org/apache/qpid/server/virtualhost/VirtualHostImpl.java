@@ -95,7 +95,7 @@ public class VirtualHostImpl implements VirtualHost
 
     private MessageStore _messageStore;
 
-    protected VirtualHostMBean _virtualHostMBean;
+    private VirtualHostMBean _virtualHostMBean;
 
     private AMQBrokerManagerMBean _brokerMBean;
 
@@ -257,54 +257,9 @@ public class VirtualHostImpl implements VirtualHost
     {
         if (period != 0L)
         {
-            class VirtualHostHouseKeepingTask extends HouseKeepingTask
-            {
-                public VirtualHostHouseKeepingTask(VirtualHost vhost)
-                {
-                    super(vhost);
-                }
 
-                public void execute()
-                {
-                    for (AMQQueue q : _queueRegistry.getQueues())
-                    {
-                        _logger.debug("Checking message status for queue: "
-                                      + q.getName());
-                        try
-                        {
-                            q.checkMessageStatus();
-                        }
-                        catch (Exception e)
-                        {
-                            _logger.error("Exception in housekeeping for queue: "
-                                          + q.getNameShortString().toString(), e);
-                            //Don't throw exceptions as this will stop the
-                            // house keeping task from running.
-                        }
-                    }
-                    for (AMQConnectionModel connection : getConnectionRegistry().getConnections())
-                    {
-                        _logger.debug("Checking for long running open transactions on connection " + connection);
-                        for (AMQSessionModel session : connection.getSessionModels())
-                        {
-	                        _logger.debug("Checking for long running open transactions on session " + session);
-                            try
-                            {
-                                session.checkTransactionStatus(_configuration.getTransactionTimeoutOpenWarn(),
-	                                                           _configuration.getTransactionTimeoutOpenClose(),
-	                                                           _configuration.getTransactionTimeoutIdleWarn(),
-	                                                           _configuration.getTransactionTimeoutIdleClose());
-                            }
-                            catch (Exception e)
-                            {
-                                _logger.error("Exception in housekeeping for connection: " + connection.toString(), e);
-                            }
-                        }
-                    }
-                }
-            }
 
-            scheduleHouseKeepingTask(period, new VirtualHostHouseKeepingTask(this));
+            scheduleHouseKeepingTask(period, new VirtualHostHouseKeepingTask());
 
             Map<String, VirtualHostPluginFactory> plugins =
                 ApplicationRegistry.getInstance().getPluginManager().getVirtualHostPlugins();
@@ -331,6 +286,53 @@ public class VirtualHostImpl implements VirtualHost
                     catch (RuntimeException e)
                     {
                         _logger.error("Unable to load VirtualHostPlugin:" + pluginName + " due to:" + e.getMessage(), e);
+                    }
+                }
+            }
+        }
+    }
+
+    private class VirtualHostHouseKeepingTask extends HouseKeepingTask
+    {
+        public VirtualHostHouseKeepingTask()
+        {
+            super(VirtualHostImpl.this);
+        }
+
+        public void execute()
+        {
+            for (AMQQueue q : _queueRegistry.getQueues())
+            {
+                _logger.debug("Checking message status for queue: "
+                              + q.getName());
+                try
+                {
+                    q.checkMessageStatus();
+                }
+                catch (Exception e)
+                {
+                    _logger.error("Exception in housekeeping for queue: "
+                                  + q.getNameShortString().toString(), e);
+                    //Don't throw exceptions as this will stop the
+                    // house keeping task from running.
+                }
+            }
+            for (AMQConnectionModel connection : getConnectionRegistry().getConnections())
+            {
+                _logger.debug("Checking for long running open transactions on connection " + connection);
+                for (AMQSessionModel session : connection.getSessionModels())
+                {
+                    _logger.debug("Checking for long running open transactions on session " + session);
+                    try
+                    {
+                        session.checkTransactionStatus(_configuration.getTransactionTimeoutOpenWarn(),
+                                                       _configuration.getTransactionTimeoutOpenClose(),
+                                                       _configuration.getTransactionTimeoutIdleWarn(),
+                                                       _configuration.getTransactionTimeoutIdleClose());
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.error("Exception in housekeeping for connection: " + connection.toString(), e);
                     }
                 }
             }
@@ -791,11 +793,11 @@ public class VirtualHostImpl implements VirtualHost
      */
     private static class StartupRoutingTable implements DurableConfigurationStore
     {
-        public List<Exchange> exchange = new LinkedList<Exchange>();
-        public List<CreateQueueTuple> queue = new LinkedList<CreateQueueTuple>();
-        public List<CreateBindingTuple> bindings = new LinkedList<CreateBindingTuple>();
-        public List<BrokerLink> links = new LinkedList<BrokerLink>();
-        public List<Bridge> bridges = new LinkedList<Bridge>();
+        private List<Exchange> exchange = new LinkedList<Exchange>();
+        private List<CreateQueueTuple> queue = new LinkedList<CreateQueueTuple>();
+        private List<CreateBindingTuple> bindings = new LinkedList<CreateBindingTuple>();
+        private List<BrokerLink> links = new LinkedList<BrokerLink>();
+        private List<Bridge> bridges = new LinkedList<Bridge>();
         
         public void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
         {
@@ -862,8 +864,8 @@ public class VirtualHostImpl implements VirtualHost
 
         private static class CreateQueueTuple
         {
-            public AMQQueue queue;
-            public FieldTable arguments;
+            private AMQQueue queue;
+            private FieldTable arguments;
 
             public CreateQueueTuple(AMQQueue queue, FieldTable arguments)
             {
@@ -874,10 +876,10 @@ public class VirtualHostImpl implements VirtualHost
 
         private static class CreateBindingTuple
         {
-            public AMQQueue queue;
-            public FieldTable arguments;
-            public Exchange exchange;
-            public AMQShortString routingKey;
+            private AMQQueue queue;
+            private FieldTable arguments;
+            private Exchange exchange;
+            private AMQShortString routingKey;
 
             public CreateBindingTuple(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args)
             {

@@ -145,7 +145,6 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
             {
                 return
                     Boolean.FALSE;
-                    // throw new RuntimeException("LIKE can only operate on String identifiers.  LIKE attemped on: '" + rv.getClass());
             }
 
             return likePattern.matcher((String) rv).matches() ? Boolean.TRUE : Boolean.FALSE;

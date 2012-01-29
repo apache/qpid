@@ -57,9 +57,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         return _instance;
     }
 
-    public boolean autoRegister = ApplicationRegistry.getInstance().getConfiguration().getQueueAutoRegister();
-
-    private final AtomicInteger _counter = new AtomicInteger();
+    private boolean autoRegister = ApplicationRegistry.getInstance().getConfiguration().getQueueAutoRegister();
 
     public void methodReceived(AMQStateManager stateManager, QueueDeclareBody body, int channelId) throws AMQException
     {
