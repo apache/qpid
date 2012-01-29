@@ -44,7 +44,7 @@ public class NoFailover extends FailoverSingleServer
     public void attainedConnection()
     {
         _connected=true;
-        _currentRetries = _retries;
+        setCurrentRetries(getRetries());
     }
 
     @Override

@@ -362,7 +362,7 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
 
             if(chosenChild != null)
             {
-                // we have one child (x), we can move it up to replace x;
+                // we have one child (x), we can move it up to replace x
                 chosenChild.setParent(entry.getParent());
                 if(chosenChild.getParent() == null)
                 {

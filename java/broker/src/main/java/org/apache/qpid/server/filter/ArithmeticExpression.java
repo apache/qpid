@@ -249,13 +249,13 @@ public abstract class ArithmeticExpression extends BinaryExpression
 
     public Object evaluate(Filterable message)
     {
-        Object lvalue = left.evaluate(message);
+        Object lvalue = getLeft().evaluate(message);
         if (lvalue == null)
         {
             return null;
         }
 
-        Object rvalue = right.evaluate(message);
+        Object rvalue = getRight().evaluate(message);
         if (rvalue == null)
         {
             return null;

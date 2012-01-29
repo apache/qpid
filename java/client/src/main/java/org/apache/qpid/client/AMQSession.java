@@ -826,15 +826,13 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         if (_logger.isInfoEnabled())
         {
-            // StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-            _logger.info("Closing session: " + this); // + ":"
-            // Arrays.asList(stackTrace).subList(3, stackTrace.length - 1));
+            _logger.info("Closing session: " + this);
         }
 
         // Ensure we only try and close an open session.
-        if (!_closed.getAndSet(true))
+        if (!setClosed())
         {
-            _closing.set(true);
+            setClosing(true);
             synchronized (getFailoverMutex())
             {
                 // We must close down all producers and consumers in an orderly fashion. This is the only method
@@ -911,9 +909,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
        }
 
         //if we don't have an exception then we can perform closing operations
-        _closing.set(e == null);
+        setClosing(e == null);
 
-        if (!_closed.getAndSet(true))
+        if (!setClosed())
         {
             synchronized (_messageDeliveryLock)
             {
@@ -1012,9 +1010,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 // Just close the consumer
                 // fixme  the CancelOK is being processed before the arriving messages..
                 // The dispatcher is still to process them so the server sent in order but the client
-                // has yet to receive before the close comes in.
-
-                // consumer.markClosed();
+                // has yet to receive before the close comes in
 
                 if (consumer.isAutoClose())
                 {
@@ -1694,7 +1690,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     public MessageListener getMessageListener() throws JMSException
     {
-        // checkNotClosed();
         return _messageListener;
     }
 
@@ -1981,31 +1976,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     public void setMessageListener(MessageListener listener) throws JMSException
     {
-        // checkNotClosed();
-        //
-        // if (_dispatcher != null && !_dispatcher.connectionStopped())
-        // {
-        // throw new javax.njms.IllegalStateException("Attempt to set listener while session is started.");
-        // }
-        //
-        // // We are stopped
-        // for (Iterator<BasicMessageConsumer> i = _consumers.values().iterator(); i.hasNext();)
-        // {
-        // BasicMessageConsumer consumer = i.next();
-        //
-        // if (consumer.isReceiving())
-        // {
-        // throw new javax.njms.IllegalStateException("Another thread is already receiving synchronously.");
-        // }
-        // }
-        //
-        // _messageListener = listener;
-        //
-        // for (Iterator<BasicMessageConsumer> i = _consumers.values().iterator(); i.hasNext();)
-        // {
-        // i.next().setMessageListener(_messageListener);
-        // }
-
     }
     
     /**
@@ -2279,7 +2249,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      */
     void markClosed()
     {
-        _closed.set(true);
+        setClosed();
         _connection.deregisterSession(_channelId);
         markClosedProducersAndConsumers();
 
@@ -2294,7 +2264,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         if (Thread.currentThread() == _dispatcherThread)
         {
-            while (!_closed.get() && !_queue.isEmpty())
+            while (!super.isClosed() && !_queue.isEmpty())
             {
                 Dispatchable disp;
                 try
@@ -2346,7 +2316,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         if (Thread.currentThread() == _dispatcherThread)
         {
-            while (!_closed.get() && !_queue.isEmpty())
+            while (!super.isClosed() && !_queue.isEmpty())
             {
                 Dispatchable disp;
                 try
@@ -2517,32 +2487,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             _dispatcher.setConnectionStopped(true);
         }
     }
-
-    /*
-     * Binds the named queue, with the specified routing key, to the named exchange.
-     *
-     * <p/>Note that this operation automatically retries in the event of fail-over.
-     *
-     * @param queueName    The name of the queue to bind.
-     * @param routingKey   The routing key to bind the queue with.
-     * @param arguments    Additional arguments.
-     * @param exchangeName The exchange to bind the queue on.
-     *
-     * @throws AMQException If the queue cannot be bound for any reason.
-     */
-    /*private void bindQueue(AMQDestination amqd, AMQShortString queueName, AMQProtocolHandler protocolHandler, FieldTable ft)
-        throws AMQException, FailoverException
-    {
-        AMQFrame queueBind =
-            QueueBindBody.createAMQFrame(_channelId, getProtocolMajorVersion(), getProtocolMinorVersion(), ft, // arguments
-                amqd.getExchangeName(), // exchange
-                false, // nowait
-                queueName, // queue
-                amqd.getRoutingKey(), // routingKey
-                getTicket()); // ticket
-
-        protocolHandler.syncWrite(queueBind, QueueBindOkBody.class);
-    }*/
 
     private void checkNotTransacted() throws JMSException
     {
@@ -3372,7 +3316,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     else
                     {
                         // should perhaps clear the _SQ here.
-                        // consumer._synchronousQueue.clear();
                         consumer.clearReceiveQueue();
                     }
 
@@ -3595,30 +3538,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     public abstract AMQMessageDelegateFactory getMessageDelegateFactory();
 
-    /*public void requestAccess(AMQShortString realm, boolean exclusive, boolean passive, boolean active, boolean write,
-        boolean read) throws AMQException
-    {
-        getProtocolHandler().writeCommandFrameAndWaitForReply(AccessRequestBody.createAMQFrame(getChannelId(),
-                getProtocolMajorVersion(), getProtocolMinorVersion(), active, exclusive, passive, read, realm, write),
-            new BlockingMethodFrameListener(_channelId)
-            {
-
-                public boolean processMethod(int channelId, AMQMethodBody frame) // throws AMQException
-                {
-                    if (frame instanceof AccessRequestOkBody)
-                    {
-                        setTicket(((AccessRequestOkBody) frame).getTicket());
-
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-            });
-    }*/
-
     private class SuspenderRunner implements Runnable
     {
         private AtomicBoolean _suspend;
@@ -3662,7 +3581,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     @Override
     public boolean isClosed()
     {
-        return _closed.get() || _connection.isClosed();
+        return super.isClosed() || _connection.isClosed();
     }
 
     /**
@@ -3674,7 +3593,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     @Override
     public boolean isClosing()
     {
-        return _closing.get()|| _connection.isClosing();
+        return super.isClosing() || _connection.isClosing();
     }
     
     public boolean isDeclareExchanges()

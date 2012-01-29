@@ -65,6 +65,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * This is a simple BerkeleyDB Store upgrade tool that will upgrade a V4 Store to a V5 Store.
@@ -407,87 +408,39 @@ public class BDBStoreUpgrade
     {
         _logger.info("Starting store upgrade from version 4");
         
-        //Migrate _exchangeDb;
+        //Migrate _exchangeDb
         _logger.info("Exchanges");
 
         moveContents(_oldMessageStore.getExchangesDb(), _newMessageStore.getExchangesDb(), "Exchange");
 
-        final List<AMQShortString> topicExchanges = new ArrayList<AMQShortString>();
-        final TupleBinding exchangeTB = new ExchangeTB();
-        
-        DatabaseVisitor exchangeListVisitor = new DatabaseVisitor()
-        {           
-            public void visit(DatabaseEntry key, DatabaseEntry value) throws DatabaseException
-            {
-                ExchangeRecord exchangeRec = (ExchangeRecord) exchangeTB.entryToObject(value);
-                AMQShortString type = exchangeRec.getType();
 
-                if (ExchangeDefaults.TOPIC_EXCHANGE_CLASS.equals(type))
-                {
-                    topicExchanges.add(exchangeRec.getNameShortString());
-                }
-            }
-        };
+        TopicExchangeDiscoverer exchangeListVisitor = new TopicExchangeDiscoverer();
         _oldMessageStore.visitExchanges(exchangeListVisitor);
 
 
-        //Migrate _queueBindingsDb;
+        //Migrate _queueBindingsDb
         _logger.info("Queue Bindings");
         moveContents(_oldMessageStore.getBindingsDb(), _newMessageStore.getBindingsDb(), "Queue Binding");
 
         //Inspect the bindings to gather a list of queues which are probably durable subscriptions, i.e. those 
         //which have a colon in their name and are bound to the Topic exchanges above
-        final List<AMQShortString> durableSubQueues = new ArrayList<AMQShortString>();
-        final TupleBinding<BindingKey> bindingTB = _oldMessageStore.getBindingTupleBindingFactory().getInstance();
-        
-        DatabaseVisitor durSubQueueListVisitor = new DatabaseVisitor()
-        {           
-            public void visit(DatabaseEntry key, DatabaseEntry value) throws DatabaseException
-            {
-                BindingKey bindingRec = (BindingKey) bindingTB.entryToObject(key);
-                AMQShortString queueName = bindingRec.getQueueName();
-                AMQShortString exchangeName = bindingRec.getExchangeName();
-                
-                if (topicExchanges.contains(exchangeName) && queueName.asString().contains(":"))
-                {
-                    durableSubQueues.add(queueName);
-                }
-            }
-        };
+        DurableSubDiscoverer durSubQueueListVisitor =
+                new DurableSubDiscoverer(exchangeListVisitor.getTopicExchanges(),
+                                         _oldMessageStore.getBindingTupleBindingFactory().getInstance());
         _oldMessageStore.visitBindings(durSubQueueListVisitor);
 
+        final List<AMQShortString> durableSubQueues = durSubQueueListVisitor.getDurableSubQueues();
 
-        //Migrate _queueDb;
+        //Migrate _queueDb
         _logger.info("Queues");
 
         // hold the list of existing queue names
-        final List<AMQShortString> existingQueues = new ArrayList<AMQShortString>();
 
         final TupleBinding<QueueRecord> queueTupleBinding = _oldMessageStore.getQueueTupleBindingFactory().getInstance();
 
-        DatabaseVisitor queueVisitor = new DatabaseVisitor()
-        {
-            public void visit(DatabaseEntry key, DatabaseEntry value) throws AMQStoreException
-            {
-                QueueRecord queueRec = (QueueRecord) queueTupleBinding.entryToObject(value);
-                AMQShortString queueName = queueRec.getNameShortString();
-
-                //if the queue name is in the gathered list then set its exclusivity true
-                if (durableSubQueues.contains(queueName))
-                {
-                    _logger.info("Marking as possible DurableSubscription backing queue: " + queueName);
-                    queueRec.setExclusive(true);
-                }
-                
-                //The simple call to createQueue with the QueueRecord object is sufficient for a v2->v3 upgrade as
-                //the extra 'exclusive' property in v3 will be defaulted to false in the record creation.
-                _newMessageStore.createQueue(queueRec);
-
-                _count++;
-                existingQueues.add(queueName);
-            }
-        };
+        QueueVisitor queueVisitor = new QueueVisitor(queueTupleBinding, durableSubQueues, _newMessageStore);
         _oldMessageStore.visitQueues(queueVisitor);
+        final List<AMQShortString> existingQueues = queueVisitor.getExistingQueues();
 
         logCount(queueVisitor.getVisitedCount(), "Queue");
 
@@ -495,42 +448,15 @@ public class BDBStoreUpgrade
         // Look for persistent messages stored for non-durable queues
         _logger.info("Checking for messages previously sent to non-durable queues");
 
-        // track all message delivery to existing queues
-        final HashSet<Long> queueMessages = new HashSet<Long>();
-
-        // hold all non existing queues and their messages IDs
-        final HashMap<String, HashSet<Long>> phantomMessageQueues = new HashMap<String, HashSet<Long>>();
-
         // delivery DB visitor to check message delivery and identify non existing queues
         final QueueEntryTB queueEntryTB = new QueueEntryTB();
-        DatabaseVisitor messageDeliveryCheckVisitor = new DatabaseVisitor()
-        {
-            public void visit(DatabaseEntry key, DatabaseEntry value) throws DatabaseException
-            {
-                QueueEntryKey entryKey = (QueueEntryKey) queueEntryTB.entryToObject(key);
-                Long messageId = entryKey.getMessageId();
-                AMQShortString queueName = entryKey.getQueueName();
-                if (!existingQueues.contains(queueName))
-                {
-                    String name = queueName.asString();
-                    HashSet<Long> messages = phantomMessageQueues.get(name);
-                    if (messages == null)
-                    {
-                        messages = new HashSet<Long>();
-                        phantomMessageQueues.put(name, messages);
-                    }
-                    messages.add(messageId);
-                    _count++;
-                }
-                else
-                {
-                    queueMessages.add(messageId);
-                }
-            }
-        };
+        MessageDeliveryCheckVisitor messageDeliveryCheckVisitor =
+                new MessageDeliveryCheckVisitor(queueEntryTB, queueVisitor.getExistingQueues());
         _oldMessageStore.visitDelivery(messageDeliveryCheckVisitor);
 
-        if (phantomMessageQueues.isEmpty())
+        final Set<Long> queueMessages = messageDeliveryCheckVisitor.getQueueMessages();
+
+        if (messageDeliveryCheckVisitor.getPhantomMessageQueues().isEmpty())
         {
             _logger.info("No such messages were found");
         }
@@ -538,7 +464,7 @@ public class BDBStoreUpgrade
         {
             _logger.info("Found " + messageDeliveryCheckVisitor.getVisitedCount()+ " such messages in total");
 
-            for (Entry<String, HashSet<Long>> phantomQueue : phantomMessageQueues.entrySet())
+            for (Entry<String, HashSet<Long>> phantomQueue : messageDeliveryCheckVisitor.getPhantomMessageQueues().entrySet())
             {
                 String queueName = phantomQueue.getKey();
                 HashSet<Long> messages = phantomQueue.getValue();
@@ -572,40 +498,20 @@ public class BDBStoreUpgrade
         }
 
 
-        //Migrate _messageMetaDataDb;
+        //Migrate _messageMetaDataDb
         _logger.info("Message MetaData");
         
         final Database newMetaDataDB = _newMessageStore.getMetaDataDb();
-        final TupleBinding<Object> oldMetaDataTupleBinding = _oldMessageStore.getMetaDataTupleBindingFactory().getInstance();
-        final TupleBinding<Object> newMetaDataTupleBinding = _newMessageStore.getMetaDataTupleBindingFactory().getInstance();
-        
-        DatabaseVisitor metaDataVisitor = new DatabaseVisitor()
-        {
-            public void visit(DatabaseEntry key, DatabaseEntry value) throws DatabaseException
-            {
-                _count++;
-                MessageMetaData metaData = (MessageMetaData) oldMetaDataTupleBinding.entryToObject(value);
 
-                // get message id
-                Long messageId = TupleBinding.getPrimitiveBinding(Long.class).entryToObject(key);
-
-                // ONLY copy data if message is delivered to existing queue
-                if (!queueMessages.contains(messageId))
-                {
-                    return;
-                }
-                DatabaseEntry newValue = new DatabaseEntry();
-                newMetaDataTupleBinding.objectToEntry(metaData, newValue);
-                
-                newMetaDataDB.put(null, key, newValue);
-            }
-        };
+        MetaDataVisitor metaDataVisitor = new MetaDataVisitor(queueMessages, newMetaDataDB,
+                _oldMessageStore.getMetaDataTupleBindingFactory().getInstance(),
+                _newMessageStore.getMetaDataTupleBindingFactory().getInstance());
         _oldMessageStore.visitMetaDataDb(metaDataVisitor);
 
         logCount(metaDataVisitor.getVisitedCount(), "Message MetaData");
 
 
-        //Migrate _messageContentDb;
+        //Migrate _messageContentDb
         _logger.info("Message Contents");
         final Database newContentDB = _newMessageStore.getContentDb();
         
@@ -613,74 +519,17 @@ public class BDBStoreUpgrade
         final TupleBinding<MessageContentKey> newContentKeyTupleBinding = new MessageContentKeyTB_5();
         final TupleBinding contentTB = new ContentTB();
         
-        DatabaseVisitor contentVisitor = new DatabaseVisitor()
-        {
-            private long _prevMsgId = -1; //Initialise to invalid value
-            private int _bytesSeenSoFar = 0;
-            
-            public void visit(DatabaseEntry key, DatabaseEntry value) throws DatabaseException
-            {
-                _count++;
-
-                //determine the msgId of the current entry
-                MessageContentKey_4 contentKey = (MessageContentKey_4) oldContentKeyTupleBinding.entryToObject(key);
-                long msgId = contentKey.getMessageId();
-
-                // ONLY copy data if message is delivered to existing queue
-                if (!queueMessages.contains(msgId))
-                {
-                    return;
-                }
-                //if this is a new message, restart the byte offset count.
-                if(_prevMsgId != msgId)
-                {
-                    _bytesSeenSoFar = 0;
-                }
-
-                //determine the content size
-                ByteBuffer content = (ByteBuffer) contentTB.entryToObject(value);
-                int contentSize = content.limit();
-
-                //create the new key: id + previously seen data count
-                MessageContentKey_5 newKey = new MessageContentKey_5(msgId, _bytesSeenSoFar);
-                DatabaseEntry newKeyEntry = new DatabaseEntry();
-                newContentKeyTupleBinding.objectToEntry(newKey, newKeyEntry);
-
-                DatabaseEntry newValueEntry = new DatabaseEntry();
-                contentTB.objectToEntry(content, newValueEntry);
-
-                newContentDB.put(null, newKeyEntry, newValueEntry);
-
-                _prevMsgId = msgId;
-                _bytesSeenSoFar += contentSize;
-            }
-        };
+        DatabaseVisitor contentVisitor = new ContentVisitor(oldContentKeyTupleBinding, queueMessages,
+                                                            contentTB, newContentKeyTupleBinding, newContentDB);
         _oldMessageStore.visitContentDb(contentVisitor);
 
         logCount(contentVisitor.getVisitedCount(), "Message Content");
 
 
-        //Migrate _deliveryDb;
+        //Migrate _deliveryDb
         _logger.info("Delivery Records");
         final Database deliveryDb =_newMessageStore.getDeliveryDb();
-        DatabaseVisitor deliveryDbVisitor = new DatabaseVisitor()
-        {
-
-            public void visit(DatabaseEntry key, DatabaseEntry value) throws DatabaseException
-            {
-                _count++;
-
-                // get message id from entry key
-                QueueEntryKey entryKey = (QueueEntryKey) queueEntryTB.entryToObject(key);
-                AMQShortString queueName = entryKey.getQueueName();
-
-                // ONLY copy data if message queue exists
-                if (existingQueues.contains(queueName))
-                {
-                    deliveryDb.put(null, key, value);
-                }
-            }
-        };
+        DatabaseVisitor deliveryDbVisitor = new DeliveryDbVisitor(queueEntryTB, existingQueues, deliveryDb);
         _oldMessageStore.visitDelivery(deliveryDbVisitor);
         logCount(contentVisitor.getVisitedCount(), "Delivery Record");
     }
@@ -711,7 +560,7 @@ public class BDBStoreUpgrade
         {
             public void visit(DatabaseEntry key, DatabaseEntry value) throws DatabaseException
             {
-                _count++;
+                incrementCount();
                 newDatabase.put(null, key, value);
             }
         };
@@ -1117,4 +966,280 @@ public class BDBStoreUpgrade
         System.exit(0);
     }
 
+    private static class TopicExchangeDiscoverer extends DatabaseVisitor
+    {
+        private final List<AMQShortString> topicExchanges = new ArrayList<AMQShortString>();
+        private final TupleBinding exchangeTB = new ExchangeTB();
+
+        public void visit(DatabaseEntry key, DatabaseEntry value) throws DatabaseException
+        {
+            ExchangeRecord exchangeRec = (ExchangeRecord) exchangeTB.entryToObject(value);
+            AMQShortString type = exchangeRec.getType();
+
+            if (ExchangeDefaults.TOPIC_EXCHANGE_CLASS.equals(type))
+            {
+                topicExchanges.add(exchangeRec.getNameShortString());
+            }
+        }
+
+        public List<AMQShortString> getTopicExchanges()
+        {
+            return topicExchanges;
+        }
+    }
+
+    private static class MessageDeliveryCheckVisitor extends DatabaseVisitor
+    {
+        private final QueueEntryTB _queueEntryTB;
+        private final List<AMQShortString> _existingQueues;
+
+        // track all message delivery to existing queues
+        private final HashSet<Long> _queueMessages = new HashSet<Long>();
+
+        // hold all non existing queues and their messages IDs
+        private final HashMap<String, HashSet<Long>> _phantomMessageQueues = new HashMap<String, HashSet<Long>>();
+
+
+
+        public MessageDeliveryCheckVisitor(QueueEntryTB queueEntryTB, List<AMQShortString> existingQueues)
+        {
+            _queueEntryTB = queueEntryTB;
+            _existingQueues = existingQueues;
+        }
+
+        public void visit(DatabaseEntry key, DatabaseEntry value) throws DatabaseException
+        {
+            QueueEntryKey entryKey = (QueueEntryKey) _queueEntryTB.entryToObject(key);
+            Long messageId = entryKey.getMessageId();
+            AMQShortString queueName = entryKey.getQueueName();
+            if (!_existingQueues.contains(queueName))
+            {
+                String name = queueName.asString();
+                HashSet<Long> messages = _phantomMessageQueues.get(name);
+                if (messages == null)
+                {
+                    messages = new HashSet<Long>();
+                    _phantomMessageQueues.put(name, messages);
+                }
+                messages.add(messageId);
+                incrementCount();
+            }
+            else
+            {
+                _queueMessages.add(messageId);
+            }
+        }
+
+        public HashSet<Long> getQueueMessages()
+        {
+            return _queueMessages;
+        }
+
+        public HashMap<String, HashSet<Long>> getPhantomMessageQueues()
+        {
+            return _phantomMessageQueues;
+        }
+    }
+
+    private static class ContentVisitor extends DatabaseVisitor
+    {
+        private long _prevMsgId; //Initialise to invalid value
+        private int _bytesSeenSoFar;
+        private final TupleBinding<MessageContentKey> _oldContentKeyTupleBinding;
+        private final Set<Long> _queueMessages;
+        private final TupleBinding _contentTB;
+        private final TupleBinding<MessageContentKey> _newContentKeyTupleBinding;
+        private final Database _newContentDB;
+
+        public ContentVisitor(TupleBinding<MessageContentKey> oldContentKeyTupleBinding, Set<Long> queueMessages, TupleBinding contentTB, TupleBinding<MessageContentKey> newContentKeyTupleBinding, Database newContentDB)
+        {
+            _oldContentKeyTupleBinding = oldContentKeyTupleBinding;
+            _queueMessages = queueMessages;
+            _contentTB = contentTB;
+            _newContentKeyTupleBinding = newContentKeyTupleBinding;
+            _newContentDB = newContentDB;
+            _prevMsgId = -1;
+            _bytesSeenSoFar = 0;
+        }
+
+        public void visit(DatabaseEntry key, DatabaseEntry value) throws DatabaseException
+        {
+            incrementCount();
+
+            //determine the msgId of the current entry
+            MessageContentKey_4 contentKey = (MessageContentKey_4) _oldContentKeyTupleBinding.entryToObject(key);
+            long msgId = contentKey.getMessageId();
+
+            // ONLY copy data if message is delivered to existing queue
+            if (!_queueMessages.contains(msgId))
+            {
+                return;
+            }
+            //if this is a new message, restart the byte offset count.
+            if(_prevMsgId != msgId)
+            {
+                _bytesSeenSoFar = 0;
+            }
+
+            //determine the content size
+            ByteBuffer content = (ByteBuffer) _contentTB.entryToObject(value);
+            int contentSize = content.limit();
+
+            //create the new key: id + previously seen data count
+            MessageContentKey_5 newKey = new MessageContentKey_5(msgId, _bytesSeenSoFar);
+            DatabaseEntry newKeyEntry = new DatabaseEntry();
+            _newContentKeyTupleBinding.objectToEntry(newKey, newKeyEntry);
+
+            DatabaseEntry newValueEntry = new DatabaseEntry();
+            _contentTB.objectToEntry(content, newValueEntry);
+
+            _newContentDB.put(null, newKeyEntry, newValueEntry);
+
+            _prevMsgId = msgId;
+            _bytesSeenSoFar += contentSize;
+        }
+    }
+
+    private static class DeliveryDbVisitor extends DatabaseVisitor
+    {
+
+        private final QueueEntryTB _queueEntryTB;
+        private final List<AMQShortString> _existingQueues;
+        private final Database _deliveryDb;
+
+        public DeliveryDbVisitor(QueueEntryTB queueEntryTB, List<AMQShortString> existingQueues, Database deliveryDb)
+        {
+            _queueEntryTB = queueEntryTB;
+            _existingQueues = existingQueues;
+            _deliveryDb = deliveryDb;
+        }
+
+        public void visit(DatabaseEntry key, DatabaseEntry value) throws DatabaseException
+        {
+            incrementCount();
+
+            // get message id from entry key
+            QueueEntryKey entryKey = (QueueEntryKey) _queueEntryTB.entryToObject(key);
+            AMQShortString queueName = entryKey.getQueueName();
+
+            // ONLY copy data if message queue exists
+            if (_existingQueues.contains(queueName))
+            {
+                _deliveryDb.put(null, key, value);
+            }
+        }
+    }
+
+    private class DurableSubDiscoverer extends DatabaseVisitor
+    {
+        private final List<AMQShortString> _durableSubQueues;
+        private final TupleBinding<BindingKey> _bindingTB;
+        private final List<AMQShortString> _topicExchanges;
+
+
+        public DurableSubDiscoverer(List<AMQShortString> topicExchanges, TupleBinding<BindingKey> bindingTB)
+        {
+            _durableSubQueues = new ArrayList<AMQShortString>();
+            _bindingTB = bindingTB;
+            _topicExchanges = topicExchanges;
+        }
+
+        public void visit(DatabaseEntry key, DatabaseEntry value) throws DatabaseException
+        {
+            BindingKey bindingRec = _bindingTB.entryToObject(key);
+            AMQShortString queueName = bindingRec.getQueueName();
+            AMQShortString exchangeName = bindingRec.getExchangeName();
+
+            if (_topicExchanges.contains(exchangeName) && queueName.asString().contains(":"))
+            {
+                _durableSubQueues.add(queueName);
+            }
+        }
+
+        public List<AMQShortString> getDurableSubQueues()
+        {
+            return _durableSubQueues;
+        }
+    }
+
+    private static class QueueVisitor extends DatabaseVisitor
+    {
+        private final TupleBinding<QueueRecord> _queueTupleBinding;
+        private final List<AMQShortString> _durableSubQueues;
+        private final List<AMQShortString> _existingQueues = new ArrayList<AMQShortString>();
+        private final BDBMessageStore _newMessageStore;
+
+        public QueueVisitor(TupleBinding<QueueRecord> queueTupleBinding,
+                            List<AMQShortString> durableSubQueues,
+                            BDBMessageStore newMessageStore)
+        {
+            _queueTupleBinding = queueTupleBinding;
+            _durableSubQueues = durableSubQueues;
+            _newMessageStore = newMessageStore;
+        }
+
+        public void visit(DatabaseEntry key, DatabaseEntry value) throws AMQStoreException
+        {
+            QueueRecord queueRec = _queueTupleBinding.entryToObject(value);
+            AMQShortString queueName = queueRec.getNameShortString();
+
+            //if the queue name is in the gathered list then set its exclusivity true
+            if (_durableSubQueues.contains(queueName))
+            {
+                _logger.info("Marking as possible DurableSubscription backing queue: " + queueName);
+                queueRec.setExclusive(true);
+            }
+
+            //The simple call to createQueue with the QueueRecord object is sufficient for a v2->v3 upgrade as
+            //the extra 'exclusive' property in v3 will be defaulted to false in the record creation.
+            _newMessageStore.createQueue(queueRec);
+
+            incrementCount();
+            _existingQueues.add(queueName);
+        }
+
+        public List<AMQShortString> getExistingQueues()
+        {
+            return _existingQueues;
+        }
+    }
+
+    private static class MetaDataVisitor extends DatabaseVisitor
+    {
+        private final TupleBinding<Object> _oldMetaDataTupleBinding;
+        private final TupleBinding<Object> _newMetaDataTupleBinding;
+        private final Set<Long> _queueMessages;
+        private final Database _newMetaDataDB;
+
+        public MetaDataVisitor(Set<Long> queueMessages,
+                               Database newMetaDataDB,
+                               TupleBinding<Object> oldMetaDataTupleBinding,
+                               TupleBinding<Object> newMetaDataTupleBinding)
+        {
+            _queueMessages = queueMessages;
+            _newMetaDataDB = newMetaDataDB;
+            _oldMetaDataTupleBinding = oldMetaDataTupleBinding;
+            _newMetaDataTupleBinding = newMetaDataTupleBinding;
+        }
+
+
+        public void visit(DatabaseEntry key, DatabaseEntry value) throws DatabaseException
+        {
+            incrementCount();
+            MessageMetaData metaData = (MessageMetaData) _oldMetaDataTupleBinding.entryToObject(value);
+
+            // get message id
+            Long messageId = TupleBinding.getPrimitiveBinding(Long.class).entryToObject(key);
+
+            // ONLY copy data if message is delivered to existing queue
+            if (!_queueMessages.contains(messageId))
+            {
+                return;
+            }
+            DatabaseEntry newValue = new DatabaseEntry();
+            _newMetaDataTupleBinding.objectToEntry(metaData, newValue);
+
+            _newMetaDataDB.put(null, key, newValue);
+        }
+    }
 }

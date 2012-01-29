@@ -51,7 +51,6 @@ public interface AMQVersionAwareProtocolSession extends AMQProtocolWriter, Proto
      *
      * @return The method registry for a specific version of the AMQP.
      */
-//    public VersionSpecificRegistry getRegistry();
 
     MethodRegistry getMethodRegistry();
 

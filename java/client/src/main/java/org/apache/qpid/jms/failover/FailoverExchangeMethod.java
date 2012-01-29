@@ -127,9 +127,7 @@ public class FailoverExchangeMethod implements FailoverMethod, MessageListener
             for (String brokerEntry:list)
             {                
                 String[] urls = brokerEntry.substring(5) .split(",");
-                // Iterate until you find the correct transport
-                // Need to reconsider the logic when the C++ broker supports
-                // SSL URLs.
+
                 for (String url:urls)
                 {
                     String[] tokens = url.split(":");

@@ -36,6 +36,9 @@ import java.util.regex.Pattern;
 
 public final class Strings
 {
+    private Strings()
+    {
+    }
 
     private static final byte[] EMPTY = new byte[0];
 

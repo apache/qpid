@@ -47,6 +47,10 @@ public class ProtocolOutputConverterRegistry
         register(ProtocolVersion.v0_91, org.apache.qpid.server.output.amqp0_9_1.ProtocolOutputConverterImpl.getInstanceFactory());
     }
 
+    private ProtocolOutputConverterRegistry()
+    {
+    }
+
     private static void register(ProtocolVersion version, Factory converter)
     {
 

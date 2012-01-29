@@ -45,18 +45,6 @@ public class XalanXPathEvaluator implements XPathExpression.XPathEvaluator {
     {
         // TODO - we would have to check the content type and then evaluate the content
         //        here... is this really a feature we wish to implement? - RobG
-        /*
-
-        if( m instanceof TextMessage ) {
-            String text = ((TextMessage)m).getText();
-            return evaluate(text);
-        } else if ( m instanceof BytesMessage ) {
-            BytesMessage bm = (BytesMessage) m;
-            byte data[] = new byte[(int) bm.getBodyLength()];
-            bm.readBytes(data);
-            return evaluate(data);
-        }
-        */
         return false;
 
     }

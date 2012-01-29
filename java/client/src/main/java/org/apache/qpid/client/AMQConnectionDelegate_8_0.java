@@ -213,7 +213,6 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
                         AMQSession session =
                                 new AMQSession_0_8(_conn, channelId, transacted, acknowledgeMode, prefetchHigh,
                                                prefetchLow);
-                        // _protocolHandler.addSessionByChannel(channelId, session);
                         _conn.registerSession(channelId, session);
 
                         boolean success = false;
@@ -307,7 +306,6 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         for (Iterator it = sessions.iterator(); it.hasNext();)
         {
             AMQSession s = (AMQSession) it.next();
-            // _protocolHandler.addSessionByChannel(s.getChannelId(), s);
             reopenChannel(s.getChannelId(), s.getDefaultPrefetchHigh(), s.getDefaultPrefetchLow(), s.isTransacted());
             s.resubscribe();
         }

@@ -24,7 +24,7 @@ abstract class QpidProperty<T>
 {
     private T defValue;
     private String[] names;
-    protected Accessor accessor;
+    private Accessor accessor;
 
     QpidProperty(T defValue, String... names)
     {
@@ -101,7 +101,12 @@ abstract class QpidProperty<T>
     {
         return new QpidStringProperty(accessor,defaultValue, names);
     }
-    
+
+    protected Accessor getAccessor()
+    {
+        return accessor;
+    }
+
     static class QpidBooleanProperty extends QpidProperty<Boolean>
     {
         QpidBooleanProperty(Boolean defValue, String... names)
@@ -117,7 +122,7 @@ abstract class QpidProperty<T>
         @Override
         protected Boolean getByName(String name)
         {
-            return accessor.getBoolean(name);
+            return getAccessor().getBoolean(name);
         }
     }
 
@@ -136,7 +141,7 @@ abstract class QpidProperty<T>
         @Override
         protected Integer getByName(String name)
         {
-            return accessor.getInt(name);
+            return getAccessor().getInt(name);
         }
     }
 
@@ -155,7 +160,7 @@ abstract class QpidProperty<T>
         @Override
         protected Long getByName(String name)
         {
-            return accessor.getLong(name);
+            return getAccessor().getLong(name);
         }
     }
 
@@ -174,7 +179,7 @@ abstract class QpidProperty<T>
         @Override
         protected String getByName(String name)
         {
-            return accessor.getString(name);
+            return getAccessor().getString(name);
         }
     }
 

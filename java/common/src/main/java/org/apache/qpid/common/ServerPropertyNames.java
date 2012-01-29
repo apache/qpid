@@ -26,6 +26,10 @@ package org.apache.qpid.common;
  */
 public final class ServerPropertyNames
 {
+    private ServerPropertyNames()
+    {
+    }
+
     /**
      * Server property: federation tag UUID
      */

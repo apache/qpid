@@ -22,7 +22,6 @@ package org.apache.qpid.server.filter;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.Filterable;
 
 import java.lang.reflect.Constructor;
@@ -94,19 +93,7 @@ public final class XPathExpression implements BooleanExpression {
     }
 
     public Object evaluate(Filterable message)  {
-//        try {
-//FIXME this is flow to disk work
-//            if( message.isDropped() )
-//                return null;
             return evaluator.evaluate(message) ? Boolean.TRUE : Boolean.FALSE;
-//        } catch (IOException e) {
-//
-//            JMSException exception = new JMSException(e.getMessage());
-//            exception.initCause(e);
-//            throw exception;
-//
-//        }
-
     }
 
     public String toString() {
@@ -116,7 +103,6 @@ public final class XPathExpression implements BooleanExpression {
     /**
      * @param message
      * @return true if the expression evaluates to Boolean.TRUE.
-     * @throws AMQException
      */
     public boolean matches(Filterable message)
     {

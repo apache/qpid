@@ -34,9 +34,7 @@ import org.apache.qpid.server.store.berkeleydb.records.QueueRecord;
 
 public class QueueTuple_4 extends TupleBinding<QueueRecord> implements QueueTuple
 {
-    protected static final Logger _logger = Logger.getLogger(QueueTuple_4.class);
-
-    protected FieldTable _arguments;
+    private static final Logger _logger = Logger.getLogger(QueueTuple_4.class);
 
     public QueueTuple_4()
     {

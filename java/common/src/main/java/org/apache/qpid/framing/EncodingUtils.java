@@ -41,6 +41,10 @@ public class EncodingUtils
     public static final int SIZEOF_UNSIGNED_INT = 4;
     private static final boolean[] ALL_FALSE_ARRAY = new boolean[8];
 
+    private EncodingUtils()
+    {
+    }
+
     public static int encodedShortStringLength(String s)
     {
         if (s == null)
@@ -115,7 +119,7 @@ public class EncodingUtils
         {
             return len + 6 + encodedShortStringLength((short) (i / 1000000));
         }
-        else // if (i > 99999)
+        else // if i > 99999
         {
             return len + 5 + encodedShortStringLength((short) (i / 100000));
         }
@@ -737,8 +741,6 @@ public class EncodingUtils
 
     public static long readTimestamp(DataInput buffer) throws IOException
     {
-        // Discard msb from AMQ timestamp
-        // buffer.getUnsignedInt();
         return buffer.readLong();
     }
 
@@ -803,8 +805,6 @@ public class EncodingUtils
 
         byte[] from = new byte[size];
 
-        // Is this not the same.
-        // bb.get(from, 0, length);
         for (int i = 0; i < size; i++)
         {
             from[i] = bb.get(i);
@@ -959,7 +959,6 @@ public class EncodingUtils
         else
         {                                                    
             // really writing out unsigned byte
-            //buffer.put((byte) 0);
             writeUnsignedInteger(buffer, 0L);
         }
     }

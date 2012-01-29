@@ -69,15 +69,15 @@ public class Spout extends OptionParser
 
     static 
     {        
-        optDefs.add(BROKER);
-        optDefs.add(HELP);
-        optDefs.add(TIMEOUT);
-        optDefs.add(COUNT);
-        optDefs.add(MSG_PROPERTY);
-        optDefs.add(MAP_ENTRY);
-        optDefs.add(CONTENT);
-        optDefs.add(CON_OPTIONS);
-        optDefs.add(BROKER_OPTIONS);
+        addOption(BROKER);
+        addOption(HELP);
+        addOption(TIMEOUT);
+        addOption(COUNT);
+        addOption(MSG_PROPERTY);
+        addOption(MAP_ENTRY);
+        addOption(CONTENT);
+        addOption(CON_OPTIONS);
+        addOption(BROKER_OPTIONS);
     }
     
     public Spout(String[] args, String usage, String desc) throws Exception
@@ -87,7 +87,7 @@ public class Spout extends OptionParser
         Connection con = createConnection();
         con.start();
         Session ssn = con.createSession(false,Session.AUTO_ACKNOWLEDGE);     
-        Destination dest = new AMQAnyDestination(address);
+        Destination dest = new AMQAnyDestination(getAddress());
         MessageProducer producer = ssn.createProducer(dest);
         
         int count = Integer.parseInt(getOp(COUNT));

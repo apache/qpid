@@ -40,6 +40,6 @@ public class AMQPriorityQueue extends OutOfOrderQueue
 
     public int getPriorities()
     {
-        return ((PriorityQueueList) _entries).getPriorities();
+        return ((PriorityQueueList) getEntries()).getPriorities();
     }
 }

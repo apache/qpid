@@ -429,57 +429,71 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         {
             _reportingTimer = new Timer("Statistics-Reporting", true);
             
-            class StatisticsReportingTask extends TimerTask
-            {
-                private final int DELIVERED = 0;
-                private final int RECEIVED = 1;
-                
-                public void run()
-                {
-                    CurrentActor.set(new AbstractActor(ApplicationRegistry.getInstance().getRootMessageLogger()) {
-                        public String getLogMessage()
-                        {
-                            return "[" + Thread.currentThread().getName() + "] ";
-                        }
-                    });
-                    
-                    if (broker)
-                    {
-                        CurrentActor.get().message(BrokerMessages.STATS_DATA(DELIVERED, _dataDelivered.getPeak() / 1024.0, _dataDelivered.getTotal()));
-                        CurrentActor.get().message(BrokerMessages.STATS_MSGS(DELIVERED, _messagesDelivered.getPeak(), _messagesDelivered.getTotal()));
-                        CurrentActor.get().message(BrokerMessages.STATS_DATA(RECEIVED, _dataReceived.getPeak() / 1024.0, _dataReceived.getTotal()));
-                        CurrentActor.get().message(BrokerMessages.STATS_MSGS(RECEIVED, _messagesReceived.getPeak(), _messagesReceived.getTotal()));
-                    }
-                    
-                    if (virtualhost)
-                    {
-                        for (VirtualHost vhost : getVirtualHostRegistry().getVirtualHosts())
-                        {
-                            String name = vhost.getName();
-                            StatisticsCounter dataDelivered = vhost.getDataDeliveryStatistics();
-                            StatisticsCounter messagesDelivered = vhost.getMessageDeliveryStatistics();
-                            StatisticsCounter dataReceived = vhost.getDataReceiptStatistics();
-                            StatisticsCounter messagesReceived = vhost.getMessageReceiptStatistics();
-                            
-                            CurrentActor.get().message(VirtualHostMessages.STATS_DATA(name, DELIVERED, dataDelivered.getPeak() / 1024.0, dataDelivered.getTotal()));
-                            CurrentActor.get().message(VirtualHostMessages.STATS_MSGS(name, DELIVERED, messagesDelivered.getPeak(), messagesDelivered.getTotal()));
-                            CurrentActor.get().message(VirtualHostMessages.STATS_DATA(name, RECEIVED, dataReceived.getPeak() / 1024.0, dataReceived.getTotal()));
-                            CurrentActor.get().message(VirtualHostMessages.STATS_MSGS(name, RECEIVED, messagesReceived.getPeak(), messagesReceived.getTotal()));
-                        }
-                    }
-                    
-                    if (reset)
-                    {
-                        resetStatistics();
-                    }
 
-                    CurrentActor.remove();
+
+            _reportingTimer.scheduleAtFixedRate(new StatisticsReportingTask(broker, virtualhost, reset),
+                                                report / 2,
+                                                report);
+        }
+    }
+
+    private class StatisticsReportingTask extends TimerTask
+    {
+        private final int DELIVERED = 0;
+        private final int RECEIVED = 1;
+
+        private boolean _broker;
+        private boolean _virtualhost;
+        private boolean _reset;
+
+
+        public StatisticsReportingTask(boolean broker, boolean virtualhost, boolean reset)
+        {
+            _broker = broker;
+            _virtualhost = virtualhost;
+            _reset = reset;
+        }
+
+        public void run()
+        {
+            CurrentActor.set(new AbstractActor(ApplicationRegistry.getInstance().getRootMessageLogger()) {
+                public String getLogMessage()
+                {
+                    return "[" + Thread.currentThread().getName() + "] ";
+                }
+            });
+
+            if (_broker)
+            {
+                CurrentActor.get().message(BrokerMessages.STATS_DATA(DELIVERED, _dataDelivered.getPeak() / 1024.0, _dataDelivered.getTotal()));
+                CurrentActor.get().message(BrokerMessages.STATS_MSGS(DELIVERED, _messagesDelivered.getPeak(), _messagesDelivered.getTotal()));
+                CurrentActor.get().message(BrokerMessages.STATS_DATA(RECEIVED, _dataReceived.getPeak() / 1024.0, _dataReceived.getTotal()));
+                CurrentActor.get().message(BrokerMessages.STATS_MSGS(RECEIVED, _messagesReceived.getPeak(), _messagesReceived.getTotal()));
+            }
+
+            if (_virtualhost)
+            {
+                for (VirtualHost vhost : getVirtualHostRegistry().getVirtualHosts())
+                {
+                    String name = vhost.getName();
+                    StatisticsCounter dataDelivered = vhost.getDataDeliveryStatistics();
+                    StatisticsCounter messagesDelivered = vhost.getMessageDeliveryStatistics();
+                    StatisticsCounter dataReceived = vhost.getDataReceiptStatistics();
+                    StatisticsCounter messagesReceived = vhost.getMessageReceiptStatistics();
+
+                    CurrentActor.get().message(VirtualHostMessages.STATS_DATA(name, DELIVERED, dataDelivered.getPeak() / 1024.0, dataDelivered.getTotal()));
+                    CurrentActor.get().message(VirtualHostMessages.STATS_MSGS(name, DELIVERED, messagesDelivered.getPeak(), messagesDelivered.getTotal()));
+                    CurrentActor.get().message(VirtualHostMessages.STATS_DATA(name, RECEIVED, dataReceived.getPeak() / 1024.0, dataReceived.getTotal()));
+                    CurrentActor.get().message(VirtualHostMessages.STATS_MSGS(name, RECEIVED, messagesReceived.getPeak(), messagesReceived.getTotal()));
                 }
             }
 
-            _reportingTimer.scheduleAtFixedRate(new StatisticsReportingTask(),
-                                                report / 2,
-                                                report);
+            if (_reset)
+            {
+                resetStatistics();
+            }
+
+            CurrentActor.remove();
         }
     }
 

@@ -36,6 +36,10 @@ public class TopicNormalizer
     private static final AMQShortString AMQP_STAR_TOKEN = new AMQShortString("*");
     private static final AMQShortString AMQP_HASH_TOKEN = new AMQShortString("#");
 
+    private TopicNormalizer()
+    {
+    }
+
     public static AMQShortString normalize(AMQShortString routingKey)
     {
         if(routingKey == null)

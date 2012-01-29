@@ -42,6 +42,10 @@ public class AppInfo
 
     private static Map<String, String> appInfoMap = new TreeMap<String, String>();
 
+    private AppInfo()
+    {
+    }
+
     /**
      * getInfo method retrieves a key-value map for specific application properties
      *

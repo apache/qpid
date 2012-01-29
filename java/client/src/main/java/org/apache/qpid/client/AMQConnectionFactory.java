@@ -27,7 +27,6 @@ import org.apache.qpid.url.URLSyntaxException;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
-import javax.jms.JMSSecurityException;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
 import javax.jms.TopicConnection;
@@ -278,7 +277,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
      *
      * @return A newly created XAConnection
      * @throws JMSException         If creating the XAConnection fails due to some internal error.
-     * @throws JMSSecurityException If client authentication fails due to an invalid user name or password.
+     * @throws javax.jms.JMSSecurityException If client authentication fails due to an invalid user name or password.
      */
     public XAConnection createXAConnection() throws JMSException
     {
@@ -305,7 +304,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
      * @param password the caller's password
      * @return A newly created XAConnection.
      * @throws JMSException         If creating the XAConnection fails due to some internal error.
-     * @throws JMSSecurityException If client authentication fails due to an invalid user name or password.
+     * @throws javax.jms.JMSSecurityException If client authentication fails due to an invalid user name or password.
      */
     public XAConnection createXAConnection(String username, String password) throws JMSException
     {
@@ -346,7 +345,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
      *
      * @return A newly created XATopicConnection
      * @throws JMSException         If creating the XATopicConnection fails due to some internal error.
-     * @throws JMSSecurityException If client authentication fails due to an invalid user name or password.
+     * @throws javax.jms.JMSSecurityException If client authentication fails due to an invalid user name or password.
      */
     public XATopicConnection createXATopicConnection() throws JMSException
     {
@@ -363,7 +362,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
      * @param password the caller's password
      * @return A newly created XATopicConnection.
      * @throws JMSException         If creating the XATopicConnection fails due to some internal error.
-     * @throws JMSSecurityException If client authentication fails due to an invalid user name or password.
+     * @throws javax.jms.JMSSecurityException If client authentication fails due to an invalid user name or password.
      */
     public XATopicConnection createXATopicConnection(String username, String password) throws JMSException
     {
@@ -378,7 +377,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
      *
      * @return A newly created XAQueueConnection
      * @throws JMSException         If creating the XAQueueConnection fails due to some internal error.
-     * @throws JMSSecurityException If client authentication fails due to an invalid user name or password.
+     * @throws javax.jms.JMSSecurityException If client authentication fails due to an invalid user name or password.
      */
     public XAQueueConnection createXAQueueConnection() throws JMSException
     {
@@ -395,7 +394,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
      * @param password the caller's password
      * @return A newly created XAQueueConnection.
      * @throws JMSException         If creating the XAQueueConnection fails due to some internal error.
-     * @throws JMSSecurityException If client authentication fails due to an invalid user name or password.
+     * @throws javax.jms.JMSSecurityException If client authentication fails due to an invalid user name or password.
      */
     public XAQueueConnection createXAQueueConnection(String username, String password) throws JMSException
     {

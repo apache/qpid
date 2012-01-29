@@ -30,7 +30,6 @@ import org.apache.qpid.server.queue.AMQQueue;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -93,7 +92,7 @@ public class ConfiguredQueueBindingListener implements BindingListener
     /**
      * Lookup and return the cache of configured {@link AMQQueue}s.
      * 
-	 * Note that when accessing the cached queues, the {@link Iterator} is not thread safe
+	 * Note that when accessing the cached queues, the {@link java.util.Iterator} is not thread safe
 	 * (see the {@link Collections#synchronizedSet(Set)} documentation) so a copy of the
 	 * cache is returned.
      * 

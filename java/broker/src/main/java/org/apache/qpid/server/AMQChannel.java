@@ -784,20 +784,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
 
             AMQQueue queue = message.getQueue();
 
-            // Our Java Client will always suspend the channel when resending!
-            // If the client has requested the messages be resent then it is
-            // their responsibility to ensure that thay are capable of receiving them
-            // i.e. The channel hasn't been server side suspended.
-            // if (isSuspended())
-            // {
-            // _logger.info("Channel is suspended so requeuing");
-            // //move this message to requeue
-            // msgToRequeue.add(message);
-            // }
-            // else
-            // {
-            // release to allow it to be delivered
-
             // Without any details from the client about what has been processed we have to mark
             // all messages in the unacked map as redelivered.
             message.setRedelivered();

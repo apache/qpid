@@ -67,8 +67,6 @@ public class QMFProperty
 
     public void setQMFClass(QMFClass qmfClass)
     {
- /*       _map.put(REF_CLASS, qmfClass.getName());
-        _map.put(REF_PACKAGE, qmfClass.getPackage().getName());*/
     }
 
     public void setReferencedClass(String refClass)

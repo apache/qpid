@@ -39,6 +39,9 @@ import java.util.Map;
 
 public class HeaderPropertiesConverter
 {
+    private HeaderPropertiesConverter()
+    {
+    }
 
     public static BasicContentHeaderProperties convert(MessageTransferMessage messageTransferMessage, VirtualHost vhost)
     {

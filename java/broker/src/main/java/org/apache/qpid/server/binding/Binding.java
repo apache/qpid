@@ -94,7 +94,7 @@ public class Binding
             return true;
         }
         
-        if (o == null || !(o instanceof Binding))
+        if (!(o instanceof Binding))
         {
             return false;
         }

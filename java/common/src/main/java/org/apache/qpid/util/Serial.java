@@ -30,6 +30,9 @@ import java.util.Comparator;
 
 public class Serial
 {
+    private Serial()
+    {
+    }
 
     public static final Comparator<Integer> COMPARATOR = new Comparator<Integer>()
     {

@@ -17,7 +17,6 @@
  */
 package org.apache.qpid.server.filter;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.Filterable;
 
 //
@@ -46,7 +45,6 @@ public final class XQueryExpression implements BooleanExpression {
     /**
      * @param message
      * @return true if the expression evaluates to Boolean.TRUE.
-     * @throws AMQException
      */
     public boolean matches(Filterable message)
     {

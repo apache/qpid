@@ -116,16 +116,7 @@ public class ClientProperties
      */
     public static final String REJECT_BEHAVIOUR_PROP_NAME = "qpid.reject.behaviour";
 
-    /*
-    public static final QpidProperty<Boolean>  IGNORE_SET_CLIENTID_PROP_NAME =
-        QpidProperty.booleanProperty(false,"qpid.ignore_set_client_id","ignore_setclientID");
-
-    public static final QpidProperty<Boolean> SYNC_PERSISTENT_PROP_NAME =
-        QpidProperty.booleanProperty(false,"qpid.sync_persistence","sync_persistence");
-
-
-    public static final QpidProperty<Integer> MAX_PREFETCH_PROP_NAME =
-        QpidProperty.intProperty(500,"qpid.max_prefetch","max_prefetch"); */
-
-
+    private ClientProperties()
+    {
+    }
 }

@@ -86,15 +86,6 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         _saslServers.put(cramHex.getMechanismName(), cramHex);
 
         //fixme The PDs should setup a PD Mangement MBean
-//        try
-//        {
-//            _mbean = new AMQUserManagementMBean();
-//            _mbean.setPrincipalDatabase(this);
-//        }
-//        catch (JMException e)
-//        {
-//            _logger.warn("User management disabled as unable to create MBean:" + e);
-//        }
     }
 
     public void setPasswordFile(String passwordFile) throws IOException

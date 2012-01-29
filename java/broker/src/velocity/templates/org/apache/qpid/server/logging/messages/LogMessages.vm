@@ -43,8 +43,8 @@ import java.util.ResourceBundle;
  */
 public class ${type.name}Messages
 {
-    static ResourceBundle _messages;
-    static Locale _currentLocale;
+    private static ResourceBundle _messages;
+    private static Locale _currentLocale;
     
     public static final String ${type.name.toUpperCase()}_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "${type.name.toLowerCase()}";
 #foreach( $message in ${type.list} )
@@ -146,7 +146,7 @@ public class ${type.name}Messages
 ## append it to the log.
 #foreach($option in ${message.options})
 
-            // Add Option : ${option.value}
+            // Add Option : ${option.value}.
             end = parts[${velocityCount}].indexOf(']');
             if (${option.name})
             {
@@ -196,5 +196,9 @@ public class ${type.name}Messages
     }
 
 #end
+
+    private ${type.name}Messages()
+    {
+    }
 
 }

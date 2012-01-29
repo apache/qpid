@@ -24,6 +24,10 @@ class HeartbeatDiagnostics
 {
     private static final Diagnostics _impl = init();
 
+    private HeartbeatDiagnostics()
+    {
+    }
+
     private static Diagnostics init()
     {
         return Boolean.getBoolean("amqj.heartbeat.diagnostics") ? new On() : new Off();

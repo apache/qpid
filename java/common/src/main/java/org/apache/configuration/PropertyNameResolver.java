@@ -32,7 +32,7 @@ public class PropertyNameResolver
     }
 
     private static Map<Class<?>,Accessor> accessors = new HashMap<Class<?>,Accessor>();
-    protected Map<String,QpidProperty> properties;
+    private Map<String,QpidProperty> properties;
 
     private static class BooleanAccessor implements Accessor
     {

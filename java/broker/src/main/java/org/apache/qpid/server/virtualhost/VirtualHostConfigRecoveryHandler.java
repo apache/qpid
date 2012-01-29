@@ -171,9 +171,6 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
                 throw new RuntimeException("Unknown message type retrieved from store " + message.getMetaData().getClass());
         }
 
-        //_logger.debug("Recovered message with id " + serverMessage);
-        
-
         _recoveredMessages.put(message.getMessageNumber(), serverMessage);
         _unusedMessages.put(message.getMessageNumber(), message);
     }

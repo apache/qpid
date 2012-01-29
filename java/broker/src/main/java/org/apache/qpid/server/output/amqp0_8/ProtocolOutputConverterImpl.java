@@ -240,7 +240,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         final AMQBody returnBlock = new AMQBody()
         {
 
-            public AMQBody _underlyingBody;
+            private AMQBody _underlyingBody;
 
             public AMQBody createAMQBody()
             {

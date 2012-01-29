@@ -36,8 +36,7 @@ public class ChannelLogSubject extends AbstractLogSubject
 
         /**
          * LOG FORMAT used by the AMQPConnectorActor follows
-         * ChannelLogSubject.CHANNEL_FORMAT :
-         * con:{0}({1}@{2}/{3})/ch:{4}
+         * ChannelLogSubject.CHANNEL_FORMAT : con:{0}({1}@{2}/{3})/ch:{4}.
          *
          * Uses a MessageFormat call to insert the required values according to
          * these indices:
@@ -60,8 +59,7 @@ public class ChannelLogSubject extends AbstractLogSubject
     {
         /**
          * LOG FORMAT used by the AMQPConnectorActor follows
-         * ChannelLogSubject.CHANNEL_FORMAT :
-         * con:{0}({1}@{2}/{3})/ch:{4}
+         * ChannelLogSubject.CHANNEL_FORMAT : con:{0}({1}@{2}/{3})/ch:{4}.
          *
          * Uses a MessageFormat call to insert the required values according to
          * these indices:

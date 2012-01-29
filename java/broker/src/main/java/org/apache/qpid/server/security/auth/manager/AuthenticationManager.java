@@ -24,7 +24,6 @@ import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.plugins.Plugin;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 
-import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
@@ -33,7 +32,7 @@ import javax.security.sasl.SaslServer;
  * the authenticity of a user's credentials.
  * 
  * If the authentication is successful, the manager is responsible for producing a populated
- * {@link Subject} containing the user's identity and zero or more principals representing
+ * {@link javax.security.auth.Subject} containing the user's identity and zero or more principals representing
  * groups to which the user belongs.
  * <p>
  * The {@link #initialise()} method is responsible for registering SASL mechanisms required by

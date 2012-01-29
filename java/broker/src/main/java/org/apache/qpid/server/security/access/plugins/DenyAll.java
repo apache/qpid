@@ -55,7 +55,7 @@ public class DenyAll extends BasicPlugin
 
         public void validateConfiguration() throws ConfigurationException
         {
-            if (!_configuration.isEmpty())
+            if (!getConfig().isEmpty())
             {
                 throw new ConfigurationException("deny-all section takes no elements.");
             }

@@ -155,7 +155,6 @@ public class AMQQueue extends AMQDestination implements Queue
 
     public AMQShortString getRoutingKey()
     {
-        //return getAMQQueueName();
         if (getAMQQueueName() != null && getAMQQueueName().equals(super.getRoutingKey()))
         {
             return getAMQQueueName();

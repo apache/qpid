@@ -361,13 +361,13 @@ abstract class AbstractDecoder implements Decoder
 
     private long readSize(Type t)
     {
-        if (t.fixed)
+        if (t.isFixed())
         {
-            return t.width;
+            return t.getWidth();
         }
         else
         {
-            return readSize(t.width);
+            return readSize(t.getWidth());
         }
     }
 

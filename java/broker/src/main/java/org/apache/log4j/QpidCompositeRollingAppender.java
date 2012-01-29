@@ -290,7 +290,6 @@ public class QpidCompositeRollingAppender extends FileAppender
                 c.setType(i);
                 Date next = new Date(c.getNextCheckMillis(epoch));
                 String r1 = sdf.format(next);
-                // LogLog.debug("Type = "+i+", r0 = "+r0+", r1 = "+r1);
                 if ((r0 != null) && (r1 != null) && !r0.equals(r1))
                 {
                     return i;
@@ -405,19 +404,6 @@ public class QpidCompositeRollingAppender extends FileAppender
         }
     }
 
-    /*
-        public void setRollingStyle(String style) {
-            if (style == S_BY_SIZE) {
-                rollingStyle = BY_SIZE;
-            }
-            else if (style == S_BY_DATE) {
-                rollingStyle = BY_DATE;
-            }
-            else if (style == S_BY_COMPOSITE) {
-                rollingStyle = BY_COMPOSITE;
-            }
-        }
-     */
     public boolean getStaticLogFileName()
     {
         return staticLogFileName;
@@ -535,7 +521,6 @@ public class QpidCompositeRollingAppender extends FileAppender
             now.setTime(System.currentTimeMillis());
             sdf = new SimpleDateFormat(datePattern);
             int type = computeCheckPeriod();
-            // printPeriodicity(type);
             rc.setType(type);
             // next line added as this removes the name check in rollOver
             nextCheck = rc.getNextCheckMillis(now);
@@ -783,7 +768,9 @@ public class QpidCompositeRollingAppender extends FileAppender
                     curSizeRollBackups--;
                 }
             }
-            // Map {(maxBackupIndex - 1), ..., 2, 1} to {maxBackupIndex, ..., 3, 2}
+            /*
+              map {(maxBackupIndex - 1), ..., 2, 1} to {maxBackupIndex, ..., 3, 2}.
+            */
             for (int i = curSizeRollBackups; i >= 1; i--)
             {
                 String oldName = (fileName + "." + i);
