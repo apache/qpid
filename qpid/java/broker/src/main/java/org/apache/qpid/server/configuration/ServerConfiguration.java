@@ -48,6 +48,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.net.ssl.KeyManagerFactory;
+
 public class ServerConfiguration extends ConfigurationPlugin
 {
     protected static final Logger _logger = Logger.getLogger(ServerConfiguration.class);
@@ -254,6 +256,13 @@ public class ServerConfiguration extends ConfigurationPlugin
                 _logger.warn("Validation warning: " + deprecatedXpath + " is deprecated and must be replaced by " + preferredXpath
                         + (_configFile == null ? "" : " Configuration file : " + _configFile));
             }
+        }
+
+        // QPID-3739 certType was a misleading name.
+        if (contains("connector.ssl.certType"))
+        {
+            _logger.warn("Validation warning: connector/ssl/certType is deprecated and must be replaced by connector/ssl/keyManagerFactoryAlgorithm"
+                    + (_configFile == null ? "" : " Configuration file : " + _configFile));
         }
     }
 
@@ -719,9 +728,12 @@ public class ServerConfiguration extends ConfigurationPlugin
         return getStringValue("connector.ssl.keyStorePassword", fallback);
     }
 
-    public String getConnectorCertType()
+    public String getConnectorKeyManagerFactoryAlgorithm()
     {
-        return getStringValue("connector.ssl.certType", "SunX509");
+        final String systemFallback = KeyManagerFactory.getDefaultAlgorithm();
+        // deprecated, pre-0.15 brokers supported this name.
+        final String fallback = getStringValue("connector.ssl.certType", systemFallback);
+        return getStringValue("connector.ssl.keyManagerFactoryAlgorithm", fallback);
     }
 
     public String getDefaultVirtualHost()

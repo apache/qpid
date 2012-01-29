@@ -20,9 +20,19 @@
  */
 package org.apache.qpid.transport;
 
-import org.apache.qpid.configuration.ClientProperties;
-
 import java.util.Map;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManagerFactory;
+
+import org.apache.qpid.configuration.QpidProperty;
+
+import static org.apache.qpid.configuration.ClientProperties.QPID_TCP_NODELAY_PROP_NAME;
+import static org.apache.qpid.configuration.ClientProperties.AMQJ_TCP_NODELAY_PROP_NAME;
+import static org.apache.qpid.configuration.ClientProperties.QPID_SSL_KEY_MANAGER_FACTORY_ALGORITHM_PROP_NAME;
+import static org.apache.qpid.configuration.ClientProperties.QPID_SSL_KEY_STORE_CERT_TYPE_PROP_NAME;
+import static org.apache.qpid.configuration.ClientProperties.QPID_SSL_TRUST_MANAGER_FACTORY_ALGORITHM_PROP_NAME;
+import static org.apache.qpid.configuration.ClientProperties.QPID_SSL_TRUST_STORE_CERT_TYPE_PROP_NAME;
 
 /**
  * A ConnectionSettings object can only be associated with
@@ -32,6 +42,8 @@ import java.util.Map;
  */
 public class ConnectionSettings
 {
+    public static final String DEFAULT_ALGORITHM_NAME = "SunX509";
+
     public static final String WILDCARD_ADDRESS = "*";
 
     private String protocol = "tcp";
@@ -40,21 +52,20 @@ public class ConnectionSettings
     private String username = "guest";
     private String password = "guest";
     private int port = 5672;
-    private boolean tcpNodelay = Boolean.valueOf(System.getProperty(ClientProperties.QPID_TCP_NODELAY_PROP_NAME,
-                                         System.getProperty(ClientProperties.AMQJ_TCP_NODELAY_PROP_NAME, "true")));
+    private boolean tcpNodelay = QpidProperty.booleanProperty(Boolean.TRUE, QPID_TCP_NODELAY_PROP_NAME, AMQJ_TCP_NODELAY_PROP_NAME).get();
     private int maxChannelCount = 32767;
     private int maxFrameSize = 65535;
     private int heartbeatInterval;
     private int readBufferSize = 65535;
     private int writeBufferSize = 65535;
     private long transportTimeout = 60000;
-    
+
     // SSL props
     private boolean useSSL;
     private String keyStorePath = System.getProperty("javax.net.ssl.keyStore");
     private String keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword");
-    private String keyStoreCertType = System.getProperty("qpid.ssl.keyStoreCertType","SunX509");;
-    private String trustStoreCertType = System.getProperty("qpid.ssl.trustStoreCertType","SunX509");;
+    private String keyManagerFactoryAlgorithm = QpidProperty.stringProperty(KeyManagerFactory.getDefaultAlgorithm(), QPID_SSL_KEY_MANAGER_FACTORY_ALGORITHM_PROP_NAME, QPID_SSL_KEY_STORE_CERT_TYPE_PROP_NAME).get();
+    private String trustManagerFactoryAlgorithm = QpidProperty.stringProperty(TrustManagerFactory.getDefaultAlgorithm(), QPID_SSL_TRUST_MANAGER_FACTORY_ALGORITHM_PROP_NAME, QPID_SSL_TRUST_STORE_CERT_TYPE_PROP_NAME).get();
     private String trustStorePath = System.getProperty("javax.net.ssl.trustStore");;
     private String trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword");;
     private String certAlias;
@@ -288,24 +299,24 @@ public class ConnectionSettings
         this.verifyHostname = verifyHostname;
     }
     
-    public String getKeyStoreCertType()
+    public String getKeyManagerFactoryAlgorithm()
     {
-        return keyStoreCertType;
+        return keyManagerFactoryAlgorithm;
     }
 
-    public void setKeyStoreCertType(String keyStoreCertType)
+    public void setKeyManagerFactoryAlgorithm(String keyManagerFactoryAlgorithm)
     {
-        this.keyStoreCertType = keyStoreCertType;
+        this.keyManagerFactoryAlgorithm = keyManagerFactoryAlgorithm;
     }
 
-    public String getTrustStoreCertType()
+    public String getTrustManagerFactoryAlgorithm()
     {
-        return trustStoreCertType;
+        return trustManagerFactoryAlgorithm;
     }
 
-    public void setTrustStoreCertType(String trustStoreCertType)
+    public void setTrustManagerFactoryAlgorithm(String trustManagerFactoryAlgorithm)
     {
-        this.trustStoreCertType = trustStoreCertType;
+        this.trustManagerFactoryAlgorithm = trustManagerFactoryAlgorithm;
     }
 
     public int getReadBufferSize()
@@ -337,5 +348,4 @@ public class ConnectionSettings
     {
         this.transportTimeout = transportTimeout;
     }
-
 }

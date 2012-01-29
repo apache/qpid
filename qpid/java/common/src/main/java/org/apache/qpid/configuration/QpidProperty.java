@@ -20,7 +20,7 @@ package org.apache.qpid.configuration;
 
 import org.apache.qpid.configuration.Accessor.SystemPropertyAccessor;
 
-abstract class QpidProperty<T>
+public abstract class QpidProperty<T>
 {
     private T defValue;
     private String[] names;
@@ -38,7 +38,7 @@ abstract class QpidProperty<T>
         this.names = names;
     }
 
-    T get()
+    public T get()
     {
         for (String name : names)
         {

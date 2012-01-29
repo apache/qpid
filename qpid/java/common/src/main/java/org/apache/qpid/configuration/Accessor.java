@@ -1,4 +1,3 @@
-package org.apache.qpid.configuration;
 /*
  * 
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,7 +18,7 @@ package org.apache.qpid.configuration;
  * under the License.
  * 
  */
-
+package org.apache.qpid.configuration;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -40,7 +39,7 @@ public interface Accessor
     {
         public Boolean getBoolean(String name)
         {
-            return Boolean.getBoolean(name);
+            return System.getProperty(name) == null ? null : Boolean.getBoolean(name);
         }
         
         public Integer getInt(String name)
