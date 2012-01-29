@@ -40,6 +40,8 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Locale;
 
+import javax.net.ssl.KeyManagerFactory;
+
 public class ServerConfigurationTest extends QpidTestCase
 {
     private XMLConfiguration _config = new XMLConfiguration();
@@ -575,17 +577,24 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals("b", _serverConfig.getConnectorKeyStorePassword());
     }
 
-    public void testGetConnectorCertType() throws ConfigurationException
+    public void testConnectorGetKeyManagerAlgorithm() throws ConfigurationException
     {
         // Check default
         _serverConfig.initialise();
-        assertEquals("SunX509", _serverConfig.getConnectorCertType());
+        assertEquals(KeyManagerFactory.getDefaultAlgorithm(), _serverConfig.getConnectorKeyManagerFactoryAlgorithm());
 
         // Check value we set
-        _config.setProperty("connector.ssl.certType", "a");
+        _config.setProperty("connector.ssl.keyManagerFactoryAlgorithm", "a");
         _serverConfig = new ServerConfiguration(_config);
         _serverConfig.initialise();
-        assertEquals("a", _serverConfig.getConnectorCertType());
+        assertEquals("a", _serverConfig.getConnectorKeyManagerFactoryAlgorithm());
+
+        // Ensure we continue to support the old name certType
+        _config.clearProperty("connector.ssl.keyManagerFactoryAlgorithm");
+        _config.setProperty("connector.ssl.certType", "b");
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals("b", _serverConfig.getConnectorKeyManagerFactoryAlgorithm());
     }
 
     public void testGetHousekeepingCheckPeriod() throws ConfigurationException

@@ -20,11 +20,16 @@
  */
 package org.apache.qpid.transport;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManagerFactory;
+
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class ConnectionSettingsTest extends QpidTestCase
 {
+    private static final String TEST_ALGORITHM_NAME = "algorithmName";
+
     private ConnectionSettings _conConnectionSettings;
 
     protected void setUp() throws Exception
@@ -33,37 +38,91 @@ public class ConnectionSettingsTest extends QpidTestCase
         _conConnectionSettings = new ConnectionSettings();
     }
 
-    public void testDefaultTCP_NODELAY()
+    public void testTcpNoDelayDefault()
     {
         assertTrue("Default for isTcpNodelay() should be true", _conConnectionSettings.isTcpNodelay());
     }
 
-    public void testSystemPropertyOverrideTrueForTCP_NODELAY()
+    public void testTcpNoDelayOverrideTrue()
     {
-        systemPropertyOverrideForTCP_NODELAYImpl(ClientProperties.QPID_TCP_NODELAY_PROP_NAME, true);
+        systemPropertyOverrideForTcpDelay(ClientProperties.QPID_TCP_NODELAY_PROP_NAME, true);
     }
     
-    public void testSystemPropertyOverrideFalseForTCP_NODELAY()
+    public void testTcpNoDelayOverrideFalse()
     {
-        systemPropertyOverrideForTCP_NODELAYImpl(ClientProperties.QPID_TCP_NODELAY_PROP_NAME, false);
+        systemPropertyOverrideForTcpDelay(ClientProperties.QPID_TCP_NODELAY_PROP_NAME, false);
     }
 
-    public void testLegacySystemPropertyOverrideTrueForTCP_NODELAY()
+    @SuppressWarnings("deprecation")
+    public void testTcpNoDelayLegacyOverrideTrue()
     {
-        systemPropertyOverrideForTCP_NODELAYImpl(ClientProperties.AMQJ_TCP_NODELAY_PROP_NAME, true);
+        systemPropertyOverrideForTcpDelay(ClientProperties.AMQJ_TCP_NODELAY_PROP_NAME, true);
     }
 
-    public void testLegacySystemPropertyOverrideFalseForTCP_NODELAY()
+    @SuppressWarnings("deprecation")
+    public void testTcpNoDelayLegacyOverrideFalse()
     {
-        systemPropertyOverrideForTCP_NODELAYImpl(ClientProperties.AMQJ_TCP_NODELAY_PROP_NAME, false);
+        systemPropertyOverrideForTcpDelay(ClientProperties.AMQJ_TCP_NODELAY_PROP_NAME, false);
     }
 
-    private void systemPropertyOverrideForTCP_NODELAYImpl(String propertyName, boolean value)
+    public void testKeyManagerFactoryAlgorithmDefault()
     {
-        //set the default via system property
-        setTestSystemProperty(propertyName, String.valueOf(value));
+        assertEquals(KeyManagerFactory.getDefaultAlgorithm(), _conConnectionSettings.getKeyManagerFactoryAlgorithm());
+    }
+
+    public void testKeyManagerFactoryAlgorithmOverridden()
+    {
+        String algorithmName = TEST_ALGORITHM_NAME;
+        systemPropertyOverrideForKeyFactoryAlgorithm(ClientProperties.QPID_SSL_KEY_MANAGER_FACTORY_ALGORITHM_PROP_NAME, algorithmName);
+    }
+
+    @SuppressWarnings("deprecation")
+    public void testKeyManagerFactoryAlgorithmLegacyOverridden()
+    {
+        String algorithmName = TEST_ALGORITHM_NAME;
+        systemPropertyOverrideForKeyFactoryAlgorithm(ClientProperties.QPID_SSL_KEY_STORE_CERT_TYPE_PROP_NAME, algorithmName);
+    }
+
+    public void testTrustManagerFactoryAlgorithmDefault()
+    {
+        assertEquals(TrustManagerFactory.getDefaultAlgorithm(), _conConnectionSettings.getTrustManagerFactoryAlgorithm());
+    }
+
+    public void testTrustManagerFactoryAlgorithmOverridden()
+    {
+        String algorithmName = TEST_ALGORITHM_NAME;
+        systemPropertyOverrideForTrustFactoryAlgorithm(ClientProperties.QPID_SSL_TRUST_MANAGER_FACTORY_ALGORITHM_PROP_NAME, algorithmName);
+    }
+
+    @SuppressWarnings("deprecation")
+    public void testTrustManagerFactoryAlgorithmLegacyOverridden()
+    {
+        String algorithmName = TEST_ALGORITHM_NAME;
+        systemPropertyOverrideForTrustFactoryAlgorithm(ClientProperties.QPID_SSL_TRUST_STORE_CERT_TYPE_PROP_NAME, algorithmName);
+    }
+
+    private void systemPropertyOverrideForTcpDelay(String propertyName, boolean value)
+    {
+        resetSystemProperty(propertyName, String.valueOf(value));
+        assertEquals("Value for isTcpNodelay() is incorrect", value, _conConnectionSettings.isTcpNodelay());
+    }
+
+    private void systemPropertyOverrideForKeyFactoryAlgorithm(String propertyName, String value)
+    {
+        resetSystemProperty(propertyName, value);
+        assertEquals(value, _conConnectionSettings.getKeyManagerFactoryAlgorithm());
+    }
+
+    private void systemPropertyOverrideForTrustFactoryAlgorithm(String propertyName, String value)
+    {
+        resetSystemProperty(propertyName, value);
+        assertEquals(value, _conConnectionSettings.getTrustManagerFactoryAlgorithm());
+    }
+
+    private void resetSystemProperty(String propertyName, String value)
+    {
+        setTestSystemProperty(propertyName, value);
 
         _conConnectionSettings = new ConnectionSettings();
-        assertEquals("Value for isTcpNodelay() is incorrect", value, _conConnectionSettings.isTcpNodelay());
     }
 }

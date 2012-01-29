@@ -80,7 +80,7 @@ public class AppInfo
                 appInfoMap.put("vhosts", "standalone");
                 appInfoMap.put("KeystorePath", sc.getConnectorKeyStorePath());
                 appInfoMap.put("PluginDirectory", sc.getPluginDirectory());
-                appInfoMap.put("CertType", sc.getConnectorCertType());
+                appInfoMap.put("KeyManagerFactoryAlgorithm", sc.getConnectorKeyManagerFactoryAlgorithm());
                 appInfoMap.put("QpidWork", sc.getQpidWork());
                 appInfoMap.put("Bind", sc.getBind());
             }

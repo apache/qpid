@@ -78,10 +78,10 @@ public class SecurityLayerFactory
                 sslCtx = SSLContextFactory
                         .buildClientContext(settings.getTrustStorePath(),
                                 settings.getTrustStorePassword(),
-                                settings.getTrustStoreCertType(),
+                                settings.getTrustManagerFactoryAlgorithm(),
                                 settings.getKeyStorePath(),
                                 settings.getKeyStorePassword(),
-                                settings.getKeyStoreCertType(),
+                                settings.getKeyManagerFactoryAlgorithm(),
                                 settings.getCertAlias());
             }
             catch (Exception e)

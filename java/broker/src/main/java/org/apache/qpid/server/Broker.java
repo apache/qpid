@@ -212,8 +212,8 @@ public class Broker
             {
                 final String keystorePath = serverConfig.getConnectorKeyStorePath();
                 final String keystorePassword = serverConfig.getConnectorKeyStorePassword();
-                final String certType = serverConfig.getConnectorCertType();
-                final SSLContext sslContext = SSLContextFactory.buildServerContext(keystorePath, keystorePassword, certType);
+                final String keyManagerFactoryAlgorithm = serverConfig.getConnectorKeyManagerFactoryAlgorithm();
+                final SSLContext sslContext = SSLContextFactory.buildServerContext(keystorePath, keystorePassword, keyManagerFactoryAlgorithm);
 
                 for(int sslPort : sslPorts)
                 {

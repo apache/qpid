@@ -133,10 +133,10 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
                 sslContext = SSLContextFactory.buildClientContext(
                                 settings.getTrustStorePath(),
                                 settings.getTrustStorePassword(),
-                                settings.getTrustStoreCertType(),
+                                settings.getTrustManagerFactoryAlgorithm(),
                                 settings.getKeyStorePath(),
                                 settings.getKeyStorePassword(),
-                                settings.getKeyStoreCertType(),
+                                settings.getKeyManagerFactoryAlgorithm(),
                                 settings.getCertAlias());
             }
             catch (GeneralSecurityException e)

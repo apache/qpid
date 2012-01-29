@@ -95,6 +95,7 @@ public class ClientProperties
      * synchronous operations.
      */
     public static final String QPID_SYNC_OP_TIMEOUT = "qpid.sync_op_timeout";
+    @Deprecated
     public static final String AMQJ_DEFAULT_SYNCWRITE_TIMEOUT = "amqj.default_syncwrite_timeout";
 
     /**
@@ -106,6 +107,7 @@ public class ClientProperties
      * System properties to change the default value used for TCP_NODELAY
      */
     public static final String QPID_TCP_NODELAY_PROP_NAME = "qpid.tcp_nodelay";
+    @Deprecated
     public static final String AMQJ_TCP_NODELAY_PROP_NAME = "amqj.tcp_nodelay";
 
     /**
@@ -119,4 +121,23 @@ public class ClientProperties
     private ClientProperties()
     {
     }
+
+    /**
+     * System property used to set the key manager factory algorithm.
+     *
+     * Historically, Qpid referred to this as {@value #QPID_SSL_KEY_STORE_CERT_TYPE_PROP_NAME}.
+     */
+    public static final String QPID_SSL_KEY_MANAGER_FACTORY_ALGORITHM_PROP_NAME = "qpid.ssl.KeyManagerFactory.algorithm";
+    @Deprecated
+    public static final String QPID_SSL_KEY_STORE_CERT_TYPE_PROP_NAME = "qpid.ssl.keyStoreCertType";
+
+    /**
+     * System property used to set the trust manager factory algorithm.
+     *
+     * Historically, Qpid referred to this {@value #QPID_SSL_TRUST_STORE_CERT_TYPE_PROP_NAME}.
+     */
+    public static final String QPID_SSL_TRUST_MANAGER_FACTORY_ALGORITHM_PROP_NAME = "qpid.ssl.TrustManagerFactory.algorithm";
+    @Deprecated
+    public static final String QPID_SSL_TRUST_STORE_CERT_TYPE_PROP_NAME = "qpid.ssl.trustStoreCertType";
+
 }

@@ -41,11 +41,11 @@ public class QpidClientX509KeyManager extends X509ExtendedKeyManager
     private String alias;
     
     public QpidClientX509KeyManager(String alias, String keyStorePath,
-                           String keyStorePassword,String keyStoreCertType) throws GeneralSecurityException, IOException
+                           String keyStorePassword, String keyManagerFactoryAlgorithmName) throws GeneralSecurityException, IOException
     {
         this.alias = alias;    
         KeyStore ks = SSLUtil.getInitializedKeyStore(keyStorePath,keyStorePassword);
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyStoreCertType);
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyManagerFactoryAlgorithmName);
         kmf.init(ks, keyStorePassword.toCharArray());
         this.delegate = (X509ExtendedKeyManager)kmf.getKeyManagers()[0];
     }
