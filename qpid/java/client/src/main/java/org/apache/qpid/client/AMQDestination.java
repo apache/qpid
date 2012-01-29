@@ -593,7 +593,7 @@ public abstract class AMQDestination implements Destination, Referenceable
         {
             return true;
         }
-        if (o == null || getClass() != o.getClass())
+        if (!(o instanceof AMQDestination))
         {
             return false;
         }
