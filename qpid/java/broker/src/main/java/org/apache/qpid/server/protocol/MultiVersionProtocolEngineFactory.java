@@ -34,24 +34,22 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
     private static final AtomicLong ID_GENERATOR = new AtomicLong(0);
 
     private final IApplicationRegistry _appRegistry;
-    private final String _fqdn;
     private final Set<AmqpProtocolVersion> _supported;
 
-    public MultiVersionProtocolEngineFactory(String fqdn, Set<AmqpProtocolVersion> supportedVersions)
+    public MultiVersionProtocolEngineFactory(Set<AmqpProtocolVersion> supportedVersions)
     {
         _appRegistry = ApplicationRegistry.getInstance();
-        _fqdn = fqdn;
         _supported = supportedVersions;
     }
 
     public ServerProtocolEngine newProtocolEngine(NetworkConnection network)
     {
-        return new MultiVersionProtocolEngine(_appRegistry, _fqdn, _supported, network, ID_GENERATOR.getAndIncrement());
+        return new MultiVersionProtocolEngine(_appRegistry, _supported, network, ID_GENERATOR.getAndIncrement());
     }
 
     public ServerProtocolEngine newProtocolEngine()
     {
-        return new MultiVersionProtocolEngine(_appRegistry, _fqdn, _supported, ID_GENERATOR.getAndIncrement());
+        return new MultiVersionProtocolEngine(_appRegistry, _supported, ID_GENERATOR.getAndIncrement());
     }
 
 }

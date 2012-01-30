@@ -186,7 +186,6 @@ public class Broker
             {
                 bindAddress = InetAddress.getByAddress(parseIP(bindAddr));
             }
-            String hostName = bindAddress.getCanonicalHostName();
 
             if (!serverConfig.getSSLOnly())
             {
@@ -199,7 +198,7 @@ public class Broker
 
                     final IncomingNetworkTransport transport = Transport.getIncomingTransportInstance();
                     final MultiVersionProtocolEngineFactory protocolEngineFactory =
-                                    new MultiVersionProtocolEngineFactory(hostName, supported);
+                                    new MultiVersionProtocolEngineFactory(supported);
 
                     transport.accept(settings, protocolEngineFactory, null);
                     ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, port),
@@ -224,7 +223,7 @@ public class Broker
 
                     final IncomingNetworkTransport transport = Transport.getIncomingTransportInstance();
                     final MultiVersionProtocolEngineFactory protocolEngineFactory =
-                                    new MultiVersionProtocolEngineFactory(hostName, supported);
+                                    new MultiVersionProtocolEngineFactory(supported);
 
                     transport.accept(settings, protocolEngineFactory, sslContext);
                     ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, sslPort),

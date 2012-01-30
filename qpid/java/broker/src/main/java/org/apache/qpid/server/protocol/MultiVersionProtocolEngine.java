@@ -30,6 +30,7 @@ import org.apache.qpid.transport.ConnectionDelegate;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
 
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Set;
@@ -49,23 +50,20 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
     private volatile ServerProtocolEngine _delegate = new SelfDelegateProtocolEngine();
 
     public MultiVersionProtocolEngine(IApplicationRegistry appRegistry,
-                                      String fqdn,
                                       Set<AmqpProtocolVersion> supported,
                                       NetworkConnection network,
                                       long id)
     {
-        this(appRegistry,fqdn,supported,id);
+        this(appRegistry, supported,id);
         setNetworkConnection(network);
     }
 
     public MultiVersionProtocolEngine(IApplicationRegistry appRegistry,
-                                      String fqdn,
                                       Set<AmqpProtocolVersion> supported,
                                       long id)
     {
         _id = id;
         _appRegistry = appRegistry;
-        _fqdn = fqdn;
         _supported = supported;
 
     }
@@ -177,6 +175,15 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
     public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
     {
         _network = network;
+        SocketAddress address = _network.getLocalAddress();
+        if (address instanceof InetSocketAddress)
+        {
+            _fqdn = ((InetSocketAddress) address).getHostName();
+        }
+        else
+        {
+            throw new IllegalArgumentException("Unsupported socket address class: " + address);
+        }
         _sender = sender;
     }
 
