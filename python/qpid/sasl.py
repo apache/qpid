@@ -89,6 +89,8 @@ class PlainClient:
       return "PLAIN", "\0%s\0%s" % (self.attrs.get("username"), self.attrs.get("password"))
     elif "ANONYMOUS" in mechs:
       return "ANONYMOUS", "%s@%s" % (self.attrs.get("username"), socket.gethostname())
+    elif "EXTERNAL" in mechs:
+      return "EXTERNAL", "%s" % (self.attrs.get("username"))
     else:
       raise SASLError("sasl negotiation failed: no mechanism agreed")
 
