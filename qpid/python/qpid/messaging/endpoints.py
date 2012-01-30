@@ -116,6 +116,13 @@ class Connection(Endpoint):
     @type address_ttl: float
     @param address_ttl: time until cached address resolution expires
 
+    @type ssl_keyfile: str
+    @param ssl_keyfile: file with client's private key (PEM format)
+    @type ssl_certfile: str
+    @param ssl_certfile: file with client's public (eventually priv+pub) key (PEM format)
+    @type ssl_trustfile: str
+    @param ssl_trustfile: file trusted certificates to validate the server
+
     @rtype: Connection
     @return: a disconnected Connection
     """
@@ -141,7 +148,7 @@ class Connection(Endpoint):
     self.password = default(url.password, options.get("password", None))
     self.auth_username = None
 
-    self.sasl_mechanisms = options.get("sasl_mechanisms")
+    self.sasl_mechanisms = options.get("sasl_mechanisms", "ANONYMOUS")
     self.sasl_service = options.get("sasl_service", "qpidd")
     self.sasl_min_ssf = options.get("sasl_min_ssf")
     self.sasl_max_ssf = options.get("sasl_max_ssf")
@@ -159,6 +166,10 @@ class Connection(Endpoint):
 
     self.address_ttl = options.get("address_ttl", 60)
     self.tcp_nodelay = options.get("tcp_nodelay", False)
+
+    self.ssl_keyfile = options.get("ssl_keyfile", None)
+    self.ssl_certfile = options.get("ssl_certfile", None)
+    self.ssl_trustfile = options.get("ssl_trustfile", None)
 
     self.options = options
 

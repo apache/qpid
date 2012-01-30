@@ -61,7 +61,7 @@ else:
 
     def __init__(self, conn, host, port):
       SocketTransport.__init__(self, conn, host, port)
-      self.tls = wrap_socket(self.socket)
+      self.tls = wrap_socket(self.socket, keyfile=conn.ssl_keyfile, certfile=conn.ssl_certfile, ca_certs=conn.ssl_trustfile)
       self.socket.setblocking(0)
       self.state = None
 
