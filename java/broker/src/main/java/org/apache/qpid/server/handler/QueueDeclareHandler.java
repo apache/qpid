@@ -44,7 +44,6 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collections;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclareBody>
 {

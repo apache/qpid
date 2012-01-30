@@ -23,14 +23,8 @@ package org.apache.qpid.server.flow;
 
 public class CreditCreditManager extends AbstractFlowCreditManager implements FlowCreditManager_0_10
 {
-        private volatile long _bytesCredit;
-        private volatile long _messageCredit;
-
-
-    public CreditCreditManager()
-     {
-         this(0L, 0L);
-     }
+    private volatile long _bytesCredit;
+    private volatile long _messageCredit;
 
     public CreditCreditManager(long bytesCredit, long messageCredit)
     {
