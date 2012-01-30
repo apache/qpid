@@ -69,7 +69,6 @@ import javax.security.auth.Subject;
 import javax.security.sasl.SaslServer;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -1460,30 +1459,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
     public String getUserName()
     {
         return getAuthorizedPrincipal().getName();
-    }
-
-    private static class ByteBufferOutputStream extends OutputStream
-    {
-
-
-        private final ByteBuffer _buf;
-
-        public ByteBufferOutputStream(ByteBuffer buf)
-        {
-            _buf = buf;
-        }
-
-        @Override
-        public void write(int b) throws IOException
-        {
-            _buf.put((byte) b);
-        }
-
-        @Override
-        public void write(byte[] b, int off, int len) throws IOException
-        {
-            _buf.put(b, off, len);
-        }
     }
 
     public final class WriteDeliverMethod
