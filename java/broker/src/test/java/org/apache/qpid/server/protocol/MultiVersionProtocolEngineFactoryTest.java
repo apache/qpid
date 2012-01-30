@@ -121,7 +121,7 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
         Set<AmqpProtocolVersion> versions = EnumSet.allOf(AmqpProtocolVersion.class);
 
         MultiVersionProtocolEngineFactory factory =
-            new MultiVersionProtocolEngineFactory("localhost", versions);
+            new MultiVersionProtocolEngineFactory(versions);
 
         //create a dummy to retrieve the 'current' ID number
         long previousId = factory.newProtocolEngine(new TestNetworkConnection()).getConnectionId();
