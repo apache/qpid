@@ -32,6 +32,7 @@ require "rake/extensiontask"
 require "rake/rdoctask"
 require "rake/testtask"
 
+require "cucumber/rake/task"
 require "spec/rake/spectask"
 
 CLOBBER.include("pkg")
@@ -50,14 +51,14 @@ HOMEPAGE = "http://qpid.apache.org"
 SUMMARY  = "Qpid is an enterprise messaging framework."
 
 desc "Default: run all tests."
-task :default => :"test:all"
+task :default => :test
+
+desc "Runs all tests."
+task :test => :"test:all"
 
 #---------------
 # Testing tasks.
 #---------------
-
-desc "Run all tests (alias for test:all)."
-task :test => :"test:all"
 
 namespace :test do
 
@@ -72,20 +73,11 @@ namespace :test do
   end
 
   desc "Run all tests (default)."
-  task :all => [:spec, :integrations]
+  task :all => [:spec, :features]
 
-  desc "Run unit tests."
-  Rake::TestTask.new(:units) do |t|
-    t.libs << "."
-    t.pattern = "test/test*.rb"
-    t.verbose = true
-  end
-
-  desc "Run integration tests."
-  Rake::TestTask.new(:integrations) do |t|
-    t.libs << "."
-    t.pattern = "test/integration/*.rb"
-    t.verbose = true
+  Cucumber::Rake::Task.new(:features) do |t|
+    t.libs          = ["lib", "ext/nonblockio"]
+    t.cucumber_opts = "--format progress"
   end
 
 end
