@@ -28,156 +28,57 @@ import java.io.Serializable;
  * Need this adaptor class to conform to JMS spec and throw IllegalStateException
  * from createDurableSubscriber, unsubscribe, createTopic & createTemporaryTopic
  */
-public class AMQQueueSessionAdaptor implements QueueSession, AMQSessionAdapter
+class AMQQueueSessionAdaptor extends AMQSessionAdapter<QueueSession> implements QueueSession
 {
-    //holds a session for delegation
-    private final AMQSession _session;
-
     /**
      * Construct an adaptor with a session to wrap
      * @param session
      */
-    public AMQQueueSessionAdaptor(Session session)
+    protected AMQQueueSessionAdaptor(QueueSession session)
     {
-        _session = (AMQSession) session;
+        super(session);
     }
 
-    public TemporaryQueue createTemporaryQueue() throws JMSException {
-        return _session.createTemporaryQueue();
+    public QueueReceiver createReceiver(Queue queue) throws JMSException
+    {
+        return getSession().createReceiver(queue);
     }
 
-    public Queue createQueue(String string) throws JMSException {
-        return _session.createQueue(string);
+    public QueueReceiver createReceiver(Queue queue, String string) throws JMSException
+    {
+        return getSession().createReceiver(queue, string);
     }
 
-    public QueueReceiver createReceiver(Queue queue) throws JMSException {
-        return _session.createReceiver(queue);
-    }
-
-    public QueueReceiver createReceiver(Queue queue, String string) throws JMSException {
-        return _session.createReceiver(queue, string);
-    }
-
-    public QueueSender createSender(Queue queue) throws JMSException {
-        return _session.createSender(queue);
-    }
-
-    public QueueBrowser createBrowser(Queue queue) throws JMSException {
-        return _session.createBrowser(queue);
-    }
-
-    public QueueBrowser createBrowser(Queue queue, String string) throws JMSException {
-        return _session.createBrowser(queue, string);
-    }
-
-    public BytesMessage createBytesMessage() throws JMSException {
-        return _session.createBytesMessage();
-    }
-
-    public MapMessage createMapMessage() throws JMSException {
-        return _session.createMapMessage();
-    }
-
-    public Message createMessage() throws JMSException {
-        return _session.createMessage();
-    }
-
-    public ObjectMessage createObjectMessage() throws JMSException {
-        return _session.createObjectMessage();
-    }
-
-    public ObjectMessage createObjectMessage(Serializable serializable) throws JMSException {
-        return _session.createObjectMessage(serializable);
-    }
-
-    public StreamMessage createStreamMessage() throws JMSException {
-        return _session.createStreamMessage();
-    }
-
-    public TextMessage createTextMessage() throws JMSException {
-        return _session.createTextMessage();
-    }
-
-    public TextMessage createTextMessage(String string) throws JMSException {
-        return _session.createTextMessage(string);
-    }
-
-    public boolean getTransacted() throws JMSException {
-        return _session.getTransacted();
-    }
-
-    public int getAcknowledgeMode() throws JMSException {
-       return _session.getAcknowledgeMode();
-    }
-
-    public void commit() throws JMSException {
-        _session.commit();
-    }
-
-    public void rollback() throws JMSException {
-        _session.rollback();
-    }
-
-    public void close() throws JMSException {
-        _session.close();
-    }
-
-    public void recover() throws JMSException {
-        _session.recover();
-    }
-
-    public MessageListener getMessageListener() throws JMSException {
-       return _session.getMessageListener();
-    }
-
-    public void setMessageListener(MessageListener messageListener) throws JMSException {
-        _session.setMessageListener(messageListener);
-    }
-
-    public void run() {
-        _session.run();
-    }
-
-    public MessageProducer createProducer(Destination destination) throws JMSException {
-        return _session.createProducer(destination);
-    }
-
-    public MessageConsumer createConsumer(Destination destination) throws JMSException {
-        return _session.createConsumer(destination);
-    }
-
-    public MessageConsumer createConsumer(Destination destination, String string) throws JMSException {
-        return _session.createConsumer(destination,string);
-    }
-
-    public MessageConsumer createConsumer(Destination destination, String string, boolean b) throws JMSException {
-        return _session.createConsumer(destination,string,b);
+    public QueueSender createSender(Queue queue) throws JMSException
+    {
+        return getSession().createSender(queue);
     }
 
     //The following methods cannot be called from a QueueSession as per JMS spec
 
-    public Topic createTopic(String string) throws JMSException {
+    public Topic createTopic(String string) throws JMSException
+    {
         throw new IllegalStateException("Cannot call createTopic from QueueSession");
     }
 
-    public TopicSubscriber createDurableSubscriber(Topic topic, String string) throws JMSException {
+    public TopicSubscriber createDurableSubscriber(Topic topic, String string) throws JMSException
+    {
         throw new IllegalStateException("Cannot call createDurableSubscriber from QueueSession");
     }
 
-    public TopicSubscriber createDurableSubscriber(Topic topic, String string, String string1, boolean b) throws JMSException {
+    public TopicSubscriber createDurableSubscriber(Topic topic, String string, String string1, boolean b) throws JMSException
+    {
          throw new IllegalStateException("Cannot call createDurableSubscriber from QueueSession");
     }
 
-    public TemporaryTopic createTemporaryTopic() throws JMSException {
+    public TemporaryTopic createTemporaryTopic() throws JMSException
+    {
         throw new IllegalStateException("Cannot call createTemporaryTopic from QueueSession");
     }
 
-    public void unsubscribe(String string) throws JMSException {
+    public void unsubscribe(String string) throws JMSException
+    {
         throw new IllegalStateException("Cannot call unsubscribe from QueueSession");
     }
 
-    public AMQSession getSession()
-    {
-        return _session;
-    }
 }
