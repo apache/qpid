@@ -1366,18 +1366,16 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     void stop() throws AMQException
     {
         super.stop();
-        synchronized (getMessageDeliveryLock())
-        {
-	        for (BasicMessageConsumer consumer : getConsumers().values())
-	        {
-	            List<Long> tags = consumer.drainReceiverQueueAndRetrieveDeliveryTags();
-	            getPrefetchedMessageTags().addAll(tags);
-	        }
-        }
         setUsingDispatcherForCleanup(true);
         drainDispatchQueue();
         setUsingDispatcherForCleanup(false);
 
+        for (BasicMessageConsumer consumer : getConsumers().values())
+        {
+            List<Long> tags = consumer.drainReceiverQueueAndRetrieveDeliveryTags();
+            getPrefetchedMessageTags().addAll(tags);
+        }
+        
         RangeSet delivered = gatherRangeSet(getUnacknowledgedMessageTags());
 		RangeSet prefetched = gatherRangeSet(getPrefetchedMessageTags());
 		RangeSet all = RangeSetFactory.createRangeSet(delivered.size()
