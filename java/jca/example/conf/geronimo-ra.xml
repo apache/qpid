@@ -63,65 +63,58 @@
     <!-- Note, do not remove this admin object. There appears to be a bug in Geronimo's deployer that does not correctly create JNDI references
          if an extra admin object is not present -->
     <adminobject>
-      <adminobject-interface>javax.jms.Destination</adminobject-interface>
-      <adminobject-class>org.apache.qpid.ra.admin.QpidDestinationProxy</adminobject-class>
+      <adminobject-interface>org.apache.qpid.ra.admin.QpidTopic</adminobject-interface>
+      <adminobject-class>org.apache.qpid.ra.admin.QpidTopicImpl</adminobject-class>
       <adminobject-instance>
          <message-destination-name>Dummy</message-destination-name>
-         <config-property-setting name="destinationType">TOPIC</config-property-setting>
          <config-property-setting name="destinationAddress">amq.topic</config-property-setting>
       </adminobject-instance>
     </adminobject>
     <adminobject>
-      <adminobject-interface>javax.jms.Destination</adminobject-interface>
-      <adminobject-class>org.apache.qpid.ra.admin.QpidDestinationProxy</adminobject-class>
+      <adminobject-interface>org.apache.qpid.ra.admin.QpidTopic</adminobject-interface>
+      <adminobject-class>org.apache.qpid.ra.admin.QpidTopicImpl</adminobject-class>
       <adminobject-instance>
          <message-destination-name>HelloTopic</message-destination-name>
-         <config-property-setting name="destinationType">TOPIC</config-property-setting>
          <config-property-setting name="destinationAddress">@qpid.hello.topic.dest.address@</config-property-setting>
       </adminobject-instance>
     </adminobject>
     <adminobject>
-      <adminobject-interface>javax.jms.Destination</adminobject-interface>
-      <adminobject-class>org.apache.qpid.ra.admin.QpidDestinationProxy</adminobject-class>
+      <adminobject-interface>org.apache.qpid.ra.admin.QpidTopic</adminobject-interface>
+      <adminobject-class>org.apache.qpid.ra.admin.QpidTopicImpl</adminobject-class>
       <adminobject-instance>
          <message-destination-name>GoodByeTopic</message-destination-name>
-         <config-property-setting name="destinationType">TOPIC</config-property-setting>
          <config-property-setting name="destinationAddress">@qpid.goodbye.topic.dest.address@</config-property-setting>
       </adminobject-instance>
     </adminobject>
     <adminobject>
-      <adminobject-interface>javax.jms.Destination</adminobject-interface>
-      <adminobject-class>org.apache.qpid.ra.admin.QpidDestinationProxy</adminobject-class>
+      <adminobject-interface>org.apache.qpid.ra.admin.QpidTopic</adminobject-interface>
+      <adminobject-class>org.apache.qpid.ra.admin.QpidTopicImpl</adminobject-class>
       <adminobject-instance>
          <message-destination-name>HelloGoodByeTopic</message-destination-name>
-         <config-property-setting name="destinationType">TOPIC</config-property-setting>
          <config-property-setting name="destinationAddress">@qpid.hellogoodbye.topic.dest.address@</config-property-setting>
       </adminobject-instance>
     </adminobject>
     <adminobject>
-      <adminobject-interface>javax.jms.Destination</adminobject-interface>
-      <adminobject-class>org.apache.qpid.ra.admin.QpidDestinationProxy</adminobject-class>
+      <adminobject-interface>org.apache.qpid.ra.admin.QpidQueue</adminobject-interface>
+      <adminobject-class>org.apache.qpid.ra.admin.QpidQueueImpl</adminobject-class>
       <adminobject-instance>
          <message-destination-name>HelloQueue</message-destination-name>
-         <config-property-setting name="destinationType">QUEUE</config-property-setting>
          <config-property-setting name="destinationAddress">@qpid.hello.queue.dest.address@</config-property-setting>
       </adminobject-instance>
     </adminobject>
     <adminobject>
-      <adminobject-interface>javax.jms.Destination</adminobject-interface>
-      <adminobject-class>org.apache.qpid.ra.admin.QpidDestinationProxy</adminobject-class>
+      <adminobject-interface>org.apache.qpid.ra.admin.QpidQueue</adminobject-interface>
+      <adminobject-class>org.apache.qpid.ra.admin.QpidQueueImpl</adminobject-class>
       <adminobject-instance>
          <message-destination-name>GoodByeQueue</message-destination-name>
-         <config-property-setting name="destinationType">QUEUE</config-property-setting>
          <config-property-setting name="destinationAddress">@qpid.goodbye.queue.dest.address@</config-property-setting>
       </adminobject-instance>
     </adminobject>
     <adminobject>
-      <adminobject-interface>javax.jms.Destination</adminobject-interface>
-      <adminobject-class>org.apache.qpid.ra.admin.QpidDestinationProxy</adminobject-class>
+      <adminobject-interface>org.apache.qpid.ra.admin.QpidQueue</adminobject-interface>
+      <adminobject-class>org.apache.qpid.ra.admin.QpidQueueImpl</adminobject-class>
       <adminobject-instance>
          <message-destination-name>ResponderQueue</message-destination-name>
-         <config-property-setting name="destinationType">QUEUE</config-property-setting>
          <config-property-setting name="destinationAddress">@qpid.responder.queue.dest.address@</config-property-setting>
       </adminobject-instance>
     </adminobject>

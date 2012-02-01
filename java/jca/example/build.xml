@@ -26,11 +26,8 @@
     <!-- Change to BURL for older syntax support -->
     <property name="qpid.dest_syntax" value="ADDR"/>
 
-    <!-- Broker specific properties. By default in the adapter we use localhost here you an override this with host specific info-->
-    <property name="broker.address" value="localhost"/>
-
     <!-- Properties controlling running sample standalone client -->
-    <property name="client.use.ejb" value="false"/> <!-- uses JNDI/JMS or JNDI/RMI -->
+    <property name="client.use.ejb" value="true"/> <!-- uses JNDI/JMS or JNDI/RMI -->
     <property name="client.message" value="Hello Qpid World"/>
     <property name="client.message.count" value="1"/>
     <property name="client.use.topic" value="false"/> <!-- Use topic/queue -->
@@ -114,9 +111,6 @@
             <classes dir="${build.classes.dir}">
                 <include name="org/apache/qpid/jca/example/web/**"/>
             </classes>
-            <webinf dir="${gen.dir}">
-                <include name="jboss-web.xml"/>
-            </webinf>
         </war>
     </target>
 
@@ -125,7 +119,6 @@
             <include name="org/apache/qpid/jca/example/ejb/**/*.class"/>
             <metainf dir="${gen.dir}">
                 <include name="jboss.xml"/>
-                <include name="ejb-jar.xml"/>
             </metainf>
         </jar>
     </target>

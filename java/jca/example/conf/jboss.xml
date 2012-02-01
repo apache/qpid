@@ -30,11 +30,6 @@
         <message-driven>
            <ejb-name>QpidHelloListenerBean</ejb-name>
            <resource-adapter-name>@rar.name@</resource-adapter-name>
-            <resource-ref>
-                <res-ref-name>QpidJMSXA</res-ref-name>
-                <res-type>javax.sql.DataSource</res-type>
-                <jndi-name>java:/QpidJMSXA</jndi-name>
-            </resource-ref>
         </message-driven>
         <message-driven>
            <ejb-name>QpidGoodByeListenerBean</ejb-name>
@@ -43,38 +38,15 @@
         <message-driven>
            <ejb-name>QpidHelloSubscriberBean</ejb-name>
            <resource-adapter-name>@rar.name@</resource-adapter-name>
-            <resource-ref>
-                <res-ref-name>QpidJMSXA</res-ref-name>
-                <res-type>javax.sql.DataSource</res-type>
-                <jndi-name>java:/QpidJMSXA</jndi-name>
-            </resource-ref>
         </message-driven>
         <message-driven>
            <ejb-name>QpidGoodByeSubscriberBean</ejb-name>
            <resource-adapter-name>@rar.name@</resource-adapter-name>
-            <resource-ref>
-                <res-ref-name>QpidJMSXA</res-ref-name>
-                <res-type>javax.sql.DataSource</res-type>
-                <jndi-name>java:/QpidJMSXA</jndi-name>
-            </resource-ref>
         </message-driven>
         <message-driven>
            <ejb-name>QpidJMSResponderBean</ejb-name>
            <resource-adapter-name>@rar.name@</resource-adapter-name>
-            <resource-ref>
-                <res-ref-name>QpidJMSXA</res-ref-name>
-                <res-type>javax.sql.DataSource</res-type>
-                <jndi-name>java:/QpidJMSXA</jndi-name>
-            </resource-ref>
         </message-driven>
-        <session>
-            <ejb-name>QpidTestBean</ejb-name>
-            <resource-ref>
-                <res-ref-name>QpidJMSXA</res-ref-name>
-                <res-type>javax.sql.DataSource</res-type>
-                <jndi-name>java:/QpidJMSXA</jndi-name>
-            </resource-ref>
-        </session>
     </enterprise-beans>
 
 </jboss>

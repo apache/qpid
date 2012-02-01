@@ -46,26 +46,26 @@ public class AdminObjectFactory implements ObjectFactory
             Reference ref = (Reference) object;
             String bindingURLString;
 
-            if (ref.getClassName().equals(QpidQueue.class.getName()))
+            if (ref.getClassName().equals(QpidQueueImpl.class.getName()))
             {
-                RefAddr addr = ref.get(QpidQueue.class.getName());
+                RefAddr addr = ref.get(QpidQueueImpl.class.getName());
                 bindingURLString = (String) addr.getContent();
 
                 if (addr != null)
                 {
-                    return new QpidQueue(bindingURLString);
+                    return new QpidQueueImpl(bindingURLString);
                 }
 
             }
 
-            if (ref.getClassName().equals(QpidTopic.class.getName()))
+            if (ref.getClassName().equals(QpidTopicImpl.class.getName()))
             {
-                RefAddr addr = ref.get(QpidTopic.class.getName());
+                RefAddr addr = ref.get(QpidTopicImpl.class.getName());
                 bindingURLString = (String) addr.getContent();
 
                 if (addr != null)
                 {
-                    return new QpidTopic(bindingURLString);
+                    return new QpidTopicImpl(bindingURLString);
                 }
             }
         }
