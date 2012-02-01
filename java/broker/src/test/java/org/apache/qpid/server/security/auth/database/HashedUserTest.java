@@ -45,49 +45,39 @@ public class HashedUserTest extends TestCase
         {
             assertEquals("User Data should be length 2, username, password", e.getMessage());
         }
-        catch (UnsupportedEncodingException e)
-        {
-            fail(e.getMessage());
-        }
+
     }
 
     public void testArrayConstructor()
     {
+        HashedUser user = new HashedUser(new String[]{USERNAME, B64_ENCODED_PASSWORD});
+        assertEquals("Username incorrect", USERNAME, user.getName());
+        int index = 0;
+
+        char[] hash = B64_ENCODED_PASSWORD.toCharArray();
+
         try
         {
-            HashedUser user = new HashedUser(new String[]{USERNAME, B64_ENCODED_PASSWORD});
-            assertEquals("Username incorrect", USERNAME, user.getName());
-            int index = 0;
-
-            char[] hash = B64_ENCODED_PASSWORD.toCharArray();
-
-            try
+            for (byte c : user.getEncodedPassword())
             {
-                for (byte c : user.getEncodedPassword())
-                {
-                    assertEquals("Password incorrect", hash[index], (char) c);
-                    index++;
-                }
-            }
-            catch (Exception e)
-            {
-                fail(e.getMessage());
-            }
-
-            hash = PASSWORD.toCharArray();
-
-            index=0;
-            for (char c : user.getPassword())
-            {
-                assertEquals("Password incorrect", hash[index], c);
+                assertEquals("Password incorrect", hash[index], (char) c);
                 index++;
             }
-
         }
-        catch (UnsupportedEncodingException e)
+        catch (Exception e)
         {
             fail(e.getMessage());
         }
+
+        hash = PASSWORD.toCharArray();
+
+        index=0;
+        for (char c : user.getPassword())
+        {
+            assertEquals("Password incorrect", hash[index], c);
+            index++;
+        }
+
     }
 }
 
