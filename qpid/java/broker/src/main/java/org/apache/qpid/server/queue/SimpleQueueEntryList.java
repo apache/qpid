@@ -190,6 +190,14 @@ public class SimpleQueueEntryList implements QueueEntryList<SimpleQueueEntryImpl
                 scavenge();
             }
         }
+        else
+        {
+            SimpleQueueEntryImpl unscavengedHWM = _unscavengedHWM.get();
+            if(unscavengedHWM != null && unscavengedHWM.compareTo(next) < 0)
+            {
+                _unscavengedHWM.compareAndSet(unscavengedHWM, null);
+            }
+        }
     }
 
     public int getPriorities()
