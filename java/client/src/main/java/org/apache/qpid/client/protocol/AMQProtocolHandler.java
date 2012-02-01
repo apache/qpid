@@ -58,7 +58,6 @@ import org.apache.qpid.thread.Threading;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
 
-import java.io.DataOutput;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;

@@ -20,9 +20,7 @@
  */
 package org.apache.qpid.server.security.auth.database;
 
-import java.security.Principal;
-
-public class PlainUser implements Principal
+public class PlainUser implements PasswordPrincipal
 {
     private String _name;
     private char[] _password;
@@ -59,12 +57,12 @@ public class PlainUser implements Principal
         return _name;
     }
 
-    char[] getPassword()
+    public char[] getPassword()
     {
         return _password;
     }
     
-    byte[] getPasswordBytes()
+    public byte[] getEncodedPassword()
     {
         byte[] byteArray = new byte[_password.length];
         int index = 0;
@@ -75,7 +73,14 @@ public class PlainUser implements Principal
         return byteArray;
     }
 
-    void setPassword(char[] password)
+
+
+    public void restorePassword(char[] password)
+    {
+        setPassword(password);
+    }
+
+    public void setPassword(char[] password)
     {
         _password = password;
         _modified = true;

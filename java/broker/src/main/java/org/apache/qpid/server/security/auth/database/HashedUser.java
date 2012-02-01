@@ -20,16 +20,15 @@
  */
 package org.apache.qpid.server.security.auth.database;
 
-import org.apache.commons.codec.EncoderException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.Principal;
 
-public class HashedUser implements Principal
+
+public class HashedUser implements PasswordPrincipal
 {
     private static final Logger _logger = Logger.getLogger(HashedUser.class);
 
@@ -39,7 +38,7 @@ public class HashedUser implements Principal
     private boolean _modified = false;
     private boolean _deleted = false;
 
-    HashedUser(String[] data) throws UnsupportedEncodingException
+    HashedUser(String[] data)
     {
         if (data.length != 2)
         {
@@ -48,7 +47,15 @@ public class HashedUser implements Principal
 
         _name = data[0];
 
-        byte[] encoded_password = data[1].getBytes(Base64MD5PasswordFilePrincipalDatabase.DEFAULT_ENCODING);
+        byte[] encoded_password;
+        try
+        {
+            encoded_password = data[1].getBytes(Base64MD5PasswordFilePrincipalDatabase.DEFAULT_ENCODING);
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            throw new RuntimeException("MD5 encoding not supported, even though the Java standard requires it",e);
+        }
 
         Base64 b64 = new Base64();
         byte[] decoded = b64.decode(encoded_password);
@@ -64,15 +71,23 @@ public class HashedUser implements Principal
         }
     }
 
-    public HashedUser(String name, char[] password) throws UnsupportedEncodingException, NoSuchAlgorithmException
+    public HashedUser(String name, char[] password)
     {
         _name = name;
         setPassword(password,false);
     }
 
-    public static byte[] getMD5(byte[] data) throws NoSuchAlgorithmException, UnsupportedEncodingException
+    public static byte[] getMD5(byte[] data)
     {
-        MessageDigest md = MessageDigest.getInstance("MD5");
+        MessageDigest md = null;
+        try
+        {
+            md = MessageDigest.getInstance("MD5");
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new RuntimeException("MD5 not supported although Java compliance requires it");
+        }
 
         for (byte b : data)
         {
@@ -92,12 +107,22 @@ public class HashedUser implements Principal
         return _name;
     }
 
-    char[] getPassword()
+    public char[] getPassword()
     {
         return _password;
     }
 
-    void setPassword(char[] password, boolean alreadyHashed) throws UnsupportedEncodingException,  NoSuchAlgorithmException
+    public void setPassword(char[] password)
+    {
+        setPassword(password, false);
+    }
+
+    public void restorePassword(char[] password)
+    {
+        setPassword(password, true);
+    }
+
+    void setPassword(char[] password, boolean alreadyHashed)
     {
         if(alreadyHashed){
             _password = password;
@@ -126,7 +151,7 @@ public class HashedUser implements Principal
         _encodedPassword = null;
     }
 
-    byte[] getEncodedPassword() throws EncoderException, UnsupportedEncodingException, NoSuchAlgorithmException
+    public byte[] getEncodedPassword()
     {
         if (_encodedPassword == null)
         {
@@ -135,7 +160,7 @@ public class HashedUser implements Principal
         return _encodedPassword;
     }
 
-    private void encodePassword() throws EncoderException, UnsupportedEncodingException, NoSuchAlgorithmException
+    private void encodePassword()
     {
         byte[] byteArray = new byte[_password.length];
         int index = 0;
