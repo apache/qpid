@@ -2752,18 +2752,38 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public long getQueueDepth(final AMQDestination amqd)
             throws AMQException
     {
-        return new FailoverNoopSupport<Long, AMQException>(
-                new FailoverProtectedOperation<Long, AMQException>()
-                {
-                    public Long execute() throws AMQException, FailoverException
-                    {
-                        return requestQueueDepth(amqd);
-                    }
-                }, _connection).execute();
-
+        return getQueueDepth(amqd, false);
     }
 
-    protected abstract Long requestQueueDepth(AMQDestination amqd) throws AMQException, FailoverException;
+    /**
+     * Returns the number of messages currently queued by the given
+     * destination. Syncs session before receiving the queue depth if sync is
+     * set to true.
+     *
+     * @param amqd AMQ destination to get the depth value
+     * @param sync flag to sync session before receiving the queue depth
+     * @return queue depth
+     * @throws AMQException
+     */
+    public long getQueueDepth(final AMQDestination amqd, final boolean sync) throws AMQException
+    {
+        return new FailoverNoopSupport<Long, AMQException>(new FailoverProtectedOperation<Long, AMQException>()
+        {
+            public Long execute() throws AMQException, FailoverException
+            {
+                try
+                {
+                    return requestQueueDepth(amqd, sync);
+                }
+                catch (TransportException e)
+                {
+                    throw new AMQException(AMQConstant.getConstant(getErrorCode(e)), e.getMessage(), e);
+                }
+            }
+        }, _connection).execute();
+    }
+
+    protected abstract Long requestQueueDepth(AMQDestination amqd, boolean sync) throws AMQException, FailoverException;
 
     /**
      * Declares the named exchange and type of exchange.
