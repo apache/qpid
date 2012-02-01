@@ -22,28 +22,12 @@ package org.apache.qpid.server.security.auth.database;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.amqplain.AmqPlainInitialiser;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5Initialiser;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainInitialiser;
 
-import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintStream;
 import java.security.Principal;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.regex.Pattern;
 
 /**
  * Represents a user database where the account information is stored in a simple flat file.
@@ -52,94 +36,19 @@ import java.util.regex.Pattern;
  *
  * where a carriage return separates each username/password pair. Passwords are assumed to be in plain text.
  */
-public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
+public class PlainPasswordFilePrincipalDatabase extends AbstractPasswordFilePrincipalDatabase<PlainUser>
 {
-    public static final String DEFAULT_ENCODING = "utf-8";
-    
-    private static final Logger _logger = Logger.getLogger(PlainPasswordFilePrincipalDatabase.class);
 
-    private File _passwordFile;
-
-    private Pattern _regexp = Pattern.compile(":");
-
-    private Map<String, AuthenticationProviderInitialiser> _saslServers;    
-    
-    private Map<String, PlainUser> _users = new HashMap<String, PlainUser>();
-    private ReentrantLock _userUpdate = new ReentrantLock();
+    private final Logger _logger = Logger.getLogger(PlainPasswordFilePrincipalDatabase.class);
 
     public PlainPasswordFilePrincipalDatabase()
     {
-        _saslServers = new HashMap<String, AuthenticationProviderInitialiser>();
-
         /**
          *  Create Authenticators for Plain Password file.
          */
-
-        // Accept AMQPlain incomming and compare it to the file.
-        AmqPlainInitialiser amqplain = new AmqPlainInitialiser();
-        amqplain.initialise(this);
-
-        // Accept Plain incomming and compare it to the file.
-        PlainInitialiser plain = new PlainInitialiser();
-        plain.initialise(this);
-
-        //  Accept MD5 incomming and Hash file value for comparison
-        CRAMMD5Initialiser cram = new CRAMMD5Initialiser();
-        cram.initialise(this);
-
-        _saslServers.put(amqplain.getMechanismName(), amqplain);
-        _saslServers.put(plain.getMechanismName(), plain);
-        _saslServers.put(cram.getMechanismName(), cram);
+        super(new AmqPlainInitialiser(), new PlainInitialiser(), new CRAMMD5Initialiser());
     }
 
-    public void setPasswordFile(String passwordFile) throws IOException
-    {
-        File f = new File(passwordFile);
-        _logger.info("PlainPasswordFile using file " + f.getAbsolutePath());
-        _passwordFile = f;
-        if (!f.exists())
-        {
-            throw new FileNotFoundException("Cannot find password file " + f);
-        }
-        if (!f.canRead())
-        {
-            throw new FileNotFoundException("Cannot read password file " + f +
-                                            ". Check permissions.");
-        }
-        
-        loadPasswordFile();
-    }
-
-    /**
-     * SASL Callback Mechanism - sets the Password in the PasswordCallback based on the value in the PasswordFile
-     * If you want to change the password for a user, use updatePassword instead.
-     *
-     * @param principal The Principal to set the password for
-     * @param callback  The PasswordCallback to call setPassword on
-     *
-     * @throws AccountNotFoundException If the Principal cannot be found in this Database
-     */
-    public void setPassword(Principal principal, PasswordCallback callback) throws AccountNotFoundException
-    {
-        if (_passwordFile == null)
-        {
-            throw new AccountNotFoundException("Unable to locate principal since no password file was specified during initialisation");
-        }
-        if (principal == null)
-        {
-            throw new IllegalArgumentException("principal must not be null");
-        }
-        char[] pwd = lookupPassword(principal.getName());
-        
-        if (pwd != null)
-        {
-            callback.setPassword(pwd);
-        }
-        else
-        {
-            throw new AccountNotFoundException("No account found for principal " + principal);
-        }
-    }
 
     /**
      * Used to verify that the presented Password is correct. Currently only used by Management Console
@@ -165,352 +74,21 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
 
     }
 
-    /**
-     * Changes the password for the specified user
-     * 
-     * @param principal to change the password for
-     * @param password plaintext password to set the password too
-     */
-    public boolean updatePassword(Principal principal, char[] password) throws AccountNotFoundException
+    protected PlainUser createUserFromPassword(Principal principal, char[] passwd)
     {
-        PlainUser user = _users.get(principal.getName());
-
-        if (user == null)
-        {
-            throw new AccountNotFoundException(principal.getName());
-        }
-
-        char[] orig = user.getPassword();
-        _userUpdate.lock();
-        try
-        {
-            user.setPassword(password);
-
-            savePasswordFile();
-
-            return true;
-        }
-        catch (IOException e)
-        {
-            _logger.error("Unable to save password file due to '"+e.getMessage()
-                          +"', password change for user '" + principal + "' discarded");
-            //revert the password change
-            user.setPassword(orig);
-            return false;
-        }
-        finally
-        {                                   
-            _userUpdate.unlock();
-        }
-    }
-
-    public boolean createPrincipal(Principal principal, char[] password)
-    {
-        if (_users.get(principal.getName()) != null)
-        {
-            return false;
-        }
-
-        PlainUser user = new PlainUser(principal.getName(), password);
-
-        try
-        {
-            _userUpdate.lock();
-            _users.put(user.getName(), user);
-
-            try
-            {
-                savePasswordFile();
-                return true;
-            }
-            catch (IOException e)
-            {
-                //remove the use on failure.
-                _users.remove(user.getName());
-                _logger.warn("Unable to create user '" + user.getName());
-                return false;
-            }
-        }
-        finally
-        {
-            _userUpdate.unlock();
-        }
-    }
-
-    public boolean deletePrincipal(Principal principal) throws AccountNotFoundException
-    {
-        PlainUser user = _users.get(principal.getName());
-
-        if (user == null)
-        {
-            throw new AccountNotFoundException(principal.getName());
-        }
-
-        try
-        {
-            _userUpdate.lock();
-            user.delete();
-
-            try
-            {
-                savePasswordFile();
-            }
-            catch (IOException e)
-            {
-                _logger.error("Unable to remove user '" + user.getName() + "' from password file.");
-                return false;
-            }
-
-            _users.remove(user.getName());
-        }
-        finally
-        {
-            _userUpdate.unlock();
-        }
-
-        return true;
-    }
-
-    public Map<String, AuthenticationProviderInitialiser> getMechanisms()
-    {
-        return _saslServers;
-    }
-
-    public List<Principal> getUsers()
-    {
-        return new LinkedList<Principal>(_users.values());
-    }
-
-    public Principal getUser(String username)
-    {
-        if (_users.containsKey(username))
-        {
-            return new UsernamePrincipal(username);
-        }
-        return null;
-    }
-
-    private boolean compareCharArray(char[] a, char[] b)
-    {
-        boolean equal = false;
-        if (a.length == b.length)
-        {
-            equal = true;
-            int index = 0;
-            while (equal && index < a.length)
-            {
-                equal = a[index] == b[index];
-                index++;
-            }
-        }
-        return equal;
+        return new PlainUser(principal.getName(), passwd);
     }
 
 
-    /**
-     * Looks up the password for a specified user in the password file. Note this code is <b>not</b> secure since it
-     * creates strings of passwords. It should be modified to create only char arrays which get nulled out.
-     *
-     * @param name The principal name to lookup
-     *
-     * @return a char[] for use in SASL.
-     */
-    private char[] lookupPassword(String name)
+    @Override
+    protected PlainUser createUserFromFileData(String[] result)
     {
-        PlainUser user = _users.get(name);
-        if (user == null)
-        {
-            return null;
-        }
-        else
-        {
-            return user.getPassword();
-        }
+        return new PlainUser(result);
     }
 
-    private void loadPasswordFile() throws IOException
+
+    protected Logger getLogger()
     {
-        try
-        {
-            _userUpdate.lock();
-            _users.clear();
-
-            BufferedReader reader = null;
-            try
-            {
-                reader = new BufferedReader(new FileReader(_passwordFile));
-                String line;
-
-                while ((line = reader.readLine()) != null)
-                {
-                    String[] result = _regexp.split(line);
-                    if (result == null || result.length < 2 || result[0].startsWith("#"))
-                    {
-                        continue;
-                    }
-
-                    PlainUser user = new PlainUser(result);
-                    _logger.info("Created user:" + user);
-                    _users.put(user.getName(), user);
-                }
-            }
-            finally
-            {
-                if (reader != null)
-                {
-                    reader.close();
-                }
-            }
-        }
-        finally
-        {
-            _userUpdate.unlock();
-        }
-    }
-
-    private void savePasswordFile() throws IOException
-    {
-        try
-        {
-            _userUpdate.lock();
-
-            BufferedReader reader = null;
-            PrintStream writer = null;
-
-            final File tmp = createTempFileOnSameFilesystem(_passwordFile);
-
-            try
-            {
-                writer = new PrintStream(tmp);
-                reader = new BufferedReader(new FileReader(_passwordFile));
-                String line;
-
-                while ((line = reader.readLine()) != null)
-                {
-                    String[] result = _regexp.split(line);
-                    if (result == null || result.length < 2 || result[0].startsWith("#"))
-                    {
-                        writer.write(line.getBytes(DEFAULT_ENCODING));
-                        writer.println();
-                        continue;
-                    }
-
-                    PlainUser user = _users.get(result[0]);
-
-                    if (user == null)
-                    {
-                        writer.write(line.getBytes(DEFAULT_ENCODING));
-                        writer.println();
-                    }
-                    else if (!user.isDeleted())
-                    {
-                        if (!user.isModified())
-                        {
-                            writer.write(line.getBytes(DEFAULT_ENCODING));
-                            writer.println();
-                        }
-                        else
-                        {
-                            byte[] password = user.getPasswordBytes();
-
-                            writer.write((user.getName() + ":").getBytes(DEFAULT_ENCODING));
-                            writer.write(password);
-                            writer.println();
-
-                            user.saved();
-                        }
-                    }
-                }
-
-                for (PlainUser user : _users.values())
-                {
-                    if (user.isModified())
-                    {
-                        byte[] password;
-                        password = user.getPasswordBytes();
-                        writer.write((user.getName() + ":").getBytes(DEFAULT_ENCODING));
-                        writer.write(password);
-                        writer.println();
-                        user.saved();
-                    }
-                }
-            }
-            catch(IOException e)
-            {
-                _logger.error("Unable to create the new password file: " + e);
-                throw new IOException("Unable to create the new password file" + e);
-            }
-            finally
-            {
-                if (writer != null)
-                {
-                    writer.close();
-                }
-                if (reader != null)
-                {
-                    reader.close();
-                }
-            }
-
-            swapTempFileToLive(_passwordFile, tmp);
-
-        }
-        finally
-        {
-            _userUpdate.unlock();
-        }
-    }
-
-    private void swapTempFileToLive(final File live, final File temp) throws IOException
-    {
-        // Remove any existing ".old" file
-        final File old = new File(live.getAbsoluteFile() + ".old");
-        if (old.exists())
-        {
-            old.delete();
-        }
-
-        // Create an new ".old" file
-        if(!live.renameTo(old))
-        {
-            //unable to rename the existing file to the backup name
-            _logger.error("Could not backup the existing password file");
-            throw new IOException("Could not backup the existing password file");
-        }
-
-        // Move temp file to be the new "live" file
-        if(!temp.renameTo(live))
-        {
-            //failed to rename the new file to the required filename
-            if(!old.renameTo(live))
-            {
-                //unable to return the backup to required filename
-                _logger.error("Could not rename the new password file into place, and unable to restore original file");
-                throw new IOException("Could not rename the new password file into place, and unable to restore original file");
-            }
-
-            _logger.error("Could not rename the new password file into place");
-            throw new IOException("Could not rename the new password file into place");
-        }
-    }
-
-    private File createTempFileOnSameFilesystem(final File liveFile)
-    {
-        File tmp;
-        final Random r = new Random();
-
-        do
-        {
-            tmp = new File(liveFile.getPath() + r.nextInt() + ".tmp");
-        }
-        while(tmp.exists());
-
-        tmp.deleteOnExit();
-        return tmp;
-    }
-    
-    public void reload() throws IOException
-    {
-        loadPasswordFile();
+        return _logger;
     }
 }

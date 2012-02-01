@@ -54,7 +54,7 @@ public class PlainUserTest extends TestCase
 
         try            
         {
-            for (byte c : user.getPasswordBytes())
+            for (byte c : user.getEncodedPassword())
             {
                 assertEquals("Password incorrect", password[index], (char) c);
                 index++;

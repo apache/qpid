@@ -22,7 +22,6 @@ package org.apache.qpid.client;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
-import java.io.Serializable;
 
 /**
  * Need this adaptor class to conform to JMS spec and throw IllegalStateException
