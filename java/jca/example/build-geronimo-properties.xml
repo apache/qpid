@@ -20,8 +20,12 @@
  -->
 <project name="qpid-jca-example-geronimo-properties" basedir="." default="">
 
-    <property name="geronimo.jndi.scheme" value="name"/>
+    <property name="jndi.scheme" value="name"/>
+
+    <!--
     <property name="qpid.xacf.jndi.name" value="jca:/qpid.jca/QpidJCAAdapter/JCAManagedConnectionFactory/QpidJMSXA"/>
+    -->
+    <property name="qpid.xacf.jndi.name" value="QpidJMSXA"/>
     <property name="qpid.cf.jndi.name" value="jca:/qpid.jca/QpidJCAAdapter/JCAAdminObject/QpidConnectionFactory"/>
     <property name="qpid.hello.queue.jndi.name" value="jca:/qpid.jca/QpidJCAAdapter/JCAAdminObject/HelloQueue"/>
     <property name="qpid.goodbye.queue.jndi.name" value="jca:/qpid.jca/QpidJCAAdapter/JCAAdminObject/GoodByeQueue"/>
@@ -64,16 +68,25 @@
     <property name="geronimo.rar.plan" value="${gen.dir}/geronimo-ra.xml"/>
     <property name="geronimo.ear.plan" value="${gen.dir}/geronimo-application.xml"/>
 
+    <available file="${geronimo.home}/bin/deploy" value="deploy" property="geronimo.deploy.exec"/>
+    <property name="geronimo.deploy.exec" value="deploy.sh"/>
+
     <path id="compile.classpath">
         <fileset dir="${geronimo.home}/repository/org/apache/geronimo/specs">
             <include name="geronimo-jms_1.1_spec/1.1.1/geronimo-jms_1.1_spec-1.1.1.jar"/>
             <include name="geronimo-servlet_2.5_spec/1.2/geronimo-servlet_2.5_spec-1.2.jar"/>
             <include name="geronimo-ejb_3.0_spec/1.0.1/geronimo-ejb_3.0_spec-1.0.1.jar"/>
             <include name="geronimo-jta_1.1_spec/1.1.1/geronimo-jta_1.1_spec-1.1.1.jar"/>
+
+            <!--Geronimo 3.x-->
+            <include name="geronimo-servlet_3.0_spec/1.0/geronimo-servlet_3.0_spec-1.0.jar"/>
+            <include name="geronimo-ejb_3.1_spec/1.0.2/geronimo-ejb_3.1_spec-1.0.2.jar"/>
         </fileset>
-        <fileset dir="${geronimo.home}/lib/">
+
+        <fileset dir="${qpid.jca.dir}">
             <include name="slf4j-api-*.jar"/>
         </fileset>
+
     </path>
 
     <path id="run.classpath">
@@ -119,7 +132,7 @@
         <attribute name="module"/>
         <attribute name="plan" default=""/>
         <sequential>
-            <exec executable="${geronimo.home}/bin/deploy.sh">
+            <exec executable="${geronimo.home}/bin/${geronimo.deploy.exec}">
                 <arg line="-u @{user} -p @{password} @{action} @{module} @{plan}"/>
             </exec>
         </sequential>

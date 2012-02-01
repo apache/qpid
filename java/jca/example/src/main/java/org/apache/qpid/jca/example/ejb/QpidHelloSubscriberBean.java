@@ -22,7 +22,7 @@ package org.apache.qpid.jca.example.ejb;
 
 import java.util.Date;
 
-import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
 import javax.jms.Connection;
@@ -52,35 +52,14 @@ public class QpidHelloSubscriberBean implements MessageListener
 {
     private static final Logger _log = LoggerFactory.getLogger(QpidHelloSubscriberBean.class);
 
+    @Resource(@jndi.scheme@="@qpid.xacf.jndi.name@")
     private ConnectionFactory _connectionFactory;
 
+    @Resource(@jndi.scheme@="GoodByeTopic")
     private Destination _topic;
 
-    @PostConstruct
-    public void init()
-    {
-        InitialContext context = null;
-
-        try
-        {
-            context = new InitialContext();
-            _connectionFactory = (ConnectionFactory)context.lookup("java:comp/env/QpidJMSXA");
-            _topic = (Destination)context.lookup("@qpid.goodbye.topic.jndi.name@");
-
-        }
-        catch(Exception e)
-        {
-           _log.error(e.getMessage(), e);
-        }
-        finally
-        {
-            QpidUtil.closeResources(context);
-        }
-
-    }
-    
     @Override
-    public void onMessage(Message message) 
+    public void onMessage(Message message)
     {
         Connection connection = null;
         Session session = null;

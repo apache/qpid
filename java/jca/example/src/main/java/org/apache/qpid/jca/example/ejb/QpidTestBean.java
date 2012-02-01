@@ -21,6 +21,7 @@
 package org.apache.qpid.jca.example.ejb;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import javax.ejb.Stateless;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -39,35 +40,15 @@ public class QpidTestBean implements QpidTestRemote, QpidTestLocal
 
     private static final Logger _log = LoggerFactory.getLogger(QpidTestBean.class);
 
+    @Resource(@jndi.scheme@="@qpid.xacf.jndi.name@")
     private ConnectionFactory _connectionFactory;
 
+    @Resource(@jndi.scheme@="HelloQueue")
     private Destination _queue;
 
+    @Resource(@jndi.scheme@="HelloTopic")
     private Destination _topic;
 
-    @PostConstruct
-    public void init()
-    {
-        InitialContext context = null;
-
-        try
-        {
-            context = new InitialContext();
-            _connectionFactory = (ConnectionFactory)context.lookup("java:comp/env/QpidJMSXA");
-            _queue = (Destination)context.lookup("@qpid.hello.queue.jndi.name@");
-            _topic = (Destination)context.lookup("@qpid.hello.topic.jndi.name@");
-
-        }
-        catch(Exception e)
-        {
-           _log.error(e.getMessage(), e);
-        }
-        finally
-        {
-           QpidUtil.closeResources(context);
-        }
-
-    }
     @Override
     public void testQpidAdapter(String content) throws Exception
     {

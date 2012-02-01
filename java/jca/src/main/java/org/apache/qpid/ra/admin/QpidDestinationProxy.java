@@ -111,11 +111,11 @@ public class QpidDestinationProxy implements Externalizable, Referenceable, Dest
         {
             if(getDestinationType().equalsIgnoreCase(DEFAULT_QUEUE_TYPE))
             {
-                _delegate = new QpidQueue(getDestinationAddress());
+                _delegate = new QpidQueueImpl(getDestinationAddress());
             }
             else if(getDestinationType().equalsIgnoreCase(DEFAULT_TOPIC_TYPE))
             {
-                _delegate = new QpidTopic(getDestinationAddress());
+                _delegate = new QpidTopicImpl(getDestinationAddress());
             }
             else
             {

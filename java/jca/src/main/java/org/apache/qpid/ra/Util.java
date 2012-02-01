@@ -32,11 +32,10 @@ import javax.naming.Context;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.Referenceable;
+import javax.naming.spi.NamingManager;
 import javax.transaction.TransactionManager;
 
 import org.apache.qpid.client.AMQConnectionURL;
-import org.apache.qpid.ra.admin.QpidQueue;
-import org.apache.qpid.ra.admin.QpidTopic;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,31 +87,7 @@ public class Util
 
 	   if (object instanceof Reference)
        {
-
-           Reference ref = (Reference) object;
-           String addressContent = null;
-
-           if (ref.getClassName().equals(QpidQueue.class.getName()))
-           {
-               RefAddr addr = ref.get(QpidQueue.class.getName());
-               addressContent = (String) addr.getContent();
-
-               if (addr != null)
-               {
-                   return (T)new QpidQueue(addressContent);
-               }
-           }
-
-           if (ref.getClassName().equals(QpidTopic.class.getName()))
-           {
-               RefAddr addr = ref.get(QpidTopic.class.getName());
-               addressContent = (String) addr.getContent();
-
-               if (addr != null)
-               {
-                   return (T)new QpidTopic(addressContent);
-               }
-           }
+		   return (T)NamingManager.getObjectInstance(object, null, null, null);
        }
 
 	   return clazz.cast(object);

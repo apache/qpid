@@ -27,40 +27,13 @@
     <enterprise-beans>
         <message-driven>
             <ejb-name>QpidHelloListenerBean</ejb-name>
-            <resource-ref>
-                <res-ref-name>QpidJMSXA</res-ref-name>
-                <res-type>javax.jms.ConnectionFactory</res-type>
-                <res-auth>Container</res-auth>
-                <res-sharing-scope>Shareable</res-sharing-scope>
-            </resource-ref>
         </message-driven>
         <message-driven>
             <ejb-name>QpidHelloSubscriberBean</ejb-name>
-            <resource-ref>
-                <res-ref-name>QpidJMSXA</res-ref-name>
-                <res-type>javax.jms.ConnectionFactory</res-type>
-                <res-auth>Container</res-auth>
-                <res-sharing-scope>Shareable</res-sharing-scope>
-            </resource-ref>
         </message-driven>
         <message-driven>
             <ejb-name>QpidJMSResponderBean</ejb-name>
-            <resource-ref>
-                <res-ref-name>QpidJMSXA</res-ref-name>
-                <res-type>javax.jms.ConnectionFactory</res-type>
-                <res-auth>Container</res-auth>
-                <res-sharing-scope>Shareable</res-sharing-scope>
-            </resource-ref>
         </message-driven>
-        <session>
-            <ejb-name>QpidTestBean</ejb-name>
-            <resource-ref>
-                <res-ref-name>QpidJMSXA</res-ref-name>
-                <res-type>javax.jms.ConnectionFactory</res-type>
-                <res-auth>Container</res-auth>
-                <res-sharing-scope>Shareable</res-sharing-scope>
-            </resource-ref>
-        </session>
     </enterprise-beans>
 
 

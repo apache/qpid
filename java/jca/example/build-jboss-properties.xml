@@ -20,7 +20,7 @@
 -->
 <project name="qpid-jca-example-jboss-properties" basedir="." default="">
 
-    <property name="jboss.jndi.scheme" value="mappedName"/>
+    <property name="jndi.scheme" value="mappedName"/>
     <property name="qpid.xacf.jndi.name" value="java:QpidJMSXA"/>
     <property name="qpid.cf.jndi.name" value="QpidConnectionFactory"/>
     <property name="qpid.hello.topic.jndi.name" value="HelloTopic"/>

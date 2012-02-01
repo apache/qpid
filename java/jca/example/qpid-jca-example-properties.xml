@@ -36,7 +36,7 @@
     <property name="rar.ver" value="${qpid.ver}"/>
     <property name="rar.name" value="qpid-ra-${rar.ver}.rar"/>
 
-    <property name="broker.url" value="amqp://anonymous:passwd@client/test?brokerlist='tcp://${broker.address}?sasl_mechs='ANONYMOUS''"/>
+    <property name="broker.url" value="amqp://anonymous:passwd@client/test?brokerlist='tcp://${broker.address}?sasl_mechs='PLAIN''"/>
 
     <property name="qpid.hello.topic.dest.address.ADDR" value="amq.topic/hello.Topic"/>
     <property name="qpid.goodbye.topic.dest.address.ADDR" value="amq.topic/goodbye.Topic"/>

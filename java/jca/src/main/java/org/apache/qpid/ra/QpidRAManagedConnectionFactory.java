@@ -330,7 +330,7 @@ public class QpidRAManagedConnectionFactory implements ManagedConnectionFactory,
    public int hashCode()
    {
       int hash = _mcfProperties.hashCode();
-      hash += 31 * _ra.hashCode();
+      hash += 31 * ((_ra != null) ? _ra.hashCode() : 1);
 
       return hash;
    }

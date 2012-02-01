@@ -20,32 +20,8 @@
  */
 package org.apache.qpid.ra.admin;
 
-import javax.naming.NamingException;
-import javax.naming.Reference;
-import javax.naming.StringRefAddr;
-
-import org.apache.qpid.client.AMQQueue;
-
-public class QpidQueue extends AMQQueue
+public interface QpidQueue
 {
-    private String _url;
-
-    public QpidQueue(final String address) throws Exception
-    {
-        super(address);
-        this._url = address;
-    }
-
-    @Override
-    public Reference getReference() throws NamingException
-    {
-        return new Reference(this.getClass().getName(), new StringRefAddr(this.getClass().getName(), toURL()),
-                AdminObjectFactory.class.getName(), null);
-    }
-
-    @Override
-    public String toURL()
-    {
-        return _url;
-    }
+	public void setDestinationAddress(String destinationAddress) throws Exception;
+	public String getDestinationAddress();
 }
