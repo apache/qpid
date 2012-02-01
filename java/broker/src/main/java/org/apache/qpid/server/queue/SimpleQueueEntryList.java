@@ -193,7 +193,7 @@ public class SimpleQueueEntryList implements QueueEntryList<SimpleQueueEntryImpl
         else
         {
             SimpleQueueEntryImpl unscavengedHWM = _unscavengedHWM.get();
-            if(unscavengedHWM != null && unscavengedHWM.compareTo(next) < 0)
+            if(unscavengedHWM != null && (next == null || unscavengedHWM.compareTo(next) < 0))
             {
                 _unscavengedHWM.compareAndSet(unscavengedHWM, null);
             }
