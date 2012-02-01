@@ -18,9 +18,8 @@
  */
 package org.apache.qpid.client;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.*;
 import org.apache.qpid.transport.Connection.SessionFactory;
 import org.apache.qpid.transport.Connection.State;
@@ -39,7 +38,7 @@ import java.util.List;
  * {@link SessionException} is not thrown from methods of
  * {@link AMQSession_0_10}.
  */
-public class AMQSession_0_10Test extends TestCase
+public class AMQSession_0_10Test extends QpidTestCase
 {
 
     public void testExceptionOnCommit()
@@ -458,6 +457,28 @@ public class AMQSession_0_10Test extends TestCase
         assertNotNull("MessageTransfer event was not sent", event);
         event = findSentProtocolEventOfClass(session, ExchangeDeclare.class, false);
         assertNotNull("ExchangeDeclare event was not sent", event);
+    }
+
+    public void testGetQueueDepthWithSync()
+    {
+        // slow down a flush thread
+        setTestSystemProperty("qpid.session.max_ack_delay", "10000");
+        AMQSession_0_10 session =  createAMQSession_0_10(false, javax.jms.Session.DUPS_OK_ACKNOWLEDGE);
+        try
+        {
+            session.acknowledgeMessage(-1, false);
+            session.getQueueDepth(createDestination(), true);
+        }
+        catch (Exception e)
+        {
+            fail("Unexpected exception is cought:" + e.getMessage());
+        }
+        ProtocolEvent command = findSentProtocolEventOfClass(session, MessageAccept.class, false);
+        assertNotNull("MessageAccept command was not sent", command);
+        command = findSentProtocolEventOfClass(session, ExecutionSync.class, false);
+        assertNotNull("ExecutionSync command was not sent", command);
+        command = findSentProtocolEventOfClass(session, QueueQuery.class, false);
+        assertNotNull("QueueQuery command was not sent", command);
     }
 
     private AMQAnyDestination createDestination()

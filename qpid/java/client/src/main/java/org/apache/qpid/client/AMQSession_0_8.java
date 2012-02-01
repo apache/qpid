@@ -587,7 +587,7 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
         }
     }
 
-    protected Long requestQueueDepth(AMQDestination amqd) throws AMQException, FailoverException
+    protected Long requestQueueDepth(AMQDestination amqd, boolean sync) throws AMQException, FailoverException
     {
         AMQFrame queueDeclare =
             getMethodRegistry().createQueueDeclareBody(getTicket(),

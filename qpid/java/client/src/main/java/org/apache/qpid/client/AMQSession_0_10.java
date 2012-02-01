@@ -951,9 +951,13 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                 }, getAMQConnection()).execute();
     }
 
-    protected Long requestQueueDepth(AMQDestination amqd)
+    protected Long requestQueueDepth(AMQDestination amqd, boolean sync)
     {
         flushAcknowledgments();
+        if (sync)
+        {
+            getQpidSession().sync();
+        }
         return getQpidSession().queueQuery(amqd.getQueueName()).get().getMessageCount();
     }
 
