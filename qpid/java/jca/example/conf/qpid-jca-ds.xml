@@ -25,9 +25,8 @@
          name="qpid.jca:name=HelloTopic">
      <attribute name="JNDIName">HelloTopic</attribute>
      <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='@rar.name@'</depends>
-     <attribute name="Type">javax.jms.Destination</attribute>
+     <attribute name="Type">org.apache.qpid.ra.admin.QpidTopic</attribute>
      <attribute name="Properties">
-        destinationType=TOPIC
         destinationAddress=@qpid.hello.topic.dest.address@
      </attribute>
   </mbean>
@@ -36,9 +35,8 @@
          name="qpid.jca:name=GoodByeTopic">
      <attribute name="JNDIName">GoodByeTopic</attribute>
      <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='@rar.name@'</depends>
-     <attribute name="Type">javax.jms.Destination</attribute>
+     <attribute name="Type">org.apache.qpid.ra.admin.QpidTopic</attribute>
      <attribute name="Properties">
-        destinationType=TOPIC
         destinationAddress=@qpid.goodbye.topic.dest.address@
      </attribute>
   </mbean>
@@ -47,9 +45,8 @@
          name="qpid.jca:name=HelloGoodByeTopic">
      <attribute name="JNDIName">HelloGoodByeTopic</attribute>
      <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='@rar.name@'</depends>
-     <attribute name="Type">javax.jms.Destination</attribute>
+     <attribute name="Type">org.apache.qpid.ra.admin.QpidTopic</attribute>
      <attribute name="Properties">
-        destinationType=TOPIC
         destinationAddress=@qpid.hellogoodbye.topic.dest.address@
      </attribute>
   </mbean>
@@ -58,9 +55,8 @@
          name="qpid.jca:name=HelloQueue">
      <attribute name="JNDIName">HelloQueue</attribute>
      <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='@rar.name@'</depends>
-     <attribute name="Type">javax.jms.Destination</attribute>
+     <attribute name="Type">org.apache.qpid.ra.admin.QpidQueue</attribute>
      <attribute name="Properties">
-        destinationType=QUEUE
         destinationAddress=@qpid.hello.queue.dest.address@
      </attribute>
   </mbean>
@@ -69,9 +65,8 @@
          name="qpid.jca:name=GoodByeQueue">
      <attribute name="JNDIName">GoodByeQueue</attribute>
      <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='@rar.name@'</depends>
-     <attribute name="Type">javax.jms.Destination</attribute>
+     <attribute name="Type">org.apache.qpid.ra.admin.QpidQueue</attribute>
      <attribute name="Properties">
-        destinationType=QUEUE
         destinationAddress=@qpid.goodbye.queue.dest.address@
      </attribute>
   </mbean>
@@ -80,9 +75,8 @@
          name="qpid.jca:name=QpidResponderQueue">
      <attribute name="JNDIName">QpidResponderQueue</attribute>
      <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='@rar.name@'</depends>
-     <attribute name="Type">javax.jms.Destination</attribute>
+     <attribute name="Type">org.apache.qpid.ra.admin.QpidQueue</attribute>
      <attribute name="Properties">
-        destinationType=QUEUE
         destinationAddress=@qpid.responder.queue.dest.address@
      </attribute>
   </mbean>

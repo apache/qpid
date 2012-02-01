@@ -58,15 +58,6 @@
 
             <context-root>/qpid-jca-web</context-root>
 
-            <naming:ejb-local-ref>
-              <naming:ref-name>QpidTestBean</naming:ref-name>
-              <naming:ejb-link>QpidTestBean</naming:ejb-link>
-            </naming:ejb-local-ref>
-
-            <naming:resource-ref>
-                <naming:ref-name>QpidJMSXA</naming:ref-name>
-                <naming:resource-link>QpidJMSXA</naming:resource-link>
-            </naming:resource-ref>
         </web-app>
     </module>
 
@@ -91,8 +82,6 @@
                         <sys:type>rar</sys:type>
                     </sys:dependency>
                 </sys:dependencies>
-                <sys:hidden-classes/>
-                <sys:non-overridable-classes/>
             </sys:environment>
 
             <enterprise-beans>
@@ -101,10 +90,6 @@
                     <resource-adapter>
                         <resource-link>QpidResourceAdapter</resource-link>
                     </resource-adapter>
-                      <naming:resource-ref>
-                        <naming:ref-name>QpidJMSXA</naming:ref-name>
-                        <naming:resource-link>QpidJMSXA</naming:resource-link>
-                    </naming:resource-ref>
                 </message-driven>
                 <message-driven>
                     <ejb-name>QpidGoodByeListenerBean</ejb-name>
@@ -117,10 +102,6 @@
                     <resource-adapter>
                         <resource-link>QpidResourceAdapter</resource-link>
                     </resource-adapter>
-                      <naming:resource-ref>
-                        <naming:ref-name>QpidJMSXA</naming:ref-name>
-                        <naming:resource-link>QpidJMSXA</naming:resource-link>
-                    </naming:resource-ref>
                 </message-driven>
                 <message-driven>
                     <ejb-name>QpidGoodByeSubscriberBean</ejb-name>
@@ -133,18 +114,7 @@
                     <resource-adapter>
                         <resource-link>QpidResourceAdapter</resource-link>
                     </resource-adapter>
-                      <naming:resource-ref>
-                        <naming:ref-name>QpidJMSXA</naming:ref-name>
-                        <naming:resource-link>QpidJMSXA</naming:resource-link>
-                    </naming:resource-ref>
                 </message-driven>
-                <session>
-                    <ejb-name>QpidTestBean</ejb-name>
-                      <naming:resource-ref>
-                        <naming:ref-name>QpidJMSXA</naming:ref-name>
-                        <naming:resource-link>QpidJMSXA</naming:resource-link>
-                    </naming:resource-ref>
-                </session>
             </enterprise-beans>
         </openejb-jar>
     </module>

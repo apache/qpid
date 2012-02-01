@@ -197,6 +197,23 @@
       </inbound-resourceadapter>
 
       <adminobject>
+            <adminobject-interface>org.apache.qpid.ra.admin.QpidQueue</adminobject-interface>
+            <adminobject-class> org.apache.qpid.ra.admin.QpidQueueImpl</adminobject-class>
+            <config-property>
+                <config-property-name>destinationAddress </config-property-name>
+                <config-property-type>java.lang.String </config-property-type>
+            </config-property>
+        </adminobject>
+      <adminobject>
+            <adminobject-interface>org.apache.qpid.ra.admin.QpidTopic</adminobject-interface>
+            <adminobject-class> org.apache.qpid.ra.admin.QpidTopicImpl</adminobject-class>
+            <config-property>
+                <config-property-name>destinationAddress </config-property-name>
+                <config-property-type>java.lang.String </config-property-type>
+            </config-property>
+        </adminobject>
+      <!--
+      <adminobject>
             <adminobject-interface>javax.jms.Destination</adminobject-interface>
             <adminobject-class> org.apache.qpid.ra.admin.QpidDestinationProxy</adminobject-class>
             <config-property>
@@ -208,6 +225,7 @@
                 <config-property-type>java.lang.String </config-property-type>
             </config-property>
         </adminobject>
+      -->
       <adminobject>
             <adminobject-interface>javax.jms.ConnectionFactory</adminobject-interface>
             <adminobject-class> org.apache.qpid.ra.admin.QpidConnectionFactoryProxy</adminobject-class>

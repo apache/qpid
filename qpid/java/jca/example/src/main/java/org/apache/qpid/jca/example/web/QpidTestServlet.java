@@ -22,6 +22,8 @@
 package org.apache.qpid.jca.example.web;
 import java.io.IOException;
 
+import javax.annotation.Resource;
+import javax.ejb.EJB;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
@@ -36,7 +38,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.transaction.UserTransaction;
 
-import org.apache.qpid.jca.example.ejb.QpidTest;
+import org.apache.qpid.jca.example.ejb.QpidTestLocal;
 import org.apache.qpid.jca.example.ejb.QpidUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,35 +54,17 @@ public class QpidTestServlet extends HttpServlet
     private static final boolean DEFAULT_XA = false;
     private static final boolean DEFAULT_SAY_GOODBYE = true;
 
+    @Resource(@jndi.scheme@="@qpid.xacf.jndi.name@")
     private ConnectionFactory _connectionFactory;
 
+    @Resource(@jndi.scheme@="HelloQueue")
     private Destination _queue;
 
+    @Resource(@jndi.scheme@="HelloTopic")
     private Destination _topic;
 
-    public void init(ServletConfig config) throws ServletException
-    {
-
-        InitialContext context = null;
-
-        try
-        {
-            context = new InitialContext();
-            _connectionFactory = (ConnectionFactory)context.lookup("java:comp/env/QpidJMSXA");
-            _queue = (Destination)context.lookup("@qpid.hello.queue.jndi.name@");
-            _topic = (Destination)context.lookup("@qpid.hello.topic.jndi.name@");
-
-        }
-        catch(Exception e)
-        {
-            _log.error(e.getMessage(), e);
-            throw new ServletException(e.getMessage(), e);
-        }
-        finally
-        {
-            QpidUtil.closeResources(context);
-        }
-    }
+    @EJB
+    private QpidTestLocal ejb;
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
@@ -127,7 +111,6 @@ public class QpidTestServlet extends HttpServlet
 
             if(useEJB)
             {
-                QpidTest ejb = (QpidTest)ctx.lookup("java:comp/env/QpidTestBean");
                 ejb.testQpidAdapter(content, count, useTopic, false, sayGoodBye);
             }
             else

@@ -22,19 +22,6 @@
 <web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
 
-    <resource-ref>
-        <res-ref-name>QpidJMSXA</res-ref-name>
-        <res-type>javax.jms.ConnectionFactory</res-type>
-        <res-auth>Container</res-auth>
-        <res-sharing-scope>Shareable</res-sharing-scope>
-    </resource-ref>
-
-    <ejb-local-ref>
-        <ejb-ref-name>QpidTestBean</ejb-ref-name>
-        <ejb-ref-type>Session</ejb-ref-type>
-        <local>org.apache.qpid.jca.example.ejb.QpidTestLocal</local>
-    </ejb-local-ref>
-
     <servlet>
         <display-name>QpidTestServlet</display-name>
         <servlet-name>QpidTestServlet</servlet-name>

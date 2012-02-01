@@ -20,4 +20,5 @@
  -->
 <project name="qpid-jca-example-build-properties" basedir="." default="">
   <property name="qpid.ver" value="@project.version@"/>
+  <property name="broker.address" value="localhost"/>
 </project>
