@@ -387,6 +387,16 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     /** Immediate message prefetch default. */
     public static final String IMMEDIATE_PREFETCH_DEFAULT = "false";
 
+    /**
+     * System property to enable allow dispatcher thread to be run as a daemon thread
+     */
+    public static final String DAEMON_DISPATCHER = "qpid.jms.daemon.dispatcher";
+
+    /**
+     * Flag indicating to start dispatcher as a daemon thread
+     */
+    protected final boolean DEAMON_DISPATCHER_THREAD = Boolean.getBoolean(DAEMON_DISPATCHER);
+
     /** The connection to which this session belongs. */
     private AMQConnection _connection;
 
@@ -2463,7 +2473,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 throw new Error("Error creating Dispatcher thread",e);
             }
             _dispatcherThread.setName("Dispatcher-Channel-" + _channelId);
-            _dispatcherThread.setDaemon(true);
+            _dispatcherThread.setDaemon(DEAMON_DISPATCHER_THREAD);
             _dispatcher.setConnectionStopped(initiallyStopped);
             _dispatcherThread.start();
             if (_dispatcherLogger.isInfoEnabled())
