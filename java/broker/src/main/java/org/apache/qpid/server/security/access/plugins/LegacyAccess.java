@@ -28,7 +28,9 @@ import org.apache.qpid.server.security.SecurityPluginFactory;
 import java.util.Arrays;
 import java.util.List;
 
-/** Always Abstain. */
+/**
+ * The <code>LegacyAccess</code> plugin is used internally and  simply ignores legacy elements of the configuration file.
+ */
 public class LegacyAccess extends BasicPlugin
 {
     public static class LegacyAccessConfiguration extends ConfigurationPlugin {
@@ -36,9 +38,7 @@ public class LegacyAccess extends BasicPlugin
         {
             public List<String> getParentPaths()
             {
-                return Arrays.asList("security.jmx", "virtualhosts.virtualhost.security.jmx",
-                                     "security.msg-auth", "virtualhosts.virtualhost.security.msg-auth",
-                                     "security.principal-databases", "virtualhosts.virtualhost.security.principal-databases");
+                return Arrays.asList("security.msg-auth", "virtualhosts.virtualhost.security.msg-auth");
             }
 
             public ConfigurationPlugin newInstance(String path, Configuration config) throws ConfigurationException
