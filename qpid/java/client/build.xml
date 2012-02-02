@@ -32,14 +32,6 @@
 
   <property name="output.dir" value="${module.precompiled}/org/apache/qpid/filter/selector"/>
 
-  <target name="precompile">
-    <mkdir dir="${output.dir}"/>
-    <javacc target="src/main/grammar/SelectorParser.jj"
-            outputdirectory="${output.dir}"
-            javacchome="${project.root}/lib"/>
-  </target>
-
-
   <uptodate property="doc-release.done" targetfile="${module.release}/api/index.html">
     <srcfiles dir="${module.src}" includes="**/*.java"/>
   </uptodate>

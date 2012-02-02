@@ -32,6 +32,7 @@
   <property name="xml.spec.list" value='"${xml.spec.dir}/amqp.0-8.xml" "${xml.spec.dir}/amqp.0-9.xml" "${xml.spec.dir}/amqp0-9-1.stripped.xml"' />
   <property name="gentools.timestamp" location="${framing.generated.dir}/gentools.timestamp" />
   <property name="jython.timestamp" location="${framing.generated.dir}/jython.timestamp" />
+  <property name="selector.output.dir" value="${module.precompiled}/org/apache/qpid/filter/selector"/>
 
   <target name="check_jython_deps">
     <uptodate property="jython.notRequired" targetfile="${jython.timestamp}">
@@ -96,7 +97,14 @@ public class QpidBuildVersion
 
   </target>
 
-  <target name="precompile" depends="gentools,jython,create-version,build-version"/>
+  <target name="jms-selector">
+    <mkdir dir="${selector.output.dir}"/>
+    <javacc target="src/main/grammar/SelectorParser.jj"
+            outputdirectory="${selector.output.dir}"
+            javacchome="${project.root}/lib"/>
+  </target>
+
+  <target name="precompile" depends="gentools,jython,create-version,build-version,jms-selector"/>
 
   <target name="bundle" depends="bundle-tasks"/>
 </project>

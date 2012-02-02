@@ -18,12 +18,10 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.filter;
+package org.apache.qpid.filter;
 //
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
-
-import org.apache.qpid.server.queue.Filterable;
 
 import java.math.BigDecimal;
 
@@ -40,7 +38,7 @@ public class ConstantExpression implements Expression
             super(value);
         }
 
-        public boolean matches(Filterable message)
+        public boolean matches(FilterableMessage message)
         {
             Object object = evaluate(message);
 
@@ -119,7 +117,7 @@ public class ConstantExpression implements Expression
         this.value = value;
     }
 
-    public Object evaluate(Filterable message)
+    public Object evaluate(FilterableMessage message)
     {
         return value;
     }
