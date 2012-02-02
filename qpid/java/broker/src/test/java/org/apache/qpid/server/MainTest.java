@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server;
 
+import org.apache.commons.cli.CommandLine;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.util.EnumSet;
@@ -145,6 +146,22 @@ public class MainTest extends QpidTestCase
         assertEquals(9, options.getLogWatchFrequency());
     }
 
+    public void testVersion()
+    {
+        final TestMain main = new TestMain("-v".split("\\s"));
+
+        assertNotNull("Command line not parsed correctly", main.getCommandLine());
+        assertTrue("Parsed command line didnt pick up version option", main.getCommandLine().hasOption("v"));
+    }
+
+    public void testHelp()
+    {
+        final TestMain main = new TestMain("-h".split("\\s"));
+
+        assertNotNull("Command line not parsed correctly", main.getCommandLine());
+        assertTrue("Parsed command line didnt pick up help option", main.getCommandLine().hasOption("h"));
+    }
+
     private BrokerOptions startDummyMain(String commandLine)
     {
         return (new TestMain(commandLine.split("\\s"))).getOptions();
@@ -173,6 +190,11 @@ public class MainTest extends QpidTestCase
         public BrokerOptions getOptions()
         {
             return _options;
+        }
+
+        public CommandLine getCommandLine()
+        {
+            return _commandLine;
         }
     }
 }
