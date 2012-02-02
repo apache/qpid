@@ -1068,6 +1068,55 @@ class MultiConsumerMsgGroupTests(Base):
         self.qmf_session.delBroker(self.qmf_broker)
 
 
+    def test_transaction_order(self):
+        """ Verify that rollback does not reorder the messages with respect to
+        the consumer (QPID-3804)
+        """
+        snd = self.ssn.sender("msg-group-q; {create:always, delete:sender," +
+                              " node: {x-declare: {arguments:" +
+                              " {'qpid.group_header_key':'THE-GROUP'," +
+                              "'qpid.shared_msg_group':1}}}}")
+
+        groups = ["A","B","A"]
+        messages = [Message(content={}, properties={"THE-GROUP": g}) for g in groups]
+        index = 0
+        for m in messages:
+            m.content['index'] = index
+            index += 1
+            snd.send(m)
+
+        s1 = self.conn.session(transactional=True)
+        c1 = s1.receiver("msg-group-q", options={"capacity":0})
+
+        # C1 gets group A
+        m1 = c1.fetch(0)
+        assert m1.properties['THE-GROUP'] == 'A'
+        assert m1.content['index'] == 0
+        s1.acknowledge(m1)
+
+        s1.rollback()  # release A back to the queue
+
+        # the order should be preserved as follows:
+
+        m1 = c1.fetch(0)
+        assert m1.properties['THE-GROUP'] == 'A'
+        assert m1.content['index'] == 0
+
+        m2 = c1.fetch(0)
+        assert m2.properties['THE-GROUP'] == 'B'
+        assert m2.content['index'] == 1
+
+        m3 = c1.fetch(0)
+        assert m3.properties['THE-GROUP'] == 'A'
+        assert m3.content['index'] == 2
+
+        s1.commit()
+
+        c1.close()
+        s1.close()
+        snd.close()
+
+
 class StickyConsumerMsgGroupTests(Base):
     """
     Tests for the behavior of sticky-consumer message groups.  These tests
