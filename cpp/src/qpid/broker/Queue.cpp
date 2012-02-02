@@ -213,15 +213,26 @@ void Queue::requeue(const QueuedMessage& msg){
     {
         Mutex::ScopedLock locker(messageLock);
         if (!isEnqueued(msg)) return;
-        messages->reinsert(msg);
-        listeners.populate(copy);
+        if (deleted) {
+            //
+            // If the queue has been deleted, requeued messages must be sent to the alternate exchange
+            // if one is configured.
+            //
+            if (alternateExchange.get()) {
+                DeliverableMessage dmsg(msg.payload);
+                alternateExchange->routeWithAlternate(dmsg);
+            }
+        } else {
+            messages->reinsert(msg);
+            listeners.populate(copy);
 
-        // for persistLastNode - don't force a message twice to disk, but force it if no force before
-        if(inLastNodeFailure && persistLastNode && !msg.payload->isStoredOnQueue(shared_from_this())) {
-            msg.payload->forcePersistent();
-            if (msg.payload->isForcedPersistent() ){
-                boost::intrusive_ptr<Message> payload = msg.payload;
-            	enqueue(0, payload);
+            // for persistLastNode - don't force a message twice to disk, but force it if no force before
+            if(inLastNodeFailure && persistLastNode && !msg.payload->isStoredOnQueue(shared_from_this())) {
+                msg.payload->forcePersistent();
+                if (msg.payload->isForcedPersistent() ){
+                    boost::intrusive_ptr<Message> payload = msg.payload;
+                    enqueue(0, payload);
+                }
             }
         }
         observeRequeue(msg, locker);

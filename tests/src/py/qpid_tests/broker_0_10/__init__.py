@@ -34,3 +34,4 @@ from priority import *
 from threshold import *
 from extensions import *
 from msg_groups import *
+from new_api import *
