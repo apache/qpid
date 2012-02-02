@@ -2412,7 +2412,7 @@ class Broker(Thread):
 
       try:
         if self.conn:
-          self.conn.close()
+          self.conn.close(5)
       except:
         pass
       self.conn = None
@@ -2713,7 +2713,7 @@ class Broker(Thread):
     self.amqpSession = None
     try:
       if self.conn:
-        self.conn.close()
+        self.conn.close(_timeout)
     except:
       pass
     self.conn = None
