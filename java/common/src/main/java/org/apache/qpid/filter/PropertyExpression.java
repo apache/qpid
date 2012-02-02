@@ -18,14 +18,14 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.filter;
+package org.apache.qpid.filter;
 //
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
 
-import org.apache.log4j.Logger;
 
-import org.apache.qpid.server.queue.Filterable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 
@@ -39,14 +39,14 @@ public class PropertyExpression implements Expression
 
     private static final int DEFAULT_PRIORITY = 4;
 
-    private static final Logger _logger = org.apache.log4j.Logger.getLogger(PropertyExpression.class);
+    private static final Logger _logger = LoggerFactory.getLogger(PropertyExpression.class);
 
     private static final HashMap<String, Expression> JMS_PROPERTY_EXPRESSIONS = new HashMap<String, Expression>();
 
     {
         JMS_PROPERTY_EXPRESSIONS.put("JMSDestination", new Expression()
                                      {
-                                         public Object evaluate(Filterable message)
+                                         public Object evaluate(FilterableMessage message)
                                          {
                                              //TODO
                                              return null;
@@ -72,7 +72,7 @@ public class PropertyExpression implements Expression
 
         JMS_PROPERTY_EXPRESSIONS.put("JMSRedelivered", new Expression()
                                      {
-                                         public Object evaluate(Filterable message)
+                                         public Object evaluate(FilterableMessage message)
                                          {
                                              return message.isRedelivered();
                                          }
@@ -93,10 +93,10 @@ public class PropertyExpression implements Expression
 
         
 
-        jmsPropertyExpression = (Expression) JMS_PROPERTY_EXPRESSIONS.get(name);
+        jmsPropertyExpression = JMS_PROPERTY_EXPRESSIONS.get(name);
     }
 
-    public Object evaluate(Filterable message)
+    public Object evaluate(FilterableMessage message)
     {
 
         if (jmsPropertyExpression != null)
@@ -105,7 +105,7 @@ public class PropertyExpression implements Expression
         }
         else
         {
-            return message.getMessageHeader().getHeader(name);
+            return message.getHeader(name);
         }
     }
 
@@ -147,9 +147,9 @@ public class PropertyExpression implements Expression
 
     private static class ReplyToExpression implements Expression
     {
-        public Object evaluate(Filterable message)
+        public Object evaluate(FilterableMessage message)
         {
-            String replyTo = message.getMessageHeader().getReplyTo();
+            String replyTo = message.getReplyTo();
             return replyTo;
         }
 
@@ -157,10 +157,10 @@ public class PropertyExpression implements Expression
 
     private static class TypeExpression implements Expression
     {
-        public Object evaluate(Filterable message)
+        public Object evaluate(FilterableMessage message)
         {
 
-                String type = message.getMessageHeader().getType();
+                String type = message.getType();
                 return type;
 
         }
@@ -168,7 +168,7 @@ public class PropertyExpression implements Expression
 
     private static class DeliveryModeExpression implements Expression
     {
-        public Object evaluate(Filterable message)
+        public Object evaluate(FilterableMessage message)
         {
                 JMSDeliveryMode mode = message.isPersistent() ? JMSDeliveryMode.PERSISTENT :
                                                                 JMSDeliveryMode.NON_PERSISTENT;
@@ -183,19 +183,19 @@ public class PropertyExpression implements Expression
 
     private static class PriorityExpression implements Expression
     {
-        public Object evaluate(Filterable message)
+        public Object evaluate(FilterableMessage message)
         {
-            byte priority = message.getMessageHeader().getPriority();
+            byte priority = message.getPriority();
             return (int) priority;
         }
     }
 
     private static class MessageIDExpression implements Expression
     {
-        public Object evaluate(Filterable message)
+        public Object evaluate(FilterableMessage message)
         {
 
-            String messageId = message.getMessageHeader().getMessageId();
+            String messageId = message.getMessageId();
 
             return messageId;
 
@@ -204,19 +204,19 @@ public class PropertyExpression implements Expression
 
     private static class TimestampExpression implements Expression
     {
-        public Object evaluate(Filterable message)
+        public Object evaluate(FilterableMessage message)
         {
-            long timestamp = message.getMessageHeader().getTimestamp();
+            long timestamp = message.getTimestamp();
             return timestamp;
         }
     }
 
     private static class CorrelationIdExpression implements Expression
     {
-        public Object evaluate(Filterable message)
+        public Object evaluate(FilterableMessage message)
         {
 
-            String correlationId = message.getMessageHeader().getCorrelationId();
+            String correlationId = message.getCorrelationId();
 
             return correlationId;
         }
@@ -224,9 +224,9 @@ public class PropertyExpression implements Expression
 
     private static class ExpirationExpression implements Expression
     {
-        public Object evaluate(Filterable message)
+        public Object evaluate(FilterableMessage message)
         {
-            long expiration = message.getMessageHeader().getExpiration();
+            long expiration = message.getExpiration();
             return expiration;
 
         }

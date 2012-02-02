@@ -15,19 +15,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpid.filter;
+package org.apache.qpid.client.filter;
 
-import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 
 
-/**
- * A BooleanExpression is an expression that always
- * produces a Boolean result.
- */
-public interface BooleanExpression extends Expression
+public interface MessageFilter
 {
-
-    public boolean matches(AbstractJMSMessage message) throws AMQInternalException;
-
+    boolean matches(AbstractJMSMessage message);
+    String getSelector();
 }

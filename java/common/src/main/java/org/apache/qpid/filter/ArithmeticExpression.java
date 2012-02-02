@@ -15,12 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.server.filter;
+package org.apache.qpid.filter;
 //
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
-
-import org.apache.qpid.server.queue.Filterable;
 
 /**
  * An expression which performs an operation on two expression values
@@ -59,7 +57,7 @@ public abstract class ArithmeticExpression extends BinaryExpression
                         return plus((Number) lvalue, asNumber(rvalue));
                     }
 
-                    throw new RuntimeException("Cannot call plus operation on: " + lvalue + " and: " + rvalue);
+                    throw new SelectorParsingException("Cannot call plus operation on: " + lvalue + " and: " + rvalue);
                 }
 
                 public String getExpressionSymbol()
@@ -80,7 +78,7 @@ public abstract class ArithmeticExpression extends BinaryExpression
                         return minus((Number) lvalue, asNumber(rvalue));
                     }
 
-                    throw new RuntimeException("Cannot call minus operation on: " + lvalue + " and: " + rvalue);
+                    throw new SelectorParsingException("Cannot call minus operation on: " + lvalue + " and: " + rvalue);
                 }
 
                 public String getExpressionSymbol()
@@ -102,7 +100,7 @@ public abstract class ArithmeticExpression extends BinaryExpression
                         return multiply((Number) lvalue, asNumber(rvalue));
                     }
 
-                    throw new RuntimeException("Cannot call multiply operation on: " + lvalue + " and: " + rvalue);
+                    throw new SelectorParsingException("Cannot call multiply operation on: " + lvalue + " and: " + rvalue);
                 }
 
                 public String getExpressionSymbol()
@@ -124,7 +122,7 @@ public abstract class ArithmeticExpression extends BinaryExpression
                         return divide((Number) lvalue, asNumber(rvalue));
                     }
 
-                    throw new RuntimeException("Cannot call divide operation on: " + lvalue + " and: " + rvalue);
+                    throw new SelectorParsingException("Cannot call divide operation on: " + lvalue + " and: " + rvalue);
                 }
 
                 public String getExpressionSymbol()
@@ -146,7 +144,7 @@ public abstract class ArithmeticExpression extends BinaryExpression
                         return mod((Number) lvalue, asNumber(rvalue));
                     }
 
-                    throw new RuntimeException("Cannot call mod operation on: " + lvalue + " and: " + rvalue);
+                    throw new SelectorParsingException("Cannot call mod operation on: " + lvalue + " and: " + rvalue);
                 }
 
                 public String getExpressionSymbol()
@@ -243,11 +241,11 @@ public abstract class ArithmeticExpression extends BinaryExpression
         }
         else
         {
-            throw new RuntimeException("Cannot convert value: " + value + " into a number");
+            throw new SelectorParsingException("Cannot convert value: " + value + " into a number");
         }
     }
 
-    public Object evaluate(Filterable message)
+    public Object evaluate(FilterableMessage message)
     {
         Object lvalue = getLeft().evaluate(message);
         if (lvalue == null)
