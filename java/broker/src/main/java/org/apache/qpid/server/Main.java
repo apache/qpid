@@ -28,7 +28,8 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 import org.apache.log4j.Logger;
-
+import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.server.Broker.InitException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
@@ -125,7 +126,7 @@ public class Main
         OPTIONS.addOption(OPTION_JMX_PORT_CONNECTOR_SERVER);
     }
 
-    private CommandLine commandLine;
+    protected CommandLine _commandLine;
 
     public static void main(String[] args)
     {
@@ -161,7 +162,7 @@ public class Main
     {
         try
         {
-            commandLine = new PosixParser().parse(OPTIONS, args);
+            _commandLine = new PosixParser().parse(OPTIONS, args);
 
             return true;
         }
@@ -177,66 +178,93 @@ public class Main
 
     protected void execute() throws Exception
     {
-        BrokerOptions options = new BrokerOptions();
-        String configFile = commandLine.getOptionValue(OPTION_CONFIG_FILE.getOpt());
-        if(configFile != null)
+        if (_commandLine.hasOption(OPTION_HELP.getOpt()))
         {
-            options.setConfigFile(configFile);
+            final HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp("Qpid", OPTIONS, true);
         }
-
-        String logWatchConfig = commandLine.getOptionValue(OPTION_LOG_WATCH.getOpt());
-        if(logWatchConfig != null)
+        else if (_commandLine.hasOption(OPTION_VERSION.getOpt()))
         {
-            options.setLogWatchFrequency(Integer.parseInt(logWatchConfig));
-        }
-
-        String logConfig = commandLine.getOptionValue(OPTION_LOG_CONFIG_FILE.getOpt());
-        if(logConfig != null)
-        {
-            options.setLogConfigFile(logConfig);
-        }
-
-        String jmxPortRegistryServer = commandLine.getOptionValue(OPTION_JMX_PORT_REGISTRY_SERVER.getOpt());
-        if(jmxPortRegistryServer != null)
-        {
-            options.setJmxPortRegistryServer(Integer.parseInt(jmxPortRegistryServer));
-        }
-
-        String jmxPortConnectorServer = commandLine.getOptionValue(OPTION_JMX_PORT_CONNECTOR_SERVER.getLongOpt());
-        if(jmxPortConnectorServer != null)
-        {
-            options.setJmxPortConnectorServer(Integer.parseInt(jmxPortConnectorServer));
-        }
-
-        String bindAddr = commandLine.getOptionValue(OPTION_BIND.getOpt());
-        if (bindAddr != null)
-        {
-            options.setBind(bindAddr);
-        }
-
-        String[] portStr = commandLine.getOptionValues(OPTION_PORT.getOpt());
-        if(portStr != null)
-        {
-            parsePortArray(options, portStr, false);
-            for(ProtocolExclusion pe : ProtocolExclusion.values())
+            final StringBuilder protocol = new StringBuilder("AMQP version(s) [major.minor]: ");
+            boolean first = true;
+            for (final ProtocolVersion pv : ProtocolVersion.getSupportedProtocolVersions())
             {
-                parsePortArray(options, commandLine.getOptionValues(pe.getExcludeName()), pe);
-            }
-        }
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    protocol.append(", ");
+                }
 
-        String[] sslPortStr = commandLine.getOptionValues(OPTION_SSLPORT.getOpt());
-        if(sslPortStr != null)
-        {
-            parsePortArray(options, sslPortStr, true);
-            for(ProtocolExclusion pe : ProtocolExclusion.values())
-            {
-                parsePortArray(options, commandLine.getOptionValues(pe.getExcludeName()), pe);
+                protocol.append(pv.getMajorVersion()).append('-').append(pv.getMinorVersion());
             }
-        }                
-        
-        setExceptionHandler();
-        
-        startBroker(options);
+            System.out.println(QpidProperties.getVersionString() + " (" + protocol + ")");
+        }
+        else
+        {
+            BrokerOptions options = new BrokerOptions();
+            String configFile = _commandLine.getOptionValue(OPTION_CONFIG_FILE.getOpt());
+            if(configFile != null)
+            {
+                options.setConfigFile(configFile);
+            }
+
+            String logWatchConfig = _commandLine.getOptionValue(OPTION_LOG_WATCH.getOpt());
+            if(logWatchConfig != null)
+            {
+                options.setLogWatchFrequency(Integer.parseInt(logWatchConfig));
+            }
+
+            String logConfig = _commandLine.getOptionValue(OPTION_LOG_CONFIG_FILE.getOpt());
+            if(logConfig != null)
+            {
+                options.setLogConfigFile(logConfig);
+            }
+
+            String jmxPortRegistryServer = _commandLine.getOptionValue(OPTION_JMX_PORT_REGISTRY_SERVER.getOpt());
+            if(jmxPortRegistryServer != null)
+            {
+                options.setJmxPortRegistryServer(Integer.parseInt(jmxPortRegistryServer));
+            }
+
+            String jmxPortConnectorServer = _commandLine.getOptionValue(OPTION_JMX_PORT_CONNECTOR_SERVER.getLongOpt());
+            if(jmxPortConnectorServer != null)
+            {
+                options.setJmxPortConnectorServer(Integer.parseInt(jmxPortConnectorServer));
+            }
+
+            String bindAddr = _commandLine.getOptionValue(OPTION_BIND.getOpt());
+            if (bindAddr != null)
+            {
+                options.setBind(bindAddr);
+            }
+
+            String[] portStr = _commandLine.getOptionValues(OPTION_PORT.getOpt());
+            if(portStr != null)
+            {
+                parsePortArray(options, portStr, false);
+                for(ProtocolExclusion pe : ProtocolExclusion.values())
+                {
+                    parsePortArray(options, _commandLine.getOptionValues(pe.getExcludeName()), pe);
+                }
+            }
+
+            String[] sslPortStr = _commandLine.getOptionValues(OPTION_SSLPORT.getOpt());
+            if(sslPortStr != null)
+            {
+                parsePortArray(options, sslPortStr, true);
+                for(ProtocolExclusion pe : ProtocolExclusion.values())
+                {
+                    parsePortArray(options, _commandLine.getOptionValues(pe.getExcludeName()), pe);
+                }
+            }
+
+            setExceptionHandler();
+
+            startBroker(options);
+        }
     }
 
     protected void setExceptionHandler()

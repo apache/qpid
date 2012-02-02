@@ -30,9 +30,6 @@ import java.util.Set;
 
 public class BrokerOptions
 {
-    /** serialVersionUID */
-    private static final long serialVersionUID = 8051825964945442234L;
-
     public static final String DEFAULT_CONFIG_FILE = "etc/config.xml";
     public static final String DEFAULT_LOG_CONFIG_FILE = "etc/log4j.xml";
     public static final String QPID_HOME = "QPID_HOME";
