@@ -608,17 +608,4 @@ if (!_vhost.getSecurityManager().accessObject("com.example.application", "Extens
 			</section>
 		</section>
 	</section>
-    <section role="h2" label="SPD-Other-Security-Plugins">
-        <title>Other Security Plugins</title>
-        <para>
-			There are two basic plugins provided internally by the broker, which can be
-			found in the <code>org.apache.qpid.server.security.access.plugins</code> package.
-			These are <code>AllowAll</code> and <code>DenyAll</code>. The <code>LegacyAccess</code>
-			plugin is not normally required, and simply ignores legacy elements of the configuration
-			file. The other two plugins are activated by the presence of an element in the
-			<code>&lt;security /&gt;</code> section of the configuration or virtual hosts XML
-			files. To deny all access by default, add the empty <code>&lt;deny-all /&gt;</code>
-			element, and to allow all access, add <code>&lt;allow-all /&gt;</code>.
-		</para>
-	</section>
 </section>
