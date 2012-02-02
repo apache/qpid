@@ -3621,6 +3621,13 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 	              <entry>false</entry>
                   <entry><para>If set will use the old map message encoding. By default the Map messages are encoded using the 0-10 map encoding.</para><para>This could also be set per connection as well (see connection paramters).</para></entry>
                 </row>
+
+                <row>
+                  <entry>qpid.jms.daemon.dispatcher</entry>
+                  <entry>boolean</entry>
+                  <entry>false</entry>
+                  <entry><para>Controls whether the Session dispatcher thread is a daemon thread or not. If this system property is set to true then the Session dispatcher threads will be created as daemon threads. This setting is introduced in version 0.16.</para></entry>
+                </row>
               </tbody>
             </tgroup>
           </table>
