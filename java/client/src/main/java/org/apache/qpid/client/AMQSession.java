@@ -47,6 +47,7 @@ import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.util.FlowControllingBlockingQueue;
 import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.filter.MessageFilter;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -388,14 +389,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public static final String IMMEDIATE_PREFETCH_DEFAULT = "false";
 
     /**
-     * System property to enable allow dispatcher thread to be run as a daemon thread
-     */
-    public static final String DAEMON_DISPATCHER = "qpid.jms.daemon.dispatcher";
-
-    /**
      * Flag indicating to start dispatcher as a daemon thread
      */
-    protected final boolean DEAMON_DISPATCHER_THREAD = Boolean.getBoolean(DAEMON_DISPATCHER);
+    protected final boolean DEAMON_DISPATCHER_THREAD = Boolean.getBoolean(ClientProperties.DAEMON_DISPATCHER);
 
     /** The connection to which this session belongs. */
     private AMQConnection _connection;
