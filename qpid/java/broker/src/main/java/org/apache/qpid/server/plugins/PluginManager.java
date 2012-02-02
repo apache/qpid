@@ -39,8 +39,6 @@ import org.apache.qpid.server.configuration.plugins.SlowConsumerDetectionQueueCo
 import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SecurityPluginFactory;
-import org.apache.qpid.server.security.access.plugins.AllowAll;
-import org.apache.qpid.server.security.access.plugins.DenyAll;
 import org.apache.qpid.server.security.access.plugins.LegacyAccess;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManagerPluginFactory;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
@@ -147,16 +145,13 @@ public class PluginManager implements Closeable
     {
         // Store all non-OSGi plugins
         // A little gross that we have to add them here, but not all the plugins are OSGIfied
-        for (SecurityPluginFactory<?> pluginFactory : Arrays.asList(
-                AllowAll.FACTORY, DenyAll.FACTORY, LegacyAccess.FACTORY))
+        for (SecurityPluginFactory<?> pluginFactory : Arrays.asList(LegacyAccess.FACTORY))
         {
             _securityPlugins.put(pluginFactory.getPluginName(), pluginFactory);
         }
         for (ConfigurationPluginFactory configFactory : Arrays.asList(
                 TopicConfiguration.FACTORY,
                 SecurityManager.SecurityConfiguration.FACTORY,
-                AllowAll.AllowAllConfiguration.FACTORY,
-                DenyAll.DenyAllConfiguration.FACTORY,
                 LegacyAccess.LegacyAccessConfiguration.FACTORY,
                 new SlowConsumerDetectionConfigurationFactory(),
                 new SlowConsumerDetectionPolicyConfigurationFactory(),
