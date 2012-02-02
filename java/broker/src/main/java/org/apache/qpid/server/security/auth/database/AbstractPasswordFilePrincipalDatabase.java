@@ -358,19 +358,26 @@ public abstract class AbstractPasswordFilePrincipalDatabase<U extends PasswordPr
             catch(IOException e)
             {
                 getLogger().error("Unable to create the new password file: " + e);
-                throw new IOException("Unable to create the new password file" + e);
+                throw new IOException("Unable to create the new password file",e);
             }
             finally
             {
-                if (reader != null)
+
+                try
                 {
-                    reader.close();
+                    if (reader != null)
+                    {
+                        reader.close();
+                    }
+                }
+                finally
+                {
+                    if (writer != null)
+                    {
+                        writer.close();
+                    }
                 }
 
-                if (writer != null)
-                {
-                    writer.close();
-                }
             }
 
             swapTempFileToLive(tmp);
