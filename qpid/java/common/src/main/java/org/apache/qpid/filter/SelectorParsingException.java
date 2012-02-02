@@ -33,8 +33,4 @@ public class SelectorParsingException extends RuntimeException
         super(cause);
     }
 
-    public SelectorParsingException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace)
-    {
-        super(message, cause, enableSuppression, writableStackTrace);
-    }
 }
