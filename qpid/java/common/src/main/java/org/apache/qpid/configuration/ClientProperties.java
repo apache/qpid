@@ -140,4 +140,8 @@ public class ClientProperties
     @Deprecated
     public static final String QPID_SSL_TRUST_STORE_CERT_TYPE_PROP_NAME = "qpid.ssl.trustStoreCertType";
 
+    /**
+     * System property to enable allow dispatcher thread to be run as a daemon thread
+     */
+    public static final String DAEMON_DISPATCHER = "qpid.jms.daemon.dispatcher";
 }
