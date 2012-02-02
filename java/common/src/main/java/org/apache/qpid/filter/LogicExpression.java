@@ -15,12 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.server.filter;
+package org.apache.qpid.filter;
 //
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
-
-import org.apache.qpid.server.queue.Filterable;
 
 /**
  * A filter performing a comparison of two objects
@@ -47,9 +45,9 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
         super(left, right);
     }
 
-    public abstract Object evaluate(Filterable message);
+    public abstract Object evaluate(FilterableMessage message);
 
-    public boolean matches(Filterable message)
+    public boolean matches(FilterableMessage message)
     {
         Object object = evaluate(message);
 
@@ -63,7 +61,7 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
             super(lvalue, rvalue);
         }
 
-        public Object evaluate(Filterable message)
+        public Object evaluate(FilterableMessage message)
         {
 
             Boolean lv = (Boolean) getLeft().evaluate(message);
@@ -91,7 +89,7 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
             super(lvalue, rvalue);
         }
 
-        public Object evaluate(Filterable message)
+        public Object evaluate(FilterableMessage message)
         {
 
             Boolean lv = (Boolean) getLeft().evaluate(message);

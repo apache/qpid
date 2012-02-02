@@ -18,12 +18,10 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.filter;
+package org.apache.qpid.filter;
 //
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
-
-import org.apache.qpid.server.queue.Filterable;
 
 import java.util.HashSet;
 import java.util.List;
@@ -136,7 +134,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         /**
          *  org.apache.activemq.filter.Expression#evaluate(MessageEvaluationContext)
          */
-        public Object evaluate(Filterable message)
+        public Object evaluate(FilterableMessage message)
         {
 
             Object rv = this.getRight().evaluate(message);
@@ -155,7 +153,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
             return likePattern.matcher((String) rv).matches() ? Boolean.TRUE : Boolean.FALSE;
         }
 
-        public boolean matches(Filterable message)
+        public boolean matches(FilterableMessage message)
         {
             Object object = evaluate(message);
 
@@ -167,8 +165,8 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
     {
         if ((escape != null) && (escape.length() != 1))
         {
-            throw new RuntimeException(
-                "The ESCAPE string litteral is invalid.  It can only be one character.  Litteral used: " + escape);
+            throw new SelectorParsingException(
+                "The ESCAPE string literal is invalid.  It can only be one character.  Litteral used: " + escape);
         }
 
         int c = -1;
@@ -190,7 +188,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
 
         if (!(left instanceof PropertyExpression))
         {
-            throw new RuntimeException("Expected a property for In expression, got: " + left);
+            throw new SelectorParsingException("Expected a property for In expression, got: " + left);
         }
 
         return UnaryExpression.createInExpression((PropertyExpression) left, elements, false);
@@ -202,7 +200,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
 
         if (!(left instanceof PropertyExpression))
         {
-            throw new RuntimeException("Expected a property for In expression, got: " + left);
+            throw new SelectorParsingException("Expected a property for In expression, got: " + left);
         }
 
         return UnaryExpression.createInExpression((PropertyExpression) left, elements, true);
@@ -333,18 +331,18 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
             }
 
             // Else it's boolean or a String..
-            throw new RuntimeException("Value '" + expr + "' cannot be compared.");
+            throw new SelectorParsingException("Value '" + expr + "' cannot be compared.");
         }
 
         if (expr instanceof BooleanExpression)
         {
-            throw new RuntimeException("Value '" + expr + "' cannot be compared.");
+            throw new SelectorParsingException("Value '" + expr + "' cannot be compared.");
         }
     }
 
     /**
      * Validates that the expression can be used in == or <> expression.
-     * Cannot not be NULL TRUE or FALSE litterals.
+     * Cannot not be NULL TRUE or FALSE literals.
      *
      * @param expr
      */
@@ -355,7 +353,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
             Object value = ((ConstantExpression) expr).getValue();
             if (value == null)
             {
-                throw new RuntimeException("'" + expr + "' cannot be compared.");
+                throw new SelectorParsingException("'" + expr + "' cannot be compared.");
             }
         }
     }
@@ -371,7 +369,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         {
             if ((left instanceof BooleanExpression) && !(right instanceof BooleanExpression))
             {
-                throw new RuntimeException("'" + left + "' cannot be compared with '" + right + "'");
+                throw new SelectorParsingException("'" + left + "' cannot be compared with '" + right + "'");
             }
         }
     }
@@ -385,7 +383,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         super(left, right);
     }
 
-    public Object evaluate(Filterable message)
+    public Object evaluate(FilterableMessage message)
     {
         Comparable lv = (Comparable) getLeft().evaluate(message);
         if (lv == null)
@@ -547,7 +545,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
 
     protected abstract boolean asBoolean(int answer);
 
-    public boolean matches(Filterable message)
+    public boolean matches(FilterableMessage message)
     {
         Object object = evaluate(message);
 
@@ -561,7 +559,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
             super(left, right);
         }
 
-        public Object evaluate(Filterable message)
+        public Object evaluate(FilterableMessage message)
         {
             Object lv = getLeft().evaluate(message);
             Object rv = getRight().evaluate(message);

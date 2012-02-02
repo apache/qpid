@@ -26,6 +26,8 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.filter.SelectorParsingException;
+import org.apache.qpid.filter.selector.TokenMgrError;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
@@ -34,6 +36,7 @@ import org.apache.qpid.server.exchange.topic.TopicMatcherResult;
 import org.apache.qpid.server.exchange.topic.TopicNormalizer;
 import org.apache.qpid.server.exchange.topic.TopicParser;
 import org.apache.qpid.server.filter.JMSSelectorFilter;
+import org.apache.qpid.filter.selector.ParseException;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
@@ -193,7 +196,22 @@ public class TopicExchange extends AbstractExchange
 
         if(selectorRef == null || (selector = selectorRef.get())==null)
         {
-            selector = new JMSSelectorFilter(selectorString);
+            try
+            {
+                selector = new JMSSelectorFilter(selectorString);
+            }
+            catch (ParseException e)
+            {
+                throw new AMQInvalidArgumentException("Cannot parse JMS selector \"" + selectorString + "\"", e);
+            }
+            catch (SelectorParsingException e)
+            {
+                throw new AMQInvalidArgumentException("Cannot parse JMS selector \"" + selectorString + "\"", e);
+            }
+            catch (TokenMgrError e)
+            {
+                throw new AMQInvalidArgumentException("Cannot parse JMS selector \"" + selectorString + "\"", e);
+            }
             _selectorCache.put(selectorString, new WeakReference<JMSSelectorFilter>(selector));
         }
         return selector;

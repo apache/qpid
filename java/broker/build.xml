@@ -34,14 +34,7 @@
     <property name="qmf.output.file" value="BrokerSchema.java"/>
 
 
-    <target name="precompile" depends="gen_logging,gen_qmf">
-        <mkdir dir="${output.dir}"/>
-        <!-- Compile Selcector Code -->
-        <javacc target="src/main/grammar/SelectorParser.jj"
-                outputdirectory="${output.dir}"
-                javacchome="${project.root}/lib"/>
-    </target>
-
+    <target name="precompile" depends="gen_logging,gen_qmf"/>
 
   <target name="check_qmf_deps">
     <uptodate property="gen_qmf.notRequired" targetfile="${qmf.output.dir}/${qmf.output.file}">

@@ -15,24 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.server.filter;
+package org.apache.qpid.filter;
 //
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
 
-import org.apache.qpid.server.queue.Filterable;
-
 /**
- * A BooleanExpression is an expression that always
- * produces a Boolean result.
+ * Represents an expression
  */
-public interface BooleanExpression extends Expression
+public interface Expression
 {
 
     /**
-     * @param message
-     * @return true if the expression evaluates to Boolean.TRUE.
+     * @return the value of this expression
      */
-    public boolean matches(Filterable message);
+    public Object evaluate(FilterableMessage message);
 
 }

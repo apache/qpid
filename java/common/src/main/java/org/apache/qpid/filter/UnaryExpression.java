@@ -18,17 +18,14 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.filter;
+package org.apache.qpid.filter;
 //
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
 
-import org.apache.qpid.server.queue.Filterable;
-
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -75,31 +72,20 @@ public abstract class UnaryExpression implements Expression
             super(left);
         }
 
-        public boolean matches(Filterable message)
+        public boolean matches(FilterableMessage message)
         {
             Object object = evaluate(message);
 
             return (object != null) && (object == Boolean.TRUE);
         }
     }
-    ;
 
-    public static<E extends Exception> BooleanExpression createNOT(BooleanExpression left)
+    public static BooleanExpression createNOT(BooleanExpression left)
     {
         return new NotExpression(left);
     }
 
-    public static BooleanExpression createXPath(final String xpath)
-    {
-        return new XPathExpression(xpath);
-    }
-
-    public static BooleanExpression createXQuery(final String xpath)
-    {
-        return new XQueryExpression(xpath);
-    }
-
-    public static<E extends Exception> BooleanExpression createBooleanCast(Expression left)
+    public static BooleanExpression createBooleanCast(Expression left)
     {
         return new BooleanCastExpression(left);
     }
@@ -141,7 +127,7 @@ public abstract class UnaryExpression implements Expression
         }
         else
         {
-            throw new RuntimeException("Don't know how to negate: " + left);
+            throw new SelectorParsingException("Don't know how to negate: " + left);
         }
     }
 
@@ -153,11 +139,6 @@ public abstract class UnaryExpression implements Expression
     public Expression getRight()
     {
         return right;
-    }
-
-    public void setRight(Expression expression)
-    {
-        right = expression;
     }
 
     /**
@@ -192,7 +173,7 @@ public abstract class UnaryExpression implements Expression
      * Returns the symbol that represents this binary expression.  For example, addition is
      * represented by "+"
      *
-     * @return
+     * @return symbol
      */
     public abstract String getExpressionSymbol();
 
@@ -203,7 +184,7 @@ public abstract class UnaryExpression implements Expression
             super(left);
         }
 
-        public Object evaluate(Filterable message)
+        public Object evaluate(FilterableMessage message)
         {
             Object rvalue = getRight().evaluate(message);
             if (rvalue == null)
@@ -237,7 +218,7 @@ public abstract class UnaryExpression implements Expression
             _not = not;
         }
 
-        public Object evaluate(Filterable message)
+        public Object evaluate(FilterableMessage message)
         {
 
             Object rvalue = getRight().evaluate(message);
@@ -264,16 +245,14 @@ public abstract class UnaryExpression implements Expression
 
         public String toString()
         {
-            StringBuffer answer = new StringBuffer();
-            answer.append(getRight());
+            StringBuilder answer = new StringBuilder(String.valueOf(getRight()));
             answer.append(" ");
             answer.append(getExpressionSymbol());
             answer.append(" ( ");
 
             int count = 0;
-            for (Iterator i = _inList.iterator(); i.hasNext();)
+            for (Object o : _inList)
             {
-                Object o = (Object) i.next();
                 if (count != 0)
                 {
                     answer.append(", ");
@@ -308,7 +287,7 @@ public abstract class UnaryExpression implements Expression
             super(left);
         }
 
-        public Object evaluate(Filterable message)
+        public Object evaluate(FilterableMessage message)
         {
             Boolean lvalue = (Boolean) getRight().evaluate(message);
             if (lvalue == null)
@@ -316,7 +295,7 @@ public abstract class UnaryExpression implements Expression
                 return null;
             }
 
-            return lvalue.booleanValue() ? Boolean.FALSE : Boolean.TRUE;
+            return lvalue ? Boolean.FALSE : Boolean.TRUE;
         }
 
         public String getExpressionSymbol()
@@ -332,7 +311,7 @@ public abstract class UnaryExpression implements Expression
             super(left);
         }
 
-        public Object evaluate(Filterable message)
+        public Object evaluate(FilterableMessage message)
         {
             Object rvalue = getRight().evaluate(message);
             if (rvalue == null)
@@ -345,7 +324,7 @@ public abstract class UnaryExpression implements Expression
                 return Boolean.FALSE;
             }
 
-            return ((Boolean) rvalue).booleanValue() ? Boolean.TRUE : Boolean.FALSE;
+            return ((Boolean) rvalue) ? Boolean.TRUE : Boolean.FALSE;
         }
 
         public String toString()
