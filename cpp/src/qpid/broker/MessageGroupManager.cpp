@@ -210,7 +210,7 @@ bool MessageGroupManager::nextConsumableMessage( Consumer::shared_ptr& c, Queued
     next.position = c->getPosition();
     if (!freeGroups.empty()) {
         const framing::SequenceNumber& nextFree = freeGroups.begin()->first;
-        if (nextFree < next.position) {     // a free message is older than current
+        if (nextFree <= next.position) {  // take oldest free
             next.position = nextFree;
             --next.position;
         }
