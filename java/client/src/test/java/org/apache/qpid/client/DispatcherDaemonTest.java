@@ -21,6 +21,7 @@ package org.apache.qpid.client;
 import javax.jms.Session;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.url.URLSyntaxException;
 
@@ -47,7 +48,7 @@ public class DispatcherDaemonTest extends QpidTestCase
 
     public void testDispatcherIsRunInDaemonThreadWithConsumerMessageListenerAndDaemonFlagOn() throws Exception
     {
-        setTestSystemProperty(AMQSession.DAEMON_DISPATCHER, "true");
+        setTestSystemProperty(ClientProperties.DAEMON_DISPATCHER, "true");
         _session = createSession();
         _session.startDispatcherIfNecessary();
         assertTrue("Dispatcher thread should be daemon as qpid.jms.daemon.dispatcher is set to true",
