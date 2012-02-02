@@ -1536,6 +1536,58 @@ public class ServerConfigurationTest extends QpidTestCase
         assertTrue("C3P0 queue DLQ should be enabled, using broker default", c3p0.isDeadLetterQueueEnabled());
     }
 
+    public void testIsAmqp010enabled() throws ConfigurationException
+    {
+        // Check default
+        _serverConfig.initialise();
+        assertEquals(true, _serverConfig.isAmqp010enabled());
+
+        // Check value we set
+        _config.setProperty(ServerConfiguration.CONNECTOR_AMQP010ENABLED, false);
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals(false, _serverConfig.isAmqp010enabled());
+    }
+
+    public void testIsAmqp091enabled() throws ConfigurationException
+    {
+        // Check default
+        _serverConfig.initialise();
+        assertEquals(true, _serverConfig.isAmqp091enabled());
+
+        // Check value we set
+        _config.setProperty(ServerConfiguration.CONNECTOR_AMQP091ENABLED, false);
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals(false, _serverConfig.isAmqp091enabled());
+    }
+
+    public void testIsAmqp09enabled() throws ConfigurationException
+    {
+        // Check default
+        _serverConfig.initialise();
+        assertEquals(true, _serverConfig.isAmqp09enabled());
+
+        // Check value we set
+        _config.setProperty(ServerConfiguration.CONNECTOR_AMQP09ENABLED, false);
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals(false, _serverConfig.isAmqp09enabled());
+    }
+
+    public void testIsAmqp08enabled() throws ConfigurationException
+    {
+        // Check default
+        _serverConfig.initialise();
+        assertEquals(true, _serverConfig.isAmqp08enabled());
+
+        // Check value we set
+        _config.setProperty(ServerConfiguration.CONNECTOR_AMQP08ENABLED, false);
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals(false, _serverConfig.isAmqp08enabled());
+    }
+
     /**
      * Convenience method to output required security preamble for broker config
      */

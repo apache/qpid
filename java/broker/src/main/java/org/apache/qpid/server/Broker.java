@@ -192,7 +192,7 @@ public class Broker
                 for(int port : ports)
                 {
                     final Set<AmqpProtocolVersion> supported =
-                                    getSupportedVersions(port, exclude_0_10, exclude_0_9_1, exclude_0_9, exclude_0_8);
+                                    getSupportedVersions(port, exclude_0_10, exclude_0_9_1, exclude_0_9, exclude_0_8, serverConfig);
                     final NetworkTransportConfiguration settings =
                                     new ServerNetworkTransportConfiguration(serverConfig, port, bindAddress.getHostName(), Transport.TCP);
 
@@ -217,7 +217,7 @@ public class Broker
                 for(int sslPort : sslPorts)
                 {
                     final Set<AmqpProtocolVersion> supported =
-                                    getSupportedVersions(sslPort, exclude_0_10, exclude_0_9_1, exclude_0_9, exclude_0_8);
+                                    getSupportedVersions(sslPort, exclude_0_10, exclude_0_9_1, exclude_0_9, exclude_0_8, serverConfig);
                     final NetworkTransportConfiguration settings =
                         new ServerNetworkTransportConfiguration(serverConfig, sslPort, bindAddress.getHostName(), Transport.TCP);
 
@@ -243,23 +243,24 @@ public class Broker
 
     private static Set<AmqpProtocolVersion> getSupportedVersions(final int port, final Set<Integer> exclude_0_10,
                                                                 final Set<Integer> exclude_0_9_1, final Set<Integer> exclude_0_9,
-                                                                final Set<Integer> exclude_0_8)
+                                                                final Set<Integer> exclude_0_8,
+                                                                final ServerConfiguration serverConfig)
     {
         final EnumSet<AmqpProtocolVersion> supported = EnumSet.allOf(AmqpProtocolVersion.class);
 
-        if(exclude_0_10.contains(port))
+        if(exclude_0_10.contains(port) || !serverConfig.isAmqp010enabled())
         {
             supported.remove(AmqpProtocolVersion.v0_10);
         }
-        if(exclude_0_9_1.contains(port))
+        if(exclude_0_9_1.contains(port) || !serverConfig.isAmqp091enabled())
         {
             supported.remove(AmqpProtocolVersion.v0_9_1);
         }
-        if(exclude_0_9.contains(port))
+        if(exclude_0_9.contains(port) || !serverConfig.isAmqp09enabled())
         {
             supported.remove(AmqpProtocolVersion.v0_9);
         }
-        if(exclude_0_8.contains(port))
+        if(exclude_0_8.contains(port) || !serverConfig.isAmqp08enabled())
         {
             supported.remove(AmqpProtocolVersion.v0_8);
         }
