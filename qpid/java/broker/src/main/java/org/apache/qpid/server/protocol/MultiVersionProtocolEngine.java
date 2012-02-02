@@ -21,19 +21,19 @@
 package org.apache.qpid.server.protocol;
 
 
-import org.apache.log4j.Logger;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.util.Set;
 
+import org.apache.log4j.Logger;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.transport.ServerConnection;
 import org.apache.qpid.transport.ConnectionDelegate;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
-
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.util.Set;
 
 public class MultiVersionProtocolEngine implements ServerProtocolEngine
 {
@@ -391,6 +391,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
                 ServerProtocolEngine newDelegate = null;
                 byte[] newestSupported = null;
+                AmqpProtocolVersion newestSupportedVersion = null;
 
                 for(int i = 0; newDelegate == null && i < _creators.length; i++)
                 {
@@ -398,6 +399,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
                     if(_supported.contains(_creators[i].getVersion()))
                     {
                         newestSupported = _creators[i].getHeaderIdentifier();
+                        newestSupportedVersion = _creators[i].getVersion();
                         byte[] compareBytes = _creators[i].getHeaderIdentifier();
                         boolean equal = true;
                         for(int j = 0; equal && j<compareBytes.length; j++)
@@ -414,6 +416,10 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
                 // If no delegate is found then send back the most recent support protocol version id
                 if(newDelegate == null)
                 {
+                    if(_logger.isDebugEnabled())
+                    {
+                        _logger.debug("Unsupported protocol version requested, replying with: " + newestSupportedVersion);
+                    }
                     _sender.send(ByteBuffer.wrap(newestSupported));
                     _sender.flush();
 
