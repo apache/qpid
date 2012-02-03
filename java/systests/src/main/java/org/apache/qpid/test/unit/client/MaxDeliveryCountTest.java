@@ -298,7 +298,7 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
         consumer.close();
 
         //check the source queue is now empty
-        assertEquals("The queue should have 0 msgs left", 0, ((AMQSession<?,?>) clientSession).getQueueDepth(checkQueue));
+        assertEquals("The queue should have 0 msgs left", 0, ((AMQSession<?,?>) clientSession).getQueueDepth(checkQueue, true));
 
         //check the DLQ has the required number of rejected-without-requeue messages
         verifyDLQdepth(redeliverMsgs.size(), clientSession, durableSub);
@@ -341,7 +341,7 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
         }
 
         assertEquals("The DLQ should have " + expected + " msgs on it", expected,
-                        ((AMQSession<?,?>) clientSession).getQueueDepth(checkQueueDLQ));
+                        ((AMQSession<?,?>) clientSession).getQueueDepth(checkQueueDLQ, true));
     }
 
     private void verifyDLQcontent(Connection clientConnection, List<Integer> redeliverMsgs, String destName, boolean durableSub) throws JMSException
