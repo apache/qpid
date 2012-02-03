@@ -57,7 +57,7 @@ class ShortTests(BrokerTest):
         bs.connection.close()
 
     def promote(self, broker):
-        os.system("qpid-ha-status %s primary"%(broker.host_port()))
+        os.system("qpid-ha-tool --promote %s"%(broker.host_port()))
 
     def assert_missing(self, session, address):
         try:
