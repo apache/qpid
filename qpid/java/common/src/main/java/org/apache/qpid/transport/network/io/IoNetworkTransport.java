@@ -20,6 +20,17 @@
  */
 package org.apache.qpid.transport.network.io;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.nio.ByteBuffer;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocketFactory;
+
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.transport.ConnectionSettings;
@@ -29,22 +40,11 @@ import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.IncomingNetworkTransport;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.OutgoingNetworkTransport;
-import org.apache.qpid.transport.util.Logger;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocketFactory;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
-import java.nio.ByteBuffer;
+import org.slf4j.LoggerFactory;
 
 public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNetworkTransport
 {
-
-    private static final Logger LOGGER = Logger.get(IoNetworkTransport.class);
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(IoNetworkTransport.class);
 
     private Socket _socket;
     private IoNetworkConnection _connection;
@@ -126,7 +126,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
         try
         {
             _acceptor = new AcceptingThread(config, factory, sslContext);
-
+            _acceptor.setDaemon(false);
             _acceptor.start();
         }
         catch (IOException e)
@@ -139,9 +139,10 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
 
     private class AcceptingThread extends Thread
     {
+        private volatile boolean _closed = false;
         private NetworkTransportConfiguration _config;
         private ProtocolEngineFactory _factory;
-        private SSLContext _sslContent;
+        private SSLContext _sslContext;
         private ServerSocket _serverSocket;
 
         private AcceptingThread(NetworkTransportConfiguration config,
@@ -151,7 +152,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
         {
             _config = config;
             _factory = factory;
-            _sslContent = sslContext;
+            _sslContext = sslContext;
 
             InetSocketAddress address = new InetSocketAddress(config.getHost(), config.getPort());
 
@@ -161,7 +162,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
             }
             else
             {
-                SSLServerSocketFactory socketFactory = sslContext.getServerSocketFactory();
+                SSLServerSocketFactory socketFactory = _sslContext.getServerSocketFactory();
                 _serverSocket = socketFactory.createServerSocket();
             }
 
@@ -177,6 +178,9 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
          */
         public void close()
         {
+            LOGGER.debug("Shutting down the Acceptor");
+            _closed = true;
+
             if (!_serverSocket.isClosed())
             {
                 try
@@ -195,7 +199,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
         {
             try
             {
-                while (true)
+                while (!_closed)
                 {
                     try
                     {
@@ -212,23 +216,35 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
 
                         NetworkConnection connection = new IoNetworkConnection(socket, engine, sendBufferSize, receiveBufferSize, _timeout);
 
-
                         engine.setNetworkConnection(connection, connection.getSender());
 
                         connection.start();
-
-
                     }
                     catch(RuntimeException e)
                     {
-                        LOGGER.error(e, "Error in Acceptor thread " + _config.getPort());
+                        LOGGER.error("Error in Acceptor thread on port " + _config.getPort(), e);
+                    }
+                    catch(IOException e)
+                    {
+                        if(!_closed)
+                        {
+                            LOGGER.error("Error in Acceptor thread on port " + _config.getPort(), e);
+                            try
+                            {
+                                //Delay to avoid tight spinning the loop during issues such as too many open files
+                                Thread.sleep(1000);
+                            }
+                            catch (InterruptedException ie)
+                            {
+                                //ignore
+                            }
+                        }
                     }
                 }
             }
-            catch (IOException e)
+            finally
             {
-                LOGGER.debug(e, "SocketException - no new connections will be accepted on port "
-                        + _config.getPort());
+                LOGGER.debug("Acceptor exiting, no new connections will be accepted on port " + _config.getPort());
             }
         }
 
