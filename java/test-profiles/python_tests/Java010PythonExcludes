@@ -84,6 +84,7 @@ qpid_tests.broker_0_10.alternate_exchange.AlternateExchangeTests.test_queue_dele
 qpid_tests.broker_0_10.alternate_exchange.AlternateExchangeTests.test_queue_delete_no_match
 qpid_tests.broker_0_10.alternate_exchange.AlternateExchangeTests.test_reject_no_match
 qpid_tests.broker_0_10.alternate_exchange.AlternateExchangeTests.test_add_alternate_to_exchange
+qpid_tests.broker_0_10.new_api.GeneralTests.test_qpid_3481_acquired_to_alt_exchange
 
 #QPID-3596 Broker does not validate for reserved exchange names on create/bind.
 qpid_tests.broker_0_10.exchange.DeclareMethodExchangeFieldReservedRuleTests.*
