@@ -24,7 +24,7 @@
 // These tests requires a broker capable of 0-8/0-9/0-9-1 and 0-10 concurrently
 org.apache.qpid.test.client.message.JMSDestinationTest#testReceiveResend
 org.apache.qpid.server.message.MessageProtocolConversionTest#*
-org.apache.qpid.server.DisablingProtocolsTest#*
+org.apache.qpid.server.SupportedProtocolVersionsTest#*
 
 
 // QPID-2478 test fails when run against broker using 0-8/9
