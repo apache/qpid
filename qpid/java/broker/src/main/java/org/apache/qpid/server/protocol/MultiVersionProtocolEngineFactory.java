@@ -35,21 +35,29 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
 
     private final IApplicationRegistry _appRegistry;
     private final Set<AmqpProtocolVersion> _supported;
+    private final AmqpProtocolVersion _defaultSupportedReply;
 
-    public MultiVersionProtocolEngineFactory(Set<AmqpProtocolVersion> supportedVersions)
+    public MultiVersionProtocolEngineFactory(final Set<AmqpProtocolVersion> supportedVersions, final AmqpProtocolVersion defaultSupportedReply)
     {
+        if(defaultSupportedReply != null && !supportedVersions.contains(defaultSupportedReply))
+        {
+            throw new IllegalArgumentException("The configured default reply (" + defaultSupportedReply
+                                             + ") to an unsupported protocol version initiation is itself not supported!");
+        }
+
         _appRegistry = ApplicationRegistry.getInstance();
         _supported = supportedVersions;
+        _defaultSupportedReply = defaultSupportedReply;
     }
 
     public ServerProtocolEngine newProtocolEngine(NetworkConnection network)
     {
-        return new MultiVersionProtocolEngine(_appRegistry, _supported, network, ID_GENERATOR.getAndIncrement());
+        return new MultiVersionProtocolEngine(_appRegistry, _supported, _defaultSupportedReply, ID_GENERATOR.getAndIncrement(), network);
     }
 
     public ServerProtocolEngine newProtocolEngine()
     {
-        return new MultiVersionProtocolEngine(_appRegistry, _supported, ID_GENERATOR.getAndIncrement());
+        return new MultiVersionProtocolEngine(_appRegistry, _supported, _defaultSupportedReply, ID_GENERATOR.getAndIncrement());
     }
 
 }

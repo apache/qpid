@@ -121,7 +121,7 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
         Set<AmqpProtocolVersion> versions = EnumSet.allOf(AmqpProtocolVersion.class);
 
         MultiVersionProtocolEngineFactory factory =
-            new MultiVersionProtocolEngineFactory(versions);
+            new MultiVersionProtocolEngineFactory(versions, null);
 
         //create a dummy to retrieve the 'current' ID number
         long previousId = factory.newProtocolEngine(new TestNetworkConnection()).getConnectionId();
@@ -142,6 +142,26 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
             assertEquals("ID was not as expected following receipt of the AMQP version header", expectedID, engine.getConnectionId());
 
             previousId = expectedID;
+        }
+    }
+
+    /**
+     * Test to verify that when requesting a ProtocolEngineFactory to produce engines having a default reply to unsupported
+     * version initiations, there is enforcement that the default reply is itself a supported protocol version.
+     */
+    public void testUnsupportedDefaultReplyCausesIllegalArgumentException()
+    {
+        Set<AmqpProtocolVersion> versions = EnumSet.allOf(AmqpProtocolVersion.class);
+        versions.remove(AmqpProtocolVersion.v0_9);
+
+        try
+        {
+            new MultiVersionProtocolEngineFactory(versions, AmqpProtocolVersion.v0_9);
+            fail("should not have been allowed to create the factory");
+        }
+        catch(IllegalArgumentException iae)
+        {
+            //expected
         }
     }
 }

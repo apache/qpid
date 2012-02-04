@@ -31,6 +31,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
+import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.signal.SignalHandlerTask;
@@ -91,6 +92,7 @@ public class ServerConfiguration extends ConfigurationPlugin
     public static final String CONNECTOR_AMQP091ENABLED = "connector.amqp091enabled";
     public static final String CONNECTOR_AMQP09ENABLED = "connector.amqp09enabled";
     public static final String CONNECTOR_AMQP08ENABLED = "connector.amqp08enabled";
+    public static final String CONNECTOR_AMQP_SUPPORTED_REPLY = "connector.amqpDefaultSupportedProtocolReply";
 
     {
         envVarMap.put("QPID_PORT", "connector.port");
@@ -861,4 +863,13 @@ public class ServerConfiguration extends ConfigurationPlugin
         return getConfig().getBoolean(CONNECTOR_AMQP08ENABLED, true);
     }
 
+    /**
+     * Returns the configured default reply to an unsupported AMQP protocol initiation, or null if there is none
+     */
+    public AmqpProtocolVersion getDefaultSupportedProtocolReply()
+    {
+        String reply = getConfig().getString(CONNECTOR_AMQP_SUPPORTED_REPLY, null);
+
+        return reply == null ? null : AmqpProtocolVersion.valueOf(reply);
+    }
 }
