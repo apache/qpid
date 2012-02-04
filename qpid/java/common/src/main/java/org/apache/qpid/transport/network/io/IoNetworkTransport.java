@@ -201,9 +201,10 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
             {
                 while (!_closed)
                 {
+                    Socket socket = null;
                     try
                     {
-                        Socket socket = _serverSocket.accept();
+                        socket = _serverSocket.accept();
                         socket.setTcpNoDelay(_config.getTcpNoDelay());
 
                         final Integer sendBufferSize = _config.getSendBufferSize();
@@ -223,12 +224,14 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
                     catch(RuntimeException e)
                     {
                         LOGGER.error("Error in Acceptor thread on port " + _config.getPort(), e);
+                        closeSocketIfNecessary(socket);
                     }
                     catch(IOException e)
                     {
                         if(!_closed)
                         {
                             LOGGER.error("Error in Acceptor thread on port " + _config.getPort(), e);
+                            closeSocketIfNecessary(socket);
                             try
                             {
                                 //Delay to avoid tight spinning the loop during issues such as too many open files
@@ -236,7 +239,8 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
                             }
                             catch (InterruptedException ie)
                             {
-                                //ignore
+                                LOGGER.debug("Stopping acceptor due to interrupt request");
+                                _closed = true;
                             }
                         }
                     }
@@ -244,11 +248,27 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
             }
             finally
             {
-                LOGGER.debug("Acceptor exiting, no new connections will be accepted on port " + _config.getPort());
+                if(LOGGER.isDebugEnabled())
+                {
+                    LOGGER.debug("Acceptor exiting, no new connections will be accepted on port " + _config.getPort());
+                }
             }
         }
 
-
+        private void closeSocketIfNecessary(final Socket socket)
+        {
+            if(socket != null)
+            {
+                try
+                {
+                    socket.close();
+                }
+                catch (IOException e)
+                {
+                    LOGGER.debug("Exception while closing socket", e);
+                }
+            }
+        }
     }
 
 }
