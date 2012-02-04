@@ -187,18 +187,21 @@ public class Broker
                 bindAddress = InetAddress.getByAddress(parseIP(bindAddr));
             }
 
+            final AmqpProtocolVersion defaultSupportedProtocolReply = serverConfig.getDefaultSupportedProtocolReply();
+
             if (!serverConfig.getSSLOnly())
             {
                 for(int port : ports)
                 {
                     final Set<AmqpProtocolVersion> supported =
                                     getSupportedVersions(port, exclude_0_10, exclude_0_9_1, exclude_0_9, exclude_0_8, serverConfig);
+
                     final NetworkTransportConfiguration settings =
                                     new ServerNetworkTransportConfiguration(serverConfig, port, bindAddress.getHostName(), Transport.TCP);
 
                     final IncomingNetworkTransport transport = Transport.getIncomingTransportInstance();
                     final MultiVersionProtocolEngineFactory protocolEngineFactory =
-                                    new MultiVersionProtocolEngineFactory(supported);
+                                    new MultiVersionProtocolEngineFactory(supported, defaultSupportedProtocolReply);
 
                     transport.accept(settings, protocolEngineFactory, null);
                     ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, port),
@@ -223,7 +226,7 @@ public class Broker
 
                     final IncomingNetworkTransport transport = Transport.getIncomingTransportInstance();
                     final MultiVersionProtocolEngineFactory protocolEngineFactory =
-                                    new MultiVersionProtocolEngineFactory(supported);
+                                    new MultiVersionProtocolEngineFactory(supported, defaultSupportedProtocolReply);
 
                     transport.accept(settings, protocolEngineFactory, sslContext);
                     ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, sslPort),
