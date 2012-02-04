@@ -143,7 +143,7 @@ public class SortedQueueTest extends QpidBrokerTestCase
         {
             try
             {
-                consumerThread.join(5000L);
+                consumerThread.join(getConsumerThreadJoinInterval());
             }
             catch(InterruptedException e)
             {
@@ -154,6 +154,11 @@ public class SortedQueueTest extends QpidBrokerTestCase
         assertEquals("Incorrect number of messages received", VALUES.length, consumerThread.getConsumed());
 
         producer.close();
+    }
+
+    private long getConsumerThreadJoinInterval()
+    {
+        return isBrokerStorePersistent() ? 50000L: 5000L;
     }
 
     public void testSortedQueueWithAscendingSortedKeys() throws JMSException, NamingException, AMQException
@@ -177,7 +182,7 @@ public class SortedQueueTest extends QpidBrokerTestCase
         {
             try
             {
-                consumerThread.join(5000L);
+                consumerThread.join(getConsumerThreadJoinInterval());
             }
             catch(InterruptedException e)
             {
@@ -212,7 +217,8 @@ public class SortedQueueTest extends QpidBrokerTestCase
         TextMessage received = null;
         int messageCount = 0;
 
-        while((received = (TextMessage) consumer.receive(1000)) != null)
+        long receiveInterval = isBrokerStorePersistent() ? 3000l : 1000l;
+        while((received = (TextMessage) consumer.receive(receiveInterval)) != null)
         {
             assertEquals("Received message with unexpected sorted key value", "samesortkeyvalue",
                             received.getStringProperty(TEST_SORT_KEY));
