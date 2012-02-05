@@ -65,7 +65,7 @@ public class ClientDelegate extends ConnectionDelegate
     {
         Map<String,Object> clientProperties = new HashMap<String,Object>();
 
-        if(this._connectionSettings.getClientProperties() != null)
+        if(_connectionSettings.getClientProperties() != null)
         {
             clientProperties.putAll(_connectionSettings.getClientProperties());
         }
