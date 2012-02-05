@@ -92,7 +92,7 @@ public class AMQProtocolSessionMBean extends AbstractAMQManagedConnectionObject
 
     public String getVersion()
     {
-        return (_protocolSession.getClientVersion() == null) ? null : _protocolSession.getClientVersion().toString();
+        return _protocolSession.getClientVersion();
     }
 
     public Date getLastIoTime()

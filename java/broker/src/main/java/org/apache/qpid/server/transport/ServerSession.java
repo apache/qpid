@@ -526,12 +526,12 @@ public class ServerSession extends Session
     
     public Principal getAuthorizedPrincipal()
     {
-        return ((ServerConnection) getConnection()).getAuthorizedPrincipal();
+        return getConnection().getAuthorizedPrincipal();
     }
     
     public Subject getAuthorizedSubject()
     {
-        return ((ServerConnection) getConnection()).getAuthorizedSubject();
+        return getConnection().getAuthorizedSubject();
     }
 
     public void addSessionCloseTask(Task task)
@@ -546,7 +546,7 @@ public class ServerSession extends Session
 
     public Object getReference()
     {
-        return ((ServerConnection) getConnection()).getReference();
+        return getConnection().getReference();
     }
 
     public MessageStore getMessageStore()
@@ -626,12 +626,18 @@ public class ServerSession extends Session
 
     public AMQConnectionModel getConnectionModel()
     {
-        return (ServerConnection) getConnection();
+        return getConnection();
     }
 
     public String getClientID()
     {
         return getConnection().getClientId();
+    }
+
+    @Override
+    public ServerConnection getConnection()
+    {
+        return (ServerConnection) super.getConnection();
     }
 
     public LogActor getLogActor()
@@ -715,8 +721,8 @@ public class ServerSession extends Session
 
     public String toLogString()
     {
-        long connectionId = getConnection() instanceof ServerConnection
-                            ? ((ServerConnection) getConnection()).getConnectionId()
+        long connectionId = super.getConnection() instanceof ServerConnection
+                            ? getConnection().getConnectionId()
                             : -1;
 
         String remoteAddress = _connectionConfig instanceof ProtocolEngine

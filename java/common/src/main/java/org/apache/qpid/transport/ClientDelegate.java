@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.transport;
 
+import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.configuration.ClientProperties;
+import org.apache.qpid.properties.ConnectionStartProperties;
 import org.apache.qpid.transport.util.Logger;
 
 import static org.apache.qpid.transport.Connection.State.OPEN;
@@ -27,8 +30,6 @@ import static org.apache.qpid.transport.Connection.State.RESUMING;
 
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,10 +71,12 @@ public class ClientDelegate extends ConnectionDelegate
             clientProperties.putAll(_connectionSettings.getClientProperties());
         }
 
-        clientProperties.put("qpid.session_flow", 1);
-        clientProperties.put("qpid.client_pid",getPID());
-        clientProperties.put("qpid.client_process",
-                System.getProperty("qpid.client_process","Qpid Java Client"));
+        clientProperties.put(ConnectionStartProperties.SESSION_FLOW, 1);
+        clientProperties.put(ConnectionStartProperties.PID, ConnectionStartProperties.getPID());
+        clientProperties.put(ConnectionStartProperties.PROCESS, System.getProperty(ClientProperties.PROCESS_NAME, "Qpid Java Client"));
+        clientProperties.put(ConnectionStartProperties.VERSION_0_10, QpidProperties.getReleaseVersion());
+        clientProperties.put(ConnectionStartProperties.PRODUCT, QpidProperties.getProductName());
+        clientProperties.put(ConnectionStartProperties.PLATFORM, ConnectionStartProperties.getPlatformInfo());
 
         List<Object> brokerMechs = start.getMechanisms();
         if (brokerMechs == null || brokerMechs.isEmpty())
@@ -194,30 +197,6 @@ public class ClientDelegate extends ConnectionDelegate
                      " using the brokers max supported value of %s sec instead.", i,max);
             return max;
         }
-    }
-
-    private int getPID()
-    {
-        RuntimeMXBean rtb = ManagementFactory.getRuntimeMXBean();
-        String processName = rtb.getName();
-        if (processName != null && processName.indexOf('@')>0)
-        {
-            try
-            {
-                return Integer.parseInt(processName.substring(0,processName.indexOf('@')));
-            }
-            catch(Exception e)
-            {
-                log.warn("Unable to get the client PID due to error",e);
-                return -1;
-            }
-        }
-        else
-        {
-            log.warn("Unable to get the client PID due to unsupported format : " + processName);
-            return -1;
-        }
-
     }
 
     public ConnectionSettings getConnectionSettings()

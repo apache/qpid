@@ -488,4 +488,14 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
             _mBean = null;
         }
     }
+
+    public String getClientId()
+    {
+        return getConnectionDelegate().getClientId();
+    }
+
+    public String getClientVersion()
+    {
+        return getConnectionDelegate().getClientVersion();
+    }
 }
