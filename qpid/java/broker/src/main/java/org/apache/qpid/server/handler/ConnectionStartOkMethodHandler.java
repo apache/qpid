@@ -80,10 +80,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
             final AuthenticationResult authResult = authMgr.authenticate(ss, body.getResponse());
             //save clientProperties
-            if (session.getClientProperties() == null)
-            {
-                session.setClientProperties(body.getClientProperties());
-            }
+            session.setClientProperties(body.getClientProperties());
 
             MethodRegistry methodRegistry = session.getMethodRegistry();
 

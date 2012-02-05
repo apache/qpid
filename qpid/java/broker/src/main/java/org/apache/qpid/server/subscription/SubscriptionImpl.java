@@ -24,7 +24,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
-import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQChannel;
@@ -319,9 +318,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     private FilterManager _filters;
 
     private final Boolean _autoClose;
-
-
-    private static final String CLIENT_PROPERTIES_INSTANCE = ClientProperties.instance.toString();
 
     private AMQQueue _queue;
     private final AtomicBoolean _deleted = new AtomicBoolean(false);

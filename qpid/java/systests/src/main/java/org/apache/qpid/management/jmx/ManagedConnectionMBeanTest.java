@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
@@ -241,5 +242,37 @@ public class ManagedConnectionMBeanTest extends QpidBrokerTestCase
         final ManagedConnection mBean = connections.get(0);
         assertNotNull("Connection MBean is null", mBean);
         assertEquals("Unexpected authorized id", "guest", mBean.getAuthorizedId());
+    }
+
+    public void testClientVersion() throws Exception
+    {
+        List<ManagedConnection> connections = _jmxUtils.getManagedConnections("test");
+        assertNotNull("Connection MBean is not found", connections);
+        assertEquals("Unexpected number of connection mbeans", 1, connections.size());
+        final ManagedConnection mBean = connections.get(0);
+        assertNotNull("Connection MBean is null", mBean);
+
+        String expectedVersion = QpidProperties.getReleaseVersion();
+        assertNotNull("version should not be null", expectedVersion);
+        assertFalse("version should not be the empty string", expectedVersion.equals(""));
+        assertFalse("version should not be the string 'null'", expectedVersion.equals("null"));
+
+        assertEquals("Unexpected version", expectedVersion, mBean.getVersion());
+    }
+
+    public void testClientId() throws Exception
+    {
+        List<ManagedConnection> connections = _jmxUtils.getManagedConnections("test");
+        assertNotNull("Connection MBean is not found", connections);
+        assertEquals("Unexpected number of connection mbeans", 1, connections.size());
+        final ManagedConnection mBean = connections.get(0);
+        assertNotNull("Connection MBean is null", mBean);
+
+        String expectedClientId = _connection.getClientID();
+        assertNotNull("ClientId should not be null", expectedClientId);
+        assertFalse("ClientId should not be the empty string", expectedClientId.equals(""));
+        assertFalse("ClientId should not be the string 'null'", expectedClientId.equals("null"));
+
+        assertEquals("Unexpected ClientId", expectedClientId, mBean.getClientId());
     }
 }

@@ -144,4 +144,10 @@ public class ClientProperties
      * System property to enable allow dispatcher thread to be run as a daemon thread
      */
     public static final String DAEMON_DISPATCHER = "qpid.jms.daemon.dispatcher";
+
+    /**
+     * Used to name the process utilising the Qpid client, to override the default
+     * value is used in the ConnectionStartOk reply to the broker.
+     */
+    public static final String PROCESS_NAME = "qpid.client_process";
 }

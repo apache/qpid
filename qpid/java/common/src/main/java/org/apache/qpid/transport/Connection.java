@@ -124,7 +124,6 @@ public class Connection extends ConnectionInvoker
     private String userID;
     private ConnectionSettings conSettings;
     private SecurityLayer securityLayer;
-    private String _clientId;
 
     private final AtomicBoolean connectionLost = new AtomicBoolean(false);
 
@@ -158,16 +157,6 @@ public class Connection extends ConnectionInvoker
             this.state = state;
             lock.notifyAll();
         }
-    }
-
-    public String getClientId()
-    {
-        return _clientId;
-    }
-
-    public void setClientId(String id)
-    {
-        _clientId = id;
     }
 
     void setLocale(String locale)
