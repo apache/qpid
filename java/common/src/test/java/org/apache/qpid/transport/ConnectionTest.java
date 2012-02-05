@@ -170,7 +170,7 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
                 }
             }
         });
-        conn.connect("localhost", port, null, "guest", "guest", false);
+        conn.connect("localhost", port, null, "guest", "guest", false, null);
         return conn;
     }
 
@@ -275,7 +275,7 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
         Connection conn = new Connection();
         conn.addConnectionListener(new FailoverConnectionListener());
         conn.setConnectionDelegate(new ClientDelegate(new ConnectionSettings()));
-        conn.connect("localhost", port, null, "guest", "guest");
+        conn.connect("localhost", port, null, "guest", "guest", false, null);
         Session ssn = conn.createSession(1);
         ssn.setSessionListener(new TestSessionListener());
 
@@ -331,7 +331,7 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
         Connection conn = new Connection();
         conn.setConnectionDelegate(new ClientDelegate(new ConnectionSettings()));
         conn.addConnectionListener(new FailoverConnectionListener());
-        conn.connect("localhost", port, null, "guest", "guest");
+        conn.connect("localhost", port, null, "guest", "guest", false, null);
         Session ssn = conn.createSession(1);
         ssn.setSessionListener(new TestSessionListener());
 
@@ -353,7 +353,7 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
 
         Connection conn = new Connection();
         conn.setConnectionDelegate(new ClientDelegate(new ConnectionSettings()));
-        conn.connect("localhost", port, null, "guest", "guest");
+        conn.connect("localhost", port, null, "guest", "guest", false, null);
         Session ssn = conn.createSession();
         ssn.sessionFlush(EXPECTED);
         send(ssn, "SINK 0");
@@ -367,7 +367,7 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
         startServer();
         Connection conn = new Connection();
         conn.setConnectionDelegate(new ClientDelegate(new ConnectionSettings()));
-        conn.connect("localhost", port, null, "guest", "guest");
+        conn.connect("localhost", port, null, "guest", "guest", false, null);
         conn.connectionHeartbeat();
         conn.close();
     }
@@ -378,7 +378,7 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
 
         Connection conn = new Connection();
         conn.setConnectionDelegate(new ClientDelegate(new ConnectionSettings()));
-        conn.connect("localhost", port, null, "guest", "guest");
+        conn.connect("localhost", port, null, "guest", "guest", false, null);
         Session ssn = conn.createSession();
         send(ssn, "EXCP 0");
         Thread.sleep(3000);
@@ -398,7 +398,7 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
 
         Connection conn = new Connection();
         conn.setConnectionDelegate(new ClientDelegate(new ConnectionSettings()));
-        conn.connect("localhost", port, null, "guest", "guest");
+        conn.connect("localhost", port, null, "guest", "guest", false, null);
         Session ssn = conn.createSession();
         send(ssn, "EXCP 0", true);
         try
@@ -424,7 +424,7 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
         public void closed(Connection conn)
         {
             queue = true;
-            conn.connect("localhost", port, null, "guest", "guest");
+            conn.connect("localhost", port, null, "guest", "guest", false, null);
             conn.resume();
         }
     }

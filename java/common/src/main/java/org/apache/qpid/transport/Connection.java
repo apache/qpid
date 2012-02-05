@@ -200,23 +200,12 @@ public class Connection extends ConnectionInvoker
         return saslClient;
     }
 
-    public void connect(String host, int port, String vhost, String username, String password)
+    public void connect(String host, int port, String vhost, String username, String password, boolean ssl, String saslMechs)
     {
-        connect(host, port, vhost, username, password, false);
+        connect(host, port, vhost, username, password, ssl, saslMechs, null);
     }
 
-    public void connect(String host, int port, String vhost, String username, String password, boolean ssl)
-    {
-        connect(host, port, vhost, username, password, ssl,"PLAIN");
-    }
-
-    public void connect(String host, int port, String vhost, String username, String password, boolean ssl,String saslMechs)
-    {
-        connect(host, port, vhost, username, password, ssl,saslMechs, Collections.EMPTY_MAP);
-    }
-
-
-    public void connect(String host, int port, String vhost, String username, String password, boolean ssl,String saslMechs,Map<String,Object> clientProps)
+    public void connect(String host, int port, String vhost, String username, String password, boolean ssl, String saslMechs, Map<String,Object> clientProps)
     {
         ConnectionSettings settings = new ConnectionSettings();
         settings.setHost(host);
