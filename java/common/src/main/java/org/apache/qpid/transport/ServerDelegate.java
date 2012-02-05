@@ -69,9 +69,6 @@ public class ServerDelegate extends ConnectionDelegate
         conn.setLocale(ok.getLocale());
         String mechanism = ok.getMechanism();
 
-        String clientName = (String) ok.getClientProperties().get("clientName");
-        conn.setClientId(clientName);
-
         if (mechanism == null || mechanism.length() == 0)
         {
             tuneAuthorizedConnection(conn);

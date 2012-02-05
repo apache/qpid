@@ -34,6 +34,7 @@ import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ChannelLimitReachedException;
 import org.apache.qpid.jms.Session;
+import org.apache.qpid.properties.ConnectionStartProperties;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ConnectionClose;
@@ -428,7 +429,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         Map<String, Object> clientProps = new HashMap<String, Object>();
         try
         {
-            clientProps.put("clientName", _conn.getClientID());
+            clientProps.put(ConnectionStartProperties.CLIENT_ID_0_10, _conn.getClientID());
 	        conSettings.setClientProperties(clientProps);
         }
         catch (JMSException e)

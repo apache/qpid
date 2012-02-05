@@ -27,8 +27,8 @@ import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.codec.AMQCodecFactory;
-import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.framing.*;
+import org.apache.qpid.properties.ConnectionStartProperties;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
@@ -87,8 +87,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
 {
     private static final Logger _logger = Logger.getLogger(AMQProtocolEngine.class);
 
-    private static final String CLIENT_PROPERTIES_INSTANCE = ClientProperties.instance.toString();
-
     // to save boxing the channelId and looking up in a map... cache in an array the low numbered
     // channels.  This value must be of the form 2^x - 1.
     private static final int CHANNEL_CACHE_SIZE = 0xff;
@@ -96,7 +94,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
 
     private AMQShortString _contextKey;
 
-    private AMQShortString _clientVersion = null;
+    private String _clientVersion = null;
 
     private VirtualHost _virtualHost;
 
@@ -133,7 +131,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
     private ProtocolOutputConverter _protocolOutputConverter;
     private Subject _authorizedSubject;
     private MethodDispatcher _dispatcher;
-    private ProtocolSessionIdentifier _sessionIdentifier;
 
     private final long _sessionID;
 
@@ -921,31 +918,22 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
         _saslServer = saslServer;
     }
 
-    public FieldTable getClientProperties()
-    {
-        return _clientProperties;
-    }
-
     public void setClientProperties(FieldTable clientProperties)
     {
         _clientProperties = clientProperties;
         if (_clientProperties != null)
         {
-            if (_clientProperties.getString(CLIENT_PROPERTIES_INSTANCE) != null)
+            if (_clientProperties.getString(ConnectionStartProperties.CLIENT_ID_0_8) != null)
             {
-                String clientID = _clientProperties.getString(CLIENT_PROPERTIES_INSTANCE);
+                String clientID = _clientProperties.getString(ConnectionStartProperties.CLIENT_ID_0_8);
                 setContextKey(new AMQShortString(clientID));
 
                 // Log the Opening of the connection for this client
                 _actor.message(ConnectionMessages.OPEN(clientID, _protocolVersion.toString(), true, true));
             }
 
-            if (_clientProperties.getString(ClientProperties.version.toString()) != null)
-            {
-                _clientVersion = new AMQShortString(_clientProperties.getString(ClientProperties.version.toString()));
-            }
+            _clientVersion = _clientProperties.getString(ConnectionStartProperties.VERSION_0_8);
         }
-        _sessionIdentifier = new ProtocolSessionIdentifier(this);
     }
 
     private void setProtocolVersion(ProtocolVersion pv)
@@ -1154,14 +1142,9 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
         return _lastReceivedTime;
     }
 
-    public ProtocolSessionIdentifier getSessionIdentifier()
-    {
-        return _sessionIdentifier;
-    }
-
     public String getClientVersion()
     {
-        return (_clientVersion == null) ? null : _clientVersion.toString();
+        return _clientVersion;
     }
 
     public Boolean isIncoming()

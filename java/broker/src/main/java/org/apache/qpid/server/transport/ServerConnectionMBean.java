@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.transport;
 
-import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -76,7 +75,7 @@ public class ServerConnectionMBean extends AbstractAMQManagedConnectionObject
     @Override
     public String getVersion()
     {
-        return String.valueOf(_serverConnection.getConnectionDelegate().getClientProperties().get(ClientProperties.version.toString()));
+        return String.valueOf(_serverConnection.getClientVersion());
     }
 
     @Override

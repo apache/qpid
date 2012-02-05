@@ -21,6 +21,7 @@
 package org.apache.qpid.server.transport;
 
 import org.apache.qpid.common.ServerPropertyNames;
+import org.apache.qpid.properties.ConnectionStartProperties;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.server.configuration.BrokerConfig;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
@@ -289,5 +290,15 @@ public class ServerConnectionDelegate extends ServerDelegate
     public Map<String,Object> getClientProperties()
     {
         return _clientProperties;
+    }
+
+    public String getClientId()
+    {
+        return _clientProperties == null ? null : (String) _clientProperties.get(ConnectionStartProperties.CLIENT_ID_0_10);
+    }
+
+    public String getClientVersion()
+    {
+        return _clientProperties == null ? null : (String) _clientProperties.get(ConnectionStartProperties.VERSION_0_10);
     }
 }
