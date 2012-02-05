@@ -32,6 +32,8 @@ import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationS
 import org.apache.qpid.server.subscription.Subscription_0_10;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
@@ -46,6 +48,8 @@ import java.util.StringTokenizer;
 
 public class ServerConnectionDelegate extends ServerDelegate
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ServerConnectionDelegate.class);
+
     private final String _localFQDN;
     private final IApplicationRegistry _appRegistry;
     private int _maxNoOfChannels;
@@ -164,19 +168,19 @@ public class ServerConnectionDelegate extends ServerDelegate
 
             if (!vhost.getSecurityManager().accessVirtualhost(vhostName, ((ProtocolEngine) sconn.getConfig()).getRemoteAddress()))
             {
-                sconn.invoke(new ConnectionClose(ConnectionCloseCode.CONNECTION_FORCED, "Permission denied '"+vhostName+"'"));
                 sconn.setState(Connection.State.CLOSING);
+                sconn.invoke(new ConnectionClose(ConnectionCloseCode.CONNECTION_FORCED, "Permission denied '"+vhostName+"'"));
             }
             else
             {
-	            sconn.invoke(new ConnectionOpenOk(Collections.emptyList()));
-	            sconn.setState(Connection.State.OPEN);
+                sconn.setState(Connection.State.OPEN);
+                sconn.invoke(new ConnectionOpenOk(Collections.emptyList()));
             }
         }
         else
         {
-            sconn.invoke(new ConnectionClose(ConnectionCloseCode.INVALID_PATH, "Unknown virtualhost '"+vhostName+"'"));
             sconn.setState(Connection.State.CLOSING);
+            sconn.invoke(new ConnectionClose(ConnectionCloseCode.INVALID_PATH, "Unknown virtualhost '"+vhostName+"'"));
         }
         
     }
@@ -189,7 +193,7 @@ public class ServerConnectionDelegate extends ServerDelegate
 
         if (okChannelMax > getChannelMax())
         {
-            _logger.error("Connection '" + sconn.getConnectionId() + "' being severed, " +
+            LOGGER.error("Connection '" + sconn.getConnectionId() + "' being severed, " +
                     "client connectionTuneOk returned a channelMax (" + okChannelMax +
                     ") above the servers offered limit (" + getChannelMax() +")");
 
