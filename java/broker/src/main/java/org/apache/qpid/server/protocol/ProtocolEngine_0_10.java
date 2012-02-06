@@ -90,8 +90,8 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
         _connection.setSender(new Disassembler(sender, MAX_FRAME_SIZE));
 
         // FIXME Two log messages to maintain compatibility with earlier protocol versions
-        _connection.getLogActor().message(ConnectionMessages.OPEN(null, null, false, false));
-        _connection.getLogActor().message(ConnectionMessages.OPEN(null, "0-10", false, true));
+        _connection.getLogActor().message(ConnectionMessages.OPEN(null, null, null, false, false, false));
+        _connection.getLogActor().message(ConnectionMessages.OPEN(null, "0-10", null, false, true, false));
     }
 
     public SocketAddress getRemoteAddress()
