@@ -462,7 +462,6 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
                     _delegate = newDelegate;
 
                     _header.flip();
-                    _delegate.setNetworkConnection(_network, _sender);
                     _delegate.received(_header);
                     if(msg.hasRemaining())
                     {
