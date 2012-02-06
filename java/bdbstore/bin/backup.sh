@@ -29,9 +29,9 @@ for arg in "$@"; do
     fi
 done
 
-if [ -z "$QPID_HOME" ]; then
-    export QPID_HOME=$(dirname $(dirname $(readlink -f $0)))
-    export PATH=${PATH}:${QPID_HOME}/bin
+if [ -z "${QPID_HOME}" ]; then
+    WHEREAMI=`dirname "$0"`
+    export QPID_HOME=`cd ${WHEREAMI}/../ && pwd`
 fi
 
 VERSION=0.15
