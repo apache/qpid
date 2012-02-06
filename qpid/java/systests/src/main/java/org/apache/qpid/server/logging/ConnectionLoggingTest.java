@@ -58,7 +58,7 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         // Wait until opened
         waitForMessage("CON-1001");
         
-        // Close the conneciton
+        // Close the connection
         connection.close();
 
         // Wait to ensure that the desired message is logged
@@ -66,18 +66,10 @@ public class ConnectionLoggingTest extends AbstractTestLogging
 
         List<String> results = waitAndFindMatches("CON-1001");
 
-        // Validation
-        // We should have at least three messages when running InVM but when running External
-        // we will get 0-10 negotiation on con:0 whcih may close at some random point
-        // MESSAGE [con:0(/127.0.0.1:46926)] CON-1001 : Open
-        // MESSAGE [con:0(/127.0.0.1:46926)] CON-1001 : Open : Protocol Version : 0-10
         // MESSAGE [con:1(/127.0.0.1:46927)] CON-1001 : Open
         // MESSAGE [con:1(/127.0.0.1:46927)] CON-1001 : Open : Protocol Version : 0-9
-        // MESSAGE [con:0(/127.0.0.1:46926)] CON-1002 : Close
         // MESSAGE [con:1(/127.0.0.1:46927)] CON-1001 : Open : Client ID : clientid : Protocol Version : 0-9
-
-        //So check how many connections we have in the result set and extract the last one.
-        // When running InVM we will have con:0 and externally con:1
+        // MESSAGE [con:0(/127.0.0.1:46927)] CON-1002 : Close
 
         HashMap<Integer, List<String>> connectionData = splitResultsOnConnectionID(results);
 
@@ -87,26 +79,21 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         //Use just the data from the last connection for the test
         results = connectionData.get(connectionID);
 
-        // If we are running inVM or with 0-10 we will get three open messagse
-	    // if running externally with 0-8/0-9 we will also have open and close messages from the failed 0-10 negotiation 
-	    assertTrue("CON messages not logged:" + results.size(), results.size() >= 3);
+	    assertEquals("Unexpected CON-1001 messages count", 3, results.size());
 
         String log = getLogMessage(results, 0);
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open
         //1 & 2
         validateMessageID("CON-1001",log);
 
-        // validate the last three CON- messages.
-        // This is because when running externally we may also have logged the failed
-        // 0-10 negotiation messages if using 0-8/0-9 on the broker.
-
-        // 3 - Assert the options are correct
+        // validate the last three CON-1001 messages.
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Client ID : clientid : Protocol Version : 0-9
         validateConnectionOpen(results, 0, true, true, clientid);
 
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Protocol Version : 0-9
         validateConnectionOpen(results, 1, true, false, null);
 
+        //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open
         validateConnectionOpen(results, 2, false, false, null);
     }
     
