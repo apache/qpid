@@ -24,7 +24,6 @@ import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.transport.network.NetworkConnection;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
@@ -48,11 +47,6 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
         _appRegistry = ApplicationRegistry.getInstance();
         _supported = supportedVersions;
         _defaultSupportedReply = defaultSupportedReply;
-    }
-
-    public ServerProtocolEngine newProtocolEngine(NetworkConnection network)
-    {
-        return new MultiVersionProtocolEngine(_appRegistry, _supported, _defaultSupportedReply, ID_GENERATOR.getAndIncrement(), network);
     }
 
     public ServerProtocolEngine newProtocolEngine()
