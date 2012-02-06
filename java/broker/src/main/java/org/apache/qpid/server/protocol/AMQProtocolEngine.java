@@ -179,7 +179,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
         _configStore = virtualHostRegistry.getConfigStore();
         _id = _configStore.createId();
 
-        _actor.message(ConnectionMessages.OPEN(null, null, false, false));
+        _actor.message(ConnectionMessages.OPEN(null, null, null, false, false, false));
 
         _registry = virtualHostRegistry.getApplicationRegistry();
         initialiseStatistics();
@@ -365,7 +365,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
         try
         {
             // Log incomming protocol negotiation request
-            _actor.message(ConnectionMessages.OPEN(null, pi.getProtocolMajor() + "-" + pi.getProtocolMinor(), false, true));
+            _actor.message(ConnectionMessages.OPEN(null, pi.getProtocolMajor() + "-" + pi.getProtocolMinor(), null, false, true, false));
 
             ProtocolVersion pv = pi.checkVersion(); // Fails if not correct
 
@@ -923,16 +923,16 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
         _clientProperties = clientProperties;
         if (_clientProperties != null)
         {
+            _clientVersion = _clientProperties.getString(ConnectionStartProperties.VERSION_0_8);
+
             if (_clientProperties.getString(ConnectionStartProperties.CLIENT_ID_0_8) != null)
             {
                 String clientID = _clientProperties.getString(ConnectionStartProperties.CLIENT_ID_0_8);
                 setContextKey(new AMQShortString(clientID));
 
                 // Log the Opening of the connection for this client
-                _actor.message(ConnectionMessages.OPEN(clientID, _protocolVersion.toString(), true, true));
+                _actor.message(ConnectionMessages.OPEN(clientID, _protocolVersion.toString(), _clientVersion, true, true, true));
             }
-
-            _clientVersion = _clientProperties.getString(ConnectionStartProperties.VERSION_0_8);
         }
     }
 
