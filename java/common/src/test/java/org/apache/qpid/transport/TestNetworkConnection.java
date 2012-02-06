@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.transport;
 
-import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.transport.network.NetworkConnection;
@@ -65,12 +64,6 @@ public class TestNetworkConnection implements NetworkConnection
     public SocketAddress getRemoteAddress()
     {
         return (_remoteAddress != null) ? _remoteAddress : new InetSocketAddress(_remoteHost, _port);
-    }
-
-    public void open(int port, InetAddress destination, ProtocolEngine engine, NetworkTransportConfiguration config,
-            SSLContextFactory sslFactory) throws OpenException
-    {
-
     }
 
     public void setMaxReadIdle(int idleTime)
