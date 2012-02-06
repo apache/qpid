@@ -512,7 +512,7 @@ public class Connection extends ConnectionInvoker
         exception(new ConnectionException(t));
     }
 
-    void closeCode(ConnectionClose close)
+    public void closeCode(ConnectionClose close)
     {
         synchronized (lock)
         {
