@@ -565,10 +565,12 @@ String stringLiteral() :
     	// Decode the sting value.
     	String image = t.image;
     	for( int i=1; i < image.length()-1; i++ ) {
-    		char c = image.charAt(i);
-    		if( c == '\'' )
-    			i++;
-   			rc.append(c);
+            char c = image.charAt(i);
+            if( c == (char) 0x27 )//single quote
+            {
+                i++;
+            }
+            rc.append(c);
     	}
 	    return rc.toString();
     }
@@ -594,7 +596,9 @@ PropertyExpression variable() :
             for( int i=1; i < image.length()-1; i++ ) {
                 char c = image.charAt(i);
                 if( c == '"' )
+                {
                     i++;
+                }
                 rc.append(c);
             }
             return new PropertyExpression(rc.toString());
