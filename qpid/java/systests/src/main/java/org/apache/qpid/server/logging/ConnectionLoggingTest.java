@@ -21,6 +21,9 @@
 package org.apache.qpid.server.logging;
 
 import javax.jms.Connection;
+
+import org.apache.qpid.common.QpidProperties;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.TreeSet;
@@ -68,7 +71,7 @@ public class ConnectionLoggingTest extends AbstractTestLogging
 
         // MESSAGE [con:1(/127.0.0.1:46927)] CON-1001 : Open
         // MESSAGE [con:1(/127.0.0.1:46927)] CON-1001 : Open : Protocol Version : 0-9
-        // MESSAGE [con:1(/127.0.0.1:46927)] CON-1001 : Open : Client ID : clientid : Protocol Version : 0-9
+        // MESSAGE [con:1(/127.0.0.1:46927)] CON-1001 : Open : Client ID : clientid : Protocol Version : 0-9 : Client Version : 1.2.3_4
         // MESSAGE [con:0(/127.0.0.1:46927)] CON-1002 : Close
 
         HashMap<Integer, List<String>> connectionData = splitResultsOnConnectionID(results);
@@ -87,18 +90,18 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         validateMessageID("CON-1001",log);
 
         // validate the last three CON-1001 messages.
-        //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Client ID : clientid : Protocol Version : 0-9
-        validateConnectionOpen(results, 0, true, true, clientid);
+        //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Client ID : clientid : Protocol Version : 0-9 : Client Version : 1.2.3_4
+        validateConnectionOpen(results, 0, true, true, clientid, true, QpidProperties.getReleaseVersion());
 
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Protocol Version : 0-9
-        validateConnectionOpen(results, 1, true, false, null);
+        validateConnectionOpen(results, 1, true, false, null, false, null);
 
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open
-        validateConnectionOpen(results, 2, false, false, null);
+        validateConnectionOpen(results, 2, false, false, null, false, null);
     }
     
     private void validateConnectionOpen(List<String> results, int positionFromEnd,
-                 boolean protocolVersionPresent, boolean clientIdOptionPresent, String clientIdValue)
+                 boolean protocolVersionPresent, boolean clientIdOptionPresent, String clientIdValue, boolean clientVersionPresent, String clientVersionValue)
     {
         String log = getLogMessageFromEnd(results, positionFromEnd);
         
@@ -115,6 +118,13 @@ public class ConnectionLoggingTest extends AbstractTestLogging
                 protocolVersionPresent, fromMessage(log).contains("Protocol Version :"));
         //fixme there is no way currently to find out the negotiated protocol version
         // The delegate is the versioned class ((AMQConnection)connection)._delegate
+
+        assertEquals("unexpected Client ID option state", clientVersionPresent, fromMessage(log).contains("Client Version :"));
+
+        if(clientVersionPresent && clientVersionValue != null)
+        {
+            assertTrue("Client version value is not present: " + clientVersionValue, fromMessage(log).contains(clientVersionValue));
+        }
     }
 
     /**

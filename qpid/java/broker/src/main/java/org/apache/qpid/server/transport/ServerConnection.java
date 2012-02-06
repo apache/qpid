@@ -107,7 +107,7 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
             {
                 _onOpenTask.run();    
             }
-            _actor.message(ConnectionMessages.OPEN(getClientId(), "0-10", true, true));
+            _actor.message(ConnectionMessages.OPEN(getClientId(), "0-10", getClientVersion(), true, true, true));
 
             getVirtualHost().getConnectionRegistry().registerConnection(this);
         }
