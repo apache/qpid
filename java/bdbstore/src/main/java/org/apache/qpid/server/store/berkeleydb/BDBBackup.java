@@ -129,7 +129,12 @@ public class BDBBackup
 
             if (log.isInfoEnabled())
             {
-                log.info("BDBBackup Utility: Hot Backup Completed. Files backed up: " + backedUpFiles);
+                log.info("BDBBackup Utility: Hot Backup Completed.");
+                log.info(backedUpFiles.length + " file(s) backed-up:");
+                for(String backedUpFile : backedUpFiles)
+                {
+                    log.info(backedUpFile);
+                }
             }
         }
         catch (Exception e)
