@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.transport;
 
+import static org.apache.qpid.transport.Connection.State.CLOSE_RCVD;
+
 import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.properties.ConnectionStartProperties;
 import org.apache.qpid.protocol.ProtocolEngine;
@@ -132,17 +134,20 @@ public class ServerConnectionDelegate extends ServerDelegate
         }
     }
 
+    @Override
     public void connectionClose(Connection conn, ConnectionClose close)
     {
+        final ServerConnection sconn = (ServerConnection) conn;
         try
         {
-            ((ServerConnection) conn).logClosed();
+            sconn.logClosed();
         }
         finally
         {
-            super.connectionClose(conn, close);
+            sconn.closeCode(close);
+            sconn.setState(CLOSE_RCVD);
+            sendConnectionCloseOkAndCloseSender(conn);
         }
-        
     }
 
     public void connectionOpen(Connection conn, ConnectionOpen open)
@@ -196,7 +201,7 @@ public class ServerConnectionDelegate extends ServerDelegate
         {
             LOGGER.error("Connection '" + sconn.getConnectionId() + "' being severed, " +
                     "client connectionTuneOk returned a channelMax (" + okChannelMax +
-                    ") above the servers offered limit (" + getChannelMax() +")");
+                    ") above the server's offered limit (" + getChannelMax() +")");
 
             //Due to the error we must forcefully close the connection without negotiation
             sconn.getSender().close();
