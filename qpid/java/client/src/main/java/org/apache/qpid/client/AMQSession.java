@@ -277,49 +277,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     /** Flow control */
     private FlowControlIndicator _flowControl = new FlowControlIndicator();
 
-    /**
-     * Used to reference durable subscribers so that requests for unsubscribe can be handled correctly.  Note this only
-     * keeps a record of subscriptions which have been created in the current instance. It does not remember
-     * subscriptions between executions of the client.
-     */
-    protected ConcurrentHashMap<String, TopicSubscriberAdaptor<C>> getSubscriptions()
-    {
-        return _subscriptions;
-    }
 
-    /**
-     * Holds a mapping from message consumers to their identifying names, so that their subscriptions may be looked
-     * up in the {@link #_subscriptions} map.
-     */
-    protected ConcurrentHashMap<C, String> getReverseSubscriptionMap()
-    {
-        return _reverseSubscriptionMap;
-    }
-
-    /**
-     * Locks to keep access to subscriber details atomic.
-     * <p>
-     * Added for QPID2418
-     */
-    protected Lock getSubscriberDetails()
-    {
-        return _subscriberDetails;
-    }
-
-    protected Lock getSubscriberAccess()
-    {
-        return _subscriberAccess;
-    }
-
-    /**
-     * Used to hold incoming messages.
-     *
-     * @todo Weaken the type once {@link org.apache.qpid.client.util.FlowControllingBlockingQueue} implements Queue.
-     */
-    protected FlowControllingBlockingQueue getQueue()
-    {
-        return _queue;
-    }
 
     /** Holds the highest received delivery tag. */
     protected AtomicLong getHighestDeliveryTag()
@@ -333,31 +291,16 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         return _prefetchedMessageTags;
     }
 
-    protected void setPrefetchedMessageTags(ConcurrentLinkedQueue<Long> prefetchedMessageTags)
-    {
-        _prefetchedMessageTags = prefetchedMessageTags;
-    }
-
     /** All the not yet acknowledged message tags */
     protected ConcurrentLinkedQueue<Long> getUnacknowledgedMessageTags()
     {
         return _unacknowledgedMessageTags;
     }
 
-    protected void setUnacknowledgedMessageTags(ConcurrentLinkedQueue<Long> unacknowledgedMessageTags)
-    {
-        _unacknowledgedMessageTags = unacknowledgedMessageTags;
-    }
-
     /** All the delivered message tags */
     protected ConcurrentLinkedQueue<Long> getDeliveredMessageTags()
     {
         return _deliveredMessageTags;
-    }
-
-    protected void setDeliveredMessageTags(ConcurrentLinkedQueue<Long> deliveredMessageTags)
-    {
-        _deliveredMessageTags = deliveredMessageTags;
     }
 
     /** Holds the dispatcher thread for this session. */
@@ -387,11 +330,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         return _messageFactoryRegistry;
     }
 
-    protected void setMessageFactoryRegistry(MessageFactoryRegistry messageFactoryRegistry)
-    {
-        _messageFactoryRegistry = messageFactoryRegistry;
-    }
-
     /**
      * Maps from identifying tags to message consumers, in order to pass dispatch incoming messages to the right
      * consumer.
@@ -401,40 +339,15 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         return _consumers;
     }
 
-    /**
-     * Set when the dispatcher should direct incoming messages straight into the UnackedMessage list instead of
-     * to the syncRecieveQueue or MessageListener. Used during cleanup, e.g. in Session.recover().
-     */
-    protected boolean isUsingDispatcherForCleanup()
-    {
-        return _usingDispatcherForCleanup;
-    }
-
     protected void setUsingDispatcherForCleanup(boolean usingDispatcherForCleanup)
     {
         _usingDispatcherForCleanup = usingDispatcherForCleanup;
-    }
-
-    /**
-     * Used to ensure that only the first call to start the dispatcher can unsuspend the channel.
-     *
-     * @todo This is accessed only within a synchronized method, so does not need to be atomic.
-     */
-    protected AtomicBoolean getFirstDispatcher()
-    {
-        return _firstDispatcher;
     }
 
     /** Used to indicate that the session should start pre-fetching messages as soon as it is started. */
     protected boolean isImmediatePrefetch()
     {
         return _immediatePrefetch;
-    }
-
-    /** Indicates that runtime exceptions should be generated on vilations of the strict AMQP. */
-    protected boolean isStrictAMQPFATAL()
-    {
-        return _strictAMQPFATAL;
     }
 
     public static final class IdToConsumerMap<C extends BasicMessageConsumer>
