@@ -178,7 +178,7 @@ public class ProducerFlowControlTest extends AbstractTestLogging
         producer = session.createProducer(queue);
 
         // try to send 5 messages (should block after 4)
-        MessageSender sender = sendMessagesAsync(producer, producerSession, 5, 50L);
+        MessageSender sender = sendMessagesAsync(producer, session, 5, 50L);
 
         List<String> results = waitAndFindMatches("Message send delayed by", TIMEOUT);
         assertTrue("No delay messages logged by client",results.size()!=0);
@@ -280,7 +280,7 @@ public class ProducerFlowControlTest extends AbstractTestLogging
         producer = session.createProducer(queue);
 
         // try to send 5 messages (should block after 4)
-        MessageSender sender = sendMessagesAsync(producer, producerSession, 5, 100L);
+        MessageSender sender = sendMessagesAsync(producer, session, 5, 100L);
 
         Exception e = sender.awaitSenderException(10000);
 
