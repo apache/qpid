@@ -26,6 +26,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.jms.Session;
@@ -137,16 +138,21 @@ public abstract class TransactionTimeoutTestCase extends QpidBrokerTestCase impl
 
     /**
      * Send a number of messages to the queue, optionally pausing after each.
+     *
+     * Need to sync to ensure that the Broker has received the message(s) in order
+     * the test and broker start timing the idle transaction from the same point in time.
      */
     protected void send(int count, float delay) throws Exception
     {
         for (int i = 0; i < count; i++)
         {
-	        sleep(delay);
+            sleep(delay);
             Message msg = _psession.createTextMessage(TEXT);
             msg.setIntProperty("i", i);
-	        _producer.send(msg);
+            _producer.send(msg);
         }
+
+        ((AMQSession<?, ?>)_psession).sync();
     }
     
     /**
