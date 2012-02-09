@@ -61,15 +61,22 @@ Duration::Duration(const AbsTime& start, const AbsTime& finish) :
     nanosecs(finish.timepoint - start.timepoint)
 {}
 
+namespace {
+/** type conversion helper: an infinite timeout for time_t sized types **/
+const time_t TIME_T_MAX = std::numeric_limits<time_t>::max();
+}
+
 struct timespec& toTimespec(struct timespec& ts, const Duration& t) {
-    ts.tv_sec  = t / TIME_SEC;
-    ts.tv_nsec = t % TIME_SEC;
+    Duration secs = t / TIME_SEC;
+    ts.tv_sec = (secs > TIME_T_MAX) ? TIME_T_MAX : static_cast<time_t>(secs);
+    ts.tv_nsec = static_cast<long>(t % TIME_SEC);
     return ts; 
 }
 
 struct timeval& toTimeval(struct timeval& tv, const Duration& t) {
-    tv.tv_sec = t/TIME_SEC;
-    tv.tv_usec = (t%TIME_SEC)/TIME_USEC;
+    Duration secs = t / TIME_SEC;
+    tv.tv_sec = (secs > TIME_T_MAX) ? TIME_T_MAX : static_cast<time_t>(secs);
+    tv.tv_usec = static_cast<suseconds_t>((t%TIME_SEC)/TIME_USEC);
     return tv;
 }
 
