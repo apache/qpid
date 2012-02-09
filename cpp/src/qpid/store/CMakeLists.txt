@@ -34,9 +34,15 @@ set (store_SOURCES
 add_library (store MODULE ${store_SOURCES})
 target_link_libraries (store qpidbroker ${Boost_PROGRAM_OPTIONS_LIBRARY})
 if (CMAKE_COMPILER_IS_GNUCXX)
+  set (GCC_CATCH_UNDEFINED "-Wl,--no-undefined")
+  # gcc on SunOS uses native linker whose "-z defs" is too fussy
+  if (CMAKE_SYSTEM_NAME STREQUAL SunOS)
+    set (GCC_CATCH_UNDEFINED "")
+  endif (CMAKE_SYSTEM_NAME STREQUAL SunOS)
+
   set_target_properties (store PROPERTIES
                          PREFIX ""
-                         LINK_FLAGS -Wl,--no-undefined)
+                         LINK_FLAGS "${GCC_CATCH_UNDEFINED}")
 endif (CMAKE_COMPILER_IS_GNUCXX)
 
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)

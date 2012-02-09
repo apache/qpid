@@ -69,7 +69,12 @@ void SystemInfo::getLocalIpAddresses(uint16_t port,
         if (::ioctl(s, SIOCGIFADDR, &ifr) < 0) {
             break;
         }
-        struct sockaddr_in *sin = (struct sockaddr_in *) &ifr.lifr_addr;
+        struct sockaddr *sa = static_cast<struct sockaddr *>((void *) &ifr.lifr_addr);
+        if (sa->sa_family != AF_INET) {
+            // TODO: Url parsing currently can't cope with IPv6 addresses, defer for now
+            break;
+        }
+        struct sockaddr_in *sin = static_cast<struct sockaddr_in *>((void *)sa);
         std::string addr(inet_ntoa(sin->sin_addr));
         if (addr != LOCALHOST)
             addrList.push_back(Address(TCP, addr, port));
