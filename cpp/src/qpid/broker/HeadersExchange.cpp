@@ -200,6 +200,8 @@ void HeadersExchange::route(Deliverable& msg, const string& /*routingKey*/, cons
             mgmtExchange->inc_byteReceives(msg.contentSize());
             mgmtExchange->inc_msgDrops();
             mgmtExchange->inc_byteDrops(msg.contentSize());
+            if (brokerMgmtObject)
+                brokerMgmtObject->inc_discardsNoRoute();
         }
         return;
     }

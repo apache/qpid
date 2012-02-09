@@ -57,6 +57,22 @@
 
   <!--
   ===============================================================
+  Memory
+  ===============================================================
+  -->
+  <class name="Memory">
+    <property name="name"            type="sstr"  access="RC" index="y" desc="Index for the broker at this agent"/>
+    <property name="malloc_arena"    type="uint64" access="RO" optional="y" desc="Total size of memory allocated with `sbrk' by `malloc', in bytes"/>
+    <property name="malloc_ordblks"  type="uint64" access="RO" optional="y" desc="The number of chunks not in use"/>
+    <property name="malloc_hblks"    type="uint64" access="RO" optional="y" desc="Total number of chunks allocated with `mmap'"/>
+    <property name="malloc_hblkhd"   type="uint64" access="RO" optional="y" desc="Total size of memory allocated with `mmap', in bytes"/>
+    <property name="malloc_uordblks" type="uint64" access="RO" optional="y" desc="Total size of memory occupied by chunks handed out by `malloc'"/>
+    <property name="malloc_fordblks" type="uint64" access="RO" optional="y" desc="Total size of memory occupied by free (not in use) chunks"/>
+    <property name="malloc_keepcost" type="uint64" access="RO" optional="y" desc="The size of the top-most releasable chunk that normally borders the end of the heap"/>
+  </class>
+
+  <!--
+  ===============================================================
   Broker
   ===============================================================
   -->
@@ -72,6 +88,40 @@
     <property name="version"          type="sstr"   access="RO" desc="Running software version"/>
     <property name="dataDir"          type="lstr"   access="RO" optional="y" desc="Persistent configuration storage location"/>
     <statistic name="uptime" type="deltaTime"/>
+
+    <statistic name="queueCount"          type="count64" unit="queue"   desc="Number of queues in the broker"/>
+    <statistic name="msgTotalEnqueues"    type="count64" unit="message" desc="Total messages enqueued to broker"/>
+    <statistic name="msgTotalDequeues"    type="count64" unit="message" desc="Total messages dequeued from broker"/>
+    <statistic name="byteTotalEnqueues"   type="count64" unit="octet"   desc="Total bytes enqueued to broker"/>
+    <statistic name="byteTotalDequeues"   type="count64" unit="octet"   desc="Total bytes dequeued from broker"/>
+    <statistic name="msgDepth"            type="count64" unit="message" desc="Current number of messages on queues in broker" assign="msgTotalEnqueues - msgTotalDequeues"/>
+    <statistic name="byteDepth"           type="count64" unit="octet"   desc="Current number of bytes on queues in broker"    assign="byteTotalEnqueues - byteTotalDequeues"/>
+    <statistic name="msgPersistEnqueues"  type="count64" unit="message" desc="Total persistent messages enqueued to broker"/>
+    <statistic name="msgPersistDequeues"  type="count64" unit="message" desc="Total persistent messages dequeued from broker"/>
+    <statistic name="bytePersistEnqueues" type="count64" unit="octet"   desc="Total persistent bytes enqueued to broker"/>
+    <statistic name="bytePersistDequeues" type="count64" unit="octet"   desc="Total persistent bytes dequeued from broker"/>
+    <statistic name="msgTxnEnqueues"      type="count64" unit="message" desc="Total transactional messages enqueued to broker"/>
+    <statistic name="msgTxnDequeues"      type="count64" unit="message" desc="Total transactional messages dequeued from broker"/>
+    <statistic name="byteTxnEnqueues"     type="count64" unit="octet"   desc="Total transactional bytes enqueued to broker"/>
+    <statistic name="byteTxnDequeues"     type="count64" unit="octet"   desc="Total transactional bytes dequeued from broker"/>
+    <statistic name="msgFtdEnqueues"      type="count64" unit="message" desc="Total message bodies released from memory and flowed-to-disk on broker"/>
+    <statistic name="msgFtdDequeues"      type="count64" unit="message" desc="Total message bodies dequeued from the broker having been flowed-to-disk"/>
+    <statistic name="byteFtdEnqueues"     type="count64" unit="octet"   desc="Total bytes released from memory and flowed-to-disk on broker"/>
+    <statistic name="byteFtdDequeues"     type="count64" unit="octet"   desc="Total bytes dequeued from the broker having been flowed-to-disk"/>
+    <statistic name="msgFtdDepth"         type="count64" unit="message" desc="Current number of messages flowed-to-disk" assign="msgFtdEnqueues - msgFtdDequeues"/>
+    <statistic name="byteFtdDepth"        type="count64" unit="octet"   desc="Current number of bytes flowed-to-disk"    assign="byteFtdEnqueues - byteFtdDequeues"/>
+    <statistic name="releases"            type="count64" unit="message" desc="Acquired messages reinserted into the queue"/>
+    <statistic name="acquires"            type="count64" unit="message" desc="Messages acquired from the queue"/>
+    <statistic name="discardsNoRoute"     type="count64" unit="message" desc="Messages discarded due to no-route from exchange"/>
+    <statistic name="discardsTtl"         type="count64" unit="message" desc="Messages discarded due to TTL expiration"/>
+    <statistic name="discardsRing"        type="count64" unit="message" desc="Messages discarded due to ring-queue overflow"/>
+    <statistic name="discardsLvq"         type="count64" unit="message" desc="Messages discarded due to LVQ insert"/>
+    <statistic name="discardsOverflow"    type="count64" unit="message" desc="Messages discarded due to reject-policy overflow"/>
+    <statistic name="discardsSubscriber"  type="count64" unit="message" desc="Messages discarded due to subscriber reject"/>
+    <statistic name="discardsPurge"       type="count64" unit="message" desc="Messages discarded due to management purge"/>
+    <statistic name="reroutes"            type="count64" unit="message" desc="Messages dequeued to management re-route"/>
+    <statistic name="abandoned"           type="count64" unit="message" desc="Messages left in a deleted queue"/>
+    <statistic name="abandonedViaAlt"     type="count64" unit="message" desc="Messages routed to alternate exchange from a deleted queue"/>
 
     <method name="echo" desc="Request a response to test the path to the management broker">
       <arg name="sequence" dir="IO" type="uint32" default="0"/>
@@ -187,6 +237,31 @@
     <statistic name="byteTxnDequeues"     type="count64"  unit="octet"       desc="Transactional messages dequeued"/>
     <statistic name="bytePersistEnqueues" type="count64"  unit="octet"       desc="Persistent messages enqueued"/>
     <statistic name="bytePersistDequeues" type="count64"  unit="octet"       desc="Persistent messages dequeued"/>
+
+    <!-- Flow-to-disk Statistics -->
+
+    <statistic name="msgFtdEnqueues"      type="count64"  unit="message"     desc="Total message bodies released from memory and flowed-to-disk on broker"/>
+    <statistic name="msgFtdDequeues"      type="count64"  unit="message"     desc="Total message bodies dequeued from the broker having been flowed-to-disk"/>
+    <statistic name="byteFtdEnqueues"     type="count64"  unit="octet"       desc="Total bytes released from memory and flowed-to-disk on broker"/>
+    <statistic name="byteFtdDequeues"     type="count64"  unit="octet"       desc="Total bytes dequeued from the broker having been flowed-to-disk"/>
+    <statistic name="msgFtdDepth"         type="count64"  unit="message"     desc="Current number of messages flowed-to-disk" assign="msgFtdEnqueues - msgFtdDequeues"/>
+    <statistic name="byteFtdDepth"        type="count64"  unit="octet"       desc="Current number of bytes flowed-to-disk"    assign="byteFtdEnqueues - byteFtdDequeues"/>
+
+    <!-- Acquire and Release Statistics - These do not affect msgDepth since msgDepth includes acquired-but-not-completed messages. -->
+
+    <statistic name="releases"            type="count64"  unit="message"     desc="Acquired messages reinserted into the queue"/>
+    <statistic name="acquires"            type="count64"  unit="message"     desc="Messages acquired from the queue"/>
+
+    <!-- Dequeue Details - all of these are included in msgTotalDequeues -->
+
+    <statistic name="discardsTtl"         type="count64"  unit="message"     desc="Messages discarded due to TTL expiration"/>
+    <statistic name="discardsRing"        type="count64"  unit="message"     desc="Messages discarded due to ring-queue overflow"/>
+    <statistic name="discardsLvq"         type="count64"  unit="message"     desc="Messages discarded due to LVQ insert"/>
+    <statistic name="discardsOverflow"    type="count64"  unit="message"     desc="Messages discarded due to reject-policy overflow"/>
+    <statistic name="discardsSubscriber"  type="count64"  unit="message"     desc="Messages discarded due to subscriber reject"/>
+    <statistic name="discardsPurge"       type="count64"  unit="message"     desc="Messages discarded due to management purge"/>
+    <statistic name="reroutes"            type="count64"  unit="message"     desc="Messages dequeued to management re-route"/>
+
     <statistic name="consumerCount"       type="hilo32"   unit="consumer"    desc="Current consumers on queue"/>
     <statistic name="bindingCount"        type="hilo32"   unit="binding"     desc="Current bindings"/>
     <statistic name="unackedMessages"     type="hilo32"   unit="message"     desc="Messages consumed but not yet acked"/>

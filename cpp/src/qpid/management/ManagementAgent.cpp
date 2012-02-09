@@ -122,7 +122,7 @@ ManagementAgent::ManagementAgent (const bool qmfV1, const bool qmfV2) :
     suppressed(false), disallowAllV1Methods(false),
     vendorNameKey(defaultVendorName), productNameKey(defaultProductName),
     qmf1Support(qmfV1), qmf2Support(qmfV2), maxReplyObjs(100),
-    msgBuffer(MA_BUFFER_SIZE)
+    msgBuffer(MA_BUFFER_SIZE), memstat(0)
 {
     nextObjectId   = 1;
     brokerBank     = 1;
@@ -132,6 +132,9 @@ ManagementAgent::ManagementAgent (const bool qmfV1, const bool qmfV2) :
     clientWasAdded = false;
     attrMap["_vendor"] = defaultVendorName;
     attrMap["_product"] = defaultProductName;
+
+    memstat = new qmf::org::apache::qpid::broker::Memory(this, 0, "amqp-broker");
+    addObject(memstat, "amqp-broker");
 }
 
 ManagementAgent::~ManagementAgent ()
@@ -720,6 +723,7 @@ void ManagementAgent::periodicProcessing (void)
     static_cast<_qmf::Broker*>(broker->GetManagementObject())->set_uptime(uptime);
 
     moveNewObjectsLH();
+    qpid::sys::MemStat::loadMemInfo(memstat);
 
     //
     //  Clear the been-here flag on all objects in the map.
@@ -1834,6 +1838,9 @@ void ManagementAgent::handleGetQueryLH(Buffer& inBuffer, const string& replyToKe
     string className (value->get<string>());
     std::list<ObjectId>matches;
 
+    if (className == "memory")
+        qpid::sys::MemStat::loadMemInfo(memstat);
+
     // build up a set of all objects to be dumped
     for (ManagementObjectMap::iterator iter = managementObjects.begin();
          iter != managementObjects.end();
@@ -1946,6 +1953,8 @@ void ManagementAgent::handleGetQueryLH(const string& body, const string& rte, co
             packageName = s_iter->second.asString();
     }
 
+    if (className == "memory")
+        qpid::sys::MemStat::loadMemInfo(memstat);
 
     /*
      * Unpack the _object_id element of the query if it is present.  If it is present, find that one
@@ -1968,6 +1977,7 @@ void ManagementAgent::handleGetQueryLH(const string& body, const string& rte, co
                 Variant::Map values;
                 Variant::Map oidMap;
 
+                object->writeTimestamps(map_);
                 object->mapEncodeValues(values, true, true); // write both stats and properties
                 objId.mapEncode(oidMap);
                 map_["_values"] = values;

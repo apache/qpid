@@ -194,6 +194,7 @@ Broker::Broker(const Broker::Options& conf) :
             conf.replayFlushLimit*1024, // convert kb to bytes.
             conf.replayHardLimit*1024),
         *this),
+    mgmtObject(0),
     queueCleaner(queues, &timer),
     queueEvents(poller,!conf.asyncQueueEvents),
     recovery(true),

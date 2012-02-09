@@ -142,6 +142,7 @@ void DeliveryRecord::reject()
             //just drop it
             QPID_LOG(info, "Dropping rejected message from " << queue->getName());
         }
+        queue->countRejected();
         dequeue();
         setEnded();
     }

@@ -31,7 +31,7 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 
 QueuePolicy::QueuePolicy(const std::string& _name, uint32_t _maxCount, uint64_t _maxSize, const std::string& _type) : 
-    maxCount(_maxCount), maxSize(_maxSize), type(_type), count(0), size(0), policyExceeded(false), name(_name) {
+    maxCount(_maxCount), maxSize(_maxSize), type(_type), count(0), size(0), policyExceeded(false), queue(0), name(_name) {
     QPID_LOG(info, "Queue \"" << name << "\": Policy created: type=" << type << "; maxCount=" << maxCount << "; maxSize=" << maxSize);
 }
 
@@ -204,7 +204,11 @@ FlowToDiskPolicy::FlowToDiskPolicy(const std::string& _name, uint32_t _maxCount,
 
 bool FlowToDiskPolicy::checkLimit(boost::intrusive_ptr<Message> m)
 {
-    if (!QueuePolicy::checkLimit(m)) m->requestContentRelease(); 
+    if (!QueuePolicy::checkLimit(m)) {
+        m->requestContentRelease();
+        if (queue)
+            queue->countFlowedToDisk(m->contentSize());
+    }
     return true;
 }
 
