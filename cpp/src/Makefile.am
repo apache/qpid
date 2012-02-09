@@ -53,6 +53,7 @@ windows_dist = \
   ../include/qpid/sys/windows/Time.h \
   qpid/sys/windows/uuid.cpp \
   qpid/sys/windows/uuid.h \
+  qpid/sys/windows/MemStat.cpp \
   windows/QpiddBroker.cpp \
   windows/SCM.h \
   windows/SCM.cpp \
@@ -163,6 +164,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/posix/Time.cpp			\
   qpid/sys/posix/Thread.cpp			\
   qpid/sys/posix/Shlib.cpp			\
+  qpid/sys/posix/MemStat.cpp			\
   qpid/sys/posix/Mutex.cpp			\
   qpid/sys/posix/Fork.cpp			\
   qpid/sys/posix/StrError.cpp			\

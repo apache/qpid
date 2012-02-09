@@ -33,6 +33,8 @@
 namespace qpid {
 namespace broker {
 
+class Queue;
+
 class QueuePolicy
 {
     static uint64_t defaultMaxSize;
@@ -44,8 +46,8 @@ class QueuePolicy
     uint64_t size;
     bool policyExceeded;
 
-
   protected:
+    Queue* queue;
     uint64_t getCurrentQueueSize() const { return size; } 
 
   public:
@@ -72,6 +74,8 @@ class QueuePolicy
     void decode ( framing::Buffer& buffer );
     uint32_t encodedSize() const;
     virtual void getPendingDequeues(Messages& result);
+    std::string getType() const { return type; }
+    void setQueue(Queue* q) { queue = q; }
 
     static QPID_BROKER_EXTERN std::auto_ptr<QueuePolicy> createQueuePolicy(const std::string& name, const qpid::framing::FieldTable& settings);
     static QPID_BROKER_EXTERN std::auto_ptr<QueuePolicy> createQueuePolicy(const std::string& name, uint32_t maxCount, uint64_t maxSize, const std::string& type = REJECT);

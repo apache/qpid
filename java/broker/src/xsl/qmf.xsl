@@ -794,9 +794,14 @@ public class <xsl:value-of select="$ClassName"/> extends QMFPackage
 <xsl:when test="$type='objId'">OBJECTREFERENCE</xsl:when>
 <xsl:when test="$type='sstr'">STR8</xsl:when>
 <xsl:when test="$type='lstr'">STR16</xsl:when>
+<xsl:when test="$type='uint8'">UINT8</xsl:when>
 <xsl:when test="$type='uint16'">UINT16</xsl:when>
 <xsl:when test="$type='uint32'">UINT32</xsl:when>
 <xsl:when test="$type='uint64'">UINT64</xsl:when>
+<xsl:when test="$type='int8'">INT8</xsl:when>
+<xsl:when test="$type='int16'">INT16</xsl:when>
+<xsl:when test="$type='int32'">INT32</xsl:when>
+<xsl:when test="$type='int64'">INT64</xsl:when>
 <xsl:when test="$type='uuid'">UUID</xsl:when>
 <xsl:when test="$type='deltaTime'">DELTATIME</xsl:when>    
 <xsl:when test="$type='count32'">UINT32</xsl:when>
@@ -813,9 +818,14 @@ public class <xsl:value-of select="$ClassName"/> extends QMFPackage
             <xsl:when test="$type='objId'"><xsl:value-of select="$referenceType"/>Object</xsl:when>
             <xsl:when test="$type='sstr'">String</xsl:when>
             <xsl:when test="$type='lstr'">String</xsl:when>
+            <xsl:when test="$type='uint8'">Integer</xsl:when>
             <xsl:when test="$type='uint16'">Integer</xsl:when>
             <xsl:when test="$type='uint32'">Long</xsl:when>
             <xsl:when test="$type='uint64'">Long</xsl:when>
+            <xsl:when test="$type='int8'">Integer</xsl:when>
+            <xsl:when test="$type='int16'">Integer</xsl:when>
+            <xsl:when test="$type='int32'">Long</xsl:when>
+            <xsl:when test="$type='int64'">Long</xsl:when>
             <xsl:when test="$type='uuid'">UUID</xsl:when>
             <xsl:when test="$type='deltaTime'">Long</xsl:when>    
             <xsl:when test="$type='count32'">Long</xsl:when>
@@ -831,9 +841,14 @@ public class <xsl:value-of select="$ClassName"/> extends QMFPackage
             <xsl:when test="$type='objId'">writeBin128( <xsl:value-of select="$var"/>.getId() )</xsl:when>
             <xsl:when test="$type='sstr'">writeStr8( <xsl:value-of select="$var"/> )</xsl:when>
             <xsl:when test="$type='lstr'">writeStr16( <xsl:value-of select="$var"/> )</xsl:when>
+            <xsl:when test="$type='uint8'">writeUint8( <xsl:value-of select="$var"/> )</xsl:when>
             <xsl:when test="$type='uint16'">writeUint16( <xsl:value-of select="$var"/> )</xsl:when>
             <xsl:when test="$type='uint32'">writeUint32( <xsl:value-of select="$var"/> )</xsl:when>
             <xsl:when test="$type='uint64'">writeUint64( <xsl:value-of select="$var"/> )</xsl:when>
+            <xsl:when test="$type='int8'">writeInt8( <xsl:value-of select="$var"/> )</xsl:when>
+            <xsl:when test="$type='int16'">writeInt16( <xsl:value-of select="$var"/> )</xsl:when>
+            <xsl:when test="$type='int32'">writeInt32( <xsl:value-of select="$var"/> )</xsl:when>
+            <xsl:when test="$type='int64'">writeInt64( <xsl:value-of select="$var"/> )</xsl:when>
             <xsl:when test="$type='uuid'">writeUuid( <xsl:value-of select="$var"/> )</xsl:when>
             <xsl:when test="$type='deltaTime'">writeUint64( <xsl:value-of select="$var"/> )</xsl:when>    
             <xsl:when test="$type='count32'">writeUint32( <xsl:value-of select="$var"/> )</xsl:when>
@@ -849,9 +864,14 @@ public class <xsl:value-of select="$ClassName"/> extends QMFPackage
             <xsl:when test="$type='objId'">readBin128()</xsl:when>
             <xsl:when test="$type='sstr'">readStr8()</xsl:when>
             <xsl:when test="$type='lstr'">readStr16()</xsl:when>
+            <xsl:when test="$type='uint8'">readUint8()</xsl:when>
             <xsl:when test="$type='uint16'">readUint16()</xsl:when>
             <xsl:when test="$type='uint32'">readUint32()</xsl:when>
             <xsl:when test="$type='uint64'">readUint64()</xsl:when>
+            <xsl:when test="$type='int8'">readInt8()</xsl:when>
+            <xsl:when test="$type='int16'">readInt16()</xsl:when>
+            <xsl:when test="$type='int32'">readInt32()</xsl:when>
+            <xsl:when test="$type='int64'">readInt64()</xsl:when>
             <xsl:when test="$type='uuid'">readUuid()</xsl:when>
             <xsl:when test="$type='deltaTime'">readUint64()</xsl:when>    
             <xsl:when test="$type='count32'">readUint32()</xsl:when>

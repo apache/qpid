@@ -39,6 +39,7 @@
 #include "qpid/sys/Timer.h"
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/broker/Queue.h"
+#include "qmf/org/apache/qpid/broker/Broker.h"
 #include "qpid/framing/amqp_types.h"
 
 #include <boost/shared_ptr.hpp>
@@ -92,7 +93,6 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     typedef std::set< boost::shared_ptr<QueueObserver> > Observers;
     enum ConsumeCode {NO_MESSAGES=0, CANT_CONSUME=1, CONSUMED=2};
 
-
     const std::string name;
     const bool autodelete;
     MessageStore* store;
@@ -119,6 +119,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     boost::shared_ptr<Exchange> alternateExchange;
     framing::SequenceNumber sequence;
     qmf::org::apache::qpid::broker::Queue* mgmtObject;
+    qmf::org::apache::qpid::broker::Broker* brokerMgmtObject;
     sys::AtomicValue<uint32_t> dequeueSincePurge; // Count dequeues since last purge.
     int eventMode;
     Observers observers;
@@ -165,9 +166,13 @@ class Queue : public boost::enable_shared_from_this<Queue>,
         if (mgmtObject != 0) {
             mgmtObject->inc_msgTotalEnqueues ();
             mgmtObject->inc_byteTotalEnqueues (msg->contentSize ());
+            brokerMgmtObject->inc_msgTotalEnqueues ();
+            brokerMgmtObject->inc_byteTotalEnqueues (msg->contentSize ());
             if (msg->isPersistent ()) {
                 mgmtObject->inc_msgPersistEnqueues ();
                 mgmtObject->inc_bytePersistEnqueues (msg->contentSize ());
+                brokerMgmtObject->inc_msgPersistEnqueues ();
+                brokerMgmtObject->inc_bytePersistEnqueues (msg->contentSize ());
             }
         }
     }
@@ -176,9 +181,13 @@ class Queue : public boost::enable_shared_from_this<Queue>,
         if (mgmtObject != 0){
             mgmtObject->inc_msgTotalDequeues  ();
             mgmtObject->inc_byteTotalDequeues (msg->contentSize());
+            brokerMgmtObject->inc_msgTotalDequeues  ();
+            brokerMgmtObject->inc_byteTotalDequeues (msg->contentSize());
             if (msg->isPersistent ()){
                 mgmtObject->inc_msgPersistDequeues ();
                 mgmtObject->inc_bytePersistDequeues (msg->contentSize());
+                brokerMgmtObject->inc_msgPersistDequeues ();
+                brokerMgmtObject->inc_bytePersistDequeues (msg->contentSize());
             }
         }
     }
@@ -354,6 +363,11 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     static void tryAutoDelete(Broker& broker, Queue::shared_ptr);
 
     virtual void setExternalQueueStore(ExternalQueueStore* inst);
+
+    // Increment the rejected-by-consumer counter.
+    void countRejected() const;
+    void countFlowedToDisk(uint64_t size) const;
+    void countLoadedFromDisk(uint64_t size) const;
 
     // Manageable entry points
     management::ManagementObject* GetManagementObject (void) const;

@@ -669,6 +669,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/windows/SystemInfo.cpp
     qpid/sys/windows/Thread.cpp
     qpid/sys/windows/Time.cpp
+    qpid/sys/windows/MemStat.cpp
     qpid/client/windows/SaslFactory.cpp
     ${sslcommon_windows_SOURCES}
   )
@@ -740,6 +741,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/posix/FileSysDir.cpp
     qpid/sys/posix/IOHandle.cpp
     qpid/sys/posix/LockFile.cpp
+    qpid/sys/posix/MemStat.cpp
     qpid/sys/posix/Mutex.cpp
     qpid/sys/posix/PipeHandle.cpp
     qpid/sys/posix/PollableCondition.cpp
