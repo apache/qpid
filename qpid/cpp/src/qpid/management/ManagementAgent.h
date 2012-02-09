@@ -32,6 +32,8 @@
 #include "qpid/management/ManagementEvent.h"
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/broker/Agent.h"
+#include "qmf/org/apache/qpid/broker/Memory.h"
+#include "qpid/sys/MemStat.h"
 #include "qpid/types/Variant.h"
 #include <qpid/framing/AMQFrame.h>
 #include <qpid/framing/FieldValue.h>
@@ -342,6 +344,11 @@ private:
     char outputBuffer[MA_BUFFER_SIZE];
     char eventBuffer[MA_BUFFER_SIZE];
     framing::ResizableBuffer msgBuffer;
+
+    //
+    // Memory statistics object
+    //
+    qmf::org::apache::qpid::broker::Memory *memstat;
 
     void writeData ();
     void periodicProcessing (void);

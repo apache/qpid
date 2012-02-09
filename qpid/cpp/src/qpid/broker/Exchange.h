@@ -32,6 +32,7 @@
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/broker/Exchange.h"
 #include "qmf/org/apache/qpid/broker/Binding.h"
+#include "qmf/org/apache/qpid/broker/Broker.h"
 
 namespace qpid {
 namespace broker {
@@ -158,6 +159,7 @@ protected:
     };
 
     qmf::org::apache::qpid::broker::Exchange* mgmtExchange;
+    qmf::org::apache::qpid::broker::Broker* brokerMgmtObject;
 
 public:
     typedef boost::shared_ptr<Exchange> shared_ptr;

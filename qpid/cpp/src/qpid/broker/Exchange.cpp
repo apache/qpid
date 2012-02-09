@@ -142,6 +142,8 @@ void Exchange::doRoute(Deliverable& msg, ConstBindingList b)
             //QPID_LOG(warning, "Exchange " << getName() << " could not route message; no matching binding found");
             mgmtExchange->inc_msgDrops  ();
             mgmtExchange->inc_byteDrops (msg.contentSize ());
+            if (brokerMgmtObject)
+                brokerMgmtObject->inc_discardsNoRoute();
         }
         else
         {
@@ -161,7 +163,7 @@ void Exchange::routeIVE(){
 
 Exchange::Exchange (const string& _name, Manageable* parent, Broker* b) :
     name(_name), durable(false), persistenceId(0), sequence(false),
-    sequenceNo(0), ive(false), mgmtExchange(0), broker(b), destroyed(false)
+    sequenceNo(0), ive(false), mgmtExchange(0), brokerMgmtObject(0), broker(b), destroyed(false)
 {
     if (parent != 0 && broker != 0)
     {
@@ -172,6 +174,8 @@ Exchange::Exchange (const string& _name, Manageable* parent, Broker* b) :
             mgmtExchange->set_durable(durable);
             mgmtExchange->set_autoDelete(false);
             agent->addObject(mgmtExchange, 0, durable);
+            if (broker)
+                brokerMgmtObject = (qmf::org::apache::qpid::broker::Broker*) broker->GetManagementObject();
         }
     }
 }
@@ -179,7 +183,7 @@ Exchange::Exchange (const string& _name, Manageable* parent, Broker* b) :
 Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::FieldTable& _args,
                    Manageable* parent, Broker* b)
     : name(_name), durable(_durable), alternateUsers(0), persistenceId(0),
-      args(_args), sequence(false), sequenceNo(0), ive(false), mgmtExchange(0), broker(b), destroyed(false)
+      args(_args), sequence(false), sequenceNo(0), ive(false), mgmtExchange(0), brokerMgmtObject(0), broker(b), destroyed(false)
 {
     if (parent != 0 && broker != 0)
     {
@@ -191,6 +195,8 @@ Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::Fiel
             mgmtExchange->set_autoDelete(false);
             mgmtExchange->set_arguments(ManagementAgent::toMap(args));
             agent->addObject(mgmtExchange, 0, durable);
+            if (broker)
+                brokerMgmtObject = (qmf::org::apache::qpid::broker::Broker*) broker->GetManagementObject();
         }
     }
 

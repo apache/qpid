@@ -270,6 +270,7 @@ void Message::sendContent(const Queue& queue, framing::FrameHandler& out, uint16
             morecontent = getContentFrame(queue, frame, maxContentSize, offset);
             out.handle(frame);
         }
+        queue.countLoadedFromDisk(contentSize());
     } else {
         Count c;
         frames.map_if(c, TypeFilter<CONTENT_BODY>());
