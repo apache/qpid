@@ -18,8 +18,23 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.log4j.Logger;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
+import javax.management.JMException;
+
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQShortString;
@@ -51,22 +66,6 @@ import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-
-import javax.management.JMException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, MessageGroupManager.SubscriptionResetHelper
 {
@@ -165,7 +164,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     private AtomicInteger _deliveredMessages = new AtomicInteger();
     private AtomicBoolean _stopped = new AtomicBoolean(false);
 
-    private final ConcurrentMap<AMQSessionModel, Boolean> _blockedChannels = new ConcurrentHashMap<AMQSessionModel, Boolean>();
+    private final Set<AMQSessionModel> _blockedChannels = new ConcurrentSkipListSet<AMQSessionModel>();
 
     private final AtomicBoolean _deleted = new AtomicBoolean(false);
     private final List<Task> _deleteTaskList = new CopyOnWriteArrayList<Task>();
@@ -1629,7 +1628,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                 //Overfull log message
                 _logActor.message(_logSubject, QueueMessages.OVERFULL(_atomicQueueSize.get(), _capacity));
 
-                _blockedChannels.putIfAbsent(channel, Boolean.TRUE);
+                _blockedChannels.add(channel);
 
                 channel.block(this);
 
@@ -1662,11 +1661,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                     _logActor.message(_logSubject, QueueMessages.UNDERFULL(_atomicQueueSize.get(), _flowResumeCapacity));
                 }
 
-
-                for(AMQSessionModel c : _blockedChannels.keySet())
+                for(final AMQSessionModel blockedChannel : _blockedChannels)
                 {
-                    c.unblock(this);
-                    _blockedChannels.remove(c);
+                    blockedChannel.unblock(this);
+                    _blockedChannels.remove(blockedChannel);
                 }
             }
         }

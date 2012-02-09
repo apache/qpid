@@ -20,11 +20,19 @@
  */
 package org.apache.qpid.server.protocol;
 
+import java.util.concurrent.ConcurrentSkipListSet;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.SimpleAMQQueue;
 
-public interface AMQSessionModel
+/**
+ * Session model interface.
+ * Extends {@link Comparable} to allow objects to be inserted into a {@link ConcurrentSkipListSet}
+ * when monitoring the blocking and blocking of queues/sessions in {@link SimpleAMQQueue}.
+ */
+public interface AMQSessionModel extends Comparable<AMQSessionModel>
 {
     public Object getID();
 
