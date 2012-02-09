@@ -46,15 +46,12 @@ public class QueueRunner implements Runnable
     private static int SCHEDULED = 1;
     private static int RUNNING = 2;
 
-
     private final AtomicInteger _scheduled = new AtomicInteger(IDLE);
 
     private final AtomicBoolean _stateChange = new AtomicBoolean();
 
     private final AtomicLong _lastRunAgain = new AtomicLong();
     private final AtomicLong _lastRunTime = new AtomicLong();
-
-    private long _continues;
 
     public QueueRunner(SimpleAMQQueue queue)
     {
@@ -86,23 +83,22 @@ public class QueueRunner implements Runnable
                 }
                 else
                 {
-                    _logger.info(errorMessage + transe.getMessage());
+                    _logger.info(errorMessage + ' ' + transe.getMessage());
                 }
             }
             finally
             {
                 CurrentActor.remove();
-            }
-            _scheduled.compareAndSet(RUNNING, IDLE);
-            long stateChangeCount = _queue.getStateChangeCount();
-            _lastRunAgain.set(runAgain);
-            _lastRunTime.set(System.nanoTime());
-            if(runAgain == 0L || runAgain != stateChangeCount || _stateChange.compareAndSet(true,false))
-            {
-                _continues++;
-                if(_scheduled.compareAndSet(IDLE, SCHEDULED))
+                _scheduled.compareAndSet(RUNNING, IDLE);
+                final long stateChangeCount = _queue.getStateChangeCount();
+                _lastRunAgain.set(runAgain);
+                _lastRunTime.set(System.nanoTime());
+                if(runAgain == 0L || runAgain != stateChangeCount || _stateChange.compareAndSet(true,false))
                 {
-                    _queue.execute(this);
+                    if(_scheduled.compareAndSet(IDLE, SCHEDULED))
+                    {
+                        _queue.execute(this);
+                    }
                 }
             }
 
