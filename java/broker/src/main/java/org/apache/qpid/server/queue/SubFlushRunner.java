@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.transport.TransportException;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -68,18 +69,30 @@ class SubFlushRunner implements Runnable
             }
             catch (AMQException e)
             {
-                _logger.error(e);
+                _logger.error("Exception during asynchronous delivery by " + toString(), e);
+            }
+            catch (final TransportException transe)
+            {
+                final String errorMessage = "Problem during asynchronous delivery by " + toString();
+                if(_logger.isDebugEnabled())
+                {
+                    _logger.debug(errorMessage, transe);
+                }
+                else
+                {
+                    _logger.info(errorMessage + ' ' + transe.getMessage());
+                }
             }
             finally
             {
                 CurrentActor.remove();
-            }
-            _scheduled.compareAndSet(RUNNING, IDLE);
-            if ((!complete || _stateChange.compareAndSet(true,false))&& !_sub.isSuspended())
-            {
-                if(_scheduled.compareAndSet(IDLE,SCHEDULED))
+                _scheduled.compareAndSet(RUNNING, IDLE);
+                if ((!complete || _stateChange.compareAndSet(true,false))&& !_sub.isSuspended())
                 {
-                    getQueue().execute(this);
+                    if(_scheduled.compareAndSet(IDLE,SCHEDULED))
+                    {
+                        getQueue().execute(this);
+                    }
                 }
             }
         }
