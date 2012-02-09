@@ -269,6 +269,12 @@ if (CMAKE_COMPILER_IS_GNUCXX)
    # -Wshadow - warns about boost headers.
    set (WARNING_FLAGS
         "-Werror -pedantic -Wall -Wextra -Wno-shadow -Wpointer-arith -Wcast-qual -Wcast-align -Wno-long-long -Wvolatile-register-var -Winvalid-pch -Wno-system-headers -Woverloaded-virtual")
+
+   set (GCC_CATCH_UNDEFINED "-Wl,--no-undefined")
+   # gcc on SunOS uses native linker whose "-z defs" is too fussy
+   if (CMAKE_SYSTEM_NAME STREQUAL SunOS)
+      set (GCC_CATCH_UNDEFINED "")
+   endif (CMAKE_SYSTEM_NAME STREQUAL SunOS)
 endif (CMAKE_COMPILER_IS_GNUCXX)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
@@ -546,7 +552,7 @@ if (BUILD_XML)
   if (CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties (xml PROPERTIES
                            PREFIX ""
-                           LINK_FLAGS -Wl,--no-undefined)
+                           LINK_FLAGS ${GCC_CATCH_UNDEFINED})
   endif (CMAKE_COMPILER_IS_GNUCXX)
   install (TARGETS xml
            DESTINATION ${QPIDD_MODULE_DIR}
@@ -581,7 +587,7 @@ if (BUILD_ACL)
     if (CMAKE_COMPILER_IS_GNUCXX)
       set_target_properties (acl PROPERTIES
                              PREFIX ""
-                             LINK_FLAGS -Wl,--no-undefined)
+                             LINK_FLAGS "${GCC_CATCH_UNDEFINED}")
     endif (CMAKE_COMPILER_IS_GNUCXX)
     install (TARGETS acl
              DESTINATION ${QPIDD_MODULE_DIR}
@@ -706,22 +712,27 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     add_definitions(-pthread)
     set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread")
     if (CMAKE_COMPILER_IS_GNUCXX)
-      set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined -pthread")
+      set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${GCC_CATCH_UNDEFINED} -pthread")
     endif (CMAKE_COMPILER_IS_GNUCXX)
   endif (CMAKE_SYSTEM_NAME STREQUAL Linux)
-
-  if (CMAKE_SYSTEM_NAME STREQUAL SunOS)
-    set (qpid_poller_module
-      qpid/sys/solaris/ECFPoller.cpp
-      qpid/sys/solaris/SystemInfo.cpp
-    )
-  endif (CMAKE_SYSTEM_NAME STREQUAL SunOS)
 
   set (qpidtypes_platform_SOURCES)
   set (qpidtypes_platform_LIBS
     uuid
     ${Boost_SYSTEM_LIBRARY}
   )
+
+  if (CMAKE_SYSTEM_NAME STREQUAL SunOS)
+    set (qpid_poller_module
+      qpid/sys/posix/PosixPoller.cpp
+      qpid/sys/solaris/SystemInfo.cpp
+    )
+#   On Sun we want -lpthread -lthread as the 2nd last and last libs passed to linker
+    set (qpidtypes_platform_LIBS ${qpidtypes_platform_LIBS}
+      pthread
+      thread
+    )
+  endif (CMAKE_SYSTEM_NAME STREQUAL SunOS)
 
   set (qpidcommon_platform_SOURCES
     qpid/sys/posix/AsynchIO.cpp
@@ -1318,7 +1329,7 @@ target_link_libraries (replicating_listener qpidbroker ${Boost_PROGRAM_OPTIONS_L
 set_target_properties (replicating_listener PROPERTIES PREFIX "")
 if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(replicating_listener PROPERTIES
-                        LINK_FLAGS -Wl,--no-undefined)
+                        LINK_FLAGS "${GCC_CATCH_UNDEFINED}")
 endif (CMAKE_COMPILER_IS_GNUCXX)
 install (TARGETS replicating_listener
          DESTINATION ${QPIDD_MODULE_DIR}
@@ -1339,7 +1350,7 @@ target_link_libraries (replication_exchange qpidbroker)
 set_target_properties (replication_exchange PROPERTIES PREFIX "")
 if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(replication_exchange PROPERTIES
-                        LINK_FLAGS -Wl,--no-undefined)
+                        LINK_FLAGS "${GCC_CATCH_UNDEFINED}")
 endif (CMAKE_COMPILER_IS_GNUCXX)
 install (TARGETS replication_exchange
          DESTINATION ${QPIDD_MODULE_DIR}

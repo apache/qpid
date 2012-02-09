@@ -97,7 +97,7 @@ if (BUILD_SSL)
                            COMPILE_FLAGS ${NSS_COMPILE_FLAGS})
     if (CMAKE_COMPILER_IS_GNUCXX)
       set_target_properties(ssl PROPERTIES
-                            LINK_FLAGS -Wl,--no-undefined)
+                            LINK_FLAGS "${GCC_CATCH_UNDEFINED}")
     endif (CMAKE_COMPILER_IS_GNUCXX)
 
     install (TARGETS ssl
@@ -111,7 +111,7 @@ if (BUILD_SSL)
                            COMPILE_FLAGS ${NSS_COMPILE_FLAGS})
     if (CMAKE_COMPILER_IS_GNUCXX)
       set_target_properties(sslconnector PROPERTIES
-                            LINK_FLAGS -Wl,--no-undefined)
+                            LINK_FLAGS "${GCC_CATCH_UNDEFINED}")
     endif (CMAKE_COMPILER_IS_GNUCXX)
 
     install (TARGETS sslconnector

@@ -68,7 +68,7 @@ if (BUILD_RDMA)
   if (CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties(rdmawrap PROPERTIES
                           COMPILE_FLAGS -Wno-missing-field-initializers
-                          LINK_FLAGS -Wl,--no-undefined)
+                          LINK_FLAGS ${GCC_CATCH_UNDEFINED})
   endif (CMAKE_COMPILER_IS_GNUCXX)
 
   install (TARGETS rdmawrap
@@ -83,7 +83,7 @@ if (BUILD_RDMA)
   if (CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties(rdma PROPERTIES
                           COMPILE_FLAGS -Wno-missing-field-initializers
-                          LINK_FLAGS -Wl,--no-undefined)
+                          LINK_FLAGS ${GCC_CATCH_UNDEFINED})
   endif (CMAKE_COMPILER_IS_GNUCXX)
 
   install (TARGETS rdma
@@ -98,7 +98,7 @@ if (BUILD_RDMA)
   if (CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties(rdmaconnector PROPERTIES
                           COMPILE_FLAGS -Wno-missing-field-initializers
-                          LINK_FLAGS -Wl,--no-undefined)
+                          LINK_FLAGS ${GCC_CATCH_UNDEFINED})
   endif (CMAKE_COMPILER_IS_GNUCXX)
 
   install (TARGETS rdmaconnector
