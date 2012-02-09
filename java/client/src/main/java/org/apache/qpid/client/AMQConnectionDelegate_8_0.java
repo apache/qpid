@@ -71,30 +71,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 
     public void closeConnection(long timeout) throws JMSException, AMQException
     {
-        final AMQStateManager stateManager = _conn.getProtocolHandler().getStateManager();
-        final AMQState currentState = stateManager.getCurrentState();
-
-        if (currentState.equals(AMQState.CONNECTION_CLOSED))
-        {
-            _logger.debug("Connection already closed.");
-        }
-        else if (currentState.equals(AMQState.CONNECTION_CLOSING))
-        {
-            _logger.debug("Connection already closing, awaiting closed state.");
-            final StateWaiter closeWaiter = new StateWaiter(stateManager, currentState, EnumSet.of(AMQState.CONNECTION_CLOSED));
-            try
-            {
-                closeWaiter.await(timeout);
-            }
-            catch (AMQTimeoutException te)
-            {
-                throw new AMQTimeoutException("Close did not complete in timely fashion", te);
-            }
-        }
-        else
-        {
-            _conn.getProtocolHandler().closeConnection(timeout);
-        }
+        _conn.getProtocolHandler().closeConnection(timeout);
     }
 
     public AMQConnectionDelegate_8_0(AMQConnection conn)
