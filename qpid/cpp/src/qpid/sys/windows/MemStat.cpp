@@ -21,7 +21,7 @@
 
 #include "qpid/sys/MemStat.h"
 
-qpid::sys::MemStat::loadMemInfo(qmf::org::apache::qpid::broker::Memory*)
+void qpid::sys::MemStat::loadMemInfo(qmf::org::apache::qpid::broker::Memory*)
 {
     // TODO: Add Windows-specific memory stats to the object and load them here.
 }
