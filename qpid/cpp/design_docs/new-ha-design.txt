@@ -343,13 +343,13 @@ LC6 - The events and query responses are not fully synchronized.
 
 * Benefits compared to previous cluster implementation.
 
-- Does not need openais/corosync, does not require multicast.
-- Possible to replace rgmanager with other resource manager (PaceMaker, windows?)
+- Does not depend on openais/corosync, does not require multicast.
+- Can be integrated with different resource managers: for example rgmanager, PaceMaker, Veritas.
+- Can be ported to/implemented in other environments: e.g. Java, Windows
 - Disaster Recovery is just another backup, no need for separate queue replication mechanism.
-- Performance (some numbers?)
-- Virtual IP and other features supported by rgmanager.
-- Fewer inconsistent errors (store failures only) that can optionally be handled without killing brokers.
-
+- Can take advantage of resource manager features, e.g. virtual IP addresses.
+- Fewer inconsistent errors (store failures) that can be handled without killing brokers.
+- Improved performance
 * User Documentation Notes
 
 Notes to seed initial user documentation. Loosely tracking the implementation,
