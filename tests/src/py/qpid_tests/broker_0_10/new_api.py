@@ -23,7 +23,7 @@ import qmf.console
 from time import sleep
 
 #
-# Tests the Broker's support for message groups
+# Broker tests using the new messaging API
 #
 
 class GeneralTests(Base):
