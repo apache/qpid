@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SortedQueueTest extends QpidBrokerTestCase
 {
@@ -139,26 +140,19 @@ public class SortedQueueTest extends QpidBrokerTestCase
             _producerSession.commit();
         }
 
-        synchronized(consumerThread)
+        try
         {
-            try
-            {
-                consumerThread.join(getConsumerThreadJoinInterval());
-            }
-            catch(InterruptedException e)
-            {
-                fail("Test failed waiting for consumer to complete");
-            }
+            consumerThread.join(getConsumerThreadJoinInterval());
         }
+        catch(InterruptedException e)
+        {
+            fail("Test failed waiting for consumer to complete");
+        }
+
         assertTrue("Consumer timed out", consumerThread.isStopped());
         assertEquals("Incorrect number of messages received", VALUES.length, consumerThread.getConsumed());
 
         producer.close();
-    }
-
-    private long getConsumerThreadJoinInterval()
-    {
-        return isBrokerStorePersistent() ? 50000L: 5000L;
     }
 
     public void testSortedQueueWithAscendingSortedKeys() throws JMSException, NamingException, AMQException
@@ -178,21 +172,24 @@ public class SortedQueueTest extends QpidBrokerTestCase
             _producerSession.commit();
         }
 
-        synchronized(consumerThread)
+        try
         {
-            try
-            {
-                consumerThread.join(getConsumerThreadJoinInterval());
-            }
-            catch(InterruptedException e)
-            {
-                fail("Test failed waiting for consumer to complete");
-            }
+            consumerThread.join(getConsumerThreadJoinInterval());
         }
+        catch(InterruptedException e)
+        {
+            fail("Test failed waiting for consumer to complete");
+        }
+
         assertTrue("Consumer timed out", consumerThread.isStopped());
         assertEquals("Incorrect number of messages received", 200, consumerThread.getConsumed());
 
         producer.close();
+    }
+
+    private long getConsumerThreadJoinInterval()
+    {
+        return isBrokerStorePersistent() ? 50000L: 5000L;
     }
 
     public void testSortOrderWithNonUniqueKeys() throws JMSException, NamingException, AMQException
@@ -376,9 +373,9 @@ public class SortedQueueTest extends QpidBrokerTestCase
 
     private class TestConsumerThread extends Thread
     {
-        private boolean _stopped = false;
+        private final AtomicInteger _consumed = new AtomicInteger(0);
+        private volatile boolean _stopped = false;
         private int _count = 0;
-        private int _consumed = 0;
         private int _sessionType = Session.AUTO_ACKNOWLEDGE;
         private Queue _queue;
 
@@ -422,7 +419,7 @@ public class SortedQueueTest extends QpidBrokerTestCase
                          {
                              LOGGER.debug("transacted session commit");
                             session.commit();
-                            _consumed++;
+                            _consumed.incrementAndGet();
                          }
                     }
                     else if(_sessionType == Session.CLIENT_ACKNOWLEDGE)
@@ -436,13 +433,13 @@ public class SortedQueueTest extends QpidBrokerTestCase
                          {
                              LOGGER.debug("client ack session acknowledge");
                              msg.acknowledge();
-                             _consumed++;
+                             _consumed.incrementAndGet();
                          }
                     }
                     else
                     {
                         LOGGER.debug("auto ack session");
-                        _consumed++;
+                        _consumed.incrementAndGet();
                     }
 
                     _count++;
@@ -460,14 +457,14 @@ public class SortedQueueTest extends QpidBrokerTestCase
            }
         }
 
-        public synchronized boolean isStopped()
+        public boolean isStopped()
         {
             return _stopped;
         }
 
-        public synchronized int getConsumed()
+        public int getConsumed()
         {
-            return _consumed;
+            return _consumed.get();
         }
     }
 
