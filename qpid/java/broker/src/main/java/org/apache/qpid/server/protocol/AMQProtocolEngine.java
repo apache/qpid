@@ -132,7 +132,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
     private Subject _authorizedSubject;
     private MethodDispatcher _dispatcher;
 
-    private final long _sessionID;
+    private final long _connectionID;
+    private Object _reference = new Object();
 
     private AMQPConnectionActor _actor;
     private LogSubject _logSubject;
@@ -170,7 +171,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
         _codecFactory = new AMQCodecFactory(true, this);
 
         setNetworkConnection(network);
-        _sessionID = connectionId;
+        _connectionID = connectionId;
 
         _actor = new AMQPConnectionActor(this, virtualHostRegistry.getApplicationRegistry().getRootMessageLogger());
 
@@ -203,7 +204,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
 
     public long getSessionID()
     {
-        return _sessionID;
+        return _connectionID;
     }
 
     public LogActor getLogActor()
@@ -969,11 +970,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
         return getMethodRegistry();
     }
 
-    public Object getClientIdentifier()
-    {
-        return _network.getRemoteAddress();
-    }
-
     public VirtualHost getVirtualHost()
     {
         return _virtualHost;
@@ -1464,4 +1460,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
 
     }
 
+    public Object getReference()
+    {
+        return _reference;
+    }
 }

@@ -58,7 +58,7 @@ public class AMQMessage extends AbstractServerMessageImpl<MessageMetaData>
 
     private final long _size;
 
-    private Object _sessionIdentifier;
+    private Object _connectionIdentifier;
     private static final byte IMMEDIATE_AND_DELIVERED = (byte) (IMMEDIATE | DELIVERED_TO_CONSUMER);
 
     public AMQMessage(StoredMessage<MessageMetaData> handle)
@@ -218,19 +218,15 @@ public class AMQMessage extends AbstractServerMessageImpl<MessageMetaData>
     }
 
 
-    public Object getPublisherIdentifier()
+    public Object getConnectionIdentifier()
     {
-        //todo store sessionIdentifier/client id with message in store
-        //Currently the _sessionIdentifier will be null if the message has been
-        // restored from a message Store
-
-        return _sessionIdentifier;
+        return _connectionIdentifier;
 
     }
 
-    public void setClientIdentifier(final Object sessionIdentifier)
+    public void setConnectionIdentifier(final Object connectionIdentifier)
     {
-        _sessionIdentifier = sessionIdentifier;
+        _connectionIdentifier = connectionIdentifier;
     }
 
 
