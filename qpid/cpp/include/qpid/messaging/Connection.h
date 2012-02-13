@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -38,7 +38,7 @@ template <class> class PrivateImplRef;
 class ConnectionImpl;
 class Session;
 
-/**  \ingroup messaging 
+/**  \ingroup messaging
  * A connection represents a network connection to a remote endpoint.
  */
 
@@ -48,40 +48,42 @@ class QPID_MESSAGING_CLASS_EXTERN Connection : public qpid::messaging::Handle<Co
     QPID_MESSAGING_EXTERN Connection(ConnectionImpl* impl);
     QPID_MESSAGING_EXTERN Connection(const Connection&);
     QPID_MESSAGING_EXTERN Connection();
-    /**  
+    /**
      * Current implementation supports the following options:
-     * 
-     *     username
-     *     password
-     *     heartbeat
-     *     tcp_nodelay
-     *     sasl_mechanisms
-     *     sasl_service
-     *     sasl_min_ssf
-     *     sasl_max_ssf
-     *     transport
-     * 
-     * Reconnect behaviour can be controlled through the following options:
-     * 
-     *     reconnect: true/false (enables/disables reconnect entirely)
-     *     reconnect_timeout: number of seconds (give up and report failure after specified time)
-     *     reconnect_limit: n (give up and report failure after specified number of attempts)
-     *     reconnect_interval_min: number of seconds (initial delay between failed reconnection attempts)
-     *     reconnect_interval_max: number of seconds (maximum delay between failed reconnection attempts)
-     *     reconnect_interval: shorthand for setting the same reconnect_interval_min/max
-     *     reconnect_urls: list of alternate urls to try when connecting
      *
-     *     The reconnect_interval is the time that the client waits
-     *     for after a failed attempt to reconnect before retrying. It
-     *     starts at the value of the min_retry_interval and is
-     *     doubled every failure until the value of max_retry_interval
-     *     is reached.
+     * - username
+     * - password
+     * - heartbeat
+     * - tcp_nodelay
+     * - sasl_mechanisms
+     * - sasl_service
+     * - sasl_min_ssf
+     * - sasl_max_ssf
+     * - transport
+     *
+     * Reconnect behaviour can be controlled through the following options:
+     *
+     * - reconnect: true/false (enables/disables reconnect entirely)
+     * - reconnect_timeout: seconds (give up and report failure after specified time)
+     * - reconnect_limit: n (give up and report failure after specified number of attempts)
+     * - reconnect_interval_min: seconds (initial delay between failed reconnection attempts)
+     * - reconnect_interval_max: seconds (maximum delay between failed reconnection attempts)
+     * - reconnect_interval: shorthand for setting the same reconnect_interval_min/max
+     * - reconnect_urls: list of alternate urls to try when connecting
+     *
+     * The reconnect_interval is the time that the client waits for
+     * after a failed attempt to reconnect before retrying. It starts
+     * at the value of the min_retry_interval and is doubled every
+     * failure until the value of max_retry_interval is reached.
+     *
+     * Values in seconds can be fractional, for example 0.001 is a
+     * millisecond delay.
      */
     QPID_MESSAGING_EXTERN Connection(const std::string& url, const qpid::types::Variant::Map& options = qpid::types::Variant::Map());
     /**
      * Creates a connection using an option string of the form
      * {name:value,name2:value2...}, see above for options supported.
-     * 
+     *
      * @exception InvalidOptionString if the string does not match the correct syntax
      */
     QPID_MESSAGING_EXTERN Connection(const std::string& url, const std::string& options);

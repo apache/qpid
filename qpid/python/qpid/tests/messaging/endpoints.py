@@ -886,9 +886,11 @@ class ReceiverTests(Base):
     rc = self.ssn.receiver('test-receiver-queue; {mode: consume}')
     self.drain(rb, expected=msgs)
     self.drain(rc, expected=msgs)
-    rb2 = self.ssn.receiver(rb.source)
-    self.assertEmpty(rb2)
+    rc2 = self.ssn.receiver(rc.source)
+    self.assertEmpty(rc2)
     self.drain(self.rcv, expected=[])
+    rb2 = self.ssn.receiver(rb.source)
+    self.drain(rb2, expected=msgs)
 
   # XXX: need testUnsettled()
 

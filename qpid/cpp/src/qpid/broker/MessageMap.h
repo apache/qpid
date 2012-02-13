@@ -43,14 +43,12 @@ class MessageMap : public Messages
     size_t size();
     bool empty();
 
-    void reinsert(const QueuedMessage&);
-    virtual bool remove(const framing::SequenceNumber&, QueuedMessage&);
+    bool deleted(const QueuedMessage&);
+    void release(const QueuedMessage&);
+    virtual bool acquire(const framing::SequenceNumber&, QueuedMessage&);
     bool find(const framing::SequenceNumber&, QueuedMessage&);
-    virtual bool next(const framing::SequenceNumber&, QueuedMessage&);
-
-    QueuedMessage& front();
-    void pop();
-    bool pop(QueuedMessage&);
+    virtual bool browse(const framing::SequenceNumber&, QueuedMessage&, bool);
+    bool consume(QueuedMessage&);
     virtual bool push(const QueuedMessage& added, QueuedMessage& removed);
 
     void foreach(Functor);

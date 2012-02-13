@@ -67,6 +67,7 @@ public:
     };
     void notify() {}
     void cancel() {}
+    void acknowledged(const QueuedMessage&) {}
     OwnershipToken* getSession() { return 0; }
 };
 
@@ -711,7 +712,7 @@ namespace {
                         const std::string& expectedGroup,
                         const int expectedId )
     {
-        queue->dispatch(c);
+        BOOST_CHECK(queue->dispatch(c));
         results.push_back(c->last);
         std::string group = c->last.payload->getProperties<MessageProperties>()->getApplicationHeaders().getAsString("GROUP-ID");
         int id = c->last.payload->getProperties<MessageProperties>()->getApplicationHeaders().getAsInt("MY-ID");
@@ -1026,6 +1027,11 @@ QPID_AUTO_TEST_CASE(testMultiQueueLastNode){
     queue2->setLastNodeFailure();
     BOOST_CHECK_EQUAL(testStore.enqCnt, 6u);
 
+    /**
+     * TODO: Fix or replace the following test which incorrectly requeues a
+     * message that was never on the queue in the first place. This relied on
+     * internal details not part of the queue abstraction.
+
     // check requeue 1
     intrusive_ptr<Message> msg4 = create_message("e", "C");
     intrusive_ptr<Message> msg5 = create_message("e", "D");
@@ -1047,6 +1053,7 @@ QPID_AUTO_TEST_CASE(testMultiQueueLastNode){
     queue2->clearLastNodeFailure();
     queue2->setLastNodeFailure();
     BOOST_CHECK_EQUAL(testStore.enqCnt, 8u);
+    */
 }
 
 QPID_AUTO_TEST_CASE(testLastNodeRecoverAndFail){

@@ -198,7 +198,8 @@ bool IncomingMessages::process(Handler* handler, qpid::sys::Duration duration)
             if (content->isA<MessageTransferBody>()) {
                 MessageTransfer transfer(content, *this);
                 if (handler && handler->accept(transfer)) {
-                    QPID_LOG(debug, "Delivered " << *content->getMethod());
+                    QPID_LOG(debug, "Delivered " << *content->getMethod() << " "
+                             << *content->getHeaders());
                     return true;
                 } else {
                     //received message for another destination, keep for later
@@ -275,7 +276,7 @@ void IncomingMessages::retrieve(FrameSetPtr command, qpid::messaging::Message* m
         populate(*message, *command);
     }
     const MessageTransferBody* transfer = command->as<MessageTransferBody>(); 
-    if (transfer->getAcquireMode() == ACQUIRE_MODE_PRE_ACQUIRED && transfer->getAcceptMode() == ACCEPT_MODE_EXPLICIT) {
+    if (transfer->getAcceptMode() == ACCEPT_MODE_EXPLICIT) {
         sys::Mutex::ScopedLock l(lock);
         acceptTracker.delivered(transfer->getDestination(), command->getId());
     }

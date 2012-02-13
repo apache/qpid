@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -38,6 +38,7 @@ namespace broker {
 class TransactionContext;
 class SemanticState;
 struct AckRange;
+class Consumer;
 
 /**
  * Record of a delivery for which an ack is outstanding.
@@ -47,6 +48,7 @@ class DeliveryRecord
     QueuedMessage msg;
     mutable boost::shared_ptr<Queue> queue;
     std::string tag;    // name of consumer
+    boost::shared_ptr<Consumer> consumer;
     DeliveryId id;
     bool acquired : 1;
     bool acceptExpected : 1;
@@ -68,14 +70,15 @@ class DeliveryRecord
     QPID_BROKER_EXTERN DeliveryRecord(const QueuedMessage& msg,
                                       const boost::shared_ptr<Queue>& queue, 
                                       const std::string& tag,
+                                      const boost::shared_ptr<Consumer>& consumer,
                                       bool acquired,
                                       bool accepted,
                                       bool windowing,
-                                      uint32_t credit=0       // Only used if msg is empty.
+                                      uint32_t credit=0 // Only used if msg is empty.
     );
-    
+
     bool coveredBy(const framing::SequenceSet* const range) const { return range->contains(id); }
-    
+
     void dequeue(TransactionContext* ctxt = 0) const;
     void requeue() const;
     void release(bool setRedelivered);
@@ -95,7 +98,7 @@ class DeliveryRecord
     bool isAccepted() const { return !acceptExpected; }
     bool isEnded() const { return ended; }
     bool isWindowing() const { return windowing; }
-    
+
     uint32_t getCredit() const;
     const std::string& getTag() const { return tag; }
 
@@ -132,7 +135,7 @@ typedef DeliveryRecord::DeliveryRecords DeliveryRecords;
 struct AckRange
 {
     DeliveryRecords::iterator start;
-    DeliveryRecords::iterator end;    
+    DeliveryRecords::iterator end;
     AckRange(DeliveryRecords::iterator _start, DeliveryRecords::iterator _end) : start(_start), end(_end) {}
 };
 

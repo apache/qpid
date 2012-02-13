@@ -165,6 +165,9 @@ class Connection : public sys::ConnectionInputHandler,
     // Used by cluster during catch-up, see cluster::OutputInterceptor
     void doIoCallbacks();
 
+    void setClientProperties(const framing::FieldTable& cp) { clientProperties = cp; }
+    const framing::FieldTable& getClientProperties() const { return clientProperties; }
+    
   private:
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
     typedef std::vector<boost::shared_ptr<Queue> >::iterator queue_iterator;
@@ -186,6 +189,8 @@ class Connection : public sys::ConnectionInputHandler,
     ErrorListener* errorListener;
     uint64_t objectId;
     bool shadow;
+    framing::FieldTable clientProperties;
+    
     /**
      * Chained ConnectionOutputHandler that allows outgoing frames to be
      * tracked (for updating mgmt stats).

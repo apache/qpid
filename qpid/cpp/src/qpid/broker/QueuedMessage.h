@@ -32,6 +32,7 @@ struct QueuedMessage
 {
     boost::intrusive_ptr<Message> payload;
     framing::SequenceNumber position;
+    enum {AVAILABLE, ACQUIRED, DELETED, REMOVED} status;
     Queue* queue;
 
     QueuedMessage() : queue(0) {}
