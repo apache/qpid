@@ -952,6 +952,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         return createBrowser(queue, null);
     }
 
+    /**
+     * Create a queue browser if the destination is a valid queue.
+     */
     public QueueBrowser createBrowser(Queue queue, String messageSelector) throws JMSException
     {
         if (isStrictAMQP())
@@ -962,7 +965,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         checkNotClosed();
         checkValidQueue(queue);
 
-        return new AMQQueueBrowser(this, (AMQQueue) queue, messageSelector);
+        return new AMQQueueBrowser(this, queue, messageSelector);
     }
 
     protected MessageConsumer createBrowserConsumer(Destination destination, String messageSelector, boolean noLocal)
