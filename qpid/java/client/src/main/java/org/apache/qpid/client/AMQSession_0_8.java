@@ -624,6 +624,7 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
 
     public void handleAddressBasedDestination(AMQDestination dest, 
                                               boolean isConsumer,
+                                              boolean noLocal,
                                               boolean noWait) throws AMQException
     {
         throw new UnsupportedOperationException("The new addressing based sytanx is "

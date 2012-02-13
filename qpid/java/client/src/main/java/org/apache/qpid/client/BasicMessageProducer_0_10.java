@@ -86,7 +86,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         {       
             try
             {
-                getSession().handleAddressBasedDestination(destination,false,false);
+                getSession().handleAddressBasedDestination(destination,false,false,false);
             }
             catch(Exception e)
             {
