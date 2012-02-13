@@ -27,8 +27,6 @@
 namespace qpid {
 namespace ha {
 
-using std::string;
-
 /**
  * Configurable settings for HA.
  */
@@ -37,9 +35,9 @@ class Settings
   public:
     Settings() : enabled(false) {}
     bool enabled;
-    string clientUrl;
-    string brokerUrl;
-    string username, password, mechanism;
+    std::string clientUrl;
+    std::string brokerUrl;
+    std::string username, password, mechanism;
   private:
 };
 }} // namespace qpid::ha

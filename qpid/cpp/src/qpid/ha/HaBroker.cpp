@@ -39,20 +39,12 @@ using namespace management;
 using namespace std;
 
 namespace {
-Url url(const std::string& s, const std::string& id) {
-    try {
-        // Allow the URL to be empty, used in tests that set the URL
-        // after starting broker
-        return s.empty() ? Url() : Url(s);
-    } catch (const std::exception& e) {
-        throw Exception(Msg() << "Invalid URL for " << id << ": '" << s << "'");
-    }
-}
 
 const std::string PRIMARY="primary";
 const std::string BACKUP="backup";
 
 } // namespace
+
 
 HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     : broker(b),
@@ -65,6 +57,8 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
         boost::shared_ptr<ReplicatingSubscription::Factory>(
             new ReplicatingSubscription::Factory()));
 
+    broker.getKnownBrokers = boost::bind(&HaBroker::getKnownBrokers, this);
+
     ManagementAgent* ma = broker.getManagementAgent();
     if (!ma)
         throw Exception("Cannot start HA: management is disabled");
@@ -74,6 +68,9 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
         mgmtObject->set_status(BACKUP);
         ma->addObject(mgmtObject);
     }
+    sys::Mutex::ScopedLock l(lock);
+    if (!settings.clientUrl.empty()) setClientUrl(Url(settings.clientUrl), l);
+    if (!settings.brokerUrl.empty()) setBrokerUrl(Url(settings.brokerUrl), l);
 }
 
 HaBroker::~HaBroker() {}
@@ -92,23 +89,49 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
           break;
       }
       case _qmf::HaBroker::METHOD_SETCLIENTADDRESSES: {
-          string url = dynamic_cast<_qmf::ArgsHaBrokerSetClientAddresses&>(args)
-              .i_clientAddresses;
-          mgmtObject->set_clientAddresses(url);
-          // FIXME aconway 2012-01-30: upate status for new URL
+          setClientUrl(
+              Url(dynamic_cast<_qmf::ArgsHaBrokerSetClientAddresses&>(args).
+                  i_clientAddresses), l);
           break;
       }
       case _qmf::HaBroker::METHOD_SETBROKERADDRESSES: {
-          string url = dynamic_cast<_qmf::ArgsHaBrokerSetBrokerAddresses&>(args)
-              .i_brokerAddresses;
-          mgmtObject->set_brokerAddresses(url);
-          if (backup.get()) backup->setUrl(Url(url));
+          setBrokerUrl(
+              Url(dynamic_cast<_qmf::ArgsHaBrokerSetBrokerAddresses&>(args)
+                  .i_brokerAddresses), l);
           break;
       }
       default:
         return Manageable::STATUS_UNKNOWN_METHOD;
     }
     return Manageable::STATUS_OK;
+}
+
+void HaBroker::setClientUrl(const Url& url, const sys::Mutex::ScopedLock& l) {
+    if (url.empty()) throw Exception("Invalid empty URL for HA client failover");
+    clientUrl = url;
+    updateClientUrl(l);
+}
+
+void HaBroker::updateClientUrl(const sys::Mutex::ScopedLock&) {
+    Url url = clientUrl.empty() ? brokerUrl : clientUrl;
+    assert(!url.empty());
+    mgmtObject->set_clientAddresses(url.str());
+    knownBrokers.clear();
+    knownBrokers.push_back(url);
+    QPID_LOG(debug, "HA: Setting client known-brokers to: " << url);
+}
+
+void HaBroker::setBrokerUrl(const Url& url, const sys::Mutex::ScopedLock& l) {
+    if (url.empty()) throw Exception("Invalid empty URL for HA broker failover");
+    brokerUrl = url;
+    mgmtObject->set_brokerAddresses(brokerUrl.str());
+    if (backup.get()) backup->setBrokerUrl(brokerUrl);
+    // Updating broker URL also updates defaulted client URL:
+    if (clientUrl.empty()) updateClientUrl(l);
+}
+
+std::vector<Url> HaBroker::getKnownBrokers() const {
+    return knownBrokers;
 }
 
 }} // namespace qpid::ha

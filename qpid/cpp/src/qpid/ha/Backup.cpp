@@ -46,10 +46,12 @@ using std::string;
 Backup::Backup(broker::Broker& b, const Settings& s) :
     broker(b), settings(s), excluder(new ConnectionExcluder())
 {
+    // Empty brokerUrl means delay initialization until setUrl() is called.
     if (!s.brokerUrl.empty()) initialize(Url(s.brokerUrl));
 }
 
 void Backup::initialize(const Url& url) {
+    assert(!url.empty());
     QPID_LOG(notice, "Ha: Backup started: " << url);
     string protocol = url[0].protocol.empty() ? "tcp" : url[0].protocol;
     // Declare the link
@@ -66,20 +68,23 @@ void Backup::initialize(const Url& url) {
     broker.getConnectionObservers().add(excluder);
 }
 
-void Backup::setUrl(const Url& url) {
+void Backup::setBrokerUrl(const Url& url) {
+    // Ignore empty URLs seen during start-up for some tests.
+    if (url.empty()) return;
     sys::Mutex::ScopedLock l(lock);
-    if (!replicator.get())
-        initialize(url);
-    else {
-        QPID_LOG(info, "HA: Backup URL set to " << url);
+    if (link) {                 // URL changed after we initialized.
+        QPID_LOG(info, "HA: Backup failover URL set to " << url);
         link->setUrl(url);
+    }
+    else {
+        initialize(url);        // Deferred initialization
     }
 }
 
 Backup::~Backup() {
     if (link) link->close();
     if (replicator.get()) broker.getExchanges().destroy(replicator->getName());
-    broker.getConnectionObservers().remove(excluder); // Allows client connections.
+    broker.getConnectionObservers().remove(excluder); // This allows client connections.
 }
 
 }} // namespace qpid::ha
