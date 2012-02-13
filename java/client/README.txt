@@ -47,5 +47,3 @@ Run 'ant build' in the parent directory from where this file is stored, ie:
 This will build the various Java modules, leaving binary .jar files output in:
 <installation path>/qpid/java/build/lib
 
-Taking the above the 'distribution directory', consult the README.txt file at:
-<installation path>/qpid/java/client/example/src/main/java
