@@ -46,12 +46,12 @@ import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
 import javax.jms.MessageNotWriteableException;
-import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -65,7 +65,22 @@ import java.util.UUID;
 public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
 {
     private static final Logger _logger = LoggerFactory.getLogger(AMQMessageDelegate_0_10.class);
-    private static final Map<ReplyTo, SoftReference<Destination>> _destinationCache = Collections.synchronizedMap(new HashMap<ReplyTo, SoftReference<Destination>>());
+
+    private static final float DESTINATION_CACHE_LOAD_FACTOR = 0.75f;
+    private static final int DESTINATION_CACHE_SIZE = 500;
+    private static final int DESTINATION_CACHE_CAPACITY = (int) (DESTINATION_CACHE_SIZE / DESTINATION_CACHE_LOAD_FACTOR);
+
+    private static final Map<ReplyTo, Destination> _destinationCache =
+            Collections.synchronizedMap(new LinkedHashMap<ReplyTo,Destination>(DESTINATION_CACHE_CAPACITY,
+                                                                              DESTINATION_CACHE_LOAD_FACTOR,
+                                                                              true)
+    {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<ReplyTo, Destination> eldest)
+        {
+            return size() >= DESTINATION_CACHE_SIZE;
+        }
+    });
 
     public static final String JMS_TYPE = "x-jms-type";
 
@@ -241,12 +256,8 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         }
         else
         {
-            Destination dest = null;
-            SoftReference<Destination> ref = _destinationCache.get(replyTo);
-            if (ref != null)
-            {
-	            dest = ref.get();
-            }
+            Destination dest = _destinationCache.get(replyTo);
+
             if (dest == null)
             {
                 String exchange = replyTo.getExchange();
@@ -254,14 +265,13 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
 
                 if (AMQDestination.getDefaultDestSyntax() == AMQDestination.DestSyntax.BURL)
                 {
-            
                     dest = generateDestination(new AMQShortString(exchange), new AMQShortString(routingKey));
                 }
                 else
                 {
                     dest = convertToAddressBasedDestination(exchange,routingKey,null);
                 }
-                _destinationCache.put(replyTo, new SoftReference<Destination>(dest));
+                _destinationCache.put(replyTo, dest);
             }
 
             return dest;
@@ -355,13 +365,11 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
                jmse.setLinkedException(e);
                throw jmse;
            }
-
         }
-        
-        final ReplyTo replyTo = new ReplyTo(amqd.getExchangeName().toString(), amqd.getRoutingKey().toString());
-        _destinationCache.put(replyTo, new SoftReference<Destination>(destination));
-        _messageProps.setReplyTo(replyTo);
 
+        final ReplyTo replyTo = new ReplyTo(amqd.getExchangeName().toString(), amqd.getRoutingKey().toString());
+        _destinationCache.put(replyTo, destination);
+        _messageProps.setReplyTo(replyTo);
     }
 
     public Destination getJMSDestination() throws JMSException
