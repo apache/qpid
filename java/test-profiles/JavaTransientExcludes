@@ -18,6 +18,7 @@
 //
 
 //These tests require a persistent store
+org.apache.qpid.server.persistent.NoLocalAfterRecoveryTest#*
 org.apache.qpid.server.store.PersistentStoreTest#*
 org.apache.qpid.test.unit.ack.ClientAcknowledgeTest#testClientAckWithLargeFlusherPeriod
 
