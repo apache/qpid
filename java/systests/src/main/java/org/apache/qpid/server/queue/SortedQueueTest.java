@@ -56,6 +56,7 @@ public class SortedQueueTest extends QpidBrokerTestCase
     private Connection _producerConnection;
     private Session _producerSession;
     private Connection _consumerConnection;
+    private long _receiveInterval;
 
     protected void setUp() throws Exception
     {
@@ -66,6 +67,7 @@ public class SortedQueueTest extends QpidBrokerTestCase
         _producerConnection = getConnection();
         _consumerConnection = getConnection();
         _producerSession = _producerConnection.createSession(true, Session.SESSION_TRANSACTED);
+        _receiveInterval = isBrokerStorePersistent() ? 3000l : 1500l;
     }
 
     protected void tearDown() throws Exception
@@ -96,7 +98,7 @@ public class SortedQueueTest extends QpidBrokerTestCase
         _consumerConnection.start();
         TextMessage received;
         int messageCount = 0;
-        while((received = (TextMessage) consumer.receive(1000)) != null)
+        while((received = (TextMessage) consumer.receive(_receiveInterval)) != null)
         {
             assertEquals("Received message with unexpected sorted key value", VALUES_SORTED[messageCount],
                             received.getStringProperty(TEST_SORT_KEY));
@@ -214,8 +216,7 @@ public class SortedQueueTest extends QpidBrokerTestCase
         TextMessage received = null;
         int messageCount = 0;
 
-        long receiveInterval = isBrokerStorePersistent() ? 3000l : 1000l;
-        while((received = (TextMessage) consumer.receive(receiveInterval)) != null)
+        while((received = (TextMessage) consumer.receive(_receiveInterval)) != null)
         {
             assertEquals("Received message with unexpected sorted key value", "samesortkeyvalue",
                             received.getStringProperty(TEST_SORT_KEY));
@@ -251,7 +252,7 @@ public class SortedQueueTest extends QpidBrokerTestCase
         TextMessage received;
         int messageCount = 0;
 
-        while((received = (TextMessage) consumer.receive(1000)) != null)
+        while((received = (TextMessage) consumer.receive(_receiveInterval)) != null)
         {
             assertEquals("Received message with unexpected sorted key value", SUBSET_KEYS[messageCount / 10],
                             received.getStringProperty(TEST_SORT_KEY));
@@ -366,7 +367,7 @@ public class SortedQueueTest extends QpidBrokerTestCase
     private Message assertReceiveMessage(final MessageConsumer consumer)
             throws JMSException
     {
-        final Message received = (TextMessage) consumer.receive(10000);
+        final Message received = (TextMessage) consumer.receive(_receiveInterval);
         assertNotNull("Received message is unexpectedly null", received);
         return received;
     }
@@ -406,7 +407,7 @@ public class SortedQueueTest extends QpidBrokerTestCase
                 conn.start();
 
                 Message msg;
-                while((msg = consumer.receive(1000)) != null)
+                while((msg = consumer.receive(_receiveInterval)) != null)
                 {
                     if(_sessionType == Session.SESSION_TRANSACTED)
                     {
@@ -444,7 +445,7 @@ public class SortedQueueTest extends QpidBrokerTestCase
 
                     _count++;
                     LOGGER.debug("Message consumed with key: " + msg.getStringProperty(TEST_SORT_KEY));
-                    LOGGER.debug("Message consumed with consumed index: " + _consumed);
+                    LOGGER.debug("Message consumed with consumed index: " + _consumed.get());
                 }
 
                 _stopped = true;
