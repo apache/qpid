@@ -39,11 +39,11 @@ public class AMQQueueBrowser implements QueueBrowser
 
     private AtomicBoolean _isClosed = new AtomicBoolean();
     private final AMQSession _session;
-    private final AMQQueue _queue;
+    private final Queue _queue;
     private final ArrayList<BasicMessageConsumer> _consumers = new ArrayList<BasicMessageConsumer>();
     private final String _messageSelector;
 
-    AMQQueueBrowser(AMQSession session, AMQQueue queue, String messageSelector) throws JMSException
+    AMQQueueBrowser(AMQSession session, Queue queue, String messageSelector) throws JMSException
     {
         _session = session;
         _queue = queue;
