@@ -236,7 +236,7 @@ class ShortTests(BrokerTest):
             print self.browse(self.connect_admin(backup2).session(), "q", transform=sn)
             raise
 
-    def test_failover(self):
+    def test_failover_python(self):
         """Verify that backups rejects connections and that fail-over works in python client"""
         getLogger().setLevel(ERROR) # Disable WARNING log messages due to failover messages
         primary = HaBroker(self, name="primary", expect=EXPECT_EXIT_FAIL)
@@ -263,6 +263,7 @@ class ShortTests(BrokerTest):
         c.close()
 
     def test_failover_cpp(self):
+        """Verify that failover works in the C++ client."""
         primary = HaBroker(self, name="primary", expect=EXPECT_EXIT_FAIL)
         primary.promote()
         backup = HaBroker(self, name="backup", broker_url=primary.host_port())
@@ -281,8 +282,7 @@ class ShortTests(BrokerTest):
         assert retry(lambda: not is_running(primary.pid)) # Wait for primary to die
         backup.promote()
         n = receiver.received       # Make sure we are still running
-        # FIXME aconway 2012-02-01: c++ client has 1 sec min retry, hence long timeout
-        assert retry(lambda: receiver.received > n + 10, timeout=5)
+        assert retry(lambda: receiver.received > n + 10)
         sender.stop()
         receiver.stop()
 

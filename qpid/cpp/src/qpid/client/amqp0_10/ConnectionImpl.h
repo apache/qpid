@@ -64,10 +64,10 @@ class ConnectionImpl : public qpid::messaging::ConnectionImpl
     std::vector<std::string> urls;
     qpid::client::ConnectionSettings settings;
     bool reconnect;
-    int64_t timeout;
+    double timeout;
     int32_t limit;
-    int64_t minReconnectInterval;
-    int64_t maxReconnectInterval;
+    double minReconnectInterval;
+    double maxReconnectInterval;
     int32_t retries;
     bool reconnectOnLimitExceeded;
 
