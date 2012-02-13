@@ -362,4 +362,22 @@ for f in fields:
         return result;
     }
 
+${
+if name == "ReplyTo":
+  out("    public boolean equals(final Object obj){\n")
+  out("        if (this == obj){\n")
+  out("            return true;\n")
+  out("        }\n\n")
+  out("        if(!(obj instanceof ReplyTo)){\n")
+  out("            return false;\n")
+  out("        }\n\n")
+  out("        final ReplyTo reply = (ReplyTo) obj;\n")
+  out("        return (routingKey == null ? reply.getRoutingKey() == null : routingKey.equals(reply.getRoutingKey()))\n")
+  out("            && (exchange == null ? reply.getExchange() == null : exchange.equals(reply.getExchange()));\n")
+  out("    }\n\n")
+  out("    public int hashCode(){\n")
+  out("        int result = routingKey == null ? 1 : routingKey.hashCode();\n")
+  out("        return 31 * result + (exchange == null ? 5 : exchange.hashCode());\n")
+  out("    }")
+}
 }
