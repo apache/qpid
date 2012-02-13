@@ -766,8 +766,14 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         else
         {
             QueueNode node = (QueueNode)amqd.getSourceNode();
+            Map<String,Object> arguments = new HashMap<String,Object>();
+            arguments.putAll((Map<? extends String, ? extends Object>) node.getDeclareArgs());
+            if (arguments == null || arguments.get(AddressHelper.NO_LOCAL) == null)
+            {
+                arguments.put(AddressHelper.NO_LOCAL, noLocal);
+            }
             getQpidSession().queueDeclare(queueName.toString(), node.getAlternateExchange() ,
-                    node.getDeclareArgs(),
+                    arguments,
                     node.isAutoDelete() ? Option.AUTO_DELETE : Option.NONE,
                     node.isDurable() ? Option.DURABLE : Option.NONE,
                     node.isExclusive() ? Option.EXCLUSIVE : Option.NONE);   
@@ -1167,13 +1173,14 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     @SuppressWarnings("deprecation")
     public void handleAddressBasedDestination(AMQDestination dest, 
                                               boolean isConsumer,
+                                              boolean noLocal,
                                               boolean noWait) throws AMQException
     {
         if (dest.isAddressResolved() && dest.isResolvedAfter(getAMQConnection().getLastFailoverTime()))
         {
             if (isConsumer && AMQDestination.TOPIC_TYPE == dest.getAddressType()) 
             {
-                createSubscriptionQueue(dest);
+                createSubscriptionQueue(dest,noLocal);
             }
         }
         else
@@ -1202,7 +1209,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                     else if(createNode)
                     {
                         setLegacyFiledsForQueueType(dest);
-                        send0_10QueueDeclare(dest,null,false,noWait);
+                        send0_10QueueDeclare(dest,null,noLocal,noWait);
                         sendQueueBind(dest.getAMQQueueName(), dest.getRoutingKey(),
                                       null,dest.getExchangeName(),dest, false);
                         break;
@@ -1217,7 +1224,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                         verifySubject(dest);
                         if (isConsumer && !isQueueExist(dest,(QueueNode)dest.getSourceNode(),true)) 
                         {  
-                            createSubscriptionQueue(dest);
+                            createSubscriptionQueue(dest, noLocal);
                         }
                         break;
                     }
@@ -1232,7 +1239,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                                 false);        
                         if (isConsumer && !isQueueExist(dest,(QueueNode)dest.getSourceNode(),true)) 
                         {
-                            createSubscriptionQueue(dest);
+                            createSubscriptionQueue(dest,noLocal);
                         }
                         break;
                     }
@@ -1295,7 +1302,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         }
     }
     
-    private void createSubscriptionQueue(AMQDestination dest) throws AMQException
+    private void createSubscriptionQueue(AMQDestination dest, boolean noLocal) throws AMQException
     {
         QueueNode node = (QueueNode)dest.getSourceNode();  // source node is never null
         
@@ -1308,7 +1315,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         }
         node.setExclusive(true);
         node.setAutoDelete(!node.isDurable());
-        send0_10QueueDeclare(dest,null,false,true);
+        send0_10QueueDeclare(dest,null,noLocal,true);
         getQpidSession().exchangeBind(dest.getQueueName(), 
         		              dest.getAddressName(), 
         		              dest.getSubject(), 
