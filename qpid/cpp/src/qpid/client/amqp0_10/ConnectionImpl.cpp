@@ -259,6 +259,7 @@ void ConnectionImpl::reopen()
 
 void ConnectionImpl::connect(const qpid::sys::AbsTime& started)
 {
+    QPID_LOG(debug, "Starting connection, urls=" << asString(urls));
     for (double i = minReconnectInterval; !tryConnect(); i = std::min(i*2, maxReconnectInterval)) {
         if (!reconnect) {
             throw qpid::messaging::TransportFailure("Failed to connect (reconnect disabled)");
@@ -269,8 +270,11 @@ void ConnectionImpl::connect(const qpid::sys::AbsTime& started)
         if (expired(started, timeout)) {
             throw qpid::messaging::TransportFailure("Failed to connect within reconnect timeout");
         }
+        QPID_LOG(debug, "Connection retry in " << i*1000*1000 << " microseconds, urls="
+                 << asString(urls));
         qpid::sys::usleep(int64_t(i*1000*1000)); // Sleep in microseconds.
     }
+    QPID_LOG(debug, "Connection successful, urls=" << asString(urls));
     retries = 0;
 }
 
