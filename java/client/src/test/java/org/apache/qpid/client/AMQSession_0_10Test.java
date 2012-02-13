@@ -276,7 +276,7 @@ public class AMQSession_0_10Test extends QpidTestCase
         {
             BasicMessageConsumer_0_10 consumer = session.createMessageConsumer(createDestination(), 1, 1, true, false,
                     null, null, false, true);
-            session.sendConsume(consumer, new AMQShortString("test"), null, true, null, 1);
+            session.sendConsume(consumer, new AMQShortString("test"), null, true, 1);
         }
         catch (Exception e)
         {

@@ -599,7 +599,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
      * Registers the consumer with the broker
      */
     public void sendConsume(BasicMessageConsumer_0_10 consumer, AMQShortString queueName, AMQProtocolHandler protocolHandler,
-                            boolean nowait, MessageFilter messageSelector, int tag)
+                            boolean nowait, int tag)
             throws AMQException, FailoverException
     {        
         boolean preAcquire = consumer.isPreAcquire();

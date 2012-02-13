@@ -364,7 +364,6 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
                                       AMQShortString queueName,
                                       AMQProtocolHandler protocolHandler,
                                       boolean nowait,
-                                      MessageFilter messageSelector,
                                       int tag) throws AMQException, FailoverException
     {
 
