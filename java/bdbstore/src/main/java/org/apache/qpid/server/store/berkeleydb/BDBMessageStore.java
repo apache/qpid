@@ -68,6 +68,7 @@ import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
 import org.apache.qpid.server.store.TransactionLogRecoveryHandler.QueueEntryRecoveryHandler;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.store.berkeleydb.keys.MessageContentKey_5;
+import org.apache.qpid.server.store.berkeleydb.records.BindingRecord;
 import org.apache.qpid.server.store.berkeleydb.records.ExchangeRecord;
 import org.apache.qpid.server.store.berkeleydb.records.QueueRecord;
 import org.apache.qpid.server.store.berkeleydb.tuples.BindingTupleBindingFactory;
@@ -691,13 +692,13 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             cursor = _queueBindingsDb.openCursor(null, null);
             DatabaseEntry key = new DatabaseEntry();
             DatabaseEntry value = new DatabaseEntry();
-            TupleBinding binding = _bindingTupleBindingFactory.getInstance();
+            TupleBinding<BindingRecord> binding = _bindingTupleBindingFactory.getInstance();
 
             while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
             {
                 //yes, this is retrieving all the useful information from the key only.
                 //For table compatibility it shall currently be left as is
-                BindingKey bindingRecord = (BindingKey) binding.entryToObject(key);
+                BindingRecord bindingRecord = binding.entryToObject(key);
 
                 String exchangeName = bindingRecord.getExchangeName() == null ? null :
                                       bindingRecord.getExchangeName().asString();
@@ -1105,18 +1106,18 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     }
 
 
-
-
     /**
      * @see DurableConfigurationStore#bindQueue(Exchange, AMQShortString, AMQQueue, FieldTable)
      */
     public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
     {
+        bindQueue(new BindingRecord(exchange.getNameShortString(), queue.getNameShortString(), routingKey, args));
+    }
+
+    protected void bindQueue(final BindingRecord bindingRecord) throws AMQStoreException
+    {
         if (_state != State.RECOVERING)
         {
-            BindingKey bindingRecord = new BindingKey(exchange.getNameShortString(),
-                                                queue.getNameShortString(), routingKey, args);
-
             DatabaseEntry key = new DatabaseEntry();
             EntryBinding keyBinding = _bindingTupleBindingFactory.getInstance();
 
@@ -1134,8 +1135,8 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             }
             catch (DatabaseException e)
             {
-                throw new AMQStoreException("Error writing binding for AMQQueue with name " + queue.getName() + " to exchange "
-                                       + exchange.getName() + " to database: " + e.getMessage(), e);
+                throw new AMQStoreException("Error writing binding for AMQQueue with name " + bindingRecord.getQueueName() + " to exchange "
+                                       + bindingRecord.getExchangeName() + " to database: " + e.getMessage(), e);
             }
         }
     }
@@ -1148,7 +1149,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     {
         DatabaseEntry key = new DatabaseEntry();
         EntryBinding keyBinding = _bindingTupleBindingFactory.getInstance();
-        keyBinding.objectToEntry(new BindingKey(exchange.getNameShortString(), queue.getNameShortString(), routingKey, args), key);
+        keyBinding.objectToEntry(new BindingRecord(exchange.getNameShortString(), queue.getNameShortString(), routingKey, args), key);
 
         try
         {

@@ -37,14 +37,17 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.logging.NullRootMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.server.store.berkeleydb.keys.MessageContentKey_4;
 import org.apache.qpid.server.store.berkeleydb.keys.MessageContentKey_5;
+import org.apache.qpid.server.store.berkeleydb.records.BindingRecord;
 import org.apache.qpid.server.store.berkeleydb.records.ExchangeRecord;
 import org.apache.qpid.server.store.berkeleydb.records.QueueRecord;
 import org.apache.qpid.server.store.berkeleydb.tuples.MessageContentKeyTB_4;
@@ -417,11 +420,6 @@ public class BDBStoreUpgrade
         TopicExchangeDiscoverer exchangeListVisitor = new TopicExchangeDiscoverer();
         _oldMessageStore.visitExchanges(exchangeListVisitor);
 
-
-        //Migrate _queueBindingsDb
-        _logger.info("Queue Bindings");
-        moveContents(_oldMessageStore.getBindingsDb(), _newMessageStore.getBindingsDb(), "Queue Binding");
-
         //Inspect the bindings to gather a list of queues which are probably durable subscriptions, i.e. those 
         //which have a colon in their name and are bound to the Topic exchanges above
         DurableSubDiscoverer durSubQueueListVisitor =
@@ -430,6 +428,14 @@ public class BDBStoreUpgrade
         _oldMessageStore.visitBindings(durSubQueueListVisitor);
 
         final List<AMQShortString> durableSubQueues = durSubQueueListVisitor.getDurableSubQueues();
+
+
+        //Migrate _queueBindingsDb
+        _logger.info("Queue Bindings");
+        BindingsVisitor bindingsVisitor = new BindingsVisitor(durableSubQueues,
+                _oldMessageStore.getBindingTupleBindingFactory().getInstance(), _newMessageStore);
+        _oldMessageStore.visitBindings(bindingsVisitor);
+        logCount(bindingsVisitor.getVisitedCount(), "Queue Binding");
 
         //Migrate _queueDb
         _logger.info("Queues");
@@ -1133,11 +1139,11 @@ public class BDBStoreUpgrade
     private class DurableSubDiscoverer extends DatabaseVisitor
     {
         private final List<AMQShortString> _durableSubQueues;
-        private final TupleBinding<BindingKey> _bindingTB;
+        private final TupleBinding<BindingRecord> _bindingTB;
         private final List<AMQShortString> _topicExchanges;
 
 
-        public DurableSubDiscoverer(List<AMQShortString> topicExchanges, TupleBinding<BindingKey> bindingTB)
+        public DurableSubDiscoverer(List<AMQShortString> topicExchanges, TupleBinding<BindingRecord> bindingTB)
         {
             _durableSubQueues = new ArrayList<AMQShortString>();
             _bindingTB = bindingTB;
@@ -1146,7 +1152,7 @@ public class BDBStoreUpgrade
 
         public void visit(DatabaseEntry key, DatabaseEntry value) throws DatabaseException
         {
-            BindingKey bindingRec = _bindingTB.entryToObject(key);
+            BindingRecord bindingRec = _bindingTB.entryToObject(key);
             AMQShortString queueName = bindingRec.getQueueName();
             AMQShortString exchangeName = bindingRec.getExchangeName();
 
@@ -1201,6 +1207,54 @@ public class BDBStoreUpgrade
         public List<AMQShortString> getExistingQueues()
         {
             return _existingQueues;
+        }
+    }
+
+    private static class BindingsVisitor extends DatabaseVisitor
+    {
+        private final List<AMQShortString> _durableSubQueues;
+        private final BDBMessageStore _newMessageStore;
+        private final TupleBinding<BindingRecord> _oldBindingTB;
+        private AMQShortString _selectorFilterKey;
+
+        public BindingsVisitor(List<AMQShortString> durableSubQueues,
+                            TupleBinding<BindingRecord> oldBindingTB,
+                            BDBMessageStore newMessageStore)
+        {
+            _oldBindingTB = oldBindingTB;
+            _durableSubQueues = durableSubQueues;
+            _newMessageStore = newMessageStore;
+            _selectorFilterKey = AMQPFilterTypes.JMS_SELECTOR.getValue();
+        }
+
+        public void visit(DatabaseEntry key, DatabaseEntry value) throws AMQStoreException
+        {
+            //All the information required in binding entries is actually in the *key* not value.
+            BindingRecord oldBindingRec = _oldBindingTB.entryToObject(key);
+
+            AMQShortString queueName = oldBindingRec.getQueueName();
+            AMQShortString exchangeName = oldBindingRec.getExchangeName();
+            AMQShortString routingKey = oldBindingRec.getRoutingKey();
+            FieldTable arguments = oldBindingRec.getArguments();
+
+            //if the queue name is in the gathered list then inspect its binding arguments
+            if (_durableSubQueues.contains(queueName))
+            {
+                if(arguments == null)
+                {
+                    arguments = new FieldTable();
+                }
+
+                if(!arguments.containsKey(_selectorFilterKey))
+                {
+                    //add the empty string (i.e. 'no selector') value for the selector argument
+                    arguments.put(_selectorFilterKey, "");
+                }
+            }
+
+            //create the binding in the new store
+            _newMessageStore.bindQueue(
+                    new BindingRecord(exchangeName, queueName, routingKey, arguments));
         }
     }
 

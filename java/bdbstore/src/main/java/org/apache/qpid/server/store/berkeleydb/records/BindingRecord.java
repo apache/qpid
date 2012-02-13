@@ -18,19 +18,19 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
+package org.apache.qpid.server.store.berkeleydb.records;
 
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 
-public class BindingKey extends Object
+public class BindingRecord extends Object
 {
     private final AMQShortString _exchangeName;
     private final AMQShortString _queueName;
     private final AMQShortString _routingKey;
     private final FieldTable _arguments;
 
-    public BindingKey(AMQShortString exchangeName, AMQShortString queueName, AMQShortString routingKey, FieldTable arguments)
+    public BindingRecord(AMQShortString exchangeName, AMQShortString queueName, AMQShortString routingKey, FieldTable arguments)
     {
         _exchangeName = exchangeName;
         _queueName = queueName;
