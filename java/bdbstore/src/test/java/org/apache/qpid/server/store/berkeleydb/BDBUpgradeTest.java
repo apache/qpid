@@ -48,6 +48,8 @@ import org.apache.qpid.util.FileUtils;
 import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.QUEUE_NAME;
 import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.SUB_NAME;
 import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.TOPIC_NAME;
+import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.SELECTOR_SUB_NAME;
+import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.SELECTOR_TOPIC_NAME;
 
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
@@ -154,7 +156,8 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
     /**
      * Test that the selector applied to the DurableSubscription was successfully
      * transfered to the new store, and functions as expected with continued use
-     * by monitoring message count while sending new messages to the topic.
+     * by monitoring message count while sending new messages to the topic and then
+     * consuming them.
      */
     public void testSelectorDurability() throws Exception
     {
@@ -171,7 +174,7 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
 
         try
         {
-            ManagedQueue dursubQueue = jmxUtils.getManagedQueue("clientid" + ":" + SUB_NAME);
+            ManagedQueue dursubQueue = jmxUtils.getManagedQueue("clientid" + ":" + SELECTOR_SUB_NAME);
             assertEquals("DurableSubscription backing queue should have 1 message on it initially", 
                           new Integer(1), dursubQueue.getMessageCount());
             
@@ -181,21 +184,79 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
             
             // Send messages which don't match and do match the selector, checking message count
             TopicSession pubSession = connection.createTopicSession(true, org.apache.qpid.jms.Session.SESSION_TRANSACTED);
-            Topic topic = pubSession.createTopic(TOPIC_NAME);
+            Topic topic = pubSession.createTopic(SELECTOR_TOPIC_NAME);
             TopicPublisher publisher = pubSession.createPublisher(topic);
             
             BDBStoreUpgradeTestPreparer.publishMessages(pubSession, publisher, topic, DeliveryMode.PERSISTENT, 1*1024, 1, "false");
             pubSession.commit();
             assertEquals("DurableSubscription backing queue should still have 1 message on it", 
-                        new Integer(1), dursubQueue.getMessageCount());
+                         Integer.valueOf(1), dursubQueue.getMessageCount());
             
             BDBStoreUpgradeTestPreparer.publishMessages(pubSession, publisher, topic, DeliveryMode.PERSISTENT, 1*1024, 1, "true");
             pubSession.commit();
             assertEquals("DurableSubscription backing queue should now have 2 messages on it", 
-                        new Integer(2), dursubQueue.getMessageCount());
+                         Integer.valueOf(2), dursubQueue.getMessageCount());
 
-            dursubQueue.clearQueue();
+            TopicSubscriber durSub = pubSession.createDurableSubscriber(topic, SELECTOR_SUB_NAME,"testprop='true'", false);
+            Message m = durSub.receive(2000);
+            assertNotNull("Failed to receive an expected message", m);
+            m = durSub.receive(2000);
+            assertNotNull("Failed to receive an expected message", m);
+            pubSession.commit();
+
             pubSession.close();
+        }
+        finally
+        {
+            jmxUtils.close();
+        }
+    }
+
+    /**
+     * Test that the DurableSubscription without selector was successfully
+     * transfered to the new store, and functions as expected with continued use.
+     */
+    public void testDurableSubscriptionWithoutSelector() throws Exception
+    {
+        JMXTestUtils jmxUtils = null;
+        try
+        {
+            jmxUtils = new JMXTestUtils(this, "guest", "guest");
+            jmxUtils.open();
+        }
+        catch (Exception e)
+        {
+            fail("Unable to establish JMX connection, test cannot proceed");
+        }
+
+        try
+        {
+            ManagedQueue dursubQueue = jmxUtils.getManagedQueue("clientid" + ":" + SUB_NAME);
+            assertEquals("DurableSubscription backing queue should have 1 message on it initially",
+                          new Integer(1), dursubQueue.getMessageCount());
+
+            // Create a connection and start it
+            TopicConnection connection = (TopicConnection) getConnection();
+            connection.start();
+
+            // Send new message matching the topic, checking message count
+            TopicSession session = connection.createTopicSession(true, org.apache.qpid.jms.Session.SESSION_TRANSACTED);
+            Topic topic = session.createTopic(TOPIC_NAME);
+            TopicPublisher publisher = session.createPublisher(topic);
+
+            BDBStoreUpgradeTestPreparer.publishMessages(session, publisher, topic, DeliveryMode.PERSISTENT, 1*1024, 1, "indifferent");
+            session.commit();
+            assertEquals("DurableSubscription backing queue should now have 2 messages on it",
+                        Integer.valueOf(2), dursubQueue.getMessageCount());
+
+            TopicSubscriber durSub = session.createDurableSubscriber(topic, SUB_NAME);
+            Message m = durSub.receive(2000);
+            assertNotNull("Failed to receive an expected message", m);
+            m = durSub.receive(2000);
+            assertNotNull("Failed to receive an expected message", m);
+
+            session.commit();
+            session.close();
         }
         finally
         {
@@ -278,7 +339,8 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
         Connection connection = getConnection();
         connection.start();
 
-        consumeDurableSubscriptionMessages(connection);
+        consumeDurableSubscriptionMessages(connection, true);
+        consumeDurableSubscriptionMessages(connection, false);
         consumeQueueMessages(connection, false);
     }
 
@@ -484,21 +546,35 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
         }
     }
 
-    private void consumeDurableSubscriptionMessages(Connection connection) throws Exception
+    private void consumeDurableSubscriptionMessages(Connection connection, boolean selector) throws Exception
     {
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Topic topic = session.createTopic(TOPIC_NAME);
+        Topic topic = null;
+        TopicSubscriber durSub = null;
 
-        TopicSubscriber durSub = session.createDurableSubscriber(topic, SUB_NAME,"testprop='true'", false);
+        if(selector)
+        {
+            topic = session.createTopic(SELECTOR_TOPIC_NAME);
+            durSub = session.createDurableSubscriber(topic, SELECTOR_SUB_NAME,"testprop='true'", false);
+        }
+        else
+        {
+            topic = session.createTopic(TOPIC_NAME);
+            durSub = session.createDurableSubscriber(topic, SUB_NAME);
+        }
+
 
         // Retrieve the matching message 
         Message m = durSub.receive(2000);
         assertNotNull("Failed to receive an expected message", m);
-        assertEquals("Selector property did not match", "true", m.getStringProperty("testprop"));
+        if(selector)
+        {
+            assertEquals("Selector property did not match", "true", m.getStringProperty("testprop"));
+        }
         assertEquals("ID property did not match", 1, m.getIntProperty("ID"));
         assertEquals("Message content was not as expected",BDBStoreUpgradeTestPreparer.generateString(1024) , ((TextMessage)m).getText());
 
-        // Verify that neither the non-matching or uncommitted message are received
+        // Verify that no more messages are received
         m = durSub.receive(1000);
         assertNull("No more messages should have been recieved", m);
 

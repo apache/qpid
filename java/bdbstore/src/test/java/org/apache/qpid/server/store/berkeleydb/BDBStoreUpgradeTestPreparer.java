@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.url.URLSyntaxException;
 
@@ -29,16 +27,21 @@ import javax.jms.*;
 
 /**
  * Prepares an older version brokers BDB store with the required 
- * contents for use in the BDBStoreUpgradeTest. 
- * 
+ * contents for use in the BDBStoreUpgradeTest.
+ *
+ * NOTE: Must be used with the equivalent older version client!
+ *
  * The store will then be used to verify that the upgraded is 
  * completed properly and that once upgraded it functions as 
  * expected with the new broker.
+ *
  */
-public class BDBStoreUpgradeTestPreparer extends TestCase
+public class BDBStoreUpgradeTestPreparer
 {
     public static final String TOPIC_NAME="myUpgradeTopic";
-    public static final String SUB_NAME="myDurSubName";    
+    public static final String SUB_NAME="myDurSubName";
+    public static final String SELECTOR_SUB_NAME="mySelectorDurSubName";
+    public static final String SELECTOR_TOPIC_NAME="mySelectorUpgradeTopic";
     public static final String QUEUE_NAME="myUpgradeQueue";
 
     private static AMQConnectionFactory _connFac;
@@ -53,19 +56,11 @@ public class BDBStoreUpgradeTestPreparer extends TestCase
         _connFac = new AMQConnectionFactory(CONN_URL);
     }
 
-    /**
-     * Utility test method to allow running the preparation tool
-     * using the test framework
-     */
-    public void testPrepareBroker() throws Exception
-    {
-        prepareBroker();
-    }
-
     private void prepareBroker() throws Exception
     {
         prepareQueues();
-        prepareDurableSubscription();
+        prepareDurableSubscriptionWithSelector();
+        prepareDurableSubscriptionWithoutSelector();
     }
 
     /**
@@ -129,7 +124,7 @@ public class BDBStoreUpgradeTestPreparer extends TestCase
      * - Send a message which matches the selector but will remain uncommitted.
      * - Close the session.
      */
-    private void prepareDurableSubscription() throws Exception
+    private void prepareDurableSubscriptionWithSelector() throws Exception
     {
 
         // Create a connection
@@ -144,10 +139,10 @@ public class BDBStoreUpgradeTestPreparer extends TestCase
         });
         // Create a session on the connection, transacted to confirm delivery
         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Topic topic = session.createTopic(TOPIC_NAME);
+        Topic topic = session.createTopic(SELECTOR_TOPIC_NAME);
 
         // Create and register a durable subscriber with selector and then close it
-        TopicSubscriber durSub1 = session.createDurableSubscriber(topic, SUB_NAME,"testprop='true'", false);
+        TopicSubscriber durSub1 = session.createDurableSubscriber(topic, SELECTOR_SUB_NAME,"testprop='true'", false);
         durSub1.close();
 
         // Create a publisher and send a persistent message which matches the selector 
@@ -156,14 +151,55 @@ public class BDBStoreUpgradeTestPreparer extends TestCase
         TopicSession pubSession = connection.createTopicSession(true, Session.SESSION_TRANSACTED);
         TopicPublisher publisher = pubSession.createPublisher(topic);
 
-        publishMessages(session, publisher, topic, DeliveryMode.PERSISTENT, 1*1024, 1, "true");
-        publishMessages(session, publisher, topic, DeliveryMode.PERSISTENT, 1*1024, 1, "false");
+        publishMessages(pubSession, publisher, topic, DeliveryMode.PERSISTENT, 1*1024, 1, "true");
+        publishMessages(pubSession, publisher, topic, DeliveryMode.PERSISTENT, 1*1024, 1, "false");
         pubSession.commit();
-        publishMessages(session, publisher, topic, DeliveryMode.PERSISTENT, 1*1024, 1, "true");
+        publishMessages(pubSession, publisher, topic, DeliveryMode.PERSISTENT, 1*1024, 1, "true");
 
         publisher.close();
         pubSession.close();
+        connection.close();
+    }
 
+    /**
+     * Prepare a DurableSubscription backing queue for use in testing use of
+     * DurableSubscriptions without selectors following the upgrade process.
+     *
+     * - Create a transacted session on the connection.
+     * - Open and close a DurableSubscription without selector to create the backing queue.
+     * - Send a message which matches the subscription and commit session.
+     * - Close the session.
+     */
+    private void prepareDurableSubscriptionWithoutSelector() throws Exception
+    {
+        // Create a connection
+        TopicConnection connection = _connFac.createTopicConnection();
+        connection.start();
+        connection.setExceptionListener(new ExceptionListener()
+        {
+            public void onException(JMSException e)
+            {
+                e.printStackTrace();
+            }
+        });
+        // Create a session on the connection, transacted to confirm delivery
+        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        Topic topic = session.createTopic(TOPIC_NAME);
+
+        // Create and register a durable subscriber without selector and then close it
+        TopicSubscriber durSub1 = session.createDurableSubscriber(topic, SUB_NAME);
+        durSub1.close();
+
+        // Create a publisher and send a persistent message which matches the subscription
+        TopicSession pubSession = connection.createTopicSession(true, Session.SESSION_TRANSACTED);
+        TopicPublisher publisher = pubSession.createPublisher(topic);
+
+        publishMessages(pubSession, publisher, topic, DeliveryMode.PERSISTENT, 1*1024, 1, "indifferent");
+        pubSession.commit();
+
+        publisher.close();
+        pubSession.close();
+        connection.close();
     }
 
     public static void sendMessages(Session session, MessageProducer messageProducer, 
