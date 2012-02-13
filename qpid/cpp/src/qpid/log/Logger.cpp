@@ -23,7 +23,7 @@
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Time.h"
 #include "qpid/DisableExceptionLogging.h"
-#include <boost/pool/detail/singleton.hpp>
+#include <boost/serialization/singleton.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include <algorithm>
@@ -45,7 +45,7 @@ inline void Logger::enable_unlocked(Statement* s) {
 }
 
 Logger& Logger::instance() {
-    return boost::details::pool::singleton_default<Logger>::instance();
+    return boost::serialization::singleton<Logger>::get_mutable_instance();
 }
 
 Logger::Logger() : flags(0) {
