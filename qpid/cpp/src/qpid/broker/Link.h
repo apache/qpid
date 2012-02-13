@@ -61,7 +61,6 @@ namespace qpid {
             uint32_t currentInterval;
             bool     closing;
             RetryList urls;
-            bool updateUrls;
 
             typedef std::vector<Bridge::shared_ptr> Bridges;
             Bridges created;   // Bridges pending creation
@@ -113,7 +112,8 @@ namespace qpid {
             void add(Bridge::shared_ptr);
             void cancel(Bridge::shared_ptr);
 
-            void established();              // Called when connection is created
+            void established(); // Called when connection is create
+            void opened();      // Called when connection is open (after create)
             void closed(int, std::string);   // Called when connection goes away
             void setConnection(Connection*); // Set pointer to the AMQP Connection
             void reconnect(const Address&); //called by LinkRegistry
