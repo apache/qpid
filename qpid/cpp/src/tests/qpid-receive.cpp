@@ -156,6 +156,8 @@ class SequenceTracker
 
     /** Return true if the message should be procesed, false if it should be ignored. */
     bool track(Message& message) {
+        if (!(opts.verifySequence || opts.ignoreDuplicates))
+            return true;        // Not checking sequence numbers.
         uint sn = message.getProperties()[SN];
         bool duplicate = (sn <= lastSn);
         bool dropped = (sn > lastSn+1);
