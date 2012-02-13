@@ -22,16 +22,16 @@ package org.apache.qpid.server.store.berkeleydb.tuples;
 
 import com.sleepycat.bind.tuple.TupleBinding;
 
-import org.apache.qpid.server.store.berkeleydb.BindingKey;
+import org.apache.qpid.server.store.berkeleydb.records.BindingRecord;
 
-public class BindingTupleBindingFactory extends TupleBindingFactory<BindingKey>
+public class BindingTupleBindingFactory extends TupleBindingFactory<BindingRecord>
 {
     public BindingTupleBindingFactory(int version)
     {
         super(version);
     }
 
-    public TupleBinding<BindingKey> getInstance()
+    public TupleBinding<BindingRecord> getInstance()
     {
         switch (getVersion())
         {

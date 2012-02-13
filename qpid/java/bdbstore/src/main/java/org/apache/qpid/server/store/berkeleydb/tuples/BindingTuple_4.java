@@ -29,10 +29,10 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.store.berkeleydb.AMQShortStringEncoding;
-import org.apache.qpid.server.store.berkeleydb.BindingKey;
 import org.apache.qpid.server.store.berkeleydb.FieldTableEncoding;
+import org.apache.qpid.server.store.berkeleydb.records.BindingRecord;
 
-public class BindingTuple_4 extends TupleBinding<BindingKey> implements BindingTuple
+public class BindingTuple_4 extends TupleBinding<BindingRecord> implements BindingTuple
 {
     protected static final Logger _log = Logger.getLogger(BindingTuple.class);
 
@@ -41,7 +41,7 @@ public class BindingTuple_4 extends TupleBinding<BindingKey> implements BindingT
         super();
     }
 
-    public BindingKey entryToObject(TupleInput tupleInput)
+    public BindingRecord entryToObject(TupleInput tupleInput)
     {
         AMQShortString exchangeName = AMQShortStringEncoding.readShortString(tupleInput);
         AMQShortString queueName = AMQShortStringEncoding.readShortString(tupleInput);
@@ -60,10 +60,10 @@ public class BindingTuple_4 extends TupleBinding<BindingKey> implements BindingT
             return null;
         }
 
-        return new BindingKey(exchangeName, queueName, routingKey, arguments);
+        return new BindingRecord(exchangeName, queueName, routingKey, arguments);
     }
 
-    public void objectToEntry(BindingKey binding, TupleOutput tupleOutput)
+    public void objectToEntry(BindingRecord binding, TupleOutput tupleOutput)
     {
         AMQShortStringEncoding.writeShortString(binding.getExchangeName(), tupleOutput);
         AMQShortStringEncoding.writeShortString(binding.getQueueName(), tupleOutput);
