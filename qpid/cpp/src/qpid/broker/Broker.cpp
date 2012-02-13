@@ -127,7 +127,8 @@ Broker::Options::Options(const std::string& name) :
     queueFlowResumeRatio(70),
     queueThresholdEventRatio(80),
     defaultMsgGroup("qpid.no-group"),
-    timestampRcvMsgs(false)     // set the 0.10 timestamp delivery property
+    timestampRcvMsgs(false),     // set the 0.10 timestamp delivery property
+    linkMaintenanceInterval(2)
 {
     int c = sys::SystemInfo::concurrency();
     workerThreads=c+1;
@@ -149,6 +150,8 @@ Broker::Options::Options(const std::string& name) :
         ("mgmt-enable,m", optValue(enableMgmt,"yes|no"), "Enable Management")
         ("mgmt-qmf2", optValue(qmf2Support,"yes|no"), "Enable broadcast of management information over QMF v2")
         ("mgmt-qmf1", optValue(qmf1Support,"yes|no"), "Enable broadcast of management information over QMF v1")
+        // FIXME aconway 2012-02-13: consistent treatment of values in SECONDS
+        // allow sub-second intervals.
         ("mgmt-pub-interval", optValue(mgmtPubInterval, "SECONDS"), "Management Publish Interval")
         ("queue-purge-interval", optValue(queueCleanInterval, "SECONDS"),
          "Interval between attempts to purge any expired messages from queues")
@@ -164,7 +167,9 @@ Broker::Options::Options(const std::string& name) :
         ("default-flow-resume-threshold", optValue(queueFlowResumeRatio, "PERCENT"), "Percent of queue's maximum capacity at which flow control is de-activated.")
         ("default-event-threshold-ratio", optValue(queueThresholdEventRatio, "%age of limit"), "The ratio of any specified queue limit at which an event will be raised")
         ("default-message-group", optValue(defaultMsgGroup, "GROUP-IDENTIFER"), "Group identifier to assign to messages delivered to a message group queue that do not contain an identifier.")
-        ("enable-timestamp", optValue(timestampRcvMsgs, "yes|no"), "Add current time to each received message.");
+        ("enable-timestamp", optValue(timestampRcvMsgs, "yes|no"), "Add current time to each received message.")
+        ("link-maintenace-interval", optValue(linkMaintenanceInterval, "SECONDS"))
+        ;
 }
 
 const std::string empty;
