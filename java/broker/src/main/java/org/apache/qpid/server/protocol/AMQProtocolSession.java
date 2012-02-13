@@ -172,7 +172,7 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
 
     void setClientProperties(FieldTable clientProperties);
 
-    Object getClientIdentifier();
+    Object getReference();
 
     VirtualHost getVirtualHost();
 

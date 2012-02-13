@@ -28,9 +28,6 @@ org.apache.qpid.test.client.queue.QueuePolicyTest#testRejectPolicy
 //Moved from JavaStandaloneExcludes when it was removed
 ///////////////////////////////////////////////////////
 
-//QPID-1818, QPID-1821 : Client code path does not correctly restore a transacted session after failover.
-org.apache.qpid.server.persistent.NoLocalAfterRecoveryTest#*
-
 //XA functionality is not fully implemented yet
 org.apache.qpid.jms.xa.XAResourceTest#*
 

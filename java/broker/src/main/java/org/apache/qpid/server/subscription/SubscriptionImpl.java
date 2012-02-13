@@ -475,10 +475,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     public boolean hasInterest(QueueEntry entry)
     {
-
-
-
-
         //check that the message hasn't been rejected
         if (entry.isRejectedBy(getSubscriptionID()))
         {
@@ -490,22 +486,17 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
         if (_noLocal)
         {
-
             AMQMessage message = (AMQMessage) entry.getMessage();
 
-            //todo - client id should be recorded so we don't have to handle
-            // the case where this is null.
-            final Object publisher = message.getPublisherIdentifier();
+            final Object publisherReference = message.getConnectionIdentifier();
 
             // We don't want local messages so check to see if message is one we sent
-            Object localInstance = getProtocolSession();
+            Object localReference = getProtocolSession().getReference();
 
-            if(publisher.equals(localInstance))
+            if(publisherReference != null && publisherReference.equals(localReference))
             {
                 return false;
             }
-
-
         }
 
 

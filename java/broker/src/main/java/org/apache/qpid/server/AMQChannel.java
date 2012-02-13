@@ -1108,7 +1108,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
         AMQMessage message = new AMQMessage(incomingMessage.getStoredMessage());
 
         message.setExpiration(incomingMessage.getExpiration());
-        message.setClientIdentifier(_session);
+        message.setConnectionIdentifier(_session.getReference());
         return message;
     }
 
