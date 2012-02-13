@@ -24,6 +24,7 @@
 
 #include "Settings.h"
 #include "qpid/Url.h"
+#include "qpid/sys/Mutex.h"
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {
@@ -41,8 +42,7 @@ class BrokerReplicator;
 /**
  * State associated with a backup broker. Manages connections to primary.
  *
- * THREAD SAFE: trivially because currently it only has a constructor.
- * May need locking as the functionality grows.
+ * THREAD SAFE
  */
 class Backup
 {
@@ -52,6 +52,7 @@ class Backup
     void setUrl(const Url&);
 
   private:
+    sys::Mutex lock;
     broker::Broker& broker;
     Settings settings;
     boost::shared_ptr<broker::Link> link;
