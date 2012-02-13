@@ -42,8 +42,6 @@ import static org.apache.qpid.configuration.ClientProperties.QPID_SSL_TRUST_STOR
  */
 public class ConnectionSettings
 {
-    public static final String DEFAULT_ALGORITHM_NAME = "SunX509";
-
     public static final String WILDCARD_ADDRESS = "*";
 
     private String protocol = "tcp";
