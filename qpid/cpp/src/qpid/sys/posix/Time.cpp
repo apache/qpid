@@ -107,7 +107,9 @@ void outputFormattedNow(std::ostream& o) {
 void outputHiresNow(std::ostream& o) {
     ::timespec time;
     ::clock_gettime(CLOCK_REALTIME, &time);
-    o << time.tv_sec << "." << std::setw(9) << std::setfill('0') << time.tv_nsec << "s ";
+    ::time_t seconds = time.tv_sec;
+    outputFormattedTime(o, &seconds);
+    o << "." << std::setw(9) << std::setfill('0') << time.tv_nsec << " ";
 }
 
 void sleep(int secs) {
