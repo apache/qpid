@@ -52,6 +52,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class TransactionTimeoutTestCase extends QpidBrokerTestCase implements ExceptionListener
 {
+    private static final int ALERT_MESSAGE_TOLERANCE = 6;
     public static final String VIRTUALHOST = "test";
     public static final String TEXT = "0123456789abcdefghiforgettherest";
     public static final String CHN_OPEN_TXN = "CHN-1007";
@@ -189,7 +190,7 @@ public abstract class TransactionTimeoutTestCase extends QpidBrokerTestCase impl
         }
         else
         {
-	        assertTrue(idleErr, idleMsgs.size() >= idle - 2 && idleMsgs.size() <= idle + 2);
+	        assertTrue(idleErr, idleMsgs.size() >= idle - ALERT_MESSAGE_TOLERANCE && idleMsgs.size() <= idle + ALERT_MESSAGE_TOLERANCE);
         }
         
         if (open == 0)
@@ -198,7 +199,7 @@ public abstract class TransactionTimeoutTestCase extends QpidBrokerTestCase impl
         }
         else
         {
-            assertTrue(openErr, openMsgs.size() >= open - 2 && openMsgs.size() <= open + 2);
+            assertTrue(openErr, openMsgs.size() >= open - ALERT_MESSAGE_TOLERANCE && openMsgs.size() <= open + ALERT_MESSAGE_TOLERANCE);
         }
     }
 
