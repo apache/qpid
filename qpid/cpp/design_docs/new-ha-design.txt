@@ -287,6 +287,14 @@ the requisite number of replication subscriptions established will be
 confirmed to the publisher before they are replicated, leaving them
 vulnerable to a loss of the new primary before they are replicated.
 
+LM6 - persistence: In the event of a total cluster failure there are
+no tools to automatically identify the "latest" store. Once this
+is manually identfied, all other stores belonging to cluster members
+must be erased and the latest node must started as primary.
+
+LM6 - persistence: In the event of a single node failure, that nodes
+store must be erased before it can re-join the cluster.
+
 For configuration propagation:
 
 LC2 - Queue and exchange propagation is entirely asynchronous. There
@@ -340,6 +348,7 @@ LC6 - The events and query responses are not fully synchronized.
 
       It is not possible to miss a create event and yet not to have
       the object in question in the query response however.
+
 
 * Benefits compared to previous cluster implementation.
 
