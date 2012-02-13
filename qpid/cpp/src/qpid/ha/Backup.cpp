@@ -46,32 +46,39 @@ using std::string;
 Backup::Backup(broker::Broker& b, const Settings& s) :
     broker(b), settings(s), excluder(new ConnectionExcluder())
 {
-    Url url(s.brokerUrl);
-    string protocol = url[0].protocol.empty() ? "tcp" : url[0].protocol;
+    if (!s.brokerUrl.empty()) initialize(Url(s.brokerUrl));
+}
 
+void Backup::initialize(const Url& url) {
+    QPID_LOG(notice, "Ha: Backup started: " << url);
+    string protocol = url[0].protocol.empty() ? "tcp" : url[0].protocol;
     // Declare the link
     std::pair<Link::shared_ptr, bool> result = broker.getLinks().declare(
         url[0].host, url[0].port, protocol,
         false,              // durable
-        s.mechanism, s.username, s.password);
+        settings.mechanism, settings.username, settings.password);
     assert(result.second);  // FIXME aconway 2011-11-23: error handling
     link = result.first;
-    link->setUrl(Url(s.brokerUrl));
+    link->setUrl(url);
 
     replicator.reset(new BrokerReplicator(link));
     broker.getExchanges().registerExchange(replicator);
-
     broker.getConnectionObservers().add(excluder);
 }
 
 void Backup::setUrl(const Url& url) {
     sys::Mutex::ScopedLock l(lock);
-    link->setUrl(url);
+    if (!replicator.get())
+        initialize(url);
+    else {
+        QPID_LOG(info, "HA: Backup URL set to " << url);
+        link->setUrl(url);
+    }
 }
 
 Backup::~Backup() {
-    link->close();
-    broker.getExchanges().destroy(replicator->getName());
+    if (link) link->close();
+    if (replicator.get()) broker.getExchanges().destroy(replicator->getName());
     broker.getConnectionObservers().remove(excluder); // Allows client connections.
 }
 

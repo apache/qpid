@@ -35,115 +35,122 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 
 namespace qpid {
-    namespace broker {
 
-        class LinkRegistry;
-        class Broker;
-        class Connection;
+namespace sys {
+class TimerTask;
+}
 
-        class Link : public PersistableConfig, public management::Manageable {
-        private:
-            sys::Mutex          lock;
-            LinkRegistry*       links;
-            MessageStore*       store;
-            std::string        host;
-            uint16_t      port;
-            std::string        transport;
-            bool          durable;
-            std::string        authMechanism;
-            std::string        username;
-            std::string        password;
-            mutable uint64_t    persistenceId;
-            qmf::org::apache::qpid::broker::Link* mgmtObject;
-            Broker* broker;
-            int     state;
-            uint32_t visitCount;
-            uint32_t currentInterval;
-            bool     closing;
-            Url      url;       // URL can contain many addresses.
-            size_t   reconnectNext; // Index for next re-connect attempt
+namespace broker {
 
-            typedef std::vector<Bridge::shared_ptr> Bridges;
-            Bridges created;   // Bridges pending creation
-            Bridges active;    // Bridges active
-            Bridges cancellations;    // Bridges pending cancellation
-            uint channelCounter;
-            Connection* connection;
-            management::ManagementAgent* agent;
+class LinkRegistry;
+class Broker;
+class Connection;
 
-            static const int STATE_WAITING     = 1;
-            static const int STATE_CONNECTING  = 2;
-            static const int STATE_OPERATIONAL = 3;
-            static const int STATE_FAILED      = 4;
-            static const int STATE_CLOSED      = 5;
-            static const int STATE_PASSIVE     = 6;
+class Link : public PersistableConfig, public management::Manageable {
+  private:
+    sys::Mutex          lock;
+    LinkRegistry*       links;
+    MessageStore*       store;
+    std::string        host;
+    uint16_t      port;
+    std::string        transport;
+    bool          durable;
+    std::string        authMechanism;
+    std::string        username;
+    std::string        password;
+    mutable uint64_t    persistenceId;
+    qmf::org::apache::qpid::broker::Link* mgmtObject;
+    Broker* broker;
+    int     state;
+    uint32_t visitCount;
+    uint32_t currentInterval;
+    bool     closing;
+    Url      url;       // URL can contain many addresses.
+    size_t   reconnectNext; // Index for next re-connect attempt
 
-            static const uint32_t MAX_INTERVAL = 32;
+    typedef std::vector<Bridge::shared_ptr> Bridges;
+    Bridges created;   // Bridges pending creation
+    Bridges active;    // Bridges active
+    Bridges cancellations;    // Bridges pending cancellation
+    uint channelCounter;
+    Connection* connection;
+    management::ManagementAgent* agent;
 
-            void setStateLH (int newState);
-            void startConnectionLH();        // Start the IO Connection
-            void destroy();                  // Called when mgmt deletes this link
-            void ioThreadProcessing();       // Called on connection's IO thread by request
-            bool tryFailoverLH();            // Called during maintenance visit
-            bool hideManagement() const;
+    boost::intrusive_ptr<sys::TimerTask> timerTask;
 
-        public:
-            typedef boost::shared_ptr<Link> shared_ptr;
+    static const int STATE_WAITING     = 1;
+    static const int STATE_CONNECTING  = 2;
+    static const int STATE_OPERATIONAL = 3;
+    static const int STATE_FAILED      = 4;
+    static const int STATE_CLOSED      = 5;
+    static const int STATE_PASSIVE     = 6;
 
-            Link(LinkRegistry* links,
-                 MessageStore* store,
-                 const std::string&       host,
-                 uint16_t      port,
-                 const std::string&       transport,
-                 bool          durable,
-                 const std::string&       authMechanism,
-                 const std::string&       username,
-                 const std::string&       password,
-                 Broker*       broker,
-                 management::Manageable* parent = 0);
-            virtual ~Link();
+    static const uint32_t MAX_INTERVAL = 32;
 
-            std::string getHost() { return host; }
-            uint16_t    getPort() { return port; }
-            std::string getTransport() { return transport; }
+    void setStateLH (int newState);
+    void startConnectionLH();        // Start the IO Connection
+    void destroy();                  // Called when mgmt deletes this link
+    void ioThreadProcessing();       // Called on connection's IO thread by request
+    bool tryFailoverLH();            // Called during maintenance visit
+    bool hideManagement() const;
 
-            bool isDurable() { return durable; }
-            void maintenanceVisit ();
-            uint nextChannel();
-            void add(Bridge::shared_ptr);
-            void cancel(Bridge::shared_ptr);
-            void setUrl(const Url&); // Set URL for reconnection.
+  public:
+    typedef boost::shared_ptr<Link> shared_ptr;
 
-            void established(); // Called when connection is create
-            void opened();      // Called when connection is open (after create)
-            void closed(int, std::string);   // Called when connection goes away
-            void setConnection(Connection*); // Set pointer to the AMQP Connection
-            void reconnect(const Address&); //called by LinkRegistry
-            void close();       // Close the link from within the broker.
+    Link(LinkRegistry* links,
+         MessageStore* store,
+         const std::string&       host,
+         uint16_t      port,
+         const std::string&       transport,
+         bool          durable,
+         const std::string&       authMechanism,
+         const std::string&       username,
+         const std::string&       password,
+         Broker*       broker,
+         management::Manageable* parent = 0);
+    virtual ~Link();
 
-            std::string getAuthMechanism() { return authMechanism; }
-            std::string getUsername()      { return username; }
-            std::string getPassword()      { return password; }
-            Broker* getBroker()       { return broker; }
+    std::string getHost() { return host; }
+    uint16_t    getPort() { return port; }
+    std::string getTransport() { return transport; }
 
-            void notifyConnectionForced(const std::string text);
-            void setPassive(bool p);
+    bool isDurable() { return durable; }
+    void maintenanceVisit ();
+    uint nextChannel();
+    void add(Bridge::shared_ptr);
+    void cancel(Bridge::shared_ptr);
+    void setUrl(const Url&); // Set URL for reconnection.
 
-            // PersistableConfig:
-            void     setPersistenceId(uint64_t id) const;
-            uint64_t getPersistenceId() const { return persistenceId; }
-            uint32_t encodedSize() const;
-            void     encode(framing::Buffer& buffer) const;
-            const std::string& getName() const;
+    void established(); // Called when connection is create
+    void opened();      // Called when connection is open (after create)
+    void closed(int, std::string);   // Called when connection goes away
+    void setConnection(Connection*); // Set pointer to the AMQP Connection
+    void reconnect(const Address&); //called by LinkRegistry
+    void close();       // Close the link from within the broker.
 
-            static Link::shared_ptr decode(LinkRegistry& links, framing::Buffer& buffer);
+    std::string getAuthMechanism() { return authMechanism; }
+    std::string getUsername()      { return username; }
+    std::string getPassword()      { return password; }
+    Broker* getBroker()       { return broker; }
 
-            // Manageable entry points
-            management::ManagementObject*    GetManagementObject(void) const;
-            management::Manageable::status_t ManagementMethod(uint32_t, management::Args&, std::string&);
+    void notifyConnectionForced(const std::string text);
+    void setPassive(bool p);
 
-        };
-    }
+    // PersistableConfig:
+    void     setPersistenceId(uint64_t id) const;
+    uint64_t getPersistenceId() const { return persistenceId; }
+    uint32_t encodedSize() const;
+    void     encode(framing::Buffer& buffer) const;
+    const std::string& getName() const;
+
+    static Link::shared_ptr decode(LinkRegistry& links, framing::Buffer& buffer);
+
+    // Manageable entry points
+    management::ManagementObject*    GetManagementObject(void) const;
+    management::Manageable::status_t ManagementMethod(uint32_t, management::Args&, std::string&);
+
+};
+}
 }
 
 
