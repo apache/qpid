@@ -91,11 +91,10 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
                 rawSelector, prefetchHigh, prefetchLow, exclusive, acknowledgeMode, browseOnly, autoClose);
         _0_10session = (AMQSession_0_10) session;
 
-        _preAcquire = evaluatePreAcquire(browseOnly, destination);
+        _serverJmsSelectorSupport = connection.isSupportedServerFeature(ServerPropertyNames.FEATURE_QPID_JMS_SELECTOR);
+        _preAcquire = evaluatePreAcquire(browseOnly, destination, _serverJmsSelectorSupport);
 
         _capacity = evaluateCapacity(destination);
-        _serverJmsSelectorSupport = connection.isSupportedServerFeature(ServerPropertyNames.FEATURE_QPID_JMS_SELECTOR);
-
 
         if (destination.isAddressResolved() && AMQDestination.TOPIC_TYPE == destination.getAddressType()) 
         {            
@@ -222,7 +221,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         boolean messageOk = true;
         try
         {
-            if (getMessageSelectorFilter() != null && !_serverJmsSelectorSupport)
+            if (!_serverJmsSelectorSupport && getMessageSelectorFilter() != null)
             {
                 messageOk = getMessageSelectorFilter().matches(message);
             }
@@ -525,7 +524,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         return _preAcquire;
     }
 
-    private boolean evaluatePreAcquire(boolean browseOnly, AMQDestination destination)
+    private boolean evaluatePreAcquire(boolean browseOnly, AMQDestination destination, boolean serverJmsSelectorSupport)
     {
         boolean preAcquire;
         if (browseOnly)
@@ -535,7 +534,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         else
         {
             boolean isQueue = (destination instanceof AMQQueue || getDestination().getAddressType() == AMQDestination.QUEUE_TYPE);
-            if (isQueue && getMessageSelectorFilter() != null)
+            if (!serverJmsSelectorSupport && isQueue && getMessageSelectorFilter() != null)
             {
                 preAcquire = false;
             }

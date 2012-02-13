@@ -47,7 +47,6 @@ import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.util.FlowControllingBlockingQueue;
 import org.apache.qpid.common.AMQPFilterTypes;
-import org.apache.qpid.client.filter.MessageFilter;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -2581,7 +2580,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      * @param queueName
      */
     private void consumeFromQueue(C consumer, AMQShortString queueName,
-                                  AMQProtocolHandler protocolHandler, boolean nowait, MessageFilter messageSelector) throws AMQException, FailoverException
+                                  AMQProtocolHandler protocolHandler, boolean nowait) throws AMQException, FailoverException
     {
         int tagId = _nextTag++;
 
@@ -2598,7 +2597,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         try
         {
-            sendConsume(consumer, queueName, protocolHandler, nowait, messageSelector, tagId);
+            sendConsume(consumer, queueName, protocolHandler, nowait, tagId);
         }
         catch (AMQException e)
         {
@@ -2609,7 +2608,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     }
 
     public abstract void sendConsume(C consumer, AMQShortString queueName,
-                                     AMQProtocolHandler protocolHandler, boolean nowait, MessageFilter messageSelector, int tag) throws AMQException, FailoverException;
+                                     AMQProtocolHandler protocolHandler, boolean nowait, int tag) throws AMQException, FailoverException;
 
     private P createProducerImpl(final Destination destination, final boolean mandatory, final boolean immediate)
             throws JMSException
@@ -2954,7 +2953,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         try
         {
-            consumeFromQueue(consumer, queueName, protocolHandler, nowait, consumer.getMessageSelectorFilter());
+            consumeFromQueue(consumer, queueName, protocolHandler, nowait);
         }
         catch (FailoverException e)
         {
