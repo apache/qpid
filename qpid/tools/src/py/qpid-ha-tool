@@ -34,38 +34,43 @@ op.add_option("-q", "--query", action="store_true",
 	      help="Show the current HA settings on the broker.")
 
 class HaBroker:
-    def __init__(self, broker):
-        self.session = qmf.console.Session()
-	self.qmf_broker = self.session.addBroker(broker, client_properties={"qpid.ha-admin":1})
-	ha_brokers = self.session.getObjects(_class="habroker", _package="org.apache.qpid.ha")
+    def __init__(self, session, broker):
+        self.session = session
+	self.qmf_broker = self.session.addBroker(
+            broker, client_properties={"qpid.ha-admin":1})
+	ha_brokers = self.session.getObjects(
+            _class="habroker", _package="org.apache.qpid.ha")
 	if (not ha_brokers): raise Exception("Broker does not have HA enabled.")
 	self.ha_broker = ha_brokers[0]
 
     def query(self):
 	self.ha_broker.update()
 	print "status=", self.ha_broker.status
-	print "client-addresses=", self.ha_broker.clientAddresses
 	print "broker-addresses=", self.ha_broker.brokerAddresses
+	print "client-addresses=", self.ha_broker.clientAddresses
 
 def main(argv):
     try:
 	opts, args = op.parse_args(argv)
 	if len(args) >1: broker = args[1]
 	else: broker = "localhost:5672"
-	hb = HaBroker(broker)
+        session = qmf.console.Session()
 	try:
+            hb = HaBroker(session, broker)
 	    action=False
-	    if opts.promote: hb.ha_broker.promote(); action=True
-	    if opts.client_addresses: hb.ha_broker.setClientAddresses(opts.client_addresses); action=True
-	    if opts.broker_addresses: hb.ha_broker.setBrokerAddresses(opts.broker_addresses); action=True
+	    if opts.promote:
+                hb.ha_broker.promote(); action=True
+	    if opts.broker_addresses:
+                hb.ha_broker.setBrokerAddresses(opts.broker_addresses); action=True
+	    if opts.client_addresses:
+                hb.ha_broker.setClientAddresses(opts.client_addresses); action=True
 	    if opts.query or not action: hb.query()
 	    return 0
 	finally:
-	    hb.session.close()		# Avoid errors shutting down threads.
+	    session.close()      # Avoid errors shutting down threads.
     except Exception, e:
-	raise				# FIXME aconway 2012-01-30:
         print e
-        return -1
+        return 1
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))

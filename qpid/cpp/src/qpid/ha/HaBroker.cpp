@@ -55,14 +55,15 @@ const std::string BACKUP="backup";
 HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     : broker(b),
       settings(s),
-      clientUrl(url(s.clientUrl, "ha-client-url")),
       brokerUrl(url(s.brokerUrl, "ha-broker-url")),
+      clientUrl(s.clientUrl.empty() ? brokerUrl : url(s.clientUrl, "ha-client-url")),
       backup(new Backup(b, s)),
       mgmtObject(0)
 {
     // Note all HA brokers start out in backup mode.
-    QPID_LOG(notice, "HA: Backup initialized: client-url=" << clientUrl
-             << " broker-url=" << brokerUrl);
+    QPID_LOG(notice, "HA: Backup initialized: "
+             << " broker-url=" << brokerUrl
+             << " client-url=" << clientUrl);
     // Register a factory for replicating subscriptions.
     broker.getConsumerFactories().add(
         boost::shared_ptr<ReplicatingSubscription::Factory>(
@@ -95,17 +96,15 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
           break;
       }
       case _qmf::HaBroker::METHOD_SETCLIENTADDRESSES: {
-          QPID_LOG(critical, "FIXME" << "before " <<  clientUrl)
           clientUrl = dynamic_cast<_qmf::ArgsHaBrokerSetClientAddresses&>(args).i_clientAddresses;
-          QPID_LOG(critical, "FIXME" << "after " <<  clientUrl)
-          // FIXME aconway 2012-01-30: upate status for new URL
           mgmtObject->set_clientAddresses(clientUrl.str());
+          // FIXME aconway 2012-01-30: upate status for new URL
           break;
       }
       case _qmf::HaBroker::METHOD_SETBROKERADDRESSES: {
           brokerUrl = dynamic_cast<_qmf::ArgsHaBrokerSetBrokerAddresses&>(args).i_brokerAddresses;
-          // FIXME aconway 2012-01-30: upate status for new URL
           mgmtObject->set_brokerAddresses(brokerUrl.str());
+          if (backup.get()) backup->setUrl(brokerUrl);
           break;
       }
       default:
