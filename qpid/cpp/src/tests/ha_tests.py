@@ -56,8 +56,8 @@ class ShortTests(BrokerTest):
         self.wait(bs, address)
         bs.connection.close()
 
-    def set_ha_status(self, address, status):
-        os.system("qpid-ha-status %s %s"%(address, status))
+    def promote(self, broker):
+        os.system("qpid-ha-status %s primary"%(broker.host_port()))
 
     def assert_missing(self, session, address):
         try:
@@ -122,7 +122,8 @@ class ShortTests(BrokerTest):
             b.sender(prefix+"e4").send(Message("drop2")) # Verify unbind.
             self.assert_browse_retry(b, prefix+"q4", ["6","7"])
 
-        primary = self.ha_broker(name="primary", broker_url="primary") # Temp hack to identify primary
+        primary = self.ha_broker(name="primary")
+        self.promote(primary)
         p = primary.connect().session()
 
         # Create config, send messages before starting the backup, to test catch-up replication.
@@ -164,7 +165,8 @@ class ShortTests(BrokerTest):
     def test_sync(self):
         def queue(name, replicate):
             return "%s;{create:always,%s}"%(name, self.qpid_replicate(replicate))
-        primary = self.ha_broker(name="primary", broker_url="primary") # Temp hack to identify primary
+        primary = self.ha_broker(name="primary")
+        self.promote(primary)
         p = primary.connect().session()
         s = p.sender(queue("q","messages"))
         for m in [str(i) for i in range(0,10)]: s.send(m)
@@ -186,7 +188,8 @@ class ShortTests(BrokerTest):
 
     def test_send_receive(self):
         """Verify sequence numbers of messages sent by qpid-send"""
-        primary = self.ha_broker(name="primary", broker_url="primary")
+        primary = self.ha_broker(name="primary")
+        self.promote(primary)
         backup1 = self.ha_broker(name="backup1", broker_url=primary.host_port())
         backup2 = self.ha_broker(name="backup2", broker_url=primary.host_port())
         sender = self.popen(
@@ -219,7 +222,8 @@ class ShortTests(BrokerTest):
     def test_failover(self):
         """Verify that backups rejects connections and that fail-over works in python client"""
         getLogger().setLevel(ERROR) # Disable WARNING log messages due to failover
-        primary = self.ha_broker(name="primary", expect=EXPECT_EXIT_FAIL, broker_url="primary") # Temp hack to identify primary
+        primary = self.ha_broker(name="primary", expect=EXPECT_EXIT_FAIL)
+        self.promote(primary)
         backup = self.ha_broker(name="backup", broker_url=primary.host_port())
         # Check that backup rejects normal connections
         try:
@@ -237,12 +241,13 @@ class ShortTests(BrokerTest):
         sender.send("foo")
         primary.kill()
         assert retry(lambda: not is_running(primary.pid))
-        self.set_ha_status(backup.host_port(), "primary")         # Promote the backup
+        self.promote(backup)
         self.assert_browse_retry(s, "q", ["foo"])
         c.close()
 
     def test_failover_cpp(self):
-        primary = self.ha_broker(name="primary", expect=EXPECT_EXIT_FAIL, broker_url="primary") # Temp hack to identify primary
+        primary = self.ha_broker(name="primary", expect=EXPECT_EXIT_FAIL)
+        self.promote(primary)
         backup = self.ha_broker(name="backup", broker_url=primary.host_port())
         url="%s,%s"%(primary.host_port(), backup.host_port())
         primary.connect().session().sender("q;{create:always,%s}"%(self.qpid_replicate()))
@@ -257,7 +262,7 @@ class ShortTests(BrokerTest):
 
         primary.kill()
         assert retry(lambda: not is_running(primary.pid)) # Wait for primary to die
-        self.set_ha_status(backup.host_port(), "primary")
+        self.promote(backup)
         n = receiver.received       # Make sure we are still running
         assert retry(lambda: receiver.received > n + 10)
         sender.stop()

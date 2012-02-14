@@ -27,6 +27,7 @@
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {
+
 namespace broker {
 class Broker;
 class Link;
@@ -34,6 +35,8 @@ class Link;
 
 namespace ha {
 class Settings;
+class ConnectionExcluder;
+class BrokerReplicator;
 
 /**
  * State associated with a backup broker. Manages connections to primary.
@@ -45,12 +48,16 @@ class Backup
 {
   public:
     Backup(broker::Broker&, const Settings&);
+    ~Backup();
 
   private:
     broker::Broker& broker;
     Settings settings;
     boost::shared_ptr<broker::Link> link;
+    boost::shared_ptr<BrokerReplicator> replicator;
+    boost::shared_ptr<ConnectionExcluder> excluder;
 };
+
 }} // namespace qpid::ha
 
 #endif  /*!QPID_HA_BACKUP_H*/

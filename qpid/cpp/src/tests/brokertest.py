@@ -513,7 +513,7 @@ class BrokerTest(TestCase):
         finally: r.close()
         return contents
 
-    def assert_browse(self, session, queue, expect_contents, timeout=0, transform=lambda d:m.content):
+    def assert_browse(self, session, queue, expect_contents, timeout=0, transform=lambda m: m.content):
         """Assert that the contents of messages on queue (as retrieved
         using session and timeout) exactly match the strings in
         expect_contents"""

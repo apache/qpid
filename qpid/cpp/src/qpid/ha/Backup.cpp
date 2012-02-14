@@ -22,6 +22,7 @@
 #include "Settings.h"
 #include "BrokerReplicator.h"
 #include "ReplicatingSubscription.h"
+#include "ConnectionExcluder.h"
 #include "qpid/Url.h"
 #include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/broker/Bridge.h"
@@ -42,11 +43,12 @@ using namespace broker;
 using types::Variant;
 using std::string;
 
-Backup::Backup(broker::Broker& b, const Settings& s) : broker(b), settings(s) {
+Backup::Backup(broker::Broker& b, const Settings& s) :
+    broker(b), settings(s), excluder(new ConnectionExcluder())
+{
     Url url(s.brokerUrl);
     string protocol = url[0].protocol.empty() ? "tcp" : url[0].protocol;
 
-    // FIXME aconway 2011-11-17: TBD: link management, discovery, fail-over.
     // Declare the link
     std::pair<Link::shared_ptr, bool> result = broker.getLinks().declare(
         url[0].host, url[0].port, protocol,
@@ -54,9 +56,16 @@ Backup::Backup(broker::Broker& b, const Settings& s) : broker(b), settings(s) {
         s.mechanism, s.username, s.password);
     assert(result.second);  // FIXME aconway 2011-11-23: error handling
     link = result.first;
-    boost::shared_ptr<BrokerReplicator> wr(new BrokerReplicator(link));
-    broker.getExchanges().registerExchange(wr);
+
+    replicator.reset(new BrokerReplicator(link));
+    broker.getExchanges().registerExchange(replicator);
+
+    broker.getConnectionObservers().add(excluder);
 }
 
+Backup::~Backup() {
+    broker.getExchanges().destroy(replicator->getName());
+    broker.getConnectionObservers().remove(excluder); // Allows client connections.
+}
 
 }} // namespace qpid::ha

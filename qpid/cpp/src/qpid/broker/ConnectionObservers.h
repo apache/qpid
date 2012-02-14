@@ -23,6 +23,9 @@
  */
 
 #include "ConnectionObserver.h"
+#include "qpid/sys/Mutex.h"
+#include <set>
+#include <algorithm>
 
 namespace qpid {
 namespace broker {
@@ -30,12 +33,18 @@ namespace broker {
 /**
  * A collection of connection observers.
  * Calling a ConnectionObserver function will call that function on each observer.
+ * THREAD SAFE.
  */
 class ConnectionObservers : public ConnectionObserver {
   public:
-    // functions for managing the collection of observers
     void add(boost::shared_ptr<ConnectionObserver> observer) {
-        observers.push_back(observer);
+        sys::Mutex::ScopedLock l(lock);
+        observers.insert(observer);
+    }
+
+    void remove(boost::shared_ptr<ConnectionObserver> observer) {
+        sys::Mutex::ScopedLock l(lock);
+        observers.erase(observer);
     }
 
     void connection(Connection& c) {
@@ -55,10 +64,12 @@ class ConnectionObservers : public ConnectionObserver {
     }
 
   private:
-    typedef std::vector<boost::shared_ptr<ConnectionObserver> > Observers;
+    typedef std::set<boost::shared_ptr<ConnectionObserver> > Observers;
+    sys::Mutex lock;
     Observers observers;
 
     template <class F> void each(F f) {
+        sys::Mutex::ScopedLock l(lock);
         std::for_each(observers.begin(), observers.end(), f);
     }
 };
