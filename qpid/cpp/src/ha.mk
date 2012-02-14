@@ -23,12 +23,14 @@
 dmoduleexec_LTLIBRARIES += ha.la
 
 ha_la_SOURCES =					\
-  qpid/ha/HaPlugin.cpp				\
-  qpid/ha/HaBroker.cpp				\
-  qpid/ha/HaBroker.h				\
   qpid/ha/Backup.cpp				\
   qpid/ha/Backup.h				\
-  qpid/ha/Settings.h
+  qpid/ha/HaBroker.cpp				\
+  qpid/ha/HaBroker.h				\
+  qpid/ha/HaPlugin.cpp				\
+  qpid/ha/Settings.h				\
+  qpid/ha/WiringReplicator.cpp			\
+  qpid/ha/WiringReplicator.h
 
 ha_la_LIBADD = libqpidbroker.la
 ha_la_LDFLAGS = $(PLUGINLDFLAGS)
