@@ -23,7 +23,13 @@
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Time.h"
 #include "qpid/DisableExceptionLogging.h"
+
+#if (BOOST_VERSION >= 104000)
 #include <boost/serialization/singleton.hpp>
+#else
+#include <boost/pool/detail/singleton.hpp>
+#endif
+
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include <algorithm>
@@ -45,7 +51,11 @@ inline void Logger::enable_unlocked(Statement* s) {
 }
 
 Logger& Logger::instance() {
+#if (BOOST_VERSION >= 104000)
     return boost::serialization::singleton<Logger>::get_mutable_instance();
+#else
+    return boost::details::pool::singleton_default<Logger>::instance();
+#endif
 }
 
 Logger::Logger() : flags(0) {
