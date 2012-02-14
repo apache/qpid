@@ -86,7 +86,7 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
   private:
     boost::shared_ptr<broker::Queue> events;
     boost::shared_ptr<broker::Consumer> consumer;
-    qpid::framing::SequenceSet range;
+    qpid::framing::SequenceSet dequeues;
 
     void generateDequeueEvent();
     class DelegatingConsumer : public Consumer

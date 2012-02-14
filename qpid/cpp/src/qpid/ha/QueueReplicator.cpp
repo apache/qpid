@@ -83,7 +83,7 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     qpid::framing::SequenceNumber oldest;
     if (queue->getOldest(oldest))
         settings.setInt(ReplicatingSubscription::QPID_LOW_SEQUENCE_NUMBER, oldest);
-    peer.getMessage().subscribe(args.i_src, args.i_dest, 0/*accept-explicit*/, 0/*acquire-pre-acquired*/, false, "", 0, settings);
+    peer.getMessage().subscribe(args.i_src, args.i_dest, 0/*accept-explicit*/, 1/*not-acquired*/, false, "", 0, settings);
     peer.getMessage().flow(getName(), 0, 0xFFFFFFFF);
     peer.getMessage().flow(getName(), 1, 0xFFFFFFFF);
     QPID_LOG(debug, "HA: Backup activated bridge from " << args.i_src << " to " << args.i_dest);
@@ -98,6 +98,7 @@ void QueueReplicator::route(Deliverable& msg, const std::string& key, const qpid
         qpid::framing::SequenceSet latest;
         latest.decode(buffer);
 
+        QPID_LOG(trace, "HA: Backup received dequeues: " << latest);
         //TODO: should be able to optimise the following
         for (qpid::framing::SequenceSet::iterator i = latest.begin(); i != latest.end(); i++) {
             if (current < *i) {

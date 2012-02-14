@@ -48,23 +48,26 @@ class ReplicationStateInitialiser
     ReplicationStateInitialiser(
         qpid::framing::SequenceSet& r,
         const qpid::framing::SequenceNumber& s,
-        const qpid::framing::SequenceNumber& e) : results(r), start(s), end(e)
+        const qpid::framing::SequenceNumber& e) : dequeues(r), start(s), end(e)
     {
-        results.add(start, end);
+        dequeues.add(start, end);
     }
 
     void operator()(const QueuedMessage& message) {
         if (message.position < start) {
             //replica does not have a message that should still be on the queue
             QPID_LOG(warning, "HA: Replica missing message " << QueuePos(message));
+            // FIXME aconway 2011-12-09: we want the replica to dump
+            // its messages and start from scratch in this case.
         } else if (message.position >= start && message.position <= end) {
-            //i.e. message is within the intial range and has not been dequeued, so remove it from the results
-            results.remove(message.position);
+            //i.e. message is within the intial range and has not been dequeued,
+            //so remove it from the dequeues
+            dequeues.remove(message.position);
         } //else message has not been seen by replica yet so can be ignored here
     }
 
   private:
-    qpid::framing::SequenceSet& results;
+    qpid::framing::SequenceSet& dequeues;
     const qpid::framing::SequenceNumber start;
     const qpid::framing::SequenceNumber end;
 };
@@ -94,6 +97,7 @@ ReplicatingSubscription::Factory::create(
         rs.reset(new ReplicatingSubscription(
                      parent, name, queue, ack, false, exclusive, tag,
                      resumeId, resumeTtl, arguments));
+        // FIXME aconway 2011-12-08: need to removeObserver also.
         queue->addObserver(rs);
     }
     return rs;
@@ -115,6 +119,12 @@ ReplicatingSubscription::ReplicatingSubscription(
     events(new Queue(mask(name))),
     consumer(new DelegatingConsumer(*this))
 {
+    // FIXME aconway 2011-12-09: Here we take advantage of existing
+    // messages on the backup queue to reduce replication
+    // effort. However if the backup queue is inconsistent with being
+    // a backup of the primary queue, then we want to issue a warning
+    // and tell the backup to dump its messages and start replicating
+    // from scratch.
     QPID_LOG(debug, "HA: Replicating subscription " << name << " to " << queue->getName());
     if (arguments.isSet(QPID_HIGH_SEQUENCE_NUMBER)) {
         qpid::framing::SequenceNumber hwm = arguments.getAsInt(QPID_HIGH_SEQUENCE_NUMBER);
@@ -127,19 +137,22 @@ ReplicatingSubscription::ReplicatingSubscription(
         qpid::framing::SequenceNumber oldest;
         if (queue->getOldest(oldest)) {
             if (oldest >= hwm) {
-                range.add(lwm, --oldest);
+                dequeues.add(lwm, --oldest);
             } else if (oldest >= lwm) {
-                ReplicationStateInitialiser initialiser(range, lwm, hwm);
+                ReplicationStateInitialiser initialiser(dequeues, lwm, hwm);
                 queue->eachMessage(initialiser);
-            } else { //i.e. have older message on master than is reported to exist on replica
-                QPID_LOG(warning, "HA: Replica  missing message on master");
+            } else { //i.e. older message on master than is reported to exist on replica
+                // FIXME aconway 2011-12-09: dump and start from scratch?
+                QPID_LOG(warning, "HA: Replica missing message on primary");
             }
         } else {
             //local queue (i.e. master) is empty
-            range.add(lwm, queue->getPosition());
+            dequeues.add(lwm, queue->getPosition());
+            // FIXME aconway 2011-12-09: if hwm >
+            // queue->getPosition(), dump and start from scratch?
         }
         QPID_LOG(debug, "HA: Initial set of dequeues for " << queue->getName() << ": "
-                 << range << " (lwm=" << lwm << ", hwm=" << hwm
+                 << dequeues << " (lwm=" << lwm << ", hwm=" << hwm
                  << ", current=" << queue->getPosition() << ")");
         //set position of 'cursor'
         position = hwm;
@@ -162,7 +175,7 @@ ReplicatingSubscription::~ReplicatingSubscription() {}
 //under the message lock in the queue
 void ReplicatingSubscription::enqueued(const QueuedMessage& m)
 {
-    QPID_LOG(trace, "HA: Enqueued message " << QueuePos(m));
+    QPID_LOG(trace, "HA: Enqueued message " << QueuePos(m) << " on " << getName());
     //delay completion
     m.payload->getIngressCompletion().startCompleter();
 }
@@ -170,11 +183,11 @@ void ReplicatingSubscription::enqueued(const QueuedMessage& m)
 // Called with lock held.
 void ReplicatingSubscription::generateDequeueEvent()
 {
-    QPID_LOG(trace, "HA: Sending dequeue event " << getQueue()->getName() << " " << range);
-    string buf(range.encodedSize(),'\0');
+    QPID_LOG(trace, "HA: Sending dequeue event " << getQueue()->getName() << " " << dequeues << " on " << getName());
+    string buf(dequeues.encodedSize(),'\0');
     framing::Buffer buffer(&buf[0], buf.size());
-    range.encode(buffer);
-    range.clear();
+    dequeues.encode(buffer);
+    dequeues.clear();
     buffer.reset();
     //generate event message
     boost::intrusive_ptr<Message> event = new Message();
@@ -199,24 +212,20 @@ void ReplicatingSubscription::generateDequeueEvent()
     events->deliver(event);
 }
 
-// FIXME aconway 2011-12-02: is it safe to defer dequues to doDispatch() like this?
-// If a queue is drained with no new messages coming on
-// will the messages be dequeued on the backup?
-
-//called after the message has been removed from the deque and under
-//the message lock in the queue
+// Called after the message has been removed from the deque and under
+// the message lock in the queue.
 void ReplicatingSubscription::dequeued(const QueuedMessage& m)
 {
     {
         sys::Mutex::ScopedLock l(lock);
-        range.add(m.position);
-        // FIXME aconway 2011-11-29: q[pos] logging
-        QPID_LOG(trace, "HA: Updated dequeue event to include " << QueuePos(m) << "; subscription is at " << position);
+        dequeues.add(m.position);
+        QPID_LOG(trace, "HA: Added " << QueuePos(m)
+                 << " to dequeue event; subscription at " << position);
     }
-    notify();
+    notify();                   // Ensure a call to doDispatch
     if (m.position > position) {
         m.payload->getIngressCompletion().finishCompleter();
-        QPID_LOG(trace, "HA: Completed " << QueuePos(m) << " early due to dequeue");
+        QPID_LOG(trace, "HA: Completed " << QueuePos(m) << " early, dequeued.");
     }
 }
 
@@ -224,7 +233,7 @@ bool ReplicatingSubscription::doDispatch()
 {
     {
         sys::Mutex::ScopedLock l(lock);
-        if (!range.empty()) {
+        if (!dequeues.empty()) {
             generateDequeueEvent();
         }
     }
