@@ -49,6 +49,7 @@ class Backup
   public:
     Backup(broker::Broker&, const Settings&);
     ~Backup();
+    void setUrl(const Url&);
 
   private:
     broker::Broker& broker;

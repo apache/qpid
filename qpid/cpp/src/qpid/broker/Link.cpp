@@ -64,6 +64,7 @@ Link::Link(LinkRegistry*  _links,
       visitCount(0),
       currentInterval(1),
       closing(false),
+      reconnectNext(0),         // Index of next address for reconnecting in url.
       channelCounter(1),
       connection(0),
       agent(0)
@@ -146,11 +147,23 @@ void Link::established ()
     }
 }
 
+void Link::setUrl(const Url& u) {
+    Mutex::ScopedLock mutex(lock);
+    url = u;
+    reconnectNext = 0;
+}
+
 void Link::opened() {
     Mutex::ScopedLock mutex(lock);
     assert(connection);
-    urls.reset(connection->getKnownHosts());
-    QPID_LOG(debug, "Known hosts for peer of inter-broker link: " << urls);
+    // Get default URL from known-hosts.
+    const std::vector<Url>& known = connection->getKnownHosts();
+    // Flatten vector of URLs into a single URL listing all addresses.
+    url.clear();
+    for(size_t i = 0; i < known.size(); ++i)
+        url.insert(url.end(), known[i].begin(), known[i].end());
+    reconnectNext = 0;
+    QPID_LOG(debug, "Known hosts for peer of inter-broker link: " << url);
 }
 
 void Link::closed(int, std::string text)
@@ -334,17 +347,16 @@ void Link::reconnect(const qpid::Address& a)
     }
 }
 
-bool Link::tryFailover()
-{
-    Address next;
-    if (urls.next(next) &&
-        (next.host != host || next.port != port || next.protocol != transport)) {
+bool Link::tryFailover() {      // FIXME aconway 2012-01-30: lock held?
+    if (reconnectNext >= url.size()) reconnectNext = 0;
+    if (url.empty()) return false;
+    Address next = url[reconnectNext++];
+    if (next.host != host || next.port != port || next.protocol != transport) {
         links->changeAddress(Address(transport, host, port), next);
         QPID_LOG(debug, "Link failing over to " << host << ":" << port);
         return true;
-    } else {
-        return false;
     }
+    return false;
 }
 
 // Management updates for a linke are inconsistent in a cluster, so they are

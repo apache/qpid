@@ -57,7 +57,7 @@ class HaBroker : public management::Manageable
     sys::Mutex lock;
     broker::Broker& broker;
     Settings settings;
-    Url clientUrl, brokerUrl;
+    Url brokerUrl, clientUrl;
     std::auto_ptr<Backup> backup;
     qmf::org::apache::qpid::ha::HaBroker* mgmtObject;
 };
