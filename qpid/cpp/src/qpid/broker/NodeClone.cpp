@@ -78,32 +78,28 @@ NodeClone::NodeClone(const std::string& name, Broker& b) : Exchange(name), broke
 NodeClone::~NodeClone() {}
 
 void NodeClone::route(Deliverable& msg, const std::string& /*key*/, const framing::FieldTable* headers) {
-    // FIXME aconway 2011-11-21: outer error handling, e.g. for decoding error.
-    if (isQMFv2(msg.getMessage()) && headers) {
+    try {
+        // FIXME aconway 2011-11-21: outer error handling, e.g. for decoding error.
+        if (!isQMFv2(msg.getMessage()) || !headers)
+            throw Exception("Unexpected message, not QMF2 event or query response.");
         // FIXME aconway 2011-11-21: string constants
         if (headers->getAsString("qmf.content") == "_event") { //decode as list
             std::string content = msg.getMessage().getFrames().getContent();
             Variant::List list;
             amqp_0_10::ListCodec::decode(content, list);
-            if (list.empty()) { // FIXME aconway 2011-11-21: remove
-                QPID_LOG(error, "Error parsing QMF event, empty list");
-            } else {
-                try {
-                    // FIXME aconway 2011-11-18: should be iterating list?
-                    Variant::Map& map = list.front().asMap();
-                    Variant::Map& schema = map[
-                        "_schema_id"].asMap();
-                    Variant::Map& values = map["_values"].asMap();
-                    if      (match<EventQueueDeclare>(schema)) doEventQueueDeclare(values);
-                    else if (match<EventQueueDelete>(schema)) doEventQueueDelete(values);
-                    else if (match<EventExchangeDeclare>(schema)) doEventExchangeDeclare(values);
-                    else if (match<EventExchangeDelete>(schema)) doEventExchangeDelete(values);
-                    else if (match<EventBind>(schema)) doEventBind(values);
-                    else if (match<EventSubscribe>(schema)) {} // Deliberately ignored.
-                    else QPID_LOG(warning, "Replicator received unexpected event, schema=" << schema);
-                } catch (const std::exception& e) {
-                    QPID_LOG(error, "Error replicating configuration: " << e.what());
-                }
+            for (Variant::List::iterator i = list.begin(); i != list.end(); ++i) {
+                // FIXME aconway 2011-11-18: should be iterating list?
+                Variant::Map& map = list.front().asMap();
+                Variant::Map& schema = map[
+                    "_schema_id"].asMap();
+                Variant::Map& values = map["_values"].asMap();
+                if      (match<EventQueueDeclare>(schema)) doEventQueueDeclare(values);
+                else if (match<EventQueueDelete>(schema)) doEventQueueDelete(values);
+                else if (match<EventExchangeDeclare>(schema)) doEventExchangeDeclare(values);
+                else if (match<EventExchangeDelete>(schema)) doEventExchangeDelete(values);
+                else if (match<EventBind>(schema)) doEventBind(values);
+                else if (match<EventSubscribe>(schema)) {} // Deliberately ignored.
+                else throw(Exception(QPID_MSG("Replicator received unexpected event, schema=" << schema)));
             }
         } else if (headers->getAsString("qmf.opcode") == "_query_response") {
             //decode as list
@@ -119,16 +115,14 @@ void NodeClone::route(Deliverable& msg, const std::string& /*key*/, const framin
                     if      (type == "queue") doResponseQueue(values);
                     else if (type == "exchange") doResponseExchange(values);
                     else if (type == "bind") doResponseBind(values);
-                    else {
-                        QPID_LOG(warning, "Replicator ignoring unexpected class: " << type);
-                    }
+                    else throw Exception(QPID_MSG("Ignoring unexpected class: " << type));
                 }
             }
         } else {
-            QPID_LOG(warning, "Replicator ignoring QMFv2 message with headers: " << *headers);
+            QPID_LOG(warning, QPID_MSG("Ignoring QMFv2 message with headers: " << *headers));
         }
-    } else {
-        QPID_LOG(warning, "Replicator ignoring message which is not a QMFv2 event or query response");
+    } catch (const std::exception& e) {
+        QPID_LOG(warning, "Error replicating configuration: " << e.what());
     }
 }
 
