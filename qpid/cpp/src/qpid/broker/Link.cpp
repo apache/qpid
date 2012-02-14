@@ -249,7 +249,6 @@ void Link::ioThreadProcessing()
 
     if (state != STATE_OPERATIONAL)
         return;
-    QPID_LOG(debug, "Link::ioThreadProcessing()");
 
     // check for bridge session errors and recover
     if (!active.empty()) {
