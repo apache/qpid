@@ -163,12 +163,7 @@ WiringReplicator::~WiringReplicator() {}
 
 WiringReplicator::WiringReplicator(const boost::shared_ptr<Link>& l)
     : Exchange(QPID_WIRING_REPLICATOR), broker(*l->getBroker()), link(l)
-{}
-
-// We need to split out the initialization so that the WiringReplicator
-// can be registered as an exchange before starting the bridge.
-void WiringReplicator::initialize() {
-    assert(link->getBroker());
+{
     broker.getLinks().declare(
         link->getHost(), link->getPort(),
         false,              // durable

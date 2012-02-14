@@ -57,7 +57,6 @@ Backup::Backup(broker::Broker& b, const Settings& s) : broker(b), settings(s) {
         link = result.first;
         boost::shared_ptr<WiringReplicator> wr(new WiringReplicator(link));
         broker.getExchanges().registerExchange(wr);
-        wr->initialize();       // Must be called after registering exchange.
     }
 }
 
