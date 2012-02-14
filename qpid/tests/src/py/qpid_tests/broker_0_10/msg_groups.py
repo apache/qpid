@@ -202,6 +202,10 @@ class MultiConsumerMsgGroupTests(Base):
         ## Queue = A-0, B-1, A-2, b-3, C-4
         ## Owners= ^C1, ---, +C1, ---, ---
 
+        m2 = b1.fetch(0);
+        assert m2.properties['THE-GROUP'] == 'A'
+        assert m2.content['index'] == 0
+
         m2 = b1.fetch(0)
         assert m2.properties['THE-GROUP'] == 'B'
         assert m2.content['index'] == 1
@@ -713,6 +717,7 @@ class MultiConsumerMsgGroupTests(Base):
         assert rc.status == 0
         queue.update()
         queue.msgDepth == 4   # the pending acquired A still counts!
+        s1.acknowledge()
 
         # verify all other A's removed....
         s2 = self.setup_session()
@@ -782,7 +787,7 @@ class MultiConsumerMsgGroupTests(Base):
         except Empty:
             pass
         assert count == 3   # non-A's
-        assert a_count == 1 # and one is an A
+        assert a_count == 2 # pending acquired message included in browse results
         s1.acknowledge()    # ack the consumed A-0
         self.qmf_session.delBroker(self.qmf_broker)
 
@@ -829,7 +834,7 @@ class MultiConsumerMsgGroupTests(Base):
 
         # verify all other A's removed from msg-group-q
         s2 = self.setup_session()
-        b1 = s2.receiver("msg-group-q; {mode: browse}", options={"capacity":0})
+        b1 = s2.receiver("msg-group-q", options={"capacity":0})
         count = 0
         try:
             while True:
@@ -963,7 +968,7 @@ class MultiConsumerMsgGroupTests(Base):
 
         # verify all other A's removed....
         s2 = self.setup_session()
-        b1 = s2.receiver("msg-group-q; {mode: browse}", options={"capacity":0})
+        b1 = s2.receiver("msg-group-q", options={"capacity":0})
         count = 0
         try:
             while True:
