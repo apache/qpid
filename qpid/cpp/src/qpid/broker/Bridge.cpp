@@ -24,7 +24,7 @@
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/Link.h"
 #include "qpid/broker/LinkRegistry.h"
-#include "qpid/ha/WiringReplicator.h"
+#include "qpid/ha/BrokerReplicator.h"
 #include "qpid/broker/SessionState.h"
 
 #include "qpid/management/ManagementAgent.h"

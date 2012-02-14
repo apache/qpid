@@ -611,8 +611,8 @@ if (BUILD_HA)
         qpid/ha/QueueReplicator.cpp
         qpid/ha/ReplicatingSubscription.h
         qpid/ha/ReplicatingSubscription.cpp
-        qpid/ha/WiringReplicator.cpp
-        qpid/ha/WiringReplicator.h
+        qpid/ha/BrokerReplicator.cpp
+        qpid/ha/BrokerReplicator.h
     )
 
     add_library (ha MODULE ${ha_SOURCES})

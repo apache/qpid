@@ -20,7 +20,7 @@
  */
 #include "Backup.h"
 #include "Settings.h"
-#include "WiringReplicator.h"
+#include "BrokerReplicator.h"
 #include "ReplicatingSubscription.h"
 #include "qpid/Url.h"
 #include "qpid/amqp_0_10/Codecs.h"
@@ -54,7 +54,7 @@ Backup::Backup(broker::Broker& b, const Settings& s) : broker(b), settings(s) {
         s.mechanism, s.username, s.password);
     assert(result.second);  // FIXME aconway 2011-11-23: error handling
     link = result.first;
-    boost::shared_ptr<WiringReplicator> wr(new WiringReplicator(link));
+    boost::shared_ptr<BrokerReplicator> wr(new BrokerReplicator(link));
     broker.getExchanges().registerExchange(wr);
 }
 
