@@ -31,6 +31,8 @@ ha_la_SOURCES =					\
   qpid/ha/Settings.h				\
   qpid/ha/QueueReplicator.h			\
   qpid/ha/QueueReplicator.cpp			\
+  qpid/ha/ReplicatingSubscription.h		\
+  qpid/ha/ReplicatingSubscription.cpp		\
   qpid/ha/WiringReplicator.cpp			\
   qpid/ha/WiringReplicator.h
 
