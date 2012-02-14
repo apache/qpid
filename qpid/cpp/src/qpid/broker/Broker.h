@@ -124,6 +124,7 @@ public:
         uint16_t queueThresholdEventRatio;
         std::string defaultMsgGroup;
         bool timestampRcvMsgs;
+        double linkMaintenanceInterval; // FIXME aconway 2012-02-13: consistent parsing of SECONDS values.
 
       private:
         std::string getHome();
