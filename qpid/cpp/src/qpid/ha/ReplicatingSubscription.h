@@ -87,6 +87,8 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
     void cancel();
     void acknowledged(const broker::QueuedMessage&);
 
+    bool hideDeletedError();
+
   protected:
     bool doDispatch();
   private:
