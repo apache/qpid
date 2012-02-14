@@ -35,6 +35,7 @@
 #include "qmf/org/apache/qpid/broker/EventQueueDeclare.h"
 #include "qmf/org/apache/qpid/broker/EventQueueDelete.h"
 #include "qmf/org/apache/qpid/broker/EventSubscribe.h"
+#include <algorithm>
 
 namespace qpid {
 namespace ha {
@@ -115,9 +116,11 @@ const string S_WIRING="wiring";
 const string S_ALL="all";
 
 ReplicateLevel replicateLevel(const string& str) {
+    string value(str.size(), '\0');
+    transform(str.begin(), str.end(), value.begin(), &tolower);
     ReplicateLevel rl = RL_NONE;
-    if (str == S_WIRING) rl = RL_WIRING;
-    else if (str == S_ALL) rl = RL_ALL;
+    if (value == S_WIRING) rl = RL_WIRING;
+    else if (value == S_ALL) rl = RL_ALL;
     return rl;
 }
 
