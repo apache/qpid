@@ -70,7 +70,7 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
         throw Exception("Cannot start HA: management is disabled");
     if (ma) {
         _qmf::Package  packageInit(ma);
-        mgmtObject = new _qmf::HaBroker(ma, this);
+        mgmtObject = new _qmf::HaBroker(ma, this, "ha-broker");
         mgmtObject->set_status(BACKUP);
         ma->addObject(mgmtObject);
     }

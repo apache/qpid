@@ -21,6 +21,7 @@
 
   <!-- Monitor and control HA status of a broker. -->
   <class name="HaBroker">
+    <property name="name"   type="sstr" access="RC" index="y" desc="Primary Key"/>
     <property name="status" type="sstr" desc="HA status: primary or backup"/>
     <property name="clientAddresses" type="sstr" desc="List of addresses used by clients to connect to the HA cluster."/>
     <property name="brokerAddresses" type="sstr" desc="List of addresses used by HA brokers to connect to each other."/>
