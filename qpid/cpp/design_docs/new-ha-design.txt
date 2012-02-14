@@ -18,12 +18,10 @@
 
 * An active-passive, hot-standby design for Qpid clustering.
 
-For some background see [[./new-cluster-design.txt]] which describes the
-issues with the old design and a new active-active design that could
-replace it.
-
-This document describes an alternative active-passive approach based on
+This document describes an active-passive approach to HA based on
 queue browsing to replicate message data.
+
+See [[./old-cluster-issues.txt]] for issues with the old design.
 
 ** Active-active vs. active-passive (hot-standby)
 
@@ -92,13 +90,13 @@ broker is started on a different node and and recovers from the
 store. This bears investigation but the store recovery times are
 likely too long for failover.
 
-** Replicating wiring
+** Replicating configuration
 
 New queues and exchanges and their bindings also need to be replicated.
-This is done by a QMF client that registers for wiring changes
+This is done by a QMF client that registers for configuration changes
 on the remote broker and mirrors them in the local broker.
 
-** Use of CPG
+** Use of CPG (openais/corosync)
 
 CPG is not required in this model, an external cluster resource
 manager takes care of membership and quorum.
@@ -107,12 +105,13 @@ manager takes care of membership and quorum.
 
 In this model it's easy to support selective replication of individual queues via
 configuration.
-- Explicit exchange/queue declare argument and message boolean: x-qpid-replicate.
-  Treated analogously to persistent/durable properties for the store.
-- if not explicitly marked, provide a choice of default
-  - default is replicate (replicated message on replicated queue)
-  - default is don't replicate
-  - default is replicate persistent/durable messages.
+
+Explicit exchange/queue qpid.replicate argument:
+- none: the object is not replicated
+- configuration: queues, exchanges and bindings are replicated but messages are not.
+- messages: configuration and messages are replicated.
+
+TODO: provide configurable default for qpid.replicate
 
 [GRS: current prototype relies on queue sequence for message identity
 so selectively replicating certain messages on a given queue would be
@@ -137,30 +136,19 @@ go thru the various failure cases. We may be able to do recovery on a
 per-queue basis rather than restarting an entire node.
 
 
-** New backups joining
+** New backups connecting to primary.
 
-New brokers can join the cluster as backups. Note - if the new broker
-has a new IP address, then the existing cluster members must be
-updated with a new client and broker URLs by a sysadmin.
+When the primary fails, one of the backups becomes primary and the
+others connect to the new primary as backups.
 
+The backups can take advantage of the messages they already have
+backed up, the new primary only needs to replicate new messages.
 
-They discover
-
-We should be able to catch up much faster than the the old design. A
-new backup can catch up ("recover") the current cluster state on a
-per-queue basis.
-- queues can be updated in parallel
-- "live" updates avoid the the "endless chase"
-
-During a "live" update several things are happening on a queue:
-- clients are publishing messages to the back of the queue, replicated to the backup
-- clients are consuming messages from the front of the queue, replicated to the backup.
-- the primary is sending pre-existing messages to the new backup.
-
-The primary sends pre-existing messages in LIFO order - starting from
-the back of the queue, at the same time clients are consuming from the front.
-The active consumers actually reduce the amount of work to be done, as there's
-no need to replicate messages that are no longer on the queue.
+To keep the N-1 guarantee, the primary needs to delay completion on
+new messages until the back-ups have caught up. However if a backup
+does not catch up within some timeout, it should be considered
+out-of-order and messages completed even though it is not caught up.
+Need to think about reasonable behavior here.
 
 ** Broker discovery and lifecycle.
 
@@ -185,14 +173,16 @@ to each other.
 
 Brokers have the following states:
 - connecting: backup broker trying to connect to primary - loops retrying broker URL.
-- catchup: connected to primary, catching up on pre-existing wiring & messages.
+- catchup: connected to primary, catching up on pre-existing configuration & messages.
 - backup: fully functional backup.
 - primary: Acting as primary, serving clients.
 
 ** Interaction with rgmanager
 
-rgmanager interacts with qpid via 2 service scripts: backup & primary. These
-scripts interact with the underlying qpidd service.
+rgmanager interacts with qpid via 2 service scripts: backup &
+primary. These scripts interact with the underlying qpidd
+service. rgmanager picks the new primary when the old primary
+fails. In a partition it also takes care of killing inquorate brokers.q
 
 *** Initial cluster start
 
@@ -273,8 +263,6 @@ vulnerable to a loss of the new master before they are replicated.
 
 For configuration propagation:
 
-LC1 - Bindings aren't propagated, only queues and exchanges.
-
 LC2 - Queue and exchange propagation is entirely asynchronous. There
 are three cases to consider here for queue creation: (a) where queues
 are created through the addressign syntax supported the messaging API,
@@ -321,6 +309,14 @@ LC6 - The events and query responses are not fully synchronized.
       It is not possible to miss a create event and yet not to have
       the object in question in the query response however.
 
+* Benefits compared to previous cluster implementation.
+
+- Does not need openais/corosync, does not require multicast.
+- Possible to replace rgmanager with other resource mgr (PaceMaker, windows?)
+- DR is just another backup
+- Performance (some numbers?)
+- Virtual IP supported by rgmanager.
+
 * User Documentation Notes
 
 Notes to seed initial user documentation. Loosely tracking the implementation,
@@ -354,8 +350,10 @@ A HA client connection has multiple addresses, one for each broker. If
 the it fails to connect to an address, or the connection breaks,
 it will automatically fail-over to another address.
 
-Only the primary broker accepts connections, the backup brokers abort
-connection attempts. That ensures clients connect to the primary only.
+Only the primary broker accepts connections, the backup brokers
+redirect connection attempts to the primary. If the primary fails, one
+of the backups is promoted to primary and clients fail-over to the new
+primary.
 
 TODO: using multiple-address connections, examples c++, python, java.
 
