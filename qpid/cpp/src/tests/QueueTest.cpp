@@ -67,6 +67,7 @@ public:
     };
     void notify() {}
     void cancel() {}
+    void acknowledged(const QueuedMessage&) {}
     OwnershipToken* getSession() { return 0; }
 };
 
