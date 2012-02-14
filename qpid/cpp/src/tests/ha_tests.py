@@ -118,6 +118,29 @@ class ShortTests(BrokerTest):
         self.assert_browse_retry(p, "foo", [])
         self.assert_browse_retry(b, "foo", [])
 
+    def test_sync(self):
+        def queue(name, replicate):
+            return "%s;{create:always,node:{x-declare:{arguments:{'qpid.replicate':%s}}}}"%(name, replicate)
+        primary = self.ha_broker(name="primary", broker_url="primary") # Temp hack to identify primary
+        p = primary.connect().session()
+        s = p.sender(queue("q","all"))
+        for m in [str(i) for i in range(0,10)]: s.send(m)
+        s.sync()
+        backup1 = self.ha_broker(name="backup1", broker_url=primary.host_port())
+        for m in [str(i) for i in range(10,20)]: s.send(m)
+        s.sync()
+        backup2 = self.ha_broker(name="backup2", broker_url=primary.host_port())
+        for m in [str(i) for i in range(20,30)]: s.send(m)
+        s.sync()
+        msgs = [str(i) for i in range(30)]
+
+        b = backup1.connect().session()
+        self.assert_browse_retry(b, "q", msgs)
+
+        b = backup2.connect().session()
+        self.assert_browse_retry(backup2.connect().session(), "q", msgs)
+
+
 if __name__ == "__main__":
     shutil.rmtree("brokertest.tmp", True)
     os.execvp("qpid-python-test", ["qpid-python-test", "-m", "ha_tests"] + sys.argv[1:])

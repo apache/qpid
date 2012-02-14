@@ -138,8 +138,9 @@ ReplicatingSubscription::ReplicatingSubscription(
             //local queue (i.e. master) is empty
             range.add(lwm, queue->getPosition());
         }
-        QPID_LOG(debug, "HA: Initial set of dequeues for " << queue->getName() << " are " << range
-                 << " (lwm=" << lwm << ", hwm=" << hwm << ", current=" << queue->getPosition() << ")");
+        QPID_LOG(debug, "HA: Initial set of dequeues for " << queue->getName() << ": "
+                 << range << " (lwm=" << lwm << ", hwm=" << hwm
+                 << ", current=" << queue->getPosition() << ")");
         //set position of 'cursor'
         position = hwm;
     }
