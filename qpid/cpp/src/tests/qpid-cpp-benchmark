@@ -147,7 +147,6 @@ def start_send(queue, opts, broker, host):
                "--report-total",
                "--report-header=no",
                "--timestamp=%s"%(opts.timestamp and "yes" or "no"),
-               "--sequence=no",
                "--flow-control", str(opts.flow_control),
                "--durable", str(opts.durable)
                ]
