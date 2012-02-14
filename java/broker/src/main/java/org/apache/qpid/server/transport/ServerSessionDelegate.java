@@ -465,7 +465,7 @@ public class ServerSessionDelegate extends SessionDelegate
             {
                 if(!exchange.getTypeShortString().toString().equals(method.getType()))
                 {
-                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Attempt to redeclare exchange: " + exchangeName + " of type " + exchange.getType() + " to " + method.getType() +".");
+                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Attempt to redeclare exchange: " + exchangeName + " of type " + exchange.getTypeShortString() + " to " + method.getType() +".");
                 }
             }
 
@@ -515,7 +515,7 @@ public class ServerSessionDelegate extends SessionDelegate
             {
                 if(!exchange.getTypeShortString().toString().equals(method.getType()))
                 {
-                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Attempt to redeclare exchange: " + exchangeName + " of type " + exchange.getType() + " to " + method.getType() +".");
+                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Attempt to redeclare exchange: " + exchangeName + " of type " + exchange.getTypeShortString() + " to " + method.getType() +".");
                 }
             }
 
