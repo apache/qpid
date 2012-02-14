@@ -125,16 +125,12 @@ eliminates the need to stall the whole cluster till an error is
 resolved. We still have to handle inconsistent store errors when store
 and cluster are used together.
 
-We also have to include error handling in the async completion loop to
-guarantee N-way at least once: we should only report success to the
-client when we know the message was replicated and stored on all N-1
-backups.
-
-TODO: We have a lot more options than the old cluster, need to figure
-out the best approach, or possibly allow mutliple approaches. Need to
-go thru the various failure cases. We may be able to do recovery on a
-per-queue basis rather than restarting an entire node.
-
+We have 2 options (configurable) for handling inconsistent errors,
+on the backup that fails to store a message from primary we can:
+- Abort the backup broker allowing it to be re-started.
+- Raise a critical error on the backup broker but carry on with the message lost.
+We can configure the option to abort or carry on per-queue, we
+will also provide a broker-wide configurable default.
 
 ** New backups connecting to primary.
 
@@ -144,19 +140,21 @@ others connect to the new primary as backups.
 The backups can take advantage of the messages they already have
 backed up, the new primary only needs to replicate new messages.
 
-To keep the N-1 guarantee, the primary needs to delay completion on
-new messages until the back-ups have caught up. However if a backup
-does not catch up within some timeout, it should be considered
-out-of-order and messages completed even though it is not caught up.
-Need to think about reasonable behavior here.
+To keep the N-way guarantee the primary needs to delay completion on
+new messages until all the back-ups have caught up. However if a
+backup does not catch up within some timeout, it is considered dead
+and its messages are completed so the cluster can carry on with N-1
+members.
+
 
 ** Broker discovery and lifecycle.
 
 The cluster has a client URL that can contain a single virtual IP
 address or a list of real IP addresses for the cluster.
 
-In backup mode, brokers reject connections except from a special
-cluster-admin user.
+In backup mode, brokers reject connections normal client connections
+so clients will fail over to the primary. HA admin tools mark their
+connections so they are allowed to connect to backup brokers.
 
 Clients discover the primary by re-trying connection to the client URL
 until the successfully connect to the primary. In the case of a
@@ -167,14 +165,13 @@ before giving up.
 
 Backup brokers discover the primary in the same way as clients. There
 is a separate broker URL for brokers since they often will connect
-over a different network to the clients. The broker URL has to be a
-list of IPs rather than one virtual IP so broker members can connect
-to each other.
+over a different network. The broker URL has to be a list of real
+addresses rather than a virtual address.
 
 Brokers have the following states:
-- connecting: backup broker trying to connect to primary - loops retrying broker URL.
-- catchup: connected to primary, catching up on pre-existing configuration & messages.
-- backup: fully functional backup.
+- connecting: Backup broker trying to connect to primary - loops retrying broker URL.
+- catchup: Backup connected to primary, catching up on pre-existing configuration & messages.
+- ready: Backup fully caught-up, ready to take over as primary.
 - primary: Acting as primary, serving clients.
 
 ** Interaction with rgmanager
@@ -182,7 +179,7 @@ Brokers have the following states:
 rgmanager interacts with qpid via 2 service scripts: backup &
 primary. These scripts interact with the underlying qpidd
 service. rgmanager picks the new primary when the old primary
-fails. In a partition it also takes care of killing inquorate brokers.q
+fails. In a partition it also takes care of killing inquorate brokers.
 
 *** Initial cluster start
 
@@ -199,6 +196,9 @@ back to connecting mode.
 rgmanager notices the failure and starts the primary service on a new node.
 This tells qpidd to go to primary mode. Backups re-connect and catch up.
 
+The primary can only be started on nodes where there is a ready backup service.
+If the backup is catching up, it's not eligible to take over as primary.
+
 *** Failback
 
 Cluster of N brokers has suffered a failure, only N-1 brokers
@@ -213,23 +213,49 @@ connects and catches up.
 
 *** Failure during failback
 
-A second failure occurs before the new backup B can complete its catch
-up.  The backup B refuses to become primary by failing the primary
+A second failure occurs before the new backup B completes its catch
+up. The backup B refuses to become primary by failing the primary
 start script if rgmanager chooses it, so rgmanager will try another
-(hopefully caught-up) broker to be primary.
+(hopefully caught-up) backup to become primary.
+
+*** Backup failure
+
+If a backup fails it is re-started. It connects and catches up from scratch
+to become a ready backup.
 
 ** Interaction with the store.
 
-# FIXME aconway 2011-11-16: TBD
-- how to identify the "best" store after a total cluster crash.
-- best = last to be primary.
-- primary "generation" - counter passed to backups and incremented by new primary.
+Clean shutdown: entire cluster is shut down cleanly by an admin tool:
+- primary stops accepting client connections till shutdown is complete.
+- backups come fully up to speed with primary state.
+- all shut down marking stores as 'clean' with an identifying  UUID.
 
-restart after crash:
-- clean/dirty flag on disk for admin shutdown vs. crash
-- dirty brokers refuse to be primary
-- sysamdin tells best broker to be primary
-- erase stores? delay loading?
+After clean shutdown the cluster can re-start automatically as all nodes
+have equivalent stores. Stores starting up with the wrong UUID will fail.
+
+Stored status: clean(UUID)/dirty, primary/backup, generation number.
+- All stores are marked dirty except after a clean shutdown.
+- Generation number: passed to backups and incremented by new primary.
+
+After total crash must manually identify the "best" store, provide admin tool.
+Best = highest generation number among stores in primary state.
+
+Recovering from total crash: all brokers will refuse to start as all stores are dirty.
+Check the stores manually to find the best one, then either:
+1. Copy stores:
+ - copy good store to all hosts
+ - restart qpidd on all hosts.
+2. Erase stores:
+ - Erase the store on all other hosts.
+ - Restart qpidd on the good store and wait for it to become primary.
+ - Restart qpidd on all other hosts.
+
+Broker startup with store:
+- Dirty: refuse to start
+- Clean:
+  - Start and load from store.
+  - When connecting as backup, check UUID matches primary, shut down if not.
+- Empty: start ok, no UUID check with primary.
 
 ** Current Limitations
 
@@ -238,8 +264,8 @@ restart after crash:
 For message replication:
 
 LM1 - The re-synchronisation does not handle the case where a newly elected
-master is *behind* one of the other backups. To address this I propose
-a new event for restting the sequence that the new master would send
+primary is *behind* one of the other backups. To address this I propose
+a new event for restting the sequence that the new primary would send
 out on detecting that a replicating browser is ahead of it, requesting
 that the replica revert back to a particular sequence number. The
 replica on receiving this event would then discard (i.e. dequeue) all
@@ -259,25 +285,31 @@ asynchronous.
 LM5 - During failover, messages (re)published to a queue before there are
 the requisite number of replication subscriptions established will be
 confirmed to the publisher before they are replicated, leaving them
-vulnerable to a loss of the new master before they are replicated.
+vulnerable to a loss of the new primary before they are replicated.
 
 For configuration propagation:
 
 LC2 - Queue and exchange propagation is entirely asynchronous. There
-are three cases to consider here for queue creation: (a) where queues
-are created through the addressign syntax supported the messaging API,
-they should be recreated if needed on failover and message replication
-if required is dealt with seperately; (b) where queues are created
-using configuration tools by an administrator or by a script they can
-query the backups to verify the config has propagated and commands can
-be re-run if there is a failure before that; (c) where applications
-have more complex programs on which queues/exchanges are created using
-QMF or directly via 0-10 APIs, the completion of the command will not
-guarantee that the command has been carried out on other
-nodes. I.e. case (a) doesn't require anything (apart from LM5 in some
-cases), case (b) can be addressed in a simple manner through tooling
-but case (c) would require changes to the broker to allow client to
-simply determine when the command has fully propagated.
+are three cases to consider here for queue creation:
+
+(a) where queues are created through the addressing syntax supported
+the messaging API, they should be recreated if needed on failover and
+message replication if required is dealt with seperately;
+
+(b) where queues are created using configuration tools by an
+administrator or by a script they can query the backups to verify the
+config has propagated and commands can be re-run if there is a failure
+before that;
+
+(c) where applications have more complex programs on which
+queues/exchanges are created using QMF or directly via 0-10 APIs, the
+completion of the command will not guarantee that the command has been
+carried out on other nodes.
+
+I.e. case (a) doesn't require anything (apart from LM5 in some cases),
+case (b) can be addressed in a simple manner through tooling but case
+(c) would require changes to the broker to allow client to simply
+determine when the command has fully propagated.
 
 LC3 - Queues that are not in the query response received when a
 replica establishes a propagation subscription but exist locally are
@@ -286,7 +318,7 @@ connected will not be propagated. Solution is to delete any queues
 marked for propagation that exist locally but do not show up in the
 query response.
 
-LC4 - It is possible on failover that the new master did not
+LC4 - It is possible on failover that the new primary did not
 previously receive a given QMF event while a backup did (sort of an
 analogous situation to LM1 but without an easy way to detect or remedy
 it).
@@ -312,10 +344,11 @@ LC6 - The events and query responses are not fully synchronized.
 * Benefits compared to previous cluster implementation.
 
 - Does not need openais/corosync, does not require multicast.
-- Possible to replace rgmanager with other resource mgr (PaceMaker, windows?)
-- DR is just another backup
+- Possible to replace rgmanager with other resource manager (PaceMaker, windows?)
+- Disaster Recovery is just another backup, no need for separate queue replication mechanism.
 - Performance (some numbers?)
-- Virtual IP supported by rgmanager.
+- Virtual IP and other features supported by rgmanager.
+- Fewer inconsistent errors (store failures only) that can optionally be handled without killing brokers.
 
 * User Documentation Notes
 
@@ -372,4 +405,3 @@ Role of rmganager
 ** Configuring rgmanager
 
 ** Configuring qpidd
-HA related options.
