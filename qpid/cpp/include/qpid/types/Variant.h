@@ -62,6 +62,8 @@ enum VariantType {
 
 std::string getTypeName(VariantType type);
 
+bool isIntegerType(VariantType type);
+
 class VariantImpl;
 
 /**
