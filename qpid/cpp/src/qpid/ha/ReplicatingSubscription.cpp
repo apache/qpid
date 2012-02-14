@@ -22,9 +22,12 @@
 #include "ReplicatingSubscription.h"
 #include "Logging.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/broker/SessionContext.h"
+#include "qpid/broker/ConnectionState.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/log/Statement.h"
+#include "ostream"
 
 namespace qpid {
 namespace ha {
@@ -93,7 +96,7 @@ ReplicatingSubscription::ReplicatingSubscription(
     // can be re-introduced later. Last revision with the optimization:
     // r1213258 | QPID-3603: Fix QueueReplicator subscription parameters.
 
-    QPID_LOG(debug, "HA: Replicating subscription " << name << " to " << queue->getName());
+    QPID_LOG(debug, "HA: Started " << *this << " subscription " << name);
 
     // Note that broker::Queue::getPosition() returns the sequence
     // number that will be assigned to the next message *minus 1*.
@@ -127,13 +130,14 @@ bool ReplicatingSubscription::deliver(QueuedMessage& m) {
              }
              backupPosition = position;
         }
-        QPID_LOG(trace, "HA: replicating message to backup: " << QueuePos(m));
+        QPID_LOG(trace, "HA: Replicating " << QueuePos(m) << " to " << *this);
     }
     return ConsumerImpl::deliver(m);
 }
 
 void ReplicatingSubscription::cancel()
 {
+    QPID_LOG(debug, "HA: Cancelled " << *this);
     getQueue()->removeObserver(boost::dynamic_pointer_cast<QueueObserver>(shared_from_this()));
 }
 
@@ -150,7 +154,7 @@ void ReplicatingSubscription::enqueued(const QueuedMessage& m)
 // Called with lock held.
 void ReplicatingSubscription::sendDequeueEvent(const sys::Mutex::ScopedLock& l)
 {
-    QPID_LOG(trace, "HA: Sending dequeues " << getQueue()->getName() << " " << dequeues << " on " << getName());
+    QPID_LOG(trace, "HA: Sending dequeues " << dequeues << " to " << *this);
     string buf(dequeues.encodedSize(),'\0');
     framing::Buffer buffer(&buf[0], buf.size());
     dequeues.encode(buffer);
@@ -164,7 +168,7 @@ void ReplicatingSubscription::sendPositionEvent(
     SequenceNumber position, const sys::Mutex::ScopedLock&l )
 {
     QPID_LOG(trace, "HA: Sending position " << QueuePos(getQueue().get(), position)
-             << " on " << getName());
+             << " on " << *this);
     string buf(backupPosition.encodedSize(),'\0');
     framing::Buffer buffer(&buf[0], buf.size());
     position.encode(buffer);
@@ -211,12 +215,12 @@ void ReplicatingSubscription::dequeued(const QueuedMessage& m)
     {
         sys::Mutex::ScopedLock l(lock);
         dequeues.add(m.position);
-        QPID_LOG(trace, "HA: Dequeued " << QueuePos(m) << " on " << getName());
+        QPID_LOG(trace, "HA: Will dequeue " << QueuePos(m) << " on " << *this);
     }
     notify();                   // Ensure a call to doDispatch
     if (m.position > position) {
         m.payload->getIngressCompletion().finishCompleter();
-        QPID_LOG(trace, "HA: Completed " << QueuePos(m) << " early, dequeued.");
+        QPID_LOG(trace, "HA: Completed " << QueuePos(m) << " early on " << *this);
     }
 }
 
@@ -241,4 +245,10 @@ bool ReplicatingSubscription::DelegatingConsumer::accept(boost::intrusive_ptr<Me
 void ReplicatingSubscription::DelegatingConsumer::cancel() {}
 OwnershipToken* ReplicatingSubscription::DelegatingConsumer::getSession() { return delegate.getSession(); }
 
-}} // namespace qpid::broker
+
+ostream& operator<<(ostream& o, const ReplicatingSubscription& rs) {
+    string url = rs.parent->getSession().getConnection().getUrl();
+    return o << rs.getQueue()->getName() << " backup on " << url;
+}
+
+}} // namespace qpid::ha
