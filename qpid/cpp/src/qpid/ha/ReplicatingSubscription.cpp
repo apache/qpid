@@ -94,19 +94,43 @@ ReplicatingSubscription::ReplicatingSubscription(
     // r1213258 | QPID-3603: Fix QueueReplicator subscription parameters.
 
     QPID_LOG(debug, "HA: Replicating subscription " << name << " to " << queue->getName());
-    qpid::framing::SequenceNumber oldest;
-    if (queue->getOldest(oldest))
-        dequeues.add(0, --oldest);
-    else //local queue (i.e. master) is empty
-        dequeues.add(0, queue->getPosition());
 
-    QPID_LOG(debug, "HA: Initial dequeues for " << queue->getName() << ": " << dequeues);
-    // Set 'cursor' on backup queue. Will be updated by dequeue event sent above.
-    position = 0;
+    // Note that broker::Queue::getPosition() returns the sequence
+    // number that will be assigned to the next message *minus 1*.
+
+    // this->position is inherited from ConsumerImpl. It tracks the
+    // position of the last message browsed on the local (primary)
+    // queue, or more exactly the next sequence number to browse
+    // *minus 1*
+    qpid::framing::SequenceNumber oldest;
+    position = queue->getOldest(oldest) ? --oldest : queue->getPosition();
+
+    // this->backupPosition tracks the position of the remote backup
+    // queue, i.e. the sequence number for the next delivered message
+    // *minus one*
+    backupPosition = 0;
 }
 
-bool ReplicatingSubscription::deliver(QueuedMessage& m)
-{
+// Message is delivered in the subscription's connection thread.
+bool ReplicatingSubscription::deliver(QueuedMessage& m) {
+    // Add position events for the subscribed queue, not for the internal event queue.
+    if (m.queue && m.queue->getName() == getQueue()->getName()) {
+        QPID_LOG(trace, "HA: replicating message to backup: " << QueuePos(m));
+        assert(position == m.position);
+        {
+             sys::Mutex::ScopedLock l(lock);
+             // this->position is the new position after enqueueing m locally.
+             // this->backupPosition is the backup position before enqueueing m.
+             assert(position > backupPosition);
+             if (position - backupPosition > 1) {
+                 // Position has advanced because of messages dequeued ahead of us.
+                 SequenceNumber send(position);
+                 // Send the position before m was enqueued.
+                 sendPositionEvent(--send, l);
+             }
+             backupPosition = position;
+        }
+    }
     return ConsumerImpl::deliver(m);
 }
 
@@ -121,20 +145,38 @@ ReplicatingSubscription::~ReplicatingSubscription() {}
 //under the message lock in the queue
 void ReplicatingSubscription::enqueued(const QueuedMessage& m)
 {
-    QPID_LOG(trace, "HA: Enqueued message " << QueuePos(m) << " on " << getName());
     //delay completion
     m.payload->getIngressCompletion().startCompleter();
 }
 
 // Called with lock held.
-void ReplicatingSubscription::generateDequeueEvent()
+void ReplicatingSubscription::sendDequeueEvent(const sys::Mutex::ScopedLock& l)
 {
-    QPID_LOG(trace, "HA: Sending dequeue event " << getQueue()->getName() << " " << dequeues << " on " << getName());
+    QPID_LOG(trace, "HA: Sending dequeues " << getQueue()->getName() << " " << dequeues << " on " << getName());
     string buf(dequeues.encodedSize(),'\0');
     framing::Buffer buffer(&buf[0], buf.size());
     dequeues.encode(buffer);
     dequeues.clear();
     buffer.reset();
+    sendEvent(QueueReplicator::DEQUEUE_EVENT_KEY, buffer, l);
+}
+
+// Called with lock held.
+void ReplicatingSubscription::sendPositionEvent(
+    SequenceNumber position, const sys::Mutex::ScopedLock&l )
+{
+    QPID_LOG(trace, "HA: Sending position " << QueuePos(getQueue().get(), position)
+             << " on " << getName());
+    string buf(backupPosition.encodedSize(),'\0');
+    framing::Buffer buffer(&buf[0], buf.size());
+    position.encode(buffer);
+    buffer.reset();
+    sendEvent(QueueReplicator::POSITION_EVENT_KEY, buffer, l);
+}
+
+void ReplicatingSubscription::sendEvent(const std::string& key, framing::Buffer& buffer,
+                                        const sys::Mutex::ScopedLock&)
+{
     //generate event message
     boost::intrusive_ptr<Message> event = new Message();
     AMQFrame method((MessageTransferBody(ProtocolVersion(), string(), 0, 0)));
@@ -154,8 +196,14 @@ void ReplicatingSubscription::generateDequeueEvent()
     event->getFrames().append(content);
 
     DeliveryProperties* props = event->getFrames().getHeaders()->get<DeliveryProperties>(true);
-    props->setRoutingKey(QueueReplicator::DEQUEUE_EVENT_KEY);
+    props->setRoutingKey(key);
+    // Send the event using the events queue. Consumer is a
+    // DelegatingConsumer that delegates to *this for everything but
+    // has an independnet position. We put an event on events and
+    // dispatch it through ourselves to send it in line with the
+    // normal browsing messages.
     events->deliver(event);
+    events->dispatch(consumer);
 }
 
 // Called after the message has been removed from the deque and under
@@ -165,8 +213,7 @@ void ReplicatingSubscription::dequeued(const QueuedMessage& m)
     {
         sys::Mutex::ScopedLock l(lock);
         dequeues.add(m.position);
-        QPID_LOG(trace, "HA: Added " << QueuePos(m)
-                 << " to dequeue event; subscription at " << position);
+        QPID_LOG(trace, "HA: Will dequeue " << QueuePos(m) << " on " << getName());
     }
     notify();                   // Ensure a call to doDispatch
     if (m.position > position) {
@@ -179,13 +226,9 @@ bool ReplicatingSubscription::doDispatch()
 {
     {
         sys::Mutex::ScopedLock l(lock);
-        if (!dequeues.empty()) {
-            generateDequeueEvent();
-        }
+        if (!dequeues.empty()) sendDequeueEvent(l);
     }
-    bool r1 = events->dispatch(consumer);
-    bool r2 = ConsumerImpl::doDispatch();
-    return r1 || r2;
+    return ConsumerImpl::doDispatch();
 }
 
 ReplicatingSubscription::DelegatingConsumer::DelegatingConsumer(ReplicatingSubscription& c) : Consumer(c.getName(), true), delegate(c) {}

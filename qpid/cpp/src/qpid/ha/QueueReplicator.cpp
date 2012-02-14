@@ -42,12 +42,14 @@ const std::string QPID_SYNC_FREQUENCY("qpid.sync_frequency");
 namespace qpid {
 namespace ha {
 using namespace broker;
+using namespace framing;
 
 const std::string QueueReplicator::DEQUEUE_EVENT_KEY("qpid.dequeue-event");
+const std::string QueueReplicator::POSITION_EVENT_KEY("qpid.position-event");
 
 QueueReplicator::QueueReplicator(boost::shared_ptr<Queue> q, boost::shared_ptr<Link> l)
     : Exchange(QPID_REPLICATOR_+q->getName(), 0, 0), // FIXME aconway 2011-11-24: hidden from management?
-      queue(q), link(l), current(queue->getPosition())
+      queue(q), link(l)
 {
     QPID_LOG(debug, "HA: Replicating queue " << q->getName() << " " << q->getSettings());
     // Declare the replicator bridge.
@@ -96,49 +98,54 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     QPID_LOG(debug, "HA: Backup activated bridge from " << args.i_src << " to " << args.i_dest);
 }
 
-void QueueReplicator::route(Deliverable& msg, const std::string& key, const qpid::framing::FieldTable* /*args*/)
-{
-    if (key == DEQUEUE_EVENT_KEY) {
-        std::string content;
-        msg.getMessage().getFrames().getContent(content);
-        qpid::framing::Buffer buffer(const_cast<char*>(content.c_str()), content.size());
-        qpid::framing::SequenceSet latest;
-        latest.decode(buffer);
+namespace {
+template <class T> T decodeContent(Message& m) {
+    std::string content;
+    m.getFrames().getContent(content);
+    Buffer buffer(const_cast<char*>(content.c_str()), content.size());
+    T result;
+    result.decode(buffer);
+    return result;
+}
+}
 
-        QPID_LOG(trace, "HA: Backup received dequeues: " << latest);
+void QueueReplicator::dequeue(SequenceNumber n,  const sys::Mutex::ScopedLock&) {
+    // Thread safe: only calls thread safe Queue functions.
+    if (queue->getPosition() >= n) { // Ignore dequeus we  haven't reached yet
+        QueuedMessage message;
+        if (queue->acquireMessageAt(n, message)) {
+            queue->dequeue(0, message);
+            QPID_LOG(trace, "HA: Backup dequeued: "<< QueuePos(message));
+        }
+    }
+}
+
+void QueueReplicator::route(Deliverable& msg, const std::string& key, const FieldTable* /*args*/)
+{
+    sys::Mutex::ScopedLock l(lock);
+    if (key == DEQUEUE_EVENT_KEY) {
+        SequenceSet dequeues = decodeContent<SequenceSet>(msg.getMessage());
+        QPID_LOG(trace, "HA: Backup received dequeues: " << dequeues);
         //TODO: should be able to optimise the following
-        for (qpid::framing::SequenceSet::iterator i = latest.begin(); i != latest.end(); i++) {
-            if (current < *i) {
-                //haven't got that far yet, record the dequeue
-                dequeued.add(*i);
-                QPID_LOG(trace, "HA: Recording dequeue of " << QueuePos(queue.get(), *i));
-            } else {
-                QueuedMessage message;
-                if (queue->acquireMessageAt(*i, message)) {
-                    queue->dequeue(0, message);
-                    QPID_LOG(trace, "HA: Backup dequeued: "<< QueuePos(message));
-                } else {
-                    // This can happen if we're replicating a queue that has initial dequeues.
-                    QPID_LOG(trace, "HA: Backup message already dequeued: "<< QueuePos(queue.get(), *i));
-                }
-            }
-        }
+        for (SequenceSet::iterator i = dequeues.begin(); i != dequeues.end(); i++)
+            dequeue(*i, l);
+    } else if (key == POSITION_EVENT_KEY) {
+        SequenceNumber position = decodeContent<SequenceNumber>(msg.getMessage());
+        assert(queue->getPosition() <= position);
+         //TODO aconway 2011-12-14: Optimize this?
+        for (SequenceNumber i = queue->getPosition(); i < position; ++i)
+            dequeue(i,l);
+        queue->setPosition(position);
+        QPID_LOG(trace, "HA: Backup advanced to: " << QueuePos(queue.get(), queue->getPosition()));
     } else {
-        //take account of any gaps in sequence created by messages
-        //dequeued before our subscription reached them
-        while (dequeued.contains(++current)) {
-            dequeued.remove(current);
-            QPID_LOG(trace, "HA: Backup skipping dequeued message: " << QueuePos(queue.get(), current));
-            queue->setPosition(current);
-        }
-        QPID_LOG(trace, "HA: Backup enqueued message: " << QueuePos(queue.get(), current));
+        QPID_LOG(trace, "HA: Backup enqueued message: " << QueuePos(queue.get(), queue->getPosition()+1));
         msg.deliverTo(queue);
     }
 }
 
-bool QueueReplicator::bind(boost::shared_ptr<Queue>, const std::string&, const qpid::framing::FieldTable*) { return false; }
-bool QueueReplicator::unbind(boost::shared_ptr<Queue>, const std::string&, const qpid::framing::FieldTable*) { return false; }
-bool QueueReplicator::isBound(boost::shared_ptr<Queue>, const std::string* const, const qpid::framing::FieldTable* const) { return false; }
+bool QueueReplicator::bind(boost::shared_ptr<Queue>, const std::string&, const FieldTable*) { return false; }
+bool QueueReplicator::unbind(boost::shared_ptr<Queue>, const std::string&, const FieldTable*) { return false; }
+bool QueueReplicator::isBound(boost::shared_ptr<Queue>, const std::string* const, const FieldTable* const) { return false; }
 std::string QueueReplicator::getType() const { return TYPE_NAME; }
 
 }} // namespace qpid::broker
