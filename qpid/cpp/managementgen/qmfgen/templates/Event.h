@@ -51,6 +51,8 @@ class Event/*MGEN:Event.NameCap*/ : public ::qpid::management::ManagementEvent
     uint8_t getSeverity() const { return /*MGEN:Event.Severity*/; }
     void encode(std::string& buffer) const;
     void mapEncode(::qpid::types::Variant::Map& map) const;
+
+    static bool match(const std::string& evt, const std::string& pkg);
 };
 
 }/*MGEN:Event.CloseNamespaces*/

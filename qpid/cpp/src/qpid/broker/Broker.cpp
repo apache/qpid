@@ -904,7 +904,7 @@ std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
             //event instead?
             managementAgent->raiseEvent(
                 _qmf::EventQueueDeclare(connectionId, userId, name,
-                                        durable, owner, autodelete,
+                                        durable, owner, autodelete, alternateExchange,
                                         ManagementAgent::toMap(arguments),
                                         "created"));
         }
