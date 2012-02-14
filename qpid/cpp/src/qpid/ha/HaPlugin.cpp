@@ -56,7 +56,6 @@ struct HaPlugin : public Plugin {
     void initialize(Plugin::Target& target) {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
         if (broker && settings.enabled) {
-            QPID_LOG(info, "HA: Enabled");
             haBroker.reset(new ha::HaBroker(*broker, settings));
         } else
             QPID_LOG(info, "HA: Disabled");

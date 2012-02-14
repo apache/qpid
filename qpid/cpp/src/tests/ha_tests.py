@@ -39,10 +39,6 @@ class ShortTests(BrokerTest):
                                   ] + args,
                       **kwargs)
 
-    def setup_wiring(self, primary, backup):
-        cmd="qpid-route route add %s %s qpid.node-cloner x"%(backup, primary)
-        self.assertEqual(0, os.system(cmd))
-
     # FIXME aconway 2011-11-15: work around async replication.
     def wait(self, session, address):
         def check():
