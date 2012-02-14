@@ -58,7 +58,7 @@ struct HaPlugin : public Plugin {
         if (broker && settings.enabled) {
             haBroker.reset(new ha::HaBroker(*broker, settings));
         } else
-            QPID_LOG(info, "HA: Disabled");
+            QPID_LOG(notice, "HA: Disabled");
     }
 };
 

@@ -43,23 +43,20 @@ using types::Variant;
 using std::string;
 
 Backup::Backup(broker::Broker& b, const Settings& s) : broker(b), settings(s) {
-    // FIXME aconway 2011-11-24: identifying the primary.
-    if (s.brokerUrl != "primary") { // FIXME aconway 2011-11-22: temporary hack to identify primary.
-        Url url(s.brokerUrl);
-        QPID_LOG(info, "HA: Acting as backup");
-        string protocol = url[0].protocol.empty() ? "tcp" : url[0].protocol;
+    Url url(s.brokerUrl);
+    string protocol = url[0].protocol.empty() ? "tcp" : url[0].protocol;
 
-        // FIXME aconway 2011-11-17: TBD: link management, discovery, fail-over.
-        // Declare the link
-        std::pair<Link::shared_ptr, bool> result = broker.getLinks().declare(
-            url[0].host, url[0].port, protocol,
-            false,              // durable
-            s.mechanism, s.username, s.password);
-        assert(result.second);  // FIXME aconway 2011-11-23: error handling
-        link = result.first;
-        boost::shared_ptr<WiringReplicator> wr(new WiringReplicator(link));
-        broker.getExchanges().registerExchange(wr);
-    }
+    // FIXME aconway 2011-11-17: TBD: link management, discovery, fail-over.
+    // Declare the link
+    std::pair<Link::shared_ptr, bool> result = broker.getLinks().declare(
+        url[0].host, url[0].port, protocol,
+        false,              // durable
+        s.mechanism, s.username, s.password);
+    assert(result.second);  // FIXME aconway 2011-11-23: error handling
+    link = result.first;
+    boost::shared_ptr<WiringReplicator> wr(new WiringReplicator(link));
+    broker.getExchanges().registerExchange(wr);
 }
+
 
 }} // namespace qpid::ha
