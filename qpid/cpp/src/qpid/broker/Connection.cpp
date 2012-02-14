@@ -19,6 +19,7 @@
  *
  */
 #include "qpid/broker/Connection.h"
+#include "qpid/broker/ConnectionObserver.h"
 #include "qpid/broker/SessionOutputException.h"
 #include "qpid/broker/SessionState.h"
 #include "qpid/broker/Bridge.h"
@@ -162,8 +163,11 @@ void Connection::received(framing::AMQFrame& frame) {
         recordFromServer(frame);
     else
         recordFromClient(frame);
-    if (!wasOpen && isOpen())
+    if (!wasOpen && isOpen()) {
         doIoCallbacks(); // Do any callbacks registered before we opened.
+        // FIXME aconway 2012-01-18: generic observer points.
+        broker.getConnectionObservers().connect(*this);
+    }
 }
 
 void Connection::sent(const framing::AMQFrame& frame)

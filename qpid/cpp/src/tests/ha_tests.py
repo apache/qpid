@@ -19,7 +19,7 @@
 #
 
 import os, signal, sys, time, imp, re, subprocess, glob, random, logging, shutil
-from qpid.messaging import Message, NotFound
+from qpid.messaging import Message, NotFound, ConnectionError
 from brokertest import *
 from threading import Thread, Lock, Condition
 from logging import getLogger
@@ -53,6 +53,10 @@ class ShortTests(BrokerTest):
             session.receiver(address)
             self.fail("Should not have been replicated: %s"%(address))
         except NotFound: pass
+
+    def connect_admin(self, backup, **kwargs):
+        """Connect to a backup broker as the admin user"""
+        return backup.connect(username="qpid-ha-admin", password="dummy", mechanism="PLAIN", **kwargs)
 
     def test_replication(self):
         """Test basic replication of wiring and messages before and
@@ -116,7 +120,7 @@ class ShortTests(BrokerTest):
         setup(p, "2", primary)
 
         # Verify the data on the backup
-        b = backup.connect().session()
+        b = self.connect_admin(backup, ).session()
         verify(b, "1", p)
         verify(b, "2", p)
 
@@ -162,10 +166,10 @@ class ShortTests(BrokerTest):
         s.sync()
 
         msgs = [str(i) for i in range(30)]
-        b1 = backup1.connect().session()
+        b1 = self.connect_admin(backup1).session()
         self.wait(b1, "q");
         self.assert_browse_retry(b1, "q", msgs)
-        b2 = backup2.connect().session()
+        b2 = self.connect_admin(backup2).session()
         self.wait(b2, "q");
         self.assert_browse_retry(b2, "q", msgs)
 
@@ -192,13 +196,25 @@ class ShortTests(BrokerTest):
             self.assertEqual(receiver.wait(), 0)
             expect = [long(i) for i in range(991, 1001)]
             sn = lambda m: m.properties["sn"]
-            self.assert_browse_retry(backup1.connect().session(), "q", expect, transform=sn)
-            self.assert_browse_retry(backup2.connect().session(), "q", expect, transform=sn)
+            self.assert_browse_retry(self.connect_admin(backup1).session(), "q", expect, transform=sn)
+            self.assert_browse_retry(self.connect_admin(backup2).session(), "q", expect, transform=sn)
         except:
             print self.browse(primary.connect().session(), "q", transform=sn)
-            print self.browse(backup1.connect().session(), "q", transform=sn)
-            print self.browse(backup2.connect().session(), "q", transform=sn)
+            print self.browse(self.connect_admin(backup1).session(), "q", transform=sn)
+            print self.browse(self.connect_admin(backup2).session(), "q", transform=sn)
             raise
+
+    def test_exclude(self):
+        """Verify that backup rejects connections"""
+        primary = self.ha_broker(name="primary", broker_url="primary") # Temp hack to identify primary
+        backup = self.ha_broker(name="backup", broker_url=primary.host_port())
+        # Admin is allowed
+        self.connect_admin(backup)
+        # Others are not
+        try:
+            backup.connect()
+            self.fail("Expected connection to backup to fail")
+        except ConnectionError: pass
 
 if __name__ == "__main__":
     shutil.rmtree("brokertest.tmp", True)

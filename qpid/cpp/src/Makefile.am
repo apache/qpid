@@ -543,6 +543,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/Credit.h \
   qpid/broker/Credit.cpp \
   qpid/broker/ConsumerFactory.h \
+  qpid/broker/ConnectionObserver.h \
+  qpid/broker/ConnectionObservers.h \
   qpid/broker/Daemon.cpp \
   qpid/broker/Daemon.h \
   qpid/broker/Deliverable.h \
