@@ -418,7 +418,10 @@ class BrokerManager:
                         queue = self.findById(queues, bind.queueRef)
                         if queue != None:
                             qname = queue.name
-                        print "    bind [%s] => %s" % (bind.bindingKey, qname)
+                        if bind.arguments:
+                            print "    bind [%s] => %s %s" % (bind.bindingKey, qname, bind.arguments)
+                        else:
+                            print "    bind [%s] => %s" % (bind.bindingKey, qname)
 
 
     def QueueList(self, filter):
@@ -484,7 +487,10 @@ class BrokerManager:
                             if ename == "":
                                 if config._ignoreDefault: continue
                                 ename = "''"
-                        print "    bind [%s] => %s" % (bind.bindingKey, ename)
+                        if bind.arguments:
+                            print "    bind [%s] => %s %s" % (bind.bindingKey, ename, bind.arguments)
+                        else:
+                            print "    bind [%s] => %s" % (bind.bindingKey, ename)
 
     def AddExchange(self, args):
         if len(args) < 2:
