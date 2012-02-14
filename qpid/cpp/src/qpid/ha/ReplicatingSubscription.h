@@ -24,6 +24,7 @@
 
 #include "qpid/broker/SemanticState.h"
 #include "qpid/broker/QueueObserver.h"
+#include "qpid/broker/ConsumerFactory.h"
 
 namespace qpid {
 
@@ -43,11 +44,21 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
                                 public broker::QueueObserver
 {
   public:
+    struct Factory : public broker::ConsumerFactory {
+        boost::shared_ptr<broker::SemanticState::ConsumerImpl> create(
+            broker::SemanticState* parent,
+            const std::string& name, boost::shared_ptr<broker::Queue> ,
+            bool ack, bool acquire, bool exclusive, const std::string& tag,
+            const std::string& resumeId, uint64_t resumeTtl,
+            const framing::FieldTable& arguments);
+    };
+
     ReplicatingSubscription(broker::SemanticState* parent,
                             const std::string& name, boost::shared_ptr<broker::Queue> ,
                             bool ack, bool acquire, bool exclusive, const std::string& tag,
                             const std::string& resumeId, uint64_t resumeTtl,
                             const framing::FieldTable& arguments);
+
     ~ReplicatingSubscription();
 
     void init();
