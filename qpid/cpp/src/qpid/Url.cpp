@@ -255,6 +255,7 @@ void Url::parse(const char* url) {
 }
 
 void Url::parseNoThrow(const char* url) {
+    clear();
     cache.clear();
     if (!UrlParser(*this, url).parse())
         clear();
