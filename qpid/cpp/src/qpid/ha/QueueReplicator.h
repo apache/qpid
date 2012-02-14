@@ -23,6 +23,7 @@
  */
 #include "qpid/broker/Exchange.h"
 #include "qpid/framing/SequenceSet.h"
+#include <iosfwd>
 
 namespace qpid {
 
@@ -44,16 +45,18 @@ namespace ha {
  * Creates a ReplicatingSubscription on the primary by passing special
  * arguments to the consume command.
  *
- * THREAD SAFE: Called in arbitrary connection threads.
+ * THREAD UNSAFE: Only called in the connection thread of the source queue.
  */
 class QueueReplicator : public broker::Exchange
 {
   public:
     static const std::string DEQUEUE_EVENT_KEY;
     static const std::string POSITION_EVENT_KEY;
+    static std::string replicatorName(const std::string& queueName);
 
     QueueReplicator(boost::shared_ptr<broker::Queue> q, boost::shared_ptr<broker::Link> l);
     ~QueueReplicator();
+
     std::string getType() const;
     bool bind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
     bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
@@ -67,6 +70,8 @@ class QueueReplicator : public broker::Exchange
     sys::Mutex lock;
     boost::shared_ptr<broker::Queue> queue;
     boost::shared_ptr<broker::Link> link;
+
+  friend std::ostream& operator<<(std::ostream&, const QueueReplicator&);
 };
 
 }} // namespace qpid::ha
