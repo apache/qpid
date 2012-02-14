@@ -65,11 +65,12 @@ Backup::Backup(broker::Broker& b, const Settings& s) :
 }
 
 void Backup::setUrl(const Url& url) {
-    // FIXME aconway 2012-01-30: locking?
+    sys::Mutex::ScopedLock l(lock);
     link->setUrl(url);
 }
 
 Backup::~Backup() {
+    link->close();
     broker.getExchanges().destroy(replicator->getName());
     broker.getConnectionObservers().remove(excluder); // Allows client connections.
 }

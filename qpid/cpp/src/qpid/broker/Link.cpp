@@ -321,7 +321,7 @@ void Link::maintenanceVisit ()
         {
             visitCount = 0;
             //switch host and port to next in url list if possible
-            if (!tryFailover()) {
+            if (!tryFailoverLH()) {
                 currentInterval *= 2;
                 if (currentInterval > MAX_INTERVAL)
                     currentInterval = MAX_INTERVAL;
@@ -347,7 +347,7 @@ void Link::reconnect(const qpid::Address& a)
     }
 }
 
-bool Link::tryFailover() {      // FIXME aconway 2012-01-30: lock held?
+bool Link::tryFailoverLH() {      // FIXME aconway 2012-01-30: lock held?
     if (reconnectNext >= url.size()) reconnectNext = 0;
     if (url.empty()) return false;
     Address next = url[reconnectNext++];
@@ -440,18 +440,24 @@ ManagementObject* Link::GetManagementObject (void) const
     return (ManagementObject*) mgmtObject;
 }
 
+void Link::close() {
+    Mutex::ScopedLock mutex(lock);
+    if (!closing) {
+        closing = true;
+        if (state != STATE_CONNECTING && connection) {
+            //connection can only be closed on the connections own IO processing thread
+            connection->requestIOProcessing(boost::bind(&Link::destroy, this));
+        }
+    }
+}
+
+
 Manageable::status_t Link::ManagementMethod (uint32_t op, Args& args, string& text)
 {
     switch (op)
     {
     case _qmf::Link::METHOD_CLOSE :
-        if (!closing) {
-	    closing = true;
-	    if (state != STATE_CONNECTING && connection) {
-                //connection can only be closed on the connections own IO processing thread
-                connection->requestIOProcessing(boost::bind(&Link::destroy, this));
-	    }
-        }
+        close();
         return Manageable::STATUS_OK;
 
     case _qmf::Link::METHOD_BRIDGE :
