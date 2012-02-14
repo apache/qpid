@@ -104,10 +104,11 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
         ~DelegatingConsumer();
         bool deliver(broker::QueuedMessage& msg);
         void notify();
-        bool filter(boost::intrusive_ptr<Message>);
-        bool accept(boost::intrusive_ptr<Message>);
+        bool filter(boost::intrusive_ptr<broker::Message>);
+        bool accept(boost::intrusive_ptr<broker::Message>);
         void cancel();
-        OwnershipToken* getSession();
+        bool isDelayedCompletion() const { return false; }
+        broker::OwnershipToken* getSession();
       private:
         ReplicatingSubscription& delegate;
     };
