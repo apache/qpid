@@ -1046,8 +1046,8 @@ class LongTests(BrokerTest):
 
         # Start sender and receiver threads
         cluster[0].declare_queue("test-queue")
-        sender = NumberedSender(cluster[0], 1000) # Max queue depth
-        receiver = NumberedReceiver(cluster[0], sender)
+        sender = NumberedSender(cluster[0], max_depth=1000)
+        receiver = NumberedReceiver(cluster[0], sender=sender)
         receiver.start()
         sender.start()
         # Wait for sender & receiver to get up and running
