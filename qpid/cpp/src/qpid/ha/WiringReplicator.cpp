@@ -109,7 +109,6 @@ template <class T> bool match(Variant::Map& schema) {
     return T::match(schema[CLASS_NAME], schema[PACKAGE_NAME]);
 }
 
-// FIXME aconway 2011-11-24: this should be a class.
 enum ReplicateLevel { RL_NONE=0, RL_WIRING, RL_ALL };
 const string S_NONE="none";
 const string S_WIRING="wiring";
@@ -216,6 +215,7 @@ void WiringReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionH
     QPID_LOG(debug, "HA: Activated wiring replicator")
 }
 
+// FIXME aconway 2011-12-02: error  handling in route. Be forging but log warnings?
 void WiringReplicator::route(Deliverable& msg, const string& /*key*/, const framing::FieldTable* headers) {
     Variant::List list;
     try {
@@ -329,7 +329,7 @@ void WiringReplicator::doEventExchangeDeclare(Variant::Map& values) {
 void WiringReplicator::doEventExchangeDelete(Variant::Map& values) {
     string name = values[EXNAME].asString();
     try {
-        boost::shared_ptr<Exchange> exchange = broker.getExchanges().get(name);
+        boost::shared_ptr<Exchange> exchange = broker.getExchanges().find(name);
         if (exchange && replicateLevel(exchange->getArgs())) {
             QPID_LOG(debug, "HA: Deleting exchange:" << name);
             broker.deleteExchange(
@@ -341,20 +341,23 @@ void WiringReplicator::doEventExchangeDelete(Variant::Map& values) {
 }
 
 void WiringReplicator::doEventBind(Variant::Map& values) {
-    try {
-        boost::shared_ptr<Exchange> exchange = broker.getExchanges().get(values[EXNAME].asString());
-        boost::shared_ptr<Queue> queue = broker.getQueues().find(values[QNAME].asString());
-        // We only replicated a binds for a replicated queue to replicated exchange.
-        if (replicateLevel(exchange->getArgs()) && replicateLevel(queue->getSettings())) {
-            framing::FieldTable args;
-            amqp_0_10::translate(values[ARGS].asMap(), args);
-            string key = values[KEY].asString();
-            QPID_LOG(debug, "HA: Replicated binding exchange=" << exchange->getName()
-                     << " queue=" << queue->getName()
-                     << " key=" << key);
-            exchange->bind(queue, key, &args);
-        }
-    } catch (const framing::NotFoundException&) {} // Ignore unreplicated queue or exchange.
+    boost::shared_ptr<Exchange> exchange =
+        broker.getExchanges().find(values[EXNAME].asString());
+    boost::shared_ptr<Queue> queue =
+        broker.getQueues().find(values[QNAME].asString());
+    // We only replicate binds for a replicated queue to replicated
+    // exchange that both exist locally.
+    if (exchange && replicateLevel(exchange->getArgs()) &&
+        queue && replicateLevel(queue->getSettings()))
+    {
+        framing::FieldTable args;
+        amqp_0_10::translate(values[ARGS].asMap(), args);
+        string key = values[KEY].asString();
+        QPID_LOG(debug, "HA: Replicated binding exchange=" << exchange->getName()
+                 << " queue=" << queue->getName()
+                 << " key=" << key);
+        exchange->bind(queue, key, &args);
+    }
 }
 
 void WiringReplicator::doResponseQueue(Variant::Map& values) {
@@ -424,26 +427,24 @@ const std::string QUEUE_REF("queueRef");
 } // namespace
 
 void WiringReplicator::doResponseBind(Variant::Map& values) {
-    try {
-        std::string exName = getRefName(EXCHANGE_REF_PREFIX, values[EXCHANGE_REF]);
-        std::string qName = getRefName(QUEUE_REF_PREFIX, values[QUEUE_REF]);
-        boost::shared_ptr<Exchange> exchange = broker.getExchanges().get(exName);
-        boost::shared_ptr<Queue> queue = broker.getQueues().find(qName);
-        // FIXME aconway 2011-11-24: more flexible configuration for binding replication.
+    std::string exName = getRefName(EXCHANGE_REF_PREFIX, values[EXCHANGE_REF]);
+    std::string qName = getRefName(QUEUE_REF_PREFIX, values[QUEUE_REF]);
+    boost::shared_ptr<Exchange> exchange = broker.getExchanges().find(exName);
+    boost::shared_ptr<Queue> queue = broker.getQueues().find(qName);
+    // FIXME aconway 2011-11-24: more flexible configuration for binding replication.
 
-        // Automatically replicate exchange if queue and exchange are replicated
-        if (exchange && replicateLevel(exchange->getArgs()) &&
-            queue && replicateLevel(queue->getSettings()))
-        {
-            framing::FieldTable args;
-            amqp_0_10::translate(values[ARGUMENTS].asMap(), args);
-            string key = values[KEY].asString();
-            QPID_LOG(debug, "HA: Replicated binding exchange=" << exchange->getName()
-                     << " queue=" << queue->getName()
-                     << " key=" << key);
-            exchange->bind(queue, key, &args);
-        }
-    } catch (const framing::NotFoundException& e) {} // Ignore unreplicated queue or exchange.
+    // Automatically replicate binding if queue and exchange exist and are replicated
+    if (exchange && replicateLevel(exchange->getArgs()) &&
+        queue && replicateLevel(queue->getSettings()))
+    {
+        framing::FieldTable args;
+        amqp_0_10::translate(values[ARGUMENTS].asMap(), args);
+        string key = values[KEY].asString();
+        QPID_LOG(debug, "HA: Replicated binding exchange=" << exchange->getName()
+                 << " queue=" << queue->getName()
+                 << " key=" << key);
+        exchange->bind(queue, key, &args);
+    }
 }
 
 void WiringReplicator::startQueueReplicator(const boost::shared_ptr<Queue>& queue) {
