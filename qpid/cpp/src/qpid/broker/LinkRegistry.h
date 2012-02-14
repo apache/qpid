@@ -91,6 +91,7 @@ namespace broker {
                     const std::string& authMechanism,
                     const std::string& username,
                     const std::string& password);
+
         std::pair<Bridge::shared_ptr, bool>
             declare(const std::string& host,
                     uint16_t     port,
@@ -103,9 +104,12 @@ namespace broker {
                     const std::string& id,
                     const std::string& excludes,
                     bool         dynamic,
-                    uint16_t     sync);
+                    uint16_t     sync,
+                    Bridge::InitializeCallback=0
+            );
 
         void destroy(const std::string& host, const uint16_t port);
+
         void destroy(const std::string& host,
                      const uint16_t     port,
                      const std::string& src,

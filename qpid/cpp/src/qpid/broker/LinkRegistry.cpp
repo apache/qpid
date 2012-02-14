@@ -162,7 +162,9 @@ pair<Bridge::shared_ptr, bool> LinkRegistry::declare(const std::string& host,
                                                      const std::string& tag,
                                                      const std::string& excludes,
                                                      bool         dynamic,
-                                                     uint16_t     sync)
+                                                     uint16_t     sync,
+                                                     Bridge::InitializeCallback init
+)
 {
     Mutex::ScopedLock locker(lock);
     QPID_LOG(debug, "Bridge declared " << host << ": " << port << " from " << src << " to " << dest << " (" << key << ")");
@@ -196,7 +198,8 @@ pair<Bridge::shared_ptr, bool> LinkRegistry::declare(const std::string& host,
         bridge = Bridge::shared_ptr
             (new Bridge (l->second.get(), l->second->nextChannel(),
                          boost::bind(&LinkRegistry::destroy, this,
-                                     host, port, src, dest, key), args));
+                                     host, port, src, dest, key),
+                         args, init));
         bridges[bridgeKey] = bridge;
         l->second->add(bridge);
         return std::pair<Bridge::shared_ptr, bool>(bridge, true);
