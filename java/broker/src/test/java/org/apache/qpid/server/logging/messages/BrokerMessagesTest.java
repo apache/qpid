@@ -22,6 +22,8 @@ package org.apache.qpid.server.logging.messages;
 
 import java.util.List;
 
+import org.apache.derby.iapi.services.io.FileUtil;
+
 /**
  * Test BRK log Messages
  */
@@ -64,7 +66,7 @@ public class BrokerMessagesTest extends AbstractTestMessages
 
         List<Object> log = performLog();
 
-        String[] expected = {"Shuting down", transport, "port ", String.valueOf(port)};
+        String[] expected = {"Shutting down", transport, "port ", String.valueOf(port)};
 
         validateLogMessage(log, "BRK-1003", expected);
     }
@@ -111,6 +113,35 @@ public class BrokerMessagesTest extends AbstractTestMessages
         String[] expected = {"Using logging configuration :", path};
 
         validateLogMessage(log, "BRK-1007", expected);
+    }
+
+    public void testBrokerPlatform()
+    {
+        String javaVendor = "jvendor";
+        String javaVersion = "j1.0";
+
+        String osName = "os";
+        String osVersion = "o1.0";
+        String osArch = "oarch";
+
+        _logMessage = BrokerMessages.PLATFORM(javaVendor, javaVersion, osName, osVersion, osArch);
+        List<Object> log = performLog();
+
+        String[] expected = {"Platform :", "JVM :", javaVendor, " version: ", " OS : ", osName, " version: ", osVersion, " arch: ", osArch};
+
+        validateLogMessage(log, "BRK-1010", expected);
+    }
+
+    public void testBrokerMemory()
+    {
+        long oneGiga = 1024*1024*1024;
+
+        _logMessage = BrokerMessages.MAX_MEMORY(oneGiga);
+        List<Object> log = performLog();
+
+        String[] expected = {"Maximum Memory :", "1,073,741,824", "bytes"};
+
+        validateLogMessage(log, "BRK-1011", expected);
     }
 
 }
