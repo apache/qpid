@@ -22,6 +22,7 @@
  *
  */
 
+#include "Settings.h"
 #include "qpid/Url.h"
 #include "qmf/org/apache/qpid/ha/HaBroker.h"
 #include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetStatus.h"
@@ -33,7 +34,6 @@ namespace broker {
 class Broker;
 }
 namespace ha {
-class Settings;
 class Backup;
 
 /**
@@ -55,6 +55,7 @@ class HaBroker : public management::Manageable
     bool isPrimary() const;
   private:
     broker::Broker& broker;
+    Settings settings;
     Url clientUrl, brokerUrl;
     std::auto_ptr<Backup> backup;
     qmf::org::apache::qpid::ha::HaBroker* mgmtObject;
