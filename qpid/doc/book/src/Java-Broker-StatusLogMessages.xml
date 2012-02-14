@@ -216,7 +216,7 @@
                </para>     
             
             <para>Property:</para>
-            <programlisting><![CDATA[SHUTTING_DOWN = BRK-1003 : Shuting down : {0} port {1,number,}]]></programlisting>                      
+            <programlisting><![CDATA[SHUTTING_DOWN = BRK-1003 : Shutting down : {0} port {1,number,}]]></programlisting>
             <para>becomes Method:</para>
             <programlisting><![CDATA[public static LogMessage SHUTTING_DOWN(String param1, Number param2)]]>
             </programlisting>

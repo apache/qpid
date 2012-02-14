@@ -37,6 +37,7 @@ import org.apache.qpid.server.configuration.SystemConfigImpl;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.logging.CompositeStartupMessageLogger;
 import org.apache.qpid.server.logging.Log4jMessageLogger;
+import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.AbstractActor;
@@ -327,7 +328,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
             _qmfService = new QMFService(getConfigStore(), this);
 
-            CurrentActor.get().message(BrokerMessages.STARTUP(QpidProperties.getReleaseVersion(), QpidProperties.getBuildVersion()));
+            logStartupMessages(CurrentActor.get());
 
             _virtualHostRegistry = new VirtualHostRegistry(this);
 
@@ -355,6 +356,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             CurrentActor.remove();
         }
     }
+
 
     /**
      * Iterates across all discovered authentication manager factories, offering the security configuration to each.
@@ -739,4 +741,18 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     {
         _statisticsEnabled = enabled;
     }
+
+    private void logStartupMessages(LogActor logActor)
+    {
+        logActor.message(BrokerMessages.STARTUP(QpidProperties.getReleaseVersion(), QpidProperties.getBuildVersion()));
+
+        logActor.message(BrokerMessages.PLATFORM(System.getProperty("java.vendor"),
+                                                 System.getProperty("java.runtime.version", System.getProperty("java.version")),
+                                                 System.getProperty("os.name"),
+                                                 System.getProperty("os.version"),
+                                                 System.getProperty("os.arch")));
+
+        logActor.message(BrokerMessages.MAX_MEMORY(Runtime.getRuntime().maxMemory()));
+    }
+
 }
