@@ -179,6 +179,7 @@ public:
     std::auto_ptr<MessageStore> store;
     AclModule* acl;
     DataDir dataDir;
+    ConnectionObservers connectionObservers;
 
     QueueRegistry queues;
     ExchangeRegistry exchanges;
@@ -201,7 +202,6 @@ public:
     boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
     ConnectionCounter connectionCounter;
     ConsumerFactories consumerFactories;
-    ConnectionObservers connectionObservers;
 
   public:
     virtual ~Broker();
