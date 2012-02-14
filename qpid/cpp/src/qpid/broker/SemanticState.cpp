@@ -27,7 +27,6 @@
 #include "qpid/broker/Message.h"
 #include "qpid/ha/WiringReplicator.h"
 #include "qpid/broker/Queue.h"
-#include "qpid/broker/QueueReplicator.h"
 #include "qpid/broker/ReplicatingSubscription.h"
 #include "qpid/broker/SessionContext.h"
 #include "qpid/broker/SessionOutputException.h"
@@ -478,9 +477,10 @@ void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
     msg->computeExpiration(getSession().getBroker().getExpiryPolicy());
 
     std::string exchangeName = msg->getExchangeName();
-    if (!cacheExchange || cacheExchange->getName() != exchangeName || cacheExchange->isDestroyed()) {
-        cacheExchange = QueueReplicator::create(exchangeName, getSession().getBroker().getQueues());
-        if (!cacheExchange) cacheExchange = session.getBroker().getExchanges().get(exchangeName);
+    if (!cacheExchange || cacheExchange->getName() != exchangeName
+        || cacheExchange->isDestroyed())
+    {
+        cacheExchange = session.getBroker().getExchanges().get(exchangeName);
     }
     cacheExchange->setProperties(msg);
 
