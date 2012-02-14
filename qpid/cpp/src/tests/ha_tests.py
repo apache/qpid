@@ -55,12 +55,15 @@ class ShortTests(BrokerTest):
         except NotFound: pass
 
     def test_replication(self):
+        """Test basic replication of wiring and messages before and
+        after backup has connected"""
+
         def queue(name, replicate):
             return "%s;{create:always,node:{x-declare:{arguments:{'qpid.replicate':%s}}}}"%(name, replicate)
 
         def exchange(name, replicate, bindq):
             return"%s;{create:always,node:{type:topic,x-declare:{arguments:{'qpid.replicate':%s}, type:'fanout'},x-bindings:[{exchange:'%s',queue:'%s'}]}}"%(name, replicate, name, bindq)
-        def setup(p, prefix):
+        def setup(p, prefix, primary):
             """Create config, send messages on the primary p"""
             s = p.sender(queue(prefix+"q1", "all"))
             for m in ["a", "b", "1"]: s.send(Message(m))
@@ -71,6 +74,14 @@ class ShortTests(BrokerTest):
             p.sender(queue(prefix+"q3", "none")).send(Message("3"))
             p.sender(exchange(prefix+"e1", "all", prefix+"q1")).send(Message("4"))
             p.sender(exchange(prefix+"e2", "all", prefix+"q2")).send(Message("5"))
+            # Test  unbind
+            p.sender(queue(prefix+"q4", "all")).send(Message("6"))
+            s3 = p.sender(exchange(prefix+"e4", "all", prefix+"q4"))
+            s3.send(Message("7"))
+            # Use old connection to unbind
+            us = primary.connect_old().session(str(qpid.datatypes.uuid4()))
+            us.exchange_unbind(exchange=prefix+"e4", binding_key="", queue=prefix+"q4")
+            p.sender(prefix+"e4").send(Message("drop1")) # Should be dropped
             # FIXME aconway 2011-11-24: need a marker so we can wait till sync is done.
             p.sender(queue(prefix+"x", "wiring"))
 
@@ -93,13 +104,16 @@ class ShortTests(BrokerTest):
             b.sender(prefix+"e2").send(Message(prefix+"e2")) # Verify binds with replicate=wiring
             self.assert_browse_retry(b, prefix+"q2", [prefix+"e2"])
 
+            b.sender(prefix+"e4").send(Message("drop2")) # Verify unbind.
+            self.assert_browse_retry(b, prefix+"q4", ["6","7"])
+
         primary = self.ha_broker(name="primary", broker_url="primary") # Temp hack to identify primary
         p = primary.connect().session()
         # Create config, send messages before starting the backup, to test catch-up replication.
-        setup(p, "1")
+        setup(p, "1", primary)
         backup  = self.ha_broker(name="backup", broker_url=primary.host_port())
         # Create config, send messages after starting the backup, to test steady-state replication.
-        setup(p, "2")
+        setup(p, "2", primary)
 
         # Verify the data on the backup
         b = backup.connect().session()
