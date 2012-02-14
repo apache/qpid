@@ -1,5 +1,5 @@
-#ifndef QPID_HA_BROKER_H
-#define QPID_HA_BROKER_H
+#ifndef QPID_HA_BACKUP_H
+#define QPID_HA_BACKUP_H
 
 /*
  *
@@ -22,41 +22,29 @@
  *
  */
 
+#include "Settings.h"
 #include "qpid/Url.h"
-#include "qmf/org/apache/qpid/ha/HaBroker.h"
-#include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetStatus.h"
-#include "qpid/management/Manageable.h"
 
 namespace qpid {
 namespace broker {
 class Broker;
 }
+
 namespace ha {
 class Settings;
-class Backup;
 
 /**
- * HA state and actions associated with a broker.
- *
- * THREAD SAFE: may be called in arbitrary broker IO or timer threads.
+ * State associated with a backup broker. Manages connections to primary.
  */
-class HaBroker : public management::Manageable
+class Backup
 {
   public:
-    HaBroker(broker::Broker&, const Settings&);
-    ~HaBroker();
-
-    // Implement Manageable.
-    qpid::management::ManagementObject* GetManagementObject() const { return mgmtObject; }
-    management::Manageable::status_t ManagementMethod (
-        uint32_t methodId, management::Args& args, std::string& text);
+    Backup(broker::Broker&, const Settings&);
 
   private:
     broker::Broker& broker;
-    Url clientUrl, brokerUrl;
-    std::auto_ptr<Backup> backup;
-    qmf::org::apache::qpid::ha::HaBroker* mgmtObject;
+    Settings settings;
 };
 }} // namespace qpid::ha
 
-#endif  /*!QPID_HA_BROKER_H*/
+#endif  /*!QPID_HA_BACKUP_H*/
