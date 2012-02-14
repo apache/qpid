@@ -89,8 +89,7 @@ class ShortTests(BrokerTest):
 #         self.assert_browse(s, "q02", []) # wiring only
 #         self.assert_missing(s,"q03")
         s.sender("e01").send(Message("e01")) # Verify bind
-        # FIXME aconway 2011-11-18: FIXME replicate bindings
-        # self.assert_browse(s, "q02", ["e01"])
+        self.assert_browse(s, "q02", ["e01"])
 
         for a in ["q1", "q2", "e1"]: self.wait(s,a)
         # FIXME aconway 2011-11-18: replicate messages
@@ -98,8 +97,7 @@ class ShortTests(BrokerTest):
 #         self.assert_browse(s, "q2", []) # wiring only
 #         self.assert_missing(s,"q3")
         s.sender("e1").send(Message("e1")) # Verify bind
-        # FIXME aconway 2011-11-18: FIXME replicate bindings
-        # self.assert_browse(s, "q2", ["e1"])
+        self.assert_browse(s, "q2", ["e1"])
 
 
 if __name__ == "__main__":
