@@ -59,7 +59,13 @@ QueueReplicator::QueueReplicator(boost::shared_ptr<Queue> q, boost::shared_ptr<L
     : Exchange(replicatorName(q->getName()), 0, q->getBroker()), queue(q), link(l)
 {
     QPID_LOG(info, *this << "Created, settings: " << q->getSettings());
+}
 
+// This must be separate from the constructor so we can call shared_from_this.
+void QueueReplicator::activate() {
+    // Take a reference to myself to ensure not deleted before initializeBridge
+    // is called.
+    self = shared_from_this();
     queue->getBroker()->getLinks().declare(
         link->getHost(), link->getPort(),
         false,              // durable
@@ -72,19 +78,19 @@ QueueReplicator::QueueReplicator(boost::shared_ptr<Queue> q, boost::shared_ptr<L
         "",                 // excludes
         false,              // dynamic
         0,                  // sync?
+        // Include shared_ptr to self to ensure we not deleted before initializeBridge is called.
         boost::bind(&QueueReplicator::initializeBridge, this, _1, _2)
     );
 }
 
 QueueReplicator::~QueueReplicator() {
-    // FIXME aconway 2011-12-21: causes race condition? Restore.
-//     queue->getBroker()->getLinks().destroy(
-//         link->getHost(), link->getPort(), queue->getName(), getName(), string());
+    queue->getBroker()->getLinks().destroy(
+        link->getHost(), link->getPort(), queue->getName(), getName(), string());
 }
 
 // Called in a broker connection thread when the bridge is created.
-void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler)
-{
+// shared_ptr to self is just to ensure we are still in memory.
+void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler) {
     framing::AMQP_ServerProxy peer(sessionHandler.out);
     const qmf::org::apache::qpid::broker::ArgsLinkBridge& args(bridge.getArgs());
     framing::FieldTable settings;
@@ -107,6 +113,8 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     peer.getMessage().flow(getName(), 0, 0xFFFFFFFF);
     peer.getMessage().flow(getName(), 1, 0xFFFFFFFF);
     QPID_LOG(debug, *this << "Activated bridge from " << args.i_src << " to " << args.i_dest);
+    // Reset self reference so this will be deleted when all external refs are gone.
+    self.reset();
 }
 
 namespace {
