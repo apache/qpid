@@ -39,7 +39,7 @@ class ShortTests(BrokerTest):
                                   ] + args,
                       **kwargs)
 
-    # FIXME aconway 2011-11-15: work around async wiring replication.
+    # FIXME aconway 2011-11-15: work around async configuration replication.
     # Wait for an address to become valid.
     def wait(self, session, address):
         def check():
@@ -70,7 +70,7 @@ class ShortTests(BrokerTest):
         return backup.connect(client_properties={"qpid.ha-admin":1}, **kwargs)
 
     def test_replication(self):
-        """Test basic replication of wiring and messages before and
+        """Test basic replication of configuration and messages before and
         after backup has connected"""
 
         def queue(name, replicate):
@@ -80,30 +80,30 @@ class ShortTests(BrokerTest):
             return"%s;{create:always,node:{type:topic,x-declare:{arguments:{'qpid.replicate':%s}, type:'fanout'},x-bindings:[{exchange:'%s',queue:'%s'}]}}"%(name, replicate, name, bindq)
         def setup(p, prefix, primary):
             """Create config, send messages on the primary p"""
-            s = p.sender(queue(prefix+"q1", "all"))
+            s = p.sender(queue(prefix+"q1", "messages"))
             for m in ["a", "b", "1"]: s.send(Message(m))
             # Test replication of dequeue
             self.assertEqual(p.receiver(prefix+"q1").fetch(timeout=0).content, "a")
             p.acknowledge()
-            p.sender(queue(prefix+"q2", "wiring")).send(Message("2"))
+            p.sender(queue(prefix+"q2", "configuration")).send(Message("2"))
             p.sender(queue(prefix+"q3", "none")).send(Message("3"))
-            p.sender(exchange(prefix+"e1", "all", prefix+"q1")).send(Message("4"))
-            p.sender(exchange(prefix+"e2", "all", prefix+"q2")).send(Message("5"))
+            p.sender(exchange(prefix+"e1", "messages", prefix+"q1")).send(Message("4"))
+            p.sender(exchange(prefix+"e2", "messages", prefix+"q2")).send(Message("5"))
             # Test  unbind
-            p.sender(queue(prefix+"q4", "all")).send(Message("6"))
-            s3 = p.sender(exchange(prefix+"e4", "all", prefix+"q4"))
+            p.sender(queue(prefix+"q4", "messages")).send(Message("6"))
+            s3 = p.sender(exchange(prefix+"e4", "messages", prefix+"q4"))
             s3.send(Message("7"))
             # Use old connection to unbind
             us = primary.connect_old().session(str(qpid.datatypes.uuid4()))
             us.exchange_unbind(exchange=prefix+"e4", binding_key="", queue=prefix+"q4")
             p.sender(prefix+"e4").send(Message("drop1")) # Should be dropped
             # FIXME aconway 2011-11-24: need a marker so we can wait till sync is done.
-            p.sender(queue(prefix+"x", "wiring"))
+            p.sender(queue(prefix+"x", "configuration"))
 
         def verify(b, prefix, p):
             """Verify setup was replicated to backup b"""
 
-            # FIXME aconway 2011-11-21: wait for wiring to replicate.
+            # FIXME aconway 2011-11-21: wait for configuration to replicate.
             self.wait(b, prefix+"x");
             # FIXME aconway 2011-11-24: assert_browse_retry to deal with async replication.
             self.assert_browse_retry(b, prefix+"q1", ["b", "1", "4"])
@@ -112,11 +112,11 @@ class ShortTests(BrokerTest):
             p.acknowledge()
             self.assert_browse_retry(b, prefix+"q1", ["1", "4"])
 
-            self.assert_browse_retry(b, prefix+"q2", []) # wiring only
+            self.assert_browse_retry(b, prefix+"q2", []) # configuration only
             self.assert_missing(b, prefix+"q3")
             b.sender(prefix+"e1").send(Message(prefix+"e1")) # Verify binds with replicate=all
             self.assert_browse_retry(b, prefix+"q1", ["1", "4", prefix+"e1"])
-            b.sender(prefix+"e2").send(Message(prefix+"e2")) # Verify binds with replicate=wiring
+            b.sender(prefix+"e2").send(Message(prefix+"e2")) # Verify binds with replicate=configuration
             self.assert_browse_retry(b, prefix+"q2", [prefix+"e2"])
 
             b.sender(prefix+"e4").send(Message("drop2")) # Verify unbind.
@@ -136,7 +136,7 @@ class ShortTests(BrokerTest):
         verify(b, "1", p)
         verify(b, "2", p)
         # Test a series of messages, enqueue all then dequeue all.
-        s = p.sender(queue("foo","all"))
+        s = p.sender(queue("foo","messages"))
         self.wait(b, "foo")
         msgs = [str(i) for i in range(10)]
         for m in msgs: s.send(Message(m))
@@ -158,7 +158,7 @@ class ShortTests(BrokerTest):
             self.assert_browse_retry(p, "foo", msgs[i+1:])
             self.assert_browse_retry(b, "foo", msgs[i+1:])
 
-    def qpid_replicate(self, value="all"):
+    def qpid_replicate(self, value="messages"):
         return "node:{x-declare:{arguments:{'qpid.replicate':%s}}}" % value
 
     def test_sync(self):
@@ -166,7 +166,7 @@ class ShortTests(BrokerTest):
             return "%s;{create:always,%s}"%(name, self.qpid_replicate(replicate))
         primary = self.ha_broker(name="primary", broker_url="primary") # Temp hack to identify primary
         p = primary.connect().session()
-        s = p.sender(queue("q","all"))
+        s = p.sender(queue("q","messages"))
         for m in [str(i) for i in range(0,10)]: s.send(m)
         s.sync()
         backup1 = self.ha_broker(name="backup1", broker_url=primary.host_port())
@@ -192,14 +192,14 @@ class ShortTests(BrokerTest):
         sender = self.popen(
             ["qpid-send",
              "--broker", primary.host_port(),
-             "--address", "q;{create:always,%s}"%(self.qpid_replicate("all")),
+             "--address", "q;{create:always,%s}"%(self.qpid_replicate("messages")),
              "--messages=1000",
              "--content-string=x"
              ])
         receiver = self.popen(
             ["qpid-receive",
              "--broker", primary.host_port(),
-             "--address", "q;{create:always,%s}"%(self.qpid_replicate("all")),
+             "--address", "q;{create:always,%s}"%(self.qpid_replicate("messages")),
              "--messages=990",
              "--timeout=10"
              ])
