@@ -78,7 +78,7 @@ void QueueReplicator::activate() {
         false,              // dynamic
         0,                  // sync?
         // Include shared_ptr to self to ensure we not deleted before initializeBridge is called.
-        boost::bind(&QueueReplicator::initializeBridge, this, _1, _2)
+        boost::bind(&QueueReplicator::initializeBridge, this, _1, _2, self)
     );
 }
 
@@ -91,7 +91,9 @@ void QueueReplicator::deactivate() {
 }
 
 // Called in a broker connection thread when the bridge is created.
-void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler) {
+// shared_ptr to self ensures we are not deleted before initializeBridge is called.
+void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler,
+                                       boost::shared_ptr<QueueReplicator> /*self*/) {
     sys::Mutex::ScopedLock l(lock);
 
     framing::AMQP_ServerProxy peer(sessionHandler.out);
