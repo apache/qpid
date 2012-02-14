@@ -198,7 +198,8 @@ bool IncomingMessages::process(Handler* handler, qpid::sys::Duration duration)
             if (content->isA<MessageTransferBody>()) {
                 MessageTransfer transfer(content, *this);
                 if (handler && handler->accept(transfer)) {
-                    QPID_LOG(debug, "Delivered " << *content->getMethod());
+                    QPID_LOG(debug, "Delivered " << *content->getMethod() << " "
+                             << *content->getHeaders());
                     return true;
                 } else {
                     //received message for another destination, keep for later
