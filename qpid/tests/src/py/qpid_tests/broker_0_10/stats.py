@@ -21,12 +21,6 @@ from qpid.messaging import *
 from qpid.tests.messaging import Base
 import qmf.console
 from time import sleep
-import os
-import sys
-
-home = os.environ.get("QPID_TOOLS_HOME", os.path.normpath("../../../../tools/src/py"))
-sys.path.append(os.path.join(home, "python"))
-
 from qpidtoollibs.broker import BrokerAgent
 
 #
