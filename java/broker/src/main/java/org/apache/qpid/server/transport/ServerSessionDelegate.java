@@ -463,7 +463,7 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             else
             {
-                if(!exchange.getTypeShortString().toString().equals(method.getType()))
+                if(!exchange.getTypeShortString().toString().equals(method.getType()) && (method.getType() != null && method.getType().length() > 0))
                 {
                     exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Attempt to redeclare exchange: " + exchangeName + " of type " + exchange.getTypeShortString() + " to " + method.getType() +".");
                 }
