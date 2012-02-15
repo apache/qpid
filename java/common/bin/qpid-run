@@ -110,7 +110,7 @@ fi
 log $INFO System Properties set to ${SYSTEM_PROPS[@]}
 log $INFO QPID_OPTS set to $QPID_OPTS
 
-program=$(basename $0)
+program=$(basename "$0")
 sourced=${BASH_SOURCE[0]}
 if [[ -z ${sourced:-''} ]]; then
   sourced=$(which qpid-run) || ${QPID_HOME}/bin/qpid-run
