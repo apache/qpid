@@ -23,9 +23,13 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.qpid.test.utils.Piper;
 import org.apache.qpid.test.utils.QpidTestCase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class QpidPasswdTest extends QpidTestCase
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(QpidPasswdTest.class);
+
     private static final String PASSWD_SCRIPT = "qpid-passwd";
     private static final String EXPECTED_OUTPUT = "user1:rL0Y20zC+Fzt72VPzMSk2A==";
 
@@ -39,15 +43,19 @@ public class QpidPasswdTest extends QpidTestCase
                     + "bin" + File.separatorChar
                     + PASSWD_SCRIPT;
 
+            LOGGER.info("About to run script: " + scriptPath);
+
             ProcessBuilder pb = new ProcessBuilder(scriptPath, "user1", "foo");
+            pb.redirectErrorStream(true);
             process = pb.start();
 
             Piper piper = new Piper(process.getInputStream(), System.out, EXPECTED_OUTPUT, EXPECTED_OUTPUT);
             piper.start();
 
             boolean finishedSuccessfully = piper.await(2, TimeUnit.SECONDS);
-            assertTrue("Script should have completed with expected output " + EXPECTED_OUTPUT, finishedSuccessfully);
-
+            assertTrue(
+                    "Script should have completed with expected output " + EXPECTED_OUTPUT + ". Check standard output for actual output.",
+                    finishedSuccessfully);
             process.waitFor();
             piper.join();
 

@@ -18,9 +18,9 @@
 # under the License.
 #
 
-WHEREAMI=`dirname $0`
 if [ -z "$QPID_HOME" ]; then
-    export QPID_HOME=`cd $WHEREAMI/../ && pwd`
+    WHEREAMI=`dirname "$0"`
+    export QPID_HOME=`cd "$WHEREAMI/../" && pwd`
 fi
 
 # Set classpath to include Qpid jar with all required jars in manifest
@@ -32,4 +32,4 @@ export JAVA=java \
        JAVA_MEM=-Xmx1024m \
        QPID_CLASSPATH=$QPID_LIBS
 
-. ${QPID_HOME}/bin/qpid-run org.apache.qpid.tools.security.Passwd "$@"
+. "${QPID_HOME}/bin/qpid-run" org.apache.qpid.tools.security.Passwd "$@"
