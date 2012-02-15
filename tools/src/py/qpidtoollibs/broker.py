@@ -127,7 +127,15 @@ class BrokerAgent(object):
     return self._getAllBrokerObjects(Cluster)
 
   def getBroker(self):
-    return self._getBrokerObject(Broker, "amqp-broker")
+    #
+    # getAllBrokerObjects is used instead of getBrokerObject(Broker, 'amqp-broker') because
+    # of a bug that used to be in the broker whereby by-name queries did not return the
+    # object timestamps.
+    #
+    brokers = self._getAllBrokerObjects(Broker)
+    if brokers:
+      return brokers[0]
+    return None
 
   def getMemory(self):
     return self._getAllBrokerObjects(Memory)[0]
