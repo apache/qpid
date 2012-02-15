@@ -252,6 +252,20 @@ class QmfData(Console):
     elif tokens[0].isdigit():
       self.showObjectById(int(tokens[0]))
 
+  def _build_object_name(self, obj):
+    values = []
+    for p,v in obj.getProperties():
+      if p.name != "vhostRef" and p.index == 1:
+        if p.name == "brokerRef": # reference to broker
+          values.append('org.apache.qpid.broker:broker:amqp-broker')
+        else:
+          values.append(str(v))
+
+    object_key = ",".join(values)
+    class_key = obj.getClassKey();
+    return class_key.getPackageName() + ":" + class_key.getClassName() + ":" + object_key
+    
+
   def do_call(self, data):
     tokens = data.split()
     if len(tokens) < 2:
@@ -290,10 +304,8 @@ class QmfData(Console):
 
     object_id = obj.getObjectId();
     if not object_id.isV2 and obj.getAgent().isV2:
-        object_key = ",".join([str(v) for p, v in obj.getProperties() if p.name != "vhostRef" and p.index == 1])
-        class_key = obj.getClassKey();
-        object_name = class_key.getPackageName() + ":" + class_key.getClassName() + ":" + object_key
-        object_id = ObjectId.create(object_id.agentName, object_name)
+      object_name = self._build_object_name(obj)
+      object_id = ObjectId.create(object_id.agentName, object_name)
 
     self.session._sendMethodRequest(self.broker, obj.getClassKey(), object_id, methodName, args)
 
