@@ -95,7 +95,12 @@ size_t  Connection::encode(const char* buffer, size_t size) {
         QPID_LOG(trace, "SENT [" << identifier << "]: " << workQueue.front());
         workQueue.pop_front();
         encoded += frameSize;
-        if (workQueue.empty() && out.available() > 0) connection->doOutput();
+        if (workQueue.empty() && out.available() > 0) {
+            // try to get more output
+            connection->doOutput();
+            Mutex::ScopedLock l(frameQueueLock);
+            workQueue.swap(frameQueue);  // Need to get any new frames into the work queue
+        }
     }
     assert(workQueue.empty() || workQueue.front().encodedSize() <= size);
     if (!workQueue.empty() && workQueue.front().encodedSize() > size)
