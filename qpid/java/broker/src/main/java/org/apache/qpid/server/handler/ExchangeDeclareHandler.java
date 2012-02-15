@@ -101,7 +101,7 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
                     }
                 }
             }
-            else if (!exchange.getTypeShortString().equals(body.getType()))
+            else if (!exchange.getTypeShortString().equals(body.getType()) && !((body.getType() == null || body.getType().length() ==0) && body.getPassive()))
             {
 
                 throw new AMQConnectionException(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: " + body.getExchange() + " of type " + exchange.getTypeShortString() + " to " + body.getType() +".",body.getClazz(), body.getMethod(),body.getMajor(),body.getMinor(),null);
