@@ -98,7 +98,7 @@
     <target name="run-tests" depends="init" unless="start.timeout">
         <echo>Running test-suite</echo>
         <exec executable="${python.dir}/qpid-python-test" output="${test.results.dir}/results.out" error="${test.results.dir}/results.err">
-            <env key="PYTHONPATH" value="${qpid.root.dir}/tests/src/py:${qpid.root.dir}/extras/qmf/src/py"/>
+            <env key="PYTHONPATH" value="${qpid.root.dir}/tests/src/py:${qpid.root.dir}/extras/qmf/src/py:${qpid.root.dir}/tools/src/py"/>
             <arg line="-b ${qpid.python.broker.url} -x ${test.results.dir}/TEST-python.xml ${python.test.modules} ${python.test.ignore}"/>
        </exec>
 
