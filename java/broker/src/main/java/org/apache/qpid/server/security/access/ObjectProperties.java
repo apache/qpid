@@ -319,8 +319,8 @@ public class ObjectProperties
                 || ruleValue.equals(STAR)
                 || (ruleValue.endsWith(STAR) 
                         && thisValue != null
-                        && thisValue.length() > ruleValue.length()
-                        && thisValue.startsWith(ruleValue.substring(0, ruleValue.length() - 2)));
+                        && thisValue.length() >= ruleValue.length() - 1
+                        && thisValue.startsWith(ruleValue.substring(0, ruleValue.length() - 1)));
     }
 
     @Override
