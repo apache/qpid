@@ -87,8 +87,8 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
             return true;
         }
 
-        // Allow querying available object names
-        if (methodName.equals("queryNames"))
+        // Allow querying available object names and mbeans
+        if (methodName.equals("queryNames") || methodName.equals("queryMBeans"))
         {
             return true;
         }
@@ -108,7 +108,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
 
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
     {
-        final String methodName = getMethodName(method, args);
+        String methodName = method.getName();
 
         if (methodName.equals("getMBeanServer"))
         {
@@ -173,6 +173,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
                 security = _appRegistry.getVirtualHostRegistry().getVirtualHost(vhost).getSecurityManager();
             }
 
+            methodName = getMethodName(method, args);
 			if (isAccessMethod(methodName) || impact == MBeanOperationInfo.INFO)
 			{
 				// Check for read-only method invocation permission
