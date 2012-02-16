@@ -511,21 +511,7 @@ public class NavigationView extends ViewPart
                 }
             }
         }
-        // To make it work with the broker without virtual host implementation.
-        // This will add the default nodes to the domain node
-        boolean hasVirtualHost = false;
-        for (TreeObject child : serverNode.getChildren())
-        {
-            if (child.getName().startsWith(VIRTUAL_HOST))
-            {
-                hasVirtualHost = true;
-                break;      
-            }
-        }
-        
-        if (!hasVirtualHost){
-            addDefaultNodes(serverNode);
-        }
+
     }
 
     /**
