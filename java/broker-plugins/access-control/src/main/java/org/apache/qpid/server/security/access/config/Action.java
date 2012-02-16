@@ -109,10 +109,9 @@ public class Action
     /** @see Comparable#compareTo(Object) */
     public boolean matches(Action a)
     {
-        return (Operation.ALL == a.getOperation()
-                || (getOperation() == a.getOperation()
-                    && getObjectType() == a.getObjectType()
-                    && _properties.matches(a.getProperties())));
+        return ((Operation.ALL == a.getOperation() || getOperation() == a.getOperation())
+                    && (ObjectType.ALL == a.getObjectType() || getObjectType() == a.getObjectType())
+                    && _properties.matches(a.getProperties()));
     }
 
     /**

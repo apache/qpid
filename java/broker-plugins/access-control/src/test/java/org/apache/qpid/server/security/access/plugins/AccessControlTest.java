@@ -24,6 +24,7 @@ import java.util.Arrays;
 
 import junit.framework.TestCase;
 
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.logging.UnitTestMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -52,10 +53,20 @@ public class AccessControlTest extends TestCase
     private AccessControl _plugin = null;  // Class under test
     private final UnitTestMessageLogger messageLogger = new UnitTestMessageLogger();
 
-    protected void setUp() throws Exception
+    private void setUpGroupAccessControl() throws ConfigurationException
     {
-        super.setUp();
+        configureAccessControl(createGroupRuleSet());
+    }
 
+    private void configureAccessControl(final RuleSet rs) throws ConfigurationException
+    {
+        _plugin = (AccessControl) AccessControl.FACTORY.newInstance(createConfiguration(rs));
+        SecurityManager.setThreadSubject(null);
+        CurrentActor.set(new TestLogActor(messageLogger));
+    }
+
+    private RuleSet createGroupRuleSet()
+    {
         final RuleSet rs = new RuleSet();
         rs.addGroup("aclGroup1", Arrays.asList(new String[] {"member1", "member2"}));
 
@@ -68,11 +79,7 @@ public class AccessControlTest extends TestCase
         // Catch all rule
         rs.grant(3, Rule.ALL, Permission.DENY_LOG, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
 
-        _plugin = (AccessControl) AccessControl.FACTORY.newInstance(createConfiguration(rs));
-
-        SecurityManager.setThreadSubject(null);
-        
-        CurrentActor.set(new TestLogActor(messageLogger));
+        return rs;
     }
 
     protected void tearDown() throws Exception
@@ -81,68 +88,238 @@ public class AccessControlTest extends TestCase
         SecurityManager.setThreadSubject(null);
     }
 
-    /** 
+    /**
      * ACL plugin must always abstain if there is no  subject attached to the thread.
      */
-    public void testNoSubjectAlwaysAbstains()
+    public void testNoSubjectAlwaysAbstains() throws ConfigurationException
     {
+        setUpGroupAccessControl();
         SecurityManager.setThreadSubject(null);
 
         final Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
         assertEquals(Result.ABSTAIN, result);
     }
 
-    /** 
+    /**
      * Tests that an allow rule expressed with a username allows an operation performed by a thread running
      * with the same username.
      */
-    public void testUsernameAllowsOperation()
+    public void testUsernameAllowsOperation() throws ConfigurationException
     {
+        setUpGroupAccessControl();
         SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("user1"));
 
         final Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
         assertEquals(Result.ALLOWED, result);
     }
 
-    /** 
+    /**
      * Tests that an allow rule expressed with an <b>ACL groupname</b> allows an operation performed by a thread running
      * by a user who belongs to the same group..
      */
-    public void testAclGroupMembershipAllowsOperation()
+    public void testAclGroupMembershipAllowsOperation() throws ConfigurationException
     {
+        setUpGroupAccessControl();
         SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("member1"));
 
         final Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
         assertEquals(Result.ALLOWED, result);
     }
 
-    /** 
+    /**
      * Tests that a deny rule expressed with an <b>External groupname</b> denies an operation performed by a thread running
      * by a user who belongs to the same group.
      */
-    public void testExternalGroupMembershipDeniesOperation()
+    public void testExternalGroupMembershipDeniesOperation() throws ConfigurationException
     {
+        setUpGroupAccessControl();
         SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("user3", "extGroup1"));
-        
+
         final Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
         assertEquals(Result.DENIED, result);
     }
 
-    /** 
+    /**
      * Tests that the catch all deny denies the operation and logs with the logging actor.
      */
-    public void testCatchAllRuleDeniesUnrecognisedUsername()
+    public void testCatchAllRuleDeniesUnrecognisedUsername() throws ConfigurationException
     {
+        setUpGroupAccessControl();
         SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("unknown", "unkgroup1", "unkgroup2"));
-        
+
         assertEquals("Expecting zero messages before test", 0, messageLogger.getLogMessages().size());
         final Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
         assertEquals(Result.DENIED, result);
-        
+
         assertEquals("Expecting one message before test", 1, messageLogger.getLogMessages().size());
         assertTrue("Logged message does not contain expected string", messageLogger.messageContains(0, "ACL-1002"));
     }
-    
+
+    /**
+     * Tests that a grant access method rule allows any access operation to be performed on any component
+     */
+    public void testAuthoriseAccessMethodWhenAllAccessOperationsAllowedOnAllComponents() throws ConfigurationException
+    {
+        final RuleSet rs = new RuleSet();
+
+        // grant user4 access right on any method in any component
+        rs.grant(1, "user4", Permission.ALLOW, Operation.ACCESS, ObjectType.METHOD, new ObjectProperties(ObjectProperties.STAR));
+        configureAccessControl(rs);
+        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("user4"));
+
+        ObjectProperties actionProperties = new ObjectProperties("getName");
+        actionProperties.put(ObjectProperties.Property.COMPONENT, "Test");
+
+        final Result result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, actionProperties);
+        assertEquals(Result.ALLOWED, result);
+    }
+
+    /**
+     * Tests that a grant access method rule allows any access operation to be performed on a specified component
+     */
+    public void testAuthoriseAccessMethodWhenAllAccessOperationsAllowedOnSpecifiedComponent() throws ConfigurationException
+    {
+        final RuleSet rs = new RuleSet();
+
+        // grant user5 access right on any methods in "Test" component
+        ObjectProperties ruleProperties = new ObjectProperties(ObjectProperties.STAR);
+        ruleProperties.put(ObjectProperties.Property.COMPONENT, "Test");
+        rs.grant(1, "user5", Permission.ALLOW, Operation.ACCESS, ObjectType.METHOD, ruleProperties);
+        configureAccessControl(rs);
+        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("user5"));
+
+        ObjectProperties actionProperties = new ObjectProperties("getName");
+        actionProperties.put(ObjectProperties.Property.COMPONENT, "Test");
+        Result result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, actionProperties);
+        assertEquals(Result.ALLOWED, result);
+
+        actionProperties.put(ObjectProperties.Property.COMPONENT, "Test2");
+        result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, actionProperties);
+        assertEquals(Result.DEFER, result);
+    }
+
+    /**
+     * Tests that a grant access method rule allows any access operation to be performed on a specified component
+     */
+    public void testAuthoriseAccessMethodWhenSpecifiedAccessOperationsAllowedOnSpecifiedComponent() throws ConfigurationException
+    {
+        final RuleSet rs = new RuleSet();
+
+        // grant user6 access right on "getAttribute" method in "Test" component
+        ObjectProperties ruleProperties = new ObjectProperties("getAttribute");
+        ruleProperties.put(ObjectProperties.Property.COMPONENT, "Test");
+        rs.grant(1, "user6", Permission.ALLOW, Operation.ACCESS, ObjectType.METHOD, ruleProperties);
+        configureAccessControl(rs);
+        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("user6"));
+
+        ObjectProperties properties = new ObjectProperties("getAttribute");
+        properties.put(ObjectProperties.Property.COMPONENT, "Test");
+        Result result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
+        assertEquals(Result.ALLOWED, result);
+
+        properties.put(ObjectProperties.Property.COMPONENT, "Test2");
+        result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
+        assertEquals(Result.DEFER, result);
+
+        properties = new ObjectProperties("getAttribute2");
+        properties.put(ObjectProperties.Property.COMPONENT, "Test");
+        result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
+        assertEquals(Result.DEFER, result);
+    }
+
+    /**
+     * Tests that granting of all method rights on a method allows a specified operation to be performed on any component
+     */
+    public void testAuthoriseAccessUpdateMethodWhenAllRightsGrantedOnSpecifiedMethodForAllComponents() throws ConfigurationException
+    {
+        final RuleSet rs = new RuleSet();
+
+        // grant user8 all rights on method queryNames in all component
+        rs.grant(1, "user8", Permission.ALLOW, Operation.ALL, ObjectType.METHOD, new ObjectProperties("queryNames"));
+        configureAccessControl(rs);
+        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("user8"));
+
+        ObjectProperties properties = new ObjectProperties();
+        properties.put(ObjectProperties.Property.COMPONENT, "Test");
+        properties.put(ObjectProperties.Property.NAME, "queryNames");
+
+        Result result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
+        assertEquals(Result.ALLOWED, result);
+
+        result = _plugin.authorise(Operation.UPDATE, ObjectType.METHOD, properties);
+        assertEquals(Result.ALLOWED, result);
+
+        properties = new ObjectProperties("getAttribute");
+        properties.put(ObjectProperties.Property.COMPONENT, "Test");
+        result = _plugin.authorise(Operation.UPDATE, ObjectType.METHOD, properties);
+        assertEquals(Result.DEFER, result);
+
+        result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
+        assertEquals(Result.DEFER, result);
+    }
+
+    /**
+     * Tests that granting of all method rights allows any operation to be performed on any component
+     */
+    public void testAuthoriseAccessUpdateMethodWhenAllRightsGrantedOnAllMethodsInAllComponents() throws ConfigurationException
+    {
+        final RuleSet rs = new RuleSet();
+
+        // grant user9 all rights on any method in all component
+        rs.grant(1, "user9", Permission.ALLOW, Operation.ALL, ObjectType.METHOD, new ObjectProperties());
+        configureAccessControl(rs);
+        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("user9"));
+
+        ObjectProperties properties = new ObjectProperties("queryNames");
+        properties.put(ObjectProperties.Property.COMPONENT, "Test");
+
+        Result result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
+        assertEquals(Result.ALLOWED, result);
+
+        result = _plugin.authorise(Operation.UPDATE, ObjectType.METHOD, properties);
+        assertEquals(Result.ALLOWED, result);
+
+        properties = new ObjectProperties("getAttribute");
+        properties.put(ObjectProperties.Property.COMPONENT, "Test");
+        result = _plugin.authorise(Operation.UPDATE, ObjectType.METHOD, properties);
+        assertEquals(Result.ALLOWED, result);
+
+        result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
+        assertEquals(Result.ALLOWED, result);
+    }
+
+    /**
+     * Tests that granting of access method rights with mask allows matching operations to be performed on the specified component
+     */
+    public void testAuthoriseAccessMethodWhenMatchingAcessOperationsAllowedOnSpecifiedComponent() throws ConfigurationException
+    {
+        final RuleSet rs = new RuleSet();
+
+        // grant user9 all rights on "getAttribute*" methods in Test component
+        ObjectProperties ruleProperties = new ObjectProperties();
+        ruleProperties.put(ObjectProperties.Property.COMPONENT, "Test");
+        ruleProperties.put(ObjectProperties.Property.NAME, "getAttribute*");
+
+        rs.grant(1, "user9", Permission.ALLOW, Operation.ACCESS, ObjectType.METHOD, ruleProperties);
+        configureAccessControl(rs);
+        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("user9"));
+
+        ObjectProperties properties = new ObjectProperties("getAttributes");
+        properties.put(ObjectProperties.Property.COMPONENT, "Test");
+        Result result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
+        assertEquals(Result.ALLOWED, result);
+
+        properties = new ObjectProperties("getAttribute");
+        properties.put(ObjectProperties.Property.COMPONENT, "Test");
+        result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
+        assertEquals(Result.ALLOWED, result);
+
+        properties = new ObjectProperties("getAttribut");
+        properties.put(ObjectProperties.Property.COMPONENT, "Test");
+        result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
+        assertEquals(Result.DEFER, result);
+    }
+
     /**
      * Creates a configuration plugin for the {@link AccessControl} plugin.
      */
@@ -150,6 +327,7 @@ public class AccessControlTest extends TestCase
     {
         final ConfigurationPlugin cp = new ConfigurationPlugin()
         {
+            @SuppressWarnings("unchecked")
             public AccessControlConfiguration  getConfiguration(final String plugin)
             {
                 return new AccessControlConfiguration()
