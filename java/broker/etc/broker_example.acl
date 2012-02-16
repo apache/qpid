@@ -24,14 +24,31 @@
 #Define a 'messaging-users' group with users  'client' and  'server' in it
 GROUP messaging-users client server
 
+
 ### MANAGEMENT ####
 
-#Allow 'guest' to perform read operations on the Serverinformation mbean and view logger levels
-ACL ALLOW-LOG guest ACCESS METHOD component="ServerInformation"
-ACL ALLOW-LOG guest ACCESS METHOD component="LoggingManagement" name="viewEffectiveRuntimeLoggerLevels"
+# Allow everyone to perform read operations on the ServerInformation mbean
+# This is used for items such as querying the management API and broker release versions.
+ACL ALLOW-LOG ALL ACCESS METHOD component="ServerInformation"
 
-#Allow 'admin' all management operations
+# Allow 'admin' all management operations
 ACL ALLOW-LOG admin ALL METHOD
+
+# Deny access to Shutdown, UserManagement, ConfigurationManagement and LoggingManagement for all other users
+# You could grant specific users access to these beans by adding ALLOW-LOG rules above for them
+ACL DENY-LOG ALL ACCESS METHOD component="Shutdown"
+ACL DENY-LOG ALL ACCESS METHOD component="UserManagement"
+ACL DENY-LOG ALL ACCESS METHOD component="ConfigurationManagement"
+ACL DENY-LOG ALL ACCESS METHOD component="LoggingManagement"
+
+# Allow 'guest' to view logger levels, and use getter methods on LoggingManagement
+# These are examples of redundant rules! The DENY-LOG rule above will be invoked
+# first and will deny the access to all methods of LoggingManagement for guest
+ACL ALLOW-LOG guest ACCESS METHOD component="LoggingManagement" name="viewEffectiveRuntimeLoggerLevels"
+ACL ALLOW-LOG guest ACCESS METHOD component="LoggingManagement" name="get*"
+
+# Allow everyone to perform all read operations on the mbeans not listened in the DENY-LOG rules above
+ACL ALLOW-LOG ALL ACCESS METHOD
 
 ### MESSAGING ###
 
