@@ -19,6 +19,8 @@
  */
 package org.apache.qpid.shutdown;
 
+import javax.management.MBeanOperationInfo;
+
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
 
@@ -34,7 +36,7 @@ public interface ShutdownMBean
     /**
      * Broker will be shut down immediately.
      */
-    @MBeanOperation(name="shutdown", description="Shut down immediately")
+    @MBeanOperation(name="shutdown", description="Shut down immediately", impact = MBeanOperationInfo.ACTION)
     public void shutdown();
 
     /**
@@ -42,7 +44,7 @@ public interface ShutdownMBean
      * 
      * @param delay the number of ms to wait
      */
-    @MBeanOperation(name="shutdown", description="Shutdown after the specified delay (ms)")
+    @MBeanOperation(name="shutdown", description="Shutdown after the specified delay (ms)", impact = MBeanOperationInfo.ACTION)
     public void shutdown(@MBeanOperationParameter(name="when", description="delay (ms)")long delay);
 
     /**
@@ -50,6 +52,6 @@ public interface ShutdownMBean
      * 
      * @param when the date and time to shutdown
      */
-    @MBeanOperation(name="shutdownAt", description="Shutdown at the specified date and time (yyyy/MM/dd HH:mm:ss)")
+    @MBeanOperation(name="shutdownAt", description="Shutdown at the specified date and time (yyyy/MM/dd HH:mm:ss)", impact = MBeanOperationInfo.ACTION)
     public void shutdownAt(@MBeanOperationParameter(name="when", description="shutdown date/time (yyyy/MM/dd HH:mm:ss)")String when);
 }
