@@ -27,6 +27,7 @@ qpid_tests.broker_0_10.msg_groups.*
 
 #The broker does not have the appropriate QMF support
 qpid_tests.broker_0_10.management.*
+qpid_tests.broker_0_10.stats.BrokerStatsTests.*
 
 #The broker does not use the same threshold alerting system (or the QMF support needed for the tests)
 qpid_tests.broker_0_10.threshold.*
