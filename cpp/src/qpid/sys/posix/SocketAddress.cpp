@@ -84,8 +84,8 @@ std::string SocketAddress::asString(::sockaddr const * const addr, size_t addrle
 uint16_t SocketAddress::getPort(::sockaddr const * const addr)
 {
     switch (addr->sa_family) {
-        case AF_INET: return ntohs(((::sockaddr_in*)(void*)addr)->sin_port);
-        case AF_INET6: return ntohs(((::sockaddr_in6*)(void*)addr)->sin6_port);
+        case AF_INET: return ntohs(((const ::sockaddr_in*)(const void*)addr)->sin_port);
+        case AF_INET6: return ntohs(((const ::sockaddr_in6*)(const void*)addr)->sin6_port);
         default:throw Exception(QPID_MSG("Unexpected socket type"));
     }
 }
