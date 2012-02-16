@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/errno.h>
+#include <unistd.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <netdb.h>
