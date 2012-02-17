@@ -302,6 +302,7 @@ public class Main
                 {
                     public void uncaughtException(final Thread t, final Throwable e)
                     {
+                        boolean continueOnError = Boolean.getBoolean("qpid.broker.exceptionHandler.continue");
                         try
                         {
                             System.err.println("########################################################################");
@@ -311,17 +312,20 @@ public class Main
                             System.err.print(" in Thread ");
                             System.err.println(t.getName());
                             System.err.println("#");
-                            System.err.println("# Exiting");
+                            System.err.println(continueOnError ? "# Forced to continue by JVM setting 'qpid.broker.exceptionHandler.continue'" : "# Exiting");
                             System.err.println("#");
                             System.err.println("########################################################################");
                             e.printStackTrace(System.err);
 
                             Logger logger = Logger.getLogger("org.apache.qpid.server.Main");
-                            logger.error("Uncaught exception, shutting down.", e);
+                            logger.error("Uncaught exception, " + (continueOnError ? "continuing." : "shutting down."), e);
                         }
                         finally
                         {
-                            Runtime.getRuntime().halt(1);
+                            if (!continueOnError)
+                            {
+                                Runtime.getRuntime().halt(1);
+                            }
                         }
 
                     }
