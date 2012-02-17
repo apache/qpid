@@ -304,7 +304,8 @@ TESTS_ENVIRONMENT = \
 
 system_tests = qpid-client-test quick_perftest quick_topictest run_header_test quick_txtest \
   run_msg_group_tests
-TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests run_federation_sys_tests \
+TESTS += start_broker $(system_tests) python_tests stop_broker \
+  ha_tests.py run_federation_tests run_federation_sys_tests \
   run_acl_tests run_cli_tests replication_test dynamic_log_level_test \
   run_queue_flow_limit_tests ipv6_test
 
