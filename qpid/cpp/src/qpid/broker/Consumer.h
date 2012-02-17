@@ -61,6 +61,7 @@ class Consumer {
     virtual bool accept(boost::intrusive_ptr<Message>) { return true; }
     virtual OwnershipToken* getSession() = 0;
     virtual void cancel() = 0;
+    virtual bool isDelayedCompletion() const { return false; }
 
   protected:
     framing::SequenceNumber position;
