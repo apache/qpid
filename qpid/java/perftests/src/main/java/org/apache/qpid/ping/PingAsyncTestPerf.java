@@ -184,6 +184,7 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
         // Check that all the replies were received and log a fail if they were not.
         if (numReplies < perCorrelationId._expectedCount)
         {
+            System.out.println("##### " + numReplies + "replies, expected " + perCorrelationId._expectedCount + " #####");
             perCorrelationId._tc.completeTest(false, numPings - perCorrelationId._expectedCount);
         }
 
