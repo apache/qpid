@@ -38,6 +38,7 @@
 #include "qpid/broker/System.h"
 #include "qpid/broker/ExpiryPolicy.h"
 #include "qpid/broker/ConsumerFactory.h"
+#include "qpid/broker/ConnectionObservers.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qmf/org/apache/qpid/broker/Broker.h"
@@ -200,6 +201,7 @@ public:
     boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
     ConnectionCounter connectionCounter;
     ConsumerFactories consumerFactories;
+    ConnectionObservers connectionObservers;
 
   public:
     virtual ~Broker();
@@ -360,6 +362,7 @@ public:
                 const std::string& connectionId);
 
     ConsumerFactories&  getConsumerFactories() { return consumerFactories; }
+    ConnectionObservers& getConnectionObservers() { return connectionObservers; }
 };
 
 }}
