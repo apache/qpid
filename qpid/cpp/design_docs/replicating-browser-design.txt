@@ -16,13 +16,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
-* Another new design for Qpid clustering.
+* An active-passive, hot-standby design for Qpid clustering.
 
 For some background see [[./new-cluster-design.txt]] which describes the
 issues with the old design and a new active-active design that could
 replace it.
 
-This document describes an alternative active-passive approach.
+This document describes an alternative active-passive approach based on
+queue browsing to replicate message data.
 
 ** Active-active vs. active-passive (hot-standby)
 
@@ -57,7 +58,19 @@ The primary can enqueue messages and replicate asynchronously -
 exactly like the store does, but it "writes" to the replicas over the
 network rather than writing to disk.
 
-** Failover in a hot-standby cluster.
+** Replicating browsers
+
+The unit of replication is a replicating browser. This is an AMQP
+consumer that browses a remote queue via a federation link and
+maintains a local replica of the queue. As well as browsing the remote
+messages as they are added the browser receives dequeue notifications
+when they are dequeued remotely.
+
+On the primary broker incoming mesage transfers are completed only when
+all of the replicating browsers have signaled completion. Thus a completed
+message is guaranteed to be on the backups.
+
+** Failover and Cluster Resource Managers
 
 We want to delegate the failover management to an existing cluster
 resource manager. Initially this is rgmanager from Cluster Suite, but
@@ -79,18 +92,6 @@ broker is started on a different node and and recovers from the
 store. This bears investigation but the store recovery times are
 likely too long for failover.
 
-** Replicating browsers
-
-The unit of replication is a replicating browser. This is an AMQP
-consumer that browses a remote queue via a federation link and
-maintains a local replica of the queue. As well as browsing the remote
-messages as they are added the browser receives dequeue notifications
-when they are dequeued remotely.
-
-On the primary broker incoming mesage transfers are completed only when
-all of the replicating browsers have signaled completion. Thus a completed
-message is guaranteed to be on the backups.
-
 ** Replicating wiring
 
 New queues and exchanges and their bindings also need to be replicated.
@@ -103,6 +104,7 @@ CPG is not required in this model, an external cluster resource
 manager takes care of membership and quorum.
 
 ** Selective replication
+
 In this model it's easy to support selective replication of individual queues via
 configuration.
 - Explicit exchange/queue declare argument and message boolean: x-qpid-replicate.
@@ -134,7 +136,15 @@ out the best approach, or possibly allow mutliple approaches. Need to
 go thru the various failure cases. We may be able to do recovery on a
 per-queue basis rather than restarting an entire node.
 
-** New members joining
+
+** New backups joining
+
+New brokers can join the cluster as backups. Note - if the new broker
+has a new IP address, then the existing cluster members must be
+updated with a new client and broker URLs by a sysadmin.
+
+
+They discover
 
 We should be able to catch up much faster than the the old design. A
 new backup can catch up ("recover") the current cluster state on a
@@ -151,6 +161,85 @@ The primary sends pre-existing messages in LIFO order - starting from
 the back of the queue, at the same time clients are consuming from the front.
 The active consumers actually reduce the amount of work to be done, as there's
 no need to replicate messages that are no longer on the queue.
+
+** Broker discovery and lifecycle.
+
+The cluster has a client URL that can contain a single virtual IP
+address or a list of real IP addresses for the cluster.
+
+In backup mode, brokers reject connections except from a special
+cluster-admin user.
+
+Clients discover the primary by re-trying connection to the client URL
+until the successfully connect to the primary. In the case of a
+virtual IP they re-try the same address until it is relocated to the
+primary. In the case of a list of IPs the client tries each in
+turn. Clients do multiple retries over a configured period of time
+before giving up.
+
+Backup brokers discover the primary in the same way as clients. There
+is a separate broker URL for brokers since they often will connect
+over a different network to the clients. The broker URL has to be a
+list of IPs rather than one virtual IP so broker members can connect
+to each other.
+
+Brokers have the following states:
+- connecting: backup broker trying to connect to primary - loops retrying broker URL.
+- catchup: connected to primary, catching up on pre-existing wiring & messages.
+- backup: fully functional backup.
+- primary: Acting as primary, serving clients.
+
+** Interaction with rgmanager
+
+rgmanager interacts with qpid via 2 service scripts: backup & primary. These
+scripts interact with the underlying qpidd service.
+
+*** Initial cluster start
+
+rgmanager starts the backup service on all nodes and the primary service on one node.
+
+On the backup nodes qpidd is in the connecting state. The primary node goes into
+the primary state. Backups discover the primary, connect and catch up.
+
+*** Failover
+
+primary broker or node fails. Backup brokers see disconnect and go
+back to connecting mode.
+
+rgmanager notices the failure and starts the primary service on a new node.
+This tells qpidd to go to primary mode. Backups re-connect and catch up.
+
+*** Failback
+
+Cluster of N brokers has suffered a failure, only N-1 brokers
+remain. We want to start a new broker (possibly on a new node) to
+restore redundancy.
+
+If the new broker has a new IP address, the sysadmin pushes a new URL
+to all the existing brokers.
+
+The new broker starts in connecting mode. It discovers the primary,
+connects and catches up.
+
+*** Failure during failback
+
+A second failure occurs before the new backup B can complete its catch
+up.  The backup B refuses to become primary by failing the primary
+start script if rgmanager chooses it, so rgmanager will try another
+(hopefully caught-up) broker to be primary.
+
+** Interaction with the store.
+
+# FIXME aconway 2011-11-16: TBD
+- how to identify the "best" store after a total cluster crash.
+- best = last to be primary.
+- primary "generation" - counter passed to backups and incremented by new primary.
+
+restart after crash:
+- clean/dirty flag on disk for admin shutdown vs. crash
+- dirty brokers refuse to be primary
+- sysamdin tells best broker to be primary
+- erase stores? delay loading?
 
 ** Current Limitations
 
