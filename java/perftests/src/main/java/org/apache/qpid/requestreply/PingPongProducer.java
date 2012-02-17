@@ -474,6 +474,8 @@ public class PingPongProducer implements Runnable, ExceptionListener
     /** Holds the number of consumers per destination. */
     protected int _noOfConsumers;
 
+    private int[] _consumerBatchCounts;
+
     /** Holds the maximum send rate in herz. */
     protected int _rate;
 
@@ -632,6 +634,7 @@ public class PingPongProducer implements Runnable, ExceptionListener
         _txBatchSize = properties.getPropertyAsInteger(TX_BATCH_SIZE_PROPNAME);
         _noOfDestinations = properties.getPropertyAsInteger(DESTINATION_COUNT_PROPNAME);
         _noOfConsumers = properties.getPropertyAsInteger(NUM_CONSUMERS_PROPNAME);
+        _consumerBatchCounts = new int[_noOfConsumers];
         _rate = properties.getPropertyAsInteger(RATE_PROPNAME);
         _isPubSub = properties.getPropertyAsBoolean(PUBSUB_PROPNAME);
         _isUnique = properties.getPropertyAsBoolean(UNIQUE_DESTS_PROPNAME);
@@ -1034,27 +1037,9 @@ public class PingPongProducer implements Runnable, ExceptionListener
                         trueCount = trafficLight.getCount();
                         remainingCount = trueCount - 1;
 
-                        // NDC.push("/rem" + remainingCount);
-
-                        // log.debug("remainingCount = " + remainingCount);
-                        // log.debug("trueCount = " + trueCount);
-
-                        // Commit on transaction batch size boundaries. At this point in time the waiting producer
-                        // remains blocked, even on the last message.
-                        // Commit count is divided by noOfConsumers in p2p mode, so that each consumer only commits on
-                        // each batch boundary. For pub/sub each consumer gets every message so no division is done.
-                        // When running in client ack mode, an ack is done instead of a commit, on the commit batch
-                        // size boundaries.
-                        long commitCount = _isPubSub ? remainingCount : (remainingCount / _noOfConsumers);
-                        // _noOfConsumers can be set to 0 on the command line but we will not get here to
-                        // divide by 0 as this is executed by the onMessage code when a message is recevied.
-                        // no consumers means no message reception.
-
-
-                        // log.debug("commitCount = " + commitCount);
-
-                        if ((commitCount % _txBatchSize) == 0)
+                        if (++_consumerBatchCounts[consumerNo] == _txBatchSize)
                         {
+                            _consumerBatchCounts[consumerNo] = 0;
                             if (_consAckMode == 2)
                             {
                                 // log.debug("Doing client ack for consumer " + consumerNo + ".");
@@ -1093,9 +1078,9 @@ public class PingPongProducer implements Runnable, ExceptionListener
                 log.warn("Got redelivered message, ignoring.");
             }
         }
-        catch (JMSException e)
+        catch (Exception e)
         {
-            log.warn("There was a JMSException: " + e.getMessage(), e);
+            log.warn("There was a Exception: " + e.getMessage(), e);
         }
         finally
         {
