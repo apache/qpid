@@ -21,7 +21,6 @@
 
 #include "QueueReplicator.h"
 #include "ReplicatingSubscription.h"
-#include "Logging.h"
 #include "qpid/broker/Bridge.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Link.h"
@@ -32,6 +31,7 @@
 #include "qpid/framing/FieldTable.h"
 #include "qpid/log/Statement.h"
 #include <boost/shared_ptr.hpp>
+#include <ostream>
 
 namespace {
 const std::string QPID_REPLICATOR_("qpid.replicator-");
@@ -47,12 +47,19 @@ using namespace framing;
 const std::string QueueReplicator::DEQUEUE_EVENT_KEY("qpid.dequeue-event");
 const std::string QueueReplicator::POSITION_EVENT_KEY("qpid.position-event");
 
+std::string QueueReplicator::replicatorName(const std::string& queueName) {
+    return QPID_REPLICATOR_ + queueName;
+}
+
+std::ostream& operator<<(std::ostream& o, const QueueReplicator& qr) {
+    return o << "HA: Backup queue " << qr.queue->getName() << ": ";
+}
+
 QueueReplicator::QueueReplicator(boost::shared_ptr<Queue> q, boost::shared_ptr<Link> l)
-    : Exchange(QPID_REPLICATOR_+q->getName(), 0, 0), // FIXME aconway 2011-11-24: hidden from management?
-      queue(q), link(l)
+    : Exchange(replicatorName(q->getName()), 0, q->getBroker()), queue(q), link(l)
 {
-    QPID_LOG(debug, "HA: Replicating queue " << q->getName() << " " << q->getSettings());
-    // Declare the replicator bridge.
+    QPID_LOG(info, *this << "Created, settings: " << q->getSettings());
+
     queue->getBroker()->getLinks().declare(
         link->getHost(), link->getPort(),
         false,              // durable
@@ -69,12 +76,15 @@ QueueReplicator::QueueReplicator(boost::shared_ptr<Queue> q, boost::shared_ptr<L
     );
 }
 
-QueueReplicator::~QueueReplicator() {}
+QueueReplicator::~QueueReplicator() {
+    // FIXME aconway 2011-12-21: causes race condition? Restore.
+//     queue->getBroker()->getLinks().destroy(
+//         link->getHost(), link->getPort(), queue->getName(), getName(), string());
+}
 
-// NB: This is called back ina broker connection thread when the
-// bridge is created.
-void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler) {
-    // No lock needed, no mutable member variables are used.
+// Called in a broker connection thread when the bridge is created.
+void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler)
+{
     framing::AMQP_ServerProxy peer(sessionHandler.out);
     const qmf::org::apache::qpid::broker::ArgsLinkBridge& args(bridge.getArgs());
     framing::FieldTable settings;
@@ -91,11 +101,12 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     queue->setPosition(0);
 
     settings.setInt(ReplicatingSubscription::QPID_REPLICATING_SUBSCRIPTION, 1);
+    // TODO aconway 2011-12-19: optimize.
     settings.setInt(QPID_SYNC_FREQUENCY, 1);
     peer.getMessage().subscribe(args.i_src, args.i_dest, 0/*accept-explicit*/, 1/*not-acquired*/, false, "", 0, settings);
     peer.getMessage().flow(getName(), 0, 0xFFFFFFFF);
     peer.getMessage().flow(getName(), 1, 0xFFFFFFFF);
-    QPID_LOG(debug, "HA: Backup activated bridge from " << args.i_src << " to " << args.i_dest);
+    QPID_LOG(debug, *this << "Activated bridge from " << args.i_src << " to " << args.i_dest);
 }
 
 namespace {
@@ -115,34 +126,37 @@ void QueueReplicator::dequeue(SequenceNumber n,  const sys::Mutex::ScopedLock&) 
         QueuedMessage message;
         if (queue->acquireMessageAt(n, message)) {
             queue->dequeue(0, message);
-            QPID_LOG(trace, "HA: Backup dequeued: "<< QueuePos(message));
+            QPID_LOG(trace, *this << "Dequeued message "<< message.position);
         }
     }
 }
 
-void QueueReplicator::route(Deliverable& msg, const std::string& key, const FieldTable* /*args*/)
+// Called in connection thread of the queues bridge to primary.
+void QueueReplicator::route(Deliverable& msg, const std::string& key, const FieldTable*)
 {
     sys::Mutex::ScopedLock l(lock);
     if (key == DEQUEUE_EVENT_KEY) {
         SequenceSet dequeues = decodeContent<SequenceSet>(msg.getMessage());
-        QPID_LOG(trace, "HA: Backup received dequeues: " << dequeues);
+        QPID_LOG(trace, *this << "Received dequeues: " << dequeues);
         //TODO: should be able to optimise the following
         for (SequenceSet::iterator i = dequeues.begin(); i != dequeues.end(); i++)
             dequeue(*i, l);
     } else if (key == POSITION_EVENT_KEY) {
         SequenceNumber position = decodeContent<SequenceNumber>(msg.getMessage());
+        QPID_LOG(trace, *this << "Advance position: from " << queue->getPosition()
+                 << " to " << position);
         assert(queue->getPosition() <= position);
          //TODO aconway 2011-12-14: Optimize this?
         for (SequenceNumber i = queue->getPosition(); i < position; ++i)
             dequeue(i,l);
         queue->setPosition(position);
-        QPID_LOG(trace, "HA: Backup advanced to: " << QueuePos(queue.get(), queue->getPosition()));
     } else {
-        QPID_LOG(trace, "HA: Backup enqueued message: " << QueuePos(queue.get(), queue->getPosition()+1));
         msg.deliverTo(queue);
+        QPID_LOG(trace, *this << "Enqueued message " << queue->getPosition());
     }
 }
 
+// Unused Exchange methods.
 bool QueueReplicator::bind(boost::shared_ptr<Queue>, const std::string&, const FieldTable*) { return false; }
 bool QueueReplicator::unbind(boost::shared_ptr<Queue>, const std::string&, const FieldTable*) { return false; }
 bool QueueReplicator::isBound(boost::shared_ptr<Queue>, const std::string* const, const FieldTable* const) { return false; }
