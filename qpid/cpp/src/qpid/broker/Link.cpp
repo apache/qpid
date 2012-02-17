@@ -221,26 +221,28 @@ void Link::add(Bridge::shared_ptr bridge)
 
 void Link::cancel(Bridge::shared_ptr bridge)
 {
-    Mutex::ScopedLock mutex(lock);
+    bool needIOProcessing = false;
+    {
+        Mutex::ScopedLock mutex(lock);
 
-    for (Bridges::iterator i = created.begin(); i != created.end(); i++) {
-        if ((*i).get() == bridge.get()) {
-            created.erase(i);
-            break;
+        for (Bridges::iterator i = created.begin(); i != created.end(); i++) {
+            if ((*i).get() == bridge.get()) {
+                created.erase(i);
+                break;
+            }
         }
-    }
-    for (Bridges::iterator i = active.begin(); i != active.end(); i++) {
-        if ((*i).get() == bridge.get()) {
-            cancellations.push_back(bridge);
-            bridge->closed();
-            active.erase(i);
-            break;
+        for (Bridges::iterator i = active.begin(); i != active.end(); i++) {
+            if ((*i).get() == bridge.get()) {
+                cancellations.push_back(bridge);
+                bridge->closed();
+                active.erase(i);
+                break;
+            }
         }
+        needIOProcessing = !cancellations.empty();
     }
-
-    if (!cancellations.empty()) {
+    if (needIOProcessing)
         connection->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
-    }
 }
 
 void Link::ioThreadProcessing()

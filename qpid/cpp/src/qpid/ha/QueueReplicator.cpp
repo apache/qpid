@@ -65,6 +65,7 @@ void QueueReplicator::activate() {
     // Take a reference to myself to ensure not deleted before initializeBridge
     // is called.
     self = shared_from_this();
+    // Note this may create a new bridge or use an existing one.
     queue->getBroker()->getLinks().declare(
         link->getHost(), link->getPort(),
         false,              // durable
@@ -77,7 +78,8 @@ void QueueReplicator::activate() {
         "",                 // excludes
         false,              // dynamic
         0,                  // sync?
-        // Include shared_ptr to self to ensure we not deleted before initializeBridge is called.
+        // Include shared_ptr to self to ensure we are not deleted
+        // before initializeBridge is called.
         boost::bind(&QueueReplicator::initializeBridge, this, _1, _2, self)
     );
 }
@@ -88,6 +90,7 @@ void QueueReplicator::deactivate() {
     sys::Mutex::ScopedLock l(lock);
     queue->getBroker()->getLinks().destroy(
         link->getHost(), link->getPort(), queue->getName(), getName(), string());
+    QPID_LOG(debug, logPrefix << "Deactivated bridge " << bridgeName);
 }
 
 // Called in a broker connection thread when the bridge is created.
@@ -95,7 +98,7 @@ void QueueReplicator::deactivate() {
 void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler,
                                        boost::shared_ptr<QueueReplicator> /*self*/) {
     sys::Mutex::ScopedLock l(lock);
-
+    bridgeName = bridge.getName();
     framing::AMQP_ServerProxy peer(sessionHandler.out);
     const qmf::org::apache::qpid::broker::ArgsLinkBridge& args(bridge.getArgs());
     framing::FieldTable settings;
@@ -117,7 +120,7 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     peer.getMessage().subscribe(args.i_src, args.i_dest, 0/*accept-explicit*/, 1/*not-acquired*/, false, "", 0, settings);
     peer.getMessage().flow(getName(), 0, 0xFFFFFFFF);
     peer.getMessage().flow(getName(), 1, 0xFFFFFFFF);
-    QPID_LOG(debug, logPrefix << "Activated bridge from " << args.i_src << " to " << args.i_dest);
+    QPID_LOG(debug, logPrefix << "Activated bridge " << bridgeName);
 }
 
 namespace {

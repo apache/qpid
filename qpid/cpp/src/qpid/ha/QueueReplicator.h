@@ -75,6 +75,7 @@ class QueueReplicator : public broker::Exchange,
     void dequeue(framing::SequenceNumber, const sys::Mutex::ScopedLock&);
 
     std::string logPrefix;
+    std::string bridgeName;
     sys::Mutex lock;
     boost::shared_ptr<broker::Queue> queue;
     boost::shared_ptr<broker::Link> link;
