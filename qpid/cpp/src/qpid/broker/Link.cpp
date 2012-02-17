@@ -50,10 +50,13 @@ namespace _qmf = ::qmf::org::apache::qpid::broker;
 
 struct LinkTimerTask : public sys::TimerTask {
     LinkTimerTask(Link& l, sys::Timer& t)
-        : TimerTask(/*FIXME*/100*sys::TIME_MSEC, "Link retry timer"), link(l), timer(t) {}
+        : TimerTask(int64_t(l.getBroker()->getOptions().linkMaintenanceInterval*
+                            sys::TIME_SEC),
+                    "Link retry timer"),
+          link(l), timer(t) {}
 
     void fire() {
-        link.maintenanceVisit();  // FIXME aconway 2012-01-31:
+        link.maintenanceVisit();
         setupNextFire();
         timer.add(this);
     }
