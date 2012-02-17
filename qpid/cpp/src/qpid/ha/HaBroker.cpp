@@ -44,24 +44,21 @@ Url url(const std::string& s, const std::string& id) {
         throw Exception(Msg() << "Invalid URL for " << id << ": '" << s << "'");
     }
 }
+
+const std::string PRIMARY="primary";
+const std::string BACKUP="backup";
+
 } // namespace
 
 HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     : broker(b),
+      settings(s),
       clientUrl(url(s.clientUrl, "ha-client-url")),
       brokerUrl(url(s.brokerUrl, "ha-broker-url")),
       mgmtObject(0)
 {
-    ManagementAgent* ma = broker.getManagementAgent();
-    if (ma) {
-        _qmf::Package  packageInit(ma);
-        mgmtObject = new _qmf::HaBroker(ma, this);
-        // FIXME aconway 2011-11-11: Placeholder - initialize cluster role.
-        mgmtObject->set_status("solo");
-        ma->addObject(mgmtObject);
-    }
     // FIXME aconway 2011-11-22: temporary hack to identify primary.
-    bool primary = (s.brokerUrl == "primary");
+    bool primary = (settings.brokerUrl == PRIMARY);
     QPID_LOG(notice, "HA: " << (primary ? "Primary" : "Backup")
              << " initialized: client-url=" << clientUrl
              << " broker-url=" << brokerUrl);
@@ -73,8 +70,16 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     // Register a connection excluder
     broker.getConnectionObservers().add(
         boost::shared_ptr<broker::ConnectionObserver>(
-            new ConnectionExcluder(
-                s.adminUser, boost::bind(&HaBroker::isPrimary, this))));
+            new ConnectionExcluder(boost::bind(&HaBroker::isPrimary, this))));
+
+    ManagementAgent* ma = broker.getManagementAgent();
+    if (ma) {
+        _qmf::Package  packageInit(ma);
+        mgmtObject = new _qmf::HaBroker(ma, this);
+        // FIXME aconway 2011-11-11: Placeholder - initialize cluster role.
+        mgmtObject->set_status(isPrimary() ? PRIMARY : BACKUP);
+        ma->addObject(mgmtObject);
+    }
 }
 
 HaBroker::~HaBroker() {}
@@ -83,7 +88,19 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
     switch (methodId) {
       case _qmf::HaBroker::METHOD_SETSTATUS: {
           std::string status = dynamic_cast<_qmf::ArgsHaBrokerSetStatus&>(args).i_status;
-          // FIXME aconway 2011-11-11: placeholder, validate & execute status change.
+          if (status == PRIMARY) {
+              if (!isPrimary()) {
+                  backup.reset();
+                  QPID_LOG(notice, "HA Primary: promoted from backup");
+              }
+          } else if (status == BACKUP) {
+              if (isPrimary()) {
+                  backup.reset(new Backup(broker, settings));
+                  QPID_LOG(notice, "HA Backup: demoted from primary.");
+              }
+          } else {
+              QPID_LOG(error, "Attempt to set invalid HA status: " << status);
+          }
           mgmtObject->set_status(status);
           break;
       }

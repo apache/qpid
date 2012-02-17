@@ -35,6 +35,7 @@ ha_la_SOURCES =					\
   qpid/ha/ReplicatingSubscription.cpp		\
   qpid/ha/BrokerReplicator.cpp			\
   qpid/ha/BrokerReplicator.h                    \
+  qpid/ha/ConnectionExcluder.cpp		\
   qpid/ha/ConnectionExcluder.h
 
 ha_la_LIBADD = libqpidbroker.la

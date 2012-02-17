@@ -23,46 +23,35 @@
  */
 
 #include "qpid/broker/ConnectionObserver.h"
-#include "qpid/broker/Connection.h"
 #include <boost/function.hpp>
-#include <sstream>
 
 namespace qpid {
+
+namespace broker {
+class Connection;
+}
+
 namespace ha {
 
 /**
  * Exclude normal connections to a backup broker.
- * Connections as ha-admin user are allowed.
+ * Admin connections are identified by a special flag in client-properties
+ * during connection negotiation.
  */
 class ConnectionExcluder : public broker::ConnectionObserver
 {
   public:
     typedef boost::function<bool()> PrimaryTest;
 
-    ConnectionExcluder(string adminUser_, PrimaryTest isPrimary_)
-        : adminUser(adminUser_), isPrimary(isPrimary_) {}
+    ConnectionExcluder(PrimaryTest isPrimary_);
 
-    void opened(broker::Connection& connection) {
-        if (!isPrimary() && !connection.isLink()
-            && !connection.isAuthenticatedUser(adminUser))
-        {
-            throw Exception(
-                QPID_MSG(
-                    "HA: Backup broker rejected connection "
-                    << connection.getMgmtId() << " by user " << connection.getUserId()
-                    << ". Only " << adminUser << " can connect to a backup."));
-        }
-        else {
-            QPID_LOG(debug, "HA: Backup broker accepted connection"
-                     << connection.getMgmtId() << " by user "
-                     << connection.getUserId());
-        }
-    }
+    void opened(broker::Connection& connection);
 
   private:
-    string adminUser;
+    static const std::string ADMIN_TAG;
     PrimaryTest isPrimary;
 };
+
 }} // namespace qpid::ha
 
 #endif  /*!QPID_HA_CONNECTIONEXCLUDER_H*/
