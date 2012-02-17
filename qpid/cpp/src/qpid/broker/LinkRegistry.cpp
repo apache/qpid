@@ -240,8 +240,7 @@ void LinkRegistry::notifyConnection(const std::string& key, Connection* c)
 {
     Link::shared_ptr link = findLink(key);
     if (link) {
-        link->established();
-        link->setConnection(c);
+        link->established(c);
         c->setUserId(str(format("%1%@%2%") % link->getUsername() % realm));
     }
 }

@@ -121,11 +121,10 @@ class Link : public PersistableConfig, public management::Manageable {
     void cancel(Bridge::shared_ptr);
     void setUrl(const Url&); // Set URL for reconnection.
 
-    void established(); // Called when connection is create
+    void established(Connection*); // Called when connection is create
     void opened();      // Called when connection is open (after create)
     void closed(int, std::string);   // Called when connection goes away
-    void setConnection(Connection*); // Set pointer to the AMQP Connection
-    void reconnect(const Address&); //called by LinkRegistry
+    void reconnectLH(const Address&); //called by LinkRegistry
     void close();       // Close the link from within the broker.
 
     std::string getAuthMechanism() { return authMechanism; }
