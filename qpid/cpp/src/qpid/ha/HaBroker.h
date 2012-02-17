@@ -26,6 +26,7 @@
 #include "qmf/org/apache/qpid/ha/HaBroker.h"
 #include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetStatus.h"
 #include "qpid/management/Manageable.h"
+#include <memory>
 
 namespace qpid {
 namespace broker {
