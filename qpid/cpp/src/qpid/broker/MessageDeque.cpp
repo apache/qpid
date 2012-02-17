@@ -123,22 +123,44 @@ bool MessageDeque::consume(QueuedMessage& message)
     return false;
 }
 
+namespace {
+QueuedMessage padding(uint32_t pos) {
+    return QueuedMessage(0, 0, pos, QueuedMessage::DELETED);
+}
+} // namespace
+
 bool MessageDeque::push(const QueuedMessage& added, QueuedMessage& /*not needed*/)
 {
     //add padding to prevent gaps in sequence, which break the index
     //calculation (needed for queue replication)
-    while (messages.size() && (added.position - messages.back().position) > 1) {
-        QueuedMessage dummy;
-        dummy.position = messages.back().position + 1;
-        dummy.status = QueuedMessage::DELETED;
-        messages.push_back(dummy);
-        QPID_LOG(debug, "Adding padding at " << dummy.position << ", between " << messages.back().position << " and " << added.position);
-    }
+    while (messages.size() && (added.position - messages.back().position) > 1)
+        messages.push_back(padding(messages.back().position + 1));
     messages.push_back(added);
     messages.back().status = QueuedMessage::AVAILABLE;
     if (head >= messages.size()) head = messages.size() - 1;
     ++available;
     return false;//adding a message never causes one to be removed for deque
+}
+
+void MessageDeque::updateAcquired(const QueuedMessage& acquired)
+{
+    // Pad the front of the queue if necessary
+    while (messages.size() && (acquired.position < messages.front().position))
+        messages.push_front(padding(uint32_t(messages.front().position) - 1));
+    size_t i = index(acquired.position);
+    if (i < messages.size()) {  // Replace an existing padding message
+        assert(messages[i].status == QueuedMessage::DELETED);
+        messages[i] = acquired;
+        messages[i].status = QueuedMessage::ACQUIRED;
+    }
+    else {                      // Push to the back
+        // Pad the back of the queue if necessary
+        while (messages.size() && (acquired.position - messages.back().position) > 1)
+            messages.push_back(padding(messages.back().position + 1));
+        assert(!messages.size() || (acquired.position - messages.back().position) == 1);
+        messages.push_back(acquired);
+        messages.back().status = QueuedMessage::ACQUIRED;
+    }
 }
 
 void MessageDeque::clean()

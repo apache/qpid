@@ -1519,7 +1519,8 @@ void Queue::updateEnqueued(const QueuedMessage& m)
 {
     if (m.payload) {
         boost::intrusive_ptr<Message> payload = m.payload;
-        enqueue ( 0, payload, true );
+        enqueue(0, payload, true);
+        messages->updateAcquired(m);
         if (policy.get()) {
             policy->recoverEnqueued(payload);
         }

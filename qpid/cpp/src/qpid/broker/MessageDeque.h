@@ -43,6 +43,7 @@ class MessageDeque : public Messages
     bool browse(const framing::SequenceNumber&, QueuedMessage&, bool);
     bool consume(QueuedMessage&);
     bool push(const QueuedMessage& added, QueuedMessage& removed);
+    void updateAcquired(const QueuedMessage& acquired);
 
     void foreach(Functor);
     void removeIf(Predicate);
