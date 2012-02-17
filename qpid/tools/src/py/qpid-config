@@ -498,6 +498,12 @@ class BrokerManager:
         etype = args[0]
         ename = args[1]
         declArgs = {}
+        for a in config._extra_arguments:
+            r = a.split("=", 1)
+            if len(r) == 2: value = r[1]
+            else: value = None
+            declArgs[r[0]] = value
+
         if config._msgSequence:
             declArgs[MSG_SEQUENCE] = 1
         if config._ive:
