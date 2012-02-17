@@ -106,8 +106,9 @@ Link::Link(LinkRegistry*  _links,
 
 Link::~Link ()
 {
-    assert(state == STATE_CLOSED); // Can only get here after destroy()
-    assert(connection == 0);
+    if (state == STATE_OPERATIONAL && connection != 0)
+        connection->close(CLOSE_CODE_CONNECTION_FORCED, "closed by management");
+
     if (mgmtObject != 0)
         mgmtObject->resourceDestroy ();
 }
@@ -162,7 +163,6 @@ void Link::established(Connection* c)
         agent->raiseEvent(_qmf::EventBrokerLinkUp(addr.str()));
 
     Mutex::ScopedLock mutex(lock);
-    assert(state == STATE_CONNECTING);
     setStateLH(STATE_OPERATIONAL);
     currentInterval = 1;
     visitCount      = 0;
