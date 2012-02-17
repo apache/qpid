@@ -30,6 +30,7 @@
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qmf/org/apache/qpid/broker/EventBind.h"
+#include "qmf/org/apache/qpid/broker/EventUnbind.h"
 #include "qmf/org/apache/qpid/broker/EventExchangeDeclare.h"
 #include "qmf/org/apache/qpid/broker/EventExchangeDelete.h"
 #include "qmf/org/apache/qpid/broker/EventQueueDeclare.h"
@@ -41,6 +42,7 @@ namespace qpid {
 namespace ha {
 
 using qmf::org::apache::qpid::broker::EventBind;
+using qmf::org::apache::qpid::broker::EventUnbind;
 using qmf::org::apache::qpid::broker::EventExchangeDeclare;
 using qmf::org::apache::qpid::broker::EventExchangeDelete;
 using qmf::org::apache::qpid::broker::EventQueueDeclare;
@@ -70,6 +72,7 @@ const string ARGUMENTS("arguments");
 const string AUTODEL("autoDel");
 const string AUTODELETE("autoDelete");
 const string BIND("bind");
+const string UNBIND("unbind");
 const string BINDING("binding");
 const string CREATED("created");
 const string DISP("disp");
@@ -171,6 +174,12 @@ void sendQuery(const string className, const string& queueName, SessionHandler& 
     sessionHandler.out->handle(header);
     sessionHandler.out->handle(content);
 }
+
+void translate(const Variant& value, framing::FieldTable& outArgs) {
+    if (!value.isVoid())
+        amqp_0_10::translate(value.asMap(), outArgs);
+}
+
 } // namespace
 
 BrokerReplicator::~BrokerReplicator() {}
@@ -237,21 +246,19 @@ void BrokerReplicator::route(Deliverable& msg, const string& /*key*/, const fram
                 else if (match<EventExchangeDeclare>(schema)) doEventExchangeDeclare(values);
                 else if (match<EventExchangeDelete>(schema)) doEventExchangeDelete(values);
                 else if (match<EventBind>(schema)) doEventBind(values);
-                // FIXME aconway 2011-11-21: handle unbind & all other relevant events.
+                else if (match<EventUnbind>(schema)) doEventUnbind(values);
             }
         } else if (headers->getAsString(QMF_OPCODE) == QUERY_RESPONSE) {
             for (Variant::List::iterator i = list.begin(); i != list.end(); ++i) {
                 string type = i->asMap()[SCHEMA_ID].asMap()[CLASS_NAME];
                 Variant::Map& values = i->asMap()[VALUES].asMap();
                 framing::FieldTable args;
-                amqp_0_10::translate(values[ARGUMENTS].asMap(), args);
+                translate(values[ARGUMENTS].asMap(), args);
                 if      (type == QUEUE) doResponseQueue(values);
                 else if (type == EXCHANGE) doResponseExchange(values);
                 else if (type == BINDING) doResponseBind(values);
-                else QPID_LOG(error, "HA: Backup received unknown response: type=" << type
+                else QPID_LOG(error, "HA: Backup received unknown response type=" << type
                               << " values=" << values);
-
-                // FIXME aconway 2011-12-06: handle all relevant response types.
             }
         } else QPID_LOG(error, "HA: Backup received unexpected message: " << *headers);
     } catch (const std::exception& e) {
@@ -264,7 +271,7 @@ void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
     Variant::Map argsMap = values[ARGS].asMap();
     if (values[DISP] == CREATED && replicateLevel(argsMap)) {
         framing::FieldTable args;
-        amqp_0_10::translate(argsMap, args);
+        translate(argsMap, args);
         std::pair<boost::shared_ptr<Queue>, bool> result =
             broker.createQueue(
                 name,
@@ -312,7 +319,7 @@ void BrokerReplicator::doEventExchangeDeclare(Variant::Map& values) {
     if (values[DISP] == CREATED && replicateLevel(argsMap)) {
         string name = values[EXNAME].asString();
         framing::FieldTable args;
-        amqp_0_10::translate(argsMap, args);
+        translate(argsMap, args);
         if (broker.createExchange(
                 name,
                 values[EXTYPE].asString(),
@@ -356,7 +363,7 @@ void BrokerReplicator::doEventBind(Variant::Map& values) {
         queue && replicateLevel(queue->getSettings()))
     {
         framing::FieldTable args;
-        amqp_0_10::translate(values[ARGS].asMap(), args);
+        translate(values[ARGS].asMap(), args);
         string key = values[KEY].asString();
         QPID_LOG(debug, "HA: Backup replicated binding exchange=" << exchange->getName()
                  << " queue=" << queue->getName()
@@ -365,12 +372,32 @@ void BrokerReplicator::doEventBind(Variant::Map& values) {
     }
 }
 
+void BrokerReplicator::doEventUnbind(Variant::Map& values) {
+    boost::shared_ptr<Exchange> exchange =
+        broker.getExchanges().find(values[EXNAME].asString());
+    boost::shared_ptr<Queue> queue =
+        broker.getQueues().find(values[QNAME].asString());
+    // We only replicate unbinds for a replicated queue to replicated
+    // exchange that both exist locally.
+    if (exchange && replicateLevel(exchange->getArgs()) &&
+        queue && replicateLevel(queue->getSettings()))
+    {
+        framing::FieldTable args;
+        translate(values[ARGS].asMap(), args);
+        string key = values[KEY].asString();
+        QPID_LOG(debug, "HA: Backup replicated unbinding exchange=" << exchange->getName()
+                 << " queue=" << queue->getName()
+                 << " key=" << key);
+        exchange->unbind(queue, key, &args);
+    }
+}
+
 void BrokerReplicator::doResponseQueue(Variant::Map& values) {
     // FIXME aconway 2011-11-22: more flexible ways & defaults to indicate replication
     Variant::Map argsMap(values[ARGUMENTS].asMap());
     if (!replicateLevel(argsMap)) return;
     framing::FieldTable args;
-    amqp_0_10::translate(argsMap, args);
+    translate(argsMap, args);
     string name(values[NAME].asString());
     std::pair<boost::shared_ptr<Queue>, bool> result =
         broker.createQueue(
@@ -396,7 +423,7 @@ void BrokerReplicator::doResponseExchange(Variant::Map& values) {
     Variant::Map argsMap(values[ARGUMENTS].asMap());
     if (!replicateLevel(argsMap)) return;
     framing::FieldTable args;
-    amqp_0_10::translate(argsMap, args);
+    translate(argsMap, args);
     if (broker.createExchange(
             values[NAME].asString(),
             values[TYPE].asString(),
@@ -445,7 +472,7 @@ void BrokerReplicator::doResponseBind(Variant::Map& values) {
         queue && replicateLevel(queue->getSettings()))
     {
         framing::FieldTable args;
-        amqp_0_10::translate(values[ARGUMENTS].asMap(), args);
+        translate(values[ARGUMENTS].asMap(), args);
         string key = values[KEY].asString();
         exchange->bind(queue, key, &args);
         QPID_LOG(debug, "HA: Backup catch-up binding: exchange=" << exchange->getName()
