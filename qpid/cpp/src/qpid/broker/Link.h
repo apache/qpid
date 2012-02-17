@@ -23,10 +23,10 @@
  */
 
 #include <boost/shared_ptr.hpp>
+#include "qpid/Url.h"
 #include "qpid/broker/MessageStore.h"
 #include "qpid/broker/PersistableConfig.h"
 #include "qpid/broker/Bridge.h"
-#include "qpid/broker/RetryList.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/management/Manageable.h"
@@ -60,7 +60,8 @@ namespace qpid {
             uint32_t visitCount;
             uint32_t currentInterval;
             bool     closing;
-            RetryList urls;
+            Url      url;       // URL can contain many addresses.
+            size_t   reconnectNext; // Index for next re-connect attempt
 
             typedef std::vector<Bridge::shared_ptr> Bridges;
             Bridges created;   // Bridges pending creation
@@ -111,6 +112,7 @@ namespace qpid {
             uint nextChannel();
             void add(Bridge::shared_ptr);
             void cancel(Bridge::shared_ptr);
+            void setUrl(const Url&); // Set URL for reconnection.
 
             void established(); // Called when connection is create
             void opened();      // Called when connection is open (after create)

@@ -56,11 +56,17 @@ Backup::Backup(broker::Broker& b, const Settings& s) :
         s.mechanism, s.username, s.password);
     assert(result.second);  // FIXME aconway 2011-11-23: error handling
     link = result.first;
+    link->setUrl(Url(s.brokerUrl));
 
     replicator.reset(new BrokerReplicator(link));
     broker.getExchanges().registerExchange(replicator);
 
     broker.getConnectionObservers().add(excluder);
+}
+
+void Backup::setUrl(const Url& url) {
+    // FIXME aconway 2012-01-30: locking?
+    link->setUrl(url);
 }
 
 Backup::~Backup() {
