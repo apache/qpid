@@ -116,7 +116,7 @@ void DeliveryRecord::complete()  {
 
 bool DeliveryRecord::accept(TransactionContext* ctxt) {
     if (!ended) {
-        consumer->acknowledged(getMessage());
+        if (consumer) consumer->acknowledged(getMessage());
         if (acquired) queue->dequeue(ctxt, msg);
         setEnded();
         QPID_LOG(debug, "Accepted " << id);

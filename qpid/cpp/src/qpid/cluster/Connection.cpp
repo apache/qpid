@@ -561,8 +561,14 @@ void Connection::deliveryRecord(const string& qname,
         //
     }
 
-    broker::DeliveryRecord dr(m, queue, tag, semanticState().find(tag),
-                              acquired, accepted, windowing, credit);
+    // If a subscription is cancelled while there are unacked messages for it
+    // there won't be a consumer. Just null it out in this case, it isn't needed.
+    boost::shared_ptr<broker::Consumer> consumer;
+    try { consumer = semanticState().find(tag); }
+    catch(...) {}
+
+    broker::DeliveryRecord dr(
+        m, queue, tag, consumer, acquired, accepted, windowing, credit);
     dr.setId(id);
     if (cancelled) dr.cancel(dr.getTag());
     if (completed) dr.complete();
