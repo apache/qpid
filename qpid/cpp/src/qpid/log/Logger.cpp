@@ -93,7 +93,7 @@ void Logger::log(const Statement& s, const std::string& msg) {
         if (flags&HIRES)
             qpid::sys::outputHiresNow(os);
         else
-		    qpid::sys::outputFormattedNow(os);
+            qpid::sys::outputFormattedNow(os);
     }
     if (flags&LEVEL)
         os << LevelTraits::name(s.level) << " ";
