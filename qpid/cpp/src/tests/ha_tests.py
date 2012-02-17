@@ -50,7 +50,7 @@ class ShortTests(BrokerTest):
     def wait(self, session, address):
         def check():
             try:
-                session.receiver(address)
+                session.sender(address)
                 return True
             except NotFound: return False
         assert retry(check), "Timed out waiting for %s"%(address)
@@ -67,37 +67,39 @@ class ShortTests(BrokerTest):
 
         # Create some wiring before starting the backup, to test catch-up
         primary = self.ha_broker(name="primary")
-        s = primary.connect().session()
-        s.sender(queue%("q1", "all")).send(Message("1"))
-        s.sender(queue%("q2", "wiring")).send(Message("2"))
-        s.sender(queue%("q3", "none")).send(Message("3"))
-        s.sender(exchange%("e1", "all", "e1", "q2")).send(Message("4"))
+        p = primary.connect().session()
+        p.sender(queue%("q1", "all")).send(Message("1"))
+        p.sender(queue%("q2", "wiring")).send(Message("2"))
+        p.sender(queue%("q3", "none")).send(Message("3"))
+        p.sender(exchange%("e1", "all", "e1", "q2")).send(Message("4"))
 
         # Create some after starting backup, test steady-state replication
         backup  = self.ha_broker(name="backup", broker_url=primary.host_port())
-        s.sender(queue%("q01", "all")).send(Message("01"))
-        s.sender(queue%("q02", "wiring")).send(Message("02"))
-        s.sender(queue%("q03", "none")).send(Message("03"))
-        s.sender(exchange%("e01", "all", "e01", "q02")).send(Message("04"))
+        b = backup.connect().session()
+        # FIXME aconway 2011-11-21: need to wait for backup to be ready to test event replication
+        for a in ["q1", "q2", "e1"]: self.wait(b,a)
+        p.sender(queue%("q11", "all")).send(Message("11"))
+        p.sender(queue%("q12", "wiring")).send(Message("12"))
+        p.sender(queue%("q13", "none")).send(Message("13"))
+        p.sender(exchange%("e11", "all", "e11", "q12")).send(Message("14"))
 
         # Verify replication
         # FIXME aconway 2011-11-18: We should kill primary here and fail over.
-        s = backup.connect().session()
-        for a in ["q01", "q02", "e01"]: self.wait(s,a)
+        for a in ["q11", "q12", "e11"]: self.wait(b,a)
         # FIXME aconway 2011-11-18: replicate messages
-#         self.assert_browse(s, "q01", ["01", "04", "e01"])
-#         self.assert_browse(s, "q02", []) # wiring only
-#         self.assert_missing(s,"q03")
-        s.sender("e01").send(Message("e01")) # Verify bind
-        self.assert_browse(s, "q02", ["e01"])
+#         self.assert_browse(b, "q11", ["11", "14", "e11"])
+#         self.assert_browse(b, "q12", []) # wiring only
+#         self.assert_missing(b,"q13")
+        b.sender("e11").send(Message("e11")) # Verify bind
+        self.assert_browse(b, "q12", ["e11"])
 
-        for a in ["q1", "q2", "e1"]: self.wait(s,a)
+        for a in ["q1", "q2", "e1"]: self.wait(b,a)
         # FIXME aconway 2011-11-18: replicate messages
-#         self.assert_browse(s, "q1", ["1", "4", "e1"])
-#         self.assert_browse(s, "q2", []) # wiring only
-#         self.assert_missing(s,"q3")
-        s.sender("e1").send(Message("e1")) # Verify bind
-        self.assert_browse(s, "q2", ["e1"])
+#         self.assert_browse(b, "q1", ["1", "4", "e1"])
+#         self.assert_browse(b, "q2", []) # wiring only
+#         self.assert_missing(b,"q3")
+        b.sender("e1").send(Message("e1")) # Verify bind
+        self.assert_browse(b, "q2", ["e1"])
 
 
 if __name__ == "__main__":
