@@ -46,7 +46,7 @@ namespace ha {
  * Creates a ReplicatingSubscription on the primary by passing special
  * arguments to the consume command.
  *
- * THREAD UNSAFE: Only called in the connection thread of the source queue.
+ * THREAD SAFE: Called in different connection threads.
  */
 class QueueReplicator : public broker::Exchange,
                         public boost::enable_shared_from_this<QueueReplicator>
@@ -59,10 +59,12 @@ class QueueReplicator : public broker::Exchange,
     QueueReplicator(boost::shared_ptr<broker::Queue> q, boost::shared_ptr<broker::Link> l);
     ~QueueReplicator();
 
-    void activate();
+    void activate();            // Call after ctor
+    void deactivate();          // Call before dtor
 
     std::string getType() const;
-    bool bind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
+    bool bind(boost::shared_ptr<broker::Queue
+              >, const std::string&, const framing::FieldTable*);
     bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
     void route(broker::Deliverable&, const std::string&, const framing::FieldTable*);
     bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const);

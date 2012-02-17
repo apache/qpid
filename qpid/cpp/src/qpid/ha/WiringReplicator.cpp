@@ -296,6 +296,11 @@ void WiringReplicator::doEventQueueDelete(Variant::Map& values) {
             values[USER].asString(),
             values[RHOST].asString());
         // Delete the QueueReplicator exchange for this queue.
+        boost::shared_ptr<broker::Exchange> ex =
+            broker.getExchanges().find(QueueReplicator::replicatorName(name));
+        boost::shared_ptr<QueueReplicator> qr =
+            boost::dynamic_pointer_cast<QueueReplicator>(ex);
+        if (qr) qr->deactivate();
         broker.getExchanges().destroy(QueueReplicator::replicatorName(name));
     }
 }
