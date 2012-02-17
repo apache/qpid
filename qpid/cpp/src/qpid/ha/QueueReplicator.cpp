@@ -36,6 +36,7 @@
 namespace {
 const std::string QPID_REPLICATOR_("qpid.replicator-");
 const std::string TYPE_NAME("qpid.queue-replicator");
+const std::string QPID_SYNC_FREQUENCY("qpid.sync_frequency");
 }
 
 namespace qpid {
@@ -50,6 +51,7 @@ QueueReplicator::QueueReplicator(boost::shared_ptr<Queue> q, boost::shared_ptr<L
 {
     // FIXME aconway 2011-11-24: consistent logging.
     QPID_LOG(debug, "HA: Replicating queue " << q->getName() << " " << q->getSettings());
+    // Declare the replicator bridge.
     queue->getBroker()->getLinks().declare(
         link->getHost(), link->getPort(),
         false,              // durable
@@ -77,11 +79,11 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     framing::FieldTable settings;
     settings.setInt(ReplicatingSubscription::QPID_REPLICATING_SUBSCRIPTION, 1);
     settings.setInt(ReplicatingSubscription::QPID_HIGH_SEQUENCE_NUMBER, queue->getPosition());
+    settings.setInt(QPID_SYNC_FREQUENCY, 1);
     qpid::framing::SequenceNumber oldest;
     if (queue->getOldest(oldest))
         settings.setInt(ReplicatingSubscription::QPID_LOW_SEQUENCE_NUMBER, oldest);
-
-    peer.getMessage().subscribe(args.i_src, args.i_dest, args.i_sync ? 0 : 1, 0, false, "", 0, settings);
+    peer.getMessage().subscribe(args.i_src, args.i_dest, 0/*accept-explicit*/, 0/*acquire-pre-acquired*/, false, "", 0, settings);
     peer.getMessage().flow(getName(), 0, 0xFFFFFFFF);
     peer.getMessage().flow(getName(), 1, 0xFFFFFFFF);
     QPID_LOG(debug, "HA: Backup activated bridge from queue " << args.i_src << " to " << args.i_dest);

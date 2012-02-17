@@ -169,12 +169,12 @@ void ReplicatingSubscription::enqueued(const QueuedMessage& m)
 // Called with lock held.
 void ReplicatingSubscription::generateDequeueEvent()
 {
+    QPID_LOG(trace, "HA: Sending dequeue event " << getQueue()->getName() << " " << range);
     string buf(range.encodedSize(),'\0');
     framing::Buffer buffer(&buf[0], buf.size());
     range.encode(buffer);
     range.clear();
     buffer.reset();
-
     //generate event message
     boost::intrusive_ptr<Message> event = new Message();
     AMQFrame method((MessageTransferBody(ProtocolVersion(), string(), 0, 0)));
