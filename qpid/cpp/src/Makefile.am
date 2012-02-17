@@ -633,6 +633,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/QueueFlowLimit.cpp \
   qpid/broker/QueueReplicator.h \
   qpid/broker/QueueReplicator.cpp \
+  qpid/broker/ReplicatingSubscription.h \
+  qpid/broker/ReplicatingSubscription.cpp \
   qpid/broker/RateFlowcontrol.h \
   qpid/broker/RecoverableConfig.h \
   qpid/broker/RecoverableExchange.h \
