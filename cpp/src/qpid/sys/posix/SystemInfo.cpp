@@ -28,6 +28,7 @@
 #include <sys/socket.h> // For FreeBSD
 #include <netinet/in.h> // For FreeBSD
 #include <ifaddrs.h>
+#include <unistd.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>

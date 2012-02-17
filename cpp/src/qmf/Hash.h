@@ -29,7 +29,7 @@ namespace qmf {
     class Hash {
     public:
         Hash();
-        qpid::types::Uuid asUuid() const { return qpid::types::Uuid((unsigned char*) data); }
+        qpid::types::Uuid asUuid() const { return qpid::types::Uuid((const unsigned char*) data); }
         void update(const char* s, uint32_t len);
         void update(uint8_t v) { update((char*) &v, sizeof(v)); }
         void update(uint32_t v) { update((char*) &v, sizeof(v)); }

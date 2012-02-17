@@ -23,6 +23,7 @@
  */
 
 #include "qpid/CommonImportExport.h" 
+#include "qpid/sys/IntegerTypes.h" 
 #include <boost/noncopyable.hpp>
 #include <iostream>
 
