@@ -1,5 +1,5 @@
-#ifndef QPID_BROKER_NODEPROPAGATOR_H
-#define QPID_BROKER_NODEPROPAGATOR_H
+#ifndef QPID_HA_REPLICATOR_H
+#define QPID_HA_REPLICATOR_H
 
 /*
  *
@@ -28,30 +28,30 @@
 // FIXME aconway 2011-11-17: relocate to ../ha
 
 namespace qpid {
-namespace types {
-class Variant;
-}
-namespace broker {
 
+namespace broker {
 class Broker;
+}
+
+namespace ha {
 
 /**
  * Pseudo-exchange for recreating local queues and/or exchanges on
  * receipt of QMF events indicating their creation on another node
  */
-class NodeClone : public Exchange
+class WiringReplicator : public broker::Exchange
 {
   public:
-    NodeClone(const std::string&, Broker&);
-    ~NodeClone();
+    WiringReplicator(const std::string&, broker::Broker&);
+    ~WiringReplicator();
     std::string getType() const;
-    bool bind(boost::shared_ptr<Queue>, const std::string&, const qpid::framing::FieldTable*);
-    bool unbind(boost::shared_ptr<Queue>, const std::string&, const qpid::framing::FieldTable*);
-    void route(Deliverable&, const std::string&, const qpid::framing::FieldTable*);
-    bool isBound(boost::shared_ptr<Queue>, const std::string* const, const qpid::framing::FieldTable* const);
+    bool bind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
+    bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
+    void route(broker::Deliverable&, const std::string&, const framing::FieldTable*);
+    bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const);
 
-    static bool isNodeCloneDestination(const std::string&);
-    static boost::shared_ptr<Exchange> create(const std::string&, Broker&);
+    static bool isWiringReplicatorDestination(const std::string&);
+    static boost::shared_ptr<broker::Exchange> create(const std::string&, broker::Broker&);
     static const std::string typeName;
   private:
 
@@ -64,8 +64,9 @@ class NodeClone : public Exchange
     void doResponseExchange(types::Variant::Map& values);
     void doResponseBind(types::Variant::Map& values);
 
-    Broker& broker;
+  private:
+    broker::Broker& broker;
 };
 }} // namespace qpid::broker
 
-#endif  /*!QPID_BROKER_NODEPROPAGATOR_H*/
+#endif  /*!QPID_HA_REPLICATOR_H*/

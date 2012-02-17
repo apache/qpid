@@ -24,7 +24,7 @@
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/Link.h"
 #include "qpid/broker/LinkRegistry.h"
-#include "qpid/broker/NodeClone.h"
+#include "qpid/ha/WiringReplicator.h"
 #include "qpid/broker/QueueReplicator.h"
 #include "qpid/broker/SessionState.h"
 
@@ -116,7 +116,7 @@ void Bridge::create(Connection& c)
         peer->getMessage().flow(args.i_dest, 0, 0xFFFFFFFF);
         peer->getMessage().flow(args.i_dest, 1, 0xFFFFFFFF);
         QPID_LOG(debug, "Activated route from queue " << args.i_src << " to " << args.i_dest);
-    } else if (NodeClone::isNodeCloneDestination(args.i_dest)) {
+    } else if (ha::WiringReplicator::isWiringReplicatorDestination(args.i_dest)) {
         //declare and bind an event queue
         peer->getQueue().declare(queueName, "", false, false, true, true, FieldTable());
         peer->getExchange().bind(queueName, "qmf.default.topic", "agent.ind.event.org_apache_qpid_broker.#", FieldTable());

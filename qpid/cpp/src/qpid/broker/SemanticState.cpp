@@ -25,7 +25,7 @@
 #include "qpid/broker/DtxAck.h"
 #include "qpid/broker/DtxTimeout.h"
 #include "qpid/broker/Message.h"
-#include "qpid/broker/NodeClone.h"
+#include "qpid/ha/WiringReplicator.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueReplicator.h"
 #include "qpid/broker/ReplicatingSubscription.h"
@@ -480,7 +480,7 @@ void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
     std::string exchangeName = msg->getExchangeName();
     if (!cacheExchange || cacheExchange->getName() != exchangeName || cacheExchange->isDestroyed()) {
         cacheExchange = QueueReplicator::create(exchangeName, getSession().getBroker().getQueues());
-        if (!cacheExchange) cacheExchange = NodeClone::create(exchangeName, getSession().getBroker());
+        if (!cacheExchange) cacheExchange = ha::WiringReplicator::create(exchangeName, getSession().getBroker());
         if (!cacheExchange) cacheExchange = session.getBroker().getExchanges().get(exchangeName);
     }
     cacheExchange->setProperties(msg);
