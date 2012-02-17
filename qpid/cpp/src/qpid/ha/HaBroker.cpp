@@ -70,6 +70,7 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
         boost::shared_ptr<ReplicatingSubscription::Factory>(
             new ReplicatingSubscription::Factory()));
 }
+
 HaBroker::~HaBroker() {}
 
 Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, string&) {

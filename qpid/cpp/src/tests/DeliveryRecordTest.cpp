@@ -49,7 +49,7 @@ QPID_AUTO_TEST_CASE(testSort)
 
     list<DeliveryRecord> records;
     for (list<SequenceNumber>::iterator i = ids.begin(); i != ids.end(); i++) {
-        DeliveryRecord r(QueuedMessage(0), Queue::shared_ptr(), "tag", false, false, false);
+        DeliveryRecord r(QueuedMessage(0), Queue::shared_ptr(), "tag", Consumer::shared_ptr(), false, false, false);
         r.setId(*i);
         records.push_back(r);
     }
