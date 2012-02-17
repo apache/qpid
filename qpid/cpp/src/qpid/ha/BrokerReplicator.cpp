@@ -175,9 +175,10 @@ void sendQuery(const string className, const string& queueName, SessionHandler& 
     sessionHandler.out->handle(content);
 }
 
-void translate(const Variant& value, framing::FieldTable& outArgs) {
-    if (!value.isVoid())
-        amqp_0_10::translate(value.asMap(), outArgs);
+// Like Variant::asMap but treat void value as an empty map.
+Variant::Map asMapVoid(const Variant& value) {
+    if (!value.isVoid()) return value.asMap();
+    else return Variant::Map();
 }
 
 } // namespace
@@ -253,7 +254,7 @@ void BrokerReplicator::route(Deliverable& msg, const string& /*key*/, const fram
                 string type = i->asMap()[SCHEMA_ID].asMap()[CLASS_NAME];
                 Variant::Map& values = i->asMap()[VALUES].asMap();
                 framing::FieldTable args;
-                translate(values[ARGUMENTS].asMap(), args);
+                amqp_0_10::translate(asMapVoid(values[ARGUMENTS]), args);
                 if      (type == QUEUE) doResponseQueue(values);
                 else if (type == EXCHANGE) doResponseExchange(values);
                 else if (type == BINDING) doResponseBind(values);
@@ -268,10 +269,10 @@ void BrokerReplicator::route(Deliverable& msg, const string& /*key*/, const fram
 
 void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
     string name = values[QNAME].asString();
-    Variant::Map argsMap = values[ARGS].asMap();
+    Variant::Map argsMap = asMapVoid(values[ARGS]);
     if (values[DISP] == CREATED && replicateLevel(argsMap)) {
         framing::FieldTable args;
-        translate(argsMap, args);
+        amqp_0_10::translate(argsMap, args);
         std::pair<boost::shared_ptr<Queue>, bool> result =
             broker.createQueue(
                 name,
@@ -315,11 +316,11 @@ void BrokerReplicator::doEventQueueDelete(Variant::Map& values) {
 }
 
 void BrokerReplicator::doEventExchangeDeclare(Variant::Map& values) {
-    Variant::Map argsMap(values[ARGS].asMap());
+    Variant::Map argsMap(asMapVoid(values[ARGS]));
     if (values[DISP] == CREATED && replicateLevel(argsMap)) {
         string name = values[EXNAME].asString();
         framing::FieldTable args;
-        translate(argsMap, args);
+        amqp_0_10::translate(argsMap, args);
         if (broker.createExchange(
                 name,
                 values[EXTYPE].asString(),
@@ -363,7 +364,7 @@ void BrokerReplicator::doEventBind(Variant::Map& values) {
         queue && replicateLevel(queue->getSettings()))
     {
         framing::FieldTable args;
-        translate(values[ARGS].asMap(), args);
+        amqp_0_10::translate(asMapVoid(values[ARGS]), args);
         string key = values[KEY].asString();
         QPID_LOG(debug, "HA: Backup replicated binding exchange=" << exchange->getName()
                  << " queue=" << queue->getName()
@@ -383,7 +384,7 @@ void BrokerReplicator::doEventUnbind(Variant::Map& values) {
         queue && replicateLevel(queue->getSettings()))
     {
         framing::FieldTable args;
-        translate(values[ARGS].asMap(), args);
+        amqp_0_10::translate(asMapVoid(values[ARGS]), args);
         string key = values[KEY].asString();
         QPID_LOG(debug, "HA: Backup replicated unbinding exchange=" << exchange->getName()
                  << " queue=" << queue->getName()
@@ -394,10 +395,10 @@ void BrokerReplicator::doEventUnbind(Variant::Map& values) {
 
 void BrokerReplicator::doResponseQueue(Variant::Map& values) {
     // FIXME aconway 2011-11-22: more flexible ways & defaults to indicate replication
-    Variant::Map argsMap(values[ARGUMENTS].asMap());
+    Variant::Map argsMap(asMapVoid(values[ARGUMENTS]));
     if (!replicateLevel(argsMap)) return;
     framing::FieldTable args;
-    translate(argsMap, args);
+    amqp_0_10::translate(argsMap, args);
     string name(values[NAME].asString());
     std::pair<boost::shared_ptr<Queue>, bool> result =
         broker.createQueue(
@@ -420,10 +421,10 @@ void BrokerReplicator::doResponseQueue(Variant::Map& values) {
 }
 
 void BrokerReplicator::doResponseExchange(Variant::Map& values) {
-    Variant::Map argsMap(values[ARGUMENTS].asMap());
+    Variant::Map argsMap(asMapVoid(values[ARGUMENTS]));
     if (!replicateLevel(argsMap)) return;
     framing::FieldTable args;
-    translate(argsMap, args);
+    amqp_0_10::translate(argsMap, args);
     if (broker.createExchange(
             values[NAME].asString(),
             values[TYPE].asString(),
@@ -472,7 +473,7 @@ void BrokerReplicator::doResponseBind(Variant::Map& values) {
         queue && replicateLevel(queue->getSettings()))
     {
         framing::FieldTable args;
-        translate(values[ARGUMENTS].asMap(), args);
+        amqp_0_10::translate(asMapVoid(values[ARGUMENTS]), args);
         string key = values[KEY].asString();
         exchange->bind(queue, key, &args);
         QPID_LOG(debug, "HA: Backup catch-up binding: exchange=" << exchange->getName()
