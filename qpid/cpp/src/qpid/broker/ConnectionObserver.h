@@ -37,14 +37,19 @@ class ConnectionObserver
   public:
     virtual ~ConnectionObserver() {}
 
-    /** Called when a connection is opened and authentication has been
-     * performed.
+    /** Called when a connection is first established. */
+    virtual void connection(Connection&) {}
+
+    /** Called when the opening negotiation is done and the connection is authenticated.
      * @exception Throwing an exception will abort the connection.
      */
-    virtual void connect(Connection& connection) = 0;
+    virtual void opened(Connection&) {}
 
-    /** Called when a connection is torn down. */
-    virtual void disconnect(Connection& connection) = 0;
+    /** Called when a connection is closed. */
+    virtual void closed(Connection&) {}
+
+    /** Called when a connection is forced closed. */
+    virtual void forced(Connection&, const std::string& /*message*/) {}
 };
 
 }} // namespace qpid::broker

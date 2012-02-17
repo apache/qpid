@@ -48,6 +48,16 @@ LinkRegistry::LinkRegistry () :
 {
 }
 
+namespace {
+struct ConnectionObserverImpl : public ConnectionObserver {
+    LinkRegistry& links;
+    ConnectionObserverImpl(LinkRegistry& l) : links(l) {}
+    void connection(Connection& c) { links.notifyConnection(c.getMgmtId(), &c); }
+    void closed(Connection& c) { links.notifyClosed(c.getMgmtId()); }
+    void forced(Connection& c, const string& text) { links.notifyConnectionForced(c.getMgmtId(), text); }
+};
+}
+
 LinkRegistry::LinkRegistry (Broker* _broker) :
     broker(_broker), timer(&broker->getTimer()),
     maintenanceTask(new Periodic(*this)),
@@ -55,6 +65,8 @@ LinkRegistry::LinkRegistry (Broker* _broker) :
     realm(broker->getOptions().realm)
 {
     timer->add(maintenanceTask);
+    broker->getConnectionObservers().add(
+        boost::shared_ptr<ConnectionObserver>(new ConnectionObserverImpl(*this)));
 }
 
 LinkRegistry::~LinkRegistry()
