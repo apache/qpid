@@ -189,7 +189,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
         }
     }
 
-    void checkNotDeleted();
+    void checkNotDeleted(const Consumer::shared_ptr& c);
     void notifyDeleted();
 
   public:
