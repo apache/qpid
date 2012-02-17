@@ -64,7 +64,6 @@ Link::Link(LinkRegistry*  _links,
       visitCount(0),
       currentInterval(1),
       closing(false),
-      updateUrls(false),
       channelCounter(1),
       connection(0),
       agent(0)
@@ -147,7 +146,14 @@ void Link::established ()
     }
 }
 
-void Link::closed (int, std::string text)
+void Link::opened() {
+    Mutex::ScopedLock mutex(lock);
+    assert(connection);
+    urls.reset(connection->getKnownHosts());
+    QPID_LOG(debug, "Known hosts for peer of inter-broker link: " << urls);
+}
+
+void Link::closed(int, std::string text)
 {
     Mutex::ScopedLock mutex(lock);
     QPID_LOG (info, "Inter-broker link disconnected from " << host << ":" << port << " " << text);
@@ -287,7 +293,6 @@ void Link::setConnection(Connection* c)
 {
     Mutex::ScopedLock mutex(lock);
     connection = c;
-    updateUrls = true;
     // Process any IO tasks bridges added before setConnection.
     connection->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
 }
@@ -295,12 +300,6 @@ void Link::setConnection(Connection* c)
 void Link::maintenanceVisit ()
 {
     Mutex::ScopedLock mutex(lock);
-
-    if (connection && updateUrls) {
-        urls.reset(connection->getKnownHosts());
-        QPID_LOG(debug, "Known hosts for peer of inter-broker link: " << urls);
-        updateUrls = false;
-    }
 
     if (state == STATE_WAITING)
     {

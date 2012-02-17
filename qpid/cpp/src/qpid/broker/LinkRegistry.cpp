@@ -53,6 +53,7 @@ struct ConnectionObserverImpl : public ConnectionObserver {
     LinkRegistry& links;
     ConnectionObserverImpl(LinkRegistry& l) : links(l) {}
     void connection(Connection& c) { links.notifyConnection(c.getMgmtId(), &c); }
+    void opened(Connection& c) { links.notifyOpened(c.getMgmtId()); }
     void closed(Connection& c) { links.notifyClosed(c.getMgmtId()); }
     void forced(Connection& c, const string& text) { links.notifyConnectionForced(c.getMgmtId(), text); }
 };
@@ -295,6 +296,12 @@ void LinkRegistry::notifyConnection(const std::string& key, Connection* c)
         link->setConnection(c);
         c->setUserId(str(format("%1%@%2%") % link->getUsername() % realm));
     }
+}
+
+void LinkRegistry::notifyOpened(const std::string& key)
+{
+    Link::shared_ptr link = findLink(key);
+    if (link) link->opened();
 }
 
 void LinkRegistry::notifyClosed(const std::string& key)

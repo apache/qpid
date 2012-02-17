@@ -132,6 +132,7 @@ namespace broker {
         MessageStore* getStore() const;
 
         void notifyConnection (const std::string& key, Connection* c);
+        void notifyOpened     (const std::string& key);
         void notifyClosed     (const std::string& key);
         void notifyConnectionForced    (const std::string& key, const std::string& text);
         std::string getAuthMechanism   (const std::string& key);
