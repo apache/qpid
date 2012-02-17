@@ -35,15 +35,12 @@ using boost::format;
 using boost::str;
 namespace _qmf = qmf::org::apache::qpid::broker;
 
-#define LINK_MAINT_INTERVAL 2
-
 // TODO: This constructor is only used by the store unit tests -
 // That probably indicates that LinkRegistry isn't correctly
-// factored: The persistence element and maintenance element
-// should be factored separately
+// factored: The persistence element should be factored separately
 LinkRegistry::LinkRegistry () :
-    broker(0), timer(0),
-    parent(0), store(0), passive(false), passiveChanged(false),
+    broker(0),
+    parent(0), store(0), passive(false),
     realm("")
 {
 }
@@ -60,79 +57,32 @@ struct ConnectionObserverImpl : public ConnectionObserver {
 }
 
 LinkRegistry::LinkRegistry (Broker* _broker) :
-    broker(_broker), timer(&broker->getTimer()),
-    maintenanceTask(new Periodic(*this)),
-    parent(0), store(0), passive(false), passiveChanged(false),
+    broker(_broker),
+    parent(0), store(0), passive(false),
     realm(broker->getOptions().realm)
 {
-    timer->add(maintenanceTask);
     broker->getConnectionObservers().add(
         boost::shared_ptr<ConnectionObserver>(new ConnectionObserverImpl(*this)));
 }
 
-LinkRegistry::~LinkRegistry()
-{
-    // This test is only necessary if the default constructor above is present
-    if (maintenanceTask)
-        maintenanceTask->cancel();
-}
+LinkRegistry::~LinkRegistry() {}
 
-LinkRegistry::Periodic::Periodic (LinkRegistry& _links) :
-    TimerTask (Duration (LINK_MAINT_INTERVAL * TIME_SEC),"LinkRegistry"), links(_links) {}
-
-void LinkRegistry::Periodic::fire ()
-{
-    links.periodicMaintenance ();
-    setupNextFire();
-    links.timer->add(this);
-}
-
-void LinkRegistry::periodicMaintenance ()
-{
-    Mutex::ScopedLock locker(lock);
-
-    linksToDestroy.clear();
-    bridgesToDestroy.clear();
-    if (passiveChanged) {
-        if (passive) { QPID_LOG(info, "Passivating links"); }
-        else { QPID_LOG(info, "Activating links"); }
-        for (LinkMap::iterator i = links.begin(); i != links.end(); i++) {
-            i->second->setPassive(passive);
-        }
-        passiveChanged = false;
-    }
-    for (LinkMap::iterator i = links.begin(); i != links.end(); i++)
-        i->second->maintenanceVisit();
-    //now process any requests for re-addressing
-    for (AddressMap::iterator i = reMappings.begin(); i != reMappings.end(); i++)
-        updateAddress(i->first, i->second);
-    reMappings.clear();
-}
 
 void LinkRegistry::changeAddress(const qpid::Address& oldAddress, const qpid::Address& newAddress)
 {
-    //done on periodic maintenance thread; hold changes in separate
-    //map to avoid modifying the link map that is iterated over
-    reMappings[createKey(oldAddress)] = newAddress;
-}
-
-bool LinkRegistry::updateAddress(const std::string& oldKey, const qpid::Address& newAddress)
-{
+    Mutex::ScopedLock   locker(lock);
+    std::string oldKey = createKey(oldAddress);
     std::string newKey = createKey(newAddress);
     if (links.find(newKey) != links.end()) {
         QPID_LOG(error, "Attempted to update key from " << oldKey << " to " << newKey << " which is already in use");
-        return false;
     } else {
         LinkMap::iterator i = links.find(oldKey);
         if (i == links.end()) {
             QPID_LOG(error, "Attempted to update key from " << oldKey << " which does not exist, to " << newKey);
-            return false;
         } else {
             links[newKey] = i->second;
-            i->second->reconnect(newAddress);
             links.erase(oldKey);
             QPID_LOG(info, "Updated link key from " << oldKey << " to " << newKey);
-            return true;
         }
     }
 }
@@ -230,7 +180,6 @@ void LinkRegistry::destroy(const string& host, const uint16_t port)
     {
         if (i->second->isDurable() && store)
             store->destroy(*(i->second));
-        linksToDestroy[key] = i->second;
         links.erase(i);
     }
 }
@@ -258,7 +207,6 @@ void LinkRegistry::destroy(const std::string& host,
     l->second->cancel(b->second);
     if (b->second->isDurable())
         store->destroy(*(b->second));
-    bridgesToDestroy[bridgeKey] = b->second;
     bridges.erase(b);
 }
 
@@ -406,9 +354,12 @@ std::string LinkRegistry::createKey(const std::string& host,  uint16_t port) {
 void LinkRegistry::setPassive(bool p)
 {
     Mutex::ScopedLock locker(lock);
-    passiveChanged = p != passive;
     passive = p;
-    //will activate or passivate links on maintenance visit
+    if (passive) { QPID_LOG(info, "Passivating links"); }
+    else { QPID_LOG(info, "Activating links"); }
+    for (LinkMap::iterator i = links.begin(); i != links.end(); i++) {
+        i->second->setPassive(passive);
+    }
 }
 
 void LinkRegistry::eachLink(boost::function<void(boost::shared_ptr<Link>)> f) {

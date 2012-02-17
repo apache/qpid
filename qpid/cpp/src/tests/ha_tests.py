@@ -30,11 +30,12 @@ log = getLogger("qpid.ha-tests")
 class HaBroker(Broker):
     def __init__(self, test, args=[], broker_url=None, **kwargs):
         assert BrokerTest.ha_lib, "Cannot locate HA plug-in"
-        Broker.__init__(self, test,
-                        args=["--load-module", BrokerTest.ha_lib,
-                              "--ha-enable=yes",
-                              "--ha-broker-url", broker_url ],
-                        **kwargs)
+        args=["--load-module", BrokerTest.ha_lib,
+              "--log-enable=debug+:ha::", # FIXME aconway 2012-01-31:
+              "--log-enable=debug+:Link",
+              "--ha-enable=yes"]
+        if broker_url: args += [ "--ha-broker-url", broker_url ]
+        Broker.__init__(self, test, args, **kwargs)
 
     def promote(self):
         assert os.system("qpid-ha-tool --promote %s"%(self.host_port())) == 0
@@ -237,13 +238,13 @@ class ShortTests(BrokerTest):
 
     def test_failover(self):
         """Verify that backups rejects connections and that fail-over works in python client"""
-        getLogger().setLevel(ERROR) # Disable WARNING log messages due to failover
+        getLogger().setLevel(ERROR) # Disable WARNING log messages due to failover messages
         primary = HaBroker(self, name="primary", expect=EXPECT_EXIT_FAIL)
         primary.promote()
         backup = HaBroker(self, name="backup", broker_url=primary.host_port())
         # Check that backup rejects normal connections
         try:
-            backup.connect()
+            backup.connect().session()
             self.fail("Expected connection to backup to fail")
         except ConnectionError: pass
         # Check that admin connections are allowed to backup.
@@ -283,6 +284,24 @@ class ShortTests(BrokerTest):
         assert retry(lambda: receiver.received > n + 10)
         sender.stop()
         receiver.stop()
+
+    def test_backup_failover(self):
+        # FIXME aconway 2012-01-30: UNFINISHED
+        brokers = [ HaBroker(self, name=name, expect=EXPECT_EXIT_FAIL)
+                    for name in ["a","b","c"] ]
+        url = ",".join([b.host_port() for b in brokers])
+        for b in brokers: b.set_broker_url(url)
+        brokers[0].promote()
+        brokers[0].connect().session().sender(
+            "q;{create:always,%s}"%(self.qpid_replicate())).send("a")
+        for b in brokers[1:]: self.assert_browse_backup(b, "q", ["a"])
+        # FIXME aconway 2012-01-30: failing - not using set URL?
+        brokers[0].kill()
+        brokers[2].promote()            # c must fail over to b.
+        brokers[2].connect().session().sender("q").send("b")
+        self.assert_browse_backup(brokers[1], "q", ["a","b"])
+        # FIXME aconway 2012-01-30: finish
+        for b in brokers[1:]: b.kill()
 
 if __name__ == "__main__":
     shutil.rmtree("brokertest.tmp", True)

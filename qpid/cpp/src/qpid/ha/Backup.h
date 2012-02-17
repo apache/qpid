@@ -52,6 +52,8 @@ class Backup
     void setUrl(const Url&);
 
   private:
+    void initialize(const Url&);
+
     sys::Mutex lock;
     broker::Broker& broker;
     Settings settings;
