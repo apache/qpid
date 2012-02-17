@@ -84,7 +84,7 @@ namespace qpid {
             void startConnectionLH();        // Start the IO Connection
             void destroy();                  // Called when mgmt deletes this link
             void ioThreadProcessing();       // Called on connection's IO thread by request
-            bool tryFailover();              // Called during maintenance visit
+            bool tryFailoverLH();            // Called during maintenance visit
             bool hideManagement() const;
 
         public:
@@ -119,6 +119,7 @@ namespace qpid {
             void closed(int, std::string);   // Called when connection goes away
             void setConnection(Connection*); // Set pointer to the AMQP Connection
             void reconnect(const Address&); //called by LinkRegistry
+            void close();       // Close the link from within the broker.
 
             std::string getAuthMechanism() { return authMechanism; }
             std::string getUsername()      { return username; }
