@@ -21,14 +21,17 @@
 
   <!-- Monitor and control HA status of a broker. -->
   <class name="HaBroker">
-    <property name="status" type="sstr" desc="HA status: primary, backup"/>
+    <property name="status" type="sstr" desc="HA status: primary or backup"/>
+    <property name="clientAddresses" type="sstr" desc="List of addresses used by clients to connect to the HA cluster."/>
+    <property name="brokerAddresses" type="sstr" desc="List of addresses used by HA brokers to connect to each other."/>
 
-    <method name="setStatus" desc="Set HA status: primary, backup">
-      <arg name="status" type="sstr" dir="I"/>
+    <method name="promote" desc="Promote a backup broker to primary."/>
+    <method name="setClientAddresses" desc="Set HA client addresses">
+      <arg name="clientAddresses" type="sstr" dir="I"/>
     </method>
-
-    <property name="clientUrl" type="sstr" desc="URL used by clients to connect to the cluster."/>
-    <property name="brokerUrl" type="sstr" desc="URL used by brokers to connect to other brokers in the cluster."/>
+    <method name="setBrokerAddresses" desc="Set HA broker addresses">
+      <arg name="brokerAddresses" type="sstr" dir="I"/>
+    </method>
   </class>
 
 </schema>

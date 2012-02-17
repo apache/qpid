@@ -27,6 +27,8 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qmf/org/apache/qpid/ha/Package.h"
+#include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetClientAddresses.h"
+#include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetBrokerAddresses.h"
 #include "qpid/log/Statement.h"
 
 namespace qpid {
@@ -82,22 +84,28 @@ HaBroker::~HaBroker() {}
 Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, string&) {
     sys::Mutex::ScopedLock l(lock);
     switch (methodId) {
-      case _qmf::HaBroker::METHOD_SETSTATUS: {
-          std::string status = dynamic_cast<_qmf::ArgsHaBrokerSetStatus&>(args).i_status;
-          if (status == PRIMARY) {
-              if (backup.get()) {
-                  // FIXME aconway 2012-01-26: create primary state before resetting backup
-                  // as it allows client connections.
-                  backup.reset();
-                  QPID_LOG(notice, "HA: Primary promoted from backup");
-              }
-          } else if (status == BACKUP) {
-              if (!backup.get())
-                  throw Exception("HA: Primary cannot be demoted");
-          } else {
-              throw Exception("Invalid HA status: "+status);
+      case _qmf::HaBroker::METHOD_PROMOTE: {
+          if (backup.get()) {   // I am a backup
+              // FIXME aconway 2012-01-26: create primary state before resetting backup
+              // as that allows client connections.
+              backup.reset();
+              QPID_LOG(notice, "HA: Primary promoted from backup");
+              mgmtObject->set_status(PRIMARY);
           }
-          mgmtObject->set_status(status);
+          break;
+      }
+      case _qmf::HaBroker::METHOD_SETCLIENTADDRESSES: {
+          QPID_LOG(critical, "FIXME" << "before " <<  clientUrl)
+          clientUrl = dynamic_cast<_qmf::ArgsHaBrokerSetClientAddresses&>(args).i_clientAddresses;
+          QPID_LOG(critical, "FIXME" << "after " <<  clientUrl)
+          // FIXME aconway 2012-01-30: upate status for new URL
+          mgmtObject->set_clientAddresses(clientUrl.str());
+          break;
+      }
+      case _qmf::HaBroker::METHOD_SETBROKERADDRESSES: {
+          brokerUrl = dynamic_cast<_qmf::ArgsHaBrokerSetBrokerAddresses&>(args).i_brokerAddresses;
+          // FIXME aconway 2012-01-30: upate status for new URL
+          mgmtObject->set_brokerAddresses(brokerUrl.str());
           break;
       }
       default:

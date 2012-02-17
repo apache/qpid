@@ -1,0 +1,71 @@
+#!/usr/bin/env python
+
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+import qmf.console, optparse, sys
+from qpid.management import managementChannel, managementClient
+
+op=optparse.OptionParser(usage="Usage: %prog [options] [broker-address]")
+
+op.add_option("-p", "--promote", action="store_true",
+	      help="Promote a backup broker to become the primary.")
+op.add_option("-c", "--client-addresses", action="store", type="string",
+	      help="Set list of addresses used by clients to connect to the HA cluster.")
+op.add_option("-b", "--broker-addresses", action="store", type="string",
+	      help="Set list of addresses used by HA brokers to connect to each other.")
+op.add_option("-q", "--query", action="store_true",
+	      help="Show the current HA settings on the broker.")
+
+class HaBroker:
+    def __init__(self, broker):
+        self.session = qmf.console.Session()
+	self.qmf_broker = self.session.addBroker(broker, client_properties={"qpid.ha-admin":1})
+	ha_brokers = self.session.getObjects(_class="habroker", _package="org.apache.qpid.ha")
+	if (not ha_brokers): raise Exception("Broker does not have HA enabled.")
+	self.ha_broker = ha_brokers[0]
+
+    def query(self):
+	self.ha_broker.update()
+	print "status=", self.ha_broker.status
+	print "client-addresses=", self.ha_broker.clientAddresses
+	print "broker-addresses=", self.ha_broker.brokerAddresses
+
+def main(argv):
+    try:
+	opts, args = op.parse_args(argv)
+	if len(args) >1: broker = args[1]
+	else: broker = "localhost:5672"
+	hb = HaBroker(broker)
+	try:
+	    action=False
+	    if opts.promote: hb.ha_broker.promote(); action=True
+	    if opts.client_addresses: hb.ha_broker.setClientAddresses(opts.client_addresses); action=True
+	    if opts.broker_addresses: hb.ha_broker.setBrokerAddresses(opts.broker_addresses); action=True
+	    if opts.query or not action: hb.query()
+	    return 0
+	finally:
+	    hb.session.close()		# Avoid errors shutting down threads.
+    except Exception, e:
+	raise				# FIXME aconway 2012-01-30:
+        print e
+        return -1
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
