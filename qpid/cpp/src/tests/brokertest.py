@@ -658,10 +658,14 @@ class NumberedReceiver(Thread):
         except Exception:
             self.error = RethrownException(self.receiver.pname)
 
+    def check(self):
+        """Raise an exception if there has been an error"""
+        if self.error: raise self.error
+
     def stop(self):
         """Returns when termination message is received"""
         join(self)
-        if self.error: raise self.error
+        self.check()
 
 class ErrorGenerator(StoppableThread):
     """
