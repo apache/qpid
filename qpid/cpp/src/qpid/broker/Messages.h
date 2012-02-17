@@ -46,22 +46,21 @@ class Messages
      * @return the number of messages available for delivery.
      */
     virtual size_t size() = 0;
-    /**
-     * @return true if there are no messages for delivery, false otherwise
-     */
-    virtual bool empty() = 0;
 
     /**
-     * Re-inserts a message back into its original position - used
-     * when requeing released messages.
+     * Called when a message is deleted from the queue.
      */
-    virtual void reinsert(const QueuedMessage&) = 0;
+    virtual bool deleted(const QueuedMessage&) = 0;
     /**
-     * Remove the message at the specified position, returning true if
-     * found, false otherwise. The removed message is passed back via
-     * the second parameter.
+     * Releases an acquired message, making it available again.
      */
-    virtual bool remove(const framing::SequenceNumber&, QueuedMessage&) = 0;
+    virtual void release(const QueuedMessage&) = 0;
+    /**
+     * Acquire the message at the specified position, returning true
+     * if found, false otherwise. The acquired message is passed back
+     * via the second parameter.
+     */
+    virtual bool acquire(const framing::SequenceNumber&, QueuedMessage&) = 0;
     /**
      * Find the message at the specified position, returning true if
      * found, false otherwise. The matched message is passed back via
@@ -69,30 +68,22 @@ class Messages
      */
     virtual bool find(const framing::SequenceNumber&, QueuedMessage&) = 0;
     /**
-     * Return the next message to be given to a browsing subscrption
-     * that has reached the specified poisition. The next messages is
-     * passed back via the second parameter.
+     * Retrieve the next message to be given to a browsing
+     * subscription that has reached the specified position. The next
+     * message is passed back via the second parameter.
+     *
+     * @param unacquired, if true, will only browse unacquired messages
      *
      * @return true if there is another message, false otherwise.
      */
-    virtual bool next(const framing::SequenceNumber&, QueuedMessage&) = 0;
+    virtual bool browse(const framing::SequenceNumber&, QueuedMessage&, bool unacquired) = 0;
     /**
-     * Note: Caller is responsible for ensuring that there is a front
-     * (e.g. empty() returns false)
+     * Retrieve the next message available for a consuming
+     * subscription.
      *
-     * @return the next message to be delivered
+     * @return true if there is such a message, false otherwise.
      */
-    virtual QueuedMessage& front() = 0;
-    /**
-     * Removes the front message
-     */
-    virtual void pop() = 0;
-    /**
-     * @return true if there is a mesage to be delivered - in which
-     * case that message will be returned via the parameter and
-     * removed - otherwise false.
-     */
-    virtual bool pop(QueuedMessage&) = 0;
+    virtual bool consume(QueuedMessage&) = 0;
     /**
      * Pushes a message to the back of the 'queue'. For some types of
      * queue this may cause another message to be removed; if that is
@@ -102,7 +93,15 @@ class Messages
     virtual bool push(const QueuedMessage& added, QueuedMessage& removed) = 0;
 
     /**
-     * Apply the functor to each message held
+     * Add an already acquired message to the queue.
+     * Used by a cluster updatee to replicate acquired messages from the updater.
+     * Only need be implemented by subclasses that keep track of
+     * acquired messages.
+     */
+    virtual void updateAcquired(const QueuedMessage&) { }
+
+    /**
+     * Apply, the functor to each message held
      */
     virtual void foreach(Functor) = 0;
     /**

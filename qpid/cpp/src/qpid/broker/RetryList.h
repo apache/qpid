@@ -23,7 +23,6 @@
  */
 
 #include "qpid/broker/BrokerImportExport.h"
-#include "qpid/Address.h"
 #include "qpid/Url.h"
 
 namespace qpid {
@@ -36,7 +35,7 @@ namespace broker {
 class RetryList
 {
   public:
-    QPID_BROKER_EXTERN RetryList();                
+    QPID_BROKER_EXTERN RetryList();
     QPID_BROKER_EXTERN void reset(const std::vector<Url>& urls);
     QPID_BROKER_EXTERN bool next(Address& address);
   private:

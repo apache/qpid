@@ -1,0 +1,81 @@
+-*-org-*-
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+* Issues with the old design.
+
+The cluster is based on virtual synchrony: each broker multicasts
+events and the events from all brokers are serialized and delivered in
+the same order to each broker.
+
+In the current design raw byte buffers from client connections are
+multicast, serialized and delivered in the same order to each broker.
+
+Each broker has a replica of all queues, exchanges, bindings and also
+all connections & sessions from every broker. Cluster code treats the
+broker as a "black box", it "plays" the client data into the
+connection objects and assumes that by giving the same input, each
+broker will reach the same state.
+
+A new broker joining the cluster receives a snapshot of the current
+cluster state, and then follows the multicast conversation.
+
+** Maintenance issues.
+
+The entire state of each broker is replicated to every member:
+connections, sessions, queues, messages, exchanges, management objects
+etc. Any discrepancy in the state that affects how messages are
+allocated to consumers can cause an inconsistency.
+
+- Entire broker state must be faithfully updated to new members.
+- Management model also has to be replicated.
+- All queues are replicated, can't have unreplicated queues (e.g. for management)
+
+Events that are not deterministically predictable from the client
+input data stream can cause inconsistencies. In particular use of
+timers/timestamps require cluster workarounds to synchronize.
+
+A member that encounters an error which is not encounted by all other
+members is considered inconsistent and will shut itself down. Such
+errors can come from any area of the broker code, e.g. different
+ACL files can cause inconsistent errors.
+
+The following areas required workarounds to work in a cluster:
+
+- Timers/timestamps in broker code: management, heartbeats, TTL
+- Security: cluster must replicate *after* decryption by security layer.
+- Management: not initially included in the replicated model, source of many inconsistencies.
+
+It is very easy for someone adding a feature or fixing a bug in the
+standalone broker to break the cluster by:
+- adding new state that needs to be replicated in cluster updates.
+- doing something in a timer or other non-connection thread.
+
+It's very hard to test for such breaks. We need a looser coupling
+and a more explicitly defined interface between cluster and standalone
+broker code.
+
+** Performance issues.
+
+Virtual synchrony delivers all data from all clients in a single
+stream to each broker.  The cluster must play this data thru the full
+broker code stack: connections, sessions etc. in a single thread
+context in order to get identical behavior on each broker. The cluster
+has a pipelined design to get some concurrency but this is a severe
+limitation on scalability in multi-core hosts compared to the
+standalone broker which processes each connection in a separate thread
+context.

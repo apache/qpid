@@ -55,12 +55,16 @@ op.add_option("--send-option", default=[], action="append", type="str",
               help="Additional option for sending addresses")
 op.add_option("--receive-option", default=[], action="append", type="str",
               help="Additional option for receiving addresses")
+op.add_option("--create-option", default=[], action="append", type="str",
+              help="Additional option for creating addresses")
 op.add_option("--send-arg", default=[], action="append", type="str",
               help="Additional argument for qpid-send")
 op.add_option("--receive-arg", default=[], action="append", type="str",
               help="Additional argument for qpid-receive")
 op.add_option("--no-timestamp", dest="timestamp", default=True,
               action="store_false", help="don't add a timestamp, no latency results")
+op.add_option("--sequence", dest="sequence", default=False,
+              action="store_true", help="add a sequence number to each message")
 op.add_option("--connection-options", type="str",
               help="Connection options for senders & receivers")
 op.add_option("--flow-control", default=0, type="int", metavar="N",
@@ -75,6 +79,7 @@ op.add_option("--verbose", default=False, action="store_true",
               help="Show commands executed")
 op.add_option("--no-delete", default=False, action="store_true",
               help="Don't delete the test queues.")
+
 single_quote_re = re.compile("'")
 def posix_quote(string):
     """ Quote a string for use as an argument in a posix shell"""
@@ -144,7 +149,7 @@ def start_send(queue, opts, broker, host):
                "--report-total",
                "--report-header=no",
                "--timestamp=%s"%(opts.timestamp and "yes" or "no"),
-               "--sequence=no",
+               "--sequence=%s"%(opts.sequence and "yes" or "no"),
                "--flow-control", str(opts.flow_control),
                "--durable", str(opts.durable)
                ]
@@ -176,7 +181,7 @@ def queue_exists(queue,broker):
             return False
     finally: c.close()
 
-def recreate_queues(queues, brokers, no_delete):
+def recreate_queues(queues, brokers, no_delete, opts):
     c = qpid.messaging.Connection(brokers[0])
     c.open()
     s = c.session()
@@ -187,7 +192,9 @@ def recreate_queues(queues, brokers, no_delete):
             # FIXME aconway 2011-05-04: new cluster async wiring, wait for changes to propagate
             for b in brokers:
                 while queue_exists(q,b): time.sleep(0.1);
-        s.sender("%s;{create:always}"%q)
+        address = "%s;{%s}"%(q, ",".join(opts.create_option + ["create:always"]))
+        if opts.verbose: print "Creating", address
+        s.sender(address)
         # FIXME aconway 2011-05-04: new cluster async wiring, wait for changes to propagate
         for b in brokers:
             while not queue_exists(q,b): time.sleep(0.1);
@@ -285,7 +292,7 @@ def main():
     queues = ["%s-%s"%(opts.queue_name, i) for i in xrange(opts.queues)]
     try:
         for i in xrange(opts.repeat):
-            recreate_queues(queues, opts.broker, opts.no_delete)
+            recreate_queues(queues, opts.broker, opts.no_delete, opts)
             ready_receiver = ReadyReceiver(ready_queue, opts.broker[0])
 
             if opts.group_receivers: # Run receivers for same queue against same broker.

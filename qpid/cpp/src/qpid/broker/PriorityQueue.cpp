@@ -32,6 +32,8 @@ PriorityQueue::PriorityQueue(int l) :
     messages(levels, Deque()),
     frontLevel(0), haveFront(false), cached(false) {}
 
+bool PriorityQueue::deleted(const QueuedMessage&) { return true; }
+
 size_t PriorityQueue::size()
 {
     size_t total(0);
@@ -41,15 +43,7 @@ size_t PriorityQueue::size()
     return total;
 }
 
-bool PriorityQueue::empty()
-{
-    for (int i = 0; i < levels; ++i) {
-        if (!messages[i].empty()) return false;
-    }
-    return true;
-}
-
-void PriorityQueue::reinsert(const QueuedMessage& message)
+void PriorityQueue::release(const QueuedMessage& message)
 {
     uint p = getPriorityLevel(message);
     messages[p].insert(lower_bound(messages[p].begin(), messages[p].end(), message), message);
@@ -78,7 +72,7 @@ bool PriorityQueue::find(const framing::SequenceNumber& position, QueuedMessage&
     return false;
 }
 
-bool PriorityQueue::remove(const framing::SequenceNumber& position, QueuedMessage& message)
+bool PriorityQueue::acquire(const framing::SequenceNumber& position, QueuedMessage& message)
 {
     return find(position, message, true);
 }
@@ -88,7 +82,7 @@ bool PriorityQueue::find(const framing::SequenceNumber& position, QueuedMessage&
     return find(position, message, false);
 }
 
-bool PriorityQueue::next(const framing::SequenceNumber& position, QueuedMessage& message)
+bool PriorityQueue::browse(const framing::SequenceNumber& position, QueuedMessage& message, bool)
 {
     QueuedMessage match;
     match.position = position+1;
@@ -112,16 +106,7 @@ bool PriorityQueue::next(const framing::SequenceNumber& position, QueuedMessage&
     return found;
 }
 
-QueuedMessage& PriorityQueue::front()
-{
-    if (checkFront()) {
-        return messages[frontLevel].front();
-    } else {
-        throw qpid::framing::InternalErrorException(QPID_MSG("No message available"));
-    }
-}
-
-bool PriorityQueue::pop(QueuedMessage& message)
+bool PriorityQueue::consume(QueuedMessage& message)
 {
     if (checkFront()) {
         message = messages[frontLevel].front();
@@ -131,12 +116,6 @@ bool PriorityQueue::pop(QueuedMessage& message)
     } else {
         return false;
     }
-}
-
-void PriorityQueue::pop()
-{
-    QueuedMessage dummy;
-    pop(dummy);
 }
 
 bool PriorityQueue::push(const QueuedMessage& added, QueuedMessage& /*not needed*/)

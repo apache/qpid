@@ -40,16 +40,13 @@ class PriorityQueue : public Messages
     PriorityQueue(int levels);
     virtual ~PriorityQueue() {}
     size_t size();
-    bool empty();
 
-    void reinsert(const QueuedMessage&);
-    bool remove(const framing::SequenceNumber&, QueuedMessage&);
+    bool deleted(const QueuedMessage&);
+    void release(const QueuedMessage&);
+    bool acquire(const framing::SequenceNumber&, QueuedMessage&);
     bool find(const framing::SequenceNumber&, QueuedMessage&);
-    bool next(const framing::SequenceNumber&, QueuedMessage&);
-
-    QueuedMessage& front();
-    void pop();
-    bool pop(QueuedMessage&);
+    bool browse(const framing::SequenceNumber&, QueuedMessage&, bool);
+    bool consume(QueuedMessage&);
     bool push(const QueuedMessage& added, QueuedMessage& removed);
 
     void foreach(Functor);
