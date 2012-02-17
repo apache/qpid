@@ -38,11 +38,8 @@ def validate_status(value):
 class HaBroker:
     def __init__(self, broker, session):
         self.session = session
-        try:
-	    self.qmf_broker = self.session.addBroker(
-		    broker, client_properties={"qpid.ha-admin":1})
-        except Exception, e:
-            raise Exception("Can't connect to %s: %s"%(broker,e))
+        self.qmf_broker = self.session.addBroker(
+            broker, client_properties={"qpid.ha-admin":1})
         ha_brokers=self.session.getObjects(_class="habroker", _package="org.apache.qpid.ha")
         if (not ha_brokers): raise Exception("Broker does not have HA enabled.")
         self.ha_broker = ha_brokers[0];
