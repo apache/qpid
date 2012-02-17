@@ -241,6 +241,7 @@ acl deny all all
         retry(lambda: find_in_file("brokerLinkUp", qp.outfile("out")))
         broker1.ready()
         broker2.ready()
+        qr.wait()
 
     def test_queue_cleaner(self):
         """ Regression test to ensure that cleanup of expired messages works correctly """
@@ -1220,25 +1221,23 @@ class LongTests(BrokerTest):
 
         receiver = NumberedReceiver(cluster[0])
         receiver.start()
-        senders = [NumberedSender(cluster[0]) for i in range(1,3)]
-        for s in senders:
-            s.start()
+        sender = NumberedSender(cluster[0])
+        sender.start()
         # Wait for senders & receiver to get up and running
-        retry(lambda: receiver.received > 2*senders)
+        retry(lambda: receiver.received > 10)
 
         # Kill original brokers, start new ones for the duration.
         endtime = time.time() + self.duration();
         i = 0
         while time.time() < endtime:
-            for s in senders: s.sender.assert_running()
+            sender.sender.assert_running()
             receiver.receiver.assert_running()
             for b in cluster[i:]: b.ready() # Check if any broker crashed.
             cluster[i].kill()
             i += 1
             b = cluster.start(expect=EXPECT_EXIT_FAIL)
             time.sleep(5)
-        for s in senders:
-            s.stop()
+        sender.stop()
         receiver.stop()
         for i in range(i, len(cluster)): cluster[i].kill()
 
