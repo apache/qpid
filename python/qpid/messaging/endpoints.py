@@ -170,6 +170,7 @@ class Connection(Endpoint):
     self.ssl_keyfile = options.get("ssl_keyfile", None)
     self.ssl_certfile = options.get("ssl_certfile", None)
     self.ssl_trustfile = options.get("ssl_trustfile", None)
+    self.client_properties = options.get("client_properties", {})
 
     self.options = options
 

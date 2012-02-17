@@ -55,7 +55,7 @@ export RECEIVER_EXEC=$QPID_TEST_EXEC_DIR/receiver
 export SENDER_EXEC=$QPID_TEST_EXEC_DIR/sender
 
 # Path
-export PATH=$top_builddir/src:$builddir:$srcdir:$PYTHON_COMMANDS:$QPID_TEST_EXEC_DIR:$PATH
+export PATH=$top_builddir/src:$builddir:$srcdir:$PYTHON_COMMANDS:$QPID_TEST_EXEC_DIR:$PYTHON_DIR/commands:$PATH
 
 # Modules
 export TEST_STORE_LIB=$testmoduledir/test_store.so
@@ -63,6 +63,7 @@ export TEST_STORE_LIB=$testmoduledir/test_store.so
 exportmodule() { test -f $moduledir/$2 && eval "export $1=$moduledir/$2"; }
 exportmodule ACL_LIB acl.so
 exportmodule CLUSTER_LIB cluster.so
+exportmodule HA_LIB ha.so
 exportmodule REPLICATING_LISTENER_LIB replicating_listener.so
 exportmodule REPLICATION_EXCHANGE_LIB replication_exchange.so
 exportmodule SSLCONNECTOR_LIB sslconnector.so

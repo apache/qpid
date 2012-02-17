@@ -99,3 +99,8 @@ void Event/*MGEN:Event.NameCap*/::mapEncode(::qpid::types::Variant::Map& map) co
     using namespace ::qpid::types;
 /*MGEN:Event.ArgMap*/
 }
+
+bool Event/*MGEN:Event.NameCap*/::match(const std::string& evt, const std::string& pkg)
+{
+    return eventName == evt && packageName == pkg;
+}
