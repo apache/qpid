@@ -44,20 +44,55 @@ namespace broker {
 using types::Variant;
 
 namespace{
-bool isQMFv2(const Message& message)
-{
-    const framing::MessageProperties* props = message.getProperties<framing::MessageProperties>();
-    return props && props->getAppId() == "qmf2";
-}
-
-template <class T> bool match(Variant::Map& schema)
-{
-    return T::match(schema["_class_name"], schema["_package_name"]);
-}
 
 const std::string QPID_REPLICATE("qpid.replicate");
 const std::string ALL("all");
 const std::string WIRING("wiring");
+
+const std::string CLASS_NAME("_class_name");
+const std::string PACKAGE_NAME("_package_name");
+const std::string VALUES("_values");
+const std::string EVENT("_event");
+const std::string SCHEMA_ID("_schema_id");
+const std::string QUERY_RESPONSE("_query_response");
+
+const std::string ARGUMENTS("arguments");
+const std::string QUEUE("queue");
+const std::string EXCHANGE("exchange");
+const std::string BIND("bind");
+const std::string ARGS("args");
+const std::string DURABLE("durable");
+const std::string QNAME("qName");
+const std::string AUTODEL("autoDel");
+const std::string ALTEX("altEx");
+const std::string USER("user");
+const std::string RHOST("rhost");
+const std::string EXTYPE("exType");
+const std::string EXNAME("exName");
+const std::string AUTODELETE("autoDelete");
+const std::string NAME("name");
+const std::string TYPE("type");
+const std::string DISP("disp");
+const std::string CREATED("created");
+
+
+const std::string QMF_OPCODE("qmf.opcode");
+const std::string QMF_CONTENT("qmf.content");
+const std::string QMF2("qmf2");
+
+const std::string QPID_NODE_CLONER("qpid.node-cloner");
+
+
+bool isQMFv2(const Message& message)
+{
+    const framing::MessageProperties* props = message.getProperties<framing::MessageProperties>();
+    return props && props->getAppId() == QMF2;
+}
+
+template <class T> bool match(Variant::Map& schema)
+{
+    return T::match(schema[CLASS_NAME], schema[PACKAGE_NAME]);
+}
 
 bool isReplicated(const std::string& value) {
     return value == ALL || value == WIRING;
@@ -83,16 +118,15 @@ void NodeClone::route(Deliverable& msg, const std::string& /*key*/, const framin
         if (!isQMFv2(msg.getMessage()) || !headers)
             throw Exception("Unexpected message, not QMF2 event or query response.");
         // FIXME aconway 2011-11-21: string constants
-        if (headers->getAsString("qmf.content") == "_event") { //decode as list
+        if (headers->getAsString(QMF_CONTENT) == EVENT) { //decode as list
             std::string content = msg.getMessage().getFrames().getContent();
             Variant::List list;
             amqp_0_10::ListCodec::decode(content, list);
             for (Variant::List::iterator i = list.begin(); i != list.end(); ++i) {
                 // FIXME aconway 2011-11-18: should be iterating list?
                 Variant::Map& map = list.front().asMap();
-                Variant::Map& schema = map[
-                    "_schema_id"].asMap();
-                Variant::Map& values = map["_values"].asMap();
+                Variant::Map& schema = map[SCHEMA_ID].asMap();
+                Variant::Map& values = map[VALUES].asMap();
                 if      (match<EventQueueDeclare>(schema)) doEventQueueDeclare(values);
                 else if (match<EventQueueDelete>(schema)) doEventQueueDelete(values);
                 else if (match<EventExchangeDeclare>(schema)) doEventExchangeDeclare(values);
@@ -101,20 +135,20 @@ void NodeClone::route(Deliverable& msg, const std::string& /*key*/, const framin
                 else if (match<EventSubscribe>(schema)) {} // Deliberately ignored.
                 else throw(Exception(QPID_MSG("Replicator received unexpected event, schema=" << schema)));
             }
-        } else if (headers->getAsString("qmf.opcode") == "_query_response") {
+        } else if (headers->getAsString(QMF_OPCODE) == QUERY_RESPONSE) {
             //decode as list
             std::string content = msg.getMessage().getFrames().getContent();
             Variant::List list;
             amqp_0_10::ListCodec::decode(content, list);
             for (Variant::List::iterator i = list.begin(); i != list.end(); ++i) {
-                std::string type = i->asMap()["_schema_id"].asMap()["_class_name"];
-                Variant::Map& values = i->asMap()["_values"].asMap();
-                if (isReplicated(values["arguments"].asMap())) {
+                std::string type = i->asMap()[SCHEMA_ID].asMap()[CLASS_NAME];
+                Variant::Map& values = i->asMap()[VALUES].asMap();
+                if (isReplicated(values[ARGUMENTS].asMap())) {
                     framing::FieldTable args;
-                    amqp_0_10::translate(values["arguments"].asMap(), args);
-                    if      (type == "queue") doResponseQueue(values);
-                    else if (type == "exchange") doResponseExchange(values);
-                    else if (type == "bind") doResponseBind(values);
+                    amqp_0_10::translate(values[ARGUMENTS].asMap(), args);
+                    if      (type == QUEUE) doResponseQueue(values);
+                    else if (type == EXCHANGE) doResponseExchange(values);
+                    else if (type == BIND) doResponseBind(values);
                     else throw Exception(QPID_MSG("Ignoring unexpected class: " << type));
                 }
             }
@@ -127,66 +161,66 @@ void NodeClone::route(Deliverable& msg, const std::string& /*key*/, const framin
 }
 
 void NodeClone::doEventQueueDeclare(Variant::Map& values) {
-    std::string name = values["qName"].asString();
-    if (values["disp"] == "created" && isReplicated(values["args"].asMap())) {
+    std::string name = values[QNAME].asString();
+    if (values[DISP] == CREATED && isReplicated(values[ARGS].asMap())) {
         QPID_LOG(debug, "Creating replicated queue " << name);
         framing::FieldTable args;
-        amqp_0_10::translate(values["args"].asMap(), args);
+        amqp_0_10::translate(values[ARGS].asMap(), args);
         if (!broker.createQueue(
                 name,
-                values["durable"].asBool(),
-                values["autoDel"].asBool(),
+                values[DURABLE].asBool(),
+                values[AUTODEL].asBool(),
                 0 /*i.e. no owner regardless of exclusivity on master*/,
-                values["altEx"].asString(),
+                values[ALTEX].asString(),
                 args,
-                values["user"].asString(),
-                values["rhost"].asString()).second) {
+                values[USER].asString(),
+                values[RHOST].asString()).second) {
             QPID_LOG(warning, "Replicated queue " << name << " already exists");
         }
     }
 }
 
 void NodeClone::doEventQueueDelete(Variant::Map& values) {
-    std::string name = values["qName"].asString();
+    std::string name = values[QNAME].asString();
     boost::shared_ptr<Queue> queue = broker.getQueues().find(name);
     if (queue && isReplicated(queue->getSettings())) {
         QPID_LOG(debug, "Deleting replicated queue " << name);
         broker.deleteQueue(
             name,
-            values["user"].asString(),
-            values["rhost"].asString());
+            values[USER].asString(),
+            values[RHOST].asString());
     }
 }
 
 void NodeClone::doEventExchangeDeclare(Variant::Map& values) {
-    if (values["disp"] == "created" && isReplicated(values["args"].asMap())) {
-        std::string name = values["exName"].asString();
+    if (values[DISP] == CREATED && isReplicated(values[ARGS].asMap())) {
+        std::string name = values[EXNAME].asString();
         framing::FieldTable args;
-        amqp_0_10::translate(values["args"].asMap(), args);
+        amqp_0_10::translate(values[ARGS].asMap(), args);
         QPID_LOG(debug, "Creating replicated exchange " << name);
         if (!broker.createExchange(
                 name,
-                values["exType"].asString(),
-                values["durable"].asBool(),
-                values["altEx"].asString(),
+                values[EXTYPE].asString(),
+                values[DURABLE].asBool(),
+                values[ALTEX].asString(),
                 args,
-                values["user"].asString(),
-                values["rhost"].asString()).second) {
+                values[USER].asString(),
+                values[RHOST].asString()).second) {
             QPID_LOG(warning, "Replicated exchange " << name << " already exists");
         }
     }
 }
 
 void NodeClone::doEventExchangeDelete(Variant::Map& values) {
-    std::string name = values["exName"].asString();
+    std::string name = values[EXNAME].asString();
     try {
         boost::shared_ptr<Exchange> exchange = broker.getExchanges().get(name);
         if (exchange && isReplicated(exchange->getArgs())) {
             QPID_LOG(warning, "Deleting replicated exchange " << name);
             broker.deleteExchange(
                 name,
-                values["user"].asString(),
-                values["rhost"].asString());
+                values[USER].asString(),
+                values[RHOST].asString());
         }
     } catch (const framing::NotFoundException&) {}
 }
@@ -197,31 +231,31 @@ void NodeClone::doEventBind(Variant::Map&) {
 }
 
 void NodeClone::doResponseQueue(Variant::Map& values) {
-    QPID_LOG(debug, "Creating replicated queue " << values["name"].asString() << " (in catch-up)");
+    QPID_LOG(debug, "Creating replicated queue " << values[NAME].asString() << " (in catch-up)");
     if (!broker.createQueue(
-            values["name"].asString(),
-            values["durable"].asBool(),
-            values["autoDelete"].asBool(),
+            values[NAME].asString(),
+            values[DURABLE].asBool(),
+            values[AUTODELETE].asBool(),
             0 /*i.e. no owner regardless of exclusivity on master*/,
             ""/*TODO: need to include alternate-exchange*/,
             args,
             ""/*TODO: who is the user?*/,
             ""/*TODO: what should we use as connection id?*/).second) {
-        QPID_LOG(warning, "Replicated queue " << values["name"] << " already exists (in catch-up)");
+        QPID_LOG(warning, "Replicated queue " << values[NAME] << " already exists (in catch-up)");
     }
 }
 
 void NodeClone::doResponseExchange(Variant::Map& values) {
-    QPID_LOG(debug, "Creating replicated exchange " << values["name"].asString() << " (in catch-up)");
+    QPID_LOG(debug, "Creating replicated exchange " << values[NAME].asString() << " (in catch-up)");
     if (!broker.createExchange(
-            values["name"].asString(),
-            values["type"].asString(),
-            values["durable"].asBool(),
+            values[NAME].asString(),
+            values[TYPE].asString(),
+            values[DURABLE].asBool(),
             ""/*TODO: need to include alternate-exchange*/,
             args,
             ""/*TODO: who is the user?*/,
             ""/*TODO: what should we use as connection id?*/).second) {
-        QPID_LOG(warning, "Replicated exchange " << values["qName"] << " already exists (in catch-up)");
+        QPID_LOG(warning, "Replicated exchange " << values[QNAME] << " already exists (in catch-up)");
     }
 }
 
@@ -242,14 +276,14 @@ boost::shared_ptr<Exchange> NodeClone::create(const std::string& target, Broker&
 
 bool NodeClone::isNodeCloneDestination(const std::string& target)
 {
-    return target == "qpid.node-cloner";
+    return target == QPID_NODE_CLONER;
 }
 
 bool NodeClone::bind(boost::shared_ptr<Queue>, const std::string&, const framing::FieldTable*) { return false; }
 bool NodeClone::unbind(boost::shared_ptr<Queue>, const std::string&, const framing::FieldTable*) { return false; }
 bool NodeClone::isBound(boost::shared_ptr<Queue>, const std::string* const, const framing::FieldTable* const) { return false; }
 
-const std::string NodeClone::typeName("node-cloner"); // FIXME aconway 2011-11-21: qpid.replicator
+const std::string NodeClone::typeName(QPID_NODE_CLONER); // FIXME aconway 2011-11-21: qpid.replicator
 
 std::string NodeClone::getType() const
 {
