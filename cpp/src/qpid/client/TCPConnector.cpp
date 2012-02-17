@@ -97,7 +97,7 @@ void TCPConnector::connect(const std::string& host, const std::string& port) {
         boost::bind(&TCPConnector::connected, this, _1),
         boost::bind(&TCPConnector::connectFailed, this, _3));
     closed = false;
-
+    identifier = str(format("[%1%]") % socket.getFullAddress());
     connector->start(poller);
 }
 
@@ -120,8 +120,6 @@ void TCPConnector::start(sys::AsynchIO* aio_) {
     for (int i = 0; i < 4; i++) {
         aio->queueReadBuffer(new Buff(maxFrameSize));
     }
-
-    identifier = str(format("[%1%]") % socket.getFullAddress());
 }
 
 void TCPConnector::initAmqp() {
@@ -131,7 +129,7 @@ void TCPConnector::initAmqp() {
 
 void TCPConnector::connectFailed(const std::string& msg) {
     connector = 0;
-    QPID_LOG(warning, "Connect failed: " << msg);
+    QPID_LOG(warning, "Connect failed: " << msg << " " << identifier);
     socket.close();
     if (!closed)
         closed = true;
@@ -185,7 +183,7 @@ sys::ShutdownHandler* TCPConnector::getShutdownHandler() const {
     return shutdownHandler;
 }
 
-const std::string& TCPConnector::getIdentifier() const { 
+const std::string& TCPConnector::getIdentifier() const {
     return identifier;
 }
 

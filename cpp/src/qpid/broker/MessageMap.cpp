@@ -27,6 +27,8 @@ namespace {
 const std::string EMPTY;
 }
 
+bool MessageMap::deleted(const QueuedMessage&) { return true; }
+
 std::string MessageMap::getKey(const QueuedMessage& message)
 {
     const framing::FieldTable* ft = message.payload->getApplicationHeaders();
@@ -44,7 +46,7 @@ bool MessageMap::empty()
     return messages.empty();
 }
 
-void MessageMap::reinsert(const QueuedMessage& message)
+void MessageMap::release(const QueuedMessage& message)
 {
     std::string key = getKey(message);
     Index::iterator i = index.find(key);
@@ -54,7 +56,7 @@ void MessageMap::reinsert(const QueuedMessage& message)
     } //else message has already been replaced
 }
 
-bool MessageMap::remove(const framing::SequenceNumber& position, QueuedMessage& message)
+bool MessageMap::acquire(const framing::SequenceNumber& position, QueuedMessage& message)
 {
     Ordering::iterator i = messages.find(position);
     if (i != messages.end()) {
@@ -77,38 +79,22 @@ bool MessageMap::find(const framing::SequenceNumber& position, QueuedMessage& me
     }
 }
 
-bool MessageMap::next(const framing::SequenceNumber& position, QueuedMessage& message)
+bool MessageMap::browse(const framing::SequenceNumber& position, QueuedMessage& message, bool)
 {
-    if (!messages.empty() && position < front().position) {
-        message = front();
+    Ordering::iterator i = messages.lower_bound(position+1);
+    if (i != messages.end()) {
+        message = i->second;
         return true;
     } else {
-        Ordering::iterator i = messages.lower_bound(position+1);
-        if (i != messages.end()) {
-            message = i->second;
-            return true;
-        } else {
-            return false;
-        }
+        return false;
     }
 }
 
-QueuedMessage& MessageMap::front()
-{
-    return messages.begin()->second;
-}
-
-void MessageMap::pop()
-{
-    QueuedMessage dummy;
-    pop(dummy);
-}
-
-bool MessageMap::pop(QueuedMessage& out)
+bool MessageMap::consume(QueuedMessage& message)
 {
     Ordering::iterator i = messages.begin();
     if (i != messages.end()) {
-        out = i->second;
+        message = i->second;
         erase(i);
         return true;
     } else {

@@ -149,10 +149,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     void observeAcquire(const QueuedMessage& msg, const sys::Mutex::ScopedLock& lock);
     void observeRequeue(const QueuedMessage& msg, const sys::Mutex::ScopedLock& lock);
     void observeDequeue(const QueuedMessage& msg, const sys::Mutex::ScopedLock& lock);
-
-    /** modify the Queue's message container - assumes messageLock held */
-    void pop(const sys::Mutex::ScopedLock& held);           // acquire front msg
-    void popAndDequeue(const sys::Mutex::ScopedLock& held); // acquire and dequeue front msg
+    bool popAndDequeue(QueuedMessage&, const sys::Mutex::ScopedLock& lock);
     // acquire message @ position, return true and set msg if acquire succeeds
     bool acquire(const qpid::framing::SequenceNumber& position, QueuedMessage& msg,
                  const sys::Mutex::ScopedLock& held);
@@ -192,7 +189,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
         }
     }
 
-    void checkNotDeleted();
+    void checkNotDeleted(const Consumer::shared_ptr& c);
     void notifyDeleted();
 
   public:
@@ -400,6 +397,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      */
     QPID_BROKER_EXTERN framing::SequenceNumber getPosition();
     void addObserver(boost::shared_ptr<QueueObserver>);
+    void removeObserver(boost::shared_ptr<QueueObserver>);
     QPID_BROKER_EXTERN void insertSequenceNumbers(const std::string& key);
     /**
      * Notify queue that recovery has completed.
@@ -419,7 +417,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     void flush();
 
-    const Broker* getBroker();
+    Broker* getBroker();
 
     uint32_t getDequeueSincePurge() { return dequeueSincePurge.get(); }
     void setDequeueSincePurge(uint32_t value);

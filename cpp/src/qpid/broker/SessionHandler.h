@@ -23,6 +23,7 @@
  */
 
 #include "qpid/amqp_0_10/SessionHandler.h"
+#include "qpid/broker/SessionHandler.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
 
 namespace qpid {

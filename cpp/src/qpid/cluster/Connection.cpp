@@ -549,7 +549,7 @@ void Connection::deliveryRecord(const string& qname,
         } else {                // Message at original position in original queue
             queue->find(position, m);
         }
-        // FIXME aconway 2011-08-19: removed:
+        // NOTE: removed:
         // if (!m.payload)
         //      throw Exception(QPID_MSG("deliveryRecord no update message"));
         //
@@ -561,7 +561,14 @@ void Connection::deliveryRecord(const string& qname,
         //
     }
 
-    broker::DeliveryRecord dr(m, queue, tag, acquired, accepted, windowing, credit);
+    // If a subscription is cancelled while there are unacked messages for it
+    // there won't be a consumer. Just null it out in this case, it isn't needed.
+    boost::shared_ptr<broker::Consumer> consumer;
+    try { consumer = semanticState().find(tag); }
+    catch(...) {}
+
+    broker::DeliveryRecord dr(
+        m, queue, tag, consumer, acquired, accepted, windowing, credit);
     dr.setId(id);
     if (cancelled) dr.cancel(dr.getTag());
     if (completed) dr.complete();
