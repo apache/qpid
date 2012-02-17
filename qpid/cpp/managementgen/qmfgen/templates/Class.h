@@ -1,6 +1,6 @@
 /*MGEN:commentPrefix=//*/
-#ifndef _MANAGEMENT_/*MGEN:Class.NameUpper*/_
-#define _MANAGEMENT_/*MGEN:Class.NameUpper*/_
+#ifndef _MANAGEMENT_/*MGEN:Class.PackageNameUpper*/_/*MGEN:Class.NameUpper*/_
+#define _MANAGEMENT_/*MGEN:Class.PackageNameUpper*/_/*MGEN:Class.NameUpper*/_
 
 //
 // Licensed to the Apache Software Foundation (ASF) under one
