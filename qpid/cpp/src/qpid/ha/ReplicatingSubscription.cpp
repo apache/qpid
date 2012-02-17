@@ -287,6 +287,7 @@ bool ReplicatingSubscription::DelegatingConsumer::deliver(QueuedMessage& m) { re
 void ReplicatingSubscription::DelegatingConsumer::notify() { delegate.notify(); }
 bool ReplicatingSubscription::DelegatingConsumer::filter(boost::intrusive_ptr<Message> msg) { return delegate.filter(msg); }
 bool ReplicatingSubscription::DelegatingConsumer::accept(boost::intrusive_ptr<Message> msg) { return delegate.accept(msg); }
+bool ReplicatingSubscription::DelegatingConsumer::browseAcquired() const { return delegate.browseAcquired(); }
 OwnershipToken* ReplicatingSubscription::DelegatingConsumer::getSession() { return delegate.getSession(); }
 
 }} // namespace qpid::ha

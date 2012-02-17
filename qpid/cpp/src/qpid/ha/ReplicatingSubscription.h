@@ -86,6 +86,7 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
     // Consumer overrides.
     void cancel();
     void acknowledged(const broker::QueuedMessage&);
+    bool browseAcquired() const { return true; }
 
     bool hideDeletedError();
 
@@ -118,6 +119,7 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
         bool accept(boost::intrusive_ptr<broker::Message>);
         void cancel() {}
         void acknowledged(const broker::QueuedMessage&) {}
+        bool browseAcquired() const;
 
         broker::OwnershipToken* getSession();
 

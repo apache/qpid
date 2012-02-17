@@ -883,16 +883,20 @@ class DtxTests(BrokerTest):
         t5.send(["1", "2"])
 
         # Accept messages in a transaction before/after join then commit
+        # Note: Message sent outside transaction, we're testing transactional acceptance.
         t6 = DtxTestFixture(self, cluster[0], "t6")
         t6.send(["a","b","c"])
         t6.start()
         self.assertEqual(t6.accept().body, "a");
+        t6.verify(sessions, ["b", "c"])
 
         # Accept messages in a transaction before/after join then roll back
+        # Note: Message sent outside transaction, we're testing transactional acceptance.
         t7 = DtxTestFixture(self, cluster[0], "t7")
         t7.send(["a","b","c"])
         t7.start()
         self.assertEqual(t7.accept().body, "a");
+        t7.verify(sessions, ["b", "c"])
 
         # Ended, suspended transactions across join.
         t8 = DtxTestFixture(self, cluster[0], "t8")
@@ -948,6 +952,7 @@ class DtxTests(BrokerTest):
 
         # Rollback t7
         self.assertEqual(t7.accept().body, "b");
+        t7.verify(sessions, ["c"])
         t7.end()
         t7.rollback()
         t7.verify(sessions, ["a", "b", "c"])

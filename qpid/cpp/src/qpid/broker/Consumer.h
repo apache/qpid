@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -63,6 +63,11 @@ class Consumer
     virtual bool accept(boost::intrusive_ptr<Message>) { return true; }
     virtual OwnershipToken* getSession() = 0;
     virtual void cancel() = 0;
+
+    /** Returns true if the browser wants acquired as well as
+     * available messages.
+     */
+    virtual bool browseAcquired() const { return false; };
 
     /** Called when the peer has acknowledged receipt of the message.
      * Not to be confused with accept() above, which is asking if
