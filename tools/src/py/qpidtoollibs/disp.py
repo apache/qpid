@@ -206,11 +206,6 @@ class Display:
     result += "%ds" % (sec % 60)
     return result
 
-  def YN(self, val):
-    if val:
-      return 'Y'
-    return 'N'
-
 class Sortable:
   """ """
   def __init__(self, row, sortIndex):
