@@ -105,6 +105,8 @@ namespace qpid {
 
             std::string getHost() { return host; }
             uint16_t    getPort() { return port; }
+            std::string getTransport() { return transport; }
+
             bool isDurable() { return durable; }
             void maintenanceVisit ();
             uint nextChannel();

@@ -19,6 +19,7 @@
  *
  */
 #include "WiringReplicator.h"
+#include "QueueReplicator.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/Link.h"
@@ -62,7 +63,6 @@ const string QUERY_RESPONSE("_query_response");
 const string SCHEMA_ID("_schema_id");
 const string VALUES("_values");
 
-const string ALL("all");
 const string ALTEX("altEx");
 const string ARGS("args");
 const string ARGUMENTS("arguments");
@@ -83,7 +83,6 @@ const string QUEUE("queue");
 const string RHOST("rhost");
 const string TYPE("type");
 const string USER("user");
-const string WIRING("wiring");
 
 const string AGENT_IND_EVENT_ORG_APACHE_QPID_BROKER("agent.ind.event.org_apache_qpid_broker.#");
 const string QMF2("qmf2");
@@ -110,15 +109,33 @@ template <class T> bool match(Variant::Map& schema) {
     return T::match(schema[CLASS_NAME], schema[PACKAGE_NAME]);
 }
 
-bool isReplicated(const string& value) {
-    return value == ALL || value == WIRING;
+// FIXME aconway 2011-11-24: this should be a class.
+enum ReplicateLevel { RL_NONE=0, RL_WIRING, RL_ALL };
+const string S_NONE="none";
+const string S_WIRING="wiring";
+const string S_ALL="all";
+
+ReplicateLevel replicateLevel(const string& str) {
+    // FIXME aconway 2011-11-24: case insenstive comparison.
+    QPID_LOG(critical, "FIXME replicateLevel " << str);
+    ReplicateLevel rl = RL_NONE;
+    if (str == S_WIRING) rl = RL_WIRING;
+    else if (str == S_ALL) rl = RL_ALL;
+    QPID_LOG(critical, "FIXME replicateLevel " << str << " = " << rl);
+    return rl;
 }
-bool isReplicated(const framing::FieldTable& f) {
-    return f.isSet(QPID_REPLICATE) && isReplicated(f.getAsString(QPID_REPLICATE));
+
+ReplicateLevel replicateLevel(const framing::FieldTable& f) {
+    QPID_LOG(critical, "FIXME replicateLevel " << f);
+    if (f.isSet(QPID_REPLICATE)) return replicateLevel(f.getAsString(QPID_REPLICATE));
+    else return RL_NONE;
 }
-bool isReplicated(const Variant::Map& m) {
+
+ReplicateLevel replicateLevel(const Variant::Map& m) {
+    QPID_LOG(critical, "FIXME replicateLevel " << m);
     Variant::Map::const_iterator i = m.find(QPID_REPLICATE);
-    return i != m.end() && isReplicated(i->second.asString());
+    if (i != m.end()) return replicateLevel(i->second.asString());
+    else return RL_NONE;
 }
 
 void sendQuery(const string className, const string& queueName, SessionHandler& sessionHandler) {
@@ -164,6 +181,8 @@ WiringReplicator::~WiringReplicator() {}
 WiringReplicator::WiringReplicator(const boost::shared_ptr<Link>& l)
     : Exchange(QPID_WIRING_REPLICATOR), broker(*l->getBroker()), link(l)
 {
+    QPID_LOG(debug, "HA: Starting replication from " <<
+             link->getTransport() << ":" << link->getHost() << ":" << link->getPort());
     broker.getLinks().declare(
         link->getHost(), link->getPort(),
         false,              // durable
@@ -198,6 +217,7 @@ void WiringReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionH
     sendQuery(QUEUE, queueName, sessionHandler);
     sendQuery(EXCHANGE, queueName, sessionHandler);
     sendQuery(BINDING, queueName, sessionHandler);
+    QPID_LOG(debug, "Activated wiring replicator")
 }
 
 void WiringReplicator::route(Deliverable& msg, const string& /*key*/, const framing::FieldTable* headers) {
@@ -244,13 +264,15 @@ void WiringReplicator::route(Deliverable& msg, const string& /*key*/, const fram
 }
 
 void WiringReplicator::doEventQueueDeclare(Variant::Map& values) {
+    QPID_LOG(critical, "FIXME doEventQueueDeclare " << values);
     string name = values[QNAME].asString();
     Variant::Map argsMap = values[ARGS].asMap();
-    if (values[DISP] == CREATED && isReplicated(argsMap)) {
-        QPID_LOG(debug, "Creating replicated queue " << name);
+    if (values[DISP] == CREATED && replicateLevel(argsMap)) {
+        QPID_LOG(debug, "HA: Creating replicated queue " << name);
         framing::FieldTable args;
         amqp_0_10::translate(argsMap, args);
-        if (!broker.createQueue(
+        std::pair<boost::shared_ptr<Queue>, bool> result =
+            broker.createQueue(
                 name,
                 values[DURABLE].asBool(),
                 values[AUTODEL].asBool(),
@@ -258,11 +280,14 @@ void WiringReplicator::doEventQueueDeclare(Variant::Map& values) {
                 values[ALTEX].asString(),
                 args,
                 values[USER].asString(),
-                values[RHOST].asString()).second) {
+                values[RHOST].asString());
+        if (result.second) {
             // FIXME aconway 2011-11-22: should delete old queue and
             // re-create from event.
             // Events are always up to date, whereas responses may be
             // out of date.
+            startQueueReplicator(result.first);
+        } else {
             QPID_LOG(warning, "Replicated queue " << name << " already exists");
         }
     }
@@ -271,7 +296,7 @@ void WiringReplicator::doEventQueueDeclare(Variant::Map& values) {
 void WiringReplicator::doEventQueueDelete(Variant::Map& values) {
     string name = values[QNAME].asString();
     boost::shared_ptr<Queue> queue = broker.getQueues().find(name);
-    if (queue && isReplicated(queue->getSettings())) {
+    if (queue && replicateLevel(queue->getSettings())) {
         QPID_LOG(debug, "Deleting replicated queue " << name);
         broker.deleteQueue(
             name,
@@ -282,7 +307,7 @@ void WiringReplicator::doEventQueueDelete(Variant::Map& values) {
 
 void WiringReplicator::doEventExchangeDeclare(Variant::Map& values) {
     Variant::Map argsMap(values[ARGS].asMap());
-    if (values[DISP] == CREATED && isReplicated(argsMap)) {
+    if (values[DISP] == CREATED && replicateLevel(argsMap)) {
         string name = values[EXNAME].asString();
         framing::FieldTable args;
         amqp_0_10::translate(argsMap, args);
@@ -305,7 +330,7 @@ void WiringReplicator::doEventExchangeDelete(Variant::Map& values) {
     string name = values[EXNAME].asString();
     try {
         boost::shared_ptr<Exchange> exchange = broker.getExchanges().get(name);
-        if (exchange && isReplicated(exchange->getArgs())) {
+        if (exchange && replicateLevel(exchange->getArgs())) {
             QPID_LOG(debug, "Deleting replicated exchange " << name);
             broker.deleteExchange(
                 name,
@@ -320,7 +345,7 @@ void WiringReplicator::doEventBind(Variant::Map& values) {
         boost::shared_ptr<Exchange> exchange = broker.getExchanges().get(values[EXNAME].asString());
         boost::shared_ptr<Queue> queue = broker.getQueues().find(values[QNAME].asString());
         // We only replicated a binds for a replicated queue to replicated exchange.
-        if (isReplicated(exchange->getArgs()) && isReplicated(queue->getSettings())) {
+        if (replicateLevel(exchange->getArgs()) && replicateLevel(queue->getSettings())) {
             framing::FieldTable args;
             amqp_0_10::translate(values[ARGS].asMap(), args);
             string key = values[KEY].asString();
@@ -333,21 +358,28 @@ void WiringReplicator::doEventBind(Variant::Map& values) {
 }
 
 void WiringReplicator::doResponseQueue(Variant::Map& values) {
+    QPID_LOG(critical, "FIXME doResponseQueue " << values);
     // FIXME aconway 2011-11-22: more flexible ways & defaults to indicate replication
     Variant::Map argsMap(values[ARGUMENTS].asMap());
-    if (!isReplicated(argsMap)) return;
+    QPID_LOG(critical, "FIXME doResponseQueue replevel " << replicateLevel(argsMap));
+    if (!replicateLevel(argsMap)) return;
     framing::FieldTable args;
     amqp_0_10::translate(argsMap, args);
+    string name(values[NAME].asString());
     QPID_LOG(debug, "Creating replicated queue " << values[NAME].asString() << " (in catch-up)");
-    if (!broker.createQueue(
-            values[NAME].asString(),
+    std::pair<boost::shared_ptr<Queue>, bool> result =
+        broker.createQueue(
+            name,
             values[DURABLE].asBool(),
             values[AUTODELETE].asBool(),
             0 /*i.e. no owner regardless of exclusivity on master*/,
             ""/*TODO: need to include alternate-exchange*/,
             args,
             ""/*TODO: who is the user?*/,
-            ""/*TODO: what should we use as connection id?*/).second) {
+            ""/*TODO: what should we use as connection id?*/);
+    if (result.second) {
+        startQueueReplicator(result.first);
+    } else {
         // FIXME aconway 2011-11-22: Normal to find queue already
         // exists if we're failing over.
         QPID_LOG(warning, "Replicated queue " << values[NAME] << " already exists (in catch-up)");
@@ -356,7 +388,7 @@ void WiringReplicator::doResponseQueue(Variant::Map& values) {
 
 void WiringReplicator::doResponseExchange(Variant::Map& values) {
     Variant::Map argsMap(values[ARGUMENTS].asMap());
-    if (!isReplicated(argsMap)) return;
+    if (!replicateLevel(argsMap)) return;
     framing::FieldTable args;
     amqp_0_10::translate(argsMap, args);
     QPID_LOG(debug, "Creating replicated exchange " << values[NAME].asString() << " (in catch-up)");
@@ -396,28 +428,35 @@ const std::string QUEUE_REF("queueRef");
 void WiringReplicator::doResponseBind(Variant::Map& values) {
     try {
         std::string exName = getRefName(EXCHANGE_REF_PREFIX, values[EXCHANGE_REF]);
-        boost::shared_ptr<Exchange> exchange = broker.getExchanges().get(exName);
-        if (!exchange) return;
-
         std::string qName = getRefName(QUEUE_REF_PREFIX, values[QUEUE_REF]);
+        QPID_LOG(critical, "FIXME doResponseBind " << qName << " to " << exName);
+        boost::shared_ptr<Exchange> exchange = broker.getExchanges().get(exName);
         boost::shared_ptr<Queue> queue = broker.getQueues().find(qName);
-        if (!queue) return;
+        QPID_LOG(critical, "FIXME doResponseBind ptrs " << queue.get() << " to "  << exchange.get());
+        // FIXME aconway 2011-11-24: more flexible configuration for binding replication.
 
-        // We only replicated a bind for a replicated queue to replicated exchange.
-        // FIXME aconway 2011-11-22: do we always log binds between replicated ex/q
-        // or do we consider the bind arguments as well?
-        if (exchange && queue &&
-            isReplicated(exchange->getArgs()) && isReplicated(queue->getSettings()))
+        // Automatically replicate exchange if queue and exchange are replicated
+        if (exchange && replicateLevel(exchange->getArgs()) &&
+            queue && replicateLevel(queue->getSettings()))
         {
             framing::FieldTable args;
             amqp_0_10::translate(values[ARGUMENTS].asMap(), args);
             string key = values[KEY].asString();
-            QPID_LOG(debug, "Replicated binding exchange=" << exchange->getName()
+            QPID_LOG(debug, "HA: Replicated binding exchange=" << exchange->getName()
                      << " queue=" << queue->getName()
                      << " key=" << key);
             exchange->bind(queue, key, &args);
         }
     } catch (const framing::NotFoundException& e) {} // Ignore unreplicated queue or exchange.
+}
+
+void WiringReplicator::startQueueReplicator(const boost::shared_ptr<Queue>& queue) {
+    QPID_LOG(critical, "FIXME startQueueReplicator " << queue->getName() << " " << queue->getSettings());
+    if (replicateLevel(queue->getSettings()) == RL_ALL) {
+        QPID_LOG(critical, "FIXME startQueueReplicator starting");
+        boost::shared_ptr<QueueReplicator> qr(new QueueReplicator(queue, link));
+        broker.getExchanges().registerExchange(qr);
+    }
 }
 
 bool WiringReplicator::bind(boost::shared_ptr<Queue>, const string&, const framing::FieldTable*) { return false; }
