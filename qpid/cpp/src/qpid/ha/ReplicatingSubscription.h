@@ -61,8 +61,6 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
 
     // Argument names for consume command.
     static const std::string QPID_REPLICATING_SUBSCRIPTION;
-    static const std::string QPID_HIGH_SEQUENCE_NUMBER;
-    static const std::string QPID_LOW_SEQUENCE_NUMBER;
 
     ReplicatingSubscription(broker::SemanticState* parent,
                             const std::string& name, boost::shared_ptr<broker::Queue> ,
