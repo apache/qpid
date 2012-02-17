@@ -37,7 +37,6 @@ class Settings
   public:
     Settings() : enabled(false) {}
     bool enabled;
-    string status;              // primary, backup, solo
     string clientUrl;
     string brokerUrl;
     string username, password, mechanism;
