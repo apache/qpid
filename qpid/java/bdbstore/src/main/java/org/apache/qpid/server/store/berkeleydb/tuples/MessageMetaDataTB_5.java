@@ -22,7 +22,6 @@ package org.apache.qpid.server.store.berkeleydb.tuples;
 
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
-import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.store.MessageMetaDataType;
 import org.apache.qpid.server.store.StorableMessageMetaData;
@@ -32,31 +31,21 @@ import org.apache.qpid.server.store.StorableMessageMetaData;
  */
 public class MessageMetaDataTB_5 extends MessageMetaDataTB_4
 {
-    private static final Logger _log = Logger.getLogger(MessageMetaDataTB_5.class);
 
     @Override
     public Object entryToObject(TupleInput tupleInput)
     {
-        try
-        {
-            final int bodySize = tupleInput.readInt();
-            byte[] dataAsBytes = new byte[bodySize];
-            tupleInput.readFast(dataAsBytes);
+        final int bodySize = tupleInput.readInt();
+        byte[] dataAsBytes = new byte[bodySize];
+        tupleInput.readFast(dataAsBytes);
 
-            java.nio.ByteBuffer buf = java.nio.ByteBuffer.wrap(dataAsBytes);
-            buf.position(1);
-            buf = buf.slice();
-            MessageMetaDataType type = MessageMetaDataType.values()[dataAsBytes[0]];
-            StorableMessageMetaData metaData = type.getFactory().createMetaData(buf);
+        java.nio.ByteBuffer buf = java.nio.ByteBuffer.wrap(dataAsBytes);
+        buf.position(1);
+        buf = buf.slice();
+        MessageMetaDataType type = MessageMetaDataType.values()[dataAsBytes[0]];
+        StorableMessageMetaData metaData = type.getFactory().createMetaData(buf);
 
-            return metaData;
-        }
-        catch (Exception e)
-        {
-            _log.error("Error converting entry to object: " + e, e);
-            // annoyingly just have to return null since we cannot throw
-            return null;
-        }
+        return metaData;
     }
 
     @Override
