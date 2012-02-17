@@ -38,7 +38,7 @@ class SessionHandler;
 namespace ha {
 
 /**
- * Replicate wiring on a backup broker.
+ * Replicate configuration on a backup broker.
  *
  * Implemented as an exchange that subscribes to receive QMF
  * configuration events from the primary. It configures local queues
