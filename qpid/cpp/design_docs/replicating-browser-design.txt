@@ -91,7 +91,7 @@ when they are dequeued remotely.
 
 On the primary broker incoming mesage transfers are completed only when
 all of the replicating browsers have signaled completion. Thus a completed
-message is guarated to be on the backups.
+message is guaranteed to be on the backups.
 
 ** Replicating wiring
 
@@ -113,6 +113,10 @@ configuration.
   - default is replicate (replicated message on replicated queue)
   - default is don't replicate
   - default is replicate persistent/durable messages.
+
+[GRS: current prototype relies on queue sequence for message identity
+so selectively replicating certain messages on a given queue would be
+challenging. Selectively replicating certain queues however is trivial.]
 
 ** Inconsistent errors
 
@@ -149,3 +153,72 @@ The primary sends pre-existing messages in LIFO order - starting from
 the back of the queue, at the same time clients are consuming from the front.
 The active consumers actually reduce the amount of work to be done, as there's
 no need to replicate messages that are no longer on the queue.
+
+** Current Limitations
+
+(In no particular order at present)
+
+For message replication:
+
+LM1 - The re-synchronisation does not handle the case where a newly elected
+master is *behind* one of the other backups. To address this I propose
+a new event for restting the sequence that the new master would send
+out on detecting that a replicating browser is ahead of it, requesting
+that the replica revert back to a particular sequence number. The
+replica on receiving this event would then discard (i.e. dequeue) all
+the messages ahead of that sequence number and reset the counter to
+correctly sequence any subsequently delivered messages.
+
+LM2 - There is a need to handle wrap-around of the message sequence to avoid
+confusing the resynchronisation where a replica has been disconnected
+for a long time, sufficient for the sequence numbering to wrap around.
+
+LM3 - Transactional changes to queue state are not replicated atomically.
+
+LM4 - Acknowledgements are confirmed to clients before the message has been
+dequeued from replicas or indeed from the local store if that is
+asynchronous.
+
+LM5 - During failover, messages (re)published to a queue before there are
+the requisite number of replication subscriptions established will be
+confirmed to the publisher before they are replicated, leaving them
+vulnerable to a loss of the new master before they are replicated.
+
+For configuration propagation:
+
+LC1 - Bindings aren't propagated, only queues and exchanges.
+
+LC2 - Queue and exchange propagation is entirely asynchronous. There
+are three cases to consider here for queue creation: (a) where queues
+are created through the addressign syntax supported the messaging API,
+they should be recreated if needed on failover and message replication
+if required is dealt with seperately; (b) where queues are created
+using configuration tools by an administrator or by a script they can
+query the backups to verify the config has propagated and commands can
+be re-run if there is a failure before that; (c) where applications
+have more complex programs on which queues/exchanges are created using
+QMF or directly via 0-10 APIs, the completion of the command will not
+guarantee that the command has been carried out on other
+nodes. I.e. case (a) doesn't require anything (apart from LM5 in some
+cases), case (b) can be addressed in a simple manner through tooling
+but case (c) would require changes to the broker to allow client to
+simply determine when the command has fully propagated.
+
+LC3 - Queues that are not in the query response received when a
+replica establishes a propagation subscription but exist locally are
+not deleted. I.e. Deletion of queues/exchanges while a replica is not
+connected will not be propagated. Solution is to delete any queues
+marked for propagation that exist locally but do not show up in the
+query response.
+
+LC4 - It is possible on failover that the new master did not
+previously receive a given QMF event while a backup did (sort of an
+analogous situation to LM1 but without an easy way to detect or remedy
+it).
+
+LC5 - Need richer control over which queues/exchanges are propagated, and
+which are not.
+
+Question: is it possible to miss an event on subscribing for
+configuration propagation? are the initial snapshot and subsequent
+events correctly synchronised?
