@@ -207,7 +207,9 @@ execute_process(COMMAND ${RUBY_EXECUTABLE} -I ${rgen_dir} ${rgen_dir}/generate $
 
   set(mgmt_specs ${AMQP_SPEC_DIR}/management-schema.xml
                  ${CMAKE_CURRENT_SOURCE_DIR}/qpid/acl/management-schema.xml
-                 ${CMAKE_CURRENT_SOURCE_DIR}/qpid/cluster/management-schema.xml)
+                 ${CMAKE_CURRENT_SOURCE_DIR}/qpid/cluster/management-schema.xml
+                 ${CMAKE_CURRENT_SOURCE_DIR}/qpid/ha/management-schema.xml
+  )
   set(mgen_dir ${qpid-cpp_SOURCE_DIR}/managementgen)
   set(regen_mgmt OFF)
   foreach (spec_file ${mgmt_specs})
@@ -594,6 +596,39 @@ if (BUILD_ACL)
              COMPONENT ${QPID_COMPONENT_BROKER})
   endif (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
 endif (BUILD_ACL)
+
+set (ha_default ON)
+option(BUILD_HA "Build Active-Passive HA plugin" ${ha_default})
+if (BUILD_HA)
+    set (ha_SOURCES
+        qpid/ha/Backup.cpp
+        qpid/ha/Backup.h
+        qpid/ha/HaBroker.cpp
+        qpid/ha/HaBroker.h
+        qpid/ha/HaPlugin.cpp
+        qpid/ha/Logging.h
+        qpid/ha/Logging.cpp
+        qpid/ha/Settings.h
+        qpid/ha/QueueReplicator.h
+        qpid/ha/QueueReplicator.cpp
+        qpid/ha/ReplicatingSubscription.h
+        qpid/ha/ReplicatingSubscription.cpp
+        qpid/ha/WiringReplicator.cpp
+        qpid/ha/WiringReplicator.h
+    )
+
+    add_library (ha MODULE ${ha_SOURCES})
+    set_target_properties (ha PROPERTIES PREFIX "")
+    target_link_libraries (ha qpidbroker ${Boost_PROGRAM_OPTIONS_LIBRARY})
+    if (CMAKE_COMPILER_IS_GNUCXX)
+      set_target_properties (ha PROPERTIES
+                             PREFIX ""
+                             LINK_FLAGS -Wl,--no-undefined)
+    endif (CMAKE_COMPILER_IS_GNUCXX)
+    install (TARGETS ha
+             DESTINATION ${QPIDD_MODULE_DIR}
+             COMPONENT ${QPID_COMPONENT_BROKER})
+endif (BUILD_HA)
 
 # Check for optional cluster support requirements
 include (cluster.cmake)
@@ -1014,14 +1049,12 @@ set (qpidbroker_SOURCES
      qpid/broker/LegacyLVQ.cpp
      qpid/broker/MessageDeque.cpp
      qpid/broker/MessageMap.cpp
-     qpid/broker/NodeClone.cpp
      qpid/broker/PriorityQueue.cpp
      qpid/broker/Queue.cpp
      qpid/broker/QueueCleaner.cpp
      qpid/broker/QueueListeners.cpp
      qpid/broker/FifoDistributor.cpp
      qpid/broker/MessageGroupManager.cpp
-     qpid/broker/QueueReplicator.cpp
      qpid/broker/PersistableMessage.cpp
      qpid/broker/Bridge.cpp
      qpid/broker/Connection.cpp
