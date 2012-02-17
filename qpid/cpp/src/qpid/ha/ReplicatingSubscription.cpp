@@ -36,11 +36,13 @@ using namespace std;
 // FIXME aconway 2011-11-28: review all arugment names, prefixes etc.
 // Do we want a common HA prefix?
 const string ReplicatingSubscription::QPID_REPLICATING_SUBSCRIPTION("qpid.replicating-subscription");
-const string ReplicatingSubscription::QPID_HIGH_SEQUENCE_NUMBER("qpid.high_sequence_number");
-const string ReplicatingSubscription::QPID_LOW_SEQUENCE_NUMBER("qpid.low_sequence_number");
+const string ReplicatingSubscription::QPID_HIGH_SEQUENCE_NUMBER("qpid.high-sequence-number");
+const string ReplicatingSubscription::QPID_LOW_SEQUENCE_NUMBER("qpid.low-sequence-number");
 
+namespace {
 const string DOLLAR("$");
 const string INTERNAL("-internal");
+} // namespace
 
 class ReplicationStateInitialiser
 {
@@ -80,15 +82,23 @@ ReplicatingSubscription::Factory::create(
     const string& name,
     Queue::shared_ptr queue,
     bool ack,
-    bool acquire,
+    bool /*acquire*/,
     bool exclusive,
     const string& tag,
     const string& resumeId,
     uint64_t resumeTtl,
     const framing::FieldTable& arguments
 ) {
-    return boost::shared_ptr<broker::SemanticState::ConsumerImpl>(
-        new ReplicatingSubscription(parent, name, queue, ack, acquire, exclusive, tag, resumeId, resumeTtl, arguments));
+    boost::shared_ptr<ReplicatingSubscription> rs;
+    if (arguments.isSet(QPID_REPLICATING_SUBSCRIPTION)) {
+        // FIXME aconway 2011-12-01: ignoring acquire param and setting acquire
+        // false. Should this be done in the caller? Remove from ctor parameters.
+        rs.reset(new ReplicatingSubscription(
+                     parent, name, queue, ack, false, exclusive, tag,
+                     resumeId, resumeTtl, arguments));
+        queue->addObserver(rs);
+    }
+    return rs;
 }
 
 ReplicatingSubscription::ReplicatingSubscription(
@@ -108,12 +118,11 @@ ReplicatingSubscription::ReplicatingSubscription(
     consumer(new DelegatingConsumer(*this))
 {
     QPID_LOG(debug, "HA: Replicating subscription " << name << " to " << queue->getName());
-    // FIXME aconway 2011-11-25: string constants.
-    if (arguments.isSet("qpid.high_sequence_number")) {
-        qpid::framing::SequenceNumber hwm = arguments.getAsInt("qpid.high_sequence_number");
+    if (arguments.isSet(QPID_HIGH_SEQUENCE_NUMBER)) {
+        qpid::framing::SequenceNumber hwm = arguments.getAsInt(QPID_HIGH_SEQUENCE_NUMBER);
         qpid::framing::SequenceNumber lwm;
-        if (arguments.isSet("qpid.low_sequence_number")) {
-            lwm = arguments.getAsInt("qpid.low_sequence_number");
+        if (arguments.isSet(QPID_LOW_SEQUENCE_NUMBER)) {
+            lwm = arguments.getAsInt(QPID_LOW_SEQUENCE_NUMBER);
         } else {
             lwm = hwm;
         }
@@ -159,6 +168,7 @@ void ReplicatingSubscription::enqueued(const QueuedMessage& m)
     m.payload->getIngressCompletion().startCompleter();
 }
 
+// Called with lock held.
 void ReplicatingSubscription::generateDequeueEvent()
 {
     string buf(range.encodedSize(),'\0');
@@ -186,10 +196,13 @@ void ReplicatingSubscription::generateDequeueEvent()
     event->getFrames().append(content);
 
     DeliveryProperties* props = event->getFrames().getHeaders()->get<DeliveryProperties>(true);
-    props->setRoutingKey("dequeue-event");
-
+    props->setRoutingKey(QueueReplicator::DEQUEUE_EVENT_KEY);
     events->deliver(event);
 }
+
+// FIXME aconway 2011-12-02: is it safe to defer dequues to doDispatch() like this?
+// If a queue is drained with no new messages coming on
+// will the messages be dequeued on the backup?
 
 //called after the message has been removed from the deque and under
 //the message lock in the queue
