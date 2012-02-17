@@ -613,6 +613,8 @@ if (BUILD_HA)
         qpid/ha/ReplicatingSubscription.cpp
         qpid/ha/BrokerReplicator.cpp
         qpid/ha/BrokerReplicator.h
+        qpid/ha/ConnectionExcluder.cpp
+        qpid/ha/ConnectionExcluder.h
     )
 
     add_library (ha MODULE ${ha_SOURCES})
