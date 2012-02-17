@@ -213,7 +213,7 @@ void WiringReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionH
     sendQuery(QUEUE, queueName, sessionHandler);
     sendQuery(EXCHANGE, queueName, sessionHandler);
     sendQuery(BINDING, queueName, sessionHandler);
-    QPID_LOG(debug, "Activated wiring replicator")
+    QPID_LOG(debug, "HA: Activated wiring replicator")
 }
 
 void WiringReplicator::route(Deliverable& msg, const string& /*key*/, const framing::FieldTable* headers) {
@@ -227,10 +227,10 @@ void WiringReplicator::route(Deliverable& msg, const string& /*key*/, const fram
 
         if (headers->getAsString(QMF_CONTENT) == EVENT) {
             for (Variant::List::iterator i = list.begin(); i != list.end(); ++i) {
-                Variant::Map& map = list.front().asMap();
+                Variant::Map& map = i->asMap();
                 Variant::Map& schema = map[SCHEMA_ID].asMap();
                 Variant::Map& values = map[VALUES].asMap();
-                QPID_LOG(trace, "HA: Configuration event from primary: " << values);
+                QPID_LOG(trace, "HA: Configuration event: schema=" << schema << " values=" << values);
                 if      (match<EventQueueDeclare>(schema)) doEventQueueDeclare(values);
                 else if (match<EventQueueDelete>(schema)) doEventQueueDelete(values);
                 else if (match<EventExchangeDeclare>(schema)) doEventExchangeDeclare(values);
@@ -246,7 +246,7 @@ void WiringReplicator::route(Deliverable& msg, const string& /*key*/, const fram
                 Variant::Map& values = i->asMap()[VALUES].asMap();
                 framing::FieldTable args;
                 amqp_0_10::translate(values[ARGUMENTS].asMap(), args);
-                QPID_LOG(trace, "HA: Configuration response from primary: " << values);
+                QPID_LOG(trace, "HA: Configuration response type=" << type << " values=" << values);
                 if      (type == QUEUE) doResponseQueue(values);
                 else if (type == EXCHANGE) doResponseExchange(values);
                 else if (type == BINDING) doResponseBind(values);
@@ -284,6 +284,7 @@ void WiringReplicator::doEventQueueDeclare(Variant::Map& values) {
             // re-create from event.
             // Events are always up to date, whereas responses may be
             // out of date.
+            QPID_LOG(debug, "HA: New queue replica " << name);
             startQueueReplicator(result.first);
         } else {
             QPID_LOG(warning, "HA: Replicated queue " << name << " already exists");
@@ -309,7 +310,7 @@ void WiringReplicator::doEventExchangeDeclare(Variant::Map& values) {
         string name = values[EXNAME].asString();
         framing::FieldTable args;
         amqp_0_10::translate(argsMap, args);
-        QPID_LOG(debug, "HA: Creating exchange from event " << name);
+        QPID_LOG(debug, "HA: New exchange replica " << name);
         if (!broker.createExchange(
                 name,
                 values[EXTYPE].asString(),
@@ -320,7 +321,7 @@ void WiringReplicator::doEventExchangeDeclare(Variant::Map& values) {
                 values[RHOST].asString()).second) {
             // FIXME aconway 2011-11-22: should delete pre-exisitng exchange
             // and re-create from event. See comment in doEventQueueDeclare.
-            QPID_LOG(warning, "Replicated exchange " << name << " already exists");
+            QPID_LOG(warning, "HA: Replicated exchange " << name << " already exists");
         }
     }
 }
@@ -348,7 +349,7 @@ void WiringReplicator::doEventBind(Variant::Map& values) {
             framing::FieldTable args;
             amqp_0_10::translate(values[ARGS].asMap(), args);
             string key = values[KEY].asString();
-            QPID_LOG(debug, "Replicated binding exchange=" << exchange->getName()
+            QPID_LOG(debug, "HA: Replicated binding exchange=" << exchange->getName()
                      << " queue=" << queue->getName()
                      << " key=" << key);
             exchange->bind(queue, key, &args);
@@ -363,7 +364,6 @@ void WiringReplicator::doResponseQueue(Variant::Map& values) {
     framing::FieldTable args;
     amqp_0_10::translate(argsMap, args);
     string name(values[NAME].asString());
-    QPID_LOG(debug, "Creating replicated queue " << values[NAME].asString() << " (in catch-up)");
     std::pair<boost::shared_ptr<Queue>, bool> result =
         broker.createQueue(
             name,
@@ -375,11 +375,12 @@ void WiringReplicator::doResponseQueue(Variant::Map& values) {
             ""/*TODO: who is the user?*/,
             ""/*TODO: what should we use as connection id?*/);
     if (result.second) {
+        QPID_LOG(debug, "HA: New queue replica: " << values[NAME] << " (in catch-up)");
         startQueueReplicator(result.first);
     } else {
         // FIXME aconway 2011-11-22: Normal to find queue already
         // exists if we're failing over.
-        QPID_LOG(warning, "Replicated queue " << values[NAME] << " already exists (in catch-up)");
+        QPID_LOG(warning, "HA: Replicated queue " << values[NAME] << " already exists (in catch-up)");
     }
 }
 
@@ -388,7 +389,7 @@ void WiringReplicator::doResponseExchange(Variant::Map& values) {
     if (!replicateLevel(argsMap)) return;
     framing::FieldTable args;
     amqp_0_10::translate(argsMap, args);
-    QPID_LOG(debug, "Creating replicated exchange " << values[NAME].asString() << " (in catch-up)");
+    QPID_LOG(debug, "HA: New exchange replica " << values[NAME] << " (in catch-up)");
     if (!broker.createExchange(
             values[NAME].asString(),
             values[TYPE].asString(),
@@ -397,7 +398,7 @@ void WiringReplicator::doResponseExchange(Variant::Map& values) {
             args,
             ""/*TODO: who is the user?*/,
             ""/*TODO: what should we use as connection id?*/).second) {
-        QPID_LOG(warning, "Replicated exchange " << values[QNAME] << " already exists (in catch-up)");
+        QPID_LOG(warning, "HA: Replicated exchange " << values[QNAME] << " already exists (in catch-up)");
     }
 }
 
