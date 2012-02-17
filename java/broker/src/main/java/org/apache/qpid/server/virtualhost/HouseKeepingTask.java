@@ -60,7 +60,7 @@ public abstract class HouseKeepingTask implements Runnable
         {
             execute();
         }
-        catch (Throwable e)
+        catch (Exception e)
         {
             _logger.warn(this.getClass().getSimpleName() + " throw exception: " + e, e);
         }
