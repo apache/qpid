@@ -88,7 +88,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public int getPropertyListSize()
     {
-        if(_encodedForm != null && (_headers == null || _headers.isClean()))
+        if(useEncodedForm())
         {
             return _encodedForm.length;
         }
@@ -189,7 +189,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void writePropertyListPayload(DataOutput buffer) throws IOException
     {
-        if(_encodedForm != null && (_headers == null || !_headers.isClean()))
+        if(useEncodedForm())
         {
             buffer.write(_encodedForm);
         }
@@ -651,5 +651,11 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
             + ",JMSCorrelationID = " + _correlationId + ",JMSDeliveryMode = " + _deliveryMode + ",JMSExpiration = "
             + _expiration + ",JMSPriority = " + _priority + ",JMSTimestamp = " + _timestamp + ",JMSType = " + _type;
     }
+
+    private boolean useEncodedForm()
+    {
+        return _encodedForm != null && (_headers == null || _headers.isClean());
+    }
+
 
 }
