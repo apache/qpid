@@ -21,7 +21,7 @@
 
   <!-- Monitor and control HA status of a broker. -->
   <class name="HaBroker">
-    <property name="status" type="sstr" desc="HA statu: PRIMARY, BACKUP, SOLO"/>
+    <property name="status" type="sstr" desc="HA status: PRIMARY, BACKUP, SOLO"/>
 
     <method name="setStatus" desc="Set HA status: PRIMARY, BACKUP, SOLO">
       <arg name="status" type="sstr" dir="I"/>

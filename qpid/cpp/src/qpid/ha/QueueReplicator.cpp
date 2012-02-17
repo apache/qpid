@@ -20,6 +20,7 @@
  */
 
 #include "QueueReplicator.h"
+#include "ReplicatingSubscription.h"
 #include "qpid/broker/Bridge.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Link.h"
@@ -63,14 +64,25 @@ QueueReplicator::QueueReplicator(boost::shared_ptr<Queue> q, boost::shared_ptr<L
 
 QueueReplicator::~QueueReplicator() {}
 
+// NB: This is called back ina broker connection thread when the
+// bridge is created.
 void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler) {
+    // No lock needed, no mutable member variables are used.
     framing::AMQP_ServerProxy peer(sessionHandler.out);
     const qmf::org::apache::qpid::broker::ArgsLinkBridge& args(bridge.getArgs());
-    peer.getMessage().subscribe(args.i_src, args.i_dest, args.i_sync ? 0 : 1, 0, false, "", 0, framing::FieldTable());
+    framing::FieldTable settings;
+    // FIXME aconway 2011-11-28: string constants.
+    settings.setInt(ReplicatingSubscription::QPID_REPLICATING_SUBSCRIPTION, 1);
+    // FIXME aconway 2011-11-28: inconsistent use of _ vs. -
+    settings.setInt(ReplicatingSubscription::QPID_HIGH_SEQUENCE_NUMBER, queue->getPosition());
+    qpid::framing::SequenceNumber oldest;
+    if (queue->getOldest(oldest))
+        settings.setInt(ReplicatingSubscription::QPID_LOW_SEQUENCE_NUMBER, oldest);
+
+    peer.getMessage().subscribe(args.i_src, args.i_dest, args.i_sync ? 0 : 1, 0, false, "", 0, settings);
     peer.getMessage().flow(getName(), 0, 0xFFFFFFFF);
     peer.getMessage().flow(getName(), 1, 0xFFFFFFFF);
     QPID_LOG(debug, "Activated route from queue " << args.i_src << " to " << args.i_dest);
-
 }
 
 
@@ -117,39 +129,13 @@ void QueueReplicator::route(Deliverable& msg, const std::string& key, const qpid
     }
 }
 
-bool QueueReplicator::isReplicatingLink(const std::string& name)
-{
-    return name.find(REPLICATOR) == 0;
-}
-
-bool QueueReplicator::initReplicationSettings(const std::string& target, QueueRegistry& queues, qpid::framing::FieldTable& settings)
-{
-    if (isReplicatingLink(target)) {
-        std::string queueName = target.substr(REPLICATOR.size());
-        boost::shared_ptr<Queue> queue = queues.find(queueName);
-        if (queue) {
-            settings.setInt("qpid.replicating-subscription", 1);
-            settings.setInt("qpid.high_sequence_number", queue->getPosition());
-            qpid::framing::SequenceNumber oldest;
-            if (queue->getOldest(oldest)) {
-                settings.setInt("qpid.low_sequence_number", oldest);
-            }
-        }
-        return true;
-    } else {
-        return false;
-    }
-}
-
 bool QueueReplicator::bind(boost::shared_ptr<Queue>, const std::string&, const qpid::framing::FieldTable*) { return false; }
 bool QueueReplicator::unbind(boost::shared_ptr<Queue>, const std::string&, const qpid::framing::FieldTable*) { return false; }
 bool QueueReplicator::isBound(boost::shared_ptr<Queue>, const std::string* const, const qpid::framing::FieldTable* const) { return false; }
 
-const std::string QueueReplicator::typeName("queue-replicator");
+// FIXME aconway 2011-11-28: rationalise string constants.
+static const std::string TYPE_NAME("qpid.queue-replicator");
 
-std::string QueueReplicator::getType() const
-{
-    return typeName;
-}
+std::string QueueReplicator::getType() const { return TYPE_NAME; }
 
 }} // namespace qpid::broker
