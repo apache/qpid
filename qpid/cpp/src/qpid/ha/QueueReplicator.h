@@ -71,11 +71,11 @@ class QueueReplicator : public broker::Exchange,
     void initializeBridge(broker::Bridge& bridge, broker::SessionHandler& sessionHandler);
     void dequeue(framing::SequenceNumber, const sys::Mutex::ScopedLock&);
 
+    std::string logPrefix;
     sys::Mutex lock;
     boost::shared_ptr<broker::Queue> queue;
     boost::shared_ptr<broker::Link> link;
     boost::shared_ptr<QueueReplicator> self;
-  friend std::ostream& operator<<(std::ostream&, const QueueReplicator&);
 };
 
 }} // namespace qpid::ha
