@@ -542,6 +542,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/Consumer.h \
   qpid/broker/Credit.h \
   qpid/broker/Credit.cpp \
+  qpid/broker/ConsumerFactory.h \
   qpid/broker/Daemon.cpp \
   qpid/broker/Daemon.h \
   qpid/broker/Deliverable.h \
@@ -629,8 +630,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/QueuedMessage.h \
   qpid/broker/QueueFlowLimit.h \
   qpid/broker/QueueFlowLimit.cpp \
-  qpid/broker/ReplicatingSubscription.h \
-  qpid/broker/ReplicatingSubscription.cpp \
   qpid/broker/RateFlowcontrol.h \
   qpid/broker/RecoverableConfig.h \
   qpid/broker/RecoverableExchange.h \
