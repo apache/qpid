@@ -54,11 +54,20 @@ class HaBroker : public management::Manageable
         uint32_t methodId, management::Args& args, std::string& text);
 
   private:
-    sys::Mutex lock;
+    void setClientUrl(const Url&, const sys::Mutex::ScopedLock&);
+    void setBrokerUrl(const Url&, const sys::Mutex::ScopedLock&);
+    void updateClientUrl(const sys::Mutex::ScopedLock&);
+    bool isPrimary(const sys::Mutex::ScopedLock&) { return !backup.get(); }
+    std::vector<Url> getKnownBrokers() const;
+
     broker::Broker& broker;
-    Settings settings;
+    const Settings settings;
+
+    sys::Mutex lock;
     std::auto_ptr<Backup> backup;
     qmf::org::apache::qpid::ha::HaBroker* mgmtObject;
+    Url clientUrl, brokerUrl;
+    std::vector<Url> knownBrokers;
 };
 }} // namespace qpid::ha
 
