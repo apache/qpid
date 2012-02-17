@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -88,7 +88,7 @@ class VariantImpl
     bool isEqualTo(VariantImpl&) const;
     bool isEquivalentTo(VariantImpl&) const;
 
-    static VariantImpl* create(const Variant&);    
+    static VariantImpl* create(const Variant&);
   private:
     const VariantType type;
     union {
@@ -150,7 +150,7 @@ VariantImpl::VariantImpl(const Variant::Map& m) : type(VAR_MAP) { value.v = new 
 VariantImpl::VariantImpl(const Variant::List& l) : type(VAR_LIST) { value.v = new Variant::List(l); }
 VariantImpl::VariantImpl(const Uuid& u) : type(VAR_UUID) { value.v = new Uuid(u); }
 
-VariantImpl::~VariantImpl() { 
+VariantImpl::~VariantImpl() {
     switch (type) {
       case VAR_STRING:
         delete reinterpret_cast<std::string*>(value.v);
@@ -173,7 +173,7 @@ VariantType VariantImpl::getType() const { return type; }
 
 namespace {
 
-bool same_char(char a, char b) 
+bool same_char(char a, char b)
 {
     return toupper(a) == toupper(b);
 }
@@ -191,7 +191,7 @@ bool toBool(const std::string& s)
     if (caseInsensitiveMatch(s, TRUE)) return true;
     if (caseInsensitiveMatch(s, FALSE)) return false;
     try { return boost::lexical_cast<int>(s); } catch(const boost::bad_lexical_cast&) {}
-    throw InvalidConversion(QPID_MSG("Cannot convert " << s << " to bool"));    
+    throw InvalidConversion(QPID_MSG("Cannot convert " << s << " to bool"));
 }
 
 template <class T> std::string toString(const T& t)
@@ -531,9 +531,9 @@ bool VariantImpl::isEqualTo(VariantImpl& other) const
           case VAR_INT64: return value.i64 == other.value.i64;
           case VAR_DOUBLE: return value.d == other.value.d;
           case VAR_FLOAT: return value.f == other.value.f;
-          case VAR_STRING: return *reinterpret_cast<std::string*>(value.v) 
+          case VAR_STRING: return *reinterpret_cast<std::string*>(value.v)
                 == *reinterpret_cast<std::string*>(other.value.v);
-          case VAR_UUID: return *reinterpret_cast<Uuid*>(value.v) 
+          case VAR_UUID: return *reinterpret_cast<Uuid*>(value.v)
                 == *reinterpret_cast<Uuid*>(other.value.v);
           case VAR_LIST: return equal(asList(), other.asList());
           case VAR_MAP: return equal(asMap(), other.asMap());
@@ -616,7 +616,25 @@ std::string getTypeName(VariantType type)
     return "<unknown>";//should never happen
 }
 
-VariantImpl* VariantImpl::create(const Variant& v) 
+bool isIntegerType(VariantType type)
+{
+    switch (type) {
+      case VAR_BOOL:
+      case VAR_UINT8:
+      case VAR_UINT16:
+      case VAR_UINT32:
+      case VAR_UINT64:
+      case VAR_INT8:
+      case VAR_INT16:
+      case VAR_INT32:
+      case VAR_INT64:
+        return true;
+      default:
+        return false;
+    }
+}
+
+VariantImpl* VariantImpl::create(const Variant& v)
 {
     switch (v.getType()) {
       case VAR_BOOL: return new VariantImpl(v.asBool());
@@ -815,9 +833,9 @@ const Variant::List& Variant::asList() const { if (!impl) throw InvalidConversio
 Variant::List& Variant::asList() { if (!impl) throw InvalidConversion("Can't convert VOID to LIST"); return impl->asList(); }
 const std::string& Variant::getString() const { if (!impl) throw InvalidConversion("Can't convert VOID to STRING"); return impl->getString(); }
 std::string& Variant::getString() { if (!impl) throw InvalidConversion("Can't convert VOID to STRING"); return impl->getString(); }
-void Variant::setEncoding(const std::string& s) { 
+void Variant::setEncoding(const std::string& s) {
     if (!impl) impl = new VariantImpl();
-    impl->setEncoding(s); 
+    impl->setEncoding(s);
 }
 const std::string& Variant::getEncoding() const { return impl ? impl->getEncoding() : EMPTY; }
 
@@ -873,7 +891,7 @@ std::ostream& operator<<(std::ostream& out, const Variant& value)
         out << value.asString();
         break;
     }
-    return out;    
+    return out;
 }
 
 bool operator==(const Variant& a, const Variant& b)
