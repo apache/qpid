@@ -118,8 +118,6 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     peer.getMessage().flow(getName(), 0, 0xFFFFFFFF);
     peer.getMessage().flow(getName(), 1, 0xFFFFFFFF);
     QPID_LOG(debug, logPrefix << "Activated bridge from " << args.i_src << " to " << args.i_dest);
-    // Reset self reference so this will be deleted when all external refs are gone.
-    self.reset();
 }
 
 namespace {
@@ -150,13 +148,13 @@ void QueueReplicator::route(Deliverable& msg, const std::string& key, const Fiel
     sys::Mutex::ScopedLock l(lock);
     if (key == DEQUEUE_EVENT_KEY) {
         SequenceSet dequeues = decodeContent<SequenceSet>(msg.getMessage());
-        QPID_LOG(trace, logPrefix << "Received dequeues: " << dequeues);
+        QPID_LOG(trace, logPrefix << "Dequeue update: " << dequeues);
         //TODO: should be able to optimise the following
         for (SequenceSet::iterator i = dequeues.begin(); i != dequeues.end(); i++)
             dequeue(*i, l);
     } else if (key == POSITION_EVENT_KEY) {
         SequenceNumber position = decodeContent<SequenceNumber>(msg.getMessage());
-        QPID_LOG(trace, logPrefix << "Advance position: from " << queue->getPosition()
+        QPID_LOG(trace, logPrefix << "Position update: from " << queue->getPosition()
                  << " to " << position);
         assert(queue->getPosition() <= position);
          //TODO aconway 2011-12-14: Optimize this?
