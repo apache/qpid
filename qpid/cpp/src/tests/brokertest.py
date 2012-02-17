@@ -76,7 +76,7 @@ def error_line(filename, n=1):
     except: return ""
     return ":\n" + "".join(result)
 
-def retry(function, timeout=1, delay=.01):
+def retry(function, timeout=10, delay=.01):
     """Call function until it returns True or timeout expires.
     Double the delay for each retry. Return True if function
     returns true, False if timeout expires."""
@@ -526,7 +526,7 @@ class BrokerTest(TestCase):
         retry(test, timeout, delay)
         self.assertEqual(expect_contents, self.browse(session, queue, 0, transform=transform))
 
-def join(thread, timeout=1):
+def join(thread, timeout=10):
     thread.join(timeout)
     if thread.isAlive(): raise Exception("Timed out joining thread %s"%thread)
 
