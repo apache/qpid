@@ -133,7 +133,7 @@ namespace broker {
          * bridges won't therefore pull or push any messages.
          */
         void setPassive(bool);
-
+        bool isPassive() { return passive; }
 
         /** Iterate over each link in the registry. Used for cluster updates. */
         void eachLink(boost::function<void(boost::shared_ptr<Link>)> f);

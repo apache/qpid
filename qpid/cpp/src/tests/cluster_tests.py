@@ -311,6 +311,7 @@ acl deny all all
         client was attached.
         """
         args=["--mgmt-pub-interval=1","--log-enable=trace+:management"]
+
         # First broker will be killed.
         cluster0 = self.cluster(1, args=args)
         cluster1 = self.cluster(1, args=args)
@@ -346,9 +347,11 @@ acl deny all all
 
         # Force a change of elder
         cluster0.start()
+        for b in cluster0: b.ready()
         cluster0[0].expect=EXPECT_EXIT_FAIL # About to die.
         cluster0[0].kill()
         time.sleep(2) # Allow a management interval to pass.
+        for b in cluster0[1:]: b.ready()
         # Verify logs are consistent
         cluster_test_logs.verify_logs()
 

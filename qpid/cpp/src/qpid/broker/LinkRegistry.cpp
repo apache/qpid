@@ -107,7 +107,6 @@ pair<Link::shared_ptr, bool> LinkRegistry::declare(const string&  host,
         link = Link::shared_ptr (new Link (this, store, host, port, transport, durable,
                                            authMechanism, username, password,
                                            broker, parent));
-        if (passive) link->setPassive(true);
         links[key] = link;
         return std::pair<Link::shared_ptr, bool>(link, true);
     }

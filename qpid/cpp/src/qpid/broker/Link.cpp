@@ -99,8 +99,12 @@ Link::Link(LinkRegistry*  _links,
             agent->addObject(mgmtObject, 0, durable);
         }
     }
-    setStateLH(STATE_WAITING);
-    startConnectionLH();
+    if (links->isPassive()) {
+        setStateLH(STATE_PASSIVE);
+    } else {
+        setStateLH(STATE_WAITING);
+        startConnectionLH();
+    }
     broker->getTimer().add(timerTask);
 }
 
@@ -155,6 +159,7 @@ void Link::startConnectionLH ()
 
 void Link::established(Connection* c)
 {
+    if (state == STATE_PASSIVE) return;
     stringstream addr;
     addr << host << ":" << port;
     QPID_LOG (info, "Inter-broker link established to " << addr.str());
@@ -182,7 +187,7 @@ void Link::setUrl(const Url& u) {
 
 void Link::opened() {
     Mutex::ScopedLock mutex(lock);
-    assert(connection);
+    if (!connection) return;
     // Get default URL from known-hosts if not already set
     if (url.empty()) {
         const std::vector<Url>& known = connection->getKnownHosts();
@@ -216,7 +221,7 @@ void Link::closed(int, std::string text)
     }
     active.clear();
 
-    if (state != STATE_FAILED)
+    if (state != STATE_FAILED && state != STATE_PASSIVE)
     {
         setStateLH(STATE_WAITING);
         if (!hideManagement())
@@ -371,6 +376,7 @@ void Link::reconnectLH(const Address& a)
 }
 
 bool Link::tryFailoverLH() {
+    assert(state == STATE_WAITING);
     if (reconnectNext >= url.size()) reconnectNext = 0;
     if (url.empty()) return false;
     Address next = url[reconnectNext++];
@@ -530,7 +536,8 @@ void Link::setPassive(bool passive)
         if (state == STATE_PASSIVE) {
             setStateLH(STATE_WAITING);
         } else {
-            QPID_LOG(warning, "Ignoring attempt to activate non-passive link");
+            QPID_LOG(warning, "Ignoring attempt to activate non-passive link "
+                     << host << ":" << port);
         }
     }
 }
