@@ -36,6 +36,10 @@ class QueuedMessage;
 class OwnershipToken;
 }
 
+namespace framing {
+class Buffer;
+}
+
 namespace ha {
 
 /**
@@ -44,7 +48,8 @@ namespace ha {
  * Runs on the primary. Delays completion of messages till the backup
  * has acknowledged, informs backup of locally dequeued messages.
  *
- * THREAD UNSAFE: used only in broker connection thread.
+ * THREAD SAFE: Used as a consume in subscription's connection
+ * thread, and as a QueueObserver in arbitrary connection threads.
  */
 class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
                                 public broker::QueueObserver
@@ -85,8 +90,12 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
     boost::shared_ptr<broker::Queue> events;
     boost::shared_ptr<broker::Consumer> consumer;
     qpid::framing::SequenceSet dequeues;
+    framing::SequenceNumber backupPosition;
 
-    void generateDequeueEvent();
+    void sendDequeueEvent(const sys::Mutex::ScopedLock&);
+    void sendPositionEvent(framing::SequenceNumber, const sys::Mutex::ScopedLock&);
+    void sendEvent(const std::string& key, framing::Buffer&,
+                   const sys::Mutex::ScopedLock&);
     class DelegatingConsumer : public Consumer
     {
       public:
