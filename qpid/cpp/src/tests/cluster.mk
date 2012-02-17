@@ -61,25 +61,15 @@ if HAVE_LIBCPG
 # You should do "newgrp ais" before running the tests to run these.
 # 
 
-# FIXME aconway 2011-11-14: Disable cluster tests on qpid-3603 branch
-# Some cluster tests are known to fail on this branch.
-# Immediate priority is to develop then new HA solution,
-# Cluster will brought up to date when thats done.
-#
-# gsim: its due to the keeping of deleted messages on the deque until they can be popped off either end
-# gsim: that is state that isn't available to new nodes of course
-# gsim: i.e. if you dequeue a message from the middle of the deque
-# gsim: it will not be on updatee but will be hidden on original node(s)
-# gsim: and is needed for the direct indexing
 
-
-# TESTS +=					\
-# 	run_cluster_test			\
-# 	cluster_read_credit			\
-# 	test_watchdog				\
-# 	run_cluster_tests			\
-# 	federated_cluster_test			\
-# 	clustered_replication_test
+# ais_check checks pre-requisites for cluster tests and runs them if ok.
+TESTS +=					\
+	run_cluster_test			\
+	cluster_read_credit			\
+	test_watchdog				\
+	run_cluster_tests			\
+	federated_cluster_test			\
+	clustered_replication_test
 
 # Clean up after cluster_test and start_cluster
 CLEANFILES += cluster_test.acl cluster.ports
