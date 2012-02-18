@@ -169,8 +169,8 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
                 _serverSocket = socketFactory.createServerSocket();
             }
 
-            _serverSocket.bind(address);
             _serverSocket.setReuseAddress(true);
+            _serverSocket.bind(address);
 
 
         }
