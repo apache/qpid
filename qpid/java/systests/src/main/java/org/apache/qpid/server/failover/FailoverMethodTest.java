@@ -37,10 +37,9 @@ import java.util.concurrent.TimeUnit;
 
 public class FailoverMethodTest extends QpidBrokerTestCase implements ExceptionListener
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FailoverMethodTest.class);
     private CountDownLatch _failoverComplete = new CountDownLatch(1);
-    protected static final Logger _logger = LoggerFactory.getLogger(FailoverMethodTest.class);
-
-
+    private final int _freePortWithNoBroker = findFreePort();
 
     /**
      * Test that the round robin method has the correct delays.
@@ -53,8 +52,8 @@ public class FailoverMethodTest extends QpidBrokerTestCase implements ExceptionL
         //note: The first broker has no connect delay and the default 1 retry
         //        while the tcp:localhost broker has 3 retries with a 2s connect delay
         String connectionString = "amqp://guest:guest@/test?brokerlist=" +
-                                  "'tcp://:" + getPort() +
-                                  ";tcp://localhost:5670?connectdelay='2000',retries='3''";
+                                  "'tcp://localhost:" + getPort() +
+                                  ";tcp://localhost:" + _freePortWithNoBroker + "?connectdelay='2000',retries='3''";
 
         AMQConnectionURL url = new AMQConnectionURL(connectionString);
 
@@ -65,7 +64,9 @@ public class FailoverMethodTest extends QpidBrokerTestCase implements ExceptionL
 
             connection.setExceptionListener(this);
 
+            LOGGER.debug("Stopping broker");
             stopBroker();
+            LOGGER.debug("Stopped broker");
 
             _failoverComplete.await(30, TimeUnit.SECONDS);
             assertEquals("failoverLatch was not decremented in given timeframe",
@@ -109,7 +110,9 @@ public class FailoverMethodTest extends QpidBrokerTestCase implements ExceptionL
 
             connection.setExceptionListener(this);
 
+            LOGGER.debug("Stopping broker");
             stopBroker();
+            LOGGER.debug("Stopped broker");
 
             _failoverComplete.await(30, TimeUnit.SECONDS);
             assertEquals("failoverLatch was not decremented in given timeframe",
@@ -138,18 +141,6 @@ public class FailoverMethodTest extends QpidBrokerTestCase implements ExceptionL
         }
     }
 
-    public void onException(JMSException e)
-    {
-        if (e.getLinkedException() instanceof AMQDisconnectedException || e.getLinkedException() instanceof AMQConnectionClosedException)
-        {
-            _logger.debug("Received AMQDisconnectedException");
-            _failoverComplete.countDown();
-        }
-        else
-        {
-            _logger.error("Unexpected underlying exception", e.getLinkedException());
-        }
-    }
 
     /**
      * Test that setting 'nofailover' as the failover policy does not result in
@@ -200,12 +191,10 @@ public class FailoverMethodTest extends QpidBrokerTestCase implements ExceptionL
                     }
                     catch (Exception e)
                     {
-                        System.err.println(e.getMessage());
-                        e.printStackTrace();
+                        LOGGER.error("Exception whilst starting broker", e);
                     }
                 }
             });
-
 
             brokerStart.start();
             long start = System.currentTimeMillis();
@@ -260,11 +249,17 @@ public class FailoverMethodTest extends QpidBrokerTestCase implements ExceptionL
         }
     }
 
-    public void stopBroker(int port) throws Exception
+    @Override
+    public void onException(JMSException e)
     {
-        if (isBrokerPresent(port))
+        if (e.getLinkedException() instanceof AMQDisconnectedException || e.getLinkedException() instanceof AMQConnectionClosedException)
         {
-            super.stopBroker(port);
+            LOGGER.debug("Received AMQDisconnectedException");
+            _failoverComplete.countDown();
+        }
+        else
+        {
+            LOGGER.error("Unexpected underlying exception", e.getLinkedException());
         }
     }
 
