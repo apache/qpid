@@ -3747,7 +3747,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 	              <entry>qpid.transport</entry>
 	              <entry>string</entry>
 	              <entry>org.apache.qpid.transport.network.io.IoNetworkTransport</entry>
-                      <entry><para>The transport implementation to be used.</para><para>A user could specify an alternative transport mechanism that implements the <varname>org.apache.qpid.transport.network.NetworkTransport</varname> interface.</para></entry>
+                      <entry><para>The transport implementation to be used.</para><para>A user could specify an alternative transport mechanism that implements the interface <varname>org.apache.qpid.transport.network.OutgoingNetworkTransport</varname>.</para></entry>
                     </row>
 	            <row>
 	              <entry>qpid.sync_op_timeout</entry>
