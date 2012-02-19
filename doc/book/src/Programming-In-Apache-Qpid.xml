@@ -3580,7 +3580,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 	              <entry>qpid.heartbeat</entry>
 	              <entry>int</entry>
 	              <entry>120 (secs)</entry>
-                  <entry>The heartbeat interval in seconds. Two consective misssed heartbeats will result in the connection timing out.<para>This could also be set per connection as well (see connection paramters).</para></entry>
+                  <entry>The heartbeat interval in seconds. Two consective misssed heartbeats will result in the connection timing out.<para>This can also be set per connection using the <link linkend="section-jms-connection-url">Connection URL</link> options.</para></entry>
                 </row>
 
 	            <row>
@@ -3624,7 +3624,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 	              <entry>qpid.use_legacy_map_message</entry>
 	              <entry>boolean</entry>
 	              <entry>false</entry>
-                  <entry><para>If set will use the old map message encoding. By default the Map messages are encoded using the 0-10 map encoding.</para><para>This could also be set per connection as well (see connection paramters).</para></entry>
+                  <entry><para>If set will use the old map message encoding. By default the Map messages are encoded using the 0-10 map encoding.</para><para>This can also be set per connection using the <link linkend="section-jms-connection-url">Connection URL</link> options.</para></entry>
                 </row>
 
                 <row>
@@ -3674,7 +3674,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 	              <entry>sync_ack</entry>
 	              <entry>boolean</entry>
 	              <entry>false</entry>
-                  <entry><para>If set, each message will be acknowledged synchronously. When using AUTO_ACK mode, you need to set this to "true", in order to get the correct behaviour as described by the JMS spec.</para><para>This is set to false by default for performance reasons, therefore by default AUTO_ACK behaves similar to DUPS_OK.</para><para>This could also be set per connection as well (see connection paramters).</para></entry>
+                  <entry><para>If set, each message will be acknowledged synchronously. When using AUTO_ACK mode, you need to set this to "true", in order to get the correct behaviour as described by the JMS spec.</para><para>This is set to false by default for performance reasons, therefore by default AUTO_ACK behaves similar to DUPS_OK.</para><para>This can also be set per connection using the <link linkend="section-jms-connection-url">Connection URL</link> options.</para></entry>
                 </row>
               </tbody>
             </tgroup>
@@ -3696,7 +3696,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 	              <entry>sync_publish</entry>
 	              <entry>string</entry>
 	              <entry>"" (disabled)</entry>
-                  <entry><para>If one of {persistent|all} is set then persistent messages or all messages will be sent synchronously.</para><para>This could also be set per connection as well (see connection paramters).</para></entry>
+                  <entry><para>If one of {persistent|all} is set then persistent messages or all messages will be sent synchronously.</para><para>This can also be set per connection using the <link linkend="section-jms-connection-url">Connection URL</link> options.</para></entry>
                 </row>
               </tbody>
             </tgroup>
@@ -3781,21 +3781,21 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 	              <entry>qpid.sasl_mechs</entry>
 	              <entry>string</entry>
 	              <entry>PLAIN</entry>
-                  <entry><para>The SASL mechanism to be used. More than one could be specified as a comma separated list.</para><para>We currently support the following mechanisms {PLAIN | GSSAPI | EXTERNAL}.</para><para>This could also be set per connection as well (see connection paramters).</para></entry>
+                  <entry><para>The SASL mechanism to be used. More than one could be specified as a comma separated list.</para><para>We currently support the following mechanisms {PLAIN | GSSAPI | EXTERNAL}.</para><para>This can also be set per connection using the <link linkend="section-jms-connection-url">Connection URL</link> options.</para></entry>
                 </row>
 
 	            <row>
 	              <entry>qpid.sasl_protocol</entry>
 	              <entry>string</entry>
 	              <entry>AMQP</entry>
-                  <entry><para>When using GSSAPI as the SASL mechanism, <varname>sasl_protocol</varname> must be set to the principal for the qpidd broker, e.g. <varname>qpidd</varname>.</para><para>This could also be set per connection as well (see connection paramters).</para></entry>
+                  <entry><para>When using GSSAPI as the SASL mechanism, <varname>sasl_protocol</varname> must be set to the principal for the qpidd broker, e.g. <varname>qpidd</varname>.</para><para>This can also be set per connection using the <link linkend="section-jms-connection-url">Connection URL</link> options.</para></entry>
                 </row>
 
 	            <row>
 	              <entry>qpid.sasl_server_name</entry>
 	              <entry>string</entry>
 	              <entry>localhost</entry>
-                  <entry><para>When using GSSAPI as the SASL mechanism, <varname>sasl_server</varname> must be set to the host for the SASL server, e.g. <varname>example.com</varname>.</para><para>This could also be set per connection as well (see connection paramters).</para></entry>
+                  <entry><para>When using GSSAPI as the SASL mechanism, <varname>sasl_server</varname> must be set to the host for the SASL server, e.g. <varname>example.com</varname>.</para><para>This can also be set per connection using the <link linkend="section-jms-connection-url">Connection URL</link> options.</para></entry>
                 </row>
               </tbody>
             </tgroup>
@@ -3895,28 +3895,28 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 	              <entry>javax.net.ssl.keyStore</entry>
 	              <entry>string</entry>
 	              <entry>jvm default</entry>
-                  <entry><para>Specifies the key store path.</para><para>This could also be set per connection as well (see connection paramters).</para></entry>
+                  <entry><para>Specifies the key store path.</para><para>This can also be set per connection using the <link linkend="section-jms-connection-url">Connection URL</link> options.</para></entry>
                 </row>
 
                 <row>
 	              <entry>javax.net.ssl.keyStorePassword</entry>
 	              <entry>string</entry>
 	              <entry>jvm default</entry>
-                  <entry><para>Specifies the key store password.</para><para>This could also be set per connection as well (see connection paramters).</para></entry>
+                  <entry><para>Specifies the key store password.</para><para>This can also be set per connection using the <link linkend="section-jms-connection-url">Connection URL</link> options.</para></entry>
                 </row>
 
 	            <row>
 	              <entry>javax.net.ssl.trustStore</entry>
 	              <entry>string</entry>
 	              <entry>jvm default</entry>
-                  <entry><para>Specifies the trust store path.</para><para>This could also be set per connection as well (see connection paramters).</para></entry>
+                  <entry><para>Specifies the trust store path.</para><para>This can also be set per connection using the <link linkend="section-jms-connection-url">Connection URL</link> options.</para></entry>
                 </row>
 
                 <row>
 	              <entry>javax.net.ssl.trustStorePassword</entry>
 	              <entry>string</entry>
 	              <entry>jvm default</entry>
-                  <entry><para>Specifies the trust store password.</para><para>This could also be set per connection as well (see connection paramters).</para></entry>
+                  <entry><para>Specifies the trust store password.</para><para>This can also be set per connection using the <link linkend="section-jms-connection-url">Connection URL</link> options.</para></entry>
                 </row>
               </tbody>
             </tgroup>
