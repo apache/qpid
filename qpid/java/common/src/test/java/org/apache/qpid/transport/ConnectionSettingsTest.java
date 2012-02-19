@@ -101,6 +101,38 @@ public class ConnectionSettingsTest extends QpidTestCase
         systemPropertyOverrideForTrustFactoryAlgorithm(ClientProperties.QPID_SSL_TRUST_STORE_CERT_TYPE_PROP_NAME, algorithmName);
     }
 
+    public void testSendBufferSizeDefault()
+    {
+        assertEquals("unexpected default for buffer size", 65535, _conConnectionSettings.getWriteBufferSize());
+    }
+
+    public void testSendBufferSizeOverridden()
+    {
+        systemPropertyOverrideForSocketBufferSize(ClientProperties.SEND_BUFFER_SIZE_PROP_NAME, 1024, false);
+    }
+
+    @SuppressWarnings("deprecation")
+    public void testtestSendBufferSizeOverriddenLegacyOverridden()
+    {
+        systemPropertyOverrideForSocketBufferSize(ClientProperties.LEGACY_SEND_BUFFER_SIZE_PROP_NAME, 1024, false);
+    }
+
+    public void testReceiveBufferSizeDefault()
+    {
+        assertEquals("unexpected default for buffer size", 65535, _conConnectionSettings.getReadBufferSize());
+    }
+
+    public void testReceiveBufferSizeOverridden()
+    {
+        systemPropertyOverrideForSocketBufferSize(ClientProperties.RECEIVE_BUFFER_SIZE_PROP_NAME, 1024, true);
+    }
+
+    @SuppressWarnings("deprecation")
+    public void testtestReceiveBufferSizeOverriddenLegacyOverridden()
+    {
+        systemPropertyOverrideForSocketBufferSize(ClientProperties.LEGACY_RECEIVE_BUFFER_SIZE_PROP_NAME, 1024, true);
+    }
+
     private void systemPropertyOverrideForTcpDelay(String propertyName, boolean value)
     {
         resetSystemProperty(propertyName, String.valueOf(value));
@@ -117,6 +149,20 @@ public class ConnectionSettingsTest extends QpidTestCase
     {
         resetSystemProperty(propertyName, value);
         assertEquals(value, _conConnectionSettings.getTrustManagerFactoryAlgorithm());
+    }
+
+
+    private void systemPropertyOverrideForSocketBufferSize(String propertyName, int value, boolean read)
+    {
+        resetSystemProperty(propertyName, String.valueOf(value));
+        if(read)
+        {
+            assertEquals("unexpected value for receive buffer", value, _conConnectionSettings.getReadBufferSize());
+        }
+        else
+        {
+            assertEquals("unexpected value for send buffer", value, _conConnectionSettings.getWriteBufferSize());
+        }
     }
 
     private void resetSystemProperty(String propertyName, String value)
