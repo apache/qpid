@@ -3017,10 +3017,15 @@ destination.topicExchange = amq.topic
 		  maxprefetch
 	        </entry>
 	        <entry>
-		  --
+                integer
 	        </entry>
 	        <entry>
-		  The maximum number of pre-fetched messages per destination.
+                <para>
+                    The maximum number of pre-fetched messages per consumer. If not specified, default value of 500 is used.
+                </para>
+                <para>
+                    Note: You can also set the default per-consumer prefetch value on a client-wide basis by configuring the client using <link linkend="client-jvm-properties">Java system properties.</link>
+                </para>
 	        </entry>
 	      </row>
 	      <row>
@@ -3550,7 +3555,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 
 <para>Some of these config options are available at all three levels (Ex. <varname>max_prefetch</varname>), while others are available only at JVM or connection level.</para>
 
-      <section>
+      <section id="client-jvm-properties">
         <title>Qpid JVM Arguments</title>
 
           <table >
@@ -3648,7 +3653,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 	              <entry>max_prefetch</entry>
 	              <entry>int</entry>
 	              <entry>500</entry>
-                  <entry>Maximum number of messages to credits. <para>This could also be set per connection (see connection paramters) or per destination (see the <varname>capacity</varname> option under link properties in addressing).</para></entry>
+                  <entry>Maximum number of pre-fetched messages per consumer. <para>This can also be defaulted for consumers created on a particular connection using the <link linkend="section-jms-connection-url">Connection URL</link> options, or per destination (see the <varname>capacity</varname> option under link properties in addressing)</para></entry>
                 </row>
 
 	            <row>
