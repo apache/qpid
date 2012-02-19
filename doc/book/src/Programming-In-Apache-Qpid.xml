@@ -3340,7 +3340,7 @@ amqp://guest:guest@/test?failover='roundrobin?cyclecount='2''
 	        </entry>
 	        <entry>
 		  If <literal>tcp_nodelay='true'</literal>, TCP packet
-		  batching is disabled.
+		  batching is disabled. Defaults to true since Qpid 0.14.
 	        </entry>
 	      </row>
 	    </tbody>
@@ -3756,11 +3756,15 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
                       <entry><para>The length of time (in milliseconds) to wait for a synchronous operation to complete.</para><para>For compatibility with older clients, the synonym <varname>amqj.default_syncwrite_timeout</varname> is supported.</para></entry>
                     </row>
 	            <row>
-	              <entry>amqj.tcp_nodelay</entry>
-	              <entry>boolean</entry>
-	              <entry>false</entry>
-                      <entry><para>Sets the TCP_NODELAY property of the underlying socket.</para><para>This could also be set per connection as well (see connection paramters).</para></entry>
-                    </row>
+                    <entry>qpid.tcp_nodelay</entry>
+                    <entry>boolean</entry>
+                    <entry>true</entry>
+                    <entry>
+                        <para>Sets the TCP_NODELAY property of the underlying socket. The default was changed to true as of Qpid 0.14.</para>
+                        <para>This can also be set per connection using the <link linkend="section-jms-connection-url">Connection URL</link> options.</para>
+                        <para>For compatibility with older clients, the synonym <varname>amqj.tcp_nodelay</varname> is supported.</para>
+                    </entry>
+                </row>
               </tbody>
             </tgroup>
           </table>
