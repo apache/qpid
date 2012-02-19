@@ -134,7 +134,7 @@ public class ClientProperties
     /**
      * System property used to set the trust manager factory algorithm.
      *
-     * Historically, Qpid referred to this {@value #QPID_SSL_TRUST_STORE_CERT_TYPE_PROP_NAME}.
+     * Historically, Qpid referred to this as {@value #QPID_SSL_TRUST_STORE_CERT_TYPE_PROP_NAME}.
      */
     public static final String QPID_SSL_TRUST_MANAGER_FACTORY_ALGORITHM_PROP_NAME = "qpid.ssl.TrustManagerFactory.algorithm";
     @Deprecated
@@ -150,4 +150,22 @@ public class ClientProperties
      * value is used in the ConnectionStartOk reply to the broker.
      */
     public static final String PROCESS_NAME = "qpid.client_process";
+
+    /**
+     * System property used to set the socket receive buffer size.
+     *
+     * Historically, Qpid referred to this as {@value #LEGACY_RECEIVE_BUFFER_SIZE_PROP_NAME}.
+     */
+    public static final String RECEIVE_BUFFER_SIZE_PROP_NAME  = "qpid.receive_buffer_size";
+    @Deprecated
+    public static final String LEGACY_RECEIVE_BUFFER_SIZE_PROP_NAME  = "amqj.receiveBufferSize";
+
+    /**
+     * System property used to set the socket send buffer size.
+     *
+     * Historically, Qpid referred to this as {@value #LEGACY_SEND_BUFFER_SIZE_PROP_NAME}.
+     */
+    public static final String SEND_BUFFER_SIZE_PROP_NAME  = "qpid.send_buffer_size";
+    @Deprecated
+    public static final String LEGACY_SEND_BUFFER_SIZE_PROP_NAME  = "amqj.sendBufferSize";
 }
