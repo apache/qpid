@@ -3765,6 +3765,24 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
                         <para>For compatibility with older clients, the synonym <varname>amqj.tcp_nodelay</varname> is supported.</para>
                     </entry>
                 </row>
+	            <row>
+                    <entry>qpid.send_buffer_size</entry>
+                    <entry>integer</entry>
+                    <entry>65535</entry>
+                    <entry>
+                        <para>Sets the SO_SNDBUF property of the underlying socket. Added in Qpid 0.16.</para>
+                        <para>For compatibility with older clients, the synonym <varname>amqj.sendBufferSize</varname> is supported.</para>
+                    </entry>
+                </row>
+	            <row>
+                    <entry>qpid.receive_buffer_size</entry>
+                    <entry>integer</entry>
+                    <entry>65535</entry>
+                    <entry>
+                        <para>Sets the SO_RCVBUF property of the underlying socket. Added in Qpid 0.16.</para>
+                        <para>For compatibility with older clients, the synonym <varname>amqj.receiveBufferSize</varname> is supported.</para>
+                    </entry>
+                </row>
               </tbody>
             </tgroup>
           </table>
