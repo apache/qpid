@@ -1185,6 +1185,62 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
                 ((AMQMessage) messages.get(1).getMessage()).getMessageId());
     }
 
+    public void testActiveConsumerCount() throws Exception
+    {
+        final SimpleAMQQueue queue = new SimpleAMQQueue(new AMQShortString("testActiveConsumerCount"), false, new AMQShortString("testOwner"),
+                false, false, _virtualHost, new SimpleQueueEntryList.Factory(), null);
+
+        //verify adding an active subscription increases the count
+        final MockSubscription subscription1 = new MockSubscription();
+        subscription1.setActive(true);
+        assertEquals("Unexpected active consumer count", 0, queue.getActiveConsumerCount());
+        queue.registerSubscription(subscription1, false);
+        assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
+
+        //verify adding an inactive subscription doesn't increase the count
+        final MockSubscription subscription2 = new MockSubscription();
+        subscription2.setActive(false);
+        assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
+        queue.registerSubscription(subscription2, false);
+        assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
+
+        //verify behaviour in face of expected state changes:
+
+        //verify a subscription going suspended->active increases the count
+        queue.stateChange(subscription2, Subscription.State.SUSPENDED, Subscription.State.ACTIVE);
+        assertEquals("Unexpected active consumer count", 2, queue.getActiveConsumerCount());
+
+        //verify a subscription going active->suspended decreases the count
+        queue.stateChange(subscription2, Subscription.State.ACTIVE, Subscription.State.SUSPENDED);
+        assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
+
+        //verify a subscription going suspended->closed doesn't change the count
+        queue.stateChange(subscription2, Subscription.State.SUSPENDED, Subscription.State.CLOSED);
+        assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
+
+        //verify a subscription going active->closed  decreases the count
+        queue.stateChange(subscription2, Subscription.State.ACTIVE, Subscription.State.CLOSED);
+        assertEquals("Unexpected active consumer count", 0, queue.getActiveConsumerCount());
+
+        //verify behaviour in face of unexpected state changes:
+
+        //verify a subscription going closed->active increases the count
+        queue.stateChange(subscription2, Subscription.State.CLOSED, Subscription.State.ACTIVE);
+        assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
+
+        //verify a subscription going active->active doesn't change the count
+        queue.stateChange(subscription2, Subscription.State.ACTIVE, Subscription.State.ACTIVE);
+        assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
+
+        //verify a subscription going closed->suspended doesn't change the count
+        queue.stateChange(subscription2, Subscription.State.CLOSED, Subscription.State.SUSPENDED);
+        assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
+
+        //verify a subscription going suspended->suspended doesn't change the count
+        queue.stateChange(subscription2, Subscription.State.SUSPENDED, Subscription.State.SUSPENDED);
+        assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
+    }
+
     /**
      * A helper method to create a queue with given name
      *
