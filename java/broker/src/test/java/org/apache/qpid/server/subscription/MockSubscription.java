@@ -55,6 +55,7 @@ public class MockSubscription implements Subscription
     private static final AtomicLong idGenerator = new AtomicLong(0);
     // Create a simple ID that increments for ever new Subscription
     private final long _subscriptionID = idGenerator.getAndIncrement();
+    private boolean _isActive = true;
 
     public MockSubscription()
     {
@@ -150,7 +151,7 @@ public class MockSubscription implements Subscription
 
     public boolean isActive()
     {
-        return true;
+        return _isActive ;
     }
 
     public void confirmAutoClose()
@@ -274,5 +275,10 @@ public class MockSubscription implements Subscription
     public boolean isSessionTransactional()
     {
         return false;
+    }
+
+    public void setActive(final boolean isActive)
+    {
+        _isActive = isActive;
     }
 }

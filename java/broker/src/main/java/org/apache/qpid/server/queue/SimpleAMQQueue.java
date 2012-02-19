@@ -100,7 +100,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     private Exchange _alternateExchange;
 
 
-    private final QueueEntryList _entries;
+    private final QueueEntryList<QueueEntry> _entries;
 
     private final SubscriptionList _subscriptionList = new SubscriptionList();
 
@@ -449,7 +449,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
             }
         }
 
-        _activeSubscriberCount.incrementAndGet();
+        if(subscription.isActive())
+        {
+            _activeSubscriberCount.incrementAndGet();
+        }
         subscription.setStateListener(this);
         subscription.setQueueContext(new QueueContext(_entries.getHead()));
 
