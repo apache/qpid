@@ -54,7 +54,7 @@ public abstract class SaslServerTestCase extends TestCase
         }
         catch (SaslException e)
         {
-            assertEquals("Authentication failed", e.getCause().getMessage());
+            assertTrue(e.getMessage().contains("Authentication failed"));
             exceptionCaught = true;
         }
         if (!exceptionCaught)
