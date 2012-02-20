@@ -1038,7 +1038,7 @@ class AddressTests(Base):
       snd.close()
       assert False, "successfully deleted amq.topic"
     except SessionError, e:
-      assert "Cannot delete default exchange" in str(e)
+      assert e.code == 530
     # XXX: need to figure out close after error
     self.conn._remove_session(self.ssn)
 
