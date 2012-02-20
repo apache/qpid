@@ -526,6 +526,8 @@ libqpidbroker_la_SOURCES = \
   qpid/amqp_0_10/Connection.cpp \
   qpid/amqp_0_10/Connection.h \
   qpid/broker/AclModule.h \
+  qpid/broker/AsyncStore.cpp \
+  qpid/broker/AsyncStore.h \
   qpid/broker/Bridge.cpp \
   qpid/broker/Bridge.h \
   qpid/broker/Broker.cpp \
@@ -670,6 +672,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/SignalHandler.cpp \
   qpid/broker/SignalHandler.h \
   qpid/broker/StatefulQueueObserver.h \
+  qpid/broker/StoreToken.h \
   qpid/broker/System.cpp \
   qpid/broker/System.h \
   qpid/broker/ThresholdAlerts.cpp \

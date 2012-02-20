@@ -1041,6 +1041,7 @@ set (qpidbroker_SOURCES
      ${qpidbroker_platform_SOURCES}
      qpid/amqp_0_10/Connection.h
      qpid/amqp_0_10/Connection.cpp
+     qpid/broker/AsyncStore.cpp
      qpid/broker/Broker.cpp
      qpid/broker/Credit.cpp
      qpid/broker/Exchange.cpp
