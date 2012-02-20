@@ -33,7 +33,7 @@ namespace qpid {
 namespace broker {
 class Message;
 class Queue;
-class QueuedMessage;
+struct QueuedMessage;
 class OwnershipToken;
 }
 

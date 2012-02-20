@@ -25,7 +25,9 @@
 #include <iostream>
 #include <boost/format.hpp>
 
-using namespace qpid::broker;
+namespace qpid {
+namespace broker {
+
 using namespace qpid::sys;
 using std::string;
 using std::pair;
@@ -45,16 +47,15 @@ LinkRegistry::LinkRegistry () :
 {
 }
 
-namespace {
-struct ConnectionObserverImpl : public ConnectionObserver {
+class LinkRegistryConnectionObserver : public ConnectionObserver {
     LinkRegistry& links;
-    ConnectionObserverImpl(LinkRegistry& l) : links(l) {}
+  public:
+    LinkRegistryConnectionObserver(LinkRegistry& l) : links(l) {}
     void connection(Connection& c) { links.notifyConnection(c.getMgmtId(), &c); }
     void opened(Connection& c) { links.notifyOpened(c.getMgmtId()); }
     void closed(Connection& c) { links.notifyClosed(c.getMgmtId()); }
     void forced(Connection& c, const string& text) { links.notifyConnectionForced(c.getMgmtId(), text); }
 };
-}
 
 LinkRegistry::LinkRegistry (Broker* _broker) :
     broker(_broker),
@@ -62,7 +63,7 @@ LinkRegistry::LinkRegistry (Broker* _broker) :
     realm(broker->getOptions().realm)
 {
     broker->getConnectionObservers().add(
-        boost::shared_ptr<ConnectionObserver>(new ConnectionObserverImpl(*this)));
+        boost::shared_ptr<ConnectionObserver>(new LinkRegistryConnectionObserver(*this)));
 }
 
 LinkRegistry::~LinkRegistry() {}
@@ -368,3 +369,4 @@ void LinkRegistry::eachBridge(boost::function<void(boost::shared_ptr<Bridge>)> f
     for (BridgeMap::iterator i = bridges.begin(); i != bridges.end(); ++i) f(i->second);
 }
 
+}} // namespace qpid::broker
