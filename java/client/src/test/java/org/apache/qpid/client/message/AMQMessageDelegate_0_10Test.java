@@ -27,8 +27,19 @@ import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.ReplyTo;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class AMQMessageDelegate_0_10Test extends QpidTestCase
 {
+
+    private static final String MAX_SHORT = "maxShort";
+    private static final String MIN_SHORT = "minShort";
+    private static final String MAX_INT = "maxInt";
+    private static final String MIN_INT = "minInt";
+    private static final String MAX_LONG = "maxLong";
+    private static final String MIN_LONG = "minLong";
+
     /**
      * Tests that when two messages arrive with the same ReplyTo exchange and routingKey values,
      * the cache returns the same Destination object from getJMSReplyTo instead of a new one.
@@ -47,6 +58,7 @@ public class AMQMessageDelegate_0_10Test extends QpidTestCase
         assertSame("Should have received the same Destination objects", dest1, dest2);
     }
 
+
     private AMQMessageDelegate_0_10 generateMessageDelegateWithReplyTo()
     {
         MessageProperties mesProps = new MessageProperties();
@@ -60,4 +72,37 @@ public class AMQMessageDelegate_0_10Test extends QpidTestCase
         AMQMessageDelegate_0_10 delegate = new AMQMessageDelegate_0_10(mesProps,delProps,1L);
         return delegate;
     }
+
+    public void testMessageProperties() throws Exception
+    {
+        MessageProperties msgProps = new MessageProperties();
+
+        Map<String, Object> appHeaders = new HashMap<String, Object>();
+        appHeaders.put(MAX_SHORT, String.valueOf(Short.MAX_VALUE));
+        appHeaders.put(MIN_SHORT, String.valueOf(Short.MIN_VALUE));
+        appHeaders.put(MAX_INT, String.valueOf(Integer.MAX_VALUE));
+        appHeaders.put(MIN_INT, String.valueOf(Integer.MIN_VALUE));
+        appHeaders.put(MAX_LONG, String.valueOf(Long.MAX_VALUE));
+        appHeaders.put(MIN_LONG, String.valueOf(Long.MIN_VALUE));
+
+        msgProps.setApplicationHeaders(appHeaders);
+
+        AMQMessageDelegate_0_10 delegate = new AMQMessageDelegate_0_10(msgProps,new DeliveryProperties(),1L);
+
+        assertEquals("Max long value not retrieved successfully", Long.MAX_VALUE, delegate.getLongProperty(MAX_LONG));
+        assertEquals("Min long value not retrieved successfully", Long.MIN_VALUE, delegate.getLongProperty(MIN_LONG));
+        assertEquals("Max int value not retrieved successfully as long", (long) Integer.MAX_VALUE, delegate.getLongProperty(MAX_INT));
+        assertEquals("Min int value not retrieved successfully as long", (long) Integer.MIN_VALUE, delegate.getLongProperty(MIN_INT));
+        assertEquals("Max short value not retrieved successfully as long", (long) Short.MAX_VALUE, delegate.getLongProperty(MAX_SHORT));
+        assertEquals("Min short value not retrieved successfully as long", (long) Short.MIN_VALUE, delegate.getLongProperty(MIN_SHORT));
+
+        assertEquals("Max int value not retrieved successfully", Integer.MAX_VALUE, delegate.getIntProperty(MAX_INT));
+        assertEquals("Min int value not retrieved successfully", Integer.MIN_VALUE, delegate.getIntProperty(MIN_INT));
+        assertEquals("Max short value not retrieved successfully as int", (int) Short.MAX_VALUE, delegate.getIntProperty(MAX_SHORT));
+        assertEquals("Min short value not retrieved successfully as int", (int) Short.MIN_VALUE, delegate.getIntProperty(MIN_SHORT));
+
+        assertEquals("Max short value not retrieved successfully", Short.MAX_VALUE, delegate.getShortProperty(MAX_SHORT));
+        assertEquals("Min short value not retrieved successfully", Short.MIN_VALUE, delegate.getShortProperty(MIN_SHORT));
+    }
+
 }
