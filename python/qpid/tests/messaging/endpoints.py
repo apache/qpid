@@ -632,9 +632,9 @@ class SessionTests(Base):
 
   def testDoubleCommit(self):
     ssn = self.conn.session(transactional=True)
-    snd = ssn.sender("amq.direct")
-    rcv = ssn.receiver("amq.direct")
-    msgs = [self.message("testDoubleCommit", i) for i in range(3)]
+    snd = ssn.sender("amq.direct/doubleCommit")
+    rcv = ssn.receiver("amq.direct/doubleCommit")
+    msgs = [self.message("testDoubleCommit", i, subject="doubleCommit") for i in range(3)]
     for m in msgs:
       snd.send(m)
     ssn.commit()
