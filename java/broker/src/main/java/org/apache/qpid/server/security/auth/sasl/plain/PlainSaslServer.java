@@ -51,55 +51,64 @@ public class PlainSaslServer implements SaslServer
 
     public byte[] evaluateResponse(byte[] response) throws SaslException
     {
+        int authzidNullPosition = findNullPosition(response, 0);
+        if (authzidNullPosition < 0)
+        {
+            throw new SaslException("Invalid PLAIN encoding, authzid null terminator not found");
+        }
+        int authcidNullPosition = findNullPosition(response, authzidNullPosition + 1);
+        if (authcidNullPosition < 0)
+        {
+            throw new SaslException("Invalid PLAIN encoding, authcid null terminator not found");
+        }
+
+        PlainPasswordCallback passwordCb;
+        AuthorizeCallback authzCb;
+
         try
         {
-            int authzidNullPosition = findNullPosition(response, 0);
-            if (authzidNullPosition < 0)
-            {
-                throw new SaslException("Invalid PLAIN encoding, authzid null terminator not found");
-            }
-            int authcidNullPosition = findNullPosition(response, authzidNullPosition + 1);
-            if (authcidNullPosition < 0)
-            {
-                throw new SaslException("Invalid PLAIN encoding, authcid null terminator not found");
-            }
-
             // we do not currently support authcid in any meaningful way
             String authzid = new String(response, authzidNullPosition + 1, authcidNullPosition - authzidNullPosition - 1, "utf8");
 
             // TODO: should not get pwd as a String but as a char array...
             int passwordLen = response.length - authcidNullPosition - 1;
             String pwd = new String(response, authcidNullPosition + 1, passwordLen, "utf8");
-            
+
             // we do not care about the prompt but it throws if null
             NameCallback nameCb = new NameCallback("prompt", authzid);
-            PlainPasswordCallback passwordCb = new PlainPasswordCallback("prompt", false, pwd);
-            AuthorizeCallback authzCb = new AuthorizeCallback(authzid, authzid);
+            passwordCb = new PlainPasswordCallback("prompt", false, pwd);
+            authzCb = new AuthorizeCallback(authzid, authzid);
 
             Callback[] callbacks = new Callback[]{nameCb, passwordCb, authzCb};
             _cbh.handle(callbacks);
 
-            if (passwordCb.isAuthenticated())
-            {
-                _complete = true;
-            }
-            if (authzCb.isAuthorized() && _complete)
-            {
-                _authorizationId = authzCb.getAuthenticationID();
-                return null;
-            }
-            else
-            {
-                throw new SaslException("Authentication failed");
-            }
         }
         catch (IOException e)
         {
+            if(e instanceof SaslException)
+            {
+                throw (SaslException) e;
+            }
             throw new SaslException("Error processing data: " + e, e);
         }
         catch (UnsupportedCallbackException e)
         {
             throw new SaslException("Unable to obtain data from callback handler: " + e, e);
+        }
+
+        if (passwordCb.isAuthenticated())
+        {
+            _complete = true;
+        }
+
+        if (authzCb.isAuthorized() && _complete)
+        {
+            _authorizationId = authzCb.getAuthenticationID();
+            return null;
+        }
+        else
+        {
+            throw new SaslException("Authentication failed");
         }
     }
 
