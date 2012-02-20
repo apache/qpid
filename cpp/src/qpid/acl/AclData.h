@@ -33,22 +33,24 @@ class AclData {
 public:
 
     typedef std::map<qpid::acl::Property, std::string> propertyMap;
-    typedef propertyMap::const_iterator propertyMapItr;
+    typedef propertyMap::const_iterator                propertyMapItr;
+
     struct rule {
 
-        bool log;
-        bool logOnly;  // this is a rule is to log only
-
-        // key value map
-        //??
-        propertyMap props;
+        int                   rawRuleNum;   // rule number in ACL file
+        qpid::acl::AclResult  ruleMode;     // combined allow/deny log/nolog
+        propertyMap           props;
 
 
-        rule (propertyMap& p):log(false),logOnly(false),props(p) {};
+        rule (int ruleNum, qpid::acl::AclResult res, propertyMap& p) :
+            rawRuleNum(ruleNum),
+            ruleMode(res),
+            props(p)
+            {};
 
         std::string toString () const {
             std::ostringstream ruleStr;
-            ruleStr << "[log=" << log << ", logOnly=" << logOnly << " props{";
+            ruleStr << "[ruleMode = " << AclHelper::getAclResultStr(ruleMode) << " props{";
             for (propertyMapItr pMItr = props.begin(); pMItr != props.end(); pMItr++) {
                 ruleStr << " " << AclHelper::getPropertyStr((Property) pMItr-> first) << "=" << pMItr->second;
             }
@@ -56,17 +58,17 @@ public:
             return ruleStr.str();
         }
     };
-    typedef  std::vector<rule> ruleSet;
-    typedef  ruleSet::const_iterator ruleSetItr;
+    typedef  std::vector<rule>               ruleSet;
+    typedef  ruleSet::const_iterator         ruleSetItr;
     typedef  std::map<std::string, ruleSet > actionObject; // user 
-    typedef  actionObject::iterator actObjItr;
-    typedef  actionObject* aclAction;
+    typedef  actionObject::iterator          actObjItr;
+    typedef  actionObject*                   aclAction;
 
     // Action*[] -> Object*[] -> map<user -> set<Rule> >
-    aclAction* actionList[qpid::acl::ACTIONSIZE];
-    qpid::acl::AclResult decisionMode;  // determines if the rule set is a deny or allow mode. 
-    bool transferAcl;
-    std::string aclSource; 
+    aclAction*           actionList[qpid::acl::ACTIONSIZE];
+    qpid::acl::AclResult decisionMode;  // allow/deny[-log] if no matching rule found
+    bool                 transferAcl;
+    std::string          aclSource; 
 
     AclResult lookup(const std::string& id, const Action& action, const ObjectType& objType, const std::string& name, std::map<Property, std::string>* params=0);
     AclResult lookup(const std::string& id, const Action& action, const ObjectType& objType, const std::string& ExchangeName, const std::string& RoutingKey);

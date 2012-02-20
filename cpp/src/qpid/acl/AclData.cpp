@@ -29,7 +29,6 @@ namespace acl {
         for (unsigned int cnt=0; cnt< qpid::acl::ACTIONSIZE; cnt++){
             actionList[cnt]=0;
         }
-
     }
 
     void AclData::clear ()
@@ -41,7 +40,6 @@ namespace acl {
             }
             delete[] actionList[cnt];
         }
-
     }
 
     bool AclData::matchProp(const std::string & src, const std::string& src1)
@@ -58,8 +56,8 @@ namespace acl {
         const std::string& name, std::map<Property, std::string>* params) {
 
             QPID_LOG(debug, "ACL: Lookup for id:" << id << " action:" << AclHelper::getActionStr((Action) action)
-                << " objectType:" << AclHelper::getObjectTypeStr((ObjectType) objType) << " name:" << name
-                << " with params " << AclHelper::propertyMapToString(params));
+                     << " objectType:" << AclHelper::getObjectTypeStr((ObjectType) objType) << " name:" << name
+                     << " with params " << AclHelper::propertyMapToString(params));
 
             AclResult aclresult = decisionMode;
             if (actionList[action] && actionList[action][objType]) {
@@ -152,7 +150,7 @@ namespace acl {
                         }
                         if (match)
                         {
-                            aclresult = getACLResult(i->logOnly, i->log);
+                            aclresult = i->ruleMode;
                             QPID_LOG(debug,"Successful match, the decision is:" << AclHelper::getAclResultStr(aclresult));
                             return aclresult;
                         }
@@ -214,7 +212,7 @@ namespace acl {
                         }
                     }
                     if (match){
-                        aclresult = getACLResult(i->logOnly, i->log);
+                        aclresult = i->ruleMode;
                         QPID_LOG(debug,"Successful match, the decision is:" << AclHelper::getAclResultStr(aclresult));
                         return aclresult;
                     }
@@ -226,32 +224,6 @@ namespace acl {
 
     }
 
-
-    AclResult AclData::getACLResult(bool logOnly, bool log)
-    {
-        switch (decisionMode)
-        {
-        case qpid::acl::ALLOWLOG:
-        case qpid::acl::ALLOW:
-            if (logOnly) return qpid::acl::ALLOWLOG;
-            if (log)
-                return qpid::acl::DENYLOG;
-            else
-                return qpid::acl::DENY;
-
-
-        case qpid::acl::DENYLOG:
-        case qpid::acl::DENY:
-            if (logOnly) return qpid::acl::DENYLOG;
-            if (log)
-                return qpid::acl::ALLOWLOG;
-            else
-                return qpid::acl::ALLOW;
-        }
-
-        QPID_LOG(error, "ACL Decision Failed, setting DENY");
-        return qpid::acl::DENY;
-    }
 
     AclData::~AclData()
     {
