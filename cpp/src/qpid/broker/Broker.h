@@ -205,7 +205,7 @@ public:
     ConsumerFactories consumerFactories;
 
   public:
-    virtual ~Broker();
+    QPID_BROKER_EXTERN virtual ~Broker();
 
     QPID_BROKER_EXTERN Broker(const Options& configuration);
     static QPID_BROKER_EXTERN boost::intrusive_ptr<Broker> create(const Options& configuration);
@@ -217,16 +217,16 @@ public:
      * port, which will be different if the configured port is
      * 0.
      */
-    virtual uint16_t getPort(const std::string& name) const;
+    QPID_BROKER_EXTERN virtual uint16_t getPort(const std::string& name) const;
 
     /**
      * Run the broker. Implements Runnable::run() so the broker
      * can be run in a separate thread.
      */
-    virtual void run();
+    QPID_BROKER_EXTERN virtual void run();
 
     /** Shut down the broker */
-    virtual void shutdown();
+    QPID_BROKER_EXTERN virtual void shutdown();
 
     QPID_BROKER_EXTERN void setStore (boost::shared_ptr<MessageStore>& store);
     MessageStore& getStore() { return *store; }
@@ -246,14 +246,14 @@ public:
     SessionManager& getSessionManager() { return sessionManager; }
     const std::string& getFederationTag() const { return federationTag; }
 
-    management::ManagementObject*     GetManagementObject (void) const;
-    management::Manageable*           GetVhostObject      (void) const;
-    management::Manageable::status_t  ManagementMethod (uint32_t methodId,
-                                                        management::Args& args,
-                                                        std::string& text);
+    QPID_BROKER_EXTERN management::ManagementObject* GetManagementObject() const;
+    QPID_BROKER_EXTERN management::Manageable* GetVhostObject() const;
+    QPID_BROKER_EXTERN management::Manageable::status_t ManagementMethod(
+        uint32_t methodId, management::Args& args, std::string& text);
 
     /** Add to the broker's protocolFactorys */
-    void registerProtocolFactory(const std::string& name, boost::shared_ptr<sys::ProtocolFactory>);
+    QPID_BROKER_EXTERN void registerProtocolFactory(
+        const std::string& name, boost::shared_ptr<sys::ProtocolFactory>);
 
     /** Accept connections */
     QPID_BROKER_EXTERN void accept();
@@ -271,15 +271,17 @@ public:
     /** Move messages from one queue to another.
         A zero quantity means to move all messages
     */
-    uint32_t queueMoveMessages( const std::string& srcQueue,
-			    const std::string& destQueue,
-                uint32_t  qty,
-                const qpid::types::Variant::Map& filter);
+    QPID_BROKER_EXTERN uint32_t queueMoveMessages(
+        const std::string& srcQueue,
+        const std::string& destQueue,
+        uint32_t  qty,
+        const qpid::types::Variant::Map& filter);
 
-    boost::shared_ptr<sys::ProtocolFactory> getProtocolFactory(const std::string& name = TCP_TRANSPORT) const;
+    QPID_BROKER_EXTERN boost::shared_ptr<sys::ProtocolFactory> getProtocolFactory(
+        const std::string& name = TCP_TRANSPORT) const;
 
     /** Expose poller so plugins can register their descriptors. */
-    boost::shared_ptr<sys::Poller> getPoller();
+    QPID_BROKER_EXTERN boost::shared_ptr<sys::Poller> getPoller();
 
     boost::shared_ptr<sys::ConnectionCodec::Factory> getConnectionFactory() { return factory; }
     void setConnectionFactory(boost::shared_ptr<sys::ConnectionCodec::Factory> f) { factory = f; }
@@ -289,7 +291,7 @@ public:
 
     /** Timer for tasks that must be synchronized if we are in a cluster */
     sys::Timer& getClusterTimer() { return clusterTimer.get() ? *clusterTimer : timer; }
-    void setClusterTimer(std::auto_ptr<sys::Timer>);
+    QPID_BROKER_EXTERN void setClusterTimer(std::auto_ptr<sys::Timer>);
 
     boost::function<std::vector<Url> ()> getKnownBrokers;
 
@@ -320,15 +322,14 @@ public:
      * context.
      *@return true if delivery of a message should be deferred.
      */
-    boost::function<bool (const std::string& queue,
-                          const boost::intrusive_ptr<Message>& msg)> deferDelivery;
+    boost::function<bool (const std::string& queue, const boost::intrusive_ptr<Message>& msg)> deferDelivery;
 
     bool isAuthenticating ( ) { return config.auth; }
     bool isTimestamping() { return config.timestampRcvMsgs; }
 
     typedef boost::function1<void, boost::shared_ptr<Queue> > QueueFunctor;
 
-    std::pair<boost::shared_ptr<Queue>, bool> createQueue(
+    QPID_BROKER_EXTERN std::pair<boost::shared_ptr<Queue>, bool> createQueue(
         const std::string& name,
         bool durable,
         bool autodelete,
@@ -337,30 +338,39 @@ public:
         const qpid::framing::FieldTable& arguments,
         const std::string& userId,
         const std::string& connectionId);
-    void deleteQueue(const std::string& name,
-                     const std::string& userId,
-                     const std::string& connectionId,
-                     QueueFunctor check = QueueFunctor());
-    std::pair<Exchange::shared_ptr, bool> createExchange(
+
+    QPID_BROKER_EXTERN void deleteQueue(
+        const std::string& name,
+        const std::string& userId,
+        const std::string& connectionId,
+        QueueFunctor check = QueueFunctor());
+
+    QPID_BROKER_EXTERN std::pair<Exchange::shared_ptr, bool> createExchange(
         const std::string& name,
         const std::string& type,
         bool durable,
         const std::string& alternateExchange,
         const qpid::framing::FieldTable& args,
         const std::string& userId, const std::string& connectionId);
-    void deleteExchange(const std::string& name, const std::string& userId,
-                        const std::string& connectionId);
-    void bind(const std::string& queue,
-              const std::string& exchange,
-              const std::string& key,
-              const qpid::framing::FieldTable& arguments,
-              const std::string& userId,
-              const std::string& connectionId);
-    void unbind(const std::string& queue,
-                const std::string& exchange,
-                const std::string& key,
-                const std::string& userId,
-                const std::string& connectionId);
+
+    QPID_BROKER_EXTERN void deleteExchange(
+        const std::string& name, const std::string& userId,
+        const std::string& connectionId);
+
+    QPID_BROKER_EXTERN void bind(
+        const std::string& queue,
+        const std::string& exchange,
+        const std::string& key,
+        const qpid::framing::FieldTable& arguments,
+        const std::string& userId,
+        const std::string& connectionId);
+
+    QPID_BROKER_EXTERN void unbind(
+        const std::string& queue,
+        const std::string& exchange,
+        const std::string& key,
+        const std::string& userId,
+        const std::string& connectionId);
 
     ConsumerFactories&  getConsumerFactories() { return consumerFactories; }
     ConnectionObservers& getConnectionObservers() { return connectionObservers; }

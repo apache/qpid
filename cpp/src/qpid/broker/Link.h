@@ -24,9 +24,11 @@
 
 #include <boost/shared_ptr.hpp>
 #include "qpid/Url.h"
+#include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/MessageStore.h"
 #include "qpid/broker/PersistableConfig.h"
 #include "qpid/broker/Bridge.h"
+#include "qpid/broker/BrokerImportExport.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/management/Manageable.h"
@@ -94,6 +96,13 @@ class Link : public PersistableConfig, public management::Manageable {
     bool tryFailoverLH();            // Called during maintenance visit
     bool hideManagement() const;
 
+    void established(Connection*); // Called when connection is create
+    void opened();      // Called when connection is open (after create)
+    void closed(int, std::string);   // Called when connection goes away
+    void reconnectLH(const Address&); //called by LinkRegistry
+
+  friend class LinkRegistry; // to call established, opened, closed
+
   public:
     typedef boost::shared_ptr<Link> shared_ptr;
 
@@ -119,13 +128,9 @@ class Link : public PersistableConfig, public management::Manageable {
     uint nextChannel();
     void add(Bridge::shared_ptr);
     void cancel(Bridge::shared_ptr);
-    void setUrl(const Url&); // Set URL for reconnection.
 
-    void established(Connection*); // Called when connection is create
-    void opened();      // Called when connection is open (after create)
-    void closed(int, std::string);   // Called when connection goes away
-    void reconnectLH(const Address&); //called by LinkRegistry
-    void close();       // Close the link from within the broker.
+    QPID_BROKER_EXTERN void setUrl(const Url&); // Set URL for reconnection.
+    QPID_BROKER_EXTERN void close(); // Close the link from within the broker.
 
     std::string getAuthMechanism() { return authMechanism; }
     std::string getUsername()      { return username; }
