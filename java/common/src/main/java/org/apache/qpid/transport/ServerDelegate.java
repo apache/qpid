@@ -191,18 +191,11 @@ public class ServerDelegate extends ConnectionDelegate
     @Override
     public void sessionAttach(Connection conn, SessionAttach atc)
     {
-        sessionAttachImpl(conn, atc);
-    }
-
-    protected Session sessionAttachImpl(Connection conn, SessionAttach atc)
-    {
         Session ssn = getSession(conn, atc);
         conn.map(ssn, atc.getChannel());
         conn.registerSession(ssn);
         ssn.sessionAttached(atc.getName());
         ssn.setState(Session.State.OPEN);
-
-        return ssn;
     }
 
     protected void setConnectionTuneOkChannelMax(final Connection conn, final int okChannelMax)
