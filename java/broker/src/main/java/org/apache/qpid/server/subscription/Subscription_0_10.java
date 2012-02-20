@@ -409,6 +409,10 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
                 {
                     deliveryProps.setTimestamp(origDeliveryProps.getTimestamp());
                 }
+                if(origDeliveryProps.hasTtl())
+                {
+                    deliveryProps.setTtl(origDeliveryProps.getTtl());
+                }
 
 
             }
