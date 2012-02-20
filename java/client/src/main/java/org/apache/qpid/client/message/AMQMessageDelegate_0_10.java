@@ -582,6 +582,10 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         {
             return ((Short)o).shortValue();
         }
+        else if(o instanceof String)
+        {
+            return Short.valueOf((String) o);
+        }
         else
         {
             try
@@ -609,6 +613,10 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         {
             return ((Integer)o).intValue();
         }
+        else if(o instanceof String)
+        {
+            return Integer.valueOf((String) o);
+        }
         else
         {
             try
@@ -634,6 +642,10 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         if(o instanceof Long)
         {
             return ((Long)o).longValue();
+        }
+        else if(o instanceof String)
+        {
+            return Long.valueOf((String) o);
         }
         else
         {
