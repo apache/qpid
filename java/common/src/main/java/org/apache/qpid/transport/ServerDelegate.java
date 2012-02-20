@@ -198,6 +198,7 @@ public class ServerDelegate extends ConnectionDelegate
     {
         Session ssn = getSession(conn, atc);
         conn.map(ssn, atc.getChannel());
+        conn.registerSession(ssn);
         ssn.sessionAttached(atc.getName());
         ssn.setState(Session.State.OPEN);
 

@@ -256,7 +256,6 @@ public class ServerConnectionDelegate extends ServerDelegate
         if(isSessionNameUnique(atc.getName(), conn))
         {
             ssn = sessionAttachImpl(conn, atc);
-            conn.registerSession(ssn);
             ((ServerConnection)conn).checkForNotification();
         }
         else
