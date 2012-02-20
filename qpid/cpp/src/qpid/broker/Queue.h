@@ -235,8 +235,9 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     /**
      * Bind self to specified exchange, and record that binding for unbinding on delete.
      */
-    bool bind(boost::shared_ptr<Exchange> exchange, const std::string& key,
-              const qpid::framing::FieldTable& arguments=qpid::framing::FieldTable());
+    QPID_BROKER_EXTERN bool bind(
+        boost::shared_ptr<Exchange> exchange, const std::string& key,
+        const qpid::framing::FieldTable& arguments=qpid::framing::FieldTable());
 
     /** Acquire the message at the given position if it is available for acquire.  Not to
      * be used by clients, but used by the broker for queue management.
@@ -271,28 +272,29 @@ class Queue : public boost::enable_shared_from_this<Queue>,
                                     bool exclusive = false);
     QPID_BROKER_EXTERN void cancel(Consumer::shared_ptr c);
 
-    uint32_t purge(const uint32_t purge_request=0,  //defaults to all messages
+    QPID_BROKER_EXTERN uint32_t purge(const uint32_t purge_request=0,  //defaults to all messages
                    boost::shared_ptr<Exchange> dest=boost::shared_ptr<Exchange>(),
                    const ::qpid::types::Variant::Map *filter=0);
     QPID_BROKER_EXTERN void purgeExpired(sys::Duration);
 
     //move qty # of messages to destination Queue destq
-    uint32_t move(const Queue::shared_ptr destq, uint32_t qty,
-                  const qpid::types::Variant::Map *filter=0);
+    QPID_BROKER_EXTERN uint32_t move(
+        const Queue::shared_ptr destq, uint32_t qty,
+        const qpid::types::Variant::Map *filter=0);
 
     QPID_BROKER_EXTERN uint32_t getMessageCount() const;
     QPID_BROKER_EXTERN uint32_t getEnqueueCompleteMessageCount() const;
     QPID_BROKER_EXTERN uint32_t getConsumerCount() const;
     inline const std::string& getName() const { return name; }
-    bool isExclusiveOwner(const OwnershipToken* const o) const;
-    void releaseExclusiveOwnership();
-    bool setExclusiveOwner(const OwnershipToken* const o);
-    bool hasExclusiveConsumer() const;
-    bool hasExclusiveOwner() const;
+    QPID_BROKER_EXTERN bool isExclusiveOwner(const OwnershipToken* const o) const;
+    QPID_BROKER_EXTERN void releaseExclusiveOwnership();
+    QPID_BROKER_EXTERN bool setExclusiveOwner(const OwnershipToken* const o);
+    QPID_BROKER_EXTERN bool hasExclusiveConsumer() const;
+    QPID_BROKER_EXTERN bool hasExclusiveOwner() const;
     inline bool isDurable() const { return store != 0; }
     inline const framing::FieldTable& getSettings() const { return settings; }
     inline bool isAutoDelete() const { return autodelete; }
-    bool canAutoDelete() const;
+    QPID_BROKER_EXTERN bool canAutoDelete() const;
     const QueueBindings& getBindings() const { return bindings; }
 
     /**
@@ -301,8 +303,8 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     QPID_BROKER_EXTERN void setLastNodeFailure();
     QPID_BROKER_EXTERN void clearLastNodeFailure();
 
-    bool enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message>& msg, bool suppressPolicyCheck = false);
-    void enqueueAborted(boost::intrusive_ptr<Message> msg);
+    QPID_BROKER_EXTERN bool enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message>& msg, bool suppressPolicyCheck = false);
+    QPID_BROKER_EXTERN void enqueueAborted(boost::intrusive_ptr<Message> msg);
     /**
      * dequeue from store (only done once messages is acknowledged)
      */
@@ -311,7 +313,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      * Inform the queue that a previous transactional dequeue
      * committed.
      */
-    void dequeueCommitted(const QueuedMessage& msg);
+    QPID_BROKER_EXTERN void dequeueCommitted(const QueuedMessage& msg);
 
     /**
      * Inform queue of messages that were enqueued, have since
@@ -319,7 +321,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      * thus are still logically on the queue) - used in
      * clustered broker.
      */
-    void updateEnqueued(const QueuedMessage& msg);
+    QPID_BROKER_EXTERN void updateEnqueued(const QueuedMessage& msg);
 
     /**
      * Test whether the specified message (identified by its
@@ -328,7 +330,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      * have been delievered to a subscriber who has not yet
      * accepted it).
      */
-    bool isEnqueued(const QueuedMessage& msg);
+    QPID_BROKER_EXTERN bool isEnqueued(const QueuedMessage& msg);
 
     /**
      * Acquires the next available (oldest) message
@@ -338,17 +340,17 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     /** Get the message at position pos, returns true if found and sets msg */
     QPID_BROKER_EXTERN bool find(framing::SequenceNumber pos, QueuedMessage& msg ) const;
 
-    const QueuePolicy* getPolicy();
+    QPID_BROKER_EXTERN const QueuePolicy* getPolicy();
 
-    void setAlternateExchange(boost::shared_ptr<Exchange> exchange);
-    boost::shared_ptr<Exchange> getAlternateExchange();
-    bool isLocal(boost::intrusive_ptr<Message>& msg);
+    QPID_BROKER_EXTERN void setAlternateExchange(boost::shared_ptr<Exchange> exchange);
+    QPID_BROKER_EXTERN boost::shared_ptr<Exchange> getAlternateExchange();
+    QPID_BROKER_EXTERN bool isLocal(boost::intrusive_ptr<Message>& msg);
 
     //PersistableQueue support:
-    uint64_t getPersistenceId() const;
-    void setPersistenceId(uint64_t persistenceId) const;
-    void encode(framing::Buffer& buffer) const;
-    uint32_t encodedSize() const;
+    QPID_BROKER_EXTERN uint64_t getPersistenceId() const;
+    QPID_BROKER_EXTERN void setPersistenceId(uint64_t persistenceId) const;
+    QPID_BROKER_EXTERN void encode(framing::Buffer& buffer) const;
+    QPID_BROKER_EXTERN uint32_t encodedSize() const;
 
     /**
      * Restores a queue from encoded data (used in recovery)
@@ -362,15 +364,15 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     virtual void setExternalQueueStore(ExternalQueueStore* inst);
 
     // Increment the rejected-by-consumer counter.
-    void countRejected() const;
-    void countFlowedToDisk(uint64_t size) const;
-    void countLoadedFromDisk(uint64_t size) const;
+    QPID_BROKER_EXTERN void countRejected() const;
+    QPID_BROKER_EXTERN void countFlowedToDisk(uint64_t size) const;
+    QPID_BROKER_EXTERN void countLoadedFromDisk(uint64_t size) const;
 
     // Manageable entry points
-    management::ManagementObject* GetManagementObject (void) const;
+    QPID_BROKER_EXTERN management::ManagementObject* GetManagementObject (void) const;
     management::Manageable::status_t
-    ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
-    void query(::qpid::types::Variant::Map&) const;
+    QPID_BROKER_EXTERN ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
+    QPID_BROKER_EXTERN void query(::qpid::types::Variant::Map&) const;
 
     /** Apply f to each Message on the queue. */
     template <class F> void eachMessage(F f) {
@@ -396,31 +398,31 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     /** return current position sequence number for the next message on the queue.
      */
     QPID_BROKER_EXTERN framing::SequenceNumber getPosition();
-    void addObserver(boost::shared_ptr<QueueObserver>);
-    void removeObserver(boost::shared_ptr<QueueObserver>);
+    QPID_BROKER_EXTERN void addObserver(boost::shared_ptr<QueueObserver>);
+    QPID_BROKER_EXTERN void removeObserver(boost::shared_ptr<QueueObserver>);
     QPID_BROKER_EXTERN void insertSequenceNumbers(const std::string& key);
     /**
      * Notify queue that recovery has completed.
      */
-    void recoveryComplete(ExchangeRegistry& exchanges);
+    QPID_BROKER_EXTERN void recoveryComplete(ExchangeRegistry& exchanges);
 
     // For cluster update
-    QueueListeners& getListeners();
-    Messages& getMessages();
-    const Messages& getMessages() const;
+    QPID_BROKER_EXTERN QueueListeners& getListeners();
+    QPID_BROKER_EXTERN Messages& getMessages();
+    QPID_BROKER_EXTERN const Messages& getMessages() const;
 
     /**
      * Reserve space in policy for an enqueued message that
      * has been recovered in the prepared state (dtx only)
      */
-    void recoverPrepared(boost::intrusive_ptr<Message>& msg);
+    QPID_BROKER_EXTERN void recoverPrepared(boost::intrusive_ptr<Message>& msg);
 
-    void flush();
+    QPID_BROKER_EXTERN void flush();
 
-    Broker* getBroker();
+    QPID_BROKER_EXTERN Broker* getBroker();
 
     uint32_t getDequeueSincePurge() { return dequeueSincePurge.get(); }
-    void setDequeueSincePurge(uint32_t value);
+    QPID_BROKER_EXTERN void setDequeueSincePurge(uint32_t value);
 };
 }
 }
