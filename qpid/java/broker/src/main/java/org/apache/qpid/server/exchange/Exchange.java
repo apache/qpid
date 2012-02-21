@@ -35,6 +35,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import javax.management.JMException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 public interface Exchange extends ExchangeReferrer, ExchangeConfig
 {
@@ -110,6 +111,8 @@ public interface Exchange extends ExchangeReferrer, ExchangeConfig
 
 
     boolean isBound(String bindingKey, AMQQueue queue);
+
+    public boolean isBound(String bindingKey, Map<String,Object> arguments, AMQQueue queue);
 
     boolean isBound(String bindingKey);
 
