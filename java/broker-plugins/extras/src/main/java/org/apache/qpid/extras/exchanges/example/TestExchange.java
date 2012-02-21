@@ -80,6 +80,11 @@ public class TestExchange implements Exchange
         return false;
     }
 
+    public boolean isBound(String bindingKey, Map<String, Object> arguments, AMQQueue queue)
+    {
+        return false;
+    }
+
     public boolean isBound(String bindingKey)
     {
         return false;

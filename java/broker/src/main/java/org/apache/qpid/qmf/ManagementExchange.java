@@ -410,6 +410,11 @@ public class ManagementExchange implements Exchange, QMFService.Listener
         return queues;
     }
 
+    public boolean isBound(String bindingKey, Map<String, Object> arguments, AMQQueue queue)
+    {
+        return false;  //TODO
+    }
+
     public boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue)
     {
         return false;  //To change body of implemented methods use File | Settings | File Templates.
