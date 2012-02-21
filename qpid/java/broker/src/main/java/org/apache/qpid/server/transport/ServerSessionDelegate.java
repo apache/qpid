@@ -474,41 +474,56 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             if (exchange == null)
             {
-                ExchangeRegistry exchangeRegistry = getExchangeRegistry(session);
-                ExchangeFactory exchangeFactory = virtualHost.getExchangeFactory();
-
-
-
-                try
+                if(exchangeName.startsWith("amq."))
                 {
-
-                    exchange = exchangeFactory.createExchange(method.getExchange(),
-                                                              method.getType(),
-                                                              method.getDurable(),
-                                                              method.getAutoDelete());
-
-                    String alternateExchangeName = method.getAlternateExchange();
-                    if(alternateExchangeName != null && alternateExchangeName.length() != 0)
-                    {
-                        Exchange alternate = getExchange(session, alternateExchangeName);
-                        exchange.setAlternateExchange(alternate);
-                    }
-
-                    if (exchange.isDurable())
-                    {
-                        DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
-                        store.createExchange(exchange);
-                    }
-
-                    exchangeRegistry.registerExchange(exchange);
+                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
+                              "Attempt to declare exchange: " + exchangeName +
+                              " which begins with reserved prefix 'amq.'.");
                 }
-                catch(AMQUnknownExchangeType e)
+                else if(exchangeName.startsWith("qpid."))
                 {
-                    exception(session, method, ExecutionErrorCode.NOT_FOUND, "Unknown Exchange Type: " + method.getType());
+                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
+                              "Attempt to declare exchange: " + exchangeName +
+                              " which begins with reserved prefix 'qpid.'.");
                 }
-                catch (AMQException e)
+                else
                 {
-                    exception(session, method, e, "Cannot declare exchange '" + exchangeName);
+                    ExchangeRegistry exchangeRegistry = getExchangeRegistry(session);
+                    ExchangeFactory exchangeFactory = virtualHost.getExchangeFactory();
+
+
+
+                    try
+                    {
+
+                        exchange = exchangeFactory.createExchange(method.getExchange(),
+                                                                  method.getType(),
+                                                                  method.getDurable(),
+                                                                  method.getAutoDelete());
+
+                        String alternateExchangeName = method.getAlternateExchange();
+                        if(alternateExchangeName != null && alternateExchangeName.length() != 0)
+                        {
+                            Exchange alternate = getExchange(session, alternateExchangeName);
+                            exchange.setAlternateExchange(alternate);
+                        }
+
+                        if (exchange.isDurable())
+                        {
+                            DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
+                            store.createExchange(exchange);
+                        }
+
+                        exchangeRegistry.registerExchange(exchange);
+                    }
+                    catch(AMQUnknownExchangeType e)
+                    {
+                        exception(session, method, ExecutionErrorCode.NOT_FOUND, "Unknown Exchange Type: " + method.getType());
+                    }
+                    catch (AMQException e)
+                    {
+                        exception(session, method, e, "Cannot declare exchange '" + exchangeName);
+                    }
                 }
             }
             else
