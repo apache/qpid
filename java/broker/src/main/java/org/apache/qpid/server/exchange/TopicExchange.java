@@ -20,29 +20,6 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInvalidArgumentException;
-import org.apache.qpid.common.AMQPFilterTypes;
-import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.filter.SelectorParsingException;
-import org.apache.qpid.filter.selector.TokenMgrError;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.exchange.topic.TopicExchangeResult;
-import org.apache.qpid.server.exchange.topic.TopicMatcherResult;
-import org.apache.qpid.server.exchange.topic.TopicNormalizer;
-import org.apache.qpid.server.exchange.topic.TopicParser;
-import org.apache.qpid.server.filter.JMSSelectorFilter;
-import org.apache.qpid.filter.selector.ParseException;
-import org.apache.qpid.server.message.InboundMessage;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-
-import javax.management.JMException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,6 +29,27 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.management.JMException;
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQInvalidArgumentException;
+import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.filter.SelectorParsingException;
+import org.apache.qpid.filter.selector.ParseException;
+import org.apache.qpid.filter.selector.TokenMgrError;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.exchange.topic.TopicExchangeResult;
+import org.apache.qpid.server.exchange.topic.TopicMatcherResult;
+import org.apache.qpid.server.exchange.topic.TopicNormalizer;
+import org.apache.qpid.server.exchange.topic.TopicParser;
+import org.apache.qpid.server.filter.JMSSelectorFilter;
+import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class TopicExchange extends AbstractExchange
 {
@@ -273,6 +271,28 @@ public class TopicExchange extends AbstractExchange
             }
 
         }
+    }
+
+    public boolean isBound(String bindingKey, Map<String, Object> arguments, AMQQueue queue)
+    {
+        Binding binding = new Binding(null, bindingKey, queue, this, arguments);
+        if (arguments == null)
+        {
+            return _bindings.containsKey(binding);
+        }
+        else
+        {
+            FieldTable o = _bindings.get(binding);
+            if (o != null)
+            {
+                return arguments.equals(FieldTable.convertToMap(o));
+            }
+            else
+            {
+                return false;
+            }
+        }
+
     }
 
     public boolean isBound(AMQShortString routingKey, AMQQueue queue)
