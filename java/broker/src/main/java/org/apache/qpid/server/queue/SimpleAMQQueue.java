@@ -1895,7 +1895,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         if(context != null)
         {
             QueueEntry releasedNode = context.getReleasedEntry();
-            return releasedNode == null || releasedNode.compareTo(entry) < 0;
+            return releasedNode != null && releasedNode.compareTo(entry) < 0;
         }
         else
         {
