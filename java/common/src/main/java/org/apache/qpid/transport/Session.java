@@ -161,7 +161,7 @@ public class Session extends SessionInvoker
         this.expiry = expiry;
     }
 
-    void setClose(boolean close)
+    protected void setClose(boolean close)
     {
         this.closing = close;
     }
