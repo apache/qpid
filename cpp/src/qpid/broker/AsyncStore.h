@@ -111,7 +111,7 @@ namespace broker {
         virtual boost::intrusive_ptr<QueueToken> nextQueueToken(const std::string& name, const qpid::types::Variant::Map& options) = 0;
         virtual boost::intrusive_ptr<TxnToken> nextTxnToken(const std::string& xid=std::string()) = 0;
 
-        // Legacy - Restore FTD message, NOT async!
+        // Legacy - Restore FTD message, is NOT async!
         virtual int loadContent(boost::intrusive_ptr<MessageToken> msgTok,
                                 const boost::intrusive_ptr<QueueToken> queueTok,
                                 char* data,
@@ -121,7 +121,7 @@ namespace broker {
 
 
     /**
-     * \brief This class contains helper functions that set up StoreOp and pass it to the submit() function.
+     * \brief This class contains helper functions that set up AsyncStoreOp and pass it to the submit() function.
      *
      * In some cases, a token instance is returned along with the return code of the submit;
      * a std::pair<int, tok> pattern is used for these calls.
@@ -150,12 +150,12 @@ namespace broker {
 
         typedef std::pair<int, boost::intrusive_ptr<ConfigToken> > storeConfigDataReturn_t;
         storeConfigDataReturn_t storeConfigData(const boost::intrusive_ptr<StoredData> configData,
-                                                const successCbFn_t complCb = 0,
+                                                const successCbFn_t successCb = 0,
                                                 const failCbFn_t failCb = 0,
                                                 const void* cbCtxt = 0);
 
         int destroyConfigData(const boost::intrusive_ptr<ConfigToken> configTok,
-                              const successCbFn_t complCb = 0,
+                              const successCbFn_t successCb = 0,
                               const failCbFn_t failCb = 0,
                               const void* cbCtxt = 0);
 
@@ -166,17 +166,17 @@ namespace broker {
         createQueueReturn_t createQueue(const std::string& name,
                                         const qpid::types::Variant::Map& options,
                                         const boost::intrusive_ptr<StoredData> queueData,
-                                        const successCbFn_t complCb = 0,
+                                        const successCbFn_t successCb = 0,
                                         const failCbFn_t failCb = 0,
                                         const void* cbCtxt = 0);
 
         int flushQueue(const boost::intrusive_ptr<QueueToken> queueTok,
-                       const successCbFn_t complCb = 0,
+                       const successCbFn_t successCb = 0,
                        const failCbFn_t failCb = 0,
                        const void* cbCtxt = 0);
 
         int destroyQueue(const boost::intrusive_ptr<QueueToken> queueTok,
-                         const successCbFn_t complCb = 0,
+                         const successCbFn_t successCb = 0,
                          const failCbFn_t failCb = 0,
                          const void* cbCtxt = 0);
 
@@ -185,22 +185,22 @@ namespace broker {
 
         typedef std::pair<int, boost::intrusive_ptr<TxnToken> > txnReturn_t;
         txnReturn_t beginTxn(const std::string xid = std::string(),
-                             const successCbFn_t complCb = 0,
+                             const successCbFn_t successCb = 0,
                              const failCbFn_t failCb = 0,
                              const void* cbCtxt = 0);
 
         int prepareTxn(const boost::intrusive_ptr<TxnToken> txnTok,
-                       const successCbFn_t complCb = 0,
+                       const successCbFn_t successCb = 0,
                        const failCbFn_t failCb = 0,
                        const void* cbCtxt = 0);
 
         int commitTxn(const boost::intrusive_ptr<TxnToken> txnTok,
-                      const successCbFn_t complCb = 0,
+                      const successCbFn_t successCb = 0,
                       const failCbFn_t failCb = 0,
                       const void* cbCtxt = 0);
 
         int abortTxn(const boost::intrusive_ptr<TxnToken> txnTok,
-                     const successCbFn_t complCb = 0,
+                     const successCbFn_t successCb = 0,
                      const failCbFn_t failCb = 0,
                      const void* cbCtxt = 0);
 
@@ -211,7 +211,7 @@ namespace broker {
         storeEventReturn_t storeQueueEvent(const boost::intrusive_ptr<StoredData> eventData,
                                            const boost::intrusive_ptr<QueueToken> queueTok,
                                            const boost::intrusive_ptr<TxnToken> txnTok = 0,
-                                           const successCbFn_t complCb = 0,
+                                           const successCbFn_t successCb = 0,
                                            const failCbFn_t failCb = 0,
                                            const void* cbCtxt = 0);
 
@@ -222,14 +222,14 @@ namespace broker {
         enqReturn_t enqueueMsg(const boost::intrusive_ptr<StoredData> msgData,
                                const boost::intrusive_ptr<QueueToken> queueTok,
                                const boost::intrusive_ptr<TxnToken> txnTok = 0,
-                               const successCbFn_t complCb = 0,
+                               const successCbFn_t successCb = 0,
                                const failCbFn_t failCb = 0,
                                const void* cbCtxt = 0);
 
         int dequeueMsg(const boost::intrusive_ptr<MessageToken> msgTok,
                        const boost::intrusive_ptr<QueueToken> queueTok,
                        const boost::intrusive_ptr<TxnToken> txnTok = 0,
-                       const successCbFn_t complCb = 0,
+                       const successCbFn_t successCb = 0,
                        const failCbFn_t failCb = 0,
                        const void* cbCtxt = 0);
     }; // class AsyncStorePlus
