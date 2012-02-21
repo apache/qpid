@@ -704,7 +704,7 @@ public class ServerSession extends Session
     {
         if(_blockingQueues.remove(queue) && _blockingQueues.isEmpty())
         {
-            if(_blocking.compareAndSet(true,false))
+            if(_blocking.compareAndSet(true,false) && !isClosing())
             {
 
                 _actor.message(_logSubject, ChannelMessages.FLOW_REMOVED());
@@ -758,6 +758,16 @@ public class ServerSession extends Session
             unregister(subscription_0_10);
         }
     }
+
+    void stopSubscriptions()
+    {
+        final Collection<Subscription_0_10> subscriptions = getSubscriptions();
+        for (Subscription_0_10 subscription_0_10 : subscriptions)
+        {
+            subscription_0_10.stop();
+        }
+    }
+
 
     public void receivedComplete()
     {
@@ -898,6 +908,12 @@ public class ServerSession extends Session
         {
             return _future.isComplete();
         }
+    }
+
+
+    protected void setClose(boolean close)
+    {
+        super.setClose(close);
     }
 
     @Override
