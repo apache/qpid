@@ -251,10 +251,11 @@ public class HeadersExchange extends AbstractExchange
         {
             bindings.remove(binding);
         }
-        
+
+        boolean removedBinding = _bindingHeaderMatchers.remove(new HeadersBinding(binding));
         if(_logger.isDebugEnabled())
         {
-            _logger.debug("Removing Binding: " + _bindingHeaderMatchers.remove(new HeadersBinding(binding)));
+            _logger.debug("Removing Binding: " + removedBinding);
         }
     }
 
