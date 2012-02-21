@@ -487,6 +487,19 @@ if (NOT BUILD_PROBES)
   set (HAVE_SYS_SDT_H 0)
 endif (NOT BUILD_PROBES)
 
+# Check for poll/epoll header files
+check_include_files(sys/poll.h HAVE_POLL)
+check_include_files(sys/epoll.h HAVE_EPOLL)
+
+# Set default poller implementation (check from general to specific to allow overriding)
+if (HAVE_POLL)
+  set(poller_default poll)
+endif (HAVE_POLL)
+if (HAVE_EPOLL)
+  set(poller_default epoll)
+endif (HAVE_EPOLL)
+set(POLLER ${poller_default} CACHE STRING "Poller implementation (poll/epoll)")
+
 # If not windows ensure that we have uuid library
 if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
   CHECK_LIBRARY_EXISTS (uuid uuid_compare "" HAVE_UUID)
@@ -750,9 +763,18 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
   # POSIX (Non-Windows) platforms have a lot of overlap in sources; the only
   # major difference is the poller module.
-  if (CMAKE_SYSTEM_NAME STREQUAL Linux)
+  if (POLLER STREQUAL poll)
+    set (qpid_poller_module
+      qpid/sys/posix/PosixPoller.cpp
+    )
+  elseif (POLLER STREQUAL epoll)
     set (qpid_poller_module
       qpid/sys/epoll/EpollPoller.cpp
+    )
+  endif (POLLER STREQUAL poll)
+
+  if (CMAKE_SYSTEM_NAME STREQUAL Linux)
+    set (qpid_system_module
       qpid/sys/posix/SystemInfo.cpp
     )
     add_definitions(-pthread)
@@ -764,13 +786,12 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
   set (qpidtypes_platform_SOURCES)
   set (qpidtypes_platform_LIBS
-    uuid
-    ${Boost_SYSTEM_LIBRARY}
+       uuid
+       ${Boost_SYSTEM_LIBRARY}
   )
 
   if (CMAKE_SYSTEM_NAME STREQUAL SunOS)
-    set (qpid_poller_module
-      qpid/sys/posix/PosixPoller.cpp
+    set (qpid_system_module
       qpid/sys/solaris/SystemInfo.cpp
     )
 #   On Sun we want -lpthread -lthread as the 2nd last and last libs passed to linker
@@ -799,6 +820,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/posix/Time.cpp
     qpid/SaslFactory.cpp
 
+    ${qpid_system_module}
     ${qpid_poller_module}
   )
   set (qpidcommon_platform_LIBS

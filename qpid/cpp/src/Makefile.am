@@ -183,11 +183,15 @@ nobase_include_HEADERS +=			\
   ../include/qpid/sys/posix/Time.h		\
   ../include/qpid/sys/posix/check.h
 
-if HAVE_EPOLL
+if USE_EPOLL
   poller = qpid/sys/epoll/EpollPoller.cpp
 endif
 
-if HAVE_ECF
+if USE_POLL
+  poller = qpid/sys/posix/PosixPoller.cpp
+endif
+
+if USE_ECF
   poller = qpid/sys/solaris/ECFPoller.cpp
 endif
 
