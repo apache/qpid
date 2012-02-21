@@ -747,10 +747,7 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             else
             {
-                AMQShortString routingKey = new AMQShortString(method.getBindingKey());
-                FieldTable fieldTable = FieldTable.convertToFieldTable(method.getArguments());
-
-                if (!exchange.isBound(routingKey, fieldTable, queue))
+                if (!exchange.isBound(method.getBindingKey(), method.getArguments(), queue))
                 {
                     try
                     {
