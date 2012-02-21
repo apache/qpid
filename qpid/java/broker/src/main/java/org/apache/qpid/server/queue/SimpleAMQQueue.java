@@ -1515,10 +1515,16 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                 for(final QueueEntry entry : entries)
                 {
                     adapter.setEntry(entry);
-                    final List<? extends BaseQueue> rerouteQueues = _alternateExchange.route(adapter);
-                    final ServerMessage message = entry.getMessage();
-                    if(rerouteQueues != null && rerouteQueues.size() != 0)
+                    List<? extends BaseQueue> queues = _alternateExchange.route(adapter);
+                    if((queues == null || queues.size() == 0) && _alternateExchange.getAlternateExchange() != null)
                     {
+                        queues = _alternateExchange.getAlternateExchange().route(adapter);
+                    }
+
+                    final ServerMessage message = entry.getMessage();
+                    if(queues != null && queues.size() != 0)
+                    {
+                        final List<? extends BaseQueue> rerouteQueues = queues;
                         txn.enqueue(rerouteQueues, entry.getMessage(),
                                     new ServerTransaction.Action()
                                     {

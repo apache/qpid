@@ -505,19 +505,40 @@ public class ServerSessionDelegate extends SessionDelegate
                                                                   method.getAutoDelete());
 
                         String alternateExchangeName = method.getAlternateExchange();
+                        boolean validAlternate;
                         if(alternateExchangeName != null && alternateExchangeName.length() != 0)
                         {
                             Exchange alternate = getExchange(session, alternateExchangeName);
-                            exchange.setAlternateExchange(alternate);
+                            if(alternate == null)
+                            {
+                                validAlternate = false;
+                            }
+                            else
+                            {
+                                exchange.setAlternateExchange(alternate);
+                                validAlternate = true;
+                            }
                         }
-
-                        if (exchange.isDurable())
+                        else
                         {
-                            DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
-                            store.createExchange(exchange);
+                            validAlternate = true;
                         }
 
-                        exchangeRegistry.registerExchange(exchange);
+                        if(validAlternate)
+                        {
+                            if (exchange.isDurable())
+                            {
+                                DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
+                                store.createExchange(exchange);
+                            }
+
+                            exchangeRegistry.registerExchange(exchange);
+                        }
+                        else
+                        {
+                            exception(session, method, ExecutionErrorCode.NOT_FOUND,
+                                        "Unknown alternate exchange " + alternateExchangeName);
+                        }
                     }
                     catch(AMQUnknownExchangeType e)
                     {
@@ -539,7 +560,8 @@ public class ServerSessionDelegate extends SessionDelegate
                                     + " to " + method.getType() +".");
                 }
                 else if(method.hasAlternateExchange()
-                          && !(method.getAlternateExchange().equals(exchange.getAlternateExchange().getName())))
+                          && (exchange.getAlternateExchange() == null ||
+                              !method.getAlternateExchange().equals(exchange.getAlternateExchange().getName())))
                 {
                     exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
                             "Attempt to change alternate exchange of: " + exchangeName
