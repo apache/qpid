@@ -448,7 +448,7 @@ AC_ARG_WITH([poller],
  [AS_HELP_STRING([--with-poller], [The low level poller implementation: poll/solaris-ecf/epoll])],
  [case ${withval} in
   poll)
-   AC_CHECK_HEADERS([sys/poll.h],[poller=no],[AC_MSG_ERROR([Can't find poll.h header file for poll])])
+   AC_CHECK_HEADERS([sys/poll.h],[poller=poll],[AC_MSG_ERROR([Can't find poll.h header file for poll])])
    ;;
   solaris-ecf)
    AC_CHECK_HEADERS([port.h],[poller=solaris-ecf],[AC_MSG_ERROR([Can't find port.h header file for solaris-ecf])])
@@ -458,14 +458,17 @@ AC_ARG_WITH([poller],
    ;;
  esac],
  [
-  AC_CHECK_HEADERS([sys/poll.h],[poller=no],)
-  AC_CHECK_HEADERS([port.h],[poller=solaris-ecf],)
+  # We check for poll first so that it is overridden
+  AC_CHECK_HEADERS([sys/poll.h],[poller=poll],)
+  # Not currently supported - WIP
+  #AC_CHECK_HEADERS([port.h],[poller=solaris-ecf],)
   AC_CHECK_HEADERS([sys/epoll.h],[poller=epoll],)
  ]
 )
 
-AM_CONDITIONAL([HAVE_ECF], [test x$poller = xsolaris-ecf])
-AM_CONDITIONAL([HAVE_EPOLL], [test x$poller = xepoll])
+AM_CONDITIONAL([USE_ECF], [test x$poller = xsolaris-ecf])
+AM_CONDITIONAL([USE_POLL], [test x$poller = xpoll])
+AM_CONDITIONAL([USE_EPOLL], [test x$poller = xepoll])
 
 #Filter not implemented or invalid mechanisms
 if test $poller = xno; then
