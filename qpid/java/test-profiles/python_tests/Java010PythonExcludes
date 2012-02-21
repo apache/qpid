@@ -78,7 +78,6 @@ qpid_tests.broker_0_10.alternate_exchange.AlternateExchangeTests.test_add_altern
 qpid_tests.broker_0_10.new_api.GeneralTests.test_qpid_3481_acquired_to_alt_exchange
 
 #QPID-3597 Headers exchange issues
-qpid_tests.broker_0_10.queue.QueueTests.test_unbind_headers
 qpid_tests.broker_0_10.exchange.RecommendedTypesRuleTests.testHeaders
 qpid_tests.broker_0_10.exchange.RequiredInstancesRuleTests.testAmqMatch
 qpid_tests.broker_0_10.query.QueryTests.test_exchange_bound_header
