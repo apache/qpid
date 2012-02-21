@@ -688,7 +688,10 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     {
         entry.setRedelivered();
         entry.routeToAlternate();
-
+        if(entry.isAcquiredBy(this))
+        {
+            entry.discard();
+        }
     }
 
     void release(final QueueEntry entry, final boolean setRedelivered)

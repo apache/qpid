@@ -524,7 +524,7 @@ class SessionTests(Base):
     self.ssn.acknowledge(echos[0])
     self.ssn.acknowledge(echos[1], Disposition(REJECTED))
     self.ssn.acknowledge(echos[2],
-                         Disposition(REJECTED, code=3, text="test-reject"))
+                         Disposition(REJECTED, code=0, text="test-reject"))
     self.drain(rej, expected=msgs[1:])
     self.ssn.acknowledge()
 
