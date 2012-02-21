@@ -487,6 +487,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/PollableCondition.h			\
   qpid/sys/PollableQueue.h			\
   qpid/sys/Poller.h				\
+  qpid/sys/Probes.h				\
   qpid/sys/ProtocolFactory.h			\
   qpid/sys/Runnable.cpp				\
   qpid/sys/ScopedIncrement.h			\

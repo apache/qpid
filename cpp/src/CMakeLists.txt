@@ -477,6 +477,16 @@ else (NOT CLOCK_GETTIME_IN_RT)
   set(QPID_HAS_CLOCK_GETTIME YES CACHE BOOL "Platform has clock_gettime")
 endif (NOT CLOCK_GETTIME_IN_RT)
 
+# Check for header file for dtrace static probes
+check_include_files(sys/sdt.h HAVE_SYS_SDT_H)
+if (HAVE_SYS_SDT_H)
+  set(probes_default ON)
+endif (HAVE_SYS_SDT_H)
+option(BUILD_PROBES "Build with DTrace/systemtap static probes" ${probes_default})
+if (NOT BUILD_PROBES)
+  set (HAVE_SYS_SDT_H 0)
+endif (NOT BUILD_PROBES)
+
 # If not windows ensure that we have uuid library
 if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
   CHECK_LIBRARY_EXISTS (uuid uuid_compare "" HAVE_UUID)

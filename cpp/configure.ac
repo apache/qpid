@@ -480,6 +480,24 @@ case "$host" in
 esac
 AM_CONDITIONAL([SUNOS], [test x$arch = xsolaris])
 
+# Check whether we've got the header for dtrace static probes
+AC_ARG_WITH([probes],
+ [AS_HELP_STRING([--with-probes], [Build with dtrace/systemtap static probes])],
+ [case ${withval} in
+  yes)
+   AC_CHECK_HEADERS([sys/sdt.h])
+   ;;
+  no)
+   ;;
+  *)
+   AC_MSG_ERROR([Bad value for --with-probes: ${withval}])
+   ;;
+  esac],
+  [
+   AC_CHECK_HEADERS([sys/sdt.h])
+  ]
+)
+
 # Check for some syslog capabilities not present in all systems
 AC_TRY_COMPILE([#include <sys/syslog.h>], 
                [int v = LOG_AUTHPRIV;],
