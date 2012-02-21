@@ -533,7 +533,18 @@ public class ServerSessionDelegate extends SessionDelegate
             {
                 if(!exchange.getTypeShortString().toString().equals(method.getType()))
                 {
-                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Attempt to redeclare exchange: " + exchangeName + " of type " + exchange.getTypeShortString() + " to " + method.getType() +".");
+                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
+                            "Attempt to redeclare exchange: " + exchangeName
+                                    + " of type " + exchange.getTypeShortString()
+                                    + " to " + method.getType() +".");
+                }
+                else if(method.hasAlternateExchange()
+                          && !(method.getAlternateExchange().equals(exchange.getAlternateExchange().getName())))
+                {
+                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
+                            "Attempt to change alternate exchange of: " + exchangeName
+                                    + " from " + exchange.getAlternateExchange()
+                                    + " to " + method.getAlternateExchange() +".");
                 }
             }
 
@@ -1302,8 +1313,9 @@ public class ServerSessionDelegate extends SessionDelegate
 
         ServerSession serverSession = (ServerSession)session;
 
-        serverSession.unregisterSubscriptions();
+        serverSession.stopSubscriptions();
         serverSession.onClose();
+        serverSession.unregisterSubscriptions();
     }
 
     @Override

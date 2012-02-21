@@ -231,22 +231,25 @@ public class ServerConnectionDelegate extends ServerDelegate
 
     @Override public void sessionDetach(Connection conn, SessionDetach dtc)
     {
-        // To ensure a clean detach, we unregister any remaining subscriptions. Unregister ensures
-        // that any in-progress delivery (SubFlushRunner/QueueRunner) is completed before the unregister
+        // To ensure a clean detach, we stop any remaining subscriptions. Stop ensures
+        // that any in-progress delivery (SubFlushRunner/QueueRunner) is completed before the stop
         // completes.
-        unregisterAllSubscriptions(conn, dtc);
+        stopAllSubscriptions(conn, dtc);
+        Session ssn = conn.getSession(dtc.getChannel());
+        ((ServerSession)ssn).setClose(true);
         super.sessionDetach(conn, dtc);
     }
 
-    private void unregisterAllSubscriptions(Connection conn, SessionDetach dtc)
+    private void stopAllSubscriptions(Connection conn, SessionDetach dtc)
     {
         final ServerSession ssn = (ServerSession) conn.getSession(dtc.getChannel());
         final Collection<Subscription_0_10> subs = ssn.getSubscriptions();
         for (Subscription_0_10 subscription_0_10 : subs)
         {
-            ssn.unregister(subscription_0_10);
+            subscription_0_10.stop();
         }
     }
+
 
     @Override
     public void sessionAttach(final Connection conn, final SessionAttach atc)
