@@ -199,6 +199,10 @@ public class ServerSessionDelegate extends SessionDelegate
                 {
                     exception(session,method,ExecutionErrorCode.RESOURCE_LOCKED, "Exclusive Queue: " + queueName + " owned exclusively by another session");
                 }
+                else if(queue.isExclusive() && queue.getExclusiveOwningSession() != null && queue.getExclusiveOwningSession() != session)
+                {
+                    exception(session,method,ExecutionErrorCode.RESOURCE_LOCKED, "Exclusive Queue: " + queueName + " owned exclusively by another session");
+                }
                 else
                 {
                     if(queue.isExclusive())
@@ -221,7 +225,6 @@ public class ServerSessionDelegate extends SessionDelegate
                                 }
                             });
                         }
-
                     }
 
                     FlowCreditManager_0_10 creditManager = new WindowCreditManager(0L,0L);
@@ -1146,6 +1149,10 @@ public class ServerSessionDelegate extends SessionDelegate
             else
             {
                 if(queue.getAuthorizationHolder() != null && queue.getAuthorizationHolder() != session)
+                {
+                    exception(session,method,ExecutionErrorCode.RESOURCE_LOCKED, "Exclusive Queue: " + queueName + " owned exclusively by another session");
+                }
+                else if(queue.isExclusive() && queue.getExclusiveOwningSession()  != null && queue.getExclusiveOwningSession() != session)
                 {
                     exception(session,method,ExecutionErrorCode.RESOURCE_LOCKED, "Exclusive Queue: " + queueName + " owned exclusively by another session");
                 }
