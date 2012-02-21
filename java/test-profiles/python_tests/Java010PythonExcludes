@@ -77,9 +77,6 @@ qpid_tests.broker_0_10.alternate_exchange.AlternateExchangeTests.test_reject_no_
 qpid_tests.broker_0_10.alternate_exchange.AlternateExchangeTests.test_add_alternate_to_exchange
 qpid_tests.broker_0_10.new_api.GeneralTests.test_qpid_3481_acquired_to_alt_exchange
 
-#QPID-3596 Broker does not validate for reserved exchange names on create/bind.
-qpid_tests.broker_0_10.exchange.DeclareMethodExchangeFieldReservedRuleTests.*
-
 #QPID-3597 Headers exchange issues
 qpid_tests.broker_0_10.exchange.HeadersExchangeTests.*
 qpid_tests.broker_0_10.queue.QueueTests.test_unbind_headers
