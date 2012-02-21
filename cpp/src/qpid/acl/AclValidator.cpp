@@ -79,23 +79,18 @@ namespace acl {
 
     AclValidator::AclValidator(){
         validators.insert(Validator(acl::PROP_MAXQUEUESIZE,
-            boost::shared_ptr<PropertyType>(
-            new IntPropertyType(0,std::numeric_limits<int64_t>::max()))
-            )
-            );
+                          boost::shared_ptr<PropertyType>(
+                            new IntPropertyType(0,std::numeric_limits<int64_t>::max()))));
 
         validators.insert(Validator(acl::PROP_MAXQUEUECOUNT,
-            boost::shared_ptr<PropertyType>(
-            new IntPropertyType(0,std::numeric_limits<int64_t>::max()))
-            )
-            );
+                          boost::shared_ptr<PropertyType>(
+                            new IntPropertyType(0,std::numeric_limits<int64_t>::max()))));
 
         std::string policyTypes[] = {"ring", "ring_strict", "flow_to_disk", "reject"};
         std::vector<std::string> v(policyTypes, policyTypes + sizeof(policyTypes) / sizeof(std::string));
         validators.insert(Validator(acl::PROP_POLICYTYPE,
-            boost::shared_ptr<PropertyType>(new EnumPropertyType(v))
-            )
-            );
+                          boost::shared_ptr<PropertyType>(
+                            new EnumPropertyType(v))));
 
     }
 
@@ -114,8 +109,8 @@ namespace acl {
                     if (d->actionList[cnt][cnt1]){
 
                         std::for_each(d->actionList[cnt][cnt1]->begin(),
-                            d->actionList[cnt][cnt1]->end(),
-                            boost::bind(&AclValidator::validateRuleSet, this, _1));                    
+                                      d->actionList[cnt][cnt1]->end(),
+                                      boost::bind(&AclValidator::validateRuleSet, this, _1));                    
                     }//if 
                 }//for
             }//if
@@ -137,9 +132,13 @@ namespace acl {
     void AclValidator::validateProperty(std::pair<const qpid::acl::Property, std::string>& prop){
         ValidatorItr itr = validators.find(prop.first);
         if (itr != validators.end()){
-            QPID_LOG(debug,"Found validator for property " << itr->second->allowedValues());
+            QPID_LOG(debug,"ACL: Found validator for property '" << acl::AclHelper::getPropertyStr(itr->first)
+                     << "'. " << itr->second->allowedValues());
 
             if (!itr->second->validate(prop.second)){
+                QPID_LOG(debug, "ACL: Property failed validation. '" << prop.second << "' is not a valid value for '"
+                    << AclHelper::getPropertyStr(prop.first) << "'");
+                
                 throw Exception( prop.second + " is not a valid value for '" + 
                     AclHelper::getPropertyStr(prop.first) + "', " +
                     itr->second->allowedValues());

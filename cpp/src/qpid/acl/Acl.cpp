@@ -106,20 +106,22 @@ bool Acl::result(const AclResult& aclreslt, const std::string& id, const Action&
         agent->raiseEvent(_qmf::EventAllow(id,  AclHelper::getActionStr(action),
             AclHelper::getObjectTypeStr(objType),
             name, types::Variant::Map()));
+        // FALLTHROUGH
     case ALLOW:
         return true;
+
+    case DENYLOG:
+        QPID_LOG(info, "ACL Deny id:" << id << " action:" << AclHelper::getActionStr(action) <<
+            " ObjectType:" << AclHelper::getObjectTypeStr(objType) << " Name:" << name);
+        agent->raiseEvent(_qmf::EventDeny(id, AclHelper::getActionStr(action),
+                                          AclHelper::getObjectTypeStr(objType),
+                                          name, types::Variant::Map()));
+        // FALLTHROUGH
     case DENY:
         if (mgmtObject!=0) mgmtObject->inc_aclDenyCount();
         return false;
-    case DENYLOG:
-        if (mgmtObject!=0) mgmtObject->inc_aclDenyCount();
-    default:
-        QPID_LOG(info, "ACL Deny id:" << id << " action:" << AclHelper::getActionStr(action) << " ObjectType:" << AclHelper::getObjectTypeStr(objType) << " Name:" << name);
-        agent->raiseEvent(_qmf::EventDeny(id, AclHelper::getActionStr(action),
-            AclHelper::getObjectTypeStr(objType),
-            name, types::Variant::Map()));
-        return false;
     }
+    assert(false);
     return false;
 }
 
@@ -149,7 +151,7 @@ bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {
     transferAcl = data->transferAcl; // any transfer ACL
 
     if (data->transferAcl){
-        QPID_LOG(debug,"Transfer ACL is Enabled!");
+        QPID_LOG(debug,"ACL: Transfer ACL is Enabled!");
     }
 
     data->aclSource = aclFile; 
@@ -174,7 +176,7 @@ ManagementObject* Acl::GetManagementObject(void) const
 Manageable::status_t Acl::ManagementMethod (uint32_t methodId, Args& /*args*/, string& text)
 {
     Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
-    QPID_LOG (debug, "Queue::ManagementMethod [id=" << methodId << "]");
+    QPID_LOG (debug, "ACL: Queue::ManagementMethod [id=" << methodId << "]");
 
     switch (methodId)
     {

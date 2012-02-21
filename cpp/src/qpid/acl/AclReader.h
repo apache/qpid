@@ -33,29 +33,30 @@ namespace qpid {
 namespace acl {
 
 class AclReader {
-    typedef std::set<std::string> nameSet;
-    typedef nameSet::const_iterator nsCitr;
-    typedef boost::shared_ptr<nameSet> nameSetPtr;
+    typedef std::set<std::string>               nameSet;
+    typedef nameSet::const_iterator             nsCitr;
+    typedef boost::shared_ptr<nameSet>          nameSetPtr;
 
-    typedef std::pair<std::string, nameSetPtr> groupPair;
-    typedef std::map<std::string, nameSetPtr> groupMap;
-    typedef groupMap::const_iterator gmCitr;
-    typedef std::pair<gmCitr, bool> gmRes;
+    typedef std::pair<std::string, nameSetPtr>  groupPair;
+    typedef std::map<std::string, nameSetPtr>   groupMap;
+    typedef groupMap::const_iterator            gmCitr;
+    typedef std::pair<gmCitr, bool>             gmRes;
 
-    typedef std::pair<Property, std::string> propNvPair;
-    typedef std::map<Property, std::string> propMap;
-    typedef propMap::const_iterator pmCitr;
+    typedef std::pair<Property, std::string>    propNvPair;
+    typedef std::map<Property, std::string>     propMap;
+    typedef propMap::const_iterator             pmCitr;
 
     class aclRule {
       public:
         enum objectStatus {NONE, VALUE, ALL};
-        AclResult res;
-        nameSet names;
-        bool actionAll; // True if action is set to keyword "all"
-        Action action; // Ignored if action is set to keyword "all"
-        objectStatus objStatus;
-        ObjectType object; // Ignored for all status values except VALUE
-        propMap props;
+        
+        AclResult       res;
+        nameSet         names;
+        bool            actionAll; // True if action is set to keyword "all"
+        Action          action; // Ignored if action is set to keyword "all"
+        objectStatus    objStatus;
+        ObjectType      object; // Ignored for all status values except VALUE
+        propMap         props;
       public:
         aclRule(const AclResult r, const std::string n, const groupMap& groups); // action = "all"
         aclRule(const AclResult r, const std::string n, const groupMap& groups, const Action a);
@@ -67,31 +68,31 @@ class AclReader {
       private:
         void processName(const std::string& name, const groupMap& groups);
     };
-    typedef boost::shared_ptr<aclRule> aclRulePtr;
-    typedef std::vector<aclRulePtr> ruleList;
-    typedef ruleList::const_iterator rlCitr;
+    typedef boost::shared_ptr<aclRule>          aclRulePtr;
+    typedef std::vector<aclRulePtr>             ruleList;
+    typedef ruleList::const_iterator            rlCitr;
 
-    typedef std::vector<std::string> tokList;
-    typedef tokList::const_iterator tlCitr;
+    typedef std::vector<std::string>            tokList;
+    typedef tokList::const_iterator             tlCitr;
 
-    typedef std::set<std::string> keywordSet;
-    typedef keywordSet::const_iterator ksCitr;
+    typedef std::set<std::string>               keywordSet;
+    typedef keywordSet::const_iterator          ksCitr;
     typedef std::pair<std::string, std::string> nvPair; // Name-Value pair
 
-    std::string fileName;
-    int lineNumber;
-    bool contFlag;
-    std::string groupName;
-    nameSet names;
-    groupMap groups;
-    ruleList rules;
+    std::string             fileName;
+    int                     lineNumber;
+    bool                    contFlag;
+    std::string             groupName;
+    nameSet                 names;
+    groupMap                groups;
+    ruleList                rules;
     AclHelper::objectMapPtr validationMap;
-    std::ostringstream errorStream;
+    std::ostringstream      errorStream;
 
   public:
     AclReader();
     virtual ~AclReader();
-    int read(const std::string& fn, boost::shared_ptr<AclData> d);
+    int read(const std::string& fn, boost::shared_ptr<AclData> d); // return=0 for success
     std::string getError();
 
   private:

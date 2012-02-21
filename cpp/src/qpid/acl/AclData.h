@@ -50,7 +50,9 @@ public:
 
         std::string toString () const {
             std::ostringstream ruleStr;
-            ruleStr << "[ruleMode = " << AclHelper::getAclResultStr(ruleMode) << " props{";
+            ruleStr << "[rule " << rawRuleNum
+                    << " ruleMode = " << AclHelper::getAclResultStr(ruleMode)
+                    << " props{";
             for (propertyMapItr pMItr = props.begin(); pMItr != props.end(); pMItr++) {
                 ruleStr << " " << AclHelper::getPropertyStr((Property) pMItr-> first) << "=" << pMItr->second;
             }

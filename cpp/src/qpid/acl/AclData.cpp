@@ -67,29 +67,29 @@ namespace acl {
 
                 if (itrRule != actionList[action][objType]->end()) {
 
-                    QPID_LOG(debug, "ACL: checking the following rules for : " << itrRule->first );
-
                     //loop the vector
-                    for (ruleSetItr i = itrRule->second.begin(); i < itrRule->second.end(); i++) {
-                        QPID_LOG(debug, "ACL: checking rule " <<  i->toString());
+                    ruleSetItr rsItr = itrRule->second.end();
+                    for (int cnt = itrRule->second.size(); cnt != 0; cnt--) {
+                        rsItr--;
+                        QPID_LOG(debug, "ACL: checking rule " <<  rsItr->toString());
                         // loop the names looking for match
                         bool match = true;
-                        for (propertyMapItr pMItr = i->props.begin(); (pMItr != i->props.end()) && match; pMItr++) {
+                        for (propertyMapItr pMItr = rsItr->props.begin(); (pMItr != rsItr->props.end()) && match; pMItr++) {
                             //match name is exists first
                             if (pMItr->first == acl::PROP_NAME) {
                                 if (matchProp(pMItr->second, name)){
-                                    QPID_LOG(debug, "ACL: name '" << name << "' matched with name '"
-                                        << pMItr->second << "' given in the rule");
+                                    QPID_LOG(debug, "ACL: lookup name '" << name << "' matched with rule name '"
+                                        << pMItr->second << "'");
                                 }else{
                                     match = false;
-                                    QPID_LOG(debug, "ACL: name '" << name << "' didn't match with name '"
-                                        << pMItr->second << "' given in the rule");
+                                    QPID_LOG(debug, "ACL: lookup name '" << name << "' didn't match with rule name '"
+                                        << pMItr->second << "'");
                                 }
                             } else if (params) { //match pMItr against params
                                 propertyMapItr paramItr = params->find(pMItr->first);
                                 if (paramItr == params->end()) {
                                     match = false;
-                                    QPID_LOG(debug, "ACL: the given parameter map in lookup doesn't contain the property '"
+                                    QPID_LOG(debug, "ACL: lookup parameter map doesn't contain the rule property '"
                                         << AclHelper::getPropertyStr(pMItr->first) << "'");
                                 }else if ( pMItr->first == acl::PROP_MAXQUEUECOUNT || pMItr->first == acl::PROP_MAXQUEUESIZE ) {
                                     if ( pMItr->first == paramItr->first ) {
@@ -101,7 +101,7 @@ namespace acl {
                                             aclMax = boost::lexical_cast<uint64_t>(pMItr->second);
                                         }catch(const boost::bad_lexical_cast&){
                                             match = false;  
-                                            QPID_LOG(error,"Error evaluating rule. " << 
+                                            QPID_LOG(error,"ACL: Error evaluating rule. " << 
                                                 "Illegal value given in ACL source <" << aclSource <<
                                                 "> for property '" <<  
                                                 AclHelper::getPropertyStr(pMItr->first) << "' : " << 
@@ -113,7 +113,7 @@ namespace acl {
                                             paramMax = boost::lexical_cast<uint64_t>(paramItr->second);
                                         }catch(const boost::bad_lexical_cast&){
                                             match = false;
-                                            QPID_LOG(error,"Error evaluating rule. " <<
+                                            QPID_LOG(error,"ACL: Error evaluating rule. " <<
                                                 "Illegal value given in lookup for property '" <<  
                                                 AclHelper::getPropertyStr(pMItr->first) << "' : " << 
                                                 boost::lexical_cast<std::string>(paramItr->second));
@@ -150,19 +150,20 @@ namespace acl {
                         }
                         if (match)
                         {
-                            aclresult = i->ruleMode;
-                            QPID_LOG(debug,"Successful match, the decision is:" << AclHelper::getAclResultStr(aclresult));
+                            aclresult = rsItr->ruleMode;
+                            QPID_LOG(debug,"ACL: Successful match, the decision is:" << AclHelper::getAclResultStr(aclresult));
                             return aclresult;
                         }
                     }
                 }
             }
 
-            QPID_LOG(debug,"No successful match, defaulting to the decision mode " << AclHelper::getAclResultStr(aclresult));
+            QPID_LOG(debug,"ACL: No successful match, defaulting to the decision mode " << AclHelper::getAclResultStr(aclresult));
             return aclresult;
     }
 
-    AclResult AclData::lookup(const std::string& id, const Action& action, const ObjectType& objType, const std::string& /*Exchange*/ name, const std::string& RoutingKey)
+    AclResult AclData::lookup(const std::string& id, const Action& action, const ObjectType& objType,
+                              const std::string& /*Exchange*/ name, const std::string& RoutingKey)
     {
 
         QPID_LOG(debug, "ACL: Lookup for id:" << id << " action:" << AclHelper::getActionStr((Action) action)
@@ -179,47 +180,46 @@ namespace acl {
 
             if (itrRule != actionList[action][objType]->end() ) {
 
-                QPID_LOG(debug, "ACL: checking the following rules for : " << itrRule->first );
-
                 //loop the vector
-                for (ruleSetItr i=itrRule->second.begin(); i<itrRule->second.end(); i++) {
-                    QPID_LOG(debug, "ACL: checking rule " <<  i->toString());
+                ruleSetItr rsItr = itrRule->second.end();
+                for (int cnt = itrRule->second.size(); cnt != 0; cnt--) {
+                    rsItr--;
 
                     // loop the names looking for match
                     bool match =true;
-                    for (propertyMapItr pMItr = i->props.begin(); (pMItr != i->props.end()) && match; pMItr++)
+                    for (propertyMapItr pMItr = rsItr->props.begin(); (pMItr != rsItr->props.end()) && match; pMItr++)
                     {
                         //match name is exists first
                         if (pMItr->first == acl::PROP_NAME){
                             if (matchProp(pMItr->second, name)){  							     
-                                QPID_LOG(debug, "ACL: name '" << name << "' matched with name '"
-                                    << pMItr->second << "' given in the rule");
+                                QPID_LOG(debug, "ACL: lookup exchange name '" << name << "' matched with rule name '"
+                                    << pMItr->second << "'");
 
                             }else{
                                 match= false;
-                                QPID_LOG(debug, "ACL: name '" << name << "' didn't match with name '"
-                                    << pMItr->second << "' given in the rule");
+                                QPID_LOG(debug, "ACL: lookup exchange name '" << name << "' didn't match with rule name '"
+                                    << pMItr->second << "'");
                             }    
                         }else if (pMItr->first == acl::PROP_ROUTINGKEY){
                             if (matchProp(pMItr->second, RoutingKey)){  
-                                QPID_LOG(debug, "ACL: name '" << name << "' matched with routing_key '"
-                                    << pMItr->second << "' given in the rule");    
+                                QPID_LOG(debug, "ACL: lookup key name '" << name << "' matched with rule routing key '"
+                                    << pMItr->second << "'");
                             }else{
                                 match= false;
-                                QPID_LOG(debug, "ACL: name '" << name << "' didn't match with routing_key '"
-                                    << pMItr->second << "' given in the rule");
+                                QPID_LOG(debug, "ACL: lookup key name '" << name << "' didn't match with routing key '"
+                                    << pMItr->second << "'");
                             } 
                         }
                     }
                     if (match){
-                        aclresult = i->ruleMode;
-                        QPID_LOG(debug,"Successful match, the decision is:" << AclHelper::getAclResultStr(aclresult));
+                        aclresult = rsItr->ruleMode;
+                        QPID_LOG(debug,"ACL: Successful match, the decision is:" << AclHelper::getAclResultStr(aclresult));
                         return aclresult;
                     }
                 }
             }
         }
-        QPID_LOG(debug,"No successful match, defaulting to the decision mode " << AclHelper::getAclResultStr(aclresult));
+        QPID_LOG(debug,"ACL: No successful match, defaulting to the decision mode " << AclHelper::getAclResultStr(aclresult));
         return aclresult;
 
     }
