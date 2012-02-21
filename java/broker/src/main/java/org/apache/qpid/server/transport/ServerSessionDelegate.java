@@ -859,12 +859,6 @@ public class ServerSessionDelegate extends SessionDelegate
                 if(method.hasBindingKey())
                 {
 
-                    if(method.hasArguments())
-                    {
-                        FieldTable args = FieldTable.convertToFieldTable(method.getArguments());
-                        
-                        result.setArgsNotMatched(!exchange.isBound(new AMQShortString(method.getBindingKey()), args, queue));
-                    }
                     if(queueMatched)
                     {
                         result.setKeyNotMatched(!exchange.isBound(method.getBindingKey(), queue));
@@ -873,23 +867,28 @@ public class ServerSessionDelegate extends SessionDelegate
                     {
                         result.setKeyNotMatched(!exchange.isBound(method.getBindingKey()));
                     }
+
+                    if(method.hasArguments())
+                    {
+                        result.setArgsNotMatched(!exchange.isBound(result.getKeyNotMatched() ? null : method.getBindingKey(), method.getArguments(), queueMatched ? queue : null));
+                    }
+
                 }
                 else if (method.hasArguments())
                 {
-                    // TODO
-
+                    result.setArgsNotMatched(!exchange.isBound(null, method.getArguments(), queueMatched ? queue : null));
                 }
-
-                result.setQueueNotMatched(!exchange.isBound(queue));
 
             }
             else if(exchange != null && method.hasBindingKey())
             {
+                result.setKeyNotMatched(!exchange.isBound(method.getBindingKey()));
+
                 if(method.hasArguments())
                 {
-                    // TODO
+                    result.setArgsNotMatched(!exchange.isBound(result.getKeyNotMatched() ? null : method.getBindingKey(), method.getArguments(), queue));
                 }
-                result.setKeyNotMatched(!exchange.isBound(method.getBindingKey()));
+
 
             }
 
@@ -898,10 +897,14 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             if(method.hasArguments())
             {
-                // TODO
+                result.setArgsNotMatched(!exchange.isBound(method.getBindingKey(), method.getArguments(), null));
             }
             result.setKeyNotMatched(!exchange.isBound(method.getBindingKey()));
 
+        }
+        else if(exchange != null && method.hasArguments())
+        {
+            result.setArgsNotMatched(!exchange.isBound(null, method.getArguments(), null));
         }
 
 
