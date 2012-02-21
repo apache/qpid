@@ -74,7 +74,7 @@ class GeneralTests(Base):
         self.assertEqual(rx_alt.available(), 0, "No messages should have been routed to the alt_exchange")
 
         sess1.close()
-
+        sleep(1)
         self.assertEqual(rx_alt.available(), 5, "All 5 messages should have been routed to the alt_exchange")
 
         sess2.close()
@@ -108,6 +108,7 @@ class GeneralTests(Base):
 
         # Close sess1; This will cause the queue to be deleted
         sess1.close()
+        sleep(1)
         self.assertEqual(rx_alt.available(), 2, "2 of the messages should have been routed to the alt_exchange")
 
         # Close sess2; This will cause the acquired messages to be requeued and routed to the alternate

@@ -63,12 +63,6 @@ qpid_tests.broker_0_10.message.MessageTests.test_window_flow_bytes
 #QPID-3605 Durable subscriber with no-local true receives messages on re-connection
 qpid_tests.broker_0_10.message.MessageTests.test_no_local_awkward
 
-#QPID-3595 Alternate Exchanges support requires work to be spec compliant.
-qpid_tests.broker_0_10.alternate_exchange.AlternateExchangeTests.test_queue_delete_no_match
-qpid_tests.broker_0_10.alternate_exchange.AlternateExchangeTests.test_reject_no_match
-qpid_tests.broker_0_10.alternate_exchange.AlternateExchangeTests.test_add_alternate_to_exchange
-qpid_tests.broker_0_10.new_api.GeneralTests.test_qpid_3481_acquired_to_alt_exchange
-
 #QPID-3599 Tests fail due to differences in expected message Redelivered status
 qpid.tests.messaging.endpoints.SessionTests.testCommitAck
 qpid.tests.messaging.endpoints.SessionTests.testRelease
