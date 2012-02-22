@@ -117,7 +117,7 @@
         qpid-config utility:
       </para>
       <programlisting>
-    $ qpid-config add queue prices --argument qpid.last_value_queue_key=ticker
+    $ qpid-config add queue prices --lvq-key ticker
       </programlisting>
     </section>
   </section>
@@ -131,13 +131,13 @@
     from qpid.messaging import Connection, Message
 
     def send(sender, key, message):
-      message.properties["key"] = key
+      message.properties["ticker"] = key
       sender.send(message)
 
     conn = Connection("localhost")
     conn.open()
     sess = conn.session()
-    tx = sess.sender("topic;{create:always, node:{type:queue,x-declare:{arguments:{'qpid.last_value_queue_key':key}}}}")
+    tx = sess.sender("prices;{create:always, node:{type:queue,x-declare:{arguments:{'qpid.last_value_queue_key':ticker}}}}")
 
     msg = Message("Content")
     send(tx, "key1", msg);
@@ -155,12 +155,11 @@
       <title>LVQ Browsing Receiver</title>
       <programlisting>
     from qpid.messaging import Connection, Message
-    from time import sleep
 
     conn = Connection("localhost")
     conn.open()
     sess = conn.session()
-    rx = sess.receiver("topic;{mode:browse}")
+    rx = sess.receiver("prices;{mode:browse}")
 
     while True:
       msg = rx.fetch()
@@ -176,7 +175,7 @@
       There are two legacy modes (still implemented as of Qpid 0.14)
       controlled by the qpid.last_value_queue and
       qpid.last_value_queue_no_browse argument values.  These modes are
-      intended to be deprecated and should not be used.
+      deprecated and should not be used.
     </para>
   </section>
 </section>

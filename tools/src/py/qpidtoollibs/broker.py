@@ -24,6 +24,9 @@ except ImportError:
   from qpid.datatypes import uuid4
 
 class BrokerAgent(object):
+  """
+  Proxy for a manageable Qpid Broker - Invoke with an opened qpid.messaging.Connection.
+  """
   def __init__(self, conn):
     self.conn = conn
     self.sess = self.conn.session()
@@ -35,6 +38,9 @@ class BrokerAgent(object):
     self.next_correlator = 1
 
   def close(self):
+    """
+    Close the proxy session.  This will not affect the connection used in creating the object.
+    """
     self.sess.close()
 
   def _method(self, method, arguments, addr="org.apache.qpid.broker:broker:amqp-broker", timeout=10):
@@ -124,9 +130,15 @@ class BrokerAgent(object):
     return None
 
   def getCluster(self):
+    """
+    Get the broker's Cluster object.
+    """
     return self._getAllBrokerObjects(Cluster)
 
   def getBroker(self):
+    """
+    Get the Broker object that contains broker-scope statistics and operations.
+    """
     #
     # getAllBrokerObjects is used instead of getBrokerObject(Broker, 'amqp-broker') because
     # of a bug that used to be in the broker whereby by-name queries did not return the
@@ -173,8 +185,8 @@ class BrokerAgent(object):
   def getAllBindings(self):
     return self._getAllBrokerObjects(Binding)
 
-  def getBinding(self, exchange=None, queue=None):
-    pass
+  def getAllLinks(self):
+    return self._getAllBrokerObjects(Link)
 
   def echo(self, sequence, body):
     """Request a response to test the path to the management broker"""
@@ -204,23 +216,52 @@ class BrokerAgent(object):
     """Get the message timestamping configuration"""
     pass
 
-#  def addExchange(self, exchange_type, name, **kwargs):
-#    pass
+  def addExchange(self, exchange_type, name, options={}, **kwargs):
+    properties = {}
+    properties['exchange-type'] = exchange_type
+    for k,v in options.items():
+      properties[k] = v
+    for k,v in kwargs.items():
+      properties[k] = v
+    args = {'type':       'exchange',
+            'name':        name,
+            'properties':  properties,
+            'strict':      True}
+    self._method('create', args)
 
-#  def delExchange(self, name):
-#    pass
+  def delExchange(self, name):
+    args = {'type': 'exchange', 'name': name}
+    self._method('delete', args)
 
-#  def addQueue(self, name, **kwargs):
-#    pass
+  def addQueue(self, name, options={}, **kwargs):
+    properties = options
+    for k,v in kwargs.items():
+      properties[k] = v
+    args = {'type':       'queue',
+            'name':        name,
+            'properties':  properties,
+            'strict':      True}
+    self._method('create', args)
 
-#  def delQueue(self, name):
-#    pass
+  def delQueue(self, name):
+    args = {'type': 'queue', 'name': name}
+    self._method('delete', args)
 
-#  def bind(self, exchange, queue, key, **kwargs):
-#    pass
+  def bind(self, exchange, queue, key, options={}, **kwargs):
+    properties = options
+    for k,v in kwargs.items():
+      properties[k] = v
+    args = {'type':       'binding',
+            'name':       "%s/%s/%s" % (exchange, queue, key),
+            'properties':  properties,
+            'strict':      True}
+    self._method('create', args)
 
-#  def unbind(self, exchange, queue, key, **kwargs):
-#    pass
+  def unbind(self, exchange, queue, key, **kwargs):
+    args = {'type':       'binding',
+            'name':       "%s/%s/%s" % (exchange, queue, key),
+            'strict':      True}
+    self._method('delete', args)
 
   def create(self, _type, name, properties, strict):
     """Create an object of the specified type"""
@@ -327,4 +368,8 @@ class Queue(BrokerObject):
     """Remove all or some messages on this queue and route them to an exchange"""
     self.broker._method("reroute", {'request':request,'useAltExchange':useAltExchange,'exchange':exchange,'filter':filter},
                         "org.apache.qpid.broker:queue:%s" % self.name)
+
+class Link(BrokerObject):
+  def __init__(self, broker, values):
+    BrokerObject.__init__(self, broker, values)
 
