@@ -25,8 +25,6 @@ import org.osgi.framework.BundleContext;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.logging.actors.BrokerActor;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.management.JMXManagedObjectRegistry;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
 
@@ -43,22 +41,6 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
     {
         super(new ServerConfiguration(configurationURL), bundleContext);
     }
-
-    @Override
-    public void close()
-    {
-        //Set the Actor for Broker Shutdown
-        CurrentActor.set(new BrokerActor(getRootMessageLogger()));
-        try
-        {
-            super.close();
-        }
-        finally
-        {
-            CurrentActor.remove();
-        }
-    }
-
 
     @Override
     protected void initialiseManagedObjectRegistry() throws AMQException
