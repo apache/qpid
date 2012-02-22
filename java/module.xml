@@ -220,7 +220,7 @@
     <jython path="${mllib.dir}">
       <args>
         <arg line='"${project.root}/genpom"'/>
-        <arg line='-s "${project.root}/lib/poms"'/>
+        <arg line='-s "${project.root}/lib/poms${path.separator}lib/poms"'/>
         <arg line='-o "${build.scratch}/qpid-${module.name}.pom"'/>
         <arg line="-u ${project.url}"/>
         <arg line="-g ${project.groupid}"/>
