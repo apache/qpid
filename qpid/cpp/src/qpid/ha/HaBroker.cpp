@@ -118,11 +118,12 @@ void HaBroker::updateClientUrl(const sys::Mutex::ScopedLock&) {
     mgmtObject->set_clientAddresses(url.str());
     knownBrokers.clear();
     knownBrokers.push_back(url);
-    QPID_LOG(debug, "HA: Setting client known-brokers to: " << url);
+    QPID_LOG(debug, "HA: Setting client URL to: " << url);
 }
 
 void HaBroker::setBrokerUrl(const Url& url, const sys::Mutex::ScopedLock& l) {
     if (url.empty()) throw Exception("Invalid empty URL for HA broker failover");
+    QPID_LOG(debug, "HA: Setting broker URL to: " << url);
     brokerUrl = url;
     mgmtObject->set_brokerAddresses(brokerUrl.str());
     if (backup.get()) backup->setBrokerUrl(brokerUrl);

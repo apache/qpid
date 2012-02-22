@@ -31,7 +31,6 @@
 #include "qpid/framing/FieldTable.h"
 #include "qpid/log/Statement.h"
 #include <boost/shared_ptr.hpp>
-#include <sstream>
 
 namespace {
 const std::string QPID_REPLICATOR_("qpid.replicator-");
@@ -54,9 +53,7 @@ std::string QueueReplicator::replicatorName(const std::string& queueName) {
 QueueReplicator::QueueReplicator(boost::shared_ptr<Queue> q, boost::shared_ptr<Link> l)
     : Exchange(replicatorName(q->getName()), 0, q->getBroker()), queue(q), link(l)
 {
-    std::stringstream ss;
-    ss << "HA: Backup " << queue->getName() << ": ";
-    logPrefix = ss.str();
+    logPrefix = "HA: Backup " + queue->getName() + ": ";
     QPID_LOG(info, logPrefix << "Created, settings: " << q->getSettings());
 }
 
