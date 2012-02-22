@@ -155,9 +155,6 @@ void QueueReplicator::route(Deliverable& msg, const std::string& key, const Fiel
         QPID_LOG(trace, logPrefix << "Position moved from " << queue->getPosition()
                  << " to " << position);
         assert(queue->getPosition() <= position);
-         //TODO aconway 2011-12-14: Optimize this?
-        for (SequenceNumber i = queue->getPosition(); i < position; ++i)
-            dequeue(i,l);
         queue->setPosition(position);
     } else {
         msg.deliverTo(queue);
