@@ -49,6 +49,10 @@ class HaBroker(Broker):
         assert os.system(
             "qpid-ha-tool --broker-addresses=%s %s"%(url, self.host_port())) == 0
 
+def set_broker_urls(brokers):
+    url = ",".join([b.host_port() for b in brokers])
+    for b in brokers: b.set_broker_url(url)
+
 class ShortTests(BrokerTest):
     """Short HA functionality tests."""
 
@@ -59,7 +63,7 @@ class ShortTests(BrokerTest):
                 session.sender(address)
                 return True
             except NotFound: return False
-        assert retry(check), "Timed out waiting for %s"%(address)
+        assert retry(check), "Timed out waiting for address %s"%(address)
 
     # Wait for address to become valid on a backup broker.
     def wait_backup(self, backup, address):
@@ -342,6 +346,7 @@ class ShortTests(BrokerTest):
         s = session.sender("priority-queue; {create:always, node:{x-declare:{arguments:{'qpid.priorities':10, 'qpid.replicate':messages}}}}")
         priorities = [8,9,5,1,2,2,3,4,9,7,8,9,9,2]
         for p in priorities: s.send(Message(priority=p))
+        # Can't use browse_backup as browser sees messages in delivery order not priority.
         self.wait_backup(backup, "priority-queue")
         r = self.connect_admin(backup).session().receiver("priority-queue")
         received = [r.fetch().priority for i in priorities]
