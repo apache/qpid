@@ -280,18 +280,18 @@ EXCHANGE_NAME=sasl_fedex
 
 
 print "add exchanges"
-$QPID_CONFIG_EXEC -a localhost:${SRC_TCP_PORT} add exchange direct $EXCHANGE_NAME
-$QPID_CONFIG_EXEC -a localhost:${DST_TCP_PORT} add exchange direct $EXCHANGE_NAME
+$QPID_CONFIG_EXEC -b localhost:${SRC_TCP_PORT} add exchange direct $EXCHANGE_NAME
+$QPID_CONFIG_EXEC -b localhost:${DST_TCP_PORT} add exchange direct $EXCHANGE_NAME
 
 
 print "add queues"
-$QPID_CONFIG_EXEC -a localhost:${SRC_TCP_PORT} add queue $QUEUE_NAME
-$QPID_CONFIG_EXEC -a localhost:${DST_TCP_PORT} add queue $QUEUE_NAME
+$QPID_CONFIG_EXEC -b localhost:${SRC_TCP_PORT} add queue $QUEUE_NAME
+$QPID_CONFIG_EXEC -b localhost:${DST_TCP_PORT} add queue $QUEUE_NAME
 
 
 print "create bindings"
-$QPID_CONFIG_EXEC -a localhost:${SRC_TCP_PORT} bind $EXCHANGE_NAME $QUEUE_NAME $ROUTING_KEY
-$QPID_CONFIG_EXEC -a localhost:${DST_TCP_PORT} bind $EXCHANGE_NAME $QUEUE_NAME $ROUTING_KEY
+$QPID_CONFIG_EXEC -b localhost:${SRC_TCP_PORT} bind $EXCHANGE_NAME $QUEUE_NAME $ROUTING_KEY
+$QPID_CONFIG_EXEC -b localhost:${DST_TCP_PORT} bind $EXCHANGE_NAME $QUEUE_NAME $ROUTING_KEY
 
 
 #

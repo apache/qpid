@@ -93,10 +93,10 @@ else
     BROKER1="[::1]:${PORTS[1]}"
     TEST_QUEUE=ipv6-fed-test
 
-    $QPID_CONFIG_EXEC -a $BROKER0 add queue $TEST_QUEUE
-    $QPID_CONFIG_EXEC -a $BROKER1 add queue $TEST_QUEUE
+    $QPID_CONFIG_EXEC -b $BROKER0 add queue $TEST_QUEUE
+    $QPID_CONFIG_EXEC -b $BROKER1 add queue $TEST_QUEUE
     $QPID_ROUTE_EXEC dynamic add $BROKER1 $BROKER0 amq.direct
-    $QPID_CONFIG_EXEC -a $BROKER1 bind amq.direct $TEST_QUEUE $TEST_QUEUE
+    $QPID_CONFIG_EXEC -b $BROKER1 bind amq.direct $TEST_QUEUE $TEST_QUEUE
     $QPID_ROUTE_EXEC route map $BROKER1
 
     ./datagen --count 100 | tee rdata-in |

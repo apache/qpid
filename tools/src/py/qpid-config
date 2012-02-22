@@ -18,12 +18,18 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+import pdb
 
 import os
 from optparse import OptionParser, OptionGroup, IndentedHelpFormatter
 import sys
 import locale
-from qmf.console import Session
+
+home = os.environ.get("QPID_TOOLS_HOME", os.path.normpath("/usr/share/qpid-tools"))
+sys.path.append(os.path.join(home, "python"))
+
+from qpid.messaging import Connection
+from qpidtoollibs.broker import BrokerAgent
 
 usage = """
 Usage:  qpid-config [OPTIONS]
@@ -43,8 +49,8 @@ Examples:
 
 $ qpid-config add queue q
 $ qpid-config add exchange direct d -a localhost:5672
-$ qpid-config exchanges -a 10.1.1.7:10000
-$ qpid-config queues -a guest/guest@broker-host:10000
+$ qpid-config exchanges -b 10.1.1.7:10000
+$ qpid-config queues -b guest/guest@broker-host:10000
 
 Add Exchange <type> values:
 
@@ -61,13 +67,7 @@ Queue Limit Actions
     reject         - Reject enqueued messages
     flow-to-disk   - Page messages to disk
     ring           - Replace oldest unacquired message with new
-    ring-strict    - Replace oldest message, reject if oldest is acquired
-
-Queue Ordering Policies
-
-    fifo (default) - First in, first out
-    lvq            - Last Value Queue ordering, allows queue browsing
-    lvq-no-browse  - Last Value Queue ordering, browsing clients may lose data"""
+    ring-strict    - Replace oldest message, reject if oldest is acquired"""
 
 
 class Config:
@@ -77,7 +77,6 @@ class Config:
         self._connTimeout       = 10
         self._ignoreDefault     = False
         self._altern_ex         = None
-        self._passive           = False
         self._durable           = False
         self._clusterDurable    = False
         self._if_empty          = True
@@ -87,8 +86,8 @@ class Config:
         self._maxQueueSize      = None
         self._maxQueueCount     = None
         self._limitPolicy       = None
-        self._order             = None
         self._msgSequence       = False
+        self._lvq_key           = None
         self._ive               = False
         self._eventGeneration   = None
         self._file              = None
@@ -110,8 +109,7 @@ MAX_QUEUE_SIZE  = "qpid.max_size"
 MAX_QUEUE_COUNT  = "qpid.max_count"
 POLICY_TYPE  = "qpid.policy_type"
 CLUSTER_DURABLE = "qpid.persist_last_node"
-LVQ = "qpid.last_value_queue"
-LVQNB = "qpid.last_value_queue_no_browse"
+LVQ_KEY = "qpid.last_value_queue_key"
 MSG_SEQUENCE = "qpid.msg_sequence"
 IVE = "qpid.ive"
 QUEUE_EVENT_GENERATION = "qpid.queue_event_generation"
@@ -127,7 +125,7 @@ SHARED_MSG_GROUP  = "qpid.shared_msg_group"
 #arguments for which there are specific program options defined
 #i.e. the arguments for which there is special processing on add and
 #list
-SPECIAL_ARGS=[FILECOUNT,FILESIZE,MAX_QUEUE_SIZE,MAX_QUEUE_COUNT,POLICY_TYPE,CLUSTER_DURABLE,LVQ,LVQNB,MSG_SEQUENCE,IVE,QUEUE_EVENT_GENERATION,FLOW_STOP_COUNT,FLOW_STOP_SIZE,FLOW_RESUME_SIZE,
+SPECIAL_ARGS=[FILECOUNT,FILESIZE,MAX_QUEUE_SIZE,MAX_QUEUE_COUNT,POLICY_TYPE,CLUSTER_DURABLE,LVQ_KEY,MSG_SEQUENCE,IVE,QUEUE_EVENT_GENERATION,FLOW_STOP_COUNT,FLOW_STOP_SIZE,FLOW_RESUME_SIZE,
               MSG_GROUP_HDR_KEY,SHARED_MSG_GROUP]
 
 class JHelpFormatter(IndentedHelpFormatter):
@@ -160,8 +158,8 @@ def OptionsAndArguments(argv):
 
     group1 = OptionGroup(parser, "General Options")
     group1.add_option("-t", "--timeout", action="store", type="int", default=10, metavar="<secs>", help="Maximum time to wait for broker connection (in seconds)")
-    group1.add_option("-b", "--bindings", action="store_true", help="Show bindings in queue or exchange list")
-    group1.add_option("-a", "--broker-addr", action="store", type="string", default="localhost:5672", metavar="<address>", help="Address of qpidd broker with syntax: [username/password@] hostname | ip-address [:<port>]")
+    group1.add_option("-r", "--recursive", action="store_true", help="Show bindings in queue or exchange list")
+    group1.add_option("-b", "--broker", action="store", type="string", default="localhost:5672", metavar="<address>", help="Address of qpidd broker with syntax: [username/password@] hostname | ip-address [:<port>]")
     group1.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
     parser.add_option_group(group1)
 
@@ -171,7 +169,6 @@ def OptionsAndArguments(argv):
 
     group2 = OptionGroup(parser, "Options for Adding Exchanges and Queues")
     group2.add_option("--alternate-exchange", action="store", type="string", metavar="<aexname>", help="Name of the alternate-exchange for the new queue or exchange. Exchanges route messages to the alternate exchange if they are unable to route them elsewhere. Queues route messages to the alternate exchange if they are rejected by a subscriber or orphaned by queue deletion.")
-    group2.add_option("--passive", "--dry-run", action="store_true", help="Do not actually add the exchange or queue, ensure that all parameters and permissions are correct and would allow it to be created.")
     group2.add_option("--durable", action="store_true", help="The new queue or exchange is durable.")
     parser.add_option_group(group2)
 
@@ -182,7 +179,7 @@ def OptionsAndArguments(argv):
     group3.add_option("--max-queue-size", action="store", type="int", metavar="<n>", help="Maximum in-memory queue size as bytes")
     group3.add_option("--max-queue-count", action="store", type="int", metavar="<n>", help="Maximum in-memory queue size as a number of messages")
     group3.add_option("--limit-policy", action="store", choices=["none", "reject", "flow-to-disk", "ring", "ring-strict"], metavar="<policy>", help="Action to take when queue limit is reached")
-    group3.add_option("--order", action="store", choices=["fifo", "lvq", "lvq-no-browse"], metavar="<ordering>", help="Queue ordering policy")
+    group3.add_option("--lvq-key", action="store", metavar="<key>", help="Last Value Queue key")
     group3.add_option("--generate-queue-events", action="store", type="int", metavar="<n>", help="If set to 1, every enqueue will generate an event that can be processed by registered listeners (e.g. for replication). If set to 2, events will be generated for enqueues and dequeues.")
     group3.add_option("--flow-stop-size", action="store", type="int", metavar="<n>",
                       help="Turn on sender flow control when the number of queued bytes exceeds this value.")
@@ -224,10 +221,10 @@ def OptionsAndArguments(argv):
     except:
         args = encArgs
 
-    if opts.bindings:
+    if opts.recursive:
         config._recursive = True
-    if opts.broker_addr:
-        config._host = opts.broker_addr
+    if opts.broker:
+        config._host = opts.broker
     if opts.timeout is not None:
         config._connTimeout = opts.timeout
         if config._connTimeout == 0:
@@ -236,8 +233,6 @@ def OptionsAndArguments(argv):
         config._ignoreDefault = True
     if opts.alternate_exchange:
         config._altern_ex = opts.alternate_exchange
-    if opts.passive:
-        config._passive = True
     if opts.durable:
         config._durable = True
     if opts.cluster_durable:
@@ -254,10 +249,10 @@ def OptionsAndArguments(argv):
         config._maxQueueCount = opts.max_queue_count
     if opts.limit_policy:
            config._limitPolicy = opts.limit_policy
-    if opts.order:
-        config._order = opts.order
     if opts.sequence:
         config._msgSequence = True
+    if opts.lvq_key:
+        config._lvq_key = opts.lvq_key
     if opts.ive:
         config._ive = True
     if opts.generate_queue_events:
@@ -331,27 +326,23 @@ def snarf_header_args(args):
 class BrokerManager:
     def __init__(self):
         self.brokerName = None
-        self.qmf        = None
+        self.conn       = None
         self.broker     = None
-        self.mechanism  = None
 
     def SetBroker(self, brokerUrl, mechanism):
         self.url = brokerUrl
-        self.qmf = Session()
-        self.broker = self.qmf.addBroker(brokerUrl, config._connTimeout, mechanism)
-        agents = self.qmf.getAgents()
-        for a in agents:
-            if a.getAgentBank() == '0':
-                self.brokerAgent = a
+        self.conn = Connection(self.url, sasl_mechanisms=mechanism)
+        self.conn.open()
+        self.broker = BrokerAgent(self.conn)
 
     def Disconnect(self):
-        if self.broker:
-            self.qmf.delBroker(self.broker)
+        if self.conn:
+            self.conn.close()
 
     def Overview(self):
-        exchanges = self.qmf.getObjects(_class="exchange", _agent=self.brokerAgent)
-        queues    = self.qmf.getObjects(_class="queue", _agent=self.brokerAgent)
-        print "Total Exchanges: %d" % len (exchanges)
+        exchanges = self.broker.getAllExchanges()
+        queues    = self.broker.getAllQueues()
+        print "Total Exchanges: %d" % len(exchanges)
         etype = {}
         for ex in exchanges:
             if ex.type not in etype:
@@ -362,16 +353,16 @@ class BrokerManager:
             print "%15s: %d" % (typ, etype[typ])
 
         print
-        print "   Total Queues: %d" % len (queues)
+        print "   Total Queues: %d" % len(queues)
         durable = 0
         for queue in queues:
             if queue.durable:
                 durable = durable + 1
         print "        durable: %d" % durable
-        print "    non-durable: %d" % (len (queues) - durable)
+        print "    non-durable: %d" % (len(queues) - durable)
 
     def ExchangeList(self, filter):
-        exchanges = self.qmf.getObjects(_class="exchange", _agent=self.brokerAgent)
+        exchanges = self.broker.getAllExchanges()
         caption1 = "Type      "
         caption2 = "Exchange Name"
         maxNameLen = len(caption2)
@@ -401,19 +392,19 @@ class BrokerManager:
                 if MSG_SEQUENCE in args and args[MSG_SEQUENCE] == 1: print "--sequence",
                 if IVE in args and args[IVE] == 1: print "--ive",
                 if ex.altExchange:
-                    print "--alternate-exchange=%s" % ex._altExchange_.name,
+                    print "--alternate-exchange=%s" % ex.altExchange,
                 print
 
     def ExchangeListRecurse(self, filter):
-        exchanges = self.qmf.getObjects(_class="exchange", _agent=self.brokerAgent)
-        bindings  = self.qmf.getObjects(_class="binding", _agent=self.brokerAgent)
-        queues    = self.qmf.getObjects(_class="queue", _agent=self.brokerAgent)
+        exchanges = self.broker.getAllExchanges()
+        bindings  = self.broker.getAllBindings()
+        queues    = self.broker.getAllQueues()
         for ex in exchanges:
             if config._ignoreDefault and not ex.name: continue
             if self.match(ex.name, filter):
                 print "Exchange '%s' (%s)" % (ex.name, ex.type)
                 for bind in bindings:
-                    if bind.exchangeRef == ex.getObjectId():
+                    if bind.exchangeRef == ex.name:
                         qname = "<unknown>"
                         queue = self.findById(queues, bind.queueRef)
                         if queue != None:
@@ -425,7 +416,7 @@ class BrokerManager:
 
 
     def QueueList(self, filter):
-        queues = self.qmf.getObjects(_class="queue", _agent=self.brokerAgent)
+        queues = self.broker.getAllQueues()
         caption = "Queue Name"
         maxNameLen = len(caption)
         found = False
@@ -458,8 +449,7 @@ class BrokerManager:
                 if MAX_QUEUE_SIZE in args: print "--max-queue-size=%s" % args[MAX_QUEUE_SIZE],
                 if MAX_QUEUE_COUNT in args: print "--max-queue-count=%s" % args[MAX_QUEUE_COUNT],
                 if POLICY_TYPE in args: print "--limit-policy=%s" % args[POLICY_TYPE].replace("_", "-"),
-                if LVQ in args and args[LVQ] == 1: print "--order lvq",
-                if LVQNB in args and args[LVQNB] == 1: print "--order lvq-no-browse",
+                if LVQ_KEY in args: print "--lvq-key=%s" % args[LVQ_KEY],
                 if QUEUE_EVENT_GENERATION in args: print "--generate-queue-events=%s" % args[QUEUE_EVENT_GENERATION],
                 if q.altExchange:
                     print "--alternate-exchange=%s" % q._altExchange_.name,
@@ -472,14 +462,14 @@ class BrokerManager:
                 print " ".join(["--argument %s=%s" % (k, v) for k,v in args.iteritems() if not k in SPECIAL_ARGS])
 
     def QueueListRecurse(self, filter):
-        exchanges = self.qmf.getObjects(_class="exchange", _agent=self.brokerAgent)
-        bindings  = self.qmf.getObjects(_class="binding", _agent=self.brokerAgent)
-        queues    = self.qmf.getObjects(_class="queue", _agent=self.brokerAgent)
+        exchanges = self.broker.getAllExchanges()
+        bindings  = self.broker.getAllBindings()
+        queues    = self.broker.getAllQueues()
         for queue in queues:
             if self.match(queue.name, filter):
                 print "Queue '%s'" % queue.name
                 for bind in bindings:
-                    if bind.queueRef == queue.getObjectId():
+                    if bind.queueRef == queue.name:
                         ename = "<unknown>"
                         ex    = self.findById(exchanges, bind.exchangeRef)
                         if ex != None:
@@ -508,16 +498,19 @@ class BrokerManager:
             declArgs[MSG_SEQUENCE] = 1
         if config._ive:
             declArgs[IVE] = 1
-        if  config._altern_ex != None:
-            self.broker.getAmqpSession().exchange_declare(exchange=ename, type=etype, alternate_exchange=config._altern_ex, passive=config._passive, durable=config._durable, arguments=declArgs)
-        else:
-            self.broker.getAmqpSession().exchange_declare(exchange=ename, type=etype, passive=config._passive, durable=config._durable, arguments=declArgs)
+        if config._altern_ex:
+            declArgs['alternate-exchange'] = config._altern_ex
+        if config._durable:
+            declArgs['durable'] = 1
+        self.broker.addExchange(etype, ename, declArgs)
+
 
     def DelExchange(self, args):
         if len(args) < 1:
             Usage()
         ename = args[0]
-        self.broker.getAmqpSession().exchange_delete(exchange=ename)
+        self.broker.delExchange(ename)
+
 
     def AddQueue(self, args):
         if len(args) < 1:
@@ -550,15 +543,10 @@ class BrokerManager:
             elif config._limitPolicy == "ring-strict":
                 declArgs[POLICY_TYPE] = "ring_strict"
 
-        if  config._clusterDurable:
+        if config._clusterDurable:
             declArgs[CLUSTER_DURABLE] = 1
-        if config._order:
-            if config._order == "fifo":
-                pass
-            elif config._order == "lvq":
-                declArgs[LVQ] = 1
-            elif config._order == "lvq-no-browse":
-                declArgs[LVQNB] = 1
+        if config._lvq_key:
+            declArgs[LVQ_KEY] = config._lvq_key
         if config._eventGeneration:
             declArgs[QUEUE_EVENT_GENERATION]  = config._eventGeneration
 
@@ -576,17 +564,19 @@ class BrokerManager:
         if config._sharedMsgGroup:
             declArgs[SHARED_MSG_GROUP] = 1
 
-        if config._altern_ex != None:
-            self.broker.getAmqpSession().queue_declare(queue=qname, alternate_exchange=config._altern_ex, passive=config._passive, durable=config._durable, arguments=declArgs)
-        else:
-            self.broker.getAmqpSession().queue_declare(queue=qname, passive=config._passive, durable=config._durable, arguments=declArgs)
+        if config._altern_ex:
+            declArgs['alternate-exchange'] = config._altern_ex
+        if config._durable:
+            declArgs['durable'] = 1
+
+        self.broker.addQueue(qname, declArgs)
 
 
     def DelQueue(self, args):
         if len(args) < 1:
             Usage()
         qname = args[0]
-        self.broker.getAmqpSession().queue_delete(queue=qname, if_empty=config._if_empty, if_unused=config._if_unused)
+        self.broker.delQueue(qname)
 
 
     def Bind(self, args):
@@ -599,7 +589,7 @@ class BrokerManager:
             key = args[2]
 
         # query the exchange to determine its type.
-        res = self.broker.getAmqpSession().exchange_query(ename)
+        res = self.broker.getExchange(ename)
 
         # type of the xchg determines the processing of the rest of
         # argv.  if it's an xml xchg, we want to find a file
@@ -608,7 +598,7 @@ class BrokerManager:
         # map containing key/value pairs.  if neither of those, extra
         # args are ignored.
         ok = True
-        _args = None
+        _args = {}
         if res.type == "xml":
             # this checks/imports the -f arg
             [ok, xquery] = snarf_xquery_args()
@@ -622,10 +612,7 @@ class BrokerManager:
         if not ok:
             sys.exit(1)
 
-        self.broker.getAmqpSession().exchange_bind(queue=qname,
-                                                    exchange=ename,
-                                                    binding_key=key,
-                                                    arguments=_args)
+        self.broker.bind(ename, qname, key, _args)
 
     def Unbind(self, args):
         if len(args) < 2:
@@ -635,11 +622,11 @@ class BrokerManager:
         key   = ""
         if len(args) > 2:
             key = args[2]
-        self.broker.getAmqpSession().exchange_unbind(queue=qname, exchange=ename, binding_key=key)
+        self.broker.unbind(ename, qname, key)
 
     def findById(self, items, id):
         for item in items:
-            if item.getObjectId() == id:
+            if item.name == id:
                 return item
         return None
 

@@ -42,7 +42,6 @@ class Config:
         self._limit = 50
         self._increasing = False
         self._sortcol = None
-        self._details = None
         self._sasl_mechanism = None
 
 config = Config()
@@ -52,16 +51,19 @@ def OptionsAndArguments(argv):
 
     global config
 
-    parser = OptionParser(usage="usage: %prog [options] BROKER",
-                      description="Example: $ qpid-stat -q  broker-host:10000")
+    parser = OptionParser(usage="usage: %prog [options] -[gcequm] [object-name]")
 
     group1 = OptionGroup(parser, "General Options")
-    group1.add_option("-t", "--timeout", action="store", type="int", default=10, metavar="<secs>", help="Maximum time to wait for broker connection (in seconds)")
-    group1.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
+    group1.add_option("-b", "--broker",  action="store", type="string", default="localhost", metavar="<url>",
+                      help="URL of the broker to query")
+    group1.add_option("-t", "--timeout", action="store", type="int", default=10, metavar="<secs>",
+                      help="Maximum time to wait for broker connection (in seconds)")
+    group1.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>",
+                      help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
     parser.add_option_group(group1)
 
     group2 = OptionGroup(parser, "Display Options")
-    group2.add_option("-b", "--broker", help="Show Brokers",               action="store_const", const="b", dest="show")
+    group2.add_option("-g", "--general", help="Show General Broker Stats", action="store_const", const="g", dest="show")
     group2.add_option("-c", "--connections", help="Show Connections",      action="store_const", const="c", dest="show")
     group2.add_option("-e", "--exchanges", help="Show Exchanges",          action="store_const", const="e", dest="show")
     group2.add_option("-q", "--queues", help="Show Queues",                action="store_const", const="q", dest="show")
@@ -70,24 +72,21 @@ def OptionsAndArguments(argv):
     group2.add_option("-S", "--sort-by",  metavar="<colname>",                   help="Sort by column name")
     group2.add_option("-I", "--increasing", action="store_true", default=False,  help="Sort by increasing value (default = decreasing)")
     group2.add_option("-L", "--limit", type="int", default=50, metavar="<n>",    help="Limit output to n rows")
-    group2.add_option("-D", "--details", action="store", metavar="<name>", dest="detail", default=None, help="Display details on a single object.")
+
     parser.add_option_group(group2)
 
     opts, args = parser.parse_args(args=argv)
 
     if not opts.show:
-        parser.error("You must specify one of these options: -b, -c, -e, -q. or -u. For details, try $ qpid-stat --help")
+        parser.error("You must specify one of these options: -g, -c, -e, -q, -m, or -u. For details, try $ qpid-stat --help")
 
     config._types = opts.show
     config._sortcol = opts.sort_by
+    config._host = opts.broker
     config._connTimeout = opts.timeout
     config._increasing = opts.increasing
     config._limit = opts.limit
     config._sasl_mechanism = opts.sasl_mechanism
-    config._detail = opts.detail
-
-    if args:
-        config._host = args[0]
 
     return args
 
@@ -118,24 +117,23 @@ class IpAddr:
 
 class BrokerManager:
     def __init__(self):
-        self.brokerName  = None
-        self.connections = []
-        self.brokers     = []
-        self.cluster     = None
+        self.brokerName = None
+        self.connection = None
+        self.broker     = None
+        self.cluster    = None
 
     def SetBroker(self, brokerUrl, mechanism):
         self.url = brokerUrl
-        self.connections.append(Connection(self.url, sasl_mechanism=mechanism))
-        self.connections[0].open()
-        self.brokers.append(BrokerAgent(self.connections[0]))
+        self.connection = Connection(self.url, sasl_mechanisms=mechanism)
+        self.connection.open()
+        self.broker = BrokerAgent(self.connection)
 
     def Disconnect(self):
         """ Release any allocated brokers.  Ignore any failures as the tool is
         shutting down.
         """
         try:
-            for conn in self.connections:
-                conn.close()
+            connection.close()
         except:
             pass
 
@@ -184,7 +182,7 @@ class BrokerManager:
         heads.append(Header('exchanges', Header.COMMAS))
         heads.append(Header('queues', Header.COMMAS))
         rows = []
-        broker = self.brokers[0].getBroker()
+        broker = self.broker.getBroker()
         connections = self.getConnectionMap()
         sessions = self.getSessionMap()
         exchanges = self.getExchangeMap()
@@ -241,8 +239,8 @@ class BrokerManager:
         heads.append(Header('msgIn', Header.KMG))
         heads.append(Header('msgOut', Header.KMG))
         rows = []
-        connections = self.brokers[0].getAllConnections()
-        broker = self.brokers[0].getBroker()
+        connections = self.broker.getAllConnections()
+        broker = self.broker.getBroker()
         for conn in connections:
             row = []
             row.append(conn.address)
@@ -279,7 +277,7 @@ class BrokerManager:
         heads.append(Header("byteOut", Header.KMG))
         heads.append(Header("byteDrop", Header.KMG))
         rows = []
-        exchanges = self.brokers[0].getAllExchanges()
+        exchanges = self.broker.getAllExchanges()
         for ex in exchanges:
             row = []
             row.append(ex.name)
@@ -317,7 +315,7 @@ class BrokerManager:
         heads.append(Header("cons", Header.KMG))
         heads.append(Header("bind", Header.KMG))
         rows = []
-        queues = self.brokers[0].getAllQueues()
+        queues = self.broker.getAllQueues()
         for q in queues:
             row = []
             row.append(q.name)
@@ -341,9 +339,65 @@ class BrokerManager:
             dispRows = rows
         disp.formattedTable(title, heads, dispRows)
 
-    def displayQueue(self, subs):
+
+    def displayQueue(self, subs, name):
+        queue = self.broker.getQueue(name)
+        if not queue:
+            print "Queue '%s' not found" % name
+            return
+
         disp = Display(prefix="  ")
         heads = []
+        heads.append(Header('Name'))
+        heads.append(Header('Durable', Header.YN))
+        heads.append(Header('AutoDelete', Header.YN))
+        heads.append(Header('Exclusive', Header.YN))
+        heads.append(Header('FlowStopped', Header.YN))
+        heads.append(Header('FlowStoppedCount', Header.COMMAS))
+        heads.append(Header('Consumers', Header.COMMAS))
+        heads.append(Header('Bindings', Header.COMMAS))
+        rows = []
+        rows.append([queue.name, queue.durable, queue.autoDelete, queue.exclusive,
+                     queue.flowStopped, queue.flowStoppedCount,
+                     queue.consumerCount, queue.bindingCount])
+        disp.formattedTable("Properties:", heads, rows)
+        print
+
+        heads = []
+        heads.append(Header('Property'))
+        heads.append(Header('Value'))
+        rows = []
+        rows.append(['arguments', queue.arguments])
+        rows.append(['alt-exchange', queue.altExchange])
+        disp.formattedTable("Optional Properties:", heads, rows)
+        print
+
+        heads = []
+        heads.append(Header('Statistic'))
+        heads.append(Header('Messages', Header.COMMAS))
+        heads.append(Header('Bytes', Header.COMMAS))
+        rows = []
+        rows.append(['queue-depth',                queue.msgDepth,           queue.byteDepth])
+        rows.append(['total-enqueues',             queue.msgTotalEnqueues,   queue.byteTotalEnqueues])
+        rows.append(['total-dequeues',             queue.msgTotalDequeues,   queue.byteTotalDequeues])
+        rows.append(['persistent-enqueues',        queue.msgPersistEnqueues, queue.bytePersistEnqueues])
+        rows.append(['persistent-dequeues',        queue.msgPersistDequeues, queue.bytePersistDequeues])
+        rows.append(['transactional-enqueues',     queue.msgTxnEnqueues,     queue.byteTxnEnqueues])
+        rows.append(['transactional-dequeues',     queue.msgTxnDequeues,     queue.byteTxnDequeues])
+        rows.append(['flow-to-disk-depth',         queue.msgFtdDepth,        queue.byteFtdDepth])
+        rows.append(['flow-to-disk-enqueues',      queue.msgFtdEnqueues,     queue.byteFtdEnqueues])
+        rows.append(['flow-to-disk-dequeues',      queue.msgFtdDequeues,     queue.byteFtdDequeues])
+        rows.append(['acquires',                   queue.acquires,           None])
+        rows.append(['releases',                   queue.releases,           None])
+        rows.append(['discards-ttl-expired',       queue.discardsTtl,        None])
+        rows.append(['discards-limit-overflow',    queue.discardsOverflow,   None])
+        rows.append(['discards-ring-overflow',     queue.discardsRing,       None])
+        rows.append(['discards-lvq-replace',       queue.discardsLvq,        None])
+        rows.append(['discards-subscriber-reject', queue.discardsSubscriber, None])
+        rows.append(['discards-purged',            queue.discardsPurge,      None])
+        rows.append(['reroutes',                   queue.reroutes,           None])
+        disp.formattedTable("Statistics:", heads, rows)
+
 
     def displaySubscriptions(self, subs):
         disp = Display(prefix="  ")
@@ -359,7 +413,7 @@ class BrokerManager:
         heads.append(Header("creditMode"))
         heads.append(Header("delivered", Header.KMG))
         rows = []
-        subscriptions = self.brokers[0].getAllSubscriptions()
+        subscriptions = self.broker.getAllSubscriptions()
         sessions = self.getSessionMap()
         connections = self.getConnectionMap()
         for s in subscriptions:
@@ -392,55 +446,55 @@ class BrokerManager:
         disp = Display(prefix="  ")
         heads = [Header('Statistic'), Header('Value', Header.COMMAS)]
         rows = []
-        memory = self.brokers[0].getMemory()
+        memory = self.broker.getMemory()
         for k,v in memory.values.items():
             if k != 'name':
                 rows.append([k, v])
         disp.formattedTable('Broker Memory Statistics:', heads, rows)
 
     def getExchangeMap(self):
-        exchanges = self.brokers[0].getAllExchanges()
+        exchanges = self.broker.getAllExchanges()
         emap = {}
         for e in exchanges:
             emap[e.name] = e
         return emap
 
     def getQueueMap(self):
-        queues = self.brokers[0].getAllQueues()
+        queues = self.broker.getAllQueues()
         qmap = {}
         for q in queues:
             qmap[q.name] = q
         return qmap
 
     def getSessionMap(self):
-        sessions = self.brokers[0].getAllSessions()
+        sessions = self.broker.getAllSessions()
         smap = {}
         for s in sessions:
             smap[s.name] = s
         return smap
 
     def getConnectionMap(self):
-        connections = self.brokers[0].getAllConnections()
+        connections = self.broker.getAllConnections()
         cmap = {}
         for c in connections:
             cmap[c.address] = c
         return cmap
 
-    def displayMain(self, main, subs):
-        if   main == 'b': self.displayBroker(subs)
+    def displayMain(self, names, main, subs):
+        if   main == 'g': self.displayBroker(subs)
         elif main == 'c': self.displayConn(subs)
         elif main == 's': self.displaySession(subs)
         elif main == 'e': self.displayExchange(subs)
         elif main == 'q':
-            if config._detail:
-                self.displayQueue(subs, config._detail)
+            if len(names) >= 1:
+                self.displayQueue(subs, names[0])
             else:
                 self.displayQueues(subs)
         elif main == 'u': self.displaySubscriptions(subs)
         elif main == 'm': self.displayMemory(subs)
 
-    def display(self):
-        self.displayMain(config._types[0], config._types[1:])
+    def display(self, names):
+        self.displayMain(names, config._types[0], config._types[1:])
 
 
 def main(argv=None):
@@ -450,7 +504,7 @@ def main(argv=None):
 
     try:
         bm.SetBroker(config._host, config._sasl_mechanism)
-        bm.display()
+        bm.display(args)
         bm.Disconnect()
         return 0
     except KeyboardInterrupt:
