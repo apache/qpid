@@ -44,13 +44,13 @@ run_test() {
 
 declare -i i=0
 declare -a tests
-tests=("qpid-config -a $BROKER_URL add queue $QUEUE_NAME --group-header=${GROUP_KEY} --shared-groups"
+tests=("qpid-config -b $BROKER_URL add queue $QUEUE_NAME --group-header=${GROUP_KEY} --shared-groups"
     "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 10007 --receivers 3 --senders 5 --group-size 211 --randomize-group-size --capacity 47 --ack-frequency 97"
     "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 10007 --receivers 3 --senders 5 --group-size 211 --randomize-group-size --capacity 79 --ack-frequency 79"
     "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 10007 --receivers 3 --senders 5 --group-size 211 --randomize-group-size --capacity 97 --ack-frequency 47"
     "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 40000  --receivers 0 --senders 5 --group-size 13 --randomize-group-size"
     "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 200000 --receivers 3 --senders 0 --capacity 23 --ack-frequency 7"
-    "qpid-config -a $BROKER_URL del queue $QUEUE_NAME --force")
+    "qpid-config -b $BROKER_URL del queue $QUEUE_NAME --force")
 
 while [ -n "${tests[i]}" ]; do
     run_test ${tests[i]}

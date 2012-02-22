@@ -29,6 +29,9 @@ from qpid.message import Message
 from qpid.harness import Skipped
 from qpid.exceptions import VersionError
 
+import qpid.messaging
+import qpidtoollibs.broker
+
 class TestBase(unittest.TestCase):
     """Base class for Qpid test cases.
 
@@ -192,6 +195,15 @@ class TestBase010(unittest.TestCase):
     def startQmf(self, handler=None):
         self.qmf = qmf.console.Session(handler)
         self.qmf_broker = self.qmf.addBroker(str(self.broker))
+
+    def startBrokerAccess(self):
+        """
+        New-style management access to the broker.  Can be used in lieu of startQmf.
+        """
+        if 'broker_conn' not in self.__dict__:
+            self.broker_conn = qpid.messaging.Connection(str(self.broker))
+            self.broker_conn.open()
+            self.broker_access = qpidtoollibs.broker.BrokerAgent(self.broker_conn)
 
     def connect(self, host=None, port=None):
         url = self.broker

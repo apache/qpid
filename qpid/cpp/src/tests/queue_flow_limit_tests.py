@@ -117,7 +117,7 @@ class QueueFlowLimitTests(TestBase010):
         tool = environ.get("QPID_CONFIG_EXEC")
         if tool:
             command = tool + \
-                " --broker-addr=%s:%s " % (self.broker.host, self.broker.port) \
+                " --broker=%s:%s " % (self.broker.host, self.broker.port) \
                 + "add queue test01 --flow-stop-count=999" \
                 + " --flow-resume-count=55 --flow-stop-size=5000000" \
                 + " --flow-resume-size=100000"
