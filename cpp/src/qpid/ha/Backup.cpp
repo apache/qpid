@@ -52,7 +52,7 @@ Backup::Backup(broker::Broker& b, const Settings& s) :
 
 void Backup::initialize(const Url& url) {
     assert(!url.empty());
-    QPID_LOG(notice, "Ha: Backup started: " << url);
+    QPID_LOG(notice, "HA: Backup started: " << url);
     string protocol = url[0].protocol.empty() ? "tcp" : url[0].protocol;
     // Declare the link
     std::pair<Link::shared_ptr, bool> result = broker.getLinks().declare(
