@@ -74,14 +74,19 @@ public class ConnectionStartProperties
 
     public static String getPlatformInfo()
     {
-        StringBuffer fullSystemInfo = new StringBuffer();
-        fullSystemInfo.append(System.getProperty("java.runtime.name"));
-        fullSystemInfo.append(", " + System.getProperty("java.runtime.version"));
-        fullSystemInfo.append(", " + System.getProperty("java.vendor"));
-        fullSystemInfo.append(", " + System.getProperty("os.arch"));
-        fullSystemInfo.append(", " + System.getProperty("os.name"));
-        fullSystemInfo.append(", " + System.getProperty("os.version"));
-        fullSystemInfo.append(", " + System.getProperty("sun.os.patch.level"));
+        StringBuilder fullSystemInfo = new StringBuilder(System.getProperty("java.runtime.name"));
+        fullSystemInfo.append(", ");
+        fullSystemInfo.append(System.getProperty("java.runtime.version"));
+        fullSystemInfo.append(", ");
+        fullSystemInfo.append(System.getProperty("java.vendor"));
+        fullSystemInfo.append(", ");
+        fullSystemInfo.append(System.getProperty("os.arch"));
+        fullSystemInfo.append(", ");
+        fullSystemInfo.append(System.getProperty("os.name"));
+        fullSystemInfo.append(", ");
+        fullSystemInfo.append(System.getProperty("os.version"));
+        fullSystemInfo.append(", ");
+        fullSystemInfo.append(System.getProperty("sun.os.patch.level"));
 
         return fullSystemInfo.toString();
     }
