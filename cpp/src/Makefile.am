@@ -485,6 +485,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/Fork.h				\
   qpid/sys/LockFile.h				\
   qpid/sys/LockPtr.h				\
+  qpid/sys/MemStat.h				\
   qpid/sys/OutputControl.h			\
   qpid/sys/OutputTask.h				\
   qpid/sys/PipeHandle.h				\
