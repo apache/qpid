@@ -61,3 +61,7 @@ org.apache.qpid.test.unit.client.temporaryqueue.TemporaryQueueTest#testTemporary
 
 // QPID-3604 This fix is applied only to the 0-10 code, hence this test does not work for pre 0-10.
 org.apache.qpid.client.prefetch.PrefetchBehaviourTest#testConnectionStop
+
+//XA functionality is not implemented in pre 0-10
+org.apache.qpid.jms.xa.XAResourceTest#*
+

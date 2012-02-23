@@ -25,7 +25,7 @@ broker.stopped=Exception
 broker.config=build/etc/config-systests-derby.xml
 broker.protocol.excludes=--exclude-0-10 @PORT --exclude-0-10 @SSL_PORT --exclude-0-9-1 @PORT --exclude-0-9-1 @SSL_PORT
 messagestore.class.name=org.apache.qpid.server.store.DerbyMessageStore
-profile.excludes=JavaPersistentExcludes JavaDerbyExcludes JavaPre010Excludes
+profile.excludes=JavaPersistentExcludes JavaDerbyExcludes XAExcludes JavaPre010Excludes
 broker.clean.between.tests=true
 broker.persistent=true
 #

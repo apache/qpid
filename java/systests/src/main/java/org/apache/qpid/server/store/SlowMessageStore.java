@@ -313,6 +313,17 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
             _underlying.abortTran();
             doPostDelay("abortTran");
         }
+
+        public void removeXid(long format, byte[] globalId, byte[] branchId) throws AMQStoreException
+        {
+            _underlying.removeXid(format, globalId, branchId);
+        }
+
+        public void recordXid(long format, byte[] globalId, byte[] branchId, Record[] enqueues, Record[] dequeues)
+                throws AMQStoreException
+        {
+            _underlying.recordXid(format, globalId, branchId, enqueues, dequeues);
+        }
     }
 
     public void updateQueue(AMQQueue queue) throws AMQStoreException

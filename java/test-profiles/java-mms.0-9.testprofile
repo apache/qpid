@@ -28,4 +28,4 @@ broker.protocol.excludes=--exclude-0-10 @PORT --exclude-0-10 @SSL_PORT --exclude
 # Do not enable. Allow client to attempt 0-10 and negotiate downwards
 #
 #qpid.amqp.version=0-9
-profile.excludes=JavaTransientExcludes JavaPre010Excludes
+profile.excludes=JavaTransientExcludes XAExcludes JavaPre010Excludes
