@@ -188,6 +188,12 @@ class BrokerAgent(object):
   def getAllLinks(self):
     return self._getAllBrokerObjects(Link)
 
+  def getAcl(self):
+    objects = self._getAllBrokerObjects(Acl)
+    if len(objects) > 0:
+      return objects[0]
+    return None # Acl module not loaded
+
   def echo(self, sequence, body):
     """Request a response to test the path to the management broker"""
     pass
@@ -262,6 +268,9 @@ class BrokerAgent(object):
             'name':       "%s/%s/%s" % (exchange, queue, key),
             'strict':      True}
     self._method('delete', args)
+
+  def reloadAclFile(self):
+    self._method('reloadACLFile', {}, "org.apache.qpid.acl:acl:org.apache.qpid.broker:broker:amqp-broker")
 
   def create(self, _type, name, properties, strict):
     """Create an object of the specified type"""
@@ -373,3 +382,6 @@ class Link(BrokerObject):
   def __init__(self, broker, values):
     BrokerObject.__init__(self, broker, values)
 
+class Acl(BrokerObject):
+  def __init__(self, broker, values):
+    BrokerObject.__init__(self, broker, values)

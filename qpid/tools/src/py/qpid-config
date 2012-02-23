@@ -42,7 +42,8 @@ Usage:  qpid-config [OPTIONS]
         qpid-config [OPTIONS] bind   <exchange-name> <queue-name> [binding-key]
                   <for type xml>     [-f -|filename]
                   <for type header>  [all|any] k1=v1 [, k2=v2...]
-        qpid-config [OPTIONS] unbind <exchange-name> <queue-name> [binding-key]"""
+        qpid-config [OPTIONS] unbind <exchange-name> <queue-name> [binding-key]
+        qpid-config [OPTIONS] reload-acl"""
 
 description = """
 Examples:
@@ -624,6 +625,15 @@ class BrokerManager:
             key = args[2]
         self.broker.unbind(ename, qname, key)
 
+    def ReloadAcl(self):
+        try:
+            self.broker.reloadAclFile()
+        except Exception, e:
+            if str(e).find('No object found') != -1:
+                print "Failed: ACL Module Not Loaded in Broker"
+            else:
+                raise
+
     def findById(self, items, id):
         for item in items:
             if item.name == id:
@@ -684,6 +694,8 @@ def main(argv=None):
                 bm.Bind(args[1:])
             elif cmd == "unbind":
                 bm.Unbind(args[1:])
+            elif cmd == "reload-acl":
+                bm.ReloadAcl()
             else:
                 Usage()
     except KeyboardInterrupt:
