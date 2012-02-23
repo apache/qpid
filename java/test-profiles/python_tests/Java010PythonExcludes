@@ -19,9 +19,6 @@
 
 ###### Feature not supported in Java Broker ######
 
-#The broker does not support DTX
-qpid_tests.broker_0_10.dtx.*
-
 #The broker does not have the appropriate QMF support
 qpid_tests.broker_0_10.management.*
 qpid_tests.broker_0_10.stats.BrokerStatsTests.*
@@ -52,6 +49,13 @@ qpid_tests.broker_0_10.priority.PriorityTests.test_prioritised_delivery_with_ali
 qpid_tests.broker_0_10.message.MessageTests.test_ack
 qpid_tests.broker_0_10.message.MessageTests.test_acquire
 qpid_tests.broker_0_10.message.MessageTests.test_acquire_with_no_accept_and_credit_flow
+
+qpid_tests.broker_0_10.dtx.DtxTests.test_forget_xid_on_completion
+qpid_tests.broker_0_10.dtx.DtxTests.test_implicit_end
+qpid_tests.broker_0_10.dtx.DtxTests.test_simple_commit
+qpid_tests.broker_0_10.dtx.DtxTests.test_simple_prepare_commit
+qpid_tests.broker_0_10.dtx.DtxTests.test_simple_prepare_rollback
+qpid_tests.broker_0_10.dtx.DtxTests.test_simple_rollback
 
 
 ###### Java Broker defects ######

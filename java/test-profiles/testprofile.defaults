@@ -47,7 +47,7 @@ test.port.alt.ssl=25671
 
 test.exclude=true
 profile.excludes=
-test.excludes=Excludes XAExcludes JavaExcludes ${profile}.excludes ${profile.excludes}
+test.excludes=Excludes JavaExcludes ${profile}.excludes ${profile.excludes}
 test.mem=512M
 test=*Test
 haltonfailure=no

@@ -162,11 +162,12 @@ public class QueueTest extends AbstractXATestCase
             // create a standard session
             try
             {
-                _queueConnection = _queueFactory.createQueueConnection();
+                _queueConnection = _queueFactory.createQueueConnection("guest", "guest");
                 _nonXASession = _queueConnection.createQueueSession(true, Session.AUTO_ACKNOWLEDGE);
             }
             catch (JMSException e)
             {
+                e.printStackTrace();
                 fail("cannot create queue session: " + e.getMessage());
             }
             init(session, _queue);
@@ -638,7 +639,8 @@ public class QueueTest extends AbstractXATestCase
                 TextMessage message1 = (TextMessage) nonXAConsumer.receive(1000);
                 if (message1 != null)
                 {
-                    fail("The queue is not empty! ");
+
+                    fail("The queue is not empty! " + message1.getLongProperty(_sequenceNumberPropertyName));
                 }
             }
             catch (JMSException e)

@@ -1615,7 +1615,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
         }
     }
 
-    @Override
     public int compareTo(AMQSessionModel session)
     {
         return getId().toString().compareTo(session.getID().toString());

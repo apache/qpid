@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import java.util.concurrent.ScheduledFuture;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
@@ -66,6 +67,7 @@ import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPlugin;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 
@@ -95,6 +97,8 @@ public class VirtualHostImpl implements VirtualHost
 
     private MessageStore _messageStore;
 
+    private DtxRegistry _dtxRegistry;
+
     private VirtualHostMBean _virtualHostMBean;
 
     private AMQBrokerManagerMBean _brokerMBean;
@@ -117,6 +121,7 @@ public class VirtualHostImpl implements VirtualHost
     private final long _createTime = System.currentTimeMillis();
     private final ConcurrentHashMap<BrokerLink,BrokerLink> _links = new ConcurrentHashMap<BrokerLink, BrokerLink>();
     private static final int HOUSEKEEPING_SHUTDOWN_TIMEOUT = 5;
+
 
     public IConnectionRegistry getConnectionRegistry()
     {
@@ -188,6 +193,7 @@ public class VirtualHostImpl implements VirtualHost
         _broker = _appRegistry.getBroker();
         _configuration = hostConfig;
         _name = _configuration.getName();
+        _dtxRegistry = new DtxRegistry();
 
         _id = _appRegistry.getConfigStore().createId();
 
@@ -349,6 +355,11 @@ public class VirtualHostImpl implements VirtualHost
     {
         _houseKeepingTasks.scheduleAtFixedRate(task, period / 2, period,
                                                TimeUnit.MILLISECONDS);
+    }
+
+    public ScheduledFuture<?> scheduleTask(long delay, Runnable task)
+    {
+        return _houseKeepingTasks.schedule(task, delay, TimeUnit.MILLISECONDS);
     }
 
     public long getHouseKeepingTaskCount()
@@ -617,6 +628,11 @@ public class VirtualHostImpl implements VirtualHost
             }
         }
 
+        if(_dtxRegistry != null)
+        {
+            _dtxRegistry.close();
+        }
+
         //Close MessageStore
         if (_messageStore != null)
         {
@@ -782,6 +798,11 @@ public class VirtualHostImpl implements VirtualHost
     public ConfigStore getConfigStore()
     {
         return getApplicationRegistry().getConfigStore();
+    }
+
+    public DtxRegistry getDtxRegistry()
+    {
+        return _dtxRegistry;
     }
 
     /**
