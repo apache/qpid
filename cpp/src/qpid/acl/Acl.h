@@ -66,12 +66,29 @@ public:
    inline virtual bool doTransferAcl() {return transferAcl;};
    
    // create specilied authorise methods for cases that need faster matching as needed.
-   virtual bool authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& name, std::map<Property, std::string>* params=0);
-   virtual bool authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& ExchangeName,const std::string& RoutingKey);
+   virtual bool authorise(
+       const std::string& id,
+       const Action& action,
+       const ObjectType& objType,
+       const std::string& name,
+       std::map<Property,
+       std::string>* params=0);
+
+   virtual bool authorise(
+       const std::string& id,
+       const Action& action,
+       const ObjectType& objType,
+       const std::string& ExchangeName,
+       const std::string& RoutingKey);
 
    virtual ~Acl();
 private:
-   bool result(const AclResult& aclreslt, const std::string& id, const Action& action, const ObjectType& objType, const std::string& name);
+   bool result(
+       const AclResult& aclreslt,
+       const std::string& id,
+       const Action& action,
+       const ObjectType& objType,
+       const std::string& name);
    bool readAclFile(std::string& errorText);
    bool readAclFile(std::string& aclFile, std::string& errorText);
    virtual qpid::management::ManagementObject* GetManagementObject(void) const;

@@ -72,15 +72,30 @@ public:
     bool                 transferAcl;
     std::string          aclSource; 
 
-    AclResult lookup(const std::string& id, const Action& action, const ObjectType& objType, const std::string& name, std::map<Property, std::string>* params=0);
-    AclResult lookup(const std::string& id, const Action& action, const ObjectType& objType, const std::string& ExchangeName, const std::string& RoutingKey);
-    AclResult getACLResult(bool logOnly, bool log);
+    AclResult lookup(
+        const std::string& id,
+        const Action& action,
+        const ObjectType& objType,
+        const std::string& name,
+        std::map<Property, std::string>* params=0);
+    
+    AclResult lookup(
+        const std::string& id,
+        const Action& action,
+        const ObjectType& objType,
+        const std::string& ExchangeName,
+        const std::string& RoutingKey);
 
     bool matchProp(const std::string & src, const std::string& src1);
     void clear ();
 
     AclData();
     virtual ~AclData();
+
+private:
+    bool compareIntMax(const qpid::acl::Property theProperty,
+                       const std::string         theAclValue,
+                       const std::string         theLookupValue);
 };
 
 }} // namespace qpid::acl

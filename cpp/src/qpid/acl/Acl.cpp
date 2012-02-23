@@ -66,7 +66,12 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
     if (mgmtObject!=0) mgmtObject->set_enforcingAcl(1);
 }
 
-bool Acl::authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& name, std::map<Property, std::string>* params)
+bool Acl::authorise(
+    const std::string& id,
+    const Action& action,
+    const ObjectType& objType,
+    const std::string& name,
+    std::map<Property, std::string>* params)
 {
     boost::shared_ptr<AclData> dataLocal;
     { 
@@ -81,7 +86,12 @@ bool Acl::authorise(const std::string& id, const Action& action, const ObjectTyp
     return result(aclreslt, id, action, objType, name);
 }
 
-bool Acl::authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& ExchangeName, const std::string& RoutingKey)
+bool Acl::authorise(
+    const std::string& id,
+    const Action& action,
+    const ObjectType& objType,
+    const std::string& ExchangeName,
+    const std::string& RoutingKey)
 {
     boost::shared_ptr<AclData> dataLocal;
     {
@@ -96,33 +106,47 @@ bool Acl::authorise(const std::string& id, const Action& action, const ObjectTyp
 }
 
 
-bool Acl::result(const AclResult& aclreslt, const std::string& id, const Action& action, const ObjectType& objType, const std::string& name)
+bool Acl::result(
+    const AclResult& aclreslt,
+    const std::string& id,
+    const Action& action,
+    const ObjectType& objType,
+    const std::string& name)
 {
+    bool result(false);
+    
     switch (aclreslt)
     {
     case ALLOWLOG:
         QPID_LOG(info, "ACL Allow id:" << id <<" action:" << AclHelper::getActionStr(action) <<
-            " ObjectType:" << AclHelper::getObjectTypeStr(objType) << " Name:" << name );
+                 " ObjectType:" << AclHelper::getObjectTypeStr(objType) << " Name:" << name );
         agent->raiseEvent(_qmf::EventAllow(id,  AclHelper::getActionStr(action),
-            AclHelper::getObjectTypeStr(objType),
-            name, types::Variant::Map()));
+                          AclHelper::getObjectTypeStr(objType),
+                          name, types::Variant::Map()));
         // FALLTHROUGH
     case ALLOW:
-        return true;
+        result = true;
+        break;
 
     case DENYLOG:
         QPID_LOG(info, "ACL Deny id:" << id << " action:" << AclHelper::getActionStr(action) <<
-            " ObjectType:" << AclHelper::getObjectTypeStr(objType) << " Name:" << name);
+                 " ObjectType:" << AclHelper::getObjectTypeStr(objType) << " Name:" << name);
         agent->raiseEvent(_qmf::EventDeny(id, AclHelper::getActionStr(action),
                                           AclHelper::getObjectTypeStr(objType),
                                           name, types::Variant::Map()));
         // FALLTHROUGH
     case DENY:
-        if (mgmtObject!=0) mgmtObject->inc_aclDenyCount();
-        return false;
+        if (mgmtObject!=0)
+            mgmtObject->inc_aclDenyCount();
+        result = false;
+        break;
+
+    default:
+        assert (false);
     }
-    assert(false);
-    return false;
+
+    QPID_LOG(debug, "ACL result() returns " << result);
+    return result;
 }
 
 bool Acl::readAclFile(std::string& errorText)

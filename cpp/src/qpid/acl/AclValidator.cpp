@@ -78,11 +78,11 @@ namespace acl {
     }
 
     AclValidator::AclValidator(){
-        validators.insert(Validator(acl::PROP_MAXQUEUESIZE,
+        validators.insert(Validator(acl::PROP_QUEUEMAXSIZE,
                           boost::shared_ptr<PropertyType>(
                             new IntPropertyType(0,std::numeric_limits<int64_t>::max()))));
 
-        validators.insert(Validator(acl::PROP_MAXQUEUECOUNT,
+        validators.insert(Validator(acl::PROP_QUEUEMAXCOUNT,
                           boost::shared_ptr<PropertyType>(
                             new IntPropertyType(0,std::numeric_limits<int64_t>::max()))));
 
