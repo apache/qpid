@@ -39,15 +39,15 @@ class HaBroker(Broker):
         Broker.__init__(self, test, args, **kwargs)
 
     def promote(self):
-        assert os.system("qpid-ha-tool --promote %s"%(self.host_port())) == 0
+        assert os.system("$QPID_HA_TOOL_EXEC --promote %s"%(self.host_port())) == 0
 
     def set_client_url(self, url):
         assert os.system(
-            "qpid-ha-tool --client-addresses=%s %s"%(url,self.host_port())) == 0
+            "$QPID_HA_TOOL_EXEC --client-addresses=%s %s"%(url,self.host_port())) == 0
 
     def set_broker_url(self, url):
         assert os.system(
-            "qpid-ha-tool --broker-addresses=%s %s"%(url, self.host_port())) == 0
+            "$QPID_HA_TOOL_EXEC --broker-addresses=%s %s"%(url, self.host_port())) == 0
 
 def set_broker_urls(brokers):
     url = ",".join([b.host_port() for b in brokers])
@@ -475,4 +475,10 @@ class LongTests(BrokerTest):
 
 if __name__ == "__main__":
     shutil.rmtree("brokertest.tmp", True)
-    os.execvp("qpid-python-test", ["qpid-python-test", "-m", "ha_tests"] + sys.argv[1:])
+    qpid_ha_tool = os.getenv("QPID_HA_TOOL_EXEC")
+    if  qpid_ha_tool and os.path.exists(qpid_ha_tool):
+        os.execvp("qpid-python-test",
+                  ["qpid-python-test", "-m", "ha_tests"] + sys.argv[1:])
+    else:
+        print "Skipping ha_tests, qpid_ha_tool not available"
+
