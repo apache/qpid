@@ -82,8 +82,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     private static AtomicReference<IApplicationRegistry> _instance = new AtomicReference<IApplicationRegistry>(null);
 
-    private volatile Thread _shutdownHookThread;
-
     private final ServerConfiguration _configuration;
 
     private final Map<InetSocketAddress, QpidAcceptor> _acceptors = new HashMap<InetSocketAddress, QpidAcceptor>();
@@ -188,14 +186,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         _qmfService = qmfService;
     }
 
-    private static class ShutdownService implements Runnable
-    {
-        public void run()
-        {
-            remove();
-        }
-    }
-
     public static void initialise(IApplicationRegistry instance) throws Exception
     {
         if(instance == null)
@@ -240,45 +230,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             }
 
             throw e;
-        }
-    }
-
-    private void addShutdownHook()
-    {
-        Thread shutdownHookThread = new Thread(new ShutdownService());
-        Runtime.getRuntime().addShutdownHook(shutdownHookThread);
-        _shutdownHookThread = shutdownHookThread;
-    }
-
-    private void removeShutdownHook()
-    {
-        Thread shutdownThread = _shutdownHookThread;
-
-        //if there is a shutdown thread and we aren't it, we should remove it
-        if(shutdownThread != null && !(Thread.currentThread() == shutdownThread))
-        {
-            _logger.debug("Removing shutdown hook");
-
-            _shutdownHookThread = null;
-
-            boolean removed = false;
-            try
-            {
-                removed = Runtime.getRuntime().removeShutdownHook(shutdownThread);
-            }
-            catch(IllegalStateException ise)
-            {
-                //ignore, means the JVM is already shutting down
-            }
-
-            if(_logger.isDebugEnabled())
-            {
-                _logger.debug("Removed shutdown hook: " + removed);
-            }
-        }
-        else
-        {
-            _logger.debug("Skipping shutdown hook removal as there either isnt one, or we are it.");
         }
     }
 
@@ -390,8 +341,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             // Startup complete, so pop the current actor
             CurrentActor.remove();
         }
-
-        addShutdownHook();
     }
 
 
@@ -614,14 +563,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
         finally
         {
-            try
-            {
-                CurrentActor.remove();
-            }
-            finally
-            {
-                removeShutdownHook();
-            }
+            CurrentActor.remove();
         }
     }
 

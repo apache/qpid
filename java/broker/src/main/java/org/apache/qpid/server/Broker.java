@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server;
 
+import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.xml.QpidLog4JConfigurator;
 
@@ -59,8 +60,11 @@ import java.util.Set;
 
 public class Broker
 {
+    private static final Logger LOGGER = Logger.getLogger(Broker.class);
+
     private static final int IPV4_ADDRESS_LENGTH = 4;
     private static final char IPV4_LITERAL_SEPARATOR = '.';
+    private volatile Thread _shutdownHookThread;
 
     protected static class InitException extends RuntimeException
     {
@@ -74,7 +78,14 @@ public class Broker
 
     public void shutdown()
     {
-        ApplicationRegistry.remove();
+        try
+        {
+            removeShutdownHook();
+        }
+        finally
+        {
+            ApplicationRegistry.remove();
+        }
     }
 
     public void startup() throws Exception
@@ -88,6 +99,7 @@ public class Broker
         {
             CurrentActor.set(new BrokerActor(new SystemOutMessageLogger()));
             startupImpl(options);
+            addShutdownHook();
         }
         finally
         {
@@ -440,5 +452,57 @@ public class Broker
         LoggingManagementMBean blm = new LoggingManagementMBean(logConfigFile.getPath(),logWatchTime);
 
         blm.register();
+    }
+
+    private void addShutdownHook()
+    {
+        Thread shutdownHookThread = new Thread(new ShutdownService());
+        shutdownHookThread.setName("QpidBrokerShutdownHook");
+
+        Runtime.getRuntime().addShutdownHook(shutdownHookThread);
+        _shutdownHookThread = shutdownHookThread;
+
+        LOGGER.debug("Added shutdown hook");
+    }
+
+    private void removeShutdownHook()
+    {
+        Thread shutdownThread = _shutdownHookThread;
+
+        //if there is a shutdown thread and we aren't it, we should remove it
+        if(shutdownThread != null && !(Thread.currentThread() == shutdownThread))
+        {
+            LOGGER.debug("Removing shutdown hook");
+
+            _shutdownHookThread = null;
+
+            boolean removed = false;
+            try
+            {
+                removed = Runtime.getRuntime().removeShutdownHook(shutdownThread);
+            }
+            catch(IllegalStateException ise)
+            {
+                //ignore, means the JVM is already shutting down
+            }
+
+            if(LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Removed shutdown hook: " + removed);
+            }
+        }
+        else
+        {
+            LOGGER.debug("Skipping shutdown hook removal as there either isnt one, or we are it.");
+        }
+    }
+
+    private class ShutdownService implements Runnable
+    {
+        public void run()
+        {
+            LOGGER.debug("Shutdown hook running");
+            Broker.this.shutdown();
+        }
     }
 }
