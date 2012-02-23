@@ -466,7 +466,7 @@ class ACLTests(TestBase010):
             queue_options["qpid.max_count"] = 200
             queue_options["qpid.max_size"] = 500  
             session.queue_declare(queue="q5", arguments=queue_options)
-            self.fail("ACL should deny queue create request with name=q2 maxqueuesize=500 maxqueuecount=200");
+            self.fail("ACL should deny queue create request with name=q5 maxqueuesize=500 maxqueuecount=200");
         except qpid.session.SessionException, e:
             self.assertEqual(403,e.args[0].error_code) 
             session = self.get_session('bob','bob')
@@ -478,7 +478,7 @@ class ACLTests(TestBase010):
             session.queue_declare(queue="q5", arguments=queue_options)  
         except qpid.session.SessionException, e:
             if (403 == e.args[0].error_code):
-                self.fail("ACL should allow queue create request with name=q2 maxqueuesize=500 maxqueuecount=200");
+                self.fail("ACL should allow queue create request with name=q5 maxqueuesize=500 maxqueuecount=200");
 
         try:
             queue_options = {}
