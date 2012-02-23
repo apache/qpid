@@ -23,6 +23,7 @@ package org.apache.qpid.server.transport;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -50,7 +51,16 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.subscription.Subscription_0_10;
+import org.apache.qpid.server.txn.AlreadyKnownDtxException;
+import org.apache.qpid.server.txn.DtxNotSelectedException;
+import org.apache.qpid.server.txn.IncorrectDtxStateException;
+import org.apache.qpid.server.txn.JoinAndResumeDtxException;
+import org.apache.qpid.server.txn.NotAssociatedDtxException;
+import org.apache.qpid.server.txn.RollbackOnlyDtxException;
 import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.txn.SuspendAndFailDtxException;
+import org.apache.qpid.server.txn.TimeoutDtxException;
+import org.apache.qpid.server.txn.UnknownDtxBranchException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.*;
 
@@ -429,6 +439,235 @@ public class ServerSessionDelegate extends SessionDelegate
         ((ServerSession)session).rollback();
     }
 
+    @Override
+    public void dtxSelect(Session session, DtxSelect method)
+    {
+        // TODO - check current tx mode
+        ((ServerSession)session).selectDtx();
+    }
+
+    @Override
+    public void dtxStart(Session session, DtxStart method)
+    {
+        XaResult result = new XaResult();
+        result.setStatus(DtxXaStatus.XA_OK);
+        try
+        {
+            ((ServerSession)session).startDtx(method.getXid(), method.getJoin(), method.getResume());
+            session.executionResult(method.getId(), result);
+        }
+        catch(JoinAndResumeDtxException e)
+        {
+            exception(session, method, ExecutionErrorCode.COMMAND_INVALID, e.getMessage());
+        }
+        catch(UnknownDtxBranchException e)
+        {
+            exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Unknown xid " + method.getXid());
+        }
+        catch(AlreadyKnownDtxException e)
+        {
+            exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Xid already started an neither join nor " +
+                                                                       "resume set" + method.getXid());
+        }
+        catch(DtxNotSelectedException e)
+        {
+            exception(session, method, ExecutionErrorCode.COMMAND_INVALID, e.getMessage());
+        }
+
+    }
+
+    @Override
+    public void dtxEnd(Session session, DtxEnd method)
+    {
+        XaResult result = new XaResult();
+        result.setStatus(DtxXaStatus.XA_OK);
+        try
+        {
+            try
+            {
+                ((ServerSession)session).endDtx(method.getXid(), method.getFail(), method.getSuspend());
+            }
+            catch (TimeoutDtxException e)
+            {
+                result.setStatus(DtxXaStatus.XA_RBTIMEOUT);
+            }
+            session.executionResult(method.getId(), result);
+        }
+        catch(UnknownDtxBranchException e)
+        {
+            exception(session, method, ExecutionErrorCode.ILLEGAL_STATE, e.getMessage());
+        }
+        catch(NotAssociatedDtxException e)
+        {
+            exception(session, method, ExecutionErrorCode.ILLEGAL_STATE, e.getMessage());
+        }
+        catch(DtxNotSelectedException e)
+        {
+            exception(session, method, ExecutionErrorCode.ILLEGAL_STATE, e.getMessage());
+        }
+        catch(SuspendAndFailDtxException e)
+        {
+            exception(session, method, ExecutionErrorCode.COMMAND_INVALID, e.getMessage());
+        }
+
+    }
+
+    @Override
+    public void dtxCommit(Session session, DtxCommit method)
+    {
+        XaResult result = new XaResult();
+        result.setStatus(DtxXaStatus.XA_OK);
+        try
+        {
+            try
+            {
+                ((ServerSession)session).commitDtx(method.getXid(), method.getOnePhase());
+            }
+            catch (RollbackOnlyDtxException e)
+            {
+                result.setStatus(DtxXaStatus.XA_RBROLLBACK);
+            }
+            catch (TimeoutDtxException e)
+            {
+                result.setStatus(DtxXaStatus.XA_RBTIMEOUT);
+            }
+            session.executionResult(method.getId(), result);
+        }
+        catch(UnknownDtxBranchException e)
+        {
+            exception(session, method, ExecutionErrorCode.NOT_FOUND, e.getMessage());
+        }
+        catch(IncorrectDtxStateException e)
+        {
+            exception(session, method, ExecutionErrorCode.ILLEGAL_STATE, e.getMessage());
+        }
+        catch(AMQStoreException e)
+        {
+            exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, e.getMessage());
+        }
+    }
+
+    @Override
+    public void dtxForget(Session session, DtxForget method)
+    {
+        try
+        {
+            ((ServerSession)session).forgetDtx(method.getXid());
+        }
+        catch(UnknownDtxBranchException e)
+        {
+            exception(session, method, ExecutionErrorCode.NOT_FOUND, e.getMessage());
+        }
+        catch(IncorrectDtxStateException e)
+        {
+            exception(session, method, ExecutionErrorCode.ILLEGAL_STATE, e.getMessage());
+        }
+
+    }
+
+    @Override
+    public void dtxGetTimeout(Session session, DtxGetTimeout method)
+    {
+        GetTimeoutResult result = new GetTimeoutResult();
+        try
+        {
+            result.setTimeout(((ServerSession) session).getTimeoutDtx(method.getXid()));
+            session.executionResult(method.getId(), result);
+        }
+        catch(UnknownDtxBranchException e)
+        {
+            exception(session, method, ExecutionErrorCode.NOT_FOUND, e.getMessage());
+        }
+    }
+
+    @Override
+    public void dtxPrepare(Session session, DtxPrepare method)
+    {
+        XaResult result = new XaResult();
+        result.setStatus(DtxXaStatus.XA_OK);
+        try
+        {
+            try
+            {
+                ((ServerSession)session).prepareDtx(method.getXid());
+            }
+            catch (RollbackOnlyDtxException e)
+            {
+                result.setStatus(DtxXaStatus.XA_RBROLLBACK);
+            }
+            catch (TimeoutDtxException e)
+            {
+                result.setStatus(DtxXaStatus.XA_RBTIMEOUT);
+            }
+            session.executionResult((int) method.getId(), result);
+        }
+        catch(UnknownDtxBranchException e)
+        {
+            exception(session, method, ExecutionErrorCode.NOT_FOUND, e.getMessage());
+        }
+        catch(IncorrectDtxStateException e)
+        {
+            exception(session, method, ExecutionErrorCode.ILLEGAL_STATE, e.getMessage());
+        }
+        catch(AMQStoreException e)
+        {
+            exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, e.getMessage());
+        }
+    }
+
+    @Override
+    public void dtxRecover(Session session, DtxRecover method)
+    {
+        RecoverResult result = new RecoverResult();
+        List inDoubt = ((ServerSession)session).recoverDtx();
+        result.setInDoubt(inDoubt);
+        session.executionResult(method.getId(), result);
+    }
+
+    @Override
+    public void dtxRollback(Session session, DtxRollback method)
+    {
+
+        XaResult result = new XaResult();
+        result.setStatus(DtxXaStatus.XA_OK);
+        try
+        {
+            try
+            {
+                ((ServerSession)session).rollbackDtx(method.getXid());
+            }
+            catch (TimeoutDtxException e)
+            {
+                result.setStatus(DtxXaStatus.XA_RBTIMEOUT);
+            }
+            session.executionResult(method.getId(), result);
+        }
+        catch(UnknownDtxBranchException e)
+        {
+            exception(session, method, ExecutionErrorCode.NOT_FOUND, e.getMessage());
+        }
+        catch(IncorrectDtxStateException e)
+        {
+            exception(session, method, ExecutionErrorCode.ILLEGAL_STATE, e.getMessage());
+        }
+        catch(AMQStoreException e)
+        {
+            exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, e.getMessage());
+        }
+    }
+
+    @Override
+    public void dtxSetTimeout(Session session, DtxSetTimeout method)
+    {
+        try
+        {
+            ((ServerSession)session).setTimeoutDtx(method.getXid(), method.getTimeout());
+        }
+        catch(UnknownDtxBranchException e)
+        {
+            exception(session, method, ExecutionErrorCode.NOT_FOUND, e.getMessage());
+        }
+    }
 
     @Override
     public void executionSync(final Session ssn, final ExecutionSync sync)

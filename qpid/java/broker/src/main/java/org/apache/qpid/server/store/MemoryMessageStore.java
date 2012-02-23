@@ -78,6 +78,14 @@ public class MemoryMessageStore implements MessageStore, DurableConfigurationSto
         {
         }
 
+        public void removeXid(long format, byte[] globalId, byte[] branchId)
+        {
+        }
+
+        public void recordXid(long format, byte[] globalId, byte[] branchId, Record[] enqueues, Record[] dequeues)
+        {
+        }
+
     };
 
     public void configureConfigStore(String name, ConfigurationRecoveryHandler handler, Configuration configuration, LogSubject logSubject) throws Exception

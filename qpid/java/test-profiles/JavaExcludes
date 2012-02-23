@@ -28,9 +28,6 @@ org.apache.qpid.test.client.queue.QueuePolicyTest#testRejectPolicy
 //Moved from JavaStandaloneExcludes when it was removed
 ///////////////////////////////////////////////////////
 
-//XA functionality is not fully implemented yet
-org.apache.qpid.jms.xa.XAResourceTest#*
-
 //The Java broker doesnt support client auth
 org.apache.qpid.client.ssl.SSLTest#testMultipleCertsInSingleStore
 

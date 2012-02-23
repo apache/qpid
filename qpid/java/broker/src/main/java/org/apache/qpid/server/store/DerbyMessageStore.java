@@ -92,7 +92,9 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
     private static final String LINKS_TABLE_NAME = "QPID_LINKS";
     private static final String BRIDGES_TABLE_NAME = "QPID_BRIDGES";
 
-
+    private static final String XID_TABLE_NAME = "QPID_XIDS";
+    private static final String XID_ACTIONS_TABLE_NAME = "QPID_XID_ACTIONS";
+    
     private static final int DB_VERSION = 3;
 
 
@@ -190,6 +192,31 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
                                                     + "arguments )"
                                                     + " values (?, ?, ?, ?, ?, ?)";
 
+    private static final String CREATE_XIDS_TABLE =
+            "CREATE TABLE "+XID_TABLE_NAME+" ( format bigint not null,"
+            + " global_id varchar(64) for bit data, branch_id varchar(64) for bit data,  PRIMARY KEY ( format, " +
+            "global_id, branch_id ))";
+    private static final String INSERT_INTO_XIDS = 
+            "INSERT INTO "+XID_TABLE_NAME+" ( format, global_id, branch_id ) values (?, ?, ?)";
+    private static final String DELETE_FROM_XIDS = "DELETE FROM " + XID_TABLE_NAME
+                                                      + " WHERE format = ? and global_id = ? and branch_id = ?";
+    private static final String SELECT_ALL_FROM_XIDS = "SELECT format, global_id, branch_id FROM " + XID_TABLE_NAME;
+
+
+    private static final String CREATE_XID_ACTIONS_TABLE =
+            "CREATE TABLE "+XID_ACTIONS_TABLE_NAME+" ( format bigint not null,"
+            + " global_id varchar(64) for bit data not null, branch_id varchar(64) for bit data not null, " +
+            "action_type char not null, queue_name varchar(255) not null, message_id bigint not null" +
+            ",  PRIMARY KEY ( " +
+            "format, global_id, branch_id, action_type, queue_name, message_id))";
+    private static final String INSERT_INTO_XID_ACTIONS =
+            "INSERT INTO "+XID_ACTIONS_TABLE_NAME+" ( format, global_id, branch_id, action_type, " +
+            "queue_name, message_id ) values (?,?,?,?,?,?) ";
+    private static final String DELETE_FROM_XID_ACTIONS = "DELETE FROM " + XID_ACTIONS_TABLE_NAME
+                                                   + " WHERE format = ? and global_id = ? and branch_id = ?";
+    private static final String SELECT_ALL_FROM_XID_ACTIONS = 
+            "SELECT action_type, queue_name, message_id FROM " + XID_ACTIONS_TABLE_NAME + 
+            " WHERE format = ? and global_id = ? and branch_id = ?";
 
     private static final String DERBY_SINGLE_DB_SHUTDOWN_CODE = "08006";
 
@@ -295,7 +322,8 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
             _configured = true;
         }
 
-        recoverQueueEntries(recoveryHandler);
+        TransactionLogRecoveryHandler.DtxRecordRecoveryHandler dtxrh = recoverQueueEntries(recoveryHandler);
+        recoverXids(dtxrh);
 
     }
 
@@ -350,7 +378,8 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
         createMessageContentTable(conn);
         createLinkTable(conn);
         createBridgeTable(conn);
-
+        createXidTable(conn);
+        createXidActionTable(conn);
         conn.close();
     }
 
@@ -519,8 +548,38 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
         }
     }
 
+    private void createXidTable(final Connection conn) throws SQLException
+    {
+        if(!tableExists(XID_TABLE_NAME, conn))
+        {
+            Statement stmt = conn.createStatement();
+            try
+            {
+                stmt.execute(CREATE_XIDS_TABLE);
+            }
+            finally
+            {
+                stmt.close();
+            }
+        }
+    }
 
 
+    private void createXidActionTable(final Connection conn) throws SQLException
+    {
+        if(!tableExists(XID_ACTIONS_TABLE_NAME, conn))
+        {
+            Statement stmt = conn.createStatement();
+            try
+            {
+                stmt.execute(CREATE_XID_ACTIONS_TABLE);
+            }
+            finally
+            {
+                stmt.close();
+            }
+        }
+    }
 
     private boolean tableExists(final String tableName, final Connection conn) throws SQLException
     {
@@ -1726,6 +1785,126 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
 
     }
 
+
+    private void removeXid(ConnectionWrapper connWrapper, long format, byte[] globalId, byte[] branchId)
+            throws AMQStoreException
+    {
+        Connection conn = connWrapper.getConnection();
+
+
+        try
+        {
+            PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_XIDS);
+            try
+            {
+                stmt.setLong(1,format);
+                stmt.setBytes(2,globalId);
+                stmt.setBytes(3,branchId);
+                int results = stmt.executeUpdate();
+
+
+
+                if(results != 1)
+                {
+                    throw new AMQStoreException("Unable to find message with xid");
+                }
+            }
+            finally
+            {
+                stmt.close();
+            }
+
+            stmt = conn.prepareStatement(DELETE_FROM_XID_ACTIONS);
+            try
+            {
+                stmt.setLong(1,format);
+                stmt.setBytes(2,globalId);
+                stmt.setBytes(3,branchId);
+                int results = stmt.executeUpdate();
+
+            }
+            finally
+            {
+                stmt.close();
+            }
+
+        }
+        catch (SQLException e)
+        {
+            _logger.error("Failed to dequeue: " + e.getMessage(), e);
+            throw new AMQStoreException("Error deleting enqueued message with xid", e);
+        }
+
+    }
+
+
+    private void recordXid(ConnectionWrapper connWrapper, long format, byte[] globalId, byte[] branchId,
+                           Transaction.Record[] enqueues, Transaction.Record[] dequeues) throws AMQStoreException
+    {
+        Connection conn = connWrapper.getConnection();
+
+
+        try
+        {
+
+            PreparedStatement stmt = conn.prepareStatement(INSERT_INTO_XIDS);
+            try
+            {
+                stmt.setLong(1,format);
+                stmt.setBytes(2, globalId);
+                stmt.setBytes(3, branchId);
+                stmt.executeUpdate();
+            }
+            finally
+            {
+                stmt.close();
+            }
+            
+            stmt = conn.prepareStatement(INSERT_INTO_XID_ACTIONS);
+
+            try
+            {
+                stmt.setLong(1,format);
+                stmt.setBytes(2, globalId);
+                stmt.setBytes(3, branchId);
+
+                if(enqueues != null)
+                {
+                    stmt.setString(4, "E");
+                    for(Transaction.Record record : enqueues)
+                    {
+                        stmt.setString(5, record.getQueue().getResourceName());
+                        stmt.setLong(6, record.getMessage().getMessageNumber());
+                        stmt.executeUpdate();
+                    }
+                }
+
+                if(dequeues != null)
+                {
+                    stmt.setString(4, "D");
+                    for(Transaction.Record record : dequeues)
+                    {
+                        stmt.setString(5, record.getQueue().getResourceName());
+                        stmt.setLong(6, record.getMessage().getMessageNumber());
+                        stmt.executeUpdate();
+                    }
+                }
+
+            }
+            finally
+            {
+                stmt.close();
+            }
+
+        }
+        catch (SQLException e)
+        {
+            _logger.error("Failed to enqueue: " + e.getMessage(), e);
+            throw new AMQStoreException("Error writing xid ", e);
+        }
+
+    }
+    
     private static final class ConnectionWrapper
     {
         private final Connection _connection;
@@ -1919,7 +2098,7 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
 
 
 
-    private void recoverQueueEntries(TransactionLogRecoveryHandler recoveryHandler) throws SQLException
+    private TransactionLogRecoveryHandler.DtxRecordRecoveryHandler recoverQueueEntries(TransactionLogRecoveryHandler recoveryHandler) throws SQLException
     {
         Connection conn = newAutoCommitConnection();
         try
@@ -1950,7 +2129,7 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
                 stmt.close();
             }
 
-            queueEntryHandler.completeQueueEntryRecovery();
+            return queueEntryHandler.completeQueueEntryRecovery();
         }
         finally
         {
@@ -1958,6 +2137,165 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
         }
     }
 
+    private static final class Xid
+    {
+
+        private final long _format;
+        private final byte[] _globalId;
+        private final byte[] _branchId;
+
+        public Xid(long format, byte[] globalId, byte[] branchId)
+        {
+            _format = format;
+            _globalId = globalId;
+            _branchId = branchId;
+        }
+
+        public long getFormat()
+        {
+            return _format;
+        }
+
+        public byte[] getGlobalId()
+        {
+            return _globalId;
+        }
+
+        public byte[] getBranchId()
+        {
+            return _branchId;
+        }
+    }
+
+    private static class RecordImpl implements MessageStore.Transaction.Record, TransactionLogResource, EnqueableMessage
+    {
+
+        private final String _queueName;
+        private long _messageNumber;
+
+        public RecordImpl(String queueName, long messageNumber)
+        {
+            _queueName = queueName;
+            _messageNumber = messageNumber;
+        }
+
+        public TransactionLogResource getQueue()
+        {
+            return this;
+        }
+
+        public EnqueableMessage getMessage()
+        {
+            return this;
+        }
+
+        public long getMessageNumber()
+        {
+            return _messageNumber;
+        }
+
+        public boolean isPersistent()
+        {
+            return true;
+        }
+
+        public StoredMessage getStoredMessage()
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        public String getResourceName()
+        {
+            return _queueName;
+        }
+    }
+
+    private void recoverXids(TransactionLogRecoveryHandler.DtxRecordRecoveryHandler dtxrh) throws SQLException
+    {
+        Connection conn = newAutoCommitConnection();
+        try
+        {
+            List<Xid> xids = new ArrayList<Xid>();
+            
+            Statement stmt = conn.createStatement();
+            try
+            {
+                ResultSet rs = stmt.executeQuery(SELECT_ALL_FROM_XIDS);
+                try
+                {
+                    while(rs.next())
+                    {
+
+                        long format = rs.getLong(1);
+                        byte[] globalId = rs.getBytes(2);
+                        byte[] branchId = rs.getBytes(3);
+                        xids.add(new Xid(format, globalId, branchId));
+                    }
+                }
+                finally
+                {
+                    rs.close();
+                }
+            }
+            finally
+            {
+                stmt.close();
+            }
+
+            
+            
+            for(Xid xid : xids)
+            {
+                List<RecordImpl> enqueues = new ArrayList<RecordImpl>();
+                List<RecordImpl> dequeues = new ArrayList<RecordImpl>();
+                
+                PreparedStatement pstmt = conn.prepareStatement(SELECT_ALL_FROM_XID_ACTIONS);
+            
+                pstmt.setLong(1, xid.getFormat());
+                pstmt.setBytes(2, xid.getGlobalId());
+                pstmt.setBytes(3, xid.getBranchId());
+                try
+                {
+                    ResultSet rs = pstmt.executeQuery();
+                    try
+                    {
+                        while(rs.next())
+                        {
+
+                            String actionType = rs.getString(1);
+                            String queueName = rs.getString(2);
+                            long messageId = rs.getLong(3);
+
+                            RecordImpl record = new RecordImpl(queueName, messageId);
+                            List<RecordImpl> records = "E".equals(actionType) ? enqueues : dequeues;
+                            records.add(record);
+                        }
+                    }
+                    finally
+                    {
+                        rs.close();
+                    }
+                }
+                finally
+                {
+                    pstmt.close();
+                }
+                
+                dtxrh.dtxRecord(xid.getFormat(), xid.getGlobalId(), xid.getBranchId(), 
+                                enqueues.toArray(new RecordImpl[enqueues.size()]), 
+                                dequeues.toArray(new RecordImpl[dequeues.size()]));
+            }
+            
+            
+            dtxrh.completeDtxRecordRecovery();
+        }
+        finally
+        {
+            conn.close();
+        }
+
+    }
+    
     StorableMessageMetaData getMetaData(long messageId) throws SQLException
     {
 
@@ -2175,7 +2513,20 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
         {
             DerbyMessageStore.this.abortTran(_connWrapper);
         }
+
+        public void removeXid(long format, byte[] globalId, byte[] branchId) throws AMQStoreException
+        {
+            DerbyMessageStore.this.removeXid(_connWrapper, format, globalId, branchId);
+        }
+
+        public void recordXid(long format, byte[] globalId, byte[] branchId, Record[] enqueues, Record[] dequeues)
+                throws AMQStoreException
+        {
+            DerbyMessageStore.this.recordXid(_connWrapper, format, globalId, branchId, enqueues, dequeues);
+        }
     }
+
+
 
     private class StoredDerbyMessage implements StoredMessage
     {

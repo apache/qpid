@@ -25,6 +25,7 @@ import org.apache.qpid.transport.RangeSet;
 import org.apache.qpid.transport.Struct;
 import org.apache.qpid.transport.Type;
 
+import org.apache.qpid.transport.Xid;
 import static org.apache.qpid.transport.util.Functions.lsb;
 
 import java.io.UnsupportedEncodingException;
@@ -61,6 +62,7 @@ abstract class AbstractEncoder implements Encoder
         ENCODINGS.put(Character.class, Type.CHAR);
         ENCODINGS.put(byte[].class, Type.VBIN32);
         ENCODINGS.put(UUID.class, Type.UUID);
+        ENCODINGS.put(Xid.class, Type.STRUCT32);
     }
 
     private final Map<String,byte[]> str8cache = new LinkedHashMap<String,byte[]>()

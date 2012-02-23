@@ -28,6 +28,13 @@ public interface TransactionLogRecoveryHandler
     {
         void queueEntry(String queuename, long messageId);
 
-        void completeQueueEntryRecovery();
+        DtxRecordRecoveryHandler completeQueueEntryRecovery();
+    }
+
+    public static interface DtxRecordRecoveryHandler
+    {
+        void dtxRecord(long format, byte[] globalId, byte[] branchId, MessageStore.Transaction.Record[] enqueues, MessageStore.Transaction.Record[] dequeues);
+
+        void completeDtxRecordRecovery();
     }
 }

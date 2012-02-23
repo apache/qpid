@@ -308,13 +308,16 @@ public class XAResourceImpl implements XAResource
             _xaSession.createSession();
             convertExecutionErrorToXAErr( e.getException().getErrorCode());
         }
-        Xid[] result = new Xid[res.getInDoubt().size()];
-        int i = 0;
-        for (Object obj : res.getInDoubt())
+        Xid[] result =  new Xid[res.getInDoubt() != null ? res.getInDoubt().size() : 0];
+        if(result.length != 0)
         {
-            org.apache.qpid.transport.Xid xid = (org.apache.qpid.transport.Xid) obj;
-            result[i] = new XidImpl(xid.getBranchId(), (int) xid.getFormat(), xid.getGlobalId());
-            i++;
+            int i = 0;
+            for (Object obj : res.getInDoubt())
+            {
+                org.apache.qpid.transport.Xid xid = (org.apache.qpid.transport.Xid) obj;
+                result[i] = new XidImpl(xid.getBranchId(), (int) xid.getFormat(), xid.getGlobalId());
+                i++;
+            }
         }
         return result;
     }

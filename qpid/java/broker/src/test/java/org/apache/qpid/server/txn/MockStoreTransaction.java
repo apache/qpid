@@ -112,6 +112,14 @@ class MockStoreTransaction implements Transaction
         _state = TransactionState.ABORTED;
     }
 
+    public void removeXid(long format, byte[] globalId, byte[] branchId)
+    {
+    }
+
+    public void recordXid(long format, byte[] globalId, byte[] branchId, Record[] enqueues, Record[] dequeues)
+    {
+    }
+
     public static MessageStore createTestTransactionLog(final MockStoreTransaction storeTransaction)
     {
         return new MessageStore()

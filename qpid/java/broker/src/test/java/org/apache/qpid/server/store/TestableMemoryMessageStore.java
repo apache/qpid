@@ -100,6 +100,14 @@ public class TestableMemoryMessageStore extends MemoryMessageStore
         public void abortTran() throws AMQStoreException
         {
         }
+
+        public void removeXid(long format, byte[] globalId, byte[] branchId)
+        {
+        }
+
+        public void recordXid(long format, byte[] globalId, byte[] branchId, Record[] enqueues, Record[] dequeues)
+        {
+        }
     }
 
 
