@@ -36,6 +36,7 @@ import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
@@ -278,4 +279,46 @@ public class BytesMessageTest extends QpidBrokerTestCase implements MessageListe
         test._count = count;
         test.test();
     }
+
+    public void testModificationAfterSend() throws Exception
+    {
+        Connection connection = getConnection();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        BytesMessage jmsMsg = session.createBytesMessage();
+        Destination destination = getTestQueue();
+
+        /* Set the constant message contents. */
+
+        jmsMsg.setStringProperty("foo", "test");
+
+        /* Pre-populate the message body buffer to the target size. */
+        byte[] jmsMsgBodyBuffer = new byte[1024];
+
+        connection.start();
+
+        /* Send messages. */
+        MessageProducer producer = session.createProducer(destination);
+
+        MessageConsumer consumer = session.createConsumer(destination);
+        
+        for(int writtenMsgCount = 0; writtenMsgCount < 10; writtenMsgCount++)
+        {
+            /* Set the per send message contents. */
+            jmsMsgBodyBuffer[0] = (byte) writtenMsgCount;
+            jmsMsg.writeBytes(jmsMsgBodyBuffer, 0, jmsMsgBodyBuffer.length);
+            /** Try to write a message. */
+            producer.send(jmsMsg);
+        }
+
+
+        for(int writtenMsgCount = 0; writtenMsgCount < 10; writtenMsgCount++)
+        {
+            BytesMessage recvdMsg = (BytesMessage) consumer.receive(1000L);
+            assertNotNull("Expected to receive message " + writtenMsgCount + " but did not", recvdMsg);
+            assertEquals("Message "+writtenMsgCount+" not of expected size", (long) ((writtenMsgCount + 1)*1024),
+                         recvdMsg.getBodyLength());
+
+        }
+    }
+
 }
