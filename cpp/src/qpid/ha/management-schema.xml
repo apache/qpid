@@ -22,16 +22,30 @@
   <!-- Monitor and control HA status of a broker. -->
   <class name="HaBroker">
     <property name="name"   type="sstr" access="RC" index="y" desc="Primary Key"/>
+
     <property name="status" type="sstr" desc="HA status: primary or backup"/>
-    <property name="clientAddresses" type="sstr" desc="List of addresses used by clients to connect to the HA cluster."/>
-    <property name="brokerAddresses" type="sstr" desc="List of addresses used by HA brokers to connect to each other."/>
+
+    <property name="brokers" type="sstr"
+	      desc="Multiple-address URL used by HA brokers to connect to each other."/>
+
+    <property name="publicBrokers" type="sstr"
+	      desc="Multiple-address URL used by clients to connect to the HA brokers."/>
+
+    <property name="expectedBackups" type="uint16"
+	      desc="Number of HA backup brokers expected."/>>
 
     <method name="promote" desc="Promote a backup broker to primary."/>
-    <method name="setClientAddresses" desc="Set HA client addresses">
-      <arg name="clientAddresses" type="sstr" dir="I"/>
+
+    <method name="setBrokers" desc="Set URL for HA brokers to connect to each other.">
+      <arg name="url" type="sstr" dir="I"/>
     </method>
-    <method name="setBrokerAddresses" desc="Set HA broker addresses">
-      <arg name="brokerAddresses" type="sstr" dir="I"/>
+
+    <method name="setPublicBrokers" desc="Set URL for clients to connect to  HA brokers">
+      <arg name="url" type="sstr" dir="I"/>
+    </method>
+
+    <method name="setExpectedBackups" desc="Set number of backups expected">
+      <arg name="expectedBackups" type="uint16" dir="I"/>
     </method>
   </class>
 

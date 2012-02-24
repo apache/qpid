@@ -34,20 +34,20 @@ class HaBroker(Broker):
         args=["--load-module", BrokerTest.ha_lib,
               # FIXME aconway 2012-02-13: workaround slow link failover.
               "--link-maintenace-interval=0.1",
-              "--ha-enable=yes"]
-        if broker_url: args += [ "--ha-broker-url", broker_url ]
+              "--ha-cluster=yes"]
+        if broker_url: args += [ "--ha-brokers", broker_url ]
         Broker.__init__(self, test, args, **kwargs)
 
     def promote(self):
-        assert os.system("$QPID_HA_TOOL_EXEC --promote %s"%(self.host_port())) == 0
+        assert os.system("$QPID_HA_EXEC promote -b %s"%(self.host_port())) == 0
 
     def set_client_url(self, url):
         assert os.system(
-            "$QPID_HA_TOOL_EXEC --client-addresses=%s %s"%(url,self.host_port())) == 0
+            "$QPID_HA_EXEC set --public-brokers=%s -b %s"%(url,self.host_port())) == 0
 
     def set_broker_url(self, url):
         assert os.system(
-            "$QPID_HA_TOOL_EXEC --broker-addresses=%s %s"%(url, self.host_port())) == 0
+            "$QPID_HA_EXEC set --brokers=%s -b %s"%(url, self.host_port())) == 0
 
 def set_broker_urls(brokers):
     url = ",".join([b.host_port() for b in brokers])
@@ -475,10 +475,10 @@ class LongTests(BrokerTest):
 
 if __name__ == "__main__":
     shutil.rmtree("brokertest.tmp", True)
-    qpid_ha_tool = os.getenv("QPID_HA_TOOL_EXEC")
-    if  qpid_ha_tool and os.path.exists(qpid_ha_tool):
+    qpid_ha = os.getenv("QPID_HA_EXEC")
+    if  qpid_ha and os.path.exists(qpid_ha):
         os.execvp("qpid-python-test",
                   ["qpid-python-test", "-m", "ha_tests"] + sys.argv[1:])
     else:
-        print "Skipping ha_tests, qpid_ha_tool not available"
+        print "Skipping ha_tests, qpid_ha not available"
 

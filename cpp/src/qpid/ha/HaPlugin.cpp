@@ -31,12 +31,20 @@ struct Options : public qpid::Options {
     Settings& settings;
     Options(Settings& s) : qpid::Options("HA Options"), settings(s) {
         addOptions()
-            ("ha-enable", optValue(settings.enabled, "yes|no"), "Enable High Availability features")
-            ("ha-client-url", optValue(settings.clientUrl,"URL"), "URL that clients use to connect and fail over.")
-            ("ha-broker-url", optValue(settings.brokerUrl,"URL"), "URL that backup brokers use to connect and fail over.")
-            ("ha-username", optValue(settings.username, "USER"), "Username for connections between brokers")
-            ("ha-password", optValue(settings.password, "PASS"), "Password for connections between brokers")
-            ("ha-mechanism", optValue(settings.mechanism, "MECH"), "Authentication mechanism for connections between brokers")
+            ("ha-cluster", optValue(settings.enabled, "yes|no"),
+             "Join a HA active/passive cluster.")
+            ("ha-brokers", optValue(settings.brokerUrl,"URL"),
+             "URL that backup brokers use to connect and fail over.")
+            ("ha-public-brokers", optValue(settings.clientUrl,"URL"),
+             "URL that clients use to connect and fail over, defaults to ha-brokers.")
+            ("ha-expected-backups", optValue(settings.expectedBackups, "N"),
+             "Number of backups expected to be active in the HA cluster.")
+            ("ha-username", optValue(settings.username, "USER"),
+             "Username for connections between HA brokers")
+            ("ha-password", optValue(settings.password, "PASS"),
+             "Password for connections between HA brokers")
+            ("ha-mechanism", optValue(settings.mechanism, "MECH"),
+             "Authentication mechanism for connections between HA brokers")
             ;
     }
 };
