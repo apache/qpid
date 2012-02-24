@@ -885,8 +885,8 @@ std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
         params.insert(make_pair(acl::PROP_EXCLUSIVE, owner ? _TRUE : _FALSE));
         params.insert(make_pair(acl::PROP_AUTODELETE, autodelete ? _TRUE : _FALSE));
         params.insert(make_pair(acl::PROP_POLICYTYPE, arguments.getAsString("qpid.policy_type")));
-        params.insert(make_pair(acl::PROP_QUEUEMAXCOUNT, boost::lexical_cast<string>(arguments.getAsInt("qpid.max_count"))));
-        params.insert(make_pair(acl::PROP_QUEUEMAXSIZE, boost::lexical_cast<string>(arguments.getAsInt64("qpid.max_size"))));
+        params.insert(make_pair(acl::PROP_MAXQUEUECOUNT, boost::lexical_cast<string>(arguments.getAsInt("qpid.max_count"))));
+        params.insert(make_pair(acl::PROP_MAXQUEUESIZE, boost::lexical_cast<string>(arguments.getAsInt64("qpid.max_size"))));
 
         if (!acl->authorise(userId,acl::ACT_CREATE,acl::OBJ_QUEUE,name,&params) )
             throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied queue create request from " << userId));
