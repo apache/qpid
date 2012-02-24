@@ -139,16 +139,21 @@ HA_BROKER = "org.apache.qpid.ha:habroker:ha-broker"
 class Command:
     commands = {}
 
-    def __init__(self, name, help, args=""):
+    def __init__(self, name, help, args=[]):
         Command.commands[name] = self
         self.name = name
-        usage="%s [options]%s\n\n%s"%(name, args, help)
+        self.args = args
+        usage="%s [options] %s\n\n%s"%(name, " ".join(args), help)
         self.help = help
         self.op=optparse.OptionParser(usage)
         self.op.add_option("-b", "--broker", metavar="<url>", help="Connect to broker at <url>")
 
     def execute(self, command):
         opts, args = self.op.parse_args(command)
+        if len(args) != len(self.args)+1:
+            self.op.print_help()
+            print "Error: wrong number of arguments"
+            return
         broker = opts.broker or "localhost:5672"
         # FIXME aconway 2012-02-23: enforce not doing primary-only operations on a backup & vice versa
         connection = Connection.establish(broker, client_properties={"qpid.ha-admin":1})
@@ -183,7 +188,7 @@ ReadyCmd()
 
 class ReplicateCmd(Command):
     def __init__(self):
-        Command.__init__(self, "replicate", "Replicate <queue> from <broker> to the current broker.", "<queue> <broker>")
+        Command.__init__(self, "replicate", "Replicate <queue> from broker <primary> to the current broker.", ["<queue>", "<primary>"])
 ReplicateCmd()
 
 class SetCmd(Command):
