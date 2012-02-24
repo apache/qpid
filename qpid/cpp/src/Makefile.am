@@ -102,15 +102,16 @@ $(srcdir)/rubygen.cmake: $(rgen_generator) $(specs)
 
 # Management generator.
 mgen_dir=$(top_srcdir)/managementgen
-mgen_cmd=$(mgen_dir)/qmf-gen -m $(srcdir)/managementgen.mk \
-	-c $(srcdir)/managementgen.cmake -q -b -o qmf \
-	$(top_srcdir)/../specs/management-schema.xml \
+mgen_xml=$(top_srcdir)/../specs/management-schema.xml \
 	$(srcdir)/qpid/acl/management-schema.xml \
 	$(srcdir)/qpid/cluster/management-schema.xml \
 	$(srcdir)/qpid/ha/management-schema.xml
+mgen_cmd=$(mgen_dir)/qmf-gen -m $(srcdir)/managementgen.mk \
+	-c $(srcdir)/managementgen.cmake -q -b -o qmf \
+	$(mgen_xml)
 
 $(srcdir)/managementgen.mk $(mgen_broker_cpp) $(dist_qpid_management_HEADERS): mgen.timestamp
-mgen.timestamp: $(mgen_generator)
+mgen.timestamp: $(mgen_generator) $(mgen_xml)
 	$(mgen_cmd); touch $@
 $(mgen_generator):
 
