@@ -29,8 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
-
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
@@ -59,7 +57,6 @@ import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.txn.DtxBranch;
 import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.txn.ServerTransaction;
-import org.apache.qpid.transport.Binary;
 import org.apache.qpid.transport.Xid;
 import org.apache.qpid.transport.util.Functions;
 import org.apache.qpid.util.ByteBufferInputStream;
@@ -271,7 +268,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
                 StringBuilder xidString = xidAsString(id);
                 CurrentActor.get().message(_logSubject,
                                            TransactionLogMessages.XA_INCOMPLETE_QUEUE(xidString.toString(),
-                                                                                      queue.getName()));
+                                                                                      record.getQueue().getResourceName()));
 
             }
         }
