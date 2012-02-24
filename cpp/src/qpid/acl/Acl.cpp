@@ -67,10 +67,10 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
 }
 
 bool Acl::authorise(
-    const std::string& id,
-    const Action& action,
-    const ObjectType& objType,
-    const std::string& name,
+    const std::string&               id,
+    const Action&                    action,
+    const ObjectType&                objType,
+    const std::string&               name,
     std::map<Property, std::string>* params)
 {
     boost::shared_ptr<AclData> dataLocal;
@@ -88,7 +88,7 @@ bool Acl::authorise(
 
 bool Acl::authorise(
     const std::string& id,
-    const Action& action,
+    const Action&      action,
     const ObjectType& objType,
     const std::string& ExchangeName,
     const std::string& RoutingKey)
@@ -107,10 +107,10 @@ bool Acl::authorise(
 
 
 bool Acl::result(
-    const AclResult& aclreslt,
+    const AclResult&   aclreslt,
     const std::string& id,
-    const Action& action,
-    const ObjectType& objType,
+    const Action&      action,
+    const ObjectType&  objType,
     const std::string& name)
 {
     bool result(false);
@@ -118,8 +118,10 @@ bool Acl::result(
     switch (aclreslt)
     {
     case ALLOWLOG:
-        QPID_LOG(info, "ACL Allow id:" << id <<" action:" << AclHelper::getActionStr(action) <<
-                 " ObjectType:" << AclHelper::getObjectTypeStr(objType) << " Name:" << name );
+        QPID_LOG(info, "ACL Allow id:" << id
+            << " action:" << AclHelper::getActionStr(action)
+            << " ObjectType:" << AclHelper::getObjectTypeStr(objType)
+            << " Name:" << name );
         agent->raiseEvent(_qmf::EventAllow(id,  AclHelper::getActionStr(action),
                           AclHelper::getObjectTypeStr(objType),
                           name, types::Variant::Map()));
@@ -129,8 +131,10 @@ bool Acl::result(
         break;
 
     case DENYLOG:
-        QPID_LOG(info, "ACL Deny id:" << id << " action:" << AclHelper::getActionStr(action) <<
-                 " ObjectType:" << AclHelper::getObjectTypeStr(objType) << " Name:" << name);
+        QPID_LOG(info, "ACL Deny id:" << id
+            << " action:" << AclHelper::getActionStr(action)
+            << " ObjectType:" << AclHelper::getObjectTypeStr(objType)
+            << " Name:" << name);
         agent->raiseEvent(_qmf::EventDeny(id, AclHelper::getActionStr(action),
                                           AclHelper::getObjectTypeStr(objType),
                                           name, types::Variant::Map()));

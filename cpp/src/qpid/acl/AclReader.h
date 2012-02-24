@@ -42,10 +42,15 @@ class AclReader {
     typedef groupMap::const_iterator            gmCitr;
     typedef std::pair<gmCitr, bool>             gmRes;
 
-    typedef std::pair<Property, std::string>    propNvPair;
-    typedef std::map<Property, std::string>     propMap;
-    typedef propMap::const_iterator             pmCitr;
+    typedef std::pair<SpecProperty, std::string> propNvPair;
+    typedef std::map<SpecProperty, std::string>  propMap;
+    typedef propMap::const_iterator              pmCitr;
 
+    //
+    // aclRule
+    //
+    // A temporary rule created during ACL file processing.
+    //
     class aclRule {
       public:
         enum objectStatus {NONE, VALUE, ALL};
@@ -62,7 +67,7 @@ class AclReader {
         aclRule(const AclResult r, const std::string n, const groupMap& groups, const Action a);
         void setObjectType(const ObjectType o);
         void setObjectTypeAll();
-        bool addProperty(const Property p, const std::string v);
+        bool addProperty(const SpecProperty p, const std::string v);
         bool validate(const AclHelper::objectMapPtr& validationMap);
         std::string toString(); // debug aid
       private:

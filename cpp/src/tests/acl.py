@@ -127,6 +127,30 @@ class ACLTests(TestBase010):
             self.fail("ACL should deny queue bind request");
         except qpid.session.SessionException, e:
             self.assertEqual(403,e.args[0].error_code)                
+
+
+    def test_allow_mode_with_specfic_allow_override(self):
+        """
+        Specific allow overrides a general deny
+        """
+        aclf = self.get_acl_file()
+        aclf.write('group admins bob@QPID joe@QPID  \n')
+        aclf.write('acl allow bob@QPID create queue \n')
+        aclf.write('acl deny  admins   create queue \n')                
+        aclf.write('acl allow all all')
+        aclf.close()        
+
+        result = self.reload_acl()
+        if (result.text.find("format error",0,len(result.text)) != -1):
+            self.fail(result)        
+
+        session = self.get_session('bob','bob')
+
+        try:
+            session.queue_declare(queue='zed')
+        except qpid.session.SessionException, e:
+            if (403 == e.args[0].error_code):
+                self.fail("ACL should allow create queue request");
         
  
    #=====================================
@@ -179,7 +203,7 @@ class ACLTests(TestBase010):
         if (result.text.find("Non-continuation line must start with \"group\" or \"acl\"",0,len(result.text)) == -1):
             self.fail(result)
 
-    def test_llegal_extension_lines(self):
+    def test_illegal_extension_lines(self):
         """
         Test proper extention lines
         """
@@ -255,18 +279,20 @@ class ACLTests(TestBase010):
         if (result.text != expected): 
             self.fail(result)        
 
-    def test_illegal_queue_size(self):
+    def test_illegal_queuemaxsize_upper_limit_spec(self):
         """
         Test illegal queue policy
         """
-         
+        #
+        # Use maxqueuesize
+        #
         aclf = self.get_acl_file()
         aclf.write('acl deny bob@QPID create queue name=q2 maxqueuesize=-1\n')
         aclf.write('acl allow all all')
         aclf.close()        
         
         result = self.reload_acl()       
-        expected = "-1 is not a valid value for 'maxqueuesize', " \
+        expected = "-1 is not a valid value for 'queuemaxsizeupperlimit', " \
                    "values should be between 0 and 9223372036854775807"; 
         if (result.text != expected): 
             self.fail(result) 
@@ -277,24 +303,53 @@ class ACLTests(TestBase010):
         aclf.close()        
         
         result = self.reload_acl()       
-        expected = "9223372036854775808 is not a valid value for 'maxqueuesize', " \
+        expected = "9223372036854775808 is not a valid value for 'queuemaxsizeupperlimit', " \
+                   "values should be between 0 and 9223372036854775807";
+        if (result.text != expected): 
+            self.fail(result) 
+
+        #
+        # Use queuemaxsizeupperlimit
+        #
+        aclf = self.get_acl_file()
+        aclf.write('acl deny bob@QPID create queue name=q2 queuemaxsizeupperlimit=-1\n')
+        aclf.write('acl allow all all')
+        aclf.close()        
+        
+        result = self.reload_acl()       
+        expected = "-1 is not a valid value for 'queuemaxsizeupperlimit', " \
+                   "values should be between 0 and 9223372036854775807"; 
+        if (result.text != expected): 
+            self.fail(result) 
+
+        aclf = self.get_acl_file()
+        aclf.write('acl deny bob@QPID create queue name=q2 queuemaxsizeupperlimit=9223372036854775808\n')
+        aclf.write('acl allow all all')                                 
+        aclf.close()        
+        
+        result = self.reload_acl()       
+        expected = "9223372036854775808 is not a valid value for 'queuemaxsizeupperlimit', " \
                    "values should be between 0 and 9223372036854775807";
         if (result.text != expected): 
             self.fail(result) 
 
 
-    def test_illegal_queue_count(self):
+
+    def test_illegal_queuemaxcount_upper_limit_spec(self):
         """
         Test illegal queue policy
         """
-         
+        #
+        # Use maxqueuecount
+        #
+
         aclf = self.get_acl_file()
         aclf.write('acl deny bob@QPID create queue name=q2 maxqueuecount=-1\n')
         aclf.write('acl allow all all')
         aclf.close()        
         
         result = self.reload_acl()       
-        expected = "-1 is not a valid value for 'maxqueuecount', " \
+        expected = "-1 is not a valid value for 'queuemaxcountupperlimit', " \
                    "values should be between 0 and 9223372036854775807"; 
         if (result.text != expected): 
             self.fail(result) 
@@ -305,7 +360,88 @@ class ACLTests(TestBase010):
         aclf.close()        
         
         result = self.reload_acl()       
-        expected = "9223372036854775808 is not a valid value for 'maxqueuecount', " \
+        expected = "9223372036854775808 is not a valid value for 'queuemaxcountupperlimit', " \
+                   "values should be between 0 and 9223372036854775807";
+        if (result.text != expected): 
+            self.fail(result) 
+
+        #
+        # use maxqueuecountupperlimit
+        #
+        aclf = self.get_acl_file()
+        aclf.write('acl deny bob@QPID create queue name=q2 queuemaxcountupperlimit=-1\n')
+        aclf.write('acl allow all all')
+        aclf.close()        
+        
+        result = self.reload_acl()       
+        expected = "-1 is not a valid value for 'queuemaxcountupperlimit', " \
+                   "values should be between 0 and 9223372036854775807"; 
+        if (result.text != expected): 
+            self.fail(result) 
+
+        aclf = self.get_acl_file()
+        aclf.write('acl deny bob@QPID create queue name=q2 queuemaxcountupperlimit=9223372036854775808\n')
+        aclf.write('acl allow all all')                                 
+        aclf.close()        
+        
+        result = self.reload_acl()       
+        expected = "9223372036854775808 is not a valid value for 'queuemaxcountupperlimit', " \
+                   "values should be between 0 and 9223372036854775807";
+        if (result.text != expected): 
+            self.fail(result) 
+
+
+    def test_illegal_queuemaxsize_lower_limit_spec(self):
+        """
+        Test illegal queue policy
+        """
+        aclf = self.get_acl_file()
+        aclf.write('acl deny bob@QPID create queue name=q2 queuemaxsizelowerlimit=-1\n')
+        aclf.write('acl allow all all')
+        aclf.close()        
+        
+        result = self.reload_acl()       
+        expected = "-1 is not a valid value for 'queuemaxsizelowerlimit', " \
+                   "values should be between 0 and 9223372036854775807"; 
+        if (result.text != expected): 
+            self.fail(result) 
+
+        aclf = self.get_acl_file()
+        aclf.write('acl deny bob@QPID create queue name=q2 queuemaxsizelowerlimit=9223372036854775808\n')
+        aclf.write('acl allow all all')                                 
+        aclf.close()        
+        
+        result = self.reload_acl()       
+        expected = "9223372036854775808 is not a valid value for 'queuemaxsizelowerlimit', " \
+                   "values should be between 0 and 9223372036854775807";
+        if (result.text != expected): 
+            self.fail(result) 
+
+
+
+    def test_illegal_queuemaxcount_lower_limit_spec(self):
+        """
+        Test illegal queue policy
+        """
+
+        aclf = self.get_acl_file()
+        aclf.write('acl deny bob@QPID create queue name=q2 queuemaxcountlowerlimit=-1\n')
+        aclf.write('acl allow all all')
+        aclf.close()        
+        
+        result = self.reload_acl()       
+        expected = "-1 is not a valid value for 'queuemaxcountlowerlimit', " \
+                   "values should be between 0 and 9223372036854775807"; 
+        if (result.text != expected): 
+            self.fail(result) 
+
+        aclf = self.get_acl_file()
+        aclf.write('acl deny bob@QPID create queue name=q2 queuemaxcountlowerlimit=9223372036854775808\n')
+        aclf.write('acl allow all all')                                 
+        aclf.close()        
+        
+        result = self.reload_acl()       
+        expected = "9223372036854775808 is not a valid value for 'queuemaxcountlowerlimit', " \
                    "values should be between 0 and 9223372036854775807";
         if (result.text != expected): 
             self.fail(result) 
@@ -427,10 +563,11 @@ class ACLTests(TestBase010):
         aclf.write('acl allow bob@QPID create queue name=q2 exclusive=true policytype=ring\n')
         aclf.write('acl allow bob@QPID access queue name=q3\n')
         aclf.write('acl allow bob@QPID purge queue name=q3\n')
-        aclf.write('acl allow bob@QPID create queue name=q3\n')                
-        aclf.write('acl allow bob@QPID create queue name=q4\n')                
-        aclf.write('acl allow bob@QPID delete queue name=q4\n')   
-        aclf.write('acl allow bob@QPID create queue name=q5 maxqueuesize=1000 maxqueuecount=100\n')                   
+        aclf.write('acl allow bob@QPID create queue name=q3\n')
+        aclf.write('acl allow bob@QPID create queue name=q4\n')  
+        aclf.write('acl allow bob@QPID delete queue name=q4\n')
+        aclf.write('acl allow bob@QPID create queue name=q5 maxqueuesize=1000 maxqueuecount=100\n')
+        aclf.write('acl allow bob@QPID create queue name=q6 queuemaxsizelowerlimit=50 queuemaxsizeupperlimit=100 queuemaxcountlowerlimit=50 queuemaxcountupperlimit=100\n')
         aclf.write('acl allow anonymous all all\n')
         aclf.write('acl deny all all')
         aclf.close()        
@@ -479,6 +616,55 @@ class ACLTests(TestBase010):
         except qpid.session.SessionException, e:
             if (403 == e.args[0].error_code):
                 self.fail("ACL should allow queue create request with name=q5 maxqueuesize=500 maxqueuecount=200");
+
+        try:
+            queue_options = {}
+            queue_options["qpid.max_count"] = 49
+            queue_options["qpid.max_size"] = 100  
+            session.queue_declare(queue="q6", arguments=queue_options)
+            self.fail("ACL should deny queue create request with name=q6 maxqueuesize=100 maxqueuecount=49");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code) 
+            session = self.get_session('bob','bob')
+
+        try:
+            queue_options = {}
+            queue_options["qpid.max_count"] = 101
+            queue_options["qpid.max_size"] = 100
+            session.queue_declare(queue="q6", arguments=queue_options)  
+            self.fail("ACL should allow queue create request with name=q6 maxqueuesize=100 maxqueuecount=101");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code) 
+            session = self.get_session('bob','bob')
+
+        try:
+            queue_options = {}
+            queue_options["qpid.max_count"] = 100
+            queue_options["qpid.max_size"] = 49 
+            session.queue_declare(queue="q6", arguments=queue_options)
+            self.fail("ACL should deny queue create request with name=q6 maxqueuesize=49 maxqueuecount=100");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code) 
+            session = self.get_session('bob','bob')
+
+        try:
+            queue_options = {}
+            queue_options["qpid.max_count"] = 100
+            queue_options["qpid.max_size"] =101 
+            session.queue_declare(queue="q6", arguments=queue_options)
+            self.fail("ACL should deny queue create request with name=q6 maxqueuesize=101 maxqueuecount=100");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code) 
+            session = self.get_session('bob','bob')
+
+        try:
+            queue_options = {}
+            queue_options["qpid.max_count"] = 50
+            queue_options["qpid.max_size"] = 50 
+            session.queue_declare(queue="q6", arguments=queue_options)  
+        except qpid.session.SessionException, e:
+            if (403 == e.args[0].error_code):
+                self.fail("ACL should allow queue create request with name=q6 maxqueuesize=50 maxqueuecount=50");
 
         try:
             queue_options = {}

@@ -34,15 +34,28 @@ public:
 
     typedef std::map<qpid::acl::Property, std::string> propertyMap;
     typedef propertyMap::const_iterator                propertyMapItr;
+    
+    typedef std::map<qpid::acl::SpecProperty, std::string> specPropertyMap;
+    typedef specPropertyMap::const_iterator                specPropertyMapItr;
 
+    //
+    // rule
+    //
+    // Created by AclReader and stored in a ruleSet vector for subsequent
+    //  run-time lookup matching and allow/deny decisions.
+    // RuleSet vectors are indexed by Action-Object-actorId so these
+    //  attributes are not part of a rule.
+    // A single ACL file entry may create many rule entries in
+    //  many ruleset vectors.
+    //
     struct rule {
 
         int                   rawRuleNum;   // rule number in ACL file
         qpid::acl::AclResult  ruleMode;     // combined allow/deny log/nolog
-        propertyMap           props;
+        specPropertyMap       props;        // 
 
 
-        rule (int ruleNum, qpid::acl::AclResult res, propertyMap& p) :
+        rule (int ruleNum, qpid::acl::AclResult res, specPropertyMap& p) :
             rawRuleNum(ruleNum),
             ruleMode(res),
             props(p)
@@ -53,13 +66,18 @@ public:
             ruleStr << "[rule " << rawRuleNum
                     << " ruleMode = " << AclHelper::getAclResultStr(ruleMode)
                     << " props{";
-            for (propertyMapItr pMItr = props.begin(); pMItr != props.end(); pMItr++) {
-                ruleStr << " " << AclHelper::getPropertyStr((Property) pMItr-> first) << "=" << pMItr->second;
+            for (specPropertyMapItr pMItr  = props.begin();
+                                    pMItr != props.end();
+                                    pMItr++) {
+                ruleStr << " "
+                        << AclHelper::getPropertyStr((SpecProperty) pMItr-> first)
+                        << "=" << pMItr->second;
             }
             ruleStr << " }]";
             return ruleStr.str();
         }
     };
+    
     typedef  std::vector<rule>               ruleSet;
     typedef  ruleSet::const_iterator         ruleSetItr;
     typedef  std::map<std::string, ruleSet > actionObject; // user 
@@ -73,18 +91,18 @@ public:
     std::string          aclSource; 
 
     AclResult lookup(
-        const std::string& id,
-        const Action& action,
-        const ObjectType& objType,
-        const std::string& name,
+        const std::string&               id,        // actor id
+        const Action&                    action,
+        const ObjectType&                objType,
+        const std::string&               name,      // object name
         std::map<Property, std::string>* params=0);
     
     AclResult lookup(
-        const std::string& id,
-        const Action& action,
-        const ObjectType& objType,
-        const std::string& ExchangeName,
-        const std::string& RoutingKey);
+        const std::string&               id,        // actor id
+        const Action&                    action,
+        const ObjectType&                objType,
+        const std::string&               ExchangeName,
+        const std::string&               RoutingKey);
 
     bool matchProp(const std::string & src, const std::string& src1);
     void clear ();
@@ -93,9 +111,13 @@ public:
     virtual ~AclData();
 
 private:
-    bool compareIntMax(const qpid::acl::Property theProperty,
-                       const std::string         theAclValue,
-                       const std::string         theLookupValue);
+    bool compareIntMax(const qpid::acl::SpecProperty theProperty,
+                       const std::string             theAclValue,
+                       const std::string             theLookupValue);
+
+    bool compareIntMin(const qpid::acl::SpecProperty theProperty,
+                       const std::string             theAclValue,
+                       const std::string             theLookupValue);
 };
 
 }} // namespace qpid::acl

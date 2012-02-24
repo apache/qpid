@@ -78,17 +78,25 @@ namespace acl {
     }
 
     AclValidator::AclValidator(){
-        validators.insert(Validator(acl::PROP_QUEUEMAXSIZE,
+        validators.insert(Validator(acl::SPECPROP_MAXQUEUESIZELOWERLIMIT,
                           boost::shared_ptr<PropertyType>(
                             new IntPropertyType(0,std::numeric_limits<int64_t>::max()))));
 
-        validators.insert(Validator(acl::PROP_QUEUEMAXCOUNT,
+        validators.insert(Validator(acl::SPECPROP_MAXQUEUESIZEUPPERLIMIT,
                           boost::shared_ptr<PropertyType>(
                             new IntPropertyType(0,std::numeric_limits<int64_t>::max()))));
 
+        validators.insert(Validator(acl::SPECPROP_MAXQUEUECOUNTLOWERLIMIT,
+                                    boost::shared_ptr<PropertyType>(
+                                        new IntPropertyType(0,std::numeric_limits<int64_t>::max()))));
+        
+        validators.insert(Validator(acl::SPECPROP_MAXQUEUECOUNTUPPERLIMIT,
+                                    boost::shared_ptr<PropertyType>(
+                                        new IntPropertyType(0,std::numeric_limits<int64_t>::max()))));
+        
         std::string policyTypes[] = {"ring", "ring_strict", "flow_to_disk", "reject"};
         std::vector<std::string> v(policyTypes, policyTypes + sizeof(policyTypes) / sizeof(std::string));
-        validators.insert(Validator(acl::PROP_POLICYTYPE,
+        validators.insert(Validator(acl::SPECPROP_POLICYTYPE,
                           boost::shared_ptr<PropertyType>(
                             new EnumPropertyType(v))));
 
@@ -129,7 +137,7 @@ namespace acl {
             boost::bind(&AclValidator::validateProperty, this, _1)); 
     }
 
-    void AclValidator::validateProperty(std::pair<const qpid::acl::Property, std::string>& prop){
+    void AclValidator::validateProperty(std::pair<const qpid::acl::SpecProperty, std::string>& prop){
         ValidatorItr itr = validators.find(prop.first);
         if (itr != validators.end()){
             QPID_LOG(debug,"ACL: Found validator for property '" << acl::AclHelper::getPropertyStr(itr->first)

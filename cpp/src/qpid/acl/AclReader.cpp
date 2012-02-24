@@ -49,7 +49,7 @@ namespace acl {
         objStatus = ALL;
     }
 
-    bool AclReader::aclRule::addProperty(const Property p, const std::string v) {
+    bool AclReader::aclRule::addProperty(const SpecProperty p, const std::string v) {
         return props.insert(propNvPair(p, v)).second;
     }
 
@@ -463,9 +463,9 @@ namespace acl {
                         << propNvp.first << "\". (Must be name=value)";
                     return false;
                 }
-                Property prop;
+                SpecProperty prop;
                 try {
-                    prop = AclHelper::getProperty(propNvp.first);
+                    prop = AclHelper::getSpecProperty(propNvp.first);
                 } catch (...) {
                     errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
                         << ", Unknown property \"" << propNvp.first << "\".";

@@ -34,8 +34,9 @@ namespace acl {
 
     // Interface enumerations.
     // These enumerations define enum lists and implied text strings
-    // to match. They are used in two places:
-    // 1. In the ACL specifications in the ACL file.
+    // to match. They are used in two areas:
+    // 1. In the ACL specifications in the ACL file, file parsing, and
+    //    internal rule storage.
     // 2. In the authorize interface in the rest of the broker where
     //    code requests the ACL module to authorize an action.
 
@@ -61,25 +62,7 @@ namespace acl {
         ACT_UPDATE,
         ACTIONSIZE }; // ACTIONSIZE must be last in list
 
-    // Property used in ACL spec file
-    enum SpecProperty {
-        SPECPROP_NAME,
-        SPECPROP_DURABLE,
-        SPECPROP_OWNER,
-        SPECPROP_ROUTINGKEY,
-        SPECPROP_PASSIVE,
-        SPECPROP_AUTODELETE,
-        SPECPROP_EXCLUSIVE,
-        SPECPROP_TYPE,
-        SPECPROP_ALTERNATE,
-        SPECPROP_QUEUENAME,
-        SPECPROP_SCHEMAPACKAGE,
-        SPECPROP_SCHEMACLASS,
-        SPECPROP_POLICYTYPE,
-        SPECPROP_MAXQUEUESIZE,
-        SPECPROP_MAXQUEUECOUNT };
-
-    // Property used in ACL authroize interface
+    // Property used in ACL authorize interface
     enum Property {
         PROP_NAME,
         PROP_DURABLE,
@@ -94,10 +77,33 @@ namespace acl {
         PROP_SCHEMAPACKAGE,
         PROP_SCHEMACLASS,
         PROP_POLICYTYPE,
-        PROP_QUEUEMAXSIZE,
-        PROP_QUEUEMAXCOUNT };
+        PROP_MAXQUEUESIZE,
+        PROP_MAXQUEUECOUNT };
 
-    // AclResult  shared between ACL spec and ACL authorise interface
+    // Property used in ACL spec file
+    // Note for properties common to file processing/rule storage and to
+    // broker rule lookups the identical enum values are used.
+    enum SpecProperty {
+        SPECPROP_NAME            = PROP_NAME,
+        SPECPROP_DURABLE         = PROP_DURABLE,
+        SPECPROP_OWNER           = PROP_OWNER,
+        SPECPROP_ROUTINGKEY      = PROP_ROUTINGKEY,
+        SPECPROP_PASSIVE         = PROP_PASSIVE,
+        SPECPROP_AUTODELETE      = PROP_AUTODELETE,
+        SPECPROP_EXCLUSIVE       = PROP_EXCLUSIVE,
+        SPECPROP_TYPE            = PROP_TYPE,
+        SPECPROP_ALTERNATE       = PROP_ALTERNATE,
+        SPECPROP_QUEUENAME       = PROP_QUEUENAME,
+        SPECPROP_SCHEMAPACKAGE   = PROP_SCHEMAPACKAGE,
+        SPECPROP_SCHEMACLASS     = PROP_SCHEMACLASS,
+        SPECPROP_POLICYTYPE      = PROP_POLICYTYPE,
+
+        SPECPROP_MAXQUEUESIZELOWERLIMIT,
+        SPECPROP_MAXQUEUESIZEUPPERLIMIT,
+        SPECPROP_MAXQUEUECOUNTLOWERLIMIT,
+        SPECPROP_MAXQUEUECOUNTUPPERLIMIT };
+        
+// AclResult  shared between ACL spec and ACL authorise interface
     enum AclResult {
         ALLOW,
         ALLOWLOG,
@@ -114,23 +120,25 @@ namespace broker {
 
     public:
 
-        // efficienty turn off ACL on message transfer.
+        // Some ACLs are invoked on every message transfer.
+        // doTransferAcl pervents time consuming ACL calls on a per-message basis.
         virtual bool doTransferAcl()=0;
 
         virtual bool authorise(
-            const std::string& id,
-            const acl::Action& action,
-            const acl::ObjectType& objType,
-            const std::string& name,
+            const std::string&                    id,
+            const acl::Action&                    action,
+            const acl::ObjectType&                objType,
+            const std::string&                    name,
             std::map<acl::Property, std::string>* params=0)=0;
             
         virtual bool authorise(
-            const std::string& id,
-            const acl::Action& action,
-            const acl::ObjectType& objType,
-            const std::string& ExchangeName,
-            const std::string& RoutingKey)=0;
-        // create specilied authorise methods for cases that need faster matching as needed.
+            const std::string&      id,
+            const acl::Action&      action,
+            const acl::ObjectType&  objType,
+            const std::string&      ExchangeName,
+            const std::string&      RoutingKey)=0;
+
+        // Add specialized authorise() methods as required.
 
         virtual ~AclModule() {};
     };
@@ -202,8 +210,8 @@ namespace acl {
             if (str.compare("schemapackage") == 0) return PROP_SCHEMAPACKAGE;
             if (str.compare("schemaclass")   == 0) return PROP_SCHEMACLASS;
             if (str.compare("policytype")    == 0) return PROP_POLICYTYPE;
-            if (str.compare("maxqueuesize")  == 0) return PROP_QUEUEMAXSIZE;
-            if (str.compare("maxqueuecount") == 0) return PROP_QUEUEMAXCOUNT;
+            if (str.compare("maxqueuesize")  == 0) return PROP_MAXQUEUESIZE;
+            if (str.compare("maxqueuecount") == 0) return PROP_MAXQUEUECOUNT;
             throw str;
         }
         static inline std::string getPropertyStr(const Property p) {
@@ -221,8 +229,8 @@ namespace acl {
             case PROP_SCHEMAPACKAGE: return "schemapackage";
             case PROP_SCHEMACLASS:   return "schemaclass";
             case PROP_POLICYTYPE:    return "policytype";
-            case PROP_QUEUEMAXSIZE:  return "maxqueuesize";
-            case PROP_QUEUEMAXCOUNT: return "maxqueuecount";
+            case PROP_MAXQUEUESIZE:  return "maxqueuesize";
+            case PROP_MAXQUEUECOUNT: return "maxqueuecount";
             default: assert(false); // should never get here
             }
             return "";
@@ -241,11 +249,16 @@ namespace acl {
             if (str.compare("schemapackage") == 0) return SPECPROP_SCHEMAPACKAGE;
             if (str.compare("schemaclass")   == 0) return SPECPROP_SCHEMACLASS;
             if (str.compare("policytype")    == 0) return SPECPROP_POLICYTYPE;
-            if (str.compare("queuemaxsize")  == 0) return SPECPROP_MAXQUEUESIZE;
-            if (str.compare("queuemaxcount") == 0) return SPECPROP_MAXQUEUECOUNT;
+            if (str.compare("queuemaxsizelowerlimit")   == 0) return SPECPROP_MAXQUEUESIZELOWERLIMIT;
+            if (str.compare("queuemaxsizeupperlimit")   == 0) return SPECPROP_MAXQUEUESIZEUPPERLIMIT;
+            if (str.compare("queuemaxcountlowerlimit")  == 0) return SPECPROP_MAXQUEUECOUNTLOWERLIMIT;
+            if (str.compare("queuemaxcountupperlimit")  == 0) return SPECPROP_MAXQUEUECOUNTUPPERLIMIT;
+            // Allow old names in ACL file as aliases for newly-named properties
+            if (str.compare("maxqueuesize")             == 0) return SPECPROP_MAXQUEUESIZEUPPERLIMIT;
+            if (str.compare("maxqueuecount")            == 0) return SPECPROP_MAXQUEUECOUNTUPPERLIMIT;
             throw str;
         }
-        static inline std::string getSpecPropertyStr(const SpecProperty p) {
+        static inline std::string getPropertyStr(const SpecProperty p) {
             switch (p) {
                 case SPECPROP_NAME:          return "name";
                 case SPECPROP_DURABLE:       return "durable";
@@ -260,8 +273,10 @@ namespace acl {
                 case SPECPROP_SCHEMAPACKAGE: return "schemapackage";
                 case SPECPROP_SCHEMACLASS:   return "schemaclass";
                 case SPECPROP_POLICYTYPE:    return "policytype";
-                case SPECPROP_MAXQUEUESIZE:  return "queuemaxsize";
-                case SPECPROP_MAXQUEUECOUNT: return "queuemaxcount";
+                case SPECPROP_MAXQUEUESIZELOWERLIMIT:  return "queuemaxsizelowerlimit";
+                case SPECPROP_MAXQUEUESIZEUPPERLIMIT:  return "queuemaxsizeupperlimit";
+                case SPECPROP_MAXQUEUECOUNTLOWERLIMIT: return "queuemaxcountlowerlimit";
+                case SPECPROP_MAXQUEUECOUNTUPPERLIMIT: return "queuemaxcountupperlimit";
                 default: assert(false); // should never get here
             }
             return "";
@@ -298,7 +313,8 @@ namespace acl {
         typedef std::map<SpecProperty, std::string> specPropMap;
         typedef specPropMap::const_iterator         specPropMapItr;
         
-        // This map contains the legal combinations of object/action/properties found in an ACL file
+        // This map contains the legal combinations of object/action/properties
+        // found in an ACL file
         static void loadValidationMap(objectMapPtr& map) {
             if (!map.get()) return;
             map->clear();
@@ -339,8 +355,8 @@ namespace acl {
             p4->insert(PROP_EXCLUSIVE);
             p4->insert(PROP_AUTODELETE);
             p4->insert(PROP_POLICYTYPE);
-            p4->insert(PROP_QUEUEMAXSIZE);
-            p4->insert(PROP_QUEUEMAXCOUNT);
+            p4->insert(PROP_MAXQUEUESIZE);
+            p4->insert(PROP_MAXQUEUECOUNT);
 
             actionMapPtr a1(new actionMap);
             a1->insert(actionPair(ACT_ACCESS,  p0));
@@ -370,32 +386,28 @@ namespace acl {
             map->insert(objectPair(OBJ_METHOD, a4));
         }
 
-        static std::string propertyMapToString(const std::map<Property, std::string>* params) {
+        //
+        // properyMapToString
+        //
+        template <typename T>
+        static std::string propertyMapToString(
+            const std::map<T, std::string>* params)
+        {
             std::ostringstream ss;
             ss << "{";
             if (params)
             {
-                for (propMapItr pMItr = params->begin(); pMItr != params->end(); pMItr++) {
-                    ss << " " << getPropertyStr((Property) pMItr-> first)
+                for (typename std::map<T, std::string>::const_iterator
+                     pMItr = params->begin(); pMItr != params->end(); pMItr++)
+                {
+                    ss << " " << getPropertyStr((T) pMItr-> first)
                     << "=" << pMItr->second;
                 }
             }
             ss << " }";
             return ss.str();
         }
-        static std::string specPropertyMapToString(const std::map<SpecProperty, std::string>* params) {
-            std::ostringstream ss;
-            ss << "{";
-            if (params)
-            {
-                for (specPropMapItr pMItr = params->begin(); pMItr != params->end(); pMItr++) {
-                    ss << " " << getSpecPropertyStr((SpecProperty) pMItr-> first)
-                    << "=" << pMItr->second;
-                }
-            }
-            ss << " }";
-            return ss.str();
-        }
+        
     };
 
     

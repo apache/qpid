@@ -62,8 +62,8 @@ class AclValidator {
             virtual std::string allowedValues();
    };
    
-   typedef std::pair<acl::Property,boost::shared_ptr<PropertyType> > Validator;
-   typedef std::map<acl::Property,boost::shared_ptr<PropertyType> > ValidatorMap;
+   typedef std::pair<acl::SpecProperty,boost::shared_ptr<PropertyType> > Validator;
+   typedef std::map<acl::SpecProperty,boost::shared_ptr<PropertyType> > ValidatorMap;
    typedef ValidatorMap::iterator ValidatorItr;
  
    ValidatorMap validators;
@@ -72,7 +72,7 @@ public:
 
    void validateRuleSet(std::pair<const std::string, qpid::acl::AclData::ruleSet>& rules);
    void validateRule(qpid::acl::AclData::rule& rule);
-   void validateProperty(std::pair<const qpid::acl::Property, std::string>& prop);
+   void validateProperty(std::pair<const qpid::acl::SpecProperty, std::string>& prop);
    void validate(boost::shared_ptr<AclData> d);   
    AclValidator();
    ~AclValidator();
