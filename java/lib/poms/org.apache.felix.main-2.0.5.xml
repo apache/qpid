@@ -17,6 +17,24 @@
 -->
 <dep>
   <groupId>org.apache.felix</groupId>
-  <artifactId>org.osgi.core</artifactId>
-  <version>1.0.0</version>
+  <artifactId>org.apache.felix.main</artifactId>
+  <version>2.0.5</version>
+  <exclusions>
+    <exclusion>
+      <groupId>org.apache.felix</groupId>
+      <artifactId>org.apache.felix.framework</artifactId>
+    </exclusion>
+    <exclusion>
+      <groupId>org.apache.felix</groupId>
+      <artifactId>org.apache.felix.shell</artifactId>
+    </exclusion>
+    <exclusion>
+      <groupId>org.apache.felix</groupId>
+      <artifactId>org.apache.felix.shell.tui</artifactId>
+    </exclusion>
+    <exclusion>
+      <groupId>org.apache.felix</groupId>
+      <artifactId>org.apache.felix.bundlerepository</artifactId>
+    </exclusion>
+  </exclusions>
 </dep>
