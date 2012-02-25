@@ -19,4 +19,10 @@
   <groupId>commons-digester</groupId>
   <artifactId>commons-digester</artifactId>
   <version>1.8.1</version>
+  <exclusions>
+    <exclusion>
+      <groupId>commons-beanutils</groupId>
+      <artifactId>commons-beanutils</artifactId>
+    </exclusion>
+  </exclusions>
 </dep>

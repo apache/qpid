@@ -48,10 +48,9 @@ jetty-util=lib/jetty-util-6.1.14.jar
 jetty-servlet-tester=lib/jetty-servlet-tester-6.1.14.jar
 servlet-api=lib/servlet-api.jar
 
-osgi-core=lib/org.osgi.core-1.0.0.jar
-felix-framework=lib/org.apache.felix.framework-2.0.5.jar
+felix-main=lib/org.apache.felix.main-2.0.5.jar
 
-felix.libs=${osgi-core} ${felix-framework}
+felix.libs=${felix-main}
 
 commons-configuration.libs = ${commons-beanutils-core} ${commons-digester} \
   ${commons-codec} ${commons-lang} ${commons-collections} ${commons-configuration}
