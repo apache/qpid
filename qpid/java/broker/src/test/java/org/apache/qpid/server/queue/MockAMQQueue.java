@@ -34,7 +34,6 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.List;
@@ -357,12 +356,12 @@ public class MockAMQQueue implements AMQQueue
         return null;
     }
 
-    public void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName, ServerTransaction storeContext)
+    public void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName)
     {
       
     }
 
-    public void copyMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName, ServerTransaction storeContext)
+    public void copyMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName)
     {
       
     }
