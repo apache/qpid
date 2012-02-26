@@ -45,7 +45,6 @@ import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.subscription.MockSubscription;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
-import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -839,7 +838,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
 
     /**
      * Tests that dequeued message is not copied as part of invocation of
-     * {@link SimpleAMQQueue#copyMessagesToAnotherQueue(long, long, String, ServerTransaction)}
+     * {@link SimpleAMQQueue#copyMessagesToAnotherQueue(long, long, String)}
      */
     public void testCopyMessagesWithDequeuedEntry()
     {
@@ -856,14 +855,8 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         // create another queue
         SimpleAMQQueue queue = createQueue(anotherQueueName);
 
-        // create transaction
-        ServerTransaction txn = new LocalTransaction(_queue.getVirtualHost().getMessageStore());
-
         // copy messages into another queue
-        _queue.copyMessagesToAnotherQueue(0, messageNumber, anotherQueueName, txn);
-
-        // commit transaction
-        txn.commit();
+        _queue.copyMessagesToAnotherQueue(0, messageNumber, anotherQueueName);
 
         // get messages on another queue
         List<QueueEntry> entries = queue.getMessagesOnTheQueue();
@@ -889,7 +882,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
 
     /**
      * Tests that dequeued message is not moved as part of invocation of
-     * {@link SimpleAMQQueue#moveMessagesToAnotherQueue(long, long, String, ServerTransaction)}
+     * {@link SimpleAMQQueue#moveMessagesToAnotherQueue(long, long, String)}
      */
     public void testMovedMessagesWithDequeuedEntry()
     {
@@ -906,14 +899,8 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         // create another queue
         SimpleAMQQueue queue = createQueue(anotherQueueName);
 
-        // create transaction
-        ServerTransaction txn = new LocalTransaction(_queue.getVirtualHost().getMessageStore());
-
         // move messages into another queue
-        _queue.moveMessagesToAnotherQueue(0, messageNumber, anotherQueueName, txn);
-
-        // commit transaction
-        txn.commit();
+        _queue.moveMessagesToAnotherQueue(0, messageNumber, anotherQueueName);
 
         // get messages on another queue
         List<QueueEntry> entries = queue.getMessagesOnTheQueue();
