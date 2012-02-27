@@ -38,7 +38,6 @@ import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
-import org.apache.qpid.client.filter.MessageFilter;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
 import org.apache.qpid.framing.amqp_0_91.MethodRegistry_0_91;
@@ -401,9 +400,17 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
     }
 
     public void sendQueueDeclare(final AMQDestination amqd, final AMQProtocolHandler protocolHandler,
-                                 final boolean nowait) throws AMQException, FailoverException
+                                 final boolean nowait, boolean passive) throws AMQException, FailoverException
     {
-        QueueDeclareBody body = getMethodRegistry().createQueueDeclareBody(getTicket(),amqd.getAMQQueueName(),false,amqd.isDurable(),amqd.isExclusive(),amqd.isAutoDelete(),false,null);
+        QueueDeclareBody body =
+                getMethodRegistry().createQueueDeclareBody(getTicket(),
+                                                           amqd.getAMQQueueName(),
+                                                           passive,
+                                                           amqd.isDurable(),
+                                                           amqd.isExclusive(),
+                                                           amqd.isAutoDelete(),
+                                                           false,
+                                                           null);
 
         AMQFrame queueDeclare = body.generateFrame(getChannelId());
 
