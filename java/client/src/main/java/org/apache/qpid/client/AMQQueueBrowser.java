@@ -132,6 +132,10 @@ public class AMQQueueBrowser implements QueueBrowser
     public Enumeration getEnumeration() throws JMSException
     {
         checkState();
+        if(!_session.getAMQConnection().started())
+        {
+            throw new IllegalStateException("Cannot enumerate message on the queue while the Connection is stopped");
+        }
         final BasicMessageConsumer consumer =
                 (BasicMessageConsumer) _session.createBrowserConsumer(_queue, _messageSelector, false);
 
