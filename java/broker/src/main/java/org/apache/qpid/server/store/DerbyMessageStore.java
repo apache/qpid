@@ -2251,11 +2251,12 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
                 
                 PreparedStatement pstmt = conn.prepareStatement(SELECT_ALL_FROM_XID_ACTIONS);
             
-                pstmt.setLong(1, xid.getFormat());
-                pstmt.setBytes(2, xid.getGlobalId());
-                pstmt.setBytes(3, xid.getBranchId());
                 try
                 {
+                    pstmt.setLong(1, xid.getFormat());
+                    pstmt.setBytes(2, xid.getGlobalId());
+                    pstmt.setBytes(3, xid.getBranchId());
+
                     ResultSet rs = pstmt.executeQuery();
                     try
                     {
