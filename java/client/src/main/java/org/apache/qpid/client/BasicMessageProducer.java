@@ -20,18 +20,8 @@
  */
 package org.apache.qpid.client;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.client.message.MessageConverter;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.transport.TransportException;
-import org.apache.qpid.util.UUIDGen;
-import org.apache.qpid.util.UUIDs;
-
+import java.io.UnsupportedEncodingException;
+import java.util.UUID;
 import javax.jms.BytesMessage;
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
@@ -42,74 +32,19 @@ import javax.jms.Message;
 import javax.jms.ObjectMessage;
 import javax.jms.StreamMessage;
 import javax.jms.TextMessage;
-import java.io.UnsupportedEncodingException;
-import java.util.UUID;
+import javax.jms.Topic;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.client.message.MessageConverter;
+import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.transport.TransportException;
+import org.apache.qpid.util.UUIDGen;
+import org.apache.qpid.util.UUIDs;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class BasicMessageProducer extends Closeable implements org.apache.qpid.jms.MessageProducer
 {
-    /**
-     * If true, messages will not get a timestamp.
-     */
-    protected boolean isDisableTimestamps()
-    {
-        return _disableTimestamps;
-    }
-
-    protected void setDisableTimestamps(boolean disableTimestamps)
-    {
-        _disableTimestamps = disableTimestamps;
-    }
-
-    protected void setDestination(AMQDestination destination)
-    {
-        _destination = destination;
-    }
-
-    protected AMQProtocolHandler getProtocolHandler()
-    {
-        return _protocolHandler;
-    }
-
-    protected void setProtocolHandler(AMQProtocolHandler protocolHandler)
-    {
-        _protocolHandler = protocolHandler;
-    }
-
-    protected int getChannelId()
-    {
-        return _channelId;
-    }
-
-    protected void setChannelId(int channelId)
-    {
-        _channelId = channelId;
-    }
-
-    protected void setSession(AMQSession session)
-    {
-        _session = session;
-    }
-
-    protected String getUserID()
-    {
-        return _userID;
-    }
-
-    protected void setUserID(String userID)
-    {
-        _userID = userID;
-    }
-
-    protected PublishMode getPublishMode()
-    {
-        return publishMode;
-    }
-
-    protected void setPublishMode(PublishMode publishMode)
-    {
-        this.publishMode = publishMode;
-    }
-
     enum PublishMode { ASYNC_PUBLISH_ALL, SYNC_PUBLISH_PERSISTENT, SYNC_PUBLISH_ALL };
 
     private final Logger _logger = LoggerFactory.getLogger(getClass());
@@ -166,7 +101,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
     private final boolean _immediate;
 
-    private final boolean _mandatory;
+    private final Boolean _mandatory;
 
     private boolean _disableMessageId;
 
@@ -174,12 +109,34 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
     private String _userID;  // ref user id used in the connection.
 
-    private static final ContentBody[] NO_CONTENT_BODIES = new ContentBody[0];
+
+    /**
+     * The default value for immediate flag used this producer is false. That is, a consumer does
+     * not need to be attached to a queue.
+     */
+    private final boolean _defaultImmediateValue = Boolean.parseBoolean(System.getProperty("qpid.default_immediate", "false"));
+
+    /**
+     * The default value for mandatory flag used by this producer is true. That is, server will not
+     * silently drop messages where no queue is connected to the exchange for the message.
+     */
+    private final boolean _defaultMandatoryValue = Boolean.parseBoolean(System.getProperty("qpid.default_mandatory", "true"));
+
+    /**
+     * The default value for mandatory flag used by this producer when publishing to a Topic is false. That is, server
+     * will silently drop messages where no queue is connected to the exchange for the message.
+     */
+    private final boolean _defaultMandatoryTopicValue =
+            Boolean.parseBoolean(System.getProperty("qpid.default_mandatory_topic",
+                    System.getProperties().containsKey("qpid.default_mandatory")
+                            ? System.getProperty("qpid.default_mandatory")
+                            : "false"));
 
     private PublishMode publishMode = PublishMode.ASYNC_PUBLISH_ALL;
 
     protected BasicMessageProducer(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
-                                   AMQSession session, AMQProtocolHandler protocolHandler, long producerId, boolean immediate, boolean mandatory) throws AMQException
+                                   AMQSession session, AMQProtocolHandler protocolHandler, long producerId,
+                                   Boolean immediate, Boolean mandatory) throws AMQException
     {
         _connection = connection;
         _destination = destination;
@@ -193,8 +150,14 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
             declareDestination(destination);
         }
 
-        _immediate = immediate;
-        _mandatory = mandatory;
+        _immediate = immediate == null ? _defaultImmediateValue : immediate;
+        _mandatory = mandatory == null
+                ? destination == null ? null
+                                      : destination instanceof Topic
+                                            ? _defaultMandatoryTopicValue
+                                            : _defaultMandatoryValue
+                : mandatory;
+
         _userID = connection.getUsername();
         setPublishMode();
     }
@@ -381,7 +344,12 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         synchronized (_connection.getFailoverMutex())
         {
             validateDestination(destination);
-            sendImpl((AMQDestination) destination, message, _deliveryMode, _messagePriority, _timeToLive, _mandatory,
+            sendImpl((AMQDestination) destination, message, _deliveryMode, _messagePriority, _timeToLive,
+                    _mandatory == null
+                            ? destination instanceof Topic
+                                ? _defaultMandatoryTopicValue
+                                : _defaultMandatoryValue
+                            : _mandatory,
                      _immediate);
         }
     }
@@ -394,7 +362,13 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         synchronized (_connection.getFailoverMutex())
         {
             validateDestination(destination);
-            sendImpl((AMQDestination) destination, message, deliveryMode, priority, timeToLive, _mandatory, _immediate);
+            sendImpl((AMQDestination) destination, message, deliveryMode, priority, timeToLive,
+                    _mandatory == null
+                            ? destination instanceof Topic
+                                ? _defaultMandatoryTopicValue
+                                : _defaultMandatoryValue
+                            : _mandatory,
+                    _immediate);
         }
     }
 
@@ -644,6 +618,69 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         {
             throw getSession().toJMSException("Exception whilst checking destination binding:" + e.getMessage(), e);
         }
+    }
+
+    /**
+     * If true, messages will not get a timestamp.
+     */
+    protected boolean isDisableTimestamps()
+    {
+        return _disableTimestamps;
+    }
+
+    protected void setDisableTimestamps(boolean disableTimestamps)
+    {
+        _disableTimestamps = disableTimestamps;
+    }
+
+    protected void setDestination(AMQDestination destination)
+    {
+        _destination = destination;
+    }
+
+    protected AMQProtocolHandler getProtocolHandler()
+    {
+        return _protocolHandler;
+    }
+
+    protected void setProtocolHandler(AMQProtocolHandler protocolHandler)
+    {
+        _protocolHandler = protocolHandler;
+    }
+
+    protected int getChannelId()
+    {
+        return _channelId;
+    }
+
+    protected void setChannelId(int channelId)
+    {
+        _channelId = channelId;
+    }
+
+    protected void setSession(AMQSession session)
+    {
+        _session = session;
+    }
+
+    protected String getUserID()
+    {
+        return _userID;
+    }
+
+    protected void setUserID(String userID)
+    {
+        _userID = userID;
+    }
+
+    protected PublishMode getPublishMode()
+    {
+        return publishMode;
+    }
+
+    protected void setPublishMode(PublishMode publishMode)
+    {
+        this.publishMode = publishMode;
     }
 
     Logger getLogger()

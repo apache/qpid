@@ -120,18 +120,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public static final long DEFAULT_FLOW_CONTROL_WAIT_FAILURE = 120000L;
 
     /**
-     * The default value for immediate flag used by producers created by this session is false. That is, a consumer does
-     * not need to be attached to a queue.
-     */
-    private final boolean _defaultImmediateValue = Boolean.parseBoolean(System.getProperty("qpid.default_immediate", "false"));
-
-    /**
-     * The default value for mandatory flag used by producers created by this session is true. That is, server will not
-     * silently drop messages where no queue is connected to the exchange for the message.
-     */
-    private final boolean _defaultMandatoryValue = Boolean.parseBoolean(System.getProperty("qpid.default_mandatory", "true"));
-
-    /**
      * The period to wait while flow controlled before sending a log message confirming that the session is still
      * waiting on flow control being revoked
      */
@@ -1198,12 +1186,12 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     public P createProducer(Destination destination) throws JMSException
     {
-        return createProducerImpl(destination, _defaultMandatoryValue, _defaultImmediateValue);
+        return createProducerImpl(destination, null, null);
     }
 
     public P createProducer(Destination destination, boolean immediate) throws JMSException
     {
-        return createProducerImpl(destination, _defaultMandatoryValue, immediate);
+        return createProducerImpl(destination, null, immediate);
     }
 
     public P createProducer(Destination destination, boolean mandatory, boolean immediate)
@@ -2613,7 +2601,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public abstract void sendConsume(C consumer, AMQShortString queueName,
                                      AMQProtocolHandler protocolHandler, boolean nowait, int tag) throws AMQException, FailoverException;
 
-    private P createProducerImpl(final Destination destination, final boolean mandatory, final boolean immediate)
+    private P createProducerImpl(final Destination destination, final Boolean mandatory, final Boolean immediate)
             throws JMSException
     {
         return new FailoverRetrySupport<P, JMSException>(
@@ -2642,8 +2630,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 }, _connection).execute();
     }
 
-    public abstract P createMessageProducer(final Destination destination, final boolean mandatory,
-                                                               final boolean immediate, final long producerId) throws JMSException;
+    public abstract P createMessageProducer(final Destination destination, final Boolean mandatory,
+                                            final Boolean immediate, final long producerId) throws JMSException;
 
     private void declareExchange(AMQDestination amqd, AMQProtocolHandler protocolHandler, boolean nowait) throws AMQException
     {
