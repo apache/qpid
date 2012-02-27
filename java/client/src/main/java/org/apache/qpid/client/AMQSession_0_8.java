@@ -441,8 +441,8 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
     }
 
 
-    public BasicMessageProducer_0_8 createMessageProducer(final Destination destination, final boolean mandatory,
-            final boolean immediate, long producerId) throws JMSException
+    public BasicMessageProducer_0_8 createMessageProducer(final Destination destination, final Boolean mandatory,
+            final Boolean immediate, long producerId) throws JMSException
     {
        try
        {
