@@ -968,7 +968,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         checkNotClosed();
 
-        return null;
+        throw new JmsNotImplementedException();
+
     }
 
     public ConnectionConsumer createConnectionConsumer(Queue queue, String messageSelector, ServerSessionPool sessionPool,
@@ -976,7 +977,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         checkNotClosed();
 
-        return null;
+        throw new JmsNotImplementedException();
     }
 
     public ConnectionConsumer createConnectionConsumer(Topic topic, String messageSelector, ServerSessionPool sessionPool,
@@ -984,7 +985,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         checkNotClosed();
 
-        return null;
+        throw new JmsNotImplementedException();
     }
 
     public ConnectionConsumer createDurableConnectionConsumer(Topic topic, String subscriptionName, String messageSelector,
@@ -993,7 +994,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         // TODO Auto-generated method stub
         checkNotClosed();
 
-        return null;
+        throw new JmsNotImplementedException();
     }
 
     public long getMaximumChannelCount() throws JMSException
