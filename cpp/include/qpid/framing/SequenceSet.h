@@ -38,9 +38,9 @@ class QPID_COMMON_CLASS_EXTERN SequenceSet : public RangeSet<SequenceNumber> {
     SequenceSet(const SequenceNumber& start, const SequenceNumber finish) { add(start,finish); }
 
 
-    void encode(Buffer& buffer) const;
-    void decode(Buffer& buffer);
-    uint32_t encodedSize() const;
+    QPID_COMMON_EXTERN void encode(Buffer& buffer) const;
+    QPID_COMMON_EXTERN void decode(Buffer& buffer);
+    QPID_COMMON_EXTERN uint32_t encodedSize() const;
 
     QPID_COMMON_EXTERN bool contains(const SequenceNumber& s) const;
     QPID_COMMON_EXTERN void add(const SequenceNumber& s);

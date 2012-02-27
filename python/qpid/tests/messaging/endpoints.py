@@ -524,7 +524,7 @@ class SessionTests(Base):
     self.ssn.acknowledge(echos[0])
     self.ssn.acknowledge(echos[1], Disposition(REJECTED))
     self.ssn.acknowledge(echos[2],
-                         Disposition(REJECTED, code=3, text="test-reject"))
+                         Disposition(REJECTED, code=0, text="test-reject"))
     self.drain(rej, expected=msgs[1:])
     self.ssn.acknowledge()
 
@@ -632,9 +632,9 @@ class SessionTests(Base):
 
   def testDoubleCommit(self):
     ssn = self.conn.session(transactional=True)
-    snd = ssn.sender("amq.direct")
-    rcv = ssn.receiver("amq.direct")
-    msgs = [self.message("testDoubleCommit", i) for i in range(3)]
+    snd = ssn.sender("amq.direct/doubleCommit")
+    rcv = ssn.receiver("amq.direct/doubleCommit")
+    msgs = [self.message("testDoubleCommit", i, subject="doubleCommit") for i in range(3)]
     for m in msgs:
       snd.send(m)
     ssn.commit()
@@ -1038,7 +1038,7 @@ class AddressTests(Base):
       snd.close()
       assert False, "successfully deleted amq.topic"
     except SessionError, e:
-      assert "Cannot delete default exchange" in str(e)
+      assert e.code == 530
     # XXX: need to figure out close after error
     self.conn._remove_session(self.ssn)
 

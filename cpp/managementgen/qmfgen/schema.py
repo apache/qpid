@@ -1471,7 +1471,7 @@ class SchemaClass:
   def genMethodIdDeclarations (self, stream, variables):
     number = 1
     for method in self.methods:
-      stream.write ("    static const uint32_t METHOD_" + method.getName().upper() +\
+      stream.write ("    QPID_BROKER_EXTERN static const uint32_t METHOD_" + method.getName().upper() +\
                     " = %d;\n" % number)
       number = number + 1
 

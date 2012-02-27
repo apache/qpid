@@ -146,6 +146,14 @@ public class SkeletonMessageStore implements MessageStore
             {
 
             }
+
+            public void removeXid(long format, byte[] globalId, byte[] branchId)
+            {
+            }
+
+            public void recordXid(long format, byte[] globalId, byte[] branchId, Record[] enqueues, Record[] dequeues)
+            {
+            }
         };
     }
 

@@ -147,7 +147,7 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
         
         ((AMQSession<?, ?>) session2).sync();
         
-        if(isJavaBroker() && isExternalBroker())
+        if(isJavaBroker())
         {
             //Verify that the queue was deleted by querying for its JMX MBean
             _jmxc = JMXConnnectionFactory.getJMXConnection(5000, "127.0.0.1",

@@ -55,6 +55,7 @@ class HaBroker : public management::Manageable
   private:
     void setClientUrl(const Url&, const sys::Mutex::ScopedLock&);
     void setBrokerUrl(const Url&, const sys::Mutex::ScopedLock&);
+    void setExpectedBackups(size_t, const sys::Mutex::ScopedLock&);
     void updateClientUrl(const sys::Mutex::ScopedLock&);
     bool isPrimary(const sys::Mutex::ScopedLock&) { return !backup.get(); }
     std::vector<Url> getKnownBrokers() const;
@@ -67,6 +68,7 @@ class HaBroker : public management::Manageable
     qmf::org::apache::qpid::ha::HaBroker* mgmtObject;
     Url clientUrl, brokerUrl;
     std::vector<Url> knownBrokers;
+    size_t expectedBackups;
 };
 }} // namespace qpid::ha
 

@@ -26,6 +26,7 @@ import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
@@ -65,26 +66,39 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
             throw body.getChannelNotFoundException(channelId);
         }
 
+        final AMQShortString exchangeName = body.getExchange();
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Request to declare exchange of type " + body.getType() + " with name " + body.getExchange());
+            _logger.debug("Request to declare exchange of type " + body.getType() + " with name " + exchangeName);
         }
         
         synchronized(exchangeRegistry)
         {
-            Exchange exchange = exchangeRegistry.getExchange(body.getExchange());
+            Exchange exchange = exchangeRegistry.getExchange(exchangeName);
 
             if (exchange == null)
             {
                 if(body.getPassive() && ((body.getType() == null) || body.getType().length() ==0))
                 {
-                    throw body.getChannelException(AMQConstant.NOT_FOUND, "Unknown exchange: " + body.getExchange());
+                    throw body.getChannelException(AMQConstant.NOT_FOUND, "Unknown exchange: " + exchangeName);
+                }
+                else if(exchangeName.startsWith("amq."))
+                {
+                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
+                              "Attempt to declare exchange: " + exchangeName +
+                              " which begins with reserved prefix 'amq.'.");
+                }
+                else if(exchangeName.startsWith("qpid."))
+                {
+                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
+                                                      "Attempt to declare exchange: " + exchangeName +
+                                                      " which begins with reserved prefix 'qpid.'.");
                 }
                 else
                 {
                     try
                     {
-                        exchange = exchangeFactory.createExchange(body.getExchange() == null ? null : body.getExchange().intern(),
+                        exchange = exchangeFactory.createExchange(exchangeName == null ? null : exchangeName.intern(),
                                                                   body.getType() == null ? null : body.getType().intern(),
                                                                   body.getDurable(),
                                                                   body.getPassive(), body.getTicket());
@@ -97,14 +111,15 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
                     }
                     catch(AMQUnknownExchangeType e)
                     {
-                        throw body.getConnectionException(AMQConstant.COMMAND_INVALID, "Unknown exchange: " + body.getExchange(),e);
+                        throw body.getConnectionException(AMQConstant.COMMAND_INVALID, "Unknown exchange: " + exchangeName,e);
                     }
                 }
             }
             else if (!exchange.getTypeShortString().equals(body.getType()) && !((body.getType() == null || body.getType().length() ==0) && body.getPassive()))
             {
 
-                throw new AMQConnectionException(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: " + body.getExchange() + " of type " + exchange.getTypeShortString() + " to " + body.getType() +".",body.getClazz(), body.getMethod(),body.getMajor(),body.getMinor(),null);
+                throw new AMQConnectionException(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: " +
+                                                                          exchangeName + " of type " + exchange.getTypeShortString() + " to " + body.getType() +".",body.getClazz(), body.getMethod(),body.getMajor(),body.getMinor(),null);
             }
         }
         if(!body.getNowait())

@@ -1,6 +1,3 @@
-#ifndef _APRPool_
-#define _APRPool_
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -10,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,30 +18,15 @@
  * under the License.
  *
  */
-#include <boost/noncopyable.hpp>
-#include <apr_pools.h>
 
-namespace qpid {
-namespace sys {
-/**
- * Singleton APR memory pool.
- */
-class APRPool : private boost::noncopyable {
-  public:
-    APRPool();
-    ~APRPool();
+package org.apache.qpid.server.txn;
 
-    /** Get singleton instance */
-    static apr_pool_t* get();
+import org.apache.qpid.transport.Xid;
 
-  private:
-    apr_pool_t* pool;
-};
-
-}}
-
-
-
-
-
-#endif  /*!_APRPool_*/
+public class RollbackOnlyDtxException extends DtxException
+{
+    public RollbackOnlyDtxException(Xid id)
+    {
+        super("Transaction " + id + " may only be rolled back");
+    }
+}

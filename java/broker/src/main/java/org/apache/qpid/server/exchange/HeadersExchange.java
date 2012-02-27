@@ -146,6 +146,33 @@ public class HeadersExchange extends AbstractExchange
         return new ArrayList<BaseQueue>(queues);
     }
 
+
+    public boolean isBound(String bindingKey, Map<String, Object> arguments, AMQQueue queue)
+    {
+        CopyOnWriteArraySet<Binding> bindings;
+        if(bindingKey == null)
+        {
+            bindings = new CopyOnWriteArraySet<Binding>(getBindings());
+        }
+        else
+        {
+            bindings = _bindingsByKey.get(bindingKey);
+        }
+
+        if(bindings != null)
+        {
+            for(Binding binding : bindings)
+            {
+                if(queue == null || binding.getQueue().equals(queue))
+                {
+                    return arguments == null ? binding.getArguments() == null : binding.getArguments().equals(arguments);
+                }
+            }
+        }
+
+        return false;
+    }
+
     public boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue)
     {
         //fixme isBound here should take the arguements in to consideration.
@@ -251,10 +278,11 @@ public class HeadersExchange extends AbstractExchange
         {
             bindings.remove(binding);
         }
-        
+
+        boolean removedBinding = _bindingHeaderMatchers.remove(new HeadersBinding(binding));
         if(_logger.isDebugEnabled())
         {
-            _logger.debug("Removing Binding: " + _bindingHeaderMatchers.remove(new HeadersBinding(binding)));
+            _logger.debug("Removing Binding: " + removedBinding);
         }
     }
 

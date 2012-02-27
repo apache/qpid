@@ -61,7 +61,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
 
     BasicMessageProducer_0_10(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
                               AMQSession session, AMQProtocolHandler protocolHandler, long producerId,
-                              boolean immediate, boolean mandatory) throws AMQException
+                              Boolean immediate, Boolean mandatory) throws AMQException
     {
         super(connection, destination, transacted, channelId, session, protocolHandler, producerId, immediate, mandatory);
         

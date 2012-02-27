@@ -20,15 +20,12 @@
 # Run the acl tests.
 
 $srcdir = Split-Path $myInvocation.InvocationName
-$PYTHON_DIR = "$srcdir\..\..\..\python"
+. .\test_env.ps1
 if (!(Test-Path $PYTHON_DIR -pathType Container)) {
     "Skipping acl tests as python libs not found"
     exit 1
 }
 
-$PYTHON_TEST_DIR = "$srcdir\..\..\..\tests\src\py"
-$QMF_LIB = "$srcdir\..\..\..\extras\qmf\src\py"
-$env:PYTHONPATH="$PYTHON_DIR;$srcdir;$PYTHON_TEST_DIR;$QMF_LIB"
 $Global:BROKER_EXE = ""
 
 Function start_broker($acl_options)

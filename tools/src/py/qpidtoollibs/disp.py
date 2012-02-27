@@ -21,6 +21,31 @@
 
 from time import strftime, gmtime
 
+def YN(val):
+  if val:
+    return 'Y'
+  return 'N'
+
+def Commas(value):
+  sval = str(value)
+  result = ""
+  while True:
+    if len(sval) == 0:
+      return result
+    left = sval[:-3]
+    right = sval[-3:]
+    result = right + result
+    if len(left) > 0:
+      result = ',' + result
+    sval = left
+
+def TimeLong(value):
+  return strftime("%c", gmtime(value / 1000000000))
+
+def TimeShort(value):
+  return strftime("%X", gmtime(value / 1000000000))
+
+
 class Header:
   """ """
   NONE = 1
@@ -59,9 +84,9 @@ class Header:
           return 'Y'
         return ''
       if self.format == Header.TIME_LONG:
-         return strftime("%c", gmtime(value / 1000000000))
+         return TimeLong(value)
       if self.format == Header.TIME_SHORT:
-         return strftime("%X", gmtime(value / 1000000000))
+         return TimeShort(value)
       if self.format == Header.DURATION:
         if value < 0: value = 0
         sec = value / 1000000000
@@ -78,17 +103,7 @@ class Header:
         result += "%ds" % (sec % 60)
         return result
       if self.format == Header.COMMAS:
-        sval = str(value)
-        result = ""
-        while True:
-          if len(sval) == 0:
-            return result
-          left = sval[:-3]
-          right = sval[-3:]
-          result = right + result
-          if len(left) > 0:
-            result = ',' + result
-          sval = left
+        return Commas(value)
     except:
       return "?"
 

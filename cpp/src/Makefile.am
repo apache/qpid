@@ -102,15 +102,16 @@ $(srcdir)/rubygen.cmake: $(rgen_generator) $(specs)
 
 # Management generator.
 mgen_dir=$(top_srcdir)/managementgen
-mgen_cmd=$(mgen_dir)/qmf-gen -m $(srcdir)/managementgen.mk \
-	-c $(srcdir)/managementgen.cmake -q -b -o qmf \
-	$(top_srcdir)/../specs/management-schema.xml \
+mgen_xml=$(top_srcdir)/../specs/management-schema.xml \
 	$(srcdir)/qpid/acl/management-schema.xml \
 	$(srcdir)/qpid/cluster/management-schema.xml \
 	$(srcdir)/qpid/ha/management-schema.xml
+mgen_cmd=$(mgen_dir)/qmf-gen -m $(srcdir)/managementgen.mk \
+	-c $(srcdir)/managementgen.cmake -q -b -o qmf \
+	$(mgen_xml)
 
 $(srcdir)/managementgen.mk $(mgen_broker_cpp) $(dist_qpid_management_HEADERS): mgen.timestamp
-mgen.timestamp: $(mgen_generator)
+mgen.timestamp: $(mgen_generator) $(mgen_xml)
 	$(mgen_cmd); touch $@
 $(mgen_generator):
 
@@ -183,11 +184,15 @@ nobase_include_HEADERS +=			\
   ../include/qpid/sys/posix/Time.h		\
   ../include/qpid/sys/posix/check.h
 
-if HAVE_EPOLL
+if USE_EPOLL
   poller = qpid/sys/epoll/EpollPoller.cpp
 endif
 
-if HAVE_ECF
+if USE_POLL
+  poller = qpid/sys/posix/PosixPoller.cpp
+endif
+
+if USE_ECF
   poller = qpid/sys/solaris/ECFPoller.cpp
 endif
 
@@ -481,12 +486,14 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/Fork.h				\
   qpid/sys/LockFile.h				\
   qpid/sys/LockPtr.h				\
+  qpid/sys/MemStat.h				\
   qpid/sys/OutputControl.h			\
   qpid/sys/OutputTask.h				\
   qpid/sys/PipeHandle.h				\
   qpid/sys/PollableCondition.h			\
   qpid/sys/PollableQueue.h			\
   qpid/sys/Poller.h				\
+  qpid/sys/Probes.h				\
   qpid/sys/ProtocolFactory.h			\
   qpid/sys/Runnable.cpp				\
   qpid/sys/ScopedIncrement.h			\
@@ -632,7 +639,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/QueuedMessage.h \
   qpid/broker/QueueFlowLimit.h \
   qpid/broker/QueueFlowLimit.cpp \
-  qpid/broker/RateFlowcontrol.h \
   qpid/broker/RecoverableConfig.h \
   qpid/broker/RecoverableExchange.h \
   qpid/broker/RecoverableMessage.h \

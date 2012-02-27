@@ -23,6 +23,7 @@ package org.apache.qpid.server.transport;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -50,7 +51,16 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.subscription.Subscription_0_10;
+import org.apache.qpid.server.txn.AlreadyKnownDtxException;
+import org.apache.qpid.server.txn.DtxNotSelectedException;
+import org.apache.qpid.server.txn.IncorrectDtxStateException;
+import org.apache.qpid.server.txn.JoinAndResumeDtxException;
+import org.apache.qpid.server.txn.NotAssociatedDtxException;
+import org.apache.qpid.server.txn.RollbackOnlyDtxException;
 import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.txn.SuspendAndFailDtxException;
+import org.apache.qpid.server.txn.TimeoutDtxException;
+import org.apache.qpid.server.txn.UnknownDtxBranchException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.*;
 
@@ -199,6 +209,10 @@ public class ServerSessionDelegate extends SessionDelegate
                 {
                     exception(session,method,ExecutionErrorCode.RESOURCE_LOCKED, "Exclusive Queue: " + queueName + " owned exclusively by another session");
                 }
+                else if(queue.isExclusive() && queue.getExclusiveOwningSession() != null && queue.getExclusiveOwningSession() != session)
+                {
+                    exception(session,method,ExecutionErrorCode.RESOURCE_LOCKED, "Exclusive Queue: " + queueName + " owned exclusively by another session");
+                }
                 else
                 {
                     if(queue.isExclusive())
@@ -221,7 +235,6 @@ public class ServerSessionDelegate extends SessionDelegate
                                 }
                             });
                         }
-
                     }
 
                     FlowCreditManager_0_10 creditManager = new WindowCreditManager(0L,0L);
@@ -426,6 +439,235 @@ public class ServerSessionDelegate extends SessionDelegate
         ((ServerSession)session).rollback();
     }
 
+    @Override
+    public void dtxSelect(Session session, DtxSelect method)
+    {
+        // TODO - check current tx mode
+        ((ServerSession)session).selectDtx();
+    }
+
+    @Override
+    public void dtxStart(Session session, DtxStart method)
+    {
+        XaResult result = new XaResult();
+        result.setStatus(DtxXaStatus.XA_OK);
+        try
+        {
+            ((ServerSession)session).startDtx(method.getXid(), method.getJoin(), method.getResume());
+            session.executionResult(method.getId(), result);
+        }
+        catch(JoinAndResumeDtxException e)
+        {
+            exception(session, method, ExecutionErrorCode.COMMAND_INVALID, e.getMessage());
+        }
+        catch(UnknownDtxBranchException e)
+        {
+            exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Unknown xid " + method.getXid());
+        }
+        catch(AlreadyKnownDtxException e)
+        {
+            exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Xid already started an neither join nor " +
+                                                                       "resume set" + method.getXid());
+        }
+        catch(DtxNotSelectedException e)
+        {
+            exception(session, method, ExecutionErrorCode.COMMAND_INVALID, e.getMessage());
+        }
+
+    }
+
+    @Override
+    public void dtxEnd(Session session, DtxEnd method)
+    {
+        XaResult result = new XaResult();
+        result.setStatus(DtxXaStatus.XA_OK);
+        try
+        {
+            try
+            {
+                ((ServerSession)session).endDtx(method.getXid(), method.getFail(), method.getSuspend());
+            }
+            catch (TimeoutDtxException e)
+            {
+                result.setStatus(DtxXaStatus.XA_RBTIMEOUT);
+            }
+            session.executionResult(method.getId(), result);
+        }
+        catch(UnknownDtxBranchException e)
+        {
+            exception(session, method, ExecutionErrorCode.ILLEGAL_STATE, e.getMessage());
+        }
+        catch(NotAssociatedDtxException e)
+        {
+            exception(session, method, ExecutionErrorCode.ILLEGAL_STATE, e.getMessage());
+        }
+        catch(DtxNotSelectedException e)
+        {
+            exception(session, method, ExecutionErrorCode.ILLEGAL_STATE, e.getMessage());
+        }
+        catch(SuspendAndFailDtxException e)
+        {
+            exception(session, method, ExecutionErrorCode.COMMAND_INVALID, e.getMessage());
+        }
+
+    }
+
+    @Override
+    public void dtxCommit(Session session, DtxCommit method)
+    {
+        XaResult result = new XaResult();
+        result.setStatus(DtxXaStatus.XA_OK);
+        try
+        {
+            try
+            {
+                ((ServerSession)session).commitDtx(method.getXid(), method.getOnePhase());
+            }
+            catch (RollbackOnlyDtxException e)
+            {
+                result.setStatus(DtxXaStatus.XA_RBROLLBACK);
+            }
+            catch (TimeoutDtxException e)
+            {
+                result.setStatus(DtxXaStatus.XA_RBTIMEOUT);
+            }
+            session.executionResult(method.getId(), result);
+        }
+        catch(UnknownDtxBranchException e)
+        {
+            exception(session, method, ExecutionErrorCode.NOT_FOUND, e.getMessage());
+        }
+        catch(IncorrectDtxStateException e)
+        {
+            exception(session, method, ExecutionErrorCode.ILLEGAL_STATE, e.getMessage());
+        }
+        catch(AMQStoreException e)
+        {
+            exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, e.getMessage());
+        }
+    }
+
+    @Override
+    public void dtxForget(Session session, DtxForget method)
+    {
+        try
+        {
+            ((ServerSession)session).forgetDtx(method.getXid());
+        }
+        catch(UnknownDtxBranchException e)
+        {
+            exception(session, method, ExecutionErrorCode.NOT_FOUND, e.getMessage());
+        }
+        catch(IncorrectDtxStateException e)
+        {
+            exception(session, method, ExecutionErrorCode.ILLEGAL_STATE, e.getMessage());
+        }
+
+    }
+
+    @Override
+    public void dtxGetTimeout(Session session, DtxGetTimeout method)
+    {
+        GetTimeoutResult result = new GetTimeoutResult();
+        try
+        {
+            result.setTimeout(((ServerSession) session).getTimeoutDtx(method.getXid()));
+            session.executionResult(method.getId(), result);
+        }
+        catch(UnknownDtxBranchException e)
+        {
+            exception(session, method, ExecutionErrorCode.NOT_FOUND, e.getMessage());
+        }
+    }
+
+    @Override
+    public void dtxPrepare(Session session, DtxPrepare method)
+    {
+        XaResult result = new XaResult();
+        result.setStatus(DtxXaStatus.XA_OK);
+        try
+        {
+            try
+            {
+                ((ServerSession)session).prepareDtx(method.getXid());
+            }
+            catch (RollbackOnlyDtxException e)
+            {
+                result.setStatus(DtxXaStatus.XA_RBROLLBACK);
+            }
+            catch (TimeoutDtxException e)
+            {
+                result.setStatus(DtxXaStatus.XA_RBTIMEOUT);
+            }
+            session.executionResult((int) method.getId(), result);
+        }
+        catch(UnknownDtxBranchException e)
+        {
+            exception(session, method, ExecutionErrorCode.NOT_FOUND, e.getMessage());
+        }
+        catch(IncorrectDtxStateException e)
+        {
+            exception(session, method, ExecutionErrorCode.ILLEGAL_STATE, e.getMessage());
+        }
+        catch(AMQStoreException e)
+        {
+            exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, e.getMessage());
+        }
+    }
+
+    @Override
+    public void dtxRecover(Session session, DtxRecover method)
+    {
+        RecoverResult result = new RecoverResult();
+        List inDoubt = ((ServerSession)session).recoverDtx();
+        result.setInDoubt(inDoubt);
+        session.executionResult(method.getId(), result);
+    }
+
+    @Override
+    public void dtxRollback(Session session, DtxRollback method)
+    {
+
+        XaResult result = new XaResult();
+        result.setStatus(DtxXaStatus.XA_OK);
+        try
+        {
+            try
+            {
+                ((ServerSession)session).rollbackDtx(method.getXid());
+            }
+            catch (TimeoutDtxException e)
+            {
+                result.setStatus(DtxXaStatus.XA_RBTIMEOUT);
+            }
+            session.executionResult(method.getId(), result);
+        }
+        catch(UnknownDtxBranchException e)
+        {
+            exception(session, method, ExecutionErrorCode.NOT_FOUND, e.getMessage());
+        }
+        catch(IncorrectDtxStateException e)
+        {
+            exception(session, method, ExecutionErrorCode.ILLEGAL_STATE, e.getMessage());
+        }
+        catch(AMQStoreException e)
+        {
+            exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, e.getMessage());
+        }
+    }
+
+    @Override
+    public void dtxSetTimeout(Session session, DtxSetTimeout method)
+    {
+        try
+        {
+            ((ServerSession)session).setTimeoutDtx(method.getXid(), method.getTimeout());
+        }
+        catch(UnknownDtxBranchException e)
+        {
+            exception(session, method, ExecutionErrorCode.NOT_FOUND, e.getMessage());
+        }
+    }
 
     @Override
     public void executionSync(final Session ssn, final ExecutionSync sync)
@@ -474,48 +716,96 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             if (exchange == null)
             {
-                ExchangeRegistry exchangeRegistry = getExchangeRegistry(session);
-                ExchangeFactory exchangeFactory = virtualHost.getExchangeFactory();
-
-
-
-                try
+                if(exchangeName.startsWith("amq."))
                 {
-
-                    exchange = exchangeFactory.createExchange(method.getExchange(),
-                                                              method.getType(),
-                                                              method.getDurable(),
-                                                              method.getAutoDelete());
-
-                    String alternateExchangeName = method.getAlternateExchange();
-                    if(alternateExchangeName != null && alternateExchangeName.length() != 0)
-                    {
-                        Exchange alternate = getExchange(session, alternateExchangeName);
-                        exchange.setAlternateExchange(alternate);
-                    }
-
-                    if (exchange.isDurable())
-                    {
-                        DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
-                        store.createExchange(exchange);
-                    }
-
-                    exchangeRegistry.registerExchange(exchange);
+                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
+                              "Attempt to declare exchange: " + exchangeName +
+                              " which begins with reserved prefix 'amq.'.");
                 }
-                catch(AMQUnknownExchangeType e)
+                else if(exchangeName.startsWith("qpid."))
                 {
-                    exception(session, method, ExecutionErrorCode.NOT_FOUND, "Unknown Exchange Type: " + method.getType());
+                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
+                              "Attempt to declare exchange: " + exchangeName +
+                              " which begins with reserved prefix 'qpid.'.");
                 }
-                catch (AMQException e)
+                else
                 {
-                    exception(session, method, e, "Cannot declare exchange '" + exchangeName);
+                    ExchangeRegistry exchangeRegistry = getExchangeRegistry(session);
+                    ExchangeFactory exchangeFactory = virtualHost.getExchangeFactory();
+
+
+
+                    try
+                    {
+
+                        exchange = exchangeFactory.createExchange(method.getExchange(),
+                                                                  method.getType(),
+                                                                  method.getDurable(),
+                                                                  method.getAutoDelete());
+
+                        String alternateExchangeName = method.getAlternateExchange();
+                        boolean validAlternate;
+                        if(alternateExchangeName != null && alternateExchangeName.length() != 0)
+                        {
+                            Exchange alternate = getExchange(session, alternateExchangeName);
+                            if(alternate == null)
+                            {
+                                validAlternate = false;
+                            }
+                            else
+                            {
+                                exchange.setAlternateExchange(alternate);
+                                validAlternate = true;
+                            }
+                        }
+                        else
+                        {
+                            validAlternate = true;
+                        }
+
+                        if(validAlternate)
+                        {
+                            if (exchange.isDurable())
+                            {
+                                DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
+                                store.createExchange(exchange);
+                            }
+
+                            exchangeRegistry.registerExchange(exchange);
+                        }
+                        else
+                        {
+                            exception(session, method, ExecutionErrorCode.NOT_FOUND,
+                                        "Unknown alternate exchange " + alternateExchangeName);
+                        }
+                    }
+                    catch(AMQUnknownExchangeType e)
+                    {
+                        exception(session, method, ExecutionErrorCode.NOT_FOUND, "Unknown Exchange Type: " + method.getType());
+                    }
+                    catch (AMQException e)
+                    {
+                        exception(session, method, e, "Cannot declare exchange '" + exchangeName);
+                    }
                 }
             }
             else
             {
                 if(!exchange.getTypeShortString().toString().equals(method.getType()))
                 {
-                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Attempt to redeclare exchange: " + exchangeName + " of type " + exchange.getTypeShortString() + " to " + method.getType() +".");
+                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
+                            "Attempt to redeclare exchange: " + exchangeName
+                                    + " of type " + exchange.getTypeShortString()
+                                    + " to " + method.getType() +".");
+                }
+                else if(method.hasAlternateExchange()
+                          && (exchange.getAlternateExchange() == null ||
+                              !method.getAlternateExchange().equals(exchange.getAlternateExchange().getName())))
+                {
+                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
+                            "Attempt to change alternate exchange of: " + exchangeName
+                                    + " from " + exchange.getAlternateExchange()
+                                    + " to " + method.getAlternateExchange() +".");
                 }
             }
 
@@ -732,10 +1022,7 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             else
             {
-                AMQShortString routingKey = new AMQShortString(method.getBindingKey());
-                FieldTable fieldTable = FieldTable.convertToFieldTable(method.getArguments());
-
-                if (!exchange.isBound(routingKey, fieldTable, queue))
+                if (!exchange.isBound(method.getBindingKey(), method.getArguments(), queue))
                 {
                     try
                     {
@@ -847,12 +1134,6 @@ public class ServerSessionDelegate extends SessionDelegate
                 if(method.hasBindingKey())
                 {
 
-                    if(method.hasArguments())
-                    {
-                        FieldTable args = FieldTable.convertToFieldTable(method.getArguments());
-                        
-                        result.setArgsNotMatched(!exchange.isBound(new AMQShortString(method.getBindingKey()), args, queue));
-                    }
                     if(queueMatched)
                     {
                         result.setKeyNotMatched(!exchange.isBound(method.getBindingKey(), queue));
@@ -861,23 +1142,28 @@ public class ServerSessionDelegate extends SessionDelegate
                     {
                         result.setKeyNotMatched(!exchange.isBound(method.getBindingKey()));
                     }
+
+                    if(method.hasArguments())
+                    {
+                        result.setArgsNotMatched(!exchange.isBound(result.getKeyNotMatched() ? null : method.getBindingKey(), method.getArguments(), queueMatched ? queue : null));
+                    }
+
                 }
                 else if (method.hasArguments())
                 {
-                    // TODO
-
+                    result.setArgsNotMatched(!exchange.isBound(null, method.getArguments(), queueMatched ? queue : null));
                 }
-
-                result.setQueueNotMatched(!exchange.isBound(queue));
 
             }
             else if(exchange != null && method.hasBindingKey())
             {
+                result.setKeyNotMatched(!exchange.isBound(method.getBindingKey()));
+
                 if(method.hasArguments())
                 {
-                    // TODO
+                    result.setArgsNotMatched(!exchange.isBound(result.getKeyNotMatched() ? null : method.getBindingKey(), method.getArguments(), queue));
                 }
-                result.setKeyNotMatched(!exchange.isBound(method.getBindingKey()));
+
 
             }
 
@@ -886,10 +1172,14 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             if(method.hasArguments())
             {
-                // TODO
+                result.setArgsNotMatched(!exchange.isBound(method.getBindingKey(), method.getArguments(), null));
             }
             result.setKeyNotMatched(!exchange.isBound(method.getBindingKey()));
 
+        }
+        else if(exchange != null && method.hasArguments())
+        {
+            result.setArgsNotMatched(!exchange.isBound(null, method.getArguments(), null));
         }
 
 
@@ -1134,6 +1424,10 @@ public class ServerSessionDelegate extends SessionDelegate
                 {
                     exception(session,method,ExecutionErrorCode.RESOURCE_LOCKED, "Exclusive Queue: " + queueName + " owned exclusively by another session");
                 }
+                else if(queue.isExclusive() && queue.getExclusiveOwningSession()  != null && queue.getExclusiveOwningSession() != session)
+                {
+                    exception(session,method,ExecutionErrorCode.RESOURCE_LOCKED, "Exclusive Queue: " + queueName + " owned exclusively by another session");
+                }
                 else if (method.getIfEmpty() && !queue.isEmpty())
                 {
                     exception(session, method, ExecutionErrorCode.PRECONDITION_FAILED, "Queue " + queueName + " not empty");
@@ -1280,8 +1574,9 @@ public class ServerSessionDelegate extends SessionDelegate
 
         ServerSession serverSession = (ServerSession)session;
 
-        serverSession.unregisterSubscriptions();
+        serverSession.stopSubscriptions();
         serverSession.onClose();
+        serverSession.unregisterSubscriptions();
     }
 
     @Override

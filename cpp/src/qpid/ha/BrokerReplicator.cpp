@@ -266,6 +266,7 @@ void BrokerReplicator::route(Deliverable& msg, const string& /*key*/, const fram
 }
 
 void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
+    QPID_LOG(debug, "HA: Backup queue declare event " << values);
     string name = values[QNAME].asString();
     Variant::Map argsMap = asMapVoid(values[ARGS]);
     if (values[DISP] == CREATED && replicateLevel(argsMap)) {
@@ -296,6 +297,7 @@ void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
 }
 
 void BrokerReplicator::doEventQueueDelete(Variant::Map& values) {
+    QPID_LOG(debug, "HA: Backup queue delete event " << values);
     // The remote queue has already been deleted so replicator
     // sessions may be closed by a "queue deleted" exception.
     string name = values[QNAME].asString();
@@ -314,6 +316,7 @@ void BrokerReplicator::doEventQueueDelete(Variant::Map& values) {
 }
 
 void BrokerReplicator::doEventExchangeDeclare(Variant::Map& values) {
+    QPID_LOG(debug, "HA: Backup exchange declare event " << values);
     Variant::Map argsMap(asMapVoid(values[ARGS]));
     if (values[DISP] == CREATED && replicateLevel(argsMap)) {
         string name = values[EXNAME].asString();
@@ -338,6 +341,7 @@ void BrokerReplicator::doEventExchangeDeclare(Variant::Map& values) {
 }
 
 void BrokerReplicator::doEventExchangeDelete(Variant::Map& values) {
+    QPID_LOG(debug, "HA: Backup exchange delete event " << values);
     string name = values[EXNAME].asString();
     try {
         boost::shared_ptr<Exchange> exchange = broker.getExchanges().find(name);
@@ -352,6 +356,7 @@ void BrokerReplicator::doEventExchangeDelete(Variant::Map& values) {
 }
 
 void BrokerReplicator::doEventBind(Variant::Map& values) {
+    QPID_LOG(debug, "HA: Backup bind event " << values);
     boost::shared_ptr<Exchange> exchange =
         broker.getExchanges().find(values[EXNAME].asString());
     boost::shared_ptr<Queue> queue =
@@ -372,6 +377,7 @@ void BrokerReplicator::doEventBind(Variant::Map& values) {
 }
 
 void BrokerReplicator::doEventUnbind(Variant::Map& values) {
+    QPID_LOG(debug, "HA: Backup unbind event " << values);
     boost::shared_ptr<Exchange> exchange =
         broker.getExchanges().find(values[EXNAME].asString());
     boost::shared_ptr<Queue> queue =
@@ -392,6 +398,7 @@ void BrokerReplicator::doEventUnbind(Variant::Map& values) {
 }
 
 void BrokerReplicator::doResponseQueue(Variant::Map& values) {
+    QPID_LOG(debug, "HA: Backup queue response " << values);
     // FIXME aconway 2011-11-22: more flexible ways & defaults to indicate replication
     Variant::Map argsMap(asMapVoid(values[ARGUMENTS]));
     if (!replicateLevel(argsMap)) return;
@@ -419,6 +426,7 @@ void BrokerReplicator::doResponseQueue(Variant::Map& values) {
 }
 
 void BrokerReplicator::doResponseExchange(Variant::Map& values) {
+    QPID_LOG(debug, "HA: Backup exchange response " << values);
     Variant::Map argsMap(asMapVoid(values[ARGUMENTS]));
     if (!replicateLevel(argsMap)) return;
     framing::FieldTable args;
@@ -460,6 +468,7 @@ const std::string QUEUE_REF("queueRef");
 } // namespace
 
 void BrokerReplicator::doResponseBind(Variant::Map& values) {
+    QPID_LOG(debug, "HA: Backup bind response " << values);
     std::string exName = getRefName(EXCHANGE_REF_PREFIX, values[EXCHANGE_REF]);
     std::string qName = getRefName(QUEUE_REF_PREFIX, values[QUEUE_REF]);
     boost::shared_ptr<Exchange> exchange = broker.getExchanges().find(exName);

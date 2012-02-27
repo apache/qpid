@@ -75,17 +75,6 @@ public class ContentHeaderBody implements AMQBody
         return TYPE;
     }
 
-    protected void populateFromBuffer(DataInputStream buffer, long size)
-        throws AMQFrameDecodingException, AMQProtocolVersionException, IOException
-    {
-        classId = buffer.readUnsignedShort();
-        weight = buffer.readUnsignedShort();
-        bodySize = buffer.readLong();
-        int propertyFlags = buffer.readUnsignedShort();
-        ContentHeaderPropertiesFactory factory = ContentHeaderPropertiesFactory.getInstance();
-        properties = factory.createContentHeaderProperties(classId, propertyFlags, buffer, (int)size - 14);
-    }
-
     /**
      * Helper method that is used currently by the persistence layer (by BDB at the moment).
      * @param buffer

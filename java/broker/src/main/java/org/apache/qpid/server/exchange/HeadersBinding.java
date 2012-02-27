@@ -39,7 +39,7 @@ class HeadersBinding
 {
     private static final Logger _logger = Logger.getLogger(HeadersBinding.class);
 
-    private final FieldTable _mappings;
+    private final Map<String,Object> _mappings;
     private final Binding _binding;
     private final Set<String> required = new HashSet<String>();
     private final Map<String,Object> matches = new HashMap<String,Object>();
@@ -58,7 +58,7 @@ class HeadersBinding
         _binding = binding;
         if(_binding !=null)
         {
-            _mappings = FieldTable.convertToFieldTable(_binding.getArguments());
+            _mappings = _binding.getArguments();
             initMappings();
         }
         else
@@ -69,37 +69,23 @@ class HeadersBinding
     
     private void initMappings()
     {
-        _mappings.processOverElements(new FieldTable.FieldTableElementProcessor()
+        for(Map.Entry<String, Object> entry : _mappings.entrySet())
         {
-
-            public boolean processElement(String propertyName, AMQTypedValue value)
+            String propertyName = entry.getKey();
+            Object value = entry.getValue();
+            if (isSpecial(propertyName))
             {
-                if (isSpecial(propertyName))
-                {
-                    processSpecial(propertyName, value.getValue());
-                }
-                else if (value.getValue() == null || value.getValue().equals(""))
-                {
-                    required.add(propertyName);
-                }
-                else
-                {
-                    matches.put(propertyName,value.getValue());
-                }
-
-                return true;
+                processSpecial(propertyName, value);
             }
-
-            public Object getResult()
+            else if (value == null || value.equals(""))
             {
-                return null;
+                required.add(propertyName);
             }
-        });
-    }
-
-    protected FieldTable getMappings()
-    {
-        return _mappings;
+            else
+            {
+                matches.put(propertyName,value);
+            }
+        }
     }
     
     public Binding getBinding()

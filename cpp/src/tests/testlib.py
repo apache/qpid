@@ -348,8 +348,8 @@ class TestBaseCluster(TestBase):
     def _qpidConfig(self, nodeNumber, clusterName, action):
         """Configure some aspect of a qpid broker using the qpid_config executable"""
         port = self.getNodeTuple(nodeNumber, clusterName)[self.PORT]
-        #print "%s -a localhost:%d %s" % (self._qpidConfigExec, port, action)
-        ret = os.spawnl(os.P_WAIT, self._qpidConfigExec, self._qpidConfigExec, "-a", "localhost:%d" % port,  *action.split())
+        #print "%s -b localhost:%d %s" % (self._qpidConfigExec, port, action)
+        ret = os.spawnl(os.P_WAIT, self._qpidConfigExec, self._qpidConfigExec, "-b", "localhost:%d" % port,  *action.split())
         if ret != 0:
             raise Exception("_qpidConfig(): cluster=\"%s\" nodeNumber=%d port=%d action=\"%s\" returned %d" % \
                             (clusterName, nodeNumber, port, action, ret))

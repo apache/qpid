@@ -48,8 +48,12 @@ class ACLTests(TestBase010):
         return connection.session(str(uuid4()))
 
     def reload_acl(self):
-        acl = self.qmf.getObjects(_class="acl")[0]    
-        return acl.reloadACLFile()
+        result = None
+        try:
+            self.broker_access.reloadAclFile()
+        except Exception, e:
+            result = str(e)
+        return result
 
     def get_acl_file(self):
         return ACLFile(self.config.defines.get("policy-file", "data_dir/policy.acl"))
@@ -59,7 +63,7 @@ class ACLTests(TestBase010):
         aclf.write('acl allow all all\n')
         aclf.close()
         TestBase010.setUp(self)
-        self.startQmf()
+        self.startBrokerAccess()
         self.reload_acl()
 
     def tearDown(self):
@@ -84,7 +88,7 @@ class ACLTests(TestBase010):
         aclf.close()        
         
         result = self.reload_acl()
-        if (result.text.find("format error",0,len(result.text)) != -1):
+        if (result):
             self.fail(result) 
         
         session = self.get_session('bob','bob')
@@ -111,7 +115,7 @@ class ACLTests(TestBase010):
         aclf.close()        
         
         result = self.reload_acl()
-        if (result.text.find("format error",0,len(result.text)) != -1):
+        if (result):
             self.fail(result)       
         
         session = self.get_session('bob','bob')
@@ -168,7 +172,7 @@ class ACLTests(TestBase010):
         aclf.close()        
         
         result = self.reload_acl()       
-        if (result.text.find("Insufficient tokens for acl definition",0,len(result.text)) == -1):
+        if (result.find("Insufficient tokens for acl definition",0,len(result)) == -1):
             self.fail("ACL Reader should reject the acl file due to empty group name")    
 
     def test_illegal_acl_formats(self):
@@ -181,7 +185,7 @@ class ACLTests(TestBase010):
         aclf.close()
         
         result = self.reload_acl()       
-        if (result.text.find("Unknown ACL permission",0,len(result.text)) == -1):
+        if (result.find("Unknown ACL permission",0,len(result)) == -1):
             self.fail(result)        
         
     def test_illegal_extension_lines(self):
@@ -197,10 +201,10 @@ class ACLTests(TestBase010):
         aclf.close()        
         
         result = self.reload_acl()       
-        if (result.text.find("contains an illegal extension",0,len(result.text)) == -1):
+        if (result.find("contains an illegal extension",0,len(result)) == -1):
             self.fail(result)
 
-        if (result.text.find("Non-continuation line must start with \"group\" or \"acl\"",0,len(result.text)) == -1):
+        if (result.find("Non-continuation line must start with \"group\" or \"acl\"",0,len(result)) == -1):
             self.fail(result)
 
     def test_illegal_extension_lines(self):
@@ -216,7 +220,7 @@ class ACLTests(TestBase010):
         aclf.close()
          
         result = self.reload_acl()
-        if (result.text.find("ACL format error",0,len(result.text)) != -1):
+        if (result):
             self.fail(result)
 
     def test_user_realm(self):
@@ -231,7 +235,7 @@ class ACLTests(TestBase010):
         aclf.close()
          
         result = self.reload_acl()
-        if (result.text.find("Username 'bob' must contain a realm",0,len(result.text)) == -1):
+        if (result.find("Username 'bob' must contain a realm",0,len(result)) == -1):
             self.fail(result)
 
     def test_allowed_chars_for_username(self):
@@ -247,7 +251,7 @@ class ACLTests(TestBase010):
         aclf.close()
          
         result = self.reload_acl()
-        if (result.text.find("ACL format error",0,len(result.text)) != -1):
+        if (result):
             self.fail(result)
 
         aclf = self.get_acl_file()
@@ -256,7 +260,7 @@ class ACLTests(TestBase010):
         aclf.close() 
 
         result = self.reload_acl()
-        if (result.text.find("Username \"joe$H@EXAMPLE.com\" contains illegal characters",0,len(result.text)) == -1):
+        if (result.find("Username \"joe$H@EXAMPLE.com\" contains illegal characters",0,len(result)) == -1):
             self.fail(result)
 
    #=====================================
@@ -276,7 +280,7 @@ class ACLTests(TestBase010):
         result = self.reload_acl()       
         expected = "ding is not a valid value for 'policytype', possible values are one of" \
                    " { 'ring' 'ring_strict' 'flow_to_disk' 'reject' }"; 
-        if (result.text != expected): 
+        if (result.find(expected) == -1):
             self.fail(result)        
 
     def test_illegal_queuemaxsize_upper_limit_spec(self):
@@ -294,7 +298,7 @@ class ACLTests(TestBase010):
         result = self.reload_acl()       
         expected = "-1 is not a valid value for 'queuemaxsizeupperlimit', " \
                    "values should be between 0 and 9223372036854775807"; 
-        if (result.text != expected): 
+        if (result.find(expected) == -1):
             self.fail(result) 
 
         aclf = self.get_acl_file()
@@ -305,7 +309,7 @@ class ACLTests(TestBase010):
         result = self.reload_acl()       
         expected = "9223372036854775808 is not a valid value for 'queuemaxsizeupperlimit', " \
                    "values should be between 0 and 9223372036854775807";
-        if (result.text != expected): 
+        if (result.find(expected) == -1):
             self.fail(result) 
 
         #
@@ -351,7 +355,7 @@ class ACLTests(TestBase010):
         result = self.reload_acl()       
         expected = "-1 is not a valid value for 'queuemaxcountupperlimit', " \
                    "values should be between 0 and 9223372036854775807"; 
-        if (result.text != expected): 
+        if (result.find(expected) == -1):
             self.fail(result) 
 
         aclf = self.get_acl_file()
@@ -362,7 +366,7 @@ class ACLTests(TestBase010):
         result = self.reload_acl()       
         expected = "9223372036854775808 is not a valid value for 'queuemaxcountupperlimit', " \
                    "values should be between 0 and 9223372036854775807";
-        if (result.text != expected): 
+        if (result.find(expected) == -1):
             self.fail(result) 
 
         #
@@ -466,7 +470,7 @@ class ACLTests(TestBase010):
         aclf.close()        
         
         result = self.reload_acl()
-        if (result.text.find("format error",0,len(result.text)) != -1):
+        if (result):
             self.fail(result) 
         
         session = self.get_session('bob','bob')
@@ -573,7 +577,7 @@ class ACLTests(TestBase010):
         aclf.close()        
         
         result = self.reload_acl()
-        if (result.text.find("format error",0,len(result.text)) != -1):
+        if (result):
             self.fail(result)     
         
         session = self.get_session('bob','bob')
@@ -742,7 +746,7 @@ class ACLTests(TestBase010):
         aclf.close()        
         
         result = self.reload_acl()
-        if (result.text.find("format error",0,len(result.text)) != -1):
+        if (result):
             self.fail(result)        
         
         session = self.get_session('bob','bob')
@@ -873,7 +877,7 @@ class ACLTests(TestBase010):
         aclf.close()        
         
         result = self.reload_acl()
-        if (result.text.find("format error",0,len(result.text)) != -1):
+        if (result):
             self.fail(result)        
         
         session = self.get_session('bob','bob')
@@ -991,7 +995,7 @@ class ACLTests(TestBase010):
         aclf.close()
 
         result = self.reload_acl()
-        if (result.text.find("format error",0,len(result.text)) != -1):
+        if (result):
             self.fail(result)
 
         bob = BrokerAdmin(self.config.broker, "bob", "bob")
@@ -1030,7 +1034,7 @@ class ACLTests(TestBase010):
         aclf.close()        
         
         result = self.reload_acl()
-        if (result.text.find("format error",0,len(result.text)) != -1):
+        if (result):
             self.fail(result)        
         
         session = self.get_session('bob','bob')
@@ -1078,7 +1082,7 @@ class ACLTests(TestBase010):
         aclf.close()        
         
         result = self.reload_acl()
-        if (result.text.find("format error",0,len(result.text)) != -1):
+        if (result):
             self.fail(result)        
         
         session = self.get_session('bob','bob')
@@ -1123,7 +1127,7 @@ class ACLTests(TestBase010):
         aclf.close()        
         
         result = self.reload_acl()
-        if (result.text.find("format error",0,len(result.text)) != -1):
+        if (result):
             self.fail(result)        
         
         session = self.get_session('bob','bob')
@@ -1174,7 +1178,7 @@ class ACLTests(TestBase010):
         aclf.close()        
         
         result = self.reload_acl()
-        if (result.text.find("format error",0,len(result.text)) != -1):
+        if (result):
             self.fail(result)        
         
         session = self.get_session('bob','bob')
@@ -1242,7 +1246,7 @@ class ACLTests(TestBase010):
         aclf.close()
 
         result = self.reload_acl()
-        if (result.text.find("format error",0,len(result.text)) != -1):
+        if (result):
             self.fail(result)
 
         ts = None

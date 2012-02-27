@@ -118,7 +118,7 @@ public class FaultTest extends AbstractXATestCase
             _queueFactory = getConnectionFactory();
             _xaqueueConnection = _queueFactory.createXAQueueConnection("guest", "guest");
             XAQueueSession session = _xaqueueConnection.createXAQueueSession();
-            _queueConnection = _queueFactory.createQueueConnection();
+            _queueConnection = _queueFactory.createQueueConnection("guest","guest");
             _nonXASession = _queueConnection.createQueueSession(true, Session.AUTO_ACKNOWLEDGE);
             init(session, _queue);
         }

@@ -277,7 +277,7 @@ acl deny all all
         QMF-based tools - regression test for BZ615300."""
         broker1 = self.cluster(1)[0]
         broker2 = self.cluster(1)[0]
-        qs = subprocess.Popen(["qpid-stat", "-e", broker1.host_port()],  stdout=subprocess.PIPE)
+        qs = subprocess.Popen(["qpid-stat", "-e", "-b", broker1.host_port()],  stdout=subprocess.PIPE)
         out = qs.communicate()[0]
         assert out.find("amq.failover") > 0
 
@@ -1160,7 +1160,7 @@ class LongTests(BrokerTest):
 
         def start_mclients(broker):
             """Start management clients that make multiple connections."""
-            cmd = ["qpid-stat", "-b", "localhost:%s" %(broker.port())]
+            cmd = ["qpid-cluster", "-C", "localhost:%s" %(broker.port())]
             mclients.append(ClientLoop(broker, cmd))
 
         endtime = time.time() + self.duration()

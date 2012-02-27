@@ -186,19 +186,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         _qmfService = qmfService;
     }
 
-    static
-    {
-        Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownService()));
-    }
-
-    private static class ShutdownService implements Runnable
-    {
-        public void run()
-        {
-            remove();
-        }
-    }
-
     public static void initialise(IApplicationRegistry instance) throws Exception
     {
         if(instance == null)
@@ -273,7 +260,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
                     _logger.info("Shutting down ApplicationRegistry(" + instance + ")");
                 }
                 instance.close();
-                instance.getBroker().getSystem().removeBroker(instance.getBroker());
             }
         }
         catch (Exception e)
@@ -536,35 +522,49 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
     }
 
-
     public void close()
     {
         if (_logger.isInfoEnabled())
         {
             _logger.info("Shutting down ApplicationRegistry:" + this);
         }
-        
-        //Stop Statistics Reporting
-        if (_reportingTimer != null)
+
+        //Set the Actor for Broker Shutdown
+        CurrentActor.set(new BrokerActor(getRootMessageLogger()));
+        try
         {
-            _reportingTimer.cancel();
+            //Stop Statistics Reporting
+            if (_reportingTimer != null)
+            {
+                _reportingTimer.cancel();
+            }
+
+            //Stop incoming connections
+            unbind();
+
+            //Shutdown virtualhosts
+            close(_virtualHostRegistry);
+
+            close(_authenticationManager);
+
+            close(_qmfService);
+
+            close(_pluginManager);
+
+            close(_managedObjectRegistry);
+
+            BrokerConfig broker = getBroker();
+            if(broker != null)
+            {
+                broker.getSystem().removeBroker(broker);
+            }
+
+            CurrentActor.get().message(BrokerMessages.STOPPED());
         }
-
-        //Stop incoming connections
-        unbind();
-
-        //Shutdown virtualhosts
-        close(_virtualHostRegistry);
-
-        close(_authenticationManager);
-
-        close(_qmfService);
-
-        close(_pluginManager);
-
-        close(_managedObjectRegistry);
-
-        CurrentActor.get().message(BrokerMessages.STOPPED());
+        finally
+        {
+            CurrentActor.remove();
+        }
     }
 
     private void unbind()

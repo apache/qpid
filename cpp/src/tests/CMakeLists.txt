@@ -34,8 +34,14 @@ set (abs_builddir ${CMAKE_CURRENT_BINARY_DIR})
 set (abs_top_srcdir ${CMAKE_SOURCE_DIR})
 set (abs_top_builddir ${CMAKE_BINARY_DIR})
 set (builddir_lib_suffix "")
-configure_file (${CMAKE_CURRENT_SOURCE_DIR}/test_env.sh.in
-  ${CMAKE_CURRENT_BINARY_DIR}/test_env.sh)
+
+if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+  configure_file (${CMAKE_CURRENT_SOURCE_DIR}/test_env.ps1.in
+    ${CMAKE_CURRENT_BINARY_DIR}/test_env.ps1)
+else (CMAKE_SYSTEM_NAME STREQUAL Windows)
+  configure_file (${CMAKE_CURRENT_SOURCE_DIR}/test_env.sh.in
+    ${CMAKE_CURRENT_BINARY_DIR}/test_env.sh)
+endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 
 # If valgrind is selected in the configuration step, set up the path to it

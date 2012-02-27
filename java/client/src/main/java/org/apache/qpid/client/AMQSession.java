@@ -120,18 +120,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public static final long DEFAULT_FLOW_CONTROL_WAIT_FAILURE = 120000L;
 
     /**
-     * The default value for immediate flag used by producers created by this session is false. That is, a consumer does
-     * not need to be attached to a queue.
-     */
-    private final boolean _defaultImmediateValue = Boolean.parseBoolean(System.getProperty("qpid.default_immediate", "false"));
-
-    /**
-     * The default value for mandatory flag used by producers created by this session is true. That is, server will not
-     * silently drop messages where no queue is connected to the exchange for the message.
-     */
-    private final boolean _defaultMandatoryValue = Boolean.parseBoolean(System.getProperty("qpid.default_mandatory", "true"));
-
-    /**
      * The period to wait while flow controlled before sending a log message confirming that the session is still
      * waiting on flow control being revoked
      */
@@ -1198,12 +1186,12 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     public P createProducer(Destination destination) throws JMSException
     {
-        return createProducerImpl(destination, _defaultMandatoryValue, _defaultImmediateValue);
+        return createProducerImpl(destination, null, null);
     }
 
     public P createProducer(Destination destination, boolean immediate) throws JMSException
     {
-        return createProducerImpl(destination, _defaultMandatoryValue, immediate);
+        return createProducerImpl(destination, null, immediate);
     }
 
     public P createProducer(Destination destination, boolean mandatory, boolean immediate)
@@ -1692,7 +1680,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         AMQProtocolHandler protocolHandler = getProtocolHandler();
         declareExchange(amqd, protocolHandler, false);
-        AMQShortString queueName = declareQueue(amqd, protocolHandler, false);
+        AMQShortString queueName = declareQueue(amqd, false);
         bindQueue(queueName, amqd.getRoutingKey(), new FieldTable(), amqd.getExchangeName(), amqd);
     }
 
@@ -2613,7 +2601,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public abstract void sendConsume(C consumer, AMQShortString queueName,
                                      AMQProtocolHandler protocolHandler, boolean nowait, int tag) throws AMQException, FailoverException;
 
-    private P createProducerImpl(final Destination destination, final boolean mandatory, final boolean immediate)
+    private P createProducerImpl(final Destination destination, final Boolean mandatory, final Boolean immediate)
             throws JMSException
     {
         return new FailoverRetrySupport<P, JMSException>(
@@ -2642,8 +2630,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 }, _connection).execute();
     }
 
-    public abstract P createMessageProducer(final Destination destination, final boolean mandatory,
-                                                               final boolean immediate, final long producerId) throws JMSException;
+    public abstract P createMessageProducer(final Destination destination, final Boolean mandatory,
+                                            final Boolean immediate, final long producerId) throws JMSException;
 
     private void declareExchange(AMQDestination amqd, AMQProtocolHandler protocolHandler, boolean nowait) throws AMQException
     {
@@ -2726,6 +2714,12 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public abstract void sendExchangeDeclare(final AMQShortString name, final AMQShortString type, final AMQProtocolHandler protocolHandler,
                                              final boolean nowait) throws AMQException, FailoverException;
 
+
+    void declareQueuePassive(AMQDestination queue) throws AMQException
+    {
+        declareQueue(queue,false,false,true);
+    }
+
     /**
      * Declares a queue for a JMS destination.
      *
@@ -2735,27 +2729,35 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      *
      * <p/>Note that this operation automatically retries in the event of fail-over.
      *
-     * @param amqd            The destination to declare as a queue.
-     * @param protocolHandler The protocol handler to communicate through.
      *
+     * @param amqd            The destination to declare as a queue.
      * @return The name of the decalred queue. This is useful where the broker is generating a queue name on behalf of
      *         the client.
+     *
+     *
      *
      * @throws AMQException If the queue cannot be declared for any reason.
      * @todo Verify the destiation is valid or throw an exception.
      * @todo Be aware of possible changes to parameter order as versions change.
      */
-    protected AMQShortString declareQueue(final AMQDestination amqd, final AMQProtocolHandler protocolHandler,
+    protected AMQShortString declareQueue(final AMQDestination amqd,
                                           final boolean noLocal) throws AMQException
     {
-        return declareQueue(amqd, protocolHandler, noLocal, false);
+        return declareQueue(amqd, noLocal, false);
     }
 
-    protected AMQShortString declareQueue(final AMQDestination amqd, final AMQProtocolHandler protocolHandler,
+    protected AMQShortString declareQueue(final AMQDestination amqd,
                                           final boolean noLocal, final boolean nowait)
+                throws AMQException
+    {
+        return declareQueue(amqd, noLocal, nowait, false);
+    }
+
+    protected AMQShortString declareQueue(final AMQDestination amqd,
+                                          final boolean noLocal, final boolean nowait, final boolean passive)
             throws AMQException
     {
-        /*return new FailoverRetrySupport<AMQShortString, AMQException>(*/
+        final AMQProtocolHandler protocolHandler = getProtocolHandler();
         return new FailoverNoopSupport<AMQShortString, AMQException>(
                 new FailoverProtectedOperation<AMQShortString, AMQException>()
                 {
@@ -2767,7 +2769,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                             amqd.setQueueName(protocolHandler.generateQueueName());
                         }
 
-                        sendQueueDeclare(amqd, protocolHandler, nowait);
+                        sendQueueDeclare(amqd, protocolHandler, nowait, passive);
 
                         return amqd.getAMQQueueName();
                     }
@@ -2775,7 +2777,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     }
 
     public abstract void sendQueueDeclare(final AMQDestination amqd, final AMQProtocolHandler protocolHandler,
-                                          final boolean nowait) throws AMQException, FailoverException;
+                                          final boolean nowait, boolean passive) throws AMQException, FailoverException;
 
     /**
      * Undeclares the specified queue.
@@ -2916,7 +2918,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     
             if (_delareQueues || amqd.isNameRequired())
             {
-                declareQueue(amqd, protocolHandler, consumer.isNoLocal(), nowait);
+                declareQueue(amqd, consumer.isNoLocal(), nowait);
             }
             bindQueue(amqd.getAMQQueueName(), amqd.getRoutingKey(), consumer.getArguments(), amqd.getExchangeName(), amqd, nowait);
         }

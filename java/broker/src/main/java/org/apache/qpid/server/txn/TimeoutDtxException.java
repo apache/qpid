@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,32 +19,14 @@
  *
  */
 
-#include "qpid/sys/Shlib.h"
-#include "qpid/sys/apr/APRBase.h"
-#include "qpid/sys/apr/APRPool.h"
-#include <apr_dso.h>
+package org.apache.qpid.server.txn;
 
-namespace qpid {
-namespace sys {
+import org.apache.qpid.transport.Xid;
 
-void Shlib::load(const char* libname) {
-    apr_dso_handle_t* aprHandle; 
-    CHECK_APR_SUCCESS(
-        apr_dso_load(&aprHandle, libname, APRPool::get()));
-    handle=aprHandle;
+public class TimeoutDtxException extends DtxException
+{
+    public TimeoutDtxException(Xid id)
+    {
+        super("Transaction " + id + " has timed-out and may only be rolled back");
+    }
 }
-
-void  Shlib::unload() {
-    CHECK_APR_SUCCESS(
-        apr_dso_unload(static_cast<apr_dso_handle_t*>(handle)));
-}
-
-void*  Shlib::getSymbol(const char* name) {
-    apr_dso_handle_sym_t symbol;
-    CHECK_APR_SUCCESS(apr_dso_sym(&symbol,
-                                  static_cast<apr_dso_handle_t*>(handle),
-                                  name));
-    return (void*) symbol;
-}
-
-}} // namespace qpid::sys

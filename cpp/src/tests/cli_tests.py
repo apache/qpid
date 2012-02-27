@@ -22,7 +22,6 @@ import sys
 import os
 import imp
 from qpid.testlib import TestBase010
-# from brokertest import import_script, checkenv 
 from qpid.datatypes import Message
 from qpid.queue import Empty
 from time import sleep
@@ -61,14 +60,13 @@ class CliTests(TestBase010):
             ret = os.system(self.qpid_config_command(" add queue " + qname  + " " + arguments))
 
         self.assertEqual(ret, 0)
-        queues = self.qmf.getObjects(_class="queue")
-        for queue in queues:
-            if queue.name == qname:
-                return queue
+        queue = self.broker_access.getQueue(qname)
+        if queue:
+            return queue
         assert False
 
     def test_queue_params(self):
-        self.startQmf()
+        self.startBrokerAccess()
         queue1 = self.makeQueue("test_queue_params1", "--limit-policy none")
         queue2 = self.makeQueue("test_queue_params2", "--limit-policy reject")
         queue3 = self.makeQueue("test_queue_params3", "--limit-policy flow-to-disk")
@@ -82,29 +80,21 @@ class CliTests(TestBase010):
         self.assertEqual(queue4.arguments[LIMIT], "ring")
         self.assertEqual(queue5.arguments[LIMIT], "ring_strict")
 
-        queue6 = self.makeQueue("test_queue_params6", "--order fifo")
-        queue7 = self.makeQueue("test_queue_params7", "--order lvq")
-        queue8 = self.makeQueue("test_queue_params8", "--order lvq-no-browse")
+        queue6 = self.makeQueue("test_queue_params6", "--lvq-key lkey")
 
-        LVQ = "qpid.last_value_queue"
-        LVQNB = "qpid.last_value_queue_no_browse"
+        LVQKEY = "qpid.last_value_queue_key"
 
-        assert LVQ not in queue6.arguments
-        assert LVQ     in queue7.arguments
-        assert LVQ not in queue8.arguments
-
-        assert LVQNB not in queue6.arguments
-        assert LVQNB not in queue7.arguments
-        assert LVQNB     in queue8.arguments
-
+        assert LVQKEY not in queue5.arguments
+        assert LVQKEY     in queue6.arguments
+        assert queue6.arguments[LVQKEY] == "lkey"
 
     def test_queue_params_api(self):
-        self.startQmf()
-        queue1 = self.makeQueue("test_queue_params1", "--limit-policy none", True)
-        queue2 = self.makeQueue("test_queue_params2", "--limit-policy reject", True)
-        queue3 = self.makeQueue("test_queue_params3", "--limit-policy flow-to-disk", True)
-        queue4 = self.makeQueue("test_queue_params4", "--limit-policy ring", True)
-        queue5 = self.makeQueue("test_queue_params5", "--limit-policy ring-strict", True)
+        self.startBrokerAccess()
+        queue1 = self.makeQueue("test_queue_params_api1", "--limit-policy none", True)
+        queue2 = self.makeQueue("test_queue_params_api2", "--limit-policy reject", True)
+        queue3 = self.makeQueue("test_queue_params_api3", "--limit-policy flow-to-disk", True)
+        queue4 = self.makeQueue("test_queue_params_api4", "--limit-policy ring", True)
+        queue5 = self.makeQueue("test_queue_params_api5", "--limit-policy ring-strict", True)
 
         LIMIT = "qpid.policy_type"
         assert LIMIT not in queue1.arguments
@@ -113,30 +103,22 @@ class CliTests(TestBase010):
         self.assertEqual(queue4.arguments[LIMIT], "ring")
         self.assertEqual(queue5.arguments[LIMIT], "ring_strict")
 
-        queue6 = self.makeQueue("test_queue_params6", "--order fifo", True)
-        queue7 = self.makeQueue("test_queue_params7", "--order lvq", True)
-        queue8 = self.makeQueue("test_queue_params8", "--order lvq-no-browse", True)
+        queue6 = self.makeQueue("test_queue_params_api6", "--lvq-key lkey")
 
-        LVQ = "qpid.last_value_queue"
-        LVQNB = "qpid.last_value_queue_no_browse"
+        LVQKEY = "qpid.last_value_queue_key"
 
-        assert LVQ not in queue6.arguments
-        assert LVQ     in queue7.arguments
-        assert LVQ not in queue8.arguments
-
-        assert LVQNB not in queue6.arguments
-        assert LVQNB not in queue7.arguments
-        assert LVQNB     in queue8.arguments
+        assert LVQKEY not in queue5.arguments
+        assert LVQKEY     in queue6.arguments
+        assert queue6.arguments[LVQKEY] == "lkey"
 
 
     def test_qpid_config(self):
-        self.startQmf();
-        qmf = self.qmf
+        self.startBrokerAccess();
         qname = "test_qpid_config"
 
         ret = os.system(self.qpid_config_command(" add queue " + qname))
         self.assertEqual(ret, 0)
-        queues = qmf.getObjects(_class="queue")
+        queues = self.broker_access.getAllQueues()
         found = False
         for queue in queues:
             if queue.name == qname:
@@ -146,7 +128,7 @@ class CliTests(TestBase010):
 
         ret = os.system(self.qpid_config_command(" del queue " + qname))
         self.assertEqual(ret, 0)
-        queues = qmf.getObjects(_class="queue")
+        queues = self.broker_access.getAllQueues()
         found = False
         for queue in queues:
             if queue.name == qname:
@@ -154,13 +136,12 @@ class CliTests(TestBase010):
         self.assertEqual(found, False)
 
     def test_qpid_config_api(self):
-        self.startQmf();
-        qmf = self.qmf
+        self.startBrokerAccess();
         qname = "test_qpid_config_api"
 
         ret = self.qpid_config_api(" add queue " + qname)
         self.assertEqual(ret, 0)
-        queues = qmf.getObjects(_class="queue")
+        queues = self.broker_access.getAllQueues()
         found = False
         for queue in queues:
             if queue.name == qname:
@@ -170,7 +151,7 @@ class CliTests(TestBase010):
 
         ret = self.qpid_config_api(" del queue " + qname)
         self.assertEqual(ret, 0)
-        queues = qmf.getObjects(_class="queue")
+        queues = self.broker_access.getAllQueues()
         found = False
         for queue in queues:
             if queue.name == qname:
@@ -179,25 +160,23 @@ class CliTests(TestBase010):
 
 
     def test_qpid_config_sasl_plain_expect_succeed(self):
-        self.startQmf();
-        qmf = self.qmf
+        self.startBrokerAccess();
         qname = "test_qpid_config_sasl_plain_expect_succeed"
-        cmd = " --sasl-mechanism PLAIN -a guest/guest@localhost:"+str(self.broker.port) + " add queue " + qname
+        cmd = " --sasl-mechanism PLAIN -b guest/guest@localhost:"+str(self.broker.port) + " add queue " + qname
         ret = self.qpid_config_api(cmd)
         self.assertEqual(ret, 0)
 
     def test_qpid_config_sasl_plain_expect_fail(self):
         """Fails because no user name and password is supplied"""
-        self.startQmf();
-        qmf = self.qmf
-        qname = "test_qpid_config_sasl_plain_expect_succeed"
-        cmd = " --sasl-mechanism PLAIN -a localhost:"+str(self.broker.port) + " add queue " + qname
+        self.startBrokerAccess();
+        qname = "test_qpid_config_sasl_plain_expect_fail"
+        cmd = " --sasl-mechanism PLAIN -b localhost:"+str(self.broker.port) + " add queue " + qname
         ret = self.qpid_config_api(cmd)
         assert ret != 0
 
         # helpers for some of the test methods
     def helper_find_exchange(self, xchgname, typ, expected=True):
-        xchgs = self.qmf.getObjects(_class = "exchange")
+        xchgs = self.broker_access.getAllExchanges()
         found = False
         for xchg in xchgs:
             if xchg.name == xchgname:
@@ -221,7 +200,7 @@ class CliTests(TestBase010):
         self.helper_find_exchange(xchgname, False, expected=False)
 
     def helper_find_queue(self, qname, expected=True):
-        queues = self.qmf.getObjects(_class="queue")
+        queues = self.broker_access.getAllQueues()
         found = False
         for queue in queues:
             if queue.name == qname:
@@ -246,8 +225,7 @@ class CliTests(TestBase010):
 
         # test the bind-queue-to-header-exchange functionality
     def test_qpid_config_headers(self):
-        self.startQmf();
-        qmf = self.qmf
+        self.startBrokerAccess();
         qname = "test_qpid_config"
         xchgname = "test_xchg"
 
@@ -277,8 +255,7 @@ class CliTests(TestBase010):
 
 
     def test_qpid_config_xml(self):
-        self.startQmf();
-        qmf = self.qmf
+        self.startBrokerAccess();
         qname = "test_qpid_config"
         xchgname = "test_xchg"
 
@@ -306,13 +283,12 @@ class CliTests(TestBase010):
         self.helper_destroy_exchange(xchgname)
 
     def test_qpid_config_durable(self):
-        self.startQmf();
-        qmf = self.qmf
+        self.startBrokerAccess();
         qname = "test_qpid_config"
 
         ret = os.system(self.qpid_config_command(" add queue --durable " + qname))
         self.assertEqual(ret, 0)
-        queues = qmf.getObjects(_class="queue")
+        queues = self.broker_access.getAllQueues()
         found = False
         for queue in queues:
             if queue.name == qname:
@@ -322,7 +298,7 @@ class CliTests(TestBase010):
 
         ret = os.system(self.qpid_config_command(" del queue " + qname))
         self.assertEqual(ret, 0)
-        queues = qmf.getObjects(_class="queue")
+        queues = self.broker_access.getAllQueues()
         found = False
         for queue in queues:
             if queue.name == qname:
@@ -330,8 +306,7 @@ class CliTests(TestBase010):
         self.assertEqual(found, False)
 
     def test_qpid_config_altex(self):
-        self.startQmf();
-        qmf = self.qmf
+        self.startBrokerAccess();
         exName = "testalt"
         qName = "testqalt"
         altName = "amq.direct"
@@ -339,7 +314,7 @@ class CliTests(TestBase010):
         ret = os.system(self.qpid_config_command(" add exchange topic %s --alternate-exchange=%s" % (exName, altName)))
         self.assertEqual(ret, 0)
 
-        exchanges = qmf.getObjects(_class="exchange")
+        exchanges = self.broker_access.getAllExchanges()
         found = False
         for exchange in exchanges:
             if exchange.name == altName:
@@ -349,20 +324,20 @@ class CliTests(TestBase010):
                 found = True
                 if not exchange.altExchange:
                     self.fail("Alternate exchange not set")
-                self.assertEqual(exchange._altExchange_.name, altName)
+                self.assertEqual(exchange.altExchange, altName)
         self.assertEqual(found, True)
 
         ret = os.system(self.qpid_config_command(" add queue %s --alternate-exchange=%s" % (qName, altName)))
         self.assertEqual(ret, 0)
 
-        queues = qmf.getObjects(_class="queue")
+        queues = self.broker_access.getAllQueues()
         found = False
         for queue in queues:
             if queue.name == qName:
                 found = True
                 if not queue.altExchange:
                     self.fail("Alternate exchange not set")
-                self.assertEqual(queue._altExchange_.name, altName)
+                self.assertEqual(queue.altExchange, altName)
         self.assertEqual(found, True)
 
     def test_qpid_config_list_queues_arguments(self):
@@ -371,8 +346,7 @@ class CliTests(TestBase010):
         actually a string (though still a valid value), it does not
         upset qpid-config
         """
-        self.startQmf();
-        qmf = self.qmf
+        self.startBrokerAccess();
 
         names = ["queue_capacity%s" % (i) for i in range(1, 6)]
         for name in names:
@@ -386,15 +360,14 @@ class CliTests(TestBase010):
             assert name in queues, "%s not in %s" % (name, queues)
 
     def test_qpid_route(self):
-        self.startQmf();
-        qmf = self.qmf
+        self.startBrokerAccess();
 
         command = self.cli_dir() + "/qpid-route dynamic add guest/guest@localhost:%d %s:%d amq.topic" %\
             (self.broker.port, self.remote_host(), self.remote_port())
         ret = os.system(command)
         self.assertEqual(ret, 0)
 
-        links = qmf.getObjects(_class="link")
+        links = self.broker_access.getAllLinks()
         found = False
         for link in links:
             if link.port == self.remote_port():
@@ -402,8 +375,7 @@ class CliTests(TestBase010):
         self.assertEqual(found, True)
 
     def test_qpid_route_api(self):
-        self.startQmf();
-        qmf = self.qmf
+        self.startBrokerAccess();
 
         ret = self.qpid_route_api("dynamic add "
                                   + "guest/guest@localhost:"+str(self.broker.port) + " "
@@ -412,7 +384,7 @@ class CliTests(TestBase010):
 
         self.assertEqual(ret, 0)
 
-        links = qmf.getObjects(_class="link")
+        links = self.broker_access.getAllLinks()
         found = False
         for link in links:
             if link.port == self.remote_port():
@@ -421,8 +393,7 @@ class CliTests(TestBase010):
 
 
     def test_qpid_route_api(self):
-        self.startQmf();
-        qmf = self.qmf
+        self.startBrokerAccess();
 
         ret = self.qpid_route_api("dynamic add "
                                   + " --client-sasl-mechanism PLAIN "
@@ -432,7 +403,7 @@ class CliTests(TestBase010):
 
         self.assertEqual(ret, 0)
 
-        links = qmf.getObjects(_class="link")
+        links = self.broker_access.getAllLinks()
         found = False
         for link in links:
             if link.port == self.remote_port():
@@ -440,8 +411,7 @@ class CliTests(TestBase010):
         self.assertEqual(found, True)
 
     def test_qpid_route_api_expect_fail(self):
-        self.startQmf();
-        qmf = self.qmf
+        self.startBrokerAccess();
 
         ret = self.qpid_route_api("dynamic add "
                                   + " --client-sasl-mechanism PLAIN "
@@ -463,11 +433,11 @@ class CliTests(TestBase010):
         return None
 
     def qpid_config_command(self, arg = ""):
-        return self.cli_dir() + "/qpid-config -a localhost:%d" % self.broker.port + " " + arg
+        return self.cli_dir() + "/qpid-config -b localhost:%d" % self.broker.port + " " + arg
 
     def qpid_config_api(self, arg = ""):
         script = import_script(checkenv("QPID_CONFIG_EXEC"))
-        broker = ["-a", "localhost:"+str(self.broker.port)]
+        broker = ["-b", "localhost:"+str(self.broker.port)]
         return script.main(broker + arg.split())
 
     def qpid_route_api(self, arg = ""):

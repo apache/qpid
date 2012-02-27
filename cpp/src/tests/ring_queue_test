@@ -28,7 +28,7 @@ MESSAGES=10000
 SENDERS=1
 RECEIVERS=1
 CONCURRENT=0
-BROKER_URL="-a ${QPID_BROKER:-localhost}:${QPID_PORT:-5672}"
+BROKER_URL="-b ${QPID_BROKER:-localhost}:${QPID_PORT:-5672}"
 
 setup() {
     if [[ $DURABLE -gt 0 ]]; then

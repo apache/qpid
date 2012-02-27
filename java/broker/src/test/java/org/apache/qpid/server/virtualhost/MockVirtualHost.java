@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import java.util.concurrent.ScheduledFuture;
 import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.server.configuration.BrokerConfig;
 import org.apache.qpid.server.configuration.ConfigStore;
@@ -39,6 +40,7 @@ import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.txn.DtxRegistry;
 
 import java.util.Map;
 import java.util.UUID;
@@ -90,6 +92,11 @@ public class MockVirtualHost implements VirtualHost
     }
 
     public ConfigStore getConfigStore()
+    {
+        return null;
+    }
+
+    public DtxRegistry getDtxRegistry()
     {
         return null;
     }
@@ -168,6 +175,11 @@ public class MockVirtualHost implements VirtualHost
     public void removeBrokerConnection(BrokerLink brokerLink)
     {
 
+    }
+
+    public ScheduledFuture<?> scheduleTask(long delay, Runnable timeoutTask)
+    {
+        return null;
     }
 
     public void scheduleHouseKeepingTask(long period, HouseKeepingTask task)

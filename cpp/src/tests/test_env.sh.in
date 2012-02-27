@@ -44,6 +44,7 @@ export PYTHONPATH=$srcdir:$PYTHON_DIR:$PYTHON_COMMANDS:$QPID_TESTS_PY:$QMF_LIB:$
 export QPID_CONFIG_EXEC=$PYTHON_COMMANDS/qpid-config
 export QPID_ROUTE_EXEC=$PYTHON_COMMANDS/qpid-route
 export QPID_CLUSTER_EXEC=$PYTHON_COMMANDS/qpid-cluster
+export QPID_HA_EXEC=$PYTHON_COMMANDS/qpid-ha
 
 # Executables
 export QPIDD_EXEC=$top_builddir/src/qpidd

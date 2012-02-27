@@ -22,6 +22,7 @@
  *
  */
 
+#include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/Consumer.h"
 #include "qpid/broker/Credit.h"
 #include "qpid/broker/Deliverable.h"
@@ -98,42 +99,44 @@ class SemanticState : private boost::noncopyable {
         bool haveCredit();
 
       protected:
-        virtual bool doDispatch();
+        QPID_BROKER_EXTERN virtual bool doDispatch();
         size_t unacked() { return parent->unacked.size(); }
 
       public:
         typedef boost::shared_ptr<ConsumerImpl> shared_ptr;
 
-        ConsumerImpl(SemanticState* parent,
-                     const std::string& name, boost::shared_ptr<Queue> queue,
-                     bool ack, bool acquire, bool exclusive,
-                     const std::string& tag, const std::string& resumeId, uint64_t resumeTtl, const framing::FieldTable& arguments);
-        virtual ~ConsumerImpl();
-        OwnershipToken* getSession();
-        virtual bool deliver(QueuedMessage& msg);
-        bool filter(boost::intrusive_ptr<Message> msg);
-        bool accept(boost::intrusive_ptr<Message> msg);
-        void cancel() {}
+        QPID_BROKER_EXTERN ConsumerImpl(
+            SemanticState* parent,
+            const std::string& name, boost::shared_ptr<Queue> queue,
+            bool ack, bool acquire, bool exclusive,
+            const std::string& tag, const std::string& resumeId, uint64_t resumeTtl,
+            const framing::FieldTable& arguments);
+        QPID_BROKER_EXTERN virtual ~ConsumerImpl();
+        QPID_BROKER_EXTERN OwnershipToken* getSession();
+        QPID_BROKER_EXTERN virtual bool deliver(QueuedMessage& msg);
+        QPID_BROKER_EXTERN bool filter(boost::intrusive_ptr<Message> msg);
+        QPID_BROKER_EXTERN bool accept(boost::intrusive_ptr<Message> msg);
+        QPID_BROKER_EXTERN void cancel() {}
 
-        void disableNotify();
-        void enableNotify();
-        void notify();
-        bool isNotifyEnabled() const;
+        QPID_BROKER_EXTERN void disableNotify();
+        QPID_BROKER_EXTERN void enableNotify();
+        QPID_BROKER_EXTERN void notify();
+        QPID_BROKER_EXTERN bool isNotifyEnabled() const;
 
-        void requestDispatch();
+        QPID_BROKER_EXTERN void requestDispatch();
 
-        void setWindowMode();
-        void setCreditMode();
-        void addByteCredit(uint32_t value);
-        void addMessageCredit(uint32_t value);
-        void flush();
-        void stop();
-        void complete(DeliveryRecord&);
+        QPID_BROKER_EXTERN void setWindowMode();
+        QPID_BROKER_EXTERN void setCreditMode();
+        QPID_BROKER_EXTERN void addByteCredit(uint32_t value);
+        QPID_BROKER_EXTERN void addMessageCredit(uint32_t value);
+        QPID_BROKER_EXTERN void flush();
+        QPID_BROKER_EXTERN void stop();
+        QPID_BROKER_EXTERN void complete(DeliveryRecord&);
         boost::shared_ptr<Queue> getQueue() const { return queue; }
         bool isBlocked() const { return blocked; }
         bool setBlocked(bool set) { std::swap(set, blocked); return set; }
 
-        bool doOutput();
+        QPID_BROKER_EXTERN bool doOutput();
 
         Credit& getCredit() { return credit; }
         const Credit& getCredit() const { return credit; }
@@ -151,8 +154,11 @@ class SemanticState : private boost::noncopyable {
         void acknowledged(const broker::QueuedMessage&) {}
 
         // manageable entry points
-        management::ManagementObject* GetManagementObject (void) const;
-        management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
+        QPID_BROKER_EXTERN management::ManagementObject*
+        GetManagementObject(void) const;
+
+        QPID_BROKER_EXTERN management::Manageable::status_t
+        ManagementMethod(uint32_t methodId, management::Args& args, std::string& text);
     };
 
     typedef std::map<std::string, DtxBuffer::shared_ptr> DtxBufferMap;

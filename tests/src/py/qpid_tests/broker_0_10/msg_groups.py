@@ -193,6 +193,10 @@ class MultiConsumerMsgGroupTests(Base):
         s2 = self.setup_session()
         b1 = s2.receiver("msg-group-q; {mode: browse}", options={"capacity":0})
 
+        m2 = b1.fetch(0);
+        assert m2.properties['THE-GROUP'] == 'A'
+        assert m2.content['index'] == 0
+
         # C1 should acquire A-0
 
         m1 = c1.fetch(0);
@@ -201,10 +205,6 @@ class MultiConsumerMsgGroupTests(Base):
 
         ## Queue = A-0, B-1, A-2, b-3, C-4
         ## Owners= ^C1, ---, +C1, ---, ---
-
-        m2 = b1.fetch(0);
-        assert m2.properties['THE-GROUP'] == 'A'
-        assert m2.content['index'] == 0
 
         m2 = b1.fetch(0)
         assert m2.properties['THE-GROUP'] == 'B'

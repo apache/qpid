@@ -21,6 +21,8 @@
 package org.apache.qpid.server.transport;
 
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CHANNEL_FORMAT;
+import org.apache.qpid.server.txn.RollbackOnlyDtxException;
+import org.apache.qpid.server.txn.TimeoutDtxException;
 import static org.apache.qpid.util.Serial.gt;
 
 import java.security.Principal;
@@ -44,6 +46,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.Subject;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.server.configuration.ConfigStore;
@@ -67,24 +70,19 @@ import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.subscription.Subscription_0_10;
+import org.apache.qpid.server.txn.AlreadyKnownDtxException;
 import org.apache.qpid.server.txn.AsyncAutoCommitTransaction;
+import org.apache.qpid.server.txn.DistributedTransaction;
+import org.apache.qpid.server.txn.DtxNotSelectedException;
+import org.apache.qpid.server.txn.IncorrectDtxStateException;
+import org.apache.qpid.server.txn.JoinAndResumeDtxException;
 import org.apache.qpid.server.txn.LocalTransaction;
+import org.apache.qpid.server.txn.NotAssociatedDtxException;
 import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.txn.SuspendAndFailDtxException;
+import org.apache.qpid.server.txn.UnknownDtxBranchException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.transport.Binary;
-import org.apache.qpid.transport.Connection;
-import org.apache.qpid.transport.MessageCreditUnit;
-import org.apache.qpid.transport.MessageFlow;
-import org.apache.qpid.transport.MessageFlowMode;
-import org.apache.qpid.transport.MessageSetFlowMode;
-import org.apache.qpid.transport.MessageStop;
-import org.apache.qpid.transport.MessageTransfer;
-import org.apache.qpid.transport.Method;
-import org.apache.qpid.transport.Range;
-import org.apache.qpid.transport.RangeSet;
-import org.apache.qpid.transport.RangeSetFactory;
-import org.apache.qpid.transport.Session;
-import org.apache.qpid.transport.SessionDelegate;
+import org.apache.qpid.transport.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -108,7 +106,6 @@ public class ServerSession extends Session
     private final AtomicBoolean _blocking = new AtomicBoolean(false);
     private ChannelLogSubject _logSubject;
     private final AtomicInteger _outstandingCredit = new AtomicInteger(UNLIMITED_CREDIT);
-
 
     public static interface MessageDispositionChangeListener
     {
@@ -359,7 +356,15 @@ public class ServerSession extends Session
 
     public void onClose()
     {
-        _transaction.rollback();
+        if(_transaction instanceof LocalTransaction)
+        {
+            _transaction.rollback();
+        }
+        else if(_transaction instanceof DistributedTransaction)
+        {
+            getVirtualHost().getDtxRegistry().endAssociations(this);
+        }
+
         for(MessageDispositionChangeListener listener : _messageDispositionListenerMap.values())
         {
             listener.onRelease(true);
@@ -454,6 +459,95 @@ public class ServerSession extends Session
         _transaction = new LocalTransaction(this.getMessageStore());
         _txnStarts.incrementAndGet();
     }
+
+    public void selectDtx()
+    {
+        _transaction = new DistributedTransaction(this, getMessageStore(), getVirtualHost());
+
+    }
+
+
+    public void startDtx(Xid xid, boolean join, boolean resume)
+            throws JoinAndResumeDtxException,
+                   UnknownDtxBranchException,
+                   AlreadyKnownDtxException,
+                   DtxNotSelectedException
+    {
+        DistributedTransaction distributedTransaction = assertDtxTransaction();
+        distributedTransaction.start(xid, join, resume);
+    }
+
+
+    public void endDtx(Xid xid, boolean fail, boolean suspend)
+            throws NotAssociatedDtxException,
+            UnknownDtxBranchException,
+            DtxNotSelectedException,
+            SuspendAndFailDtxException, TimeoutDtxException
+    {
+        DistributedTransaction distributedTransaction = assertDtxTransaction();
+        distributedTransaction.end(xid, fail, suspend);
+    }
+
+
+    public long getTimeoutDtx(Xid xid)
+            throws UnknownDtxBranchException
+    {
+        return getVirtualHost().getDtxRegistry().getTimeout(xid);
+    }
+
+
+    public void setTimeoutDtx(Xid xid, long timeout)
+            throws UnknownDtxBranchException
+    {
+        getVirtualHost().getDtxRegistry().setTimeout(xid, timeout);
+    }
+
+
+    public void prepareDtx(Xid xid)
+            throws UnknownDtxBranchException,
+            IncorrectDtxStateException, AMQStoreException, RollbackOnlyDtxException, TimeoutDtxException
+    {
+        getVirtualHost().getDtxRegistry().prepare(xid);
+    }
+
+    public void commitDtx(Xid xid, boolean onePhase)
+            throws UnknownDtxBranchException,
+            IncorrectDtxStateException, AMQStoreException, RollbackOnlyDtxException, TimeoutDtxException
+    {
+        getVirtualHost().getDtxRegistry().commit(xid, onePhase);
+    }
+
+
+    public void rollbackDtx(Xid xid)
+            throws UnknownDtxBranchException,
+            IncorrectDtxStateException, AMQStoreException, TimeoutDtxException
+    {
+        getVirtualHost().getDtxRegistry().rollback(xid);
+    }
+
+
+    public void forgetDtx(Xid xid) throws UnknownDtxBranchException, IncorrectDtxStateException
+    {
+        getVirtualHost().getDtxRegistry().forget(xid);
+    }
+
+    public List<Xid> recoverDtx()
+    {
+        return getVirtualHost().getDtxRegistry().recover();
+    }
+
+    private DistributedTransaction assertDtxTransaction() throws DtxNotSelectedException
+    {
+        if(_transaction instanceof DistributedTransaction)
+        {
+            return (DistributedTransaction) _transaction;
+        }
+        else
+        {
+            throw new DtxNotSelectedException();
+        }
+    }
+
 
     public void commit()
     {
@@ -704,7 +798,7 @@ public class ServerSession extends Session
     {
         if(_blockingQueues.remove(queue) && _blockingQueues.isEmpty())
         {
-            if(_blocking.compareAndSet(true,false))
+            if(_blocking.compareAndSet(true,false) && !isClosing())
             {
 
                 _actor.message(_logSubject, ChannelMessages.FLOW_REMOVED());
@@ -758,6 +852,16 @@ public class ServerSession extends Session
             unregister(subscription_0_10);
         }
     }
+
+    void stopSubscriptions()
+    {
+        final Collection<Subscription_0_10> subscriptions = getSubscriptions();
+        for (Subscription_0_10 subscription_0_10 : subscriptions)
+        {
+            subscription_0_10.stop();
+        }
+    }
+
 
     public void receivedComplete()
     {
@@ -900,7 +1004,11 @@ public class ServerSession extends Session
         }
     }
 
-    @Override
+    protected void setClose(boolean close)
+    {
+        super.setClose(close);
+    }
+
     public int compareTo(AMQSessionModel session)
     {
         return getId().toString().compareTo(session.getID().toString());

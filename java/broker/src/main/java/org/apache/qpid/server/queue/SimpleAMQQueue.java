@@ -1198,19 +1198,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     public void moveMessagesToAnotherQueue(final long fromMessageId,
                                            final long toMessageId,
-                                           String queueName,
-                                           ServerTransaction txn) throws IllegalArgumentException
+                                           String destinationQueueName) throws IllegalArgumentException
     {
 
-        final AMQQueue toQueue = getVirtualHost().getQueueRegistry().getQueue(new AMQShortString(queueName));
-        if (toQueue == null)
-        {
-            throw new IllegalArgumentException("Queue '" + queueName + "' is not registered with the virtualhost.");
-        }
-        else if (toQueue == this)
-        {
-            throw new IllegalArgumentException("The destination queue cant be the same as the source queue");
-        }
+        final AMQQueue toQueue = getValidatedDestinationQueue(destinationQueueName);
 
         List<QueueEntry> entries = getMessagesOnTheQueue(new QueueEntryFilter()
         {
@@ -1230,65 +1221,68 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         });
 
 
-
-        // Move the messages in on the message store.
-        for (final QueueEntry entry : entries)
+        final ServerTransaction txn = new LocalTransaction(getVirtualHost().getMessageStore());
+        boolean shouldRollback = true;
+        try
         {
-            final ServerMessage message = entry.getMessage();
-            txn.enqueue(toQueue, message,
-                        new ServerTransaction.Action()
-                        {
-
-                            public void postCommit()
+            // Move the messages in on the message store.
+            for (final QueueEntry entry : entries)
+            {
+                final ServerMessage message = entry.getMessage();
+                txn.enqueue(toQueue, message,
+                            new ServerTransaction.Action()
                             {
-                                try
+
+                                public void postCommit()
                                 {
-                                    toQueue.enqueue(message);
+                                    try
+                                    {
+                                        toQueue.enqueue(message);
+                                    }
+                                    catch (AMQException e)
+                                    {
+                                        throw new RuntimeException(e);
+                                    }
                                 }
-                                catch (AMQException e)
+
+                                public void onRollback()
                                 {
-                                    throw new RuntimeException(e);
+                                    entry.release();
                                 }
-                            }
-
-                            public void onRollback()
-                            {
-                                entry.release();
-                            }
-                        });
-            txn.dequeue(this, message,
-                        new ServerTransaction.Action()
-                        {
-
-                            public void postCommit()
-                            {
-                                entry.discard();
-                            }
-
-                            public void onRollback()
+                            });
+                txn.dequeue(this, message,
+                            new ServerTransaction.Action()
                             {
 
-                            }
-                        });
+                                public void postCommit()
+                                {
+                                    entry.discard();
+                                }
 
+                                public void onRollback()
+                                {
+
+                                }
+                            });
+            }
+            txn.commit();
+            shouldRollback = false;
+        }
+        finally
+        {
+            if (shouldRollback)
+            {
+                txn.rollback();
+            }
         }
 
     }
 
     public void copyMessagesToAnotherQueue(final long fromMessageId,
                                            final long toMessageId,
-                                           String queueName,
-                                           final ServerTransaction txn) throws IllegalArgumentException
+                                           String destinationQueueName) throws IllegalArgumentException
     {
-        final AMQQueue toQueue = getVirtualHost().getQueueRegistry().getQueue(new AMQShortString(queueName));
-        if (toQueue == null)
-        {
-            throw new IllegalArgumentException("Queue '" + queueName + "' is not registered with the virtualhost.");
-        }
-        else if (toQueue == this)
-        {
-            throw new IllegalArgumentException("The destination queue cant be the same as the source queue");
-        }
+        final AMQQueue toQueue = getValidatedDestinationQueue(destinationQueueName);
 
         List<QueueEntry> entries = getMessagesOnTheQueue(new QueueEntryFilter()
         {
@@ -1306,34 +1300,61 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
             }
         });
 
-
-        // Move the messages in on the message store.
-        for (QueueEntry entry : entries)
+        final ServerTransaction txn = new LocalTransaction(_virtualHost.getMessageStore());
+        boolean shouldRollback = true;
+        try
         {
-            final ServerMessage message = entry.getMessage();
-
-            txn.enqueue(toQueue, message, new ServerTransaction.Action()
+            // Copy the messages in on the message store.
+            for (QueueEntry entry : entries)
             {
-                public void postCommit()
+                final ServerMessage message = entry.getMessage();
+
+                txn.enqueue(toQueue, message, new ServerTransaction.Action()
                 {
-                    try
+                    public void postCommit()
                     {
-                        toQueue.enqueue(message);
+                        try
+                        {
+                            toQueue.enqueue(message);
+                        }
+                        catch (AMQException e)
+                        {
+                            throw new RuntimeException(e);
+                        }
                     }
-                    catch (AMQException e)
+
+                    public void onRollback()
                     {
-                        throw new RuntimeException(e);
                     }
-                }
+                });
 
-                public void onRollback()
-                {
+            }
 
-                }
-            });
-
+            txn.commit();
+            shouldRollback = false;
+        }
+        finally
+        {
+            if (shouldRollback)
+            {
+                txn.rollback();
+            }
         }
 
+    }
+
+    private AMQQueue getValidatedDestinationQueue(String queueName)
+    {
+        final AMQQueue toQueue = getVirtualHost().getQueueRegistry().getQueue(new AMQShortString(queueName));
+        if (toQueue == null)
+        {
+            throw new IllegalArgumentException("Queue '" + queueName + "' is not registered with the virtualhost.");
+        }
+        else if (toQueue == this)
+        {
+            throw new IllegalArgumentException("The destination queue can't be the same as the source queue");
+        }
+        return toQueue;
     }
 
     public void removeMessagesFromQueue(long fromMessageId, long toMessageId)
@@ -1515,10 +1536,16 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                 for(final QueueEntry entry : entries)
                 {
                     adapter.setEntry(entry);
-                    final List<? extends BaseQueue> rerouteQueues = _alternateExchange.route(adapter);
-                    final ServerMessage message = entry.getMessage();
-                    if(rerouteQueues != null && rerouteQueues.size() != 0)
+                    List<? extends BaseQueue> queues = _alternateExchange.route(adapter);
+                    if((queues == null || queues.size() == 0) && _alternateExchange.getAlternateExchange() != null)
                     {
+                        queues = _alternateExchange.getAlternateExchange().route(adapter);
+                    }
+
+                    final ServerMessage message = entry.getMessage();
+                    if(queues != null && queues.size() != 0)
+                    {
+                        final List<? extends BaseQueue> rerouteQueues = queues;
                         txn.enqueue(rerouteQueues, entry.getMessage(),
                                     new ServerTransaction.Action()
                                     {
@@ -1895,7 +1922,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         if(context != null)
         {
             QueueEntry releasedNode = context.getReleasedEntry();
-            return releasedNode == null || releasedNode.compareTo(entry) < 0;
+            return releasedNode != null && releasedNode.compareTo(entry) < 0;
         }
         else
         {

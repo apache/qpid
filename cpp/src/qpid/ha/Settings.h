@@ -33,10 +33,11 @@ namespace ha {
 class Settings
 {
   public:
-    Settings() : enabled(false) {}
+    Settings() : enabled(false), expectedBackups(0) {}
     bool enabled;
     std::string clientUrl;
     std::string brokerUrl;
+    size_t expectedBackups;
     std::string username, password, mechanism;
   private:
 };

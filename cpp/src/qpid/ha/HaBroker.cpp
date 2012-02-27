@@ -27,8 +27,9 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qmf/org/apache/qpid/ha/Package.h"
-#include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetClientAddresses.h"
-#include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetBrokerAddresses.h"
+#include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetBrokers.h"
+#include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetPublicBrokers.h"
+#include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetExpectedBackups.h"
 #include "qpid/log/Statement.h"
 
 namespace qpid {
@@ -88,18 +89,19 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
           }
           break;
       }
-      case _qmf::HaBroker::METHOD_SETCLIENTADDRESSES: {
-          setClientUrl(
-              Url(dynamic_cast<_qmf::ArgsHaBrokerSetClientAddresses&>(args).
-                  i_clientAddresses), l);
+      case _qmf::HaBroker::METHOD_SETBROKERS: {
+          setBrokerUrl(Url(dynamic_cast<_qmf::ArgsHaBrokerSetBrokers&>(args).i_url), l);
           break;
       }
-      case _qmf::HaBroker::METHOD_SETBROKERADDRESSES: {
-          setBrokerUrl(
-              Url(dynamic_cast<_qmf::ArgsHaBrokerSetBrokerAddresses&>(args)
-                  .i_brokerAddresses), l);
+      case _qmf::HaBroker::METHOD_SETPUBLICBROKERS: {
+          setClientUrl(Url(dynamic_cast<_qmf::ArgsHaBrokerSetPublicBrokers&>(args).i_url), l);
           break;
       }
+      case _qmf::HaBroker::METHOD_SETEXPECTEDBACKUPS: {
+          setExpectedBackups(dynamic_cast<_qmf::ArgsHaBrokerSetExpectedBackups&>(args).i_expectedBackups, l);
+        break;
+    }
+
       default:
         return Manageable::STATUS_UNKNOWN_METHOD;
     }
@@ -115,19 +117,25 @@ void HaBroker::setClientUrl(const Url& url, const sys::Mutex::ScopedLock& l) {
 void HaBroker::updateClientUrl(const sys::Mutex::ScopedLock&) {
     Url url = clientUrl.empty() ? brokerUrl : clientUrl;
     assert(!url.empty());
-    mgmtObject->set_clientAddresses(url.str());
+    mgmtObject->set_publicBrokers(url.str());
     knownBrokers.clear();
     knownBrokers.push_back(url);
-    QPID_LOG(debug, "HA: Setting client known-brokers to: " << url);
+    QPID_LOG(debug, "HA: Setting client URL to: " << url);
 }
 
 void HaBroker::setBrokerUrl(const Url& url, const sys::Mutex::ScopedLock& l) {
     if (url.empty()) throw Exception("Invalid empty URL for HA broker failover");
+    QPID_LOG(debug, "HA: Setting broker URL to: " << url);
     brokerUrl = url;
-    mgmtObject->set_brokerAddresses(brokerUrl.str());
+    mgmtObject->set_brokers(brokerUrl.str());
     if (backup.get()) backup->setBrokerUrl(brokerUrl);
     // Updating broker URL also updates defaulted client URL:
     if (clientUrl.empty()) updateClientUrl(l);
+}
+
+void HaBroker::setExpectedBackups(size_t n, const sys::Mutex::ScopedLock&) {
+    expectedBackups = n;
+    mgmtObject->set_expectedBackups(n);
 }
 
 std::vector<Url> HaBroker::getKnownBrokers() const {

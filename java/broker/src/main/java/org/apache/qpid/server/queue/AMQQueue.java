@@ -34,7 +34,6 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.List;
@@ -141,10 +140,9 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
     public List<QueueEntry> getMessagesRangeOnTheQueue(final long fromPosition, final long toPosition);
 
 
-    void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName,
-                                                        ServerTransaction transaction);
+    void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName);
 
-    void copyMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName, ServerTransaction transaction);
+    void copyMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName);
 
     void removeMessagesFromQueue(long fromMessageId, long toMessageId);
 
