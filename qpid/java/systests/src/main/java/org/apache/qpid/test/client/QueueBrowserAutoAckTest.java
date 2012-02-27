@@ -420,4 +420,21 @@ public class QueueBrowserAutoAckTest extends QpidBrokerTestCase
         validate(messages);
     }
 
+    public void testBrowsingWhileStopped() throws JMSException
+    {
+        _clientConnection.stop();
+
+        try
+        {
+            QueueBrowser browser = _clientSession.createBrowser(getTestQueue());
+            Enumeration messages = browser.getEnumeration();
+            fail("Expected exception when attempting to browse on a stopped connection did not occur");
+        }
+        catch(javax.jms.IllegalStateException e)
+        {
+            // pass
+        }
+
+    }
+
 }
