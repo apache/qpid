@@ -42,9 +42,9 @@ import java.util.Map;
 
 public class VirtualHostConfiguration extends ConfigurationPlugin
 {
-    private String _name;
-    private Map<String, QueueConfiguration> _queues = new HashMap<String, QueueConfiguration>();
-    private Map<String, ExchangeConfiguration> _exchanges = new HashMap<String, ExchangeConfiguration>();
+    private final String _name;
+    private final Map<String, QueueConfiguration> _queues = new HashMap<String, QueueConfiguration>();
+    private final Map<String, ExchangeConfiguration> _exchanges = new HashMap<String, ExchangeConfiguration>();
 
     public VirtualHostConfiguration(String name, Configuration config) throws ConfigurationException
     {
@@ -90,11 +90,6 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
     public long getHousekeepingCheckPeriod()
     {
         return getLongValue("housekeeping.checkPeriod", ApplicationRegistry.getInstance().getConfiguration().getHousekeepingCheckPeriod());
-    }
-
-    public String getAuthenticationDatabase()
-    {
-        return getStringValue("security.authentication.name");
     }
 
     public List getCustomExchanges()
@@ -251,16 +246,6 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
         }
 
         return queueConfig;
-    }
-
-    public long getMemoryUsageMaximum()
-    {
-        return getLongValue("queues.maximumMemoryUsage");
-    }
-
-    public long getMemoryUsageMinimum()
-    {
-        return getLongValue("queues.minimumMemoryUsage");
     }
 
     public int getMaximumMessageAge()

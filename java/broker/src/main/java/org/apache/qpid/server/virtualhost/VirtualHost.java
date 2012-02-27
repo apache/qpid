@@ -36,7 +36,6 @@ import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
@@ -59,8 +58,6 @@ public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHo
     MessageStore getMessageStore();
 
     DurableConfigurationStore getDurableConfigurationStore();
-
-    AuthenticationManager getAuthenticationManager();
 
     SecurityManager getSecurityManager();
 

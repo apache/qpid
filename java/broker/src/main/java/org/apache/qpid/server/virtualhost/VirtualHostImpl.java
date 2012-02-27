@@ -62,7 +62,6 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.DurableConfigurationStore;
@@ -102,8 +101,6 @@ public class VirtualHostImpl implements VirtualHost
     private VirtualHostMBean _virtualHostMBean;
 
     private AMQBrokerManagerMBean _brokerMBean;
-
-    private final AuthenticationManager _authenticationManager;
 
     private SecurityManager _securityManager;
 
@@ -244,7 +241,6 @@ public class VirtualHostImpl implements VirtualHost
 			initialiseMessageStore(hostConfig);
         }
 		
-        _authenticationManager = ApplicationRegistry.getInstance().getAuthenticationManager();
 
         _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
         _brokerMBean.register();
@@ -583,11 +579,6 @@ public class VirtualHostImpl implements VirtualHost
     public DurableConfigurationStore getDurableConfigurationStore()
     {
         return _durableConfigurationStore;
-    }
-
-    public AuthenticationManager getAuthenticationManager()
-    {
-        return _authenticationManager;
     }
 
     public SecurityManager getSecurityManager()
