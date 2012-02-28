@@ -273,7 +273,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
         {
             throw new AMQSecurityException("Permission denied: " + e.getName());
         }
-        _currentMessage = new IncomingMessage(info);
+        _currentMessage = new IncomingMessage(info, getProtocolSession().getReference());
         _currentMessage.setExchange(e);
     }
 
@@ -1384,6 +1384,16 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
                 flow(true);
             }
         }
+    }
+
+    public boolean onSameConnection(InboundMessage inbound)
+    {
+        if(inbound instanceof IncomingMessage)
+        {
+            IncomingMessage incoming = (IncomingMessage) inbound;
+            return getProtocolSession().getReference() == incoming.getConnectionReference();
+        }
+        return false;
     }
 
     private void flow(boolean flow)
