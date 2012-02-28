@@ -21,6 +21,7 @@ package org.apache.qpid.management.jmx;
 import org.apache.commons.lang.time.FastDateFormat;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.server.queue.AMQQueueMBean;
@@ -107,6 +108,7 @@ public class ManagedQueueMBeanTest extends QpidBrokerTestCase
     public void testViewSingleMessage() throws Exception
     {
         final List<Message> sentMessages = sendMessage(_session, _sourceQueue, 1);
+        syncSession(_session);
         final Message sentMessage = sentMessages.get(0);
 
         assertEquals("Unexpected queue depth", 1, _managedSourceQueue.getMessageCount().intValue());
@@ -141,6 +143,7 @@ public class ManagedQueueMBeanTest extends QpidBrokerTestCase
         final int numberOfMessagesToSend = 10;
 
         sendMessage(_session, _sourceQueue, numberOfMessagesToSend);
+        syncSession(_session);
         assertEquals("Unexpected queue depth after send", numberOfMessagesToSend, _managedSourceQueue.getMessageCount().intValue());
 
         List<Long> amqMessagesIds = getAMQMessageIdsOn(_managedSourceQueue, 1, numberOfMessagesToSend);
@@ -170,6 +173,7 @@ public class ManagedQueueMBeanTest extends QpidBrokerTestCase
     {
         final int numberOfMessagesToSend = 10;
         sendMessage(_session, _sourceQueue, numberOfMessagesToSend);
+        syncSession(_session);
         assertEquals("Unexpected queue depth after send", numberOfMessagesToSend, _managedSourceQueue.getMessageCount().intValue());
 
         List<Long> amqMessagesIds = getAMQMessageIdsOn(_managedSourceQueue, 1, numberOfMessagesToSend);
@@ -200,6 +204,7 @@ public class ManagedQueueMBeanTest extends QpidBrokerTestCase
 
         final int numberOfMessagesToSend = 50;
         sendMessage(_session, _sourceQueue, numberOfMessagesToSend);
+        syncSession(_session);
         assertEquals("Unexpected queue depth after send", numberOfMessagesToSend, _managedSourceQueue.getMessageCount().intValue());
 
         List<Long> amqMessagesIds = getAMQMessageIdsOn(_managedSourceQueue, 1, numberOfMessagesToSend);
@@ -239,6 +244,7 @@ public class ManagedQueueMBeanTest extends QpidBrokerTestCase
 
         final int numberOfMessagesToSend = 50;
         sendMessage(_session, _sourceQueue, numberOfMessagesToSend);
+        syncSession(_session);
         assertEquals("Unexpected queue depth after send", numberOfMessagesToSend, _managedSourceQueue.getMessageCount().intValue());
 
         List<Long> amqMessagesIds = getAMQMessageIdsOn(_managedSourceQueue, 1, numberOfMessagesToSend);
@@ -272,11 +278,11 @@ public class ManagedQueueMBeanTest extends QpidBrokerTestCase
         });
     }
 
-    private void assertMessageIndicesOn(Destination queue, int... expectedIndexes) throws Exception
+    private void assertMessageIndicesOn(Destination queue, int... expectedIndices) throws Exception
     {
         MessageConsumer consumer = _session.createConsumer(queue);
 
-        for (int i : expectedIndexes)
+        for (int i : expectedIndices)
         {
             Message message = consumer.receive(1000);
             assertNotNull("Expected message with index " + i, message);
@@ -325,4 +331,10 @@ public class ManagedQueueMBeanTest extends QpidBrokerTestCase
     {
         _session.createConsumer(destination).close(); // Create a consumer only to cause queue creation
     }
+
+    private void syncSession(Session session) throws Exception
+    {
+        ((AMQSession<?,?>)session).sync();
+    }
+
 }
