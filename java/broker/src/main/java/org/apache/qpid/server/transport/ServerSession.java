@@ -21,6 +21,9 @@
 package org.apache.qpid.server.transport;
 
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CHANNEL_FORMAT;
+import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.message.MessageMetaData_0_10;
+import org.apache.qpid.server.message.MessageTransferMessage;
 import org.apache.qpid.server.txn.RollbackOnlyDtxException;
 import org.apache.qpid.server.txn.TimeoutDtxException;
 import static org.apache.qpid.util.Serial.gt;
@@ -812,6 +815,14 @@ public class ServerSession extends Session
 
             }
         }
+    }
+
+    public boolean onSameConnection(InboundMessage inbound)
+    {
+        return ((inbound instanceof MessageTransferMessage)
+                && ((MessageTransferMessage)inbound).getConnectionReference() == getConnection().getReference())
+                || ((inbound instanceof MessageMetaData_0_10)
+                    && (((MessageMetaData_0_10)inbound).getConnectionReference())== getConnection().getReference());
     }
 
 

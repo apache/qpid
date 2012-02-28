@@ -199,6 +199,10 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         // possible to determine  when querying the broker whether there are no arguments or just a non-matching selector
         // argument, as specifying null for the arguments when querying means they should not be checked at all
         ft.put(AMQPFilterTypes.JMS_SELECTOR.getValue(), messageSelector == null ? "" : messageSelector);
+        if(noLocal)
+        {
+            ft.put(AMQPFilterTypes.NO_LOCAL.getValue(), noLocal);
+        }
 
         _arguments = ft;
 

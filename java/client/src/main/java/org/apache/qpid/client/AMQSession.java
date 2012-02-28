@@ -1089,6 +1089,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     // possible to determine  when querying the broker whether there are no arguments or just a non-matching selector
                     // argument, as specifying null for the arguments when querying means they should not be checked at all
                     args.put(AMQPFilterTypes.JMS_SELECTOR.getValue().toString(), messageSelector == null ? "" : messageSelector);
+                    if(noLocal)
+                    {
+                        args.put(AMQPFilterTypes.NO_LOCAL.getValue().toString(), true);
+                    }
 
                     // if the queue is bound to the exchange but NOT for this topic and selector, then the JMS spec
                     // says we must trash the subscription.
