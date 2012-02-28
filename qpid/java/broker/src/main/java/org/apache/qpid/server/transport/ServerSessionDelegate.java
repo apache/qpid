@@ -294,6 +294,7 @@ public class ServerSessionDelegate extends SessionDelegate
         }
 
         final MessageMetaData_0_10 messageMetaData = new MessageMetaData_0_10(xfr);
+        messageMetaData.setConnectionReference(((ServerSession)ssn).getReference());
         
         if (!getVirtualHost(ssn).getSecurityManager().authorisePublish(messageMetaData.isImmediate(), messageMetaData.getRoutingKey(), exchange.getName()))
         {

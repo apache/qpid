@@ -89,12 +89,11 @@ public class NoLocalAfterRecoveryTest extends QpidBrokerTestCase
                 createDurableSubscriber(topic2, MY_TOPIC_SUBSCRIPTION_NAME + "-NoLocal",
                                         null, true);
 
-        // The NO-local subscriber should now get ALL the messages
-        // as they are being consumed on a different connection to
-        // the one that they were published on.
+        // The NO-local subscriber should not get any messages
         received = receiveMessage(noLocalSubscriber2, SEND_COUNT);
         session2.commit();
-        assertEquals("No Local Subscriber Received messages", SEND_COUNT, received.size());
+        assertEquals("No Local Subscriber Received messages", 0, received.size());
+
     }
 
     protected List<Message> receiveMessage(MessageConsumer messageConsumer,

@@ -80,13 +80,20 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
     private MessageMetaData _messageMetaData;
 
     private StoredMessage<MessageMetaData> _storedMessageHandle;
+    private Object _connectionReference;
 
 
     public IncomingMessage(
             final MessagePublishInfo info
     )
     {
+        this(info, null);
+    }
+
+    public IncomingMessage(MessagePublishInfo info, Object reference)
+    {
         _messagePublishInfo = info;
+        _connectionReference = reference;
     }
 
     public void setContentHeaderBody(final ContentHeaderBody contentHeaderBody) throws AMQException
@@ -317,5 +324,10 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
     public StoredMessage<MessageMetaData> getStoredMessage()
     {
         return _storedMessageHandle;
+    }
+
+    public Object getConnectionReference()
+    {
+        return _connectionReference;
     }
 }
