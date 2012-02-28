@@ -288,12 +288,12 @@ confirmed to the publisher before they are replicated, leaving them
 vulnerable to a loss of the new primary before they are replicated.
 
 LM6 - persistence: In the event of a total cluster failure there are
-no tools to automatically identify the "latest" store. Once this
-is manually identfied, all other stores belonging to cluster members
-must be erased and the latest node must started as primary.
+no tools to automatically identify the "latest" store.
 
-LM6 - persistence: In the event of a single node failure, that nodes
-store must be erased before it can re-join the cluster.
+LM7 - persistence: In the event of a persistent broker being
+re-started (due to failure or admin) it should be able to use its
+stored messages to reduce the download required from the
+primary. This means storing message IDs persistently.
 
 For configuration propagation:
 
