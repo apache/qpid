@@ -26,10 +26,6 @@ org.apache.qpid.test.client.message.JMSDestinationTest#testReceiveResend
 org.apache.qpid.server.message.MessageProtocolConversionTest#*
 org.apache.qpid.server.SupportedProtocolVersionsTest#*
 
-
-// QPID-2478 test fails when run against broker using 0-8/9
-org.apache.qpid.test.client.message.JMSDestinationTest#testGetDestinationWithCustomExchange
-
 // The new addressing based syntax is not supported for AMQP 0-8/0-9 versions
 org.apache.qpid.client.failover.AddressBasedFailoverBehaviourTest#*
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#*
