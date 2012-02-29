@@ -31,7 +31,7 @@ struct Options : public qpid::Options {
     Settings& settings;
     Options(Settings& s) : qpid::Options("HA Options"), settings(s) {
         addOptions()
-            ("ha-cluster", optValue(settings.enabled, "yes|no"),
+            ("ha-cluster", optValue(settings.cluster, "yes|no"),
              "Join a HA active/passive cluster.")
             ("ha-brokers", optValue(settings.brokerUrl,"URL"),
              "URL that backup brokers use to connect and fail over.")
@@ -63,11 +63,7 @@ struct HaPlugin : public Plugin {
 
     void initialize(Plugin::Target& target) {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
-        if (broker && settings.enabled) {
-            QPID_LOG(notice, "HA: Enabled");
-            haBroker.reset(new ha::HaBroker(*broker, settings));
-        } else
-            QPID_LOG(notice, "HA: Disabled");
+        if (broker) haBroker.reset(new ha::HaBroker(*broker, settings));
     }
 };
 

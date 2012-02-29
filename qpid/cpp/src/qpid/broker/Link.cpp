@@ -206,11 +206,9 @@ void Link::closed(int, std::string text)
     QPID_LOG (info, "Inter-broker link disconnected from " << host << ":" << port << " " << text);
 
     connection = 0;
-
     if (state == STATE_OPERATIONAL) {
         stringstream addr;
         addr << host << ":" << port;
-        QPID_LOG(warning, "Inter-broker link disconnected from " << addr.str());
         if (!hideManagement() && agent)
             agent->raiseEvent(_qmf::EventBrokerLinkDown(addr.str()));
     }
@@ -405,7 +403,6 @@ uint Link::nextChannel()
 void Link::notifyConnectionForced(const string text)
 {
     Mutex::ScopedLock mutex(lock);
-
     setStateLH(STATE_FAILED);
     if (!hideManagement())
         mgmtObject->set_lastError(text);

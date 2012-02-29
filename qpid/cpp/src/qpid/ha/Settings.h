@@ -33,8 +33,8 @@ namespace ha {
 class Settings
 {
   public:
-    Settings() : enabled(false), expectedBackups(0) {}
-    bool enabled;
+    Settings() : cluster(false), expectedBackups(0) {}
+    bool cluster;               // True if we are a cluster member.
     std::string clientUrl;
     std::string brokerUrl;
     size_t expectedBackups;
