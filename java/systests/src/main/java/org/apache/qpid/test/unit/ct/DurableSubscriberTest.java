@@ -379,7 +379,7 @@ public class DurableSubscriberTest extends QpidBrokerTestCase
         
         // Create durable subscriber that matches A
         TopicSubscriber subA = session.createDurableSubscriber(topic, 
-                "testResubscribeWithChangedSelector",
+                "testResubscribeWithChangedSelectorAndRestart",
                 "Match = True", false);
 
         // Send 1 matching message and 1 non-matching message
@@ -397,8 +397,8 @@ public class DurableSubscriberTest extends QpidBrokerTestCase
                      ((TextMessage) rMsg).getText());
 
         // Queue has no messages left
-        AMQQueue subQueueTmp = new AMQQueue("amq.topic", "clientid" + ":" + "testResubscribeWithChangedSelectorAndRestart");
-        assertEquals("Msg count should be 0", 0, ((AMQSession<?, ?>) session).getQueueDepth(subQueueTmp));
+        AMQQueue subQueue = new AMQQueue("amq.topic", "clientid" + ":" + "testResubscribeWithChangedSelectorAndRestart");
+        assertEquals("Msg count should be 0", 0, ((AMQSession<?, ?>) session).getQueueDepth(subQueue, true));
         
         rMsg = subA.receive(1000);
         assertNull(rMsg);
@@ -423,8 +423,7 @@ public class DurableSubscriberTest extends QpidBrokerTestCase
         //verify no messages are now present on the queue as changing selector should have issued
         //an unsubscribe and thus deleted the previous durable backing queue for the subscription.
         //check the dur sub's underlying queue now has msg count 0
-        AMQQueue subQueue = new AMQQueue("amq.topic", "clientid" + ":" + "testResubscribeWithChangedSelectorAndRestart");
-        assertEquals("Msg count should be 0", 0, ((AMQSession<?, ?>) session).getQueueDepth(subQueue));
+        assertEquals("Msg count should be 0", 0, ((AMQSession<?, ?>) session).getQueueDepth(subQueue, true));
         
         // Check that new messages are received properly
         msg = session.createTextMessage("testResubscribeWithChangedSelectorAndRestart1");
@@ -444,8 +443,8 @@ public class DurableSubscriberTest extends QpidBrokerTestCase
         assertNull(rMsg);
 
         //check the dur sub's underlying queue now has msg count 0
-        subQueue = new AMQQueue("amq.topic", "clientid" + ":" + "testResubscribeWithChangedSelectorAndRestart");
-        assertEquals("Msg count should be 0", 0, ((AMQSession<?, ?>) session).getQueueDepth(subQueue));
+        assertEquals("Msg count should be 0", 0, ((AMQSession<?, ?>) session).getQueueDepth(subQueue, true));
+        conn.close();
 
         //now restart the server
         try
@@ -467,8 +466,7 @@ public class DurableSubscriberTest extends QpidBrokerTestCase
 
         //verify no messages now present on the queue after we restart the broker
         //check the dur sub's underlying queue now has msg count 0
-        subQueue = new AMQQueue("amq.topic", "clientid" + ":" + "testResubscribeWithChangedSelectorAndRestart");
-        assertEquals("Msg count should be 0", 0, ((AMQSession<?, ?>) session).getQueueDepth(subQueue));
+        assertEquals("Msg count should be 0", 0, ((AMQSession<?, ?>) session).getQueueDepth(subQueue, true));
 
         // Reconnect with new selector that matches B
         TopicSubscriber subC = session.createDurableSubscriber(topic, 
@@ -484,8 +482,7 @@ public class DurableSubscriberTest extends QpidBrokerTestCase
         producer.send(msg);
 
         //check the dur sub's underlying queue now has msg count 1
-        subQueue = new AMQQueue("amq.topic", "clientid" + ":" + "testResubscribeWithChangedSelectorAndRestart");
-        assertEquals("Msg count should be 1", 1, ((AMQSession<?, ?>) session).getQueueDepth(subQueue));
+        assertEquals("Msg count should be 1", 1, ((AMQSession<?, ?>) session).getQueueDepth(subQueue, true));
         
         rMsg = subC.receive(1000);
         assertNotNull(rMsg);

@@ -61,3 +61,5 @@ org.apache.qpid.client.prefetch.PrefetchBehaviourTest#testConnectionStop
 //XA functionality is not implemented in pre 0-10
 org.apache.qpid.jms.xa.XAResourceTest#*
 
+//Tests durable subscription selector verification behaviour that 0-8/0-9/0-9-1 cant provide
+org.apache.qpid.test.unit.ct.DurableSubscriberTest#testResubscribeWithChangedSelectorAndRestart
