@@ -129,12 +129,6 @@ class BrokerAgent(object):
       return cls(self, obj)
     return None
 
-  def getCluster(self):
-    """
-    Get the broker's Cluster object.
-    """
-    return self._getAllBrokerObjects(Cluster)
-
   def getBroker(self):
     """
     Get the Broker object that contains broker-scope statistics and operations.
@@ -149,8 +143,11 @@ class BrokerAgent(object):
       return brokers[0]
     return None
 
-  def getMemory(self):
-    return self._getAllBrokerObjects(Memory)[0]
+  def getCluster(self):
+    return self._getAllBrokerObjects(Cluster)[0]
+
+  def getHaBroker(self):
+    return self._getAllBrokerObjects(HaBroker)[0]
 
   def getAllConnections(self):
     return self._getAllBrokerObjects(Connection)
@@ -329,6 +326,14 @@ class BrokerObject(object):
       raise Exception("No longer exists on the broker")
 
 class Broker(BrokerObject):
+  def __init__(self, broker, values):
+    BrokerObject.__init__(self, broker, values)
+
+class Cluster(BrokerObject):
+  def __init__(self, broker, values):
+    BrokerObject.__init__(self, broker, values)
+
+class HaBroker(BrokerObject):
   def __init__(self, broker, values):
     BrokerObject.__init__(self, broker, values)
 
