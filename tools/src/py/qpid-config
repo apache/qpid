@@ -70,7 +70,7 @@ Queue Limit Actions:
     ring           - Replace oldest unacquired message with new
     ring-strict    - Replace oldest message, reject if oldest is acquired
 
-Replicate levels:
+Replication levels:
 
     none           - no replication
     configuration  - replicate queue and exchange existence and bindings, but not messages.
@@ -88,6 +88,7 @@ class Config:
         self._altern_ex         = None
         self._durable           = False
         self._replicate         = None
+        self._ha_admin          = False
         self._clusterDurable    = False
         self._if_empty          = True
         self._if_unused         = True
@@ -185,6 +186,7 @@ def OptionsAndArguments(argv):
     group2.add_option("--alternate-exchange", action="store", type="string", metavar="<aexname>", help="Name of the alternate-exchange for the new queue or exchange. Exchanges route messages to the alternate exchange if they are unable to route them elsewhere. Queues route messages to the alternate exchange if they are rejected by a subscriber or orphaned by queue deletion.")
     group2.add_option("--durable", action="store_true", help="The new queue or exchange is durable.")
     group2.add_option("--replicate", action="store", metavar="<level>", help="Replication level for the new queue or exchange (none, configuration or messages).")
+    group2.add_option("--ha-admin", action="store_true", help="Allow connection to a HA backup broker.")
     parser.add_option_group(group2)
 
     group3 = OptionGroup(parser, "Options for Adding Queues")
@@ -254,6 +256,7 @@ def OptionsAndArguments(argv):
         if not opts.replicate in REPLICATE_LEVELS:
             raise Exception("Invalid replicate level '%s', should be one of: %s" % (opts.replicate, ", ".join(REPLICATE_LEVELS)))
         config._replicate = opts.replicate
+    if opts.ha_admin: config._ha_admin = True
     if opts.cluster_durable:
         config._clusterDurable = True
     if opts.file:
@@ -350,8 +353,9 @@ class BrokerManager:
 
     def SetBroker(self, brokerUrl, mechanism):
         self.url = brokerUrl
-        self.conn = Connection(self.url, sasl_mechanisms=mechanism)
-        self.conn.open()
+        client_properties={}
+        if config._ha_admin: client_properties["qpid.ha-admin"] = 1
+        self.conn = Connection.establish(self.url, sasl_mechanisms=mechanism, client_properties=client_properties)
         self.broker = BrokerAgent(self.conn)
 
     def Disconnect(self):

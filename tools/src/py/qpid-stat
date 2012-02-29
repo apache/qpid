@@ -43,6 +43,7 @@ class Config:
         self._increasing = False
         self._sortcol = None
         self._sasl_mechanism = None
+        self._ha_admin = False
 
 config = Config()
 
@@ -60,6 +61,7 @@ def OptionsAndArguments(argv):
                       help="Maximum time to wait for broker connection (in seconds)")
     group1.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>",
                       help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
+    group1.add_option("--ha-admin", action="store_true", help="Allow connection to a HA backup broker.")
     parser.add_option_group(group1)
 
     group2 = OptionGroup(parser, "Display Options")
@@ -88,6 +90,7 @@ def OptionsAndArguments(argv):
     config._increasing = opts.increasing
     config._limit = opts.limit
     config._sasl_mechanism = opts.sasl_mechanism
+    config._ha_admin = opts.ha_admin
 
     return args
 
@@ -125,8 +128,9 @@ class BrokerManager:
 
     def SetBroker(self, brokerUrl, mechanism):
         self.url = brokerUrl
-        self.connection = Connection(self.url, sasl_mechanisms=mechanism)
-        self.connection.open()
+        client_properties={}
+        if config._ha_admin: client_properties["qpid.ha-admin"] = 1
+        self.connection = Connection.establish(self.url, sasl_mechanisms=mechanism, client_properties=client_properties)
         self.broker = BrokerAgent(self.connection)
 
     def Disconnect(self):
