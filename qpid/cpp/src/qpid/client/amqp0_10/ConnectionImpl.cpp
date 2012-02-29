@@ -41,6 +41,7 @@ using qpid::framing::Uuid;
 
 namespace {
 
+const std::string TCP("tcp");
 double FOREVER(std::numeric_limits<double>::max());
 
 // Time values in seconds can be specified as integer or floating point values.
@@ -290,7 +291,7 @@ bool ConnectionImpl::tryConnect()
     for (std::vector<std::string>::const_iterator i = urls.begin(); i != urls.end(); ++i) {
         try {
             QPID_LOG(info, "Trying to connect to " << *i << "...");
-            Url url(*i, settings.protocol.size() ? settings.protocol : Address::TCP);
+            Url url(*i, settings.protocol.size() ? settings.protocol : TCP);
             if (url.getUser().size()) settings.username = url.getUser();
             if (url.getPass().size()) settings.password = url.getPass();
             connection.open(url, settings);
