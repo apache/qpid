@@ -47,6 +47,11 @@
     <method name="setExpectedBackups" desc="Set number of backups expected">
       <arg name="expectedBackups" type="uint16" dir="I"/>
     </method>
+
+    <method name="replicate" desc="Replicate from a remote queue to the local broker.">
+      <arg name="broker" type="sstr" dir="I"/>
+      <arg name="queue" type="sstr" dir="I"/>
+    </method>
   </class>
 
 </schema>

@@ -25,8 +25,11 @@
 #include "ReplicatingSubscription.h"
 #include "qpid/Exception.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/Link.h"
+#include "qpid/broker/Queue.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qmf/org/apache/qpid/ha/Package.h"
+#include "qmf/org/apache/qpid/ha/ArgsHaBrokerReplicate.h"
 #include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetBrokers.h"
 #include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetPublicBrokers.h"
 #include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetExpectedBackups.h"
@@ -50,7 +53,6 @@ const std::string BACKUP="backup";
 HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     : broker(b),
       settings(s),
-      backup(new Backup(b, s)),
       mgmtObject(0)
 {
     // Register a factory for replicating subscriptions.
@@ -72,6 +74,9 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     sys::Mutex::ScopedLock l(lock);
     if (!settings.clientUrl.empty()) setClientUrl(Url(settings.clientUrl), l);
     if (!settings.brokerUrl.empty()) setBrokerUrl(Url(settings.brokerUrl), l);
+
+    // If we are in a cluster, we start in backup mode.
+    if (settings.cluster) backup.reset(new Backup(b, s));
 }
 
 HaBroker::~HaBroker() {}
@@ -81,8 +86,8 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
     switch (methodId) {
       case _qmf::HaBroker::METHOD_PROMOTE: {
           if (backup.get()) {   // I am a backup
-              // FIXME aconway 2012-01-26: create primary state before resetting backup
-              // as that allows client connections.
+              // NOTE: resetting backup allows client connections, so any
+              // primary state should be set up here before backup.reset()
               backup.reset();
               QPID_LOG(notice, "HA: Primary promoted from backup");
               mgmtObject->set_status(PRIMARY);
@@ -100,7 +105,27 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
       case _qmf::HaBroker::METHOD_SETEXPECTEDBACKUPS: {
           setExpectedBackups(dynamic_cast<_qmf::ArgsHaBrokerSetExpectedBackups&>(args).i_expectedBackups, l);
         break;
-    }
+      }
+      case _qmf::HaBroker::METHOD_REPLICATE: {
+          _qmf::ArgsHaBrokerReplicate& bq_args =
+              dynamic_cast<_qmf::ArgsHaBrokerReplicate&>(args);
+          QPID_LOG(debug, "HA replicating individual queue "<< bq_args.i_queue << " from " << bq_args.i_broker);
+
+          boost::shared_ptr<broker::Queue> queue = broker.getQueues().get(bq_args.i_queue);
+          Url url(bq_args.i_broker);
+          string protocol = url[0].protocol.empty() ? "tcp" : url[0].protocol;
+          std::pair<broker::Link::shared_ptr, bool> result = broker.getLinks().declare(
+              url[0].host, url[0].port, protocol,
+              false,              // durable
+              settings.mechanism, settings.username, settings.password);
+          boost::shared_ptr<broker::Link> link = result.first;
+          link->setUrl(url);
+          // Create a queue replicator
+          boost::shared_ptr<QueueReplicator> qr(new QueueReplicator(queue, link));
+          broker.getExchanges().registerExchange(qr);
+          qr->activate();
+          break;
+      }
 
       default:
         return Manageable::STATUS_UNKNOWN_METHOD;

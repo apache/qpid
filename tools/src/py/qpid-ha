@@ -83,7 +83,9 @@ ReadyCmd()
 
 class ReplicateCmd(Command):
     def __init__(self):
-        Command.__init__(self, "replicate", "Replicate <queue> from broker <primary> to the current broker.", ["<queue>", "<primary>"])
+        Command.__init__(self, "replicate", "Set up replication from <queue> on <remote-broker> to <queue> on the current broker.", ["<queue>", "<remote-broker>"])
+    def do_execute(self, qmf_broker, opts, args):
+        qmf_broker._method("replicate", {"broker":args[1], "queue":args[2]}, HA_BROKER)
 ReplicateCmd()
 
 class SetCmd(Command):
