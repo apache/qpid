@@ -231,7 +231,6 @@ def main(argv):
             return 1;
         Command.commands[command[0]].execute(command)
     except Exception, e:
-        raise                           # FIXME aconway 2012-02-23:
         print e
         return 1
 
