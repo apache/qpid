@@ -75,7 +75,7 @@ void Connection::open(const Url& url, const ConnectionSettings& settings) {
         i++;
         try {
             ConnectionSettings cs(settings);
-            cs.protocol = addr.protocol;
+            if (addr.protocol.size()) cs.protocol = addr.protocol;
             cs.host = addr.host;
             cs.port = addr.port;
             open(cs);

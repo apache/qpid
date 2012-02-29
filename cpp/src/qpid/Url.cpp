@@ -111,7 +111,8 @@ ssl_addr = "ssl:" host [":" port]
 */
 class UrlParser {
   public:
-    UrlParser(Url& u, const char* s) : url(u), text(s), end(s+strlen(s)), i(s) {}
+    UrlParser(Url& u, const char* s, const std::string& defaultProtocol_=Address::TCP) : url(u), text(s), end(s+strlen(s)), i(s),
+                                                                 defaultProtocol(defaultProtocol_) {}
     bool parse() {
         literal("amqp:"); // Optional
         userPass();       // Optional
@@ -135,7 +136,7 @@ class UrlParser {
     bool comma() { return literal(","); }
 
     bool protocolAddr() {
-        Address addr(Address::TCP, "", Address::AMQP_PORT); // Set up defaults
+        Address addr(defaultProtocol, "", Address::AMQP_PORT); // Set up defaults
         protocolTag(addr.protocol);  // Optional
         bool ok = (host(addr.host) &&
                    (literal(":") ? port(addr.port) : true));
@@ -244,20 +245,28 @@ class UrlParser {
     const char* text;
     const char* end;
     const char* i;
+    const std::string defaultProtocol;
 };
 
 const string UrlParser::LOCALHOST("127.0.0.1");
 
 void Url::parse(const char* url) {
-    parseNoThrow(url);
+    parse(url, Address::TCP);
+}
+void Url::parse(const char* url, const std::string& defaultProtocol) {
+    parseNoThrow(url, defaultProtocol);
     if (empty())
         throw Url::Invalid(QPID_MSG("Invalid URL: " << url));
 }
 
 void Url::parseNoThrow(const char* url) {
+    parseNoThrow(url, Address::TCP);
+}
+
+void Url::parseNoThrow(const char* url, const std::string& defaultProtocol) {
     clear();
     cache.clear();
-    if (!UrlParser(*this, url).parse())
+    if (!UrlParser(*this, url, defaultProtocol).parse())
         clear();
 }
 

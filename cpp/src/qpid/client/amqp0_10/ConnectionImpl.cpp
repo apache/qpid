@@ -290,7 +290,7 @@ bool ConnectionImpl::tryConnect()
     for (std::vector<std::string>::const_iterator i = urls.begin(); i != urls.end(); ++i) {
         try {
             QPID_LOG(info, "Trying to connect to " << *i << "...");
-            Url url(*i);
+            Url url(*i, settings.protocol.size() ? settings.protocol : Address::TCP);
             if (url.getUser().size()) settings.username = url.getUser();
             if (url.getPass().size()) settings.password = url.getPass();
             connection.open(url, settings);
