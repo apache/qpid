@@ -23,117 +23,13 @@ import qmf.console, optparse, sys
 from qpid.management import managementChannel, managementClient
 from qpid.messaging import Connection
 from qpid.messaging import Message as QpidMessage
+from qpidtoollibs.broker import BrokerAgent
 try:
     from uuid import uuid4
 except ImportError:
     from qpid.datatypes import uuid4
 
-# Utility for doing fast qmf2 operations on a broker.
-class QmfBroker(object):
-    def __init__(self, conn):
-        self.conn = conn
-        self.sess = self.conn.session()
-        self.reply_to = "qmf.default.topic/direct.%s;{node:{type:topic}, link:{x-declare:{auto-delete:True,exclusive:True}}}" % \
-            str(uuid4())
-        self.reply_rx = self.sess.receiver(self.reply_to)
-        self.reply_rx.capacity = 10
-        self.tx = self.sess.sender("qmf.default.direct/broker")
-        self.next_correlator = 1
-
-    def close(self):
-        self.conn.close()
-
-    def __repr__(self):
-        return "Qpid Broker: %s" % self.url
-
-    def _method(self, method, arguments, addr="org.apache.qpid.broker:broker:amqp-broker"):
-        props = {'method'             : 'request',
-                 'qmf.opcode'         : '_method_request',
-                 'x-amqp-0-10.app-id' : 'qmf2'}
-        correlator = str(self.next_correlator)
-        self.next_correlator += 1
-
-        content = {'_object_id'   : {'_object_name' : addr},
-                   '_method_name' : method,
-                   '_arguments'   : arguments}
-
-        message = QpidMessage(content, reply_to=self.reply_to, correlation_id=correlator,
-                              properties=props, subject="broker")
-        self.tx.send(message)
-        response = self.reply_rx.fetch(10)
-        if response.properties['qmf.opcode'] == '_exception':
-            raise Exception("Exception from Agent: %r" % response.content['_values'])
-        if response.properties['qmf.opcode'] != '_method_response':
-            raise Exception("bad response: %r" % response.properties)
-        return response.content['_arguments']
-
-    def _sendRequest(self, opcode, content):
-        props = {'method'             : 'request',
-                 'qmf.opcode'         : opcode,
-                 'x-amqp-0-10.app-id' : 'qmf2'}
-        correlator = str(self.next_correlator)
-        self.next_correlator += 1
-        message = QpidMessage(content, reply_to=self.reply_to, correlation_id=correlator,
-                              properties=props, subject="broker")
-        self.tx.send(message)
-        return correlator
-
-    def _doClassQuery(self, class_name):
-        query = {'_what'      : 'OBJECT',
-                 '_schema_id' : {'_class_name' : class_name}}
-        correlator = self._sendRequest('_query_request', query)
-        response = self.reply_rx.fetch(10)
-        if response.properties['qmf.opcode'] != '_query_response':
-            raise Exception("bad response")
-        items = []
-        done = False
-        while not done:
-            for item in response.content:
-                items.append(item['_values'])
-            if 'partial' in response.properties:
-                response = self.reply_rx.fetch(10)
-            else:
-                done = True
-        return items
-
-    def _doNameQuery(self, class_name, object_name, package_name='org.apache.qpid.broker'):
-        query = {'_what'      : 'OBJECT',
-                 '_object_id' : {'_object_name' : "%s:%s:%s" % (package_name, class_name, object_name)}}
-        correlator = self._sendRequest('_query_request', query)
-        response = self.reply_rx.fetch(10)
-        if response.properties['qmf.opcode'] != '_query_response':
-            raise Exception("bad response")
-        items = []
-        done = False
-        while not done:
-            for item in response.content:
-                items.append(item['_values'])
-            if 'partial' in response.properties:
-                response = self.reply_rx.fetch(10)
-            else:
-                done = True
-        if len(items) == 1:
-            return items[0]
-        return None
-
-    def _getAllBrokerObjects(self, cls):
-        items = self._doClassQuery(cls.__name__.lower())
-        objs = []
-        for item in items:
-            objs.append(cls(self, item))
-        return objs
-
-    def _getBrokerObject(self, cls, name):
-        obj = self._doNameQuery(cls.__name__.lower(), name)
-        if obj:
-            return cls(self, obj)
-        return None
-
-    def get_ha_broker(self):
-        ha_brokers = self._doClassQuery("habroker")
-        if (not ha_brokers): raise Exception("Broker does not have HA enabled.")
-        return ha_brokers[0]
-
+# QMF address for the HA broker object.
 HA_BROKER = "org.apache.qpid.ha:habroker:ha-broker"
 
 class Command:
@@ -155,9 +51,8 @@ class Command:
             print "Error: wrong number of arguments"
             return
         broker = opts.broker or "localhost:5672"
-        # FIXME aconway 2012-02-23: enforce not doing primary-only operations on a backup & vice versa
         connection = Connection.establish(broker, client_properties={"qpid.ha-admin":1})
-        try: self.do_execute(QmfBroker(connection), opts, args)
+        try: self.do_execute(BrokerAgent(connection), opts, args)
         finally: connection.close()
 
     def do_execute(self, qmf_broker, opts, args):
@@ -211,11 +106,11 @@ class QueryCmd(Command):
         Command.__init__(self, "query", "Print HA configuration settings")
 
     def do_execute(self, qmf_broker, opts, args):
-        hb = qmf_broker.get_ha_broker()
-        for x in [("Status:", "status"),
-                  ("Brokers URL:", "brokers"),
-                  ("Public URL:", "publicBrokers")]:
-            print "%-16s%s"%(x[0], hb[x[1]])
+        hb = qmf_broker.getHaBroker()
+        for x in [("Status:", hb.status),
+                  ("Brokers URL:", hb.brokers),
+                  ("Public URL:", hb.publicBrokers)]:
+            print "%-16s%s"%(x[0], x[1])
 
 QueryCmd()
 
