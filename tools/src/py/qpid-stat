@@ -443,7 +443,7 @@ class BrokerManager:
             dispRows = rows
         disp.formattedTable(title, heads, dispRows)
 
-    def displayMemory(self, unused):
+    def displayMemory(self):
         disp = Display(prefix="  ")
         heads = [Header('Statistic'), Header('Value', Header.COMMAS)]
         rows = []

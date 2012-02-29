@@ -72,7 +72,7 @@ public:
     virtual ~ManagementAgent ();
 
     /** Called before plugins are initialized */
-    void configure       (const std::string& dataDir, uint16_t interval,
+    void configure       (const std::string& dataDir, bool publish, uint16_t interval,
                           qpid::broker::Broker* broker, int threadPoolSize);
     /** Called after plugins are initialized. */
     void pluginsInitialized();
@@ -300,6 +300,7 @@ private:
     qpid::broker::Exchange::shared_ptr v2Topic;
     qpid::broker::Exchange::shared_ptr v2Direct;
     std::string                  dataDir;
+    bool                         publish;
     uint16_t                     interval;
     qpid::broker::Broker*        broker;
     qpid::sys::Timer*            timer;
