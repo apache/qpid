@@ -658,6 +658,11 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             return _obj.getStagingThreshold();
         }
 
+        public Boolean getMgmtPublish()
+        {
+            return true;
+        }
+
         public Integer getMgmtPubInterval()
         {
             return _obj.getManagementPublishInterval();
