@@ -105,6 +105,7 @@ public:
         int maxConnections;
         int connectionBacklog;
         bool enableMgmt;
+        bool mgmtPublish;
         uint16_t mgmtPubInterval;
         uint16_t queueCleanInterval;
         bool auth;
