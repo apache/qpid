@@ -127,11 +127,13 @@ public class TopicExchange extends AbstractExchange
             {
                 if(argumentsContainFilter(oldArgs))
                 {
-                    result.replaceQueueFilter(queue,createSelectorFilter(oldArgs, queue), createSelectorFilter(args, queue));
+                    result.replaceQueueFilter(queue,
+                                              createMessageFilter(oldArgs, queue),
+                                              createMessageFilter(args, queue));
                 }
                 else
                 {
-                    result.addFilteredQueue(queue,createSelectorFilter(args,queue));
+                    result.addFilteredQueue(queue, createMessageFilter(args, queue));
                     result.removeUnfilteredQueue(queue);
                 }
             }
@@ -140,7 +142,7 @@ public class TopicExchange extends AbstractExchange
                 if(argumentsContainFilter(oldArgs))
                 {
                     result.addUnfilteredQueue(queue);
-                    result.removeFilteredQueue(queue, createSelectorFilter(oldArgs, queue));
+                    result.removeFilteredQueue(queue, createMessageFilter(oldArgs, queue));
                 }
                 else
                 {
@@ -161,7 +163,7 @@ public class TopicExchange extends AbstractExchange
                 result = new TopicExchangeResult();
                 if(argumentsContainFilter(args))
                 {
-                    result.addFilteredQueue(queue, createSelectorFilter(args, queue));
+                    result.addFilteredQueue(queue, createMessageFilter(args, queue));
                 }
                 else
                 {
@@ -174,7 +176,7 @@ public class TopicExchange extends AbstractExchange
             {
                 if(argumentsContainFilter(args))
                 {
-                    result.addFilteredQueue(queue, createSelectorFilter(args, queue));
+                    result.addFilteredQueue(queue, createMessageFilter(args, queue));
                 }
                 else
                 {
@@ -188,7 +190,7 @@ public class TopicExchange extends AbstractExchange
 
     }
 
-    private MessageFilter createSelectorFilter(final FieldTable args, AMQQueue queue) throws AMQInvalidArgumentException
+    private MessageFilter createMessageFilter(final FieldTable args, AMQQueue queue) throws AMQInvalidArgumentException
     {
         if(argumentsContainNoLocal(args))
         {
@@ -381,7 +383,7 @@ public class TopicExchange extends AbstractExchange
             {
                 try
                 {
-                    result.removeFilteredQueue(binding.getQueue(), createSelectorFilter(bindingArgs, binding.getQueue()));
+                    result.removeFilteredQueue(binding.getQueue(), createMessageFilter(bindingArgs, binding.getQueue()));
                 }
                 catch (AMQInvalidArgumentException e)
                 {
@@ -478,8 +480,15 @@ public class TopicExchange extends AbstractExchange
         @Override
         public boolean equals(Object o)
         {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+            {
+                return true;
+            }
+
+            if (o == null || getClass() != o.getClass())
+            {
+                return false;
+            }
 
             NoLocalFilter that = (NoLocalFilter) o;
 
@@ -512,15 +521,25 @@ public class TopicExchange extends AbstractExchange
         @Override
         public boolean equals(Object o)
         {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+            {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass())
+            {
+                return false;
+            }
 
             CompoundFilter that = (CompoundFilter) o;
 
             if (_jmsSelectorFilter != null ? !_jmsSelectorFilter.equals(that._jmsSelectorFilter) : that._jmsSelectorFilter != null)
+            {
                 return false;
+            }
             if (_noLocalFilter != null ? !_noLocalFilter.equals(that._noLocalFilter) : that._noLocalFilter != null)
+            {
                 return false;
+            }
 
             return true;
         }
