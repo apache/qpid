@@ -117,7 +117,7 @@ ManagementAgent::RemoteAgent::~RemoteAgent ()
 }
 
 ManagementAgent::ManagementAgent (const bool qmfV1, const bool qmfV2) :
-    threadPoolSize(1), interval(10), broker(0), timer(0),
+    threadPoolSize(1), publish(true), interval(10), broker(0), timer(0),
     startTime(sys::now()),
     suppressed(false), disallowAllV1Methods(false),
     vendorNameKey(defaultVendorName), productNameKey(defaultProductName),
@@ -164,10 +164,11 @@ ManagementAgent::~ManagementAgent ()
     }
 }
 
-void ManagementAgent::configure(const string& _dataDir, uint16_t _interval,
+void ManagementAgent::configure(const string& _dataDir, bool _publish, uint16_t _interval,
                                 qpid::broker::Broker* _broker, int _threads)
 {
     dataDir        = _dataDir;
+    publish        = _publish;
     interval       = _interval;
     broker         = _broker;
     threadPoolSize = _threads;
@@ -428,16 +429,17 @@ void ManagementAgent::raiseEvent(const ManagementEvent& event, severity_t severi
 }
 
 ManagementAgent::Periodic::Periodic (ManagementAgent& _agent, uint32_t _seconds)
-    : TimerTask (sys::Duration((_seconds ? _seconds : 1) * sys::TIME_SEC),
-                 "ManagementAgent::periodicProcessing"),
+    : TimerTask(sys::Duration((_seconds ? _seconds : 1) * sys::TIME_SEC),
+                "ManagementAgent::periodicProcessing"),
       agent(_agent) {}
 
-ManagementAgent::Periodic::~Periodic () {}
+ManagementAgent::Periodic::~Periodic() {}
 
-void ManagementAgent::Periodic::fire ()
+void ManagementAgent::Periodic::fire()
 {
-    agent.timer->add (new Periodic (agent, agent.interval));
-    agent.periodicProcessing ();
+    setupNextFire();
+    agent.timer->add(this);
+    agent.periodicProcessing();
 }
 
 void ManagementAgent::clientAdded (const string& routingKey)
@@ -719,11 +721,16 @@ void ManagementAgent::periodicProcessing (void)
     string              routingKey;
     string sBuf;
 
-    uint64_t uptime = sys::Duration(startTime, sys::now());
-    static_cast<_qmf::Broker*>(broker->GetManagementObject())->set_uptime(uptime);
-
     moveNewObjectsLH();
-    qpid::sys::MemStat::loadMemInfo(memstat);
+
+    //
+    //  If we're publishing updates, get the latest memory statistics and uptime now
+    //
+    if (publish) {
+        uint64_t uptime = sys::Duration(startTime, sys::now());
+        static_cast<_qmf::Broker*>(broker->GetManagementObject())->set_uptime(uptime);
+        qpid::sys::MemStat::loadMemInfo(memstat);
+    }
 
     //
     //  Clear the been-here flag on all objects in the map.
@@ -747,6 +754,14 @@ void ManagementAgent::periodicProcessing (void)
     // would incorrectly think the object was deleted.  See QPID-2997
     //
     bool objectsDeleted = moveDeletedObjectsLH();
+
+    //
+    // If we are not publishing updates, just clear the pending deletes.  There's no
+    // need to tell anybody.
+    //
+    if (!publish)
+        pendingDeletedObjs.clear();
+
     if (!pendingDeletedObjs.empty()) {
         // use a temporary copy of the pending deletes so dropping the lock when
         // the buffer is sent is safe.
@@ -867,7 +882,9 @@ void ManagementAgent::periodicProcessing (void)
     // sendBuffer().  This allows the managementObjects map to be altered during the
     // sendBuffer() call, so always restart the search after a sendBuffer() call
     //
-    while (1) {
+    // If publish is disabled, don't send any updates.
+    //
+    while (publish) {
         msgBuffer.reset();
         Variant::List list_;
         uint32_t pcount;
@@ -1023,10 +1040,9 @@ void ManagementAgent::periodicProcessing (void)
 
     if (objectsDeleted) deleteOrphanedAgentsLH();
 
-    // heartbeat generation
+    // heartbeat generation.  Note that heartbeats need to be sent even if publish is disabled.
 
     if (qmf1Support) {
-#define BUFSIZE   65536
         uint32_t            contentSize;
         char                msgChars[BUFSIZE];
         Buffer msgBuffer(msgChars, BUFSIZE);
@@ -1087,7 +1103,7 @@ void ManagementAgent::deleteObjectNowLH(const ObjectId& oid)
     Variant::List list_;
     stringstream v1key, v2key;
 
-    if (qmf1Support) {
+    if (publish && qmf1Support) {
         string sBuf;
 
         v1key << "console.obj.1.0." << object->getPackageName() << "." << object->getClassName();
@@ -1096,7 +1112,7 @@ void ManagementAgent::deleteObjectNowLH(const ObjectId& oid)
         msgBuffer.putRawData(sBuf);
     }
 
-    if (qmf2Support) {
+    if (publish && qmf2Support) {
         Variant::Map  map_;
         Variant::Map  values;
 
@@ -1121,14 +1137,14 @@ void ManagementAgent::deleteObjectNowLH(const ObjectId& oid)
 
     // object deleted, ok to drop lock now.
 
-    if (qmf1Support) {
+    if (publish && qmf1Support) {
         uint32_t contentSize = msgBuffer.getPosition();
         msgBuffer.reset();
         sendBufferLH(msgBuffer, contentSize, mExchange, v1key.str());
         QPID_LOG(debug, "SEND Immediate(delete) ContentInd to=" << v1key.str());
     }
 
-    if (qmf2Support) {
+    if (publish && qmf2Support) {
         Variant::Map  headers;
         headers["method"] = "indication";
         headers["qmf.opcode"] = "_data_indication";
@@ -1841,6 +1857,12 @@ void ManagementAgent::handleGetQueryLH(Buffer& inBuffer, const string& replyToKe
     if (className == "memory")
         qpid::sys::MemStat::loadMemInfo(memstat);
 
+    if (className == "broker") {
+        uint64_t uptime = sys::Duration(startTime, sys::now());
+        static_cast<_qmf::Broker*>(broker->GetManagementObject())->set_uptime(uptime);
+    }
+
+
     // build up a set of all objects to be dumped
     for (ManagementObjectMap::iterator iter = managementObjects.begin();
          iter != managementObjects.end();
@@ -1955,6 +1977,11 @@ void ManagementAgent::handleGetQueryLH(const string& body, const string& rte, co
 
     if (className == "memory")
         qpid::sys::MemStat::loadMemInfo(memstat);
+
+    if (className == "broker") {
+        uint64_t uptime = sys::Duration(startTime, sys::now());
+        static_cast<_qmf::Broker*>(broker->GetManagementObject())->set_uptime(uptime);
+    }
 
     /*
      * Unpack the _object_id element of the query if it is present.  If it is present, find that one

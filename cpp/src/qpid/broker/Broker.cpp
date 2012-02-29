@@ -111,6 +111,7 @@ Broker::Options::Options(const std::string& name) :
     maxConnections(500),
     connectionBacklog(10),
     enableMgmt(1),
+    mgmtPublish(1),
     mgmtPubInterval(10),
     queueCleanInterval(60*10),//10 minutes
     auth(SaslAuthenticator::available()),
@@ -148,6 +149,7 @@ Broker::Options::Options(const std::string& name) :
         ("max-connections", optValue(maxConnections, "N"), "Sets the maximum allowed connections")
         ("connection-backlog", optValue(connectionBacklog, "N"), "Sets the connection backlog limit for the server socket")
         ("mgmt-enable,m", optValue(enableMgmt,"yes|no"), "Enable Management")
+        ("mgmt-publish", optValue(mgmtPublish,"yes|no"), "Enable Publish of Management Data ('no' implies query-only)")
         ("mgmt-qmf2", optValue(qmf2Support,"yes|no"), "Enable broadcast of management information over QMF v2")
         ("mgmt-qmf1", optValue(qmf1Support,"yes|no"), "Enable broadcast of management information over QMF v1")
         // FIXME aconway 2012-02-13: consistent treatment of values in SECONDS
@@ -213,7 +215,7 @@ Broker::Broker(const Broker::Options& conf) :
     try {
     if (conf.enableMgmt) {
         QPID_LOG(info, "Management enabled");
-        managementAgent->configure(dataDir.isEnabled() ? dataDir.getPath() : string(),
+        managementAgent->configure(dataDir.isEnabled() ? dataDir.getPath() : string(), conf.mgmtPublish,
                                    conf.mgmtPubInterval, this, conf.workerThreads + 3);
         managementAgent->setName("apache.org", "qpidd");
         _qmf::Package packageInitializer(managementAgent.get());
@@ -228,6 +230,7 @@ Broker::Broker(const Broker::Options& conf) :
         mgmtObject->set_maxConns(conf.maxConnections);
         mgmtObject->set_connBacklog(conf.connectionBacklog);
         mgmtObject->set_mgmtPubInterval(conf.mgmtPubInterval);
+        mgmtObject->set_mgmtPublish(conf.mgmtPublish);
         mgmtObject->set_version(qpid::version);
         if (dataDir.isEnabled())
             mgmtObject->set_dataDir(dataDir.getPath());

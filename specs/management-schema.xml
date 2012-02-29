@@ -84,6 +84,7 @@
     <property name="maxConns"         type="uint16" access="RO" desc="Maximum allowed connections"/>
     <property name="connBacklog"      type="uint16" access="RO" desc="Connection backlog limit for listening socket"/>
     <property name="stagingThreshold" type="uint32" access="RO" desc="Broker stages messages over this size to disk"/>
+    <property name="mgmtPublish"      type="bool"   access="RO" desc="Broker's management agent sends unsolicited data on the publish interval"/>
     <property name="mgmtPubInterval"  type="uint16" access="RW" unit="second" min="1" desc="Interval for management broadcasts"/>
     <property name="version"          type="sstr"   access="RO" desc="Running software version"/>
     <property name="dataDir"          type="lstr"   access="RO" optional="y" desc="Persistent configuration storage location"/>
