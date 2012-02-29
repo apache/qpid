@@ -52,6 +52,8 @@ struct Url : public std::vector<Address> {
 
     /** Parse url, throw Invalid if invalid. */
     explicit Url(const std::string& url) { parse(url.c_str()); }
+    /** Parse url, throw Invalid if invalid. */
+    explicit Url(const std::string& url, const std::string& defaultProtocol) { parse(url.c_str(), defaultProtocol); }
 
     /** Parse url, throw Invalid if invalid. */
     explicit Url(const char* url) { parse(url); }
@@ -66,10 +68,12 @@ struct Url : public std::vector<Address> {
      *@exception Invalid if the url is invalid.
      */
     QPID_COMMON_EXTERN void parse(const char* url);
+    QPID_COMMON_EXTERN void parse(const char* url, const std::string& defaultProtocol);
     QPID_COMMON_INLINE_EXTERN void parse(const std::string& url) { parse(url.c_str()); }
 
     /** Replace contesnts with parsed URL. Replace with empty URL if invalid. */
     QPID_COMMON_EXTERN void parseNoThrow(const char* url);
+    QPID_COMMON_EXTERN void parseNoThrow(const char* url, const std::string& defaultProtocol);
 
     /** Add a protocol tag to be recognzed in URLs.
      * Only for use by protcol plug-in initializers.
