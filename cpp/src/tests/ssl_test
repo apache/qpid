@@ -140,6 +140,12 @@ URL=amqp:ssl:$TEST_HOSTNAME:$PORT
 MSG=`./qpid-receive -b $URL -a "foo;{create:always}" --messages 1`
 test "$MSG" = "hello" || { echo "receive failed '$MSG' != 'hello'"; exit 1; }
 
+## Test connection with a combination of URL and connection options (in messaging API)
+URL=$TEST_HOSTNAME:$PORT
+./qpid-send -b $URL --connection-options '{transport:ssl,heartbeat:2}' --content-string='hello again' -a "foo;{create:always}"
+MSG=`./qpid-receive -b $URL --connection-options '{transport:ssl,heartbeat:2}' -a "foo;{create:always}" --messages 1`
+test "$MSG" = "hello again" || { echo "receive failed '$MSG' != 'hello again'"; exit 1; }
+
 #### Client Authentication tests
 
 start_authenticating_broker
