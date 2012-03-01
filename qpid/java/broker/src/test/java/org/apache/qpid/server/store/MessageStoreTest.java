@@ -689,7 +689,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
         if (usePriority)
         {
             queueArguments = new FieldTable();
-            queueArguments.put(AMQQueueFactory.X_QPID_PRIORITIES, DEFAULT_PRIORTY_LEVEL);
+            queueArguments.put(new AMQShortString(AMQQueueFactory.X_QPID_PRIORITIES), DEFAULT_PRIORTY_LEVEL);
         }
         
         if (lastValueQueue)
@@ -767,7 +767,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
     private void bindAllQueuesToExchange(Exchange exchange, AMQShortString routingKey)
     {
         FieldTable queueArguments = new FieldTable();
-        queueArguments.put(AMQQueueFactory.X_QPID_PRIORITIES, DEFAULT_PRIORTY_LEVEL);
+        queueArguments.put(new AMQShortString(AMQQueueFactory.X_QPID_PRIORITIES), DEFAULT_PRIORTY_LEVEL);
 
         QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
 
@@ -781,7 +781,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
     private void bindAllTopicQueuesToExchange(Exchange exchange, AMQShortString routingKey)
     {
         FieldTable queueArguments = new FieldTable();
-        queueArguments.put(AMQQueueFactory.X_QPID_PRIORITIES, DEFAULT_PRIORTY_LEVEL);
+        queueArguments.put(new AMQShortString(AMQQueueFactory.X_QPID_PRIORITIES), DEFAULT_PRIORTY_LEVEL);
 
         QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
 

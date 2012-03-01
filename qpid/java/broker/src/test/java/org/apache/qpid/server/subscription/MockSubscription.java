@@ -125,6 +125,12 @@ public class MockSubscription implements Subscription
         return queue;
     }
 
+    public boolean trySendLock()
+    {
+        return _stateChangeLock.tryLock();
+    }
+
+
     public void getSendLock()
     {
         _stateChangeLock.lock();
@@ -202,13 +208,23 @@ public class MockSubscription implements Subscription
     {
     }
 
-    public void send(QueueEntry entry) throws AMQException
+    public void releaseQueueEntry(QueueEntry queueEntry)
+    {
+    }
+
+    public void send(QueueEntry entry, boolean batch) throws AMQException
     {
         if (messages.contains(entry))
         {
             entry.setRedelivered();
         }
         messages.add(entry);
+    }
+
+    @Override
+    public void flushBatched()
+    {
+
     }
 
     public void setQueueContext(AMQQueue.Context queueContext)

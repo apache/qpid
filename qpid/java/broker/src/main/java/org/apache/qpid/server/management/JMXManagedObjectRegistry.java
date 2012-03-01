@@ -38,10 +38,13 @@ import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.management.JMException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
+import javax.management.Notification;
 import javax.management.NotificationFilterSupport;
 import javax.management.NotificationListener;
 import javax.management.ObjectName;
@@ -49,11 +52,13 @@ import javax.management.remote.JMXConnectionNotification;
 import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXServiceURL;
 import javax.management.remote.MBeanServerForwarder;
+import javax.management.remote.rmi.RMIConnection;
 import javax.management.remote.rmi.RMIConnectorServer;
 import javax.management.remote.rmi.RMIJRMPServerImpl;
 import javax.management.remote.rmi.RMIServerImpl;
 import javax.rmi.ssl.SslRMIClientSocketFactory;
 import javax.rmi.ssl.SslRMIServerSocketFactory;
+import javax.security.auth.Subject;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
@@ -63,6 +68,7 @@ import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.auth.rmi.RMIPasswordAuthenticator;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 
 /**
  * This class starts up an MBeanserver. If out of the box agent has been enabled then there are no 
@@ -223,7 +229,40 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
          * The registry is exported on the defined management port 'port'. We will export the RMIConnectorServer
          * on 'port +1'. Use of these two well-defined ports will ease any navigation through firewall's. 
          */
-        final RMIServerImpl rmiConnectorServerStub = new RMIJRMPServerImpl(_jmxPortConnectorServer, csf, ssf, env);
+        final Map<String, String> connectionIdUsernameMap = new ConcurrentHashMap<String, String>();
+        final RMIServerImpl rmiConnectorServerStub = new RMIJRMPServerImpl(_jmxPortConnectorServer, csf, ssf, env)
+        {
+
+            /**
+             * Override makeClient so we can cache the username of the client in a Map keyed by connectionId.
+             * ConnectionId is guaranteed to be unique per client connection, according to the JMS spec.
+             * An instance of NotificationListener (mapCleanupListener) will be responsible for removing these Map
+             * entries.
+             *
+             * @see javax.management.remote.rmi.RMIJRMPServerImpl#makeClient(java.lang.String, javax.security.auth.Subject)
+             */
+            @Override
+            protected RMIConnection makeClient(String connectionId, Subject subject) throws IOException
+            {
+                final RMIConnection makeClient = super.makeClient(connectionId, subject);
+                final UsernamePrincipal usernamePrincipalFromSubject = UsernamePrincipal.getUsernamePrincipalFromSubject(subject);
+                connectionIdUsernameMap.put(connectionId, usernamePrincipalFromSubject.getName());
+                return makeClient;
+            }
+        };
+
+        // Create a Listener responsible for removing the map entries add by the #makeClient entry above.
+        final NotificationListener mapCleanupListener = new NotificationListener()
+        {
+
+            @Override
+            public void handleNotification(Notification notification, Object handback)
+            {
+                final String connectionId = ((JMXConnectionNotification) notification).getConnectionId();
+                connectionIdUsernameMap.remove(connectionId);
+            }
+        };
+
         String localHost;
         try
         {
@@ -295,13 +334,26 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         MBeanServerForwarder mbsf = MBeanInvocationHandlerImpl.newProxyInstance();
         _cs.setMBeanServerForwarder(mbsf);
 
-        NotificationFilterSupport filter = new NotificationFilterSupport();
-        filter.enableType(JMXConnectionNotification.OPENED);
-        filter.enableType(JMXConnectionNotification.CLOSED);
-        filter.enableType(JMXConnectionNotification.FAILED);
+
         // Get the handler that is used by the above MBInvocationHandler Proxy.
-        // which is the MBeanInvocationHandlerImpl and so also a NotificationListener
-        _cs.addNotificationListener((NotificationListener) Proxy.getInvocationHandler(mbsf), filter, null);
+        // which is the MBeanInvocationHandlerImpl and so also a NotificationListener.
+        final NotificationListener invocationHandler = (NotificationListener) Proxy.getInvocationHandler(mbsf);
+
+        // Install a notification listener on OPENED, CLOSED, and FAILED,
+        // passing the map of connection-ids to usernames as hand-back data.
+        final NotificationFilterSupport invocationHandlerFilter = new NotificationFilterSupport();
+        invocationHandlerFilter.enableType(JMXConnectionNotification.OPENED);
+        invocationHandlerFilter.enableType(JMXConnectionNotification.CLOSED);
+        invocationHandlerFilter.enableType(JMXConnectionNotification.FAILED);
+        _cs.addNotificationListener(invocationHandler, invocationHandlerFilter, connectionIdUsernameMap);
+
+        // Install a second notification listener on CLOSED AND FAILED only to remove the entry from the
+        // Map.  Here we rely on the fact that JMX will call the listeners in the order in which they are
+        // installed.
+        final NotificationFilterSupport mapCleanupHandlerFilter = new NotificationFilterSupport();
+        mapCleanupHandlerFilter.enableType(JMXConnectionNotification.CLOSED);
+        mapCleanupHandlerFilter.enableType(JMXConnectionNotification.FAILED);
+        _cs.addNotificationListener(mapCleanupListener, mapCleanupHandlerFilter, null);
 
         _cs.start();
 

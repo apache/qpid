@@ -1,6 +1,5 @@
 package org.apache.qpid.server.flow;
 
-import org.apache.qpid.server.message.ServerMessage;
 
 /*
 *
@@ -47,7 +46,7 @@ public class LimitlessCreditManager extends AbstractFlowCreditManager implements
         return true;
     }
 
-    public boolean useCreditForMessage(ServerMessage msg)
+    public boolean useCreditForMessage(long msgSize)
     {
         return true;
     }

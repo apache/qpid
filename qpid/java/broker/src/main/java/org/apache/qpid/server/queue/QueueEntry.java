@@ -1,5 +1,7 @@
 package org.apache.qpid.server.queue;
 
+import java.util.Collection;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.message.ServerMessage;
@@ -214,6 +216,10 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable
 
     boolean isQueueDeleted();
 
+    QueueEntry getNextNode();
+
+    QueueEntry getNextValidEntry();
+
     void addStateChangeListener(StateChangeListener listener);
     boolean removeStateChangeListener(StateChangeListener listener);
 
@@ -230,4 +236,16 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable
      * @return true if entry is either DEQUED or DELETED state
      */
     boolean isDispensed();
+
+    /**
+     * Number of times this queue entry has been delivered.
+     *
+     * @return delivery count
+     */
+    int getDeliveryCount();
+
+    void incrementDeliveryCount();
+
+    void decrementDeliveryCount();
+
 }

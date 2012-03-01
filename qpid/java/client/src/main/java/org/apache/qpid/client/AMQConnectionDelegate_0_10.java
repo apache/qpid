@@ -74,12 +74,6 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
     org.apache.qpid.transport.Connection _qpidConnection;
     private ConnectionException exception = null;
 
-    static
-    {
-        // Register any configured SASL client factories.
-        org.apache.qpid.client.security.DynamicSaslRegistrar.registerSaslProviders();
-    }
-
     //--- constructor
     public AMQConnectionDelegate_0_10(AMQConnection conn)
     {
@@ -170,6 +164,35 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         return session;
     }
 
+    @Override
+    public XASession createXASession(int ackMode)
+        throws JMSException
+    {
+
+        _conn.checkNotClosed();
+
+        if (_conn.channelLimitReached())
+        {
+            throw new ChannelLimitReachedException(_conn.getMaximumChannelCount());
+        }
+
+        int channelId = _conn.getNextChannelID();
+        XASessionImpl session;
+        try
+        {
+            session = new XASessionImpl(_qpidConnection, _conn, channelId, ackMode, (int)_conn.getMaxPrefetch(), (int)_conn.getMaxPrefetch() / 2);
+            _conn.registerSession(channelId, session);
+            if (_conn._started)
+            {
+                session.start();
+            }
+        }
+        catch (Exception e)
+        {
+            throw new JMSAMQException("cannot create session", e);
+        }
+        return session;
+    }
 
     /**
      * Make a connection with the broker

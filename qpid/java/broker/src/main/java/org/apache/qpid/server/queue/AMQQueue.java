@@ -213,6 +213,8 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
 
     void setAlternateExchange(Exchange exchange);
 
+    void setAlternateExchange(String exchangeName);
+
     Map<String, Object> getArguments();
 
     void checkCapacity(AMQChannel channel);
@@ -272,4 +274,22 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
     ManagedObject getManagedObject();
 
     void setExclusive(boolean exclusive) throws AMQException;
+
+    /**
+     * Gets the maximum delivery count.   If a message on this queue
+     * is delivered more than maximumDeliveryCount, the message will be
+     * routed to the {@link #getAlternateExchange()} (if set), or otherwise
+     * discarded. 0 indicates that maximum deliver count should not be enforced.
+     *
+     * @return maximum delivery count
+     */
+    int getMaximumDeliveryCount();
+
+    /**
+     * Sets the maximum delivery count.
+     *
+     * @param maximumDeliveryCount maximum delivery count
+     */
+    public void setMaximumDeliveryCount(final int maximumDeliveryCount);
+
 }

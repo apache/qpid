@@ -45,7 +45,7 @@ public class AccessControlConfiguration extends ConfigurationPlugin
 
         public List<String> getParentPaths()
         {
-            return Arrays.asList("security.aclv2", "virtualhosts.virtualhost.security.aclv2");
+            return Arrays.asList("security.acl", "virtualhosts.virtualhost.security.acl");
         }
     };
 

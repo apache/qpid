@@ -26,6 +26,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.util.Map;
 import java.util.Set;
 
 import javax.management.Attribute;
@@ -45,6 +46,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 
@@ -56,20 +58,52 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
 {
     private static final Logger _logger = Logger.getLogger(MBeanInvocationHandlerImpl.class);
 
+    private final IApplicationRegistry _appRegistry = ApplicationRegistry.getInstance();
     private final static String DELEGATE = "JMImplementation:type=MBeanServerDelegate";
     private MBeanServer _mbs;
-    private static ManagementActor  _logActor;
-    
+    private final ManagementActor _logActor = new ManagementActor(_appRegistry.getRootMessageLogger());
+    private final boolean _managementRightsInferAllAccess =
+        _appRegistry.getConfiguration().getManagementRightsInferAllAccess();
+
     public static MBeanServerForwarder newProxyInstance()
     {
         final InvocationHandler handler = new MBeanInvocationHandlerImpl();
         final Class<?>[] interfaces = new Class[] { MBeanServerForwarder.class };
 
-
-        _logActor = new ManagementActor(ApplicationRegistry.getInstance().getRootMessageLogger());
-
         Object proxy = Proxy.newProxyInstance(MBeanServerForwarder.class.getClassLoader(), interfaces, handler);
         return MBeanServerForwarder.class.cast(proxy);
+    }
+
+    private boolean invokeDirectly(String methodName, Object[] args, Subject subject)
+    {
+        // Allow operations performed locally on behalf of the connector server itself
+        if (subject == null)
+        {
+            return true;
+        }
+
+        if (args == null || DELEGATE.equals(args[0]))
+        {
+            return true;
+        }
+
+        // Allow querying available object names
+        if (methodName.equals("queryNames"))
+        {
+            return true;
+        }
+
+        if (args[0] instanceof ObjectName)
+        {
+            ObjectName mbean = (ObjectName) args[0];
+
+            if(!DefaultManagedObject.DOMAIN.equalsIgnoreCase(mbean.getDomain()))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
@@ -95,36 +129,24 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
             return null;
         }
 
+        // Restrict access to "createMBean" and "unregisterMBean" to any user
+        if (methodName.equals("createMBean") || methodName.equals("unregisterMBean"))
+        {
+            _logger.debug("User trying to create or unregister an MBean");
+            throw new SecurityException("Access denied: " + methodName);
+        }
+
         // Retrieve Subject from current AccessControlContext
         AccessControlContext acc = AccessController.getContext();
         Subject subject = Subject.getSubject(acc);
 
         try
         {
-            // Allow operations performed locally on behalf of the connector server itself
-            if (subject == null)
+            if(invokeDirectly(methodName, args, subject))
             {
                 return method.invoke(_mbs, args);
             }
-    
-            if (args == null || DELEGATE.equals(args[0]))
-            {
-                return method.invoke(_mbs, args);
-            }
-    
-            // Restrict access to "createMBean" and "unregisterMBean" to any user
-            if (methodName.equals("createMBean") || methodName.equals("unregisterMBean"))
-            {
-                _logger.debug("User trying to create or unregister an MBean");
-                throw new SecurityException("Access denied: " + methodName);
-            }
-    
-            // Allow querying available object names
-            if (methodName.equals("queryNames"))
-            {
-                return method.invoke(_mbs, args);
-            }
-    
+
             // Retrieve JMXPrincipal from Subject
             Set<JMXPrincipal> principals = subject.getPrincipals(JMXPrincipal.class);
             if (principals == null || principals.isEmpty())
@@ -134,23 +156,23 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
 
             // Save the subject
             SecurityManager.setThreadSubject(subject);
-   
+
             // Get the component, type and impact, which may be null
             String type = getType(method, args);
             String vhost = getVirtualHost(method, args);
             int impact = getImpact(method, args);
-            
+
             // Get the security manager for the virtual host (if set)
             SecurityManager security;
             if (vhost == null)
             {
-                security = ApplicationRegistry.getInstance().getSecurityManager();
+                security = _appRegistry.getSecurityManager();
             }
             else
             {
-                security = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(vhost).getSecurityManager();
+                security = _appRegistry.getVirtualHostRegistry().getVirtualHost(vhost).getSecurityManager();
             }
-            
+
 			if (isAccessMethod(methodName) || impact == MBeanOperationInfo.INFO)
 			{
 				// Check for read-only method invocation permission
@@ -159,25 +181,33 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
                     throw new SecurityException("Permission denied: Access " + methodName);
                 }
 			}
-			else if (isUpdateMethod(methodName))
-            {
-	            // Check for setting properties permission
-                if (!security.authoriseMethod(Operation.UPDATE, type, methodName))
-                {
-                    throw new SecurityException("Permission denied: Update " + methodName);
-                }
-            }
-			else 
-            {
-	            // Check for invoking/executing method action/operation permission
-                if (!security.authoriseMethod(Operation.EXECUTE, type, methodName))
-                {
-                    throw new SecurityException("Permission denied: Execute " + methodName);
-                }
-            }
-			
-			// Actually invoke the method
-			return method.invoke(_mbs, args);
+			else
+			{
+			    // Check for setting properties permission
+			    if (!security.authoriseMethod(Operation.UPDATE, type, methodName))
+			    {
+			        throw new SecurityException("Permission denied: Update " + methodName);
+			    }
+			}
+
+			boolean oldAccessChecksDisabled = false;
+			if(_managementRightsInferAllAccess)
+			{
+			    oldAccessChecksDisabled = SecurityManager.setAccessChecksDisabled(true);
+			}
+
+			try
+			{
+			    // Actually invoke the method
+			    return method.invoke(_mbs, args);
+			}
+			finally
+			{
+			    if(_managementRightsInferAllAccess)
+			    {
+			        SecurityManager.setAccessChecksDisabled(oldAccessChecksDisabled);
+			    }
+			}
         }
         catch (InvocationTargetException e)
         {
@@ -290,28 +320,44 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
         return (methodName.startsWith("query") || methodName.startsWith("get") || methodName.startsWith("is"));
     }
 
-
-    private boolean isUpdateMethod(String methodName)
-    {
-        //handle standard set methods from MBeanServer
-        return methodName.startsWith("set");
-    }
-
-    public void handleNotification(Notification notification, Object handback)
+    /**
+     * Receives notifications from the MBeanServer.
+     */
+    public void handleNotification(final Notification notification, final Object handback)
     {
         assert notification instanceof JMXConnectionNotification;
 
-        // only RMI Connections are serviced here, Local API atta
-        // rmi://169.24.29.116 guest 3
-        String[] connectionData = ((JMXConnectionNotification) notification).getConnectionId().split(" ");
-        String user = connectionData[1];
+        final String connectionId = ((JMXConnectionNotification) notification).getConnectionId();
+        final String type = notification.getType();
 
-        if (notification.getType().equals(JMXConnectionNotification.OPENED))
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Notification connectionId : " + connectionId + " type : " + type
+                    + " Notification handback : " + handback);
+        }
+
+        // Normally JMXManagedObjectRegistry provides a Map as handback data containing a map
+        // between connection id and username.
+        String user = null;
+        if (handback != null && handback instanceof Map)
+        {
+            final Map<String, String> connectionIdUsernameMap = (Map<String, String>) handback;
+            user = connectionIdUsernameMap.get(connectionId);
+        }
+
+        // If user is still null, fallback to an unordered list of Principals from the connection id.
+        if (user == null)
+        {
+            final String[] splitConnectionId = connectionId.split(" ");
+            user = splitConnectionId[1];
+        }
+
+        if (JMXConnectionNotification.OPENED.equals(type))
         {
             _logActor.message(ManagementConsoleMessages.OPEN(user));
         }
-        else if (notification.getType().equals(JMXConnectionNotification.CLOSED) ||
-                 notification.getType().equals(JMXConnectionNotification.FAILED))
+        else if (JMXConnectionNotification.CLOSED.equals(type) ||
+                 JMXConnectionNotification.FAILED.equals(type))
         {
             _logActor.message(ManagementConsoleMessages.CLOSE(user));
         }

@@ -40,6 +40,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 public class DefaultExchangeFactory implements ExchangeFactory
 {
     private static final Logger _logger = Logger.getLogger(DefaultExchangeFactory.class);
+    public static final String DEFAULT_DLE_NAME_SUFFIX = "_DLE";
 
     private Map<AMQShortString, ExchangeType<? extends Exchange>> _exchangeClassMap = new HashMap<AMQShortString, ExchangeType<? extends Exchange>>();
     private final VirtualHost _host;
@@ -122,7 +123,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
                 if (exchangeType == null)
                 {
                     _logger.error("No such custom exchange class found: \""+String.valueOf(className)+"\"");
-                    return;
+                    continue;
                 }
                 Class<? extends ExchangeType> exchangeTypeClass = exchangeType.getClass();
                 ExchangeType<? extends ExchangeType> type = exchangeTypeClass.newInstance();

@@ -611,4 +611,21 @@ public class MockAMQQueue implements AMQQueue
     {
 
     }
+
+    @Override
+    public int getMaximumDeliveryCount()
+    {
+        return 0;
+    }
+
+    @Override
+    public void setMaximumDeliveryCount(int maximumDeliveryCount)
+    {
+    }
+
+    @Override
+    public void setAlternateExchange(String exchangeName)
+    {
+    }
+
 }

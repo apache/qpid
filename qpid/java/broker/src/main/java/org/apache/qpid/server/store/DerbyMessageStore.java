@@ -142,6 +142,19 @@ public class DerbyMessageStore implements MessageStore
     private boolean _configured;
 
 
+    private static final class CommitStoreFuture implements StoreFuture
+    {
+        public boolean isComplete()
+        {
+            return true;
+        }
+
+        public void waitForCompletion()
+        {
+
+        }
+    }
+
     private enum State
     {
         INITIAL,
@@ -910,19 +923,19 @@ public class DerbyMessageStore implements MessageStore
             throws AMQStoreException
     {
         Connection conn = null;
+        PreparedStatement stmt = null;
 
         try
         {
             conn = newAutoCommitConnection();
             // exchange_name varchar(255) not null, queue_name varchar(255) not null, binding_key varchar(255), arguments blob
-            PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_BINDINGS);
+            stmt = conn.prepareStatement(DELETE_FROM_BINDINGS);
             stmt.setString(1, exchange.getNameShortString().toString() );
             stmt.setString(2, queue.getNameShortString().toString());
             stmt.setString(3, routingKey == null ? null : routingKey.toString());
-            
+
             int result = stmt.executeUpdate();
-            stmt.close();
-            
+
             if(result != 1)
             {
                  throw new AMQStoreException("Queue binding for queue with name " + queue.getNameShortString() + " to exchange "
@@ -936,21 +949,9 @@ public class DerbyMessageStore implements MessageStore
         }
         finally
         {
-            if(conn != null)
-            {
-               try
-               {
-                   conn.close();
-               }
-               catch (SQLException e)
-               {
-                   _logger.error(e);
-               }
-            }
-
+            closePreparedStatement(stmt);
+            closeConnection(conn);
         }
-
-
     }
 
     public void createQueue(AMQQueue queue) throws AMQStoreException
@@ -1153,15 +1154,14 @@ public class DerbyMessageStore implements MessageStore
         AMQShortString name = queue.getNameShortString();
         _logger.debug("public void removeQueue(AMQShortString name = " + name + "): called");
         Connection conn = null;
-
+        PreparedStatement stmt = null;
         try
         {
             conn = newAutoCommitConnection();
-            PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_QUEUE);
+            stmt = conn.prepareStatement(DELETE_FROM_QUEUE);
             stmt.setString(1, name.toString());
             int results = stmt.executeUpdate();
-            stmt.close();
-            
+
             if (results == 0)
             {
                 throw new AMQStoreException("Queue " + name + " not found");
@@ -1173,18 +1173,8 @@ public class DerbyMessageStore implements MessageStore
         }
         finally
         {
-            if(conn != null)
-            {
-               try
-               {
-                   conn.close();
-               }
-               catch (SQLException e)
-               {
-                   _logger.error(e);
-               }
-            }
-
+            closePreparedStatement(stmt);
+            closeConnection(conn);
         }
 
 
@@ -1317,19 +1307,7 @@ public class DerbyMessageStore implements MessageStore
     public StoreFuture commitTranAsync(ConnectionWrapper connWrapper) throws AMQStoreException
     {
         commitTran(connWrapper);
-        return new StoreFuture()
-                    {
-                        public boolean isComplete()
-                        {
-                            return true;
-                        }
-
-                        public void waitForCompletion()
-                        {
-
-                        }
-                    };
-
+        return new CommitStoreFuture();
     }
 
     public void abortTran(ConnectionWrapper connWrapper) throws AMQStoreException
@@ -1572,6 +1550,7 @@ public class DerbyMessageStore implements MessageStore
         {
             _logger.debug("Adding content chunk offset " + offset + " for message " +messageId);
         }
+        PreparedStatement stmt = null;
 
         try
         {
@@ -1580,7 +1559,7 @@ public class DerbyMessageStore implements MessageStore
             byte[] chunkData = new byte[src.limit()];
             src.duplicate().get(chunkData);
 
-            PreparedStatement stmt = conn.prepareStatement(INSERT_INTO_MESSAGE_CONTENT);
+            stmt = conn.prepareStatement(INSERT_INTO_MESSAGE_CONTENT);
             stmt.setLong(1,messageId);
             stmt.setInt(2, offset);
             stmt.setInt(3, offset+chunkData.length);
@@ -1594,23 +1573,15 @@ public class DerbyMessageStore implements MessageStore
             ByteArrayInputStream bis = new ByteArrayInputStream(chunkData);
             stmt.setBinaryStream(4, bis, chunkData.length);
             stmt.executeUpdate();
-            stmt.close();
         }
         catch (SQLException e)
         {
-            if(conn != null)
-            {
-                try
-                {
-                    conn.close();
-                }
-                catch (SQLException e1)
-                {
-
-                }
-            }
-
+            closeConnection(conn);
             throw new RuntimeException("Error adding content chunk offset " + offset + " for message " + messageId + ": " + e.getMessage(), e);
+        }
+        finally
+        {
+            closePreparedStatement(stmt);
         }
 
     }
@@ -1619,13 +1590,13 @@ public class DerbyMessageStore implements MessageStore
     public int getContent(long messageId, int offset, ByteBuffer dst)
     {
         Connection conn = null;
-
+        PreparedStatement stmt = null;
 
         try
         {
             conn = newAutoCommitConnection();
 
-            PreparedStatement stmt = conn.prepareStatement(SELECT_FROM_MESSAGE_CONTENT);
+            stmt = conn.prepareStatement(SELECT_FROM_MESSAGE_CONTENT);
             stmt.setLong(1,messageId);
             stmt.setInt(2, offset);
             stmt.setInt(3, offset+dst.remaining());
@@ -1656,28 +1627,18 @@ public class DerbyMessageStore implements MessageStore
                 }
             }
 
-            stmt.close();
-            conn.close();
             return written;
 
         }
         catch (SQLException e)
         {
-            if(conn != null)
-            {
-                try
-                {
-                    conn.close();
-                }
-                catch (SQLException e1)
-                {
-
-                }
-            }
-
             throw new RuntimeException("Error retrieving content from offset " + offset + " for message " + messageId + ": " + e.getMessage(), e);
         }
-
+        finally
+        {
+            closePreparedStatement(stmt);
+            closeConnection(conn);
+        }
 
 
     }
@@ -1849,5 +1810,33 @@ public class DerbyMessageStore implements MessageStore
         }
     }
 
+    private void closeConnection(final Connection conn)
+    {
+        if(conn != null)
+        {
+           try
+           {
+               conn.close();
+           }
+           catch (SQLException e)
+           {
+               _logger.error("Problem closing connection", e);
+           }
+        }
+    }
 
+    private void closePreparedStatement(final PreparedStatement stmt)
+    {
+        if (stmt != null)
+        {
+            try
+            {
+                stmt.close();
+            }
+            catch(SQLException e)
+            {
+                _logger.error("Problem closing prepared statement", e);
+            }
+        }
+    }
 }

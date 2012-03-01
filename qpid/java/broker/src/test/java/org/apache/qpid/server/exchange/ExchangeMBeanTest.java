@@ -20,8 +20,7 @@
  */
 package org.apache.qpid.server.exchange;
 
-import junit.framework.TestCase;
-
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.qpid.management.common.mbeans.ManagedExchange;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -34,9 +33,11 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 
+import javax.management.JMException;
+import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.TabularData;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Iterator;
 
 /**
  * Unit test class for testing different Exchange MBean operations
@@ -47,10 +48,20 @@ public class ExchangeMBeanTest  extends InternalBrokerBaseCase
     private QueueRegistry _queueRegistry;
     private VirtualHost _virtualHost;
 
-    /**
-     * Test for direct exchange mbean
-     * @throws Exception
-     */
+    public void testGeneralProperties() throws Exception
+    {
+        DirectExchange exchange = new DirectExchange();
+        exchange.initialise(_virtualHost, ExchangeDefaults.DIRECT_EXCHANGE_NAME, false, 0, true);
+        ManagedObject managedObj = exchange.getManagedObject();
+        ManagedExchange mbean = (ManagedExchange)managedObj;
+
+        // test general exchange properties
+        assertEquals("Unexpected exchange name", "amq.direct", mbean.getName());
+        assertEquals("Unexpected exchange type", "direct", mbean.getExchangeType());
+        assertEquals("Unexpected ticket number", Integer.valueOf(0), mbean.getTicketNo());
+        assertFalse("Unexpected durable flag", mbean.isDurable());
+        assertTrue("Unexpected auto delete flag", mbean.isAutoDelete());
+    }
 
     public void testDirectExchangeMBean() throws Exception
     {
@@ -65,19 +76,7 @@ public class ExchangeMBeanTest  extends InternalBrokerBaseCase
         TabularData data = mbean.bindings();
         ArrayList<Object> list = new ArrayList<Object>(data.values());
         assertTrue(list.size() == 2);
-
-        // test general exchange properties
-        assertEquals(mbean.getName(), "amq.direct");
-        assertEquals(mbean.getExchangeType(), "direct");
-        assertTrue(mbean.getTicketNo() == 0);
-        assertTrue(!mbean.isDurable());
-        assertTrue(mbean.isAutoDelete());
     }
-
-    /**
-     * Test for "topic" exchange mbean
-     * @throws Exception
-     */
 
     public void testTopicExchangeMBean() throws Exception
     {
@@ -92,19 +91,7 @@ public class ExchangeMBeanTest  extends InternalBrokerBaseCase
         TabularData data = mbean.bindings();
         ArrayList<Object> list = new ArrayList<Object>(data.values());
         assertTrue(list.size() == 2);
-
-        // test general exchange properties
-        assertEquals(mbean.getName(), "amq.topic");
-        assertEquals(mbean.getExchangeType(), "topic");
-        assertTrue(mbean.getTicketNo() == 0);
-        assertTrue(!mbean.isDurable());
-        assertTrue(mbean.isAutoDelete());
     }
-
-    /**
-     * Test for "Headers" exchange mbean
-     * @throws Exception
-     */
 
     public void testHeadersExchangeMBean() throws Exception
     {
@@ -113,21 +100,72 @@ public class ExchangeMBeanTest  extends InternalBrokerBaseCase
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
 
-        mbean.createNewBinding(_queue.getNameShortString().toString(), "key1=binding1,key2=binding2");
-        mbean.createNewBinding(_queue.getNameShortString().toString(), "key3=binding3");
+        mbean.createNewBinding(_queue.getNameShortString().toString(), "x-match=any,key1=binding1,key2=binding2");
 
         TabularData data = mbean.bindings();
         ArrayList<Object> list = new ArrayList<Object>(data.values());
-        assertTrue(list.size() == 2);
+        assertEquals("Unexpected number of bindings", 1, list.size());
 
-        // test general exchange properties
-        assertEquals(mbean.getName(), "amq.match");
-        assertEquals(mbean.getExchangeType(), "headers");
-        assertTrue(mbean.getTicketNo() == 0);
-        assertTrue(!mbean.isDurable());
-        assertTrue(mbean.isAutoDelete());
+        final Iterator<CompositeDataSupport> rowItr = (Iterator<CompositeDataSupport>) data.values().iterator();
+        CompositeDataSupport row = rowItr.next();
+        assertBinding(1, _queue.getName(), new String[]{"x-match=any","key1=binding1","key2=binding2"}, row);
     }
-    
+
+    /**
+     * Included to ensure 0-10 Specification compliance:
+     * 2.3.1.4 "the field in the bind arguments has no value and a field of the same name is present in the message headers
+     */
+    public void testHeadersExchangeMBeanMatchPropertyNoValue() throws Exception
+    {
+        HeadersExchange exchange = new HeadersExchange();
+        exchange.initialise(_virtualHost,ExchangeDefaults.HEADERS_EXCHANGE_NAME, false, 0, true);
+        ManagedObject managedObj = exchange.getManagedObject();
+        ManagedExchange mbean = (ManagedExchange)managedObj;
+
+        mbean.createNewBinding(_queue.getNameShortString().toString(), "x-match=any,key4,key5=");
+
+        TabularData data = mbean.bindings();
+        ArrayList<Object> list = new ArrayList<Object>(data.values());
+        assertEquals("Unexpected number of bindings", 1, list.size());
+
+        final Iterator<CompositeDataSupport> rowItr = (Iterator<CompositeDataSupport>) data.values().iterator();
+        CompositeDataSupport row = rowItr.next();
+        assertBinding(1, _queue.getName(), new String[]{"x-match=any","key4=","key5="}, row);
+    }
+
+    public void testInvalidHeaderBindingMalformed() throws Exception
+    {
+        HeadersExchange exchange = new HeadersExchange();
+        exchange.initialise(_virtualHost,ExchangeDefaults.HEADERS_EXCHANGE_NAME, false, 0, true);
+        ManagedObject managedObj = exchange.getManagedObject();
+        ManagedExchange mbean = (ManagedExchange)managedObj;
+
+        try
+        {
+            mbean.createNewBinding(_queue.getNameShortString().toString(), "x-match=any,=value4");
+            fail("Exception not thrown");
+        }
+        catch (JMException jme)
+        {
+            //pass
+        }
+    }
+
+    private void assertBinding(final int expectedBindingNo, final String expectedQueueName, final String[] expectedBindingArray,
+                                final CompositeDataSupport row)
+    {
+        final Number bindingNumber = (Number) row.get(ManagedExchange.HDR_BINDING_NUMBER);
+        final String queueName = (String) row.get(ManagedExchange.HDR_QUEUE_NAME);
+        final String[] bindings = (String[]) row.get(ManagedExchange.HDR_QUEUE_BINDINGS);
+        assertEquals("Unexpected binding number", expectedBindingNo, bindingNumber);
+        assertEquals("Unexpected queue name", expectedQueueName, queueName);
+        assertEquals("Unexpected no of bindings", expectedBindingArray.length, bindings.length);
+        for(String binding : bindings)
+        {
+            assertTrue("Expected binding not found: " + binding, ArrayUtils.contains(expectedBindingArray, binding));
+        }
+    }
+
     /**
      * Test adding bindings and removing them from the default exchange via JMX.
      * <p>

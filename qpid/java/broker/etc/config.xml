@@ -80,7 +80,12 @@
             </principal-database>
         </pd-auth-manager>
 
-        <allow-all />
+        <!-- By default, all authenticated users have permissions to perform all actions -->
+
+        <!-- ACL Example
+             This example illustrates securing the both Management (JMX) and Messaging.
+        <acl>${conf}/broker_example.acl</acl>
+        -->
         
         <msg-auth>false</msg-auth>
     </security>

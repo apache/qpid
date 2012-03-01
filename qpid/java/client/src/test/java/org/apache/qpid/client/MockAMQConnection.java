@@ -55,4 +55,9 @@ public class MockAMQConnection extends AMQConnection
         _protocolHandler.getStateManager().changeState(AMQState.CONNECTION_OPEN);
         return null;
     }
+
+    public AMQConnectionDelegate getDelegate()
+    {
+        return _delegate;
+    }
 }

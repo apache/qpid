@@ -22,6 +22,7 @@ package org.apache.qpid.server.message;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.AMQChannel;
@@ -64,7 +65,6 @@ public class AMQMessage extends AbstractServerMessageImpl
     private final StoredMessage<MessageMetaData> _handle;
 
     WeakReference<AMQChannel> _channelRef;
-
 
     public AMQMessage(StoredMessage<MessageMetaData> handle)
     {
@@ -122,7 +122,15 @@ public class AMQMessage extends AbstractServerMessageImpl
 
     public String getRoutingKey()
     {
-        // TODO
+        MessageMetaData messageMetaData = getMessageMetaData();
+        if (messageMetaData != null)
+        {
+            AMQShortString routingKey = messageMetaData.getMessagePublishInfo().getRoutingKey();
+            if (routingKey != null)
+            {
+                return routingKey.asString();
+            }
+        }
         return null;
     }
 

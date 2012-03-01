@@ -1,10 +1,3 @@
-package org.apache.qpid.server.queue;
-
-import org.apache.qpid.server.message.ServerMessage;
-
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-import java.util.concurrent.atomic.AtomicLong;
-
 /*
 *
 * Licensed to the Apache Software Foundation (ASF) under one
@@ -25,25 +18,31 @@ import java.util.concurrent.atomic.AtomicLong;
 * under the License.
 *
 */
-public class SimpleQueueEntryList implements QueueEntryList
+package org.apache.qpid.server.queue;
+
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import org.apache.qpid.server.message.ServerMessage;
+
+public class SimpleQueueEntryList implements QueueEntryList<SimpleQueueEntryImpl>
 {
 
-    private final QueueEntryImpl _head;
+    private final SimpleQueueEntryImpl _head;
 
-    private volatile QueueEntryImpl _tail;
+    private volatile SimpleQueueEntryImpl _tail;
 
-    static final AtomicReferenceFieldUpdater<SimpleQueueEntryList, QueueEntryImpl>
+    static final AtomicReferenceFieldUpdater<SimpleQueueEntryList, SimpleQueueEntryImpl>
             _tailUpdater =
         AtomicReferenceFieldUpdater.newUpdater
-        (SimpleQueueEntryList.class, QueueEntryImpl.class, "_tail");
+        (SimpleQueueEntryList.class, SimpleQueueEntryImpl.class, "_tail");
 
 
     private final AMQQueue _queue;
 
-    static final AtomicReferenceFieldUpdater<QueueEntryImpl, QueueEntryImpl>
+    static final AtomicReferenceFieldUpdater<SimpleQueueEntryImpl, SimpleQueueEntryImpl>
                 _nextUpdater =
             AtomicReferenceFieldUpdater.newUpdater
-            (QueueEntryImpl.class, QueueEntryImpl.class, "_next");
+            (SimpleQueueEntryImpl.class, SimpleQueueEntryImpl.class, "_next");
 
     private AtomicLong _scavenges = new AtomicLong(0L);
     private final long _scavengeCount = Integer.getInteger("qpid.queue.scavenge_count", 50);
@@ -52,14 +51,14 @@ public class SimpleQueueEntryList implements QueueEntryList
     public SimpleQueueEntryList(AMQQueue queue)
     {
         _queue = queue;
-        _head = new QueueEntryImpl(this);
+        _head = new SimpleQueueEntryImpl(this);
         _tail = _head;
     }
 
     void advanceHead()
     {
-        QueueEntryImpl next = _head.nextNode();
-        QueueEntryImpl newNext = _head.getNext();
+        SimpleQueueEntryImpl next = _head.getNextNode();
+        SimpleQueueEntryImpl newNext = _head.getNextValidEntry();
 
         if (next == newNext)
         {
@@ -73,11 +72,11 @@ public class SimpleQueueEntryList implements QueueEntryList
 
     void scavenge()
     {
-        QueueEntryImpl next = _head.getNext();
+        SimpleQueueEntryImpl next = _head.getNextValidEntry();
 
         while (next != null)
         {
-            next = next.getNext();
+            next = next.getNextValidEntry();
         }
     }
 
@@ -88,13 +87,13 @@ public class SimpleQueueEntryList implements QueueEntryList
     }
 
 
-    public QueueEntry add(ServerMessage message)
+    public SimpleQueueEntryImpl add(ServerMessage message)
     {
-        QueueEntryImpl node = createQueueEntry(message);
+        SimpleQueueEntryImpl node = createQueueEntry(message);
         for (;;)
         {
-            QueueEntryImpl tail = _tail;
-            QueueEntryImpl next = tail.nextNode();
+            SimpleQueueEntryImpl tail = _tail;
+            SimpleQueueEntryImpl next = tail.getNextNode();
             if (tail == _tail)
             {
                 if (next == null)
@@ -115,23 +114,22 @@ public class SimpleQueueEntryList implements QueueEntryList
         }
     }
 
-    protected QueueEntryImpl createQueueEntry(ServerMessage message)
+    protected SimpleQueueEntryImpl createQueueEntry(ServerMessage message)
     {
-        return new QueueEntryImpl(this, message);
+        return new SimpleQueueEntryImpl(this, message);
     }
 
-    public QueueEntry next(QueueEntry node)
+    public SimpleQueueEntryImpl next(SimpleQueueEntryImpl node)
     {
-        return ((QueueEntryImpl)node).getNext();
+        return node.getNextValidEntry();
     }
 
-
-    public static class QueueEntryIteratorImpl implements QueueEntryIterator
+    public static class QueueEntryIteratorImpl implements QueueEntryIterator<SimpleQueueEntryImpl>
     {
 
-        private QueueEntryImpl _lastNode;
+        private SimpleQueueEntryImpl _lastNode;
 
-        QueueEntryIteratorImpl(QueueEntryImpl startNode)
+        QueueEntryIteratorImpl(SimpleQueueEntryImpl startNode)
         {
             _lastNode = startNode;
         }
@@ -139,14 +137,12 @@ public class SimpleQueueEntryList implements QueueEntryList
 
         public boolean atTail()
         {
-            return _lastNode.nextNode() == null;
+            return _lastNode.getNextNode() == null;
         }
 
-        public QueueEntry getNode()
+        public SimpleQueueEntryImpl getNode()
         {
-
             return _lastNode;
-
         }
 
         public boolean advance()
@@ -154,10 +150,10 @@ public class SimpleQueueEntryList implements QueueEntryList
 
             if(!atTail())
             {
-                QueueEntryImpl nextNode = _lastNode.nextNode();
-                while(nextNode.isDispensed() && nextNode.nextNode() != null)
+                SimpleQueueEntryImpl nextNode = _lastNode.getNextNode();
+                while(nextNode.isDispensed() && nextNode.getNextNode() != null)
                 {
-                    nextNode = nextNode.nextNode();
+                    nextNode = nextNode.getNextNode();
                 }
                 _lastNode = nextNode;
                 return true;
@@ -173,21 +169,26 @@ public class SimpleQueueEntryList implements QueueEntryList
     }
 
 
-    public QueueEntryIterator iterator()
+    public QueueEntryIteratorImpl iterator()
     {
         return new QueueEntryIteratorImpl(_head);
     }
 
 
-    public QueueEntry getHead()
+    public SimpleQueueEntryImpl getHead()
     {
         return _head;
+    }
+
+    public void entryDeleted(SimpleQueueEntryImpl queueEntry)
+    {
+        advanceHead();
     }
 
     static class Factory implements QueueEntryListFactory
     {
 
-        public QueueEntryList createQueueEntryList(AMQQueue queue)
+        public SimpleQueueEntryList createQueueEntryList(AMQQueue queue)
         {
             return new SimpleQueueEntryList(queue);
         }

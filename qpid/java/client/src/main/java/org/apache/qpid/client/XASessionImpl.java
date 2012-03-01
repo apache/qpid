@@ -5,9 +5,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
- *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
+ *   http://www.apache.org/licenses/LICENSE 2.0
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -43,21 +43,36 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
     private Session _jmsSession;
 
 
-    //-- Constructors
+    //   Constructors
     /**
      * Create a JMS XASession
      */
     public XASessionImpl(org.apache.qpid.transport.Connection qpidConnection, AMQConnection con, int channelId,
                          int defaultPrefetchHigh, int defaultPrefetchLow)
     {
-        super(qpidConnection, con, channelId, false,  // this is not a transacted session
-              Session.AUTO_ACKNOWLEDGE, // the ack mode is transacted
-              MessageFactoryRegistry.newDefaultRegistry(), defaultPrefetchHigh, defaultPrefetchLow,null);
+        this(qpidConnection, con, channelId, false, Session.AUTO_ACKNOWLEDGE,
+             MessageFactoryRegistry.newDefaultRegistry(), defaultPrefetchHigh, defaultPrefetchLow, null);
+     }
+
+     public XASessionImpl(org.apache.qpid.transport.Connection qpidConnection, AMQConnection con, int channelId,
+                int ackMode, int defaultPrefetchHigh, int defaultPrefetchLow)
+     {
+        this(qpidConnection, con, channelId, false, ackMode, MessageFactoryRegistry.newDefaultRegistry(),
+                        defaultPrefetchHigh, defaultPrefetchLow, null);
+ 
+     }
+
+     public XASessionImpl(org.apache.qpid.transport.Connection qpidConnection, AMQConnection con, int channelId,
+               boolean transacted, int ackMode, MessageFactoryRegistry registry, int defaultPrefetchHigh, int defaultPrefetchLow,
+               String name)
+     {
+        super(qpidConnection, con, channelId, transacted, ackMode, registry, defaultPrefetchHigh, defaultPrefetchLow, name);
         createSession();
         _xaResource = new XAResourceImpl(this);
-    }
+     }
 
-    //-- public methods
+
+    //   public methods
 
     /**
      * Create a qpid session.
@@ -70,7 +85,7 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
     }
 
 
-    //--- javax.njms.XASEssion API
+    //    javax.njms.XASEssion API
 
     /**
      * Gets the session associated with this XASession.
@@ -97,7 +112,7 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
         return _xaResource;
     }
 
-    //-- overwritten mehtods
+    //   overwritten mehtods
     /**
      * Throws a {@link TransactionInProgressException}, since it should
      * not be called for an XASession object.
@@ -132,7 +147,7 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
         return _qpidDtxSession;
     }
 
-    //--- interface  XAQueueSession
+    //    interface  XAQueueSession
     /**
      * Gets the topic session associated with this <CODE>XATopicSession</CODE>.
      *
@@ -144,7 +159,7 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
         return (QueueSession) getSession();
     }
 
-    //--- interface  XATopicSession
+    //    interface  XATopicSession
 
     /**
      * Gets the topic session associated with this <CODE>XATopicSession</CODE>.

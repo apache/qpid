@@ -37,16 +37,13 @@ import javax.naming.NamingException;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionListener;
-import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.test.utils.FailoverBaseCase;
 
 public class FailoverTest extends FailoverBaseCase implements ConnectionListener
 {
     private static final Logger _logger = Logger.getLogger(FailoverTest.class);
 
-    private static final String QUEUE = "queue";
     private static final int DEFAULT_NUM_MESSAGES = 10;
     private static final int DEFAULT_SEED = 20080921;
     protected int numMessages = 0;
@@ -192,7 +189,6 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
     
     protected void runP2PFailover(int totalMessages, boolean consumeAll, boolean produceAll , boolean transacted) throws JMSException, NamingException
     {
-        Message msg = null;
         int toProduce = totalMessages;
         
         _logger.debug("===================================================================");
@@ -280,45 +276,6 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
         assertNotNull("Exception should be thrown", failure);
     } 
 
-    /**
-     * The client used to have a fixed timeout of 4 minutes after which failover would no longer work.
-     * Check that this code has not regressed
-     *
-     * @throws Exception if something unexpected occurs in the test.
-     */
-   
-    public void test4MinuteFailover() throws Exception
-    {
-        ConnectionURL connectionURL = getConnectionFactory().getConnectionURL();
-
-        int RETRIES = 4;
-        int DELAY = 60000;
-
-        //Set up a long delay on and large number of retries
-        BrokerDetails details = connectionURL.getBrokerDetails(1);
-        details.setProperty(BrokerDetails.OPTIONS_RETRY, String.valueOf(RETRIES));
-        details.setProperty(BrokerDetails.OPTIONS_CONNECT_DELAY, String.valueOf(DELAY));
-
-        connection = new AMQConnection(connectionURL);
-
-        ((AMQConnection) connection).setConnectionListener(this);
-
-        //Start the connection
-        connection.start();
-
-        long FAILOVER_DELAY = ((long)RETRIES * (long)DELAY);
-
-        // Use Nano seconds as it is more accurate for comparision.
-        long failTime = System.nanoTime() + FAILOVER_DELAY * 1000000;
-
-        //Fail the first broker
-        causeFailure(getFailingPort(), FAILOVER_DELAY + DEFAULT_FAILOVER_TIME);
-
-        //Reconnection should occur
-        assertTrue("Failover did not take long enough", System.nanoTime() > failTime);
-    }
-
-    
     /**
      * The idea is to run a failover test in a loop by failing over
      * to the other broker each time.

@@ -365,6 +365,9 @@ public class Session_1_0 implements SessionEventListener
         catch (AMQSecurityException e)
         {
             e.printStackTrace();  //TODO.
+        } catch (AMQException e)
+        {
+            e.printStackTrace();  //TODO
         }
 
         return queue;

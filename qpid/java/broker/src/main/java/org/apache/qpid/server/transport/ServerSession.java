@@ -37,9 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
-
 import javax.security.auth.Subject;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.ProtocolEngine;
@@ -93,7 +91,7 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
     {
         public void onAccept();
 
-        public void onRelease();
+        public void onRelease(boolean setRedelivered);
 
         public void onReject();
 
@@ -230,13 +228,13 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
     }
 
 
-    public void release(RangeSet ranges)
+    public void release(RangeSet ranges, final boolean setRedelivered)
     {
         dispositionChange(ranges, new MessageDispositionAction()
                                       {
                                           public void performAction(MessageDispositionChangeListener listener)
                                           {
-                                              listener.onRelease();
+                                              listener.onRelease(setRedelivered);
                                           }
                                       });
     }
@@ -350,7 +348,7 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
         _transaction.rollback();
         for(MessageDispositionChangeListener listener : _messageDispositionListenerMap.values())
         {
-            listener.onRelease();
+            listener.onRelease(true);
         }
         _messageDispositionListenerMap.clear();
 
@@ -697,5 +695,24 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
         {
             unregister(subscription_0_10);
         }
+    }
+
+    public void flushCreditState()
+    {
+        final Collection<Subscription_0_10> subscriptions = getSubscriptions();
+        for (Subscription_0_10 subscription_0_10 : subscriptions)
+        {
+            subscription_0_10.flushCreditState(false);
+        }
+    }
+
+    public int getUnacknowledgedMessageCount()
+    {
+        return _messageDispositionListenerMap.size();
+    }
+
+    public boolean getBlocking()
+    {
+        return false; //TODO: Blocking not implemented on 0-10 yet.
     }
 }

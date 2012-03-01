@@ -23,7 +23,7 @@ package org.apache.qpid.test.unit.ack;
 
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.test.utils.FailoverBaseCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -39,7 +39,7 @@ import javax.jms.MessageProducer;
  *
  * The ack mode is provided from the various test methods. 
  */
-public class AcknowledgeTest extends FailoverBaseCase
+public class AcknowledgeTest extends QpidBrokerTestCase
 {
     protected int NUM_MESSAGES;
     protected Connection _connection;

@@ -234,4 +234,31 @@ public class MockQueueEntry implements QueueEntry
         return false;
     }
 
+    public QueueEntry getNextNode()
+    {
+        return null;
+    }
+
+    public QueueEntry getNextValidEntry()
+    {
+        return null;
+    }
+
+    @Override
+    public int getDeliveryCount()
+    {
+        return 0;
+    }
+
+    @Override
+    public void incrementDeliveryCount()
+    {
+    }
+
+    @Override
+    public void decrementDeliveryCount()
+    {
+    }
+
+
 }

@@ -58,7 +58,6 @@ public class JMSDestinationTest extends QpidBrokerTestCase
     private Connection _connection;
     private Session _session;
 
-    private static final String USER = "admin";
     private CountDownLatch _receiveMessage;
     private Message _message;
 
@@ -143,7 +142,7 @@ public class JMSDestinationTest extends QpidBrokerTestCase
     public void testMovedToQueue() throws Exception
     {
         // Setup JMXUtils
-        JMXTestUtils jmxUtils = new JMXTestUtils(this, USER, USER);
+        JMXTestUtils jmxUtils = new JMXTestUtils(this);
         jmxUtils.setUp();
         // Open the JMX Connection
         jmxUtils.open();

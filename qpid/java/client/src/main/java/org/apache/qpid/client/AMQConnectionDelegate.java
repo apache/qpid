@@ -50,6 +50,8 @@ public interface AMQConnectionDelegate
 
     XASession createXASession(int prefetchHigh, int prefetchLow) throws JMSException;
 
+    XASession createXASession(int ackMode) throws JMSException;
+
     void failoverPrep();
 
     void resubscribeSessions() throws JMSException, AMQException, FailoverException;

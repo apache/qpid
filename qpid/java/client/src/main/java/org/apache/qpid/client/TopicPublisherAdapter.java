@@ -123,7 +123,7 @@ public class TopicPublisherAdapter implements TopicPublisher
     public void send(Destination dest, Message msg) throws JMSException
     {
         checkPreConditions();
-        checkTopic(_topic);
+        checkTopic(dest);
         _delegate.send(dest, msg);
     }
 

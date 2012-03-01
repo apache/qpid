@@ -20,9 +20,17 @@
  */
 package org.apache.qpid.server.exchange;
 
-import junit.framework.TestCase;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -51,17 +59,6 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
-
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
 {
@@ -487,6 +484,32 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
                 public boolean isDispensed()
                 {
                     return false;
+                }
+
+                public QueueEntry getNextNode()
+                {
+                    return null;
+                }
+
+                public QueueEntry getNextValidEntry()
+                {
+                    return null;
+                }
+
+                @Override
+                public int getDeliveryCount()
+                {
+                    return 0;
+                }
+
+                @Override
+                public void incrementDeliveryCount()
+                {
+                }
+
+                @Override
+                public void decrementDeliveryCount()
+                {
                 }
             };
 

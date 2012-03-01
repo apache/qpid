@@ -20,6 +20,14 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.AMQSecurityException;
@@ -27,16 +35,28 @@ import org.apache.qpid.amqp_1_0.transport.DeliveryStateHandler;
 import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SendingLinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SendingLinkListener;
-import org.apache.qpid.amqp_1_0.type.*;
-
-import org.apache.qpid.amqp_1_0.type.messaging.*;
+import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
+import org.apache.qpid.amqp_1_0.type.Binary;
+import org.apache.qpid.amqp_1_0.type.DeliveryState;
+import org.apache.qpid.amqp_1_0.type.Outcome;
+import org.apache.qpid.amqp_1_0.type.Symbol;
+import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
+import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
+import org.apache.qpid.amqp_1_0.type.messaging.ExactSubjectFilter;
+import org.apache.qpid.amqp_1_0.type.messaging.Filter;
+import org.apache.qpid.amqp_1_0.type.messaging.JMSSelectorFilter;
+import org.apache.qpid.amqp_1_0.type.messaging.MatchingSubjectFilter;
+import org.apache.qpid.amqp_1_0.type.messaging.NoLocalFilter;
+import org.apache.qpid.amqp_1_0.type.messaging.Released;
 import org.apache.qpid.amqp_1_0.type.messaging.Source;
-import org.apache.qpid.amqp_1_0.type.transport.*;
-import org.apache.qpid.AMQException;
+import org.apache.qpid.amqp_1_0.type.messaging.StdDistMode;
+import org.apache.qpid.amqp_1_0.type.messaging.TerminusDurability;
+import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
+import org.apache.qpid.amqp_1_0.type.transport.Detach;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
+import org.apache.qpid.amqp_1_0.type.transport.Transfer;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.filter.JMSSelectorMessageFilter;
 import org.apache.qpid.server.filter.SimpleFilterManager;
@@ -46,9 +66,6 @@ import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryStateHandler
 {
@@ -140,7 +157,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
             try
             {
                 queue = AMQQueueFactory.createAMQQueueImpl(UUID.randomUUID().toString(), false, null, true,
-                        false, _vhost, Collections.EMPTY_MAP);
+                            false, _vhost, Collections.EMPTY_MAP);
                 Exchange exchange = ((ExchangeDestination) destination).getExchange();
 
                 String binding = "";
@@ -181,6 +198,9 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
             }
             catch (AMQInternalException e)
+            {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            } catch (AMQException e)
             {
                 e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
             }

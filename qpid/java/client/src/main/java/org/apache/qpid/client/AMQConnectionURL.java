@@ -34,7 +34,6 @@ import org.apache.qpid.url.URLSyntaxException;
 
 public class AMQConnectionURL implements ConnectionURL
 {
- 
     private String _url;
     private String _failoverMethod;
     private Map<String, String> _failoverOptions;
@@ -278,15 +277,6 @@ public class AMQConnectionURL implements ConnectionURL
             sb.append(_failoverMethod);
             sb.append(URLHelper.printOptions(_failoverOptions));
             sb.append("'");
-        }
-        
-        for (String key : _options.keySet())
-        {
-            if (!key.equals(OPTIONS_FAILOVER) || !key.equals(OPTIONS_BROKERLIST))
-            {
-                sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR).append(key).append("='");
-                sb.append(_options.get(key)).append("'");
-            }
         }
 
         return sb.toString();

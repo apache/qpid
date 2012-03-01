@@ -579,7 +579,7 @@ public class NavigationView extends ViewPart
         List<TreeObject> childNodes = typeNode.getChildren();
         for (TreeObject child : childNodes)
         {
-            if (MBEAN.equals(child.getType()) && mbeanName.equals(child.getName()))
+            if (MBEAN.equals(child.getType()) && mbeanName != null && mbeanName.equals(child.getName()))
             {
                 return true;
             }

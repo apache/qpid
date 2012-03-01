@@ -56,7 +56,7 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
     private static boolean CLUSTERED = Boolean.getBoolean("profile.clustered");
 
     /** Default number of messages to send before failover */
-    private static final int DEFAULT_NUMBER_OF_MESSAGES = 10;
+    private static final int DEFAULT_NUMBER_OF_MESSAGES = 40;
 
     /** Actual number of messages to send before failover */
     protected int _messageNumber = Integer.getInteger("profile.failoverMsgCount", DEFAULT_NUMBER_OF_MESSAGES);
@@ -1157,7 +1157,6 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
     {
         init(acknowledgeMode, false);
         _consumer.close();
-        QueueBrowser browser = _consumerSession.createBrowser((Queue) _destination);
         _connection.start();
 
         produceMessages(TEST_MESSAGE_FORMAT, _messageNumber, false);
@@ -1165,6 +1164,8 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
         {
             _producerSession.commit();
         }
+
+        QueueBrowser browser = _consumerSession.createBrowser((Queue) _destination);
         return browser;
     }
 

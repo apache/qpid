@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.server.logging;
 
-import junit.framework.AssertionFailedError;
 
 import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.util.LogMonitor;
 
 import java.util.List;
@@ -41,6 +41,8 @@ import java.io.File;
  * MNG-1004 : Ready
  * MNG-1005 : Stopped
  * MNG-1006 : Using SSL Keystore : <path>
+ * MNG-1007 : Open : User <username>
+ * MNG-1008 : Close : User <username>
  */
 public class ManagementLoggingTest extends AbstractTestLogging
 {
@@ -86,33 +88,24 @@ public class ManagementLoggingTest extends AbstractTestLogging
             waitForMessage("MNG-1001");
 
             List<String> results = findMatches(MNG_PREFIX);
-            
-            try
-            {
-                // Validation
+            // Validation
 
-                assertTrue("MNGer message not logged", results.size() > 0);
+            assertTrue("MNGer message not logged", results.size() > 0);
 
-                String log = getLogMessage(results, 0);
+            String log = getLogMessage(results, 0);
 
-                //1
-                validateMessageID("MNG-1001", log);
+            //1
+            validateMessageID("MNG-1001", log);
 
-                //2
-                //There will be 2 copies of the startup message (one via SystemOut, and one via Log4J)
-                results = findMatches("MNG-1001");
-                assertEquals("Unexpected startup message count.",
-                             2, results.size());
+            //2
+            //There will be 2 copies of the startup message (one via SystemOut, and one via Log4J)
+            results = findMatches("MNG-1001");
+            assertEquals("Unexpected startup message count.",
+                         2, results.size());
 
-                //3
-                assertEquals("Startup log message is not 'Startup'.", "Startup",
-                             getMessageString(log));
-            }
-            catch (AssertionFailedError afe)
-            {
-                dumpLogs(results, _monitor);
-                throw afe;
-            }
+            //3
+            assertEquals("Startup log message is not 'Startup'.", "Startup",
+                         getMessageString(log));
         }
     }
 
@@ -135,17 +128,9 @@ public class ManagementLoggingTest extends AbstractTestLogging
             startBrokerAndCreateMonitor(false, false);
 
             List<String> results = findMatches(MNG_PREFIX);
-            try
-            {
-                // Validation
+            // Validation
 
-                assertEquals("MNGer messages logged", 0, results.size());
-            }
-            catch (AssertionFailedError afe)
-            {
-                dumpLogs(results, _monitor);
-                throw afe;
-            }
+            assertEquals("MNGer messages logged", 0, results.size());
         }
     }
 
@@ -194,39 +179,31 @@ public class ManagementLoggingTest extends AbstractTestLogging
             startBrokerAndCreateMonitor(true, false);
             
             List<String> results = waitAndFindMatches("MNG-1002");
-            try
-            {
-                // Validation
+            // Validation
 
-                //There will be 4 startup messages (two via SystemOut, and two via Log4J)
-                assertEquals("Unexpected MNG-1002 message count", 4, results.size());
+            //There will be 4 startup messages (two via SystemOut, and two via Log4J)
+            assertEquals("Unexpected MNG-1002 message count", 4, results.size());
 
-                String log = getLogMessage(results, 0);
+            String log = getLogMessage(results, 0);
 
-                //1
-                validateMessageID("MNG-1002", log);
+            //1
+            validateMessageID("MNG-1002", log);
 
-                //Check the RMI Registry port is as expected
-                int mPort = getManagementPort(getPort());
-                assertTrue("RMI Registry port not as expected(" + mPort + ").:" + getMessageString(log),
-                           getMessageString(log).endsWith(String.valueOf(mPort)));
+            //Check the RMI Registry port is as expected
+            int mPort = getManagementPort(getPort());
+            assertTrue("RMI Registry port not as expected(" + mPort + ").:" + getMessageString(log),
+                       getMessageString(log).endsWith(String.valueOf(mPort)));
 
-                log = getLogMessage(results, 2);
+            log = getLogMessage(results, 2);
 
-                //1
-                validateMessageID("MNG-1002", log);
+            //1
+            validateMessageID("MNG-1002", log);
 
-                // We expect the RMI Registry port (the defined 'management port') to be
-                // 100 lower than the JMX RMIConnector Server Port (the actual JMX server)
-                int jmxPort = mPort + ServerConfiguration.JMXPORT_CONNECTORSERVER_OFFSET;
-                assertTrue("JMX RMIConnectorServer port not as expected(" + jmxPort + ").:" + getMessageString(log),
-                           getMessageString(log).endsWith(String.valueOf(jmxPort)));
-            }
-            catch (AssertionFailedError afe)
-            {
-                dumpLogs(results, _monitor);
-                throw afe;
-            }
+            // We expect the RMI Registry port (the defined 'management port') to be
+            // 100 lower than the JMX RMIConnector Server Port (the actual JMX server)
+            int jmxPort = mPort + ServerConfiguration.JMXPORT_CONNECTORSERVER_OFFSET;
+            assertTrue("JMX RMIConnectorServer port not as expected(" + jmxPort + ").:" + getMessageString(log),
+                       getMessageString(log).endsWith(String.valueOf(jmxPort)));
         }
     }
 
@@ -251,35 +228,75 @@ public class ManagementLoggingTest extends AbstractTestLogging
             startBrokerAndCreateMonitor(true, true);
 
             List<String> results = waitAndFindMatches("MNG-1006");
+
+            assertTrue("MNGer message not logged", results.size() > 0);
+
+            String log = getLogMessage(results, 0);
+
+            //1
+            validateMessageID("MNG-1006", log);
+
+            // Validate we only have two MNG-1002 (one via stdout, one via log4j)
+            results = findMatches("MNG-1006");
+            assertEquals("Upexpected SSL Keystore message count",
+                         2, results.size());
+
+            // Validate the keystore path is as expected
+            assertTrue("SSL Keystore entry expected.:" + getMessageString(log),
+                       getMessageString(log).endsWith(new File(getConfigurationStringProperty("management.ssl.keyStorePath")).getName()));
+        }
+    }
+
+    /**
+     * Description: Tests the management connection open/close are logged correctly.
+     *
+     * Output:
+     *
+     * <date> MESSAGE MNG-1007 : Open : User <username>
+     * <date> MESSAGE MNG-1008 : Close : User <username>
+     *
+     * Validation Steps:
+     *
+     * 1. The MNG ID is correct
+     * 2. The message and username are correct
+     */
+    public void testManagementUserOpenClose() throws Exception
+    {
+        if (isJavaBroker())
+        {
+            startBrokerAndCreateMonitor(true, false);
+
+            final JMXTestUtils jmxUtils = new JMXTestUtils(this);
+            List<String> openResults = null;
+            List<String> closeResults = null;
             try
             {
-                // Validation
-
-                assertTrue("MNGer message not logged", results.size() > 0);
-
-                String log = getLogMessage(results, 0);
-
-                //1
-                validateMessageID("MNG-1006", log);
-
-                // Validate we only have two MNG-1002 (one via stdout, one via log4j)
-                results = findMatches("MNG-1006");
-                assertEquals("Upexpected SSL Keystore message count",
-                             2, results.size());
-
-                // Validate the keystore path is as expected
-                assertTrue("SSL Keystore entry expected.:" + getMessageString(log),
-                           getMessageString(log).endsWith(new File(getConfigurationStringProperty("management.ssl.keyStorePath")).getName()));
+                jmxUtils.setUp();
+                jmxUtils.open();
+                openResults = waitAndFindMatches("MNG-1007");
             }
-            catch (AssertionFailedError afe)
+            finally
             {
-                dumpLogs(results, _monitor);
-                throw afe;
+                if (jmxUtils != null)
+                {
+                    jmxUtils.close();
+                    closeResults = waitAndFindMatches("MNG-1008");
+                }
             }
-        }
 
+            assertNotNull("Management Open results null", openResults.size());
+            assertEquals("Management Open logged unexpected number of times", 1, openResults.size());
+
+            assertNotNull("Management Close results null", closeResults.size());
+            assertEquals("Management Close logged unexpected number of times", 1, closeResults.size());
+
+            final String openMessage = getMessageString(getLogMessage(openResults, 0));
+            assertTrue("Unexpected open message " + openMessage, openMessage.endsWith("Open : User admin"));
+            final String closeMessage = getMessageString(getLogMessage(closeResults, 0));
+            assertTrue("Unexpected close message " + closeMessage, closeMessage.endsWith("Close : User admin"));
+        }
     }
-    
+
     private void startBrokerAndCreateMonitor(boolean managementEnabled, boolean useManagementSSL) throws Exception
     {
         //Ensure management is on

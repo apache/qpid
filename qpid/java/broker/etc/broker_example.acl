@@ -1,0 +1,63 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+### EXAMPLE ACL V2 FILE
+
+### DEFINE GROUPS ###
+
+#Define a 'messaging-users' group with users  'client' and  'server' in it
+GROUP messaging-users client server
+
+### MANAGEMENT ####
+
+#Allow 'guest' to perform read operations on the Serverinformation mbean and view logger levels
+ACL ALLOW-LOG guest ACCESS METHOD component="ServerInformation"
+ACL ALLOW-LOG guest ACCESS METHOD component="LoggingManagement" name="viewEffectiveRuntimeLoggerLevels"
+
+#Allow 'admin' all management operations
+ACL ALLOW-LOG admin ALL METHOD
+
+### MESSAGING ###
+
+#Example permissions for request-response based messaging.
+
+#Allow 'messaging-users' group to connect to the virtualhost
+ACL ALLOW-LOG messaging-users ACCESS VIRTUALHOST
+
+# Client side
+# Allow the 'client' user to publish requests to the request queue and create, consume from, and delete temporary reply queues.
+ACL ALLOW-LOG client CREATE QUEUE temporary="true"
+ACL ALLOW-LOG client CONSUME QUEUE temporary="true"
+ACL ALLOW-LOG client DELETE QUEUE temporary="true"
+ACL ALLOW-LOG client BIND EXCHANGE name="amq.direct" temporary="true"
+ACL ALLOW-LOG client UNBIND EXCHANGE name="amq.direct" temporary="true"
+ACL ALLOW-LOG client PUBLISH EXCHANGE name="amq.direct" routingKey="example.RequestQueue"
+
+# Server side
+# Allow the 'server' user to create and consume from the request queue and publish a response to the temporary response queue created by
+# client.
+ACL ALLOW-LOG server CREATE QUEUE name="example.RequestQueue"
+ACL ALLOW-LOG server CONSUME QUEUE name="example.RequestQueue"
+ACL ALLOW-LOG server BIND EXCHANGE
+ACL ALLOW-LOG server PUBLISH EXCHANGE name="amq.direct" routingKey="TempQueue*"
+
+### DEFAULT ###
+
+#Deny all users from performing all operations
+ACL DENY-LOG all all

@@ -823,7 +823,7 @@ public class QpidBrokerTestCase extends QpidTestCase
      * @throws ConfigurationException when loading the current config file
      * @throws IOException            when writing the new config file
      */
-    protected void setConfigurationProperty(String property, String value)
+    public void setConfigurationProperty(String property, String value)
             throws ConfigurationException, IOException
     {
         // Choose which file to write the property to based on prefix.
@@ -945,7 +945,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected boolean isJavaBroker()
     {
-        return _brokerLanguage.equals("java") || _brokerType.equals("vm");
+        return _brokerLanguage.equals("java");
     }
 
     protected boolean isCppBroker()
@@ -955,7 +955,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected boolean isExternalBroker()
     {
-        return !_brokerType.equals("vm"); //TODO
+        return !isInternalBroker();
     }
 
     protected boolean isInternalBroker()
@@ -1326,7 +1326,7 @@ public class QpidBrokerTestCase extends QpidTestCase
      */
     public void reloadBrokerSecurityConfig() throws Exception
     {
-        JMXTestUtils jmxu = new JMXTestUtils(this, "admin" , "admin");
+        JMXTestUtils jmxu = new JMXTestUtils(this);
         jmxu.open();
         
         try

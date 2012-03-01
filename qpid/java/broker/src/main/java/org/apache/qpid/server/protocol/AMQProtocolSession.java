@@ -32,6 +32,7 @@ import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
+import org.apache.qpid.server.subscription.ClientDeliveryMethod;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.List;
@@ -48,6 +49,14 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
     long getMaxFrameSize();
 
     boolean isClosing();
+
+    void flushBatched();
+
+    void setDeferFlush(boolean defer);
+
+    ClientDeliveryMethod createDeliveryMethod(int channelId);
+
+    long getLastReceivedTime();
 
     public static final class ProtocolSessionIdentifier
     {
@@ -75,15 +84,6 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
     {
         public void doTask(AMQProtocolSession session) throws AMQException;
     }
-
-    /**
-     * Called when a protocol data block is received
-     *
-     * @param message the data block that has been received
-     *
-     * @throws Exception if processing the datablock fails
-     */
-    void dataBlockReceived(AMQDataBlock message) throws Exception;
 
     /**
      * Get the context key associated with this session. Context key is described in the AMQ protocol specification (RFC
@@ -234,4 +234,5 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
     List<AMQChannel> getChannels();
 
     void mgmtCloseChannel(int channelId);
+
 }

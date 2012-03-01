@@ -22,7 +22,6 @@ package org.apache.qpid.server;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQMethodBody;
@@ -53,6 +52,7 @@ import org.apache.qpid.server.logging.messages.ChannelMessages;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.logging.subjects.ChannelLogSubject;
 import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
@@ -63,6 +63,7 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.queue.InboundMessageAdapter;
 import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -693,6 +694,31 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
 
     }
 
+    public boolean isMaxDeliveryCountEnabled(final long deliveryTag)
+    {
+        final QueueEntry queueEntry = _unacknowledgedMessageMap.get(deliveryTag);
+        if (queueEntry != null)
+        {
+            final int maximumDeliveryCount = queueEntry.getQueue().getMaximumDeliveryCount();
+            return maximumDeliveryCount > 0;
+        }
+
+        return false;
+    }
+
+    public boolean isDeliveredTooManyTimes(final long deliveryTag)
+    {
+        final QueueEntry queueEntry = _unacknowledgedMessageMap.get(deliveryTag);
+        if (queueEntry != null)
+        {
+            final int maximumDeliveryCount = queueEntry.getQueue().getMaximumDeliveryCount();
+            final int numDeliveries = queueEntry.getDeliveryCount();
+            return maximumDeliveryCount != 0 && numDeliveries >= maximumDeliveryCount;
+        }
+
+        return false;
+    }
+
     /**
      * Called to resend all outstanding unacknowledged messages to this same channel.
      *
@@ -740,9 +766,9 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             QueueEntry message = entry.getValue();
             long deliveryTag = entry.getKey();
 
+            //Amend the delivery counter as the client hasn't seen these messages yet.
+            message.decrementDeliveryCount();
 
-
-            ServerMessage msg = message.getMessage();
             AMQQueue queue = message.getQueue();
 
             // Our Java Client will always suspend the channel when resending!
@@ -800,6 +826,10 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
         {
             QueueEntry message = entry.getValue();
             long deliveryTag = entry.getKey();
+
+            //Amend the delivery counter as the client hasn't seen these messages yet.
+            message.decrementDeliveryCount();
+
             _unacknowledgedMessageMap.remove(deliveryTag);
 
             message.setRedelivered();
@@ -1060,6 +1090,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
                 getProtocolSession().getProtocolOutputConverter().writeDeliver(entry, getChannelId(),
                                                                                deliveryTag,
                                                                                ((SubscriptionImpl)sub).getConsumerTag());
+                entry.incrementDeliveryCount();
             }
 
         };
@@ -1247,7 +1278,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
     private class MessageAcknowledgeAction implements ServerTransaction.Action
     {
         private final Collection<QueueEntry> _ackedMessages;
-
 
         public MessageAcknowledgeAction(Collection<QueueEntry> ackedMessages)
         {
@@ -1479,6 +1509,56 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             {
                 getConnectionModel().closeSession(this, AMQConstant.RESOURCE_ERROR, "Open transaction timed out");
             }
+        }
+    }
+
+    public void deadLetter(long deliveryTag) throws AMQException
+    {
+        final UnacknowledgedMessageMap unackedMap = getUnacknowledgedMessageMap();
+        final QueueEntry rejectedQueueEntry = unackedMap.get(deliveryTag);
+
+        if (rejectedQueueEntry == null)
+        {
+            _logger.warn("No message found, unable to DLQ delivery tag: " + deliveryTag);
+            return;
+        }
+        else
+        {
+            final ServerMessage msg = rejectedQueueEntry.getMessage();
+
+            final AMQQueue queue = rejectedQueueEntry.getQueue();
+
+            final Exchange altExchange = queue.getAlternateExchange();
+            unackedMap.remove(deliveryTag);
+
+            if (altExchange == null)
+            {
+                _logger.debug("No alternate exchange configured for queue, must discard the message as unable to DLQ: delivery tag: " + deliveryTag);
+                _actor.message(_logSubject, ChannelMessages.DISCARDMSG_NOALTEXCH(msg.getMessageNumber(), queue.getName(), msg.getRoutingKey()));
+                rejectedQueueEntry.discard();
+                return;
+            }
+
+            final InboundMessage m = new InboundMessageAdapter(rejectedQueueEntry);
+
+            final ArrayList<? extends BaseQueue> destinationQueues = altExchange.route(m);
+
+            if (destinationQueues == null || destinationQueues.isEmpty())
+            {
+                _logger.debug("Routing process provided no queues to enqueue the message on, must discard message as unable to DLQ: delivery tag: " + deliveryTag);
+                _actor.message(_logSubject, ChannelMessages.DISCARDMSG_NOROUTE(msg.getMessageNumber(), altExchange.getName()));
+                rejectedQueueEntry.discard();
+                return;
+            }
+
+            rejectedQueueEntry.routeToAlternate();
+
+            //output operational logging for each delivery post commit
+            for (final BaseQueue destinationQueue : destinationQueues)
+            {
+                _actor.message(_logSubject, ChannelMessages.DEADLETTERMSG(msg.getMessageNumber(), destinationQueue.getNameShortString().asString()));
+            }
+
         }
     }
 }

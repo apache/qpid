@@ -117,7 +117,7 @@ public class FanoutExchange extends AbstractExchange
 
     public boolean isBound(AMQShortString routingKey, AMQQueue queue)
     {
-        return _queues.contains(queue);
+        return _queues.containsKey(queue);
     }
 
     public boolean isBound(AMQShortString routingKey)
@@ -129,7 +129,7 @@ public class FanoutExchange extends AbstractExchange
     public boolean isBound(AMQQueue queue)
     {
 
-        return _queues.contains(queue);
+        return _queues.containsKey(queue);
     }
 
     public boolean hasBindings()

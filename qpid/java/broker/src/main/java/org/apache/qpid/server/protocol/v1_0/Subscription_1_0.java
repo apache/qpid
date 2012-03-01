@@ -20,6 +20,13 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
+import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.amqp_1_0.transport.SendingLinkEndpoint;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.DeliveryState;
@@ -31,23 +38,13 @@ import org.apache.qpid.amqp_1_0.type.messaging.StdDistMode;
 import org.apache.qpid.amqp_1_0.type.transaction.TransactionalState;
 import org.apache.qpid.amqp_1_0.type.transport.SenderSettleMode;
 import org.apache.qpid.amqp_1_0.type.transport.Transfer;
-
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.message.MessageTransferMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.ServerTransaction;
-
-import java.nio.ByteBuffer;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.ReentrantLock;
 
 class Subscription_1_0 implements Subscription
 {
@@ -169,6 +166,17 @@ class Subscription_1_0 implements Subscription
     public void close()
     {
         getEndpoint().detach();
+    }
+
+    public void send(QueueEntry entry, boolean batch) throws AMQException
+    {
+        // TODO
+        send(entry);
+    }
+
+    public void flushBatched()
+    {
+        // TODO
     }
 
     public void send(final QueueEntry queueEntry) throws AMQException
@@ -296,6 +304,11 @@ class Subscription_1_0 implements Subscription
         return !hasCredit;
     }
 
+    public boolean trySendLock()
+    {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public void suspend()
     {
         if(_state.compareAndSet(State.ACTIVE, State.SUSPENDED))
@@ -312,6 +325,11 @@ class Subscription_1_0 implements Subscription
     public void releaseSendLock()
     {
         _stateChangeLock.unlock();
+    }
+
+    public void releaseQueueEntry(QueueEntry queueEntryImpl)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 
 

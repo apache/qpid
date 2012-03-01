@@ -250,13 +250,13 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
         try
         {
+            initialiseManagedObjectRegistry();
+
             configure();
 
             _qmfService = new QMFService(getConfigStore(), this);
 
             CurrentActor.get().message(BrokerMessages.STARTUP(QpidProperties.getReleaseVersion(), QpidProperties.getBuildVersion()));
-
-            initialiseManagedObjectRegistry();
 
             _virtualHostRegistry = new VirtualHostRegistry(this);
 
@@ -471,11 +471,11 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
         close(_authenticationManager);
 
-        close(_managedObjectRegistry);
-
         close(_qmfService);
 
         close(_pluginManager);
+
+        close(_managedObjectRegistry);
 
         CurrentActor.get().message(BrokerMessages.STOPPED());
     }

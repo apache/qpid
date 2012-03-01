@@ -22,6 +22,8 @@ package org.apache.qpid.transport;
 
 import java.util.Map;
 
+import org.apache.qpid.configuration.ClientProperties;
+
 /**
  * A ConnectionSettings object can only be associated with
  * one Connection object. I have added an assertion that will
@@ -38,7 +40,8 @@ public class ConnectionSettings
     String username = "guest";
     String password = "guest";
     int port = 5672;
-    boolean tcpNodelay = Boolean.getBoolean("amqj.tcp_nodelay");
+    boolean tcpNodelay = Boolean.valueOf(System.getProperty(ClientProperties.QPID_TCP_NODELAY_PROP_NAME,
+                                         System.getProperty(ClientProperties.AMQJ_TCP_NODELAY_PROP_NAME, "true")));
     int maxChannelCount = 32767;
     int maxFrameSize = 65535;
     int heartbeatInterval;

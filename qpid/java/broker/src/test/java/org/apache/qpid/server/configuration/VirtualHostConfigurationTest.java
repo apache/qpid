@@ -21,7 +21,6 @@ package org.apache.qpid.server.configuration;
 
 
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQPriorityQueue;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -32,19 +31,6 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
 {
-
-    @Override
-    public void setUp() throws Exception
-    {
-        super.setUp();
-        // Set the default configuration items
-        getConfigXml().clear();
-        getConfigXml().addProperty("virtualhosts.virtualhost(-1).name", "test");
-        getConfigXml().addProperty("virtualhosts.virtualhost(-1).test.store.class", TestableMemoryMessageStore.class.getName());
-
-        getConfigXml().addProperty("virtualhosts.virtualhost.name", getName());
-        getConfigXml().addProperty("virtualhosts.virtualhost."+getName()+".store.class", TestableMemoryMessageStore.class.getName());
-    }
 
     @Override
     public void createBroker()
@@ -134,6 +120,88 @@ public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
         assertEquals(3, bTest.getMaximumMessageAge());
     }
 
+    public void testMaxDeliveryCount() throws Exception
+    {
+        // Set up vhosts and queues
+        getConfigXml().addProperty("virtualhosts.virtualhost." + getName() + ".queues.maximumDeliveryCount", 5);
+        getConfigXml().addProperty("virtualhosts.virtualhost." + getName() + ".queues(-1).queue(-1).name", "biggles");
+        getConfigXml().addProperty("virtualhosts.virtualhost." + getName() + ".queues.queue.biggles.maximumDeliveryCount", 4);
+        getConfigXml().addProperty("virtualhosts.virtualhost." + getName() + ".queues(-1).queue(-1).name", "beetle");
+
+        // Start the broker now.
+        super.createBroker();
+
+        // Get vhosts
+        VirtualHost test = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(getName());
+
+        // Enabled specifically
+        assertEquals("Test vhost MDC was configured as enabled", 5 ,test.getConfiguration().getMaxDeliveryCount());
+
+        // Enabled by test vhost default
+        assertEquals("beetle queue DLQ was configured as enabled", test.getConfiguration().getMaxDeliveryCount(), test.getConfiguration().getQueueConfiguration("beetle").getMaxDeliveryCount());
+
+        // Disabled specifically
+        assertEquals("Biggles queue DLQ was configured as disabled", 4, test.getConfiguration().getQueueConfiguration("biggles").getMaxDeliveryCount());
+    }
+
+    /**
+     * Tests the full set of configuration options for enabling DLQs in the broker configuration.
+     */
+    public void testIsDeadLetterQueueEnabled() throws Exception
+    {
+        // Set up vhosts and queues
+        getConfigXml().addProperty("virtualhosts.virtualhost." + getName() + ".queues.deadLetterQueues", "true");
+        getConfigXml().addProperty("virtualhosts.virtualhost." + getName() + ".queues(-1).queue(-1).name", "biggles");
+        getConfigXml().addProperty("virtualhosts.virtualhost." + getName() + ".queues.queue.biggles.deadLetterQueues", "false");
+        getConfigXml().addProperty("virtualhosts.virtualhost." + getName() + ".queues(-1).queue(-1).name", "beetle");
+
+
+        getConfigXml().addProperty("virtualhosts.virtualhost.name", getName() + "Extra");
+        getConfigXml().addProperty("virtualhosts.virtualhost." + getName() + "Extra.queues(-1).queue(-1).name", "r2d2");
+        getConfigXml().addProperty("virtualhosts.virtualhost." + getName() + "Extra.queues.queue.r2d2.deadLetterQueues", "true");
+        getConfigXml().addProperty("virtualhosts.virtualhost." + getName() + "Extra.queues(-1).queue(-1).name", "c3p0");
+        getConfigXml().addProperty("virtualhosts.virtualhost." + getName() + "Extra.store.class", TestableMemoryMessageStore.class.getName());
+
+        // Start the broker now.
+        super.createBroker();
+
+        // Get vhosts
+        VirtualHost test = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(getName());
+        VirtualHost extra = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(getName() + "Extra");
+
+        // Enabled specifically
+        assertTrue("Test vhost DLQ was configured as enabled", test.getConfiguration().isDeadLetterQueueEnabled());
+        assertTrue("r2d2 queue DLQ was configured as enabled", extra.getConfiguration().getQueueConfiguration("r2d2").isDeadLetterQueueEnabled());
+
+        // Enabled by test vhost default
+        assertTrue("beetle queue DLQ was configured as enabled", test.getConfiguration().getQueueConfiguration("beetle").isDeadLetterQueueEnabled());
+
+        // Disabled specifically
+        assertFalse("Biggles queue DLQ was configured as disabled", test.getConfiguration().getQueueConfiguration("biggles").isDeadLetterQueueEnabled());
+
+        // Using broker default of disabled
+        assertFalse("Extra vhost DLQ disabled, using broker default", extra.getConfiguration().isDeadLetterQueueEnabled());
+        assertFalse("c3p0 queue DLQ was configured as disabled", extra.getConfiguration().getQueueConfiguration("c3p0").isDeadLetterQueueEnabled());
+
+        // Get queues
+        AMQQueue biggles = test.getQueueRegistry().getQueue(new AMQShortString("biggles"));
+        AMQQueue beetle = test.getQueueRegistry().getQueue(new AMQShortString("beetle"));
+        AMQQueue r2d2 = extra.getQueueRegistry().getQueue(new AMQShortString("r2d2"));
+        AMQQueue c3p0 = extra.getQueueRegistry().getQueue(new AMQShortString("c3p0"));
+
+        // Disabled specifically for this queue, overriding virtualhost setting
+        assertNull("Biggles queue should not have alt exchange as DLQ should be configured as disabled: " + biggles.getAlternateExchange(), biggles.getAlternateExchange());
+
+        // Enabled for all queues on the virtualhost
+        assertNotNull("Beetle queue should have an alt exchange as DLQ should be enabled, using test vhost default", beetle.getAlternateExchange());
+
+        // Enabled specifically for this queue, overriding the default broker setting of disabled
+        assertNotNull("R2D2 queue should have an alt exchange as DLQ should be configured as enabled", r2d2.getAlternateExchange());
+
+        // Disabled by the default broker setting
+        assertNull("C3PO queue should not have an alt exchange as DLQ should be disabled, using broker default", c3p0.getAlternateExchange());
+    }
+
     /**
      * Test that the house keeping pool sizes is correctly processed
      *
@@ -173,7 +241,7 @@ public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
                      vhost.getHouseKeepingTaskCount());
 
         // Currently the two are tasks:
-        // ExpiredMessageTask from VirtualHost        
+        // ExpiredMessageTask from VirtualHost
         // UpdateTask from the QMF ManagementExchange
     }
 
@@ -214,7 +282,7 @@ public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
      {
          getConfigXml().addProperty("virtualhosts.virtualhost.testSecurityAuthenticationNameRejected.security.authentication.name",
                  "testdb");
-         
+
          try
          {
              super.createBroker();

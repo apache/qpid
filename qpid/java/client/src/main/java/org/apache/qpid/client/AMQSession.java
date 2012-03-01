@@ -310,7 +310,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     /** Holds the highest received delivery tag. */
     protected final AtomicLong _highestDeliveryTag = new AtomicLong(-1);
     private final AtomicLong _rollbackMark = new AtomicLong(-1);
-    
+
+    /** Pre-fetched message tags */
+    protected ConcurrentLinkedQueue<Long> _prefetchedMessageTags = new ConcurrentLinkedQueue<Long>();
+
     /** All the not yet acknowledged message tags */
     protected ConcurrentLinkedQueue<Long> _unacknowledgedMessageTags = new ConcurrentLinkedQueue<Long>();
 
@@ -2925,11 +2928,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         _producers.put(new Long(producerId), producer);
     }
 
-    private void rejectAllMessages(boolean requeue)
-    {
-        rejectMessagesForConsumerTag(0, requeue, true);
-    }
-
     /**
      * @param consumerTag The consumerTag to prune from queue or all if null
      * @param requeue     Should the removed messages be requeued (or discarded. Possibly to DLQ)
@@ -3235,7 +3233,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 for (C consumer : _consumers.values())
                 {
                     List<Long> tags = consumer.drainReceiverQueueAndRetrieveDeliveryTags();
-                    _unacknowledgedMessageTags.addAll(tags);
+                    _prefetchedMessageTags.addAll(tags);
                 }
 
                 setConnectionStopped(isStopped);
@@ -3345,7 +3343,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 }
                 else if (_usingDispatcherForCleanup)
                 {
-                    _unacknowledgedMessageTags.add(deliveryTag);            
+                    _prefetchedMessageTags.add(deliveryTag);
                 }
                 else
                 {
@@ -3548,4 +3546,5 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             _logger.debug("Rollback mark is set to " + _rollbackMark.get());
         }
     }
+
 }

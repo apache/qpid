@@ -40,6 +40,8 @@ import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+import org.apache.qpid.server.exchange.DefaultExchangeFactory;
+import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.signal.SignalHandlerTask;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -805,4 +807,39 @@ public class ServerConfiguration extends ConfigurationPlugin
         final List<String> disabledFeatures = getListValue("disabledFeatures", Collections.emptyList());
         return disabledFeatures;
     }
+
+    public boolean getManagementRightsInferAllAccess()
+    {
+        return getBooleanValue("management.managementRightsInferAllAccess", true);
+    }
+
+    public int getMaxDeliveryCount()
+    {
+        return getConfig().getInt("maximumDeliveryCount", 0);
+    }
+
+    /**
+     * Check if dead letter queue delivery is enabled, defaults to disabled if not set.
+     */
+    public boolean isDeadLetterQueueEnabled()
+    {
+        return getConfig().getBoolean("deadLetterQueues", false);
+    }
+
+    /**
+     * String to affix to end of queue name when generating an alternate exchange for DLQ purposes.
+     */
+    public String getDeadLetterExchangeSuffix()
+    {
+        return getConfig().getString("deadLetterExchangeSuffix", DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
+    }
+
+    /**
+     * String to affix to end of queue name when generating a queue for DLQ purposes.
+     */
+    public String getDeadLetterQueueSuffix()
+    {
+        return getConfig().getString("deadLetterQueueSuffix", AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
+    }
+
 }

@@ -20,10 +20,8 @@ package org.apache.qpid.server.security;
 
 import static org.apache.qpid.server.security.access.ObjectType.EXCHANGE;
 import static org.apache.qpid.server.security.access.ObjectType.METHOD;
-import static org.apache.qpid.server.security.access.ObjectType.OBJECT;
 import static org.apache.qpid.server.security.access.ObjectType.QUEUE;
 import static org.apache.qpid.server.security.access.ObjectType.VIRTUALHOST;
-import static org.apache.qpid.server.security.access.Operation.ACCESS;
 import static org.apache.qpid.server.security.access.Operation.BIND;
 import static org.apache.qpid.server.security.access.Operation.CONSUME;
 import static org.apache.qpid.server.security.access.Operation.CREATE;
@@ -67,7 +65,14 @@ public class SecurityManager
     
     /** Container for the {@link Principal} that is using to this thread. */
     private static final ThreadLocal<Subject> _subject = new ThreadLocal<Subject>();
-    
+    private static final ThreadLocal<Boolean> _accessChecksDisabled = new ThreadLocal<Boolean>()
+    {
+        protected Boolean initialValue()
+        {
+            return false;
+        }
+    };
+
     private PluginManager _pluginManager;
     private Map<String, SecurityPluginFactory> _pluginFactories = new HashMap<String, SecurityPluginFactory>();
     private Map<String, SecurityPlugin> _globalPlugins = new HashMap<String, SecurityPlugin>();
@@ -194,6 +199,11 @@ public class SecurityManager
 
     private boolean checkAllPlugins(AccessCheck checker)
     {
+        if(_accessChecksDisabled.get())
+        {
+            return true;
+        }
+
         HashMap<String, SecurityPlugin> remainingPlugins = new HashMap<String, SecurityPlugin>(_globalPlugins);
 		
 		for (Entry<String, SecurityPlugin> hostEntry : _hostPlugins.entrySet())
@@ -273,21 +283,6 @@ public class SecurityManager
             }
         });
     }
-    
-    // TODO not implemented yet, awaiting consensus
-    public boolean authoriseObject(final String packageName, final String className)
-    {
-        return checkAllPlugins(new AccessCheck()
-        {
-            Result allowed(SecurityPlugin plugin)
-            {
-                ObjectProperties properties = new ObjectProperties();
-                properties.put(ObjectProperties.Property.PACKAGE, packageName);
-                properties.put(ObjectProperties.Property.CLASS, className);
-                return plugin.authorise(ACCESS, OBJECT, properties);
-            }
-        });
-    }
 
     public boolean authoriseMethod(final Operation operation, final String componentName, final String methodName)
     {
@@ -325,17 +320,6 @@ public class SecurityManager
             Result allowed(SecurityPlugin plugin)
             {
                 return plugin.authorise(CONSUME, QUEUE, new ObjectProperties(queue));
-            }
-        });
-    }
-
-    public boolean authoriseConsume(final boolean exclusive, final boolean noAck, final boolean noLocal, final boolean nowait, final AMQQueue queue)
-    {
-        return checkAllPlugins(new AccessCheck()
-        {
-            Result allowed(SecurityPlugin plugin)
-            {
-                return plugin.authorise(CONSUME, QUEUE, new ObjectProperties(exclusive, noAck, noLocal, nowait, queue));
             }
         });
     }
@@ -418,5 +402,15 @@ public class SecurityManager
                 return plugin.authorise(UNBIND, EXCHANGE, new ObjectProperties(exch, queue, routingKey));
             }
         });
+    }
+
+    public static boolean setAccessChecksDisabled(final boolean status)
+    {
+        //remember current value
+        boolean current = _accessChecksDisabled.get();
+
+        _accessChecksDisabled.set(status);
+
+        return current;
     }
 }

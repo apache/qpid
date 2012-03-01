@@ -69,7 +69,6 @@ public class RuleSetTest extends QpidTestCase
         super.setUp();
 
         _ruleSet = new RuleSet();
-        _ruleSet.configure(RuleSet.TRANSITIVE, Boolean.FALSE);
     }
 
     @Override

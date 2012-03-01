@@ -55,11 +55,10 @@ public class ProducerFlowControlTest extends AbstractTestLogging
 
     private JMXTestUtils _jmxUtils;
     private boolean _jmxUtilConnected;
-    private static final String USER = "admin";
 
     public void setUp() throws Exception
     {
-        _jmxUtils = new JMXTestUtils(this, USER , USER);
+        _jmxUtils = new JMXTestUtils(this);
         _jmxUtils.setUp();
         _jmxUtilConnected=false;
         super.setUp();

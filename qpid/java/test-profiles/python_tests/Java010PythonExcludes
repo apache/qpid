@@ -66,19 +66,8 @@ qpid.tests.messaging.endpoints.SessionTests.testDoubleCommit
 qpid_tests.broker_0_10.message.MessageTests.test_credit_flow_bytes
 qpid_tests.broker_0_10.message.MessageTests.test_window_flow_bytes
 
-#QPID-3592 Fails to receive more messages after restart
-qpid_tests.broker_0_10.message.MessageTests.test_window_stop
-
-#QPID-3539 Tests fail because is incorrectly being done per session and not connection
-qpid_tests.broker_0_10.message.MessageTests.test_no_local
+#QPID-3605 Durable subscriber with no-local true receives messages on re-connection
 qpid_tests.broker_0_10.message.MessageTests.test_no_local_awkward
-qpid_tests.broker_0_10.message.MessageTests.test_no_local_exclusive_subscribe
-
-#QPID-3593 Priority Queue test failures
-qpid_tests.broker_0_10.priority.PriorityTests.test_browsing
-qpid_tests.broker_0_10.priority.PriorityTests.test_prioritised_delivery_1
-qpid_tests.broker_0_10.priority.PriorityTests.test_prioritised_delivery_2
-qpid_tests.broker_0_10.priority.PriorityTests.test_requeue
 
 #QPID-3594 exclusive queues problem
 qpid_tests.broker_0_10.queue.QueueTests.test_declare_exclusive

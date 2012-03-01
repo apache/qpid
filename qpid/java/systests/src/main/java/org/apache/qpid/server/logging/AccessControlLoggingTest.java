@@ -18,7 +18,6 @@
  */
 package org.apache.qpid.server.logging;
 
-import java.io.File;
 import java.util.List;
 
 import javax.jms.Connection;
@@ -29,6 +28,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.security.acl.AbstractACLTestCase;
 
 /**
  * ACL version 2/3 file testing to verify that ACL actor logging works correctly.
@@ -49,13 +49,18 @@ public class AccessControlLoggingTest extends AbstractTestLogging
 
     public void setUp() throws Exception
     {
-        setConfigurationProperty("virtualhosts.virtualhost.test.security.aclv2",
-                QpidHome + File.separator + "etc" + File.separator + "test-logging.txt");
-        
+        // Write out ACL for this test
+        AbstractACLTestCase.writeACLFileUtil(this, "test",
+                "ACL ALLOW client ACCESS VIRTUALHOST",
+                "ACL ALLOW client CREATE QUEUE name='allow'",
+                "ACL ALLOW-LOG client CREATE QUEUE name='allow-log'",
+                "ACL DENY client CREATE QUEUE name='deny'",
+                "ACL DENY-LOG client CREATE QUEUE name='deny-log'");
+
         super.setUp();
+
     }
 
-    /** FIXME This comes from SimpleACLTest and makes me suspicious. */
     @Override
     public void tearDown() throws Exception
     {
@@ -69,7 +74,7 @@ public class AccessControlLoggingTest extends AbstractTestLogging
             //that we provoked with authentication failures, where the test passes - we can ignore on con close
         }
     }
-    
+
     /**
      * Test that {@code allow} ACL entries do not log anything.
      */

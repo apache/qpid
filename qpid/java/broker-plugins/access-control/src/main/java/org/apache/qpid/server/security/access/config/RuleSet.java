@@ -21,6 +21,7 @@ package org.apache.qpid.server.security.access.config;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -36,7 +37,7 @@ import javax.security.auth.Subject;
 
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.access.ObjectProperties;
@@ -53,20 +54,15 @@ import org.apache.qpid.server.security.access.logging.AccessControlMessages;
  */
 public class RuleSet
 {
+    public static final Logger _logger = Logger.getLogger(RuleSet.class);
+
     private static final String AT = "@";
     private static final String SLASH = "/";
 
     public static final String DEFAULT_ALLOW = "defaultallow";
     public static final String DEFAULT_DENY = "defaultdeny";
-    public static final String TRANSITIVE = "transitive";
-    public static final String EXPAND = "expand";
-    public static final String AUTONUMBER = "autonumber";
-    public static final String CONTROLLED = "controlled";
-    public static final String VALIDATE = "validate";
 
-    public static final List<String> CONFIG_PROPERTIES = Arrays.asList(
-            DEFAULT_ALLOW, DEFAULT_DENY, TRANSITIVE, EXPAND, AUTONUMBER, CONTROLLED
-        );
+    public static final List<String> CONFIG_PROPERTIES = Arrays.asList(DEFAULT_ALLOW, DEFAULT_DENY);
 
     private static final Integer _increment = 10;
 
@@ -80,7 +76,6 @@ public class RuleSet
     {
         // set some default configuration properties
         configure(DEFAULT_DENY, Boolean.TRUE);
-        configure(TRANSITIVE, Boolean.TRUE);
     }
 
     /**
@@ -139,12 +134,21 @@ public class RuleSet
 
             // Save the rules we selected
             objects.put(objectType, filtered);
+            if(_logger.isDebugEnabled())
+            {
+                _logger.debug("Cached " + objectType + " RulesList: " + filtered);
+            }
         }
 
         // Return the cached rules
-        return objects.get(objectType);
-    }
+        List<Rule> rules = objects.get(objectType);
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("Returning RuleList: " + rules);
+        }
 
+        return rules;
+    }
 
     public boolean isValidNumber(Integer number)
     {
@@ -175,20 +179,6 @@ public class RuleSet
         return false;
     }
 
-    private Permission noLog(Permission permission)
-    {
-        switch (permission)
-        {
-            case ALLOW:
-            case ALLOW_LOG:
-                return Permission.ALLOW;
-            case DENY:
-            case DENY_LOG:
-            default:
-                return Permission.DENY;
-        }
-    }
-
     // TODO make this work when group membership is not known at file parse time
     public void addRule(Integer number, String identity, Permission permission, Action action)
     {
@@ -196,61 +186,11 @@ public class RuleSet
 
         if (!action.isAllowed())
         {
-            throw new IllegalArgumentException("Action is not allowd: " + action);
+            throw new IllegalArgumentException("Action is not allowed: " + action);
         }
         if (ruleExists(identity, action))
         {
             return;
-        }
-
-        // expand actions - possibly multiply number by
-        if (isSet(EXPAND))
-        {
-            if (action.getOperation() == Operation.CREATE && action.getObjectType() == ObjectType.TOPIC)
-            {
-                addRule(null, identity, noLog(permission), new Action(Operation.BIND, ObjectType.EXCHANGE,
-                        new ObjectProperties("amq.topic", action.getProperties().get(ObjectProperties.Property.NAME))));
-                ObjectProperties topicProperties = new ObjectProperties();
-                topicProperties.put(ObjectProperties.Property.DURABLE, true);
-                addRule(null, identity, permission, new Action(Operation.CREATE, ObjectType.QUEUE, topicProperties));
-                return;
-            }
-            if (action.getOperation() == Operation.DELETE && action.getObjectType() == ObjectType.TOPIC)
-            {
-                addRule(null, identity, noLog(permission), new Action(Operation.UNBIND, ObjectType.EXCHANGE,
-                        new ObjectProperties("amq.topic", action.getProperties().get(ObjectProperties.Property.NAME))));
-                ObjectProperties topicProperties = new ObjectProperties();
-                topicProperties.put(ObjectProperties.Property.DURABLE, true);
-                addRule(null, identity, permission, new Action(Operation.DELETE, ObjectType.QUEUE, topicProperties));
-                return;
-            }
-        }
-
-        // transitive action dependencies
-        if (isSet(TRANSITIVE))
-        {
-            if (action.getOperation() == Operation.CREATE && action.getObjectType() == ObjectType.QUEUE)
-            {
-                ObjectProperties exchProperties = new ObjectProperties(action.getProperties());
-                exchProperties.setName(ExchangeDefaults.DEFAULT_EXCHANGE_NAME);
-                exchProperties.put(ObjectProperties.Property.ROUTING_KEY, action.getProperties().get(ObjectProperties.Property.NAME));
-                addRule(null, identity, noLog(permission), new Action(Operation.BIND, ObjectType.EXCHANGE, exchProperties));
-                if (action.getProperties().isSet(ObjectProperties.Property.AUTO_DELETE))
-                {
-                    addRule(null, identity, noLog(permission), new Action(Operation.DELETE, ObjectType.QUEUE, action.getProperties()));
-                }
-            }
-            else if (action.getOperation() == Operation.DELETE && action.getObjectType() == ObjectType.QUEUE)
-            {
-                ObjectProperties exchProperties = new ObjectProperties(action.getProperties());
-                exchProperties.setName(ExchangeDefaults.DEFAULT_EXCHANGE_NAME);
-                exchProperties.put(ObjectProperties.Property.ROUTING_KEY, action.getProperties().get(ObjectProperties.Property.NAME));
-                addRule(null, identity, noLog(permission), new Action(Operation.UNBIND, ObjectType.EXCHANGE, exchProperties));
-            }
-            else if (action.getOperation() != Operation.ACCESS && action.getObjectType() != ObjectType.VIRTUALHOST)
-            {
-                addRule(null, identity, noLog(permission), new Action(Operation.ACCESS, ObjectType.VIRTUALHOST));
-            }
         }
 
         // set rule number if needed
@@ -392,24 +332,29 @@ public class RuleSet
         // Create the action to check
         Action action = new Action(operation, objectType, properties);
 
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("Checking action: " + action);
+        }
+
         // get the list of rules relevant for this request
         List<Rule> rules = getRules(subject, operation, objectType);
         if (rules == null)
         {
-            if (isSet(CONTROLLED))
+            if(_logger.isDebugEnabled())
             {
-                // Abstain if there are no rules for this operation
-                return Result.ABSTAIN;
+                _logger.debug("No rules found, returning default result");
             }
-            else
-            {
-                return getDefault();
-            }
+            return getDefault();
         }
 
         // Iterate through a filtered set of rules dealing with this identity and operation
         for (Rule current : rules)
         {
+            if(_logger.isDebugEnabled())
+            {
+                _logger.debug("Checking against rule: " + current);
+            }
             // Check if action matches
             if (action.matches(current.getAction()))
             {
@@ -479,6 +424,15 @@ public class RuleSet
     {
         _config.put(key, value);
     }
+
+     /**
+      * Returns all rules in the {@link RuleSet}.   Primarily intended to support unit-testing.
+      * @return map of rules
+      */
+     public Map<Integer, Rule> getAllRules()
+     {
+         return Collections.unmodifiableMap(_rules);
+     }
 
     private boolean isRelevant(final Set<Principal> principals, final Rule rule)
     {

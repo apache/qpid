@@ -94,13 +94,6 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
         assertNotNull("QPID_WORK must be set", QPID_WORK_ORIG);
         assertNotNull("QPID_HOME must be set", QPID_HOME);
 
-        if(! isExternalBroker())
-        {
-            //override QPID_WORK to add the InVM port used so the store
-            //output from the upgrade tool can be found by the broker
-            setSystemProperty("QPID_WORK", QPID_WORK_ORIG + "/" + getPort());
-        }
-
         _fromDir = QPID_HOME + "/bdbstore-to-upgrade/test-store";
         _toDir = getWorkDirBaseDir() + "/bdbstore/test-store";
         _toDirTwice = getWorkDirBaseDir() + "/bdbstore-upgraded-twice";

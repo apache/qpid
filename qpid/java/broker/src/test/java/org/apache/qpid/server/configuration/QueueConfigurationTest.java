@@ -24,6 +24,8 @@ import junit.framework.TestCase;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.util.TestApplicationRegistry;
 
 public class QueueConfigurationTest extends TestCase
 {
@@ -43,9 +45,69 @@ public class QueueConfigurationTest extends TestCase
         fullEnv.setProperty("queues.maximumMessageSize", 1);
         fullEnv.setProperty("queues.maximumMessageCount", 1);
         fullEnv.setProperty("queues.minimumAlertRepeatGap", 1);
+        fullEnv.setProperty("queues.deadLetterQueues", true);
+        fullEnv.setProperty("queues.maximumDeliveryCount", 5);
 
         _fullHostConf = new VirtualHostConfiguration("test", fullEnv);
 
+    }
+
+    public void testMaxDeliveryCount() throws Exception
+    {
+        try
+        {
+            ApplicationRegistry registry = new TestApplicationRegistry(new ServerConfiguration(_env));
+            ApplicationRegistry.initialise(registry);
+
+            // Check default value
+            QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
+            assertEquals("Unexpected default server configuration for max delivery count ", 0, qConf.getMaxDeliveryCount());
+
+            // Check explicit value
+            VirtualHostConfiguration vhostConfig = overrideConfiguration("maximumDeliveryCount", 7);
+            qConf = new QueueConfiguration("test", vhostConfig);
+            assertEquals("Unexpected host configuration for max delivery count", 7, qConf.getMaxDeliveryCount());
+
+            // Check inherited value
+            qConf = new QueueConfiguration("test",  _fullHostConf);
+            assertEquals("Unexpected queue configuration for max delivery count", 5, qConf.getMaxDeliveryCount());
+
+        }
+        finally
+        {
+            ApplicationRegistry.remove();
+        }
+    }
+
+    /**
+     * Tests that the default setting for DLQ configuration is disabled, and verifies that it can be overridden
+     * at a broker or virtualhost level.
+     * @throws Exception
+     */
+    public void testIsDeadLetterQueueEnabled() throws Exception
+    {
+        try
+        {
+            ApplicationRegistry registry = new TestApplicationRegistry(new ServerConfiguration(_env));
+            ApplicationRegistry.initialise(registry);
+
+            // Check default value
+            QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
+            assertFalse("Unexpected queue configuration for dead letter enabled attribute", qConf.isDeadLetterQueueEnabled());
+
+            // Check explicit value
+            VirtualHostConfiguration vhostConfig = overrideConfiguration("deadLetterQueues", true);
+            qConf = new QueueConfiguration("test", vhostConfig);
+            assertTrue("Unexpected queue configuration for dead letter enabled attribute", qConf.isDeadLetterQueueEnabled());
+
+            // Check inherited value
+            qConf = new QueueConfiguration("test", _fullHostConf);
+            assertTrue("Unexpected queue configuration for dead letter enabled attribute", qConf.isDeadLetterQueueEnabled());
+        }
+        finally
+        {
+            ApplicationRegistry.remove();
+        }
     }
 
     public void testGetMaximumMessageAge() throws ConfigurationException
@@ -129,7 +191,19 @@ public class QueueConfigurationTest extends TestCase
         assertEquals(1, qConf.getMinimumAlertRepeatGap());
     }
 
-    private VirtualHostConfiguration overrideConfiguration(String property, int value)
+    public void testSortQueueConfiguration() throws ConfigurationException
+    {
+        //Check default value
+        QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
+        assertNull(qConf.getQueueSortKey());
+
+        // Check explicit value
+        final VirtualHostConfiguration vhostConfig = overrideConfiguration("sortKey", "test-sort-key");
+        qConf = new QueueConfiguration("test", vhostConfig);
+        assertEquals("test-sort-key", qConf.getQueueSortKey());
+    }
+
+    private VirtualHostConfiguration overrideConfiguration(String property, Object value)
             throws ConfigurationException
     {
         PropertiesConfiguration queueConfig = new PropertiesConfiguration();
@@ -141,5 +215,4 @@ public class QueueConfigurationTest extends TestCase
 
         return new VirtualHostConfiguration("test", config);
     }
-
 }

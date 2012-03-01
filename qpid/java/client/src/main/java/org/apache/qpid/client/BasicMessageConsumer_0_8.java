@@ -28,13 +28,18 @@ import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.*;
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.url.BindingURL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMessage_0_8>
 {
     protected final Logger _logger = LoggerFactory.getLogger(getClass());
+
+    private final RejectBehaviour _rejectBehaviour;
 
     protected BasicMessageConsumer_0_8(int channelId, AMQConnection connection, AMQDestination destination,
                                        String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory, AMQSession session,
@@ -55,6 +60,25 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
             consumerArguments.put(AMQPFilterTypes.NO_CONSUME.getValue(), Boolean.TRUE);
         }
 
+        if (destination.getRejectBehaviour() != null)
+        {
+            _rejectBehaviour = destination.getRejectBehaviour();
+        }
+        else
+        {
+            ConnectionURL connectionURL = connection.getConnectionURL();
+            String rejectBehaviour = connectionURL.getOption(ConnectionURL.OPTIONS_REJECT_BEHAVIOUR);
+            if (rejectBehaviour != null)
+            {
+                _rejectBehaviour = RejectBehaviour.valueOf(rejectBehaviour.toUpperCase());
+            }
+            else
+            {
+                // use the default value for all connections, if not set
+                rejectBehaviour = System.getProperty(ClientProperties.REJECT_BEHAVIOUR_PROP_NAME, RejectBehaviour.NORMAL.toString());
+                _rejectBehaviour = RejectBehaviour.valueOf( rejectBehaviour.toUpperCase());
+            }
+        }
     }
 
     void sendCancel() throws AMQException, FailoverException
@@ -88,5 +112,10 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
     void cleanupQueue() throws AMQException, FailoverException
     {
         
+    }
+
+    public RejectBehaviour getRejectBehaviour()
+    {
+        return _rejectBehaviour;
     }
 }

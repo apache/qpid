@@ -21,13 +21,14 @@ package org.apache.qpid.test.unit.ack;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.test.utils.FailoverBaseCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.BytesMessage;
 import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -38,13 +39,14 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.TextMessage;
 
-import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class RecoverTest extends FailoverBaseCase
+public class RecoverTest extends QpidBrokerTestCase
 {
     static final Logger _logger = LoggerFactory.getLogger(RecoverTest.class);
+
+    private static final int POSIITIVE_TIMEOUT = 2000;
 
     private volatile Exception _error;
     private AtomicInteger count;
@@ -64,7 +66,7 @@ public class RecoverTest extends FailoverBaseCase
 
     protected void initTest() throws Exception
     {
-        _connection = (AMQConnection) getConnection("guest", "guest");
+        _connection = (AMQConnection) getConnection();
 
         _consumerSession = _connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         Queue queue = _consumerSession.createQueue(getTestQueueName());
@@ -174,7 +176,7 @@ public class RecoverTest extends FailoverBaseCase
 
     public void testAcknowledgePerConsumer() throws Exception
     {
-        AMQConnection con = (AMQConnection) getConnection("guest", "guest");
+        AMQConnection con = (AMQConnection) getConnection();
 
         Session consumerSession = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         Queue queue =
@@ -186,7 +188,7 @@ public class RecoverTest extends FailoverBaseCase
         MessageConsumer consumer = consumerSession.createConsumer(queue);
         MessageConsumer consumer2 = consumerSession.createConsumer(queue2);
 
-        AMQConnection con2 = (AMQConnection) getConnection("guest", "guest");
+        AMQConnection con2 = (AMQConnection) getConnection();
         Session producerSession = con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         MessageProducer producer = producerSession.createProducer(queue);
         MessageProducer producer2 = producerSession.createProducer(queue2);
@@ -216,7 +218,7 @@ public class RecoverTest extends FailoverBaseCase
 
     public void testRecoverInAutoAckListener() throws Exception
     {
-        AMQConnection con = (AMQConnection) getConnection("guest", "guest");
+        AMQConnection con = (AMQConnection) getConnection();
 
         final Session consumerSession = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue =
@@ -304,16 +306,6 @@ public class RecoverTest extends FailoverBaseCase
         _error = e;
     }
     
-    private void sendMessages(javax.jms.Session session,Destination dest,int count) throws Exception
-    {
-        MessageProducer prod = session.createProducer(dest);
-        for (int i=0; i<count; i++)
-        {
-             prod.send(session.createTextMessage("Msg" + i));
-        }
-        prod.close();
-    }
-    
     /**
      * Goal : Check if ordering is preserved when doing recovery under reasonable circumstances.
      *        Refer QPID-2471 for more details. 
@@ -325,48 +317,47 @@ public class RecoverTest extends FailoverBaseCase
      * While doing so it will verify that the messages are not 
      * delivered out of order.
      */
-    public void testOderingWithSyncConsumer() throws Exception
+    public void testOrderingWithSyncConsumer() throws Exception
     {
-        Connection con = (Connection) getConnection("guest", "guest");
+        Connection con = (Connection) getConnection();
         javax.jms.Session session = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         Destination topic = session.createTopic("myTopic");
         MessageConsumer cons = session.createConsumer(topic);
         
-        sendMessages(session,topic,8);
+        sendMessage(session,topic,8);
         con.start();
-        
-        int messageSeen = 0;
-        int expectedMsg = 0;
 
+        int messageSeen = 0;
+        int expectedIndex = 0;
         long startTime = System.currentTimeMillis();
         
-        while(expectedMsg < 8)
+        while(expectedIndex < 8)
         {
             // Based on historical data, on average the test takes about 6 secs to complete.
             if (System.currentTimeMillis() - startTime > 8000)
             {
                 fail("Test did not complete on time. Received " + 
-                     expectedMsg + " msgs so far. Please check the logs");
+                     expectedIndex + " msgs so far. Please check the logs");
             }
             
-            Message message = cons.receive(2000);            
-            String text=((TextMessage) message).getText();            
+            Message message = cons.receive(POSIITIVE_TIMEOUT);
+            int actualIndex = message.getIntProperty(INDEX);
             
-            assertEquals("Received Message Out Of Order","Msg"+expectedMsg,text);
+            assertEquals("Received Message Out Of Order",expectedIndex, actualIndex);
                         
             //don't ack the message until we receive it 5 times
             if( messageSeen < 5 ) 
             {
-                _logger.debug("Ignoring message " + text + " and calling recover"); 
+                _logger.debug("Ignoring message " + actualIndex + " and calling recover");
                 session.recover();
                 messageSeen++;
             }
             else
             {
                 messageSeen = 0;
-                expectedMsg++;
+                expectedIndex++;
                 message.acknowledge();
-                _logger.debug("Acknowledging message " + text);    
+                _logger.debug("Acknowledging message " + actualIndex);
             }
         }        
     }
@@ -377,44 +368,45 @@ public class RecoverTest extends FailoverBaseCase
      * Same as testOderingWithSyncConsumer but using a 
      * Message Listener instead of a sync receive().
      */
-    public void testOderingWithAsyncConsumer() throws Exception
+    public void testOrderingWithAsyncConsumer() throws Exception
     {
-        Connection con = (Connection) getConnection("guest", "guest");
+        Connection con = (Connection) getConnection();
         final javax.jms.Session session = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         Destination topic = session.createTopic("myTopic");
         MessageConsumer cons = session.createConsumer(topic);
         
-        sendMessages(session,topic,8);
+        sendMessage(session,topic,8);
         con.start();
-        
+
         final Object lock = new Object();
         final AtomicBoolean pass = new AtomicBoolean(false); //used as work around for 'final'
+
         cons.setMessageListener(new MessageListener()
         {               
             int messageSeen = 0;
-            int expectedMsg = 0;
-            
+            int expectedIndex = 0;
+
             public void onMessage(Message message)
             {
                 try
                 {
-                    String text = ((TextMessage) message).getText();
-                    assertEquals("Received Message Out Of Order","Msg"+expectedMsg,text);
+                    int actualIndex = message.getIntProperty(INDEX);
+                    assertEquals("Received Message Out Of Order", expectedIndex, actualIndex);
                                 
                     //don't ack the message until we receive it 5 times
                     if( messageSeen < 5 ) 
                     {
-                        _logger.debug("Ignoring message " + text + " and calling recover"); 
+                        _logger.debug("Ignoring message " + actualIndex + " and calling recover");
                         session.recover();
                         messageSeen++;
                     }
                     else
                     {
                         messageSeen = 0;
-                        expectedMsg++;
+                        expectedIndex++;
                         message.acknowledge();
-                        _logger.debug("Acknowledging message " + text);
-                        if (expectedMsg == 8)
+                        _logger.debug("Acknowledging message " + actualIndex);
+                        if (expectedIndex == 8)
                         {
                             pass.set(true);
                             synchronized (lock) 
@@ -426,7 +418,7 @@ public class RecoverTest extends FailoverBaseCase
                 } 
                 catch (JMSException e)
                 {
-                    fail("Exception : " + e.getMessage());
+                    _error = e;
                     synchronized (lock) 
                     {
                         lock.notifyAll();
@@ -440,10 +432,53 @@ public class RecoverTest extends FailoverBaseCase
             // Based on historical data, on average the test takes about 6 secs to complete.
             lock.wait(8000);
         }
-        
+
+        assertNull("Unexpected exception thrown by async listener", _error);
+
         if (!pass.get())
         {
             fail("Test did not complete on time. Please check the logs");
         }
     }
+
+    /**
+     * This test ensures that after exhausting credit (prefetch), a {@link Session#recover()} successfully
+     * restores credit and allows the same messages to be re-received.
+     */
+    public void testRecoverSessionAfterCreditExhausted() throws Exception
+    {
+        final int maxPrefetch = 5;
+
+        // We send more messages than prefetch size.  This ensure that if the 0-10 client were to
+        // complete the message commands before the rollback command is sent, the broker would
+        // send additional messages utilising the release credit.  This problem would manifest itself
+        // as an incorrect message (or no message at all) being received at the end of the test.
+
+        final int numMessages = maxPrefetch * 2;
+
+        setTestClientSystemProperty(ClientProperties.MAX_PREFETCH_PROP_NAME, String.valueOf(maxPrefetch));
+
+        Connection con = (Connection) getConnection();
+        final javax.jms.Session session = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        Destination dest = session.createQueue(getTestQueueName());
+        MessageConsumer cons = session.createConsumer(dest);
+
+        sendMessage(session, dest, numMessages);
+        con.start();
+
+        for (int i=0; i< maxPrefetch; i++)
+        {
+            final Message message = cons.receive(POSIITIVE_TIMEOUT);
+            assertNotNull("Received:" + i, message);
+            assertEquals("Unexpected message received", i, message.getIntProperty(INDEX));
+        }
+
+        _logger.info("Recovering");
+        session.recover();
+
+        Message result = cons.receive(POSIITIVE_TIMEOUT);
+        // Expect the first message
+        assertEquals("Unexpected message received", 0, result.getIntProperty(INDEX));
+    }
+
 }

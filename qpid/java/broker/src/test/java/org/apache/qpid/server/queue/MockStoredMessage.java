@@ -20,6 +20,8 @@
 */
 package org.apache.qpid.server.queue;
 
+import org.apache.qpid.framing.FieldTable;
+
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TransactionLog;
 import org.apache.qpid.server.store.StoredMessage;
@@ -36,16 +38,32 @@ public class MockStoredMessage implements StoredMessage<MessageMetaData>
     private MessageMetaData _metaData;
     private ByteBuffer _content;
 
-
     public MockStoredMessage(long messageId)
     {
-        this(messageId, new MockMessagePublishInfo(), new ContentHeaderBody(new BasicContentHeaderProperties(), 60));
+        this(messageId, (String)null, null);
+    }
+
+    public MockStoredMessage(long messageId, String headerName, Object headerValue)
+    {
+        this(messageId, new MockMessagePublishInfo(), new ContentHeaderBody(new BasicContentHeaderProperties(), 60), headerName, headerValue);
     }
 
     public MockStoredMessage(long messageId, MessagePublishInfo info, ContentHeaderBody chb)
     {
+        this(messageId, info, chb, null, null);
+    }
+
+    public MockStoredMessage(long messageId, MessagePublishInfo info, ContentHeaderBody chb, String headerName, Object headerValue)
+    {
         _messageId = messageId;
+        if (headerName != null)
+        {
+            FieldTable headers = new FieldTable();
+            headers.setString(headerName, headerValue == null? null :String.valueOf(headerValue));
+            ((BasicContentHeaderProperties)chb.getProperties()).setHeaders(headers);
+        }
         _metaData = new MessageMetaData(info, chb, 0);
+        _content = ByteBuffer.allocate(_metaData.getContentSize());
     }
 
     public MessageMetaData getMetaData()

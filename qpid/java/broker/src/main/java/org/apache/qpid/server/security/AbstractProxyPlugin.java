@@ -73,11 +73,6 @@ public abstract class AbstractProxyPlugin extends AbstractPlugin
         return getDefault();
     }
     
-    public Result authoriseExecute(ObjectType object, ObjectProperties properties)
-    {
-        return getDefault();
-    }
-    
     public Result authoriseUpdate(ObjectType object, ObjectProperties properties)
     {
         return getDefault();
@@ -121,8 +116,6 @@ public abstract class AbstractProxyPlugin extends AbstractPlugin
 				return authoriseDelete(objectType, properties);
 			case PURGE:
 				return authorisePurge(objectType, properties);
-			case EXECUTE:
-				return authoriseExecute(objectType, properties);
 			case UPDATE:
 				return authoriseUpdate(objectType, properties);
 		}

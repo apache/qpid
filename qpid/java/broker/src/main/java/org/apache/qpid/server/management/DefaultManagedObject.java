@@ -21,6 +21,8 @@
 package org.apache.qpid.server.management;
 
 import javax.management.JMException;
+import javax.management.MBeanInfo;
+import javax.management.MBeanNotificationInfo;
 import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
@@ -28,7 +30,6 @@ import javax.management.StandardMBean;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 
 /**
  * Provides implementation of the boilerplate ManagedObject interface. Most managed objects should find it useful
@@ -37,11 +38,13 @@ import org.apache.qpid.server.registry.IApplicationRegistry;
  */
 public abstract class DefaultManagedObject extends StandardMBean implements ManagedObject
 {
-    private static final Logger LOGGER = Logger.getLogger(ApplicationRegistry.class);
+    private static final Logger LOGGER = Logger.getLogger(DefaultManagedObject.class);
     
-    private Class<?> _managementInterface;
+    private final Class<?> _managementInterface;
 
-    private String _typeName;
+    private final String _typeName;
+
+    private final MBeanInfo _mbeanInfo;
 
     private ManagedObjectRegistry _registry;
 
@@ -51,6 +54,13 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
         super(managementInterface);
         _managementInterface = managementInterface;
         _typeName = typeName;
+        _mbeanInfo = buildMBeanInfo();
+    }
+
+    @Override
+    public MBeanInfo getMBeanInfo()
+    {
+        return _mbeanInfo;
     }
 
     public String getType()
@@ -97,7 +107,6 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
     {
         return getObjectInstanceName() + "[" + getType() + "]";
     }
-
 
     /**
      * Created the ObjectName as per the JMX Specs
@@ -161,4 +170,18 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
             return "";
     }
 
+    private MBeanInfo buildMBeanInfo() throws NotCompliantMBeanException
+    {
+        return new MBeanInfo(this.getClass().getName(),
+                      MBeanIntrospector.getMBeanDescription(this.getClass()),
+                      MBeanIntrospector.getMBeanAttributesInfo(getManagementInterface()),
+                      MBeanIntrospector.getMBeanConstructorsInfo(this.getClass()),
+                      MBeanIntrospector.getMBeanOperationsInfo(getManagementInterface()),
+                      this.getNotificationInfo());
+    }
+
+    public MBeanNotificationInfo[] getNotificationInfo()
+    {
+        return null;
+    }
 }
