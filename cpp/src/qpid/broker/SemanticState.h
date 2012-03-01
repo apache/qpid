@@ -40,7 +40,6 @@
 #include "qpid/sys/AggregateOutput.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/AtomicValue.h"
-#include "qpid/broker/AclModule.h"
 #include "qmf/org/apache/qpid/broker/Subscription.h"
 
 #include <list>

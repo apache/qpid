@@ -66,10 +66,15 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
     if (mgmtObject!=0) mgmtObject->set_enforcingAcl(1);
 }
 
-bool Acl::authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& name, std::map<Property, std::string>* params)
+bool Acl::authorise(
+    const std::string&               id,
+    const Action&                    action,
+    const ObjectType&                objType,
+    const std::string&               name,
+    std::map<Property, std::string>* params)
 {
     boost::shared_ptr<AclData> dataLocal;
-    { 
+    {
         Mutex::ScopedLock locker(dataLock);
         dataLocal = data;  //rcu copy
     }
@@ -81,7 +86,12 @@ bool Acl::authorise(const std::string& id, const Action& action, const ObjectTyp
     return result(aclreslt, id, action, objType, name);
 }
 
-bool Acl::authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& ExchangeName, const std::string& RoutingKey)
+bool Acl::authorise(
+    const std::string& id,
+    const Action&      action,
+    const ObjectType& objType,
+    const std::string& ExchangeName,
+    const std::string& RoutingKey)
 {
     boost::shared_ptr<AclData> dataLocal;
     {
@@ -96,31 +106,51 @@ bool Acl::authorise(const std::string& id, const Action& action, const ObjectTyp
 }
 
 
-bool Acl::result(const AclResult& aclreslt, const std::string& id, const Action& action, const ObjectType& objType, const std::string& name)
+bool Acl::result(
+    const AclResult&   aclreslt,
+    const std::string& id,
+    const Action&      action,
+    const ObjectType&  objType,
+    const std::string& name)
 {
+    bool result(false);
+
     switch (aclreslt)
     {
     case ALLOWLOG:
-        QPID_LOG(info, "ACL Allow id:" << id <<" action:" << AclHelper::getActionStr(action) <<
-            " ObjectType:" << AclHelper::getObjectTypeStr(objType) << " Name:" << name );
+        QPID_LOG(info, "ACL Allow id:" << id
+            << " action:" << AclHelper::getActionStr(action)
+            << " ObjectType:" << AclHelper::getObjectTypeStr(objType)
+            << " Name:" << name );
         agent->raiseEvent(_qmf::EventAllow(id,  AclHelper::getActionStr(action),
-            AclHelper::getObjectTypeStr(objType),
-            name, types::Variant::Map()));
+                          AclHelper::getObjectTypeStr(objType),
+                          name, types::Variant::Map()));
+        // FALLTHROUGH
     case ALLOW:
-        return true;
-    case DENY:
-        if (mgmtObject!=0) mgmtObject->inc_aclDenyCount();
-        return false;
+        result = true;
+        break;
+
     case DENYLOG:
-        if (mgmtObject!=0) mgmtObject->inc_aclDenyCount();
-    default:
-        QPID_LOG(info, "ACL Deny id:" << id << " action:" << AclHelper::getActionStr(action) << " ObjectType:" << AclHelper::getObjectTypeStr(objType) << " Name:" << name);
+        QPID_LOG(info, "ACL Deny id:" << id
+            << " action:" << AclHelper::getActionStr(action)
+            << " ObjectType:" << AclHelper::getObjectTypeStr(objType)
+            << " Name:" << name);
         agent->raiseEvent(_qmf::EventDeny(id, AclHelper::getActionStr(action),
-            AclHelper::getObjectTypeStr(objType),
-            name, types::Variant::Map()));
-        return false;
+                                          AclHelper::getObjectTypeStr(objType),
+                                          name, types::Variant::Map()));
+        // FALLTHROUGH
+    case DENY:
+        if (mgmtObject!=0)
+            mgmtObject->inc_aclDenyCount();
+        result = false;
+        break;
+
+    default:
+        assert (false);
     }
-    return false;
+
+    QPID_LOG(debug, "ACL result() returns " << result);
+    return result;
 }
 
 bool Acl::readAclFile(std::string& errorText)
@@ -129,7 +159,7 @@ bool Acl::readAclFile(std::string& errorText)
     return readAclFile(aclValues.aclFile, errorText);
 }
 
-bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {      
+bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {
     boost::shared_ptr<AclData> d(new AclData);
     AclReader ar;
     if (ar.read(aclFile, d)){
@@ -142,17 +172,17 @@ bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {
     AclValidator validator;
     validator.validate(d);
 
-    {  
+    {
         Mutex::ScopedLock locker(dataLock);
         data = d;
     }
     transferAcl = data->transferAcl; // any transfer ACL
 
     if (data->transferAcl){
-        QPID_LOG(debug,"Transfer ACL is Enabled!");
+        QPID_LOG(debug,"ACL: Transfer ACL is Enabled!");
     }
 
-    data->aclSource = aclFile; 
+    data->aclSource = aclFile;
     if (mgmtObject!=0){
         mgmtObject->set_transferAcl(transferAcl?1:0);
         mgmtObject->set_policyFile(aclFile);
@@ -174,7 +204,7 @@ ManagementObject* Acl::GetManagementObject(void) const
 Manageable::status_t Acl::ManagementMethod (uint32_t methodId, Args& /*args*/, string& text)
 {
     Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
-    QPID_LOG (debug, "Queue::ManagementMethod [id=" << methodId << "]");
+    QPID_LOG (debug, "ACL: Queue::ManagementMethod [id=" << methodId << "]");
 
     switch (methodId)
     {
