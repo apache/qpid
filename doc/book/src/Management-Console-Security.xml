@@ -57,8 +57,7 @@
             The broker configuration must be updated before the broker will
             start. This can be done either by disabling the SSL support,
             utilizing a purchased SSL certificate to create a keystore of
-            your own, or using the example 'create-example-ssl-stores' script
-            in the brokers bin/ directory to generate a self-signed keystore.
+            your own, or generating a self-signed keystore.
           </para><para>
             The broker must be configured with a keystore containing the
             private and public keys associated with its SSL certificate. This
@@ -76,7 +75,7 @@
     &lt;ssl&gt;
         &lt;enabled&gt;true&lt;/enabled&gt;
         &lt;!-- Update below path to your keystore location, eg ${conf}/qpid.keystore  --&gt;
-        &lt;keyStorePath&gt;${prefix}/../test_resources/ssl/keystore.jks&lt;/keyStorePath&gt;
+        &lt;keyStorePath&gt;${conf}/qpid.keystore&lt;/keyStorePath&gt;
         &lt;keyStorePassword&gt;password&lt;/keyStorePassword&gt;
     &lt;/ssl&gt;
 &lt;/management&gt;
