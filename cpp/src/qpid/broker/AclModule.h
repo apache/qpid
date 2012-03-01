@@ -102,7 +102,7 @@ namespace acl {
         SPECPROP_MAXQUEUESIZEUPPERLIMIT,
         SPECPROP_MAXQUEUECOUNTLOWERLIMIT,
         SPECPROP_MAXQUEUECOUNTUPPERLIMIT };
-        
+
 // AclResult  shared between ACL spec and ACL authorise interface
     enum AclResult {
         ALLOW,
@@ -130,7 +130,7 @@ namespace broker {
             const acl::ObjectType&                objType,
             const std::string&                    name,
             std::map<acl::Property, std::string>* params=0)=0;
-            
+
         virtual bool authorise(
             const std::string&      id,
             const acl::Action&      action,
@@ -312,7 +312,7 @@ namespace acl {
         typedef propMap::const_iterator             propMapItr;
         typedef std::map<SpecProperty, std::string> specPropMap;
         typedef specPropMap::const_iterator         specPropMapItr;
-        
+
         // This map contains the legal combinations of object/action/properties
         // found in an ACL file
         static void loadValidationMap(objectMapPtr& map) {
@@ -407,10 +407,10 @@ namespace acl {
             ss << " }";
             return ss.str();
         }
-        
+
     };
 
-    
+
 }} // namespace qpid::acl
 
 #endif // QPID_ACLMODULE_ACL_H

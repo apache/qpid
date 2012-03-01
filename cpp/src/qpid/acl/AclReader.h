@@ -54,7 +54,7 @@ class AclReader {
     class aclRule {
       public:
         enum objectStatus {NONE, VALUE, ALL};
-        
+
         AclResult       res;
         nameSet         names;
         bool            actionAll; // True if action is set to keyword "all"

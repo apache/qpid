@@ -56,15 +56,15 @@ private:
    boost::shared_ptr<AclData> data;
    qmf::org::apache::qpid::acl::Acl* mgmtObject; // mgnt owns lifecycle
    qpid::management::ManagementAgent* agent;
-   mutable qpid::sys::Mutex dataLock; 
+   mutable qpid::sys::Mutex dataLock;
 
 public:
    Acl (AclValues& av, broker::Broker& b);
 
    void initialize();
-   
+
    inline virtual bool doTransferAcl() {return transferAcl;};
-   
+
    // create specilied authorise methods for cases that need faster matching as needed.
    virtual bool authorise(
        const std::string& id,

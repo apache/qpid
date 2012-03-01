@@ -38,7 +38,7 @@ namespace acl {
         }
     }
 
-    
+
     //
     // clear
     //
@@ -49,7 +49,7 @@ namespace acl {
             if (actionList[cnt])
             {
                 for (unsigned int cnt1=0; cnt1< qpid::acl::OBJECTSIZE; cnt1++)
-                    delete actionList[cnt][cnt1]; 
+                    delete actionList[cnt][cnt1];
             }
             delete[] actionList[cnt];
         }
@@ -105,7 +105,7 @@ namespace acl {
         //  with params { durable=false passive=false autodelete=false
         //  exclusive=false alternate= policytype= maxqueuesize=0
         //  maxqueuecount=0 }
-        
+
         // Default result is blanket decision mode for the entire ACL list.
         AclResult aclresult = decisionMode;
 
@@ -138,7 +138,7 @@ namespace acl {
                     // in the lookup param list. The lookup may specify things
                     // (they usually do) that are not in the rule properties but
                     // these things don't interfere with the rule match.
-                    
+
                     for (specPropertyMapItr rulePropMapItr  = rsItr->props.begin();
                                            (rulePropMapItr != rsItr->props.end()) && match;
                                             rulePropMapItr++)
@@ -186,7 +186,7 @@ namespace acl {
                                     lookupParamItr = params->find((Property)rulePropMapItr->first);
                                     break;
                                 };
-                                
+
                                 if (lookupParamItr == params->end())
                                 {
                                     // Now the rule has a specified property
@@ -348,7 +348,7 @@ namespace acl {
                         {
                         case acl::SPECPROP_NAME:
                             if (matchProp(pMItr->second, name))
-                            {  							     
+                            {
                                 QPID_LOG(debug, "ACL: lookup exchange name '"
                                     << name << "' matched with rule name '"
                                     << pMItr->second << "'");
@@ -415,10 +415,10 @@ namespace acl {
     bool AclData::compareIntMax(const qpid::acl::SpecProperty theProperty,
                                 const std::string             theAclValue,
                                 const std::string             theLookupValue)
-    {    
+    {
         uint64_t aclMax   (0);
         uint64_t paramMax (0);
-        
+
         try
         {
             aclMax = boost::lexical_cast<uint64_t>(theAclValue);
@@ -428,7 +428,7 @@ namespace acl {
             assert (false);
             return false;
         }
-        
+
         try
         {
             paramMax = boost::lexical_cast<uint64_t>(theLookupValue);
@@ -441,12 +441,12 @@ namespace acl {
                 << "' : " << theLookupValue);
             return false;
         }
-        
+
         QPID_LOG(debug, "ACL: Numeric greater-than comparison for property "
             << AclHelper::getPropertyStr(theProperty)
             << " (value given in lookup = " << theLookupValue
             << ", value give in rule = " << theAclValue << " )");
-        
+
         if (( aclMax ) && ( paramMax == 0 || paramMax > aclMax))
         {
             QPID_LOG(debug, "ACL: Max limit exceeded for property '"
@@ -467,7 +467,7 @@ namespace acl {
     {
         uint64_t aclMin   (0);
         uint64_t paramMin (0);
-        
+
         try
         {
             aclMin = boost::lexical_cast<uint64_t>(theAclValue);
@@ -477,7 +477,7 @@ namespace acl {
             assert (false);
             return false;
         }
-        
+
         try
         {
             paramMin = boost::lexical_cast<uint64_t>(theLookupValue);
@@ -490,19 +490,19 @@ namespace acl {
                 << "' : " << theLookupValue);
             return false;
         }
-        
+
         QPID_LOG(debug, "ACL: Numeric less-than comparison for property "
             << AclHelper::getPropertyStr(theProperty)
             << " (value given in lookup = " << theLookupValue
             << ", value give in rule = " << theAclValue << " )");
-        
+
         if (( aclMin ) && ( paramMin == 0 || paramMin < aclMin))
         {
             QPID_LOG(debug, "ACL: Min limit exceeded for property '"
                 << AclHelper::getPropertyStr(theProperty) << "'");
             return false;
         }
-        
+
         return true;
     }
 

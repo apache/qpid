@@ -34,7 +34,7 @@ public:
 
     typedef std::map<qpid::acl::Property, std::string> propertyMap;
     typedef propertyMap::const_iterator                propertyMapItr;
-    
+
     typedef std::map<qpid::acl::SpecProperty, std::string> specPropertyMap;
     typedef specPropertyMap::const_iterator                specPropertyMapItr;
 
@@ -52,7 +52,7 @@ public:
 
         int                   rawRuleNum;   // rule number in ACL file
         qpid::acl::AclResult  ruleMode;     // combined allow/deny log/nolog
-        specPropertyMap       props;        // 
+        specPropertyMap       props;        //
 
 
         rule (int ruleNum, qpid::acl::AclResult res, specPropertyMap& p) :
@@ -77,10 +77,10 @@ public:
             return ruleStr.str();
         }
     };
-    
+
     typedef  std::vector<rule>               ruleSet;
     typedef  ruleSet::const_iterator         ruleSetItr;
-    typedef  std::map<std::string, ruleSet > actionObject; // user 
+    typedef  std::map<std::string, ruleSet > actionObject; // user
     typedef  actionObject::iterator          actObjItr;
     typedef  actionObject*                   aclAction;
 
@@ -88,7 +88,7 @@ public:
     aclAction*           actionList[qpid::acl::ACTIONSIZE];
     qpid::acl::AclResult decisionMode;  // allow/deny[-log] if no matching rule found
     bool                 transferAcl;
-    std::string          aclSource; 
+    std::string          aclSource;
 
     AclResult lookup(
         const std::string&               id,        // actor id
@@ -96,7 +96,7 @@ public:
         const ObjectType&                objType,
         const std::string&               name,      // object name
         std::map<Property, std::string>* params=0);
-    
+
     AclResult lookup(
         const std::string&               id,        // actor id
         const Action&                    action,

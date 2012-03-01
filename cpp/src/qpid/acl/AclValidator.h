@@ -33,18 +33,18 @@ namespace acl {
 class AclValidator {
 
     /* Base Property */
-   class PropertyType{        
-        
+   class PropertyType{
+
         public:
             virtual ~PropertyType(){};
             virtual bool validate(const std::string& val)=0;
             virtual std::string allowedValues()=0;
    };
 
-   class IntPropertyType : public PropertyType{        
+   class IntPropertyType : public PropertyType{
             int64_t min;
             int64_t max;
-        
+
         public:
             IntPropertyType(int64_t min,int64_t max);
             virtual ~IntPropertyType (){};
@@ -53,7 +53,7 @@ class AclValidator {
    };
 
    class EnumPropertyType : public PropertyType{
-            std::vector<std::string> values;               
+            std::vector<std::string> values;
 
         public:
             EnumPropertyType(std::vector<std::string>& allowed);
@@ -61,11 +61,11 @@ class AclValidator {
             virtual bool validate(const std::string& val);
             virtual std::string allowedValues();
    };
-   
+
    typedef std::pair<acl::SpecProperty,boost::shared_ptr<PropertyType> > Validator;
    typedef std::map<acl::SpecProperty,boost::shared_ptr<PropertyType> > ValidatorMap;
    typedef ValidatorMap::iterator ValidatorItr;
- 
+
    ValidatorMap validators;
 
 public:
@@ -73,11 +73,11 @@ public:
    void validateRuleSet(std::pair<const std::string, qpid::acl::AclData::ruleSet>& rules);
    void validateRule(qpid::acl::AclData::rule& rule);
    void validateProperty(std::pair<const qpid::acl::SpecProperty, std::string>& prop);
-   void validate(boost::shared_ptr<AclData> d);   
+   void validate(boost::shared_ptr<AclData> d);
    AclValidator();
    ~AclValidator();
 };
-    
+
 }} // namespace qpid::acl
 
 #endif // QPID_ACL_ACLVALIDATOR_H

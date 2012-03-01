@@ -74,7 +74,7 @@ bool Acl::authorise(
     std::map<Property, std::string>* params)
 {
     boost::shared_ptr<AclData> dataLocal;
-    { 
+    {
         Mutex::ScopedLock locker(dataLock);
         dataLocal = data;  //rcu copy
     }
@@ -114,7 +114,7 @@ bool Acl::result(
     const std::string& name)
 {
     bool result(false);
-    
+
     switch (aclreslt)
     {
     case ALLOWLOG:
@@ -159,7 +159,7 @@ bool Acl::readAclFile(std::string& errorText)
     return readAclFile(aclValues.aclFile, errorText);
 }
 
-bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {      
+bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {
     boost::shared_ptr<AclData> d(new AclData);
     AclReader ar;
     if (ar.read(aclFile, d)){
@@ -172,7 +172,7 @@ bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {
     AclValidator validator;
     validator.validate(d);
 
-    {  
+    {
         Mutex::ScopedLock locker(dataLock);
         data = d;
     }
@@ -182,7 +182,7 @@ bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {
         QPID_LOG(debug,"ACL: Transfer ACL is Enabled!");
     }
 
-    data->aclSource = aclFile; 
+    data->aclSource = aclFile;
     if (mgmtObject!=0){
         mgmtObject->set_transferAcl(transferAcl?1:0);
         mgmtObject->set_policyFile(aclFile);

@@ -29,7 +29,7 @@
 namespace qpid {
 namespace acl {
 
-    AclValidator::IntPropertyType::IntPropertyType(int64_t i,int64_t j) : min(i), max(j){    
+    AclValidator::IntPropertyType::IntPropertyType(int64_t i,int64_t j) : min(i), max(j){
     }
 
     bool AclValidator::IntPropertyType::validate(const std::string& val) {
@@ -49,12 +49,12 @@ namespace acl {
     }
 
     std::string AclValidator::IntPropertyType::allowedValues() {
-        return "values should be between " + 
+        return "values should be between " +
             boost::lexical_cast<std::string>(min) + " and " +
             boost::lexical_cast<std::string>(max);
     }
 
-    AclValidator::EnumPropertyType::EnumPropertyType(std::vector<std::string>& allowed): values(allowed){      
+    AclValidator::EnumPropertyType::EnumPropertyType(std::vector<std::string>& allowed): values(allowed){
     }
 
     bool AclValidator::EnumPropertyType::validate(const std::string& val) {
@@ -89,11 +89,11 @@ namespace acl {
         validators.insert(Validator(acl::SPECPROP_MAXQUEUECOUNTLOWERLIMIT,
                                     boost::shared_ptr<PropertyType>(
                                         new IntPropertyType(0,std::numeric_limits<int64_t>::max()))));
-        
+
         validators.insert(Validator(acl::SPECPROP_MAXQUEUECOUNTUPPERLIMIT,
                                     boost::shared_ptr<PropertyType>(
                                         new IntPropertyType(0,std::numeric_limits<int64_t>::max()))));
-        
+
         std::string policyTypes[] = {"ring", "ring_strict", "flow_to_disk", "reject"};
         std::vector<std::string> v(policyTypes, policyTypes + sizeof(policyTypes) / sizeof(std::string));
         validators.insert(Validator(acl::SPECPROP_POLICYTYPE,
@@ -118,8 +118,8 @@ namespace acl {
 
                         std::for_each(d->actionList[cnt][cnt1]->begin(),
                                       d->actionList[cnt][cnt1]->end(),
-                                      boost::bind(&AclValidator::validateRuleSet, this, _1));                    
-                    }//if 
+                                      boost::bind(&AclValidator::validateRuleSet, this, _1));
+                    }//if
                 }//for
             }//if
         }//for
@@ -128,13 +128,13 @@ namespace acl {
     void AclValidator::validateRuleSet(std::pair<const std::string, qpid::acl::AclData::ruleSet>& rules){
         std::for_each(rules.second.begin(),
             rules.second.end(),
-            boost::bind(&AclValidator::validateRule, this, _1)); 
+            boost::bind(&AclValidator::validateRule, this, _1));
     }
 
     void AclValidator::validateRule(qpid::acl::AclData::rule& rule){
         std::for_each(rule.props.begin(),
             rule.props.end(),
-            boost::bind(&AclValidator::validateProperty, this, _1)); 
+            boost::bind(&AclValidator::validateProperty, this, _1));
     }
 
     void AclValidator::validateProperty(std::pair<const qpid::acl::SpecProperty, std::string>& prop){
@@ -146,11 +146,11 @@ namespace acl {
             if (!itr->second->validate(prop.second)){
                 QPID_LOG(debug, "ACL: Property failed validation. '" << prop.second << "' is not a valid value for '"
                     << AclHelper::getPropertyStr(prop.first) << "'");
-                
-                throw Exception( prop.second + " is not a valid value for '" + 
+
+                throw Exception( prop.second + " is not a valid value for '" +
                     AclHelper::getPropertyStr(prop.first) + "', " +
                     itr->second->allowedValues());
-            } 
+            }
         }
     }
 
