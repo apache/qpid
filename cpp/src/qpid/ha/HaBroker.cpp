@@ -44,8 +44,10 @@ using namespace std;
 
 namespace {
 
-const std::string PRIMARY="primary";
+const std::string STANDALONE="standalone";
+const std::string CATCH_UP="catch-up";
 const std::string BACKUP="backup";
+const std::string PRIMARY="primary";
 
 } // namespace
 
@@ -65,12 +67,12 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     ManagementAgent* ma = broker.getManagementAgent();
     if (!ma)
         throw Exception("Cannot start HA: management is disabled");
-    if (ma) {
-        _qmf::Package  packageInit(ma);
-        mgmtObject = new _qmf::HaBroker(ma, this, "ha-broker");
-        mgmtObject->set_status(BACKUP);
-        ma->addObject(mgmtObject);
-    }
+    _qmf::Package  packageInit(ma);
+    mgmtObject = new _qmf::HaBroker(ma, this, "ha-broker");
+    // FIXME aconway 2012-03-01: should start in catch-up state and move to backup
+    // only when caught up.
+    mgmtObject->set_status(BACKUP);
+    ma->addObject(mgmtObject);
     sys::Mutex::ScopedLock l(lock);
     if (!settings.clientUrl.empty()) setClientUrl(Url(settings.clientUrl), l);
     if (!settings.brokerUrl.empty()) setBrokerUrl(Url(settings.brokerUrl), l);
