@@ -26,14 +26,14 @@ import org.apache.qpid.server.filter.jms.selector.SelectorParser;
 import org.apache.qpid.server.queue.Filterable;
 
 
-public class JMSSelectorMessageFilter implements MessageFilter
+public class JMSSelectorFilter implements MessageFilter
 {
-    private final static Logger _logger = org.apache.log4j.Logger.getLogger(JMSSelectorMessageFilter.class);
+    private final static Logger _logger = org.apache.log4j.Logger.getLogger(JMSSelectorFilter.class);
 
     private String _selector;
     private BooleanExpression _matcher;
 
-    public JMSSelectorMessageFilter(String selector) throws AMQInvalidArgumentException
+    public JMSSelectorFilter(String selector) throws AMQInvalidArgumentException
     {
         _selector = selector;
         _matcher = new SelectorParser().parse(selector);

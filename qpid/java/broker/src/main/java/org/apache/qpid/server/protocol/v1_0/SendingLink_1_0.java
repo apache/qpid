@@ -44,7 +44,6 @@ import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
 import org.apache.qpid.amqp_1_0.type.messaging.ExactSubjectFilter;
 import org.apache.qpid.amqp_1_0.type.messaging.Filter;
-import org.apache.qpid.amqp_1_0.type.messaging.JMSSelectorFilter;
 import org.apache.qpid.amqp_1_0.type.messaging.MatchingSubjectFilter;
 import org.apache.qpid.amqp_1_0.type.messaging.NoLocalFilter;
 import org.apache.qpid.amqp_1_0.type.messaging.Released;
@@ -58,7 +57,7 @@ import org.apache.qpid.amqp_1_0.type.transport.Transfer;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.TopicExchange;
-import org.apache.qpid.server.filter.JMSSelectorMessageFilter;
+import org.apache.qpid.server.filter.JMSSelectorFilter;
 import org.apache.qpid.server.filter.SimpleFilterManager;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
@@ -102,7 +101,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
 
         boolean noLocal = false;
-        JMSSelectorMessageFilter messageFilter = null;
+        JMSSelectorFilter messageFilter = null;
 
         if(destination instanceof QueueDestination)
         {
@@ -126,13 +125,13 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                         actualFilters.put(entry.getKey(), entry.getValue());
                         noLocal = true;
                     }
-                    else if(messageFilter == null && entry.getValue() instanceof JMSSelectorFilter)
+                    else if(messageFilter == null && entry.getValue() instanceof org.apache.qpid.amqp_1_0.type.messaging.JMSSelectorFilter)
                     {
 
-                        JMSSelectorFilter selectorFilter = (JMSSelectorFilter) entry.getValue();
+                        org.apache.qpid.amqp_1_0.type.messaging.JMSSelectorFilter selectorFilter = (org.apache.qpid.amqp_1_0.type.messaging.JMSSelectorFilter) entry.getValue();
                         try
                         {
-                            messageFilter = new JMSSelectorMessageFilter(selectorFilter.getValue());
+                            messageFilter = new JMSSelectorFilter(selectorFilter.getValue());
 
                             actualFilters.put(entry.getKey(), entry.getValue());
                         }

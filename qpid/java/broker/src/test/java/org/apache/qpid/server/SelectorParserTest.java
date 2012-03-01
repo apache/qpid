@@ -1,7 +1,7 @@
 package org.apache.qpid.server;
 
 import junit.framework.TestCase;
-import org.apache.qpid.server.filter.JMSSelectorMessageFilter;
+import org.apache.qpid.server.filter.JMSSelectorFilter;
 import org.apache.qpid.AMQException;/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -104,7 +104,7 @@ public class SelectorParserTest extends TestCase
     {
         try
         {
-            new JMSSelectorMessageFilter(selector);
+            new JMSSelectorFilter(selector);
         }
         catch (AMQException e)
         {
@@ -116,7 +116,7 @@ public class SelectorParserTest extends TestCase
     {
         try
         {
-            new JMSSelectorMessageFilter(selector);
+            new JMSSelectorFilter(selector);
             fail("Selector '" + selector + "' was parsed ");
         }
         catch (AMQException e)

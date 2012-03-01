@@ -33,7 +33,7 @@ import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.topic.*;
-import org.apache.qpid.server.filter.JMSSelectorMessageFilter;
+import org.apache.qpid.server.filter.JMSSelectorFilter;
 import org.apache.qpid.server.message.InboundMessage;
 
 import javax.management.JMException;
@@ -86,7 +86,7 @@ public class TopicExchange extends AbstractExchange
 
     private final Map<Binding, FieldTable> _bindings = new HashMap<Binding, FieldTable>();
 
-    private final Map<String, WeakReference<JMSSelectorMessageFilter>> _selectorCache = new WeakHashMap<String, WeakReference<JMSSelectorMessageFilter>>();
+    private final Map<String, WeakReference<JMSSelectorFilter>> _selectorCache = new WeakHashMap<String, WeakReference<JMSSelectorFilter>>();
 
     public TopicExchange()
     {
@@ -178,17 +178,17 @@ public class TopicExchange extends AbstractExchange
 
     }
 
-    private JMSSelectorMessageFilter createSelectorFilter(final FieldTable args) throws AMQInvalidArgumentException
+    private JMSSelectorFilter createSelectorFilter(final FieldTable args) throws AMQInvalidArgumentException
     {
 
         final String selectorString = args.getString(AMQPFilterTypes.JMS_SELECTOR.getValue());
-        WeakReference<JMSSelectorMessageFilter> selectorRef = _selectorCache.get(selectorString);
-        JMSSelectorMessageFilter selector = null;
+        WeakReference<JMSSelectorFilter> selectorRef = _selectorCache.get(selectorString);
+        JMSSelectorFilter selector = null;
 
         if(selectorRef == null || (selector = selectorRef.get())==null)
         {
-            selector = new JMSSelectorMessageFilter(selectorString);
-            _selectorCache.put(selectorString, new WeakReference<JMSSelectorMessageFilter>(selector));
+            selector = new JMSSelectorFilter(selectorString);
+            _selectorCache.put(selectorString, new WeakReference<JMSSelectorFilter>(selector));
         }
         return selector;
     }
