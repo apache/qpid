@@ -122,11 +122,16 @@ class BrokerAgent(object):
     for item in items:
       objs.append(cls(self, item))
     return objs
-    
+
   def _getBrokerObject(self, cls, name):
     obj = self._doNameQuery(cls.__name__.lower(), name)
     if obj:
       return cls(self, obj)
+    return None
+
+  def _getSingleObject(self, cls):
+    objects = self._getAllBrokerObjects(cls)
+    if objects: return objects[0]
     return None
 
   def getBroker(self):
@@ -138,16 +143,14 @@ class BrokerAgent(object):
     # of a bug that used to be in the broker whereby by-name queries did not return the
     # object timestamps.
     #
-    brokers = self._getAllBrokerObjects(Broker)
-    if brokers:
-      return brokers[0]
-    return None
+    return self._getSingleObject(Broker)
+
 
   def getCluster(self):
-    return self._getAllBrokerObjects(Cluster)[0]
+    return self._getSingleObject(Cluster)
 
   def getHaBroker(self):
-    return self._getAllBrokerObjects(HaBroker)[0]
+    return self._getSingleObject(HaBroker)
 
   def getAllConnections(self):
     return self._getAllBrokerObjects(Connection)
@@ -186,10 +189,7 @@ class BrokerAgent(object):
     return self._getAllBrokerObjects(Link)
 
   def getAcl(self):
-    objects = self._getAllBrokerObjects(Acl)
-    if len(objects) > 0:
-      return objects[0]
-    return None # Acl module not loaded
+    return self._getSingleObject(Acl)
 
   def echo(self, sequence, body):
     """Request a response to test the path to the management broker"""
