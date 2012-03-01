@@ -129,8 +129,8 @@ public class FailoverMethodTest extends QpidBrokerTestCase implements ExceptionL
             assertTrue("Failover took less than 6 seconds", duration > 6000);
 
             // Ensure we don't have delays before initial connection and reconnection.
-            // We allow 1 second for initial connection and failover logic on top of 6s of sleep.
-            assertTrue("Failover took more than 7 seconds:(" + duration + ")", duration < 7000);
+            // We allow 3 second for initial connection and failover logic on top of 6s of sleep.
+            assertTrue("Failover took more than 9 seconds:(" + duration + ")", duration < 9000);
         }
         catch (AMQException e)
         {

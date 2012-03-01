@@ -30,6 +30,8 @@ import static org.apache.qpid.transport.Session.State.DETACHED;
 import static org.apache.qpid.transport.Session.State.NEW;
 import static org.apache.qpid.transport.Session.State.OPEN;
 import static org.apache.qpid.transport.Session.State.RESUMING;
+
+import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.transport.network.Frame;
 import static org.apache.qpid.transport.util.Functions.mod;
 import org.apache.qpid.transport.util.Logger;
@@ -42,7 +44,6 @@ import static org.apache.qpid.util.Serial.max;
 import static org.apache.qpid.util.Strings.toUTF8;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -58,7 +59,6 @@ import java.util.concurrent.TimeUnit;
 
 public class Session extends SessionInvoker
 {
-
     private static final Logger log = Logger.get(Session.class);
 
     public enum State { NEW, DETACHED, RESUMING, OPEN, CLOSING, CLOSED }
@@ -92,7 +92,9 @@ public class Session extends SessionInvoker
     private int channel;
     private SessionDelegate delegate;
     private SessionListener listener = new DefaultSessionListener();
-    private long timeout = 60000;
+    private final long timeout = Long.getLong(ClientProperties.QPID_SYNC_OP_TIMEOUT,
+                                        Long.getLong(ClientProperties.AMQJ_DEFAULT_SYNCWRITE_TIMEOUT,
+                                                     ClientProperties.DEFAULT_SYNC_OPERATION_TIMEOUT));
     private boolean autoSync = false;
 
     private boolean incomingInit;
@@ -257,6 +259,8 @@ public class Session extends SessionInvoker
     {
         synchronized (commands)
         {
+            attach();
+
             for (int i = maxComplete + 1; lt(i, commandsOut); i++)
             {
                 Method m = commands[mod(i, commands.length)];
@@ -297,11 +301,18 @@ public class Session extends SessionInvoker
                 sessionCommandPoint(m.getId(), 0);
                 send(m);
             }
-           
+
             sessionCommandPoint(commandsOut, 0);
+
             sessionFlush(COMPLETED);
             resumer = Thread.currentThread();
             state = RESUMING;
+
+            if(isTransacted())
+            {
+                txSelect();
+            }
+
             listener.resumed(this);
             resumer = null;
         }
@@ -565,17 +576,6 @@ public class Session extends SessionInvoker
     {
         if (m.getEncodedTrack() == Frame.L4)
         {
-            
-            if (state == DETACHED && transacted)
-            {
-                state = CLOSED;
-                delegate.closed(this);
-                connection.removeSession(this);
-                throw new SessionException(
-                        "Session failed over, possibly in the middle of a transaction. " +
-                        "Closing the session. Any Transaction in progress will be rolledback.");
-            }
-            
             if (m.hasPayload())
             {
                 acquireCredit();
@@ -583,24 +583,30 @@ public class Session extends SessionInvoker
             
             synchronized (commands)
             {
-                if (state == DETACHED && m.isUnreliable())
-                {
-                    Thread current = Thread.currentThread();
-                    if (!current.equals(resumer))
-                    {
-                        return;
-                    }
-                }
+                //allow the txSelect operation to be invoked during resume
+                boolean skipWait = m instanceof TxSelect && state == RESUMING;
 
-                if (state != OPEN && state != CLOSED && state != CLOSING)
+                if(!skipWait)
                 {
-                    Thread current = Thread.currentThread();
-                    if (!current.equals(resumer))
+                    if (state == DETACHED && m.isUnreliable())
                     {
-                        Waiter w = new Waiter(commands, timeout);
-                        while (w.hasTime() && (state != OPEN && state != CLOSED))
+                        Thread current = Thread.currentThread();
+                        if (!current.equals(resumer))
                         {
-                            w.await();
+                            return;
+                        }
+                    }
+
+                    if (state != OPEN && state != CLOSED && state != CLOSING)
+                    {
+                        Thread current = Thread.currentThread();
+                        if (!current.equals(resumer))
+                        {
+                            Waiter w = new Waiter(commands, timeout);
+                            while (w.hasTime() && (state != OPEN && state != CLOSED))
+                            {
+                                w.await();
+                            }
                         }
                     }
                 }
@@ -1097,6 +1103,7 @@ public class Session extends SessionInvoker
             {
                 throw new SessionException("Timed out waiting for Session to open");
             }
+            break;
         case DETACHED:
         case CLOSING:
         case CLOSED:

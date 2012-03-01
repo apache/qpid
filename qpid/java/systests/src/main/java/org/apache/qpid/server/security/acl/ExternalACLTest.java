@@ -91,9 +91,9 @@ public class ExternalACLTest extends AbstractACLTestCase
             //send a message to each queue (also causing an exchange declare)
             MessageProducer sender = ((AMQSession<?, ?>) sess).createProducer(null);
             ((org.apache.qpid.jms.MessageProducer) sender).send(namedQueue, sess.createTextMessage("test"),
-                                                                DeliveryMode.NON_PERSISTENT, 0, 0L, false, false, true);
+                                                                DeliveryMode.NON_PERSISTENT, 0, 0L, false, false);
             ((org.apache.qpid.jms.MessageProducer) sender).send(tempQueue, sess.createTextMessage("test"),
-                                                                DeliveryMode.NON_PERSISTENT, 0, 0L, false, false, true);
+                                                                DeliveryMode.NON_PERSISTENT, 0, 0L, false, false);
 
             //consume the messages from the queues
             consumer.receive(2000);
@@ -309,7 +309,7 @@ public class ExternalACLTest extends AbstractACLTestCase
             // before we finish this test. Message is set !immed !mand as the queue is invalid so want to test ACLs not
             // queue existence.
             ((org.apache.qpid.jms.MessageProducer) sender).send(queue, sess.createTextMessage("test"),
-                                                                DeliveryMode.NON_PERSISTENT, 0, 0L, false, false, true);
+                                                                DeliveryMode.NON_PERSISTENT, 0, 0L, false, false);
 
             conn.close();
         }
@@ -337,7 +337,7 @@ public class ExternalACLTest extends AbstractACLTestCase
             // before we finish this test. Message is set !immed !mand as the queue is invalid so want to test ACLs not
             // queue existence.
             ((org.apache.qpid.jms.MessageProducer) sender).send(queue, session.createTextMessage("test"),
-                                                                DeliveryMode.NON_PERSISTENT, 0, 0L, false, false, true);
+                                                                DeliveryMode.NON_PERSISTENT, 0, 0L, false, false);
 
             // Test the connection with a valid consumer
             // This may fail as the session may be closed before the queue or the consumer created.
@@ -608,7 +608,7 @@ public class ExternalACLTest extends AbstractACLTestCase
             // before we finish this test. Message is set !immed !mand as the queue is invalid so want to test ACLs not
             // queue existence.
             ((org.apache.qpid.jms.MessageProducer) sender).send(queue, session.createTextMessage("test"),
-                                                                DeliveryMode.NON_PERSISTENT, 0, 0L, false, false, true);
+                                                                DeliveryMode.NON_PERSISTENT, 0, 0L, false, false);
 
             // Test the connection with a valid consumer
             // This may not work as the session may be closed before the queue or consumer creation can occur.

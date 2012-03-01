@@ -239,7 +239,6 @@ public class Connection extends ConnectionInvoker
             conSettings = settings;
             state = OPENING;
             userID = settings.getUsername();
-            delegate = new ClientDelegate(settings);
 
             securityLayer = SecurityLayerFactory.newInstance(getConnectionSettings());
 
@@ -347,14 +346,22 @@ public class Connection extends ConnectionInvoker
             }
 
             Session ssn = _sessionFactory.newSession(this, name, expiry);
-            sessions.put(name, ssn);
+            registerSession(ssn);
             map(ssn);
             ssn.attach();
             return ssn;
         }
     }
 
-    void removeSession(Session ssn)
+    public void registerSession(Session ssn)
+    {
+        synchronized (lock)
+        {
+            sessions.put(ssn.getName(),ssn);
+        }
+    }
+
+    public void removeSession(Session ssn)
     {
         synchronized (lock)
         {
@@ -478,26 +485,12 @@ public class Connection extends ConnectionInvoker
     {
         synchronized (lock)
         {
-            List <Binary> transactedSessions = new ArrayList();
             for (Session ssn : sessions.values())
             {
-                if (ssn.isTransacted())
-                {
-                    transactedSessions.add(ssn.getName());
-                    ssn.setState(Session.State.CLOSED);
-                }
-                else
-                {
-                    map(ssn);
-                    ssn.attach();
-                    ssn.resume();
-                }
+                map(ssn);
+                ssn.resume();
             }
 
-            for (Binary ssn_name : transactedSessions)
-            {
-                sessions.remove(ssn_name);
-            }
             setState(OPEN);
         }
     }
@@ -706,5 +699,10 @@ public class Connection extends ConnectionInvoker
     protected Collection<Session> getChannels()
     {
         return channels.values();
+    }
+
+    public boolean hasSessionWithName(final String name)
+    {
+        return sessions.containsKey(new Binary(name.getBytes()));
     }
 }

@@ -69,4 +69,8 @@ public interface AMQConnectionModel extends StatisticsGatherer
      * Return a {@link LogSubject} for the connection.
      */
     public LogSubject getLogSubject();
+
+    public String getUserName();
+
+    public boolean isSessionNameUnique(String name);
 }

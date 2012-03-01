@@ -23,9 +23,7 @@ import org.apache.qpid.client.AMQDestination.AddressOption;
 import org.apache.qpid.client.AMQDestination.DestSyntax;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.message.*;
-import org.apache.qpid.client.messaging.address.Node.QueueNode;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
@@ -68,19 +66,13 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
     private boolean _preAcquire = true;
 
     /**
-     * Indicate whether this consumer is started.
-     */
-    private boolean _isStarted = false;
-
-    /**
      * Specify whether this consumer is performing a sync receive
      */
     private final AtomicBoolean _syncReceive = new AtomicBoolean(false);
     private String _consumerTagString;
     
     private long capacity = 0;
-        
-    //--- constructor
+
     protected BasicMessageConsumer_0_10(int channelId, AMQConnection connection, AMQDestination destination,
                                         String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory,
                                         AMQSession session, AMQProtocolHandler protocolHandler,
@@ -106,7 +98,6 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
                 _preAcquire = false;
             }
         }
-        _isStarted = connection.started();
         
         // Destination setting overrides connection defaults
         if (destination.getDestSyntax() == DestSyntax.ADDR && 
@@ -174,8 +165,6 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         }
     }
 
-    //----- overwritten methods
-
     /**
      * This method is invoked when this consumer is stopped.
      * It tells the broker to stop delivering messages to this consumer.
@@ -205,11 +194,18 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         super.notifyMessage(messageFrame);
     }
 
-    @Override protected void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
+    @Override
+    protected void preDeliver(AbstractJMSMessage jmsMsg)
     {
-        super.preApplicationProcessing(jmsMsg);
-        if (!_session.getTransacted() && _session.getAcknowledgeMode() != org.apache.qpid.jms.Session.CLIENT_ACKNOWLEDGE)
+        super.preDeliver(jmsMsg);
+
+        if (_acknowledgeMode == org.apache.qpid.jms.Session.NO_ACKNOWLEDGE)
         {
+            //For 0-10 we need to ensure that all messages are indicated processed in some way to
+            //ensure their AMQP command-id is marked completed, and so we must send a completion
+            //even for no-ack messages even though there isnt actually an 'acknowledgement' occurring.
+            //Add message to the unacked message list to ensure we dont lose record of it before
+            //sending a completion of some sort.
             _session.addUnacknowledgedMessage(jmsMsg.getDeliveryTag());
         }
     }
@@ -221,7 +217,6 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         return _messageFactory.createMessage(msg.getMessageTransfer());
     }
 
-    // private methods
     /**
      * Check whether a message can be delivered to this consumer.
      *
@@ -365,21 +360,28 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
     public void setMessageListener(final MessageListener messageListener) throws JMSException
     {
         super.setMessageListener(messageListener);
-        if (messageListener != null && capacity == 0)
+        try
         {
-            _0_10session.getQpidSession().messageFlow(getConsumerTagString(),
-                                                      MessageCreditUnit.MESSAGE, 1,
-                                                      Option.UNRELIABLE);
-        }
-        if (messageListener != null && !_synchronousQueue.isEmpty())
-        {
-            Iterator messages=_synchronousQueue.iterator();
-            while (messages.hasNext())
+            if (messageListener != null && capacity == 0)
             {
-                AbstractJMSMessage message=(AbstractJMSMessage) messages.next();
-                messages.remove();
-                _session.rejectMessage(message, true);
+                _0_10session.getQpidSession().messageFlow(getConsumerTagString(),
+                                                          MessageCreditUnit.MESSAGE, 1,
+                                                          Option.UNRELIABLE);
             }
+            if (messageListener != null && !_synchronousQueue.isEmpty())
+            {
+                Iterator messages=_synchronousQueue.iterator();
+                while (messages.hasNext())
+                {
+                    AbstractJMSMessage message=(AbstractJMSMessage) messages.next();
+                    messages.remove();
+                    _session.rejectMessage(message, true);
+                }
+            }
+        }
+        catch(TransportException e)
+        {
+            throw _session.toJMSException("Exception while setting message listener:"+ e.getMessage(), e);
         }
     }
 
@@ -443,7 +445,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         return o;
     }
 
-    void postDeliver(AbstractJMSMessage msg) throws JMSException
+    void postDeliver(AbstractJMSMessage msg)
     {
         super.postDeliver(msg);
         if (_acknowledgeMode == org.apache.qpid.jms.Session.NO_ACKNOWLEDGE && !_session.isInRecovery())
@@ -452,10 +454,8 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         }
         
         if (_acknowledgeMode == org.apache.qpid.jms.Session.AUTO_ACKNOWLEDGE  &&
-             !_session.isInRecovery() &&   
-             _session.getAMQConnection().getSyncAck())
+             !_session.isInRecovery() && _session.getAMQConnection().getSyncAck())
         {
-            ((AMQSession_0_10) getSession()).flushAcknowledgments();
             ((AMQSession_0_10) getSession()).getQpidSession().sync();
         }
     }

@@ -32,6 +32,7 @@ import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.BrokerDetails;
@@ -285,16 +286,23 @@ public class ConnectionTest extends QpidBrokerTestCase
         }
         catch (Exception e)
         {
-            assertTrue("Incorrect exception thrown",
-                       e.getMessage().contains("The following SASL mechanisms " +
-                       "[MY_MECH]"  +
-                       " specified by the client are not supported by the broker"));
+            assertTrue("Unexpected exception message : " + e.getMessage(),
+                       e.getMessage().contains("Client and broker have no SASL mechanisms in common."));
+            assertTrue("Unexpected exception message : " + e.getMessage(),
+                    e.getMessage().contains("Client restricted itself to : MY_MECH"));
+
         }
     }
 
-    public void testClientIDVerification() throws Exception
+    /**
+     * Tests that when the same user connects twice with same clientid, the second connection
+     * fails if the clientid verification feature is enabled (which uses a dummy 0-10 Session
+     * with the clientid as its name to detect the previous usage of the clientid by the user)
+     */
+    public void testClientIDVerificationForSameUser() throws Exception
     {
-        System.setProperty("qpid.verify_client_id", "true");
+        setTestSystemProperty(ClientProperties.QPID_VERIFY_CLIENT_ID, "true");
+
         BrokerDetails broker = getBroker();
         try
         {
@@ -302,19 +310,40 @@ public class ConnectionTest extends QpidBrokerTestCase
                                         "client_id", "test");
 
             Connection con2 = new AMQConnection(broker.toString(), "guest", "guest",
-                    "client_id", "test");
+                                        "client_id", "test");
 
             fail("The client should throw a ConnectionException stating the" +
                     " client ID is not unique");
         }
         catch (Exception e)
         {
-            assertTrue("Incorrect exception thrown",
+            assertTrue("Incorrect exception thrown: " + e.getMessage(),
                        e.getMessage().contains("ClientID must be unique"));
         }
-        finally
+    }
+
+    /**
+     * Tests that when different users connects with same clientid, the second connection
+     * succeeds even though the clientid verification feature is enabled (which uses a dummy
+     * 0-10 Session with the clientid as its name; these are only verified unique on a
+     * per-principal basis)
+     */
+    public void testClientIDVerificationForDifferentUsers() throws Exception
+    {
+        setTestSystemProperty(ClientProperties.QPID_VERIFY_CLIENT_ID, "true");
+
+        BrokerDetails broker = getBroker();
+        try
         {
-            System.setProperty("qpid.verify_client_id", "false");
+            Connection con = new AMQConnection(broker.toString(), "guest", "guest",
+                                        "client_id", "test");
+
+            Connection con2 = new AMQConnection(broker.toString(), "admin", "admin",
+                                        "client_id", "test");
+        }
+        catch (Exception e)
+        {
+            fail("Unexpected exception thrown, client id was not unique but usernames were different! " + e.getMessage());
         }
     }
 

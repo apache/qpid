@@ -22,6 +22,8 @@
 
   <import file="common.xml"/>
 
+  <property file="${project.root}/build.overrides"/>
+
   <findSubProjects name="broker-plugins" dir="broker-plugins"/>
   <findSubProjects name="client-plugins" dir="client-plugins"/>
   <findSubProjects name="management" dir="management" excludes="common,example"/>
@@ -31,8 +33,9 @@
   <property name="modules.tests"      value="systests perftests integrationtests testkit"/>
   <property name="modules.management" value="${management}"/>
   <property name="modules.plugin"     value="${broker-plugins} ${client-plugins}"/>
+  <property name="modules.opt"        value=""/>
   <property name="modules"            value="${modules.core} ${modules.examples}
-   ${modules.management} ${modules.tests} ${modules.plugin}"/>
+   ${modules.management} ${modules.tests} ${modules.plugin} ${modules.opt}"/>
 
   <property name="qpid.jar"           location="${build.lib}/qpid-all.jar"/>
   <basename property="qpid.jar.name"  file="${qpid.jar}"/>

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,11 +18,25 @@
  * under the License.
  *
  */
-package org.apache.qpid.security;
+package org.apache.qpid.server.store.berkeleydb;
 
-import javax.security.auth.callback.CallbackHandler;
-
-public interface AMQPCallbackHandler extends CallbackHandler
+public class MessageContentKey
 {
-    void initialise(String username,String password);    
+    private long _messageId;
+    
+    public MessageContentKey(long messageId)
+    {
+        _messageId = messageId;
+    }    
+    
+    
+    public long getMessageId()
+    {
+        return _messageId;
+    }
+
+    public void setMessageId(long messageId)
+    {
+        this._messageId = messageId;
+    }
 }

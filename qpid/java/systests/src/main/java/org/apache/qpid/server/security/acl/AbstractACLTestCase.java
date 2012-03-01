@@ -83,14 +83,8 @@ public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements 
     @Override
     public void setUp() throws Exception
     {
-        if (QpidHome == null)
-        {
-            fail("QPID_HOME not set");
-        }
-
         // Initialise ACLs.
-        _configFile = new File(QpidHome, "etc" + File.separator + getConfig());
-        
+        _configFile = new File("build" + File.separator + "etc" + File.separator + getConfig());
         // Initialise ACL files
         for (String virtualHost : getHostList())
         {
@@ -156,7 +150,7 @@ public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements 
      */
     public void setUpACLFile(String virtualHost) throws IOException, ConfigurationException
     {
-        String path = QpidHome + File.separator + "etc";
+        String path = "build" + File.separator + "etc";
         String className = StringUtils.substringBeforeLast(getClass().getSimpleName().toLowerCase(), "test");
         String testName = StringUtils.substringAfter(getName(), "test").toLowerCase();
         

@@ -1451,11 +1451,14 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         {
             try
             {
-                _delegate.verifyClientID();
+                if (!_delegate.verifyClientID())
+                {
+                    throw new AMQException(AMQConstant.ALREADY_EXISTS,"ClientID must be unique");
+                }
             }
             catch(JMSException e)
             {
-                throw new AMQException(AMQConstant.ALREADY_EXISTS,"ClientID must be unique",e);
+                    throw new AMQException(e.getMessage(),e);
             }
         }
     }

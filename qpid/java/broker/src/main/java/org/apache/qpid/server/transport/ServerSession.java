@@ -200,8 +200,8 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
     public void sendMessage(MessageTransfer xfr,
                             Runnable postIdSettingAction)
     {
-        invoke(xfr, postIdSettingAction);
         getConnectionModel().registerMessageDelivered(xfr.getBodySize());
+        invoke(xfr, postIdSettingAction);
     }
 
     public void onMessageDispositionChange(MessageTransfer xfr, MessageDispositionChangeListener acceptListener)
@@ -645,7 +645,7 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
             // Log a warning on idle or open transactions
             if (idleWarn > 0L && idleTime > idleWarn)
             {
-                CurrentActor.get().message(getLogSubject(), ChannelMessages.IDLE_TXN(openTime));
+                CurrentActor.get().message(getLogSubject(), ChannelMessages.IDLE_TXN(idleTime));
                 _logger.warn("IDLE TRANSACTION ALERT " + getLogSubject().toString() + " " + idleTime + " ms");
             }
             else if (openWarn > 0L && openTime > openWarn)

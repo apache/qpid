@@ -118,7 +118,7 @@ public class Broker
 
         ConfigurationFileApplicationRegistry config = new ConfigurationFileApplicationRegistry(configFile, options.getBundleContext());
         ServerConfiguration serverConfig = config.getConfiguration();
-        updateManagementPort(serverConfig, options.getJmxPort());
+        updateManagementPorts(serverConfig, options.getJmxPortRegistryServer(), options.getJmxPortConnectorServer());
 
         ApplicationRegistry.initialise(config);
 
@@ -326,19 +326,30 @@ public class Broker
     /**
      * Update the configuration data with the management port.
      * @param configuration
-     * @param managementPort The string from the command line
+     * @param registryServerPort The string from the command line
      */
-    private void updateManagementPort(ServerConfiguration configuration, Integer managementPort)
+    private void updateManagementPorts(ServerConfiguration configuration, Integer registryServerPort, Integer connectorServerPort)
     {
-        if (managementPort != null)
+        if (registryServerPort != null)
         {
             try
             {
-                configuration.setJMXManagementPort(managementPort);
+                configuration.setJMXPortRegistryServer(registryServerPort);
             }
             catch (NumberFormatException e)
             {
-                throw new InitException("Invalid management port: " + managementPort, null);
+                throw new InitException("Invalid management (registry server) port: " + registryServerPort, null);
+            }
+        }
+        if (connectorServerPort != null)
+        {
+            try
+            {
+                configuration.setJMXPortConnectorServer(connectorServerPort);
+            }
+            catch (NumberFormatException e)
+            {
+                throw new InitException("Invalid management (connector server) port: " + connectorServerPort, null);
             }
         }
     }

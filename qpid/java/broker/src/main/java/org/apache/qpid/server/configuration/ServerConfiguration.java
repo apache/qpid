@@ -58,7 +58,8 @@ public class ServerConfiguration extends ConfigurationPlugin
     public static final int DEFAULT_PORT = 5672;
     public static final int DEFAULT_SSL_PORT = 5671;
     public static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
-    public static final int DEFAULT_JMXPORT = 8999;
+    public static final int DEFAULT_JMXPORT_REGISTRYSERVER = 8999;
+    public static final int JMXPORT_CONNECTORSERVER_OFFSET = 100;
 
     public static final String QPID_HOME = "QPID_HOME";
     public static final String QPID_WORK = "QPID_WORK";
@@ -77,6 +78,8 @@ public class ServerConfiguration extends ConfigurationPlugin
     // Configuration values to be read from the configuration file
     //todo Move all properties to static values to ensure system testing can be performed.
     public static final String MGMT_CUSTOM_REGISTRY_SOCKET = "management.custom-registry-socket";
+    public static final String MGMT_JMXPORT_REGISTRYSERVER = "management.jmxport.registryServer";
+    public static final String MGMT_JMXPORT_CONNECTORSERVER = "management.jmxport.connectorServer";
     public static final String STATUS_UPDATES = "status-updates";
     public static final String ADVANCED_LOCALE = "advanced.locale";
 
@@ -85,7 +88,8 @@ public class ServerConfiguration extends ConfigurationPlugin
         envVarMap.put("QPID_ENABLEDIRECTBUFFERS", "advanced.enableDirectBuffers");
         envVarMap.put("QPID_SSLPORT", "connector.ssl.port");
         envVarMap.put("QPID_WRITEBIASED", "advanced.useWriteBiasedPool");
-        envVarMap.put("QPID_JMXPORT", "management.jmxport");
+        envVarMap.put("QPID_JMXPORT_REGISTRYSERVER", MGMT_JMXPORT_REGISTRYSERVER);
+        envVarMap.put("QPID_JMXPORT_CONNECTORSERVER", MGMT_JMXPORT_CONNECTORSERVER);
         envVarMap.put("QPID_FRAMESIZE", "advanced.framesize");
         envVarMap.put("QPID_MSGAUTH", "security.msg-auth");
         envVarMap.put("QPID_AUTOREGISTER", "auto_register");
@@ -470,14 +474,24 @@ public class ServerConfiguration extends ConfigurationPlugin
         return System.getProperty(QPID_HOME);
     }
 
-    public void setJMXManagementPort(int mport)
+    public void setJMXPortRegistryServer(int registryServerPort)
     {
-        getConfig().setProperty("management.jmxport", mport);
+        getConfig().setProperty(MGMT_JMXPORT_REGISTRYSERVER, registryServerPort);
     }
 
-    public int getJMXManagementPort()
+    public int getJMXPortRegistryServer()
     {
-        return getIntValue("management.jmxport", DEFAULT_JMXPORT);
+        return getIntValue(MGMT_JMXPORT_REGISTRYSERVER, DEFAULT_JMXPORT_REGISTRYSERVER);
+    }
+
+    public void setJMXPortConnectorServer(int connectorServerPort)
+    {
+        getConfig().setProperty(MGMT_JMXPORT_CONNECTORSERVER, connectorServerPort);
+    }
+
+    public int getJMXConnectorServerPort()
+    {
+        return getIntValue(MGMT_JMXPORT_CONNECTORSERVER, getJMXPortRegistryServer() + JMXPORT_CONNECTORSERVER_OFFSET);
     }
 
     public boolean getUseCustomRMISocketFactory()

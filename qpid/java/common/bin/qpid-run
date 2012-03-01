@@ -77,7 +77,10 @@ fi
 
 #Set the default system properties that we'll use now that they have
 #all been initialised
-SYSTEM_PROPS="-Damqj.logging.level=$AMQJ_LOGGING_LEVEL -DQPID_HOME=$QPID_HOME -DQPID_WORK=$QPID_WORK"
+declare -a SYSTEM_PROPS
+SYSTEM_PROPS[${#SYSTEM_PROPS[@]}]="-Damqj.logging.level=$AMQJ_LOGGING_LEVEL"
+SYSTEM_PROPS[${#SYSTEM_PROPS[@]}]="-DQPID_HOME=$QPID_HOME"
+SYSTEM_PROPS[${#SYSTEM_PROPS[@]}]="-DQPID_WORK=$QPID_WORK"
 
 #If logprefix or logsuffix set to use PID make that happen
 #Otherwise just pass the value through for these props
@@ -90,7 +93,7 @@ if [ -n "$QPID_LOG_PREFIX" ]; then
         log $INFO Using qpid logprefix property
         LOG_PREFIX=" -Dlogprefix=$QPID_LOG_PREFIX"
     fi
-    SYSTEM_PROPS="${SYSTEM_PROPS} ${LOG_PREFIX}"
+    SYSTEM_PROPS[${#SYSTEM_PROPS[@]}]="${LOG_PREFIX}"
 fi
 
 if [ -n "$QPID_LOG_SUFFIX" ]; then
@@ -101,10 +104,10 @@ if [ -n "$QPID_LOG_SUFFIX" ]; then
         log $INFO Using qpig logsuffix property
         LOG_SUFFIX=" -Dlogsuffix=$QPID_LOG_SUFFIX"
     fi
-    SYSTEM_PROPS="${SYSTEM_PROPS} ${LOG_SUFFIX}"
+    SYSTEM_PROPS[${#SYSTEM_PROPS[@]}]="${LOG_SUFFIX}"
 fi
 
-log $INFO System Properties set to $SYSTEM_PROPS
+log $INFO System Properties set to ${SYSTEM_PROPS[@]}
 log $INFO QPID_OPTS set to $QPID_OPTS
 
 program=$(basename $0)
@@ -254,6 +257,6 @@ if $cygwin; then
   JAVA=$(cygpath -u $JAVA)
 fi
 
-COMMAND=($JAVA $JAVA_VM $QPID_PNAME $JAVA_GC $JAVA_MEM $SYSTEM_PROPS $JAVA_OPTS $QPID_OPTS "${JAVA_ARGS[@]}")
+COMMAND=($JAVA $JAVA_VM $QPID_PNAME $JAVA_GC $JAVA_MEM "${SYSTEM_PROPS[@]}" $JAVA_OPTS $QPID_OPTS "${JAVA_ARGS[@]}")
 
 DISPATCH

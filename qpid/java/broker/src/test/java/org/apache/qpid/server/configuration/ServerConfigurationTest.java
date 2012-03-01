@@ -58,18 +58,45 @@ public class ServerConfigurationTest extends QpidTestCase
         ApplicationRegistry.remove();
     }
 
-    public void testSetJMXManagementPort() throws ConfigurationException
+    public void testSetJMXPortRegistryServer() throws ConfigurationException
     {
         _serverConfig.initialise();
-        _serverConfig.setJMXManagementPort(23);
-        assertEquals(23, _serverConfig.getJMXManagementPort());
+        _serverConfig.setJMXPortRegistryServer(23);
+        assertEquals(23, _serverConfig.getJMXPortRegistryServer());
     }
 
-    public void testGetJMXManagementPort() throws ConfigurationException
+    public void testGetJMXPortRegistryServer() throws ConfigurationException
     {
-        _config.setProperty("management.jmxport", 42);
+        _config.setProperty(ServerConfiguration.MGMT_JMXPORT_REGISTRYSERVER, 42);
         _serverConfig.initialise();
-        assertEquals(42, _serverConfig.getJMXManagementPort());
+        assertEquals(42, _serverConfig.getJMXPortRegistryServer());
+    }
+
+    public void testDefaultJMXPortRegistryServer() throws ConfigurationException
+    {
+        _serverConfig.initialise();
+        assertEquals(8999, _serverConfig.getJMXPortRegistryServer());
+    }
+
+    public void testSetJMXPortConnectorServer() throws ConfigurationException
+    {
+        ServerConfiguration serverConfig = new ServerConfiguration(_config);
+        serverConfig.setJMXPortConnectorServer(67);
+        assertEquals(67, serverConfig.getJMXConnectorServerPort());
+    }
+
+    public void testGetJMXPortConnectorServer() throws ConfigurationException
+    {
+        _config.setProperty(ServerConfiguration.MGMT_JMXPORT_CONNECTORSERVER, 67);
+        ServerConfiguration serverConfig = new ServerConfiguration(_config);
+        assertEquals(67, serverConfig.getJMXConnectorServerPort());
+    }
+
+    public void testDefaultJMXPortConnectorServer() throws ConfigurationException
+    {
+        ServerConfiguration serverConfig = new ServerConfiguration(_config);
+        assertEquals(ServerConfiguration.DEFAULT_JMXPORT_REGISTRYSERVER + ServerConfiguration.JMXPORT_CONNECTORSERVER_OFFSET,
+                        serverConfig.getJMXConnectorServerPort());
     }
 
     public void testGetPlatformMbeanserver() throws ConfigurationException

@@ -35,16 +35,8 @@ public class FirewallConfigTest extends QpidBrokerTestCase
     @Override
     protected void setUp() throws Exception
     {
-        // do setup
-        final String QPID_HOME = System.getProperty("QPID_HOME");
-
-        if (QPID_HOME == null)
-        {
-            fail("QPID_HOME not set");
-        }
-
         // Setup initial config file.
-        _configFile = new File(QPID_HOME, "etc/config-systests-firewall.xml");
+        _configFile = new File("build/etc/config-systests-firewall.xml");
         
         // Setup temporary config file
         _tmpConfig = File.createTempFile("config-systests-firewall", ".xml");
@@ -86,7 +78,7 @@ public class FirewallConfigTest extends QpidBrokerTestCase
     public void testVhostAllowBrokerDeny() throws Exception
     {
 
-        _configFile = new File(System.getProperty("QPID_HOME"), "etc/config-systests-firewall-2.xml");
+        _configFile = new File("build/etc/config-systests-firewall-2.xml");
         
         super.setUp();
         
@@ -119,7 +111,7 @@ public class FirewallConfigTest extends QpidBrokerTestCase
     
     public void testVhostDenyBrokerAllow() throws Exception
     {
-        _configFile = new File(System.getProperty("QPID_HOME"), "etc/config-systests-firewall-3.xml");
+        _configFile = new File("build/etc/config-systests-firewall-3.xml");
         
         super.setUp();
         

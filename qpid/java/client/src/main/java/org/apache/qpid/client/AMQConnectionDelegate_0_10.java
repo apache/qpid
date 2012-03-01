@@ -35,6 +35,7 @@ import javax.jms.XASession;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
+import org.apache.qpid.client.transport.ClientConnectionDelegate;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.BrokerDetails;
@@ -49,6 +50,7 @@ import org.apache.qpid.transport.ConnectionListener;
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.ProtocolVersionException;
 import org.apache.qpid.transport.SessionDetachCode;
+import org.apache.qpid.transport.SessionException;
 import org.apache.qpid.transport.TransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -193,6 +195,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
             }
 
             ConnectionSettings conSettings = retriveConnectionSettings(brokerDetail);
+            _qpidConnection.setConnectionDelegate(new ClientConnectionDelegate(conSettings, _conn.getConnectionURL()));
             _qpidConnection.connect(conSettings);
 
             _conn._connected = true;
@@ -408,7 +411,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         return _qpidConnection;
     }
 
-    public void verifyClientID() throws JMSException
+    public boolean verifyClientID() throws JMSException, AMQException
     {
         int prefetch = (int)_conn.getMaxPrefetch();
         AMQSession_0_10 ssn = (AMQSession_0_10)createSession(false, 1,prefetch,prefetch,_conn.getClientID());
@@ -417,13 +420,19 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         {
             ssn_0_10.awaitOpen();
         }
-        catch(Exception e)
+        catch(SessionException se)
         {
+            //if due to non unique client id for user return false, otherwise wrap and re-throw.
             if (ssn_0_10.getDetachCode() != null &&
                 ssn_0_10.getDetachCode() == SessionDetachCode.SESSION_BUSY)
             {
-                throw new JMSException("ClientID must be unique");
+                return false;
+            }
+            else
+            {
+                throw new AMQException(AMQConstant.INTERNAL_ERROR, "Unexpected SessionException thrown while awaiting session opening", se);
             }
         }
+        return true;
     }
 }

@@ -36,11 +36,13 @@ import javax.jms.XASession;
 import javax.net.ssl.SSLContext;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQTimeoutException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.failover.FailoverRetrySupport;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQState;
+import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateWaiter;
 import org.apache.qpid.framing.BasicQosBody;
 import org.apache.qpid.framing.BasicQosOkBody;
@@ -69,8 +71,30 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 
     public void closeConnection(long timeout) throws JMSException, AMQException
     {
-        _conn.getProtocolHandler().closeConnection(timeout);
+        final AMQStateManager stateManager = _conn.getProtocolHandler().getStateManager();
+        final AMQState currentState = stateManager.getCurrentState();
 
+        if (currentState.equals(AMQState.CONNECTION_CLOSED))
+        {
+            _logger.debug("Connection already closed.");
+        }
+        else if (currentState.equals(AMQState.CONNECTION_CLOSING))
+        {
+            _logger.debug("Connection already closing, awaiting closed state.");
+            final StateWaiter closeWaiter = new StateWaiter(stateManager, currentState, EnumSet.of(AMQState.CONNECTION_CLOSED));
+            try
+            {
+                closeWaiter.await(timeout);
+            }
+            catch (AMQTimeoutException te)
+            {
+                throw new AMQTimeoutException("Close did not complete in timely fashion", te);
+            }
+        }
+        else
+        {
+            _conn.getProtocolHandler().closeConnection(timeout);
+        }
     }
 
     public AMQConnectionDelegate_8_0(AMQConnection conn)
@@ -351,8 +375,8 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         return ProtocolVersion.v8_0;
     }
 
-    public void verifyClientID() throws JMSException
+    public boolean verifyClientID() throws JMSException
     {
-        // NOOP
+        return true;
     }
 }

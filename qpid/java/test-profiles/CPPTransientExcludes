@@ -27,3 +27,6 @@ org.apache.qpid.test.unit.xa.TopicTest#testMultiMessagesDurSubCrash
 org.apache.qpid.test.unit.xa.TopicTest#testRecover
 org.apache.qpid.test.unit.xa.QueueTest#testRecover
 org.apache.qpid.test.unit.xa.QueueTest#testSendAndRecover
+
+// test requires a persistent store
+org.apache.qpid.test.unit.ack.ClientAcknowledgeTest#testClientAckWithLargeFlusherPeriod
