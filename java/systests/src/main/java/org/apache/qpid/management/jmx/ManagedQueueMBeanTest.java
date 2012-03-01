@@ -223,17 +223,22 @@ public class ManagedQueueMBeanTest extends QpidBrokerTestCase
 
         asyncConnection.stop();
 
-        // The exact number of messages moved will be non deterministic, but the number of messages moved
-        // plus the number consumed should be equal to the number we originally sent.
+        // The exact number of messages moved will be non deterministic, as the number of messages processed
+        // by the consumer cannot be predicited.  There is also the possibility that a message can remain
+        // on the source queue.  This situation will arise if a message has been acquired by the consumer, but not
+        // yet delivered to the client application (i.e. MessageListener#onMessage()) when the Connection#stop() occurs.
+        //
+        // The number of messages moved + the number consumed + any messages remaining on source should
+        // *always* be equal to the number we originally sent.
 
         int numberOfMessagesReadByConsumer = totalConsumed.intValue();
         int numberOfMessagesOnDestinationQueue = _managedDestinationQueue.getMessageCount().intValue();
-        LOGGER.debug("Async consumer read : " + numberOfMessagesReadByConsumer
-                + " Number of messages moved to destination : " + numberOfMessagesOnDestinationQueue);
-        assertEquals(numberOfMessagesToSend, numberOfMessagesReadByConsumer + numberOfMessagesOnDestinationQueue);
-
         int numberOfMessagesRemainingOnSourceQueue = _managedSourceQueue.getMessageCount().intValue();
-        assertEquals(0, numberOfMessagesRemainingOnSourceQueue);
+
+        LOGGER.debug("Async consumer read : " + numberOfMessagesReadByConsumer
+                + " Number of messages moved to destination : " + numberOfMessagesOnDestinationQueue
+                + " Number of messages remaining on source : " + numberOfMessagesRemainingOnSourceQueue);
+        assertEquals("Unexpected number of messages after move", numberOfMessagesToSend, numberOfMessagesReadByConsumer + numberOfMessagesOnDestinationQueue + numberOfMessagesRemainingOnSourceQueue);
     }
 
     public void testMoveMessagesBetweenQueuesWithActiveConsumerOnDestinationQueue() throws Exception
