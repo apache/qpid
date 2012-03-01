@@ -32,17 +32,83 @@ namespace qpid {
 
 namespace acl {
 
-    enum ObjectType {OBJ_QUEUE, OBJ_EXCHANGE, OBJ_BROKER, OBJ_LINK,
-        OBJ_METHOD, OBJECTSIZE}; // OBJECTSIZE must be last in list
-    enum Action {ACT_CONSUME, ACT_PUBLISH, ACT_CREATE, ACT_ACCESS, ACT_BIND,
-        ACT_UNBIND, ACT_DELETE, ACT_PURGE, ACT_UPDATE,
-        ACTIONSIZE}; // ACTIONSIZE must be last in list
-    enum Property {PROP_NAME, PROP_DURABLE, PROP_OWNER, PROP_ROUTINGKEY,
-        PROP_PASSIVE, PROP_AUTODELETE, PROP_EXCLUSIVE, PROP_TYPE,
-        PROP_ALTERNATE, PROP_QUEUENAME, PROP_SCHEMAPACKAGE,
-        PROP_SCHEMACLASS, PROP_POLICYTYPE, PROP_MAXQUEUESIZE,
-        PROP_MAXQUEUECOUNT};
-    enum AclResult {ALLOW, ALLOWLOG, DENY, DENYLOG};	
+    // Interface enumerations.
+    // These enumerations define enum lists and implied text strings
+    // to match. They are used in two areas:
+    // 1. In the ACL specifications in the ACL file, file parsing, and
+    //    internal rule storage.
+    // 2. In the authorize interface in the rest of the broker where
+    //    code requests the ACL module to authorize an action.
+
+    // ObjectType  shared between ACL spec and ACL authorise interface
+    enum ObjectType {
+        OBJ_QUEUE,
+        OBJ_EXCHANGE,
+        OBJ_BROKER,
+        OBJ_LINK,
+        OBJ_METHOD,
+        OBJECTSIZE }; // OBJECTSIZE must be last in list
+
+    // Action  shared between ACL spec and ACL authorise interface
+    enum Action {
+        ACT_CONSUME,
+        ACT_PUBLISH,
+        ACT_CREATE,
+        ACT_ACCESS,
+        ACT_BIND,
+        ACT_UNBIND,
+        ACT_DELETE,
+        ACT_PURGE,
+        ACT_UPDATE,
+        ACTIONSIZE }; // ACTIONSIZE must be last in list
+
+    // Property used in ACL authorize interface
+    enum Property {
+        PROP_NAME,
+        PROP_DURABLE,
+        PROP_OWNER,
+        PROP_ROUTINGKEY,
+        PROP_PASSIVE,
+        PROP_AUTODELETE,
+        PROP_EXCLUSIVE,
+        PROP_TYPE,
+        PROP_ALTERNATE,
+        PROP_QUEUENAME,
+        PROP_SCHEMAPACKAGE,
+        PROP_SCHEMACLASS,
+        PROP_POLICYTYPE,
+        PROP_MAXQUEUESIZE,
+        PROP_MAXQUEUECOUNT };
+
+    // Property used in ACL spec file
+    // Note for properties common to file processing/rule storage and to
+    // broker rule lookups the identical enum values are used.
+    enum SpecProperty {
+        SPECPROP_NAME            = PROP_NAME,
+        SPECPROP_DURABLE         = PROP_DURABLE,
+        SPECPROP_OWNER           = PROP_OWNER,
+        SPECPROP_ROUTINGKEY      = PROP_ROUTINGKEY,
+        SPECPROP_PASSIVE         = PROP_PASSIVE,
+        SPECPROP_AUTODELETE      = PROP_AUTODELETE,
+        SPECPROP_EXCLUSIVE       = PROP_EXCLUSIVE,
+        SPECPROP_TYPE            = PROP_TYPE,
+        SPECPROP_ALTERNATE       = PROP_ALTERNATE,
+        SPECPROP_QUEUENAME       = PROP_QUEUENAME,
+        SPECPROP_SCHEMAPACKAGE   = PROP_SCHEMAPACKAGE,
+        SPECPROP_SCHEMACLASS     = PROP_SCHEMACLASS,
+        SPECPROP_POLICYTYPE      = PROP_POLICYTYPE,
+
+        SPECPROP_MAXQUEUESIZELOWERLIMIT,
+        SPECPROP_MAXQUEUESIZEUPPERLIMIT,
+        SPECPROP_MAXQUEUECOUNTLOWERLIMIT,
+        SPECPROP_MAXQUEUECOUNTUPPERLIMIT };
+
+// AclResult  shared between ACL spec and ACL authorise interface
+    enum AclResult {
+        ALLOW,
+        ALLOWLOG,
+        DENY,
+        DENYLOG };
 
 } // namespace acl
 
@@ -54,14 +120,25 @@ namespace broker {
 
     public:
 
-        // effienty turn off ACL on message transfer.
+        // Some ACLs are invoked on every message transfer.
+        // doTransferAcl pervents time consuming ACL calls on a per-message basis.
         virtual bool doTransferAcl()=0;
 
-        virtual bool authorise(const std::string& id, const acl::Action& action, const acl::ObjectType& objType, const std::string& name, 
+        virtual bool authorise(
+            const std::string&                    id,
+            const acl::Action&                    action,
+            const acl::ObjectType&                objType,
+            const std::string&                    name,
             std::map<acl::Property, std::string>* params=0)=0;
-        virtual bool authorise(const std::string& id, const acl::Action& action, const acl::ObjectType& objType, const std::string& ExchangeName, 
-            const std::string& RoutingKey)=0;
-        // create specilied authorise methods for cases that need faster matching as needed.
+
+        virtual bool authorise(
+            const std::string&      id,
+            const acl::Action&      action,
+            const acl::ObjectType&  objType,
+            const std::string&      ExchangeName,
+            const std::string&      RoutingKey)=0;
+
+        // Add specialized authorise() methods as required.
 
         virtual ~AclModule() {};
     };
@@ -134,7 +211,7 @@ namespace acl {
             if (str.compare("schemaclass")   == 0) return PROP_SCHEMACLASS;
             if (str.compare("policytype")    == 0) return PROP_POLICYTYPE;
             if (str.compare("maxqueuesize")  == 0) return PROP_MAXQUEUESIZE;
-            if (str.compare("maxqueuecount") == 0) return PROP_MAXQUEUECOUNT; 
+            if (str.compare("maxqueuecount") == 0) return PROP_MAXQUEUECOUNT;
             throw str;
         }
         static inline std::string getPropertyStr(const Property p) {
@@ -153,8 +230,54 @@ namespace acl {
             case PROP_SCHEMACLASS:   return "schemaclass";
             case PROP_POLICYTYPE:    return "policytype";
             case PROP_MAXQUEUESIZE:  return "maxqueuesize";
-            case PROP_MAXQUEUECOUNT: return "maxqueuecount"; 
+            case PROP_MAXQUEUECOUNT: return "maxqueuecount";
             default: assert(false); // should never get here
+            }
+            return "";
+        }
+        static inline SpecProperty getSpecProperty(const std::string& str) {
+            if (str.compare("name")          == 0) return SPECPROP_NAME;
+            if (str.compare("durable")       == 0) return SPECPROP_DURABLE;
+            if (str.compare("owner")         == 0) return SPECPROP_OWNER;
+            if (str.compare("routingkey")    == 0) return SPECPROP_ROUTINGKEY;
+            if (str.compare("passive")       == 0) return SPECPROP_PASSIVE;
+            if (str.compare("autodelete")    == 0) return SPECPROP_AUTODELETE;
+            if (str.compare("exclusive")     == 0) return SPECPROP_EXCLUSIVE;
+            if (str.compare("type")          == 0) return SPECPROP_TYPE;
+            if (str.compare("alternate")     == 0) return SPECPROP_ALTERNATE;
+            if (str.compare("queuename")     == 0) return SPECPROP_QUEUENAME;
+            if (str.compare("schemapackage") == 0) return SPECPROP_SCHEMAPACKAGE;
+            if (str.compare("schemaclass")   == 0) return SPECPROP_SCHEMACLASS;
+            if (str.compare("policytype")    == 0) return SPECPROP_POLICYTYPE;
+            if (str.compare("queuemaxsizelowerlimit")   == 0) return SPECPROP_MAXQUEUESIZELOWERLIMIT;
+            if (str.compare("queuemaxsizeupperlimit")   == 0) return SPECPROP_MAXQUEUESIZEUPPERLIMIT;
+            if (str.compare("queuemaxcountlowerlimit")  == 0) return SPECPROP_MAXQUEUECOUNTLOWERLIMIT;
+            if (str.compare("queuemaxcountupperlimit")  == 0) return SPECPROP_MAXQUEUECOUNTUPPERLIMIT;
+            // Allow old names in ACL file as aliases for newly-named properties
+            if (str.compare("maxqueuesize")             == 0) return SPECPROP_MAXQUEUESIZEUPPERLIMIT;
+            if (str.compare("maxqueuecount")            == 0) return SPECPROP_MAXQUEUECOUNTUPPERLIMIT;
+            throw str;
+        }
+        static inline std::string getPropertyStr(const SpecProperty p) {
+            switch (p) {
+                case SPECPROP_NAME:          return "name";
+                case SPECPROP_DURABLE:       return "durable";
+                case SPECPROP_OWNER:         return "owner";
+                case SPECPROP_ROUTINGKEY:    return "routingkey";
+                case SPECPROP_PASSIVE:       return "passive";
+                case SPECPROP_AUTODELETE:    return "autodelete";
+                case SPECPROP_EXCLUSIVE:     return "exclusive";
+                case SPECPROP_TYPE:          return "type";
+                case SPECPROP_ALTERNATE:     return "alternate";
+                case SPECPROP_QUEUENAME:     return "queuename";
+                case SPECPROP_SCHEMAPACKAGE: return "schemapackage";
+                case SPECPROP_SCHEMACLASS:   return "schemaclass";
+                case SPECPROP_POLICYTYPE:    return "policytype";
+                case SPECPROP_MAXQUEUESIZELOWERLIMIT:  return "queuemaxsizelowerlimit";
+                case SPECPROP_MAXQUEUESIZEUPPERLIMIT:  return "queuemaxsizeupperlimit";
+                case SPECPROP_MAXQUEUECOUNTLOWERLIMIT: return "queuemaxcountlowerlimit";
+                case SPECPROP_MAXQUEUECOUNTUPPERLIMIT: return "queuemaxcountupperlimit";
+                default: assert(false); // should never get here
             }
             return "";
         }
@@ -187,8 +310,11 @@ namespace acl {
         typedef boost::shared_ptr<objectMap>        objectMapPtr;
         typedef std::map<Property, std::string>     propMap;
         typedef propMap::const_iterator             propMapItr;
+        typedef std::map<SpecProperty, std::string> specPropMap;
+        typedef specPropMap::const_iterator         specPropMapItr;
 
-        // This map contains the legal combinations of object/action/properties found in an ACL file
+        // This map contains the legal combinations of object/action/properties
+        // found in an ACL file
         static void loadValidationMap(objectMapPtr& map) {
             if (!map.get()) return;
             map->clear();
@@ -260,21 +386,31 @@ namespace acl {
             map->insert(objectPair(OBJ_METHOD, a4));
         }
 
-        static std::string propertyMapToString(const std::map<Property, std::string>* params) {
+        //
+        // properyMapToString
+        //
+        template <typename T>
+        static std::string propertyMapToString(
+            const std::map<T, std::string>* params)
+        {
             std::ostringstream ss;
             ss << "{";
             if (params)
             {
-                for (propMapItr pMItr = params->begin(); pMItr != params->end(); pMItr++) {
-                    ss << " " << getPropertyStr((Property) pMItr-> first) << "=" << pMItr->second;
+                for (typename std::map<T, std::string>::const_iterator
+                     pMItr = params->begin(); pMItr != params->end(); pMItr++)
+                {
+                    ss << " " << getPropertyStr((T) pMItr-> first)
+                    << "=" << pMItr->second;
                 }
             }
             ss << " }";
             return ss.str();
         }
+
     };
 
-    
+
 }} // namespace qpid::acl
 
 #endif // QPID_ACLMODULE_ACL_H
