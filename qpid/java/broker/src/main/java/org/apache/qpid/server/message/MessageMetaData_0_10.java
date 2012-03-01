@@ -44,7 +44,7 @@ public class MessageMetaData_0_10 implements StorableMessageMetaData, InboundMes
     private int _bodySize;
     private volatile SoftReference<ByteBuffer> _body;
 
-    private static final int ENCODER_SIZE = 1 << 16;
+    private static final int ENCODER_SIZE = 1 << 10;
 
     public static final MessageMetaDataType.Factory<MessageMetaData_0_10> FACTORY = new MetaDataFactory();
 

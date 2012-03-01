@@ -65,4 +65,16 @@ public interface AMQConnectionDelegate
     ProtocolVersion getProtocolVersion();
 
     boolean verifyClientID() throws JMSException, AMQException;
+
+    /**
+     * Tests whether the server has advertised support for the specified feature
+     * via the qpid.features server connection property.  By convention the feature name
+     * with begin <code>qpid.</code> followed by one or more words separated by minus signs
+     * e.g. qpid.jms-selector.
+     *
+     * @param featureName name of feature.
+     *
+     * @return true if the feature is supported by the server
+     */
+    boolean isSupportedServerFeature(final String featureName);
 }

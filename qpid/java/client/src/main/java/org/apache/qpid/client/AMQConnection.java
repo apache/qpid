@@ -175,6 +175,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     // new amqp-0-10 encoded format.
     private boolean _useLegacyMapMessageFormat;
 
+    //used to track the last failover time for
+    //Address resolution purposes
+    private volatile long _lastFailoverTime = 0;
+
     /**
      * @param broker      brokerdetails
      * @param username    username
@@ -1076,6 +1080,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      */
     public boolean firePreFailover(boolean redirect)
     {
+        _lastFailoverTime = System.currentTimeMillis();
         boolean proceed = true;
         if (_connectionListener != null)
         {
@@ -1397,6 +1402,19 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             return null;
         }
     }
+
+    /**
+     * Tests whether the Broker has advertised support for the named feature.
+     *
+     * @param featureName
+     *
+     * @return true if the feature is supported, or false otherwise.
+     */
+    boolean isSupportedServerFeature(final String featureName)
+    {
+        return _delegate.isSupportedServerFeature(featureName);
+    }
+
     public boolean isFailingOver()
     {
         return (_protocolHandler.getFailoverLatch() != null);
@@ -1461,5 +1479,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                     throw new AMQException(e.getMessage(),e);
             }
         }
+    }
+
+    public long getLastFailoverTime()
+    {
+         return _lastFailoverTime;
     }
 }

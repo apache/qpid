@@ -256,7 +256,7 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals(false, _serverConfig.getManagementSSLEnabled());
     }
 
-    public void testGetManagementKeyStorePassword() throws ConfigurationException
+    public void testGetManagementKeystorePassword() throws ConfigurationException
     {
         // Check default
         _serverConfig.initialise();
@@ -534,43 +534,57 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals("10", _serverConfig.getSSLPorts().get(0));
     }
 
-    public void testGetKeystorePath() throws ConfigurationException
+    public void testGetConnectorKeystorePath() throws ConfigurationException
     {
         // Check default
         _serverConfig.initialise();
-        assertNull(_serverConfig.getKeystorePath());
+        assertNull(_serverConfig.getConnectorKeyStorePath());
 
         // Check value we set
-        _config.setProperty("connector.ssl.keystorePath", "a");
+        _config.setProperty("connector.ssl.keyStorePath", "a");
         _serverConfig = new ServerConfiguration(_config);
         _serverConfig.initialise();
-        assertEquals("a", _serverConfig.getKeystorePath());
+        assertEquals("a", _serverConfig.getConnectorKeyStorePath());
+
+        // Ensure we continue to support the old name keystorePath
+        _config.clearProperty("connector.ssl.keyStorePath");
+        _config.setProperty("connector.ssl.keystorePath", "b");
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals("b", _serverConfig.getConnectorKeyStorePath());
     }
 
-    public void testGetKeystorePassword() throws ConfigurationException
+    public void testGetConnectorKeystorePassword() throws ConfigurationException
     {
         // Check default
         _serverConfig.initialise();
-        assertNull(_serverConfig.getKeystorePassword());
+        assertNull(_serverConfig.getConnectorKeyStorePassword());
 
         // Check value we set
-        _config.setProperty("connector.ssl.keystorePassword", "a");
+        _config.setProperty("connector.ssl.keyStorePassword", "a");
         _serverConfig = new ServerConfiguration(_config);
         _serverConfig.initialise();
-        assertEquals("a", _serverConfig.getKeystorePassword());
+        assertEquals("a", _serverConfig.getConnectorKeyStorePassword());
+
+        // Ensure we continue to support the old name keystorePassword
+        _config.clearProperty("connector.ssl.keyStorePassword");
+        _config.setProperty("connector.ssl.keystorePassword", "b");
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals("b", _serverConfig.getConnectorKeyStorePassword());
     }
 
-    public void testGetCertType() throws ConfigurationException
+    public void testGetConnectorCertType() throws ConfigurationException
     {
         // Check default
         _serverConfig.initialise();
-        assertEquals("SunX509", _serverConfig.getCertType());
+        assertEquals("SunX509", _serverConfig.getConnectorCertType());
 
         // Check value we set
         _config.setProperty("connector.ssl.certType", "a");
         _serverConfig = new ServerConfiguration(_config);
         _serverConfig.initialise();
-        assertEquals("a", _serverConfig.getCertType());
+        assertEquals("a", _serverConfig.getConnectorCertType());
     }
 
     public void testGetUseBiasedWrites() throws ConfigurationException
@@ -1284,7 +1298,7 @@ public class ServerConfigurationTest extends QpidTestCase
     }
 
     /**
-     * Test that a non-existant virtualhost file throws a {@link ConfigurationException}.
+     * Test that a non-existent virtualhost file throws a {@link ConfigurationException}.
      * <p>
      * Test for QPID-2624
      */
@@ -1312,7 +1326,27 @@ public class ServerConfigurationTest extends QpidTestCase
         }
     }
     
-    /*
+    /**
+     * Tests that element disabledFeatures allows features that would
+     * otherwise be advertised by the broker to be turned off.
+     */
+    public void testDisabledFeatures() throws ConfigurationException
+    {
+        // Check default
+        _serverConfig.initialise();
+        _serverConfig = new ServerConfiguration(_config);
+        assertEquals("Unexpected size", 0, _serverConfig.getDisabledFeatures().size());
+
+        // Check value we set
+        _config.addProperty("disabledFeatures", "qpid.feature1");
+        _config.addProperty("disabledFeatures", "qpid.feature2");
+        _serverConfig = new ServerConfiguration(_config);
+
+        assertEquals("Unexpected size",2, _serverConfig.getDisabledFeatures().size());
+        assertTrue("Unexpected contents", _serverConfig.getDisabledFeatures().contains("qpid.feature1"));
+    }
+
+    /**
      * Tests that the old element security.jmx.access (that used to be used
      * to define JMX access rights) is rejected.
      */
@@ -1338,7 +1372,7 @@ public class ServerConfigurationTest extends QpidTestCase
         }
     }
 
-    /*
+    /**
      * Tests that the old element security.jmx.principal-database (that used to define the
      * principal database used for JMX authentication) is rejected.
      */
@@ -1364,7 +1398,7 @@ public class ServerConfigurationTest extends QpidTestCase
         }
     }
 
-    /*
+    /**
      * Tests that the old element security.principal-databases. ... (that used to define 
      * principal databases) is rejected.
      */
@@ -1389,7 +1423,7 @@ public class ServerConfigurationTest extends QpidTestCase
         }
     }
 
-    /*
+    /**
      * Tests that the old element housekeeping.expiredMessageCheckPeriod. ... (that was
      * replaced by housekeeping.checkPeriod) is rejected.
      */

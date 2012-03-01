@@ -41,6 +41,7 @@ import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
 import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.filter.MessageFilter;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
@@ -333,24 +334,9 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
                                       AMQShortString queueName,
                                       AMQProtocolHandler protocolHandler,
                                       boolean nowait,
-                                      String messageSelector,
+                                      MessageFilter messageSelector,
                                       int tag) throws AMQException, FailoverException
     {
-        FieldTable arguments = FieldTableFactory.newFieldTable();
-        if ((messageSelector != null) && !messageSelector.equals(""))
-        {
-            arguments.put(AMQPFilterTypes.JMS_SELECTOR.getValue(), messageSelector);
-        }
-
-        if (consumer.isAutoClose())
-        {
-            arguments.put(AMQPFilterTypes.AUTO_CLOSE.getValue(), Boolean.TRUE);
-        }
-
-        if (consumer.isNoConsume())
-        {
-            arguments.put(AMQPFilterTypes.NO_CONSUME.getValue(), Boolean.TRUE);
-        }
 
         BasicConsumeBody body = getMethodRegistry().createBasicConsumeBody(getTicket(),
                                                                            queueName,
@@ -359,7 +345,7 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
                                                                            consumer.getAcknowledgeMode() == Session.NO_ACKNOWLEDGE,
                                                                            consumer.isExclusive(),
                                                                            nowait,
-                                                                           arguments);
+                                                                           consumer.getArguments());
 
 
         AMQFrame jmsConsume = body.generateFrame(_channelId);

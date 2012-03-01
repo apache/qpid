@@ -26,20 +26,21 @@ import org.slf4j.LoggerFactory;
 
 public class JMSSelectorFilter implements MessageFilter
 {
-    /**
-     * this JMSSelectorFilter's logger
-     */
     private static final Logger _logger = LoggerFactory.getLogger(JMSSelectorFilter.class);
 
-    private String _selector;
-    private BooleanExpression _matcher;
+    private final String _selector;
+    private final BooleanExpression _matcher;
 
     public JMSSelectorFilter(String selector) throws AMQInternalException
     {
-        _selector = selector;
-        if (JMSSelectorFilter._logger.isDebugEnabled())
+        if (selector == null || "".equals(selector))
         {
-            JMSSelectorFilter._logger.debug("Created JMSSelectorFilter with selector:" + _selector);
+            throw new IllegalArgumentException("Cannot create a JMSSelectorFilter with a null or empty selector string");
+        }
+        _selector = selector;
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Created JMSSelectorFilter with selector:" + _selector);
         }
         _matcher = new SelectorParser().parse(selector);
     }
@@ -49,16 +50,15 @@ public class JMSSelectorFilter implements MessageFilter
         try
         {
             boolean match = _matcher.matches(message);
-            if (JMSSelectorFilter._logger.isDebugEnabled())
+            if (_logger.isDebugEnabled())
             {
-                JMSSelectorFilter._logger.debug(message + " match(" + match + ") selector(" + System
-                        .identityHashCode(_selector) + "):" + _selector);
+                _logger.debug(message + " match(" + match + ") selector(" + _selector + "): " + _selector);
             }
             return match;
         }
         catch (AMQInternalException e)
         {
-            JMSSelectorFilter._logger.warn("Caght exception when evaluating message selector for message  " + message, e);
+            _logger.warn("Caught exception when evaluating message selector for message  " + message, e);
         }
         return false;
     }

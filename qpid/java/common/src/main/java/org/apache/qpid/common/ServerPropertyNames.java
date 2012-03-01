@@ -18,22 +18,26 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.message;
+package org.apache.qpid.common;
 
-public class TransferMessageReference extends MessageReference<MessageTransferMessage>
+/**
+ * Keys names used within the serverProperties argument of the ConnectionStart
+ * method.  These property names are Qpid specific.
+ */
+public final class ServerPropertyNames
 {
-    public TransferMessageReference(MessageTransferMessage message)
-    {
-        super(message);
-    }
+    /**
+     * Server property: federation tag UUID
+     */
+    public static final String FEDERATION_TAG = "qpid.federation_tag";
 
-    protected void onReference(MessageTransferMessage message)
-    {
-        message.incrementReference();
-    }
+    /**
+     * Server property: array of features supported by the server.
+     */
+    public static final String QPID_FEATURES = "qpid.features";
 
-    protected void onRelease(MessageTransferMessage message)
-    {
-        message.decrementReference();
-    }
+    /**
+     * Feature: Signifies that a server supports JMS selectors.
+     */
+    public static final String FEATURE_QPID_JMS_SELECTOR = "qpid.jms-selector";
 }

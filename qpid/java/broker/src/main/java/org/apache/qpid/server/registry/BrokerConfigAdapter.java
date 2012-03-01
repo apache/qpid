@@ -23,7 +23,10 @@ package org.apache.qpid.server.registry;
 import org.apache.qpid.server.configuration.*;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.common.ServerPropertyNames;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.UUID;
 import java.util.List;
 import java.util.Map;
@@ -157,5 +160,20 @@ public class BrokerConfigAdapter implements BrokerConfig
     public String getFederationTag()
     {
         return _federationTag;
+    }
+
+    /**
+     * @see org.apache.qpid.server.configuration.BrokerConfig#getFeatures()
+     */
+    @Override
+    public List<String> getFeatures()
+    {
+        final List<String> features = new ArrayList<String>();
+        if (!_instance.getConfiguration().getDisabledFeatures().contains(ServerPropertyNames.FEATURE_QPID_JMS_SELECTOR))
+        {
+            features.add(ServerPropertyNames.FEATURE_QPID_JMS_SELECTOR);
+        }
+
+        return Collections.unmodifiableList(features);
     }
 }

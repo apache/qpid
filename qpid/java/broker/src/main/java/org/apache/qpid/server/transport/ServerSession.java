@@ -53,6 +53,7 @@ import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
+import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -172,6 +173,7 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
 
                 public void postCommit()
                 {
+                    MessageReference<?> ref = message.newReference();
                     for(int i = 0; i < _queues.length; i++)
                     {
                         try
@@ -184,6 +186,7 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
                             throw new RuntimeException(e);
                         }
                     }
+                    ref.release();
                 }
 
                 public void onRollback()
@@ -412,12 +415,11 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
             {
                 queue.unregisterSubscription(sub);
             }
-
         }
         catch (AMQException e)
         {
             // TODO
-            _logger.error("Failed to unregister subscription", e);
+            _logger.error("Failed to unregister subscription :" + e.getMessage(), e);
         }
         finally
         {
@@ -683,12 +685,17 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
     {
         // unregister subscriptions in order to prevent sending of new messages
         // to subscriptions with closing session
+        unregisterSubscriptions();
+
+        super.close();
+    }
+
+    void unregisterSubscriptions()
+    {
         final Collection<Subscription_0_10> subscriptions = getSubscriptions();
         for (Subscription_0_10 subscription_0_10 : subscriptions)
         {
             unregister(subscription_0_10);
         }
-
-        super.close();
     }
 }

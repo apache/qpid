@@ -47,12 +47,17 @@ public class MessageConverterTest extends TestCase
     protected JMSTextMessage testTextMessage;
 
     protected JMSMapMessage testMapMessage;
-    private AMQSession _session = new TestAMQSession();
+    private AMQConnection _connection;
+    private AMQSession _session;
 
 
     protected void setUp() throws Exception
     {
         super.setUp();
+
+        _connection =  new MockAMQConnection("amqp://guest:guest@client/test?brokerlist='tcp://localhost:1'");
+        _session = new TestAMQSession(_connection);
+
         testTextMessage = new JMSTextMessage(AMQMessageDelegateFactory.FACTORY_0_8);
 
         //Set Message Text

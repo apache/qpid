@@ -17,13 +17,14 @@
  - under the License.
  -->
 <project name="bdbstore" default="build">
-    <property name="module.depends" value="common client management/common broker perftests systests" />
-    <property name="module.test.depends" value="test common/test broker/test management/common perftests systests" />
+    <property name="module.depends" value="common broker" />
+    <property name="module.test.depends" value="test client common/test broker/test management/common perftests systests" />
+    <property name="module.genpom" value="true"/>
 
     <import file="../module.xml" />
 
     <property name="bdb.lib.dir" value="${project.root}/lib/bdbstore" />
-    <property name="bdb.version" value="4.0.103" />
+    <property name="bdb.version" value="4.0.117" />
     <property name="bdb.download.url" value="http://download.oracle.com/maven/com/sleepycat/je/${bdb.version}/je-${bdb.version}.jar" />
     <property name="bdb.jar.file" value="${bdb.lib.dir}/je-${bdb.version}.jar" />
 
@@ -80,5 +81,4 @@ http://www.oracle.com/technetwork/database/berkeleydb/downloads/jeoslicense-0868
         <fileset dir="src/test/resources/upgrade"/>
       </copy>
     </target>
-
 </project>

@@ -17,8 +17,10 @@
 # under the License.
 #
 
-# File to allow overriding default values of properties within the build system
-# without having to specify them on the command line on every build execution
+ver: 0.15.0
 
-# Override the setting for the optional modules to be built
-#modules.opt=bdbstore
+Bundle-SymbolicName: qpid-broker
+Bundle-Version: ${ver}
+Export-Package: *;version=${ver}
+Bundle-RequiredExecutionEnvironment: J2SE-1.5
+

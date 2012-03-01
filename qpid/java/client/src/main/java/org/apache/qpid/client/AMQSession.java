@@ -89,9 +89,9 @@ import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.util.FlowControllingBlockingQueue;
 import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.filter.MessageFilter;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.protocol.AMQConstant;
@@ -308,7 +308,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     protected final FlowControllingBlockingQueue _queue;
 
     /** Holds the highest received delivery tag. */
-    private final AtomicLong _highestDeliveryTag = new AtomicLong(-1);
+    protected final AtomicLong _highestDeliveryTag = new AtomicLong(-1);
     private final AtomicLong _rollbackMark = new AtomicLong(-1);
     
     /** All the not yet acknowledged message tags */
@@ -534,7 +534,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         {
             _queue = new FlowControllingBlockingQueue(_prefetchHighMark, null);
         }
-        
+
         // Add creation logging to tie in with the existing close logging
         if (_logger.isInfoEnabled())
         {
@@ -856,6 +856,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         //Check that we are clean to commit.
         if (_failedOverDirty)
         {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Session " + _channelId + " was dirty whilst failing over. Rolling back.");
+            }
             rollback();
 
             throw new TransactionRolledBackException("Connection failover has occured with uncommitted transaction activity." +
@@ -890,7 +894,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         C consumer = _consumers.get(consumerTag);
         if (consumer != null)
         {
-            if (!consumer.isNoConsume())  // Normal Consumer
+            if (!consumer.isBrowseOnly())  // Normal Consumer
             {
                 // Clean the Maps up first
                 // Flush any pending messages for this consumerTag
@@ -1092,7 +1096,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     // possible to determine  when querying the broker whether there are no arguments or just a non-matching selector
                     // argument, as specifying null for the arguments when querying means they should not be checked at all
                     args.put(AMQPFilterTypes.JMS_SELECTOR.getValue().toString(), messageSelector == null ? "" : messageSelector);
-                    
+
                     // if the queue is bound to the exchange but NOT for this topic and selector, then the JMS spec
                     // says we must trash the subscription.
                     boolean isQueueBound = isQueueBound(dest.getExchangeName(), dest.getAMQQueueName());
@@ -1814,9 +1818,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     suspendChannel(true);
                 }
 
-                // Let the dispatcher know that all the incomming messages
-                // should be rolled back(reject/release)
-                _rollbackMark.set(_highestDeliveryTag.get());
+                setRollbackMark();
 
                 syncDispatchQueue();
 
@@ -2008,28 +2010,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
                         AMQDestination amqd = (AMQDestination) destination;
 
-                        // TODO: Define selectors in AMQP
-                        // TODO: construct the rawSelector from the selector string if rawSelector == null
-                        final FieldTable ft = FieldTableFactory.newFieldTable();
-                        // if (rawSelector != null)
-                        // ft.put("headers", rawSelector.getDataAsBytes());
-                        // rawSelector is used by HeadersExchange and is not a JMS Selector
-                        if (rawSelector != null)
-                        {
-                            ft.addAll(rawSelector);
-                        }
-
-                        // We must always send the selector argument even if empty, so that we can tell when a selector is removed from a 
-                        // durable topic subscription that the broker arguments don't match any more. This is because it is not otherwise
-                        // possible to determine  when querying the broker whether there are no arguments or just a non-matching selector
-                        // argument, as specifying null for the arguments when querying means they should not be checked at all
-                        ft.put(AMQPFilterTypes.JMS_SELECTOR.getValue(), messageSelector == null ? "" : messageSelector);
-
                         C consumer;
                         try
                         {
                             consumer = createMessageConsumer(amqd, prefetchHigh, prefetchLow,
-                                                             noLocal, exclusive, messageSelector, ft, noConsume, autoClose);
+                                                             noLocal, exclusive, messageSelector, rawSelector, noConsume, autoClose);
                         }
                         catch(TransportException e)
                         {
@@ -2570,7 +2555,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      * @param queueName
      */
     private void consumeFromQueue(C consumer, AMQShortString queueName,
-                                  AMQProtocolHandler protocolHandler, boolean nowait, String messageSelector) throws AMQException, FailoverException
+                                  AMQProtocolHandler protocolHandler, boolean nowait, MessageFilter messageSelector) throws AMQException, FailoverException
     {
         int tagId = _nextTag++;
 
@@ -2598,7 +2583,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     }
 
     public abstract void sendConsume(C consumer, AMQShortString queueName,
-                                     AMQProtocolHandler protocolHandler, boolean nowait, String messageSelector, int tag) throws AMQException, FailoverException;
+                                     AMQProtocolHandler protocolHandler, boolean nowait, MessageFilter messageSelector, int tag) throws AMQException, FailoverException;
 
     private P createProducerImpl(final Destination destination, final boolean mandatory, final boolean immediate)
             throws JMSException
@@ -2923,7 +2908,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         try
         {
-            consumeFromQueue(consumer, queueName, protocolHandler, nowait, consumer._messageSelector);
+            consumeFromQueue(consumer, queueName, protocolHandler, nowait, consumer.getMessageSelectorFilter());
         }
         catch (FailoverException e)
         {
@@ -3202,13 +3187,13 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     setConnectionStopped(true);
                 }
 
-                _rollbackMark.set(_highestDeliveryTag.get());
+                setRollbackMark();
 
                 _dispatcherLogger.debug("Session Pre Dispatch Queue cleared");
 
                 for (C consumer : _consumers.values())
                 {
-                    if (!consumer.isNoConsume())
+                    if (!consumer.isBrowseOnly())
                     {
                         consumer.rollback();
                     }
@@ -3351,6 +3336,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 if (!(message instanceof CloseConsumerMessage)
                     && tagLE(deliveryTag, _rollbackMark.get()))
                 {
+                    if (_logger.isDebugEnabled())
+                    {
+                        _logger.debug("Rejecting message because delivery tag " + deliveryTag
+                                + " <= rollback mark " + _rollbackMark.get());
+                    }
                     rejectMessage(message, true);
                 }
                 else if (_usingDispatcherForCleanup)
@@ -3390,7 +3380,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     }
                     else
                     {
-                        if (consumer.isNoConsume())
+                        if (consumer.isBrowseOnly())
                         {
                             _dispatcherLogger.info("Received a message("
                                                    + System.identityHashCode(message) + ")" + "["
@@ -3412,6 +3402,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 // Don't reject if we're already closing
                 if (!_closed.get())
                 {
+                    if (_logger.isDebugEnabled())
+                    {
+                        _logger.debug("Rejecting message with delivery tag " + message.getDeliveryTag()
+                                + " for closing consumer " + String.valueOf(consumer == null? null: consumer._consumerTag));
+                    }
                     rejectMessage(message, true);
                 }
             }
@@ -3541,5 +3536,16 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     private boolean isBrowseOnlyDestination(Destination destination)
     {
         return ((destination instanceof AMQDestination)  && ((AMQDestination)destination).isBrowseOnly());
+    }
+
+    private void setRollbackMark()
+    {
+        // Let the dispatcher know that all the incomming messages
+        // should be rolled back(reject/release)
+        _rollbackMark.set(_highestDeliveryTag.get());
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Rollback mark is set to " + _rollbackMark.get());
+        }
     }
 }

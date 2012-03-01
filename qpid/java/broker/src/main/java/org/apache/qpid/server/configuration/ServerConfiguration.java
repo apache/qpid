@@ -123,7 +123,7 @@ public class ServerConfiguration extends ConfigurationPlugin
      * Configuration Manager to be initialised in the Application Registry.
      * <p>
      * If using this ServerConfiguration via an ApplicationRegistry there is no
-     * need to explictly call {@link #initialise()} as this is done via the
+     * need to explicitly call {@link #initialise()} as this is done via the
      * {@link ApplicationRegistry#initialise()} method.
      *
      * @param configurationURL
@@ -169,7 +169,7 @@ public class ServerConfiguration extends ConfigurationPlugin
      * Configuration Manager to be initialised in the Application Registry.
      * <p>
      * If using this ServerConfiguration via an ApplicationRegistry there is no 
-     * need to explictly call {@link #initialise()} as this is done via the
+     * need to explicitly call {@link #initialise()} as this is done via the
      * {@link ApplicationRegistry#initialise()} method.
      *
      * @param conf
@@ -238,6 +238,22 @@ public class ServerConfiguration extends ConfigurationPlugin
             String message = "Validation error : housekeeping/expiredMessageCheckPeriod must be replaced by housekeeping/checkPeriod."
                     + (_configFile == null ? "" : " Configuration file : " + _configFile);
             throw new ConfigurationException(message);
+        }
+
+        // QPID-3517: Inconsistency in capitalisation in the SSL configuration keys used within the connector and management configuration
+        // sections. For the moment, continue to understand both but generate a deprecated warning if the less preferred keystore is used.
+        for (String key : new String[] {"management.ssl.keystorePath",
+                "management.ssl.keystorePassword," +
+                "connector.ssl.keystorePath",
+                "connector.ssl.keystorePassword"})
+        {
+            if (contains(key))
+            {
+                final String deprecatedXpath = key.replaceAll("\\.", "/");
+                final String preferredXpath = deprecatedXpath.replaceAll("keystore", "keyStore");
+                _logger.warn("Validation warning: " + deprecatedXpath + " is deprecated and must be replaced by " + preferredXpath
+                        + (_configFile == null ? "" : " Configuration file : " + _configFile));
+            }
         }
     }
 
@@ -404,7 +420,7 @@ public class ServerConfiguration extends ConfigurationPlugin
     public final static Configuration flatConfig(File file) throws ConfigurationException
     {
         // We have to override the interpolate methods so that
-        // interpolation takes place accross the entirety of the
+        // interpolation takes place across the entirety of the
         // composite configuration. Without doing this each
         // configuration object only interpolates variables defined
         // inside itself.
@@ -551,7 +567,8 @@ public class ServerConfiguration extends ConfigurationPlugin
 
     public String getManagementKeyStorePath()
     {
-        return getStringValue("management.ssl.keyStorePath");
+        final String fallback = getStringValue("management.ssl.keystorePath");
+        return getStringValue("management.ssl.keyStorePath", fallback);
     }
 
     public boolean getManagementSSLEnabled()
@@ -561,7 +578,8 @@ public class ServerConfiguration extends ConfigurationPlugin
 
     public String getManagementKeyStorePassword()
     {
-        return getStringValue("management.ssl.keyStorePassword");
+        final String fallback = getStringValue("management.ssl.keystorePassword");
+        return getStringValue("management.ssl.keyStorePassword", fallback);
     }
 
     public boolean getQueueAutoRegister()
@@ -699,17 +717,19 @@ public class ServerConfiguration extends ConfigurationPlugin
         return getListValue("connector.ssl.port", Collections.<Integer>singletonList(DEFAULT_SSL_PORT));
     }
 
-    public String getKeystorePath()
+    public String getConnectorKeyStorePath()
     {
-        return getStringValue("connector.ssl.keystorePath");
+        final String fallback = getStringValue("connector.ssl.keystorePath"); // pre-0.13 broker supported this name.
+        return getStringValue("connector.ssl.keyStorePath", fallback);
     }
 
-    public String getKeystorePassword()
+    public String getConnectorKeyStorePassword()
     {
-        return getStringValue("connector.ssl.keystorePassword");
+        final String fallback = getStringValue("connector.ssl.keystorePassword"); // pre-0.13 brokers supported this name.
+        return getStringValue("connector.ssl.keyStorePassword", fallback);
     }
 
-    public String getCertType()
+    public String getConnectorCertType()
     {
         return getStringValue("connector.ssl.certType", "SunX509");
     }
@@ -772,5 +792,17 @@ public class ServerConfiguration extends ConfigurationPlugin
     public int getMaxChannelCount()
     {
         return getIntValue("maximumChannelCount", 256);
+    }
+
+    /**
+     * List of Broker features that have been disabled within configuration.  Disabled
+     * features won't be advertised to the clients on connection.
+     *
+     * @return list of disabled features, or empty list if no features are disabled.
+     */
+    public List<String> getDisabledFeatures()
+    {
+        final List<String> disabledFeatures = getListValue("disabledFeatures", Collections.emptyList());
+        return disabledFeatures;
     }
 }

@@ -20,10 +20,14 @@
  */
 package org.apache.qpid.client;
 
+import org.apache.qpid.AMQInternalException;
+import org.apache.qpid.filter.JMSSelectorFilter;
+import org.apache.qpid.filter.MessageFilter;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.jms.MessageConsumer;
 import org.apache.qpid.jms.Session;
@@ -31,6 +35,7 @@ import org.apache.qpid.transport.TransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.jms.InvalidSelectorException;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
@@ -52,7 +57,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     /** The connection being used by this consumer */
     protected final AMQConnection _connection;
 
-    protected final String _messageSelector;
+    protected final MessageFilter _messageSelectorFilter;
 
     private final boolean _noLocal;
 
@@ -138,7 +143,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
      */
     private final boolean _autoClose;
 
-    private final boolean _noConsume;
+    private final boolean _browseOnly;
     private List<StackTraceElement> _closedStack = null;
 
 
@@ -146,28 +151,44 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     protected BasicMessageConsumer(int channelId, AMQConnection connection, AMQDestination destination,
                                    String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory,
                                    AMQSession session, AMQProtocolHandler protocolHandler,
-                                   FieldTable arguments, int prefetchHigh, int prefetchLow,
-                                   boolean exclusive, int acknowledgeMode, boolean noConsume, boolean autoClose)
+                                   FieldTable rawSelector, int prefetchHigh, int prefetchLow,
+                                   boolean exclusive, int acknowledgeMode, boolean browseOnly, boolean autoClose) throws JMSException
     {
         _channelId = channelId;
         _connection = connection;
-        _messageSelector = messageSelector;
         _noLocal = noLocal;
         _destination = destination;
         _messageFactory = messageFactory;
         _session = session;
         _protocolHandler = protocolHandler;
-        _arguments = arguments;
         _prefetchHigh = prefetchHigh;
         _prefetchLow = prefetchLow;
         _exclusive = exclusive;
         
         _synchronousQueue = new LinkedBlockingQueue();
         _autoClose = autoClose;
-        _noConsume = noConsume;
+        _browseOnly = browseOnly;
+
+        try
+        {
+            if (messageSelector == null || "".equals(messageSelector.trim()))
+            {
+                _messageSelectorFilter = null;
+            }
+            else
+            {
+                _messageSelectorFilter = new JMSSelectorFilter(messageSelector);
+            }
+        }
+        catch (final AMQInternalException ie)
+        {
+            InvalidSelectorException ise = new InvalidSelectorException("cannot create consumer because of selector issue");
+            ise.setLinkedException(ie);
+            throw ise;
+        }
 
         // Force queue browsers not to use acknowledge modes.
-        if (_noConsume)
+        if (_browseOnly)
         {
             _acknowledgeMode = Session.NO_ACKNOWLEDGE;
         }
@@ -175,6 +196,21 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         {
             _acknowledgeMode = acknowledgeMode;
         }
+
+        final FieldTable ft = FieldTableFactory.newFieldTable();
+        // rawSelector is used by HeadersExchange and is not a JMS Selector
+        if (rawSelector != null)
+        {
+            ft.addAll(rawSelector);
+        }
+
+        // We must always send the selector argument even if empty, so that we can tell when a selector is removed from a
+        // durable topic subscription that the broker arguments don't match any more. This is because it is not otherwise
+        // possible to determine  when querying the broker whether there are no arguments or just a non-matching selector
+        // argument, as specifying null for the arguments when querying means they should not be checked at all
+        ft.put(AMQPFilterTypes.JMS_SELECTOR.getValue(), messageSelector == null ? "" : messageSelector);
+
+        _arguments = ft;
     }
 
     public AMQDestination getDestination()
@@ -186,7 +222,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     {
         checkPreConditions();
 
-        return _messageSelector;
+        return _messageSelectorFilter == null ? null :_messageSelectorFilter.getSelector();
     }
 
     public MessageListener getMessageListener() throws JMSException
@@ -343,6 +379,11 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     public boolean isReceiving()
     {
         return _receiving.get();
+    }
+
+    public MessageFilter getMessageSelectorFilter()
+    {
+        return _messageSelectorFilter;
     }
 
     public Message receive() throws JMSException
@@ -874,9 +915,9 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         return _autoClose;
     }
 
-    public boolean isNoConsume()
+    public boolean isBrowseOnly()
     {
-        return _noConsume;
+        return _browseOnly;
     }
 
     public void rollback()

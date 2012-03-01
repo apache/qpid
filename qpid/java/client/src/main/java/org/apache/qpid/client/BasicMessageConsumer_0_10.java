@@ -20,22 +20,20 @@ package org.apache.qpid.client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.qpid.client.AMQDestination.AddressOption;
-import org.apache.qpid.client.AMQDestination.DestSyntax;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.transport.*;
-import org.apache.qpid.filter.MessageFilter;
-import org.apache.qpid.filter.JMSSelectorFilter;
+import org.apache.qpid.jms.Session;
 
-import javax.jms.InvalidSelectorException;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
+
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -51,11 +49,6 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
     protected final Logger _logger = LoggerFactory.getLogger(getClass());
 
     /**
-     * The message selector filter associated with this consumer message selector
-     */
-    private MessageFilter _filter = null;
-
-    /**
      * The underlying QpidSession
      */
     private AMQSession_0_10 _0_10session;
@@ -63,7 +56,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
     /**
      * Indicates whether this consumer receives pre-acquired messages
      */
-    private boolean _preAcquire = true;
+    private final boolean _preAcquire;
 
     /**
      * Specify whether this consumer is performing a sync receive
@@ -71,44 +64,27 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
     private final AtomicBoolean _syncReceive = new AtomicBoolean(false);
     private String _consumerTagString;
     
-    private long capacity = 0;
+    private final long _capacity;
+
+    /** Flag indicating if the server supports message selectors */
+    protected final boolean _serverJmsSelectorSupport;
 
     protected BasicMessageConsumer_0_10(int channelId, AMQConnection connection, AMQDestination destination,
                                         String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory,
-                                        AMQSession session, AMQProtocolHandler protocolHandler,
-                                        FieldTable arguments, int prefetchHigh, int prefetchLow,
-                                        boolean exclusive, int acknowledgeMode, boolean noConsume, boolean autoClose)
+                                        AMQSession<?,?> session, AMQProtocolHandler protocolHandler,
+                                        FieldTable rawSelector, int prefetchHigh, int prefetchLow,
+                                        boolean exclusive, int acknowledgeMode, boolean browseOnly, boolean autoClose)
             throws JMSException
     {
         super(channelId, connection, destination, messageSelector, noLocal, messageFactory, session, protocolHandler,
-                arguments, prefetchHigh, prefetchLow, exclusive, acknowledgeMode, noConsume, autoClose);
+                rawSelector, prefetchHigh, prefetchLow, exclusive, acknowledgeMode, browseOnly, autoClose);
         _0_10session = (AMQSession_0_10) session;
-        if (messageSelector != null && !messageSelector.equals(""))
-        {
-            try
-            {
-                _filter = new JMSSelectorFilter(messageSelector);
-            }
-            catch (AMQInternalException e)
-            {
-                throw new InvalidSelectorException("cannot create consumer because of selector issue");
-            }
-            if (destination instanceof AMQQueue)
-            {
-                _preAcquire = false;
-            }
-        }
-        
-        // Destination setting overrides connection defaults
-        if (destination.getDestSyntax() == DestSyntax.ADDR && 
-                destination.getLink().getConsumerCapacity() > 0)
-        {
-            capacity = destination.getLink().getConsumerCapacity();
-        }
-        else if (getSession().prefetch())
-        {
-            capacity = _0_10session.getAMQConnection().getMaxPrefetch();
-        }
+
+        _preAcquire = evaluatePreAcquire(browseOnly, destination);
+
+        _capacity = evaluateCapacity(destination);
+        _serverJmsSelectorSupport = connection.isSupportedServerFeature(ServerPropertyNames.FEATURE_QPID_JMS_SELECTOR);
+
 
         if (destination.isAddressResolved() && AMQDestination.TOPIC_TYPE == destination.getAddressType()) 
         {            
@@ -121,7 +97,6 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
             }
         }
     }
-
 
     @Override public void setConsumerTag(int consumerTag)
     {
@@ -148,14 +123,21 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         {
             if (checkPreConditions(jmsMessage))
             {
-                if (isMessageListenerSet() && capacity == 0)
+                if (isMessageListenerSet() && _capacity == 0)
                 {
-                    _0_10session.getQpidSession().messageFlow(getConsumerTagString(),
-                                                              MessageCreditUnit.MESSAGE, 1,
-                                                              Option.UNRELIABLE);
+                    messageFlow();
                 }
                 _logger.debug("messageOk, trying to notify");
                 super.notifyMessage(jmsMessage);
+            }
+            else
+            {
+                // if we are synchronously waiting for a message
+                // and messages are not pre-fetched we then need to request another one
+                if(_capacity == 0)
+                {
+                   messageFlow();
+                }
             }
         }
         catch (AMQException e)
@@ -227,12 +209,11 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
     private boolean checkPreConditions(AbstractJMSMessage message) throws AMQException
     {
         boolean messageOk = true;
-        // TODO Use a tag for fiding out if message filtering is done here or by the broker.
         try
         {
-            if (_messageSelector != null && !_messageSelector.equals(""))
+            if (_messageSelectorFilter != null && !_serverJmsSelectorSupport)
             {
-                messageOk = _filter.matches(message);
+                messageOk = _messageSelectorFilter.matches(message);
             }
         }
         catch (Exception e)
@@ -245,6 +226,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
             _logger.debug("messageOk " + messageOk);
             _logger.debug("_preAcquire " + _preAcquire);
         }
+
         if (!messageOk)
         {
             if (_preAcquire)
@@ -261,23 +243,15 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
             {
                 if (_logger.isDebugEnabled())
                 {
-                    _logger.debug("Message not OK, releasing");
+                    _logger.debug("filterMessage - not ack'ing message as not acquired");
                 }
-                releaseMessage(message);
-            }
-            // if we are syncrhonously waiting for a message
-            // and messages are not prefetched we then need to request another one
-            if(capacity == 0)
-            {
-               _0_10session.getQpidSession().messageFlow(getConsumerTagString(),
-                                                         MessageCreditUnit.MESSAGE, 1,
-                                                         Option.UNRELIABLE);
+                flushUnwantedMessage(message);
             }
         }
-        // now we need to acquire this message if needed
-        // this is the case of queue with a message selector set
-        if (!_preAcquire && messageOk && !isNoConsume())
+        else if (!_preAcquire && !isBrowseOnly())
         {
+            // now we need to acquire this message if needed
+            // this is the case of queue with a message selector set
             if (_logger.isDebugEnabled())
             {
                 _logger.debug("filterMessage - trying to acquire message");
@@ -285,6 +259,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
             messageOk = acquireMessage(message);
             _logger.debug("filterMessage - message acquire status : " + messageOk);
         }
+
         return messageOk;
     }
 
@@ -295,38 +270,38 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
      * @param message The message to be acknowledged
      * @throws AMQException If the message cannot be acquired due to some internal error.
      */
-    private void acknowledgeMessage(AbstractJMSMessage message) throws AMQException
+    private void acknowledgeMessage(final AbstractJMSMessage message) throws AMQException
     {
-        if (!_preAcquire)
-        {
-            RangeSet ranges = new RangeSet();
-            ranges.add((int) message.getDeliveryTag());
-            _0_10session.messageAcknowledge
-                (ranges,
-                 _acknowledgeMode != org.apache.qpid.jms.Session.NO_ACKNOWLEDGE);
+        final RangeSet ranges = new RangeSet();
+        ranges.add((int) message.getDeliveryTag());
+        _0_10session.messageAcknowledge
+            (ranges,
+             _acknowledgeMode != org.apache.qpid.jms.Session.NO_ACKNOWLEDGE);
 
-            AMQException amqe = _0_10session.getCurrentException();
-            if (amqe != null)
-            {
-                throw amqe;
-            }
+        final AMQException amqe = _0_10session.getCurrentException();
+        if (amqe != null)
+        {
+            throw amqe;
         }
     }
 
     /**
-     * Release a message
+     * Flush an unwanted message. For 0-10 we need to ensure that all messages are indicated
+     * processed to ensure their AMQP command-id is marked completed.
      *
-     * @param message The message to be released
-     * @throws AMQException If the message cannot be released due to some internal error.
+     * @param message The unwanted message to be flushed
+     * @throws AMQException If the unwanted message cannot be flushed due to some internal error.
      */
-    private void releaseMessage(AbstractJMSMessage message) throws AMQException
+    private void flushUnwantedMessage(final AbstractJMSMessage message) throws AMQException
     {
-        if (_preAcquire)
+        final RangeSet ranges = new RangeSet();
+        ranges.add((int) message.getDeliveryTag());
+        _0_10session.flushProcessed(ranges,false);
+
+        final AMQException amqe = _0_10session.getCurrentException();
+        if (amqe != null)
         {
-            RangeSet ranges = new RangeSet();
-            ranges.add((int) message.getDeliveryTag());
-            _0_10session.getQpidSession().messageRelease(ranges);
-            _0_10session.sync();
+            throw amqe;
         }
     }
 
@@ -337,36 +312,37 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
      * @return true if the message has been acquired, false otherwise.
      * @throws AMQException If the message cannot be acquired due to some internal error.
      */
-    private boolean acquireMessage(AbstractJMSMessage message) throws AMQException
+    private boolean acquireMessage(final AbstractJMSMessage message) throws AMQException
     {
         boolean result = false;
-        if (!_preAcquire)
+        final RangeSet ranges = new RangeSet();
+        ranges.add((int) message.getDeliveryTag());
+
+        final Acquired acq = _0_10session.getQpidSession().messageAcquire(ranges).get();
+
+        final RangeSet acquired = acq.getTransfers();
+        if (acquired != null && acquired.size() > 0)
         {
-            RangeSet ranges = new RangeSet();
-            ranges.add((int) message.getDeliveryTag());
-
-            Acquired acq = _0_10session.getQpidSession().messageAcquire(ranges).get();
-
-            RangeSet acquired = acq.getTransfers();
-            if (acquired != null && acquired.size() > 0)
-            {
-                result = true;
-            }
+            result = true;
         }
         return result;
     }
 
+    private void messageFlow()
+    {
+        _0_10session.getQpidSession().messageFlow(getConsumerTagString(),
+                                                  MessageCreditUnit.MESSAGE, 1,
+                                                  Option.UNRELIABLE);
+    }
 
     public void setMessageListener(final MessageListener messageListener) throws JMSException
     {
         super.setMessageListener(messageListener);
         try
         {
-            if (messageListener != null && capacity == 0)
+            if (messageListener != null && _capacity == 0)
             {
-                _0_10session.getQpidSession().messageFlow(getConsumerTagString(),
-                                                          MessageCreditUnit.MESSAGE, 1,
-                                                          Option.UNRELIABLE);
+                messageFlow();
             }
             if (messageListener != null && !_synchronousQueue.isEmpty())
             {
@@ -389,9 +365,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
     {
         if (_0_10session.isStarted() && _syncReceive.get())
         {
-            _0_10session.getQpidSession().messageFlow
-                (getConsumerTagString(), MessageCreditUnit.MESSAGE, 1,
-                 Option.UNRELIABLE);
+            messageFlow();
         }
     }
 
@@ -406,15 +380,13 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
      */
     public Object getMessageFromQueue(long l) throws InterruptedException
     {
-        if (capacity == 0)
+        if (_capacity == 0)
         {
             _syncReceive.set(true);
         }
-        if (_0_10session.isStarted() && capacity == 0 && _synchronousQueue.isEmpty())
+        if (_0_10session.isStarted() && _capacity == 0 && _synchronousQueue.isEmpty())
         {
-            _0_10session.getQpidSession().messageFlow(getConsumerTagString(),
-                                                      MessageCreditUnit.MESSAGE, 1,
-                                                      Option.UNRELIABLE);
+            messageFlow();
         }
         Object o = super.getMessageFromQueue(l);
         if (o == null && _0_10session.isStarted())
@@ -427,18 +399,18 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
                 (getConsumerTagString(), MessageCreditUnit.BYTE,
                  0xFFFFFFFF, Option.UNRELIABLE);
             
-            if (capacity > 0)
+            if (_capacity > 0)
             {
                 _0_10session.getQpidSession().messageFlow
                                                (getConsumerTagString(),
                                                 MessageCreditUnit.MESSAGE,
-                                                capacity,
+                                                _capacity,
                                                 Option.UNRELIABLE);
             }
             _0_10session.syncDispatchQueue();
             o = super.getMessageFromQueue(-1);
         }
-        if (capacity == 0)
+        if (_capacity == 0)
         {
             _syncReceive.set(false);
         }
@@ -448,16 +420,26 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
     void postDeliver(AbstractJMSMessage msg)
     {
         super.postDeliver(msg);
-        if (_acknowledgeMode == org.apache.qpid.jms.Session.NO_ACKNOWLEDGE && !_session.isInRecovery())
+
+        switch (_acknowledgeMode)
         {
-          _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+            case Session.SESSION_TRANSACTED:
+                _0_10session.sendTxCompletionsIfNecessary();
+                break;
+            case Session.NO_ACKNOWLEDGE:
+                if (!_session.isInRecovery())
+                {
+                  _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+                }
+                break;
+            case Session.AUTO_ACKNOWLEDGE:
+                if (!_session.isInRecovery() && _session.getAMQConnection().getSyncAck())
+                {
+                    ((AMQSession_0_10) getSession()).getQpidSession().sync();
+                }
+                break;
         }
         
-        if (_acknowledgeMode == org.apache.qpid.jms.Session.AUTO_ACKNOWLEDGE  &&
-             !_session.isInRecovery() && _session.getAMQConnection().getSyncAck())
-        {
-            ((AMQSession_0_10) getSession()).getQpidSession().sync();
-        }
     }
 
     Message receiveBrowse() throws JMSException
@@ -526,4 +508,51 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
             }
         }
     }
+
+    long getCapacity()
+    {
+        return _capacity;
+    }
+
+    boolean isPreAcquire()
+    {
+        return _preAcquire;
+    }
+
+    private boolean evaluatePreAcquire(boolean browseOnly, AMQDestination destination)
+    {
+        boolean preAcquire;
+        if (browseOnly)
+        {
+            preAcquire = false;
+        }
+        else
+        {
+            boolean isQueue = (destination instanceof AMQQueue || getDestination().getAddressType() == AMQDestination.QUEUE_TYPE);
+            if (isQueue && getMessageSelectorFilter() != null)
+            {
+                preAcquire = false;
+            }
+            else
+            {
+                preAcquire = true;
+            }
+        }
+        return preAcquire;
+    }
+
+    private long evaluateCapacity(AMQDestination destination)
+    {
+        long capacity = 0;
+        if (destination.getLink() != null && destination.getLink().getConsumerCapacity() > 0)
+        {
+            capacity = destination.getLink().getConsumerCapacity();
+        }
+        else if (getSession().prefetch())
+        {
+            capacity = _0_10session.getAMQConnection().getMaxPrefetch();
+        }
+        return capacity;
+    }
+
 }

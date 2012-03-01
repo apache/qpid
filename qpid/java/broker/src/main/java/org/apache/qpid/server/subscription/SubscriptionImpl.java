@@ -460,7 +460,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     public void queueDeleted(AMQQueue queue)
     {
         _deleted.set(true);
-//        _channel.queueDeleted(queue);
     }
 
     public boolean filtersMessages()
