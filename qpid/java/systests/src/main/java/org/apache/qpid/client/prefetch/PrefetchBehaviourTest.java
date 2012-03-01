@@ -1,24 +1,3 @@
-package org.apache.qpid.client.prefetch;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.jms.Connection;
-import javax.jms.Destination;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageListener;
-import javax.jms.MessageProducer;
-import javax.jms.Queue;
-import javax.jms.Session;
-import javax.jms.TextMessage;
-
-import org.apache.qpid.configuration.ClientProperties;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /*
 *
 * Licensed to the Apache Software Foundation (ASF) under one
@@ -39,6 +18,26 @@ import org.slf4j.LoggerFactory;
 * under the License.
 *
 */
+package org.apache.qpid.client.prefetch;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.jms.Connection;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.Session;
+
+import org.apache.qpid.configuration.ClientProperties;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
 public class PrefetchBehaviourTest extends QpidBrokerTestCase
 {
     protected static final Logger _logger = LoggerFactory.getLogger(PrefetchBehaviourTest.class);
@@ -132,44 +131,66 @@ public class PrefetchBehaviourTest extends QpidBrokerTestCase
         //wait for the other consumer to finish to ensure it completes ok
         _logger.debug("waiting for async consumer to complete");
         assertTrue("Async processing failed to complete in allowed timeframe", _processingStarted.await(processingTime + 2000, TimeUnit.MILLISECONDS));
-        assertFalse("Unexpecte exception during async message processing",_exceptionCaught.get());
+        assertFalse("Unexpected exception during async message processing",_exceptionCaught.get());
     }
 
     /**
-     * Test Goal: Verify if connection stop releases all messages in it's prefetch buffer.
-     * Test Strategy: Send 10 messages to a queue. Create a consumer with maxprefetch of 5, but never consume them.
-     *                Stop the connection. Create a new connection and a consumer with maxprefetch 10 on the same queue.
-     *                Try to receive all 10 messages.
+     * This test was originally known as AMQConnectionTest#testPrefetchSystemProperty.
+     *
      */
-    public void testConnectionStop() throws Exception
+    public void testMessagesAreDistributedBetweenConsumersWithLowPrefetch() throws Exception
     {
-        setTestClientSystemProperty(ClientProperties.MAX_PREFETCH_PROP_NAME, "10");
-        Connection con = getConnection();
-        con.start();
-        Session ssn = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Destination queue = ssn.createQueue("ADDR:my-queue;{create: always}");
+        Queue queue = getTestQueue();
 
-        MessageProducer prod = ssn.createProducer(queue);
-        for (int i=0; i<10;i++)
+        setTestClientSystemProperty(ClientProperties.MAX_PREFETCH_PROP_NAME, new Integer(2).toString());
+
+        Connection connection = getConnection();
+        connection.start();
+        // Create Consumer A
+        Session consSessA = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        MessageConsumer consumerA = consSessA.createConsumer(queue);
+
+        // ensure message delivery to consumer A is started (required for 0-8..0-9-1)
+        final Message msg = consumerA.receiveNoWait();
+        assertNull(msg);
+
+        Session producerSession = connection.createSession(true, Session.SESSION_TRANSACTED);
+        sendMessage(producerSession, queue, 3);
+
+        // Create Consumer B
+        MessageConsumer consumerB = null;
+        if (isBroker010())
         {
-           prod.send(ssn.createTextMessage("Msg" + i));
+            // 0-10 prefetch is per consumer so we create Consumer B on the same session as Consumer A
+            consumerB = consSessA.createConsumer(queue);
+        }
+        else
+        {
+            // 0-8..0-9-1 prefetch is per session so we create Consumer B on a separate session
+            Session consSessB = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            consumerB = consSessB.createConsumer(queue);
         }
 
-        MessageConsumer consumer = ssn.createConsumer(queue);
-        // This is to ensure we get the first client to prefetch.
-        Message msg = consumer.receive(1000);
-        assertNotNull("The first consumer should get one message",msg);
-        con.stop();
+        // As message delivery to consumer A is already started, the first two messages should
+        // now be with consumer A.  The last message will still be on the Broker as consumer A's
+        // credit is exhausted and message delivery for consumer B is not yet running.
 
-        Connection con2 = getConnection();
-        con2.start();
-        Session ssn2 = con2.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        MessageConsumer consumer2 = ssn2.createConsumer(queue);
-        for (int i=0; i<9;i++)
+        // As described by QPID-3747, for 0-10 we *must* check Consumer B before Consumer A.
+        // If we were to reverse the order, the SessionComplete will restore Consumer A's credit,
+        // and the third message could be delivered to either Consumer A or Consumer B.
+
+        // Check that consumer B gets the last (third) message.
+        final Message msgConsumerB = consumerB.receive(1500);
+        assertNotNull("Consumer B should have received a message", msgConsumerB);
+        assertEquals("Consumer B received message with unexpected index", 2, msgConsumerB.getIntProperty(INDEX));
+
+        // Now check that consumer A has indeed got the first two messages.
+        for (int i = 0; i < 2; i++)
         {
-           TextMessage m = (TextMessage)consumer2.receive(1000);
-           assertNotNull("The second consumer should get 9 messages, but received only " + i,m);
+            final Message msgConsumerA = consumerA.receive(1500);
+            assertNotNull("Consumer A should have received a message " + i, msgConsumerA);
+            assertEquals("Consumer A received message with unexpected index", i, msgConsumerA.getIntProperty(INDEX));
         }
     }
-
 }
+

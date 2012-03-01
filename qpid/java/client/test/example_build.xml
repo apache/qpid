@@ -73,7 +73,7 @@
         </javac>
 
         <copy todir="${example.classes}">
-            <!-- copy any non java src files into the build tree, e.g. log4j.properties -->
+            <!-- copy any non java src files into the build tree, e.g. properties files -->
             <fileset dir="${example.src}">
                 <exclude name="**/*.java"/>
                 <exclude name="**/package.html"/>

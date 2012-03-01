@@ -275,10 +275,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         {
             if(arguments.containsKey(QPID_SHARED_MSG_GROUP) && String.valueOf(arguments.get(QPID_SHARED_MSG_GROUP)).equals("1"))
             {
-                String defaultGroup = String.valueOf(arguments.get(QPID_DEFAULT_MESSAGE_GROUP));
+                Object defaultGroup = arguments.get(QPID_DEFAULT_MESSAGE_GROUP);
                 _messageGroupManager =
                         new DefinedGroupMessageGroupManager(String.valueOf(arguments.get(QPID_GROUP_HEADER_KEY)),
-                                defaultGroup == null ? QPID_NO_GROUP : defaultGroup,
+                                defaultGroup == null ? QPID_NO_GROUP : defaultGroup.toString(),
                                 this);
             }
             else
@@ -2255,9 +2255,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
         public boolean equals(Object o)
         {
-            assert o != null;
-            assert o instanceof QueueEntryListener;
-            return _sub == ((QueueEntryListener) o)._sub;
+            return o != null
+                    && o instanceof SimpleAMQQueue.QueueEntryListener
+                    && _sub == ((QueueEntryListener) o)._sub;
         }
 
         public int hashCode()

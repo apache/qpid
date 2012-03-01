@@ -26,6 +26,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
@@ -55,6 +56,11 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
         VirtualHost virtualHost = session.getVirtualHost();
         ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
         ExchangeFactory exchangeFactory = virtualHost.getExchangeFactory();
+        final AMQChannel channel = session.getChannel(channelId);
+        if (channel == null)
+        {
+            throw body.getChannelNotFoundException(channelId);
+        }
 
         if (_logger.isDebugEnabled())
         {
@@ -102,6 +108,7 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
         {
             MethodRegistry methodRegistry = session.getMethodRegistry();
             AMQMethodBody responseBody = methodRegistry.createExchangeDeclareOkBody();
+            channel.sync();
             session.writeFrame(responseBody.generateFrame(channelId));
         }
     }

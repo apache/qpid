@@ -64,18 +64,18 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         VirtualHost virtualHost = protocolConnection.getVirtualHost();
         ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
+        AMQChannel channel = protocolConnection.getChannel(channelId);
+
+        if (channel == null)
+        {
+            throw body.getChannelNotFoundException(channelId);
+        }
 
         final AMQQueue queue;
         final AMQShortString routingKey;
 
         if (body.getQueue() == null)
         {
-            AMQChannel channel = protocolConnection.getChannel(channelId);
-
-            if (channel == null)
-            {
-                throw body.getChannelNotFoundException(channelId);
-            }
 
             queue = channel.getDefaultQueue();
 
@@ -150,6 +150,7 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         }
         if (!body.getNowait())
         {
+            channel.sync();
             MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
             AMQMethodBody responseBody = methodRegistry.createQueueBindOkBody();
             protocolConnection.writeFrame(responseBody.generateFrame(channelId));

@@ -34,8 +34,10 @@ import javax.naming.Reference;
 import javax.naming.Referenceable;
 import javax.transaction.TransactionManager;
 
+import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.ra.admin.QpidQueue;
 import org.apache.qpid.ra.admin.QpidTopic;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -181,4 +183,19 @@ public class Util
    {
       return (object == null ? "null" : object.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(object))) ;
    }
+
+
+   public static String maskUrlForLog(final String url)
+   {
+       String results = null;
+
+       try
+       {
+           results = new AMQConnectionURL(url).toString();
+       }
+       catch(Exception ignore){}
+
+       return (results == null) ? url : results;
+   }
+
 }

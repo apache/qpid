@@ -30,12 +30,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.sleepycat.bind.tuple.IntegerBinding;
 import com.sleepycat.bind.tuple.LongBinding;
 import com.sleepycat.bind.tuple.StringBinding;
 import com.sleepycat.je.*;
@@ -93,6 +95,8 @@ import com.sleepycat.bind.tuple.TupleBinding;
 public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 {
     private static final Logger _log = Logger.getLogger(BDBMessageStore.class);
+
+    private static final int LOCK_RETRY_ATTEMPTS = 5;
 
     static final int DATABASE_FORMAT_VERSION = 5;
     private static final String DATABASE_FORMAT_VERSION_PROPERTY = "version";
@@ -893,103 +897,133 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     {
 
         // _log.debug("public void removeMessage(Long messageId = " + messageId): called");
-
+        boolean complete = false;
         com.sleepycat.je.Transaction tx = null;
 
-        Cursor cursor = null;
+        Random rand = null;
+        int attempts = 0;
         try
         {
-            tx = _environment.beginTransaction(null, null);
-
-            //remove the message meta data from the store
-            DatabaseEntry key = new DatabaseEntry();
-            LongBinding.longToEntry(messageId, key);
-
-            if (_log.isDebugEnabled())
+            do
             {
-                _log.debug("Removing message id " + messageId);
-            }
-
-
-            OperationStatus status = _messageMetaDataDb.delete(tx, key);
-            if (status == OperationStatus.NOTFOUND)
-            {
-                _log.info("Message not found (attempt to remove failed - probably application initiated rollback) " +
-                messageId);
-            }
-
-            if (_log.isDebugEnabled())
-            {
-                _log.debug("Deleted metadata for message " + messageId);
-            }
-
-            //now remove the content data from the store if there is any.
-
-            DatabaseEntry contentKeyEntry = new DatabaseEntry();
-            MessageContentKey_5 mck = new MessageContentKey_5(messageId,0);
-
-            TupleBinding<MessageContentKey> contentKeyTupleBinding = new MessageContentKeyTB_5();
-            contentKeyTupleBinding.objectToEntry(mck, contentKeyEntry);
-
-            //Use a partial record for the value to prevent retrieving the
-            //data itself as we only need the key to identify what to remove.
-            DatabaseEntry value = new DatabaseEntry();
-            value.setPartial(0, 0, true);
-
-            cursor = _messageContentDb.openCursor(tx, null);
-
-            status = cursor.getSearchKeyRange(contentKeyEntry, value, LockMode.RMW);
-            while (status == OperationStatus.SUCCESS)
-            {
-                mck = (MessageContentKey_5) contentKeyTupleBinding.entryToObject(contentKeyEntry);
-
-                if(mck.getMessageId() != messageId)
+                tx = null;
+                try
                 {
-                    //we have exhausted all chunks for this message id, break
-                    break;
-                }
-                else
-                {
-                    status = cursor.delete();
+                    tx = _environment.beginTransaction(null, null);
 
-                    if(status == OperationStatus.NOTFOUND)
+                    //remove the message meta data from the store
+                    DatabaseEntry key = new DatabaseEntry();
+                    LongBinding.longToEntry(messageId, key);
+
+                    if (_log.isDebugEnabled())
                     {
-                        cursor.close();
-                        cursor = null;
+                        _log.debug("Removing message id " + messageId);
+                    }
 
-                        tx.abort();
-                        throw new AMQStoreException("Content chunk offset" + mck.getOffset() + " not found for message " + messageId);
+
+                    OperationStatus status = _messageMetaDataDb.delete(tx, key);
+                    if (status == OperationStatus.NOTFOUND)
+                    {
+                        _log.info("Message not found (attempt to remove failed - probably application initiated rollback) " +
+                        messageId);
                     }
 
                     if (_log.isDebugEnabled())
                     {
-                        _log.debug("Deleted content chunk offset " + mck.getOffset() + " for message " + messageId);
+                        _log.debug("Deleted metadata for message " + messageId);
+                    }
+
+                    //now remove the content data from the store if there is any.
+
+
+
+                    int offset = 0;
+                    do
+                    {
+                        DatabaseEntry contentKeyEntry = new DatabaseEntry();
+                        MessageContentKey_5 mck = new MessageContentKey_5(messageId,offset);
+                        TupleBinding<MessageContentKey> contentKeyTupleBinding = new MessageContentKeyTB_5();
+                        contentKeyTupleBinding.objectToEntry(mck, contentKeyEntry);
+                        //Use a partial record for the value to prevent retrieving the
+                        //data itself as we only need the key to identify what to remove.
+                        DatabaseEntry value = new DatabaseEntry();
+                        value.setPartial(0, 4, true);
+
+                        status = _messageContentDb.get(null,contentKeyEntry, value, LockMode.READ_COMMITTED);
+
+                        if(status == OperationStatus.SUCCESS)
+                        {
+
+                            offset += IntegerBinding.entryToInt(value);
+                            _messageContentDb.delete(tx, contentKeyEntry);
+                            if (_log.isDebugEnabled())
+                            {
+                                _log.debug("Deleted content chunk offset " + mck.getOffset() + " for message " + messageId);
+                            }
+                        }
+                    }
+                    while (status == OperationStatus.SUCCESS);
+
+                    commit(tx, sync);
+                    complete = true;
+                    tx = null;
+                }
+                catch (LockConflictException e)
+                {
+                    try
+                    {
+                        if(tx != null)
+                        {
+                            tx.abort();
+                        }
+                    }
+                    catch(DatabaseException e2)
+                    {
+                        _log.warn("Unable to abort transaction after LockConflictExcption", e2);
+                        // rethrow the original log conflict exception, the secondary exception should already have
+                        // been logged.
+                        throw e;
+                    }
+
+
+                    _log.warn("Lock timeout exception. Retrying (attempt "
+                              + (attempts+1) + " of "+ LOCK_RETRY_ATTEMPTS +") " + e);
+
+                    if(++attempts < LOCK_RETRY_ATTEMPTS)
+                    {
+                        if(rand == null)
+                        {
+                            rand = new Random();
+                        }
+
+                        try
+                        {
+                            Thread.sleep(500l + (long)(500l * rand.nextDouble()));
+                        }
+                        catch (InterruptedException e1)
+                        {
+
+                        }
+                    }
+                    else
+                    {
+                        // rethrow the lock conflict exception since we could not solve by retrying
+                        throw e;
                     }
                 }
-
-                status = cursor.getNext(contentKeyEntry, value, LockMode.RMW);
             }
-
-            cursor.close();
-            cursor = null;
-
-            commit(tx, sync);
+            while(!complete);
         }
         catch (DatabaseException e)
         {
-            e.printStackTrace();
+            _log.error("Unexpected BDB exception", e);
 
             if (tx != null)
             {
                 try
                 {
-                    if(cursor != null)
-                    {
-                        cursor.close();
-                        cursor = null;
-                    }
-
                     tx.abort();
+                    tx = null;
                 }
                 catch (DatabaseException e1)
                 {
@@ -1001,15 +1035,16 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         }
         finally
         {
-            if(cursor != null)
+            if (tx != null)
             {
                 try
                 {
-                    cursor.close();
+                    tx.abort();
+                    tx = null;
                 }
-                catch (DatabaseException e)
+                catch (DatabaseException e1)
                 {
-                    throw new AMQStoreException("Error closing database connection: " + e.getMessage(), e);
+                    throw new AMQStoreException("Error aborting transaction " + e1, e1);
                 }
             }
         }
@@ -2073,7 +2108,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
                         {
                             // RHM-7 Periodically wake up and check, just in case we
                             // missed a notification. Don't want to lock the broker hard.
-                            _lock.wait(250);
+                            _lock.wait(1000);
                         }
                         catch (InterruptedException e)
                         {

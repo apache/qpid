@@ -74,27 +74,20 @@ import org.apache.qpid.server.subscription.RecordDeliveryMethod;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.subscription.SubscriptionImpl;
+import org.apache.qpid.server.txn.AsyncAutoCommitTransaction;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.TransportException;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class AMQChannel implements SessionConfig, AMQSessionModel
+public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoCommitTransaction.FutureRecorder
 {
     public static final int DEFAULT_PREFETCH = 4096;
 
@@ -132,6 +125,10 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
     protected final Map<AMQShortString, Subscription> _tag2SubscriptionMap = new HashMap<AMQShortString, Subscription>();
 
     private final MessageStore _messageStore;
+
+    private final LinkedList<AsyncCommand> _unfinishedCommandsQueue = new LinkedList<AsyncCommand>();
+
+    private static final int UNFINISHED_COMMAND_QUEUE_THRESHOLD = 500;
 
     private UnacknowledgedMessageMap _unacknowledgedMessageMap = new UnacknowledgedMessageMapImpl(DEFAULT_PREFETCH);
 
@@ -185,7 +182,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
         _messageStore = messageStore;
 
         // by default the session is non-transactional
-        _transaction = new AutoCommitTransaction(_messageStore);
+        _transaction = new AsyncAutoCommitTransaction(_messageStore, this);
 
          _clientDeliveryMethod = session.createDeliveryMethod(_channelId);
     }
@@ -204,14 +201,12 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
 
     public boolean isTransactional()
     {
-        // this does not look great but there should only be one "non-transactional"
-        // transactional context, while there could be several transactional ones in
-        // theory
-        return !(_transaction instanceof AutoCommitTransaction);
+        return _transaction.isTransactional();
     }
 
     public void receivedComplete()
     {
+        sync();
     }
 
 
@@ -267,7 +262,8 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
 
     public void setPublishFrame(MessagePublishInfo info, final Exchange e) throws AMQSecurityException
     {
-        if (!getVirtualHost().getSecurityManager().authorisePublish(info.isImmediate(), info.getRoutingKey().asString(), e.getName()))
+        String routingKey = info.getRoutingKey() == null ? null : info.getRoutingKey().asString();
+        if (!getVirtualHost().getSecurityManager().authorisePublish(info.isImmediate(), routingKey, e.getName()))
         {
             throw new AMQSecurityException("Permission denied: " + e.getName());
         }
@@ -1562,4 +1558,69 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
 
         }
     }
+
+    public void recordFuture(final MessageStore.StoreFuture future, final ServerTransaction.Action action)
+    {
+        _unfinishedCommandsQueue.add(new AsyncCommand(future, action));
+    }
+
+    public void completeAsyncCommands()
+    {
+        AsyncCommand cmd;
+        while((cmd = _unfinishedCommandsQueue.peek()) != null && cmd.isReadyForCompletion())
+        {
+            cmd.complete();
+            _unfinishedCommandsQueue.poll();
+        }
+        while(_unfinishedCommandsQueue.size() > UNFINISHED_COMMAND_QUEUE_THRESHOLD)
+        {
+            cmd = _unfinishedCommandsQueue.poll();
+            cmd.awaitReadyForCompletion();
+            cmd.complete();
+        }
+    }
+
+
+    public void sync()
+    {
+        AsyncCommand cmd;
+        while((cmd = _unfinishedCommandsQueue.poll()) != null)
+        {
+            cmd.awaitReadyForCompletion();
+            cmd.complete();
+        }
+    }
+
+    private static class AsyncCommand
+    {
+        private final MessageStore.StoreFuture _future;
+        private ServerTransaction.Action _action;
+
+        public AsyncCommand(final MessageStore.StoreFuture future, final ServerTransaction.Action action)
+        {
+            _future = future;
+            _action = action;
+        }
+
+        void awaitReadyForCompletion()
+        {
+            _future.waitForCompletion();
+        }
+
+        void complete()
+        {
+            if(!_future.isComplete())
+            {
+                _future.waitForCompletion();
+            }
+            _action.postCommit();
+            _action = null;
+        }
+
+        boolean isReadyForCompletion()
+        {
+            return _future.isComplete();
+        }
+    }
+
 }

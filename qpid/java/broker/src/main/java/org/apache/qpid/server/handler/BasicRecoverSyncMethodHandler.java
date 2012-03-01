@@ -59,7 +59,7 @@ public class BasicRecoverSyncMethodHandler implements StateAwareMethodListener<B
         {
             throw body.getChannelNotFoundException(channelId);
         }
-
+        channel.sync();
         channel.resend(body.getRequeue());
 
         // Qpid 0-8 hacks a synchronous -ok onto recover.

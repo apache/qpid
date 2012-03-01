@@ -65,6 +65,7 @@ public class BasicRecoverMethodHandler implements StateAwareMethodListener<Basic
         {
             MethodRegistry_8_0 methodRegistry = (MethodRegistry_8_0) session.getMethodRegistry();
             AMQMethodBody recoverOk = methodRegistry.createBasicRecoverOkBody();
+            channel.sync();
             session.writeFrame(recoverOk.generateFrame(channelId));
 
         }

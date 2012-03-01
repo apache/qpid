@@ -721,7 +721,7 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
         msg = session.createTextMessage("testResubscribeWithChangedSelectorAndRestart2");
         msg.setBooleanProperty("Match", false);
         producer.send(msg);
-
+        ((AMQSession)session).sync();
         // should be 1 or 2 messages on queue now
         // (1 for the java broker due to use of server side selectors, and 2 for the cpp broker due to client side selectors only)
         AMQQueue queue = new AMQQueue("amq.topic", "clientid" + ":" + "testResubscribeWithChangedSelectorNoClose");

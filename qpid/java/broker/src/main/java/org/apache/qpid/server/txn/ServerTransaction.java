@@ -41,6 +41,8 @@ import org.apache.qpid.server.queue.QueueEntry;
  */
 public interface ServerTransaction
 {
+
+
     /**
      * Represents an action to be performed on transaction commit or rollback
      */
@@ -108,4 +110,6 @@ public interface ServerTransaction
      * be executed immediately after the underlying transaction has rolled-back. 
      */
     void rollback();
+
+    boolean isTransactional();
 }

@@ -68,6 +68,7 @@ public class BasicCancelMethodHandler implements StateAwareMethodListener<BasicC
         {
             MethodRegistry methodRegistry = session.getMethodRegistry();
             BasicCancelOkBody cancelOkBody = methodRegistry.createBasicCancelOkBody(body.getConsumerTag());
+            channel.sync();
             session.writeFrame(cancelOkBody.generateFrame(channelId));
         }
     }

@@ -62,6 +62,8 @@ import org.apache.qpid.transport.ExecutionException;
 import org.apache.qpid.transport.Method;
 import org.apache.qpid.transport.ProtocolEvent;
 import org.apache.qpid.transport.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ServerConnection extends Connection implements Managable, AMQConnectionModel, LogSubject, AuthorizationHolder
 {
@@ -123,6 +125,7 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
             {
                 _virtualHost.getConnectionRegistry().deregisterConnection(this);
             }
+            unregisterConnectionMbean();
         }
 
         if (state == State.CLOSED)
@@ -161,15 +164,7 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
 
         initialiseStatistics();
 
-        try
-        {
-            _mBean = new ServerConnectionMBean(this);
-            _mBean.register();
-        }
-        catch (JMException jme)
-        {
-            log.error("Unable to create mBean for ServerConnection",jme);
-        }
+        registerConnectionMbean();
     }
 
     public void setConnectionConfig(final ConnectionConfig config)
@@ -285,11 +280,7 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
     public void close(AMQConstant cause, String message) throws AMQException
     {
         closeSubscriptions();
-        if (_mBean != null)
-        {
-            _mBean.unregister();
-            _mBean = null;
-        }
+        unregisterConnectionMbean();
         ConnectionCloseCode replyCode = ConnectionCloseCode.NORMAL;
         try
         {
@@ -433,11 +424,6 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
     public void closed()
     {
         closeSubscriptions();
-        if (_mBean != null)
-        {
-            _mBean.unregister();
-            _mBean = null;
-        }
         super.closed();
     }
 
@@ -481,6 +467,32 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
         if (_mBean != null && channelsCount >= getConnectionDelegate().getChannelMax())
         {
             _mBean.notifyClients("Channel count (" + channelsCount + ") has reached the threshold value");
+        }
+    }
+
+    private void registerConnectionMbean()
+    {
+        try
+        {
+            _mBean = new ServerConnectionMBean(this);
+            _mBean.register();
+        }
+        catch (JMException jme)
+        {
+            log.error("Unable to register mBean for ServerConnection", jme);
+        }
+    }
+
+    private void unregisterConnectionMbean()
+    {
+        if (_mBean != null)
+        {
+            if (log.isDebugEnabled())
+            {
+                log.debug("Unregistering mBean for ServerConnection" + _mBean);
+            }
+            _mBean.unregister();
+            _mBean = null;
         }
     }
 }

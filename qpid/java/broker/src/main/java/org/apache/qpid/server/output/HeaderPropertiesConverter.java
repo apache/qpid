@@ -20,22 +20,23 @@
 */
 package org.apache.qpid.server.output;
 
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.message.MessageTransferMessage;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.transport.Header;
-import org.apache.qpid.transport.DeliveryProperties;
-import org.apache.qpid.transport.MessageProperties;
-import org.apache.qpid.transport.MessageDeliveryMode;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.transport.*;
 import org.apache.qpid.AMQPInvalidClassException;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class HeaderPropertiesConverter
 {
 
-    public static BasicContentHeaderProperties convert(MessageTransferMessage messageTransferMessage)
+    public static BasicContentHeaderProperties convert(MessageTransferMessage messageTransferMessage, VirtualHost vhost)
     {
         BasicContentHeaderProperties props = new BasicContentHeaderProperties();
 
@@ -82,11 +83,23 @@ public class HeaderPropertiesConverter
             }
             if(messageProps.hasMessageId())
             {
-                props.setMessageId(messageProps.getMessageId().toString());
+                props.setMessageId("ID:" + messageProps.getMessageId().toString());
             }
+            if(messageProps.hasReplyTo())
+            {
+                ReplyTo replyTo = messageProps.getReplyTo();
+                String exchangeName = replyTo.getExchange();
+                String routingKey = replyTo.getRoutingKey();
+                if(exchangeName == null)
+                {
+                    exchangeName = "";
+                }
 
-            // TODO Reply-to
+                Exchange exchange = vhost.getExchangeRegistry().getExchange(exchangeName);
+                String exchangeClass = exchange == null ? ExchangeDefaults.DIRECT_EXCHANGE_CLASS.asString() : exchange.getType().getName().asString();
+                props.setReplyTo(exchangeClass + "://"+exchangeName+"//?routingkey='"+(routingKey==null ? "" : routingKey+"'"));
 
+            }
             if(messageProps.hasUserId())
             {
                 props.setUserId(new AMQShortString(messageProps.getUserId()));
@@ -94,7 +107,12 @@ public class HeaderPropertiesConverter
 
             if(messageProps.hasApplicationHeaders())
             {
-                Map<String, Object> appHeaders = messageProps.getApplicationHeaders();
+                Map<String, Object> appHeaders = new HashMap<String, Object>(messageProps.getApplicationHeaders());
+                if(messageProps.getApplicationHeaders().containsKey("x-jms-type"))
+                {
+                    props.setType(String.valueOf(appHeaders.remove("x-jms-type")));
+                }
+
                 FieldTable ft = new FieldTable();
                 for(Map.Entry<String, Object> entry : appHeaders.entrySet())
                 {

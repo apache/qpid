@@ -20,10 +20,11 @@
 package org.apache.qpid.server.queue;
 
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -128,11 +129,10 @@ public class SortedQueueTest extends QpidBrokerTestCase
 
         final TestConsumerThread consumerThread = new TestConsumerThread(sessionMode, queue);
         consumerThread.start();
-        final Calendar cal = Calendar.getInstance(Locale.UK);
 
         for(String value : VALUES)
         {
-            final Message msg = _producerSession.createTextMessage(String.valueOf(cal.getTimeInMillis()));
+            final Message msg = _producerSession.createMessage();
             msg.setStringProperty(TEST_SORT_KEY, value);
             producer.send(msg);
             _producerSession.commit();
@@ -273,22 +273,22 @@ public class SortedQueueTest extends QpidBrokerTestCase
         _consumerConnection.start();
 
         //Receive 3 in sorted order
-        received = receiveAndValidateMessage(consumer, "1");
+        received = assertReceiveAndValidateMessage(consumer, "1");
         received.acknowledge();
-        received = receiveAndValidateMessage(consumer, "2");
+        received = assertReceiveAndValidateMessage(consumer, "2");
         received.acknowledge();
-        received = receiveAndValidateMessage(consumer, "3");
+        received = assertReceiveAndValidateMessage(consumer, "3");
         received.acknowledge();
 
         //Send 1
         sendAndCommitMessage(producer,"4");
 
         //Receive 1 and recover
-        received = receiveAndValidateMessage(consumer, "4");
+        received = assertReceiveAndValidateMessage(consumer, "4");
         consumerSession.recover();
 
         //Receive same 1
-        received = receiveAndValidateMessage(consumer, "4");
+        received = assertReceiveAndValidateMessage(consumer, "4");
         received.acknowledge();
 
         //Send 3 out of order
@@ -296,33 +296,39 @@ public class SortedQueueTest extends QpidBrokerTestCase
         sendAndCommitMessage(producer,"6");
         sendAndCommitMessage(producer,"5");
 
-        //Receive 1 of 3 (out of order due to pre-fetch) and recover
-        received = receiveAndValidateMessage(consumer, "7");
+        //Receive 1 of 3 (possibly out of order due to pre-fetch)
+        final Message messageBeforeRollback = assertReceiveMessage(consumer);
         consumerSession.recover();
 
         if (isBroker010())
         {
             //Receive 3 in sorted order (not as per JMS recover)
-            received = receiveAndValidateMessage(consumer, "5");
+            received = assertReceiveAndValidateMessage(consumer, "5");
             received.acknowledge();
-            received = receiveAndValidateMessage(consumer, "6");
+            received = assertReceiveAndValidateMessage(consumer, "6");
             received.acknowledge();
-            received = receiveAndValidateMessage(consumer, "7");
+            received = assertReceiveAndValidateMessage(consumer, "7");
             received.acknowledge();
         }
         else
         {
-            //Receive 3 in partial sorted order due to recover
-            received = receiveAndValidateMessage(consumer, "7");
+            //First message will be the one rolled-back (as per JMS spec).
+            final String messageKeyDeliveredBeforeRollback = messageBeforeRollback.getStringProperty(TEST_SORT_KEY);
+            received = assertReceiveAndValidateMessage(consumer, messageKeyDeliveredBeforeRollback);
             received.acknowledge();
-            received = receiveAndValidateMessage(consumer, "5");
+
+            //Remaining two messages will be sorted
+            final SortedSet<String> keys = new TreeSet<String>(Arrays.asList("5", "6", "7"));
+            keys.remove(messageKeyDeliveredBeforeRollback);
+
+            received = assertReceiveAndValidateMessage(consumer, keys.first());
             received.acknowledge();
-            received = receiveAndValidateMessage(consumer, "6");
+            received = assertReceiveAndValidateMessage(consumer, keys.last());
             received.acknowledge();
         }
     }
 
-    protected Queue createQueue() throws AMQException, JMSException
+    private Queue createQueue() throws AMQException, JMSException
     {
         final Map<String, Object> arguments = new HashMap<String, Object>();
         arguments.put(AMQQueueFactory.QPID_QUEUE_SORT_KEY, TEST_SORT_KEY);
@@ -345,12 +351,19 @@ public class SortedQueueTest extends QpidBrokerTestCase
         _producerSession.commit();
     }
 
-    private Message receiveAndValidateMessage(final MessageConsumer consumer, final String expectedKey) throws JMSException
+    private Message assertReceiveAndValidateMessage(final MessageConsumer consumer, final String expectedKey) throws JMSException
+    {
+        final Message received = assertReceiveMessage(consumer);
+        assertEquals("Received message with unexpected sorted key value", expectedKey,
+                        received.getStringProperty(TEST_SORT_KEY));
+        return received;
+    }
+
+    private Message assertReceiveMessage(final MessageConsumer consumer)
+            throws JMSException
     {
         final Message received = (TextMessage) consumer.receive(10000);
         assertNotNull("Received message is unexpectedly null", received);
-        assertEquals("Received message with unexpected sorted key value", expectedKey,
-                        received.getStringProperty(TEST_SORT_KEY));
         return received;
     }
 
@@ -388,9 +401,8 @@ public class SortedQueueTest extends QpidBrokerTestCase
 
                 conn.start();
 
-                TextMessage msg;
-                Calendar cal = Calendar.getInstance(Locale.UK);
-                while((msg = (TextMessage) consumer.receive(1000)) != null)
+                Message msg;
+                while((msg = consumer.receive(1000)) != null)
                 {
                     if(_sessionType == Session.SESSION_TRANSACTED)
                     {
@@ -427,9 +439,7 @@ public class SortedQueueTest extends QpidBrokerTestCase
                     }
 
                     _count++;
-                    LOGGER.debug("Message consumed at : " + cal.getTimeInMillis());
                     LOGGER.debug("Message consumed with key: " + msg.getStringProperty(TEST_SORT_KEY));
-                    LOGGER.debug("Message consumed with text: " + msg.getText());
                     LOGGER.debug("Message consumed with consumed index: " + _consumed);
                 }
 
@@ -439,8 +449,8 @@ public class SortedQueueTest extends QpidBrokerTestCase
             }
             catch(JMSException e)
             {
-                e.printStackTrace();
-            }
+                LOGGER.error("Exception in listener", e);
+           }
         }
 
         public synchronized boolean isStopped()

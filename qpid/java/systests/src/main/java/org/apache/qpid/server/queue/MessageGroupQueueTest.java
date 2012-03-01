@@ -147,7 +147,6 @@ public class MessageGroupQueueTest extends QpidBrokerTestCase
 
         assertNotNull("Consumer 2 should have received first message", cs2Received);
 
-        cs1Received.acknowledge();
         cs2Received.acknowledge();
 
         Message cs2Received2 = consumer2.receive(1000);
@@ -156,6 +155,7 @@ public class MessageGroupQueueTest extends QpidBrokerTestCase
         assertEquals("Differing groups", cs2Received2.getStringProperty("group"),
                      cs2Received.getStringProperty("group"));
 
+        cs1Received.acknowledge();
         Message cs1Received2 = consumer1.receive(1000);
 
         assertNotNull("Consumer 1 should have received second message", cs1Received2);
