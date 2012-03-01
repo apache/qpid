@@ -1,0 +1,81 @@
+#!/bin/bash
+
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# Run the cli-utility tests.
+
+source ./test_env.sh
+CLI_DIR=$PYTHON_COMMANDS
+
+trap stop_brokers INT TERM QUIT
+
+# helper function to create test.xquery in the current directory, so
+# that the python test program can find it.  yes, it leaves a turd.
+create_test_xquery() {
+     cat <<EOF > ./test.xquery
+    let \$w := ./weather
+    return \$w/station = 'Raleigh-Durham International Airport (KRDU)'
+       and \$w/temperature_f > 50
+       and \$w/temperature_f - \$w/dewpoint > 5
+       and \$w/wind_speed_mph > 7
+       and \$w/wind_speed_mph < 20
+EOF
+}
+
+start_brokers() {
+    # if the xml lib is present, use it.  if not, disable any tests which
+    # look like they're xml related.
+    # if we start supporting xml on windows, it will need something similar 
+    # here
+    if [ -f ../.libs/xml.so ] ; then
+	xargs="--load-module ../.libs/xml.so"
+	if [ ! -f test.xquery ] ; then 
+	    create_test_xquery
+	fi
+	targs=""
+    else
+	echo "Ignoring XML tests"
+	xargs=""
+	targs="--ignore=*xml*"
+    fi
+
+    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --mgmt-publish no --auth no $xargs > qpidd.port
+    LOCAL_PORT=`cat qpidd.port`
+    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --mgmt-publish no --auth no $xargs > qpidd.port
+    REMOTE_PORT=`cat qpidd.port`
+}
+
+stop_brokers() {
+        $QPIDD_EXEC --no-module-dir -q --port $LOCAL_PORT
+        $QPIDD_EXEC --no-module-dir -q --port $REMOTE_PORT
+}
+
+if test -d ${PYTHON_DIR} ;  then
+    start_brokers
+    echo "Running CLI tests using brokers on ports $LOCAL_PORT $REMOTE_PORT"
+    PYTHON_TESTS=${PYTHON_TESTS:-$*}
+    $QPID_PYTHON_TEST -m cli_tests -b localhost:$LOCAL_PORT -Dremote-port=$REMOTE_PORT -Dcli-dir=$CLI_DIR $targs $PYTHON_TESTS $@
+    RETCODE=$?
+    stop_brokers
+    if test x$RETCODE != x0; then 
+        echo "FAIL CLI tests"; exit 1;
+    fi
+fi
+
