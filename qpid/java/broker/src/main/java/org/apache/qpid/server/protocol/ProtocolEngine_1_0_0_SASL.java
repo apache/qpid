@@ -411,7 +411,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
      public void close()
      {
-         //To change body of implemented methods use File | Settings | File Templates.
+         _sender.close();
      }
 
      public void setLogOutput(final PrintWriter out)
