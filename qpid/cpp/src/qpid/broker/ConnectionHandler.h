@@ -35,7 +35,6 @@
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/Exception.h"
-#include "qpid/broker/AclModule.h"
 #include "qpid/sys/SecurityLayer.h"
 
 
