@@ -66,6 +66,8 @@ public class NoLocalAfterRecoveryTest extends QpidBrokerTestCase
         // Check messages can be received as expected.
         connection.start();
 
+        //As the no-local subscriber was on the same connection the messages were
+        //published on, tit will receive no messages as they will be discarded on the broker
         List<Message> received = receiveMessage(noLocalSubscriber, SEND_COUNT);
         assertEquals("No Local Subscriber Received messages", 0, received.size());
 
@@ -77,8 +79,8 @@ public class NoLocalAfterRecoveryTest extends QpidBrokerTestCase
         normalSubscriber.close();
         connection.close();
 
-        //We didn't receive the messages on the durable queue for the no-local subscriber
-        //so they are still on the broker. Restart the broker, prompting their recovery.
+        //Ensure the no-local subscribers messages were discarded by restarting the broker
+        //and reconnecting to the subscription to ensure they were not recovered.
         restartBroker();
 
         Connection connection2 = getConnection();
