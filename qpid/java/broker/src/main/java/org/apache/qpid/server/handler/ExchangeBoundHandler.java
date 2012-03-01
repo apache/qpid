@@ -65,7 +65,6 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
     public void methodReceived(AMQStateManager stateManager, ExchangeBoundBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
-        
         VirtualHost virtualHost = session.getVirtualHost();
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
         MethodRegistry methodRegistry = session.getMethodRegistry();

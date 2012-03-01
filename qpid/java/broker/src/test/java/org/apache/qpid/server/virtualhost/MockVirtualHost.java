@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.binding.BindingFactory;
@@ -41,7 +42,6 @@ import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.TransactionLog;
 import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
 
 
@@ -64,6 +64,11 @@ public class MockVirtualHost implements VirtualHost
             String username, String password)
     {
 
+    }
+
+    public BrokerLink createBrokerConnection(final UUID id, final long createTime, final Map<String, String> arguments)
+    {
+        return null;
     }
 
     public IApplicationRegistry getApplicationRegistry()
@@ -161,10 +166,6 @@ public class MockVirtualHost implements VirtualHost
         return null;
     }
 
-    public TransactionLog getTransactionLog()
-    {
-        return null;
-    }
 
     public void removeBrokerConnection(BrokerLink brokerLink)
     {

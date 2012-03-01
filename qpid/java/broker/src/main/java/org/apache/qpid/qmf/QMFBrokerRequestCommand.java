@@ -21,6 +21,7 @@
 
 package org.apache.qpid.qmf;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.transport.codec.BBDecoder;
 import org.apache.qpid.transport.codec.BBEncoder;
 import org.apache.qpid.server.message.ServerMessage;
@@ -32,9 +33,13 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class QMFBrokerRequestCommand extends QMFCommand
 {
+
+    private static final Logger _qmfLogger = Logger.getLogger("qpid.qmf");
+
 
     public QMFBrokerRequestCommand(QMFCommandHeader header, BBDecoder buf)
     {
@@ -45,6 +50,8 @@ public class QMFBrokerRequestCommand extends QMFCommand
     {
         String exchangeName = message.getMessageHeader().getReplyToExchange();
         String queueName = message.getMessageHeader().getReplyToRoutingKey();
+
+        _qmfLogger.debug("Execute: " + this);
 
         QMFCommand[] commands = new QMFCommand[2];
         commands[0] = new QMFBrokerResponseCommand(this, virtualHost);
@@ -57,7 +64,7 @@ public class QMFBrokerRequestCommand extends QMFCommand
             QMFMessage responseMessage = new QMFMessage(queueName, cmd);
 
 
-            ArrayList<? extends BaseQueue> queues = exchange.route(responseMessage);
+            List<? extends BaseQueue> queues = exchange.route(responseMessage);
 
 
             for(BaseQueue q : queues)

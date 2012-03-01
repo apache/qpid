@@ -20,24 +20,29 @@
 */
 package org.apache.qpid.server.message;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.apache.qpid.amqp_1_0.codec.ValueHandler;
 import org.apache.qpid.amqp_1_0.messaging.SectionDecoder;
 import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
-import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.Section;
 import org.apache.qpid.amqp_1_0.type.Symbol;
-import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 import org.apache.qpid.amqp_1_0.type.codec.AMQPDescribedTypeRegistry;
-import org.apache.qpid.amqp_1_0.type.messaging.*;
-
-
+import org.apache.qpid.amqp_1_0.type.messaging.AmqpSequence;
+import org.apache.qpid.amqp_1_0.type.messaging.AmqpValue;
+import org.apache.qpid.amqp_1_0.type.messaging.ApplicationProperties;
+import org.apache.qpid.amqp_1_0.type.messaging.Data;
+import org.apache.qpid.amqp_1_0.type.messaging.DeliveryAnnotations;
+import org.apache.qpid.amqp_1_0.type.messaging.Footer;
+import org.apache.qpid.amqp_1_0.type.messaging.Header;
+import org.apache.qpid.amqp_1_0.type.messaging.MessageAnnotations;
 import org.apache.qpid.amqp_1_0.type.messaging.Properties;
-import org.apache.qpid.configuration.Validator;
 import org.apache.qpid.server.store.MessageMetaDataType;
 import org.apache.qpid.server.store.StorableMessageMetaData;
-
-import java.nio.ByteBuffer;
-import java.util.*;
 
 public class MessageMetaData_1_0 implements StorableMessageMetaData
 {
@@ -310,6 +315,18 @@ public class MessageMetaData_1_0 implements StorableMessageMetaData
         }
         dest.put(buf);
         return buf.limit();
+    }
+
+    public int getContentSize()
+    {
+        ByteBuffer buf = _encoded;
+
+        if(buf == null)
+        {
+            buf = encodeAsBuffer();
+            _encoded = buf;
+        }
+        return buf.remaining();
     }
 
     public boolean isPersistent()

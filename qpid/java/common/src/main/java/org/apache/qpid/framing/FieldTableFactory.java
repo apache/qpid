@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.framing;
 
+import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
 
@@ -30,7 +31,7 @@ public class FieldTableFactory
         return new FieldTable();
     }
 
-    public static FieldTable newFieldTable(DataInputStream byteBuffer, long length) throws AMQFrameDecodingException, IOException
+    public static FieldTable newFieldTable(DataInput byteBuffer, long length) throws AMQFrameDecodingException, IOException
     {
         return new FieldTable(byteBuffer, length);
     }

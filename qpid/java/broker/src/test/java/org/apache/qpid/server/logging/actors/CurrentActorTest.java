@@ -23,6 +23,7 @@ package org.apache.qpid.server.logging.actors;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.NullRootMessageLogger;
 
 /**
@@ -49,10 +50,7 @@ import org.apache.qpid.server.logging.NullRootMessageLogger;
 public class CurrentActorTest extends BaseConnectionActorTestCase
 {
     //Set this to be a reasonably large number
-    int THREADS = 10;
-
-    // Record any exceptions that are thrown by the threads
-    Exception[] _errors = new Exception[THREADS];
+    private static final int THREADS = 10;
 
     /**
      * Test that CurrentActor behaves as LIFO queue.
@@ -161,19 +159,11 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
     public void testThreadLocal()
     {
 
-        new Runnable(){
-            public void run()
-            {
-                System.out.println(_errors[0]);
-            }
-        };
-
         // Setup the threads
-        Thread[] threads = new Thread[THREADS];
+        LogMessagesWithAConnectionActor[] threads = new LogMessagesWithAConnectionActor[THREADS];
         for (int count = 0; count < THREADS; count++)
         {
-            Runnable test = new LogMessagesWithAConnectionActor(count);
-            threads[count] = new Thread(test);
+            threads[count] = new LogMessagesWithAConnectionActor();
         }
 
         //Run the threads
@@ -198,10 +188,10 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
         // Verify that none of the tests threw an exception
         for (int count = 0; count < THREADS; count++)
         {
-            if (_errors[count] != null)
+            if (threads[count].getException() != null)
             {
-                _errors[count].printStackTrace();
-                fail("Error occured in thread:" + count);
+                threads[count].getException().printStackTrace();
+                fail("Error occured in thread:" + count + "("+threads[count].getException()+")");
             }
         }
     }
@@ -210,13 +200,12 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
      * Creates a new ConnectionActor and logs the given number of messages
      * before removing the actor and validating that there is no set actor.
      */
-    public class LogMessagesWithAConnectionActor implements Runnable
+    public class LogMessagesWithAConnectionActor extends Thread
     {
-        int count;
+        Throwable _exception;
 
-        LogMessagesWithAConnectionActor(int count)
+        public LogMessagesWithAConnectionActor()
         {
-            this.count = count;
         }
 
         public void run()
@@ -227,6 +216,7 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
             //fixme reminder that we need a better approach for broker testing.
             try
             {
+                LogActor defaultActor = CurrentActor.get();
 
                 AMQPConnectionActor actor = new AMQPConnectionActor(getSession(),
                                                                     new NullRootMessageLogger());
@@ -237,19 +227,25 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
                 sendTestLogMessage(CurrentActor.get());
 
                 // Verify it was the same actor as we set earlier
-                assertEquals("Retrieved actor is not as expected ",
-                             actor, CurrentActor.get());
+                if(!actor.equals(CurrentActor.get()))
+                   throw new IllegalArgumentException("Retrieved actor is not as expected ");
 
                 // Verify that removing the actor works for this thread
                 CurrentActor.remove();
 
-                assertNull("CurrentActor should be null", CurrentActor.get());
+                if(CurrentActor.get() != defaultActor)
+                   throw new IllegalArgumentException("CurrentActor ("+CurrentActor.get()+") should be default actor" + defaultActor);
             }
-            catch (Exception e)
+            catch (Throwable e)
             {
-                _errors[count] = e;
+                _exception = e;
             }
 
+        }
+
+        public Throwable getException()
+        {
+            return _exception;
         }
     }
 

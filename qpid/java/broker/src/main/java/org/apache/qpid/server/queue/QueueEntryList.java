@@ -35,4 +35,6 @@ public interface QueueEntryList<Q extends QueueEntry>
     Q getHead();
 
     void entryDeleted(Q queueEntry);
+    
+    int getPriorities();
 }

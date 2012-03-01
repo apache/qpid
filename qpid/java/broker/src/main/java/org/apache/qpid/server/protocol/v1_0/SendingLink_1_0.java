@@ -439,7 +439,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
                 if(outcome instanceof Accepted)
                 {
-                    AutoCommitTransaction txn = new AutoCommitTransaction(_vhost.getTransactionLog());
+                    AutoCommitTransaction txn = new AutoCommitTransaction(_vhost.getMessageStore());
                     if(_subscription.acquires())
                     {
                         txn.dequeue(Collections.singleton(queueEntry),
@@ -459,7 +459,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 }
                 else if(outcome instanceof Released)
                 {
-                    AutoCommitTransaction txn = new AutoCommitTransaction(_vhost.getTransactionLog());
+                    AutoCommitTransaction txn = new AutoCommitTransaction(_vhost.getMessageStore());
                     if(_subscription.acquires())
                     {
                         txn.dequeue(Collections.singleton(queueEntry),

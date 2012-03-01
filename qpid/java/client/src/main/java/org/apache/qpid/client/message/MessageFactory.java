@@ -25,6 +25,9 @@ import java.util.List;
 import javax.jms.JMSException;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession_0_8;
+import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.transport.DeliveryProperties;
@@ -36,7 +39,7 @@ public interface MessageFactory
     AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered,
                                      ContentHeaderBody contentHeader,
                                      AMQShortString exchange, AMQShortString routingKey,
-                                     List bodies)
+                                     List bodies, AMQSession_0_8.DestinationCache<AMQQueue> queueDestinationCache, AMQSession_0_8.DestinationCache<AMQTopic> topicDestinationCache)
         throws JMSException, AMQException;
 
      AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered,

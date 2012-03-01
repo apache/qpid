@@ -22,27 +22,37 @@ package org.apache.qpid.server.store.berkeleydb;
 
 import java.io.File;
 import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.sleepycat.bind.tuple.LongBinding;
+import com.sleepycat.bind.tuple.StringBinding;
+import com.sleepycat.je.*;
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.federation.Bridge;
+import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.messages.MessageStoreMessages;
 import org.apache.qpid.server.logging.messages.TransactionLogMessages;
+import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.DurableConfigurationStore;
@@ -70,17 +80,6 @@ import org.apache.qpid.server.store.berkeleydb.tuples.QueueTupleBindingFactory;
 import com.sleepycat.bind.EntryBinding;
 import com.sleepycat.bind.tuple.ByteBinding;
 import com.sleepycat.bind.tuple.TupleBinding;
-import com.sleepycat.je.CheckpointConfig;
-import com.sleepycat.je.Cursor;
-import com.sleepycat.je.Database;
-import com.sleepycat.je.DatabaseConfig;
-import com.sleepycat.je.DatabaseEntry;
-import com.sleepycat.je.DatabaseException;
-import com.sleepycat.je.Environment;
-import com.sleepycat.je.EnvironmentConfig;
-import com.sleepycat.je.LockMode;
-import com.sleepycat.je.OperationStatus;
-import com.sleepycat.je.TransactionConfig;
 
 /**
  * BDBMessageStore implements a persistent {@link MessageStore} using the BDB high performance log.
@@ -91,7 +90,7 @@ import com.sleepycat.je.TransactionConfig;
  * dequeue messages to queues. <tr><td> Generate message identifiers. </table>
  */
 @SuppressWarnings({"unchecked"})
-public class BDBMessageStore implements MessageStore
+public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 {
     private static final Logger _log = Logger.getLogger(BDBMessageStore.class);
 
@@ -107,19 +106,24 @@ public class BDBMessageStore implements MessageStore
     private String DELIVERYDB_NAME = "deliveryDb";
     private String EXCHANGEDB_NAME = "exchangeDb";
     private String QUEUEDB_NAME = "queueDb";
+    private String BRIDGEDB_NAME = "bridges";
+    private String LINKDB_NAME = "links";
+
     private Database _messageMetaDataDb;
     private Database _messageContentDb;
     private Database _queueBindingsDb;
     private Database _deliveryDb;
     private Database _exchangeDb;
     private Database _queueDb;
+    private Database _bridgeDb;
+    private Database _linkDb;
 
     /* =======
      * Schema:
      * =======
-     * 
+     *
      * Queue:
-     * name(AMQShortString) - name(AMQShortString), owner(AMQShortString), 
+     * name(AMQShortString) - name(AMQShortString), owner(AMQShortString),
      *                        arguments(FieldTable encoded as binary), exclusive (boolean)
      *
      * Exchange:
@@ -171,7 +175,7 @@ public class BDBMessageStore implements MessageStore
 
     private boolean _configured;
 
-    
+
     public BDBMessageStore()
     {
         this(DATABASE_FORMAT_VERSION);
@@ -197,27 +201,28 @@ public class BDBMessageStore implements MessageStore
             EXCHANGEDB_NAME += "_v" + version;
 
             QUEUEBINDINGSDB_NAME += "_v" + version;
+
+            LINKDB_NAME += "_v" + version;
+
+            BRIDGEDB_NAME += "_v" + version;
         }
     }
- 
-    public void configureConfigStore(String name, 
-                                     ConfigurationRecoveryHandler recoveryHandler, 
+
+    public void configureConfigStore(String name,
+                                     ConfigurationRecoveryHandler recoveryHandler,
                                      Configuration storeConfiguration,
                                      LogSubject logSubject) throws Exception
     {
-        _logSubject = logSubject;
-        CurrentActor.get().message(_logSubject, ConfigStoreMessages.CREATED(this.getClass().getName()));
+        CurrentActor.get().message(logSubject, ConfigStoreMessages.CREATED(this.getClass().getName()));
 
-        if(_configured)
+        if(!_configured)
         {
-            throw new Exception("ConfigStore already configured");
+            _logSubject = logSubject;
+            configure(name,storeConfiguration);
+            _configured = true;
+            stateTransition(State.CONFIGURING, State.CONFIGURED);
         }
 
-        configure(name,storeConfiguration);
-        
-        _configured = true;
-        stateTransition(State.CONFIGURING, State.CONFIGURED);
-        
         recover(recoveryHandler);
         stateTransition(State.RECOVERING, State.STARTED);
     }
@@ -227,11 +232,14 @@ public class BDBMessageStore implements MessageStore
                                       Configuration storeConfiguration,
                                       LogSubject logSubject) throws Exception
     {
-        CurrentActor.get().message(_logSubject, MessageStoreMessages.CREATED(this.getClass().getName()));
+        CurrentActor.get().message(logSubject, MessageStoreMessages.CREATED(this.getClass().getName()));
 
         if(!_configured)
         {
-            throw new Exception("ConfigStore not configured");
+            _logSubject = logSubject;
+            configure(name,storeConfiguration);
+            _configured = true;
+            stateTransition(State.CONFIGURING, State.CONFIGURED);
         }
 
         recoverMessages(recoveryHandler);
@@ -240,24 +248,28 @@ public class BDBMessageStore implements MessageStore
     public void configureTransactionLog(String name, TransactionLogRecoveryHandler recoveryHandler,
             Configuration storeConfiguration, LogSubject logSubject) throws Exception
     {
-        CurrentActor.get().message(_logSubject, TransactionLogMessages.CREATED(this.getClass().getName()));
+        CurrentActor.get().message(logSubject, TransactionLogMessages.CREATED(this.getClass().getName()));
+
 
         if(!_configured)
         {
-            throw new Exception("ConfigStore not configured");
+            _logSubject = logSubject;
+            configure(name,storeConfiguration);
+            _configured = true;
+            stateTransition(State.CONFIGURING, State.CONFIGURED);
         }
 
         recoverQueueEntries(recoveryHandler);
 
-        
+
     }
 
-    public org.apache.qpid.server.store.TransactionLog.Transaction newTransaction()
+    public org.apache.qpid.server.store.MessageStore.Transaction newTransaction()
     {
         return new BDBTransaction();
     }
 
-    
+
     /**
      * Called after instantiation in order to configure the message store.
      *
@@ -268,8 +280,8 @@ public class BDBMessageStore implements MessageStore
      */
     public boolean configure(String name, Configuration storeConfig) throws Exception
     {
-        File environmentPath = new File(storeConfig.getString(ENVIRONMENT_PATH_PROPERTY, 
-                                System.getProperty("QPID_WORK") + "/bdbstore/" + name));        
+        File environmentPath = new File(storeConfig.getString(ENVIRONMENT_PATH_PROPERTY,
+                                System.getProperty("QPID_WORK") + "/bdbstore/" + name));
         if (!environmentPath.exists())
         {
             if (!environmentPath.mkdirs())
@@ -288,7 +300,7 @@ public class BDBMessageStore implements MessageStore
 
     /**
      * @param environmentPath location for the store to be created in/recovered from
-     * @param readonly if true then don't allow modifications to an existing store, and don't create a new store if none exists 
+     * @param readonly if true then don't allow modifications to an existing store, and don't create a new store if none exists
      * @return whether or not a new store environment was created
      * @throws AMQStoreException
      * @throws DatabaseException
@@ -301,12 +313,12 @@ public class BDBMessageStore implements MessageStore
         _log.info("Configuring BDB message store");
 
         createTupleBindingFactories(_version);
-        
+
         setDatabaseNames(_version);
 
         return setupStore(environmentPath, readonly);
     }
-    
+
     private void createTupleBindingFactories(int version)
     {
             _bindingTupleBindingFactory = new BindingTupleBindingFactory(version);
@@ -406,7 +418,7 @@ public class BDBMessageStore implements MessageStore
         envConfig.setTransactional(true);
         envConfig.setConfigParam("je.lock.nLockTables", "7");
 
-        // Restore 500,000 default timeout.	
+        // Restore 500,000 default timeout.
         //envConfig.setLockTimeout(15000);
 
         // Added to help diagnosis of Deadlock issue
@@ -416,10 +428,10 @@ public class BDBMessageStore implements MessageStore
             envConfig.setConfigParam("je.txn.deadlockStackTrace", "true");
             envConfig.setConfigParam("je.txn.dumpLocks", "true");
         }
-        
+
         // Set transaction mode
         _transactionConfig.setReadCommitted(true);
-        
+
         //This prevents background threads running which will potentially update the store.
         envConfig.setReadOnly(readonly);
         try
@@ -458,13 +470,24 @@ public class BDBMessageStore implements MessageStore
         //This is required if we are wanting read only access.
         dbConfig.setReadOnly(readonly);
 
-        _messageMetaDataDb = _environment.openDatabase(null, MESSAGEMETADATADB_NAME, dbConfig);
-        _queueDb = _environment.openDatabase(null, QUEUEDB_NAME, dbConfig);
-        _exchangeDb = _environment.openDatabase(null, EXCHANGEDB_NAME, dbConfig);
-        _queueBindingsDb = _environment.openDatabase(null, QUEUEBINDINGSDB_NAME, dbConfig);
-        _messageContentDb = _environment.openDatabase(null, MESSAGECONTENTDB_NAME, dbConfig);
-        _deliveryDb = _environment.openDatabase(null, DELIVERYDB_NAME, dbConfig);
+        _messageMetaDataDb = openDatabase(MESSAGEMETADATADB_NAME, dbConfig);
+        _queueDb = openDatabase(QUEUEDB_NAME, dbConfig);
+        _exchangeDb = openDatabase(EXCHANGEDB_NAME, dbConfig);
+        _queueBindingsDb = openDatabase(QUEUEBINDINGSDB_NAME, dbConfig);
+        _messageContentDb = openDatabase(MESSAGECONTENTDB_NAME, dbConfig);
+        _deliveryDb = openDatabase(DELIVERYDB_NAME, dbConfig);
+        _linkDb = openDatabase(LINKDB_NAME, dbConfig);
+        _bridgeDb = openDatabase(BRIDGEDB_NAME, dbConfig);
 
+
+    }
+
+    private Database openDatabase(final String dbName, final DatabaseConfig dbConfig)
+    {
+        // if opening read-only and the database doesn't exist, then you can't create it
+        return dbConfig.getReadOnly() && !_environment.getDatabaseNames().contains(dbName)
+               ? null
+               : _environment.openDatabase(null, dbName, dbConfig);
     }
 
     /**
@@ -520,10 +543,22 @@ public class BDBMessageStore implements MessageStore
             _deliveryDb.close();
         }
 
+        if (_bridgeDb != null)
+        {
+            _log.info("Close bridge database");
+            _bridgeDb.close();
+        }
+
+        if (_linkDb != null)
+        {
+            _log.info("Close link database");
+            _linkDb.close();
+        }
+
         closeEnvironment();
 
         _state = State.CLOSED;
-        
+
         CurrentActor.get().message(_logSubject,MessageStoreMessages.CLOSED());
     }
 
@@ -542,7 +577,7 @@ public class BDBMessageStore implements MessageStore
         }
     }
 
-    
+
     public void recover(ConfigurationRecoveryHandler recoveryHandler) throws AMQStoreException
     {
         stateTransition(State.CONFIGURED, State.RECOVERING);
@@ -556,11 +591,12 @@ public class BDBMessageStore implements MessageStore
 
             ExchangeRecoveryHandler erh = qrh.completeQueueRecovery();
             loadExchanges(erh);
-            
+
             BindingRecoveryHandler brh = erh.completeExchangeRecovery();
             recoverBindings(brh);
-            
-            brh.completeBindingRecovery();
+
+            ConfigurationRecoveryHandler.BrokerLinkRecoveryHandler lrh = brh.completeBindingRecovery();
+            recoverBrokerLinks(lrh);
         }
         catch (DatabaseException e)
         {
@@ -582,13 +618,13 @@ public class BDBMessageStore implements MessageStore
             while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
             {
                 QueueRecord queueRecord = (QueueRecord) binding.entryToObject(value);
-                
-                String queueName = queueRecord.getNameShortString() == null ? null : 
+
+                String queueName = queueRecord.getNameShortString() == null ? null :
                                         queueRecord.getNameShortString().asString();
-                String owner = queueRecord.getOwner() == null ? null : 
+                String owner = queueRecord.getOwner() == null ? null :
                                         queueRecord.getOwner().asString();
                 boolean exclusive = queueRecord.isExclusive();
-                
+
                 FieldTable arguments = queueRecord.getArguments();
 
                 qrh.queue(queueName, owner, exclusive, arguments);
@@ -603,8 +639,8 @@ public class BDBMessageStore implements MessageStore
             }
         }
     }
-    
-    
+
+
     private void loadExchanges(ExchangeRecoveryHandler erh) throws DatabaseException
     {
         Cursor cursor = null;
@@ -615,17 +651,17 @@ public class BDBMessageStore implements MessageStore
             DatabaseEntry key = new DatabaseEntry();
             DatabaseEntry value = new DatabaseEntry();
             TupleBinding binding = new ExchangeTB();
-            
+
             while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
             {
                 ExchangeRecord exchangeRec = (ExchangeRecord) binding.entryToObject(value);
 
-                String exchangeName = exchangeRec.getNameShortString() == null ? null : 
+                String exchangeName = exchangeRec.getNameShortString() == null ? null :
                                       exchangeRec.getNameShortString().asString();
-                String type = exchangeRec.getType() == null ? null : 
+                String type = exchangeRec.getType() == null ? null :
                               exchangeRec.getType().asString();
                 boolean autoDelete = exchangeRec.isAutoDelete();
-                
+
                 erh.exchange(exchangeName, type, autoDelete);
             }
         }
@@ -638,7 +674,7 @@ public class BDBMessageStore implements MessageStore
         }
 
     }
-    
+
     private void recoverBindings(BindingRecoveryHandler brh) throws DatabaseException
     {
         Cursor cursor = null;
@@ -648,22 +684,22 @@ public class BDBMessageStore implements MessageStore
             DatabaseEntry key = new DatabaseEntry();
             DatabaseEntry value = new DatabaseEntry();
             TupleBinding binding = _bindingTupleBindingFactory.getInstance();
-            
+
             while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
             {
                 //yes, this is retrieving all the useful information from the key only.
                 //For table compatibility it shall currently be left as is
                 BindingKey bindingRecord = (BindingKey) binding.entryToObject(key);
-                
+
                 String exchangeName = bindingRecord.getExchangeName() == null ? null :
                                       bindingRecord.getExchangeName().asString();
                 String queueName = bindingRecord.getQueueName() == null ? null :
                                    bindingRecord.getQueueName().asString();
                 String routingKey = bindingRecord.getRoutingKey() == null ? null :
                                     bindingRecord.getRoutingKey().asString();
-                ByteBuffer argumentsBB = (bindingRecord.getArguments() == null ? null : 
+                ByteBuffer argumentsBB = (bindingRecord.getArguments() == null ? null :
                     java.nio.ByteBuffer.wrap(bindingRecord.getArguments().getDataAsBytes()));
-                
+
                 brh.binding(exchangeName, queueName, routingKey, argumentsBB);
             }
         }
@@ -677,6 +713,74 @@ public class BDBMessageStore implements MessageStore
 
     }
 
+
+    private void recoverBrokerLinks(final ConfigurationRecoveryHandler.BrokerLinkRecoveryHandler lrh)
+    {
+        Cursor cursor = null;
+
+        try
+        {
+            cursor = _linkDb.openCursor(null, null);
+            DatabaseEntry key = new DatabaseEntry();
+            DatabaseEntry value = new DatabaseEntry();
+
+            while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
+            {
+                UUID id = UUIDTupleBinding.getInstance().entryToObject(key);
+                long createTime = LongBinding.entryToLong(value);
+                Map<String,String> arguments = StringMapBinding.getInstance().entryToObject(value);
+
+                ConfigurationRecoveryHandler.BridgeRecoveryHandler brh = lrh.brokerLink(id, createTime, arguments);
+
+                recoverBridges(brh, id);
+            }
+        }
+        finally
+        {
+            if (cursor != null)
+            {
+                cursor.close();
+            }
+        }
+
+    }
+
+    private void recoverBridges(final ConfigurationRecoveryHandler.BridgeRecoveryHandler brh, final UUID linkId)
+    {
+        Cursor cursor = null;
+
+        try
+        {
+            cursor = _bridgeDb.openCursor(null, null);
+            DatabaseEntry key = new DatabaseEntry();
+            DatabaseEntry value = new DatabaseEntry();
+
+            while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
+            {
+                UUID id = UUIDTupleBinding.getInstance().entryToObject(key);
+
+                UUID parentId = UUIDTupleBinding.getInstance().entryToObject(value);
+                if(parentId.equals(linkId))
+                {
+
+                    long createTime = LongBinding.entryToLong(value);
+                    Map<String,String> arguments = StringMapBinding.getInstance().entryToObject(value);
+                    brh.bridge(id,createTime,arguments);
+                }
+            }
+            brh.completeBridgeRecoveryForLink();
+        }
+        finally
+        {
+            if (cursor != null)
+            {
+                cursor.close();
+            }
+        }
+
+    }
+
+
     private void recoverMessages(MessageStoreRecoveryHandler msrh) throws DatabaseException
     {
         StoredMessageRecoveryHandler mrh = msrh.begin();
@@ -686,8 +790,6 @@ public class BDBMessageStore implements MessageStore
         {
             cursor = _messageMetaDataDb.openCursor(null, null);
             DatabaseEntry key = new DatabaseEntry();
-            EntryBinding keyBinding = TupleBinding.getPrimitiveBinding(Long.class);;
-
             DatabaseEntry value = new DatabaseEntry();
             EntryBinding valueBinding = _metaDataTupleBindingFactory.getInstance();
 
@@ -695,12 +797,12 @@ public class BDBMessageStore implements MessageStore
 
             while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
             {
-                long messageId = (Long) keyBinding.entryToObject(key);
+                long messageId = LongBinding.entryToLong(key);
                 StorableMessageMetaData metaData = (StorableMessageMetaData) valueBinding.entryToObject(value);
 
                 StoredBDBMessage message = new StoredBDBMessage(messageId, metaData, false);
                 mrh.message(message);
-                
+
                 maxId = Math.max(maxId, messageId);
             }
 
@@ -719,14 +821,14 @@ public class BDBMessageStore implements MessageStore
             }
         }
     }
-    
-    private void recoverQueueEntries(TransactionLogRecoveryHandler recoveryHandler) 
+
+    private void recoverQueueEntries(TransactionLogRecoveryHandler recoveryHandler)
     throws DatabaseException
     {
         QueueEntryRecoveryHandler qerh = recoveryHandler.begin(this);
 
         ArrayList<QueueEntryKey> entries = new ArrayList<QueueEntryKey>();
-        
+
         Cursor cursor = null;
         try
         {
@@ -751,12 +853,12 @@ public class BDBMessageStore implements MessageStore
             {
                 cursor = null;
             }
-            
+
             for(QueueEntryKey entry : entries)
             {
                 AMQShortString queueName = entry.getQueueName();
                 long messageId = entry.getMessageId();
-                
+
                 qerh.queueEntry(queueName.asString(),messageId);
             }
         }
@@ -781,36 +883,39 @@ public class BDBMessageStore implements MessageStore
      *
      * @param messageId Identifies the message to remove.
      *
-     * @throws AMQInternalException If the operation fails for any reason.
+     * @throws AMQStoreException If the operation fails for any reason.
      */
-    public void removeMessage(Long messageId) throws AMQStoreException
+    public void removeMessage(long messageId) throws AMQStoreException
     {
+        removeMessage(messageId, true);
+    }
+    public void removeMessage(long messageId, boolean sync) throws AMQStoreException
+    {
+
         // _log.debug("public void removeMessage(Long messageId = " + messageId): called");
 
         com.sleepycat.je.Transaction tx = null;
-        
+
         Cursor cursor = null;
         try
         {
             tx = _environment.beginTransaction(null, null);
-            
+
             //remove the message meta data from the store
             DatabaseEntry key = new DatabaseEntry();
-            EntryBinding metaKeyBindingTuple = TupleBinding.getPrimitiveBinding(Long.class);
-            metaKeyBindingTuple.objectToEntry(messageId, key);
+            LongBinding.longToEntry(messageId, key);
 
             if (_log.isDebugEnabled())
             {
                 _log.debug("Removing message id " + messageId);
             }
 
-            
+
             OperationStatus status = _messageMetaDataDb.delete(tx, key);
             if (status == OperationStatus.NOTFOUND)
             {
-                tx.abort();
-
-                throw new AMQStoreException("Message metadata not found for message id " + messageId);
+                _log.info("Message not found (attempt to remove failed - probably application initiated rollback) " +
+                messageId);
             }
 
             if (_log.isDebugEnabled())
@@ -826,7 +931,7 @@ public class BDBMessageStore implements MessageStore
             TupleBinding<MessageContentKey> contentKeyTupleBinding = new MessageContentKeyTB_5();
             contentKeyTupleBinding.objectToEntry(mck, contentKeyEntry);
 
-            //Use a partial record for the value to prevent retrieving the 
+            //Use a partial record for the value to prevent retrieving the
             //data itself as we only need the key to identify what to remove.
             DatabaseEntry value = new DatabaseEntry();
             value.setPartial(0, 0, true);
@@ -837,7 +942,7 @@ public class BDBMessageStore implements MessageStore
             while (status == OperationStatus.SUCCESS)
             {
                 mck = (MessageContentKey_5) contentKeyTupleBinding.entryToObject(contentKeyEntry);
-                
+
                 if(mck.getMessageId() != messageId)
                 {
                     //we have exhausted all chunks for this message id, break
@@ -846,34 +951,34 @@ public class BDBMessageStore implements MessageStore
                 else
                 {
                     status = cursor.delete();
-                    
+
                     if(status == OperationStatus.NOTFOUND)
                     {
                         cursor.close();
                         cursor = null;
-                        
+
                         tx.abort();
                         throw new AMQStoreException("Content chunk offset" + mck.getOffset() + " not found for message " + messageId);
                     }
-                    
+
                     if (_log.isDebugEnabled())
                     {
                         _log.debug("Deleted content chunk offset " + mck.getOffset() + " for message " + messageId);
                     }
                 }
-                
+
                 status = cursor.getNext(contentKeyEntry, value, LockMode.RMW);
             }
 
             cursor.close();
             cursor = null;
-            
-            commit(tx, true);
+
+            commit(tx, sync);
         }
         catch (DatabaseException e)
         {
             e.printStackTrace();
-            
+
             if (tx != null)
             {
                 try
@@ -883,7 +988,7 @@ public class BDBMessageStore implements MessageStore
                         cursor.close();
                         cursor = null;
                     }
-                    
+
                     tx.abort();
                 }
                 catch (DatabaseException e1)
@@ -917,7 +1022,7 @@ public class BDBMessageStore implements MessageStore
     {
         if (_state != State.RECOVERING)
         {
-            ExchangeRecord exchangeRec = new ExchangeRecord(exchange.getNameShortString(), 
+            ExchangeRecord exchangeRec = new ExchangeRecord(exchange.getNameShortString(),
                                              exchange.getTypeShortString(), exchange.isAutoDelete());
 
             DatabaseEntry key = new DatabaseEntry();
@@ -974,20 +1079,20 @@ public class BDBMessageStore implements MessageStore
 
         if (_state != State.RECOVERING)
         {
-            BindingKey bindingRecord = new BindingKey(exchange.getNameShortString(), 
+            BindingKey bindingRecord = new BindingKey(exchange.getNameShortString(),
                                                 queue.getNameShortString(), routingKey, args);
 
             DatabaseEntry key = new DatabaseEntry();
             EntryBinding keyBinding = _bindingTupleBindingFactory.getInstance();
-            
+
             keyBinding.objectToEntry(bindingRecord, key);
 
-            //yes, this is writing out 0 as a value and putting all the 
+            //yes, this is writing out 0 as a value and putting all the
             //useful info into the key, don't ask me why. For table
             //compatibility it shall currently be left as is
             DatabaseEntry value = new DatabaseEntry();
             ByteBinding.byteToEntry((byte) 0, value);
-            
+
             try
             {
                 _queueBindingsDb.put(null, key, value);
@@ -1043,16 +1148,16 @@ public class BDBMessageStore implements MessageStore
         {
             _log.debug("public void createQueue(AMQQueue queue(" + queue.getName() + ") = " + queue + "): called");
         }
-        
-        QueueRecord queueRecord= new QueueRecord(queue.getNameShortString(), 
+
+        QueueRecord queueRecord= new QueueRecord(queue.getNameShortString(),
                                                 queue.getOwner(), queue.isExclusive(), arguments);
-        
+
         createQueue(queueRecord);
     }
 
     /**
-     * Makes the specified queue persistent. 
-     * 
+     * Makes the specified queue persistent.
+     *
      * Only intended for direct use during store upgrades.
      *
      * @param queueRecord     Details of the queue to store.
@@ -1086,7 +1191,7 @@ public class BDBMessageStore implements MessageStore
     /**
      * Updates the specified queue in the persistent store, IF it is already present. If the queue
      * is not present in the store, it will not be added.
-     * 
+     *
      * NOTE: Currently only updates the exclusivity.
      *
      * @param queue The queue to update the entry for.
@@ -1112,13 +1217,13 @@ public class BDBMessageStore implements MessageStore
             OperationStatus status = _queueDb.get(null, key, value, LockMode.DEFAULT);
             if(status == OperationStatus.SUCCESS)
             {
-                //read the existing record and apply the new exclusivity setting 
+                //read the existing record and apply the new exclusivity setting
                 QueueRecord queueRecord = (QueueRecord) queueBinding.entryToObject(value);
                 queueRecord.setExclusive(queue.isExclusive());
-                
+
                 //write the updated entry to the store
                 queueBinding.objectToEntry(queueRecord, newValue);
-                
+
                 _queueDb.put(null, key, newValue);
             }
             else if(status != OperationStatus.NOTFOUND)
@@ -1147,7 +1252,7 @@ public class BDBMessageStore implements MessageStore
         {
             _log.debug("public void removeQueue(AMQShortString name = " + name + "): called");
         }
-            
+
         DatabaseEntry key = new DatabaseEntry();
         EntryBinding keyBinding = new AMQShortStringTB();
         keyBinding.objectToEntry(name, key);
@@ -1165,6 +1270,90 @@ public class BDBMessageStore implements MessageStore
         }
     }
 
+    public void createBrokerLink(final BrokerLink link) throws AMQStoreException
+    {
+        if (_state != State.RECOVERING)
+        {
+            DatabaseEntry key = new DatabaseEntry();
+            UUIDTupleBinding.getInstance().objectToEntry(link.getId(), key);
+
+            DatabaseEntry value = new DatabaseEntry();
+            LongBinding.longToEntry(link.getCreateTime(),value);
+            StringMapBinding.getInstance().objectToEntry(link.getArguments(), value);
+
+            try
+            {
+                _linkDb.put(null, key, value);
+            }
+            catch (DatabaseException e)
+            {
+                throw new AMQStoreException("Error writing Link  " + link
+                                            + " to database: " + e.getMessage(), e);
+            }
+        }
+    }
+
+    public void deleteBrokerLink(final BrokerLink link) throws AMQStoreException
+    {
+        DatabaseEntry key = new DatabaseEntry();
+        UUIDTupleBinding.getInstance().objectToEntry(link.getId(), key);
+        try
+        {
+            OperationStatus status = _linkDb.delete(null, key);
+            if (status == OperationStatus.NOTFOUND)
+            {
+                throw new AMQStoreException("Link " + link + " not found");
+            }
+        }
+        catch (DatabaseException e)
+        {
+            throw new AMQStoreException("Error deleting the Link " + link + " from database: " + e.getMessage(), e);
+        }
+    }
+
+    public void createBridge(final Bridge bridge) throws AMQStoreException
+    {
+        if (_state != State.RECOVERING)
+        {
+            DatabaseEntry key = new DatabaseEntry();
+            UUIDTupleBinding.getInstance().objectToEntry(bridge.getId(), key);
+
+            DatabaseEntry value = new DatabaseEntry();
+            UUIDTupleBinding.getInstance().objectToEntry(bridge.getLink().getId(),value);
+            LongBinding.longToEntry(bridge.getCreateTime(),value);
+            StringMapBinding.getInstance().objectToEntry(bridge.getArguments(), value);
+
+            try
+            {
+                _bridgeDb.put(null, key, value);
+            }
+            catch (DatabaseException e)
+            {
+                throw new AMQStoreException("Error writing Bridge  " + bridge
+                                            + " to database: " + e.getMessage(), e);
+            }
+
+        }
+    }
+
+    public void deleteBridge(final Bridge bridge) throws AMQStoreException
+    {
+        DatabaseEntry key = new DatabaseEntry();
+        UUIDTupleBinding.getInstance().objectToEntry(bridge.getId(), key);
+        try
+        {
+            OperationStatus status = _bridgeDb.delete(null, key);
+            if (status == OperationStatus.NOTFOUND)
+            {
+                throw new AMQStoreException("Bridge " + bridge + " not found");
+            }
+        }
+        catch (DatabaseException e)
+        {
+            throw new AMQStoreException("Error deleting the Bridge " + bridge + " from database: " + e.getMessage(), e);
+        }
+    }
+
     /**
      * Places a message onto a specified queue, in a given transaction.
      *
@@ -1174,12 +1363,13 @@ public class BDBMessageStore implements MessageStore
      *
      * @throws AMQStoreException If the operation fails for any reason.
      */
-    public void enqueueMessage(final com.sleepycat.je.Transaction tx, final TransactionLogResource queue, Long messageId) throws AMQStoreException
+    public void enqueueMessage(final com.sleepycat.je.Transaction tx, final TransactionLogResource queue,
+                               long messageId) throws AMQStoreException
     {
         // _log.debug("public void enqueueMessage(Transaction tx = " + tx + ", AMQShortString name = " + name + ", Long messageId): called");
 
-        AMQShortString name = new AMQShortString(queue.getResourceName());
-        
+        AMQShortString name = AMQShortString.valueOf(queue.getResourceName());
+
         DatabaseEntry key = new DatabaseEntry();
         EntryBinding keyBinding = new QueueEntryTB();
         QueueEntryKey dd = new QueueEntryKey(name, messageId);
@@ -1212,7 +1402,8 @@ public class BDBMessageStore implements MessageStore
      *
      * @throws AMQStoreException If the operation fails for any reason, or if the specified message does not exist.
      */
-    public void dequeueMessage(final com.sleepycat.je.Transaction tx, final TransactionLogResource queue, Long messageId) throws AMQStoreException
+    public void dequeueMessage(final com.sleepycat.je.Transaction tx, final TransactionLogResource queue,
+                               long messageId) throws AMQStoreException
     {
         AMQShortString name = new AMQShortString(queue.getResourceName());
 
@@ -1226,7 +1417,7 @@ public class BDBMessageStore implements MessageStore
         {
             _log.debug("Dequeue message id " + messageId);
         }
-        
+
         try
         {
 
@@ -1234,7 +1425,7 @@ public class BDBMessageStore implements MessageStore
             if (status == OperationStatus.NOTFOUND)
             {
                 throw new AMQStoreException("Unable to find message with id " + messageId + " on queue " + name);
-            } 
+            }
             else if (status != OperationStatus.SUCCESS)
             {
                 throw new AMQStoreException("Unable to remove message with id " + messageId + " on queue " + name);
@@ -1269,12 +1460,12 @@ public class BDBMessageStore implements MessageStore
         //{
         //    _log.debug("public void commitTranImpl() called with (Transaction=" + tx + ", syncCommit= "+ syncCommit + ")");
         //}
-        
+
         if (tx == null)
         {
             throw new AMQStoreException("Fatal internal error: transactional is null at commitTran");
         }
-        
+
         StoreFuture result;
         try
         {
@@ -1289,7 +1480,7 @@ public class BDBMessageStore implements MessageStore
         {
             throw new AMQStoreException("Error commit tx: " + e.getMessage(), e);
         }
-        
+
         return result;
     }
 
@@ -1383,7 +1574,7 @@ public class BDBMessageStore implements MessageStore
      *
      * @return A fresh message id.
      */
-    public Long getNewMessageId()
+    public long getNewMessageId()
     {
         return _messageId.incrementAndGet();
     }
@@ -1398,7 +1589,7 @@ public class BDBMessageStore implements MessageStore
      *
      * @throws AMQStoreException If the operation fails for any reason, or if the specified message does not exist.
      */
-    protected void addContent(final com.sleepycat.je.Transaction tx, Long messageId, int offset, 
+    protected void addContent(final com.sleepycat.je.Transaction tx, long messageId, int offset,
                                       ByteBuffer contentBody) throws AMQStoreException
     {
         DatabaseEntry key = new DatabaseEntry();
@@ -1436,7 +1627,8 @@ public class BDBMessageStore implements MessageStore
      *
      * @throws AMQStoreException If the operation fails for any reason, or if the specified message does not exist.
      */
-    private void storeMetaData(final com.sleepycat.je.Transaction tx, Long messageId, StorableMessageMetaData messageMetaData)
+    private void storeMetaData(final com.sleepycat.je.Transaction tx, long messageId,
+                               StorableMessageMetaData messageMetaData)
             throws AMQStoreException
     {
         if (_log.isDebugEnabled())
@@ -1446,10 +1638,9 @@ public class BDBMessageStore implements MessageStore
         }
 
         DatabaseEntry key = new DatabaseEntry();
-        EntryBinding keyBinding = TupleBinding.getPrimitiveBinding(Long.class);
-        keyBinding.objectToEntry(messageId, key);
+        LongBinding.longToEntry(messageId, key);
         DatabaseEntry value = new DatabaseEntry();
-        
+
         TupleBinding messageBinding = _metaDataTupleBindingFactory.getInstance();
         messageBinding.objectToEntry(messageMetaData, value);
         try
@@ -1475,7 +1666,7 @@ public class BDBMessageStore implements MessageStore
      *
      * @throws AMQStoreException If the operation fails for any reason, or if the specified message does not exist.
      */
-    public StorableMessageMetaData getMessageMetaData(Long messageId) throws AMQStoreException
+    public StorableMessageMetaData getMessageMetaData(long messageId) throws AMQStoreException
     {
         if (_log.isDebugEnabled())
         {
@@ -1484,8 +1675,7 @@ public class BDBMessageStore implements MessageStore
         }
 
         DatabaseEntry key = new DatabaseEntry();
-        EntryBinding keyBinding = TupleBinding.getPrimitiveBinding(Long.class);
-        keyBinding.objectToEntry(messageId, key);
+        LongBinding.longToEntry(messageId, key);
         DatabaseEntry value = new DatabaseEntry();
         TupleBinding messageBinding = _metaDataTupleBindingFactory.getInstance();
 
@@ -1519,17 +1709,17 @@ public class BDBMessageStore implements MessageStore
      *
      * @throws AMQStoreException If the operation fails for any reason, or if the specified message does not exist.
      */
-    public int getContent(Long messageId, int offset, ByteBuffer dst) throws AMQStoreException
-    {    
+    public int getContent(long messageId, int offset, ByteBuffer dst) throws AMQStoreException
+    {
         DatabaseEntry contentKeyEntry = new DatabaseEntry();
-        
-        //Start from 0 offset and search for the starting chunk. 
+
+        //Start from 0 offset and search for the starting chunk.
         MessageContentKey_5 mck = new MessageContentKey_5(messageId, 0);
         TupleBinding<MessageContentKey> contentKeyTupleBinding = new MessageContentKeyTB_5();
         contentKeyTupleBinding.objectToEntry(mck, contentKeyEntry);
         DatabaseEntry value = new DatabaseEntry();
         TupleBinding<ByteBuffer> contentTupleBinding = new ContentTB();
-        
+
         if (_log.isDebugEnabled())
         {
             _log.debug("Message Id: " + messageId + " Getting content body from offset: " + offset);
@@ -1537,32 +1727,32 @@ public class BDBMessageStore implements MessageStore
 
         int written = 0;
         int seenSoFar = 0;
-        
+
         Cursor cursor = null;
         try
         {
             cursor = _messageContentDb.openCursor(null, null);
-            
+
             OperationStatus status = cursor.getSearchKeyRange(contentKeyEntry, value, LockMode.READ_UNCOMMITTED);
 
             while (status == OperationStatus.SUCCESS)
             {
                 mck = (MessageContentKey_5) contentKeyTupleBinding.entryToObject(contentKeyEntry);
                 long id = mck.getMessageId();
-                
+
                 if(id != messageId)
                 {
                     //we have exhausted all chunks for this message id, break
                     break;
                 }
-                
+
                 int offsetInMessage = mck.getOffset();
                 ByteBuffer buf = (ByteBuffer) contentTupleBinding.entryToObject(value);
-                
+
                 final int size = (int) buf.limit();
-                
+
                 seenSoFar += size;
-                
+
                 if(seenSoFar >= offset)
                 {
                     byte[] dataAsBytes = buf.array();
@@ -1581,7 +1771,7 @@ public class BDBMessageStore implements MessageStore
                         break;
                     }
                 }
-                
+
                 status = cursor.getNext(contentKeyEntry, value, LockMode.RMW);
             }
 
@@ -1636,7 +1826,7 @@ public class BDBMessageStore implements MessageStore
     {
         return _bindingTupleBindingFactory;
     }
-    
+
     protected MessageMetaDataTupleBindingFactory getMetaDataTupleBindingFactory()
     {
         return _metaDataTupleBindingFactory;
@@ -1743,7 +1933,7 @@ public class BDBMessageStore implements MessageStore
 
         BDBCommitFuture commitFuture = new BDBCommitFuture(_commitThread, tx, syncCommit);
         commitFuture.commit();
-        
+
         return commitFuture;
     }
 
@@ -1778,7 +1968,6 @@ public class BDBMessageStore implements MessageStore
             {
                 _log.debug("public synchronized void complete(): called (Transaction = " + _tx + ")");
             }
-
             _complete = true;
 
             notifyAll();
@@ -1799,36 +1988,22 @@ public class BDBMessageStore implements MessageStore
         {
             //_log.debug("public void commit(): called");
 
-            _commitThread.addJob(this);
-            
+            _commitThread.addJob(this, _syncCommit);
+
             if(!_syncCommit)
             {
                 _log.debug("CommitAsync was requested, returning immediately.");
                 return;
             }
-            
-            synchronized (BDBCommitFuture.this)
+
+            waitForCompletion();
+            // _log.debug("Commit completed, _databaseException = " + _databaseException);
+
+            if (_databaseException != null)
             {
-                while (!_complete)
-                {
-                    try
-                    {
-                        wait(250);
-                    }
-                    catch (InterruptedException e)
-                    {
-                        // _log.error("Unexpected thread interruption: " + e, e);
-                        throw new RuntimeException(e);
-                    }
-                }
-
-                // _log.debug("Commit completed, _databaseException = " + _databaseException);
-
-                if (_databaseException != null)
-                {
-                    throw _databaseException;
-                }
+                throw _databaseException;
             }
+
         }
 
         public synchronized boolean isComplete()
@@ -1836,10 +2011,11 @@ public class BDBMessageStore implements MessageStore
             return _complete;
         }
 
-        public void waitForCompletion()
+        public synchronized void waitForCompletion()
         {
             while (!isComplete())
             {
+                _commitThread.explicitNotify();
                 try
                 {
                     wait(250);
@@ -1866,7 +2042,7 @@ public class BDBMessageStore implements MessageStore
         // private final Logger _log = Logger.getLogger(CommitThread.class);
 
         private final AtomicBoolean _stopped = new AtomicBoolean(false);
-        private final AtomicReference<Queue<BDBCommitFuture>> _jobQueue = new AtomicReference<Queue<BDBCommitFuture>>(new ConcurrentLinkedQueue<BDBCommitFuture>());
+        private final Queue<BDBCommitFuture> _jobQueue = new ConcurrentLinkedQueue<BDBCommitFuture>();
         private final CheckpointConfig _config = new CheckpointConfig();
         private final Object _lock = new Object();
 
@@ -1875,6 +2051,14 @@ public class BDBMessageStore implements MessageStore
             super(name);
             _config.setForce(true);
 
+        }
+
+        public void explicitNotify()
+        {
+            synchronized (_lock)
+            {
+                _lock.notify();
+            }
         }
 
         public void run()
@@ -1887,7 +2071,7 @@ public class BDBMessageStore implements MessageStore
                     {
                         try
                         {
-                            // RHM-7 Periodically wake up and check, just in case we 
+                            // RHM-7 Periodically wake up and check, just in case we
                             // missed a notification. Don't want to lock the broker hard.
                             _lock.wait(250);
                         }
@@ -1905,24 +2089,24 @@ public class BDBMessageStore implements MessageStore
         {
             // _log.debug("private void processJobs(): called");
 
-            // we replace the old queue atomically with a new one and this avoids any need to
-            // copy elements out of the queue
-            Queue<BDBCommitFuture> jobs = _jobQueue.getAndSet(new ConcurrentLinkedQueue<BDBCommitFuture>());
+            int size = _jobQueue.size();
 
             try
             {
-                // _environment.checkpoint(_config);
-                _environment.sync();
+                _environment.flushLog(true);
 
-                for (BDBCommitFuture commit : jobs)
+                for(int i = 0; i < size; i++)
                 {
+                    BDBCommitFuture commit = _jobQueue.poll();
                     commit.complete();
                 }
+
             }
             catch (DatabaseException e)
             {
-                for (BDBCommitFuture commit : jobs)
+                for(int i = 0; i < size; i++)
                 {
+                    BDBCommitFuture commit = _jobQueue.poll();
                     commit.abort(e);
                 }
             }
@@ -1931,15 +2115,19 @@ public class BDBMessageStore implements MessageStore
 
         private boolean hasJobs()
         {
-            return !_jobQueue.get().isEmpty();
+            return !_jobQueue.isEmpty();
         }
 
-        public void addJob(BDBCommitFuture commit)
+        public void addJob(BDBCommitFuture commit, final boolean sync)
         {
-            synchronized (_lock)
+
+            _jobQueue.add(commit);
+            if(sync)
             {
-                _jobQueue.get().add(commit);
-                _lock.notifyAll();
+                synchronized (_lock)
+                {
+                    _lock.notifyAll();
+                }
             }
         }
 
@@ -1952,14 +2140,17 @@ public class BDBMessageStore implements MessageStore
             }
         }
     }
-    
-    
+
+
     private class StoredBDBMessage implements StoredMessage
     {
 
         private final long _messageId;
         private volatile SoftReference<StorableMessageMetaData> _metaDataRef;
-        private com.sleepycat.je.Transaction _txn;
+
+        private StorableMessageMetaData _metaData;
+        private volatile SoftReference<byte[]> _dataRef;
+        private byte[] _data;
 
         StoredBDBMessage(long messageId, StorableMessageMetaData metaData)
         {
@@ -1973,19 +2164,12 @@ public class BDBMessageStore implements MessageStore
             try
             {
                 _messageId = messageId;
+                _metaData = metaData;
 
                 _metaDataRef = new SoftReference<StorableMessageMetaData>(metaData);
-                if(persist)
-                {
-                    _txn = _environment.beginTransaction(null, null);
-                    storeMetaData(_txn, messageId, metaData);
-                }
+
             }
             catch (DatabaseException e)
-            {
-                throw new RuntimeException(e);
-            }
-            catch (AMQStoreException e)
             {
                 throw new RuntimeException(e);
             }
@@ -2018,58 +2202,114 @@ public class BDBMessageStore implements MessageStore
 
         public void addContent(int offsetInMessage, java.nio.ByteBuffer src)
         {
-            try
+            src = src.slice();
+
+            if(_data == null)
             {
-                BDBMessageStore.this.addContent(_txn, _messageId, offsetInMessage, src);
+                _data = new byte[src.remaining()];
+                _dataRef = new SoftReference<byte[]>(_data);
+                src.duplicate().get(_data);
             }
-            catch (AMQStoreException e)
+            else
             {
-                throw new RuntimeException(e);
+                byte[] oldData = _data;
+                _data = new byte[oldData.length + src.remaining()];
+                _dataRef = new SoftReference<byte[]>(_data);
+
+                System.arraycopy(oldData,0,_data,0,oldData.length);
+                src.duplicate().get(_data, oldData.length, src.remaining());
             }
+
         }
 
         public int getContent(int offsetInMessage, java.nio.ByteBuffer dst)
         {
-            try
+            byte[] data = _dataRef == null ? null : _dataRef.get();
+            if(data != null)
             {
-                return BDBMessageStore.this.getContent(_messageId, offsetInMessage, dst);
+                int length = Math.min(dst.remaining(), data.length - offsetInMessage);
+                dst.put(data, offsetInMessage, length);
+                return length;
             }
-            catch (AMQStoreException e)
+            else
             {
-                throw new RuntimeException(e);
+                try
+                {
+                    return BDBMessageStore.this.getContent(_messageId, offsetInMessage, dst);
+                }
+                catch (AMQStoreException e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
         }
 
-        public StoreFuture flushToStore()
+        public ByteBuffer getContent(int offsetInMessage, int size)
         {
-            try
+            byte[] data = _dataRef == null ? null : _dataRef.get();
+            if(data != null)
             {
-                if(_txn != null)
+                return ByteBuffer.wrap(data,offsetInMessage,size);
+            }
+            else
+            {
+                ByteBuffer buf = ByteBuffer.allocate(size);
+                getContent(offsetInMessage, buf);
+                buf.position(0);
+                return  buf;
+            }
+        }
+
+        synchronized void store(com.sleepycat.je.Transaction txn)
+        {
+
+            if(_metaData != null)
+            {
+                try
                 {
-                    //if(_log.isDebugEnabled())
-                    //{
-                    //   _log.debug("Flushing message " + _messageId + " to store");
-                    //}
-                    BDBMessageStore.this.commitTranImpl(_txn, true);
+                    _dataRef = new SoftReference<byte[]>(_data);
+                    BDBMessageStore.this.storeMetaData(txn, _messageId, _metaData);
+                    BDBMessageStore.this.addContent(txn, _messageId, 0,
+                                                    _data == null ? ByteBuffer.allocate(0) : ByteBuffer.wrap(_data));
+                }
+                catch(DatabaseException e)
+                {
+                    throw new RuntimeException(e);
+                }
+                catch (AMQStoreException e)
+                {
+                    throw new RuntimeException(e);
+                }
+                catch (RuntimeException e)
+                {
+                    e.printStackTrace();
+                    throw e;
+                }
+                finally
+                {
+                    _metaData = null;
+                    _data = null;
                 }
             }
-            catch (AMQStoreException e)
+        }
+
+        public synchronized StoreFuture flushToStore()
+        {
+            if(_metaData != null)
             {
-                throw new RuntimeException(e);
-            }
-            finally
-            {
-                _txn = null;
+                com.sleepycat.je.Transaction txn = _environment.beginTransaction(null, null);
+                store(txn);
+                BDBMessageStore.this.commit(txn,true);
+
             }
             return IMMEDIATE_FUTURE;
         }
 
         public void remove()
         {
-            flushToStore();
             try
             {
-                BDBMessageStore.this.removeMessage(_messageId);
+                BDBMessageStore.this.removeMessage(_messageId, false);
             }
             catch (AMQStoreException e)
             {
@@ -2094,12 +2334,27 @@ public class BDBMessageStore implements MessageStore
             }
         }
 
-        public void enqueueMessage(TransactionLogResource queue, Long messageId) throws AMQStoreException
+        public void enqueueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
+        {
+            if(message.getStoredMessage() instanceof StoredBDBMessage)
+            {
+                ((StoredBDBMessage)message.getStoredMessage()).store(_txn);
+            }
+
+            BDBMessageStore.this.enqueueMessage(_txn, queue, message.getMessageNumber());
+        }
+
+        public void dequeueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
+        {
+            BDBMessageStore.this.dequeueMessage(_txn, queue, message.getMessageNumber());
+        }
+
+        public void enqueueMessage(TransactionLogResource queue, long messageId) throws AMQStoreException
         {
             BDBMessageStore.this.enqueueMessage(_txn, queue, messageId);
         }
 
-        public void dequeueMessage(TransactionLogResource queue, Long messageId) throws AMQStoreException
+        public void dequeueMessage(TransactionLogResource queue, long messageId) throws AMQStoreException
         {
             BDBMessageStore.this.dequeueMessage(_txn, queue, messageId);
 

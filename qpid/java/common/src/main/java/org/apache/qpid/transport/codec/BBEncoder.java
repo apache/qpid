@@ -70,6 +70,16 @@ public final class BBEncoder extends AbstractEncoder
         return slice;
     }
 
+    public int position()
+    {
+        return out.position();
+    }
+
+    public ByteBuffer underlyingBuffer()
+    {
+        return out;
+    }
+
     private void grow(int size)
     {
         ByteBuffer old = out;

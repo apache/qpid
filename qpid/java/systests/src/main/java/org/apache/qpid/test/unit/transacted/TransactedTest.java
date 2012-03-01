@@ -31,6 +31,8 @@ import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.jms.Connection;
+import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -301,6 +303,70 @@ public class TransactedTest extends QpidBrokerTestCase
 
         con.close();
         con2.close();
+    }
+
+    public void testCommitOnClosedConnection() throws Exception
+    {
+        Connection connnection = getConnection();
+        javax.jms.Session transactedSession = connnection.createSession(true, Session.SESSION_TRANSACTED);
+        connnection.close();
+        try
+        {
+            transactedSession.commit();
+            fail("Commit on closed connection should throw IllegalStateException!");
+        }
+        catch(IllegalStateException e)
+        {
+            // passed
+        }
+    }
+
+    public void testCommitOnClosedSession() throws Exception
+    {
+        Connection connnection = getConnection();
+        javax.jms.Session transactedSession = connnection.createSession(true, Session.SESSION_TRANSACTED);
+        transactedSession.close();
+        try
+        {
+            transactedSession.commit();
+            fail("Commit on closed session should throw IllegalStateException!");
+        }
+        catch(IllegalStateException e)
+        {
+            // passed
+        }
+    }
+
+    public void testRollbackOnClosedSession() throws Exception
+    {
+        Connection connnection = getConnection();
+        javax.jms.Session transactedSession = connnection.createSession(true, Session.SESSION_TRANSACTED);
+        transactedSession.close();
+        try
+        {
+            transactedSession.rollback();
+            fail("Rollback on closed session should throw IllegalStateException!");
+        }
+        catch(IllegalStateException e)
+        {
+            // passed
+        }
+    }
+
+    public void testGetTransactedOnClosedSession() throws Exception
+    {
+        Connection connnection = getConnection();
+        javax.jms.Session transactedSession = connnection.createSession(true, Session.SESSION_TRANSACTED);
+        transactedSession.close();
+        try
+        {
+            transactedSession.getTransacted();
+            fail("According to Sun TCK invocation of Session#getTransacted on closed session should throw IllegalStateException!");
+        }
+        catch(IllegalStateException e)
+        {
+            // passed
+        }
     }
 
     private void expect(String text, Message msg) throws JMSException

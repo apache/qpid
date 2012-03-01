@@ -46,10 +46,6 @@ public interface UnacknowledgedMessageMap
 
     void add(long deliveryTag, QueueEntry message);
 
-    void collect(long deliveryTag, boolean multiple, Map<Long, QueueEntry> msgs);
-
-    void remove(Map<Long,QueueEntry> msgs);
-
     QueueEntry remove(long deliveryTag);
 
     Collection<QueueEntry> cancelAllMessages();
@@ -66,6 +62,8 @@ public interface UnacknowledgedMessageMap
      * @return a set of delivery tags
      */
     Set<Long> getDeliveryTags();
+
+    Collection<QueueEntry> acknowledge(long deliveryTag, boolean multiple);
 
 }
 

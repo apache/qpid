@@ -93,6 +93,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
     // to save boxing the channelId and looking up in a map... cache in an array the low numbered
     // channels.  This value must be of the form 2^x - 1.
     private static final int CHANNEL_CACHE_SIZE = 0xff;
+    private static final int REUSABLE_BYTE_BUFFER_CAPACITY = 65 * 1024;
 
     private AMQShortString _contextKey;
 
@@ -262,12 +263,22 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
                     closeProtocolSession();
                 }
             }
+            receiveComplete();
         }
         catch (Exception e)
         {
             _logger.error("Unexpected exception when processing datablock", e);
             closeProtocolSession();
         }
+    }
+
+    private void receiveComplete()
+    {
+        for (AMQChannel channel : _channelMap.values())
+        {
+            channel.receivedComplete();
+        }
+
     }
 
     public void dataBlockReceived(AMQDataBlock message) throws Exception
@@ -387,35 +398,51 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
         }
     }
 
+
+    private final byte[] _reusableBytes = new byte[REUSABLE_BYTE_BUFFER_CAPACITY];
+    private final ByteBuffer _reusableByteBuffer = ByteBuffer.wrap(_reusableBytes);
+    private final BytesDataOutput _reusableDataOutput = new BytesDataOutput(_reusableBytes);
+
     private ByteBuffer asByteBuffer(AMQDataBlock block)
     {
-        final ByteBuffer buf = ByteBuffer.allocate((int) block.getSize());
+        final int size = (int) block.getSize();
+
+        final byte[] data;
+
+
+        if(size > REUSABLE_BYTE_BUFFER_CAPACITY)
+        {
+            data= new byte[size];
+        }
+        else
+        {
+
+            data = _reusableBytes;
+        }
+        _reusableDataOutput.setBuffer(data);
 
         try
         {
-            block.writePayload(new DataOutputStream(new OutputStream()
-            {
-
-
-                @Override
-                public void write(int b) throws IOException
-                {
-                    buf.put((byte) b);
-                }
-
-                @Override
-                public void write(byte[] b, int off, int len) throws IOException
-                {
-                    buf.put(b, off, len);
-                }
-            }));
+            block.writePayload(_reusableDataOutput);
         }
         catch (IOException e)
         {
             throw new RuntimeException(e);
         }
 
-        buf.flip();
+        final ByteBuffer buf;
+
+        if(size <= REUSABLE_BYTE_BUFFER_CAPACITY)
+        {
+            buf = _reusableByteBuffer;
+            buf.position(0);
+        }
+        else
+        {
+            buf = ByteBuffer.wrap(data);
+        }
+        buf.limit(_reusableDataOutput.length());
+
         return buf;
     }
 
@@ -1417,8 +1444,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
     {
         _deferFlush = deferFlush;
     }
-
-
 
     public String getUserName()
     {

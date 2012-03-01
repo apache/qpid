@@ -20,6 +20,12 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.qpid.amqp_1_0.messaging.SectionDecoderImpl;
 import org.apache.qpid.amqp_1_0.transport.DeliveryStateHandler;
 import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
@@ -35,16 +41,11 @@ import org.apache.qpid.amqp_1_0.type.transaction.TransactionalState;
 import org.apache.qpid.amqp_1_0.type.transport.Detach;
 import org.apache.qpid.amqp_1_0.type.transport.ReceiverSettleMode;
 import org.apache.qpid.amqp_1_0.type.transport.Transfer;
-
 import org.apache.qpid.server.message.MessageMetaData_1_0;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-
-import java.lang.ref.WeakReference;
-import java.nio.ByteBuffer;
-import java.util.*;
 
 public class ReceivingLink_1_0 implements ReceivingLinkListener, Link_1_0, DeliveryStateHandler
 {
@@ -181,7 +182,7 @@ public class ReceivingLink_1_0 implements ReceivingLinkListener, Link_1_0, Deliv
             else
             {
                 Session_1_0 session = getSession();
-                transaction = session != null ? session.getTransaction(null) : new AutoCommitTransaction(_vhost.getTransactionLog());
+                transaction = session != null ? session.getTransaction(null) : new AutoCommitTransaction(_vhost.getMessageStore());
             }
 
             Outcome outcome = _destination.send(message, transaction);

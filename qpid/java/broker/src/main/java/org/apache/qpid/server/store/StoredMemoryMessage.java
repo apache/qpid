@@ -42,36 +42,87 @@ public class StoredMemoryMessage implements StoredMessage
 
     public void addContent(int offsetInMessage, ByteBuffer src)
     {
-        src = src.duplicate();
-        if(_content == null || offsetInMessage + src.remaining() > _content.capacity())
+        if(_content == null)
         {
-            ByteBuffer newContent = ByteBuffer.allocate(offsetInMessage+src.remaining());
-            if(_content != null)
+            if(offsetInMessage == 0)
             {
-                newContent.duplicate().put(_content.array());
+                _content = src.slice();
             }
-            _content = newContent;
+            else
+            {
+                final int contentSize = _metaData.getContentSize();
+                int size = (contentSize < offsetInMessage + src.remaining())
+                        ? offsetInMessage + src.remaining()
+                        : contentSize;
+                _content = ByteBuffer.allocate(size);
+                addContent(offsetInMessage, src);
+            }
         }
+        else
+        {
+            if(_content.limit() >= offsetInMessage + src.remaining())
+            {
+                _content.position(offsetInMessage);
+                _content.put(src);
+                _content.position(0);
+            }
+            else
+            {
+                final int contentSize = _metaData.getContentSize();
+                int size = (contentSize < offsetInMessage + src.remaining())
+                        ? offsetInMessage + src.remaining()
+                        : contentSize;
+                ByteBuffer oldContent = _content;
+                _content = ByteBuffer.allocate(size);
+                _content.put(oldContent);
+                _content.position(0);
+                addContent(offsetInMessage, src);
+            }
 
-        ByteBuffer dst = _content.duplicate();
-        dst.position(offsetInMessage);
-        dst.put(src);
+        }
     }
 
     public int getContent(int offset, ByteBuffer dst)
     {
-        ByteBuffer src = _content.duplicate();
-        src.position(offset);
-        src = src.slice();
-        if(dst.remaining() < src.limit())
+        if(_content == null)
         {
-            src.limit(dst.remaining());
+            return 0;
         }
+        ByteBuffer src = _content.duplicate();
+
+        int oldPosition = src.position();
+
+        src.position(oldPosition + offset);
+
+        int length = dst.remaining() < src.remaining() ? dst.remaining() : src.remaining();
+        src.limit(oldPosition + length);
+
         dst.put(src);
-        return src.limit();
+
+
+        return length;
     }
 
-    public TransactionLog.StoreFuture flushToStore()
+
+    public ByteBuffer getContent(int offsetInMessage, int size)
+    {
+        if(_content == null)
+        {
+            return null;
+        }
+        ByteBuffer buf = _content.duplicate();
+
+        if(offsetInMessage != 0)
+        {
+            buf.position(offsetInMessage);
+            buf = buf.slice();
+        }
+
+        buf.limit(size);
+        return buf;
+    }
+
+    public MessageStore.StoreFuture flushToStore()
     {
         return MessageStore.IMMEDIATE_FUTURE;
     }

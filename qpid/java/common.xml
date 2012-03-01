@@ -61,6 +61,12 @@
   <property name="javac.compiler.args"   value=""/>
 
   <property name="cobertura.dir" value="${project.root}/lib/cobertura" />
+  <property name="cobertura.version" value="1.9.4.1" />
+  <property name="cobertura.download.url"
+            value="http://downloads.sourceforge.net/project/cobertura/cobertura/${cobertura.version}/cobertura-${cobertura.version}-bin.zip" />
+  <property name="cobertura.zip.filename" value="cobertura-${cobertura.version}-bin.zip" />
+  <property name="cobertura.temp.dir" value="${cobertura.dir}"/>
+
   <property name="mllib.dir" value="${project.root}/../python" />
   <property name="findbugs.dir" value="${project.root}/lib/findbugs" />
 
@@ -71,8 +77,8 @@
 
   <path id="cobertura.classpath">
     <fileset dir="${cobertura.dir}">
-        <include name="cobertura.jar" />
-        <include name="lib/**/*.jar" />
+        <include name="cobertura-${cobertura.version}/*.jar" />
+        <include name="cobertura-${cobertura.version}/**/lib/*.jar" />
     </fileset>
   </path>
 
@@ -190,6 +196,22 @@
 
   <target name="cobertura-init">
     <taskdef classpathref="cobertura.classpath" resource="tasks.properties" />
+  </target>
+
+  <!--download Cobertura jar and expand-->
+  <target name="download-cobertura" description="download Cobertura if not already present" depends="cobertura-check" unless="cobertura.already.exists">
+      <mkdir dir="${cobertura.dir}"/>
+      <echo>Downloading Cobertura ${cobertura.version}</echo>
+      <get src="${cobertura.download.url}" dest="${cobertura.temp.dir}/${cobertura.zip.filename}" usetimestamp="false" />
+      <echo>Extracting Cobertura JAR and dependencies</echo>
+      <unzip src="${cobertura.temp.dir}/${cobertura.zip.filename}" dest="${cobertura.dir}"/>
+      <echo>Cleanup Cobertura Download</echo>
+      <delete file="${cobertura.temp.dir}/${cobertura.zip.filename}"/>
+      <echo>Done</echo>
+  </target>
+
+  <target name="cobertura-check">
+    <available property="cobertura.already.exists" file="${cobertura.dir}/cobertura-${cobertura.version}" type="dir"/>
   </target>
 
   <target name="findbugs-init">

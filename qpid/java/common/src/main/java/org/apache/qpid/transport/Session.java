@@ -44,6 +44,7 @@ import static org.apache.qpid.util.Serial.max;
 import static org.apache.qpid.util.Strings.toUTF8;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -61,7 +62,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class Session extends SessionInvoker
 {
     private static final Logger log = Logger.get(Session.class);
-
+    
     public enum State { NEW, DETACHED, RESUMING, OPEN, CLOSING, CLOSED }
 
     static class DefaultSessionListener implements SessionListener
@@ -96,6 +97,9 @@ public class Session extends SessionInvoker
     private final long timeout = Long.getLong(ClientProperties.QPID_SYNC_OP_TIMEOUT,
                                         Long.getLong(ClientProperties.AMQJ_DEFAULT_SYNCWRITE_TIMEOUT,
                                                      ClientProperties.DEFAULT_SYNC_OPERATION_TIMEOUT));
+    private final long blockedSendTimeout = Long.getLong("qpid.flow_control_wait_failure", timeout);
+    private long blockedSendReportingPeriod = Long.getLong("qpid.flow_control_wait_notify_period",5000L);
+
     private boolean autoSync = false;
 
     private boolean incomingInit;
@@ -228,10 +232,21 @@ public class Session extends SessionInvoker
         {
             try
             {
-                if (!credit.tryAcquire(timeout, TimeUnit.MILLISECONDS))
+                long wait = blockedSendTimeout > blockedSendReportingPeriod ? blockedSendReportingPeriod :
+                           blockedSendTimeout;
+                long totalWait = 1L;
+                while(totalWait <= blockedSendTimeout && !credit.tryAcquire(wait, TimeUnit.MILLISECONDS))
                 {
+                    totalWait+=wait;
+                    log.warn("Message send delayed by " + (totalWait)/1000 + "s due to broker enforced flow control");
+
+
+                }
+                if(totalWait > blockedSendTimeout)
+                {
+                    log.error("Message send failed due to timeout waiting on broker enforced flow control");
                     throw new SessionException
-                        ("timed out waiting for message credit");
+                            ("timed out waiting for message credit");
                 }
             }
             catch (InterruptedException e)
@@ -247,7 +262,7 @@ public class Session extends SessionInvoker
         synchronized (processedLock)
         {
             incomingInit = false;
-            processed = new RangeSet();
+            processed = RangeSetFactory.createRangeSet();
         }
     }
 
@@ -276,22 +291,22 @@ public class Session extends SessionInvoker
                 else if (m instanceof MessageTransfer)
                 {
                 	MessageTransfer xfr = (MessageTransfer)m;
-                	
-                	if (xfr.getHeader() != null)
+
+                    Header header = xfr.getHeader();
+
+                    if (header != null)
                 	{
-                		if (xfr.getHeader().get(DeliveryProperties.class) != null)
+                		if (header.getDeliveryProperties() != null)
                 		{
-                		   xfr.getHeader().get(DeliveryProperties.class).setRedelivered(true);
+                		   header.getDeliveryProperties().setRedelivered(true);
                 		}
                 		else
                 		{
-                			Struct[] structs = xfr.getHeader().getStructs();
                 			DeliveryProperties deliveryProps = new DeliveryProperties();
                     		deliveryProps.setRedelivered(true);
-                    		
-                    		List<Struct> list = Arrays.asList(structs);
-                    		list.add(deliveryProps);
-                    		xfr.setHeader(new Header(list));
+
+                    		xfr.setHeader(new Header(deliveryProps, header.getMessageProperties(),
+                                                     header.getNonStandardProperties()));
                 		}
                 		
                 	}
@@ -299,7 +314,7 @@ public class Session extends SessionInvoker
                 	{
                 		DeliveryProperties deliveryProps = new DeliveryProperties();
                 		deliveryProps.setRedelivered(true);
-                		xfr.setHeader(new Header(deliveryProps));
+                		xfr.setHeader(new Header(deliveryProps, null, null));
                 	}
                 }
                 sessionCommandPoint(m.getId(), 0);
@@ -394,38 +409,46 @@ public class Session extends SessionInvoker
 
     public void processed(int command)
     {
-        processed(new Range(command, command));
-    }
-
-    public void processed(int lower, int upper)
-    {
-
-        processed(new Range(lower, upper));
+        processed(command, command);
     }
 
     public void processed(Range range)
     {
-        log.debug("%s processed(%s) %s %s", this, range, syncPoint, maxProcessed);
+
+        processed(range.getLower(), range.getUpper());
+    }
+
+    public void processed(int lower, int upper)
+    {
+        if(log.isDebugEnabled())
+        {
+            log.debug("%s processed([%d,%d]) %s %s", this, lower, upper, syncPoint, maxProcessed);
+        }
 
         boolean flush;
         synchronized (processedLock)
         {
-            log.debug("%s", processed);
-
-            if (ge(range.getUpper(), commandsIn))
+            if(log.isDebugEnabled())
             {
-                throw new IllegalArgumentException
-                    ("range exceeds max received command-id: " + range);
+                log.debug("%s", processed);
             }
 
-            processed.add(range);
-            Range first = processed.getFirst();
-            int lower = first.getLower();
-            int upper = first.getUpper();
-            int old = maxProcessed;
-            if (le(lower, maxProcessed + 1))
+            if (ge(upper, commandsIn))
             {
-                maxProcessed = max(maxProcessed, upper);
+                throw new IllegalArgumentException
+                    ("range exceeds max received command-id: " + Range.newInstance(lower, upper));
+            }
+
+            processed.add(lower, upper);
+
+            Range first = processed.getFirst();
+
+            int flower = first.getLower();
+            int fupper = first.getUpper();
+            int old = maxProcessed;
+            if (le(flower, maxProcessed + 1))
+            {
+                maxProcessed = max(maxProcessed, fupper);
             }
             boolean synced = ge(maxProcessed, syncPoint);
             flush = lt(old, syncPoint) && synced;
@@ -442,7 +465,7 @@ public class Session extends SessionInvoker
 
     void flushExpected()
     {
-        RangeSet rs = new RangeSet();
+        RangeSet rs = RangeSetFactory.createRangeSet();
         synchronized (processedLock)
         {
             if (incomingInit)
@@ -478,7 +501,7 @@ public class Session extends SessionInvoker
     {
         synchronized (processedLock)
         {
-            RangeSet newProcessed = new RangeSet();
+            RangeSet newProcessed = RangeSetFactory.createRangeSet();
             for (Range pr : processed)
             {
                 for (Range kr : kc)
@@ -534,7 +557,12 @@ public class Session extends SessionInvoker
             {
                 maxComplete = max(maxComplete, upper);
             }
-            log.debug("%s   commands remaining: %s", this, commandsOut - maxComplete);
+
+            if(log.isDebugEnabled())
+            {
+                log.debug("%s   commands remaining: %s", this, commandsOut - maxComplete);
+            }
+
             commands.notifyAll();
             return gt(maxComplete, old);
         }
@@ -801,8 +829,17 @@ public class Session extends SessionInvoker
             Waiter w = new Waiter(commands, timeout);
             while (w.hasTime() && state != CLOSED && lt(maxComplete, point))
             {
-                checkFailoverRequired("Session sync was interrupted by failover.");
-                log.debug("%s   waiting for[%d]: %d, %s", this, point, maxComplete, commands);
+                checkFailoverRequired("Session sync was interrupted by failover.");                               
+                if(log.isDebugEnabled())
+                {
+                    List<Method> waitingFor =
+                            Arrays.asList(commands)
+                                  .subList(mod(maxComplete,commands.length),
+                                           mod(commandsOut-1, commands.length) < mod(maxComplete, commands.length)
+                                             ? commands.length-1
+                                             : mod(commandsOut-1, commands.length));
+                    log.debug("%s   waiting for[%d]: %d, %s", this, point, maxComplete, waitingFor);
+                }
                 w.await();
             }
 

@@ -20,15 +20,13 @@
  */
 package org.apache.qpid.tools.security;
 
-import org.apache.commons.codec.binary.Base64;
-
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.security.DigestException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.DigestException;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintStream;
+import org.apache.commons.codec.binary.Base64;
 
 public class Passwd
 {
@@ -40,7 +38,14 @@ public class Passwd
             System.exit(0);
         }
 
-        byte[] data = args[1].getBytes("utf-8");
+        Passwd passwd = new Passwd();
+        String output = passwd.getOutput(args[0], args[1]);
+        System.out.println(output);
+    }
+
+    public String getOutput(String userName, String password) throws UnsupportedEncodingException, NoSuchAlgorithmException
+    {
+        byte[] data = password.getBytes("utf-8");
 
         MessageDigest md = MessageDigest.getInstance("MD5");
 
@@ -55,24 +60,8 @@ public class Passwd
 
         byte[] encoded = b64.encode(digest);
 
-        output(args[0], encoded);
+        String encodedStr = new String(encoded, Charset.forName("utf-8"));
+        return userName + ":" + encodedStr;
     }
 
-    private static void output(String user, byte[] encoded) throws IOException
-    {
-        PrintStream ps = new PrintStream(System.out);
-
-        user += ":";
-        ps.write(user.getBytes("utf-8"));
-
-        for (byte b : encoded)
-        {
-            ps.write(b);
-        }
-
-        ps.println();
-
-        ps.flush();
-        ps.close();
-    }
 }

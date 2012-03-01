@@ -21,17 +21,28 @@
 package org.apache.qpid.server.message;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
+import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoredMessage;
 
-public abstract class AbstractServerMessageImpl implements ServerMessage
+public abstract class AbstractServerMessageImpl<T extends StorableMessageMetaData> implements ServerMessage<T>
 {
-    private final AtomicInteger _referenceCount = new AtomicInteger(0);
-    private final StoredMessage<?> _handle;
 
-    public AbstractServerMessageImpl(StoredMessage<?> handle)
+    private static final AtomicIntegerFieldUpdater<AbstractServerMessageImpl> _refCountUpdater =
+            AtomicIntegerFieldUpdater.newUpdater(AbstractServerMessageImpl.class, "_referenceCount");
+
+    private volatile int _referenceCount = 0;
+    private final StoredMessage<T> _handle;
+
+    public AbstractServerMessageImpl(StoredMessage<T> handle)
     {
         _handle = handle;
+    }
+
+    public StoredMessage<T> getStoredMessage()
+    {
+        return _handle;
     }
 
     public boolean incrementReference()
@@ -41,9 +52,9 @@ public abstract class AbstractServerMessageImpl implements ServerMessage
 
     public boolean incrementReference(int count)
     {
-        if(_referenceCount.addAndGet(count) <= 0)
+        if(_refCountUpdater.addAndGet(this, count) <= 0)
         {
-            _referenceCount.addAndGet(-count);
+            _refCountUpdater.addAndGet(this, -count);
             return false;
         }
         else
@@ -62,7 +73,7 @@ public abstract class AbstractServerMessageImpl implements ServerMessage
      */
     public void decrementReference()
     {
-        int count = _referenceCount.decrementAndGet();
+        int count = _refCountUpdater.decrementAndGet(this);
 
         // note that the operation of decrementing the reference count and then removing the message does not
         // have to be atomic since the ref count starts at 1 and the exchange itself decrements that after
@@ -73,7 +84,7 @@ public abstract class AbstractServerMessageImpl implements ServerMessage
             // set the reference count way below 0 so that we can detect that the message has been deleted
             // this is to guard against the message being spontaneously recreated (from the mgmt console)
             // by copying from other queues at the same time as it is being removed.
-            _referenceCount.set(Integer.MIN_VALUE/2);
+            _refCountUpdater.set(this,Integer.MIN_VALUE/2);
 
             // must check if the handle is null since there may be cases where we decide to throw away a message
             // and the handle has not yet been constructed
@@ -99,6 +110,6 @@ public abstract class AbstractServerMessageImpl implements ServerMessage
 
     protected int getReferenceCount()
     {
-        return _referenceCount.get();
+        return _referenceCount;
     }
 }

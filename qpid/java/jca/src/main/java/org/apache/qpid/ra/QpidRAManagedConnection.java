@@ -57,6 +57,8 @@ import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
 
+import org.apache.qpid.client.Closeable;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -752,26 +754,25 @@ public class QpidRAManagedConnection implements ManagedConnection, ExceptionList
 
       try
       {
-         boolean transacted = _cri.isTransacted();
-         int acknowledgeMode =  Session.AUTO_ACKNOWLEDGE;
-         boolean localTx = _mcf.getUseLocalTx();
+         boolean transacted = _cri.isTransacted() || _mcf.getUseLocalTx();
+         int acknowledgeMode =  (transacted) ? Session.SESSION_TRANSACTED : _cri.getAcknowledgeMode();
 
          if (_cri.getType() == QpidRAConnectionFactory.TOPIC_CONNECTION)
          {
             if (_userName != null && _password != null)
             {
-               if(!localTx)
+               if(!transacted)
                {
                     _connection = _mcf.getCleanAMQConnectionFactory().createXATopicConnection(_userName, _password);
                }
                else
                {
-                    _connection = _mcf.getCleanAMQConnectionFactory().createTopicConnection();
+                    _connection = _mcf.getCleanAMQConnectionFactory().createTopicConnection(_userName, _password);
                }
             }
             else
             {
-               if(!localTx)
+               if(!transacted)
                {
                    _connection = _mcf.getDefaultAMQConnectionFactory().createXATopicConnection();
                }
@@ -781,32 +782,31 @@ public class QpidRAManagedConnection implements ManagedConnection, ExceptionList
                }
             }
 
-            if(!localTx)
+            if(!transacted)
             {
                 _xaSession = ((XATopicConnection)_connection).createXATopicSession();
-
             }
             else
             {
-                _session =  ((TopicConnection)_connection).createTopicSession(localTx, acknowledgeMode);
+                _session =  ((TopicConnection)_connection).createTopicSession(transacted, acknowledgeMode);
             }
          }
          else if (_cri.getType() == QpidRAConnectionFactory.QUEUE_CONNECTION)
          {
             if (_userName != null && _password != null)
             {
-               if(!localTx)
+               if(!transacted)
                {
                     _connection = _mcf.getCleanAMQConnectionFactory().createXAQueueConnection(_userName, _password);
                }
                else
                {
-                    _connection = _mcf.getCleanAMQConnectionFactory().createQueueConnection();
+                    _connection = _mcf.getCleanAMQConnectionFactory().createQueueConnection(_userName, _password);
                }
             }
             else
             {
-               if(!localTx)
+               if(!transacted)
                {
                    _connection = _mcf.getDefaultAMQConnectionFactory().createXAQueueConnection();
                }
@@ -816,14 +816,14 @@ public class QpidRAManagedConnection implements ManagedConnection, ExceptionList
                }
             }
 
-            if(!localTx)
+            if(!transacted)
             {
                 _xaSession = ((XAQueueConnection)_connection).createXAQueueSession();
 
             }
             else
             {
-               _session =  ((QueueConnection)_connection).createQueueSession(localTx, acknowledgeMode);
+               _session =  ((QueueConnection)_connection).createQueueSession(transacted, acknowledgeMode);
 
             }
          }
@@ -831,18 +831,18 @@ public class QpidRAManagedConnection implements ManagedConnection, ExceptionList
          {
             if (_userName != null && _password != null)
             {
-               if(!localTx)
+               if(!transacted)
                {
                     _connection = _mcf.getCleanAMQConnectionFactory().createXAConnection(_userName, _password);
                }
                else
                {
-                    _connection = _mcf.getCleanAMQConnectionFactory().createConnection();
+                    _connection = _mcf.getCleanAMQConnectionFactory().createConnection(_userName, _password);
                }
             }
             else
             {
-               if(!localTx)
+               if(!transacted)
                {
                    _connection = _mcf.getDefaultAMQConnectionFactory().createXAConnection();
                }
@@ -852,22 +852,24 @@ public class QpidRAManagedConnection implements ManagedConnection, ExceptionList
                }
             }
 
-            if(!localTx)
+            if(!transacted)
             {
                 _xaSession = ((XAQueueConnection)_connection).createXASession();
 
             }
             else
             {
-               _session =  ((QueueConnection)_connection).createSession(localTx, acknowledgeMode);
+               _session =  ((QueueConnection)_connection).createSession(transacted, acknowledgeMode);
 
             }
          }
 
         _connection.setExceptionListener(this);
+
       }
       catch (JMSException je)
       {
+         _log.error(je.getMessage(), je);
          throw new ResourceException(je.getMessage(), je);
       }
    }
@@ -877,4 +879,9 @@ public class QpidRAManagedConnection implements ManagedConnection, ExceptionList
       this._inManagedTx = inManagedTx;
    }
 
+   public boolean isConnectionClosed()
+   {
+       Closeable c = (Closeable)_connection;
+       return (c == null || c.isClosed() || c.isClosing());
+   }
 }

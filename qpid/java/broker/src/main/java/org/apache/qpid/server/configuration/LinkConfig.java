@@ -54,4 +54,8 @@ public interface LinkConfig extends ConfiguredObject<LinkConfigType, LinkConfig>
                       String src,
                       String dest,
                       String key, String tag, String excludes);
+
+    String getState();
+
+    String getLastError();
 }

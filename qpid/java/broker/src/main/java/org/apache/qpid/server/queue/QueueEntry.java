@@ -75,6 +75,11 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable
         {
             return State.AVAILABLE;
         }
+
+        public String toString()
+        {
+            return getState().name();
+        }
     }
 
 
@@ -84,6 +89,11 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable
         public State getState()
         {
             return State.DEQUEUED;
+        }
+
+        public String toString()
+        {
+            return getState().name();
         }
     }
 
@@ -95,6 +105,11 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable
         {
             return State.DELETED;
         }
+
+        public String toString()
+        {
+            return getState().name();
+        }
     }
 
     public final class ExpiredState extends EntryState
@@ -104,6 +119,11 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable
         {
             return State.EXPIRED;
         }
+
+        public String toString()
+        {
+            return getState().name();
+        }
     }
 
 
@@ -112,6 +132,11 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable
         public State getState()
         {
             return State.ACQUIRED;
+        }
+
+        public String toString()
+        {
+            return getState().name();
         }
     }
 
@@ -134,6 +159,11 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable
         {
             return _subscription;
         }
+
+        public String toString()
+        {
+            return "{" + getState().name() + " : " + _subscription +"}";
+        }
     }
 
     public final class SubscriptionAssignedState extends EntryState
@@ -154,6 +184,12 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable
         public Subscription getSubscription()
         {
             return _subscription;
+        }
+
+
+        public String toString()
+        {
+            return "{" + getState().name() + " : " + _subscription +"}";
         }
     }
 

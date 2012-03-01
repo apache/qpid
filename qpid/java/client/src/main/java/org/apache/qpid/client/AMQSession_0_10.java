@@ -30,7 +30,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
@@ -60,23 +59,7 @@ import org.apache.qpid.filter.MessageFilter;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.transport.ExchangeBoundResult;
-import org.apache.qpid.transport.ExchangeQueryResult;
-import org.apache.qpid.transport.ExecutionErrorCode;
-import org.apache.qpid.transport.ExecutionException;
-import org.apache.qpid.transport.MessageAcceptMode;
-import org.apache.qpid.transport.MessageAcquireMode;
-import org.apache.qpid.transport.MessageCreditUnit;
-import org.apache.qpid.transport.MessageFlowMode;
-import org.apache.qpid.transport.MessageTransfer;
-import org.apache.qpid.transport.Option;
-import org.apache.qpid.transport.QueueQueryResult;
-import org.apache.qpid.transport.Range;
-import org.apache.qpid.transport.RangeSet;
-import org.apache.qpid.transport.Session;
-import org.apache.qpid.transport.SessionException;
-import org.apache.qpid.transport.SessionListener;
-import org.apache.qpid.transport.TransportException;
+import org.apache.qpid.transport.*;
 import org.apache.qpid.util.Serial;
 import org.apache.qpid.util.Strings;
 import org.slf4j.Logger;
@@ -141,13 +124,13 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
 
     private long maxAckDelay = Long.getLong("qpid.session.max_ack_delay", 1000);
     private TimerTask flushTask = null;
-    private RangeSet unacked = new RangeSet();
+    private RangeSet unacked = RangeSetFactory.createRangeSet();
     private int unackedCount = 0;    
 
     /**
      * Used to store the range of in tx messages
      */
-    private final RangeSet _txRangeSet = new RangeSet();
+    private final RangeSet _txRangeSet = RangeSetFactory.createRangeSet();
     private int _txSize = 0;    
     //--- constructors
 
@@ -460,7 +443,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     public void sendRecover() throws AMQException, FailoverException
     {
         // release all unacked messages
-        RangeSet all = new RangeSet();
+        RangeSet all = RangeSetFactory.createRangeSet();
         RangeSet delivered = gatherRangeSet(_unacknowledgedMessageTags);
         RangeSet prefetched = gatherRangeSet(_prefetchedMessageTags);
         for (Iterator<Range> deliveredIter = delivered.iterator(); deliveredIter.hasNext();)
@@ -483,7 +466,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
 
     private RangeSet gatherRangeSet(ConcurrentLinkedQueue<Long> messageTags)
     {
-        RangeSet ranges = new RangeSet();
+        RangeSet ranges = RangeSetFactory.createRangeSet();
         while (true)
         {
             Long tag = messageTags.poll();
@@ -518,7 +501,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     public void rejectMessage(long deliveryTag, boolean requeue)
     {
         // The value of requeue is always true
-        RangeSet ranges = new RangeSet();
+        RangeSet ranges = RangeSetFactory.createRangeSet();
         ranges.add((int) deliveryTag);
         flushProcessed(ranges, false);
         if (requeue)
@@ -812,11 +795,43 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     {
         if (suspend)
         {
-            for (BasicMessageConsumer consumer : _consumers.values())
-            {
-                getQpidSession().messageStop(String.valueOf(consumer.getConsumerTag()),
-                                             Option.UNRELIABLE);
-            }
+                synchronized (getMessageDeliveryLock())
+                {
+                    for (BasicMessageConsumer consumer : _consumers.values())
+	            {
+	                getQpidSession().messageStop(String.valueOf(consumer.getConsumerTag()),
+	                                             Option.UNRELIABLE);
+	                sync();
+	                List<Long> tags = consumer.drainReceiverQueueAndRetrieveDeliveryTags();
+	                _prefetchedMessageTags.addAll(tags);
+	            }
+                }
+
+                _usingDispatcherForCleanup = true;
+                syncDispatchQueue();
+                _usingDispatcherForCleanup = false;
+
+                RangeSet delivered = gatherRangeSet(_unacknowledgedMessageTags);
+		RangeSet prefetched = gatherRangeSet(_prefetchedMessageTags);
+		RangeSet all = RangeSetFactory.createRangeSet(delivered.size()
+					+ prefetched.size());
+
+		for (Iterator<Range> deliveredIter = delivered.iterator(); deliveredIter.hasNext();)
+		{
+			Range range = deliveredIter.next();
+			all.add(range);
+		}
+
+		for (Iterator<Range> prefetchedIter = prefetched.iterator(); prefetchedIter.hasNext();)
+		{
+			Range range = prefetchedIter.next();
+			all.add(range);
+		}
+
+		flushProcessed(all, false);
+		getQpidSession().messageRelease(delivered,Option.SET_REDELIVERED);
+		getQpidSession().messageRelease(prefetched);
+		sync();
         }
         else
         {

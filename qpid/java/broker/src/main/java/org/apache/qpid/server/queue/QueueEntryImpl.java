@@ -35,6 +35,7 @@ import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
+import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 
 public abstract class QueueEntryImpl implements QueueEntry
@@ -420,7 +421,7 @@ public abstract class QueueEntryImpl implements QueueEntry
             if (rerouteQueues != null && rerouteQueues.size() != 0)
             {
 
-                ServerTransaction txn = new AutoCommitTransaction(getQueue().getVirtualHost().getTransactionLog());
+                ServerTransaction txn = new LocalTransaction(getQueue().getVirtualHost().getMessageStore());
 
                 txn.enqueue(rerouteQueues, message, new ServerTransaction.Action()
                 {
@@ -443,7 +444,8 @@ public abstract class QueueEntryImpl implements QueueEntry
                     {
 
                     }
-                });
+                }, 0L);
+
                 txn.dequeue(currentQueue, message, new ServerTransaction.Action()
                 {
                     public void postCommit()
@@ -456,8 +458,10 @@ public abstract class QueueEntryImpl implements QueueEntry
 
                     }
                 });
-                }
+
+                txn.commit();
             }
+        }
     }
 
     public boolean isQueueDeleted()
@@ -545,4 +549,11 @@ public abstract class QueueEntryImpl implements QueueEntry
         _deliveryCountUpdater.decrementAndGet(this);
     }
 
+    public String toString()
+    {
+        return "QueueEntryImpl{" +
+                "_entryId=" + _entryId +
+                ", _state=" + _state +
+                '}';
+    }
 }

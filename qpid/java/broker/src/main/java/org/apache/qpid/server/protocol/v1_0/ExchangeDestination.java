@@ -20,16 +20,13 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
+import java.util.List;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.amqp_1_0.type.Outcome;
 import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
-
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.txn.ServerTransaction;
-
-import java.util.ArrayList;
-import java.util.Arrays;
 
 public class ExchangeDestination implements ReceivingDestination, SendingDestination
 {
@@ -50,7 +47,7 @@ public class ExchangeDestination implements ReceivingDestination, SendingDestina
 
     public Outcome send(final Message_1_0 message, ServerTransaction txn)
     {
-        final ArrayList<? extends BaseQueue> queues = _exchange.route(message);
+        final List<? extends BaseQueue> queues = _exchange.route(message);
 
         txn.enqueue(queues,message, new ServerTransaction.Action()
         {
@@ -77,7 +74,7 @@ public class ExchangeDestination implements ReceivingDestination, SendingDestina
             {
                 // NO-OP
             }
-        });
+        }, System.currentTimeMillis());
 
         return ACCEPTED;
     }

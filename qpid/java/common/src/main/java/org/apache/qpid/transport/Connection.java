@@ -383,13 +383,19 @@ public class Connection extends ConnectionInvoker
 
     public void received(ProtocolEvent event)
     {
-        log.debug("RECV: [%s] %s", this, event);
+        if(log.isDebugEnabled())
+        {
+            log.debug("RECV: [%s] %s", this, event);
+        }
         event.delegate(this, delegate);
     }
 
     public void send(ProtocolEvent event)
     {
-        log.debug("SEND: [%s] %s", this, event);
+        if(log.isDebugEnabled())
+        {
+            log.debug("SEND: [%s] %s", this, event);
+        }
         Sender s = sender;
         if (s == null)
         {
@@ -400,8 +406,15 @@ public class Connection extends ConnectionInvoker
 
     public void flush()
     {
-        log.debug("FLUSH: [%s]", this);
-        sender.flush();
+        if(log.isDebugEnabled())
+        {
+            log.debug("FLUSH: [%s]", this);
+        }
+        final Sender<ProtocolEvent> theSender = sender;
+        if(theSender != null)
+        {
+            theSender.flush();
+        }
     }
 
     protected void invoke(Method method)

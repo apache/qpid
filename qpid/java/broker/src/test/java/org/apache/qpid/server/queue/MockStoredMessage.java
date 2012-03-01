@@ -23,7 +23,6 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.framing.FieldTable;
 
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.TransactionLog;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.framing.ContentHeaderBody;
@@ -107,7 +106,17 @@ public class MockStoredMessage implements StoredMessage<MessageMetaData>
         return src.limit();
     }
 
-    public TransactionLog.StoreFuture flushToStore()
+
+
+    public ByteBuffer getContent(int offsetInMessage, int size)
+    {
+        ByteBuffer buf = ByteBuffer.allocate(size);
+        getContent(offsetInMessage, buf);
+        buf.position(0);
+        return  buf;
+    }
+
+    public MessageStore.StoreFuture flushToStore()
     {
         return MessageStore.IMMEDIATE_FUTURE;
     }

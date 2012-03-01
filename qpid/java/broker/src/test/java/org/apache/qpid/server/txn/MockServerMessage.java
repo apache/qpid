@@ -27,11 +27,12 @@ import org.apache.qpid.server.configuration.SessionConfig;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.store.StoredMessage;
 
 /**
  * Mock Server Message allowing its persistent flag to be controlled from test.
  */
-class MockServerMessage implements ServerMessage<MockServerMessage>
+class MockServerMessage implements ServerMessage
 {
     /**
      *
@@ -83,6 +84,11 @@ class MockServerMessage implements ServerMessage<MockServerMessage>
         throw new NotImplementedException();
     }
 
+    public StoredMessage getStoredMessage()
+    {
+        throw new NotImplementedException();
+    }
+
     public long getExpiration()
     {
         throw new NotImplementedException();
@@ -93,12 +99,18 @@ class MockServerMessage implements ServerMessage<MockServerMessage>
         throw new NotImplementedException();
     }
 
+
+    public ByteBuffer getContent(int offset, int size)
+    {
+        throw new NotImplementedException();
+    }
+
     public long getArrivalTime()
     {
         throw new NotImplementedException();
     }
 
-    public Long getMessageNumber()
+    public long getMessageNumber()
     {
         return 0L;
     }

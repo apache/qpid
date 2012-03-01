@@ -219,7 +219,7 @@ public class EncodingUtils
         return 0;
     }
 
-    public static void writeShortStringBytes(DataOutputStream buffer, String s) throws IOException
+    public static void writeShortStringBytes(DataOutput buffer, String s) throws IOException
     {
         if (s != null)
         {
@@ -243,7 +243,7 @@ public class EncodingUtils
         }
     }
 
-    public static void writeShortStringBytes(DataOutputStream buffer, AMQShortString s) throws IOException
+    public static void writeShortStringBytes(DataOutput buffer, AMQShortString s) throws IOException
     {
         if (s != null)
         {
@@ -257,7 +257,7 @@ public class EncodingUtils
         }
     }
 
-    public static void writeLongStringBytes(DataOutputStream buffer, String s) throws IOException
+    public static void writeLongStringBytes(DataOutput buffer, String s) throws IOException
     {
         assert (s == null) || (s.length() <= 0xFFFE);
         if (s != null)
@@ -279,7 +279,7 @@ public class EncodingUtils
         }
     }
 
-    public static void writeLongStringBytes(DataOutputStream buffer, char[] s) throws IOException
+    public static void writeLongStringBytes(DataOutput buffer, char[] s) throws IOException
     {
         assert (s == null) || (s.length <= 0xFFFE);
         if (s != null)
@@ -300,7 +300,7 @@ public class EncodingUtils
         }
     }
 
-    public static void writeLongStringBytes(DataOutputStream buffer, byte[] bytes) throws IOException
+    public static void writeLongStringBytes(DataOutput buffer, byte[] bytes) throws IOException
     {
         assert (bytes == null) || (bytes.length <= 0xFFFE);
         if (bytes != null)
@@ -314,13 +314,13 @@ public class EncodingUtils
         }
     }
 
-    public static void writeUnsignedByte(DataOutputStream buffer, short b) throws IOException
+    public static void writeUnsignedByte(DataOutput buffer, short b) throws IOException
     {
         byte bv = (byte) b;
         buffer.write(bv);
     }
 
-    public static void writeUnsignedShort(DataOutputStream buffer, int s) throws IOException
+    public static void writeUnsignedShort(DataOutput buffer, int s) throws IOException
     {
         // TODO: Is this comparison safe? Do I need to cast RHS to long?
         if (s < Short.MAX_VALUE)
@@ -340,7 +340,7 @@ public class EncodingUtils
         return 4;
     }
 
-    public static void writeUnsignedInteger(DataOutputStream buffer, long l) throws IOException
+    public static void writeUnsignedInteger(DataOutput buffer, long l) throws IOException
     {
         // TODO: Is this comparison safe? Do I need to cast RHS to long?
         if (l < Integer.MAX_VALUE)
@@ -360,7 +360,7 @@ public class EncodingUtils
         }
     }
 
-    public static void writeFieldTableBytes(DataOutputStream buffer, FieldTable table) throws IOException
+    public static void writeFieldTableBytes(DataOutput buffer, FieldTable table) throws IOException
     {
         if (table != null)
         {
@@ -372,12 +372,12 @@ public class EncodingUtils
         }
     }
 
-    public static void writeContentBytes(DataOutputStream buffer, Content content)
+    public static void writeContentBytes(DataOutput buffer, Content content)
     {
         // TODO: New Content class required for AMQP 0-9.
     }
 
-    public static void writeBooleans(DataOutputStream buffer, boolean[] values) throws IOException
+    public static void writeBooleans(DataOutput buffer, boolean[] values) throws IOException
     {
         byte packedValue = 0;
         for (int i = 0; i < values.length; i++)
@@ -391,13 +391,13 @@ public class EncodingUtils
         buffer.write(packedValue);
     }
 
-    public static void writeBooleans(DataOutputStream buffer, boolean value) throws IOException
+    public static void writeBooleans(DataOutput buffer, boolean value) throws IOException
     {
 
         buffer.write(value ? (byte) 1 : (byte) 0);
     }
 
-    public static void writeBooleans(DataOutputStream buffer, boolean value0, boolean value1) throws IOException
+    public static void writeBooleans(DataOutput buffer, boolean value0, boolean value1) throws IOException
     {
         byte packedValue = value0 ? (byte) 1 : (byte) 0;
 
@@ -409,7 +409,7 @@ public class EncodingUtils
         buffer.write(packedValue);
     }
 
-    public static void writeBooleans(DataOutputStream buffer, boolean value0, boolean value1, boolean value2) throws IOException
+    public static void writeBooleans(DataOutput buffer, boolean value0, boolean value1, boolean value2) throws IOException
     {
         byte packedValue = value0 ? (byte) 1 : (byte) 0;
 
@@ -426,7 +426,7 @@ public class EncodingUtils
         buffer.write(packedValue);
     }
 
-    public static void writeBooleans(DataOutputStream buffer, boolean value0, boolean value1, boolean value2, boolean value3) throws IOException
+    public static void writeBooleans(DataOutput buffer, boolean value0, boolean value1, boolean value2, boolean value3) throws IOException
     {
         byte packedValue = value0 ? (byte) 1 : (byte) 0;
 
@@ -448,7 +448,7 @@ public class EncodingUtils
         buffer.write(packedValue);
     }
 
-    public static void writeBooleans(DataOutputStream buffer, boolean value0, boolean value1, boolean value2, boolean value3,
+    public static void writeBooleans(DataOutput buffer, boolean value0, boolean value1, boolean value2, boolean value3,
         boolean value4) throws IOException
     {
         byte packedValue = value0 ? (byte) 1 : (byte) 0;
@@ -476,7 +476,7 @@ public class EncodingUtils
         buffer.write(packedValue);
     }
 
-    public static void writeBooleans(DataOutputStream buffer, boolean value0, boolean value1, boolean value2, boolean value3,
+    public static void writeBooleans(DataOutput buffer, boolean value0, boolean value1, boolean value2, boolean value3,
         boolean value4, boolean value5) throws IOException
     {
         byte packedValue = value0 ? (byte) 1 : (byte) 0;
@@ -509,7 +509,7 @@ public class EncodingUtils
         buffer.write(packedValue);
     }
 
-    public static void writeBooleans(DataOutputStream buffer, boolean value0, boolean value1, boolean value2, boolean value3,
+    public static void writeBooleans(DataOutput buffer, boolean value0, boolean value1, boolean value2, boolean value3,
         boolean value4, boolean value5, boolean value6) throws IOException
     {
         byte packedValue = value0 ? (byte) 1 : (byte) 0;
@@ -547,7 +547,7 @@ public class EncodingUtils
         buffer.write(packedValue);
     }
 
-    public static void writeBooleans(DataOutputStream buffer, boolean value0, boolean value1, boolean value2, boolean value3,
+    public static void writeBooleans(DataOutput buffer, boolean value0, boolean value1, boolean value2, boolean value3,
         boolean value4, boolean value5, boolean value6, boolean value7) throws IOException
     {
         byte packedValue = value0 ? (byte) 1 : (byte) 0;
@@ -596,7 +596,7 @@ public class EncodingUtils
      * @param buffer
      * @param data
      */
-    public static void writeLongstr(DataOutputStream buffer, byte[] data) throws IOException
+    public static void writeLongstr(DataOutput buffer, byte[] data) throws IOException
     {
         if (data != null)
         {
@@ -609,12 +609,12 @@ public class EncodingUtils
         }
     }
 
-    public static void writeTimestamp(DataOutputStream buffer, long timestamp) throws IOException
+    public static void writeTimestamp(DataOutput buffer, long timestamp) throws IOException
     {
         writeLong(buffer, timestamp);
     }
 
-    public static boolean[] readBooleans(DataInputStream buffer) throws IOException
+    public static boolean[] readBooleans(DataInput buffer) throws IOException
     {
         final byte packedValue = buffer.readByte();
         if (packedValue == 0)
@@ -641,7 +641,7 @@ public class EncodingUtils
         return result;
     }
 
-    public static FieldTable readFieldTable(DataInputStream buffer) throws AMQFrameDecodingException, IOException
+    public static FieldTable readFieldTable(DataInput buffer) throws AMQFrameDecodingException, IOException
     {
         long length = ((long)(buffer.readInt())) & 0xFFFFFFFFL;
         if (length == 0)
@@ -654,19 +654,19 @@ public class EncodingUtils
         }
     }
 
-    public static Content readContent(DataInputStream buffer) throws AMQFrameDecodingException
+    public static Content readContent(DataInput buffer) throws AMQFrameDecodingException
     {
         // TODO: New Content class required for AMQP 0-9.
         return null;
     }
 
-    public static AMQShortString readAMQShortString(DataInputStream buffer) throws IOException
+    public static AMQShortString readAMQShortString(DataInput buffer) throws IOException
     {
         return AMQShortString.readFromBuffer(buffer);
 
     }
 
-    public static String readShortString(DataInputStream buffer) throws IOException
+    public static String readShortString(DataInput buffer) throws IOException
     {
         short length = (short) (((short)buffer.readByte()) & 0xFF);
         if (length == 0)
@@ -681,7 +681,7 @@ public class EncodingUtils
             // this approach here is valid since we know that all the chars are
             // ASCII (0-127)
             byte[] stringBytes = new byte[length];
-            buffer.read(stringBytes, 0, length);
+            buffer.readFully(stringBytes, 0, length);
             char[] stringChars = new char[length];
             for (int i = 0; i < stringChars.length; i++)
             {
@@ -692,7 +692,7 @@ public class EncodingUtils
         }
     }
 
-    public static String readLongString(DataInputStream buffer) throws IOException
+    public static String readLongString(DataInput buffer) throws IOException
     {
         long length = ((long)(buffer.readInt())) & 0xFFFFFFFFL;
         if (length == 0)
@@ -707,7 +707,7 @@ public class EncodingUtils
             // this approach here is valid since we know that all the chars are
             // ASCII (0-127)
             byte[] stringBytes = new byte[(int) length];
-            buffer.read(stringBytes, 0, (int) length);
+            buffer.readFully(stringBytes, 0, (int) length);
             char[] stringChars = new char[(int) length];
             for (int i = 0; i < stringChars.length; i++)
             {
@@ -718,7 +718,7 @@ public class EncodingUtils
         }
     }
 
-    public static byte[] readLongstr(DataInputStream buffer) throws IOException
+    public static byte[] readLongstr(DataInput buffer) throws IOException
     {
         long length = ((long)(buffer.readInt())) & 0xFFFFFFFFL;
         if (length == 0)
@@ -728,13 +728,13 @@ public class EncodingUtils
         else
         {
             byte[] result = new byte[(int) length];
-            buffer.read(result);
+            buffer.readFully(result);
 
             return result;
         }
     }
 
-    public static long readTimestamp(DataInputStream buffer) throws IOException
+    public static long readTimestamp(DataInput buffer) throws IOException
     {
         // Discard msb from AMQ timestamp
         // buffer.getUnsignedInt();
@@ -818,12 +818,12 @@ public class EncodingUtils
 
     // AMQP_BOOLEAN_PROPERTY_PREFIX
 
-    public static void writeBoolean(DataOutputStream buffer, Boolean aBoolean) throws IOException
+    public static void writeBoolean(DataOutput buffer, boolean aBoolean) throws IOException
     {
         buffer.write(aBoolean ? 1 : 0);
     }
 
-    public static boolean readBoolean(DataInputStream buffer) throws IOException
+    public static boolean readBoolean(DataInput buffer) throws IOException
     {
         byte packedValue = buffer.readByte();
 
@@ -836,12 +836,12 @@ public class EncodingUtils
     }
 
     // AMQP_BYTE_PROPERTY_PREFIX
-    public static void writeByte(DataOutputStream buffer, Byte aByte) throws IOException
+    public static void writeByte(DataOutput buffer, byte aByte) throws IOException
     {
         buffer.writeByte(aByte);
     }
 
-    public static byte readByte(DataInputStream buffer) throws IOException
+    public static byte readByte(DataInput buffer) throws IOException
     {
         return buffer.readByte();
     }
@@ -852,12 +852,12 @@ public class EncodingUtils
     }
 
     // AMQP_SHORT_PROPERTY_PREFIX
-    public static void writeShort(DataOutputStream buffer, Short aShort) throws IOException
+    public static void writeShort(DataOutput buffer, short aShort) throws IOException
     {
         buffer.writeShort(aShort);
     }
 
-    public static short readShort(DataInputStream buffer) throws IOException
+    public static short readShort(DataInput buffer) throws IOException
     {
         return buffer.readShort();
     }
@@ -868,12 +868,12 @@ public class EncodingUtils
     }
 
     // INTEGER_PROPERTY_PREFIX
-    public static void writeInteger(DataOutputStream buffer, Integer aInteger) throws IOException
+    public static void writeInteger(DataOutput buffer, int aInteger) throws IOException
     {
         buffer.writeInt(aInteger);
     }
 
-    public static int readInteger(DataInputStream buffer) throws IOException
+    public static int readInteger(DataInput buffer) throws IOException
     {
         return buffer.readInt();
     }
@@ -884,12 +884,12 @@ public class EncodingUtils
     }
 
     // AMQP_LONG_PROPERTY_PREFIX
-    public static void writeLong(DataOutputStream buffer, Long aLong) throws IOException
+    public static void writeLong(DataOutput buffer, long aLong) throws IOException
     {
         buffer.writeLong(aLong);
     }
 
-    public static long readLong(DataInputStream buffer) throws IOException
+    public static long readLong(DataInput buffer) throws IOException
     {
         return buffer.readLong();
     }
@@ -900,12 +900,12 @@ public class EncodingUtils
     }
 
     // Float_PROPERTY_PREFIX
-    public static void writeFloat(DataOutputStream buffer, Float aFloat) throws IOException
+    public static void writeFloat(DataOutput buffer, float aFloat) throws IOException
     {
         buffer.writeFloat(aFloat);
     }
 
-    public static float readFloat(DataInputStream buffer) throws IOException
+    public static float readFloat(DataInput buffer) throws IOException
     {
         return buffer.readFloat();
     }
@@ -916,12 +916,12 @@ public class EncodingUtils
     }
 
     // Double_PROPERTY_PREFIX
-    public static void writeDouble(DataOutputStream buffer, Double aDouble) throws IOException
+    public static void writeDouble(DataOutput buffer, Double aDouble) throws IOException
     {
         buffer.writeDouble(aDouble);
     }
 
-    public static double readDouble(DataInputStream buffer) throws IOException
+    public static double readDouble(DataInput buffer) throws IOException
     {
         return buffer.readDouble();
     }
@@ -931,7 +931,7 @@ public class EncodingUtils
         return 8;
     }
 
-    public static byte[] readBytes(DataInputStream buffer) throws IOException
+    public static byte[] readBytes(DataInput buffer) throws IOException
     {
         long length = ((long)(buffer.readInt())) & 0xFFFFFFFFL;
         if (length == 0)
@@ -941,13 +941,13 @@ public class EncodingUtils
         else
         {
             byte[] dataBytes = new byte[(int)length];
-            buffer.read(dataBytes, 0, (int) length);
+            buffer.readFully(dataBytes, 0, (int) length);
 
             return dataBytes;
         }
     }
 
-    public static void writeBytes(DataOutputStream buffer, byte[] data) throws IOException
+    public static void writeBytes(DataOutput buffer, byte[] data) throws IOException
     {
         if (data != null)
         {
@@ -969,19 +969,19 @@ public class EncodingUtils
         return encodedByteLength();
     }
 
-    public static char readChar(DataInputStream buffer) throws IOException
+    public static char readChar(DataInput buffer) throws IOException
     {
         // This is valid as we know that the Character is ASCII 0..127
-        return (char) buffer.read();
+        return (char) buffer.readByte();
     }
 
-    public static void writeChar(DataOutputStream buffer, char character) throws IOException
+    public static void writeChar(DataOutput buffer, char character) throws IOException
     {
         // This is valid as we know that the Character is ASCII 0..127
         writeByte(buffer, (byte) character);
     }
 
-    public static long readLongAsShortString(DataInputStream buffer) throws IOException
+    public static long readLongAsShortString(DataInput buffer) throws IOException
     {
         short length = (short) buffer.readUnsignedByte();
         short pos = 0;
@@ -1018,7 +1018,7 @@ public class EncodingUtils
         return result;
     }
 
-    public static long readUnsignedInteger(DataInputStream buffer) throws IOException
+    public static long readUnsignedInteger(DataInput buffer) throws IOException
     {
         long l = 0xFF & buffer.readByte();
         l <<= 8;

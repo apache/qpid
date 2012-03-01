@@ -21,6 +21,7 @@
 package org.apache.qpid.framing;
 
 import java.io.DataInputStream;
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
@@ -42,6 +43,6 @@ public abstract class AMQDataBlock implements EncodableAMQDataBlock
      * Writes the datablock to the specified buffer.
      * @param buffer
      */
-    public abstract void writePayload(DataOutputStream buffer) throws IOException;
+    public abstract void writePayload(DataOutput buffer) throws IOException;
 
 }

@@ -245,6 +245,11 @@ if segments:
         return this;
     }
 
+    public int getBodySize()
+    {
+        return this.body == null ? 0 : this.body.remaining();
+    }
+
     public final ByteBuffer getBody() {
         if (this.body == null)
         {

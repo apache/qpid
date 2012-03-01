@@ -410,7 +410,10 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
         ConcurrentHashMap<UUID, QMFObject> map = _managedObjectsById.get(qmfclass);
         if(map != null)
         {
-            return map.get(id);
+
+            UUID key = new UUID(id.getMostSignificantBits() & (0xFFFl << 48), id.getLeastSignificantBits());
+            return map.get(key);
+
         }
         else
         {
@@ -604,6 +607,11 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
         {
             return _obj.getCreateTime();
         }
+
+        public String toString()
+        {
+            return _obj.toString();
+        }
     }
 
     private class BrokerDelegate implements BrokerSchema.BrokerDelegate
@@ -762,6 +770,11 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
         {
             return _obj.getCreateTime();
         }
+
+        public String toString()
+        {
+            return _obj.toString();
+        }
     }
 
     private class VhostDelegate implements BrokerSchema.VhostDelegate
@@ -796,6 +809,11 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
         public long getCreateTime()
         {
             return _obj.getCreateTime();
+        }
+
+        public String toString()
+        {
+            return _obj.toString();
         }
     }
 
@@ -922,6 +940,11 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
         public long getCreateTime()
         {
             return _obj.getCreateTime();
+        }
+
+        public String toString()
+        {
+            return _obj.toString();
         }
     }
 
@@ -1163,6 +1186,11 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
         {
             return _obj.getCreateTime();
         }
+
+        public String toString()
+        {
+            return _obj.toString();
+        }
     }
 
     private class BindingDelegate implements BrokerSchema.BindingDelegate
@@ -1213,6 +1241,11 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
         public long getCreateTime()
         {
             return _obj.getCreateTime();
+        }
+
+        public String toString()
+        {
+            return _obj.toString();
         }
     }
 
@@ -1352,6 +1385,12 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             // TODO
             return 0;
         }
+
+
+        public String toString()
+        {
+            return _obj.toString();
+        }
     }
 
     private class SessionDelegate implements BrokerSchema.SessionDelegate
@@ -1476,6 +1515,11 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
         {
             return _obj.getCreateTime();
         }
+
+        public String toString()
+        {
+            return _obj.toString();
+        }
     }
 
     private class SubscriptionDelegate implements BrokerSchema.SubscriptionDelegate
@@ -1542,92 +1586,102 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
         {
             return _obj.getCreateTime();
         }
+
+        public String toString()
+        {
+            return _obj.toString();
+        }
     }
 
-        private class BridgeDelegate implements BrokerSchema.BridgeDelegate
+    private class BridgeDelegate implements BrokerSchema.BridgeDelegate
+    {
+        private final BridgeConfig _obj;
+
+        private BridgeDelegate(final BridgeConfig obj)
         {
-            private final BridgeConfig _obj;
-
-            private BridgeDelegate(final BridgeConfig obj)
-            {
-                _obj = obj;
-            }
-
-            public BrokerSchema.LinkObject getLinkRef()
-            {
-                return (BrokerSchema.LinkObject) adapt(_obj.getLink());
-            }
-
-            public Integer getChannelId()
-            {
-                return _obj.getChannelId();
-            }
-
-            public Boolean getDurable()
-            {
-                return _obj.isDurable();
-            }
-
-            public String getSrc()
-            {
-                return _obj.getSource();
-            }
-
-            public String getDest()
-            {
-                return _obj.getDestination();
-            }
-
-            public String getKey()
-            {
-                return _obj.getKey();
-            }
-
-            public Boolean getSrcIsQueue()
-            {
-                return _obj.isQueueBridge();
-            }
-
-            public Boolean getSrcIsLocal()
-            {
-                return _obj.isLocalSource();
-            }
-
-            public String getTag()
-            {
-                return _obj.getTag();
-            }
-
-            public String getExcludes()
-            {
-                return _obj.getExcludes();
-            }
-
-            public Boolean getDynamic()
-            {
-                return _obj.isDynamic();
-            }
-
-            public Integer getSync()
-            {
-                return _obj.getAckBatching();
-            }
-
-            public BrokerSchema.BridgeClass.CloseMethodResponseCommand close(final BrokerSchema.BridgeClass.CloseMethodResponseCommandFactory factory)
-            {
-                return null;
-            }
-
-            public UUID getId()
-            {
-                return _obj.getId();
-            }
-
-            public long getCreateTime()
-            {
-                return _obj.getCreateTime();
-            }
+            _obj = obj;
         }
+
+        public BrokerSchema.LinkObject getLinkRef()
+        {
+            return (BrokerSchema.LinkObject) adapt(_obj.getLink());
+        }
+
+        public Integer getChannelId()
+        {
+            return _obj.getChannelId();
+        }
+
+        public Boolean getDurable()
+        {
+            return _obj.isDurable();
+        }
+
+        public String getSrc()
+        {
+            return _obj.getSource();
+        }
+
+        public String getDest()
+        {
+            return _obj.getDestination();
+        }
+
+        public String getKey()
+        {
+            return _obj.getKey();
+        }
+
+        public Boolean getSrcIsQueue()
+        {
+            return _obj.isQueueBridge();
+        }
+
+        public Boolean getSrcIsLocal()
+        {
+            return _obj.isLocalSource();
+        }
+
+        public String getTag()
+        {
+            return _obj.getTag();
+        }
+
+        public String getExcludes()
+        {
+            return _obj.getExcludes();
+        }
+
+        public Boolean getDynamic()
+        {
+            return _obj.isDynamic();
+        }
+
+        public Integer getSync()
+        {
+            return _obj.getAckBatching();
+        }
+
+        public BrokerSchema.BridgeClass.CloseMethodResponseCommand close(final BrokerSchema.BridgeClass.CloseMethodResponseCommandFactory factory)
+        {
+            return null;
+        }
+
+        public UUID getId()
+        {
+            return _obj.getId();
+        }
+
+        public long getCreateTime()
+        {
+            return _obj.getCreateTime();
+        }
+        
+        public String toString()
+        {
+            return _obj.toString();
+        }
+    }
 
     private class LinkDelegate implements BrokerSchema.LinkDelegate
     {
@@ -1665,14 +1719,12 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
 
         public String getState()
         {
-            // TODO
-            return "";
+            return _obj.getState();
         }
 
         public String getLastError()
         {
-            // TODO
-            return "";
+            return _obj.getLastError();
         }
 
         public BrokerSchema.LinkClass.CloseMethodResponseCommand close(final BrokerSchema.LinkClass.CloseMethodResponseCommandFactory factory)
@@ -1705,6 +1757,12 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
         public long getCreateTime()
         {
             return _obj.getCreateTime();
+        }
+
+        @Override
+        public String toString()
+        {
+            return _obj.toString();
         }
     }
 

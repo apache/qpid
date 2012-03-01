@@ -154,8 +154,7 @@ public class ProducerFlowControlTest extends AbstractTestLogging
         // try to send 5 messages (should block after 4)
         sendMessagesAsync(producer, producerSession, 5, 50L);
 
-        Thread.sleep(5000);
-        List<String> results = waitAndFindMatches("QUE-1003");
+        List<String> results = waitAndFindMatches("QUE-1003", 7000);
 
         assertEquals("Did not find correct number of QUE-1003 queue overfull messages", 1, results.size());
 
@@ -199,11 +198,13 @@ public class ProducerFlowControlTest extends AbstractTestLogging
         // try to send 5 messages (should block after 4)
         MessageSender sender = sendMessagesAsync(producer, producerSession, 5, 50L);
 
-        Thread.sleep(TIMEOUT);
         List<String> results = waitAndFindMatches("Message send delayed by", TIMEOUT);
         assertTrue("No delay messages logged by client",results.size()!=0);
-        results = findMatches("Message send failed due to timeout waiting on broker enforced flow control");
-        assertEquals("Incorrect number of send failure messages logged by client",1,results.size());
+
+        List<String> failedMessages = waitAndFindMatches("Message send failed due to timeout waiting on broker enforced"
+                                                  + " flow control", TIMEOUT);
+        assertEquals("Incorrect number of send failure messages logged by client (got " + results.size() + " delay "
+                     + "messages)",1,failedMessages.size());
 
 
 
@@ -325,8 +326,9 @@ public class ProducerFlowControlTest extends AbstractTestLogging
 
 
         // try to send 5 messages (should block after 4)
-        MessageSender sender = sendMessagesAsync(producer, producerSession, 5, 50L);
+        MessageSender sender = sendMessagesAsync(producer, producerSession, 5, 100L);
 
+        
         Thread.sleep(10000);
 
         Exception e = sender.getException();
@@ -438,6 +440,15 @@ public class ProducerFlowControlTest extends AbstractTestLogging
             catch (AMQException e)
             {
                 e.printStackTrace();
+                throw new RuntimeException(e);
+            }
+
+            try
+            {
+                Thread.sleep(sleepPeriod);
+            }
+            catch (InterruptedException e)
+            {
                 throw new RuntimeException(e);
             }
         }

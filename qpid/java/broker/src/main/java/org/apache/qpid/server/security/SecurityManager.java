@@ -32,11 +32,9 @@ import static org.apache.qpid.server.security.access.Operation.UNBIND;
 
 import java.net.SocketAddress;
 import java.security.Principal;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.security.auth.Subject;
 
@@ -192,6 +190,15 @@ public class SecurityManager
         return _logger;
     }
 
+    private static class CachedPropertiesMap extends LinkedHashMap<String, PublishAccessCheck>
+    {
+        @Override
+        protected boolean removeEldestEntry(Entry<String, PublishAccessCheck> eldest)
+        {
+            return size() >= 200;
+        }
+    }
+
     private abstract class AccessCheck
     {
         abstract Result allowed(SecurityPlugin plugin);
@@ -204,56 +211,61 @@ public class SecurityManager
             return true;
         }
 
-        HashMap<String, SecurityPlugin> remainingPlugins = new HashMap<String, SecurityPlugin>(_globalPlugins);
+        Map<String, SecurityPlugin> remainingPlugins = _globalPlugins.isEmpty()
+                ? Collections.<String, SecurityPlugin>emptyMap()
+                : _hostPlugins.isEmpty() ? _globalPlugins : new HashMap<String, SecurityPlugin>(_globalPlugins);
 		
-		for (Entry<String, SecurityPlugin> hostEntry : _hostPlugins.entrySet())
+		if(!_hostPlugins.isEmpty())
         {
-		    // Create set of global only plugins
-			SecurityPlugin globalPlugin = remainingPlugins.get(hostEntry.getKey());
-			if (globalPlugin != null)
-			{
-				remainingPlugins.remove(hostEntry.getKey());
-			}
-			
-            Result host = checker.allowed(hostEntry.getValue());
-			
-			if (host == Result.DENIED)
-			{
-				// Something vetoed the access, we're done
-				return false;
-			}
-            
-			// host allow overrides global allow, so only check global on abstain or defer
-			if (host != Result.ALLOWED)
-			{
-				if (globalPlugin == null)
-				{
-				    if (host == Result.DEFER)
-				    {
-				        host = hostEntry.getValue().getDefault();
-                    }
-                    if (host == Result.DENIED)
+            for (Entry<String, SecurityPlugin> hostEntry : _hostPlugins.entrySet())
+            {
+                // Create set of global only plugins
+                SecurityPlugin globalPlugin = remainingPlugins.get(hostEntry.getKey());
+                if (globalPlugin != null)
+                {
+                    remainingPlugins.remove(hostEntry.getKey());
+                }
+
+                Result host = checker.allowed(hostEntry.getValue());
+
+                if (host == Result.DENIED)
+                {
+                    // Something vetoed the access, we're done
+                    return false;
+                }
+
+                // host allow overrides global allow, so only check global on abstain or defer
+                if (host != Result.ALLOWED)
+                {
+                    if (globalPlugin == null)
                     {
-                        return false;
+                        if (host == Result.DEFER)
+                        {
+                            host = hostEntry.getValue().getDefault();
+                        }
+                        if (host == Result.DENIED)
+                        {
+                            return false;
+                        }
                     }
-				}
-				else
-				{
-				    Result global = checker.allowed(globalPlugin);
-					if (global == Result.DEFER)
-					{
-					    global = globalPlugin.getDefault();
-					}
-					if (global == Result.ABSTAIN && host == Result.DEFER)
-					{
-					    global = hostEntry.getValue().getDefault();
-					}
-					if (global == Result.DENIED)
+                    else
                     {
-                        return false;
+                        Result global = checker.allowed(globalPlugin);
+                        if (global == Result.DEFER)
+                        {
+                            global = globalPlugin.getDefault();
+                        }
+                        if (global == Result.ABSTAIN && host == Result.DEFER)
+                        {
+                            global = hostEntry.getValue().getDefault();
+                        }
+                        if (global == Result.DENIED)
+                        {
+                            return false;
+                        }
                     }
-				}
-			}
+                }
+            }
         }
 
         for (SecurityPlugin plugin : remainingPlugins.values())
@@ -371,15 +383,41 @@ public class SecurityManager
         });
     }
 
-    public boolean authorisePublish(final boolean immediate, final String routingKey, final String exchangeName)
+
+    private ConcurrentHashMap<String, ConcurrentHashMap<String, PublishAccessCheck>> _immediatePublishPropsCache
+            = new ConcurrentHashMap<String, ConcurrentHashMap<String, PublishAccessCheck>>();
+    private ConcurrentHashMap<String, ConcurrentHashMap<String, PublishAccessCheck>> _publishPropsCache
+            = new ConcurrentHashMap<String, ConcurrentHashMap<String, PublishAccessCheck>>();
+
+    public boolean authorisePublish(final boolean immediate, String routingKey, String exchangeName)
     {
-        return checkAllPlugins(new AccessCheck()
+        if(routingKey == null)
         {
-            Result allowed(SecurityPlugin plugin)
+            routingKey = "";
+        }
+        if(exchangeName == null)
+        {
+            exchangeName = "";
+        }
+        PublishAccessCheck check;
+        ConcurrentHashMap<String, ConcurrentHashMap<String, PublishAccessCheck>> cache =
+                immediate ? _immediatePublishPropsCache : _publishPropsCache;
+
+        ConcurrentHashMap<String, PublishAccessCheck> exchangeMap = cache.get(exchangeName);
+        if(exchangeMap == null)
+        {
+            cache.putIfAbsent(exchangeName, new ConcurrentHashMap<String, PublishAccessCheck>());
+            exchangeMap = cache.get(exchangeName);
+        }
+
+            check = exchangeMap.get(routingKey);
+            if(check == null)
             {
-                return plugin.authorise(PUBLISH, EXCHANGE, new ObjectProperties(exchangeName, routingKey, immediate));
+                check = new PublishAccessCheck(new ObjectProperties(exchangeName, routingKey, immediate));
+                exchangeMap.put(routingKey, check);
             }
-        });
+
+        return checkAllPlugins(check);
     }
 
     public boolean authorisePurge(final AMQQueue queue)
@@ -412,5 +450,20 @@ public class SecurityManager
         _accessChecksDisabled.set(status);
 
         return current;
+    }
+
+    private class PublishAccessCheck extends AccessCheck
+    {
+        private final ObjectProperties _props;
+
+        public PublishAccessCheck(ObjectProperties props)
+        {
+            _props = props;
+        }
+
+        Result allowed(SecurityPlugin plugin)
+        {
+            return plugin.authorise(PUBLISH, EXCHANGE, _props);
+        }
     }
 }

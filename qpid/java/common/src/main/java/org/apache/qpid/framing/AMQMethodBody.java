@@ -25,6 +25,7 @@ import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
@@ -45,12 +46,12 @@ public interface AMQMethodBody extends AMQBody
     /** @return unsigned short */
     public int getMethod();
 
-    public void writeMethodPayload(DataOutputStream buffer) throws IOException;
+    public void writeMethodPayload(DataOutput buffer) throws IOException;
 
 
     public int getSize();
 
-    public void writePayload(DataOutputStream buffer) throws IOException;
+    public void writePayload(DataOutput buffer) throws IOException;
 
     //public abstract void populateMethodBodyFromBuffer(ByteBuffer buffer) throws AMQFrameDecodingException;
 

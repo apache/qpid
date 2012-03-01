@@ -124,7 +124,7 @@ public class TxnCoordinatorLink_1_0 implements ReceivingLinkListener, Link_1_0
                         }
                         txnId = Integer.valueOf(txnId.intValue() + 1);
 
-                        _openTransactions.put(txnId, new LocalTransaction(_vhost.getTransactionLog()));
+                        _openTransactions.put(txnId, new LocalTransaction(_vhost.getMessageStore()));
 
                         Declared state = new Declared();
 

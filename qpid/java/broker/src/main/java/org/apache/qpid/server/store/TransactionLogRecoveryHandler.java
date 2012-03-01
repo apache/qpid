@@ -22,7 +22,7 @@ package org.apache.qpid.server.store;
 
 public interface TransactionLogRecoveryHandler
 {
-    QueueEntryRecoveryHandler begin(TransactionLog log);
+    QueueEntryRecoveryHandler begin(MessageStore log);
 
     public static interface QueueEntryRecoveryHandler
     {

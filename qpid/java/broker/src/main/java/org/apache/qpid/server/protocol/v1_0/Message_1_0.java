@@ -21,20 +21,18 @@
 package org.apache.qpid.server.protocol.v1_0;
 
 
+import java.lang.ref.WeakReference;
+import java.nio.ByteBuffer;
+import java.util.List;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.SessionConfig;
-import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.MessageMetaData_1_0;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.store.StoredMessage;
 
-import java.lang.ref.WeakReference;
-import java.nio.ByteBuffer;
-import java.util.Collection;
-import java.util.List;
-
-public class Message_1_0 implements ServerMessage<Message_1_0>, InboundMessage
+public class Message_1_0 implements ServerMessage, InboundMessage
 {
     private final StoredMessage<MessageMetaData_1_0> _storedMessage;
     private List<ByteBuffer> _fragments;
@@ -63,6 +61,11 @@ public class Message_1_0 implements ServerMessage<Message_1_0>, InboundMessage
         }
     }
 
+    public AMQShortString getRoutingKeyShortString()
+    {
+        return AMQShortString.valueOf(getRoutingKey());
+    }
+
     private MessageMetaData_1_0 getMessageMetaData()
     {
         return _storedMessage.getMetaData();
@@ -71,6 +74,11 @@ public class Message_1_0 implements ServerMessage<Message_1_0>, InboundMessage
     public MessageMetaData_1_0.MessageHeader_1_0 getMessageHeader()
     {
         return getMessageMetaData().getMessageHeader();
+    }
+
+    public StoredMessage getStoredMessage()
+    {
+        return _storedMessage;
     }
 
     public boolean isPersistent()
@@ -105,7 +113,7 @@ public class Message_1_0 implements ServerMessage<Message_1_0>, InboundMessage
         return new Reference(this);
     }
 
-    public Long getMessageNumber()
+    public long getMessageNumber()
     {
         return _storedMessage.getMessageNumber();
     }
@@ -118,6 +126,14 @@ public class Message_1_0 implements ServerMessage<Message_1_0>, InboundMessage
     public int getContent(final ByteBuffer buf, final int offset)
     {
         return _storedMessage.getContent(offset, buf);
+    }
+
+    public ByteBuffer getContent(int offset, int size)
+    {
+        ByteBuffer buf = ByteBuffer.allocate(size);
+        buf.limit(getContent(buf, offset));
+
+        return buf;
     }
 
     public SessionConfig getSessionConfig()

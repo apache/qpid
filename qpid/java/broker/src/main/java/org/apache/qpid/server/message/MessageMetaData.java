@@ -29,8 +29,8 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.MessageMetaDataType;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.util.ByteBufferInputStream;
 import org.apache.qpid.server.util.ByteBufferOutputStream;
+import org.apache.qpid.util.ByteBufferInputStream;
 
 import java.io.*;
 import java.nio.ByteBuffer;

@@ -24,32 +24,35 @@ import org.apache.qpid.transport.*;
 import org.apache.qpid.server.configuration.SessionConfig;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.transport.ServerSession;
+import org.apache.qpid.framing.AMQShortString;
 
 import java.nio.ByteBuffer;
-import java.lang.ref.WeakReference;
 
 
-public class MessageTransferMessage extends AbstractServerMessageImpl implements InboundMessage
+public class MessageTransferMessage extends AbstractServerMessageImpl<MessageMetaData_0_10> implements InboundMessage
 {
-    private StoredMessage<MessageMetaData_0_10> _storeMessage;
-    private WeakReference<Session> _sessionRef;
 
-    public MessageTransferMessage(StoredMessage<MessageMetaData_0_10> storeMessage, WeakReference<Session> sessionRef)
+    private Object _connectionRef;
+
+    public MessageTransferMessage(StoredMessage<MessageMetaData_0_10> storeMessage, Object connectionRef)
     {
         super(storeMessage);
-        _storeMessage = storeMessage;
-        _sessionRef = sessionRef;
+        _connectionRef = connectionRef;
     }
 
     private MessageMetaData_0_10 getMetaData()
     {
-        return _storeMessage.getMetaData();
+        return getStoredMessage().getMetaData();
     }
 
     public String getRoutingKey()
     {
         return getMetaData().getRoutingKey();
+    }
 
+    public AMQShortString getRoutingKeyShortString()
+    {
+        return AMQShortString.valueOf(getRoutingKey());
     }
 
     public AMQMessageHeader getMessageHeader()
@@ -91,9 +94,9 @@ public class MessageTransferMessage extends AbstractServerMessageImpl implements
         return new TransferMessageReference(this);
     }
 
-    public Long getMessageNumber()
+    public long getMessageNumber()
     {
-        return _storeMessage.getMessageNumber();
+        return getStoredMessage().getMessageNumber();
     }
 
     public long getArrivalTime()
@@ -103,7 +106,13 @@ public class MessageTransferMessage extends AbstractServerMessageImpl implements
 
     public int getContent(ByteBuffer buf, int offset)
     {
-        return _storeMessage.getContent(offset, buf);
+        return getStoredMessage().getContent(offset, buf);
+    }
+
+
+    public ByteBuffer getContent(int offset, int size)
+    {
+        return getStoredMessage().getContent(offset,size);
     }
 
     public Header getHeader()
@@ -113,32 +122,13 @@ public class MessageTransferMessage extends AbstractServerMessageImpl implements
 
     public ByteBuffer getBody()
     {
-        ByteBuffer body = getMetaData().getBody();
-        if(body == null && getSize() != 0l)
-        {
-            final int size = (int) getSize();
-            int pos = 0;
-            body = ByteBuffer.allocate(size);
 
-            while(pos < size)
-            {
-                pos += getContent(body, pos);
-            }
-
-            body.flip();
-
-            getMetaData().setBody(body.duplicate());
-        }
-        return body;
+        return  getContent(0, (int)getSize());
     }
 
-    public Session getSession()
+    public Object getConnectionReference()
     {
-        return _sessionRef == null ? null : _sessionRef.get();
+        return _connectionRef;
     }
 
-    public SessionConfig getSessionConfig()
-    {
-        return _sessionRef == null ? null : (ServerSession) _sessionRef.get();
-    }
 }

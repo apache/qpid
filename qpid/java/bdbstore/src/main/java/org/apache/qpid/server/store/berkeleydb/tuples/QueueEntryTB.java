@@ -33,7 +33,7 @@ public class QueueEntryTB extends TupleBinding<QueueEntryKey>
     public QueueEntryKey entryToObject(TupleInput tupleInput)
     {
         AMQShortString queueName = AMQShortStringEncoding.readShortString(tupleInput);
-        Long messageId = tupleInput.readLong();
+        long messageId = tupleInput.readLong();
 
         return new QueueEntryKey(queueName, messageId);
     }

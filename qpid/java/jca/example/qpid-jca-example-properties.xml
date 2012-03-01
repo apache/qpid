@@ -49,17 +49,17 @@
          value="responder.Queue;{create:always, node:{type:queue, x-declare:{auto-delete:true}}}"/>
 
     <property name="qpid.hello.topic.dest.address.BURL"
-            value="topic://amq.topic//hello.jcaTopic?routingKey='hello.jcaTopic',autodelete='true'"/>
+            value="BURL:topic://amq.topic//hello.jcaTopic?routingKey='hello.jcaTopic',autodelete='true'"/>
     <property name="qpid.goodbye.topic.dest.address.BURL"
-            value="topic://amq.topic//goodbye.jcaTopic?routingKey='goodbye.jcaTopic',autodelete='true'"/>
+            value="BURL:topic://amq.topic//goodbye.jcaTopic?routingKey='goodbye.jcaTopic',autodelete='true'"/>
     <property name="qpid.hellogoodbye.topic.dest.address.BURL"
-           value="topic://amq.topic//#.jcaTopic"/>
+           value="BURL:topic://amq.topic//#.jcaTopic"/>
     <property name="qpid.hello.queue.dest.address.BURL"
-           value="direct://amq.direct//hello.Queue?routingkey='hello.Queue'"/>
+           value="BURL:direct://amq.direct//hello.Queue?routingkey='hello.Queue'"/>
     <property name="qpid.goodbye.queue.dest.address.BURL"
-           value="direct://amq.direct//goodbye.Queue?routingkey='goodbye.Queue'"/>
+           value="BURL:direct://amq.direct//goodbye.Queue?routingkey='goodbye.Queue'"/>
     <property name="qpid.responder.queue.dest.address.BURL"
-           value="direct://amq.direct//responder.Queue?routingkey='responder.Queue'"/>
+           value="BURL:direct://amq.direct//responder.Queue?routingkey='responder.Queue'"/>
 
     <!-- This macro allows us to construct a property name which contains a property expansion -->
     <macrodef name="set-address-property">

@@ -20,9 +20,7 @@
  */
 package org.apache.qpid.transport;
 
-import java.util.Iterator;
-import java.util.ListIterator;
-import java.util.LinkedList;
+import java.util.*;
 
 import static org.apache.qpid.util.Serial.*;
 
@@ -32,121 +30,29 @@ import static org.apache.qpid.util.Serial.*;
  * @author Rafael H. Schloming
  */
 
-public final class RangeSet implements Iterable<Range>
+public interface RangeSet extends Iterable<Range>
 {
 
-    private LinkedList<Range> ranges = new LinkedList<Range>();
+    int size();
 
-    public int size()
-    {
-        return ranges.size();
-    }
+    Iterator<Range> iterator();
 
-    public Iterator<Range> iterator()
-    {
-        return ranges.iterator();
-    }
+    Range getFirst();
 
-    public Range getFirst()
-    {
-        return ranges.getFirst();
-    }
+    Range getLast();
 
-    public Range getLast()
-    {
-        return ranges.getLast();
-    }
+    boolean includes(Range range);
 
-    public boolean includes(Range range)
-    {
-        for (Range r : this)
-        {
-            if (r.includes(range))
-            {
-                return true;
-            }
-        }
+    boolean includes(int n);
 
-        return false;
-    }
+    void add(Range range);
 
-    public boolean includes(int n)
-    {
-        for (Range r : this)
-        {
-            if (r.includes(n))
-            {
-                return true;
-            }
-        }
+    void add(int lower, int upper);
 
-        return false;
-    }
+    void add(int value);
 
-    public void add(Range range)
-    {
-        ListIterator<Range> it = ranges.listIterator();
+    void clear();
 
-        while (it.hasNext())
-        {
-            Range next = it.next();
-            if (range.touches(next))
-            {
-                it.remove();
-                range = range.span(next);
-            }
-            else if (lt(range.getUpper(), next.getLower()))
-            {
-                it.previous();
-                it.add(range);
-                return;
-            }
-        }
-
-        it.add(range);
-    }
-
-    public void add(int lower, int upper)
-    {
-        add(new Range(lower, upper));
-    }
-
-    public void add(int value)
-    {
-        add(value, value);
-    }
-
-    public void clear()
-    {
-        ranges.clear();
-    }
-
-    public RangeSet copy()
-    {
-        RangeSet copy = new RangeSet();
-        copy.ranges.addAll(ranges);
-        return copy;
-    }
-
-    public String toString()
-    {
-        StringBuffer str = new StringBuffer();
-        str.append("{");
-        boolean first = true;
-        for (Range range : ranges)
-        {
-            if (first)
-            {
-                first = false;
-            }
-            else
-            {
-                str.append(", ");
-            }
-            str.append(range);
-        }
-        str.append("}");
-        return str.toString();
-    }
+    RangeSet copy();
 
 }

@@ -588,7 +588,7 @@ public class AMQSession_0_10Test extends TestCase
         }
         boolean isTransacted = acknowledgeMode == javax.jms.Session.SESSION_TRANSACTED ? true : false;
         AMQSession_0_10 session = new AMQSession_0_10(createConnection(throwException), amqConnection, 1, isTransacted, acknowledgeMode,
-                 1, 1, "test");
+                 0, 0, "test");
         return session;
     }
 
@@ -600,7 +600,6 @@ public class AMQSession_0_10Test extends TestCase
         connection.setSessionFactory(new SessionFactory()
         {
 
-            @Override
             public Session newSession(Connection conn, Binary name, long expiry)
             {
                 return new MockSession(conn, new SessionDelegate(), name, expiry, throwException);
@@ -611,7 +610,6 @@ public class AMQSession_0_10Test extends TestCase
 
     private final class MockMessageListener implements MessageListener
     {
-        @Override
         public void onMessage(Message arg0)
         {
         }
@@ -710,23 +708,19 @@ public class AMQSession_0_10Test extends TestCase
     {
         private List<ProtocolEvent> _sendEvents = new ArrayList<ProtocolEvent>();
 
-        @Override
         public void setIdleTimeout(int i)
         {
         }
 
-        @Override
         public void send(ProtocolEvent msg)
         {
             _sendEvents.add(msg);
         }
 
-        @Override
         public void flush()
         {
         }
 
-        @Override
         public void close()
         {
         }

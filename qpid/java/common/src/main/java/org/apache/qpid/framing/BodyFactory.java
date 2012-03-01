@@ -20,7 +20,8 @@
  */
 package org.apache.qpid.framing;
 
-import java.io.DataInputStream;
+import org.apache.qpid.codec.MarkableDataInput;
+
 import java.io.IOException;
 
 /**
@@ -28,5 +29,5 @@ import java.io.IOException;
  */
 public interface BodyFactory
 {
-    AMQBody createBody(DataInputStream in, long bodySize) throws AMQFrameDecodingException, IOException;
+    AMQBody createBody(MarkableDataInput in, long bodySize) throws AMQFrameDecodingException, IOException;
 }

@@ -21,14 +21,17 @@
 
 package org.apache.qpid.qmf;
 
+import org.apache.commons.lang.NotImplementedException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.SessionConfig;
 import org.apache.qpid.server.message.*;
+import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.transport.codec.BBEncoder;
 
 import java.nio.ByteBuffer;
 import java.util.Set;
 
-public class QMFMessage implements ServerMessage<QMFMessage>, InboundMessage, AMQMessageHeader
+public class QMFMessage implements ServerMessage, InboundMessage, AMQMessageHeader
 {
 
     private ByteBuffer _content;
@@ -59,9 +62,19 @@ public class QMFMessage implements ServerMessage<QMFMessage>, InboundMessage, AM
         return _routingKey;
     }
 
+    public AMQShortString getRoutingKeyShortString()
+    {
+        return AMQShortString.valueOf(_routingKey);
+    }
+
     public AMQMessageHeader getMessageHeader()
     {
         return this;
+    }
+
+    public StoredMessage getStoredMessage()
+    {
+        throw new NotImplementedException();
     }
 
     public boolean isPersistent()
@@ -159,9 +172,9 @@ public class QMFMessage implements ServerMessage<QMFMessage>, InboundMessage, AM
         return new QMFMessageReference(this);
     }
 
-    public Long getMessageNumber()
+    public long getMessageNumber()
     {
-        return null;
+        return 0l;
     }
 
     public long getArrivalTime()
@@ -172,9 +185,9 @@ public class QMFMessage implements ServerMessage<QMFMessage>, InboundMessage, AM
     public int getContent(ByteBuffer buf, int offset)
     {
         ByteBuffer src = _content.duplicate();
-        _content.position(offset);
-        _content = _content.slice();
-        int len = _content.remaining();
+        src.position(offset);
+        src = src.slice();
+        int len = src.remaining();
         if(len > buf.remaining())
         {
             len = buf.remaining();
@@ -183,6 +196,16 @@ public class QMFMessage implements ServerMessage<QMFMessage>, InboundMessage, AM
         buf.put(src);
 
         return len;
+    }
+
+
+    public ByteBuffer getContent(int offset, int size)
+    {
+        ByteBuffer src = _content.duplicate();
+        src.position(offset);
+        src = src.slice();
+        src.limit(size);
+        return src;
     }
 
     private static class QMFMessageReference extends MessageReference<QMFMessage>

@@ -20,6 +20,7 @@
 */
 package org.apache.qpid.server.flow;
 
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.Set;
 import java.util.HashSet;
@@ -27,13 +28,16 @@ import java.util.HashSet;
 public abstract class AbstractFlowCreditManager implements FlowCreditManager
 {
     protected final AtomicBoolean _suspended = new AtomicBoolean(false);
-    private final Set<FlowCreditManagerListener> _listeners = new HashSet<FlowCreditManagerListener>();
+    private final ArrayList<FlowCreditManagerListener> _listeners = new ArrayList<FlowCreditManagerListener>();
 
     public final void addStateListener(FlowCreditManagerListener listener)
     {
         synchronized(_listeners)
         {
-            _listeners.add(listener);
+            if(!_listeners.contains(listener))
+            {
+                _listeners.add(listener);
+            }
         }
     }
 
@@ -49,9 +53,10 @@ public abstract class AbstractFlowCreditManager implements FlowCreditManager
     {
         synchronized(_listeners)
         {
-            for(FlowCreditManagerListener listener : _listeners)
+            final int size = _listeners.size();
+            for(int i = 0; i<size; i++)
             {
-                listener.creditStateChanged(!suspended);
+                _listeners.get(i).creditStateChanged(!suspended);
             }
         }
     }

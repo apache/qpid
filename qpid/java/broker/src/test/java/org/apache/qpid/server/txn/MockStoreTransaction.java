@@ -24,11 +24,11 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.store.TransactionLog;
-import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
-import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.store.TransactionLog.StoreFuture;
-import org.apache.qpid.server.store.TransactionLog.Transaction;
+import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.store.*;
+import org.apache.qpid.server.store.MessageStore.StoreFuture;
+import org.apache.qpid.server.store.MessageStore.Transaction;
 
 /**
  * Mock implementation of a (Store) Transaction allow its state to be observed.
@@ -61,7 +61,7 @@ class MockStoreTransaction implements Transaction
         return _state;
     }
 
-    public void enqueueMessage(TransactionLogResource queue, Long messageId) throws AMQStoreException
+    public void enqueueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
     {
         if (_throwExceptionOnQueueOp)
         {
@@ -82,7 +82,7 @@ class MockStoreTransaction implements Transaction
         return _numberOfEnqueuedMessages;
     }
 
-    public void dequeueMessage(TransactionLogResource queue, Long messageId) throws AMQStoreException
+    public void dequeueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
     {
         if (_throwExceptionOnQueueOp)
         {
@@ -107,10 +107,33 @@ class MockStoreTransaction implements Transaction
         _state = TransactionState.ABORTED;
     }
 
-    public static TransactionLog createTestTransactionLog(final MockStoreTransaction storeTransaction)
+    public static MessageStore createTestTransactionLog(final MockStoreTransaction storeTransaction)
     {
-        return new TransactionLog()
+        return new MessageStore()
         {
+            public void configureMessageStore(final String name,
+                                              final MessageStoreRecoveryHandler recoveryHandler,
+                                              final Configuration config,
+                                              final LogSubject logSubject) throws Exception
+            {
+                //TODO.
+            }
+
+            public void close() throws Exception
+            {
+                //TODO.
+            }
+
+            public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(final T metaData)
+            {
+                return null;  //TODO.
+            }
+
+            public boolean isPersistent()
+            {
+                return false;  //TODO.
+            }
+
             public void configureTransactionLog(String name, TransactionLogRecoveryHandler recoveryHandler,
                     Configuration storeConfiguration, LogSubject logSubject) throws Exception
             {

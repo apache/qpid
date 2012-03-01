@@ -30,7 +30,6 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.security.AuthorizationHolder;
-import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -168,22 +167,22 @@ public class MockAMQQueue implements AMQQueue
 
     public UUID getId()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public QueueConfigType getConfigType()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public ConfiguredObject getParent()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public boolean isDurable()
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
     public boolean isAutoDelete()
@@ -199,7 +198,7 @@ public class MockAMQQueue implements AMQQueue
 
     public AMQShortString getOwner()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public void setVirtualHost(VirtualHost virtualhost)
@@ -219,22 +218,22 @@ public class MockAMQQueue implements AMQQueue
 
     public void registerSubscription(Subscription subscription, boolean exclusive) throws AMQException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+      
     }
 
     public void unregisterSubscription(Subscription subscription) throws AMQException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+      
     }
 
     public int getConsumerCount()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public int getActiveConsumerCount()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public boolean hasExclusiveSubscriber()
@@ -244,37 +243,37 @@ public class MockAMQQueue implements AMQQueue
 
     public boolean isUnused()
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
     public boolean isEmpty()
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
     public int getMessageCount()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public int getUndeliveredMessageCount()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public long getQueueDepth()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public long getReceivedMessageCount()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public long getOldestMessageArrivalTime()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public boolean isDeleted()
@@ -297,59 +296,58 @@ public class MockAMQQueue implements AMQQueue
     }
 
 
+    public void enqueue(ServerMessage message, boolean sync, PostEnqueueAction action) throws AMQException
+    {
+    }
+
     public void requeue(QueueEntry entry)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void requeue(QueueEntryImpl storeContext, Subscription subscription)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void dequeue(QueueEntry entry, Subscription sub)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public boolean resend(QueueEntry entry, Subscription subscription) throws AMQException
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
     public void addQueueDeleteTask(Task task)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void removeQueueDeleteTask(final Task task)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public List<QueueEntry> getMessagesOnTheQueue()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public List<QueueEntry> getMessagesOnTheQueue(long fromMessageId, long toMessageId)
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public List<Long> getMessagesOnTheQueue(int num)
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public List<Long> getMessagesOnTheQueue(int num, int offest)
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public QueueEntry getMessageOnTheQueue(long messageId)
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public List<QueueEntry> getMessagesRangeOnTheQueue(long fromPosition, long toPosition)
@@ -359,146 +357,137 @@ public class MockAMQQueue implements AMQQueue
 
     public void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName, ServerTransaction storeContext)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+      
     }
 
     public void copyMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName, ServerTransaction storeContext)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+      
     }
 
     public void removeMessagesFromQueue(long fromMessageId, long toMessageId)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+      
     }
 
     public long getMaximumMessageSize()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public void setMaximumMessageSize(long value)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+      
     }
 
     public long getMaximumMessageCount()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public void setMaximumMessageCount(long value)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+      
     }
 
     public long getMaximumQueueDepth()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public void setMaximumQueueDepth(long value)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+      
     }
 
     public long getMaximumMessageAge()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public void setMaximumMessageAge(long maximumMessageAge)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public boolean getBlockOnQueueFull()
-    {
-        return false;
-    }
-
-    public void setBlockOnQueueFull(boolean block)
-    {
+      
     }
 
     public long getMinimumAlertRepeatGap()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public void deleteMessageFromTop()
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+      
     }
 
     public long clearQueue()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
 
     public void checkMessageStatus() throws AMQException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+      
     }
 
     public Set<NotificationCheck> getNotificationChecks()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public void flushSubscription(Subscription sub) throws AMQException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+      
     }
 
     public void deliverAsync(Subscription sub)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+      
     }
 
     public void deliverAsync()
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+      
     }
 
     public void stop()
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+      
     }
 
     public boolean isExclusive()
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
     public Exchange getAlternateExchange()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public void setAlternateExchange(Exchange exchange)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+      
     }
 
     public Map<String, Object> getArguments()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
-    public void checkCapacity(AMQChannel channel)
+    public void checkCapacity(AMQSessionModel channel)
     {
     }
 
     public ManagedObject getManagedObject()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public int compareTo(AMQQueue o)
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public void setMinimumAlertRepeatGap(long value)
@@ -508,22 +497,22 @@ public class MockAMQQueue implements AMQQueue
 
     public long getCapacity()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public void setCapacity(long capacity)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+      
     }
 
     public long getFlowResumeCapacity()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public void setFlowResumeCapacity(long flowResumeCapacity)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+      
     }
 
     public void configure(ConfigurationPlugin config)
@@ -533,7 +522,7 @@ public class MockAMQQueue implements AMQQueue
 
     public ConfigurationPlugin getConfiguration()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public AuthorizationHolder getAuthorizationHolder()
@@ -612,20 +601,20 @@ public class MockAMQQueue implements AMQQueue
 
     }
 
-    @Override
     public int getMaximumDeliveryCount()
     {
         return 0;
     }
 
-    @Override
     public void setMaximumDeliveryCount(int maximumDeliveryCount)
     {
     }
 
-    @Override
     public void setAlternateExchange(String exchangeName)
     {
     }
 
+    public void visit(final Visitor visitor)
+    {
+    }
 }

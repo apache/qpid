@@ -66,14 +66,15 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
         final AMQQueue queue;
         final AMQShortString routingKey;
 
+
+        AMQChannel channel = session.getChannel(channelId);
+        if (channel == null)
+        {
+            throw body.getChannelNotFoundException(channelId);
+        }
+
         if (body.getQueue() == null)
         {
-            AMQChannel channel = session.getChannel(channelId);
-
-            if (channel == null)
-            {
-                throw body.getChannelNotFoundException(channelId);
-            }
 
             queue = channel.getDefaultQueue();
 

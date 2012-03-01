@@ -75,7 +75,7 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
     private boolean _statisticsEnabled = false;
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
     private final long _connectionId;
-
+    private final Object _reference = new Object();
     private ServerConnectionMBean _mBean;
     private VirtualHost _virtualHost;
     private AtomicLong _lastIoTime = new AtomicLong();
@@ -88,6 +88,11 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
     public UUID getId()
     {
         return _config.getId();
+    }
+
+    public Object getReference()
+    {
+        return _reference;
     }
 
     @Override
@@ -414,13 +419,11 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
         return _connectionId;
     }
 
-    @Override
     public boolean isSessionNameUnique(byte[] name)
     {
         return !super.hasSessionWithName(name);
     }
 
-    @Override
     public String getUserName()
     {
         return _authorizedPrincipal.getName();
@@ -450,11 +453,11 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
     {
         for (Session ssn : getChannels())
         {
-            ((ServerSession)ssn).flushCreditState();
+            ((ServerSession)ssn).receivedComplete();
         }
     }
 
-    @Override
+
     public ManagedObject getManagedObject()
     {
         return _mBean;

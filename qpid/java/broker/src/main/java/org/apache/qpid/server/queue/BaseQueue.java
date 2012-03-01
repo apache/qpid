@@ -35,6 +35,7 @@ public interface BaseQueue extends TransactionLogResource
 
     void enqueue(ServerMessage message) throws AMQException;
     void enqueue(ServerMessage message, PostEnqueueAction action) throws AMQException;
+    void enqueue(ServerMessage message, boolean transactional, PostEnqueueAction action) throws AMQException;
 
     boolean isDurable();
 

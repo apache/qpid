@@ -22,7 +22,6 @@ package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.pool.ReadWriteRunnable;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.queue.QueueRunner;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
@@ -38,7 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * when straight-through delivery of a message to a subscription isn't
  * possible during the enqueue operation.
  */
-public class QueueRunner implements ReadWriteRunnable
+public class QueueRunner implements Runnable
 {
     private static final Logger _logger = Logger.getLogger(QueueRunner.class);
 
@@ -51,21 +50,17 @@ public class QueueRunner implements ReadWriteRunnable
 
     private final AtomicInteger _scheduled = new AtomicInteger(IDLE);
 
-    private static final long ITERATIONS = SimpleAMQQueue.MAX_ASYNC_DELIVERIES;
     private final AtomicBoolean _stateChange = new AtomicBoolean();
 
     private final AtomicLong _lastRunAgain = new AtomicLong();
     private final AtomicLong _lastRunTime = new AtomicLong();
 
-    private long _runs;
     private long _continues;
 
     public QueueRunner(SimpleAMQQueue queue)
     {
         _queue = queue;
     }
-
-    private int trouble = 0;
 
     public void run()
     {
@@ -101,16 +96,6 @@ public class QueueRunner implements ReadWriteRunnable
             }
 
         }
-    }
-
-    public boolean isRead()
-    {
-        return false;
-    }
-
-    public boolean isWrite()
-    {
-        return true;
     }
 
     public String toString()

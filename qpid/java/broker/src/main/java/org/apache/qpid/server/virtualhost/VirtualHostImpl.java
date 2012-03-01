@@ -55,6 +55,7 @@ import org.apache.qpid.server.exchange.DefaultExchangeRegistry;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.federation.Bridge;
 import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -77,7 +78,6 @@ import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.TransactionLog;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPlugin;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 
@@ -231,7 +231,10 @@ public class VirtualHostImpl implements VirtualHost
         if (store != null)
         {
             _messageStore = store;
-            _durableConfigurationStore = store;
+            if(store instanceof DurableConfigurationStore)
+            {
+                _durableConfigurationStore = (DurableConfigurationStore) store;
+            }
         }
         else
         {
@@ -383,6 +386,8 @@ public class VirtualHostImpl implements VirtualHost
         Class clazz = Class.forName(messageStoreClass);
         Object o = clazz.newInstance();
 
+
+
         if (!(o instanceof MessageStore))
         {
             throw new ClassCastException("Message store class must implement " + MessageStore.class + ". Class " + clazz +
@@ -393,10 +398,18 @@ public class VirtualHostImpl implements VirtualHost
 
         MessageStoreLogSubject storeLogSubject = new MessageStoreLogSubject(this, messageStore);
 
-        messageStore.configureConfigStore(this.getName(),
-                                          recoveryHandler,
-                                          hostConfig.getStoreConfiguration(),
-                                          storeLogSubject);
+
+        if(messageStore instanceof DurableConfigurationStore)
+        {
+            DurableConfigurationStore durableConfigurationStore = (DurableConfigurationStore) messageStore;
+
+            durableConfigurationStore.configureConfigStore(this.getName(),
+                                              recoveryHandler,
+                                              hostConfig.getStoreConfiguration(),
+                                              storeLogSubject);
+
+            _durableConfigurationStore = durableConfigurationStore;
+        }
 
         messageStore.configureMessageStore(this.getName(),
                                            recoveryHandler,
@@ -408,7 +421,8 @@ public class VirtualHostImpl implements VirtualHost
                                            storeLogSubject);
 
         _messageStore = messageStore;
-        _durableConfigurationStore = messageStore;
+
+
     }
 
     private void initialiseModel(VirtualHostConfiguration config) throws ConfigurationException, AMQException
@@ -552,11 +566,6 @@ public class VirtualHostImpl implements VirtualHost
     }
 
     public MessageStore getMessageStore()
-    {
-        return _messageStore;
-    }
-
-    public TransactionLog getTransactionLog()
     {
         return _messageStore;
     }
@@ -725,6 +734,16 @@ public class VirtualHostImpl implements VirtualHost
         _statisticsEnabled = enabled;
     }
 
+    public BrokerLink createBrokerConnection(UUID id, long createTime, Map<String,String> arguments)
+    {
+        BrokerLink blink = new BrokerLink(this, id, createTime, arguments);
+        // TODO - cope with duplicate broker link creation requests
+        _links.putIfAbsent(blink,blink);
+        getConfigStore().addConfiguredObject(blink);
+        return blink;
+    }
+
+    
     public void createBrokerConnection(final String transport,
                                        final String host,
                                        final int port,
@@ -735,10 +754,11 @@ public class VirtualHostImpl implements VirtualHost
                                        final String password)
     {
         BrokerLink blink = new BrokerLink(this, transport, host, port, vhost, durable, authMechanism, username, password);
-        if(_links.putIfAbsent(blink,blink) != null)
-        {
-            getConfigStore().addConfiguredObject(blink);
-        }
+
+        // TODO - cope with duplicate broker link creation requests
+        _links.putIfAbsent(blink,blink);
+        getConfigStore().addConfiguredObject(blink);
+
     }
 
     public void removeBrokerConnection(final String transport,
@@ -788,7 +808,9 @@ public class VirtualHostImpl implements VirtualHost
         public List<Exchange> exchange = new LinkedList<Exchange>();
         public List<CreateQueueTuple> queue = new LinkedList<CreateQueueTuple>();
         public List<CreateBindingTuple> bindings = new LinkedList<CreateBindingTuple>();
-
+        public List<BrokerLink> links = new LinkedList<BrokerLink>();
+        public List<Bridge> bridges = new LinkedList<Bridge>();
+        
         public void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
         {
         }
@@ -881,6 +903,30 @@ public class VirtualHostImpl implements VirtualHost
         }
 
         public void updateQueue(AMQQueue queue) throws AMQStoreException
+        {
+        }
+
+        public void createBrokerLink(final BrokerLink link) throws AMQStoreException
+        {
+            if(link.isDurable())
+            {
+                links.add(link);
+            }
+        }
+
+        public void deleteBrokerLink(final BrokerLink link) throws AMQStoreException
+        {
+        }
+
+        public void createBridge(final Bridge bridge) throws AMQStoreException
+        {
+            if(bridge.isDurable())
+            {
+                bridges.add(bridge);
+            }
+        }
+
+        public void deleteBridge(final Bridge bridge) throws AMQStoreException
         {
         }
     }

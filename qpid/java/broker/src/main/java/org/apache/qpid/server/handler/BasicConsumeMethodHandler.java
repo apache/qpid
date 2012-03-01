@@ -52,7 +52,6 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
         AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
 
         AMQChannel channel = protocolConnection.getChannel(channelId);
-
         VirtualHost vHost = protocolConnection.getVirtualHost();
 
         if (channel == null)

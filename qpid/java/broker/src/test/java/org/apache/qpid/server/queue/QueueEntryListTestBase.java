@@ -164,7 +164,7 @@ public abstract class QueueEntryListTestBase extends TestCase
         final QueueEntry head = getTestList().getHead();
         assertNull("Head entry should not contain an actual message", head.getMessage());
         assertEquals("Unexpected message id for first list entry", getExpectedFirstMsgId(), getTestList().next(head)
-                        .getMessage().getMessageNumber().longValue());
+                        .getMessage().getMessageNumber());
     }
 
     /**

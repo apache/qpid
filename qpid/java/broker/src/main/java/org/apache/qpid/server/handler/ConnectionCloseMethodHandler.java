@@ -49,7 +49,6 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener<Co
     public void methodReceived(AMQStateManager stateManager, ConnectionCloseBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
-
         if (_logger.isInfoEnabled())
         {
             _logger.info("ConnectionClose received with reply code/reply text " + body.getReplyCode() + "/" +

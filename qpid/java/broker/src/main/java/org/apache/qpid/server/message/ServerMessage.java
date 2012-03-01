@@ -22,13 +22,16 @@ package org.apache.qpid.server.message;
 
 import java.nio.ByteBuffer;
 
-import org.apache.qpid.server.configuration.SessionConfig;
+import org.apache.qpid.server.store.StorableMessageMetaData;
+import org.apache.qpid.server.store.StoredMessage;
 
-public interface ServerMessage<T extends ServerMessage> extends EnqueableMessage, MessageContentSource
+public interface ServerMessage<T extends StorableMessageMetaData> extends EnqueableMessage, MessageContentSource
 {
     String getRoutingKey();
 
     AMQMessageHeader getMessageHeader();
+
+    public StoredMessage<T> getStoredMessage();
 
     boolean isPersistent();
 
@@ -38,13 +41,14 @@ public interface ServerMessage<T extends ServerMessage> extends EnqueableMessage
 
     long getExpiration();
 
-    MessageReference<T> newReference();
+    MessageReference newReference();
 
-    Long getMessageNumber();
+    long getMessageNumber();
 
     long getArrivalTime();
 
     public int getContent(ByteBuffer buf, int offset);
 
-    SessionConfig getSessionConfig();
+    public ByteBuffer getContent(int offset, int size);
+
 }

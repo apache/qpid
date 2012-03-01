@@ -40,7 +40,10 @@ public class ConfigStore
     private AtomicReference<SystemConfig> _root = new AtomicReference<SystemConfig>(null);
 
     private final AtomicLong _objectIdSource = new AtomicLong(0l);
+    private final AtomicLong _persistentObjectIdSource = new AtomicLong(0l);
 
+    // TODO - should load/increment this on broker startup
+    private long _sequenceNumber = 1L;
 
     public enum Event
     {
@@ -167,9 +170,23 @@ public class ConfigStore
 
     public UUID createId()
     {
-        return new UUID(0l, _objectIdSource.getAndIncrement());
+        return new UUID(((_sequenceNumber & 0xFFFl)<<48), _objectIdSource.incrementAndGet());
     }
 
+    public UUID createPersistentId()
+    {
+        return new UUID(0L, _persistentObjectIdSource.incrementAndGet());
+    }
+    
+    public void persistentIdInUse(UUID id)
+    {
+        long lsb = id.getLeastSignificantBits();
+        long currentId;
+        while((currentId = _persistentObjectIdSource.get()) < lsb)
+        {
+            _persistentObjectIdSource.compareAndSet(currentId, lsb);
+        }
+    }
 
     public SystemConfig getRoot()
     {
