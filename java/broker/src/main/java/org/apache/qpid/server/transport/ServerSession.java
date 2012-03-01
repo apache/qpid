@@ -403,6 +403,9 @@ public class ServerSession extends Session
 
                                  public void onRollback()
                                  {
+                                     // The client has acknowledge the message and therefore have seen it.
+                                     // In the event of rollback, the message must be marked as redelivered.
+                                     entry.setRedelivered();
                                      entry.release();
                                  }
                              });
