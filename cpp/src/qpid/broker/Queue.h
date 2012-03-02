@@ -157,38 +157,6 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     void forcePersistent(QueuedMessage& msg);
     int getEventMode();
     void configureImpl(const qpid::framing::FieldTable& settings);
-
-    inline void mgntEnqStats(const boost::intrusive_ptr<Message>& msg)
-    {
-        if (mgmtObject != 0) {
-            mgmtObject->inc_msgTotalEnqueues ();
-            mgmtObject->inc_byteTotalEnqueues (msg->contentSize ());
-            brokerMgmtObject->inc_msgTotalEnqueues ();
-            brokerMgmtObject->inc_byteTotalEnqueues (msg->contentSize ());
-            if (msg->isPersistent ()) {
-                mgmtObject->inc_msgPersistEnqueues ();
-                mgmtObject->inc_bytePersistEnqueues (msg->contentSize ());
-                brokerMgmtObject->inc_msgPersistEnqueues ();
-                brokerMgmtObject->inc_bytePersistEnqueues (msg->contentSize ());
-            }
-        }
-    }
-    inline void mgntDeqStats(const boost::intrusive_ptr<Message>& msg)
-    {
-        if (mgmtObject != 0){
-            mgmtObject->inc_msgTotalDequeues  ();
-            mgmtObject->inc_byteTotalDequeues (msg->contentSize());
-            brokerMgmtObject->inc_msgTotalDequeues  ();
-            brokerMgmtObject->inc_byteTotalDequeues (msg->contentSize());
-            if (msg->isPersistent ()){
-                mgmtObject->inc_msgPersistDequeues ();
-                mgmtObject->inc_bytePersistDequeues (msg->contentSize());
-                brokerMgmtObject->inc_msgPersistDequeues ();
-                brokerMgmtObject->inc_bytePersistDequeues (msg->contentSize());
-            }
-        }
-    }
-
     void checkNotDeleted(const Consumer::shared_ptr& c);
     void notifyDeleted();
 

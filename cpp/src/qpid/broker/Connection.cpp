@@ -185,11 +185,13 @@ void Connection::recordFromServer(const framing::AMQFrame& frame)
     // Don't record management stats in cluster-unsafe contexts
     if (mgmtObject != 0 && isClusterSafe())
     {
-        mgmtObject->inc_framesToClient();
-        mgmtObject->inc_bytesToClient(frame.encodedSize());
-        if (isMessage(frame.getMethod())) {
-            mgmtObject->inc_msgsToClient();
-        }
+      qmf::org::apache::qpid::broker::Connection::PerThreadStats *cStats = mgmtObject->getStatistics();
+      cStats->framesToClient += 1;
+      cStats->bytesToClient += frame.encodedSize();
+      if (isMessage(frame.getMethod())) {
+	cStats->msgsToClient += 1;
+      }
+      mgmtObject->statisticsUpdated();
     }
 }
 
@@ -198,11 +200,13 @@ void Connection::recordFromClient(const framing::AMQFrame& frame)
     // Don't record management stats in cluster-unsafe contexts
     if (mgmtObject != 0 && isClusterSafe())
     {
-        mgmtObject->inc_framesFromClient();
-        mgmtObject->inc_bytesFromClient(frame.encodedSize());
-        if (isMessage(frame.getMethod())) {
-            mgmtObject->inc_msgsFromClient();
-        }
+      qmf::org::apache::qpid::broker::Connection::PerThreadStats *cStats = mgmtObject->getStatistics();
+      cStats->framesFromClient += 1;
+      cStats->bytesFromClient += frame.encodedSize();
+      if (isMessage(frame.getMethod())) {
+	cStats->msgsFromClient += 1;
+      }
+      mgmtObject->statisticsUpdated();
     }
 }
 

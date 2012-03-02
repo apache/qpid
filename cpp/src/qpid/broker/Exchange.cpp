@@ -135,20 +135,23 @@ void Exchange::doRoute(Deliverable& msg, ConstBindingList b)
 
     if (mgmtExchange != 0)
     {
-        mgmtExchange->inc_msgReceives  ();
-        mgmtExchange->inc_byteReceives (msg.contentSize ());
-        if (count == 0)
+      qmf::org::apache::qpid::broker::Exchange::PerThreadStats *eStats = mgmtExchange->getStatistics();
+      uint64_t contentSize = msg.contentSize();
+
+      eStats->msgReceives += 1;
+      eStats->byteReceives += contentSize;
+      if (count == 0)
         {
-            //QPID_LOG(warning, "Exchange " << getName() << " could not route message; no matching binding found");
-            mgmtExchange->inc_msgDrops  ();
-            mgmtExchange->inc_byteDrops (msg.contentSize ());
-            if (brokerMgmtObject)
-                brokerMgmtObject->inc_discardsNoRoute();
+	  //QPID_LOG(warning, "Exchange " << getName() << " could not route message; no matching binding found");
+	  eStats->msgDrops += 1;
+	  eStats->byteDrops += contentSize;
+	  if (brokerMgmtObject)
+	    brokerMgmtObject->inc_discardsNoRoute();
         }
-        else
+      else
         {
-            mgmtExchange->inc_msgRoutes  (count);
-            mgmtExchange->inc_byteRoutes (count * msg.contentSize ());
+	  eStats->msgRoutes += count;
+	  eStats->byteRoutes += count * contentSize;
         }
     }
 }
