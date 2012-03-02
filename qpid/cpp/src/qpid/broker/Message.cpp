@@ -131,9 +131,12 @@ uint32_t Message::getRequiredCredit()
 
 void Message::encode(framing::Buffer& buffer) const
 {
-    //encode method and header frames
-    EncodeFrame f1(buffer);
-    frames.map_if(f1, TypeFilter2<METHOD_BODY, HEADER_BODY>());
+    {
+        sys::Mutex::ScopedLock l(lock);   // prevent header modifications while encoding
+        //encode method and header frames
+        EncodeFrame f1(buffer);
+        frames.map_if(f1, TypeFilter2<METHOD_BODY, HEADER_BODY>());
+    }
 
     //then encode the payload of each content frame
     framing::EncodeBody f2(buffer);
@@ -159,6 +162,7 @@ uint32_t Message::encodedContentSize() const
 
 uint32_t Message::encodedHeaderSize() const
 {
+    sys::Mutex::ScopedLock l(lock);   // prevent modifications while computing size
     //add up the size for all method and header frames in the frameset
     SumFrameSize sum;
     frames.map_if(sum, TypeFilter2<METHOD_BODY, HEADER_BODY>());
@@ -354,6 +358,7 @@ public:
 
 AMQHeaderBody* Message::getHeaderBody()
 {
+    // expects lock to be held
     if (copyHeaderOnWrite) {
         CloneHeaderBody f;
         frames.map_if(f, TypeFilter<HEADER_BODY>());
