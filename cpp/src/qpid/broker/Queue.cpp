@@ -93,48 +93,48 @@ inline void mgntEnqStats(const boost::intrusive_ptr<Message>& msg,
 			 _qmf::Queue* mgmtObject,
 			 _qmf::Broker* brokerMgmtObject)
 {
-  if (mgmtObject != 0) {
-    qmf::org::apache::qpid::broker::Queue::PerThreadStats *qStats = mgmtObject->getStatistics();
-    qmf::org::apache::qpid::broker::Broker::PerThreadStats *bStats = brokerMgmtObject->getStatistics();
+    if (mgmtObject != 0) {
+        qmf::org::apache::qpid::broker::Queue::PerThreadStats *qStats = mgmtObject->getStatistics();
+        qmf::org::apache::qpid::broker::Broker::PerThreadStats *bStats = brokerMgmtObject->getStatistics();
 
-    uint64_t contentSize = msg->contentSize();
-    qStats->msgTotalEnqueues +=1;
-    bStats->msgTotalEnqueues += 1;
-    qStats->byteTotalEnqueues += contentSize;
-    bStats->byteTotalEnqueues += contentSize;
-    if (msg->isPersistent ()) {
-      qStats->msgPersistEnqueues += 1;
-      bStats->msgPersistEnqueues += 1;
-      qStats->bytePersistEnqueues += contentSize;
-      bStats->bytePersistEnqueues += contentSize;
+        uint64_t contentSize = msg->contentSize();
+        qStats->msgTotalEnqueues +=1;
+        bStats->msgTotalEnqueues += 1;
+        qStats->byteTotalEnqueues += contentSize;
+        bStats->byteTotalEnqueues += contentSize;
+        if (msg->isPersistent ()) {
+            qStats->msgPersistEnqueues += 1;
+            bStats->msgPersistEnqueues += 1;
+            qStats->bytePersistEnqueues += contentSize;
+            bStats->bytePersistEnqueues += contentSize;
+        }
+        mgmtObject->statisticsUpdated();
+        brokerMgmtObject->statisticsUpdated();
     }
-    mgmtObject->statisticsUpdated();
-    brokerMgmtObject->statisticsUpdated();
-  }
 }
 
 inline void mgntDeqStats(const boost::intrusive_ptr<Message>& msg,
 			 _qmf::Queue* mgmtObject,
 			 _qmf::Broker* brokerMgmtObject)
 {
-  if (mgmtObject != 0){
-    qmf::org::apache::qpid::broker::Queue::PerThreadStats *qStats = mgmtObject->getStatistics();
-    qmf::org::apache::qpid::broker::Broker::PerThreadStats *bStats = brokerMgmtObject->getStatistics();
-    uint64_t contentSize = msg->contentSize();
+    if (mgmtObject != 0){
+        qmf::org::apache::qpid::broker::Queue::PerThreadStats *qStats = mgmtObject->getStatistics();
+        qmf::org::apache::qpid::broker::Broker::PerThreadStats *bStats = brokerMgmtObject->getStatistics();
+        uint64_t contentSize = msg->contentSize();
 
-    qStats->msgTotalDequeues += 1;
-    bStats->msgTotalDequeues += 1;
-    qStats->byteTotalDequeues += contentSize;
-    bStats->byteTotalDequeues += contentSize;
-    if (msg->isPersistent ()){
-      qStats->msgPersistDequeues += 1;
-      bStats->msgPersistDequeues += 1;
-      qStats->bytePersistDequeues += contentSize;
-      bStats->bytePersistDequeues += contentSize;
+        qStats->msgTotalDequeues += 1;
+        bStats->msgTotalDequeues += 1;
+        qStats->byteTotalDequeues += contentSize;
+        bStats->byteTotalDequeues += contentSize;
+        if (msg->isPersistent ()){
+            qStats->msgPersistDequeues += 1;
+            bStats->msgPersistDequeues += 1;
+            qStats->bytePersistDequeues += contentSize;
+            bStats->bytePersistDequeues += contentSize;
+        }
+        mgmtObject->statisticsUpdated();
+        brokerMgmtObject->statisticsUpdated();
     }
-    mgmtObject->statisticsUpdated();
-    brokerMgmtObject->statisticsUpdated();
-  }
 }
 
 } // namespace
