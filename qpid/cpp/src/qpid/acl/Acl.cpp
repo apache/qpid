@@ -149,7 +149,6 @@ bool Acl::result(
         assert (false);
     }
 
-    QPID_LOG(debug, "ACL result() returns " << result);
     return result;
 }
 
