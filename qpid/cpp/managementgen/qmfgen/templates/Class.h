@@ -53,9 +53,12 @@ QPID_BROKER_CLASS_EXTERN class /*MGEN:Class.NameCap*/ : public ::qpid::managemen
 /*MGEN:Class.InstDeclarations*/
 /*MGEN:IF(Class.ExistPerThreadStats)*/
     // Per-Thread Statistics
+
+ public:    
     struct PerThreadStats {
 /*MGEN:Class.PerThreadDeclarations*/
     };
+ private:
 
     struct PerThreadStats** perThreadStatsArray;
 
@@ -120,6 +123,11 @@ QPID_BROKER_CLASS_EXTERN class /*MGEN:Class.NameCap*/ : public ::qpid::managemen
 /*MGEN:Class.MethodIdDeclarations*/
     // Accessor Methods
 /*MGEN:Class.AccessorMethods*/
+
+/*MGEN:IF(Class.ExistPerThreadStats)*/
+    struct PerThreadStats* getStatistics() { return getThreadStats(); }
+    void statisticsUpdated() { instChanged = true; }
+/*MGEN:ENDIF*/
 };
 
 }/*MGEN:Class.CloseNamespaces*/
