@@ -88,7 +88,56 @@ const std::string qpidInsertSequenceNumbers("qpid.insert_sequence_numbers");
 
 const int ENQUEUE_ONLY=1;
 const int ENQUEUE_AND_DEQUEUE=2;
+
+inline void mgntEnqStats(const boost::intrusive_ptr<Message>& msg,
+			 _qmf::Queue* mgmtObject,
+			 _qmf::Broker* brokerMgmtObject)
+{
+  if (mgmtObject != 0) {
+    qmf::org::apache::qpid::broker::Queue::PerThreadStats *qStats = mgmtObject->getStatistics();
+    qmf::org::apache::qpid::broker::Broker::PerThreadStats *bStats = brokerMgmtObject->getStatistics();
+
+    uint64_t contentSize = msg->contentSize();
+    qStats->msgTotalEnqueues +=1;
+    bStats->msgTotalEnqueues += 1;
+    qStats->byteTotalEnqueues += contentSize;
+    bStats->byteTotalEnqueues += contentSize;
+    if (msg->isPersistent ()) {
+      qStats->msgPersistEnqueues += 1;
+      bStats->msgPersistEnqueues += 1;
+      qStats->bytePersistEnqueues += contentSize;
+      bStats->bytePersistEnqueues += contentSize;
+    }
+    mgmtObject->statisticsUpdated();
+    brokerMgmtObject->statisticsUpdated();
+  }
 }
+
+inline void mgntDeqStats(const boost::intrusive_ptr<Message>& msg,
+			 _qmf::Queue* mgmtObject,
+			 _qmf::Broker* brokerMgmtObject)
+{
+  if (mgmtObject != 0){
+    qmf::org::apache::qpid::broker::Queue::PerThreadStats *qStats = mgmtObject->getStatistics();
+    qmf::org::apache::qpid::broker::Broker::PerThreadStats *bStats = brokerMgmtObject->getStatistics();
+    uint64_t contentSize = msg->contentSize();
+
+    qStats->msgTotalDequeues += 1;
+    bStats->msgTotalDequeues += 1;
+    qStats->byteTotalDequeues += contentSize;
+    bStats->byteTotalDequeues += contentSize;
+    if (msg->isPersistent ()){
+      qStats->msgPersistDequeues += 1;
+      bStats->msgPersistDequeues += 1;
+      qStats->bytePersistDequeues += contentSize;
+      bStats->bytePersistDequeues += contentSize;
+    }
+    mgmtObject->statisticsUpdated();
+    brokerMgmtObject->statisticsUpdated();
+  }
+}
+
+} // namespace
 
 Queue::Queue(const string& _name, bool _autodelete,
              MessageStore* const _store,
@@ -238,7 +287,7 @@ void Queue::requeue(const QueuedMessage& msg){
                 if (brokerMgmtObject)
                     brokerMgmtObject->inc_abandoned();
             }
-            mgntDeqStats(msg.payload);
+            mgntDeqStats(msg.payload, mgmtObject, brokerMgmtObject);
         } else {
             messages->release(msg);
             listeners.populate(copy);
@@ -951,7 +1000,7 @@ bool Queue::popAndDequeue(QueuedMessage& msg, const Mutex::ScopedLock& locker)
  */
 void Queue::observeDequeue(const QueuedMessage& msg, const Mutex::ScopedLock&)
 {
-    mgntDeqStats(msg.payload);
+    mgntDeqStats(msg.payload, mgmtObject, brokerMgmtObject);
     if (policy.get()) policy->dequeued(msg);
     messages->deleted(msg);
     for (Observers::const_iterator i = observers.begin(); i != observers.end(); ++i) {
@@ -1512,7 +1561,7 @@ void Queue::observeEnqueue(const QueuedMessage& m, const Mutex::ScopedLock&)
     if (policy.get()) {
         policy->enqueued(m);
     }
-    mgntEnqStats(m.payload);
+    mgntEnqStats(m.payload, mgmtObject, brokerMgmtObject);
 }
 
 void Queue::updateEnqueued(const QueuedMessage& m)
