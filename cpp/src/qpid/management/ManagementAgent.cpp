@@ -564,7 +564,7 @@ void ManagementAgent::sendBufferLH(Buffer&  buf,
 
         DeliverableMessage deliverable (msg);
         try {
-            exchange->route(deliverable, routingKey, 0);
+            exchange->route(deliverable);
         } catch(exception&) {}
     }
     buf.reset();
@@ -641,7 +641,7 @@ void ManagementAgent::sendBufferLH(const string& data,
 
         DeliverableMessage deliverable (msg);
         try {
-            exchange->route(deliverable, routingKey, 0);
+            exchange->route(deliverable);
         } catch(exception&) {}
     }
 }

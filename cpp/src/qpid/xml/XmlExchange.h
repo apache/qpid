@@ -82,7 +82,7 @@ class XmlExchange : public virtual Exchange {
 
     virtual bool unbind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
 
-    virtual void route(Deliverable& msg, const std::string& routingKey, const qpid::framing::FieldTable* args);
+    virtual void route(Deliverable& msg);
 
     virtual bool isBound(Queue::shared_ptr queue, const std::string* const routingKey, const qpid::framing::FieldTable* const args);
 

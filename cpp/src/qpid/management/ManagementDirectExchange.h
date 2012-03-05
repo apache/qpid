@@ -43,9 +43,7 @@ class ManagementDirectExchange : public virtual DirectExchange
 
     virtual std::string getType() const { return typeName; }
 
-    virtual void route(Deliverable& msg,
-                       const std::string& routingKey,
-                       const qpid::framing::FieldTable* args);
+    virtual void route(Deliverable& msg);
 
     void setManagmentAgent(management::ManagementAgent* agent, int qmfVersion);
 

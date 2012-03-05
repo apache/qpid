@@ -80,7 +80,7 @@ void ReplicatingEventListener::route(boost::intrusive_ptr<qpid::broker::Message>
     try {
         if (exchange) {
             DeliverableMessage deliverable(msg);
-            exchange->route(deliverable, msg->getRoutingKey(), msg->getApplicationHeaders());
+            exchange->route(deliverable);
         } else if (queue) {
             queue->deliver(msg);
         } else {

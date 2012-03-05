@@ -50,7 +50,7 @@ class CredentialsExchange : public broker::Exchange
     bool check(MemberId member);
 
     /** Throw an exception if the calling connection is not the cluster user. Store credentials in msg. */
-    void route(broker::Deliverable& msg, const std::string& routingKey, const framing::FieldTable* args);
+    void route(broker::Deliverable& msg);
 
     // Exchange overrides
     std::string getType() const;
