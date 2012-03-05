@@ -31,6 +31,10 @@
 namespace qpid {
 namespace framing {
 
+FieldTable::FieldTable() : cachedSize(0)
+{
+}
+
 FieldTable::FieldTable(const FieldTable& ft)
 {
   *this = ft;
@@ -40,17 +44,22 @@ FieldTable& FieldTable::operator=(const FieldTable& ft)
 {
   clear();
   values = ft.values;
+  cachedSize = ft.cachedSize;
   return *this;
 }
 
 FieldTable::~FieldTable() {}
 
 uint32_t FieldTable::encodedSize() const {
+    if (cachedSize != 0) {
+        return cachedSize;
+    }
     uint32_t len(4/*size field*/ + 4/*count field*/);
     for(ValueMap::const_iterator i = values.begin(); i != values.end(); ++i) {
         // shortstr_len_byte + key size + value size
-	len += 1 + (i->first).size() + (i->second)->encodedSize();
+        len += 1 + (i->first).size() + (i->second)->encodedSize();
     }
+    cachedSize = len;
     return len;
 }
 
@@ -78,43 +87,53 @@ std::ostream& operator<<(std::ostream& out, const FieldTable& t) {
 
 void FieldTable::set(const std::string& name, const ValuePtr& value){
     values[name] = value;
+    cachedSize = 0;
 }
 
 void FieldTable::setString(const std::string& name, const std::string& value){
     values[name] = ValuePtr(new Str16Value(value));
+    cachedSize = 0;
 }
 
 void FieldTable::setInt(const std::string& name, const int value){
     values[name] = ValuePtr(new IntegerValue(value));
+    cachedSize = 0;
 }
 
 void FieldTable::setInt64(const std::string& name, const int64_t value){
     values[name] = ValuePtr(new Integer64Value(value));
+    cachedSize = 0;
 }
 
 void FieldTable::setTimestamp(const std::string& name, const uint64_t value){
     values[name] = ValuePtr(new TimeValue(value));
+    cachedSize = 0;
 }
 
 void FieldTable::setUInt64(const std::string& name, const uint64_t value){
     values[name] = ValuePtr(new Unsigned64Value(value));
+    cachedSize = 0;
 }
 
 void FieldTable::setTable(const std::string& name, const FieldTable& value)
 {
     values[name] = ValuePtr(new FieldTableValue(value));
+    cachedSize = 0;
 }
 void FieldTable::setArray(const std::string& name, const Array& value)
 {
     values[name] = ValuePtr(new ArrayValue(value));
+    cachedSize = 0;
 }
 
 void FieldTable::setFloat(const std::string& name, const float value){
     values[name] = ValuePtr(new FloatValue(value));
+    cachedSize = 0;
 }
 
 void FieldTable::setDouble(const std::string& name, double value){
     values[name] = ValuePtr(new DoubleValue(value));
+    cachedSize = 0;
 }
 
 FieldTable::ValuePtr FieldTable::get(const std::string& name) const
@@ -216,6 +235,7 @@ void FieldTable::decode(Buffer& buffer){
             values[name] = ValuePtr(value);
         }    
     }
+    cachedSize = 0;
 }
 
 bool FieldTable::operator==(const FieldTable& x) const {
@@ -230,17 +250,26 @@ bool FieldTable::operator==(const FieldTable& x) const {
 
 void FieldTable::erase(const std::string& name) 
 {
-    if (values.find(name) != values.end()) 
+    if (values.find(name) != values.end()) {
         values.erase(name);
+        cachedSize = 0;
+    }
+}
+void FieldTable::clear()
+{
+    values.clear();
+    cachedSize = 0;
 }
 
 std::pair<FieldTable::ValueMap::iterator, bool> FieldTable::insert(const ValueMap::value_type& value)
 {
+    cachedSize = 0;
     return values.insert(value);
 }
 
 FieldTable::ValueMap::iterator FieldTable::insert(ValueMap::iterator position, const ValueMap::value_type& value)
 {
+    cachedSize = 0;
     return values.insert(position, value);
 }
 

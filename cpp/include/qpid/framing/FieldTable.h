@@ -56,7 +56,7 @@ class FieldTable
     typedef ValueMap::reference reference;
     typedef ValueMap::value_type value_type;
 
-    QPID_COMMON_INLINE_EXTERN FieldTable() {};
+    QPID_COMMON_EXTERN FieldTable();
     QPID_COMMON_EXTERN FieldTable(const FieldTable& ft);
     QPID_COMMON_EXTERN ~FieldTable();
     QPID_COMMON_EXTERN FieldTable& operator=(const FieldTable& ft);
@@ -109,7 +109,7 @@ class FieldTable
 
     QPID_COMMON_EXTERN std::pair <ValueMap::iterator, bool> insert(const ValueMap::value_type&);
     QPID_COMMON_EXTERN ValueMap::iterator insert(ValueMap::iterator, const ValueMap::value_type&);
-    void clear() { values.clear(); }
+    void clear();
 
     // ### Hack Alert
 
@@ -117,6 +117,7 @@ class FieldTable
 
   private:
     ValueMap values;
+    mutable uint32_t cachedSize; // if = 0 then non cached size as 0 is not a legal size
 
     QPID_COMMON_EXTERN friend std::ostream& operator<<(std::ostream& out, const FieldTable& body);
 };
