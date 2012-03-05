@@ -29,7 +29,7 @@ home = os.environ.get("QPID_TOOLS_HOME", os.path.normpath("/usr/share/qpid-tools
 sys.path.append(os.path.join(home, "python"))
 
 from qpid.messaging import Connection
-from qpidtoollibs.broker import BrokerAgent
+from qpidtoollibs import BrokerAgent
 
 usage = """
 Usage:  qpid-config [OPTIONS]

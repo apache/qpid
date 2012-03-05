@@ -30,8 +30,8 @@ from qpid.messaging import Connection
 home = os.environ.get("QPID_TOOLS_HOME", os.path.normpath("/usr/share/qpid-tools"))
 sys.path.append(os.path.join(home, "python"))
 
-from qpidtoollibs.broker import BrokerAgent
-from qpidtoollibs.disp import Display, Header, Sorter, YN, Commas, TimeLong
+from qpidtoollibs import BrokerAgent
+from qpidtoollibs import Display, Header, Sorter, YN, Commas, TimeLong
 
 
 class Config:

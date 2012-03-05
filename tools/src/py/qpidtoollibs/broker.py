@@ -95,9 +95,8 @@ class BrokerAgent(object):
       self.sess.acknowledge()
     return items
 
-  def _doNameQuery(self, class_name, object_name, package_name='org.apache.qpid.broker'):
-    query = {'_what'      : 'OBJECT',
-             '_object_id' : {'_object_name' : "%s:%s:%s" % (package_name, class_name, object_name)}}
+  def _doNameQuery(self, object_id):
+    query = {'_what'      : 'OBJECT', '_object_id' : {'_object_name' : object_id}}
     correlator = self._sendRequest('_query_request', query)
     response = self.reply_rx.fetch(10)
     if response.properties['qmf.opcode'] != '_query_response':
@@ -123,13 +122,18 @@ class BrokerAgent(object):
       objs.append(cls(self, item))
     return objs
 
-  def _getBrokerObject(self, cls, name):
-    obj = self._doNameQuery(cls.__name__.lower(), name)
+  def _getBrokerObject(self, cls, oid):
+    obj = self._doNameQuery(oid)
     if obj:
       return cls(self, obj)
     return None
 
   def _getSingleObject(self, cls):
+    #
+    # getAllBrokerObjects is used instead of getBrokerObject(Broker, 'amqp-broker') because
+    # of a bug that used to be in the broker whereby by-name queries did not return the
+    # object timestamps.
+    #
     objects = self._getAllBrokerObjects(cls)
     if objects: return objects[0]
     return None
@@ -138,11 +142,6 @@ class BrokerAgent(object):
     """
     Get the Broker object that contains broker-scope statistics and operations.
     """
-    #
-    # getAllBrokerObjects is used instead of getBrokerObject(Broker, 'amqp-broker') because
-    # of a bug that used to be in the broker whereby by-name queries did not return the
-    # object timestamps.
-    #
     return self._getSingleObject(Broker)
 
 
@@ -155,32 +154,32 @@ class BrokerAgent(object):
   def getAllConnections(self):
     return self._getAllBrokerObjects(Connection)
 
-  def getConnection(self, name):
-    return self._getBrokerObject(Connection, name)
+  def getConnection(self, oid):
+    return self._getBrokerObject(Connection, "org.apache.qpid.broker:connection:%s" % oid)
 
   def getAllSessions(self):
     return self._getAllBrokerObjects(Session)
 
-  def getSession(self, name):
-    return self._getBrokerObject(Session, name)
+  def getSession(self, oid):
+    return self._getBrokerObject(Session, "org.apache.qpid.broker:session:%s" % oid)
 
   def getAllSubscriptions(self):
     return self._getAllBrokerObjects(Subscription)
 
-  def getSubscription(self, name):
-    return self._getBrokerObject(Subscription, name)
+  def getSubscription(self, oid):
+    return self._getBrokerObject(Subscription, "org.apache.qpid.broker:subscription:%s" % oid)
 
   def getAllExchanges(self):
     return self._getAllBrokerObjects(Exchange)
 
   def getExchange(self, name):
-    return self._getBrokerObject(Exchange, name)
+    return self._getBrokerObject(Exchange, "org.apache.qpid.broker:exchange:%s" % name)
 
   def getAllQueues(self):
     return self._getAllBrokerObjects(Queue)
 
   def getQueue(self, name):
-    return self._getBrokerObject(Queue, name)
+    return self._getBrokerObject(Queue, "org.apache.qpid.broker:queue:%s" % name)
 
   def getAllBindings(self):
     return self._getAllBrokerObjects(Binding)
@@ -277,9 +276,9 @@ class BrokerAgent(object):
     """Delete an object of the specified type"""
     pass
 
-  def query(self, _type, name):
+  def query(self, _type, oid):
     """Query the current state of an object"""
-    return self._getBrokerObject(self, _type, name)
+    return self._getBrokerObject(self, _type, oid)
 
 
 class BrokerObject(object):
@@ -302,6 +301,9 @@ class BrokerObject(object):
           return full_name[colon+1:]
     return value
 
+  def getObjectId(self):
+    return self.content['_object_id']['_object_name']
+
   def getAttributes(self):
     return self.values
 
@@ -318,7 +320,7 @@ class BrokerObject(object):
     """
     Reload the property values from the agent.
     """
-    refreshed = self.broker._getBrokerObject(self.__class__, self.name)
+    refreshed = self.broker._getBrokerObject(self.__class__, self.getObjectId())
     if refreshed:
       self.content = refreshed.content
       self.values = self.content['_values']

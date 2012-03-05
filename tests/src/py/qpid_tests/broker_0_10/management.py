@@ -24,8 +24,17 @@ from threading import Condition
 from time import sleep
 import qmf.console
 import qpid.messaging
+from qpidtoollibs import BrokerAgent
 
 class ManagementTest (TestBase010):
+
+    def setup_access(self):
+        if 'broker_agent' not in self.__dict__:
+            self.conn2 = qpid.messaging.Connection(self.broker)
+            self.conn2.open()
+            self.broker_agent = BrokerAgent(self.conn2)
+        return self.broker_agent
+
     """
     Tests for the management hooks
     """
@@ -559,12 +568,18 @@ class ManagementTest (TestBase010):
         """
         Test message in/out stats for connection
         """
-        self.startQmf()
+        agent = self.setup_access()
         conn = self.connect()
         session = conn.session("stats-session")
 
         #using qmf find named session and the corresponding connection:
-        conn_qmf = self.qmf.getObjects(_class="session", name="stats-session")[0]._connectionRef_
+        conn_qmf = None
+        sessions = agent.getAllSessions()
+        for s in sessions:
+            if s.name == "stats-session":
+                conn_qmf = agent.getConnection(s.connectionRef)
+
+        assert(conn_qmf)
         
         #send a message to a queue
         session.queue_declare(queue="stats-q", exclusive=True, auto_delete=True)
