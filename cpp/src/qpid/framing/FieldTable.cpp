@@ -36,6 +36,25 @@ FieldTable::FieldTable() :
 {
 }
 
+FieldTable::FieldTable(const FieldTable& ft) :
+    cachedBytes(ft.cachedBytes),
+    cachedSize(ft.cachedSize)
+{
+    // Only copy the values if we have no raw data
+    // - copying the map is expensive and we can
+    //   reconstruct it if necessary from the raw data
+    if (!cachedBytes && !ft.values.empty()) values = ft.values;
+}
+
+FieldTable& FieldTable::operator=(const FieldTable& ft)
+{
+    FieldTable nft(ft);
+    values.swap(nft.values);
+    cachedBytes.swap(nft.cachedBytes);
+    cachedSize = nft.cachedSize;
+    return (*this);
+}
+
 uint32_t FieldTable::encodedSize() const {
     if (cachedSize != 0) {
         return cachedSize;
@@ -211,18 +230,23 @@ void FieldTable::encode(Buffer& buffer) const {
     if (cachedBytes) {
         buffer.putRawData(&cachedBytes[0], cachedSize);
     } else {
+        uint32_t p = buffer.getPosition();
         buffer.putLong(encodedSize() - 4);
         buffer.putLong(values.size());
         for (ValueMap::const_iterator i = values.begin(); i!=values.end(); ++i) {
             buffer.putShortString(i->first);
             i->second->encode(buffer);
         }
+        // Now create raw bytes in case we are used again
+        cachedSize = buffer.getPosition() - p;
+        cachedBytes = boost::shared_array<uint8_t>(new uint8_t[cachedSize]);
+        buffer.setPosition(p);
+        buffer.getRawData(&cachedBytes[0], cachedSize);
     }
 }
 
 // Decode lazily - just record the raw bytes until we need them
 void FieldTable::decode(Buffer& buffer){
-    clear();
     if (buffer.available() < 4)
         throw IllegalArgumentException(QPID_MSG("Not enough data for field table."));
     uint32_t p = buffer.getPosition();
@@ -232,6 +256,8 @@ void FieldTable::decode(Buffer& buffer){
         if ((available < len) || (available < 4))
             throw IllegalArgumentException(QPID_MSG("Not enough data for field table."));
     }
+    // Throw away previous stored values
+    values.clear();
     // Copy data into our buffer
     cachedBytes = boost::shared_array<uint8_t>(new uint8_t[len + 4]);
     cachedSize = len + 4;
@@ -260,16 +286,12 @@ void FieldTable::realDecode() const
             values[name] = ValuePtr(value);
         }
     }
-    cachedSize = len + 4;
-    // We've done the delayed decoding throw away the raw data
-    // (later on we may find a way to keep this and avoid some
-    // other allocations)
-    cachedBytes.reset();
 }
 
 void FieldTable::flushRawCache() const
 {
-    cachedBytes.reset();
+    // Avoid recreating shared array unless we actually have one.
+    if (cachedBytes) cachedBytes.reset();
     cachedSize = 0;
 }
 
