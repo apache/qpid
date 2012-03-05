@@ -36,47 +36,55 @@ import org.slf4j.LoggerFactory;
 
 public abstract class QpidDestination implements Destination, Referenceable
 {
+    public enum Type {QUEUE, TOPIC};
+
     private static final Logger _logger = LoggerFactory.getLogger(QpidDestination.class);
     private static final DestSyntax defaultDestSyntax;
     private DestSyntax _destSyntax = DestSyntax.ADDR;
-    
+
+    protected final Type type;
     protected String destinationString;
     protected Address address;
+
+    protected QpidDestination(Type type)
+    {
+        this.type = type;
+    }
 
     public String getDestinationString()
     {
         return destinationString;
     }
-    
+
     public void setDestinationString(String str) throws JMSException
     {
     	if (destinationString != null)
     	{
-    		throw new javax.jms.IllegalStateException("Once an address string is set, it cannot be set again");
+            throw new javax.jms.IllegalStateException("Once a destination string is set, it cannot be changed");
     	}
         destinationString = str;
         parseDestinationString(str);
     }
-    
+
     protected void parseDestinationString(String str) throws JMSException
     {
         _destSyntax = getDestType(str);
         str = stripSyntaxPrefix(str);
-        
+
         if (_logger.isDebugEnabled())
         {
         	_logger.debug("Based on " + str + " the selected destination syntax is " + _destSyntax);
         }
-        
+
         try 
         {
 			if (_destSyntax == DestSyntax.BURL)
 			{    
-				address = DestinationStringParser.parseAddressString(str);     
+				address = DestinationStringParser.parseAddressString(str,type);
 			}
 			else
 			{
-				address = DestinationStringParser.parseBURLString(str);  
+				address = DestinationStringParser.parseBURLString(str,type);
 			}
 		}
         catch (AddressException e)
@@ -85,9 +93,9 @@ public abstract class QpidDestination implements Destination, Referenceable
 			ex.initCause(e);
 			ex.setLinkedException(e);
 			throw ex;
-		}        
+		}
     }
-    
+
     protected Address getAddress()
     {
     	return address;

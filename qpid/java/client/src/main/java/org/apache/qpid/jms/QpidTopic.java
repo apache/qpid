@@ -23,18 +23,25 @@ package org.apache.qpid.jms;
 import javax.jms.JMSException;
 import javax.jms.Topic;
 
+import org.apache.qpid.jms.QpidDestination.Type;
+
 public class QpidTopic extends QpidDestination implements Topic 
 {
+	public QpidTopic()
+	{
+		super(Type.TOPIC);
+	}
 
 	public QpidTopic(String str) throws JMSException
 	{
+		super(Type.TOPIC);
 		setDestinationString(str);
 	}
-	
+
 	@Override
 	public String getTopicName() throws JMSException 
 	{
-		return address.getSubject() == null ? "" : address.getSubject();
+        return address.getSubject() == null ? "" : address.getSubject();
 	}
 
 }

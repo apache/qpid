@@ -25,15 +25,20 @@ import javax.jms.Queue;
 
 public class QpidQueue extends QpidDestination implements Queue 
 {
+	public QpidQueue()
+	{
+		super(Type.QUEUE);
+	}
+
 	public QpidQueue(String str) throws JMSException
 	{
-		setDestinationString(str);
+		super(Type.QUEUE);
+        setDestinationString(str);
 	}
 
 	@Override
 	public String getQueueName() throws JMSException 
 	{
-		return address.getName();
+       return address.getName();
 	}
-
 }
