@@ -159,7 +159,7 @@ void Exchange::doRoute(Deliverable& msg, ConstBindingList b)
 void Exchange::routeIVE(){
     if (ive && lastMsg.get()){
         DeliverableMessage dmsg(lastMsg);
-        route(dmsg, lastMsg->getRoutingKey(), lastMsg->getApplicationHeaders());
+        route(dmsg);
     }
 }
 
@@ -402,9 +402,9 @@ void Exchange::setProperties(const boost::intrusive_ptr<Message>& msg) {
 
 bool Exchange::routeWithAlternate(Deliverable& msg)
 {
-    route(msg, msg.getMessage().getRoutingKey(), msg.getMessage().getApplicationHeaders());
+    route(msg);
     if (!msg.delivered && alternate) {
-        alternate->route(msg, msg.getMessage().getRoutingKey(), msg.getMessage().getApplicationHeaders());
+        alternate->route(msg);
     }
     return msg.delivered;
 }

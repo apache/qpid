@@ -226,7 +226,8 @@ void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionH
 }
 
 // FIXME aconway 2011-12-02: error handling in route.
-void BrokerReplicator::route(Deliverable& msg, const string& /*key*/, const framing::FieldTable* headers) {
+void BrokerReplicator::route(Deliverable& msg) {
+    const framing::FieldTable* headers = msg.getMessage().getApplicationHeaders();
     Variant::List list;
     try {
         if (!isQMFv2(msg.getMessage()) || !headers)

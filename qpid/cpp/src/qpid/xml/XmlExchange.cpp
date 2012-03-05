@@ -283,8 +283,10 @@ bool XmlExchange::matches(Query& query, Deliverable& msg, const qpid::framing::F
 // But for very large messages, if all these queries are on the first part of the data,
 // it could still be a big win.
 
-void XmlExchange::route(Deliverable& msg, const string& routingKey, const FieldTable* args)
+void XmlExchange::route(Deliverable& msg)
 {
+    const string& routingKey = msg.getMessage().getRoutingKey();
+    const FieldTable* args = msg.getMessage().getApplicationHeaders();
     PreRoute pr(msg, this);
     try {
         XmlBinding::vector::ConstPtr p;

@@ -153,8 +153,9 @@ bool DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, c
     return true;
 }
 
-void DirectExchange::route(Deliverable& msg, const string& routingKey, const FieldTable* /*args*/)
+void DirectExchange::route(Deliverable& msg)
 {
+    const string& routingKey = msg.getMessage().getRoutingKey();
     PreRoute pr(msg, this);
     ConstBindingList b;
     {
