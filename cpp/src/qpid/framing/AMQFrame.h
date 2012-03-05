@@ -43,8 +43,7 @@ class QPID_COMMON_CLASS_EXTERN AMQFrame : public AMQDataBlock
     ChannelId getChannel() const { return channel; }
     void setChannel(ChannelId c) { channel = c; }
 
-    AMQBody* getBody() { return body.get(); }
-    const AMQBody* getBody() const { return body.get(); }
+    AMQBody* getBody() const { return body.get(); }
 
     AMQMethodBody* getMethod() { return getBody() ? getBody()->getMethod() : 0; }
     const AMQMethodBody* getMethod() const { return getBody() ? getBody()->getMethod() : 0; }
