@@ -189,14 +189,14 @@ public class Broker
                 bindAddr = serverConfig.getBind();
             }
 
-            InetAddress bindAddress = null;
+            InetAddress bindAddress;
             if (bindAddr.equals(WILDCARD_ADDRESS))
             {
-                bindAddress = new InetSocketAddress(0).getAddress();
+                bindAddress = InetAddress.getByName("::");
             }
             else
             {
-                bindAddress = InetAddress.getByAddress(parseIP(bindAddr));
+                bindAddress = InetAddress.getByName(bindAddr);
             }
 
             final AmqpProtocolVersion defaultSupportedProtocolReply = serverConfig.getDefaultSupportedProtocolReply();
@@ -359,34 +359,6 @@ public class Broker
                 throw new InitException("Invalid management (connector server) port: " + connectorServerPort, null);
             }
         }
-    }
-
-    private byte[] parseIP(String address) throws Exception
-    {
-        char[] literalBuffer = address.toCharArray();
-        int byteCount = 0;
-        int currByte = 0;
-        byte[] ip = new byte[IPV4_ADDRESS_LENGTH];
-        for (int i = 0; i < literalBuffer.length; i++)
-        {
-            char currChar = literalBuffer[i];
-            if ((currChar >= '0') && (currChar <= '9'))
-            {
-                currByte = (currByte * 10) + (Character.digit(currChar, 10) & 0xFF);
-            }
-
-            if (currChar == IPV4_LITERAL_SEPARATOR || (i + 1 == literalBuffer.length))
-            {
-                ip[byteCount++] = (byte) currByte;
-                currByte = 0;
-            }
-        }
-
-        if (byteCount != 4)
-        {
-            throw new Exception("Invalid IP address: " + address);
-        }
-        return ip;
     }
 
     private void configureLogging(File logConfigFile, long logWatchTime) throws InitException, IOException
