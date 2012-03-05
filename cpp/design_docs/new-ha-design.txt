@@ -257,20 +257,24 @@ Broker startup with store:
   - When connecting as backup, check UUID matches primary, shut down if not.
 - Empty: start ok, no UUID check with primary.
 
-** Current Limitations
+* Current Limitations
 
 (In no particular order at present)
 
 For message replication:
 
-LM1 - The re-synchronisation does not handle the case where a newly elected
-primary is *behind* one of the other backups. To address this I propose
-a new event for restting the sequence that the new primary would send
-out on detecting that a replicating browser is ahead of it, requesting
-that the replica revert back to a particular sequence number. The
-replica on receiving this event would then discard (i.e. dequeue) all
-the messages ahead of that sequence number and reset the counter to
-correctly sequence any subsequently delivered messages.
+LM1a - On failover, backups delete their queues and download the full queue state from the
+primary.  There was code to use messags already on the backup for re-synchronisation, it
+was removed in early development (r1214490) to simplify the logic while getting basic
+replication working. It needs to be re-introduced.
+
+LM1b - This re-synchronisation does not handle the case where a newly elected primary is *behind*
+one of the other backups. To address this I propose a new event for restting the sequence
+that the new primary would send out on detecting that a replicating browser is ahead of
+it, requesting that the replica revert back to a particular sequence number. The replica
+on receiving this event would then discard (i.e. dequeue) all the messages ahead of that
+sequence number and reset the counter to correctly sequence any subsequently delivered
+messages.
 
 LM2 - There is a need to handle wrap-around of the message sequence to avoid
 confusing the resynchronisation where a replica has been disconnected
@@ -349,6 +353,12 @@ LC6 - The events and query responses are not fully synchronized.
       It is not possible to miss a create event and yet not to have
       the object in question in the query response however.
 
+LC7 Federated links from the primary will be lost in failover, they will not be re-connected on
+the new primary. Federation links to the primary can fail over.
+
+LC8 Only plain FIFO queues can be replicated. LVQs and ring queues are not yet supported.
+
+LC9 The "last man standing" feature of the old cluster is not available.
 
 * Benefits compared to previous cluster implementation.
 
@@ -359,58 +369,3 @@ LC6 - The events and query responses are not fully synchronized.
 - Can take advantage of resource manager features, e.g. virtual IP addresses.
 - Fewer inconsistent errors (store failures) that can be handled without killing brokers.
 - Improved performance
-* User Documentation Notes
-
-Notes to seed initial user documentation. Loosely tracking the implementation,
-some points mentioned in the doc may not be implemented yet.
-
-** High Availability Overview
-
-HA is implemented using a 'hot standby' approach. Clients are directed
-to a single "primary" broker. The primary executes client requests and
-also replicates them to one or more "backup" brokers. If the primary
-fails, one of the backups takes over the role of primary carrying on
-from where the primary left off. Clients will fail over to the new
-primary automatically and continue their work.
-
-TODO: at least once, deduplication.
-
-** Enabling replication on the client.
-
-To enable replication set the qpid.replicate argument when creating a
-queue or exchange.
-
-This can have one of 3 values
-- none: the object is not replicated
-- configuration: queues, exchanges and bindings are replicated but messages are not.
-- messages: configuration and messages are replicated.
-
-TODO: examples
-TODO: more options for default value of qpid.replicate
-
-A HA client connection has multiple addresses, one for each broker. If
-the it fails to connect to an address, or the connection breaks,
-it will automatically fail-over to another address.
-
-Only the primary broker accepts connections, the backup brokers
-redirect connection attempts to the primary. If the primary fails, one
-of the backups is promoted to primary and clients fail-over to the new
-primary.
-
-TODO: using multiple-address connections, examples c++, python, java.
-
-TODO: dynamic cluster addressing?
-
-TODO: need de-duplication.
-
-** Enabling replication on the broker.
-
-Network topology: backup links, separate client/broker networks.
-Describe failover mechanisms.
-- Client view: URLs, failover, exclusion & discovery.
-- Broker view: similar.
-Role of rmganager
-
-** Configuring rgmanager
-
-** Configuring qpidd

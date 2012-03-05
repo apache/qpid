@@ -113,15 +113,15 @@ template <class T> bool match(Variant::Map& schema) {
     return T::match(schema[CLASS_NAME], schema[PACKAGE_NAME]);
 }
 
-enum ReplicateLevel { RL_NONE=0, RL_CONFIGURATION, RL_MESSAGES };
+enum ReplicateLevel { RL_NONE=0, RL_CONFIGURATION, RL_ALL };
 const string S_NONE="none";
 const string S_CONFIGURATION="configuration";
-const string S_MESSAGES="messages";
+const string S_ALL="all";
 
 ReplicateLevel replicateLevel(const string& level) {
     if (level == S_NONE) return RL_NONE;
     if (level == S_CONFIGURATION) return RL_CONFIGURATION;
-    if (level == S_MESSAGES) return RL_MESSAGES;
+    if (level == S_ALL) return RL_ALL;
     throw Exception("Invalid value for "+QPID_REPLICATE+": "+level);
 }
 
@@ -491,7 +491,7 @@ void BrokerReplicator::doResponseBind(Variant::Map& values) {
 }
 
 void BrokerReplicator::startQueueReplicator(const boost::shared_ptr<Queue>& queue) {
-    if (replicateLevel(queue->getSettings()) == RL_MESSAGES) {
+    if (replicateLevel(queue->getSettings()) == RL_ALL) {
         boost::shared_ptr<QueueReplicator> qr(new QueueReplicator(queue, link));
         broker.getExchanges().registerExchange(qr);
         qr->activate();

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- 
+
  Licensed to the Apache Software Foundation (ASF) under one
  or more contributor license agreements.  See the NOTICE file
  distributed with this work for additional information
@@ -8,16 +8,16 @@
  to you under the Apache License, Version 2.0 (the
  "License"); you may not use this file except in compliance
  with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
  Unless required by applicable law or agreed to in writing,
  software distributed under the License is distributed on an
  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  KIND, either express or implied.  See the License for the
  specific language governing permissions and limitations
  under the License.
- 
+
 -->
 
 <section id="section-Managing-CPP-Broker">
@@ -37,6 +37,8 @@
             and call any management actions on the broker
             </para></listitem>
             <listitem><para>qpid-printevents - used to receive and print QMF events
+            </para></listitem>
+            <listitem><para>qpid-ha - used to interact with the High Availability module
             </para></listitem>
           </itemizedlist>
 
@@ -119,10 +121,10 @@ Total Exchanges: 6
 $ qpid-config queues
 Queue Name                                  Attributes
 =================================================================
-pub_start                                  
-pub_done                                   
-sub_ready                                  
-sub_done                                   
+pub_start
+pub_done
+sub_ready
+sub_done
 perftest0                                   --durable
 reply-dhcp-100-18-254.bos.redhat.com.20713  auto-del excl
 topic-dhcp-100-18-254.bos.redhat.com.20713  auto-del excl
@@ -459,4 +461,25 @@ Options:
             You get the idea... have fun!
           </para>
 <!--h3--></section>
+<section>
+  <title>Using qpid-ha</title>
+  <para>This utility lets you monitor and control the activity of the clustering behavior provided by the HA module.
+  </para>
+  <programlisting>
+    <![CDATA[
+qpid-ha --help
+usage: qpid-ha <command> [<arguments>]
+
+Commands are:
+
+  ready        Test if a backup broker is ready.
+  query        Print HA configuration settings.
+  set          Set HA configuration settings.
+  promote      Promote broker from backup to primary.
+  replicate    Set up replication from <queue> on <remote-broker> to <queue> on the current broker.
+
+For help with a command type: qpid-ha <command> --help
+]]>
+  </programlisting>
+</section>
 </section>
