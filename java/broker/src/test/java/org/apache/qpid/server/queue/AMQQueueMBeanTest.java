@@ -27,6 +27,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.server.AMQChannel;
@@ -45,6 +46,7 @@ import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.TabularData;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -457,15 +459,16 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
             currentMessage.enqueue(qs);
 
             // route header
-            MessageMetaData mmd = currentMessage.headersReceived();
-            currentMessage.setStoredMessage(getMessageStore().addMessage(mmd));
+            MessageMetaData mmd = currentMessage.headersReceived(System.currentTimeMillis());
 
-            // Add the body so we have something to test later
-            currentMessage.addContentBodyFrame(
-                    getSession().getMethodRegistry()
-                                                       .getProtocolVersionMethodConverter()
-                                                       .convertToContentChunk(
-                                                       new ContentBody(new byte[(int) MESSAGE_SIZE])));
+            // Add the message to the store so we have something to test later
+            currentMessage.setStoredMessage(getMessageStore().addMessage(mmd));
+            ContentChunk chunk = getSession().getMethodRegistry()
+                                               .getProtocolVersionMethodConverter()
+                                               .convertToContentChunk(
+                                               new ContentBody(new byte[(int) MESSAGE_SIZE]));
+            currentMessage.addContentBodyFrame(chunk);
+            currentMessage.getStoredMessage().addContent(0, ByteBuffer.wrap(chunk.getData()));
 
             AMQMessage m = new AMQMessage(currentMessage.getStoredMessage());
             for(BaseQueue q : currentMessage.getDestinationQueues())
