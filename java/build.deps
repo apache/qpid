@@ -43,11 +43,6 @@ slf4j-log4j=lib/slf4j-log4j12-1.6.1.jar
 
 xalan=lib/xalan-2.7.0.jar
 
-jetty=lib/jetty-6.1.14.jar
-jetty-util=lib/jetty-util-6.1.14.jar
-jetty-servlet-tester=lib/jetty-servlet-tester-6.1.14.jar
-servlet-api=lib/servlet-api.jar
-
 felix-main=lib/org.apache.felix.main-2.0.5.jar
 
 felix.libs=${felix-main}
@@ -65,7 +60,6 @@ broker-plugins.libs=${felix.libs} ${log4j} ${commons-configuration.libs}
 
 junit-toolkit.libs=${log4j} ${junit} ${slf4j-api}
 test.libs=${slf4j-log4j} ${junit-toolkit.libs}
-testkit.libs=${log4j}
 
 ibm-icu=lib/com.ibm.icu_3.8.1.v20080530.jar
 ecl-core-jface=lib/org.eclipse.jface_3.4.1.M20080827-2000.jar
@@ -134,7 +128,6 @@ testkit.test.libs=${test.libs}
 systests.libs=${test.libs}
 
 broker-plugins.test.libs=${test.libs} 
-broker-plugins-experimental-info.test.libs=${test.libs} ${servlet-api} ${jetty} ${jetty-util} ${jetty-servlet-tester}
 
 management-eclipse-plugin.test.libs=${test.libs}
 management-common.test.libs=${test.libs}
