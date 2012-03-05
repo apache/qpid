@@ -30,7 +30,7 @@ TransferContent::TransferContent(const std::string& data, const std::string& key
 }
 
 
-AMQHeaderBody TransferContent::getHeader() const
+const AMQHeaderBody& TransferContent::getHeader() const
 {
     return header;
 }
