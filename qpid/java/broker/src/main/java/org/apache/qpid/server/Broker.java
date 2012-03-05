@@ -192,7 +192,7 @@ public class Broker
             InetAddress bindAddress;
             if (bindAddr.equals(WILDCARD_ADDRESS))
             {
-                bindAddress = new InetSocketAddress(0).getAddress();
+                bindAddress = null;
             }
             else
             {
@@ -205,18 +205,21 @@ public class Broker
             {
                 for(int port : ports)
                 {
+                    final InetSocketAddress inetSocketAddress = new InetSocketAddress(bindAddress, port);
+
                     final Set<AmqpProtocolVersion> supported =
                                     getSupportedVersions(port, exclude_0_10, exclude_0_9_1, exclude_0_9, exclude_0_8, serverConfig);
 
                     final NetworkTransportConfiguration settings =
-                                    new ServerNetworkTransportConfiguration(serverConfig, port, bindAddress.getHostName(), Transport.TCP);
+                                    new ServerNetworkTransportConfiguration(serverConfig, inetSocketAddress, Transport.TCP);
 
                     final IncomingNetworkTransport transport = Transport.getIncomingTransportInstance();
                     final MultiVersionProtocolEngineFactory protocolEngineFactory =
                                     new MultiVersionProtocolEngineFactory(supported, defaultSupportedProtocolReply);
 
                     transport.accept(settings, protocolEngineFactory, null);
-                    ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, port),
+
+                    ApplicationRegistry.getInstance().addAcceptor(inetSocketAddress,
                                     new QpidAcceptor(transport,"TCP"));
                     CurrentActor.get().message(BrokerMessages.LISTENING("TCP", port));
                 }
@@ -231,17 +234,20 @@ public class Broker
 
                 for(int sslPort : sslPorts)
                 {
+                    final InetSocketAddress inetSocketAddress = new InetSocketAddress(bindAddress, sslPort);
+
                     final Set<AmqpProtocolVersion> supported =
                                     getSupportedVersions(sslPort, exclude_0_10, exclude_0_9_1, exclude_0_9, exclude_0_8, serverConfig);
                     final NetworkTransportConfiguration settings =
-                        new ServerNetworkTransportConfiguration(serverConfig, sslPort, bindAddress.getHostName(), Transport.TCP);
+                        new ServerNetworkTransportConfiguration(serverConfig, inetSocketAddress, Transport.TCP);
 
                     final IncomingNetworkTransport transport = Transport.getIncomingTransportInstance();
                     final MultiVersionProtocolEngineFactory protocolEngineFactory =
                                     new MultiVersionProtocolEngineFactory(supported, defaultSupportedProtocolReply);
 
                     transport.accept(settings, protocolEngineFactory, sslContext);
-                    ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, sslPort),
+
+                    ApplicationRegistry.getInstance().addAcceptor(inetSocketAddress,
                             new QpidAcceptor(transport,"TCP"));
                     CurrentActor.get().message(BrokerMessages.LISTENING("TCP/SSL", sslPort));
                 }
