@@ -143,7 +143,7 @@ public class AckTest extends InternalBrokerBaseCase
             ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
             qs.add(_queue);
             msg.enqueue(qs);
-            MessageMetaData mmd = msg.headersReceived();
+            MessageMetaData mmd = msg.headersReceived(System.currentTimeMillis());
             final StoredMessage storedMessage = _messageStore.addMessage(mmd);
             msg.setStoredMessage(storedMessage);
             final AMQMessage message = new AMQMessage(storedMessage);

@@ -123,7 +123,7 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
 
     protected int route(Message m) throws AMQException
     {
-        m.getIncomingMessage().headersReceived();
+        m.getIncomingMessage().headersReceived(System.currentTimeMillis());
         m.route(exchange);
         if(m.getIncomingMessage().allContentReceived())
         {

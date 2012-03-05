@@ -600,7 +600,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
         currentMessage.setExpiration();
 
-        MessageMetaData mmd = currentMessage.headersReceived();
+        MessageMetaData mmd = currentMessage.headersReceived(System.currentTimeMillis());
         currentMessage.setStoredMessage(getVirtualHost().getMessageStore().addMessage(mmd));
         currentMessage.getStoredMessage().flushToStore();
         currentMessage.route();

@@ -35,6 +35,8 @@ import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 import javax.management.Notification;
+
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 /** This class tests all the alerts an AMQQueue can throw based on threshold values of different parameters */
@@ -300,7 +302,7 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
             messages[i] = message(false, size);
             ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
             qs.add(getQueue());
-            metaData[i] = messages[i].headersReceived();
+            metaData[i] = messages[i].headersReceived(System.currentTimeMillis());
             messages[i].setStoredMessage(getMessageStore().addMessage(metaData[i]));
 
             messages[i].enqueue(qs);
@@ -309,30 +311,29 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
 
         for (int i = 0; i < messageCount; i++)
         {
-            messages[i].addContentBodyFrame(
-                    new ContentChunk()
-                    {
+            ContentChunk contentChunk = new ContentChunk()
+            {
+                private byte[] _data = new byte[(int)size];
 
-                        private byte[] _data = new byte[(int)size];
+                public int getSize()
+                {
+                    return (int) size;
+                }
 
-                        public int getSize()
-                        {
-                            return (int) size;
-                        }
+                public byte[] getData()
+                {
+                    return _data;
+                }
 
-                        public byte[] getData()
-                        {
-                            return _data;
-                        }
+                public void reduceToFit()
+                {
+                }
+            };
 
-                        public void reduceToFit()
-                        {
-
-                        }
-                    });
+            messages[i].addContentBodyFrame(contentChunk);
+            messages[i].getStoredMessage().addContent(0, ByteBuffer.wrap(contentChunk.getData()));
 
             getQueue().enqueue(new AMQMessage(messages[i].getStoredMessage()));
-
         }
     }
 
