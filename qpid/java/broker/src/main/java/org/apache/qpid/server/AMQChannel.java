@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -295,26 +296,9 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
 
             _currentMessage.setExpiration();
 
+            _currentMessage.headersReceived(getProtocolSession().getLastReceivedTime());
 
-            MessageMetaData mmd = _currentMessage.headersReceived(getProtocolSession().getLastReceivedTime());
-            final StoredMessage<MessageMetaData> handle = _messageStore.addMessage(mmd);
-            _currentMessage.setStoredMessage(handle);
-
-            routeCurrentMessage();
-
-
-            _transaction.addPostTransactionAction(new ServerTransaction.Action()
-            {
-
-                public void postCommit()
-                {
-                }
-
-                public void onRollback()
-                {
-                    handle.remove();
-                }
-            });
+            _currentMessage.route();
 
             deliverCurrentMessageIfComplete();
         }
@@ -346,17 +330,41 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
                         {
                             _actor.message(ExchangeMessages.DISCARDMSG(_currentMessage.getExchange().asString(), _currentMessage.getRoutingKey()));
                         }
-
                     }
                     else
                     {
+                        final StoredMessage<MessageMetaData> handle = _messageStore.addMessage(_currentMessage.getMessageMetaData());
+                        _currentMessage.setStoredMessage(handle);
+                        int bodyCount = _currentMessage.getBodyCount();
+                        if(bodyCount > 0)
+                        {
+                            long bodyLengthReceived = 0;
+                            for(int i = 0 ; i < bodyCount ; i++)
+                            {
+                                ContentChunk contentChunk = _currentMessage.getContentChunk(i);
+                                handle.addContent((int)bodyLengthReceived, ByteBuffer.wrap(contentChunk.getData()));
+                                bodyLengthReceived += contentChunk.getSize();
+                            }
+                        }
+
+                        _transaction.addPostTransactionAction(new ServerTransaction.Action()
+                        {
+                            public void postCommit()
+                            {
+                            }
+
+                            public void onRollback()
+                            {
+                                handle.remove();
+                            }
+                        });
+
                         _transaction.enqueue(destinationQueues, _currentMessage, new MessageDeliveryAction(_currentMessage, destinationQueues), getProtocolSession().getLastReceivedTime());
                         incrementOutstandingTxnsIfNecessary();
-			            updateTransactionalActivity();
+                        updateTransactionalActivity();
+                        _currentMessage.getStoredMessage().flushToStore();
                     }
                 }
-                _currentMessage.getStoredMessage().flushToStore();
-
             }
             finally
             {
@@ -383,9 +391,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
 
         try
         {
-
-            // returns true iff the message was delivered (i.e. if all data was
-            // received
             final ContentChunk contentChunk =
                     _session.getMethodRegistry().getProtocolVersionMethodConverter().convertToContentChunk(contentBody);
 
@@ -407,11 +412,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
             _currentMessage = null;
             throw e;
         }
-    }
-
-    protected void routeCurrentMessage() throws AMQException
-    {
-        _currentMessage.route();
     }
 
     public long getNextDeliveryTag()

@@ -633,7 +633,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         // Send persistent message
 
         qs.add(_queue);
-        MessageMetaData metaData = msg.headersReceived();
+        MessageMetaData metaData = msg.headersReceived(System.currentTimeMillis());
         StoredMessage handle = _store.addMessage(metaData);
         msg.setStoredMessage(handle);
 
