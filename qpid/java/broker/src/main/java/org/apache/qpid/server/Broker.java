@@ -192,7 +192,7 @@ public class Broker
             InetAddress bindAddress;
             if (bindAddr.equals(WILDCARD_ADDRESS))
             {
-                bindAddress = InetAddress.getByName("::");
+                bindAddress = new InetSocketAddress(0).getAddress();
             }
             else
             {
