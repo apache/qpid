@@ -24,6 +24,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -34,6 +35,8 @@ public interface Accessor
     public Integer getInt(String name);
     public Long getLong(String name);
     public String getString(String name);
+    public Map<String,Object> getMap(String name);
+    public List<Object> getList(String name);
     
     static class SystemPropertyAccessor implements Accessor
     {
@@ -56,6 +59,10 @@ public interface Accessor
         {
             return System.getProperty(name);
         }
+
+        public Map<String,Object> getMap(String name){ throw new UnsupportedOperationException("Not supported by system properties"); }
+
+        public List<Object> getList(String name){ throw new UnsupportedOperationException("Not supported by system properties"); }
     }
     
     static class MapAccessor implements Accessor
@@ -147,6 +154,30 @@ public interface Accessor
                 return null;
             }
         }
+
+        public Map<String,Object> getMap(String name)
+        {
+            if (source != null && source.containsKey(name) && source.get(name) instanceof Map)
+            {
+                return (Map<String,Object>)source.get(name);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public List<Object> getList(String name)
+        {
+            if (source != null && source.containsKey(name) && source.get(name) instanceof List)
+            {
+                return (List<Object>)source.get(name);
+            }
+            else
+            {
+                return null;
+            }
+        }
     }  
     
     static class PropertyFileAccessor extends MapAccessor
@@ -167,7 +198,11 @@ public interface Accessor
             setSource(props);
         }
 
+        @Override
+        public Map getMap(String name){ throw new UnsupportedOperationException("Not supported by property file"); }
 
+        @Override
+        public List getList(String name){ throw new UnsupportedOperationException("Not supported by property file"); }
     }
     
     static class CombinedAccessor implements Accessor
@@ -226,6 +261,30 @@ public interface Accessor
             }
             return null;
         }
+
+        public Map<String,Object> getMap(String name)
+        {
+            for (Accessor accessor: accessors)
+            {
+                if (accessor.getMap(name) != null && accessor.getMap(name) instanceof Map)
+                {
+                    return accessor.getMap(name);
+                }
+            }
+            return null;
+        }
+
+        public List<Object> getList(String name)
+        {
+            for (Accessor accessor: accessors)
+            {
+                if (accessor.getMap(name) != null && accessor.getList(name) instanceof List)
+                {
+                    return accessor.getList(name);
+                }
+            }
+            return null;
+        }
     }
     
     static class ValidationAccessor implements Accessor
@@ -274,5 +333,96 @@ public interface Accessor
             }
             return v;
         }
+
+        public Map<String,Object> getMap(String name){ throw new UnsupportedOperationException("Validator interface does not support maps"); }
+
+        public List<Object> getList(String name){ throw new UnsupportedOperationException("Validator interface does not support lists"); }
     }
+
+    /* Property names as passed in the form
+    * level_1_prop/level_2_prop/.../level_n_prop
+    * All property name upto level_n-1_prop should return
+    * a map or null
+    */
+   static class NestedMapAccessor implements Accessor
+   {
+       protected Map<Object,Object> baseMap;
+
+       public NestedMapAccessor(Map<Object,Object> map)
+       {
+           baseMap = map;
+       }
+
+       private String getKey(String name)
+       {
+           if (name.lastIndexOf("/") > -1)
+           {
+               return name.substring(name.lastIndexOf("/")+1);
+           }
+           else
+           {
+               return name;
+           }
+       }
+
+       private MapAccessor mapIterator(String name)
+       {
+           if (name.lastIndexOf("/") == -1)
+           {
+               return new MapAccessor(baseMap);
+           }
+
+           String[] paths = name.substring(0,name.lastIndexOf("/")).split("/");
+           Map map = baseMap == null ? Collections.EMPTY_MAP : baseMap;
+
+           for (String path:paths)
+           {
+
+               Object obj = map.get(path);
+               if (obj == null)
+               {
+                   return new MapAccessor(null);
+               }
+               else if (obj instanceof Map)
+               {
+                   map = (Map)obj;
+               }
+               else
+               {
+                   throw new IllegalArgumentException(path + " doesn't retrieve another map");
+               }
+           }
+           return new MapAccessor(map);
+       }
+
+       public Boolean getBoolean(String name)
+       {
+           return mapIterator(name).getBoolean(getKey(name));
+       }
+
+       public Integer getInt(String name)
+       {
+           return mapIterator(name).getInt(getKey(name));
+       }
+
+       public Long getLong(String name)
+       {
+           return mapIterator(name).getLong(getKey(name));
+       }
+
+       public String getString(String name)
+       {
+           return mapIterator(name).getString(getKey(name));
+       }
+
+       public Map<String,Object> getMap(String name)
+       {
+           return mapIterator(name).getMap(getKey(name));
+       }
+
+       public List<Object> getList(String name)
+       {
+           return mapIterator(name).getList(getKey(name));
+       }
+   }
 }
