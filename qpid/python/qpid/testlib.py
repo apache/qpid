@@ -30,7 +30,7 @@ from qpid.harness import Skipped
 from qpid.exceptions import VersionError
 
 import qpid.messaging
-import qpidtoollibs.broker
+from qpidtoollibs import BrokerAgent
 
 class TestBase(unittest.TestCase):
     """Base class for Qpid test cases.
@@ -203,7 +203,7 @@ class TestBase010(unittest.TestCase):
         if 'broker_conn' not in self.__dict__:
             self.broker_conn = qpid.messaging.Connection(str(self.broker))
             self.broker_conn.open()
-            self.broker_access = qpidtoollibs.broker.BrokerAgent(self.broker_conn)
+            self.broker_access = BrokerAgent(self.broker_conn)
 
     def connect(self, host=None, port=None):
         url = self.broker

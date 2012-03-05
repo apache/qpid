@@ -24,7 +24,7 @@ from qpid.datatypes import uuid4
 from brokertest import *
 from threading import Thread, Lock, Condition
 from logging import getLogger, WARN, ERROR, DEBUG
-from qpidtoollibs.broker import BrokerAgent
+from qpidtoollibs import BrokerAgent
 
 log = getLogger("qpid.ha-tests")
 

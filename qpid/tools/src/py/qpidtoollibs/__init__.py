@@ -16,3 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+
+from qpidtoollibs.broker import *
+from qpidtoollibs.disp import *
+
