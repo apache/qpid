@@ -19,7 +19,7 @@
 # under the License.
 #
 
-import qmf.console, optparse, sys, time
+import qmf.console, optparse, sys, time, os
 from qpid.management import managementChannel, managementClient
 from qpid.messaging import Connection
 from qpid.messaging import Message as QpidMessage
@@ -125,12 +125,12 @@ class QueryCmd(Command):
             print "%-20s %s"%(x[0], x[1])
 QueryCmd()
 
-def print_usage(name):
-    print "usage: %s <command> [<arguments>]\n\nCommands are:\n"%name
+def print_usage(prog):
+    print "usage: %s <command> [<arguments>]\n\nCommands are:\n"%prog
     for name, command in Command.commands.iteritems():
         help = command.help
         print "  %-12s %s."%(name, help.split(".")[0])
-    print "\nFor help with a command: %s <command> --help\n"%name
+    print "\nFor help with a command type: %s <command> --help\n"%prog
 
 def find_command(args):
     """Find a command among the arguments and options"""
@@ -148,7 +148,7 @@ def main(argv):
             return 1
         command = find_command(args)
         if not command:
-            print_usage(argv[0]);
+            print_usage(os.path.basename(argv[0]));
             return 1;
         if command.execute(): return 1
     except Exception, e:

@@ -20,7 +20,7 @@
 
 -->
 
-<book>
+<book xmlns:xi="http://www.w3.org/2001/XInclude">
   <title>AMQP Messaging Broker (Implemented in C++)</title>
   <preface>
     <title>Introduction</title>
@@ -46,21 +46,20 @@
       Running the AMQP Messaging Broker
     </title>
 
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Running-CPP-Broker.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Cheat-Sheet-for-configuring-Queue-Options.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Cheat-Sheet-for-configuring-Exchange-Options.xml"/>
-
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Using-Broker-Federation.xml"/>
-
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Security.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="LVQ.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="queue-state-replication.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Starting-a-cluster.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="producer-flow-control.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP-Compatibility.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid-Interoperability-Documentation.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Using-message-groups.xml"/>
-
+    <xi:include href="Running-CPP-Broker.xml"/>
+    <xi:include href="Cheat-Sheet-for-configuring-Queue-Options.xml"/>
+    <xi:include href="Cheat-Sheet-for-configuring-Exchange-Options.xml"/>
+    <xi:include href="Using-Broker-Federation.xml"/>
+    <xi:include href="Security.xml"/>
+    <xi:include href="LVQ.xml"/>
+    <xi:include href="queue-state-replication.xml"/>
+    <xi:include href="Active-Active-Cluster.xml"/>
+    <xi:include href="producer-flow-control.xml"/>
+    <xi:include href="AMQP-Compatibility.xml"/>
+    <xi:include href="Qpid-Interoperability-Documentation.xml"/>
+    <xi:include href="Using-message-groups.xml"/>
+    <xi:include href="Active-Passive-Cluster.xml"/>
+    <xi:include href="HA-Queue-Replication.xml"/>
 </chapter>
 
 
@@ -69,8 +68,8 @@
       Managing the AMQP Messaging Broker
     </title>
 
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Managing-CPP-Broker.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid-Management-Framework.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="QMF-Python-Console-Tutorial.xml"/>
+    <xi:include href="Managing-CPP-Broker.xml"/>
+    <xi:include href="Qpid-Management-Framework.xml"/>
+    <xi:include href="QMF-Python-Console-Tutorial.xml"/>
 </chapter>
 </book>
