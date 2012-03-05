@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.messaging;
 
+import org.apache.qpid.messaging.address.Link;
+import org.apache.qpid.messaging.address.Node;
 import org.apache.qpid.messaging.util.AddressParser;
 
 import static org.apache.qpid.messaging.util.PyPrint.pprint;
@@ -39,6 +41,9 @@ public class Address
     private String _subject;
     private Map _options;
     private final String _myToString;
+
+    private Node node;
+    private Link link;
 
     public static Address parse(String address)
     {
@@ -73,4 +78,23 @@ public class Address
         return _myToString;
     }
 
+    public Node getNode()
+    {
+        return node;
+    }
+
+    public void setNode(Node n)
+    {
+        this.node = n;
+    }
+
+    public Link getLink()
+    {
+        return link;
+    }
+
+    public void setLink(Link l)
+    {
+        this.link = l;
+    }
 }
