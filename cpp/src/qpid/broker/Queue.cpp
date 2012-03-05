@@ -215,7 +215,7 @@ void Queue::deliver(boost::intrusive_ptr<Message> msg){
     if (msg->isImmediate() && getConsumerCount() == 0) {
         if (alternateExchange) {
             DeliverableMessage deliverable(msg);
-            alternateExchange->route(deliverable, msg->getRoutingKey(), msg->getApplicationHeaders());
+            alternateExchange->route(deliverable);
         }
     } else if (isLocal(msg)) {
         //drop message

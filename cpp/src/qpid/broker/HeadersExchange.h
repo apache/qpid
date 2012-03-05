@@ -98,9 +98,7 @@ class HeadersExchange : public virtual Exchange {
 
     virtual bool unbind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
 
-    QPID_BROKER_EXTERN virtual void route(Deliverable& msg,
-                                          const std::string& routingKey,
-                                          const qpid::framing::FieldTable* args);
+    QPID_BROKER_EXTERN virtual void route(Deliverable& msg);
 
     QPID_BROKER_EXTERN virtual bool isBound(Queue::shared_ptr queue,
                                             const std::string* const routingKey,

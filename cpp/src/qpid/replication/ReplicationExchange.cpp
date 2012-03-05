@@ -50,8 +50,9 @@ ReplicationExchange::ReplicationExchange(const std::string& name, bool durable,
 
 std::string ReplicationExchange::getType() const { return typeName; }            
 
-void ReplicationExchange::route(Deliverable& msg, const std::string& /*routingKey*/, const FieldTable* args)
+void ReplicationExchange::route(Deliverable& msg)
 {
+    const FieldTable* args = msg.getMessage().getApplicationHeaders();
     if (mgmtExchange != 0) {
         mgmtExchange->inc_msgReceives();
         mgmtExchange->inc_byteReceives(msg.contentSize());

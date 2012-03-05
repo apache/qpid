@@ -138,8 +138,9 @@ void QueueReplicator::dequeue(SequenceNumber n,  const sys::Mutex::ScopedLock&) 
 }
 
 // Called in connection thread of the queues bridge to primary.
-void QueueReplicator::route(Deliverable& msg, const std::string& key, const FieldTable*)
+void QueueReplicator::route(Deliverable& msg)
 {
+    const std::string& key = msg.getMessage().getRoutingKey();
     sys::Mutex::ScopedLock l(lock);
     if (key == DEQUEUE_EVENT_KEY) {
         SequenceSet dequeues = decodeContent<SequenceSet>(msg.getMessage());

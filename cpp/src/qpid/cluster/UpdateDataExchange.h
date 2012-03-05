@@ -50,8 +50,7 @@ class UpdateDataExchange : public broker::Exchange
 
     UpdateDataExchange(Cluster& parent);
 
-    void route(broker::Deliverable& msg, const std::string& routingKey,
-               const framing::FieldTable* args);
+    void route(broker::Deliverable& msg);
 
     // Not implemented
     std::string getType() const { return EXCHANGE_TYPE; }

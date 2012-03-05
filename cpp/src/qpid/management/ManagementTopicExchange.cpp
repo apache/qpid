@@ -39,18 +39,18 @@ ManagementTopicExchange::ManagementTopicExchange(const std::string& _name,
     TopicExchange(_name, _durable, _args, _parent, b),
     managementAgent(0) {}
 
-void ManagementTopicExchange::route(Deliverable&      msg,
-                                    const string&     routingKey,
-                                    const FieldTable* args)
+void ManagementTopicExchange::route(Deliverable&      msg)
 {
     bool routeIt = true;
+    const string& routingKey = msg.getMessage().getRoutingKey();
+    const FieldTable* args = msg.getMessage().getApplicationHeaders();
 
     // Intercept management agent commands
     if (managementAgent)
         routeIt = managementAgent->dispatchCommand(msg, routingKey, args, true, qmfVersion);
 
     if (routeIt)
-        TopicExchange::route(msg, routingKey, args);
+        TopicExchange::route(msg);
 }
 
 bool ManagementTopicExchange::bind(Queue::shared_ptr queue,

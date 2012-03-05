@@ -66,7 +66,7 @@ class QueueReplicator : public broker::Exchange,
     bool bind(boost::shared_ptr<broker::Queue
               >, const std::string&, const framing::FieldTable*);
     bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
-    void route(broker::Deliverable&, const std::string&, const framing::FieldTable*);
+    void route(broker::Deliverable&);
     bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const);
 
   private:
