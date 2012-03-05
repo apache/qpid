@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.transport;
 
+import java.net.InetSocketAddress;
+
 /**
  * This interface provides a means for NetworkDrivers to configure TCP options such as incoming and outgoing
  * buffer sizes and set particular options on the socket. NetworkDrivers should honour the values returned
@@ -43,4 +45,6 @@ public interface NetworkTransportConfiguration
     String getTransport();
 
     Integer getConnectorProcessors();
+
+    InetSocketAddress getAddress();
 }
