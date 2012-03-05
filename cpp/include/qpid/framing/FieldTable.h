@@ -58,7 +58,9 @@ class FieldTable
     typedef ValueMap::value_type value_type;
 
     QPID_COMMON_EXTERN FieldTable();
-    // Compiler default copy, assignment and destructor are fine
+    QPID_COMMON_EXTERN FieldTable(const FieldTable&);
+    QPID_COMMON_EXTERN FieldTable& operator=(const FieldTable&);
+    // Compiler default destructor fine
     QPID_COMMON_EXTERN uint32_t encodedSize() const;
     QPID_COMMON_EXTERN void encode(Buffer& buffer) const;
     QPID_COMMON_EXTERN void decode(Buffer& buffer);
