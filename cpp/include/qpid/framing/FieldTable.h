@@ -21,6 +21,7 @@
 #include <iostream>
 #include <vector>
 #include <boost/shared_ptr.hpp>
+#include <boost/shared_array.hpp>
 #include <map>
 #include "qpid/framing/amqp_types.h"
 #include "qpid/CommonImportExport.h"
@@ -57,9 +58,7 @@ class FieldTable
     typedef ValueMap::value_type value_type;
 
     QPID_COMMON_EXTERN FieldTable();
-    QPID_COMMON_EXTERN FieldTable(const FieldTable& ft);
-    QPID_COMMON_EXTERN ~FieldTable();
-    QPID_COMMON_EXTERN FieldTable& operator=(const FieldTable& ft);
+    // Compiler default copy, assignment and destructor are fine
     QPID_COMMON_EXTERN uint32_t encodedSize() const;
     QPID_COMMON_EXTERN void encode(Buffer& buffer) const;
     QPID_COMMON_EXTERN void decode(Buffer& buffer);
@@ -99,24 +98,24 @@ class FieldTable
     QPID_COMMON_EXTERN bool operator==(const FieldTable& other) const;
 
     // Map-like interface.
-    ValueMap::const_iterator begin() const { return values.begin(); }
-    ValueMap::const_iterator end() const { return values.end(); }
-    ValueMap::const_iterator find(const std::string& s) const { return values.find(s); }
+    ValueMap::const_iterator begin() const;
+    ValueMap::const_iterator end() const;
+    ValueMap::const_iterator find(const std::string& s) const;
 
-    ValueMap::iterator begin() { return values.begin(); }
-    ValueMap::iterator end() { return values.end(); }
-    ValueMap::iterator find(const std::string& s) { return values.find(s); }
+    ValueMap::iterator begin();
+    ValueMap::iterator end();
+    ValueMap::iterator find(const std::string& s);
 
     QPID_COMMON_EXTERN std::pair <ValueMap::iterator, bool> insert(const ValueMap::value_type&);
     QPID_COMMON_EXTERN ValueMap::iterator insert(ValueMap::iterator, const ValueMap::value_type&);
     void clear();
 
-    // ### Hack Alert
-
-    ValueMap::iterator getValues() { return values.begin(); }
-
   private:
-    ValueMap values;
+    void realDecode() const;
+    void flushRawCache() const;
+
+    mutable ValueMap values;
+    mutable boost::shared_array<uint8_t> cachedBytes;
     mutable uint32_t cachedSize; // if = 0 then non cached size as 0 is not a legal size
 
     QPID_COMMON_EXTERN friend std::ostream& operator<<(std::ostream& out, const FieldTable& body);

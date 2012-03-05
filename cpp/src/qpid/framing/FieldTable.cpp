@@ -31,24 +31,10 @@
 namespace qpid {
 namespace framing {
 
-FieldTable::FieldTable() : cachedSize(0)
+FieldTable::FieldTable() :
+    cachedSize(0)
 {
 }
-
-FieldTable::FieldTable(const FieldTable& ft)
-{
-  *this = ft;
-}
-
-FieldTable& FieldTable::operator=(const FieldTable& ft)
-{
-  clear();
-  values = ft.values;
-  cachedSize = ft.cachedSize;
-  return *this;
-}
-
-FieldTable::~FieldTable() {}
 
 uint32_t FieldTable::encodedSize() const {
     if (cachedSize != 0) {
@@ -75,6 +61,7 @@ std::ostream& operator<<(std::ostream& out, const FieldTable::ValueMap::value_ty
 }
 
 std::ostream& operator<<(std::ostream& out, const FieldTable& t) {
+    t.realDecode();
     out << "{";
     FieldTable::ValueMap::const_iterator i = t.begin();
     if (i != t.end()) out << *i++;
@@ -86,58 +73,70 @@ std::ostream& operator<<(std::ostream& out, const FieldTable& t) {
 }
 
 void FieldTable::set(const std::string& name, const ValuePtr& value){
+    realDecode();
     values[name] = value;
-    cachedSize = 0;
+    flushRawCache();
 }
 
 void FieldTable::setString(const std::string& name, const std::string& value){
+    realDecode();
     values[name] = ValuePtr(new Str16Value(value));
-    cachedSize = 0;
+    flushRawCache();
 }
 
 void FieldTable::setInt(const std::string& name, const int value){
+    realDecode();
     values[name] = ValuePtr(new IntegerValue(value));
-    cachedSize = 0;
+    flushRawCache();
 }
 
 void FieldTable::setInt64(const std::string& name, const int64_t value){
+    realDecode();
     values[name] = ValuePtr(new Integer64Value(value));
-    cachedSize = 0;
+    flushRawCache();
 }
 
 void FieldTable::setTimestamp(const std::string& name, const uint64_t value){
+    realDecode();
     values[name] = ValuePtr(new TimeValue(value));
-    cachedSize = 0;
+    flushRawCache();
 }
 
 void FieldTable::setUInt64(const std::string& name, const uint64_t value){
+    realDecode();
     values[name] = ValuePtr(new Unsigned64Value(value));
-    cachedSize = 0;
+    flushRawCache();
 }
 
 void FieldTable::setTable(const std::string& name, const FieldTable& value)
 {
+    realDecode();
     values[name] = ValuePtr(new FieldTableValue(value));
-    cachedSize = 0;
+    flushRawCache();
 }
 void FieldTable::setArray(const std::string& name, const Array& value)
 {
+    realDecode();
     values[name] = ValuePtr(new ArrayValue(value));
-    cachedSize = 0;
+    flushRawCache();
 }
 
 void FieldTable::setFloat(const std::string& name, const float value){
+    realDecode();
     values[name] = ValuePtr(new FloatValue(value));
-    cachedSize = 0;
+    flushRawCache();
 }
 
 void FieldTable::setDouble(const std::string& name, double value){
+    realDecode();
     values[name] = ValuePtr(new DoubleValue(value));
-    cachedSize = 0;
+    flushRawCache();
 }
 
 FieldTable::ValuePtr FieldTable::get(const std::string& name) const
 {
+    // Ensure we have any values we're trying to read
+    realDecode();
     ValuePtr value;
     ValueMap::const_iterator i = values.find(name);
     if ( i!=values.end() )
@@ -207,38 +206,76 @@ bool FieldTable::getDouble(const std::string& name, double& value) const {
 //}
 
 void FieldTable::encode(Buffer& buffer) const {
-    buffer.putLong(encodedSize() - 4);
-    buffer.putLong(values.size());
-    for (ValueMap::const_iterator i = values.begin(); i!=values.end(); ++i) {
-        buffer.putShortString(i->first);
-    	i->second->encode(buffer);
+    // If we've still got the input field table
+    // we can just copy it directly to the output
+    if (cachedBytes) {
+        buffer.putRawData(&cachedBytes[0], cachedSize);
+    } else {
+        buffer.putLong(encodedSize() - 4);
+        buffer.putLong(values.size());
+        for (ValueMap::const_iterator i = values.begin(); i!=values.end(); ++i) {
+            buffer.putShortString(i->first);
+            i->second->encode(buffer);
+        }
     }
 }
 
+// Decode lazily - just record the raw bytes until we need them
 void FieldTable::decode(Buffer& buffer){
     clear();
     if (buffer.available() < 4)
         throw IllegalArgumentException(QPID_MSG("Not enough data for field table."));
+    uint32_t p = buffer.getPosition();
     uint32_t len = buffer.getLong();
     if (len) {
         uint32_t available = buffer.available();
         if ((available < len) || (available < 4))
             throw IllegalArgumentException(QPID_MSG("Not enough data for field table."));
+    }
+    // Copy data into our buffer
+    cachedBytes = boost::shared_array<uint8_t>(new uint8_t[len + 4]);
+    cachedSize = len + 4;
+    buffer.setPosition(p);
+    buffer.getRawData(&cachedBytes[0], cachedSize);
+}
+
+void FieldTable::realDecode() const
+{
+    // If we've got no raw data stored up then nothing to do
+    if (!cachedBytes)
+        return;
+
+    Buffer buffer((char*)&cachedBytes[0], cachedSize);
+    uint32_t len = buffer.getLong();
+    if (len) {
+        uint32_t available = buffer.available();
         uint32_t count = buffer.getLong();
         uint32_t leftover = available - len;
         while(buffer.available() > leftover && count--){
             std::string name;
             ValuePtr value(new FieldValue);
-            
+
             buffer.getShortString(name);
             value->decode(buffer);
             values[name] = ValuePtr(value);
-        }    
+        }
     }
+    cachedSize = len + 4;
+    // We've done the delayed decoding throw away the raw data
+    // (later on we may find a way to keep this and avoid some
+    // other allocations)
+    cachedBytes.reset();
+}
+
+void FieldTable::flushRawCache() const
+{
+    cachedBytes.reset();
     cachedSize = 0;
 }
 
 bool FieldTable::operator==(const FieldTable& x) const {
+    realDecode();
+    x.realDecode();
     if (values.size() != x.values.size()) return false;
     for (ValueMap::const_iterator i =  values.begin(); i != values.end(); ++i) {
         ValueMap::const_iterator j = x.values.find(i->first);
@@ -250,29 +287,72 @@ bool FieldTable::operator==(const FieldTable& x) const {
 
 void FieldTable::erase(const std::string& name) 
 {
+    realDecode();
     if (values.find(name) != values.end()) {
         values.erase(name);
-        cachedSize = 0;
+        flushRawCache();
     }
 }
+
 void FieldTable::clear()
 {
     values.clear();
-    cachedSize = 0;
+    flushRawCache();
+}
+
+// Map-like interface.
+FieldTable::ValueMap::const_iterator FieldTable::begin() const
+{
+    realDecode();
+    return values.begin();
+}
+
+FieldTable::ValueMap::const_iterator FieldTable::end() const
+{
+    realDecode();
+    return values.end();
+}
+
+FieldTable::ValueMap::const_iterator FieldTable::find(const std::string& s) const
+{
+    realDecode();
+    return values.find(s);
+}
+
+FieldTable::ValueMap::iterator FieldTable::begin()
+{
+    realDecode();
+    flushRawCache();
+    return values.begin();
+}
+
+FieldTable::ValueMap::iterator FieldTable::end()
+{
+    realDecode();
+    flushRawCache();
+    return values.end();
+}
+
+FieldTable::ValueMap::iterator FieldTable::find(const std::string& s)
+{
+    realDecode();
+    flushRawCache();
+    return values.find(s);
 }
 
 std::pair<FieldTable::ValueMap::iterator, bool> FieldTable::insert(const ValueMap::value_type& value)
 {
-    cachedSize = 0;
+    realDecode();
+    flushRawCache();
     return values.insert(value);
 }
 
 FieldTable::ValueMap::iterator FieldTable::insert(ValueMap::iterator position, const ValueMap::value_type& value)
 {
-    cachedSize = 0;
+    realDecode();
+    flushRawCache();
     return values.insert(position, value);
 }
-
 
 }
 }
