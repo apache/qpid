@@ -116,7 +116,6 @@ public class SimpleQueueEntryList implements QueueEntryList<SimpleQueueEntryImpl
 
     public static class QueueEntryIteratorImpl implements QueueEntryIterator<SimpleQueueEntryImpl>
     {
-
         private SimpleQueueEntryImpl _lastNode;
 
         QueueEntryIteratorImpl(SimpleQueueEntryImpl startNode)
@@ -124,10 +123,9 @@ public class SimpleQueueEntryList implements QueueEntryList<SimpleQueueEntryImpl
             _lastNode = startNode;
         }
 
-
         public boolean atTail()
         {
-            return _lastNode.getNextNode() == null;
+            return _lastNode.getNextValidEntry() == null;
         }
 
         public SimpleQueueEntryImpl getNode()
@@ -137,27 +135,16 @@ public class SimpleQueueEntryList implements QueueEntryList<SimpleQueueEntryImpl
 
         public boolean advance()
         {
+            SimpleQueueEntryImpl nextValidNode = _lastNode.getNextValidEntry();
 
-            if(!atTail())
+            if(nextValidNode != null)
             {
-                SimpleQueueEntryImpl nextNode = _lastNode.getNextNode();
-                while(nextNode.isDispensed() && nextNode.getNextNode() != null)
-                {
-                    nextNode = nextNode.getNextNode();
-                }
-                _lastNode = nextNode;
-                return true;
-
-            }
-            else
-            {
-                return false;
+                _lastNode = nextValidNode;
             }
 
+            return nextValidNode != null;
         }
-
     }
-
 
     public QueueEntryIteratorImpl iterator()
     {
