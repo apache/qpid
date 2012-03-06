@@ -92,25 +92,25 @@ class FieldTable
     QPID_COMMON_EXTERN bool getArray(const std::string& name, Array& value) const;
     QPID_COMMON_EXTERN bool getFloat(const std::string& name, float& value) const;
     QPID_COMMON_EXTERN bool getDouble(const std::string& name, double& value) const;
-    //bool getTimestamp(const std::string& name, uint64_t& value) const;
-    //bool getDecimal(string& name, xxx& value);
+    //QPID_COMMON_EXTERN bool getTimestamp(const std::string& name, uint64_t& value) const;
+    //QPID_COMMON_EXTERN bool getDecimal(string& name, xxx& value);
     QPID_COMMON_EXTERN void erase(const std::string& name);
 
 
     QPID_COMMON_EXTERN bool operator==(const FieldTable& other) const;
 
     // Map-like interface.
-    ValueMap::const_iterator begin() const;
-    ValueMap::const_iterator end() const;
-    ValueMap::const_iterator find(const std::string& s) const;
+    QPID_COMMON_EXTERN ValueMap::const_iterator begin() const;
+    QPID_COMMON_EXTERN ValueMap::const_iterator end() const;
+    QPID_COMMON_EXTERN ValueMap::const_iterator find(const std::string& s) const;
 
-    ValueMap::iterator begin();
-    ValueMap::iterator end();
-    ValueMap::iterator find(const std::string& s);
+    QPID_COMMON_EXTERN ValueMap::iterator begin();
+    QPID_COMMON_EXTERN ValueMap::iterator end();
+    QPID_COMMON_EXTERN ValueMap::iterator find(const std::string& s);
 
     QPID_COMMON_EXTERN std::pair <ValueMap::iterator, bool> insert(const ValueMap::value_type&);
     QPID_COMMON_EXTERN ValueMap::iterator insert(ValueMap::iterator, const ValueMap::value_type&);
-    void clear();
+    QPID_COMMON_EXTERN void clear();
 
   private:
     void realDecode() const;
