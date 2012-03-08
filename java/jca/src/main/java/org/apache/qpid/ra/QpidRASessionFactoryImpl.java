@@ -567,7 +567,7 @@ public class QpidRASessionFactoryImpl implements QpidRASessionFactory, Reference
          _started = true;
          for (Iterator<QpidRASession> i = _sessions.iterator(); i.hasNext();)
          {
-            QpidRASessionImpl session = (QpidRASessionImpl)i.next();
+            QpidRASession session = (QpidRASession)i.next();
             session.start();
          }
       }
@@ -609,7 +609,7 @@ public class QpidRASessionFactoryImpl implements QpidRASessionFactory, Reference
       {
          for (Iterator<QpidRASession> i = _sessions.iterator(); i.hasNext();)
          {
-            QpidRASessionImpl session = (QpidRASessionImpl)i.next();
+            QpidRASession session = (QpidRASession)i.next();
             try
             {
                session.closeSession();
@@ -670,7 +670,7 @@ public class QpidRASessionFactoryImpl implements QpidRASessionFactory, Reference
     * @param session The session
     * @exception JMSException Thrown if an error occurs
     */
-   public void closeSession(final QpidRASessionImpl session) throws JMSException
+   public void closeSession(final QpidRASession session) throws JMSException
    {
       if (_log.isTraceEnabled())
       {
@@ -679,7 +679,7 @@ public class QpidRASessionFactoryImpl implements QpidRASessionFactory, Reference
 
       synchronized (_sessions)
       {
-         _sessions.remove(session);
+         _sessions.clear();
       }
    }
 
