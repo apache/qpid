@@ -95,9 +95,9 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
 
     public static ClientMethodDispatcherImpl newMethodDispatcher(ProtocolVersion version, AMQProtocolSession session)
     {
-        if (_logger.isInfoEnabled())
+        if (_logger.isDebugEnabled())
         {
-            _logger.info("New Method Dispatcher:" + session);
+            _logger.debug("New Method Dispatcher:" + session);
         }
         
         DispatcherFactory factory = _dispatcherFactories.get(version);

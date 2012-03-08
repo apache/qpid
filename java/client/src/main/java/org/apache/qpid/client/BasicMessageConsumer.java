@@ -279,7 +279,10 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
                 throw new javax.jms.IllegalStateException("Attempt to alter listener while session is started.");
             }
 
-            _logger.debug("Message listener set for destination " + _destination);
+            if (_logger.isDebugEnabled())
+            {
+            	_logger.debug("Message listener set for destination " + _destination);
+            }
 
             if (messageListener != null)
             {
@@ -557,9 +560,9 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
 
     public void close(boolean sendClose) throws JMSException
     {
-        if (_logger.isInfoEnabled())
+        if (_logger.isDebugEnabled())
         {
-            _logger.info("Closing consumer:" + debugIdentity());
+            _logger.debug("Closing consumer:" + debugIdentity());
         }
 
         if (!setClosed())
