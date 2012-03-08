@@ -122,6 +122,11 @@ public abstract class Range implements RangeSet
         throw new UnsupportedOperationException();
     }
 
+    public void subtract(RangeSet rangeSet)
+    {
+        throw new UnsupportedOperationException();
+    }
+
     public RangeSet copy()
     {
         RangeSet rangeSet = RangeSetFactory.createRangeSet();
