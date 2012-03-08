@@ -27,6 +27,7 @@ import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
+import javax.jms.Destination;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
@@ -40,7 +41,7 @@ import org.slf4j.LoggerFactory;
 @MessageDriven(activationConfig = {
     @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge"),
     @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
-    @ActivationConfigProperty(propertyName = "destination", propertyValue = "@qpid.responder.queue.jndi.name@"),
+    @ActivationConfigProperty(propertyName = "destination", propertyValue = "@qpid.request.queue.jndi.name@"),
     @ActivationConfigProperty(propertyName = "connectionURL", propertyValue = "@broker.url@"),
     @ActivationConfigProperty(propertyName = "maxSession", propertyValue = "10")
 })
@@ -72,10 +73,12 @@ public class QpidJMSResponderBean implements MessageListener
                 temp.append("QpidJMSResponderBean received message with content: [" + content);
                 temp.append("] at " + new Date());
 
+                connection = _connectionFactory.createConnection();
+                session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
                 if(message.getJMSReplyTo() != null)
                 {
-                    connection = _connectionFactory.createConnection();
-                    session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                    _log.info("Sending response via JMSReplyTo");
                     messageProducer = session.createProducer(message.getJMSReplyTo());
                     response = session.createTextMessage();
                     response.setText(temp.toString());
@@ -83,8 +86,10 @@ public class QpidJMSResponderBean implements MessageListener
                 }
                 else
                 {
-                    _log.warn("Response was requested with no JMSReplyToDestination set. Will not respond to message.");
+                    _log.info("JMSReplyTo is null. Will not respond to message.");
                 }
+
+
             }
         }
         catch(Exception e)

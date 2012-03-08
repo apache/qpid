@@ -45,8 +45,10 @@
          value="hello.Queue;{create:always, node:{type:queue, x-declare:{auto-delete:true}}}"/>
     <property name="qpid.goodbye.queue.dest.address.ADDR"
          value="goodbye.Queue;{create:always, node:{type:queue, x-declare:{auto-delete:true}}}"/>
-    <property name="qpid.responder.queue.dest.address.ADDR"
-         value="responder.Queue;{create:always, node:{type:queue, x-declare:{auto-delete:true}}}"/>
+    <property name="qpid.request.queue.dest.address.ADDR"
+         value="request.Queue;{create:always, node:{type:queue, x-declare:{auto-delete:true}}}"/>
+    <property name="qpid.response.queue.dest.address.ADDR"
+         value="response.Queue;{create:always, node:{type:queue, x-declare:{auto-delete:false}}}"/>
 
     <property name="qpid.hello.topic.dest.address.BURL"
             value="BURL:topic://amq.topic//hello.jcaTopic?routingKey='hello.jcaTopic',autodelete='true'"/>
@@ -58,8 +60,10 @@
            value="BURL:direct://amq.direct//hello.Queue?routingkey='hello.Queue'"/>
     <property name="qpid.goodbye.queue.dest.address.BURL"
            value="BURL:direct://amq.direct//goodbye.Queue?routingkey='goodbye.Queue'"/>
-    <property name="qpid.responder.queue.dest.address.BURL"
-           value="BURL:direct://amq.direct//responder.Queue?routingkey='responder.Queue'"/>
+    <property name="qpid.request.queue.dest.address.BURL"
+           value="BURL:direct://amq.direct//request.Queue?routingkey='request.Queue'"/>
+    <property name="qpid.response.queue.dest.address.BURL"
+           value="BURL:direct://amq.direct//response.Queue?routingkey='response.Queue'"/>
 
     <!-- This macro allows us to construct a property name which contains a property expansion -->
     <macrodef name="set-address-property">
@@ -75,5 +79,6 @@
     <set-address-property name="qpid.hellogoodbye.topic.dest.address" syntax="${qpid.dest_syntax}"/>
     <set-address-property name="qpid.hello.queue.dest.address" syntax="${qpid.dest_syntax}"/>
     <set-address-property name="qpid.goodbye.queue.dest.address" syntax="${qpid.dest_syntax}"/>
-    <set-address-property name="qpid.responder.queue.dest.address" syntax="${qpid.dest_syntax}"/>
+    <set-address-property name="qpid.request.queue.dest.address" syntax="${qpid.dest_syntax}"/>
+    <set-address-property name="qpid.response.queue.dest.address" syntax="${qpid.dest_syntax}"/>
 </project>
