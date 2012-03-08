@@ -308,9 +308,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             _delegate = new AMQConnectionDelegate_0_10(this);
         }
 
-        if (_logger.isInfoEnabled())
+        if (_logger.isDebugEnabled())
         {
-            _logger.info("Connection:" + connectionURL);
+            _logger.debug("Connection:" + connectionURL);
         }
 
         _connectionURL = connectionURL;
@@ -343,7 +343,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
         _protocolHandler = new AMQProtocolHandler(this);
 
-        _logger.info("Connecting with ProtocolHandler Version:"+_protocolHandler.getProtocolVersion());
+        if (_logger.isDebugEnabled())
+        {
+        	_logger.debug("Connecting with ProtocolHandler Version:"+_protocolHandler.getProtocolVersion());
+        }
 
         // We are not currently connected
         setConnected(false);
@@ -435,7 +438,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             throw new AMQConnectionFailureException(message, connectionException);
         }
 
-        _logger.info("Connected with ProtocolHandler Version:"+_protocolHandler.getProtocolVersion());
+        if (_logger.isDebugEnabled())
+        {
+        	_logger.debug("Connected with ProtocolHandler Version:"+_protocolHandler.getProtocolVersion());
+        }
 
         _sessions.setMaxChannelID(_delegate.getMaxChannelID());
         _sessions.setMinChannelID(_delegate.getMinChannelID());
@@ -462,7 +468,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             String delegateClassName = String.format
                                     ("org.apache.qpid.client.AMQConnectionDelegate_%s_%s",
                                      pe.getMajorVersion(), pe.getMinorVersion());
-            _logger.info("Looking up delegate '" + delegateClassName + "' Based on PE:" + pe);
+            if (_logger.isDebugEnabled())
+            {
+            	_logger.debug("Looking up delegate '" + delegateClassName + "' Based on PE:" + pe);
+            }
             Class c = Class.forName(delegateClassName);
             Class partypes[] = new Class[1];
             partypes[0] = AMQConnection.class;

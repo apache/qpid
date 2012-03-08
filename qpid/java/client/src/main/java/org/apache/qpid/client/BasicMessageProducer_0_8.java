@@ -33,6 +33,9 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.framing.MethodRegistry;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.Queue;
@@ -42,11 +45,12 @@ import java.util.UUID;
 
 public class BasicMessageProducer_0_8 extends BasicMessageProducer
 {
+	private static final Logger _logger = LoggerFactory.getLogger(BasicMessageProducer_0_8.class);
 
     BasicMessageProducer_0_8(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
             AMQSession session, AMQProtocolHandler protocolHandler, long producerId, Boolean immediate, Boolean mandatory) throws AMQException
     {
-        super(connection, destination,transacted,channelId,session, protocolHandler, producerId, immediate, mandatory);
+        super(_logger,connection, destination,transacted,channelId,session, protocolHandler, producerId, immediate, mandatory);
     }
 
     void declareDestination(AMQDestination destination)

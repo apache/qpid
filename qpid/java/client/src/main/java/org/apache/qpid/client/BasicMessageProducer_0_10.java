@@ -63,7 +63,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
                               AMQSession session, AMQProtocolHandler protocolHandler, long producerId,
                               Boolean immediate, Boolean mandatory) throws AMQException
     {
-        super(connection, destination, transacted, channelId, session, protocolHandler, producerId, immediate, mandatory);
+        super(_logger, connection, destination, transacted, channelId, session, protocolHandler, producerId, immediate, mandatory);
         
         userIDBytes = Strings.toUTF8(getUserID());
     }

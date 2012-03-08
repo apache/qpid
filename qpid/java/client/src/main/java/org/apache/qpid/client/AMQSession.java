@@ -530,9 +530,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
 
         // Add creation logging to tie in with the existing close logging
-        if (_logger.isInfoEnabled())
+        if (_logger.isDebugEnabled())
         {
-            _logger.info("Created session:" + this);
+            _logger.debug("Created session:" + this);
         }
     }
 
@@ -721,9 +721,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     private void close(long timeout, boolean sendClose) throws JMSException
     {
-        if (_logger.isInfoEnabled())
+        if (_logger.isDebugEnabled())
         {
-            _logger.info("Closing session: " + this);
+            _logger.debug("Closing session: " + this);
         }
 
         // Ensure we only try and close an open session.
@@ -892,11 +892,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 // Flush any pending messages for this consumerTag
                 if (_dispatcher != null)
                 {
-                    _logger.info("Dispatcher is not null");
+                    _logger.debug("Dispatcher is not null");
                 }
                 else
                 {
-                    _logger.info("Dispatcher is null so created stopped dispatcher");
+                    _logger.debug("Dispatcher is null so created stopped dispatcher");
                     startDispatcherIfNecessary(true);
                 }
 
@@ -914,9 +914,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     // There is a small window where the message is between the two queues in the dispatcher.
                     if (consumer.isClosed())
                     {
-                        if (_logger.isInfoEnabled())
+                        if (_logger.isDebugEnabled())
                         {
-                            _logger.info("Closing consumer:" + consumer.debugIdentity());
+                            _logger.debug("Closing consumer:" + consumer.debugIdentity());
                         }
 
                         deregisterConsumer(consumer);
@@ -2370,9 +2370,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             _dispatcherThread.setDaemon(DEAMON_DISPATCHER_THREAD);
             _dispatcher.setConnectionStopped(initiallyStopped);
             _dispatcherThread.start();
-            if (_dispatcherLogger.isInfoEnabled())
+            if (_dispatcherLogger.isDebugEnabled())
             {
-                _dispatcherLogger.info(_dispatcherThread.getName() + " created");
+                _dispatcherLogger.debug(_dispatcherThread.getName() + " created");
             }
         }
         else
@@ -2945,7 +2945,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     try
                     {
                         suspendChannel(true);
-                        _logger.info(
+                        _logger.debug(
                                 "Prefetching delayed existing messages will not flow until requested via receive*() or setML().");
                     }
                     catch (AMQException e)
@@ -2957,7 +2957,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
         else
         {
-            _logger.info("Immediately prefetching existing messages to new consumer.");
+            _logger.debug("Immediately prefetching existing messages to new consumer.");
         }
 
         try
@@ -2989,18 +2989,18 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     private void rejectMessagesForConsumerTag(int consumerTag, boolean requeue, boolean rejectAllConsumers)
     {
         Iterator messages = _queue.iterator();
-        if (_logger.isInfoEnabled())
+        if (_logger.isDebugEnabled())
         {
-            _logger.info("Rejecting messages from _queue for Consumer tag(" + consumerTag + ") (PDispatchQ) requeue:"
+            _logger.debug("Rejecting messages from _queue for Consumer tag(" + consumerTag + ") (PDispatchQ) requeue:"
                          + requeue);
 
             if (messages.hasNext())
             {
-                _logger.info("Checking all messages in _queue for Consumer tag(" + consumerTag + ")");
+                _logger.debug("Checking all messages in _queue for Consumer tag(" + consumerTag + ")");
             }
             else
             {
-                _logger.info("No messages in _queue to reject");
+                _logger.debug("No messages in _queue to reject");
             }
         }
         while (messages.hasNext())
@@ -3043,7 +3043,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     private void resubscribeProducers() throws AMQException
     {
         ArrayList producers = new ArrayList(_producers.values());
-        _logger.info(MessageFormat.format("Resubscribing producers = {0} producers.size={1}", producers, producers.size())); // FIXME: removeKey
+        _logger.debug(MessageFormat.format("Resubscribing producers = {0} producers.size={1}", producers, producers.size())); // FIXME: removeKey
         for (Iterator it = producers.iterator(); it.hasNext();)
         {
             P producer = (P) it.next();
@@ -3133,7 +3133,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public void setFlowControl(final boolean active)
     {
         _flowControl.setFlowControl(active);
-        _logger.warn("Broker enforced flow control " + (active ? "no longer in effect" : "has been enforced"));
+        if (_logger.isDebugEnabled())
+        {
+        	_logger.debug("Broker enforced flow control " + (active ? "no longer in effect" : "has been enforced"));
+        }
     }
 
     public void checkFlowControl() throws InterruptedException, JMSException
@@ -3147,7 +3150,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             {
 
                 _flowControl.wait(_flowControlWaitPeriod);
-                _logger.warn("Message send delayed by " + (System.currentTimeMillis() + _flowControlWaitFailure - expiryTime)/1000 + "s due to broker enforced flow control");
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("Message send delayed by " + (System.currentTimeMillis() + _flowControlWaitFailure - expiryTime)/1000 + "s due to broker enforced flow control");
+                }
             }
             if(!_flowControl.getFlowControl())
             {
@@ -3300,9 +3306,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         
         public void run()
         {
-            if (_dispatcherLogger.isInfoEnabled())
+            if (_dispatcherLogger.isDebugEnabled())
             {
-                _dispatcherLogger.info(_dispatcherThread.getName() + " started");
+                _dispatcherLogger.debug(_dispatcherThread.getName() + " started");
             }
 
             // Allow disptacher to start stopped
@@ -3334,9 +3340,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 // ignored as run will exit immediately
             }
 
-            if (_dispatcherLogger.isInfoEnabled())
+            if (_dispatcherLogger.isDebugEnabled())
             {
-                _dispatcherLogger.info(_dispatcherThread.getName() + " thread terminating for channel " + _channelId + ":" + AMQSession.this);
+                _dispatcherLogger.debug(_dispatcherThread.getName() + " thread terminating for channel " + _channelId + ":" + AMQSession.this);
             }
 
         }
