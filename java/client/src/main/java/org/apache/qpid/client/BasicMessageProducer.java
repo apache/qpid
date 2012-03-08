@@ -47,7 +47,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 {
     enum PublishMode { ASYNC_PUBLISH_ALL, SYNC_PUBLISH_PERSISTENT, SYNC_PUBLISH_ALL };
 
-    private final Logger _logger = LoggerFactory.getLogger(getClass());
+    private final Logger _logger ;
 
     private AMQConnection _connection;
 
@@ -134,11 +134,12 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
     private PublishMode publishMode = PublishMode.ASYNC_PUBLISH_ALL;
 
-    protected BasicMessageProducer(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
+    protected BasicMessageProducer(Logger logger,AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
                                    AMQSession session, AMQProtocolHandler protocolHandler, long producerId,
                                    Boolean immediate, Boolean mandatory) throws AMQException
     {
-        _connection = connection;
+    	_logger = logger;
+    	_connection = connection;
         _destination = destination;
         _transacted = transacted;
         _protocolHandler = protocolHandler;
@@ -178,7 +179,10 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
             publishMode = PublishMode.SYNC_PUBLISH_ALL;
         }
 
-        _logger.info("MessageProducer " + toString() + " using publish mode : " + publishMode);
+        if (_logger.isDebugEnabled())
+        {
+        	_logger.debug("MessageProducer " + toString() + " using publish mode : " + publishMode);
+        }
     }
 
     void resubscribe() throws AMQException
@@ -516,7 +520,10 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
             _logger.debug("Updating original message");
             origMessage.setJMSPriority(message.getJMSPriority());
             origMessage.setJMSTimestamp(message.getJMSTimestamp());
-            _logger.debug("Setting JMSExpiration:" + message.getJMSExpiration());
+            if (_logger.isDebugEnabled())
+            {
+            	_logger.debug("Setting JMSExpiration:" + message.getJMSExpiration());
+            }
             origMessage.setJMSExpiration(message.getJMSExpiration());
             origMessage.setJMSMessageID(message.getJMSMessageID());
         }
