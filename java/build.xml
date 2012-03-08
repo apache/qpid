@@ -7,9 +7,9 @@
  - to you under the Apache License, Version 2.0 (the
  - "License"); you may not use this file except in compliance
  - with the License.  You may obtain a copy of the License at
- - 
+ -
  -   http://www.apache.org/licenses/LICENSE-2.0
- - 
+ -
  - Unless required by applicable law or agreed to in writing,
  - software distributed under the License is distributed on an
  - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -34,7 +34,7 @@
   <property name="modules.opt"        value=""/>
   <property name="modules.jca"        value="jca"/>
   <property name="modules"            value="${modules.core} ${modules.examples}
-   ${modules.management} ${modules.tests} ${modules.plugin} ${modules.opt} ${modules.jca}"/>
+   ${modules.management} ${modules.jca} ${modules.tests} ${modules.plugin} ${modules.opt}"/>
 
   <property name="qpid.jar"           location="${build.lib}/qpid-all.jar"/>
   <basename property="qpid.jar.name"  file="${qpid.jar}"/>
@@ -94,7 +94,7 @@
     <fail if="failed" message="TEST SUITE FAILED"/>
 
   </target>
-  
+
   <target name="report-module" description="generate junitreport for modules">
     <iterate target="report-module"/>
   </target>
@@ -122,7 +122,7 @@
   <target name="bundle" description="create OSGi bundles">
     <iterate target="bundle"/>
   </target>
-  
+
   <target name="release-bin" description="build a binary release artifact" depends="build,bundle">
       <iterate  target="release-bin"/>
   </target>
@@ -245,14 +245,14 @@
   <target name="instrument" description="instrument for artifacts">
     <iterate target="instrument"/>
   </target>
-  
+
   <target name="cover-test" description="run tests and generate coverage information" depends="build">
     <iterate target="cover-test" modules="broker client common"/>
   </target>
 
   <target name="test-interop" depends="build,compile-tests"
       description="run JMS examples against the corresponding c++ and python examples">
-      <property name="qpid.src.home" location=".."/> 
+      <property name="qpid.src.home" location=".."/>
       <echo-prop name="qpid.src.home"/>
       <exec executable="/bin/sh" failonerror="true">
          <env key="QPID_SRC_HOME" value="${qpid.src.home}"/>
@@ -276,7 +276,7 @@
 
     <findbugs home="${findbugs.dir}"
               output="html"
-              outputFile="${build.findbugs}/report.html" 
+              outputFile="${build.findbugs}/report.html"
               stylesheet="fancy-hist.xsl"
               jvmargs="-Xmx512m"
               projectName="Qpid">
