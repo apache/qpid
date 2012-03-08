@@ -3133,9 +3133,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public void setFlowControl(final boolean active)
     {
         _flowControl.setFlowControl(active);
-        if (_logger.isDebugEnabled())
+        if (_logger.isInfoEnabled())
         {
-        	_logger.debug("Broker enforced flow control " + (active ? "no longer in effect" : "has been enforced"));
+            _logger.info("Broker enforced flow control " + (active ? "no longer in effect" : "has been enforced"));
         }
     }
 
@@ -3150,9 +3150,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             {
 
                 _flowControl.wait(_flowControlWaitPeriod);
-                if (_logger.isDebugEnabled())
+                if (_logger.isInfoEnabled())
                 {
-                    _logger.debug("Message send delayed by " + (System.currentTimeMillis() + _flowControlWaitFailure - expiryTime)/1000 + "s due to broker enforced flow control");
+                    _logger.info("Message send delayed by " + (System.currentTimeMillis() + _flowControlWaitFailure - expiryTime)/1000 + "s due to broker enforced flow control");
                 }
             }
             if(!_flowControl.getFlowControl())
