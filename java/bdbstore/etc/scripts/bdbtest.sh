@@ -32,7 +32,7 @@ for arg in "$@"; do
     fi
 done
 
-VERSION=0.15
+VERSION=0.17
 
 # Set classpath to include Qpid jar with all required jars in manifest
 QPID_LIBS=$QPID_HOME/lib/qpid-all.jar:$QPID_HOME/lib/qpid-junit-toolkit-$VERSION.jar:$QPID_HOME/lib/junit-3.8.1.jar:$QPID_HOME/lib/log4j-1.2.12.jar:$QPID_HOME/lib/qpid-systests-$VERSION.jar:$QPID_HOME/lib/qpid-perftests-$VERSION.jar:$QPID_HOME/lib/slf4j-log4j12-1.6.1.jar
