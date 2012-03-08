@@ -1,0 +1,102 @@
+#!/bin/bash
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#
+# qpidd        Startup script for the Qpid messaging daemon.
+#
+
+### BEGIN INIT INFO
+# Provides: qpidd-primary
+# Required-Start: $qpidd
+# Required-Stop: $qpidd
+# Default-Start:
+# Default-Stop: 0 1 2 3 4 5 6
+# Short-Description: promote qpidd to cluster primary
+# Description: Qpidd can be run in an active/passive cluster. Promote a running qpidd to primary.
+### END INIT INFO
+
+# chkconfig: - 85 15
+# description: Qpidd can be run in an active/passive cluster. Promote a running qpidd to primary.
+# processname: qpidd
+
+prog=qpidd
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+if [ -f /etc/sysconfig/$prog ] ; then
+    . /etc/sysconfig/$prog
+fi
+
+# The following variables can be overridden in /etc/sysconfig/$prog
+[[ $QPID_PORT ]] || QPID_PORT=5672
+[[ $QPID_HA ]]   || QPID_HA=/usr/bin/qpid-ha
+export QPID_PORT
+
+RETVAL=0
+
+#ensure binary is present and executable
+if [[ !(-x $QPID_HA) ]]; then
+    echo "qpid-ha executable not found or not executable"
+fi
+
+status() {
+    if $QPID_HA -b localhost:$QPID_PORT status --expect=primary ; then
+	echo "qpidd is primary"
+    else
+	echo "qpidd is not primary"
+	return 1
+    fi
+}
+
+start() {
+    service qpidd start
+    echo -n $"Promoting qpid daemon to cluster primary: "
+    $QPID_HA -b localhost:$QPID_PORT promote
+    [ "$?" -eq 0 ] && success || failure
+}
+
+stop() {
+    service qpidd stop
+}
+
+reload() {
+    echo 1>&2 $"$0: reload not supported"
+    exit 3
+}
+
+restart() {
+    service qpidd restart && start
+}
+
+# See how we were called.
+case "$1" in
+    start|stop|status|restart|reload)
+	$1
+	RETVAL=$?
+	;;
+    force-reload)
+	restart
+	;;
+    *)
+	echo 1>&2 $"Usage: $0 {start|stop|status|restart|force-reload}"
+	exit 2
+esac
+
+exit $RETVAL

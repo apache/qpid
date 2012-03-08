@@ -1,0 +1,18 @@
+#!/bin/sh
+# A simple manual failover test, sends a stream of numbered messages.
+# You can kill the connected broker and verify that the client reconnects 
+# and no messages are lost.
+
+URL=$1
+test -n "$URL" || { echo Usage: $0 URL ; exit 1; }
+SEND=$(mktemp /tmp/send.XXXXXXXXXX)
+RECV=$(mktemp /tmp/recv.XXXXXXXXXX)
+echo $SEND $RECV
+
+seq 1000000 > $SEND
+
+qpid-receive -f -a 'q;{create:always}' -b $URL --connection-options "{reconnect:true}"  | tee $RECV &
+
+qpid-send -a 'q;{create:always}' -b $URL --connection-options "{reconnect:true}" --send-rate 10 --content-stdin < $SEND &
+
+wait

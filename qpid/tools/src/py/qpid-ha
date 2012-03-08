@@ -67,26 +67,19 @@ class PromoteCmd(Command):
         qmf_broker._method("promote", {}, HA_BROKER)
 PromoteCmd()
 
-class ReadyCmd(Command):
+class StatusCmd(Command):
     def __init__(self):
-        Command.__init__(self, "ready", "Test if a backup broker is ready.\nReturn 0 if broker is a ready backup, non-0 otherwise.")
+        Command.__init__(self, "status", "Print HA status")
         self.op.add_option(
-            "--wait", type="int", metavar="<seconds>", default=None,
-            help="Wait up to <seconds> for broker to be ready. 0 means wait forever.")
+            "--expect", type="string", metavar="<status>",
+            help="Don't print status but return 0 if it matches <status>, 1 otherwise")
     def do_execute(self, qmf_broker, ha_broker, opts, args):
-        if (ha_broker.status == "backup"): return
-        if (ha_broker.status != "catch-up"):
-            raise Exception("Broker is not a backup, status is '%s'"%ha_broker.status)
-        if (opts.wait is None): return 1
-        delay = 0.1
-        timeout = time.time() + opts.wait
-        while opts.wait == 0 or time.time() < timeout:
-            time.sleep(delay)
-            delay = min(2*delay, 1)
-            ha_broker = qmf_broker.getHaBroker()
-            if (ha_broker.status == "backup"): return
-        return 1
-ReadyCmd()
+        if opts.expect:
+            if opts.expect != ha_broker.status: return 1
+        else:
+            print ha_broker.status
+        return 0
+StatusCmd()
 
 class ReplicateCmd(Command):
     def __init__(self):
