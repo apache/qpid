@@ -17,7 +17,7 @@
 # under the License.
 #
 
-ver: 0.15.0
+ver: 0.16.0
 
 Bundle-SymbolicName: qpid-shutdown-plugin
 Bundle-Version: ${ver}

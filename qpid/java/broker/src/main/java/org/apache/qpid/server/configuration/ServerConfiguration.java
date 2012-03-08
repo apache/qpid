@@ -737,7 +737,7 @@ public class ServerConfiguration extends ConfigurationPlugin
     public String getConnectorKeyManagerFactoryAlgorithm()
     {
         final String systemFallback = KeyManagerFactory.getDefaultAlgorithm();
-        // deprecated, pre-0.15 brokers supported this name.
+        // deprecated, pre-0.16 brokers supported this name.
         final String fallback = getStringValue("connector.ssl.certType", systemFallback);
         return getStringValue("connector.ssl.keyManagerFactoryAlgorithm", fallback);
     }

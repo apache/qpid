@@ -34,7 +34,7 @@ if [ -z "${QPID_HOME}" ]; then
     export QPID_HOME=`cd ${WHEREAMI}/../ && pwd`
 fi
 
-VERSION=0.15
+VERSION=0.16
 
 # BDB's je JAR expected to be found in lib/opt
 LIBS="${QPID_HOME}/lib/opt/*:${QPID_HOME}/lib/qpid-bdbstore-${VERSION}.jar:${QPID_HOME}/lib/qpid-all.jar"

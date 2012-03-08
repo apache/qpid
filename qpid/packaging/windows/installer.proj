@@ -32,7 +32,7 @@
 	<source_root>$(MSBuildProjectDirectory)\..\..</source_root>
 	<staging_dir>$(MSBuildProjectDirectory)\stage</staging_dir>
 	<bits Condition="'$(bits)' == ''">32</bits>
-	<qpid_version>0.14</qpid_version>
+	<qpid_version>0.16</qpid_version>
 	<OutputName>qpidc</OutputName>
 	<OutputType>Package</OutputType>
 	<WixToolPath>C:\Program Files (x86)\Windows Installer XML v3.5\bin</WixToolPath>

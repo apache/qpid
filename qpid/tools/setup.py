@@ -20,7 +20,7 @@
 from distutils.core import setup
 
 setup(name="qpid-tools",
-      version="0.15",
+      version="0.16",
       author="Apache Qpid",
       author_email="dev@qpid.apache.org",
       package_dir={'' : 'src/py'},
