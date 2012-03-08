@@ -49,6 +49,8 @@ public interface RangeSet extends Iterable<Range>
 
     void add(int value);
 
+    void subtract(final RangeSet other);
+
     void clear();
 
     RangeSet copy();
