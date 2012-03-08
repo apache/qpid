@@ -72,15 +72,24 @@
   </mbean>
 
   <mbean code="org.jboss.resource.deployment.AdminObject"
-         name="qpid.jca:name=QpidResponderQueue">
-     <attribute name="JNDIName">QpidResponderQueue</attribute>
+         name="qpid.jca:name=QpidRequestQueue">
+     <attribute name="JNDIName">QpidRequestQueue</attribute>
      <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='@rar.name@'</depends>
      <attribute name="Type">org.apache.qpid.ra.admin.QpidQueue</attribute>
      <attribute name="Properties">
-        destinationAddress=@qpid.responder.queue.dest.address@
+        destinationAddress=@qpid.request.queue.dest.address@
      </attribute>
   </mbean>
 
+  <mbean code="org.jboss.resource.deployment.AdminObject"
+         name="qpid.jca:name=QpidResponseQueue">
+     <attribute name="JNDIName">QpidResponseQueue</attribute>
+     <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='@rar.name@'</depends>
+     <attribute name="Type">org.apache.qpid.ra.admin.QpidQueue</attribute>
+     <attribute name="Properties">
+        destinationAddress=@qpid.response.queue.dest.address@
+     </attribute>
+  </mbean>
   <mbean code="org.jboss.resource.deployment.AdminObject"
          name="qpid.jca:name=QpidConnectionFactory">
      <attribute name="JNDIName">QpidConnectionFactory</attribute>

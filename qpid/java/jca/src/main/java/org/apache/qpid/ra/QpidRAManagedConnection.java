@@ -34,10 +34,11 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.jms.Connection;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
+import javax.jms.QueueConnection;
 import javax.jms.ResourceAllocationException;
 import javax.jms.Session;
-import javax.jms.QueueConnection;
 import javax.jms.TopicConnection;
+import javax.jms.XAConnection;
 import javax.jms.XAQueueConnection;
 import javax.jms.XASession;
 import javax.jms.XATopicConnection;
@@ -260,7 +261,20 @@ public class QpidRAManagedConnection implements ManagedConnection, ExceptionList
          }
          catch (JMSException e)
          {
-            _log.debug("Error closing session " + this, e);
+            _log.debug("Error closing XASession " + this, e);
+         }
+
+         try
+         {
+             if(_session != null)
+             {
+                 _session.close();
+             }
+
+         }
+         catch(JMSException e)
+         {
+             _log.error("Error closing Session " + this, e);
          }
 
          if (_connection != null)
@@ -585,7 +599,7 @@ public class QpidRAManagedConnection implements ManagedConnection, ExceptionList
     */
    protected Session getSession() throws JMSException
    {
-      if(_xaSession != null && !_mcf.getUseLocalTx())
+      if(_xaSession != null && !_mcf.getUseLocalTx() && _inManagedTx)
       {
           if (_log.isTraceEnabled())
           {
@@ -761,107 +775,44 @@ public class QpidRAManagedConnection implements ManagedConnection, ExceptionList
          {
             if (_userName != null && _password != null)
             {
-               if(!transacted)
-               {
-                    _connection = _mcf.getCleanAMQConnectionFactory().createXATopicConnection(_userName, _password);
-               }
-               else
-               {
-                    _connection = _mcf.getCleanAMQConnectionFactory().createTopicConnection(_userName, _password);
-               }
+                _connection = _mcf.getCleanAMQConnectionFactory().createXATopicConnection(_userName, _password);
             }
             else
             {
-               if(!transacted)
-               {
-                   _connection = _mcf.getDefaultAMQConnectionFactory().createXATopicConnection();
-               }
-               else
-               {
-                   _connection = _mcf.getDefaultAMQConnectionFactory().createTopicConnection();
-               }
+                _connection = _mcf.getDefaultAMQConnectionFactory().createXATopicConnection();
             }
 
-            if(!transacted)
-            {
-                _xaSession = ((XATopicConnection)_connection).createXATopicSession();
-            }
-            else
-            {
-                _session =  ((TopicConnection)_connection).createTopicSession(transacted, acknowledgeMode);
-            }
+            _xaSession = ((XATopicConnection)_connection).createXATopicSession();
+            _session =  ((TopicConnection)_connection).createTopicSession(transacted, acknowledgeMode);
+
          }
          else if (_cri.getType() == QpidRAConnectionFactory.QUEUE_CONNECTION)
          {
             if (_userName != null && _password != null)
             {
-               if(!transacted)
-               {
-                    _connection = _mcf.getCleanAMQConnectionFactory().createXAQueueConnection(_userName, _password);
-               }
-               else
-               {
-                    _connection = _mcf.getCleanAMQConnectionFactory().createQueueConnection(_userName, _password);
-               }
+                _connection = _mcf.getCleanAMQConnectionFactory().createXAQueueConnection(_userName, _password);
             }
             else
             {
-               if(!transacted)
-               {
-                   _connection = _mcf.getDefaultAMQConnectionFactory().createXAQueueConnection();
-               }
-               else
-               {
-                   _connection = _mcf.getDefaultAMQConnectionFactory().createQueueConnection();
-               }
+                _connection = _mcf.getDefaultAMQConnectionFactory().createXAQueueConnection();
             }
 
-            if(!transacted)
-            {
-                _xaSession = ((XAQueueConnection)_connection).createXAQueueSession();
+            _xaSession = ((XAQueueConnection)_connection).createXAQueueSession();
+            _session =  ((QueueConnection)_connection).createQueueSession(transacted, acknowledgeMode);
 
-            }
-            else
-            {
-               _session =  ((QueueConnection)_connection).createQueueSession(transacted, acknowledgeMode);
-
-            }
          }
          else
          {
             if (_userName != null && _password != null)
             {
-               if(!transacted)
-               {
-                    _connection = _mcf.getCleanAMQConnectionFactory().createXAConnection(_userName, _password);
-               }
-               else
-               {
-                    _connection = _mcf.getCleanAMQConnectionFactory().createConnection(_userName, _password);
-               }
+                _connection = _mcf.getCleanAMQConnectionFactory().createXAConnection(_userName, _password);
             }
             else
             {
-               if(!transacted)
-               {
-                   _connection = _mcf.getDefaultAMQConnectionFactory().createXAConnection();
-               }
-               else
-               {
-                   _connection = _mcf.getDefaultAMQConnectionFactory().createConnection();
-               }
+                _connection = _mcf.getDefaultAMQConnectionFactory().createXAConnection();
             }
-
-            if(!transacted)
-            {
-                _xaSession = ((XAQueueConnection)_connection).createXASession();
-
-            }
-            else
-            {
-               _session =  ((QueueConnection)_connection).createSession(transacted, acknowledgeMode);
-
-            }
+            _xaSession = ((XAConnection)_connection).createXASession();
+            _session =  _connection.createSession(transacted, acknowledgeMode);
          }
 
         _connection.setExceptionListener(this);

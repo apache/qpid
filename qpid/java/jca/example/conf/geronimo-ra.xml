@@ -114,8 +114,16 @@
       <adminobject-interface>org.apache.qpid.ra.admin.QpidQueue</adminobject-interface>
       <adminobject-class>org.apache.qpid.ra.admin.QpidQueueImpl</adminobject-class>
       <adminobject-instance>
-         <message-destination-name>ResponderQueue</message-destination-name>
-         <config-property-setting name="destinationAddress">@qpid.responder.queue.dest.address@</config-property-setting>
+         <message-destination-name>RequestQueue</message-destination-name>
+         <config-property-setting name="destinationAddress">@qpid.request.queue.dest.address@</config-property-setting>
+      </adminobject-instance>
+    </adminobject>
+    <adminobject>
+      <adminobject-interface>org.apache.qpid.ra.admin.QpidQueue</adminobject-interface>
+      <adminobject-class>org.apache.qpid.ra.admin.QpidQueueImpl</adminobject-class>
+      <adminobject-instance>
+         <message-destination-name>ResponseQueue</message-destination-name>
+         <config-property-setting name="destinationAddress">@qpid.response.queue.dest.address@</config-property-setting>
       </adminobject-instance>
     </adminobject>
     <adminobject>

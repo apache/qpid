@@ -37,7 +37,6 @@ import org.slf4j.LoggerFactory;
     @ActivationConfigProperty(propertyName = "destination", propertyValue = "@qpid.goodbye.topic.jndi.name@"),
     @ActivationConfigProperty(propertyName = "connectionURL", propertyValue = "@broker.url@"),
     @ActivationConfigProperty(propertyName = "subscriptionDurability", propertyValue = "NotDurable"),
-    @ActivationConfigProperty(propertyName = "subscriptionName", propertyValue = "hello.Topic"),
     @ActivationConfigProperty(propertyName = "maxSession", propertyValue = "10")
 })
 
