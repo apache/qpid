@@ -439,6 +439,16 @@ public class XAResourceImpl implements XAResource
         }
     }
 
+    /**
+     * Is this resource currently enlisted in a transaction?
+     * 
+     * @return true if the resource is associated with a transaction, false otherwise.
+     */
+    public boolean isEnlisted()
+    {
+        return (_xid != null) ;
+    }
+    
     //------------------------------------------------------------------------
     // Private methods
     //------------------------------------------------------------------------

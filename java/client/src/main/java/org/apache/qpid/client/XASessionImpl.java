@@ -18,6 +18,7 @@
 package org.apache.qpid.client;
 
 import org.apache.qpid.client.message.MessageFactoryRegistry;
+import org.apache.qpid.transport.RangeSet;
 
 import javax.jms.JMSException;
 import javax.jms.QueueSession;
@@ -177,5 +178,18 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
     public TopicSession getTopicSession() throws JMSException
     {
         return (TopicSession) getSession();
+    }
+
+    @Override
+    protected void acknowledgeImpl()
+    {
+        if (_xaResource.isEnlisted())
+        {
+            acknowledgeMessage(Long.MAX_VALUE, true) ;
+        }
+        else
+        {
+            super.acknowledgeImpl() ;
+        }
     }
 }
