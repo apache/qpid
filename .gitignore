@@ -58,6 +58,9 @@ qpid/java/lib/cobertura
 qpid/java/lib/findbugs
 qpid/java/lib/ivy
 qpid/java/build.overrides
+qpid/java/felix-cache/*
+qpid/java/eclipse-projects
+qpid/java/derby.log
 # Intellij Project files
 *.iml
 *.ipr
@@ -79,3 +82,6 @@ qpid/java/build.overrides
 
 #Eclipse workspace
 workspace/
+
+*.swp
+

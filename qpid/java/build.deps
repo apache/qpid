@@ -118,7 +118,7 @@ management-eclipse-plugin-macosx.libs=${management-eclipse-plugin.core-libs} \
     ${ecl-swt-macosx-carbon} ${ecl-equinox-launcher-macosx-carbon} ${ecl-core-runtime-compat-registry}
 management-eclipse-plugin-solaris-gtk-sparc.libs=${management-eclipse-plugin.core-libs} \
     ${ecl-swt-solaris-gtk-sparc} ${ecl-equinox-launcher-solaris-gtk-sparc} ${ecl-core-runtime-compat-registry}
-    
+
 common.test.libs=${test.libs}
 broker.test.libs=${test.libs}
 client.test.libs=${test.libs}
@@ -133,7 +133,12 @@ management-eclipse-plugin.test.libs=${test.libs}
 management-common.test.libs=${test.libs}
 
 # JCA Resource adapter
-ra.libs=${geronimo-j2ee} ${geronimo-jta} ${geronimo-jms} ${slf4j-api} ${geronimo-kernel} ${geronimo-openejb}
+ra.libs=${geronimo-j2ee} ${geronimo-jta} ${geronimo-jms} ${test.libs} ${geronimo-kernel} ${geronimo-openejb}
+ra.test.libs=${test.libs}
+
+#note this is a hack because systests is looking for 'jca' versus 'ra' we need to do this twice
+jca.libs=${geronimo-j2ee} ${geronimo-jta} ${geronimo-jms} ${test.libs} ${geronimo-kernel} ${geronimo-openejb}
+jca.test.libs=${test.libs}
 
 # optional bdbstore module deps
 bdb-je=lib/bdbstore/je-5.0.34.jar
