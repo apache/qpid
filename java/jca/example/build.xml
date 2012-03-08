@@ -80,7 +80,8 @@
                 <filter token="qpid.hellogoodbye.topic.dest.address" value="${qpid.hellogoodbye.topic.dest.address}"/>
                 <filter token="qpid.hello.queue.dest.address" value="${qpid.hello.queue.dest.address}"/>
                 <filter token="qpid.goodbye.queue.dest.address" value="${qpid.goodbye.queue.dest.address}"/>
-                <filter token="qpid.responder.queue.dest.address" value="${qpid.responder.queue.dest.address}"/>
+                <filter token="qpid.request.queue.dest.address" value="${qpid.request.queue.dest.address}"/>
+                <filter token="qpid.response.queue.dest.address" value="${qpid.response.queue.dest.address}"/>
 
             </filterset>
             <filterset refid="extra.filterset"/>
@@ -96,7 +97,7 @@
                 <filter token="qpid.goodbye.topic.jndi.name" value="${qpid.goodbye.topic.jndi.name}"/>
                 <filter token="qpid.hello.queue.jndi.name" value="${qpid.hello.queue.jndi.name}"/>
                 <filter token="qpid.goodbye.queue.jndi.name" value="${qpid.goodbye.queue.jndi.name}"/>
-                <filter token="qpid.responder.queue.jndi.name" value="${qpid.responder.queue.jndi.name}"/>
+                <filter token="qpid.request.queue.jndi.name" value="${qpid.request.queue.jndi.name}"/>
                 <filter token="qpid.ejb.jndi.name" value="${qpid.ejb.jndi.name}"/>
             </filterset>
         </copy>

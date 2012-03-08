@@ -25,6 +25,11 @@
         <res-type>javax.jms.ConnectionFactory</res-type>
         <jndi-name>java:/QpidJMSXA</jndi-name>
     </resource-ref>
+    <resource-ref>
+        <res-ref-name>QpidJMS</res-ref-name>
+        <res-type>javax.jms.ConnectionFactory</res-type>
+        <jndi-name>java:/QpidJMS</jndi-name>
+    </resource-ref>
     <ejb-local-ref>
         <ejb-ref-name>QpidTestBean</ejb-ref-name>
         <jndi-name>qpid-jcaex/QpidTestBean/local</jndi-name>

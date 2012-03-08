@@ -45,7 +45,6 @@ import org.slf4j.LoggerFactory;
    @ActivationConfigProperty(propertyName = "destination", propertyValue = "@qpid.hello.topic.jndi.name@"),
    @ActivationConfigProperty(propertyName = "connectionURL", propertyValue = "@broker.url@"),
    @ActivationConfigProperty(propertyName = "subscriptionDurability", propertyValue = "NotDurable"),
-   @ActivationConfigProperty(propertyName = "subscriptionName", propertyValue = "hello.Topic"),
    @ActivationConfigProperty(propertyName = "maxSession", propertyValue = "10")
 })
 public class QpidHelloSubscriberBean implements MessageListener

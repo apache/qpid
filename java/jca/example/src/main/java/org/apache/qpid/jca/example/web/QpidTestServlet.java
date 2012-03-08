@@ -52,6 +52,7 @@ public class QpidTestServlet extends HttpServlet
     private static final int DEFAULT_COUNT = 1;
     private static final boolean DEFAULT_TOPIC = false;
     private static final boolean DEFAULT_XA = false;
+    private static final boolean DEFAULT_TX = false;
     private static final boolean DEFAULT_SAY_GOODBYE = true;
 
     @Resource(@jndi.scheme@="@qpid.xacf.jndi.name@")
@@ -82,6 +83,7 @@ public class QpidTestServlet extends HttpServlet
         UserTransaction ut = null;
         boolean useXA = false;
         boolean rollback = false;
+        boolean useTX = false;
 
         try
         {
@@ -90,8 +92,10 @@ public class QpidTestServlet extends HttpServlet
             int count = (req.getParameter("count") == null) ? DEFAULT_COUNT : Integer.valueOf(req.getParameter("count"));
             boolean useTopic = (req.getParameter("useTopic") == null) ? DEFAULT_TOPIC : Boolean.valueOf(req.getParameter("useTopic"));
             useXA = (req.getParameter("useXA") == null) ? DEFAULT_XA : Boolean.valueOf(req.getParameter("useXA"));
+            useTX = (req.getParameter("useTX") == null) ? DEFAULT_TX : Boolean.valueOf(req.getParameter("useTX"));
             ctx = new InitialContext();
             boolean sayGoodBye = (req.getParameter("sayGoodBye") == null) ? DEFAULT_SAY_GOODBYE : Boolean.valueOf(req.getParameter("sayGoodBye"));
+            useTX = (req.getParameter("useTX") == null) ? DEFAULT_TOPIC : Boolean.valueOf(req.getParameter("DEFAULT_TX"));
 
             _log.debug("Environment: ");
             _log.debug("Message content: " + content);
@@ -122,7 +126,7 @@ public class QpidTestServlet extends HttpServlet
                 }
 
                 connection = _connectionFactory.createConnection();
-                session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                session = connection.createSession(useTX, Session.AUTO_ACKNOWLEDGE);
                 messageProducer = (useTopic) ? session.createProducer(_topic) : session.createProducer(_queue);
 
                 for(int i = 0; i < count; i++)
@@ -147,6 +151,19 @@ public class QpidTestServlet extends HttpServlet
                 {
                     rollback = true;
                     ut.setRollbackOnly();
+                }
+                catch(Exception ex)
+                {
+                    _log.error(ex.getMessage(), ex);
+                    throw new ServletException(ex.getMessage(), ex);
+                }
+            }
+
+            if(useTX)
+            {
+                try
+                {
+                    session.rollback();
                 }
                 catch(Exception ex)
                 {
@@ -181,11 +198,31 @@ public class QpidTestServlet extends HttpServlet
                 }
             }
 
+            if(useTX && !useXA)
+            {
+                try
+                {
+
+                    if(rollback)
+                    {
+                        session.rollback();
+                    }
+                    else
+                    {
+                        session.commit();
+                    }
+                }
+                catch(Exception e)
+                {
+
+                    _log.error(e.getMessage(), e);
+                    throw new ServletException(e.getMessage(), e);
+                }
+            }
+
             QpidUtil.closeResources(session, connection, ctx);
         }
     }
-
-
 
 }
 

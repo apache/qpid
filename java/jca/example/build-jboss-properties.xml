@@ -27,7 +27,7 @@
     <property name="qpid.goodbye.topic.jndi.name" value="GoodByeTopic"/>
     <property name="qpid.hello.queue.jndi.name" value="HelloQueue"/>
     <property name="qpid.goodbye.queue.jndi.name" value="GoodByeQueue"/>
-    <property name="qpid.responder.queue.jndi.name" value="QpidResponderQueue"/>
+    <property name="qpid.request.queue.jndi.name" value="QpidRequestQueue"/>
     <property name="qpid.ejb.jndi.name" value="mappedName=&quot;QpidTestEJB&quot;"/>
     <property name="qpid.ejb.ref.name" value="QpidTestBean/local"/>
     <property name="qpid.ejb.name" value="qpid-jcaex/QpidTestBean/remote"/>

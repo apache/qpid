@@ -29,11 +29,22 @@
         <load-on-startup>1</load-on-startup>
     </servlet>
 
+    <servlet>
+        <display-name>QpidRequestResponseServlet</display-name>
+        <servlet-name>QpidRequestResponseServlet</servlet-name>
+        <servlet-class>org.apache.qpid.jca.example.web.QpidRequestResponseServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
     <servlet-mapping>
         <servlet-name>QpidTestServlet</servlet-name>
         <url-pattern>/qpid</url-pattern>
     </servlet-mapping>
 
+    <servlet-mapping>
+        <servlet-name>QpidRequestResponseServlet</servlet-name>
+        <url-pattern>/qpid-reqresp</url-pattern>
+    </servlet-mapping>
 
 </web-app>
 
