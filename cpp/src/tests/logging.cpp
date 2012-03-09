@@ -29,6 +29,7 @@
 #endif
 
 #include <boost/test/floating_point_comparison.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/format.hpp>
 #include "unit_test.h"
 
@@ -176,7 +177,9 @@ QPID_AUTO_TEST_CASE(testLoggerFormat) {
 
     l.format(Logger::FUNCTION);
     QPID_LOG(critical, "foo");
-    BOOST_CHECK_EQUAL(string(BOOST_CURRENT_FUNCTION) + ": foo\n", out->last());
+    BOOST_CHECK( ends_with( out->last(), ": foo\n"));
+    string name = out->last().substr(0, out->last().length() - 6);
+    BOOST_CHECK( contains( string(BOOST_CURRENT_FUNCTION), name));
 
     l.format(Logger::LEVEL);
     QPID_LOG(critical, "foo");
