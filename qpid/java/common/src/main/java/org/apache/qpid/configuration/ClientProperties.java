@@ -95,6 +95,7 @@ public class ClientProperties
      * synchronous operations.
      */
     public static final String QPID_SYNC_OP_TIMEOUT = "qpid.sync_op_timeout";
+    @Deprecated
     public static final String AMQJ_DEFAULT_SYNCWRITE_TIMEOUT = "amqj.default_syncwrite_timeout";
 
     /**
@@ -106,6 +107,7 @@ public class ClientProperties
      * System properties to change the default value used for TCP_NODELAY
      */
     public static final String QPID_TCP_NODELAY_PROP_NAME = "qpid.tcp_nodelay";
+    @Deprecated
     public static final String AMQJ_TCP_NODELAY_PROP_NAME = "amqj.tcp_nodelay";
 
     /**
@@ -116,16 +118,54 @@ public class ClientProperties
      */
     public static final String REJECT_BEHAVIOUR_PROP_NAME = "qpid.reject.behaviour";
 
-    /*
-    public static final QpidProperty<Boolean>  IGNORE_SET_CLIENTID_PROP_NAME =
-        QpidProperty.booleanProperty(false,"qpid.ignore_set_client_id","ignore_setclientID");
+    private ClientProperties()
+    {
+    }
 
-    public static final QpidProperty<Boolean> SYNC_PERSISTENT_PROP_NAME =
-        QpidProperty.booleanProperty(false,"qpid.sync_persistence","sync_persistence");
+    /**
+     * System property used to set the key manager factory algorithm.
+     *
+     * Historically, Qpid referred to this as {@value #QPID_SSL_KEY_STORE_CERT_TYPE_PROP_NAME}.
+     */
+    public static final String QPID_SSL_KEY_MANAGER_FACTORY_ALGORITHM_PROP_NAME = "qpid.ssl.KeyManagerFactory.algorithm";
+    @Deprecated
+    public static final String QPID_SSL_KEY_STORE_CERT_TYPE_PROP_NAME = "qpid.ssl.keyStoreCertType";
 
+    /**
+     * System property used to set the trust manager factory algorithm.
+     *
+     * Historically, Qpid referred to this as {@value #QPID_SSL_TRUST_STORE_CERT_TYPE_PROP_NAME}.
+     */
+    public static final String QPID_SSL_TRUST_MANAGER_FACTORY_ALGORITHM_PROP_NAME = "qpid.ssl.TrustManagerFactory.algorithm";
+    @Deprecated
+    public static final String QPID_SSL_TRUST_STORE_CERT_TYPE_PROP_NAME = "qpid.ssl.trustStoreCertType";
 
-    public static final QpidProperty<Integer> MAX_PREFETCH_PROP_NAME =
-        QpidProperty.intProperty(500,"qpid.max_prefetch","max_prefetch"); */
+    /**
+     * System property to enable allow dispatcher thread to be run as a daemon thread
+     */
+    public static final String DAEMON_DISPATCHER = "qpid.jms.daemon.dispatcher";
 
+    /**
+     * Used to name the process utilising the Qpid client, to override the default
+     * value is used in the ConnectionStartOk reply to the broker.
+     */
+    public static final String PROCESS_NAME = "qpid.client_process";
 
+    /**
+     * System property used to set the socket receive buffer size.
+     *
+     * Historically, Qpid referred to this as {@value #LEGACY_RECEIVE_BUFFER_SIZE_PROP_NAME}.
+     */
+    public static final String RECEIVE_BUFFER_SIZE_PROP_NAME  = "qpid.receive_buffer_size";
+    @Deprecated
+    public static final String LEGACY_RECEIVE_BUFFER_SIZE_PROP_NAME  = "amqj.receiveBufferSize";
+
+    /**
+     * System property used to set the socket send buffer size.
+     *
+     * Historically, Qpid referred to this as {@value #LEGACY_SEND_BUFFER_SIZE_PROP_NAME}.
+     */
+    public static final String SEND_BUFFER_SIZE_PROP_NAME  = "qpid.send_buffer_size";
+    @Deprecated
+    public static final String LEGACY_SEND_BUFFER_SIZE_PROP_NAME  = "amqj.sendBufferSize";
 }

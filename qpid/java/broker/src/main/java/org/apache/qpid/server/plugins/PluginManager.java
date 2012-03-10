@@ -18,16 +18,35 @@
  */
 package org.apache.qpid.server.plugins;
 
-import static org.apache.felix.framework.util.FelixConstants.SYSTEMBUNDLE_ACTIVATORS_PROP;
-import static org.apache.felix.main.AutoProcessor.AUTO_DEPLOY_ACTION_PROPERY;
-import static org.apache.felix.main.AutoProcessor.AUTO_DEPLOY_DIR_PROPERY;
-import static org.apache.felix.main.AutoProcessor.AUTO_DEPLOY_INSTALL_VALUE;
-import static org.apache.felix.main.AutoProcessor.AUTO_DEPLOY_START_VALUE;
-import static org.apache.felix.main.AutoProcessor.process;
-import static org.osgi.framework.Constants.FRAMEWORK_STORAGE;
-import static org.osgi.framework.Constants.FRAMEWORK_STORAGE_CLEAN;
-import static org.osgi.framework.Constants.FRAMEWORK_STORAGE_CLEAN_ONFIRSTINIT;
-import static org.osgi.framework.Constants.FRAMEWORK_SYSTEMPACKAGES;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.felix.framework.Felix;
+import org.apache.felix.framework.util.StringMap;
+import org.apache.log4j.Logger;
+import org.osgi.framework.BundleActivator;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleException;
+import org.osgi.framework.Version;
+import org.osgi.framework.launch.Framework;
+import org.osgi.util.tracker.ServiceTracker;
+
+import org.apache.qpid.common.Closeable;
+import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.server.configuration.TopicConfiguration;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
+import org.apache.qpid.server.configuration.plugins.SlowConsumerDetectionConfiguration.SlowConsumerDetectionConfigurationFactory;
+import org.apache.qpid.server.configuration.plugins.SlowConsumerDetectionPolicyConfiguration.SlowConsumerDetectionPolicyConfigurationFactory;
+import org.apache.qpid.server.configuration.plugins.SlowConsumerDetectionQueueConfiguration.SlowConsumerDetectionQueueConfigurationFactory;
+import org.apache.qpid.server.exchange.ExchangeType;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.SecurityPluginFactory;
+import org.apache.qpid.server.security.access.plugins.LegacyAccess;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManagerPluginFactory;
+import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
+import org.apache.qpid.server.virtualhost.plugins.SlowConsumerDetection;
+import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
+import org.apache.qpid.server.virtualhost.plugins.policies.TopicDeletePolicy;
+import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPluginFactory;
+import org.apache.qpid.util.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,36 +59,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.felix.framework.Felix;
-import org.apache.felix.framework.util.StringMap;
-import org.apache.log4j.Logger;
-import org.apache.qpid.common.Closeable;
-import org.apache.qpid.common.QpidProperties;
-import org.apache.qpid.server.configuration.TopicConfiguration;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
-import org.apache.qpid.server.configuration.plugins.SlowConsumerDetectionConfiguration.SlowConsumerDetectionConfigurationFactory;
-import org.apache.qpid.server.configuration.plugins.SlowConsumerDetectionPolicyConfiguration.SlowConsumerDetectionPolicyConfigurationFactory;
-import org.apache.qpid.server.configuration.plugins.SlowConsumerDetectionQueueConfiguration.SlowConsumerDetectionQueueConfigurationFactory;
-import org.apache.qpid.server.exchange.ExchangeType;
-import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.SecurityPluginFactory;
-import org.apache.qpid.server.security.access.plugins.AllowAll;
-import org.apache.qpid.server.security.access.plugins.DenyAll;
-import org.apache.qpid.server.security.access.plugins.LegacyAccess;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManagerPluginFactory;
-import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.virtualhost.plugins.SlowConsumerDetection;
-import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
-import org.apache.qpid.server.virtualhost.plugins.policies.TopicDeletePolicy;
-import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPluginFactory;
-import org.apache.qpid.util.FileUtils;
-import org.osgi.framework.BundleActivator;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.BundleException;
-import org.osgi.framework.Version;
-import org.osgi.framework.launch.Framework;
-import org.osgi.util.tracker.ServiceTracker;
+import static org.apache.felix.framework.util.FelixConstants.SYSTEMBUNDLE_ACTIVATORS_PROP;
+import static org.apache.felix.main.AutoProcessor.AUTO_DEPLOY_ACTION_PROPERY;
+import static org.apache.felix.main.AutoProcessor.AUTO_DEPLOY_DIR_PROPERY;
+import static org.apache.felix.main.AutoProcessor.AUTO_DEPLOY_INSTALL_VALUE;
+import static org.apache.felix.main.AutoProcessor.AUTO_DEPLOY_START_VALUE;
+import static org.apache.felix.main.AutoProcessor.process;
+import static org.osgi.framework.Constants.FRAMEWORK_STORAGE;
+import static org.osgi.framework.Constants.FRAMEWORK_STORAGE_CLEAN;
+import static org.osgi.framework.Constants.FRAMEWORK_STORAGE_CLEAN_ONFIRSTINIT;
+import static org.osgi.framework.Constants.FRAMEWORK_SYSTEMPACKAGES;
 
 /**
  * Provides access to pluggable elements, such as exchanges
@@ -146,16 +145,13 @@ public class PluginManager implements Closeable
     {
         // Store all non-OSGi plugins
         // A little gross that we have to add them here, but not all the plugins are OSGIfied
-        for (SecurityPluginFactory<?> pluginFactory : Arrays.asList(
-                AllowAll.FACTORY, DenyAll.FACTORY, LegacyAccess.FACTORY))
+        for (SecurityPluginFactory<?> pluginFactory : Arrays.asList(LegacyAccess.FACTORY))
         {
             _securityPlugins.put(pluginFactory.getPluginName(), pluginFactory);
         }
         for (ConfigurationPluginFactory configFactory : Arrays.asList(
                 TopicConfiguration.FACTORY,
                 SecurityManager.SecurityConfiguration.FACTORY,
-                AllowAll.AllowAllConfiguration.FACTORY,
-                DenyAll.DenyAllConfiguration.FACTORY,
                 LegacyAccess.LegacyAccessConfiguration.FACTORY,
                 new SlowConsumerDetectionConfigurationFactory(),
                 new SlowConsumerDetectionPolicyConfigurationFactory(),
@@ -254,6 +250,8 @@ public class PluginManager implements Closeable
             _logger.info("Using the specified external BundleContext");
         }
 
+        // TODO save trackers in a map, keyed by class name
+        
         _exchangeTracker = new ServiceTracker(bundleContext, ExchangeType.class.getName(), null);
         _exchangeTracker.open();
         _trackers.add(_exchangeTracker);

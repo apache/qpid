@@ -20,10 +20,11 @@
  */
 package org.apache.qpid.jms.failover;
 
-import org.apache.qpid.jms.BrokerDetails;
-import org.apache.qpid.jms.ConnectionURL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.jms.ConnectionURL;
 
 public class FailoverRoundRobinServers implements FailoverMethod
 {
@@ -49,8 +50,7 @@ public class FailoverRoundRobinServers implements FailoverMethod
     /** The current number of cycles performed. */
     private int _currentCycleRetries = 0;
 
-    /** Array of BrokerDetail used to make connections. */
-    protected ConnectionURL _connectionDetails;
+    private ConnectionURL _connectionDetails;
 
     public FailoverRoundRobinServers(ConnectionURL connectionDetails)
     {

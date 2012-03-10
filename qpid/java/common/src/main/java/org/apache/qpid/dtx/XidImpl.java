@@ -19,11 +19,13 @@ package org.apache.qpid.dtx;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.AMQInvalidArgumentException;
 
 import javax.transaction.xa.Xid;
-
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.util.Arrays;
 
 /**

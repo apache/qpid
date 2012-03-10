@@ -20,29 +20,31 @@
  */
 package org.apache.qpid.server.exchange;
 
-import java.util.Collections;
-import java.util.Map;
-
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.management.common.mbeans.ManagedExchange;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.binding.BindingFactory;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.ManagementActor;
-import org.apache.qpid.management.common.mbeans.ManagedExchange;
-import org.apache.qpid.framing.AMQShortString;
 
-import javax.management.openmbean.*;
+import javax.management.JMException;
 import javax.management.MBeanException;
+import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
-import javax.management.MalformedObjectNameException;
-import javax.management.JMException;
+import javax.management.openmbean.ArrayType;
+import javax.management.openmbean.CompositeType;
+import javax.management.openmbean.OpenDataException;
+import javax.management.openmbean.OpenType;
+import javax.management.openmbean.SimpleType;
+import javax.management.openmbean.TabularType;
+import java.util.Collections;
+
 
 /**
      * Abstract MBean class. This has some of the methods implemented from
@@ -52,9 +54,9 @@ import javax.management.JMException;
 public abstract class AbstractExchangeMBean<T extends AbstractExchange> extends AMQManagedObject implements ManagedExchange
 {
     // open mbean data types for representing exchange bindings
-    protected OpenType[] _bindingItemTypes;
-    protected CompositeType _bindingDataType;
-    protected TabularType _bindinglistDataType;
+    private OpenType[] _bindingItemTypes;
+    private CompositeType _bindingDataType;
+    private TabularType _bindinglistDataType;
 
 
     private T _exchange;
@@ -105,17 +107,17 @@ public abstract class AbstractExchangeMBean<T extends AbstractExchange> extends 
 
     public Integer getTicketNo()
     {
-        return _exchange._ticket;
+        return _exchange.getTicket();
     }
 
     public boolean isDurable()
     {
-        return _exchange._durable;
+        return _exchange.isDurable();
     }
 
     public boolean isAutoDelete()
     {
-        return _exchange._autoDelete;
+        return _exchange.isAutoDelete();
     }
 
     // Added exchangetype in the object name lets maangement apps to do any customization required
@@ -140,7 +142,7 @@ public abstract class AbstractExchangeMBean<T extends AbstractExchange> extends 
             throw new JMException("Queue \"" + queueName + "\" is not registered with the virtualhost.");
         }
 
-        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+        CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
         try
         {
             vhost.getBindingFactory().addBinding(binding,queue,getExchange(),null);
@@ -156,7 +158,7 @@ public abstract class AbstractExchangeMBean<T extends AbstractExchange> extends 
     /**
      * Removes a queue binding from the exchange.
      *
-     * @see BindingFactory#removeBinding(String, AMQQueue, Exchange, Map)
+     * @see org.apache.qpid.server.binding.BindingFactory#removeBinding(String, AMQQueue, Exchange, java.util.Map)
      */
     public void removeBinding(String queueName, String binding) throws JMException
     {
@@ -167,7 +169,7 @@ public abstract class AbstractExchangeMBean<T extends AbstractExchange> extends 
             throw new JMException("Queue \"" + queueName + "\" is not registered with the virtualhost.");
         }
 
-        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+        CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
         try
         {
             vhost.getBindingFactory().removeBinding(binding, queue, _exchange, Collections.<String, Object>emptyMap());
@@ -178,5 +180,36 @@ public abstract class AbstractExchangeMBean<T extends AbstractExchange> extends 
             throw new MBeanException(jme, "Error removing binding " + binding);
         }
         CurrentActor.remove();
+    }
+
+
+    protected OpenType[] getBindingItemTypes()
+    {
+        return _bindingItemTypes;
+    }
+
+    protected void setBindingItemTypes(OpenType[] bindingItemTypes)
+    {
+        _bindingItemTypes = bindingItemTypes;
+    }
+
+    protected CompositeType getBindingDataType()
+    {
+        return _bindingDataType;
+    }
+
+    protected void setBindingDataType(CompositeType bindingDataType)
+    {
+        _bindingDataType = bindingDataType;
+    }
+
+    protected TabularType getBindinglistDataType()
+    {
+        return _bindinglistDataType;
+    }
+
+    protected void setBindinglistDataType(TabularType bindinglistDataType)
+    {
+        _bindinglistDataType = bindinglistDataType;
     }
 }

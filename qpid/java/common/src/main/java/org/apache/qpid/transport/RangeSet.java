@@ -20,9 +20,7 @@
  */
 package org.apache.qpid.transport;
 
-import java.util.*;
-
-import static org.apache.qpid.util.Serial.*;
+import java.util.Iterator;
 
 /**
  * RangeSet
@@ -50,6 +48,8 @@ public interface RangeSet extends Iterable<Range>
     void add(int lower, int upper);
 
     void add(int value);
+
+    void subtract(final RangeSet other);
 
     void clear();
 

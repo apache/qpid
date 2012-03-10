@@ -21,8 +21,13 @@
 package org.apache.qpid.server.filter;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQInvalidArgumentException;
-import org.apache.qpid.server.filter.jms.selector.SelectorParser;
+
+import org.apache.qpid.filter.BooleanExpression;
+import org.apache.qpid.filter.FilterableMessage;
+import org.apache.qpid.filter.SelectorParsingException;
+import org.apache.qpid.filter.selector.ParseException;
+import org.apache.qpid.filter.selector.SelectorParser;
+import org.apache.qpid.filter.selector.TokenMgrError;
 import org.apache.qpid.server.queue.Filterable;
 
 
@@ -33,7 +38,7 @@ public class JMSSelectorFilter implements MessageFilter
     private String _selector;
     private BooleanExpression _matcher;
 
-    public JMSSelectorFilter(String selector) throws AMQInvalidArgumentException
+    public JMSSelectorFilter(String selector) throws ParseException, TokenMgrError, SelectorParsingException
     {
         _selector = selector;
         _matcher = new SelectorParser().parse(selector);
@@ -41,12 +46,69 @@ public class JMSSelectorFilter implements MessageFilter
 
     public boolean matches(Filterable message)
     {
-        boolean match = _matcher.matches(message);
+
+        boolean match = _matcher.matches(wrap(message));
         if(_logger.isDebugEnabled())
         {
             _logger.debug(message + " match(" + match + ") selector(" + System.identityHashCode(_selector) + "):" + _selector);
         }
         return match;
+    }
+
+    private FilterableMessage wrap(final Filterable message)
+    {
+        return new FilterableMessage()
+        {
+            public boolean isPersistent()
+            {
+                return message.isPersistent();
+            }
+
+            public boolean isRedelivered()
+            {
+                return message.isRedelivered();
+            }
+
+            public Object getHeader(String name)
+            {
+                return message.getMessageHeader().getHeader(name);
+            }
+
+            public String getReplyTo()
+            {
+                return message.getMessageHeader().getReplyTo();
+            }
+
+            public String getType()
+            {
+                return message.getMessageHeader().getType();
+            }
+
+            public byte getPriority()
+            {
+                return message.getMessageHeader().getPriority();
+            }
+
+            public String getMessageId()
+            {
+                return message.getMessageHeader().getMessageId();
+            }
+
+            public long getTimestamp()
+            {
+                return message.getMessageHeader().getTimestamp();
+            }
+
+            public String getCorrelationId()
+            {
+                return message.getMessageHeader().getCorrelationId();
+            }
+
+            public long getExpiration()
+            {
+                return message.getMessageHeader().getExpiration();
+            }
+        };
     }
 
     public String getSelector()

@@ -22,6 +22,10 @@ package org.apache.qpid.transport;
 
 public class RangeSetFactory
 {
+    private RangeSetFactory()
+    {
+    }
+
     public static RangeSet createRangeSet()
     {
         return new RangeSetImpl();

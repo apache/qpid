@@ -20,15 +20,15 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.MessageStoreMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
-import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public abstract class AbstractMessageStore implements MessageStore
 {
-    protected LogSubject _logSubject;
+    private LogSubject _logSubject;
 
     public void configure(VirtualHost virtualHost) throws Exception
     {

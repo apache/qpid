@@ -20,6 +20,24 @@
 
 package org.apache.qpid.server.configuration;
 
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.ConfigurationFactory;
+import org.apache.commons.configuration.HierarchicalConfiguration;
+import org.apache.commons.configuration.SystemConfiguration;
+import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+import org.apache.qpid.server.exchange.DefaultExchangeFactory;
+import org.apache.qpid.server.protocol.AmqpProtocolVersion;
+import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.signal.SignalHandlerTask;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+
 import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
 
 import java.io.File;
@@ -31,21 +49,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.ConfigurationFactory;
-import org.apache.commons.configuration.HierarchicalConfiguration;
-import org.apache.commons.configuration.SystemConfiguration;
-import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
-import org.apache.qpid.server.exchange.DefaultExchangeFactory;
-import org.apache.qpid.server.queue.AMQQueueFactory;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.signal.SignalHandlerTask;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import javax.net.ssl.KeyManagerFactory;
 
 public class ServerConfiguration extends ConfigurationPlugin
 {
@@ -84,10 +88,14 @@ public class ServerConfiguration extends ConfigurationPlugin
     public static final String MGMT_JMXPORT_CONNECTORSERVER = "management.jmxport.connectorServer";
     public static final String STATUS_UPDATES = "status-updates";
     public static final String ADVANCED_LOCALE = "advanced.locale";
+    public static final String CONNECTOR_AMQP010ENABLED = "connector.amqp010enabled";
+    public static final String CONNECTOR_AMQP091ENABLED = "connector.amqp091enabled";
+    public static final String CONNECTOR_AMQP09ENABLED = "connector.amqp09enabled";
+    public static final String CONNECTOR_AMQP08ENABLED = "connector.amqp08enabled";
+    public static final String CONNECTOR_AMQP_SUPPORTED_REPLY = "connector.amqpDefaultSupportedProtocolReply";
 
     {
         envVarMap.put("QPID_PORT", "connector.port");
-        envVarMap.put("QPID_ENABLEDIRECTBUFFERS", "advanced.enableDirectBuffers");
         envVarMap.put("QPID_SSLPORT", "connector.ssl.port");
         envVarMap.put("QPID_JMXPORT_REGISTRYSERVER", MGMT_JMXPORT_REGISTRYSERVER);
         envVarMap.put("QPID_JMXPORT_CONNECTORSERVER", MGMT_JMXPORT_CONNECTORSERVER);
@@ -108,7 +116,6 @@ public class ServerConfiguration extends ConfigurationPlugin
         envVarMap.put("QPID_SOCKETRECEIVEBUFFER", "connector.socketReceiveBuffer");
         envVarMap.put("QPID_SOCKETWRITEBUFFER", "connector.socketWriteBuffer");
         envVarMap.put("QPID_TCPNODELAY", "connector.tcpNoDelay");
-        envVarMap.put("QPID_ENABLEPOOLEDALLOCATOR", "advanced.enablePooledAllocator");
         envVarMap.put("QPID_STATUS-UPDATES", "status-updates");
     }
 
@@ -177,7 +184,7 @@ public class ServerConfiguration extends ConfigurationPlugin
      */
     public ServerConfiguration(Configuration conf)
     {
-        _configuration = conf;        
+        setConfig(conf);
     }
 
     /**
@@ -197,8 +204,8 @@ public class ServerConfiguration extends ConfigurationPlugin
      */
     public void initialise() throws ConfigurationException
     {	
-        setConfiguration("", _configuration);
-        setupVirtualHosts(_configuration);
+        setConfiguration("", getConfig());
+        setupVirtualHosts(getConfig());
     }
 
     public String[] getElementsProcessed()
@@ -256,6 +263,13 @@ public class ServerConfiguration extends ConfigurationPlugin
                         + (_configFile == null ? "" : " Configuration file : " + _configFile));
             }
         }
+
+        // QPID-3739 certType was a misleading name.
+        if (contains("connector.ssl.certType"))
+        {
+            _logger.warn("Validation warning: connector/ssl/certType is deprecated and must be replaced by connector/ssl/keyManagerFactoryAlgorithm"
+                    + (_configFile == null ? "" : " Configuration file : " + _configFile));
+        }
     }
 
     /*
@@ -303,7 +317,7 @@ public class ServerConfiguration extends ConfigurationPlugin
 
                 // save the default virtualhost name
                 String defaultVirtualHost = vhostConfiguration.getString("default");
-                _configuration.setProperty("virtualhosts.default", defaultVirtualHost);
+                getConfig().setProperty("virtualhosts.default", defaultVirtualHost);
             }
         }
 
@@ -472,7 +486,7 @@ public class ServerConfiguration extends ConfigurationPlugin
             {
                 VirtualHost vhost = vhostRegistry.getVirtualHost(hostName);
                 Configuration vhostConfig = newVhosts.subset("virtualhost." + hostName);
-                vhost.getConfiguration().setConfiguration("virtualhosts.virtualhost", vhostConfig); // XXX
+                vhost.getConfiguration().setConfiguration("virtualhosts.virtualhost", vhostConfig);
                 vhost.getSecurityManager().configureGlobalPlugins(this);
                 vhost.getSecurityManager().configureHostPlugins(vhost.getConfiguration());
             }
@@ -608,11 +622,6 @@ public class ServerConfiguration extends ConfigurationPlugin
         return getDoubleValue("heartbeat.timeoutFactor", 2.0);
     }
 
-    public int getDeliveryPoolSize()
-    {
-        return getIntValue("delivery.poolsize");
-    }
-
     public long getMaximumMessageAge()
     {
         return getLongValue("maximumMessageAge");
@@ -698,11 +707,6 @@ public class ServerConfiguration extends ConfigurationPlugin
         return getBooleanValue("connector.tcpNoDelay", true);
     }
 
-    public boolean getEnableExecutorPool()
-    {
-        return getBooleanValue("advanced.filterchain[@enableExecutorPool]");
-    }
-
     public boolean getEnableSSL()
     {
         return getBooleanValue("connector.ssl.enabled");
@@ -730,9 +734,12 @@ public class ServerConfiguration extends ConfigurationPlugin
         return getStringValue("connector.ssl.keyStorePassword", fallback);
     }
 
-    public String getConnectorCertType()
+    public String getConnectorKeyManagerFactoryAlgorithm()
     {
-        return getStringValue("connector.ssl.certType", "SunX509");
+        final String systemFallback = KeyManagerFactory.getDefaultAlgorithm();
+        // deprecated, pre-0.17 brokers supported this name.
+        final String fallback = getStringValue("connector.ssl.certType", systemFallback);
+        return getStringValue("connector.ssl.keyManagerFactoryAlgorithm", fallback);
     }
 
     public String getDefaultVirtualHost()
@@ -836,4 +843,33 @@ public class ServerConfiguration extends ConfigurationPlugin
         return getConfig().getString("deadLetterQueueSuffix", AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
     }
 
+    public boolean isAmqp010enabled()
+    {
+        return getConfig().getBoolean(CONNECTOR_AMQP010ENABLED, true);
+    }
+
+    public boolean isAmqp091enabled()
+    {
+        return getConfig().getBoolean(CONNECTOR_AMQP091ENABLED, true);
+    }
+
+    public boolean isAmqp09enabled()
+    {
+        return getConfig().getBoolean(CONNECTOR_AMQP09ENABLED, true);
+    }
+
+    public boolean isAmqp08enabled()
+    {
+        return getConfig().getBoolean(CONNECTOR_AMQP08ENABLED, true);
+    }
+
+    /**
+     * Returns the configured default reply to an unsupported AMQP protocol initiation, or null if there is none
+     */
+    public AmqpProtocolVersion getDefaultSupportedProtocolReply()
+    {
+        String reply = getConfig().getString(CONNECTOR_AMQP_SUPPORTED_REPLY, null);
+
+        return reply == null ? null : AmqpProtocolVersion.valueOf(reply);
+    }
 }

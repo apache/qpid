@@ -20,11 +20,12 @@
  */
 package org.apache.qpid.server.plugins;
 
-import java.util.Map;
-import java.util.TreeMap;
+import org.osgi.framework.Version;
 
 import org.apache.qpid.test.utils.QpidTestCase;
-import org.osgi.framework.Version;
+
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  *
@@ -72,11 +73,11 @@ public class OsgiSystemPackageUtilTest extends QpidTestCase
         _map.put("org.apache.qpid.xyz", "1.0.0");
         _map.put("org.abc", "1.2.3");
 
-        _util = new OsgiSystemPackageUtil(new Version("0.15"), _map);
+        _util = new OsgiSystemPackageUtil(new Version("0.17"), _map);
 
         final String systemPackageString = _util.getFormattedSystemPackageString();
 
-        assertEquals("org.abc; version=1.2.3, org.apache.qpid.xyz; version=0.15.0", systemPackageString);   
+        assertEquals("org.abc; version=1.2.3, org.apache.qpid.xyz; version=0.17.0", systemPackageString);   
     }
 
     public void testWithQpidPackageWithoutQpidReleaseNumberSet() throws Exception

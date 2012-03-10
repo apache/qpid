@@ -20,10 +20,11 @@
  */
 package org.apache.qpid.server.subscription;
 
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.QueueEntry;
 
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,7 +48,10 @@ public class AssignedSubscriptionMessageGroupManager implements MessageGroupMana
     private static int pow2(final int i)
     {
         int val = 1;
-        while(val < i) val<<=1;
+        while(val < i)
+        {
+            val<<=1;
+        }
         return val;
     }
 
@@ -111,11 +115,15 @@ public class AssignedSubscriptionMessageGroupManager implements MessageGroupMana
         public boolean visit(final QueueEntry entry)
         {
             if(!entry.isAvailable())
+            {
                 return false;
+            }
 
             Object groupId = entry.getMessage().getMessageHeader().getHeader(_groupId);
             if(groupId == null)
+            {
                 return false;
+            }
 
             Integer group = groupId.hashCode() & _groupMask;
             Subscription assignedSub = _groupMap.get(group);

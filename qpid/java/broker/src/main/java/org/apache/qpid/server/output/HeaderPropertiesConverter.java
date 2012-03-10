@@ -20,21 +20,28 @@
 */
 package org.apache.qpid.server.output;
 
+import org.apache.qpid.AMQPInvalidClassException;
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.message.MessageTransferMessage;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.transport.*;
-import org.apache.qpid.AMQPInvalidClassException;
+import org.apache.qpid.transport.DeliveryProperties;
+import org.apache.qpid.transport.Header;
+import org.apache.qpid.transport.MessageDeliveryMode;
+import org.apache.qpid.transport.MessageProperties;
+import org.apache.qpid.transport.ReplyTo;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class HeaderPropertiesConverter
 {
+    private HeaderPropertiesConverter()
+    {
+    }
 
     public static BasicContentHeaderProperties convert(MessageTransferMessage messageTransferMessage, VirtualHost vhost)
     {

@@ -22,9 +22,13 @@
 package org.apache.qpid.qmf;
 
 import org.apache.commons.lang.NotImplementedException;
+
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.SessionConfig;
-import org.apache.qpid.server.message.*;
+import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.message.MessageReference;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.transport.codec.BBEncoder;
 

@@ -22,13 +22,14 @@ package org.apache.qpid.server.configuration;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 
 public class TopicConfig extends ConfigurationPlugin
 {
     public TopicConfig()
     {
-        _configuration = new PropertiesConfiguration();
+        setConfig(new PropertiesConfiguration());
     }
 
     @Override
@@ -50,7 +51,7 @@ public class TopicConfig extends ConfigurationPlugin
 
     public void validateConfiguration() throws ConfigurationException
     {
-        if (_configuration.isEmpty())
+        if (getConfig().isEmpty())
         {
             throw new ConfigurationException("Topic section cannot be empty.");
         }

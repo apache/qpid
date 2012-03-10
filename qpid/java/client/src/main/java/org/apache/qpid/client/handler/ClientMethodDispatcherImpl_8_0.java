@@ -20,11 +20,19 @@
  */
  package org.apache.qpid.client.handler;
 
-import org.apache.qpid.framing.*;
-import org.apache.qpid.framing.amqp_8_0.MethodDispatcher_8_0;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
+import org.apache.qpid.framing.BasicRecoverOkBody;
+import org.apache.qpid.framing.ChannelAlertBody;
+import org.apache.qpid.framing.TestContentBody;
+import org.apache.qpid.framing.TestContentOkBody;
+import org.apache.qpid.framing.TestIntegerBody;
+import org.apache.qpid.framing.TestIntegerOkBody;
+import org.apache.qpid.framing.TestStringBody;
+import org.apache.qpid.framing.TestStringOkBody;
+import org.apache.qpid.framing.TestTableBody;
+import org.apache.qpid.framing.TestTableOkBody;
+import org.apache.qpid.framing.amqp_8_0.MethodDispatcher_8_0;
 
 public class ClientMethodDispatcherImpl_8_0 extends ClientMethodDispatcherImpl implements MethodDispatcher_8_0
 {

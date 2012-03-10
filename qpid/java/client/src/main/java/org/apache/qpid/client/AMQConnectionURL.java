@@ -20,17 +20,17 @@
  */
 package org.apache.qpid.client;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.qpid.client.url.URLParser;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.url.URLHelper;
 import org.apache.qpid.url.URLSyntaxException;
+
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 public class AMQConnectionURL implements ConnectionURL
 {
@@ -50,7 +50,10 @@ public class AMQConnectionURL implements ConnectionURL
 
     public AMQConnectionURL(String fullURL) throws URLSyntaxException
     {
-        if (fullURL == null) throw new IllegalArgumentException("URL cannot be null");
+        if (fullURL == null)
+        {
+            throw new IllegalArgumentException("URL cannot be null");
+        }
         _url = fullURL;
         _options = new HashMap<String, String>();
         _brokers = new LinkedList<BrokerDetails>();
@@ -273,7 +276,8 @@ public class AMQConnectionURL implements ConnectionURL
         if (_failoverMethod != null)
         {
             sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
-            sb.append(OPTIONS_FAILOVER + "='");
+            sb.append(OPTIONS_FAILOVER);
+            sb.append("='");
             sb.append(_failoverMethod);
             sb.append(URLHelper.printOptions(_failoverOptions));
             sb.append("'");

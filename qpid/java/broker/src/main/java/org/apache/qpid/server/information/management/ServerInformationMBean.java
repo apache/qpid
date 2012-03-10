@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.information.management;
 
-import java.io.IOException;
-
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.management.common.mbeans.ServerInformation;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
@@ -29,6 +27,7 @@ import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import javax.management.JMException;
+import java.io.IOException;
 
 /** MBean class for the ServerInformationMBean. */
 @MBeanDescription("Server Information Interface")

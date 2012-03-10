@@ -20,42 +20,14 @@
  */
 package org.apache.qpid.client;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.net.ConnectException;
-import java.net.UnknownHostException;
-import java.nio.channels.UnresolvedAddressException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
-import javax.jms.ConnectionConsumer;
-import javax.jms.ConnectionMetaData;
-import javax.jms.Destination;
-import javax.jms.ExceptionListener;
-import javax.jms.IllegalStateException;
-import javax.jms.JMSException;
-import javax.jms.Queue;
-import javax.jms.QueueConnection;
-import javax.jms.QueueSession;
-import javax.jms.ServerSessionPool;
-import javax.jms.Topic;
-import javax.jms.TopicConnection;
-import javax.jms.TopicSession;
-import javax.naming.NamingException;
-import javax.naming.Reference;
-import javax.naming.Referenceable;
-import javax.naming.StringRefAddr;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQConnectionFailureException;
+import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQProtocolException;
 import org.apache.qpid.AMQUnresolvedAddressException;
-import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
@@ -76,8 +48,36 @@ import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.jms.FailoverPolicy;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.url.URLSyntaxException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import javax.jms.ConnectionConsumer;
+import javax.jms.ConnectionMetaData;
+import javax.jms.Destination;
+import javax.jms.ExceptionListener;
+import javax.jms.IllegalStateException;
+import javax.jms.JMSException;
+import javax.jms.Queue;
+import javax.jms.QueueConnection;
+import javax.jms.QueueSession;
+import javax.jms.ServerSessionPool;
+import javax.jms.Topic;
+import javax.jms.TopicConnection;
+import javax.jms.TopicSession;
+import javax.naming.NamingException;
+import javax.naming.Reference;
+import javax.naming.Referenceable;
+import javax.naming.StringRefAddr;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.net.ConnectException;
+import java.net.UnknownHostException;
+import java.nio.channels.UnresolvedAddressException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class AMQConnection extends Closeable implements Connection, QueueConnection, TopicConnection, Referenceable
 {
@@ -106,7 +106,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      * the handler deals with this. It also deals with the initial dispatch of any protocol frames to their appropriate
      * handler.
      */
-    protected AMQProtocolHandler _protocolHandler;
+    private AMQProtocolHandler _protocolHandler;
 
     /** Maps from session id (Integer) to AMQSession instance */
     private final ChannelToSessionMap _sessions = new ChannelToSessionMap();
@@ -122,7 +122,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     /** The virtual path to connect to on the AMQ server */
     private String _virtualHost;
 
-    protected ExceptionListener _exceptionListener;
+    private ExceptionListener _exceptionListener;
 
     private ConnectionListener _connectionListener;
 
@@ -132,15 +132,15 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      * Whether this connection is started, i.e. whether messages are flowing to consumers. It has no meaning for message
      * publication.
      */
-    protected volatile boolean _started;
+    private volatile boolean _started;
 
     /** Policy dictating how to failover */
-    protected FailoverPolicy _failoverPolicy;
+    private FailoverPolicy _failoverPolicy;
 
     /*
      * _Connected should be refactored with a suitable wait object.
      */
-    protected boolean _connected;
+    private boolean _connected;
 
     /*
      * The connection meta data
@@ -156,7 +156,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     private final ExecutorService _taskPool = Executors.newCachedThreadPool();
     private static final long DEFAULT_TIMEOUT = 1000 * 30;
 
-    protected AMQConnectionDelegate _delegate;
+    private AMQConnectionDelegate _delegate;
 
     // this connection maximum number of prefetched messages
     private int _maxPrefetch;
@@ -308,9 +308,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             _delegate = new AMQConnectionDelegate_0_10(this);
         }
 
-        if (_logger.isInfoEnabled())
+        if (_logger.isDebugEnabled())
         {
-            _logger.info("Connection:" + connectionURL);
+            _logger.debug("Connection:" + connectionURL);
         }
 
         _connectionURL = connectionURL;
@@ -343,14 +343,17 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
         _protocolHandler = new AMQProtocolHandler(this);
 
-        _logger.info("Connecting with ProtocolHandler Version:"+_protocolHandler.getProtocolVersion());
+        if (_logger.isDebugEnabled())
+        {
+        	_logger.debug("Connecting with ProtocolHandler Version:"+_protocolHandler.getProtocolVersion());
+        }
 
         // We are not currently connected
-        _connected = false;
+        setConnected(false);
 
         boolean retryAllowed = true;
         Exception connectionException = null;
-        while (!_connected && retryAllowed && brokerDetails != null)
+        while (!isConnected() && retryAllowed && brokerDetails != null)
         {
             ProtocolVersion pe = null;
             try
@@ -374,7 +377,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 // broker
                 initDelegate(pe);
             }
-            else if (!_connected)
+            else if (!isConnected())
             {
                 retryAllowed = _failoverPolicy.failoverAllowed();
                 brokerDetails = _failoverPolicy.getNextBrokerDetails();
@@ -384,10 +387,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Are we connected:" + _connected);
+            _logger.debug("Are we connected:" + isConnected());
         }
 
-        if (!_connected)
+        if (!isConnected())
         {
             if (_logger.isDebugEnabled())
             {
@@ -435,7 +438,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             throw new AMQConnectionFailureException(message, connectionException);
         }
 
-        _logger.info("Connected with ProtocolHandler Version:"+_protocolHandler.getProtocolVersion());
+        if (_logger.isDebugEnabled())
+        {
+        	_logger.debug("Connected with ProtocolHandler Version:"+_protocolHandler.getProtocolVersion());
+        }
 
         _sessions.setMaxChannelID(_delegate.getMaxChannelID());
         _sessions.setMinChannelID(_delegate.getMinChannelID());
@@ -462,7 +468,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             String delegateClassName = String.format
                                     ("org.apache.qpid.client.AMQConnectionDelegate_%s_%s",
                                      pe.getMajorVersion(), pe.getMinorVersion());
-            _logger.info("Looking up delegate '" + delegateClassName + "' Based on PE:" + pe);
+            if (_logger.isDebugEnabled())
+            {
+            	_logger.debug("Looking up delegate '" + delegateClassName + "' Based on PE:" + pe);
+            }
             Class c = Class.forName(delegateClassName);
             Class partypes[] = new Class[1];
             partypes[0] = AMQConnection.class;
@@ -590,7 +599,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     public boolean failoverAllowed()
     {
-        if (!_connected)
+        if (!isConnected())
         {
             return false;
         }
@@ -729,6 +738,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     }
 
+    protected final ExceptionListener getExceptionListenerNoCheck()
+    {
+        return _exceptionListener;
+    }
+
     public ExceptionListener getExceptionListener() throws JMSException
     {
         checkNotClosed();
@@ -804,13 +818,13 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     public void close(List<AMQSession> sessions, long timeout) throws JMSException
     {
-        if (!_closed.getAndSet(true))
+        if (!setClosed())
         {
-            _closing.set(true);
+            setClosing(true);
             try{
                 doClose(sessions, timeout);
             }finally{
-                _closing.set(false);
+                setClosing(false);
             }
         }
     }
@@ -963,7 +977,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         checkNotClosed();
 
-        return null;
+        throw new JmsNotImplementedException();
+
     }
 
     public ConnectionConsumer createConnectionConsumer(Queue queue, String messageSelector, ServerSessionPool sessionPool,
@@ -971,7 +986,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         checkNotClosed();
 
-        return null;
+        throw new JmsNotImplementedException();
     }
 
     public ConnectionConsumer createConnectionConsumer(Topic topic, String messageSelector, ServerSessionPool sessionPool,
@@ -979,7 +994,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         checkNotClosed();
 
-        return null;
+        throw new JmsNotImplementedException();
     }
 
     public ConnectionConsumer createDurableConnectionConsumer(Topic topic, String subscriptionName, String messageSelector,
@@ -988,7 +1003,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         // TODO Auto-generated method stub
         checkNotClosed();
 
-        return null;
+        throw new JmsNotImplementedException();
     }
 
     public long getMaximumChannelCount() throws JMSException
@@ -1048,14 +1063,24 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         return _virtualHost;
     }
 
-    public AMQProtocolHandler getProtocolHandler()
+    public final AMQProtocolHandler getProtocolHandler()
     {
         return _protocolHandler;
     }
 
-    public boolean started()
+    public final boolean started()
     {
         return _started;
+    }
+
+    protected final boolean isConnected()
+    {
+        return _connected;
+    }
+
+    protected final void setConnected(boolean connected)
+    {
+        _connected = connected;
     }
 
     public void bytesSent(long writtenBytes)
@@ -1226,8 +1251,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         if (cause instanceof IOException || cause instanceof AMQDisconnectedException)
         {
             // If we have an IOE/AMQDisconnect there is no connection to close on.
-            _closing.set(false);
-            closer = !_closed.getAndSet(true);
+            setClosing(false);
+            closer = !setClosed();
 
             _protocolHandler.getProtocolSession().notifyError(je);
         }
@@ -1238,7 +1263,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             // decide if we are going to close the session
             if (hardError(cause))
             {
-                closer = (!_closed.getAndSet(true)) || closer;
+                closer = (!setClosed()) || closer;
                 {
                     _logger.info("Closing AMQConnection due to :" + cause);
                 }
@@ -1489,4 +1514,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
          return _lastFailoverTime;
     }
 
+    protected AMQConnectionDelegate getDelegate()
+    {
+        return _delegate;
+    }
 }

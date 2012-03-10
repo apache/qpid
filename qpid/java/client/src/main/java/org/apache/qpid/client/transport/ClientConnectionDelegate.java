@@ -20,13 +20,11 @@
  */
 package org.apache.qpid.client.transport;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.security.sasl.Sasl;
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslException;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.GSSManager;
+import org.ietf.jgss.GSSName;
+import org.ietf.jgss.Oid;
 
 import org.apache.qpid.client.security.AMQCallbackHandler;
 import org.apache.qpid.client.security.CallbackHandlerRegistry;
@@ -38,11 +36,13 @@ import org.apache.qpid.transport.ConnectionOpenOk;
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.util.Logger;
 import org.apache.qpid.util.Strings;
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSException;
-import org.ietf.jgss.GSSManager;
-import org.ietf.jgss.GSSName;
-import org.ietf.jgss.Oid;
+
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -85,7 +85,7 @@ public class ClientConnectionDelegate extends ClientDelegate
     protected SaslClient createSaslClient(List<Object> brokerMechs) throws ConnectionException, SaslException
     {
         final String brokerMechanisms = Strings.join(" ", brokerMechs);
-        final String restrictionList = _conSettings.getSaslMechs();
+        final String restrictionList = getConnectionSettings().getSaslMechs();
         final String selectedMech = CallbackHandlerRegistry.getInstance().selectMechanism(brokerMechanisms, restrictionList);
         if (selectedMech == null)
         {
@@ -96,14 +96,14 @@ public class ClientConnectionDelegate extends ClientDelegate
         }
 
         Map<String,Object> saslProps = new HashMap<String,Object>();
-        if (_conSettings.isUseSASLEncryption())
+        if (getConnectionSettings().isUseSASLEncryption())
         {
             saslProps.put(Sasl.QOP, "auth-conf");
         }
 
         final AMQCallbackHandler handler = CallbackHandlerRegistry.getInstance().createCallbackHandler(selectedMech);
         handler.initialise(_connectionURL);
-        final SaslClient sc = Sasl.createSaslClient(new String[] {selectedMech}, null, _conSettings.getSaslProtocol(), _conSettings.getSaslServerName(), saslProps, handler);
+        final SaslClient sc = Sasl.createSaslClient(new String[] {selectedMech}, null, getConnectionSettings().getSaslProtocol(), getConnectionSettings().getSaslServerName(), saslProps, handler);
 
         return sc;
     }
@@ -137,7 +137,7 @@ public class ClientConnectionDelegate extends ClientDelegate
     private String getKerberosUser()
     {
         LOGGER.debug("Obtaining userID from kerberos");
-        String service = _conSettings.getSaslProtocol() + "@" + _conSettings.getSaslServerName();
+        String service = getConnectionSettings().getSaslProtocol() + "@" + getConnectionSettings().getSaslServerName();
         GSSManager manager = GSSManager.getInstance();
 
         try

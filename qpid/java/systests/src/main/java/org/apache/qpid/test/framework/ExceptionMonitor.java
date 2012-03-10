@@ -38,7 +38,6 @@ import org.apache.log4j.Logger;
 
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -59,7 +58,7 @@ public class ExceptionMonitor implements ExceptionListener
     private final Logger log = Logger.getLogger(ExceptionMonitor.class);
 
     /** Holds the received exceptions. */
-    List<Exception> exceptions = new ArrayList<Exception>();
+    private List<Exception> exceptions = new ArrayList<Exception>();
 
     /**
      * Receives incoming exceptions.

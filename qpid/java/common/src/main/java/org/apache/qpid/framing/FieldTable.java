@@ -25,7 +25,11 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQPInvalidClassException;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.Enumeration;

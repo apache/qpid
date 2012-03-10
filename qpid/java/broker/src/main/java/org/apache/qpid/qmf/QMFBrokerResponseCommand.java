@@ -22,7 +22,6 @@
 package org.apache.qpid.qmf;
 
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.transport.codec.BBEncoder;
 
 public class QMFBrokerResponseCommand extends QMFCommand

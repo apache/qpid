@@ -3,9 +3,15 @@ package org.apache.qpid.server.exchange.topic;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.AMQShortStringTokenizer;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.io.IOException;
 
 /*
 *
@@ -52,14 +58,43 @@ public class TopicParser
         }
 
 
+        public TopicWord getWord()
+        {
+            return _word;
+        }
+
+        public boolean isSelfTransition()
+        {
+            return _selfTransition;
+        }
+
+        public int getPosition()
+        {
+            return _position;
+        }
+
+        public boolean isEndState()
+        {
+            return _endState;
+        }
+
+        public boolean isFollowedByAnyLoop()
+        {
+            return _followedByAnyLoop;
+        }
+
+        public void setFollowedByAnyLoop(boolean followedByAnyLoop)
+        {
+            _followedByAnyLoop = followedByAnyLoop;
+        }
     }
 
     private static final Position ERROR_POSITION = new Position(Integer.MAX_VALUE,null, true, false);
 
     private static class SimpleState
     {
-        Set<Position> _positions;
-        Map<TopicWord, SimpleState> _nextState;
+        private Set<Position> _positions;
+        private Map<TopicWord, SimpleState> _nextState;
     }
 
 
@@ -180,11 +215,11 @@ public class TopicParser
             while(followedByWildcards && n<(positionCount+1))
             {
 
-                if(positions[n]._selfTransition)
+                if(positions[n].isSelfTransition())
                 {
                     break;
                 }
-                else if(positions[n]._word!=TopicWord.ANY_WORD)
+                else if(positions[n].getWord() !=TopicWord.ANY_WORD)
                 {
                     followedByWildcards = false;
                 }
@@ -192,7 +227,7 @@ public class TopicParser
             }
 
 
-            positions[p]._followedByAnyLoop = followedByWildcards && (n!= positionCount+1);
+            positions[p].setFollowedByAnyLoop(followedByWildcards && (n!= positionCount+1));
         }
 
 
@@ -221,7 +256,7 @@ public class TopicParser
 
             for(Position p : simpleStates[i]._positions)
             {
-                if(p._endState)
+                if(p.isEndState())
                 {
                     endState = true;
                     break;
@@ -267,7 +302,7 @@ public class TopicParser
 
         for(Position pos : state._positions)
         {
-            if(pos._selfTransition)
+            if(pos.isSelfTransition())
             {
                 Set<Position> dest = transitions.get(TopicWord.ANY_WORD);
                 if(dest == null)
@@ -278,14 +313,14 @@ public class TopicParser
                 dest.add(pos);
             }
 
-            final int nextPos = pos._position + 1;
+            final int nextPos = pos.getPosition() + 1;
             Position nextPosition = nextPos == positions.length ? ERROR_POSITION : positions[nextPos];
 
-            Set<Position> dest = transitions.get(pos._word);
+            Set<Position> dest = transitions.get(pos.getWord());
             if(dest == null)
             {
                 dest = new HashSet<Position>();
-                transitions.put(pos._word,dest);
+                transitions.put(pos.getWord(),dest);
             }
             dest.add(nextPosition);
 
@@ -312,7 +347,7 @@ public class TopicParser
             Position loopingTerminal = null;
             for(Position destPos : dest.getValue())
             {
-                if(destPos._selfTransition && destPos._endState)
+                if(destPos.isSelfTransition() && destPos.isEndState())
                 {
                     loopingTerminal = destPos;
                     break;
@@ -328,9 +363,9 @@ public class TopicParser
                 Position anyLoop = null;
                 for(Position destPos : dest.getValue())
                 {
-                    if(destPos._followedByAnyLoop)
+                    if(destPos.isFollowedByAnyLoop())
                     {
-                        if(anyLoop == null || anyLoop._position<destPos._position)
+                        if(anyLoop == null || anyLoop.getPosition() < destPos.getPosition())
                         {
                             anyLoop = destPos;
                         }
@@ -341,7 +376,7 @@ public class TopicParser
                     Collection<Position> removals = new ArrayList<Position>();
                     for(Position destPos : dest.getValue())
                     {
-                        if(destPos._position < anyLoop._position)
+                        if(destPos.getPosition() < anyLoop.getPosition())
                         {
                             removals.add(destPos);
                         }
@@ -420,194 +455,5 @@ public class TopicParser
         return wordList;
     }
 
-
-    public static void main(String[] args)
-    {
-
-        printMatches("#.b.*.*.*.*.*.h.#.j.*.*.*.*.*.*.q.#.r.*.*.*.*.*.*.*.*","a.b.c.d.e.f.g.h.i.j.k.l.m.n.o.p.q.r.s.t.u.v.w.x.y.z");
-        printMatches(new String[]{
-                        "#.a.#",
-                        "#.b.#",
-                        "#.c.#",
-                        "#.d.#",
-                        "#.e.#",
-                        "#.f.#",
-                        "#.g.#",
-                        "#.h.#",
-                        "#.i.#",
-                        "#.j.#",
-                        "#.k.#",
-                        "#.l.#",
-                        "#.m.#",
-                        "#.n.#",
-                        "#.o.#",
-                        "#.p.#",
-                        "#.q.#"
-
-        }, "a.b.c.d.e.f.g.h.i.j.k.l.m.n.o.p.q.r.s.t.u.v.w.x.y.z");        
-/*
-        printMatches(new String[]{
-                "#.a.#",
-                "#.b.#",
-                "#.c.#",
-                "#.d.#",
-                "#.e.#",
-                "#.f.#",
-                "#.g.#",
-                "#.h.#",
-                "#.i.#",
-                "#.j.#",
-                "#.k.#",
-                "#.l.#",
-                "#.m.#",
-                "#.n.#",
-                "#.o.#",
-                "#.p.#",
-                "#.q.#",
-                "#.r.#",
-                "#.s.#",
-                "#.t.#",
-                "#.u.#",
-                "#.v.#",
-                "#.w.#",
-                "#.x.#",
-                "#.y.#",
-                "#.z.#"
-
-
-        },"a.b");
-
-        printMatches("#.b.*.*.*.*.*.h.#.j.*.*.*.*.*.p.#.r.*.*.*.*.*","a.b.c.d.e.f.g.h.i.j.k.l.m.n.o.p.q.r.s.t.u.v.w.x.y.z");
-        printMatches("#.b.*.*.*.*.*.h.#.j.*.*.*.*.*.p.#.r.*.*.*.*.*.*.*.*","a.b.c.d.e.f.g.h.i.j.k.l.m.n.o.p.q.r.s.t.u.v.w.x.y.z");
-        printMatches("a.#.b.#","a.b.b.b.b.b.b.b.c");
-
-*/
-
-        printMatches("","");
-        printMatches("a","a");
-        printMatches("a","");
-        printMatches("","a");
-        printMatches("a.b","a.b");
-        printMatches("a","a.b");
-        printMatches("a.b","a");
-        printMatches("*","a");
-        printMatches("*.b","a.b");
-        printMatches("*.*","a.b");
-        printMatches("a.*","a.b");
-        printMatches("a.*.#","a.b");
-        printMatches("a.#.b","a.b");
-
-        printMatches("#.b","a");
-        printMatches("#.b","a.b");
-        printMatches("#.a.b","a.b");
-
-
-        printMatches("#","");
-        printMatches("#","a");
-        printMatches("#","a.b");
-        printMatches("#.#","a.b");
-        printMatches("#.*","a.b");
-
-        printMatches("#.a.b","a.b");
-        printMatches("a.b.#","a.b");
-        printMatches("a.#","a.b");
-        printMatches("#.*.#","a.b");
-        printMatches("#.*.b.#","a.b");
-        printMatches("#.a.*.#","a.b");
-        printMatches("#.a.#.b.#","a.b");
-        printMatches("#.*.#.*.#","a.b");
-        printMatches("*.#.*.#","a.b");
-        printMatches("#.*.#.*","a.b");
-
-
-        printMatches(new String[]{"a.#.b.#","a.*.#.b.#"},"a.b.b.b.b.b.b.b.c");
-
-
-        printMatches(new String[]{"a.b", "a.c"},"a.b");
-        printMatches(new String[]{"a.#", "a.c", "#.b"},"a.b");
-        printMatches(new String[]{"a.#", "a.c", "#.b", "#", "*.*"},"a.b");
-
-        printMatches(new String[]{"a.b.c.d.e.#", "a.b.c.d.#", "a.b.c.d.*", "a.b.c.#", "#.e", "a.*.c.d.e","#.c.*.#.*.*"},"a.b.c.d.e");
-        printMatches(new String[]{"a.b.c.d.e.#", "a.b.c.d.#", "a.b.c.d.*", "a.b.c.#", "#.e", "a.*.c.d.e","#.c.*.#.*.*"},"a.b.c.d.f.g");
-
-
-
-
-    }
-
-    private static void printMatches(final String[] bindingKeys, final String routingKey)
-    {
-        TopicMatcherDFAState sm = null;
-        Map<TopicMatcherResult, String> resultMap = new HashMap<TopicMatcherResult, String>();
-
-        TopicParser parser = new TopicParser();
-
-        long start = System.currentTimeMillis();
-        for(int i = 0; i < bindingKeys.length; i++)
-        {
-            System.out.println((System.currentTimeMillis() - start) + ":\t" + bindingKeys[i]);
-            TopicMatcherResult r = new TopicMatcherResult(){};
-            resultMap.put(r, bindingKeys[i]);
-            AMQShortString bindingKeyShortString = new AMQShortString(bindingKeys[i]);
-
-            System.err.println("=====================================================");
-            System.err.println("Adding binding key: " + bindingKeyShortString);
-            System.err.println("-----------------------------------------------------");
-
-
-            if(i==0)
-            {
-                sm = parser.createStateMachine(bindingKeyShortString, r);
-            }
-            else
-            {
-                sm = sm.mergeStateMachines(parser.createStateMachine(bindingKeyShortString, r));
-            }
-            System.err.println(sm.reachableStates());
-            System.err.println("=====================================================");
-            try
-            {
-                System.in.read();
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-            }
-        }
-        AMQShortString routingKeyShortString = new AMQShortString(routingKey);
-
-        Collection<TopicMatcherResult> results = sm.parse(parser._dictionary, routingKeyShortString);
-        Collection<String> resultStrings = new ArrayList<String>();
-
-        for(TopicMatcherResult result : results)
-        {
-            resultStrings.add(resultMap.get(result));
-        }
-
-        final ArrayList<String> nonMatches = new ArrayList<String>(Arrays.asList(bindingKeys));
-        nonMatches.removeAll(resultStrings);
-        System.out.println("\""+routingKeyShortString+"\" matched with " + resultStrings + " DID NOT MATCH with " + nonMatches);
-
-
-    }
-
-    private static void printMatches(String bindingKey, String routingKey)
-    {
-        printMatches(new String[] { bindingKey }, routingKey);
-    }
-
-
-    private static boolean matches(String bindingKey, String routingKey)
-    {
-        AMQShortString bindingKeyShortString = new AMQShortString(bindingKey);
-        AMQShortString routingKeyShortString = new AMQShortString(routingKey);
-        TopicParser parser = new TopicParser();
-
-        final TopicMatcherResult result = new TopicMatcherResult(){};
-
-        TopicMatcherDFAState sm = parser.createStateMachine(bindingKeyShortString, result);
-        return !sm.parse(parser._dictionary,routingKeyShortString).isEmpty();
-
-    }
 
 }

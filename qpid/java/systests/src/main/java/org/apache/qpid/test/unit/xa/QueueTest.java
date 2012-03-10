@@ -17,14 +17,25 @@
  */
 package org.apache.qpid.test.unit.xa;
 
-import javax.jms.*;
-import javax.transaction.xa.XAResource;
-import javax.transaction.xa.Xid;
-import javax.transaction.xa.XAException;
-
 import junit.framework.TestSuite;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.jms.DeliveryMode;
+import javax.jms.JMSException;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.QueueConnection;
+import javax.jms.QueueSession;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import javax.jms.XAQueueConnection;
+import javax.jms.XAQueueConnectionFactory;
+import javax.jms.XAQueueSession;
+import javax.transaction.xa.XAException;
+import javax.transaction.xa.XAResource;
+import javax.transaction.xa.Xid;
 
 public class QueueTest extends AbstractXATestCase
 {
@@ -151,11 +162,12 @@ public class QueueTest extends AbstractXATestCase
             // create a standard session
             try
             {
-                _queueConnection = _queueFactory.createQueueConnection();
+                _queueConnection = _queueFactory.createQueueConnection("guest", "guest");
                 _nonXASession = _queueConnection.createQueueSession(true, Session.AUTO_ACKNOWLEDGE);
             }
             catch (JMSException e)
             {
+                e.printStackTrace();
                 fail("cannot create queue session: " + e.getMessage());
             }
             init(session, _queue);
@@ -627,7 +639,8 @@ public class QueueTest extends AbstractXATestCase
                 TextMessage message1 = (TextMessage) nonXAConsumer.receive(1000);
                 if (message1 != null)
                 {
-                    fail("The queue is not empty! ");
+
+                    fail("The queue is not empty! " + message1.getLongProperty(_sequenceNumberPropertyName));
                 }
             }
             catch (JMSException e)

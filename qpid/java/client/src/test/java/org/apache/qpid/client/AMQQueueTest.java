@@ -20,17 +20,17 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.framing.AMQShortString;
-
 import junit.framework.TestCase;
+
+import org.apache.qpid.framing.AMQShortString;
 
 public class AMQQueueTest extends TestCase
 {
-    AMQShortString exchange = new AMQShortString("test.exchange");
-    AMQShortString routingkey = new AMQShortString("test-route");
-    AMQShortString qname = new AMQShortString("test-queue");
-    AMQShortString[] oneBinding = new AMQShortString[]{new AMQShortString("bindingA")};
-    AMQShortString[] bindings = new AMQShortString[]{new AMQShortString("bindingB"), 
+    private AMQShortString exchange = new AMQShortString("test.exchange");
+    private AMQShortString routingkey = new AMQShortString("test-route");
+    private AMQShortString qname = new AMQShortString("test-queue");
+    private AMQShortString[] oneBinding = new AMQShortString[]{new AMQShortString("bindingA")};
+    private AMQShortString[] bindings = new AMQShortString[]{new AMQShortString("bindingB"),
                                                      new AMQShortString("bindingC")};
 
     public void testToURLNoBindings()

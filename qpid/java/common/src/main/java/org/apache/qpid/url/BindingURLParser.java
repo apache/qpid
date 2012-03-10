@@ -21,17 +21,18 @@ package org.apache.qpid.url;
  */
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
+
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.AMQShortString;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class BindingURLParser
 {
@@ -183,7 +184,7 @@ public class BindingURLParser
         char nextChar = _url[_index];
 
         // check for the following special cases.
-        // "myQueue?durable='true'" or just "myQueue";
+        // "myQueue?durable='true'" or just "myQueue"
 
         StringBuilder builder = new StringBuilder();
         while (nextChar != COLON_CHAR && nextChar != QUESTION_MARK_CHAR && nextChar != END_OF_URL_MARKER_CHAR)

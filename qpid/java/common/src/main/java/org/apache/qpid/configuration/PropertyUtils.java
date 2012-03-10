@@ -40,6 +40,10 @@ import java.util.Iterator;
  */
 public class PropertyUtils
 {
+    private PropertyUtils()
+    {
+    }
+
     /**
      * Given a string that contains substrings of the form <code>${xxx}</code>, looks up the valuea of 'xxx' as a
      * system properties and substitutes tham back into the original string, to provide a property value expanded
@@ -66,13 +70,13 @@ public class PropertyUtils
         parsePropertyString(value, fragments, propertyRefs);
 
         StringBuffer sb = new StringBuffer();
-        Iterator j = propertyRefs.iterator();
+        Iterator<String> j = propertyRefs.iterator();
 
         for (String fragment : fragments)
         {
             if (fragment == null)
             {
-                String propertyName = (String) j.next();
+                String propertyName = j.next();
 
                 // try to get it from the project or keys
                 // Backward compatibility

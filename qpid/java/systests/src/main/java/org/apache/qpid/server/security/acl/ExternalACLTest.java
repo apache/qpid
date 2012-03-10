@@ -18,6 +18,10 @@
  */
 package org.apache.qpid.server.security.acl;
 
+import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.url.URLSyntaxException;
+
 import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -30,10 +34,6 @@ import javax.jms.TextMessage;
 import javax.jms.Topic;
 import javax.jms.TopicSubscriber;
 import javax.naming.NamingException;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.url.URLSyntaxException;
 
 /**
  * Tests the V2 ACLs.  The tests perform basic AMQP operations like creating queues or excahnges and publishing and consuming messages, using

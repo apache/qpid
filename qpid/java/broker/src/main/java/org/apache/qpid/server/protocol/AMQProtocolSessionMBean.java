@@ -22,7 +22,7 @@
  *
  * Copyright (c) 2006 The Apache Software Foundation
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -37,16 +37,6 @@
  */
 package org.apache.qpid.server.protocol;
 
-import java.util.Date;
-import java.util.List;
-import javax.management.JMException;
-import javax.management.MBeanException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.OpenDataException;
-import javax.management.openmbean.TabularData;
-import javax.management.openmbean.TabularDataSupport;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ConnectionCloseBody;
@@ -59,6 +49,17 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.management.AbstractAMQManagedConnectionObject;
 import org.apache.qpid.server.management.ManagedObject;
+
+import javax.management.JMException;
+import javax.management.MBeanException;
+import javax.management.NotCompliantMBeanException;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.OpenDataException;
+import javax.management.openmbean.TabularData;
+import javax.management.openmbean.TabularDataSupport;
+import java.util.Date;
+import java.util.List;
 
 /**
  * This MBean class implements the management interface. In order to make more attributes, operations and notifications
@@ -91,7 +92,7 @@ public class AMQProtocolSessionMBean extends AbstractAMQManagedConnectionObject
 
     public String getVersion()
     {
-        return (_protocolSession.getClientVersion() == null) ? null : _protocolSession.getClientVersion().toString();
+        return _protocolSession.getClientVersion();
     }
 
     public Date getLastIoTime()
@@ -132,7 +133,7 @@ public class AMQProtocolSessionMBean extends AbstractAMQManagedConnectionObject
      */
     public void commitTransactions(int channelId) throws JMException
     {
-        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+        CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
         try
         {
             AMQChannel channel = _protocolSession.getChannel(channelId);
@@ -161,7 +162,7 @@ public class AMQProtocolSessionMBean extends AbstractAMQManagedConnectionObject
      */
     public void rollbackTransactions(int channelId) throws JMException
     {
-        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+        CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
         try
         {
             AMQChannel channel = _protocolSession.getChannel(channelId);
@@ -240,7 +241,7 @@ public class AMQProtocolSessionMBean extends AbstractAMQManagedConnectionObject
         if (CurrentActor.get() == null)
         {
             removeActor = true;
-            CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+            CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
         }
 
         try

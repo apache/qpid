@@ -21,9 +21,10 @@
 package org.apache.qpid;
 
 import junit.framework.TestCase;
-import org.apache.qpid.protocol.AMQConstant;
+
 import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.protocol.AMQConstant;
 
 /**
  * This test is to ensure that when an AMQException is rethrown that the specified exception is correctly wrapped up.

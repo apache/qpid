@@ -22,20 +22,18 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
-import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.QueueConfig;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeReferrer;
+import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.List;
@@ -142,10 +140,9 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
     public List<QueueEntry> getMessagesRangeOnTheQueue(final long fromPosition, final long toPosition);
 
 
-    void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName,
-                                                        ServerTransaction transaction);
+    void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName);
 
-    void copyMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName, ServerTransaction transaction);
+    void copyMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName);
 
     void removeMessagesFromQueue(long fromMessageId, long toMessageId);
 

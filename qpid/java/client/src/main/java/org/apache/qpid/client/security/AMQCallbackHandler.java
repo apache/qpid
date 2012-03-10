@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.client.security;
 
-import javax.security.auth.callback.CallbackHandler;
-
 import org.apache.qpid.jms.ConnectionURL;
+
+import javax.security.auth.callback.CallbackHandler;
 
 public interface AMQCallbackHandler extends CallbackHandler
 {

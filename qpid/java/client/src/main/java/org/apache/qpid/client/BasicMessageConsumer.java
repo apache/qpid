@@ -20,29 +20,35 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.AMQInternalException;
-import org.apache.qpid.filter.JMSSelectorFilter;
-import org.apache.qpid.filter.MessageFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.client.failover.FailoverException;
-import org.apache.qpid.client.message.*;
+import org.apache.qpid.client.filter.MessageFilter;
+import org.apache.qpid.client.message.AMQMessageDelegateFactory;
+import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.client.message.CloseConsumerMessage;
+import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.common.AMQPFilterTypes;
-import org.apache.qpid.framing.*;
+import org.apache.qpid.client.filter.JMSSelectorFilter;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.jms.MessageConsumer;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.transport.TransportException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.jms.InvalidSelectorException;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -54,14 +60,13 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
 {
     private static final Logger _logger = LoggerFactory.getLogger(BasicMessageConsumer.class);
 
-    /** The connection being used by this consumer */
-    protected final AMQConnection _connection;
+    private final AMQConnection _connection;
 
-    protected final MessageFilter _messageSelectorFilter;
+    private final MessageFilter _messageSelectorFilter;
 
     private final boolean _noLocal;
 
-    protected AMQDestination _destination;
+    private AMQDestination _destination;
 
     /**
      * When true indicates that a blocking receive call is in progress
@@ -72,23 +77,17 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
      */
     private final AtomicReference<MessageListener> _messageListener = new AtomicReference<MessageListener>();
 
-    /** The consumer tag allows us to close the consumer by sending a jmsCancel method to the broker */
-    protected int _consumerTag;
+    private int _consumerTag;
 
-    /** We need to know the channel id when constructing frames */
-    protected final int _channelId;
+    private final int _channelId;
 
-    /**
-     * Used in the blocking receive methods to receive a message from the Session thread. <p/> Or to notify of errors
-     * <p/> Argument true indicates we want strict FIFO semantics
-     */
-    protected final BlockingQueue _synchronousQueue;
+    private final BlockingQueue _synchronousQueue;
 
-    protected final MessageFactoryRegistry _messageFactory;
+    private final MessageFactoryRegistry _messageFactory;
 
-    protected final AMQSession _session;
+    private final AMQSession _session;
 
-    protected final AMQProtocolHandler _protocolHandler;
+    private final AMQProtocolHandler _protocolHandler;
 
     /**
      * We need to store the "raw" field table so that we can resubscribe in the event of failover being required
@@ -107,17 +106,9 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
      */
     private final int _prefetchLow;
 
-    /**
-     * We store the exclusive field in order to be able to reuse it when resubscribing in the event of failover
-     */
-    protected boolean _exclusive;
+    private boolean _exclusive;
 
-    /**
-     * The acknowledge mode in force for this consumer. Note that the AMQP protocol allows different ack modes per
-     * consumer whereas JMS defines this at the session level, hence why we associate it with the consumer in our
-     * implementation.
-     */
-    protected final int _acknowledgeMode;
+    private final int _acknowledgeMode;
 
     /**
      * List of tags delievered, The last of which which should be acknowledged on commit in transaction mode.
@@ -208,6 +199,10 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         // possible to determine  when querying the broker whether there are no arguments or just a non-matching selector
         // argument, as specifying null for the arguments when querying means they should not be checked at all
         ft.put(AMQPFilterTypes.JMS_SELECTOR.getValue(), messageSelector == null ? "" : messageSelector);
+        if(noLocal)
+        {
+            ft.put(AMQPFilterTypes.NO_LOCAL.getValue(), noLocal);
+        }
 
         _arguments = ft;
 
@@ -232,6 +227,11 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         return _messageListener.get();
     }
 
+    /**
+     * The acknowledge mode in force for this consumer. Note that the AMQP protocol allows different ack modes per
+     * consumer whereas JMS defines this at the session level, hence why we associate it with the consumer in our
+     * implementation.
+     */
     public int getAcknowledgeMode()
     {
         return _acknowledgeMode;
@@ -279,7 +279,10 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
                 throw new javax.jms.IllegalStateException("Attempt to alter listener while session is started.");
             }
 
-            _logger.debug("Message listener set for destination " + _destination);
+            if (_logger.isDebugEnabled())
+            {
+            	_logger.debug("Message listener set for destination " + _destination);
+            }
 
             if (messageListener != null)
             {
@@ -371,6 +374,9 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         return _noLocal;
     }
 
+    /**
+     * We store the exclusive field in order to be able to reuse it when resubscribing in the event of failover
+     */
     public boolean isExclusive()
     {
         return _exclusive;
@@ -537,7 +543,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         }
         else if (o instanceof CloseConsumerMessage)
         {
-            _closed.set(true);
+            setClosed();
             deregisterConsumer();
             return null;
         }
@@ -554,14 +560,14 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
 
     public void close(boolean sendClose) throws JMSException
     {
-        if (_logger.isInfoEnabled())
+        if (_logger.isDebugEnabled())
         {
-            _logger.info("Closing consumer:" + debugIdentity());
+            _logger.debug("Closing consumer:" + debugIdentity());
         }
 
-        if (!_closed.getAndSet(true))
+        if (!setClosed())
         {
-            _closing.set(true);
+            setClosing(true);
             if (_logger.isDebugEnabled())
             {
                 StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
@@ -607,12 +613,8 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
             }
             else
             {
-            	// FIXME: wow this is ugly
-                // //fixme this probably is not right
-                // if (!isNoConsume())
-                { // done in BasicCancelOK Handler but not sending one so just deregister.
-                    deregisterConsumer();
-                }
+            	// FIXME?
+                deregisterConsumer();
             }
 
             // This will occur if session.close is called closing all consumers we may be blocked waiting for a receive
@@ -641,7 +643,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     {
         // synchronized (_closed)
         {
-            _closed.set(true);
+            setClosed();
 
             if (_logger.isDebugEnabled())
             {
@@ -818,7 +820,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     {
         // synchronized (_closed)
         {
-            _closed.set(true);
+            setClosed();
             if (_logger.isDebugEnabled())
             {
                 StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
@@ -859,6 +861,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         _session.deregisterConsumer(this);
     }
 
+    /** The consumer tag allows us to close the consumer by sending a jmsCancel method to the broker */
     public int getConsumerTag()
     {
         return _consumerTag;
@@ -1002,10 +1005,44 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     public void failedOverPre()
     {
         clearReceiveQueue();
-        // TGM FIXME: think this should just be removed
-        // clearUnackedMessages();
     }
 
     public void failedOverPost() {}
+
+    /** The connection being used by this consumer */
+    protected AMQConnection getConnection()
+    {
+        return _connection;
+    }
+
+    protected void setDestination(AMQDestination destination)
+    {
+        _destination = destination;
+    }
+
+    /** We need to know the channel id when constructing frames */
+    protected int getChannelId()
+    {
+        return _channelId;
+    }
+
+    /**
+     * Used in the blocking receive methods to receive a message from the Session thread. <p/> Or to notify of errors
+     * <p/> Argument true indicates we want strict FIFO semantics
+     */
+    protected BlockingQueue getSynchronousQueue()
+    {
+        return _synchronousQueue;
+    }
+
+    protected MessageFactoryRegistry getMessageFactory()
+    {
+        return _messageFactory;
+    }
+
+    protected AMQProtocolHandler getProtocolHandler()
+    {
+        return _protocolHandler;
+    }
 
 }

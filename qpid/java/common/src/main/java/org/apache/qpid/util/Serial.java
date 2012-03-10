@@ -23,8 +23,6 @@ package org.apache.qpid.util;
 
 import java.util.Comparator;
 
-import org.apache.qpid.SerialException;
-
 /**
  * This class provides basic serial number comparisons as defined in
  * RFC 1982.
@@ -32,6 +30,9 @@ import org.apache.qpid.SerialException;
 
 public class Serial
 {
+    private Serial()
+    {
+    }
 
     public static final Comparator<Integer> COMPARATOR = new Comparator<Integer>()
     {

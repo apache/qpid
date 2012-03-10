@@ -22,8 +22,8 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.AMQChannel;
@@ -35,6 +35,8 @@ import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 import javax.management.Notification;
+
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 /** This class tests all the alerts an AMQQueue can throw based on threshold values of different parameters */
@@ -277,7 +279,7 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
         ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
         BasicContentHeaderProperties props = new BasicContentHeaderProperties();
         contentHeaderBody.setProperties(props);
-        contentHeaderBody.bodySize = size;   // in bytes
+        contentHeaderBody.setBodySize(size);   // in bytes
         IncomingMessage message = new IncomingMessage(publish);
         message.setContentHeaderBody(contentHeaderBody);
 
@@ -300,7 +302,7 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
             messages[i] = message(false, size);
             ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
             qs.add(getQueue());
-            metaData[i] = messages[i].headersReceived();
+            metaData[i] = messages[i].headersReceived(System.currentTimeMillis());
             messages[i].setStoredMessage(getMessageStore().addMessage(metaData[i]));
 
             messages[i].enqueue(qs);
@@ -309,9 +311,9 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
 
         for (int i = 0; i < messageCount; i++)
         {
-            messages[i].addContentBodyFrame(new ContentChunk(){
-
-                byte[] _data = new byte[(int)size];
+            ContentChunk contentChunk = new ContentChunk()
+            {
+                private byte[] _data = new byte[(int)size];
 
                 public int getSize()
                 {
@@ -325,12 +327,13 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
 
                 public void reduceToFit()
                 {
-
                 }
-            });
+            };
+
+            messages[i].addContentBodyFrame(contentChunk);
+            messages[i].getStoredMessage().addContent(0, ByteBuffer.wrap(contentChunk.getData()));
 
             getQueue().enqueue(new AMQMessage(messages[i].getStoredMessage()));
-
         }
     }
 

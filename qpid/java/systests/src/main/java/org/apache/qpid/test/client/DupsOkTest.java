@@ -1,8 +1,8 @@
 package org.apache.qpid.test.client;
 
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -96,7 +96,7 @@ public class DupsOkTest extends QpidBrokerTestCase
 
         consumer.setMessageListener(new MessageListener()
         {
-            int _msgCount = 0;
+            private int _msgCount = 0;
 
             public void onMessage(Message message)
             {

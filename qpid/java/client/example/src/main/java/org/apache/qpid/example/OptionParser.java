@@ -68,12 +68,12 @@ public class OptionParser
             String.class);
     
     
-    protected Map<String,Object> optMap = new HashMap<String,Object>();
-    protected static final List<Option> optDefs = new ArrayList<Option>();
+    private Map<String,Object> optMap = new HashMap<String,Object>();
+    private static final List<Option> optDefs = new ArrayList<Option>();
     
-    protected String usage;
-    protected String desc;
-    protected String address;
+    private String usage;
+    private String desc;
+    private String address;
     
     public OptionParser(String[] args, String usage, String desc)
     {   
@@ -147,8 +147,8 @@ public class OptionParser
                 for (Option option: optDefs)
                 {
                     
-                    if ((op.startsWith("-") && option.shortForm != null && option.shortForm.equals(key)) ||
-                        (op.startsWith("--") && option.longForm != null && option.longForm.equals(key)) )
+                    if ((op.startsWith("-") && option.getShortForm() != null && option.getShortForm().equals(key)) ||
+                        (op.startsWith("--") && option.getLongForm() != null && option.getLongForm().equals(key)) )
                     {
                         match = true;
                         break;
@@ -205,7 +205,9 @@ public class OptionParser
         if (op.startsWith("'"))
         {
             if (!op.endsWith("'")) 
+            {
                 throw new IllegalArgumentException(" The option " + op + " needs to be inside quotes");
+            }
             
             return op.substring(1,op.length() -1);
         }
@@ -217,18 +219,18 @@ public class OptionParser
     
     protected boolean containsOp(Option op)
     {
-        return optMap.containsKey(op.shortForm) || optMap.containsKey(op.longForm);
+        return optMap.containsKey(op.getShortForm()) || optMap.containsKey(op.getLongForm());
     }
     
     protected String getOp(Option op)
     {
-        if (optMap.containsKey(op.shortForm))
+        if (optMap.containsKey(op.getShortForm()))
         {
-            return (String)optMap.get(op.shortForm);
+            return (String)optMap.get(op.getShortForm());
         }
-        else if (optMap.containsKey(op.longForm))
+        else if (optMap.containsKey(op.getLongForm()))
         {
-            return (String)optMap.get(op.longForm);
+            return (String)optMap.get(op.getLongForm());
         }
         else
         {
@@ -281,15 +283,25 @@ public class OptionParser
         Connection con = new AMQConnection(buf.toString());
         return con;
     }
-    
+
+    public static void addOption(Option opt)
+    {
+        optDefs.add(opt);
+    }
+
+    protected String getAddress()
+    {
+        return address;
+    }
+
     static class Option
     {
-        private String shortForm;
-        private String longForm;
-        private String desc;
-        private String valueLabel;
-        private String defaultValue;
-        private Class type;
+        private final String shortForm;
+        private final String longForm;
+        private final String desc;
+        private final String valueLabel;
+        private final String defaultValue;
+        private final Class type;
         
         public Option(String shortForm, String longForm, String desc,
                       String valueLabel, String defaultValue, Class type)

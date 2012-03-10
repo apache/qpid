@@ -20,11 +20,8 @@
  */
 package org.apache.qpid.server.handler;
 
-import java.util.UUID;
-import java.util.Collections;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.MethodRegistry;
@@ -45,6 +42,9 @@ import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import java.util.Collections;
+import java.util.UUID;
+
 public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclareBody>
 {
     private static final Logger _logger = Logger.getLogger(QueueDeclareHandler.class);
@@ -56,9 +56,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         return _instance;
     }
 
-    public boolean autoRegister = ApplicationRegistry.getInstance().getConfiguration().getQueueAutoRegister();
-
-    private final AtomicInteger _counter = new AtomicInteger();
+    private boolean autoRegister = ApplicationRegistry.getInstance().getConfiguration().getQueueAutoRegister();
 
     public void methodReceived(AMQStateManager stateManager, QueueDeclareBody body, int channelId) throws AMQException
     {

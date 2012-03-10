@@ -20,16 +20,20 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.server.binding.Binding;
 
 import javax.management.JMException;
-import javax.management.openmbean.*;
-import java.util.List;
-import java.util.Map;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.OpenDataException;
+import javax.management.openmbean.TabularData;
+import javax.management.openmbean.TabularDataSupport;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
      * MBean class implementing the management interfaces.
@@ -47,7 +51,7 @@ final class DirectExchangeMBean extends AbstractExchangeMBean<DirectExchange>
 
     public TabularData bindings() throws OpenDataException
     {
-        TabularDataSupport bindingList = new TabularDataSupport(_bindinglistDataType);
+        TabularDataSupport bindingList = new TabularDataSupport(getBindinglistDataType());
 
         Map<String, List<String>> bindingMap = new HashMap<String, List<String>>();
 
@@ -67,7 +71,7 @@ final class DirectExchangeMBean extends AbstractExchangeMBean<DirectExchange>
         for(Map.Entry<String, List<String>> entry : bindingMap.entrySet())
         {
             Object[] bindingItemValues = {entry.getKey(), entry.getValue().toArray(new String[0])};
-            CompositeData bindingData = new CompositeDataSupport(_bindingDataType,
+            CompositeData bindingData = new CompositeDataSupport(getBindingDataType(),
                     COMPOSITE_ITEM_NAMES.toArray(new String[COMPOSITE_ITEM_NAMES.size()]),
                     bindingItemValues);
             bindingList.put(bindingData);

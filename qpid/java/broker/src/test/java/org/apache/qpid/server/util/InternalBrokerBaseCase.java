@@ -21,6 +21,7 @@
 package org.apache.qpid.server.util;
 
 import org.apache.commons.configuration.XMLConfiguration;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -30,10 +31,10 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.logging.SystemOutMessageLogger;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.logging.SystemOutMessageLogger;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -231,7 +232,7 @@ public class InternalBrokerBaseCase extends QpidTestCase
 
             //Set the body size
             ContentHeaderBody _headerBody = new ContentHeaderBody();
-            _headerBody.bodySize = 0;
+            _headerBody.setBodySize(0);
 
             //Set Minimum properties
             BasicContentHeaderProperties properties = new BasicContentHeaderProperties();

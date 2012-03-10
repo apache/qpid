@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.transport.network;
 
+import org.apache.qpid.framing.ProtocolVersion;
+import org.apache.qpid.transport.TransportException;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.apache.qpid.framing.ProtocolVersion;
-import org.apache.qpid.transport.TransportException;
 
 public class Transport
 {
@@ -52,6 +52,10 @@ public class Transport
         map.put(ProtocolVersion.v0_10, IO_TRANSPORT_CLASSNAME);
 
         OUTGOING_PROTOCOL_TO_IMPLDEFAULTS_MAP = Collections.unmodifiableMap(map);
+    }
+
+    private Transport()
+    {
     }
 
     public static IncomingNetworkTransport getIncomingTransportInstance()

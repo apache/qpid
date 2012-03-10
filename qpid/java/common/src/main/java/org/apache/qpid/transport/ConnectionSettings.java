@@ -20,9 +20,24 @@
  */
 package org.apache.qpid.transport;
 
+import static org.apache.qpid.configuration.ClientProperties.AMQJ_TCP_NODELAY_PROP_NAME;
+import static org.apache.qpid.configuration.ClientProperties.QPID_SSL_KEY_MANAGER_FACTORY_ALGORITHM_PROP_NAME;
+import static org.apache.qpid.configuration.ClientProperties.QPID_SSL_KEY_STORE_CERT_TYPE_PROP_NAME;
+import static org.apache.qpid.configuration.ClientProperties.QPID_SSL_TRUST_MANAGER_FACTORY_ALGORITHM_PROP_NAME;
+import static org.apache.qpid.configuration.ClientProperties.QPID_SSL_TRUST_STORE_CERT_TYPE_PROP_NAME;
+import static org.apache.qpid.configuration.ClientProperties.QPID_TCP_NODELAY_PROP_NAME;
+import static org.apache.qpid.configuration.ClientProperties.RECEIVE_BUFFER_SIZE_PROP_NAME;
+import static org.apache.qpid.configuration.ClientProperties.SEND_BUFFER_SIZE_PROP_NAME;
+import static org.apache.qpid.configuration.ClientProperties.LEGACY_RECEIVE_BUFFER_SIZE_PROP_NAME;
+import static org.apache.qpid.configuration.ClientProperties.LEGACY_SEND_BUFFER_SIZE_PROP_NAME;
+
 import java.util.Map;
 
-import org.apache.qpid.configuration.ClientProperties;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManagerFactory;
+
+import org.apache.qpid.configuration.QpidProperty;
+
 
 /**
  * A ConnectionSettings object can only be associated with
@@ -34,37 +49,36 @@ public class ConnectionSettings
 {
     public static final String WILDCARD_ADDRESS = "*";
 
-    String protocol = "tcp";
-    String host = "localhost";
-    String vhost;
-    String username = "guest";
-    String password = "guest";
-    int port = 5672;
-    boolean tcpNodelay = Boolean.valueOf(System.getProperty(ClientProperties.QPID_TCP_NODELAY_PROP_NAME,
-                                         System.getProperty(ClientProperties.AMQJ_TCP_NODELAY_PROP_NAME, "true")));
-    int maxChannelCount = 32767;
-    int maxFrameSize = 65535;
-    int heartbeatInterval;
-    int readBufferSize = 65535;
-    int writeBufferSize = 65535;
-    long transportTimeout = 60000;
-    
+    private String protocol = "tcp";
+    private String host = "localhost";
+    private String vhost;
+    private String username = "guest";
+    private String password = "guest";
+    private int port = 5672;
+    private boolean tcpNodelay = QpidProperty.booleanProperty(Boolean.TRUE, QPID_TCP_NODELAY_PROP_NAME, AMQJ_TCP_NODELAY_PROP_NAME).get();
+    private int maxChannelCount = 32767;
+    private int maxFrameSize = 65535;
+    private int heartbeatInterval;
+    private int readBufferSize = QpidProperty.intProperty(65535, RECEIVE_BUFFER_SIZE_PROP_NAME, LEGACY_RECEIVE_BUFFER_SIZE_PROP_NAME).get();
+    private int writeBufferSize = QpidProperty.intProperty(65535, SEND_BUFFER_SIZE_PROP_NAME, LEGACY_SEND_BUFFER_SIZE_PROP_NAME).get();;
+    private long transportTimeout = 60000;
+
     // SSL props
-    boolean useSSL;
-    String keyStorePath = System.getProperty("javax.net.ssl.keyStore");
-    String keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword");
-    String keyStoreCertType = System.getProperty("qpid.ssl.keyStoreCertType","SunX509");;
-    String trustStoreCertType = System.getProperty("qpid.ssl.trustStoreCertType","SunX509");;
-    String trustStorePath = System.getProperty("javax.net.ssl.trustStore");;
-    String trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword");;
-    String certAlias;
-    boolean verifyHostname;
+    private boolean useSSL;
+    private String keyStorePath = System.getProperty("javax.net.ssl.keyStore");
+    private String keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword");
+    private String keyManagerFactoryAlgorithm = QpidProperty.stringProperty(KeyManagerFactory.getDefaultAlgorithm(), QPID_SSL_KEY_MANAGER_FACTORY_ALGORITHM_PROP_NAME, QPID_SSL_KEY_STORE_CERT_TYPE_PROP_NAME).get();
+    private String trustManagerFactoryAlgorithm = QpidProperty.stringProperty(TrustManagerFactory.getDefaultAlgorithm(), QPID_SSL_TRUST_MANAGER_FACTORY_ALGORITHM_PROP_NAME, QPID_SSL_TRUST_STORE_CERT_TYPE_PROP_NAME).get();
+    private String trustStorePath = System.getProperty("javax.net.ssl.trustStore");;
+    private String trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword");;
+    private String certAlias;
+    private boolean verifyHostname;
     
     // SASL props
-    String saslMechs = System.getProperty("qpid.sasl_mechs", null);
-    String saslProtocol = System.getProperty("qpid.sasl_protocol", "AMQP");
-    String saslServerName = System.getProperty("qpid.sasl_server_name", "localhost");
-    boolean useSASLEncryption;
+    private String saslMechs = System.getProperty("qpid.sasl_mechs", null);
+    private String saslProtocol = System.getProperty("qpid.sasl_protocol", "AMQP");
+    private String saslServerName = System.getProperty("qpid.sasl_server_name", "localhost");
+    private boolean useSASLEncryption;
    
     private Map<String, Object> _clientProperties;
     
@@ -288,24 +302,24 @@ public class ConnectionSettings
         this.verifyHostname = verifyHostname;
     }
     
-    public String getKeyStoreCertType()
+    public String getKeyManagerFactoryAlgorithm()
     {
-        return keyStoreCertType;
+        return keyManagerFactoryAlgorithm;
     }
 
-    public void setKeyStoreCertType(String keyStoreCertType)
+    public void setKeyManagerFactoryAlgorithm(String keyManagerFactoryAlgorithm)
     {
-        this.keyStoreCertType = keyStoreCertType;
+        this.keyManagerFactoryAlgorithm = keyManagerFactoryAlgorithm;
     }
 
-    public String getTrustStoreCertType()
+    public String getTrustManagerFactoryAlgorithm()
     {
-        return trustStoreCertType;
+        return trustManagerFactoryAlgorithm;
     }
 
-    public void setTrustStoreCertType(String trustStoreCertType)
+    public void setTrustManagerFactoryAlgorithm(String trustManagerFactoryAlgorithm)
     {
-        this.trustStoreCertType = trustStoreCertType;
+        this.trustManagerFactoryAlgorithm = trustManagerFactoryAlgorithm;
     }
 
     public int getReadBufferSize()
@@ -337,5 +351,4 @@ public class ConnectionSettings
     {
         this.transportTimeout = transportTimeout;
     }
-
 }

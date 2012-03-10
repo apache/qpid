@@ -21,15 +21,19 @@
 package org.apache.qpid.server.protocol;
 
 import org.apache.qpid.protocol.ServerProtocolEngine;
-import org.apache.qpid.transport.Sender;
-import org.apache.qpid.transport.network.InputHandler;
-import org.apache.qpid.transport.network.Assembler;
-import org.apache.qpid.transport.network.Disassembler;
-import org.apache.qpid.transport.network.NetworkConnection;
-import org.apache.qpid.server.configuration.*;
-import org.apache.qpid.server.transport.ServerConnection;
+import org.apache.qpid.server.configuration.ConfigStore;
+import org.apache.qpid.server.configuration.ConfiguredObject;
+import org.apache.qpid.server.configuration.ConnectionConfig;
+import org.apache.qpid.server.configuration.ConnectionConfigType;
+import org.apache.qpid.server.configuration.VirtualHostConfig;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.transport.ServerConnection;
+import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.network.Assembler;
+import org.apache.qpid.transport.network.Disassembler;
+import org.apache.qpid.transport.network.InputHandler;
+import org.apache.qpid.transport.network.NetworkConnection;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -86,8 +90,8 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
         _connection.setSender(new Disassembler(sender, MAX_FRAME_SIZE));
 
         // FIXME Two log messages to maintain compatibility with earlier protocol versions
-        _connection.getLogActor().message(ConnectionMessages.OPEN(null, null, false, false));
-        _connection.getLogActor().message(ConnectionMessages.OPEN(null, "0-10", false, true));
+        _connection.getLogActor().message(ConnectionMessages.OPEN(null, null, null, false, false, false));
+        _connection.getLogActor().message(ConnectionMessages.OPEN(null, "0-10", null, false, true, false));
     }
 
     public SocketAddress getRemoteAddress()

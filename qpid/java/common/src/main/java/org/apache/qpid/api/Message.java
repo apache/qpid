@@ -1,11 +1,11 @@
 package org.apache.qpid.api;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
-import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
+import org.apache.qpid.transport.MessageProperties;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one

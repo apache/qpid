@@ -20,10 +20,9 @@
  */
 package org.apache.qpid.server.logging.messages;
 
-import java.util.List;
-
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
+
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
@@ -31,6 +30,8 @@ import org.apache.qpid.server.logging.UnitTestMessageLogger;
 import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.logging.subjects.TestBlankSubject;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
+
+import java.util.List;
 
 public abstract class AbstractTestMessages extends InternalBrokerBaseCase
 {
@@ -62,16 +63,21 @@ public abstract class AbstractTestMessages extends InternalBrokerBaseCase
         return _logger.getLogMessages();
     }
 
+    protected void validateLogMessage(List<Object> logs, String tag, String[] expected)
+    {
+        validateLogMessage(logs, tag, false, expected);
+    }
+
     /**
-     * Validate that only a single log messasge occured and that the message
+     * Validate that only a single log message occurred and that the message
      * section starts with the specified tag
      *
      * @param logs     the logs generated during test run
      * @param tag      the tag to check for
      * @param expected the expected log messages
-     *
+     * @param useStringForNull replace a null String reference with "null"
      */
-    protected void validateLogMessage(List<Object> logs, String tag, String[] expected)
+    protected void validateLogMessage(List<Object> logs, String tag, boolean useStringForNull, String[] expected)
     {
         assertEquals("Log has incorrect message count", 1, logs.size());
 
@@ -96,6 +102,10 @@ public abstract class AbstractTestMessages extends InternalBrokerBaseCase
         int index = 0;
         for (String text : expected)
         {
+            if(useStringForNull && text == null)
+            {
+                text = "null";
+            }
             index = message.indexOf(text, index);
             assertTrue("Message does not contain expected (" + text + ") text :" + message, index != -1);
             index = index + text.length();

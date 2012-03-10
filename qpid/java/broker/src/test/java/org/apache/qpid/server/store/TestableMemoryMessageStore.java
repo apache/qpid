@@ -20,14 +20,13 @@
  */
 package org.apache.qpid.server.store;
 
+import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.queue.AMQQueue;
+
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.message.EnqueableMessage;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.queue.AMQQueue;
 
 /**
  * Adds some extra methods to the memory message store for testing purposes.
@@ -35,7 +34,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 public class TestableMemoryMessageStore extends MemoryMessageStore
 {
 
-    MemoryMessageStore _mms = null;
+    private MemoryMessageStore _mms = null;
     private HashMap<Long, AMQQueue> _messages = new HashMap<Long, AMQQueue>();
     private AtomicInteger _messageCount = new AtomicInteger(0);
 
@@ -99,6 +98,14 @@ public class TestableMemoryMessageStore extends MemoryMessageStore
         }
 
         public void abortTran() throws AMQStoreException
+        {
+        }
+
+        public void removeXid(long format, byte[] globalId, byte[] branchId)
+        {
+        }
+
+        public void recordXid(long format, byte[] globalId, byte[] branchId, Record[] enqueues, Record[] dequeues)
         {
         }
     }

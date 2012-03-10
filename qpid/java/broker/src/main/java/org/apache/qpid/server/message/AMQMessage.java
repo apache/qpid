@@ -21,15 +21,14 @@
 package org.apache.qpid.server.message;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.configuration.SessionConfig;
 import org.apache.qpid.server.queue.AMQQueue;
-
+import org.apache.qpid.server.store.StoredMessage;
 
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
@@ -59,7 +58,7 @@ public class AMQMessage extends AbstractServerMessageImpl<MessageMetaData>
 
     private final long _size;
 
-    private Object _sessionIdentifier;
+    private Object _connectionIdentifier;
     private static final byte IMMEDIATE_AND_DELIVERED = (byte) (IMMEDIATE | DELIVERED_TO_CONSUMER);
 
     private WeakReference<AMQChannel> _channelRef;
@@ -223,19 +222,15 @@ public class AMQMessage extends AbstractServerMessageImpl<MessageMetaData>
     }
 
 
-    public Object getPublisherIdentifier()
+    public Object getConnectionIdentifier()
     {
-        //todo store sessionIdentifier/client id with message in store
-        //Currently the _sessionIdentifier will be null if the message has been
-        // restored from a message Store
-
-        return _sessionIdentifier;
+        return _connectionIdentifier;
 
     }
 
-    public void setClientIdentifier(final Object sessionIdentifier)
+    public void setConnectionIdentifier(final Object connectionIdentifier)
     {
-        _sessionIdentifier = sessionIdentifier;
+        _connectionIdentifier = connectionIdentifier;
     }
 
 

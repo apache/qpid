@@ -20,6 +20,35 @@
  */
 package org.apache.qpid.server.management;
 
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.security.auth.rmi.RMIPasswordAuthenticator;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+
+import javax.management.JMException;
+import javax.management.MBeanServer;
+import javax.management.MBeanServerFactory;
+import javax.management.Notification;
+import javax.management.NotificationFilterSupport;
+import javax.management.NotificationListener;
+import javax.management.ObjectName;
+import javax.management.remote.JMXConnectionNotification;
+import javax.management.remote.JMXConnectorServer;
+import javax.management.remote.JMXServiceURL;
+import javax.management.remote.MBeanServerForwarder;
+import javax.management.remote.rmi.RMIConnection;
+import javax.management.remote.rmi.RMIConnectorServer;
+import javax.management.remote.rmi.RMIJRMPServerImpl;
+import javax.management.remote.rmi.RMIServerImpl;
+import javax.rmi.ssl.SslRMIClientSocketFactory;
+import javax.rmi.ssl.SslRMIServerSocketFactory;
+import javax.security.auth.Subject;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -40,35 +69,6 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import javax.management.JMException;
-import javax.management.MBeanServer;
-import javax.management.MBeanServerFactory;
-import javax.management.Notification;
-import javax.management.NotificationFilterSupport;
-import javax.management.NotificationListener;
-import javax.management.ObjectName;
-import javax.management.remote.JMXConnectionNotification;
-import javax.management.remote.JMXConnectorServer;
-import javax.management.remote.JMXServiceURL;
-import javax.management.remote.MBeanServerForwarder;
-import javax.management.remote.rmi.RMIConnection;
-import javax.management.remote.rmi.RMIConnectorServer;
-import javax.management.remote.rmi.RMIJRMPServerImpl;
-import javax.management.remote.rmi.RMIServerImpl;
-import javax.rmi.ssl.SslRMIClientSocketFactory;
-import javax.rmi.ssl.SslRMIServerSocketFactory;
-import javax.security.auth.Subject;
-
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.security.auth.rmi.RMIPasswordAuthenticator;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 
 /**
  * This class starts up an MBeanserver. If out of the box agent has been enabled then there are no 
@@ -157,9 +157,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
                 if (!ksf.exists())
                 {
-                    throw new FileNotFoundException("Cannot find JMX management SSL keystore file " + ksf + "\n"
-                                                  + "Check broker configuration, or see create-example-ssl-stores script"
-                                                  + "in the bin/ directory if you need to generate an example store.");
+                    throw new FileNotFoundException("Cannot find JMX management SSL keystore file: " + ksf);
                 }
                 if (!ksf.canRead())
                 {

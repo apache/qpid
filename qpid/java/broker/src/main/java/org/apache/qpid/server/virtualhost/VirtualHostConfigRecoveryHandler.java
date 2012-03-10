@@ -20,42 +20,46 @@
 */
 package org.apache.qpid.server.virtualhost;
 
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.binding.BindingFactory;
+import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.federation.BrokerLink;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.messages.TransactionLogMessages;
+import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
+import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.AbstractServerMessageImpl;
 import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.MessageTransferMessage;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
 import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQQueueFactory;
-import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.messages.TransactionLogMessages;
-import org.apache.qpid.server.message.AMQMessage;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.message.MessageTransferMessage;
-import org.apache.qpid.server.binding.BindingFactory;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.AMQException;
-
-import org.apache.log4j.Logger;
+import org.apache.qpid.server.txn.DtxBranch;
+import org.apache.qpid.server.txn.DtxRegistry;
+import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.transport.Xid;
+import org.apache.qpid.transport.util.Functions;
 import org.apache.qpid.util.ByteBufferInputStream;
-
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.TreeMap;
-import java.util.UUID;
 
 public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHandler,
                                                         ConfigurationRecoveryHandler.QueueRecoveryHandler,
@@ -65,7 +69,8 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
                                                         MessageStoreRecoveryHandler,
                                                         MessageStoreRecoveryHandler.StoredMessageRecoveryHandler,
                                                         TransactionLogRecoveryHandler,
-                                                        TransactionLogRecoveryHandler.QueueEntryRecoveryHandler
+                                                        TransactionLogRecoveryHandler.QueueEntryRecoveryHandler,
+                                                        TransactionLogRecoveryHandler.DtxRecordRecoveryHandler
 {
     private static final Logger _logger = Logger.getLogger(VirtualHostConfigRecoveryHandler.class);
 
@@ -78,7 +83,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
     private MessageStore _store;
 
     private final Map<String, Integer> _queueRecoveries = new TreeMap<String, Integer>();
-    private Map<Long, ServerMessage> _recoveredMessages = new HashMap<Long, ServerMessage>();
+    private Map<Long, AbstractServerMessageImpl> _recoveredMessages = new HashMap<Long, AbstractServerMessageImpl>();
     private Map<Long, StoredMessage> _unusedMessages = new HashMap<Long, StoredMessage>();
 
 
@@ -160,7 +165,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
     public void message(StoredMessage message)
     {
-        ServerMessage serverMessage;
+        AbstractServerMessageImpl serverMessage;
         switch(message.getMetaData().getType())
         {
             case META_DATA_0_8:
@@ -172,9 +177,6 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
             default:
                 throw new RuntimeException("Unknown message type retrieved from store " + message.getMetaData().getClass());
         }
-
-        //_logger.debug("Recovered message with id " + serverMessage);
-        
 
         _recoveredMessages.put(message.getMessageNumber(), serverMessage);
         _unusedMessages.put(message.getMessageNumber(), message);
@@ -196,6 +198,164 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
     public void completeBrokerLinkRecovery()
     {
+    }
+
+    public void dtxRecord(long format, byte[] globalId, byte[] branchId,
+                          MessageStore.Transaction.Record[] enqueues,
+                          MessageStore.Transaction.Record[] dequeues)
+    {
+        Xid id = new Xid(format, globalId, branchId);
+        DtxRegistry dtxRegistry = _virtualHost.getDtxRegistry();
+        DtxBranch branch = dtxRegistry.getBranch(id);
+        if(branch == null)
+        {
+            branch = new DtxBranch(id, _store, _virtualHost);
+            dtxRegistry.registerBranch(branch);
+        }
+        for(MessageStore.Transaction.Record record : enqueues)
+        {
+            final AMQQueue queue = _virtualHost.getQueueRegistry().getQueue(record.getQueue().getResourceName());
+            if(queue != null)
+            {
+                final long messageId = record.getMessage().getMessageNumber();
+                final AbstractServerMessageImpl message = _recoveredMessages.get(messageId);
+                _unusedMessages.remove(messageId);
+
+                if(message != null)
+                {
+                    message.incrementReference();
+
+                    branch.enqueue(queue,message);
+
+                    branch.addPostTransactionAcion(new ServerTransaction.Action()
+                    {
+
+                        public void postCommit()
+                        {
+                            try
+                            {
+
+                                queue.enqueue(message, true, null);
+                                message.decrementReference();
+                            }
+                            catch (AMQException e)
+                            {
+                                _logger.error("Unable to enqueue message " + message.getMessageNumber() + " into " +
+                                              "queue " + queue.getName() + " (from XA transaction)", e);
+                                throw new RuntimeException(e);
+                            }
+                        }
+
+                        public void onRollback()
+                        {
+                            message.decrementReference();
+                        }
+                    });
+                }
+                else
+                {
+                    StringBuilder xidString = xidAsString(id);
+                    String messageNumberString = String.valueOf(message.getMessageNumber());
+                    CurrentActor.get().message(_logSubject,
+                                               TransactionLogMessages.XA_INCOMPLETE_MESSAGE(xidString.toString(),
+                                                                                            messageNumberString));
+                    
+                }
+
+            }
+            else
+            {
+                StringBuilder xidString = xidAsString(id);
+                CurrentActor.get().message(_logSubject,
+                                           TransactionLogMessages.XA_INCOMPLETE_QUEUE(xidString.toString(),
+                                                                                      record.getQueue().getResourceName()));
+
+            }
+        }
+        for(MessageStore.Transaction.Record record : dequeues)
+        {
+            final AMQQueue queue = _virtualHost.getQueueRegistry().getQueue(record.getQueue().getResourceName());
+            if(queue != null)
+            {
+                final long messageId = record.getMessage().getMessageNumber();
+                final AbstractServerMessageImpl message = _recoveredMessages.get(messageId);
+                _unusedMessages.remove(messageId);
+
+                if(message != null)
+                {
+                    final QueueEntry entry = queue.getMessageOnTheQueue(messageId);
+                    
+                    entry.acquire();
+                    
+                    branch.dequeue(queue, message);
+
+                    branch.addPostTransactionAcion(new ServerTransaction.Action()
+                    {
+
+                        public void postCommit()
+                        {
+                            entry.discard();
+                        }
+
+                        public void onRollback()
+                        {
+                            entry.release();
+                        }
+                    });
+                }
+                else
+                {
+                    StringBuilder xidString = xidAsString(id);
+                    String messageNumberString = String.valueOf(message.getMessageNumber());
+                    CurrentActor.get().message(_logSubject,
+                                               TransactionLogMessages.XA_INCOMPLETE_MESSAGE(xidString.toString(),
+                                                                                            messageNumberString));
+
+                }
+
+            }
+            else
+            {
+                StringBuilder xidString = xidAsString(id);
+                CurrentActor.get().message(_logSubject,
+                                           TransactionLogMessages.XA_INCOMPLETE_QUEUE(xidString.toString(),
+                                                                                      queue.getName()));
+            }
+
+        }
+
+        try
+        {
+            branch.setState(DtxBranch.State.PREPARED);
+            branch.prePrepareTransaction();
+        }
+        catch (AMQStoreException e)
+        {
+            _logger.error("Unexpected database exception when attempting to prepare a recovered XA transaction " +
+                          xidAsString(id), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static StringBuilder xidAsString(Xid id)
+    {
+        return new StringBuilder("(")
+                    .append(id.getFormat())
+                    .append(',')
+                    .append(Functions.str(id.getGlobalId()))
+                    .append(',')
+                    .append(Functions.str(id.getBranchId()))
+                    .append(')');
+    }
+
+    public void completeDtxRecordRecovery()
+    {
+        for(StoredMessage m : _unusedMessages.values())
+        {
+            _logger.warn("Message id " + m.getMessageNumber() + " in store, but not in any queue - removing....");
+            m.remove();
+        }
+        CurrentActor.get().message(_logSubject, TransactionLogMessages.RECOVERY_COMPLETE(null, false));
     }
 
     private static final class ProcessAction
@@ -354,14 +514,8 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
     }
 
-    public void completeQueueEntryRecovery()
+    public DtxRecordRecoveryHandler completeQueueEntryRecovery()
     {
-
-        for(StoredMessage m : _unusedMessages.values())
-        {
-            _logger.warn("Message id " + m.getMessageNumber() + " in store, but not in any queue - removing....");
-            m.remove();
-        }
 
         for(Map.Entry<String,Integer> entry : _queueRecoveries.entrySet())
         {
@@ -370,7 +524,9 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
             CurrentActor.get().message(_logSubject, TransactionLogMessages.RECOVERY_COMPLETE(entry.getKey(), true));
         }
 
-        CurrentActor.get().message(_logSubject, TransactionLogMessages.RECOVERY_COMPLETE(null, false));
+
+
+        return this;
     }
 
     private static class DummyMessage implements EnqueableMessage

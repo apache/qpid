@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.transport;
 
-import java.util.List;
-import java.util.Map;
-
 import org.apache.qpid.transport.codec.Decoder;
 import org.apache.qpid.transport.codec.Encodable;
 import org.apache.qpid.transport.codec.Encoder;
+
+import java.util.Map;
 
 
 /**
@@ -42,7 +41,7 @@ public abstract class Struct implements Encodable
         return StructFactory.create(type);
     }
 
-    boolean dirty = true;
+    private boolean dirty = true;
 
     public boolean isDirty()
     {

@@ -21,21 +21,14 @@
 package org.apache.qpid.server.store;
 
 import org.apache.commons.configuration.Configuration;
-import org.apache.qpid.AMQException;
+
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.abstraction.ContentChunk;
-import org.apache.qpid.server.message.EnqueableMessage;
-import org.apache.qpid.server.message.MessageMetaData;
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.logging.LogSubject;
-
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
-import java.nio.ByteBuffer;
+import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.queue.AMQQueue;
 
 /**
  * A message store that does nothing. Designed to be used in tests that do not want to use any message store
@@ -152,6 +145,14 @@ public class SkeletonMessageStore implements MessageStore
             public void abortTran() throws AMQStoreException
             {
 
+            }
+
+            public void removeXid(long format, byte[] globalId, byte[] branchId)
+            {
+            }
+
+            public void recordXid(long format, byte[] globalId, byte[] branchId, Record[] enqueues, Record[] dequeues)
+            {
             }
         };
     }

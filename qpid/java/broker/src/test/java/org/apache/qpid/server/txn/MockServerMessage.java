@@ -20,14 +20,15 @@
  */
 package org.apache.qpid.server.txn;
 
-import java.nio.ByteBuffer;
-
 import org.apache.commons.lang.NotImplementedException;
+
 import org.apache.qpid.server.configuration.SessionConfig;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.store.StoredMessage;
+
+import java.nio.ByteBuffer;
 
 /**
  * Mock Server Message allowing its persistent flag to be controlled from test.

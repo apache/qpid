@@ -20,10 +20,9 @@
  */
 package org.apache.qpid.client.protocol;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
 import junit.framework.TestCase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQAuthenticationException;
@@ -35,8 +34,9 @@ import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.amqp_8_0.BasicRecoverOkBodyImpl;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.transport.TestNetworkConnection;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This is a test address QPID-1431 where frame listeners would fail to be notified of an incomming exception.
@@ -59,15 +59,15 @@ public class AMQProtocolHandlerTest extends TestCase
     private static final Logger _logger = LoggerFactory.getLogger(AMQProtocolHandlerTest.class);
 
     // The handler to test
-    AMQProtocolHandler _handler;
+    private AMQProtocolHandler _handler;
 
     // A frame to block upon whilst waiting the exception
-    AMQFrame _blockFrame;
+    private AMQFrame _blockFrame;
 
     // Latch to know when the listener receives an exception
     private CountDownLatch _handleCountDown;
     // The listener that will receive an exception
-    BlockToAccessFrameListener _listener;
+    private BlockToAccessFrameListener _listener;
 
     @Override
     public void setUp() throws Exception

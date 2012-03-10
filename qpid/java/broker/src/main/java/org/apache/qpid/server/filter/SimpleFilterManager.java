@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.server.filter;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
+
 import org.apache.qpid.server.queue.Filterable;
+
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class SimpleFilterManager implements FilterManager
 {

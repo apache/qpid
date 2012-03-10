@@ -17,10 +17,16 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.jms.ConnectionURL;
 
-import javax.jms.*;
+import javax.jms.JMSException;
+import javax.jms.XAConnection;
+import javax.jms.XAQueueConnection;
+import javax.jms.XAQueueSession;
+import javax.jms.XASession;
+import javax.jms.XATopicConnection;
+import javax.jms.XATopicSession;
 
 /**
  * This class implements the javax.njms.XAConnection interface
@@ -47,7 +53,7 @@ public class XAConnectionImpl extends AMQConnection implements XAConnection, XAQ
     public synchronized XASession createXASession() throws JMSException
     {
         checkNotClosed();
-        return _delegate.createXASession();
+        return getDelegate().createXASession();
     }
 
     //-- Interface  XAQueueConnection
@@ -80,6 +86,6 @@ public class XAConnectionImpl extends AMQConnection implements XAConnection, XAQ
     public XASession createXASession(int ackMode) throws JMSException
     {
         checkNotClosed();
-        return _delegate.createXASession(ackMode);
+        return getDelegate().createXASession(ackMode);
     }
 }

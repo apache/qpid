@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.test.unit.client.channelclose;
 
-import javax.jms.MessageConsumer;
-import javax.jms.Session;
-
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+
+import javax.jms.MessageConsumer;
+import javax.jms.Session;
 
 /**
  * @author Apache Software Foundation

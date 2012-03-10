@@ -17,43 +17,11 @@
  */
 package org.apache.qpid.test.utils;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
-import java.io.PrintStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import javax.jms.BytesMessage;
-import javax.jms.Connection;
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.MapMessage;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.ObjectMessage;
-import javax.jms.Queue;
-import javax.jms.Session;
-import javax.jms.StreamMessage;
-import javax.jms.TextMessage;
-import javax.jms.Topic;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQQueue;
@@ -71,6 +39,34 @@ import org.apache.qpid.server.store.DerbyMessageStore;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.util.FileUtils;
 import org.apache.qpid.util.LogMonitor;
+
+import javax.jms.BytesMessage;
+import javax.jms.Connection;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.MapMessage;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.ObjectMessage;
+import javax.jms.Queue;
+import javax.jms.Session;
+import javax.jms.StreamMessage;
+import javax.jms.TextMessage;
+import javax.jms.Topic;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Qpid base class for system testing test cases.
@@ -126,7 +122,6 @@ public class QpidBrokerTestCase extends QpidTestCase
     private static final String BROKER_LOG_PREFIX = "broker.log.prefix";
     private static final String BROKER_PERSITENT = "broker.persistent";
     private static final String BROKER_PROTOCOL_EXCLUDES = "broker.protocol.excludes";
-    
 
     // values
     protected static final String JAVA = "java";
@@ -154,7 +149,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected File _outputFile;
 
-    protected PrintStream _brokerOutputStream;
+    protected PrintStream _testcaseOutputStream;
 
     protected Map<Integer, BrokerHolder> _brokers = new HashMap<Integer, BrokerHolder>();
 
@@ -195,10 +190,10 @@ public class QpidBrokerTestCase extends QpidTestCase
         super();
     }
     
-	public Logger getLogger()
-	{
-		return QpidBrokerTestCase._logger;
-	}
+    public Logger getLogger()
+    {
+        return QpidBrokerTestCase._logger;
+    }
 
     public void runBare() throws Throwable
     {
@@ -228,12 +223,12 @@ public class QpidBrokerTestCase extends QpidTestCase
 
             if (_interleaveBrokerLog)
             {
-            	_brokerOutputStream = out;
+                _testcaseOutputStream = out;
             }
             else
             {
-            	_brokerOutputStream = new PrintStream(new FileOutputStream(String
-    					.format("%s/TEST-%s.broker.out", _output, qname)), true);
+                _testcaseOutputStream = new PrintStream(new FileOutputStream(String
+                        .format("%s/TEST-%s.broker.out", _output, qname)), true);
             }
         }
 
@@ -278,7 +273,7 @@ public class QpidBrokerTestCase extends QpidTestCase
                 out.close();
                 if (!_interleaveBrokerLog)
                 {
-                	_brokerOutputStream.close();
+                    _testcaseOutputStream.close();
                 }
             }
         }
@@ -305,103 +300,6 @@ public class QpidBrokerTestCase extends QpidTestCase
         }
 
         startBroker();
-    }
-
-    private static final class Piper extends Thread
-    {
-
-        private LineNumberReader in;
-        private PrintStream out;
-        private String ready;
-        private CountDownLatch latch;
-        private boolean seenReady;
-        private String stopped;
-        private String stopLine;
-
-        public Piper(InputStream in, PrintStream out, String ready)
-        {
-            this(in, out, ready, null);
-        }
-
-        public Piper(InputStream in, PrintStream out, String ready, String stopped)
-        {
-            this.in = new LineNumberReader(new InputStreamReader(in));
-            this.out = out;
-            this.ready = ready;
-            this.stopped = stopped;
-            this.seenReady = false;
-
-            if (this.ready != null && !this.ready.equals(""))
-            {
-                this.latch = new CountDownLatch(1);
-            }
-            else
-            {
-                this.latch = null;
-            }
-        }
-
-        public Piper(InputStream in, PrintStream out)
-        {
-            this(in, out, null);
-        }
-
-        public boolean await(long timeout, TimeUnit unit) throws InterruptedException
-        {
-            if (latch == null)
-            {
-                return true;
-            }
-            else
-            {
-                latch.await(timeout, unit);
-                return seenReady;
-            }
-        }
-
-        public void run()
-        {
-            try
-            {
-                String line;
-                while ((line = in.readLine()) != null)
-                {
-                	if (_interleaveBrokerLog)
-                	{
-                		line = _brokerLogPrefix + line;
-                	}
-                	out.println(line);
-
-                    if (latch != null && line.contains(ready))
-                    {
-                        seenReady = true;
-                        latch.countDown();
-                    }
-
-                    if (!seenReady && line.contains(stopped))
-                    {
-                        stopLine = line;
-                    }
-                }
-            }
-            catch (IOException e)
-            {
-                // this seems to happen regularly even when
-                // exits are normal
-            }
-            finally
-            {
-                if (latch != null)
-                {
-                    latch.countDown();
-                }
-            }
-        }
-
-        public String getStopLine()
-        {
-            return stopLine;
-        }
     }
 
     /**
@@ -489,7 +387,7 @@ public class QpidBrokerTestCase extends QpidTestCase
             _logger.info("starting internal broker (same JVM)");
             broker.startup(options);
 
-            _brokers.put(port, new InternalBrokerHolder(broker));
+            _brokers.put(port, new InternalBrokerHolder(broker, System.getProperty("QPID_WORK")));
         }
         else if (!_brokerType.equals(BrokerType.EXTERNAL))
         {
@@ -563,18 +461,19 @@ public class QpidBrokerTestCase extends QpidTestCase
             // cpp broker requires that the work directory is created
             createBrokerWork(qpidWork);
 
-            Process process = pb.start();;
+            Process process = pb.start();
 
             Piper p = new Piper(process.getInputStream(),
-            		            _brokerOutputStream,
+                                _testcaseOutputStream,
                                 System.getProperty(BROKER_READY),
-                                System.getProperty(BROKER_STOPPED));
+                                System.getProperty(BROKER_STOPPED),
+                                _interleaveBrokerLog ? _brokerLogPrefix : null);
 
             p.start();
 
             if (!p.await(30, TimeUnit.SECONDS))
             {
-                _logger.info("broker failed to become ready (" + p.ready + "):" + p.getStopLine());
+                _logger.info("broker failed to become ready (" + p.getReady() + "):" + p.getStopLine());
                 //Ensure broker has stopped
                 process.destroy();
                 cleanBrokerWork(qpidWork);
@@ -595,7 +494,7 @@ public class QpidBrokerTestCase extends QpidTestCase
                 // this is expect if the broker started successfully
             }
 
-            _brokers.put(port, new SpawnedBrokerHolder(process));
+            _brokers.put(port, new SpawnedBrokerHolder(process, qpidWork));
         }
     }
 
@@ -742,11 +641,31 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     public void stopBroker(int port) throws Exception
     {
-        port = getPort(port);
+        if (isBrokerPresent(port))
+        {
+            port = getPort(port);
 
-        _logger.info("stopping broker on port : " + port);
-        BrokerHolder broker = _brokers.remove(port);
-        broker.shutdown();
+            _logger.info("stopping broker on port : " + port);
+            BrokerHolder broker = _brokers.remove(port);
+            broker.shutdown();
+        }
+    }
+
+    public void killBroker() throws Exception
+    {
+        killBroker(0);
+    }
+
+    public void killBroker(int port) throws Exception
+    {
+        if (isBrokerPresent(port))
+        {
+            port = getPort(port);
+
+            _logger.info("killing broker on port : " + port);
+            BrokerHolder broker = _brokers.remove(port);
+            broker.kill();
+        }
     }
 
     public boolean isBrokerPresent(int port) throws Exception
@@ -755,7 +674,13 @@ public class QpidBrokerTestCase extends QpidTestCase
 
         return _brokers.containsKey(port);
     }
-    
+
+    public BrokerHolder getBroker(int port) throws Exception
+    {
+        port = getPort(port);
+        return _brokers.get(port);
+    }
+
     /**
      * Attempt to set the Java Broker to use the BDBMessageStore for persistence
      * Falling back to the DerbyMessageStore if
@@ -984,7 +909,6 @@ public class QpidBrokerTestCase extends QpidTestCase
     /**
      * we assume that the environment is correctly set
      * i.e. -Djava.naming.provider.url="..//example010.properties"
-     * TODO should be a way of setting that through maven
      *
      * @return an initial context
      *
@@ -1158,13 +1082,13 @@ public class QpidBrokerTestCase extends QpidTestCase
     /**
      * Send messages to the given destination.
      *
-     * If session is transacted then messages will be commited before returning
+     * If session is transacted then messages will be committed before returning
      *
      * @param session the session to use for sending
      * @param destination where to send them to
      * @param count no. of messages to send
      *
-     * @return the sent messges
+     * @return the sent messages
      *
      * @throws Exception
      */
@@ -1357,6 +1281,6 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected int getFailingPort()
     {
-    	return FAILING_PORT;
+        return FAILING_PORT;
     }
 }

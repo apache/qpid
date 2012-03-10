@@ -23,14 +23,12 @@ package org.apache.qpid.test.framework;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
-import org.apache.qpid.test.framework.BrokerLifecycleAware;
-import org.apache.qpid.test.framework.sequencers.CircuitFactory;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-
 import org.apache.qpid.junit.extensions.SetupTaskAware;
 import org.apache.qpid.junit.extensions.SetupTaskHandler;
 import org.apache.qpid.junit.extensions.util.ParsedProperties;
 import org.apache.qpid.junit.extensions.util.TestContextProperties;
+import org.apache.qpid.test.framework.sequencers.CircuitFactory;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import java.util.ArrayList;
 import java.util.List;

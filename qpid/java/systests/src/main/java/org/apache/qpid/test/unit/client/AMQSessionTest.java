@@ -20,15 +20,15 @@
  */
 package org.apache.qpid.test.unit.client;
 
-import javax.jms.JMSException;
-import javax.jms.QueueReceiver;
-import javax.jms.TopicSubscriber;
-
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+
+import javax.jms.JMSException;
+import javax.jms.QueueReceiver;
+import javax.jms.TopicSubscriber;
 
 /**
  * Tests for QueueReceiver and TopicSubscriber creation methods on AMQSession

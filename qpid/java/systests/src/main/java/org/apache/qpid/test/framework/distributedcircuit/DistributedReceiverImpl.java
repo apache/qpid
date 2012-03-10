@@ -20,10 +20,9 @@
  */
 package org.apache.qpid.test.framework.distributedcircuit;
 
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 import org.apache.qpid.test.framework.Assertion;
 import org.apache.qpid.test.framework.Receiver;
-
-import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
 /**
  * DistributedReceiverImpl represents the status of the receiving side of a test circuit. Its main purpose is to

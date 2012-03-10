@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.server;
 
+import org.apache.qpid.test.utils.QpidTestCase;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.apache.qpid.test.utils.QpidTestCase;
 
 
 public class BrokerOptionsTest extends QpidTestCase

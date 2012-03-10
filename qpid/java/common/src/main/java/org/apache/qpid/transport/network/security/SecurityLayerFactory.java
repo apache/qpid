@@ -21,7 +21,10 @@
 package org.apache.qpid.transport.network.security;
 
 import org.apache.qpid.ssl.SSLContextFactory;
-import org.apache.qpid.transport.*;
+import org.apache.qpid.transport.ConnectionSettings;
+import org.apache.qpid.transport.Receiver;
+import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.security.sasl.SASLReceiver;
 import org.apache.qpid.transport.network.security.sasl.SASLSender;
 import org.apache.qpid.transport.network.security.ssl.SSLReceiver;
@@ -34,6 +37,10 @@ import java.nio.ByteBuffer;
 
 public class SecurityLayerFactory
 {
+    private SecurityLayerFactory()
+    {
+    }
+
     public static SecurityLayer newInstance(ConnectionSettings settings)
     {
 
@@ -71,10 +78,10 @@ public class SecurityLayerFactory
                 sslCtx = SSLContextFactory
                         .buildClientContext(settings.getTrustStorePath(),
                                 settings.getTrustStorePassword(),
-                                settings.getTrustStoreCertType(),
+                                settings.getTrustManagerFactoryAlgorithm(),
                                 settings.getKeyStorePath(),
                                 settings.getKeyStorePassword(),
-                                settings.getKeyStoreCertType(),
+                                settings.getKeyManagerFactoryAlgorithm(),
                                 settings.getCertAlias());
             }
             catch (Exception e)

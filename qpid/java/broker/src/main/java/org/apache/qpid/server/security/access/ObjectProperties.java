@@ -18,12 +18,16 @@
  */
 package org.apache.qpid.server.security.access;
 
-import java.util.*;
-
 import org.apache.commons.lang.StringUtils;
+
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
+
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * An set of properties for an access control v2 rule {@link ObjectType}.
@@ -315,19 +319,28 @@ public class ObjectProperties
                 || ruleValue.equals(STAR)
                 || (ruleValue.endsWith(STAR) 
                         && thisValue != null
-                        && thisValue.length() > ruleValue.length()
-                        && thisValue.startsWith(ruleValue.substring(0, ruleValue.length() - 2)));
+                        && thisValue.length() >= ruleValue.length() - 1
+                        && thisValue.startsWith(ruleValue.substring(0, ruleValue.length() - 1)));
     }
 
     @Override
     public boolean equals(Object o)
     {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+        {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
 
         ObjectProperties that = (ObjectProperties) o;
 
-        if (_properties != null ? !_properties.equals(that._properties) : that._properties != null) return false;
+        if (_properties != null ? !_properties.equals(that._properties) : that._properties != null)
+        {
+            return false;
+        }
 
         return true;
     }

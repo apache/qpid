@@ -20,17 +20,16 @@
  */
 package org.apache.qpid.management.jmx;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.management.common.mbeans.ManagedBroker;
+import org.apache.qpid.management.common.mbeans.ManagedConnection;
 
 import javax.jms.Connection;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
-
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.management.common.mbeans.ManagedBroker;
-import org.apache.qpid.management.common.mbeans.ManagedConnection;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Test statistics for delivery and receipt.

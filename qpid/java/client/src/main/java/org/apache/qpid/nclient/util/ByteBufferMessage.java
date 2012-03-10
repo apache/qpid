@@ -21,14 +21,17 @@ package org.apache.qpid.nclient.util;
  */
 
 
+import org.apache.qpid.api.Message;
+import org.apache.qpid.transport.DeliveryProperties;
+import org.apache.qpid.transport.Header;
+import org.apache.qpid.transport.MessageProperties;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.*;
-
-import org.apache.qpid.transport.DeliveryProperties;
-import org.apache.qpid.transport.MessageProperties;
-import org.apache.qpid.transport.Header;
-import org.apache.qpid.api.Message;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * <p>A Simple implementation of the message interface
@@ -42,7 +45,7 @@ import org.apache.qpid.api.Message;
  */
 public class ByteBufferMessage implements Message
 {
-    private List<ByteBuffer> _data;// = new ArrayList<ByteBuffer>();
+    private List<ByteBuffer> _data;
     private ByteBuffer _readBuffer;
     private int _dataSize;
     private DeliveryProperties _currentDeliveryProps;

@@ -20,13 +20,7 @@
  */
 package org.apache.qpid.test.client;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.test.utils.FailoverBaseCase;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-
+import java.util.Enumeration;
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -37,8 +31,10 @@ import javax.jms.QueueBrowser;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.naming.NamingException;
-import java.util.Enumeration;
-import java.util.Random;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class QueueBrowserAutoAckTest extends QpidBrokerTestCase
 {
@@ -422,6 +418,23 @@ public class QueueBrowserAutoAckTest extends QpidBrokerTestCase
         }
 
         validate(messages);
+    }
+
+    public void testBrowsingWhileStopped() throws JMSException
+    {
+        _clientConnection.stop();
+
+        try
+        {
+            QueueBrowser browser = _clientSession.createBrowser(getTestQueue());
+            Enumeration messages = browser.getEnumeration();
+            fail("Expected exception when attempting to browse on a stopped connection did not occur");
+        }
+        catch(javax.jms.IllegalStateException e)
+        {
+            // pass
+        }
+
     }
 
 }

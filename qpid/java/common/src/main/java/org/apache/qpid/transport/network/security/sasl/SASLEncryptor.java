@@ -21,21 +21,19 @@ package org.apache.qpid.transport.network.security.sasl;
  */
 
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.security.sasl.Sasl;
-import javax.security.sasl.SaslClient;
-
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ConnectionException;
 import org.apache.qpid.transport.ConnectionListener;
 
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslClient;
+
 public abstract class SASLEncryptor implements ConnectionListener
 {
-    protected SaslClient saslClient;
-    protected boolean securityLayerEstablished = false;
-    protected int sendBuffSize;
-    protected int recvBuffSize;
+    private SaslClient saslClient;
+    private boolean securityLayerEstablished = false;
+    private int sendBuffSize;
+    private int recvBuffSize;
 
     public boolean isSecurityLayerEstablished()
     {
@@ -63,4 +61,19 @@ public abstract class SASLEncryptor implements ConnectionListener
     public void closed(Connection conn) {}
     
     public abstract void securityLayerEstablished();
+
+    public SaslClient getSaslClient()
+    {
+        return saslClient;
+    }
+
+    public int getSendBuffSize()
+    {
+        return sendBuffSize;
+    }
+
+    public int getRecvBuffSize()
+    {
+        return recvBuffSize;
+    }
 }

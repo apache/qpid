@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.client.failover;
 
-import org.apache.qpid.AMQDisconnectedException;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.client.state.AMQStateManager;
-import org.apache.qpid.client.state.AMQState;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.AMQDisconnectedException;
+import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.client.state.AMQState;
+import org.apache.qpid.client.state.AMQStateManager;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -231,14 +231,7 @@ public class FailoverHandler implements Runnable
                 {
                     _logger.info("Failover process failed - exception being propagated by protocol handler");
                     _amqProtocolHandler.setFailoverState(FailoverState.FAILED);
-                    /*try
-                    {*/
                     _amqProtocolHandler.exception(e);
-                    /*}
-                    catch (Exception ex)
-                    {
-                        _logger.error("Error notifying protocol session of error: " + ex, ex);
-                    }*/
                 }
             }
         }

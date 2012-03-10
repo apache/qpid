@@ -17,17 +17,18 @@
  */
 package org.apache.qpid.test.unit.xa;
 
-import javax.jms.*;
-import javax.transaction.xa.XAResource;
-import javax.transaction.xa.Xid;
-import javax.transaction.xa.XAException;
-
 import junit.framework.TestSuite;
-
-import java.util.concurrent.atomic.AtomicBoolean;
-
+import org.apache.qpid.configuration.ClientProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.jms.*;
+import javax.transaction.xa.XAException;
+import javax.transaction.xa.XAResource;
+import javax.transaction.xa.Xid;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  *
@@ -105,7 +106,7 @@ public class TopicTest extends AbstractXATestCase
             }
             catch (Exception e)
             {
-                fail("Exception thrown when cleaning standard connection: " + e.getStackTrace());
+                fail("Exception thrown when cleaning standard connection: " + e);
             }
         }
         super.tearDown();
@@ -118,6 +119,7 @@ public class TopicTest extends AbstractXATestCase
     {
         if (!isBroker08())
         {
+            setTestClientSystemProperty(ClientProperties.MAX_PREFETCH_PROP_NAME, "1");
             // lookup test queue
             try
             {
@@ -652,7 +654,12 @@ public class TopicTest extends AbstractXATestCase
                     {
 
                         message = (TextMessage) xaDurSub.receive(1000);
-                        _logger.debug(" received message: " + message.getLongProperty(_sequenceNumberPropertyName));
+
+                        if(message != null)
+                        {
+                            _logger.debug(" received message: " + message.getLongProperty(_sequenceNumberPropertyName));
+                        }
+
                         if (message == null)
                         {
                             fail("no message received! expected: " + i);
@@ -884,35 +891,40 @@ public class TopicTest extends AbstractXATestCase
                     // receive 3 message within tx1: 3, 4 and 7
                     _xaResource.start(xid1, XAResource.TMRESUME);
                     // receive messages 3, 4 and 7
+                    Set<Long> expected = new HashSet<Long>();
+                    expected.add(3L);
+                    expected.add(4L);
+                    expected.add(7L);
                     message = (TextMessage) xaDurSub.receive(1000);
                     if (message == null)
                     {
-                        fail("no message received! expected: " + 3);
+                        fail("no message received! expected one of: " + expected);
                     }
-                    else if (message.getLongProperty(_sequenceNumberPropertyName) != 3)
+                    else if (!expected.remove(message.getLongProperty(_sequenceNumberPropertyName)))
                     {
                         fail("wrong sequence number: " + message
-                                .getLongProperty(_sequenceNumberPropertyName) + " 3 was expected");
-                    }
-                    message = (TextMessage) xaDurSub.receive(1000);
-                    if (message == null)
-                    {
-                        fail("no message received! expected: " + 4);
-                    }
-                    else if (message.getLongProperty(_sequenceNumberPropertyName) != 4)
-                    {
-                        fail("wrong sequence number: " + message
-                                .getLongProperty(_sequenceNumberPropertyName) + " 4 was expected");
+                                .getLongProperty(_sequenceNumberPropertyName) + " expected one from " + expected);
                     }
                     message = (TextMessage) xaDurSub.receive(1000);
                     if (message == null)
                     {
-                        fail("no message received! expected: " + 7);
+                        fail("no message received! expected one of: " + expected);
                     }
-                    else if (message.getLongProperty(_sequenceNumberPropertyName) != 7)
+                    else if (!expected.remove(message.getLongProperty(_sequenceNumberPropertyName)))
+                    {
+
+                        fail("wrong sequence number: " + message
+                                .getLongProperty(_sequenceNumberPropertyName) + " expected one from " + expected);
+                    }
+                    message = (TextMessage) xaDurSub.receive(1000);
+                    if (message == null)
+                    {
+                        fail("no message received! expected one of: " + expected);
+                    }
+                    else if (!expected.remove(message.getLongProperty(_sequenceNumberPropertyName)))
                     {
                         fail("wrong sequence number: " + message
-                                .getLongProperty(_sequenceNumberPropertyName) + " 7 was expected");
+                                .getLongProperty(_sequenceNumberPropertyName) + " expected one from " + expected);
                     }
                 }
                 catch (Exception e)
@@ -938,8 +950,18 @@ public class TopicTest extends AbstractXATestCase
 
                 try
                 {
-                    // consume messages 1 - 4
-                    //----- start xid1
+                    // consume messages: could be any from (1 - 4, 7-10)
+                    //----- start xid4
+                    Set<Long> expected = new HashSet<Long>();
+                    Set<Long> xid4msgs = new HashSet<Long>();
+                    for(long l = 1; l <= 4l; l++)
+                    {
+                        expected.add(l);
+                    }
+                    for(long l = 7; l <= 10l; l++)
+                    {
+                        expected.add(l);
+                    }
                     _xaResource.start(xid4, XAResource.TMNOFLAGS);
                     for (int i = 1; i <= 4; i++)
                     {
@@ -948,9 +970,14 @@ public class TopicTest extends AbstractXATestCase
                         {
                             fail("no message received! expected: " + i);
                         }
-                        else if (message.getLongProperty(_sequenceNumberPropertyName) != i)
+
+                        long seqNo = message.getLongProperty(_sequenceNumberPropertyName);
+                        xid4msgs.add(seqNo);
+
+                        if (!expected.remove(seqNo))
                         {
-                            fail("wrong sequence number: " + message.getLongProperty(_sequenceNumberPropertyName));
+                            fail("wrong sequence number: " + seqNo +
+                                 " expected one from " + expected);
                         }
                     }
                     _xaResource.end(xid4, XAResource.TMSUSPEND);
@@ -963,15 +990,17 @@ public class TopicTest extends AbstractXATestCase
                         {
                             fail("no message received! expected: " + i);
                         }
-                        else if (message.getLongProperty(_sequenceNumberPropertyName) != i)
+                        else if (!expected.remove(message.getLongProperty(_sequenceNumberPropertyName)))
                         {
-                            fail("wrong sequence number: " + message.getLongProperty(_sequenceNumberPropertyName));
+                            fail("wrong sequence number: " + message.getLongProperty(_sequenceNumberPropertyName)
+                                + " expected one from " + expected);
                         }
                     }
                     _xaResource.end(xid5, XAResource.TMSUSPEND);
                     // abort tx4
                     _xaResource.prepare(xid4);
                     _xaResource.rollback(xid4);
+                    expected.addAll(xid4msgs);
                     // consume messages 1-4 with tx5
                     _xaResource.start(xid5, XAResource.TMRESUME);
                     for (int i = 1; i <= 4; i++)
@@ -981,13 +1010,15 @@ public class TopicTest extends AbstractXATestCase
                         {
                             fail("no message received! expected: " + i);
                         }
-                        else if (message.getLongProperty(_sequenceNumberPropertyName) != i)
+                        else if (!expected.remove(message.getLongProperty(_sequenceNumberPropertyName)))
                         {
-                            fail("wrong sequence number: " + message.getLongProperty(_sequenceNumberPropertyName));
+                            fail("wrong sequence number: " + message.getLongProperty(_sequenceNumberPropertyName)
+                                 + " expected one from " + expected);
                         }
                     }
                     _xaResource.end(xid5, XAResource.TMSUSPEND);
                     // commit tx5
+
                     _xaResource.prepare(xid5);
                     _xaResource.commit(xid5, false);
                 }
@@ -1604,6 +1635,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 _xaResource.end(xid2, XAResource.TMSUCCESS);
                 _xaResource.commit(xid2, true);
+                _session.close();
             }
             catch (Exception e)
             {

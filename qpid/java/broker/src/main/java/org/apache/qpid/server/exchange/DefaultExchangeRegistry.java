@@ -20,19 +20,19 @@
  */
 package org.apache.qpid.server.exchange;
 
-import java.util.Collection;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.util.Collection;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class DefaultExchangeRegistry implements ExchangeRegistry
 {
@@ -153,24 +153,4 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         }
     }
 
-
-    /**
-     * Routes content through exchanges, delivering it to 1 or more queues.
-     * @param payload
-     * @throws AMQException if something goes wrong delivering data
-     */
-    public void routeContent(IncomingMessage payload) throws AMQException
-    {
-        final AMQShortString exchange = payload.getExchange();
-        final Exchange exch = getExchange(exchange);
-        // there is a small window of opportunity for the exchange to be deleted in between
-        // the BasicPublish being received (where the exchange is validated) and the final
-        // content body being received (which triggers this method)
-        // TODO: check where the exchange is validated
-        if (exch == null)
-        {
-            throw new AMQException("Exchange '" + exchange + "' does not exist");
-        }
-        payload.enqueue(exch.route(payload));
-    }
 }

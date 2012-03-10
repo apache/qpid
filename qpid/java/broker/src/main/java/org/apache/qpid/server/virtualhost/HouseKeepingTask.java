@@ -21,13 +21,14 @@
 package org.apache.qpid.server.virtualhost;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.AbstractActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 
 public abstract class HouseKeepingTask implements Runnable
 {
-    Logger _logger = Logger.getLogger(this.getClass());
+    private Logger _logger = Logger.getLogger(this.getClass());
 
     private VirtualHost _virtualHost;
 
@@ -59,7 +60,7 @@ public abstract class HouseKeepingTask implements Runnable
         {
             execute();
         }
-        catch (Throwable e)
+        catch (Exception e)
         {
             _logger.warn(this.getClass().getSimpleName() + " throw exception: " + e, e);
         }

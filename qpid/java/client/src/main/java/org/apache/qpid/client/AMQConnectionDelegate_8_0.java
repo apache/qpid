@@ -20,19 +20,8 @@
  */
 package org.apache.qpid.client;
 
-import java.io.IOException;
-import java.net.ConnectException;
-import java.nio.channels.UnresolvedAddressException;
-import java.security.GeneralSecurityException;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.Iterator;
-import java.util.Set;
-
-import javax.jms.JMSException;
-import javax.jms.XASession;
-import javax.net.ssl.SSLContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQTimeoutException;
@@ -60,8 +49,19 @@ import org.apache.qpid.transport.network.OutgoingNetworkTransport;
 import org.apache.qpid.transport.network.Transport;
 import org.apache.qpid.transport.network.security.SecurityLayer;
 import org.apache.qpid.transport.network.security.SecurityLayerFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import javax.jms.JMSException;
+import javax.jms.XASession;
+import javax.net.ssl.SSLContext;
+import java.io.IOException;
+import java.net.ConnectException;
+import java.nio.channels.UnresolvedAddressException;
+import java.security.GeneralSecurityException;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.Iterator;
+import java.util.Set;
 
 public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 {
@@ -71,30 +71,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 
     public void closeConnection(long timeout) throws JMSException, AMQException
     {
-        final AMQStateManager stateManager = _conn.getProtocolHandler().getStateManager();
-        final AMQState currentState = stateManager.getCurrentState();
-
-        if (currentState.equals(AMQState.CONNECTION_CLOSED))
-        {
-            _logger.debug("Connection already closed.");
-        }
-        else if (currentState.equals(AMQState.CONNECTION_CLOSING))
-        {
-            _logger.debug("Connection already closing, awaiting closed state.");
-            final StateWaiter closeWaiter = new StateWaiter(stateManager, currentState, EnumSet.of(AMQState.CONNECTION_CLOSED));
-            try
-            {
-                closeWaiter.await(timeout);
-            }
-            catch (AMQTimeoutException te)
-            {
-                throw new AMQTimeoutException("Close did not complete in timely fashion", te);
-            }
-        }
-        else
-        {
-            _conn.getProtocolHandler().closeConnection(timeout);
-        }
+        _conn.getProtocolHandler().closeConnection(timeout);
     }
 
     public AMQConnectionDelegate_8_0(AMQConnection conn)
@@ -120,7 +97,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
                 EnumSet.of(AMQState.CONNECTION_OPEN, AMQState.CONNECTION_CLOSED);
 
 
-        StateWaiter waiter = _conn._protocolHandler.createWaiter(openOrClosedStates);
+        StateWaiter waiter = _conn.getProtocolHandler().createWaiter(openOrClosedStates);
 
         ConnectionSettings settings = brokerDetail.buildConnectionSettings();
         settings.setProtocol(brokerDetail.getTransport());
@@ -133,10 +110,10 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
                 sslContext = SSLContextFactory.buildClientContext(
                                 settings.getTrustStorePath(),
                                 settings.getTrustStorePassword(),
-                                settings.getTrustStoreCertType(),
+                                settings.getTrustManagerFactoryAlgorithm(),
                                 settings.getKeyStorePath(),
                                 settings.getKeyStorePassword(),
-                                settings.getKeyStoreCertType(),
+                                settings.getKeyManagerFactoryAlgorithm(),
                                 settings.getCertAlias());
             }
             catch (GeneralSecurityException e)
@@ -148,9 +125,9 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         SecurityLayer securityLayer = SecurityLayerFactory.newInstance(settings);
 
         OutgoingNetworkTransport transport = Transport.getOutgoingTransportInstance(getProtocolVersion());
-        NetworkConnection network = transport.connect(settings, securityLayer.receiver(_conn._protocolHandler), sslContext);
-        _conn._protocolHandler.setNetworkConnection(network, securityLayer.sender(network.getSender()));
-        _conn._protocolHandler.getProtocolSession().init();
+        NetworkConnection network = transport.connect(settings, securityLayer.receiver(_conn.getProtocolHandler()), sslContext);
+        _conn.getProtocolHandler().setNetworkConnection(network, securityLayer.sender(network.getSender()));
+        _conn.getProtocolHandler().getProtocolSession().init();
         // this blocks until the connection has been set up or when an error
         // has prevented the connection being set up
 
@@ -158,13 +135,13 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 
         if(state == AMQState.CONNECTION_OPEN)
         {
-            _conn._failoverPolicy.attainedConnection();
-            _conn._connected = true;
+            _conn.getFailoverPolicy().attainedConnection();
+            _conn.setConnected(true);
             return null;
         }
         else
         {
-            return _conn._protocolHandler.getSuggestedProtocolVersion();
+            return _conn.getProtocolHandler().getSuggestedProtocolVersion();
         }
 
     }
@@ -213,7 +190,6 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
                         AMQSession session =
                                 new AMQSession_0_8(_conn, channelId, transacted, acknowledgeMode, prefetchHigh,
                                                prefetchLow);
-                        // _protocolHandler.addSessionByChannel(channelId, session);
                         _conn.registerSession(channelId, session);
 
                         boolean success = false;
@@ -237,7 +213,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
                             }
                         }
 
-                        if (_conn._started)
+                        if (_conn.started())
                         {
                             try
                             {
@@ -271,12 +247,12 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
     {
         ChannelOpenBody channelOpenBody = _conn.getProtocolHandler().getMethodRegistry().createChannelOpenBody(null);
         // TODO: Be aware of possible changes to parameter order as versions change.
-        _conn._protocolHandler.syncWrite(channelOpenBody.generateFrame(channelId),  ChannelOpenOkBody.class);
+        _conn.getProtocolHandler().syncWrite(channelOpenBody.generateFrame(channelId),  ChannelOpenOkBody.class);
 
         // todo send low water mark when protocol allows.
         // todo Be aware of possible changes to parameter order as versions change.
         BasicQosBody basicQosBody = _conn.getProtocolHandler().getMethodRegistry().createBasicQosBody(0,prefetchHigh,false);
-        _conn._protocolHandler.syncWrite(basicQosBody.generateFrame(channelId),BasicQosOkBody.class);
+        _conn.getProtocolHandler().syncWrite(basicQosBody.generateFrame(channelId),BasicQosOkBody.class);
 
         if (transacted)
         {
@@ -287,7 +263,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
             TxSelectBody body = _conn.getProtocolHandler().getMethodRegistry().createTxSelectBody();
 
             // TODO: Be aware of possible changes to parameter order as versions change.
-            _conn._protocolHandler.syncWrite(body.generateFrame(channelId), TxSelectOkBody.class);
+            _conn.getProtocolHandler().syncWrite(body.generateFrame(channelId), TxSelectOkBody.class);
         }
     }
 
@@ -307,7 +283,6 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         for (Iterator it = sessions.iterator(); it.hasNext();)
         {
             AMQSession s = (AMQSession) it.next();
-            // _protocolHandler.addSessionByChannel(s.getChannelId(), s);
             reopenChannel(s.getChannelId(), s.getDefaultPrefetchHigh(), s.getDefaultPrefetchLow(), s.isTransacted());
             s.resubscribe();
         }

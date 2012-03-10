@@ -21,12 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.message.ServerMessage;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.server.queue.SortedQueueEntryImpl.Colour;
-import org.apache.qpid.server.store.StoreContext;
 
 /**
  * A sorted implementation of QueueEntryList.
@@ -367,7 +362,7 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
 
             if(chosenChild != null)
             {
-                // we have one child (x), we can move it up to replace x;
+                // we have one child (x), we can move it up to replace x
                 chosenChild.setParent(entry.getParent());
                 if(chosenChild.getParent() == null)
                 {

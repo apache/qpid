@@ -20,20 +20,21 @@
  */
 package org.apache.qpid.server.logging;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-
 import org.apache.commons.configuration.ConfigurationException;
+
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.subjects.AbstractTestLogSubject;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.util.LogMonitor;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Abstract superclass for logging test set up and utility methods.
@@ -46,7 +47,7 @@ public class AbstractTestLogging extends QpidBrokerTestCase
     public static final String TEST_LOG_PREFIX = "MESSAGE";
     protected LogMonitor _monitor;
 
-    InternalBrokerBaseCase _configLoader;
+    private InternalBrokerBaseCase _configLoader;
 
     @Override
     public void setUp() throws Exception

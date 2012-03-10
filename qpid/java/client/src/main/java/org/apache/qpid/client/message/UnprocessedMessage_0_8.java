@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.client.message;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicDeliverBody;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * This class contains everything needed to process a JMS message. It assembles the deliver body, the content header and
@@ -44,7 +44,7 @@ public class UnprocessedMessage_0_8 extends UnprocessedMessage
     private AMQShortString _exchange;
     private AMQShortString _routingKey;
     private final long _deliveryId;
-    protected boolean _redelivered;
+    private boolean _redelivered;
 
     private BasicDeliverBody _deliverBody;
     private ContentHeaderBody _contentHeader;
@@ -87,13 +87,13 @@ public class UnprocessedMessage_0_8 extends UnprocessedMessage
     public void receiveBody(ContentBody body)
     {
 
-        if (body._payload != null)
+        if (body.getPayload() != null)
         {
-            final long payloadSize = body._payload.length;
+            final long payloadSize = body.getPayload().length;
 
             if (_bodies == null)
             {
-                if (payloadSize == getContentHeader().bodySize)
+                if (payloadSize == getContentHeader().getBodySize())
                 {
                     _bodies = Collections.singletonList(body);
                 }
@@ -124,7 +124,7 @@ public class UnprocessedMessage_0_8 extends UnprocessedMessage
 
     public boolean isAllBodyDataReceived()
     {
-        return _bytesReceived == getContentHeader().bodySize;
+        return _bytesReceived == getContentHeader().getBodySize();
     }
 
     public BasicDeliverBody getDeliverBody()

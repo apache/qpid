@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.server.management;
 
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.server.registry.ApplicationRegistry;
+
 import javax.management.JMException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanNotificationInfo;
@@ -27,9 +31,6 @@ import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import javax.management.StandardMBean;
-
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 
 /**
  * Provides implementation of the boilerplate ManagedObject interface. Most managed objects should find it useful
@@ -153,7 +154,9 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
             return parentType + "." + obj.getType();
         }
         else
+        {
             return obj.getType();
+        }
     }
 
     protected String getHierarchicalName(ManagedObject obj)
@@ -167,7 +170,9 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
             return parentName;
         }
         else
+        {
             return "";
+        }
     }
 
     private MBeanInfo buildMBeanInfo() throws NotCompliantMBeanException

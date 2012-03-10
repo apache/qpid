@@ -29,7 +29,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
-import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.amqp_1_0.transport.DeliveryStateHandler;
 import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
@@ -54,6 +53,7 @@ import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
 import org.apache.qpid.amqp_1_0.type.transport.Detach;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.amqp_1_0.type.transport.Transfer;
+import org.apache.qpid.filter.selector.ParseException;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.TopicExchange;
@@ -135,7 +135,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
                             actualFilters.put(entry.getKey(), entry.getValue());
                         }
-                        catch (AMQInvalidArgumentException e)
+                        catch (ParseException e)
                         {
                             Error error = new Error();
                             error.setCondition(AmqpError.INVALID_FIELD);

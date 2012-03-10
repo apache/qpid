@@ -20,26 +20,24 @@
  */
 package org.apache.qpid.client.message;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession_0_8;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.DeliveryProperties;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.qpid.transport.MessageProperties;
 
 import javax.jms.JMSException;
-
+import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.List;
-
-import java.nio.ByteBuffer;
 
 public abstract class AbstractJMSMessageFactory implements MessageFactory
 {
@@ -59,25 +57,25 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         {
             if (debug)
             {
-                _logger.debug("Non-fragmented message body (bodySize=" + contentHeader.bodySize + ")");
+                _logger.debug("Non-fragmented message body (bodySize=" + contentHeader.getBodySize() + ")");
             }
 
-            data = ByteBuffer.wrap(((ContentBody) bodies.get(0))._payload);
+            data = ByteBuffer.wrap(((ContentBody) bodies.get(0)).getPayload());
         }
         else if (bodies != null)
         {
             if (debug)
             {
                 _logger.debug("Fragmented message body (" + bodies
-                        .size() + " frames, bodySize=" + contentHeader.bodySize + ")");
+                        .size() + " frames, bodySize=" + contentHeader.getBodySize() + ")");
             }
 
-            data = ByteBuffer.allocate((int) contentHeader.bodySize); // XXX: Is cast a problem?
+            data = ByteBuffer.allocate((int) contentHeader.getBodySize()); // XXX: Is cast a problem?
             final Iterator it = bodies.iterator();
             while (it.hasNext())
             {
                 ContentBody cb = (ContentBody) it.next();
-                final ByteBuffer payload = ByteBuffer.wrap(cb._payload);
+                final ByteBuffer payload = ByteBuffer.wrap(cb.getPayload());
                 if(payload.isDirect() || payload.isReadOnly())
                 {
                     data.put(payload);

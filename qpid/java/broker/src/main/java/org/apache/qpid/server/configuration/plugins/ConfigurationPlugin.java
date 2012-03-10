@@ -22,6 +22,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.ConversionException;
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.configuration.ConfigurationManager;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
@@ -42,7 +43,7 @@ public abstract class ConfigurationPlugin
     private Map<String, ConfigurationPlugin>
             _pluginConfiguration = new HashMap<String, ConfigurationPlugin>();
 
-    protected Configuration _configuration;
+    private Configuration _config;
 
     /**
      * The Elements that this Plugin can process.
@@ -65,7 +66,7 @@ public abstract class ConfigurationPlugin
 
     public Configuration getConfig()
     {
-        return _configuration;
+        return _config;
     }
 
     public <C extends ConfigurationPlugin> C getConfiguration(String plugin)
@@ -81,7 +82,7 @@ public abstract class ConfigurationPlugin
      */
     public void setConfiguration(String path, Configuration configuration) throws ConfigurationException
     {
-        _configuration = configuration;
+        _config = configuration;
 
         // Extract a list of elements for processing
         Iterator<?> keys = configuration.getKeys();
@@ -215,7 +216,7 @@ public abstract class ConfigurationPlugin
 
     protected boolean hasConfiguration()
     {
-        return _configuration != null;
+        return _config != null;
     }
 
     /// Getters
@@ -227,7 +228,7 @@ public abstract class ConfigurationPlugin
 
     protected double getDoubleValue(String property, double defaultValue)
     {
-        return _configuration.getDouble(property, defaultValue);
+        return _config.getDouble(property, defaultValue);
     }
 
     protected long getLongValue(String property)
@@ -237,7 +238,7 @@ public abstract class ConfigurationPlugin
 
     protected long getLongValue(String property, long defaultValue)
     {
-        return _configuration.getLong(property, defaultValue);
+        return _config.getLong(property, defaultValue);
     }
 
     protected int getIntValue(String property)
@@ -247,7 +248,7 @@ public abstract class ConfigurationPlugin
 
     protected int getIntValue(String property, int defaultValue)
     {
-        return _configuration.getInt(property, defaultValue);
+        return _config.getInt(property, defaultValue);
     }
 
     protected String getStringValue(String property)
@@ -257,7 +258,7 @@ public abstract class ConfigurationPlugin
 
     protected String getStringValue(String property, String defaultValue)
     {
-        return _configuration.getString(property, defaultValue);
+        return _config.getString(property, defaultValue);
     }
 
     protected boolean getBooleanValue(String property)
@@ -267,7 +268,7 @@ public abstract class ConfigurationPlugin
 
     protected boolean getBooleanValue(String property, boolean defaultValue)
     {
-        return _configuration.getBoolean(property, defaultValue);
+        return _config.getBoolean(property, defaultValue);
     }
 
     protected List getListValue(String property)
@@ -277,14 +278,14 @@ public abstract class ConfigurationPlugin
 
     protected List getListValue(String property, List defaultValue)
     {
-        return _configuration.getList(property, defaultValue);
+        return _config.getList(property, defaultValue);
     }
 
     /// Validation Helpers
 
     protected boolean contains(String property)
     {
-        return _configuration.getProperty(property) != null;
+        return _config.getProperty(property) != null;
     }
 
     /**
@@ -323,7 +324,7 @@ public abstract class ConfigurationPlugin
             throw new ConfigurationException(this.getClass().getSimpleName() +
                                              ": unable to configure invalid " +
                                              property + ":" +
-                                             _configuration.getString(property),
+                                             _config.getString(property),
                                              last);
         }
     }
@@ -332,7 +333,7 @@ public abstract class ConfigurationPlugin
     {
         try
         {
-            _configuration.getLong(property);
+            _config.getLong(property);
             return true;
         }
         catch (NoSuchElementException e)
@@ -345,7 +346,7 @@ public abstract class ConfigurationPlugin
     {
         try
         {
-            long value = _configuration.getLong(property);
+            long value = _config.getLong(property);
             return value > 0;
         }
         catch (NoSuchElementException e)
@@ -359,7 +360,7 @@ public abstract class ConfigurationPlugin
     {
         try
         {
-            _configuration.getInt(property);
+            _config.getInt(property);
             return true;
         }
         catch (NoSuchElementException e)
@@ -372,7 +373,7 @@ public abstract class ConfigurationPlugin
     {
         try
         {
-            _configuration.getBoolean(property);
+            _config.getBoolean(property);
             return true;
         }
         catch (NoSuchElementException e)
@@ -453,7 +454,7 @@ public abstract class ConfigurationPlugin
 
     protected void mergeConfiguration(ConfigurationPlugin configuration)
     {
-         _configuration = configuration.getConfig();
+         _config = configuration.getConfig();
     }
 
     public String toString()
@@ -478,6 +479,10 @@ public abstract class ConfigurationPlugin
         return super.toString();
     }
 
+    protected void setConfig(Configuration config)
+    {
+        _config = config;
+    }
 }
 
 

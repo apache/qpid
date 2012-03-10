@@ -689,7 +689,7 @@ public class QpidBench
     {
         org.apache.qpid.transport.Connection conn =
             new org.apache.qpid.transport.Connection();
-        conn.connect(opts.broker, opts.port, null, "guest", "guest",false);
+        conn.connect(opts.broker, opts.port, null, "guest", "guest", false, null);
         return conn;
     }
 

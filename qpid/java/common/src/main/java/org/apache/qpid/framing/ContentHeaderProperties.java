@@ -21,7 +21,6 @@
 package org.apache.qpid.framing;
 
 import java.io.DataInput;
-import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.IOException;
 

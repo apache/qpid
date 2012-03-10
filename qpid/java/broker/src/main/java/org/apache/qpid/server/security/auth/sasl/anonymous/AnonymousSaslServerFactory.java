@@ -20,15 +20,12 @@
  */
 package org.apache.qpid.server.security.auth.sasl.anonymous;
 
-import org.apache.qpid.server.security.auth.sasl.amqplain.AmqPlainSaslServer;
-
-import java.util.Map;
-
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import javax.security.sasl.SaslServerFactory;
+import java.util.Map;
 
 public class AnonymousSaslServerFactory implements SaslServerFactory
 {

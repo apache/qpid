@@ -20,15 +20,16 @@
  */
 package org.apache.qpid.transport.network.io;
 
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 
 public class IoNetworkConnection implements NetworkConnection
 {

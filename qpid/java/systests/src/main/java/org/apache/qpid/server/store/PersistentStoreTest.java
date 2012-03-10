@@ -26,147 +26,117 @@ import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
-import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
-import javax.jms.Queue;
 import javax.jms.Session;
-
 import java.util.ArrayList;
 import java.util.List;
 
 public class PersistentStoreTest extends QpidBrokerTestCase
 {
-
     private static final int NUM_MESSAGES = 100;
     private Connection _con;
     private Session _session;
-    private Queue _destination;
-    private MessageConsumer _consumer;
+    private Destination _destination;
 
-    public void setUp() throws Exception, JMSException
+    public void setUp() throws Exception
     {
         super.setUp();
         _con = getConnection();
-        _con.start();
+    }
+
+    public void testCommittedMessagesSurviveBrokerNormalShutdown() throws Exception
+    {
+        sendAndCommitMessages();
+        stopBroker();
+        startBroker();
+        confirmBrokerStillHasCommittedMessages();
+    }
+
+    public void testCommittedMessagesSurviveBrokerAbnormalShutdown() throws Exception
+    {
+        if (isInternalBroker())
+        {
+            return;
+        }
+
+        sendAndCommitMessages();
+        killBroker();
+        startBroker();
+        confirmBrokerStillHasCommittedMessages();
+    }
+
+    public void testCommittedMessagesSurviveBrokerNormalShutdownMidTransaction() throws Exception
+    {
+        sendAndCommitMessages();
+        sendMoreMessagesWithoutCommitting();
+        stopBroker();
+        startBroker();
+        confirmBrokerStillHasCommittedMessages();
+    }
+
+    public void testCommittedMessagesSurviveBrokerAbnormalShutdownMidTransaction() throws Exception
+    {
+        if (isInternalBroker())
+        {
+            return;
+        }
+        sendAndCommitMessages();
+        sendMoreMessagesWithoutCommitting();
+        killBroker();
+        startBroker();
+        confirmBrokerStillHasCommittedMessages();
+    }
+
+    private void sendAndCommitMessages() throws Exception
+    {
         _session = _con.createSession(true, Session.SESSION_TRANSACTED);
         _destination = _session.createQueue(getTestQueueName());
-        _consumer = _session.createConsumer(_destination);
-        _consumer.close();
+        // Create queue by consumer side-effect
+        _session.createConsumer(_destination).close();
 
         sendMessage(_session, _destination, NUM_MESSAGES);
         _session.commit();
     }
 
-    /** Checks that a new consumer on a new connection can get NUM_MESSAGES from _destination */
-    private void checkMessages() throws Exception, JMSException
+    private void sendMoreMessagesWithoutCommitting() throws Exception
     {
-        _con = getConnection();
-        _session = _con.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        _con.start();
-        _consumer = _session.createConsumer(_destination);
+        sendMessage(_session, _destination, 5);
+        // sync to ensure that messages have reached the broker
+        ((AMQSession<?,?>) _session).sync();
+    }
+
+    private void confirmBrokerStillHasCommittedMessages() throws Exception
+    {
+        Connection con = getConnection();
+        Session session = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        con.start();
+        Destination destination = session.createQueue(getTestQueueName());
+        MessageConsumer consumer = session.createConsumer(destination);
         for (int i = 1; i <= NUM_MESSAGES; i++)
         {
-            Message msg = _consumer.receive(RECEIVE_TIMEOUT);
+            Message msg = consumer.receive(RECEIVE_TIMEOUT);
             assertNotNull("Message " + i + " not received", msg);
             assertEquals("Did not receive the expected message", i, msg.getIntProperty(INDEX));
         }
-        
-        Message msg = _consumer.receive(100);
+
+        Message msg = consumer.receive(100);
         if(msg != null)
         {
             fail("No more messages should be received, but received additional message with index: " + msg.getIntProperty(INDEX));
         }
     }
 
-//    /**
-//     * starts the server, sends 100 messages, restarts the server and gets 100 messages back
-//     * the test formerly referred to as BDB-Qpid-1
-//     * @throws Exception
-//     */
-//    public void testStartStop() throws Exception
-//    {
-//        restartBroker(); -- Not Currently a gracefull restart so not BDB-Qpid-1
-//        checkMessages();
-//    }
-
     /**
-     * starts the server, sends 100 messages, nukes then starts the server and gets 100 messages back
-     * the test formerly referred to as BDB-Qpid-2
-     *
-     * @throws Exception
-     */
-    public void testForcibleStartStop() throws Exception
-    {
-        restartBroker();
-        checkMessages();
-    }
-
-//    /**
-//     * starts the server, sends 100 committed messages, 5 uncommited ones,
-//     * restarts the server and gets 100 messages back
-//     * the test formerly referred to as BDB-Qpid-5
-//     * @throws Exception
-//     */
-//    public void testStartStopMidTransaction() throws Exception
-//    {
-//        sendMessage(_session, _destination, 5);
-//        restartBroker(); -- Not Currently a gracefull restart so not BDB-Qpid-1
-//        checkMessages();
-//    }
-
-    /**
-     * starts the server, sends 100 committed messages, 5 uncommited ones,
-     * nukes and starts the server and gets 100 messages back
-     * the test formerly referred to as BDB-Qpid-6
-     *
-     * @throws Exception
-     */
-    public void testForcibleStartStopMidTransaction() throws Exception
-    {
-        sendMessage(_session, _destination, 5);
-        //sync to ensure that the above messages have reached the broker
-        ((AMQSession) _session).sync();
-        restartBroker();
-        checkMessages();
-    }
-
-    /**
-     * starts the server, sends 100 committed messages, 5 uncommited ones,
-     * restarts the client and gets 100 messages back.
-     * the test formerly referred to as BDB-Qpid-7
-     *
-     * FIXME: is this a PersistentStoreTest? Seems more like a transaction test to me.. aidan
-     *
-     * @throws Exception
-     */
-    public void testClientDeathMidTransaction() throws Exception
-    {
-        sendMessage(_session, _destination, 5);
-        _con.close();
-        checkMessages();
-    }
-
-//    /**
-//     * starts the server, sends 50 committed messages, copies $QPID_WORK to a new location,
-//     * sends 10 messages, stops the server, nukes the store, restores the copy, starts the server
-//     * checks that we get the first 50 back.
-//     */
-//    public void testHotBackup()
-//    {
-//        -- removing as this will leave 100msgs on a queue
-//    }
-
-    /**
-     * This test requires that we can send messages without commiting.
+     * This test requires that we can send messages without committing.
      * QTC always commits the messages sent via sendMessages.
      *
      * @param session the session to use for sending
      * @param destination where to send them to
      * @param count no. of messages to send
      *
-     * @return the sent messges
+     * @return the sent messages
      *
      * @throws Exception
      */

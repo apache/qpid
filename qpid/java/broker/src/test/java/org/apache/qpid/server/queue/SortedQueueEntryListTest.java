@@ -19,11 +19,11 @@
  */
 package org.apache.qpid.server.queue;
 
+import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.ServerMessage;
 
 import java.util.Arrays;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.message.ServerMessage;
 
 public class SortedQueueEntryListTest extends QueueEntryListTestBase
 {
@@ -77,9 +77,23 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase
 
     }
 
+    @Override
     public QueueEntryList getTestList()
     {
-        return _sqel;
+        return getTestList(false);
+    }
+
+    @Override
+    public QueueEntryList getTestList(boolean newList)
+    {
+        if(newList)
+        {
+            return new SelfValidatingSortedQueueEntryList(_testQueue, "KEY");
+        }
+        else
+        {
+            return _sqel;
+        }
     }
 
     public int getExpectedListLength()

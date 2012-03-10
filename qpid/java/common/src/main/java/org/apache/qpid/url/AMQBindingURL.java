@@ -20,26 +20,25 @@
  */
 package org.apache.qpid.url;
 
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.net.URISyntaxException;
+import java.util.HashMap;
 
 public class AMQBindingURL implements BindingURL
 {
     private static final Logger _logger = LoggerFactory.getLogger(AMQBindingURL.class);
 
-    String _url;
-    AMQShortString _exchangeClass = ExchangeDefaults.DIRECT_EXCHANGE_CLASS;
-    AMQShortString _exchangeName = new AMQShortString("");
-    AMQShortString _destinationName = new AMQShortString("");;
-    AMQShortString _queueName = new AMQShortString("");
-    AMQShortString[] _bindingKeys = new AMQShortString[0];
+    private String _url;
+    private AMQShortString _exchangeClass = ExchangeDefaults.DIRECT_EXCHANGE_CLASS;
+    private AMQShortString _exchangeName = new AMQShortString("");
+    private AMQShortString _destinationName = new AMQShortString("");;
+    private AMQShortString _queueName = new AMQShortString("");
+    private AMQShortString[] _bindingKeys = new AMQShortString[0];
     private HashMap<String, String> _options;
 
     public AMQBindingURL(String url) throws URISyntaxException

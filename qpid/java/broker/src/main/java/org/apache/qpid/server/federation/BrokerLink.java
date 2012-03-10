@@ -30,8 +30,15 @@ import org.apache.qpid.server.configuration.LinkConfig;
 import org.apache.qpid.server.configuration.LinkConfigType;
 import org.apache.qpid.server.transport.ServerSession;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.transport.*;
-import org.apache.qpid.util.Strings;
+import org.apache.qpid.transport.Binary;
+import org.apache.qpid.transport.ClientDelegate;
+import org.apache.qpid.transport.Connection;
+import org.apache.qpid.transport.ConnectionException;
+import org.apache.qpid.transport.ConnectionListener;
+import org.apache.qpid.transport.ConnectionSettings;
+import org.apache.qpid.transport.Session;
+import org.apache.qpid.transport.SessionDelegate;
+import org.apache.qpid.transport.TransportException;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -42,7 +49,11 @@ import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -365,8 +376,8 @@ public class BrokerLink implements LinkConfig, ConnectionListener
                             }
                         };
                         final SaslClient sc = Sasl.createSaslClient(new String[] {"PLAIN"}, null,
-                                                                    _conSettings.getSaslProtocol(),
-                                                                    _conSettings.getSaslServerName(),
+                                                                    getConnectionSettings().getSaslProtocol(),
+                                                                    getConnectionSettings().getSaslServerName(),
                                                                     saslProps, cbh);
 
                         return sc;

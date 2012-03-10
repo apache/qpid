@@ -22,7 +22,7 @@ package org.apache.qpid.transport;
 
 import org.apache.qpid.transport.util.Logger;
 
-import static org.apache.qpid.transport.Connection.State.*;
+import static org.apache.qpid.transport.Connection.State.CLOSE_RCVD;
 
 
 /**
@@ -71,10 +71,15 @@ public abstract class ConnectionDelegate
 
     @Override public void connectionClose(Connection conn, ConnectionClose close)
     {
-        conn.connectionCloseOk();
-        conn.getSender().close();
+        sendConnectionCloseOkAndCloseSender(conn);
         conn.closeCode(close);
         conn.setState(CLOSE_RCVD);
+    }
+
+    protected void sendConnectionCloseOkAndCloseSender(Connection conn)
+    {
+        conn.connectionCloseOk();
+        conn.getSender().close();
     }
 
     @Override public void connectionCloseOk(Connection conn, ConnectionCloseOk ok)

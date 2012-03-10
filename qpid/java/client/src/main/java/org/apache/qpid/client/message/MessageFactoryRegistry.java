@@ -20,12 +20,8 @@
  */
 package org.apache.qpid.client.message;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.nio.ByteBuffer;
-
-import javax.jms.JMSException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQQueue;
@@ -34,19 +30,21 @@ import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.transport.Struct;
+import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.MessageTransfer;
-import org.apache.qpid.transport.DeliveryProperties;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import javax.jms.JMSException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class MessageFactoryRegistry
 {
     /**
      * This class logger
      */
-    protected final Logger _logger = LoggerFactory.getLogger(getClass());
+    private final Logger _logger = LoggerFactory.getLogger(getClass());
 
     private final Map<String, MessageFactory> _mimeStringToFactoryMap = new HashMap<String, MessageFactory>();
     private final Map<AMQShortString, MessageFactory> _mimeShortStringToFactoryMap =

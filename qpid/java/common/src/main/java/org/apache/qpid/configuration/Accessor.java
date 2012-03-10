@@ -1,4 +1,3 @@
-package org.apache.qpid.configuration;
 /*
  * 
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,12 +18,11 @@ package org.apache.qpid.configuration;
  * under the License.
  * 
  */
-
+package org.apache.qpid.configuration;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +39,7 @@ public interface Accessor
     {
         public Boolean getBoolean(String name)
         {
-            return Boolean.getBoolean(name);
+            return System.getProperty(name) == null ? null : Boolean.getBoolean(name);
         }
         
         public Integer getInt(String name)
@@ -62,13 +60,18 @@ public interface Accessor
     
     static class MapAccessor implements Accessor
     {
-        protected Map<Object,Object> source;
+        private Map<Object,Object> source;
         
         public MapAccessor(Map<Object,Object> map)
         {
             source = map;
         }
-        
+
+        protected void setSource(Map<Object, Object> source)
+        {
+            this.source = source;
+        }
+
         public Boolean getBoolean(String name)
         {
             if (source != null && source.containsKey(name))
@@ -161,8 +164,10 @@ public interface Accessor
             {
                 inStream.close();
             }
-            source = props;
+            setSource(props);
         }
+
+
     }
     
     static class CombinedAccessor implements Accessor

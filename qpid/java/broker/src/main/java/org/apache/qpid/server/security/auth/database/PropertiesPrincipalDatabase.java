@@ -27,14 +27,14 @@ import org.apache.qpid.server.security.auth.sasl.plain.PlainInitialiser;
 
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
-import java.util.Properties;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.LinkedList;
-import java.security.Principal;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.security.Principal;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 public class PropertiesPrincipalDatabase implements PrincipalDatabase
 {

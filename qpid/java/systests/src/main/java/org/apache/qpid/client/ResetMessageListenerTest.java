@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -35,7 +35,6 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.naming.Context;
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -52,13 +51,13 @@ public class ResetMessageListenerTest extends QpidBrokerTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(ResetMessageListenerTest.class);
 
-    Context _context;
+    private Context _context;
 
     private static final int MSG_COUNT = 6;
     private Connection _clientConnection, _producerConnection;
     private MessageConsumer _consumer1;
-    MessageProducer _producer;
-    Session _clientSession, _producerSession;
+    private MessageProducer _producer;
+    private Session _clientSession, _producerSession;
 
     private final CountDownLatch _allFirstMessagesSent = new CountDownLatch(MSG_COUNT); // all messages Sent Lock
     private final CountDownLatch _allSecondMessagesSent = new CountDownLatch(MSG_COUNT); // all messages Sent Lock

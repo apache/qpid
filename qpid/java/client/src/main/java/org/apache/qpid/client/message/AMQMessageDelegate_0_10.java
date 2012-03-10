@@ -21,22 +21,8 @@
 
 package org.apache.qpid.client.message;
 
-import java.lang.ref.SoftReference;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-import javax.jms.DeliveryMode;
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
-import javax.jms.MessageNotWriteableException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQPInvalidClassException;
@@ -54,8 +40,22 @@ import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.ReplyTo;
 import org.apache.qpid.transport.TransportException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import javax.jms.DeliveryMode;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.MessageFormatException;
+import javax.jms.MessageNotWriteableException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * This extends AbstractAMQMessageDelegate which contains common code between
@@ -65,7 +65,22 @@ import org.slf4j.LoggerFactory;
 public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
 {
     private static final Logger _logger = LoggerFactory.getLogger(AMQMessageDelegate_0_10.class);
-    private static final Map<ReplyTo, SoftReference<Destination>> _destinationCache = Collections.synchronizedMap(new HashMap<ReplyTo, SoftReference<Destination>>());
+
+    private static final float DESTINATION_CACHE_LOAD_FACTOR = 0.75f;
+    private static final int DESTINATION_CACHE_SIZE = 500;
+    private static final int DESTINATION_CACHE_CAPACITY = (int) (DESTINATION_CACHE_SIZE / DESTINATION_CACHE_LOAD_FACTOR);
+
+    private static final Map<ReplyTo, Destination> _destinationCache =
+            Collections.synchronizedMap(new LinkedHashMap<ReplyTo,Destination>(DESTINATION_CACHE_CAPACITY,
+                                                                              DESTINATION_CACHE_LOAD_FACTOR,
+                                                                              true)
+    {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<ReplyTo, Destination> eldest)
+        {
+            return size() >= DESTINATION_CACHE_SIZE;
+        }
+    });
 
     public static final String JMS_TYPE = "x-jms-type";
 
@@ -241,12 +256,8 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         }
         else
         {
-            Destination dest = null;
-            SoftReference<Destination> ref = _destinationCache.get(replyTo);
-            if (ref != null)
-            {
-	            dest = ref.get();
-            }
+            Destination dest = _destinationCache.get(replyTo);
+
             if (dest == null)
             {
                 String exchange = replyTo.getExchange();
@@ -254,14 +265,13 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
 
                 if (AMQDestination.getDefaultDestSyntax() == AMQDestination.DestSyntax.BURL)
                 {
-            
                     dest = generateDestination(new AMQShortString(exchange), new AMQShortString(routingKey));
                 }
                 else
                 {
                     dest = convertToAddressBasedDestination(exchange,routingKey,null);
                 }
-                _destinationCache.put(replyTo, new SoftReference<Destination>(dest));
+                _destinationCache.put(replyTo, dest);
             }
 
             return dest;
@@ -271,6 +281,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
     private Destination convertToAddressBasedDestination(String exchange, String routingKey, String subject)
     {
         String addr;
+        boolean isQueue = true;
         if ("".equals(exchange)) // type Queue
         {
             subject = (subject == null) ? "" : "/" + subject;
@@ -279,11 +290,24 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         else
         {
             addr = exchange + "/" + routingKey;
+            isQueue = false;
         }
         
         try
         {
-            return AMQDestination.createDestination("ADDR:" + addr);
+            AMQDestination dest = (AMQDestination)AMQDestination.createDestination("ADDR:" + addr);
+            if (isQueue)
+            {
+                dest.setQueueName(new AMQShortString(routingKey));
+                dest.setRoutingKey(new AMQShortString(routingKey));
+                dest.setExchangeName(new AMQShortString(""));
+            }
+            else
+            {
+                dest.setRoutingKey(new AMQShortString(routingKey));
+                dest.setExchangeName(new AMQShortString(exchange));
+            }
+            return dest;
         }
         catch(Exception e)
         {
@@ -341,13 +365,11 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
                jmse.setLinkedException(e);
                throw jmse;
            }
-
         }
-        
-        final ReplyTo replyTo = new ReplyTo(amqd.getExchangeName().toString(), amqd.getRoutingKey().toString());
-        _destinationCache.put(replyTo, new SoftReference<Destination>(destination));
-        _messageProps.setReplyTo(replyTo);
 
+        final ReplyTo replyTo = new ReplyTo(amqd.getExchangeName().toString(), amqd.getRoutingKey().toString());
+        _destinationCache.put(replyTo, destination);
+        _messageProps.setReplyTo(replyTo);
     }
 
     public Destination getJMSDestination() throws JMSException
@@ -560,6 +582,10 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         {
             return ((Short)o).shortValue();
         }
+        else if(o instanceof String)
+        {
+            return Short.valueOf((String) o);
+        }
         else
         {
             try
@@ -587,6 +613,10 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         {
             return ((Integer)o).intValue();
         }
+        else if(o instanceof String)
+        {
+            return Integer.valueOf((String) o);
+        }
         else
         {
             try
@@ -612,6 +642,10 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         if(o instanceof Long)
         {
             return ((Long)o).longValue();
+        }
+        else if(o instanceof String)
+        {
+            return Long.valueOf((String) o);
         }
         else
         {
@@ -933,7 +967,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
 //          apply when a property is used in a message selector expression. For
 //          example, suppose you set a property as a string value, as in the
 //          following:
-//              myMessage.setStringProperty("NumberOfOrders", "2");
+//              myMessage.setStringProperty("NumberOfOrders", "2")
 //          The following expression in a message selector would evaluate to false,
 //          because a string cannot be used in an arithmetic expression:
 //          "NumberOfOrders > 1"

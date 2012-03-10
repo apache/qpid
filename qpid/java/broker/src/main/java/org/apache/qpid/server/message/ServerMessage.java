@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.server.message;
 
-import java.nio.ByteBuffer;
-
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoredMessage;
+
+import java.nio.ByteBuffer;
 
 public interface ServerMessage<T extends StorableMessageMetaData> extends EnqueableMessage, MessageContentSource
 {

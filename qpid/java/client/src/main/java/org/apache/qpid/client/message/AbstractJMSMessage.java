@@ -20,16 +20,15 @@
  */
 package org.apache.qpid.client.message;
 
-import java.nio.ByteBuffer;
-import java.util.Enumeration;
-import java.util.UUID;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQSession;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MessageNotWriteableException;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQSession;
+import java.nio.ByteBuffer;
+import java.util.Enumeration;
+import java.util.UUID;
 
 public abstract class AbstractJMSMessage implements org.apache.qpid.jms.Message
 {
@@ -37,7 +36,7 @@ public abstract class AbstractJMSMessage implements org.apache.qpid.jms.Message
 
     /** If the acknowledge mode is CLIENT_ACKNOWLEDGE the session is required */
 
-    protected AMQMessageDelegate _delegate;
+    private AMQMessageDelegate _delegate;
     private boolean _redelivered;
     private boolean _receivedFromServer;
 

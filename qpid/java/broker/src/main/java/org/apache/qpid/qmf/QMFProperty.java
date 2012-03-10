@@ -23,9 +23,8 @@ package org.apache.qpid.qmf;
 
 import org.apache.qpid.transport.codec.Encoder;
 
-import java.util.Map;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class QMFProperty
 {
@@ -68,8 +67,6 @@ public class QMFProperty
 
     public void setQMFClass(QMFClass qmfClass)
     {
- /*       _map.put(REF_CLASS, qmfClass.getName());
-        _map.put(REF_PACKAGE, qmfClass.getPackage().getName());*/
     }
 
     public void setReferencedClass(String refClass)

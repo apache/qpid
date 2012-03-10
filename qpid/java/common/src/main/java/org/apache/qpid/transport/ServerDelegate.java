@@ -20,18 +20,17 @@
  */
 package org.apache.qpid.transport;
 
-import static org.apache.qpid.transport.Connection.State.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import static org.apache.qpid.transport.Connection.State.OPEN;
 
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * ServerDelegate
@@ -69,9 +68,6 @@ public class ServerDelegate extends ConnectionDelegate
     {
         conn.setLocale(ok.getLocale());
         String mechanism = ok.getMechanism();
-
-        String clientName = (String) ok.getClientProperties().get("clientName");
-        conn.setClientId(clientName);
 
         if (mechanism == null || mechanism.length() == 0)
         {
@@ -195,17 +191,11 @@ public class ServerDelegate extends ConnectionDelegate
     @Override
     public void sessionAttach(Connection conn, SessionAttach atc)
     {
-        sessionAttachImpl(conn, atc);
-    }
-
-    protected Session sessionAttachImpl(Connection conn, SessionAttach atc)
-    {
         Session ssn = getSession(conn, atc);
         conn.map(ssn, atc.getChannel());
+        conn.registerSession(ssn);
         ssn.sessionAttached(atc.getName());
         ssn.setState(Session.State.OPEN);
-
-        return ssn;
     }
 
     protected void setConnectionTuneOkChannelMax(final Connection conn, final int okChannelMax)

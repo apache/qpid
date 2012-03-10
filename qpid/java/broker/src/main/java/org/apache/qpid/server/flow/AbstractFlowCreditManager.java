@@ -22,12 +22,10 @@ package org.apache.qpid.server.flow;
 
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.Set;
-import java.util.HashSet;
 
 public abstract class AbstractFlowCreditManager implements FlowCreditManager
 {
-    protected final AtomicBoolean _suspended = new AtomicBoolean(false);
+    private final AtomicBoolean _suspended = new AtomicBoolean(false);
     private final ArrayList<FlowCreditManagerListener> _listeners = new ArrayList<FlowCreditManagerListener>();
 
     public final void addStateListener(FlowCreditManagerListener listener)

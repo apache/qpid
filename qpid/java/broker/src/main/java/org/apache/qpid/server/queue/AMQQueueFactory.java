@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import java.util.HashMap;
-import java.util.Map;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -35,6 +33,9 @@ import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class AMQQueueFactory
 {
     public static final String X_QPID_PRIORITIES = "x-qpid-priorities";
@@ -47,6 +48,10 @@ public class AMQQueueFactory
     public static final String X_QPID_DLQ_ENABLED = "x-qpid-dlq-enabled";
     public static final String X_QPID_MAXIMUM_DELIVERY_COUNT = "x-qpid-maximum-delivery-count";
     public static final String DEFAULT_DLQ_NAME_SUFFIX = "_DLQ";
+
+    private AMQQueueFactory()
+    {
+    }
 
     private abstract static class QueueProperty
     {

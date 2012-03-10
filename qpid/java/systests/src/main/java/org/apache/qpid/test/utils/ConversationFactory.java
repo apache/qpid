@@ -21,11 +21,19 @@
 package org.apache.qpid.test.utils;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.test.utils.ReflectionUtils;
 
-import javax.jms.*;
-
-import java.util.*;
+import javax.jms.Connection;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -113,19 +121,19 @@ public class ConversationFactory
     private Session session;
 
     /** The message consumer for incoming messages. */
-    MessageConsumer consumer;
+    private MessageConsumer consumer;
 
     /** The message producer for outgoing messages. */
-    MessageProducer producer;
+    private MessageProducer producer;
 
     /** The well-known or temporary destination to receive replies on. */
-    Destination receiveDestination;
+    private Destination receiveDestination;
 
     /** Holds the queue implementation class for the reply queue. */
-    Class<? extends BlockingQueue> queueClass;
+    private Class<? extends BlockingQueue> queueClass;
 
     /** Used to hold any replies that are received outside of the context of a conversation. */
-    BlockingQueue<Message> deadLetterBox = new LinkedBlockingQueue<Message>();
+    private BlockingQueue<Message> deadLetterBox = new LinkedBlockingQueue<Message>();
 
     /* Used to hold conversation state on a per thread basis. */
     /*
@@ -143,7 +151,7 @@ public class ConversationFactory
      */
 
     /** Generates new coversation id's as needed. */
-    AtomicLong conversationIdGenerator = new AtomicLong();
+    private AtomicLong conversationIdGenerator = new AtomicLong();
 
     /**
      * Creates a conversation helper on the specified connection with the default sending destination, and listening
@@ -238,13 +246,13 @@ public class ConversationFactory
     public class Conversation
     {
         /** Holds the correlation id for the context. */
-        long conversationId;
+        private long conversationId;
 
         /**
          * Holds the send destination for the context. This will automatically be updated to the most recently received
          * reply-to destination.
          */
-        Destination sendDestination;
+        private Destination sendDestination;
 
         /**
          * Sends a message to the default sending location. The correlation id of the message will be assigned by this

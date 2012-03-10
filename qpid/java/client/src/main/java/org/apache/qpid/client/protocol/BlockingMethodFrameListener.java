@@ -20,12 +20,7 @@
  */
 package org.apache.qpid.client.protocol;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
-
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQTimeoutException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.util.BlockingWaiter;
 import org.apache.qpid.framing.AMQMethodBody;
@@ -68,7 +63,7 @@ public abstract class BlockingMethodFrameListener extends BlockingWaiter<AMQMeth
 {
 
     /** Holds the channel id for the channel upon which this listener is waiting for a response. */
-    protected int _channelId;
+    private int _channelId;
 
     /**
      * Creates a new method listener, that filters incoming method to just those that match the specified channel id.

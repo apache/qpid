@@ -26,7 +26,7 @@ import org.apache.qpid.framing.AMQShortString;
 import java.util.Collection;
 
 
-public interface ExchangeRegistry extends MessageRouter
+public interface ExchangeRegistry
 {
     void registerExchange(Exchange exchange) throws AMQException;
 

@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.transport;
 
-import java.util.List;
-
 /**
  * SessionException
  *

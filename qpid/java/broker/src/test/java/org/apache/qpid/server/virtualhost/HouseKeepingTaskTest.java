@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-import java.util.concurrent.CountDownLatch;
-
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.NullRootMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.test.utils.QpidTestCase;
+
+import java.util.concurrent.CountDownLatch;
 
 public class HouseKeepingTaskTest extends QpidTestCase
 {

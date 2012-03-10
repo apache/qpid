@@ -18,20 +18,22 @@
  */
 package org.apache.qpid.server.security.firewall;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import org.apache.qpid.client.AMQConnectionURL;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
-
-import org.apache.qpid.client.AMQConnectionURL;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 public class FirewallConfigTest extends QpidBrokerTestCase 
 {
     private File _tmpConfig, _tmpVirtualhosts;
-    
+    private String _ipAddressOfBrokerHost;
+
     @Override
     protected void setUp() throws Exception
     {
@@ -47,12 +49,13 @@ public class FirewallConfigTest extends QpidBrokerTestCase
         _tmpVirtualhosts = File.createTempFile("virtualhosts-systests-firewall", ".xml");
         setSystemProperty("QPID_FIREWALL_VIRTUALHOSTS_SETTINGS", _tmpVirtualhosts.getAbsolutePath());
         _tmpVirtualhosts.deleteOnExit();
+
+        _ipAddressOfBrokerHost = getIpAddressOfBrokerHost();
     }
 
     private void writeFirewallFile(boolean allow, boolean inVhost) throws IOException
     {
         FileWriter out = new FileWriter(inVhost ? _tmpVirtualhosts : _tmpConfig);
-        String ipAddr = "127.0.0.1"; // FIXME: get this from InetAddress.getLocalHost().getAddress() ?
         if (inVhost) 
         {
             out.write("<virtualhosts><virtualhost><test>");
@@ -62,7 +65,7 @@ public class FirewallConfigTest extends QpidBrokerTestCase
             out.write("<broker>");
         }
         out.write("<security><firewall>");
-        out.write("<rule access=\""+((allow) ? "allow" : "deny")+"\" network=\""+ipAddr +"\"/>");
+        out.write("<rule access=\""+((allow) ? "allow" : "deny")+"\" network=\"" + _ipAddressOfBrokerHost + "\"/>");
         out.write("</firewall></security>");
         if (inVhost)
         {
@@ -81,26 +84,23 @@ public class FirewallConfigTest extends QpidBrokerTestCase
         _configFile = new File("build/etc/config-systests-firewall-2.xml");
         
         super.setUp();
-        
-        Connection conn = null;
         try 
         {
             //Try to get a connection to the 'test2' vhost
             //This is expected to succeed as it is allowed at the vhost level
-            conn = getConnection(new AMQConnectionURL("amqp://guest:guest@clientid/test2?brokerlist='" + getBroker() + "'"));
+            getConnection(new AMQConnectionURL("amqp://guest:guest@clientid/test2?brokerlist='" + getBroker() + "'"));
         } 
         catch (JMSException e)
         {
             e.getLinkedException().printStackTrace();
             fail("The connection was expected to succeed: " + e.getMessage());
         }
-        
-        conn = null;
+
         try 
         {
             //Try to get a connection to the 'test' vhost
             //This is expected to fail as it is denied at the broker level
-            conn = getConnection();
+            getConnection();
             fail("We expected the connection to fail");
         } 
         catch (JMSException e)
@@ -114,13 +114,11 @@ public class FirewallConfigTest extends QpidBrokerTestCase
         _configFile = new File("build/etc/config-systests-firewall-3.xml");
         
         super.setUp();
-        
-        Connection conn = null;
         try 
         {
             //Try to get a connection to the 'test2' vhost
             //This is expected to fail as it is denied at the vhost level
-            conn = getConnection(new AMQConnectionURL("amqp://guest:guest@clientid/test2?brokerlist='" + getBroker() + "'"));
+            getConnection(new AMQConnectionURL("amqp://guest:guest@clientid/test2?brokerlist='" + getBroker() + "'"));
             fail("The connection was expected to fail");
         } 
         catch (JMSException e)
@@ -128,12 +126,11 @@ public class FirewallConfigTest extends QpidBrokerTestCase
             //ignore
         }
 
-        conn = null;
         try 
         {
             //Try to get a connection to the 'test' vhost
             //This is expected to succeed as it is allowed at the broker level
-            conn = getConnection();
+            getConnection();
         } 
         catch (JMSException e)
         {
@@ -268,5 +265,19 @@ public class FirewallConfigTest extends QpidBrokerTestCase
         restartOrReload.run();
         
         assertEquals("Second connection check failed", !initial, checkConnection());
+    }
+
+    private String getIpAddressOfBrokerHost()
+    {
+        String brokerHost = getBroker().getHost();
+        try
+        {
+            return InetAddress.getByName(brokerHost).getHostAddress();
+        }
+        catch (UnknownHostException e)
+        {
+            throw new RuntimeException("Could not determine IP address of host : " + brokerHost, e);
+        }
+
     }
 }

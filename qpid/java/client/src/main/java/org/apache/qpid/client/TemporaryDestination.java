@@ -21,10 +21,10 @@
 
 package org.apache.qpid.client;
 
+import org.apache.qpid.framing.AMQShortString;
+
 import javax.jms.Destination;
 import javax.jms.JMSException;
-
-import org.apache.qpid.framing.AMQShortString;
 
 /**
  * Provides support for convenience interface implemented by both AMQTemporaryTopic and AMQTemporaryQueue

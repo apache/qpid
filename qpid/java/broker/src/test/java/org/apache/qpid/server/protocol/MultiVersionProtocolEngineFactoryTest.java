@@ -20,17 +20,18 @@
 */
 package org.apache.qpid.server.protocol;
 
-import java.nio.ByteBuffer;
-import java.util.EnumSet;
-import java.util.Set;
-
 import org.apache.commons.configuration.XMLConfiguration;
+
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.TestApplicationRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.TestNetworkConnection;
+
+import java.nio.ByteBuffer;
+import java.util.EnumSet;
+import java.util.Set;
 
 public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
 {
@@ -120,10 +121,10 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
         Set<AmqpProtocolVersion> versions = EnumSet.allOf(AmqpProtocolVersion.class);
 
         MultiVersionProtocolEngineFactory factory =
-            new MultiVersionProtocolEngineFactory("localhost", versions);
+            new MultiVersionProtocolEngineFactory(versions, null);
 
         //create a dummy to retrieve the 'current' ID number
-        long previousId = factory.newProtocolEngine(new TestNetworkConnection()).getConnectionId();
+        long previousId = factory.newProtocolEngine().getConnectionId();
 
         //create a protocol engine and send the AMQP header for all supported AMQP verisons,
         //ensuring the ID assigned increases as expected
@@ -133,7 +134,9 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
             byte[] header = getAmqpHeader(version);
             assertNotNull("protocol header should not be null", header);
 
-            ServerProtocolEngine engine = factory.newProtocolEngine(new TestNetworkConnection());
+            ServerProtocolEngine engine = factory.newProtocolEngine();
+            TestNetworkConnection conn = new TestNetworkConnection();
+            engine.setNetworkConnection(conn, conn.getSender());
             assertEquals("ID did not increment as expected", expectedID, engine.getConnectionId());
 
             //actually feed in the AMQP header for this protocol version, and ensure the ID remains consistent
@@ -141,6 +144,26 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
             assertEquals("ID was not as expected following receipt of the AMQP version header", expectedID, engine.getConnectionId());
 
             previousId = expectedID;
+        }
+    }
+
+    /**
+     * Test to verify that when requesting a ProtocolEngineFactory to produce engines having a default reply to unsupported
+     * version initiations, there is enforcement that the default reply is itself a supported protocol version.
+     */
+    public void testUnsupportedDefaultReplyCausesIllegalArgumentException()
+    {
+        Set<AmqpProtocolVersion> versions = EnumSet.allOf(AmqpProtocolVersion.class);
+        versions.remove(AmqpProtocolVersion.v0_9);
+
+        try
+        {
+            new MultiVersionProtocolEngineFactory(versions, AmqpProtocolVersion.v0_9);
+            fail("should not have been allowed to create the factory");
+        }
+        catch(IllegalArgumentException iae)
+        {
+            //expected
         }
     }
 }

@@ -20,23 +20,19 @@
  */
 package org.apache.qpid.test.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.util.FileUtils;
 
 import javax.naming.NamingException;
-import javax.jms.JMSException;
-import javax.naming.NamingException;
-
-import org.apache.qpid.client.AMQConnectionFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class FailoverBaseCase extends QpidBrokerTestCase
 {
     protected static final Logger _logger = LoggerFactory.getLogger(FailoverBaseCase.class);
 
     public static final long DEFAULT_FAILOVER_TIME = 10000L;
-
-    protected int failingPort;
 
     protected void setUp() throws java.lang.Exception
     {
@@ -68,15 +64,6 @@ public class FailoverBaseCase extends QpidBrokerTestCase
         return _connectionFactory;
     }
 
-    @Override
-    public void stopBroker(int port) throws Exception
-    {
-        if (isBrokerPresent(port))
-        {
-            super.stopBroker(port);
-        }
-    }
-
     public void tearDown() throws Exception
     {
         try
@@ -92,11 +79,11 @@ public class FailoverBaseCase extends QpidBrokerTestCase
         }
     }
 
-
     public void failBroker(int port)
     {
         try
         {
+            //TODO: use killBroker instead
             stopBroker(port);
         }
         catch (Exception e)
@@ -104,6 +91,4 @@ public class FailoverBaseCase extends QpidBrokerTestCase
             throw new RuntimeException(e);
         }
     }
-
-        
 }

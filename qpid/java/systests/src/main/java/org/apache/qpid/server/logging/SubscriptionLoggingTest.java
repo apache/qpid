@@ -20,16 +20,18 @@
  */
 package org.apache.qpid.server.logging;
 
+import javax.jms.QueueBrowser;
 import junit.framework.AssertionFailedError;
+
 import org.apache.qpid.client.AMQConnection;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
+import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.Topic;
-import javax.jms.Message;
 import java.io.IOException;
 import java.util.List;
 
@@ -48,10 +50,10 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 {
     static final String SUB_PREFIX = "SUB-";
 
-    Connection _connection;
-    Session _session;
-    Queue _queue;
-    Topic _topic;
+    private Connection _connection;
+    private Session _session;
+    private Queue _queue;
+    private Topic _topic;
 
     @Override
     public void setUp() throws Exception
@@ -165,8 +167,10 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
      */
     public void testSubscriptionCreateQueueBrowser() throws JMSException, IOException
     {
-        _session.createBrowser(_queue);
+        _connection.start();
+        QueueBrowser browser = _session.createBrowser(_queue);
 
+        browser.getEnumeration();
         //Validate
         //Ensure that we wait for the SUB log message
         waitAndFindMatches("SUB-1001");

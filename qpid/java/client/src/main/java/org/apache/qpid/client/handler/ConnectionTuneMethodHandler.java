@@ -20,15 +20,18 @@
  */
 package org.apache.qpid.client.handler;
 
-import org.apache.qpid.AMQException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.client.ConnectionTuneParameters;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.StateAwareMethodListener;
-import org.apache.qpid.framing.*;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ConnectionOpenBody;
+import org.apache.qpid.framing.ConnectionTuneBody;
+import org.apache.qpid.framing.ConnectionTuneOkBody;
+import org.apache.qpid.framing.MethodRegistry;
 
 public class ConnectionTuneMethodHandler implements StateAwareMethodListener<ConnectionTuneBody>
 {

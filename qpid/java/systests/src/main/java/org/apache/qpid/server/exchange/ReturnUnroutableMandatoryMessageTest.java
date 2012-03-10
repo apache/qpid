@@ -21,20 +21,8 @@
 
 package org.apache.qpid.server.exchange;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import javax.jms.Connection;
-import javax.jms.ExceptionListener;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.Session;
-import javax.jms.TextMessage;
-
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.client.AMQHeadersExchange;
 import org.apache.qpid.client.AMQNoRouteException;
 import org.apache.qpid.client.AMQQueue;
@@ -46,6 +34,18 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
+
+import javax.jms.Connection;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class ReturnUnroutableMandatoryMessageTest extends QpidBrokerTestCase implements ExceptionListener
 {
@@ -241,7 +241,7 @@ public class ReturnUnroutableMandatoryMessageTest extends QpidBrokerTestCase imp
         con2.start();
 
         MessageProducer nonMandatoryProducer = producerSession.createProducer(valid_topic, false, false);
-        MessageProducer mandatoryProducer = producerSession.createProducer(invalid_topic);
+        MessageProducer mandatoryProducer = producerSession.createProducer(invalid_topic, false, true);
 
         // First test - should be routed
         _logger.info("Sending non-mandatory message");

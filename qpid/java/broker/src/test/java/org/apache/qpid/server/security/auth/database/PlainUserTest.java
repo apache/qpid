@@ -28,8 +28,8 @@ import junit.framework.TestCase;
 public class PlainUserTest extends TestCase
 {
 
-    String USERNAME = "username";
-    String PASSWORD = "password";
+    private String USERNAME = "username";
+    private String PASSWORD = "password";
 
     public void testTooLongArrayConstructor()
     {
@@ -54,7 +54,7 @@ public class PlainUserTest extends TestCase
 
         try            
         {
-            for (byte c : user.getPasswordBytes())
+            for (byte c : user.getEncodedPassword())
             {
                 assertEquals("Password incorrect", password[index], (char) c);
                 index++;

@@ -20,15 +20,15 @@
  */
 package org.apache.qpid.jms.xa;
 
-import javax.jms.XAConnection;
-import javax.jms.XAConnectionFactory;
-import javax.jms.XASession;
-import javax.transaction.xa.XAResource;
-
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.util.FileUtils;
+
+import javax.jms.XAConnection;
+import javax.jms.XAConnectionFactory;
+import javax.jms.XASession;
+import javax.transaction.xa.XAResource;
 
 public class XAResourceTest extends QpidBrokerTestCase
 {
@@ -43,7 +43,7 @@ public class XAResourceTest extends QpidBrokerTestCase
     public void testIsSameRMSingleCF() throws Exception
     {
         XAConnectionFactory factory = getConnectionFactory(FACTORY_NAME);
-        XAConnection conn = factory.createXAConnection();
+        XAConnection conn = factory.createXAConnection("guest","guest");
         XASession session = conn.createXASession();
         XAResource xaResource1 = session.getXAResource();
         XAResource xaResource2 = session.getXAResource();
@@ -68,9 +68,9 @@ public class XAResourceTest extends QpidBrokerTestCase
         XAConnectionFactory factory2 = new AMQConnectionFactory(url);
         XAConnectionFactory factory3 = getConnectionFactory(ALT_FACTORY_NAME);
         
-        XAConnection conn = factory.createXAConnection();
-        XAConnection conn2 = factory2.createXAConnection();
-        XAConnection conn3 = factory3.createXAConnection();
+        XAConnection conn = factory.createXAConnection("guest","guest");
+        XAConnection conn2 = factory2.createXAConnection("guest","guest");
+        XAConnection conn3 = factory3.createXAConnection("guest","guest");
         
         XASession session = conn.createXASession();
         XASession session2 = conn2.createXASession();

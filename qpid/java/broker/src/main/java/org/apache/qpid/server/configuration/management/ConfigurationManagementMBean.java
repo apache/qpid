@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.server.configuration.management;
 
-import javax.management.NotCompliantMBeanException;
-
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.management.common.mbeans.ConfigurationManagement;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+
+import javax.management.NotCompliantMBeanException;
 
 public class ConfigurationManagementMBean extends AMQManagedObject implements ConfigurationManagement
 {

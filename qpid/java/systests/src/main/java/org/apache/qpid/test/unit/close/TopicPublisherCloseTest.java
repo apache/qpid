@@ -19,14 +19,14 @@
  *
  */package org.apache.qpid.test.unit.close;
 
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+
 import javax.jms.Session;
 import javax.jms.Topic;
 import javax.jms.TopicPublisher;
 import javax.jms.TopicSession;
-
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 /**
  * @author Apache Software Foundation

@@ -14,9 +14,9 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
 package org.apache.qpid.tools.security;
 
@@ -26,8 +26,12 @@ import java.nio.charset.Charset;
 import java.security.DigestException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+
 import org.apache.commons.codec.binary.Base64;
 
+/**
+ * Utility to generate user:encodedPassword string for use in md5passwd
+ */
 public class Passwd
 {
     public static void main(String args[]) throws NoSuchAlgorithmException, DigestException, IOException
@@ -63,5 +67,4 @@ public class Passwd
         String encodedStr = new String(encoded, Charset.forName("utf-8"));
         return userName + ":" + encodedStr;
     }
-
 }

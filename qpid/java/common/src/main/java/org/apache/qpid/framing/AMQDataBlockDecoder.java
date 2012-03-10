@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.qpid.codec.MarkableDataInput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.DataInputStream;
+import org.apache.qpid.codec.MarkableDataInput;
+
 import java.io.IOException;
 
 public class AMQDataBlockDecoder
@@ -39,7 +39,7 @@ public class AMQDataBlockDecoder
         _bodiesSupported[HeartbeatBody.TYPE] = new HeartbeatBodyFactory();
     }
 
-    Logger _logger = LoggerFactory.getLogger(AMQDataBlockDecoder.class);
+    private Logger _logger = LoggerFactory.getLogger(AMQDataBlockDecoder.class);
 
     public AMQDataBlockDecoder()
     { }

@@ -22,16 +22,15 @@
 package org.apache.qpid.qmf;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.transport.codec.BBDecoder;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.AMQException;
 
-import java.util.Collection;
-import java.util.ArrayList;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.transport.codec.BBDecoder;
+
 import java.util.List;
 
 public class QMFSchemaRequestCommand extends QMFCommand

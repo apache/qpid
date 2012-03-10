@@ -20,10 +20,8 @@
  */
 package org.apache.qpid.server.handler;
 
-import javax.security.sasl.SaslException;
-import javax.security.sasl.SaslServer;
-
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.ConnectionSecureBody;
@@ -40,6 +38,9 @@ import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
 
 
 public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<ConnectionStartOkBody>
@@ -79,10 +80,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
             final AuthenticationResult authResult = authMgr.authenticate(ss, body.getResponse());
             //save clientProperties
-            if (session.getClientProperties() == null)
-            {
-                session.setClientProperties(body.getClientProperties());
-            }
+            session.setClientProperties(body.getClientProperties());
 
             MethodRegistry methodRegistry = session.getMethodRegistry();
 

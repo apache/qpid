@@ -22,6 +22,7 @@ package org.apache.qpid.test.framework.sequencers;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 import org.apache.qpid.test.framework.Assertion;
 import org.apache.qpid.test.framework.Circuit;
 import org.apache.qpid.test.framework.TestClientDetails;
@@ -29,10 +30,11 @@ import org.apache.qpid.test.framework.TestUtils;
 import org.apache.qpid.test.framework.distributedcircuit.DistributedCircuitImpl;
 import org.apache.qpid.test.utils.ConversationFactory;
 
-import org.apache.qpid.junit.extensions.util.ParsedProperties;
-
-import javax.jms.*;
-
+import javax.jms.Connection;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.Session;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
@@ -56,7 +58,7 @@ import java.util.Properties;
 public class InteropCircuitFactory extends BaseCircuitFactory
 {
     /** Used for debugging. */
-    Logger log = Logger.getLogger(InteropCircuitFactory.class);
+    private Logger log = Logger.getLogger(InteropCircuitFactory.class);
 
     /**
      * Creates a test circuit for the test, configered by the test parameters specified.

@@ -18,16 +18,6 @@
  */
 package org.apache.qpid.server;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import javax.management.JMException;
-import javax.management.MBeanException;
-import javax.management.MalformedObjectNameException;
-import javax.management.ObjectName;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -39,6 +29,8 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.exchange.ExchangeType;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -48,8 +40,15 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.ManagementActor;
+
+import javax.management.JMException;
+import javax.management.MBeanException;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This MBean implements the broker management interface and exposes the
@@ -169,7 +168,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
      */
     public void createNewExchange(String exchangeName, String type, boolean durable) throws JMException, MBeanException
     {
-        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+        CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
         try
         {
             synchronized (_exchangeRegistry)
@@ -213,10 +212,10 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     {
         // TODO
         // Check if the exchange is in use.
-        // boolean inUse = false;
+
         // Check if there are queue-bindings with the exchange and unregister
         // when there are no bindings.
-        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+        CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
         try
         {
             _exchangeRegistry.unregisterExchange(new AMQShortString(exchangeName), false);
@@ -256,7 +255,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
             throw new JMException("The queue \"" + queueName + "\" already exists.");
         }
 
-        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+        CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
         try
         {
             AMQShortString ownerShortString = null;
@@ -312,7 +311,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
             throw new JMException("The Queue " + queueName + " is not a registered queue.");
         }
 
-        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+        CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
         try
         {
             queue.delete();

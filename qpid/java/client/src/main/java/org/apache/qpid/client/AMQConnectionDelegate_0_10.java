@@ -21,16 +21,8 @@
 
 package org.apache.qpid.client;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-
-import javax.jms.ExceptionListener;
-import javax.jms.JMSException;
-import javax.jms.XASession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
@@ -42,6 +34,7 @@ import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ChannelLimitReachedException;
 import org.apache.qpid.jms.Session;
+import org.apache.qpid.properties.ConnectionStartProperties;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ConnectionClose;
@@ -53,8 +46,16 @@ import org.apache.qpid.transport.ProtocolVersionException;
 import org.apache.qpid.transport.SessionDetachCode;
 import org.apache.qpid.transport.SessionException;
 import org.apache.qpid.transport.TransportException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import javax.jms.XASession;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, ConnectionListener
 {
@@ -71,7 +72,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
     /**
      * The QpidConeection instance that is mapped with this JMS connection.
      */
-    org.apache.qpid.transport.Connection _qpidConnection;
+    private org.apache.qpid.transport.Connection _qpidConnection;
     private ConnectionException exception = null;
 
     //--- constructor
@@ -109,7 +110,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
             session = new AMQSession_0_10(_qpidConnection, _conn, channelId, transacted, acknowledgeMode, prefetchHigh,
                     prefetchLow,name);
             _conn.registerSession(channelId, session);
-            if (_conn._started)
+            if (_conn.started())
             {
                 session.start();
             }
@@ -152,7 +153,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         {
             session = new XASessionImpl(_qpidConnection, _conn, channelId, prefetchHigh, prefetchLow);
             _conn.registerSession(channelId, session);
-            if (_conn._started)
+            if (_conn.started())
             {
                 session.start();
             }
@@ -164,7 +165,6 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         return session;
     }
 
-    @Override
     public XASession createXASession(int ackMode)
         throws JMSException
     {
@@ -182,7 +182,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         {
             session = new XASessionImpl(_qpidConnection, _conn, channelId, ackMode, (int)_conn.getMaxPrefetch(), (int)_conn.getMaxPrefetch() / 2);
             _conn.registerSession(channelId, session);
-            if (_conn._started)
+            if (_conn.started())
             {
                 session.start();
             }
@@ -218,10 +218,10 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
             _qpidConnection.setConnectionDelegate(new ClientConnectionDelegate(conSettings, _conn.getConnectionURL()));
             _qpidConnection.connect(conSettings);
 
-            _conn._connected = true;
+            _conn.setConnected(true);
             _conn.setUsername(_qpidConnection.getUserID());
             _conn.setMaximumChannelCount(_qpidConnection.getChannelMax());
-            _conn._failoverPolicy.attainedConnection();
+            _conn.getFailoverPolicy().attainedConnection();
         }
         catch (ProtocolVersionException pe)
         {
@@ -327,7 +327,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
             }
         }
 
-        ExceptionListener listener = _conn._exceptionListener;
+        ExceptionListener listener = _conn.getExceptionListenerNoCheck();
         if (listener == null)
         {
             _logger.error("connection exception: " + conn, exc);
@@ -429,7 +429,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         Map<String, Object> clientProps = new HashMap<String, Object>();
         try
         {
-            clientProps.put("clientName", _conn.getClientID());
+            clientProps.put(ConnectionStartProperties.CLIENT_ID_0_10, _conn.getClientID());
 	        conSettings.setClientProperties(clientProps);
         }
         catch (JMSException e)

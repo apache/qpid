@@ -68,8 +68,7 @@ public class GenerateLogMessages
         }
         catch (InvalidTypeException e)
         {
-            // This occurs when a type other than 'number' appears in the
-            // paramater config {0, number...}
+            // This occurs when a type other than 'number' appears in the paramater config {0, number...}.
             System.err.println(e.getMessage());
             System.exit(-1);
         }
@@ -365,9 +364,9 @@ public class GenerateLogMessages
         // Taking an example of:
         // 'Text {n,type,format} [option] text {m} [option with param{p}] more'
         // This would give us:
-        // 0 - Text {n,type,format}
-        // 1 - option] text {m}
-        // 2 - option with param{p}] more
+        // 0 - Text {n,type,format}.
+        // 1 - option] text {m}.
+        // 2 - option with param{p}] more.
 
         // Create the parameter list for this item
         List<HashMap<String, String>> options = new LinkedList<HashMap<String, String>>();
@@ -442,17 +441,20 @@ public class GenerateLogMessages
         String[] parametersString = logMessage.split("\\{");
         // Taking an example of 'Text {n[,type]} text {m} more text {p}'
         // This would give us:
-        // 0 - Text
-        // 1 - n[,type]} text
-        // 2 - m} more text
-        // 3 - p}
+        // 0 - Text.
+        // 1 - n[,type]} text.
+        // 2 - m} more text.
+        // 3 - p}.
 
         // Create the parameter list for this item
         List<HashMap<String, String>> parameters = new LinkedList<HashMap<String, String>>();
 
-        // Check that we have some parameters to process
-        // Skip 0 as that will not be the first entry
-        //  Text {n[,type]} text {m} more text {p}
+        /*
+          Check that we have some parameters to process
+          Skip 0 as that will not be the first entry
+          Text {n[,type]} text {m} more text {p}.
+        */
+
         if (parametersString.length > 1)
         {
             for (int index = 1; index < parametersString.length; index++)
@@ -461,8 +463,11 @@ public class GenerateLogMessages
                 // for easy retrieval in the macro template
                 HashMap<String, String> parameter = new HashMap<String, String>();
 
-                // Check for any properties of the parameter :
-                // e.g. {0} vs {0,number} vs {0,number,xxxx}
+                /*
+                  Check for any properties of the parameter :
+                  e.g. {0} vs {0,number} vs {0,number,xxxx}.
+                */
+
                 int typeIndex = parametersString[index].indexOf(",");
 
                 // The parameter type

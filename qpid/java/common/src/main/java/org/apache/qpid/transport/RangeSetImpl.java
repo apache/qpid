@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.transport;
 
+import static org.apache.qpid.util.Serial.lt;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-
-import static org.apache.qpid.util.Serial.lt;
 
 public class RangeSetImpl implements RangeSet
 {
@@ -148,6 +148,68 @@ public class RangeSetImpl implements RangeSet
     public void clear()
     {
         ranges.clear();
+    }
+
+    public void subtract(final RangeSet other)
+    {
+        final Iterator<Range> otherIter = other.iterator() ;
+        if (otherIter.hasNext())
+        {
+            Range otherRange = otherIter.next();
+            final ListIterator<Range> iter = ranges.listIterator() ;
+            if (iter.hasNext())
+            {
+                Range range = iter.next();
+                do
+                {
+                    if (otherRange.getUpper() < range.getLower())
+                    {
+                        otherRange = nextRange(otherIter) ;
+                    }
+                    else if (range.getUpper() < otherRange.getLower())
+                    {
+                        range = nextRange(iter) ;
+                    }
+                    else
+                    {
+                        final boolean first = range.getLower() < otherRange.getLower() ;
+                        final boolean second = otherRange.getUpper() < range.getUpper() ;
+
+                        if (first)
+                        {
+                            iter.set(Range.newInstance(range.getLower(), otherRange.getLower()-1)) ;
+                            if (second)
+                            {
+                                iter.add(Range.newInstance(otherRange.getUpper()+1, range.getUpper())) ;
+                                iter.previous() ;
+                                range = iter.next() ;
+                            }
+                            else
+                            {
+                                range = nextRange(iter) ;
+                            }
+                        }
+                        else if (second)
+                        {
+                            range = Range.newInstance(otherRange.getUpper()+1, range.getUpper()) ;
+                            iter.set(range) ;
+                            otherRange = nextRange(otherIter) ;
+                        }
+                        else
+                        {
+                            iter.remove() ;
+                            range = nextRange(iter) ;
+                        }
+                    }
+                }
+                while ((otherRange != null) && (range != null)) ;
+            }
+        }
+    }
+
+    private Range nextRange(final Iterator<Range> iter)
+    {
+        return (iter.hasNext() ? iter.next() : null) ;
     }
 
     public RangeSet copy()

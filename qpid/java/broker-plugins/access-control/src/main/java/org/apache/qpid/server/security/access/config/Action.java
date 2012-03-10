@@ -21,8 +21,6 @@
 package org.apache.qpid.server.security.access.config;
 
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
@@ -35,7 +33,7 @@ import org.apache.qpid.server.security.access.Operation;
 /**
  * An access control v2 rule action.
  * 
- * An action consists of an {@link Operation} on an {@link ObjectType} with certain properties, stored in a {@link Map}.
+ * An action consists of an {@link Operation} on an {@link ObjectType} with certain properties, stored in a {@link java.util.Map}.
  * The operation and object should be an allowable combination, based on the {@link ObjectType#isAllowed(Operation)}
  * method of the object, which is exposed as the {@link #isAllowed()} method here. The internal {@link #propertiesMatch(Map)}
  * and {@link #valueMatches(String, String)} methods are used to determine wildcarded matching of properties, with
@@ -111,10 +109,9 @@ public class Action
     /** @see Comparable#compareTo(Object) */
     public boolean matches(Action a)
     {
-        return (Operation.ALL == a.getOperation()
-                || (getOperation() == a.getOperation()
-                    && getObjectType() == a.getObjectType()
-                    && _properties.matches(a.getProperties())));
+        return ((Operation.ALL == a.getOperation() || getOperation() == a.getOperation())
+                    && (ObjectType.ALL == a.getObjectType() || getObjectType() == a.getObjectType())
+                    && _properties.matches(a.getProperties()));
     }
 
     /**
@@ -136,12 +133,6 @@ public class Action
             }
             else if (a.getOperation() == b.getOperation())
             {
-                // Same operator, compare rest of action
-                
-//                    || (getOperation() == a.getOperation()
-//                        && getObjectType() == a.getObjectType()
-//                        && _properties.matches(a.getProperties())));
-
                 return 1; // b is more specific
             }
             else // Different operations

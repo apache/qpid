@@ -3,7 +3,17 @@ package org.apache.qpid.server.exchange.topic;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.AMQShortStringTokenizer;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /*
@@ -246,25 +256,25 @@ public class TopicMatcherDFAState
             transitions.append("[ ");
             transitions.append(entry.getKey());
             transitions.append("\t ->\t ");
-            transitions.append(entry.getValue()._id);
+            transitions.append(entry.getValue().getId());
             transitions.append(" ]\n");
         }
 
 
-        return "[ State " + _id + " ]\n" + transitions + "\n";
+        return "[ State " + getId() + " ]\n" + transitions + "\n";
 
     }
 
     public String reachableStates()
     {
-        StringBuilder result = new StringBuilder("Start state: " + _id + "\n");
+        StringBuilder result = new StringBuilder("Start state: " + getId() + "\n");
 
         SortedSet<TopicMatcherDFAState> reachableStates =
                 new TreeSet<TopicMatcherDFAState>(new Comparator<TopicMatcherDFAState>()
                                                         {
                                                             public int compare(final TopicMatcherDFAState o1, final TopicMatcherDFAState o2)
                                                             {
-                                                                return o1._id - o2._id;
+                                                                return o1.getId() - o2.getId();
                                                             }
                                                         });
         reachableStates.add(this);
@@ -292,4 +302,9 @@ public class TopicMatcherDFAState
         return result.toString();
     }
 
+
+    int getId()
+    {
+        return _id;
+    }
 }

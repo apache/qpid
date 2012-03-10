@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import java.util.List;
-
 import org.apache.qpid.server.subscription.MockSubscription;
+
+import java.util.List;
 
 /**
  * Test : AMQPConnectionActorTest

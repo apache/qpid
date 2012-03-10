@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.test.unit.client;
 
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+
 import javax.jms.QueueConnection;
 import javax.jms.QueueSession;
 import javax.jms.Session;
 import javax.jms.Topic;
 import javax.jms.TopicSession;
-
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 /**
  * Ensures that queue specific session factory method {@link QueueConnection#createQueueSession()} create sessions

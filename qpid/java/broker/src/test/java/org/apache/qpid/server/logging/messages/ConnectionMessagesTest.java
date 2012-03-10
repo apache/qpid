@@ -27,25 +27,27 @@ import java.util.List;
  */
 public class ConnectionMessagesTest extends AbstractTestMessages
 {
-    public void testConnectionOpen_WithClientIDProtocolVersion()
+    public void testConnectionOpen_WithClientIDProtocolVersionClientVersion()
     {
         String clientID = "client";
         String protocolVersion = "8-0";
+        String clientVersion = "1.2.3_4";
 
-        _logMessage = ConnectionMessages.OPEN(clientID, protocolVersion, true , true);
+        _logMessage = ConnectionMessages.OPEN(clientID, protocolVersion, clientVersion, true , true, true);
         List<Object> log = performLog();
 
         String[] expected = {"Open :", "Client ID", clientID,
-                             ": Protocol Version :", protocolVersion};
+                             ": Protocol Version :", protocolVersion,
+                             ": Client Version :", clientVersion};
 
         validateLogMessage(log, "CON-1001", expected);
     }
 
-    public void testConnectionOpen_WithClientIDNoProtocolVersion()
+    public void testConnectionOpen_WithClientIDNoProtocolVersionNoClientVersion()
     {
         String clientID = "client";        
 
-        _logMessage = ConnectionMessages.OPEN(clientID, null,true, false);
+        _logMessage = ConnectionMessages.OPEN(clientID, null, null, true, false, false);
         List<Object> log = performLog();
 
         String[] expected = {"Open :", "Client ID", clientID};
@@ -53,11 +55,11 @@ public class ConnectionMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "CON-1001", expected);
     }
 
-    public void testConnectionOpen_WithNOClientIDProtocolVersion()
+    public void testConnectionOpen_WithNOClientIDProtocolVersionNoClientVersion()
     {
         String protocolVersion = "8-0";
 
-        _logMessage = ConnectionMessages.OPEN(null, protocolVersion, false , true);
+        _logMessage = ConnectionMessages.OPEN(null, protocolVersion, null, false , true, false);
         List<Object> log = performLog();
 
         String[] expected = {"Open", ": Protocol Version :", protocolVersion};
@@ -65,17 +67,39 @@ public class ConnectionMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "CON-1001", expected);
     }
 
-    public void testConnectionOpen_WithNoClientIDNoProtocolVersion()
+    public void testConnectionOpen_WithNOClientIDNoProtocolVersionClientVersion()
     {
-        _logMessage = ConnectionMessages.OPEN(null, null,false, false);
+        String clientVersion = "1.2.3_4";
+
+        _logMessage = ConnectionMessages.OPEN(null, null, clientVersion, false , false, true);
+        List<Object> log = performLog();
+
+        String[] expected = {"Open", ": Client Version :", clientVersion};
+
+        validateLogMessage(log, "CON-1001", expected);
+    }
+
+    public void testConnectionOpen_WithNOClientIDNoProtocolVersionNullClientVersion()
+    {
+        String clientVersion = null;
+
+        _logMessage = ConnectionMessages.OPEN(null, null, clientVersion , false , false, true);
+        List<Object> log = performLog();
+
+        String[] expected = {"Open", ": Client Version :", clientVersion};
+
+        validateLogMessage(log, "CON-1001", true, expected);
+    }
+
+    public void testConnectionOpen_WithNoClientIDNoProtocolVersionNoClientVersion()
+    {
+        _logMessage = ConnectionMessages.OPEN(null, null, null, false, false, false);
         List<Object> log = performLog();
 
         String[] expected = {"Open"};
 
         validateLogMessage(log, "CON-1001", expected);
     }
-
-
 
     public void testConnectionClose()
     {

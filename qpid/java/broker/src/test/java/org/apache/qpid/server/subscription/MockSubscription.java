@@ -21,12 +21,6 @@ package org.apache.qpid.server.subscription;
 *
 */
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
@@ -34,6 +28,12 @@ import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntry.SubscriptionAcquiredState;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class MockSubscription implements Subscription
 {
@@ -55,6 +55,7 @@ public class MockSubscription implements Subscription
     private static final AtomicLong idGenerator = new AtomicLong(0);
     // Create a simple ID that increments for ever new Subscription
     private final long _subscriptionID = idGenerator.getAndIncrement();
+    private boolean _isActive = true;
 
     public MockSubscription()
     {
@@ -150,7 +151,7 @@ public class MockSubscription implements Subscription
 
     public boolean isActive()
     {
-        return true;
+        return _isActive ;
     }
 
     public void set(String key, Object value)
@@ -269,5 +270,10 @@ public class MockSubscription implements Subscription
     public void queueEmpty() throws AMQException
     {
         //TODO
+    }
+
+    public void setActive(final boolean isActive)
+    {
+        _isActive = isActive;
     }
 }

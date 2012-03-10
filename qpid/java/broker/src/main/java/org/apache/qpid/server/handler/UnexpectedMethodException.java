@@ -21,8 +21,8 @@
 package org.apache.qpid.server.handler;
 
 
-import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQMethodBody;
 
 public class UnexpectedMethodException extends AMQException
 {

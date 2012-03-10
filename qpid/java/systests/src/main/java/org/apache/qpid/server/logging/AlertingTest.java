@@ -20,16 +20,16 @@
 */
 package org.apache.qpid.server.logging;
 
-import javax.jms.Connection;
-import javax.jms.Queue;
-import javax.jms.Session;
-
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.util.FileUtils;
+
+import javax.jms.Connection;
+import javax.jms.Queue;
+import javax.jms.Session;
 
 public class AlertingTest extends AbstractTestLogging
 {

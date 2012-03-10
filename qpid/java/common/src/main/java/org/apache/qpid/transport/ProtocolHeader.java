@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.transport;
 
-import java.nio.ByteBuffer;
-
+import org.apache.qpid.transport.network.Frame;
 import org.apache.qpid.transport.network.NetworkDelegate;
 import org.apache.qpid.transport.network.NetworkEvent;
-import org.apache.qpid.transport.network.Frame;
+
+import java.nio.ByteBuffer;
 
 
 /**

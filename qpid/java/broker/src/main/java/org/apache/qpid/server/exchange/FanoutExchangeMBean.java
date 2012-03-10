@@ -20,12 +20,16 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.server.binding.Binding;
 
 import javax.management.JMException;
-import javax.management.openmbean.*;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.OpenDataException;
+import javax.management.openmbean.TabularData;
+import javax.management.openmbean.TabularDataSupport;
 import java.util.ArrayList;
 
 /**
@@ -46,7 +50,7 @@ final class FanoutExchangeMBean extends AbstractExchangeMBean<FanoutExchange>
     public TabularData bindings() throws OpenDataException
     {
 
-        TabularDataSupport bindingList = new TabularDataSupport(_bindinglistDataType);
+        TabularDataSupport bindingList = new TabularDataSupport(getBindinglistDataType());
 
 
         ArrayList<String> queueNames = new ArrayList<String>();
@@ -58,7 +62,7 @@ final class FanoutExchangeMBean extends AbstractExchangeMBean<FanoutExchange>
         }
 
         Object[] bindingItemValues = {BINDING_KEY_SUBSTITUTE, queueNames.toArray(new String[0])};
-        CompositeData bindingData = new CompositeDataSupport(_bindingDataType,
+        CompositeData bindingData = new CompositeDataSupport(getBindingDataType(),
                 COMPOSITE_ITEM_NAMES.toArray(new String[COMPOSITE_ITEM_NAMES.size()]), 
                 bindingItemValues);
         bindingList.put(bindingData);

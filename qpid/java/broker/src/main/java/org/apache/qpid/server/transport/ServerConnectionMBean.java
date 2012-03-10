@@ -20,17 +20,6 @@
  */
 package org.apache.qpid.server.transport;
 
-import java.io.IOException;
-import java.util.Date;
-import java.util.List;
-import javax.management.JMException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.TabularData;
-import javax.management.openmbean.TabularDataSupport;
-
-import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -38,6 +27,16 @@ import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.management.AbstractAMQManagedConnectionObject;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+
+import javax.management.JMException;
+import javax.management.NotCompliantMBeanException;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.TabularData;
+import javax.management.openmbean.TabularDataSupport;
+import java.io.IOException;
+import java.util.Date;
+import java.util.List;
 
 /**
  * This MBean class implements the management interface. In order to make more attributes, operations and notifications
@@ -76,7 +75,7 @@ public class ServerConnectionMBean extends AbstractAMQManagedConnectionObject
     @Override
     public String getVersion()
     {
-        return String.valueOf(_serverConnection.getConnectionDelegate().getClientProperties().get(ClientProperties.version.toString()));
+        return String.valueOf(_serverConnection.getClientVersion());
     }
 
     @Override
@@ -132,7 +131,7 @@ public class ServerConnectionMBean extends AbstractAMQManagedConnectionObject
         }
         else if (session.isTransactional())
         {
-            CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+            CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
             try
             {
                 session.commit();
@@ -154,7 +153,7 @@ public class ServerConnectionMBean extends AbstractAMQManagedConnectionObject
         }
         else if (session.isTransactional())
         {
-            CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+            CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
             try
             {
                 session.rollback();

@@ -21,18 +21,16 @@ package org.apache.qpid.transport.network.security.sasl;
  */
 
 
-import java.nio.ByteBuffer;
-
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslException;
-
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.SenderException;
 import org.apache.qpid.transport.util.Logger;
 
+import javax.security.sasl.SaslException;
+import java.nio.ByteBuffer;
+
 public class SASLReceiver extends SASLEncryptor implements Receiver<ByteBuffer> {
 
-    Receiver<ByteBuffer> delegate;
+    private Receiver<ByteBuffer> delegate;
     private byte[] netData;
     private static final Logger log = Logger.get(SASLReceiver.class);
     
@@ -58,11 +56,11 @@ public class SASLReceiver extends SASLEncryptor implements Receiver<ByteBuffer> 
         {
             while (buf.hasRemaining())
             {
-                int length = Math.min(buf.remaining(),recvBuffSize);
+                int length = Math.min(buf.remaining(), getRecvBuffSize());
                 buf.get(netData, 0, length);
                 try
                 {
-                    byte[] out = saslClient.unwrap(netData, 0, length);
+                    byte[] out = getSaslClient().unwrap(netData, 0, length);
                     delegate.received(ByteBuffer.wrap(out));
                 } 
                 catch (SaslException e)
@@ -79,7 +77,7 @@ public class SASLReceiver extends SASLEncryptor implements Receiver<ByteBuffer> 
     
     public void securityLayerEstablished()
     {
-        netData = new byte[recvBuffSize];
+        netData = new byte[getRecvBuffSize()];
         log.debug("SASL Security Layer Established");
     }
 

@@ -21,8 +21,6 @@ package org.apache.qpid.codec;
  */
 
 
-import java.nio.ByteBuffer;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQMethodBody;
@@ -33,6 +31,8 @@ import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.transport.Sender;
+
+import java.nio.ByteBuffer;
 
 public class MockAMQVersionAwareProtocolSession implements AMQVersionAwareProtocolSession
 {

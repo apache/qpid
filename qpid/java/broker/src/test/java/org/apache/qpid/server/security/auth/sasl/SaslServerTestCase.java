@@ -21,12 +21,12 @@
 
 package org.apache.qpid.server.security.auth.sasl;
 
-import javax.security.sasl.SaslException;
-import javax.security.sasl.SaslServer;
+import junit.framework.TestCase;
 
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 
-import junit.framework.TestCase;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
 
 public abstract class SaslServerTestCase extends TestCase
 {
@@ -54,7 +54,7 @@ public abstract class SaslServerTestCase extends TestCase
         }
         catch (SaslException e)
         {
-            assertEquals("Authentication failed", e.getCause().getMessage());
+            assertTrue(e.getMessage().contains("Authentication failed"));
             exceptionCaught = true;
         }
         if (!exceptionCaught)

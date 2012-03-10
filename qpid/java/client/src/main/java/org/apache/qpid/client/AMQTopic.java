@@ -20,16 +20,15 @@
  */
 package org.apache.qpid.client;
 
-import java.net.URISyntaxException;
-
-import javax.jms.InvalidDestinationException;
-import javax.jms.JMSException;
-import javax.jms.Topic;
-
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.messaging.Address;
 import org.apache.qpid.url.BindingURL;
+
+import javax.jms.InvalidDestinationException;
+import javax.jms.JMSException;
+import javax.jms.Topic;
+import java.net.URISyntaxException;
 
 public class AMQTopic extends AMQDestination implements Topic
 {
@@ -175,7 +174,7 @@ public class AMQTopic extends AMQDestination implements Topic
         }
         else
         {
-            return _exchangeName;
+            return super.getExchangeName();
         }
     }
 

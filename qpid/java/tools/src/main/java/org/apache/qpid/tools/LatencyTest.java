@@ -56,24 +56,24 @@ import org.apache.qpid.thread.Threading;
 
 public class LatencyTest extends PerfBase implements MessageListener
 {
-    MessageProducer producer;
-    MessageConsumer consumer;
-    Message msg;
-    byte[] payload;
-    long maxLatency = 0;
-    long minLatency = Long.MAX_VALUE;
-    long totalLatency = 0;  // to calculate avg latency.
-    int rcvdMsgCount = 0;
-    double stdDev = 0;
-    double avgLatency = 0;
-    boolean warmup_mode = true;
-    boolean transacted = false;
-    int transSize = 0;
+    private MessageProducer producer;
+    private MessageConsumer consumer;
+    private Message msg;
+    private byte[] payload;
+    private long maxLatency = 0;
+    private long minLatency = Long.MAX_VALUE;
+    private long totalLatency = 0;  // to calculate avg latency.
+    private int rcvdMsgCount = 0;
+    private double stdDev = 0;
+    private double avgLatency = 0;
+    private boolean warmup_mode = true;
+    private boolean transacted = false;
+    private int transSize = 0;
 
-    final List<Long> latencies;
-    final Lock lock = new ReentrantLock();
-    final Condition warmedUp;
-    final Condition testCompleted;
+    private final List<Long> latencies;
+    private final Lock lock = new ReentrantLock();
+    private final Condition warmedUp;
+    private final Condition testCompleted;
 
     public LatencyTest()
     {

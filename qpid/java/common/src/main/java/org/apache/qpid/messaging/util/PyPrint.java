@@ -33,6 +33,9 @@ import java.util.Map;
 
 public class PyPrint
 {
+    private PyPrint()
+    {
+    }
 
     public static String pprint(Object obj)
     {

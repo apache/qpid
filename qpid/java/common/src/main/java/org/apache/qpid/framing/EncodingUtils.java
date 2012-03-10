@@ -20,11 +20,12 @@
  */
 package org.apache.qpid.framing;
 
-import java.io.*;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
@@ -39,6 +40,10 @@ public class EncodingUtils
     public static final int SIZEOF_UNSIGNED_SHORT = 2;
     public static final int SIZEOF_UNSIGNED_INT = 4;
     private static final boolean[] ALL_FALSE_ARRAY = new boolean[8];
+
+    private EncodingUtils()
+    {
+    }
 
     public static int encodedShortStringLength(String s)
     {
@@ -114,7 +119,7 @@ public class EncodingUtils
         {
             return len + 6 + encodedShortStringLength((short) (i / 1000000));
         }
-        else // if (i > 99999)
+        else // if i > 99999
         {
             return len + 5 + encodedShortStringLength((short) (i / 100000));
         }
@@ -259,7 +264,6 @@ public class EncodingUtils
 
     public static void writeLongStringBytes(DataOutput buffer, String s) throws IOException
     {
-        assert (s == null) || (s.length() <= 0xFFFE);
         if (s != null)
         {
             int len = s.length();
@@ -281,7 +285,6 @@ public class EncodingUtils
 
     public static void writeLongStringBytes(DataOutput buffer, char[] s) throws IOException
     {
-        assert (s == null) || (s.length <= 0xFFFE);
         if (s != null)
         {
             int len = s.length;
@@ -302,7 +305,6 @@ public class EncodingUtils
 
     public static void writeLongStringBytes(DataOutput buffer, byte[] bytes) throws IOException
     {
-        assert (bytes == null) || (bytes.length <= 0xFFFE);
         if (bytes != null)
         {
             writeUnsignedInteger(buffer, bytes.length);
@@ -736,8 +738,6 @@ public class EncodingUtils
 
     public static long readTimestamp(DataInput buffer) throws IOException
     {
-        // Discard msb from AMQ timestamp
-        // buffer.getUnsignedInt();
         return buffer.readLong();
     }
 
@@ -802,8 +802,6 @@ public class EncodingUtils
 
         byte[] from = new byte[size];
 
-        // Is this not the same.
-        // bb.get(from, 0, length);
         for (int i = 0; i < size; i++)
         {
             from[i] = bb.get(i);
@@ -958,7 +956,6 @@ public class EncodingUtils
         else
         {                                                    
             // really writing out unsigned byte
-            //buffer.put((byte) 0);
             writeUnsignedInteger(buffer, 0L);
         }
     }

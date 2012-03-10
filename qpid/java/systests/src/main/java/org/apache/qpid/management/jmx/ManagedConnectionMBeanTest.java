@@ -18,10 +18,14 @@
  */
 package org.apache.qpid.management.jmx;
 
-import java.io.IOException;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.management.common.mbeans.ManagedConnection;
+import org.apache.qpid.test.utils.JMXTestUtils;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -33,13 +37,10 @@ import javax.jms.TextMessage;
 import javax.management.JMException;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.TabularData;
-
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.management.common.mbeans.ManagedConnection;
-import org.apache.qpid.test.utils.JMXTestUtils;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.IOException;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
 
 public class ManagedConnectionMBeanTest extends QpidBrokerTestCase
 {
@@ -241,5 +242,37 @@ public class ManagedConnectionMBeanTest extends QpidBrokerTestCase
         final ManagedConnection mBean = connections.get(0);
         assertNotNull("Connection MBean is null", mBean);
         assertEquals("Unexpected authorized id", "guest", mBean.getAuthorizedId());
+    }
+
+    public void testClientVersion() throws Exception
+    {
+        List<ManagedConnection> connections = _jmxUtils.getManagedConnections("test");
+        assertNotNull("Connection MBean is not found", connections);
+        assertEquals("Unexpected number of connection mbeans", 1, connections.size());
+        final ManagedConnection mBean = connections.get(0);
+        assertNotNull("Connection MBean is null", mBean);
+
+        String expectedVersion = QpidProperties.getReleaseVersion();
+        assertNotNull("version should not be null", expectedVersion);
+        assertFalse("version should not be the empty string", expectedVersion.equals(""));
+        assertFalse("version should not be the string 'null'", expectedVersion.equals("null"));
+
+        assertEquals("Unexpected version", expectedVersion, mBean.getVersion());
+    }
+
+    public void testClientId() throws Exception
+    {
+        List<ManagedConnection> connections = _jmxUtils.getManagedConnections("test");
+        assertNotNull("Connection MBean is not found", connections);
+        assertEquals("Unexpected number of connection mbeans", 1, connections.size());
+        final ManagedConnection mBean = connections.get(0);
+        assertNotNull("Connection MBean is null", mBean);
+
+        String expectedClientId = _connection.getClientID();
+        assertNotNull("ClientId should not be null", expectedClientId);
+        assertFalse("ClientId should not be the empty string", expectedClientId.equals(""));
+        assertFalse("ClientId should not be the string 'null'", expectedClientId.equals("null"));
+
+        assertEquals("Unexpected ClientId", expectedClientId, mBean.getClientId());
     }
 }

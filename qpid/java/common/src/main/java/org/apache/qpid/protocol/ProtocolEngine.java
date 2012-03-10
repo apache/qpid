@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.protocol;
 
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
+
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 
 /**
  * A ProtocolEngine is a Receiver for java.nio.ByteBuffers. It takes the data passed to it in the received

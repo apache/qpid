@@ -21,11 +21,12 @@ package org.apache.qpid.nclient.util;
  */
 
 
+import org.apache.qpid.nclient.MessagePartListener;
+import org.apache.qpid.transport.Header;
+import org.apache.qpid.transport.MessageTransfer;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
-
-import org.apache.qpid.transport.*;
-import org.apache.qpid.nclient.MessagePartListener;
 
 /**
  * This is a simple message assembler.
@@ -37,8 +38,8 @@ import org.apache.qpid.nclient.MessagePartListener;
  */
 public class MessagePartListenerAdapter implements MessagePartListener
 {
-	MessageListener _adaptee;
-    ByteBufferMessage _currentMsg;
+	private MessageListener _adaptee;
+    private ByteBufferMessage _currentMsg;
 
 	public MessagePartListenerAdapter(MessageListener listener)
 	{

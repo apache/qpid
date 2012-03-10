@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.management.jmx;
 
-import javax.jms.Connection;
-
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
+
+import javax.jms.Connection;
 
 /**
  * Test generation of message statistics.
@@ -162,29 +162,7 @@ public class MessageStatisticsTest extends MessageStatisticsTestCase
         assertEquals("Incorrect test vhost total", 30, test.getTotalMessagesReceived());
         assertEquals("Incorrect test vhost data", 30 * 100, test.getTotalDataReceived());
     }
-    
-    /**
-     * Test message peak rate generation.
-     */
-    public void testMessagePeakRates() throws Exception
-    {
-        sendUsing(_test, 2, 10);
-        Thread.sleep(10000);
-        sendUsing(_dev, 4, 10);
-        Thread.sleep(10000);
-        
-        ManagedBroker test = _jmxUtils.getManagedBroker("test");
-        ManagedBroker dev = _jmxUtils.getManagedBroker("development");
-        
-        assertApprox("Incorrect test vhost peak messages", 0.2d, 1.0d, test.getPeakMessageReceiptRate());
-        assertApprox("Incorrect test vhost peak data", 0.2d, 10.0d, test.getPeakDataReceiptRate());
-        assertApprox("Incorrect dev vhost peak messages", 0.2d, 2.0d, dev.getPeakMessageReceiptRate());
-        assertApprox("Incorrect dev vhost peak data", 0.2d, 20.0d, dev.getPeakDataReceiptRate());
 
-        assertApprox("Incorrect server peak messages", 0.2d, 2.0d, _jmxUtils.getServerInformation().getPeakMessageReceiptRate());
-        assertApprox("Incorrect server peak data", 0.2d, 20.0d, _jmxUtils.getServerInformation().getPeakDataReceiptRate());
-    }
-    
     /**
      * Test message totals when a vhost has its statistics reset
      */

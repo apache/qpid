@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.server.security;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectType;
@@ -32,9 +32,9 @@ import org.apache.qpid.server.security.access.Operation;
  */
 public abstract class AbstractPlugin implements SecurityPlugin
 {
-	protected final Logger _logger = Logger.getLogger(getClass());
+	private final Logger _logger = Logger.getLogger(getClass());
     
-    protected ConfigurationPlugin _config;
+    private ConfigurationPlugin _config;
 	
 	public Result getDefault()
 	{
@@ -50,4 +50,8 @@ public abstract class AbstractPlugin implements SecurityPlugin
         _config = config;
     }
 
+    public ConfigurationPlugin getConfig()
+    {
+        return _config;
+    }
 }

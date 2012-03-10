@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.test.unit.basic;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
@@ -30,15 +33,11 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.jms.BytesMessage;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
-
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -56,7 +55,7 @@ public class FieldTableMessageTest extends QpidBrokerTestCase implements Message
     private final ArrayList<JMSBytesMessage> received = new ArrayList<JMSBytesMessage>();
     private FieldTable _expected;
     private int _count = 10;
-    public String _connectionString = "vm://:1";
+    private String _connectionString = "vm://:1";
     private CountDownLatch _waitForCompletion;
 
     protected void setUp() throws Exception

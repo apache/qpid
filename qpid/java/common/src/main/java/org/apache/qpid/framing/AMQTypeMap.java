@@ -27,6 +27,10 @@ public class AMQTypeMap
 {
     public static final Map<Byte, AMQType> _reverseTypeMap = new HashMap<Byte, AMQType>();
 
+    private AMQTypeMap()
+    {
+    }
+
     static
     {
         for(AMQType type : AMQType.values())

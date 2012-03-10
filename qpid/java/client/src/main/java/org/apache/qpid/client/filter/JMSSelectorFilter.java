@@ -55,6 +55,10 @@ public class JMSSelectorFilter implements MessageFilter
         {
             _matcher = new SelectorParser().parse(selector);
         }
+        catch (ParseException e)
+        {
+            throw new AMQInternalException("Unable to parse selector \""+selector+"\"", e);
+        }
         catch (SelectorParsingException e)
         {
             throw new AMQInternalException("Unable to parse selector \""+selector+"\"", e);

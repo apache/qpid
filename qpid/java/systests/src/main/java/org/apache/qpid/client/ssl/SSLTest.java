@@ -20,21 +20,20 @@
  */
 package org.apache.qpid.client.ssl;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-
-import javax.jms.Session;
-
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQTestConnection_0_10;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.transport.Connection;
 
+import javax.jms.Session;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+
 public class SSLTest extends QpidBrokerTestCase
 {
-    private static final String KEYSTORE = "test-profiles/test_resources/ssl/java_client_keystore.jks";
+    private static final String KEYSTORE = TEST_RESOURCES_DIR + "/ssl/java_client_keystore.jks";
     private static final String KEYSTORE_PASSWORD = "password";
-    private static final String TRUSTSTORE = "test-profiles/test_resources/ssl/java_client_truststore.jks";
+    private static final String TRUSTSTORE = TEST_RESOURCES_DIR + "/ssl/java_client_truststore.jks";
     private static final String TRUSTSTORE_PASSWORD = "password";
     private static final String CERT_ALIAS_APP1 = "app1";
     private static final String CERT_ALIAS_APP2 = "app2";

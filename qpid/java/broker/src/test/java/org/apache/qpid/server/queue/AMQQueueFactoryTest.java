@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.commons.configuration.XMLConfiguration;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
@@ -40,8 +41,8 @@ import org.apache.qpid.test.utils.QpidTestCase;
 
 public class AMQQueueFactoryTest extends QpidTestCase
 {
-    QueueRegistry _queueRegistry;
-    VirtualHost _virtualHost;
+    private QueueRegistry _queueRegistry;
+    private VirtualHost _virtualHost;
 
     @Override
     public void setUp() throws Exception

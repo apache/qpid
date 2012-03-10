@@ -35,7 +35,6 @@ import org.apache.qpid.server.exchange.topic.TopicExchangeResult;
 import org.apache.qpid.server.exchange.topic.TopicMatcherResult;
 import org.apache.qpid.server.exchange.topic.TopicNormalizer;
 import org.apache.qpid.server.exchange.topic.TopicParser;
-import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -50,7 +49,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -410,6 +408,11 @@ public class ManagementExchange implements Exchange, QMFService.Listener
         _bytesReceived.addAndGet(message.getSize());
         queues.add(_mgmtQueue);
         return queues;
+    }
+
+    public boolean isBound(String bindingKey, Map<String, Object> arguments, AMQQueue queue)
+    {
+        return false;  //TODO
     }
 
     public boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue)

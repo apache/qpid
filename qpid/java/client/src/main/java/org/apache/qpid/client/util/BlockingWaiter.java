@@ -20,16 +20,17 @@
  */
 package org.apache.qpid.client.util;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQTimeoutException;
 import org.apache.qpid.client.failover.FailoverException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * BlockingWaiter is a 'rendezvous' which delegates handling of
@@ -84,7 +85,7 @@ public abstract class BlockingWaiter<T>
     private volatile Exception _error;
 
     /** Holds the incomming Object. */
-    protected Object _doneObject = null;
+    private Object _doneObject = null;
     private AtomicBoolean _waiting = new AtomicBoolean(false);
     private boolean _closed = false;
 
@@ -183,11 +184,7 @@ public abstract class BlockingWaiter<T>
                     {
                         _logger.error(e.getMessage(), e);
                         // IGNORE    -- //fixme this isn't ideal as being interrupted isn't equivellant to sucess
-                        // if (!_ready && timeout != -1)
-                        // {
-                        // _error = new AMQException("Server did not respond timely");
-                        // _ready = true;
-                        // }
+
                     }
                 }
             }

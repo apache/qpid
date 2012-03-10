@@ -53,17 +53,13 @@
         </jmxport>
         <ssl>
             <enabled>false</enabled>
-            <!-- Update below path to your keystore location, or run the bin/create-example-ssl-stores(.sh|.bat)
-                 script from within the etc/ folder to generate an example store with self-signed cert -->
+            <!-- Update below path to your keystore location. -->
             <keyStorePath>${conf}/qpid.keystore</keyStorePath>
             <keyStorePassword>password</keyStorePassword>
         </ssl>
     </management>
     <advanced>
-        <filterchain enableExecutorPool="true"/>
         <framesize>65535</framesize>
-        <compressBufferOnQueue>false</compressBufferOnQueue>
-        <enableJMSXUserID>false</enableJMSXUserID>
         <locale>en_US</locale>	
     </advanced>
 

@@ -22,10 +22,10 @@ package org.apache.qpid.server.registry;
 
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
-import java.security.Security;
 import java.security.Provider;
-import java.util.List;
+import java.security.Security;
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * QPID-1390 : Test to validate that the AuthenticationManger can successfully unregister any new SASL providers when
@@ -36,7 +36,7 @@ import java.util.LinkedList;
 public class ApplicationRegistryShutdownTest extends InternalBrokerBaseCase
 {
 
-    Provider[] _defaultProviders;
+    private Provider[] _defaultProviders;
     @Override
     public void setUp() throws Exception
     {
@@ -80,11 +80,10 @@ public class ApplicationRegistryShutdownTest extends InternalBrokerBaseCase
             }
         }
 
-        // Not using isEmpty as that is not in Java 5
-        assertTrue("No new SASL mechanisms added by initialisation.", additions.size() != 0 );
+        assertFalse("No new SASL mechanisms added by initialisation.", additions.isEmpty());
 
         //Close the registry which will perform the close the AuthenticationManager
-        getRegistry().close();
+        stopBroker();
 
         //Validate that the SASL plugFins have been removed.
         Provider[] providersAfterClose = Security.getProviders();

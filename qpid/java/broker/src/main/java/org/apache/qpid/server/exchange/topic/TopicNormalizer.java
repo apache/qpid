@@ -22,10 +22,9 @@ package org.apache.qpid.server.exchange.topic;
 
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.AMQShortStringTokenizer;
-import org.apache.qpid.server.exchange.TopicExchange;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 public class TopicNormalizer
 {
@@ -36,6 +35,10 @@ public class TopicNormalizer
     private static final AMQShortString TOPIC_SEPARATOR_AS_SHORTSTRING = new AMQShortString(".");
     private static final AMQShortString AMQP_STAR_TOKEN = new AMQShortString("*");
     private static final AMQShortString AMQP_HASH_TOKEN = new AMQShortString("#");
+
+    private TopicNormalizer()
+    {
+    }
 
     public static AMQShortString normalize(AMQShortString routingKey)
     {

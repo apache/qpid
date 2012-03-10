@@ -20,6 +20,7 @@
 package org.apache.qpid.server.queue;
 
 import junit.framework.TestCase;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.ServerMessage;
 
@@ -30,6 +31,7 @@ public abstract class QueueEntryListTestBase extends TestCase
 {
     protected static final AMQQueue _testQueue = new MockAMQQueue("test");
     public abstract QueueEntryList<QueueEntry> getTestList();
+    public abstract QueueEntryList<QueueEntry> getTestList(boolean newList);
     public abstract long getExpectedFirstMsgId();
     public abstract int getExpectedListLength();
     public abstract ServerMessage getTestMessageToAdd() throws AMQException;
@@ -187,4 +189,36 @@ public abstract class QueueEntryListTestBase extends TestCase
                         .getMessage().getMessageNumber(), third.getMessage().getMessageNumber());
     }
 
+    /**
+     * Tests that after the last node of the list is marked deleted but has not yet been removed,
+     * the iterator still ignores it and returns that it is 'atTail()' and can't 'advance()'
+     *
+     * @see QueueEntryListTestBase#getTestList()
+     * @see QueueEntryListTestBase#getExpectedListLength()
+     */
+    public void testIteratorIgnoresDeletedFinalNode() throws Exception
+    {
+        QueueEntryList<QueueEntry> list = getTestList(true);
+        int i = 0;
+
+        QueueEntry queueEntry1 = list.add(new MockAMQMessage(i++));
+        QueueEntry queueEntry2 = list.add(new MockAMQMessage(i++));
+
+        assertSame(queueEntry2, list.next(queueEntry1));
+        assertNull(list.next(queueEntry2));
+
+        //'delete' the 2nd QueueEntry
+        assertTrue("Deleting node should have succeeded", queueEntry2.delete());
+
+        QueueEntryIterator<QueueEntry> iter = list.iterator();
+
+        //verify the iterator isn't 'atTail', can advance, and returns the 1st QueueEntry
+        assertFalse("Iterator should not have been 'atTail'", iter.atTail());
+        assertTrue("Iterator should have been able to advance", iter.advance());
+        assertSame("Iterator returned unexpected QueueEntry", queueEntry1, iter.getNode());
+
+        //verify the iterator is atTail() and can't advance
+        assertTrue("Iterator should have been 'atTail'", iter.atTail());
+        assertFalse("Iterator should not have been able to advance", iter.advance());
+    }
 }

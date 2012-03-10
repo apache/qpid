@@ -20,17 +20,11 @@
  */
 package org.apache.qpid.server.configuration;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.binding.Binding;
@@ -39,11 +33,18 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MemoryMessageStore;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
 public class VirtualHostConfiguration extends ConfigurationPlugin
 {
-    private String _name;
-    private Map<String, QueueConfiguration> _queues = new HashMap<String, QueueConfiguration>();
-    private Map<String, ExchangeConfiguration> _exchanges = new HashMap<String, ExchangeConfiguration>();
+    private final String _name;
+    private final Map<String, QueueConfiguration> _queues = new HashMap<String, QueueConfiguration>();
+    private final Map<String, ExchangeConfiguration> _exchanges = new HashMap<String, ExchangeConfiguration>();
 
     public VirtualHostConfiguration(String name, Configuration config) throws ConfigurationException
     {
@@ -75,7 +76,7 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
         {
             CompositeConfiguration mungedConf = new CompositeConfiguration();
             mungedConf.addConfiguration(config.subset("exchanges.exchange(" + count++ + ")"));
-            mungedConf.addConfiguration(_configuration.subset("exchanges"));
+            mungedConf.addConfiguration(getConfig().subset("exchanges"));
             String exchName = (String) i.next();
             _exchanges.put(exchName, new ExchangeConfiguration(exchName, mungedConf));
         }
@@ -91,11 +92,6 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
         return getLongValue("housekeeping.checkPeriod", ApplicationRegistry.getInstance().getConfiguration().getHousekeepingCheckPeriod());
     }
 
-    public String getAuthenticationDatabase()
-    {
-        return getStringValue("security.authentication.name");
-    }
-
     public List getCustomExchanges()
     {
         return getListValue("custom-exchanges.class-name");
@@ -103,7 +99,7 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
 
     public Configuration getStoreConfiguration()
     {
-        return _configuration.subset("store");
+        return getConfig().subset("store");
     }
 
     public String getMessageStoreClass()
@@ -113,7 +109,7 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
 
     public void setMessageStoreClass(String storeClass)
     {
-        _configuration.setProperty("store.class", storeClass);
+        getConfig().setProperty("store.class", storeClass);
     }
 
     public List getExchanges()
@@ -250,16 +246,6 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
         }
 
         return queueConfig;
-    }
-
-    public long getMemoryUsageMaximum()
-    {
-        return getLongValue("queues.maximumMemoryUsage");
-    }
-
-    public long getMemoryUsageMinimum()
-    {
-        return getLongValue("queues.minimumMemoryUsage");
     }
 
     public int getMaximumMessageAge()

@@ -29,16 +29,16 @@ public class Link
     
     public enum Reliability { UNRELIABLE, AT_MOST_ONCE, AT_LEAST_ONCE, EXACTLY_ONCE }
     
-    protected String name;
-    protected String _filter;
-    protected FilterType _filterType = FilterType.SUBJECT;
-    protected boolean _isNoLocal;
-    protected boolean _isDurable;
-    protected int _consumerCapacity = 0;
-    protected int _producerCapacity = 0;
-    protected Node node;
-    protected Subscription subscription;
-    protected Reliability reliability = Reliability.AT_LEAST_ONCE;
+    private String name;
+    private String _filter;
+    private FilterType _filterType = FilterType.SUBJECT;
+    private boolean _isNoLocal;
+    private boolean _isDurable;
+    private int _consumerCapacity = 0;
+    private int _producerCapacity = 0;
+    private Node node;
+    private Subscription subscription;
+    private Reliability reliability = Reliability.AT_LEAST_ONCE;
     
     public Reliability getReliability()
     {

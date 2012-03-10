@@ -24,7 +24,6 @@ package org.apache.qpid.server.logging.actors;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 
 public class GenericActor extends AbstractActor
 {

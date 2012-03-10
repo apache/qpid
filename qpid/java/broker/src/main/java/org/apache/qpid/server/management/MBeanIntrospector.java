@@ -20,23 +20,22 @@
  */
 package org.apache.qpid.server.management;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
 
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanConstructorInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
 import javax.management.NotCompliantMBeanException;
-
-import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class is a utility class to introspect the MBean class and the management
@@ -50,6 +49,10 @@ class MBeanIntrospector {
     private static final String _defaultOerationDescription = "Management operation";
     private static final String _defaultConstructorDescription = "MBean constructor";
     private static final String _defaultMbeanDescription = "Management interface of the MBean";
+
+    private MBeanIntrospector()
+    {
+    }
 
     /**
      * Introspects the management interface class for MBean attributes.
@@ -328,7 +331,9 @@ class MBeanIntrospector {
                 paramInfo = new MBeanParameterInfo("p " + (i + 1), type, "parameter " + (i + 1));
             }
             if (paramInfo != null)
+            {
                 paramsInfo[i] = paramInfo;
+            }
         }
 
         return paramsInfo;
@@ -346,9 +351,10 @@ class MBeanIntrospector {
         for (Constructor cons : implClass.getConstructors())
         {
             MBeanConstructorInfo constructorInfo = getMBeanConstructorInfo(cons);
-            //MBeanConstructorInfo constructorInfo = new MBeanConstructorInfo("desc", cons);
             if (constructorInfo != null)
+            {
                 constructors.add(constructorInfo);
+            }
         }
 
         return constructors.toArray(new MBeanConstructorInfo[0]);
@@ -371,9 +377,6 @@ class MBeanIntrospector {
                 desc = _defaultConstructorDescription;
             }
         }
-
-        //MBeanParameterInfo[] paramsInfo = getParametersInfo(cons.getParameterAnnotations(),
-        //                                                    cons.getParameterTypes());
 
         return new MBeanConstructorInfo(cons.getName(), desc, null);
     }

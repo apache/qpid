@@ -20,22 +20,24 @@
  */
 package org.apache.qpid.server.protocol;
 
+import java.util.List;
+
 import javax.security.auth.Subject;
 import javax.security.sasl.SaslServer;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.common.ClientProperties;
-import org.apache.qpid.framing.*;
 import org.apache.qpid.AMQConnectionException;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.MethodDispatcher;
+import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
+import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.subscription.ClientDeliveryMethod;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-
-import java.util.List;
 
 
 public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, AuthorizationHolder, AMQConnectionModel
@@ -57,28 +59,6 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
     ClientDeliveryMethod createDeliveryMethod(int channelId);
 
     long getLastReceivedTime();
-
-    public static final class ProtocolSessionIdentifier
-    {
-        private final Object _sessionIdentifier;
-        private final Object _sessionInstance;
-
-        ProtocolSessionIdentifier(AMQProtocolSession session)
-        {
-            _sessionIdentifier = session.getClientIdentifier();
-            _sessionInstance = session.getClientProperties() == null ? null : session.getClientProperties().getObject(ClientProperties.instance.toAMQShortString());
-        }
-
-        public Object getSessionIdentifier()
-        {
-            return _sessionIdentifier;
-        }
-
-        public Object getSessionInstance()
-        {
-            return _sessionInstance;
-        }
-    }
 
     public static interface Task
     {
@@ -190,12 +170,9 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
      */
     void setSaslServer(SaslServer saslServer);
 
-
-    FieldTable getClientProperties();
-
     void setClientProperties(FieldTable clientProperties);
 
-    Object getClientIdentifier();
+    Object getReference();
 
     VirtualHost getVirtualHost();
 
@@ -214,8 +191,6 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
     public MethodRegistry getMethodRegistry();
 
     public MethodDispatcher getMethodDispatcher();
-
-    public ProtocolSessionIdentifier getSessionIdentifier();
 
     String getClientVersion();
 

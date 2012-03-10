@@ -20,33 +20,36 @@
  */
 package org.apache.qpid.server.exchange;
 
-import junit.framework.TestCase;
 import junit.framework.Assert;
-import org.apache.qpid.server.queue.*;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MemoryMessageStore;
-import org.apache.qpid.server.protocol.InternalTestProtocolSession;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.server.protocol.InternalTestProtocolSession;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.queue.IncomingMessage;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.store.MemoryMessageStore;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class TopicExchangeTest extends InternalBrokerBaseCase
 {
 
-    TopicExchange _exchange;
+    private TopicExchange _exchange;
 
-    VirtualHost _vhost;
-    MessageStore _store;
+    private VirtualHost _vhost;
+    private MessageStore _store;
 
-    InternalTestProtocolSession _protocolSession;
+    private InternalTestProtocolSession _protocolSession;
 
 
     @Override
@@ -347,7 +350,7 @@ public class TopicExchangeTest extends InternalBrokerBaseCase
     private int routeMessage(final IncomingMessage message)
             throws AMQException
     {
-        MessageMetaData mmd = message.headersReceived();
+        MessageMetaData mmd = message.headersReceived(System.currentTimeMillis());
         message.setStoredMessage(_store.addMessage(mmd));
 
         message.enqueue(_exchange.route(message));
@@ -406,7 +409,7 @@ public class TopicExchangeTest extends InternalBrokerBaseCase
 
     class PublishInfo implements MessagePublishInfo
     {
-        AMQShortString _routingkey;
+        private AMQShortString _routingkey;
 
         PublishInfo(AMQShortString routingkey)
         {

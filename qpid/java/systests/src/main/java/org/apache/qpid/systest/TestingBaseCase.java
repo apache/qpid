@@ -21,9 +21,8 @@
 package org.apache.qpid.systest;
 
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.AMQChannelClosedException;
+
 import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQSession_0_10;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
@@ -44,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 public class TestingBaseCase extends QpidBrokerTestCase implements ExceptionListener, ConnectionListener
 {
 
-    Topic _destination;
+    private Topic _destination;
     protected CountDownLatch _disconnectionLatch = new CountDownLatch(1);
     protected int MAX_QUEUE_MESSAGE_COUNT;
     protected int MESSAGE_SIZE = DEFAULT_MESSAGE_SIZE;

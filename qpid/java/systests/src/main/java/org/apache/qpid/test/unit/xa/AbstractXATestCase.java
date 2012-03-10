@@ -20,9 +20,15 @@ package org.apache.qpid.test.unit.xa;
 import org.apache.qpid.dtx.XidImpl;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
-import javax.transaction.xa.Xid;
+import javax.jms.DeliveryMode;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.TextMessage;
+import javax.jms.XASession;
 import javax.transaction.xa.XAResource;
-import javax.jms.*;
+import javax.transaction.xa.Xid;
 import java.util.Random;
 
 /**

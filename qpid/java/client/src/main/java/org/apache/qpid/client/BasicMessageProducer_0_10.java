@@ -17,18 +17,8 @@
  */
 package org.apache.qpid.client;
 
-import static org.apache.qpid.transport.Option.NONE;
-import static org.apache.qpid.transport.Option.SYNC;
-import static org.apache.qpid.transport.Option.UNRELIABLE;
-
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.jms.DeliveryMode;
-import javax.jms.JMSException;
-import javax.jms.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQDestination.AddressOption;
@@ -48,8 +38,18 @@ import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.Option;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.util.Strings;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static org.apache.qpid.transport.Option.NONE;
+import static org.apache.qpid.transport.Option.SYNC;
+import static org.apache.qpid.transport.Option.UNRELIABLE;
+
+import javax.jms.DeliveryMode;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * This is a 0_10 message producer.
@@ -61,11 +61,11 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
 
     BasicMessageProducer_0_10(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
                               AMQSession session, AMQProtocolHandler protocolHandler, long producerId,
-                              boolean immediate, boolean mandatory) throws AMQException
+                              Boolean immediate, Boolean mandatory) throws AMQException
     {
-        super(connection, destination, transacted, channelId, session, protocolHandler, producerId, immediate, mandatory);
+        super(_logger, connection, destination, transacted, channelId, session, protocolHandler, producerId, immediate, mandatory);
         
-        userIDBytes = Strings.toUTF8(_userID);
+        userIDBytes = Strings.toUTF8(getUserID());
     }
 
     void declareDestination(AMQDestination destination) throws AMQException
@@ -86,7 +86,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         {       
             try
             {
-                getSession().handleAddressBasedDestination(destination,false,false);
+                getSession().handleAddressBasedDestination(destination,false,false,false);
             }
             catch(Exception e)
             {
@@ -125,7 +125,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         }
 
         long currentTime = 0;
-        if (timeToLive > 0 || !_disableTimestamps)
+        if (timeToLive > 0 || !isDisableTimestamps())
         {
             currentTime = System.currentTimeMillis();
         }        
@@ -136,7 +136,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             message.setJMSExpiration(currentTime + timeToLive);
         }
         
-        if (!_disableTimestamps)
+        if (!isDisableTimestamps())
         {
             
             deliveryProp.setTimestamp(currentTime);            
@@ -213,8 +213,8 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             // if true, we need to sync the delivery of this message
             boolean sync = false;
 
-            sync = ( (publishMode == PublishMode.SYNC_PUBLISH_ALL) ||
-                     (publishMode == PublishMode.SYNC_PUBLISH_PERSISTENT && 
+            sync = ( (getPublishMode() == PublishMode.SYNC_PUBLISH_ALL) ||
+                     (getPublishMode() == PublishMode.SYNC_PUBLISH_PERSISTENT &&
                          deliveryMode == DeliveryMode.PERSISTENT)
                    );  
             
@@ -248,14 +248,14 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
     @Override
     public boolean isBound(AMQDestination destination) throws JMSException
     {
-        return _session.isQueueBound(destination);
+        return getSession().isQueueBound(destination);
     }
     
     @Override
     public void close() throws JMSException
     {
         super.close();
-        AMQDestination dest = _destination;
+        AMQDestination dest = getAMQDestination();
         if (dest != null && dest.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
         {
             if (dest.getDelete() == AddressOption.ALWAYS ||
@@ -264,7 +264,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
                 try
                 {
                     ((AMQSession_0_10) getSession()).getQpidSession().queueDelete(
-                        _destination.getQueueName());
+                        getAMQDestination().getQueueName());
                 }
                 catch(TransportException e)
                 {

@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQChannelClosedException;
 import org.apache.qpid.AMQConnectionClosedException;
 import org.apache.qpid.AMQException;

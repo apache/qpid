@@ -2,10 +2,6 @@ package org.apache.qpid.server.exchange.topic;
 
 import org.apache.qpid.framing.AMQShortString;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
-
 /*
 *
 * Licensed to the Apache Software Foundation (ASF) under one

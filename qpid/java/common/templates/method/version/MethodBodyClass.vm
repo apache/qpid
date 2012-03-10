@@ -2,9 +2,6 @@
 #set( $name = "${name.substring(0,1).toUpperCase()}${name.substring(1)}" )
 #end
 #macro( toUpperCamel $name )${name.substring(0,1).toUpperCase()}${name.substring(1)}#end
-
-
-
 #set( $amqp_ClassName = $amqpClass.Name) 
 #UpperCamel( $amqp_ClassName )
 #set( $amqp_MethodName = $amqpMethod.Name ) 
@@ -12,7 +9,6 @@
 #set( $javaClassName = "${amqp_ClassName}${amqp_MethodName}BodyImpl" )
 #set( $interfaceName = "${amqp_ClassName}${amqp_MethodName}Body" )
 #set( $amqpPackageName = "amqp_$version.getMajor()_$version.getMinor()" )
-
 #set( $filename = "${amqpPackageName}/${javaClassName}.java")
 /*
  *
@@ -46,11 +42,9 @@
  
 package org.apache.qpid.framing.amqp_$version.getMajor()_$version.getMinor();
 
-import java.io.DataInput;
 import org.apache.qpid.codec.MarkableDataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.HashMap;
 
 import org.apache.qpid.framing.*;
 import org.apache.qpid.AMQException;

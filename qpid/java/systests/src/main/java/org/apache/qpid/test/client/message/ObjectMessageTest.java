@@ -20,10 +20,9 @@
  */
 package org.apache.qpid.test.client.message;
 
-import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -38,8 +37,8 @@ public class ObjectMessageTest extends QpidBrokerTestCase
 {
     private Connection _connection;
     private Session _session;
-    MessageConsumer _consumer;
-    MessageProducer _producer;
+    private MessageConsumer _consumer;
+    private MessageProducer _producer;
 
     public void setUp() throws Exception
     {

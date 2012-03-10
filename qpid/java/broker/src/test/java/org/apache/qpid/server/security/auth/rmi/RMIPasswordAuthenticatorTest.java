@@ -20,19 +20,18 @@
  */
 package org.apache.qpid.server.security.auth.rmi;
 
-import java.util.Collections;
-
-import javax.management.remote.JMXPrincipal;
-import javax.security.auth.Subject;
-import javax.security.sasl.SaslException;
-import javax.security.sasl.SaslServer;
-
 import junit.framework.TestCase;
 
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+
+import javax.management.remote.JMXPrincipal;
+import javax.security.auth.Subject;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
+import java.util.Collections;
 
 /**
  * Tests the RMIPasswordAuthenticator and its collaboration with the AuthenticationManager.

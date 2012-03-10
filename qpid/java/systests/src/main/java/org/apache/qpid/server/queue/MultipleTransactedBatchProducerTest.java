@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.server.queue;
 
-import java.util.Random;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -30,9 +30,9 @@ import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.Session;
-
-import org.apache.log4j.Logger;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class MultipleTransactedBatchProducerTest extends QpidBrokerTestCase
 {

@@ -26,9 +26,11 @@ import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
+import javax.jms.QueueSession;
+import javax.jms.TopicSession;
 
 
-public interface Session extends javax.jms.Session
+public interface Session extends TopicSession, QueueSession
 {
     /**
      * Indicates that no client acknowledgements are required. Broker assumes that once it has delivered

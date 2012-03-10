@@ -21,6 +21,7 @@
 package org.apache.qpid.server.logging.actors;
 
 import org.apache.commons.configuration.ConfigurationException;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.logging.LogActor;
@@ -202,7 +203,7 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
      */
     public class LogMessagesWithAConnectionActor extends Thread
     {
-        Throwable _exception;
+        private Throwable _exception;
 
         public LogMessagesWithAConnectionActor()
         {
@@ -228,13 +229,17 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
 
                 // Verify it was the same actor as we set earlier
                 if(!actor.equals(CurrentActor.get()))
-                   throw new IllegalArgumentException("Retrieved actor is not as expected ");
+                {
+                    throw new IllegalArgumentException("Retrieved actor is not as expected ");
+                }
 
                 // Verify that removing the actor works for this thread
                 CurrentActor.remove();
 
                 if(CurrentActor.get() != defaultActor)
-                   throw new IllegalArgumentException("CurrentActor ("+CurrentActor.get()+") should be default actor" + defaultActor);
+                {
+                    throw new IllegalArgumentException("CurrentActor ("+CurrentActor.get()+") should be default actor" + defaultActor);
+                }
             }
             catch (Throwable e)
             {

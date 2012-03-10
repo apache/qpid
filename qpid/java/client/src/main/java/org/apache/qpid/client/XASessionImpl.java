@@ -18,8 +18,16 @@
 package org.apache.qpid.client;
 
 import org.apache.qpid.client.message.MessageFactoryRegistry;
+import org.apache.qpid.transport.RangeSet;
 
-import javax.jms.*;
+import javax.jms.JMSException;
+import javax.jms.QueueSession;
+import javax.jms.Session;
+import javax.jms.TopicSession;
+import javax.jms.TransactionInProgressException;
+import javax.jms.XAQueueSession;
+import javax.jms.XASession;
+import javax.jms.XATopicSession;
 import javax.transaction.xa.XAResource;
 
 /**
@@ -79,7 +87,7 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
      */
     public void createSession()
     {
-        _qpidDtxSession = _qpidConnection.createSession(0);
+        _qpidDtxSession = getQpidConnection().createSession(0);
         _qpidDtxSession.setSessionListener(this);
         _qpidDtxSession.dtxSelect();
     }
@@ -170,5 +178,18 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
     public TopicSession getTopicSession() throws JMSException
     {
         return (TopicSession) getSession();
+    }
+
+    @Override
+    protected void acknowledgeImpl()
+    {
+        if (_xaResource.isEnlisted())
+        {
+            acknowledgeMessage(Long.MAX_VALUE, true) ;
+        }
+        else
+        {
+            super.acknowledgeImpl() ;
+        }
     }
 }

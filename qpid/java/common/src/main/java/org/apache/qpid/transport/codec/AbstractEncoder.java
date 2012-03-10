@@ -20,23 +20,21 @@
  */
 package org.apache.qpid.transport.codec;
 
-import java.io.UnsupportedEncodingException;
-
-import java.nio.ByteBuffer;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import org.apache.qpid.transport.Range;
 import org.apache.qpid.transport.RangeSet;
 import org.apache.qpid.transport.Struct;
 import org.apache.qpid.transport.Type;
 
-import static org.apache.qpid.transport.util.Functions.*;
+import org.apache.qpid.transport.Xid;
+import static org.apache.qpid.transport.util.Functions.lsb;
+
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 
 /**
@@ -64,6 +62,7 @@ abstract class AbstractEncoder implements Encoder
         ENCODINGS.put(Character.class, Type.CHAR);
         ENCODINGS.put(byte[].class, Type.VBIN32);
         ENCODINGS.put(UUID.class, Type.UUID);
+        ENCODINGS.put(Xid.class, Type.STRUCT32);
     }
 
     private final Map<String,byte[]> str8cache = new LinkedHashMap<String,byte[]>()
@@ -362,7 +361,7 @@ abstract class AbstractEncoder implements Encoder
             Object value = entry.getValue();
             Type type = encoding(value);
             writeStr8(key);
-            put(type.code);
+            put(type.getCode());
             write(type, value);
         }
     }
@@ -383,7 +382,7 @@ abstract class AbstractEncoder implements Encoder
         for (Object value : list)
         {
             Type type = encoding(value);
-            put(type.code);
+            put(type.getCode());
             write(type, value);
         }
     }
@@ -411,7 +410,7 @@ abstract class AbstractEncoder implements Encoder
             type = encoding(array.get(0));
         }
 
-        put(type.code);
+        put(type.getCode());
 
         writeUint32(array.size());
 
@@ -423,18 +422,18 @@ abstract class AbstractEncoder implements Encoder
 
     private void writeSize(Type t, int size)
     {
-        if (t.fixed)
+        if (t.isFixed())
         {
-            if (size != t.width)
+            if (size != t.getWidth())
             {
                 throw new IllegalArgumentException
-                    ("size does not match fixed width " + t.width + ": " +
+                    ("size does not match fixed width " + t.getWidth() + ": " +
                      size);
             }
         }
         else
         {
-            writeSize(t.width, size);
+            writeSize(t.getWidth(), size);
         }
     }
 

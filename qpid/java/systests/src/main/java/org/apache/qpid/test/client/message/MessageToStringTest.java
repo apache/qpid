@@ -20,14 +20,12 @@
  */
 package org.apache.qpid.test.client.message;
 
-import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.BytesMessage;
 import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
 import javax.jms.MapMessage;
 import javax.jms.Message;
@@ -49,7 +47,7 @@ public class MessageToStringTest extends QpidBrokerTestCase
     private Connection _connection;
     private Session _session;
     private Queue _queue;
-    MessageConsumer _consumer;
+    private MessageConsumer _consumer;
     private static final String BYTE_TEST = "MapByteTest";
 
     public void setUp() throws Exception

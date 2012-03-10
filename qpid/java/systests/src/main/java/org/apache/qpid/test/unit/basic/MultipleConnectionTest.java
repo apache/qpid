@@ -19,15 +19,15 @@
  */
 package org.apache.qpid.test.unit.basic;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -71,6 +71,11 @@ public class MultipleConnectionTest extends QpidBrokerTestCase
         void close() throws JMSException
         {
             _connection.close();
+        }
+
+        public MessageCounter[] getCounters()
+        {
+            return _counters;
         }
     }
 
@@ -151,7 +156,7 @@ public class MultipleConnectionTest extends QpidBrokerTestCase
     {
         for (int i = 0; i < receivers.length; i++)
         {
-            waitForCompletion(expected, wait, receivers[i]._counters);
+            waitForCompletion(expected, wait, receivers[i].getCounters());
         }
     }
 

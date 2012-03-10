@@ -20,21 +20,13 @@
  */
 package org.apache.qpid.client.message;
 
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharsetEncoder;
+import org.apache.qpid.AMQException;
 
 import javax.jms.BytesMessage;
 import javax.jms.JMSException;
 import javax.jms.MessageEOFException;
 import javax.jms.MessageFormatException;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
+import java.nio.ByteBuffer;
 
 public class JMSBytesMessage extends AbstractBytesTypedMessage implements BytesMessage
 {
@@ -60,7 +52,7 @@ public class JMSBytesMessage extends AbstractBytesTypedMessage implements BytesM
 
     public void reset()
     {
-        _readableMessage = true;
+        setReadable(true);
 
         if(_typedBytesContentReader != null)
         {

@@ -20,22 +20,27 @@
  */
 package org.apache.qpid.server;
 
+import org.osgi.framework.BundleContext;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.osgi.framework.BundleContext;
-
 public class BrokerOptions
 {
-    /** serialVersionUID */
-    private static final long serialVersionUID = 8051825964945442234L;
-
     public static final String DEFAULT_CONFIG_FILE = "etc/config.xml";
     public static final String DEFAULT_LOG_CONFIG_FILE = "etc/log4j.xml";
     public static final String QPID_HOME = "QPID_HOME";
+
+    public static final String PORTS = "p";
+    public static final String SSL_PORTS = "s";
+    public static final String BIND = "b";
+    public static final String MANAGEMENT = "m";
+    public static final String LOG_CONFIG = "l";
+    public static final String WATCH = "w";
+    public static final String CONFIG = "c";
 
     private final Set<Integer> _ports = new HashSet<Integer>();
     private final Set<Integer> _sslPorts = new HashSet<Integer>();
@@ -49,7 +54,6 @@ public class BrokerOptions
     private BundleContext _bundleContext;
 
     private Integer _logWatchFrequency = 0;
-
 
     public void addPort(final int port)
     {
@@ -110,7 +114,6 @@ public class BrokerOptions
     {
         _jmxPortConnectorServer = jmxPortConnectorServer;
     }
-
     public String getQpidHome()
     {
         return System.getProperty(QPID_HOME);
@@ -157,6 +160,7 @@ public class BrokerOptions
         _logWatchFrequency = logWatchFrequency;
     }
 
+
     public BundleContext getBundleContext()
     {
         return _bundleContext ;
@@ -166,5 +170,4 @@ public class BrokerOptions
     {
         _bundleContext = bundleContext;
     }
-
 }

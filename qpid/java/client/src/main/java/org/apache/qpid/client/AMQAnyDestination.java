@@ -20,15 +20,14 @@
  */
 package org.apache.qpid.client;
 
-import java.net.URISyntaxException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.messaging.Address;
+import org.apache.qpid.url.BindingURL;
 
 import javax.jms.JMSException;
 import javax.jms.Queue;
 import javax.jms.Topic;
-
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.messaging.Address;
-import org.apache.qpid.url.BindingURL;
+import java.net.URISyntaxException;
 
 /**
  * In order to support JMS 1.0 the Qpid implementation maps the 

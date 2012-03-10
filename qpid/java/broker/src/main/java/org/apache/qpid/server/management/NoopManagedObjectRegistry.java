@@ -20,11 +20,9 @@
  */
 package org.apache.qpid.server.management;
 
-import javax.management.JMException;
-
 import org.apache.log4j.Logger;
 
-import java.rmi.RemoteException;
+import javax.management.JMException;
 
 /**
  * This managed object registry does not actually register MBeans. This can be used in tests when management is

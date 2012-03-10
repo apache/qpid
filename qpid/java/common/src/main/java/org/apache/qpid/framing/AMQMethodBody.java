@@ -26,7 +26,6 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 
 import java.io.DataOutput;
-import java.io.DataOutputStream;
 import java.io.IOException;
 
 public interface AMQMethodBody extends AMQBody
@@ -52,10 +51,6 @@ public interface AMQMethodBody extends AMQBody
     public int getSize();
 
     public void writePayload(DataOutput buffer) throws IOException;
-
-    //public abstract void populateMethodBodyFromBuffer(ByteBuffer buffer) throws AMQFrameDecodingException;
-
-    //public void populateFromBuffer(ByteBuffer buffer, long size) throws AMQFrameDecodingException;
 
     public AMQFrame generateFrame(int channelId);
 

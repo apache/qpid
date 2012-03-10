@@ -20,10 +20,12 @@
  */
 package org.apache.qpid.framing;
 
-import java.io.*;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Map;
-import java.math.BigDecimal;
 
 /**
  * AMQTypedValue combines together a native Java Object value, and an {@link AMQType}, as a fully typed AMQP parameter

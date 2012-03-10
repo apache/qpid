@@ -20,17 +20,14 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.qpid.AMQException;
-
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.qpid.AMQException;
+
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
-
 import java.nio.ByteBuffer;
-import java.nio.charset.CharacterCodingException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -42,7 +39,7 @@ public class JMSMapMessage extends AbstractJMSMessage implements javax.jms.MapMe
 
     public static final String MIME_TYPE = "jms/map-message";
 
-    protected Map<String, Object> _map = new HashMap<String, Object>();
+    private Map<String, Object> _map = new HashMap<String, Object>();
 
     public JMSMapMessage(AMQMessageDelegateFactory delegateFactory) throws JMSException
     {
@@ -486,4 +483,13 @@ public class JMSMapMessage extends AbstractJMSMessage implements javax.jms.MapMe
         return writer.getData();
     }
 
+    protected Map<String, Object> getMap()
+    {
+        return _map;
+    }
+
+    protected void setMap(Map<String, Object> map)
+    {
+        _map = map;
+    }
 }

@@ -23,10 +23,8 @@ package org.apache.qpid.server.message;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.url.AMQBindingURL;
 
 import javax.jms.*;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;

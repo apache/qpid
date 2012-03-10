@@ -20,10 +20,19 @@
  */
 package org.apache.qpid.test.unit.transacted;
 
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import junit.framework.TestCase;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQConnectionURL;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.jms.Session;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.util.LogMonitor;
 
 import javax.jms.DeliveryMode;
 import javax.jms.ExceptionListener;
@@ -33,25 +42,17 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.TextMessage;
-
-import junit.framework.TestCase;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQConnectionURL;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.jms.ConnectionURL;
-import org.apache.qpid.jms.Session;
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.util.LogMonitor;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * The {@link TestCase} for transaction timeout testing.
  */
 public abstract class TransactionTimeoutTestCase extends QpidBrokerTestCase implements ExceptionListener
 {
+    private static final int ALERT_MESSAGE_TOLERANCE = 6;
     public static final String VIRTUALHOST = "test";
     public static final String TEXT = "0123456789abcdefghiforgettherest";
     public static final String CHN_OPEN_TXN = "CHN-1007";
@@ -138,16 +139,21 @@ public abstract class TransactionTimeoutTestCase extends QpidBrokerTestCase impl
 
     /**
      * Send a number of messages to the queue, optionally pausing after each.
+     *
+     * Need to sync to ensure that the Broker has received the message(s) in order
+     * the test and broker start timing the idle transaction from the same point in time.
      */
     protected void send(int count, float delay) throws Exception
     {
         for (int i = 0; i < count; i++)
         {
-	        sleep(delay);
+            sleep(delay);
             Message msg = _psession.createTextMessage(TEXT);
             msg.setIntProperty("i", i);
-	        _producer.send(msg);
+            _producer.send(msg);
         }
+
+        ((AMQSession<?, ?>)_psession).sync();
     }
     
     /**
@@ -184,7 +190,7 @@ public abstract class TransactionTimeoutTestCase extends QpidBrokerTestCase impl
         }
         else
         {
-	        assertTrue(idleErr, idleMsgs.size() >= idle - 2 && idleMsgs.size() <= idle + 2);
+	        assertTrue(idleErr, idleMsgs.size() >= idle - ALERT_MESSAGE_TOLERANCE && idleMsgs.size() <= idle + ALERT_MESSAGE_TOLERANCE);
         }
         
         if (open == 0)
@@ -193,7 +199,7 @@ public abstract class TransactionTimeoutTestCase extends QpidBrokerTestCase impl
         }
         else
         {
-            assertTrue(openErr, openMsgs.size() >= open - 2 && openMsgs.size() <= open + 2);
+            assertTrue(openErr, openMsgs.size() >= open - ALERT_MESSAGE_TOLERANCE && openMsgs.size() <= open + ALERT_MESSAGE_TOLERANCE);
         }
     }
 

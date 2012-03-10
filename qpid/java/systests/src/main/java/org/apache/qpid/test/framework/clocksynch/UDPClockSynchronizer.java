@@ -24,7 +24,12 @@ import org.apache.qpid.junit.extensions.util.CommandLineParser;
 import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 

@@ -20,9 +20,6 @@
  */
 package org.apache.qpid.server.subscription;
 
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
@@ -37,6 +34,9 @@ import org.apache.qpid.server.transport.ServerSession;
 import org.apache.qpid.transport.MessageAcceptMode;
 import org.apache.qpid.transport.MessageAcquireMode;
 import org.apache.qpid.transport.MessageFlowMode;
+
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class SubscriptionFactoryImpl implements SubscriptionFactory
 {

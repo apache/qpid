@@ -21,25 +21,28 @@
 
 package org.apache.qpid.client.messaging.address;
 
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQDestination.Binding;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import javax.naming.OperationNotSupportedException;
-
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQDestination.Binding;
-
 public abstract class Node
 { 
-    protected int _nodeType = AMQDestination.UNKNOWN_TYPE;
-    protected boolean _isDurable;
-    protected boolean _isAutoDelete;
-    protected String _alternateExchange;
-    protected List<Binding> _bindings = new ArrayList<Binding>();
-    protected Map<String,Object> _declareArgs = Collections.emptyMap();
-    
+    private int _nodeType = AMQDestination.UNKNOWN_TYPE;
+    private boolean _isDurable;
+    private boolean _isAutoDelete;
+    private String _alternateExchange;
+    private List<Binding> _bindings = new ArrayList<Binding>();
+    private Map<String,Object> _declareArgs = Collections.emptyMap();
+
+    protected Node(int nodeType)
+    {
+        _nodeType = nodeType;
+    }
+
     public int getType()
     {
         return _nodeType;
@@ -101,12 +104,12 @@ public abstract class Node
     
     public static class QueueNode extends Node 
     {
-       protected boolean _isExclusive;      
-       protected QpidQueueOptions _queueOptions = new QpidQueueOptions();
+       private boolean _isExclusive;
+       private QpidQueueOptions _queueOptions = new QpidQueueOptions();
        
        public QueueNode()
        {
-           _nodeType = AMQDestination.QUEUE_TYPE;
+           super(AMQDestination.QUEUE_TYPE);
        }
        
        public boolean isExclusive()
@@ -122,12 +125,12 @@ public abstract class Node
     
     public static class ExchangeNode extends Node 
     {
-       protected QpidExchangeOptions _exchangeOptions = new QpidExchangeOptions();
-       protected String _exchangeType;
+       private QpidExchangeOptions _exchangeOptions = new QpidExchangeOptions();
+       private String _exchangeType;
        
        public ExchangeNode()
        {
-           _nodeType = AMQDestination.TOPIC_TYPE;
+           super(AMQDestination.TOPIC_TYPE);
        }
        
        public String getExchangeType()
@@ -144,5 +147,9 @@ public abstract class Node
     
     public static class UnknownNodeType extends Node 
     {
+        public UnknownNodeType()
+        {
+            super(AMQDestination.UNKNOWN_TYPE);
+        }
     }
 }

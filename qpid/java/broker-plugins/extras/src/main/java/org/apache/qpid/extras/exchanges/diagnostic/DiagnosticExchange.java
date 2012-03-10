@@ -20,14 +20,8 @@
  */
 package org.apache.qpid.extras.exchanges.diagnostic;
 
-import java.util.ArrayList;
-import java.util.Map;
-
-import javax.management.JMException;
-import javax.management.openmbean.OpenDataException;
-import javax.management.openmbean.TabularData;
-
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -41,6 +35,12 @@ import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import javax.management.JMException;
+import javax.management.openmbean.OpenDataException;
+import javax.management.openmbean.TabularData;
+import java.util.ArrayList;
+import java.util.Map;
+
 /**
  * This is a special diagnostic exchange type which doesn't actually do anything
  * with messages. When it receives a message, it writes information about the
@@ -53,9 +53,6 @@ public class DiagnosticExchange extends AbstractExchange
 
     public static final AMQShortString DIAGNOSTIC_EXCHANGE_CLASS = new AMQShortString("x-diagnostic");
     public static final AMQShortString DIAGNOSTIC_EXCHANGE_NAME = new AMQShortString("diagnostic");
-
-    /** The logger */
-    //private static final Logger _logger = Logger.getLogger(DiagnosticExchange.class);
 
     /**
      * MBean class implementing the management interfaces.
@@ -83,7 +80,6 @@ public class DiagnosticExchange extends AbstractExchange
          * @returns null
          * TODO or can there? Could this actually return all the information in one easy to read table?
          */
-        @Override
         public TabularData bindings() throws OpenDataException
         {
             return null;
@@ -197,13 +193,6 @@ public class DiagnosticExchange extends AbstractExchange
     public ArrayList<AMQQueue> doRoute(InboundMessage payload)
     {
         //TODO shouldn't modify messages... perhaps put a new message on the queue?
-        /*
-        Long value = new Long(SizeOf.getUsedMemory());
-        AMQShortString key = new AMQShortString("memory");
-        FieldTable headers = ((BasicContentHeaderProperties)payload.getMessageHeader().properties).getHeaders();
-        headers.put(key, value);
-        ((BasicContentHeaderProperties)payload.getMessageHeader().properties).setHeaders(headers);
-        */
         AMQQueue q = getQueueRegistry().getQueue(new AMQShortString("diagnosticqueue"));
         ArrayList<AMQQueue> queues =  new ArrayList<AMQQueue>();
         queues.add(q);

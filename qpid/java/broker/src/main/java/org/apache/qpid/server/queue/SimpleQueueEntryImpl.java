@@ -22,9 +22,16 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.message.ServerMessage;
 
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
 public class SimpleQueueEntryImpl extends QueueEntryImpl
 {
-    volatile SimpleQueueEntryImpl _next;
+    static final AtomicReferenceFieldUpdater<SimpleQueueEntryImpl, SimpleQueueEntryImpl>
+                _nextUpdater =
+            AtomicReferenceFieldUpdater.newUpdater
+            (SimpleQueueEntryImpl.class, SimpleQueueEntryImpl.class, "_next");
+
+    private volatile SimpleQueueEntryImpl _next;
 
     public SimpleQueueEntryImpl(SimpleQueueEntryList queueEntryList)
     {

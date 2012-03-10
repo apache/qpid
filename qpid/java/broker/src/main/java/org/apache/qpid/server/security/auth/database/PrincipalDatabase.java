@@ -22,14 +22,12 @@ package org.apache.qpid.server.security.auth.database;
 
 import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.Principal;
-import java.util.Map;
-import java.util.List;
-
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
+import java.io.IOException;
+import java.security.Principal;
+import java.util.List;
+import java.util.Map;
 
 /** Represents a "user database" which is really a way of storing principals (i.e. usernames) and passwords. */
 public interface PrincipalDatabase

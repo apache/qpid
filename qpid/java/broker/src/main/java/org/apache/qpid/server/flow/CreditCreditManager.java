@@ -23,14 +23,8 @@ package org.apache.qpid.server.flow;
 
 public class CreditCreditManager extends AbstractFlowCreditManager implements FlowCreditManager_0_10
 {
-        private volatile long _bytesCredit;
-        private volatile long _messageCredit;
-
-
-    public CreditCreditManager()
-     {
-         this(0L, 0L);
-     }
+    private volatile long _bytesCredit;
+    private volatile long _messageCredit;
 
     public CreditCreditManager(long bytesCredit, long messageCredit)
     {
@@ -67,9 +61,6 @@ public class CreditCreditManager extends AbstractFlowCreditManager implements Fl
 
     public synchronized void restoreCredit(final long messageCredit, final long bytesCredit)
     {
-        /*_bytesCredit = 0l;
-        _messageCredit = 0l;
-        setSuspended(true);*/
     }
 
     
@@ -138,7 +129,6 @@ public class CreditCreditManager extends AbstractFlowCreditManager implements Fl
                 }
                 else
                 {
-                    //setSuspended(true);
                     return false;
                 }
             }
@@ -158,7 +148,6 @@ public class CreditCreditManager extends AbstractFlowCreditManager implements Fl
             }
             else
             {
-                //setSuspended(true);
                 return false;
             }
 

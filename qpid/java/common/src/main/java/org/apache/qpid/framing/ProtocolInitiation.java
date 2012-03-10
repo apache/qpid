@@ -23,8 +23,9 @@ package org.apache.qpid.framing;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.MarkableDataInput;
 
-import java.io.*;
-
+import java.io.DataOutput;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
 public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQDataBlock
@@ -36,14 +37,11 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
     private static final byte CURRENT_PROTOCOL_CLASS = 1;
     private static final byte TCP_PROTOCOL_INSTANCE = 1;
 
-    public final byte[] _protocolHeader;
-    public final byte _protocolClass;
-    public final byte _protocolInstance;
-    public final byte _protocolMajor;
-    public final byte _protocolMinor;
-
-
-//    public ProtocolInitiation() {}
+    private final byte[] _protocolHeader;
+    private final byte _protocolClass;
+    private final byte _protocolInstance;
+    private final byte _protocolMajor;
+    private final byte _protocolMinor;
 
     public ProtocolInitiation(byte[] protocolHeader, byte protocolClass, byte protocolInstance, byte protocolMajor, byte protocolMinor)
     {
@@ -204,6 +202,26 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
                                                   _protocolMajor + "." + _protocolMinor + " not suppoerted by this version of the Qpid broker.", null);
         }
         return pv;
+    }
+
+    public byte getProtocolClass()
+    {
+        return _protocolClass;
+    }
+
+    public byte getProtocolInstance()
+    {
+        return _protocolInstance;
+    }
+
+    public byte getProtocolMajor()
+    {
+        return _protocolMajor;
+    }
+
+    public byte getProtocolMinor()
+    {
+        return _protocolMinor;
     }
 
     public String toString()

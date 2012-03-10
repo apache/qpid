@@ -20,18 +20,17 @@
  */
 package org.apache.qpid.server.virtualhost.plugins;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
-
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.plugins.SlowConsumerDetectionQueueConfiguration;
-import org.apache.qpid.server.exchange.AbstractExchange;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.Exchange.BindingListener;
 import org.apache.qpid.server.queue.AMQQueue;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * This is a listener that caches queues that are configured for slow consumer disconnection.
@@ -93,7 +92,7 @@ public class ConfiguredQueueBindingListener implements BindingListener
     /**
      * Lookup and return the cache of configured {@link AMQQueue}s.
      * 
-	 * Note that when accessing the cached queues, the {@link Iterator} is not thread safe
+	 * Note that when accessing the cached queues, the {@link java.util.Iterator} is not thread safe
 	 * (see the {@link Collections#synchronizedSet(Set)} documentation) so a copy of the
 	 * cache is returned.
      * 

@@ -658,6 +658,11 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             return _obj.getStagingThreshold();
         }
 
+        public Boolean getMgmtPublish()
+        {
+            return true;
+        }
+
         public Integer getMgmtPubInterval()
         {
             return _obj.getManagementPublishInterval();
@@ -676,6 +681,204 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
         public Long getUptime()
         {
             return (System.currentTimeMillis() - _obj.getCreateTime()) * 1000000L;
+        }
+
+        public Long getQueueCount()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getMsgTotalEnqueues()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getMsgTotalDequeues()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getByteTotalEnqueues()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getByteTotalDequeues()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getMsgDepth()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getByteDepth()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getMsgPersistEnqueues()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getMsgPersistDequeues()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getBytePersistEnqueues()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getBytePersistDequeues()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getMsgTxnEnqueues()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getMsgTxnDequeues()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getByteTxnEnqueues()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getByteTxnDequeues()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getMsgFtdEnqueues()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getMsgFtdDequeues()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getByteFtdEnqueues()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getByteFtdDequeues()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getMsgFtdDepth()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getByteFtdDepth()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getReleases()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getAcquires()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getDiscardsNoRoute()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getDiscardsTtl()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getDiscardsRing()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getDiscardsLvq()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getDiscardsOverflow()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getDiscardsSubscriber()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getDiscardsPurge()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getReroutes()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getAbandoned()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getAbandonedViaAlt()
+        {
+            // TODO
+            return 0L;
         }
 
         public BrokerSchema.BrokerClass.EchoMethodResponseCommand echo(final BrokerSchema.BrokerClass.EchoMethodResponseCommandFactory factory,
@@ -1062,6 +1265,96 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
         public Long getBytePersistDequeues()
         {
             return _obj.getPersistentByteDequeues();
+        }
+
+        public Long getMsgFtdEnqueues()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getMsgFtdDequeues()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getByteFtdEnqueues()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getByteFtdDequeues()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getMsgFtdDepth()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getByteFtdDepth()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getReleases()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getAcquires()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getDiscardsTtl()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getDiscardsRing()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getDiscardsLvq()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getDiscardsOverflow()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getDiscardsSubscriber()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getDiscardsPurge()
+        {
+            // TODO
+            return 0L;
+        }
+
+        public Long getReroutes()
+        {
+            // TODO
+            return 0L;
         }
 
         public Long getConsumerCount()

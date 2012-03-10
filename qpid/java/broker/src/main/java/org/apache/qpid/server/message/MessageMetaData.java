@@ -20,19 +20,21 @@
  */
 package org.apache.qpid.server.message;
 
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.EncodingUtils;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.EncodingUtils;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.MessageMetaDataType;
-import org.apache.qpid.AMQException;
+import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.util.ByteBufferOutputStream;
 import org.apache.qpid.util.ByteBufferInputStream;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Set;
 
@@ -159,7 +161,7 @@ public class MessageMetaData implements StorableMessageMetaData
 
     public int getContentSize()
     {
-        return (int) _contentHeaderBody.bodySize;
+        return (int) _contentHeaderBody.getBodySize();
     }
 
     public boolean isPersistent()

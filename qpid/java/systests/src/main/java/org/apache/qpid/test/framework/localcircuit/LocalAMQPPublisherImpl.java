@@ -22,9 +22,13 @@ package org.apache.qpid.test.framework.localcircuit;
 
 import org.apache.qpid.client.AMQNoConsumersException;
 import org.apache.qpid.client.AMQNoRouteException;
-import org.apache.qpid.test.framework.*;
-
 import org.apache.qpid.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.test.framework.AMQPPublisher;
+import org.apache.qpid.test.framework.Assertion;
+import org.apache.qpid.test.framework.AssertionBase;
+import org.apache.qpid.test.framework.CircuitEndBase;
+import org.apache.qpid.test.framework.ExceptionMonitor;
+import org.apache.qpid.test.framework.MessageMonitor;
 
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;

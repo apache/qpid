@@ -20,24 +20,23 @@
  */
 package org.apache.qpid.framing;
 
+import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
-import org.apache.qpid.AMQException;
-
 public class ContentHeaderBody implements AMQBody
 {
     public static final byte TYPE = 2;
 
-    public int classId;
+    private int classId;
 
-    public int weight;
+    private int weight;
 
-    /** unsigned long but java can't handle that anyway when allocating byte array */
-    public long bodySize;
+    private long bodySize;
 
     /** must never be null */
     private ContentHeaderProperties properties;
@@ -74,17 +73,6 @@ public class ContentHeaderBody implements AMQBody
     public byte getFrameType()
     {
         return TYPE;
-    }
-
-    protected void populateFromBuffer(DataInputStream buffer, long size)
-        throws AMQFrameDecodingException, AMQProtocolVersionException, IOException
-    {
-        classId = buffer.readUnsignedShort();
-        weight = buffer.readUnsignedShort();
-        bodySize = buffer.readLong();
-        int propertyFlags = buffer.readUnsignedShort();
-        ContentHeaderPropertiesFactory factory = ContentHeaderPropertiesFactory.getInstance();
-        properties = factory.createContentHeaderProperties(classId, propertyFlags, buffer, (int)size - 14);
     }
 
     /**
@@ -152,5 +140,26 @@ public class ContentHeaderBody implements AMQBody
                 ", bodySize=" + bodySize +
                 ", properties=" + properties +
                 '}';
+    }
+
+    public int getClassId()
+    {
+        return classId;
+    }
+
+    public int getWeight()
+    {
+        return weight;
+    }
+
+    /** unsigned long but java can't handle that anyway when allocating byte array */
+    public long getBodySize()
+    {
+        return bodySize;
+    }
+
+    public void setBodySize(long bodySize)
+    {
+        this.bodySize = bodySize;
     }
 }

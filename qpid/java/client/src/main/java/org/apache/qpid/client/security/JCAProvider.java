@@ -24,9 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.sasl.SaslClientFactory;
-
 import java.security.Provider;
-import java.security.Security;
 import java.util.Map;
 
 /**
@@ -53,7 +51,6 @@ public class JCAProvider extends Provider
         super("AMQSASLProvider-Client", 1.0, "A JCA provider that registers all "
             + "AMQ SASL providers that want to be registered");
         register(providerMap);
-//        Security.addProvider(this);
     }
 
     /**

@@ -22,14 +22,15 @@
 package org.apache.qpid.server.failure;
 
 import junit.framework.TestCase;
-import org.apache.qpid.test.utils.QpidClientConnectionHelper;
-import org.apache.qpid.client.failover.FailoverException;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.protocol.AMQConstant;
 import org.apache.log4j.Logger;
 
-import javax.jms.JMSException;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.failover.FailoverException;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.test.utils.QpidClientConnectionHelper;
+
 import javax.jms.DeliveryMode;
+import javax.jms.JMSException;
 import java.io.IOException;
 
 

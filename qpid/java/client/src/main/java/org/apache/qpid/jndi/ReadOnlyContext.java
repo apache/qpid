@@ -20,13 +20,6 @@
  */
 package org.apache.qpid.jndi;
 
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.Map;
-
 import javax.naming.Binding;
 import javax.naming.CompositeName;
 import javax.naming.Context;
@@ -41,6 +34,12 @@ import javax.naming.NotContextException;
 import javax.naming.OperationNotSupportedException;
 import javax.naming.Reference;
 import javax.naming.spi.NamingManager;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Based on class from ActiveMQ.
@@ -66,9 +65,9 @@ public class ReadOnlyContext implements Context, Serializable
     private static final long serialVersionUID = -5754338187296859149L;
     protected static final NameParser nameParser = new NameParserImpl();
 
-    protected final Hashtable environment; // environment for this context
-    protected final Map bindings; // bindings at my level
-    protected final Map treeBindings; // all bindings under me
+    private final Hashtable environment; // environment for this context
+    private final Map bindings; // bindings at my level
+    private final Map treeBindings; // all bindings under me
 
     private boolean frozen = false;
     private String nameInNamespace = "";

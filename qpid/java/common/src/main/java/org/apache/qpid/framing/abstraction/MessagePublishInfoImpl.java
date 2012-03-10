@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.framing.abstraction;
 
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.AMQShortString;
 
 public class MessagePublishInfoImpl implements MessagePublishInfo

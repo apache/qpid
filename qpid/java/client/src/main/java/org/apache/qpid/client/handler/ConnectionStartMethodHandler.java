@@ -20,12 +20,8 @@
  */
 package org.apache.qpid.client.handler;
 
-import java.io.UnsupportedEncodingException;
-import java.util.StringTokenizer;
-
-import javax.security.sasl.Sasl;
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
@@ -33,16 +29,21 @@ import org.apache.qpid.client.security.AMQCallbackHandler;
 import org.apache.qpid.client.security.CallbackHandlerRegistry;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.StateAwareMethodListener;
-import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ConnectionStartBody;
 import org.apache.qpid.framing.ConnectionStartOkBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.framing.ProtocolVersion;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.qpid.properties.ConnectionStartProperties;
+
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslException;
+import java.io.UnsupportedEncodingException;
+import java.util.StringTokenizer;
 
 public class ConnectionStartMethodHandler implements StateAwareMethodListener<ConnectionStartBody>
 {
@@ -148,14 +149,18 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener<Co
                 session.getStateManager().changeState(AMQState.CONNECTION_NOT_TUNED);
                 FieldTable clientProperties = FieldTableFactory.newFieldTable();
 
-                clientProperties.setString(new AMQShortString(ClientProperties.instance.toString()),
-                    session.getClientID());
-                clientProperties.setString(new AMQShortString(ClientProperties.product.toString()),
-                    QpidProperties.getProductName());
-                clientProperties.setString(new AMQShortString(ClientProperties.version.toString()),
-                    QpidProperties.getReleaseVersion());
-                clientProperties.setString(new AMQShortString(ClientProperties.platform.toString()), getFullSystemInfo());
-
+                clientProperties.setString(ConnectionStartProperties.CLIENT_ID_0_8,
+                        session.getClientID());
+                clientProperties.setString(ConnectionStartProperties.PRODUCT,
+                        QpidProperties.getProductName());
+                clientProperties.setString(ConnectionStartProperties.VERSION_0_8,
+                        QpidProperties.getReleaseVersion());
+                clientProperties.setString(ConnectionStartProperties.PLATFORM,
+                        ConnectionStartProperties.getPlatformInfo());
+                clientProperties.setString(ConnectionStartProperties.PROCESS,
+                        System.getProperty(ClientProperties.PROCESS_NAME, "Qpid Java Client"));
+                clientProperties.setInteger(ConnectionStartProperties.PID,
+                        ConnectionStartProperties.getPID());
 
                 ConnectionStartOkBody connectionStartOkBody = session.getMethodRegistry().createConnectionStartOkBody(clientProperties,new AMQShortString(mechanism),saslResponse,new AMQShortString(locales));
                 // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
@@ -176,20 +181,6 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener<Co
 
             session.closeProtocolSession();
         }
-    }
-
-    private String getFullSystemInfo()
-    {
-        StringBuffer fullSystemInfo = new StringBuffer();
-        fullSystemInfo.append(System.getProperty("java.runtime.name"));
-        fullSystemInfo.append(", " + System.getProperty("java.runtime.version"));
-        fullSystemInfo.append(", " + System.getProperty("java.vendor"));
-        fullSystemInfo.append(", " + System.getProperty("os.arch"));
-        fullSystemInfo.append(", " + System.getProperty("os.name"));
-        fullSystemInfo.append(", " + System.getProperty("os.version"));
-        fullSystemInfo.append(", " + System.getProperty("sun.os.patch.level"));
-
-        return fullSystemInfo.toString();
     }
 
     private String chooseMechanism(byte[] availableMechanisms) throws UnsupportedEncodingException

@@ -21,21 +21,11 @@ package org.apache.qpid.transport;
  */
 
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import org.apache.qpid.transport.codec.Decoder;
-import org.apache.qpid.transport.codec.Encodable;
 import org.apache.qpid.transport.codec.Encoder;
-
-import org.apache.qpid.transport.network.Frame;
-
-import org.apache.qpid.util.Strings;
-
 
 ${
 from genutil import *
@@ -77,6 +67,13 @@ PACK_TYPES = {
 }
 
 typecode = code(type)
+
+if segments:
+  out("import java.nio.ByteBuffer;\n")
+  out("import org.apache.qpid.util.Strings;\n")
+
+if track != "-1":
+  out("import org.apache.qpid.transport.network.Frame;\n")
 }
 
 public final class $name extends $base {
@@ -190,7 +187,7 @@ ${
 if not f.empty:
   out("        this.$(f.name) = $(f.default);")
 }
-        this.dirty = true;
+        setDirty(true);
         return this;
     }
 """)
@@ -214,13 +211,17 @@ ${
 if pack > 0:
   if f.empty:
     out("        if (value)\\n")
+    out("        {\\n")
     out("            packing_flags |= $(f.flag_mask(pack));\\n")
+    out("        }\\n")
     out("        else\\n")
-    out("            packing_flags &= ~$(f.flag_mask(pack));")
+    out("        {\\n")
+    out("            packing_flags &= ~$(f.flag_mask(pack));\\n")
+    out("        }\\n")
   else:
     out("        packing_flags |= $(f.flag_mask(pack));")
 }
-        this.dirty = true;
+        setDirty(true);
         return this;
     }
 
@@ -304,6 +305,7 @@ for f in fields:
     continue
   if pack > 0:
     out("        if ((packing_flags & $(f.flag_mask(pack))) != 0)\n    ")
+    out("    {\n    ")
   pre = ""
   post = ""
   if f.type_node.name == "struct":
@@ -311,6 +313,8 @@ for f in fields:
   elif f.type_node.name == "domain":
     post = ".getValue()"
   out("        enc.write$(f.coder)($(pre)this.$(f.name)$(post));\n")
+  if pack > 0:
+    out("        }\n")
 }
     }
 
@@ -325,6 +329,7 @@ for f in fields:
     continue
   if pack > 0:
     out("        if ((packing_flags & $(f.flag_mask(pack))) != 0)\n    ")
+    out("    {\n    ")
   pre = ""
   post = ""
   arg = ""
@@ -335,6 +340,8 @@ for f in fields:
     pre = "%s.get(" % cname(f.type_node)
     post = ")"
   out("        this.$(f.name) = $(pre)dec.read$(f.coder)($(arg))$(post);\n")
+  if pack > 0:
+    out("        }\n")
 }
     }
 
@@ -346,10 +353,31 @@ ${
 for f in fields:
   if pack > 0:
     out("        if ((packing_flags & $(f.flag_mask(pack))) != 0)\n    ")
+    out("    {\n    ")
   out('        result.put("$(f.name)", $(f.get)());\n')
+  if pack > 0:
+    out("        }\n")
 }
 
         return result;
     }
 
+${
+if name == "ReplyTo":
+  out("    public boolean equals(final Object obj){\n")
+  out("        if (this == obj){\n")
+  out("            return true;\n")
+  out("        }\n\n")
+  out("        if(!(obj instanceof ReplyTo)){\n")
+  out("            return false;\n")
+  out("        }\n\n")
+  out("        final ReplyTo reply = (ReplyTo) obj;\n")
+  out("        return (routingKey == null ? reply.getRoutingKey() == null : routingKey.equals(reply.getRoutingKey()))\n")
+  out("            && (exchange == null ? reply.getExchange() == null : exchange.equals(reply.getExchange()));\n")
+  out("    }\n\n")
+  out("    public int hashCode(){\n")
+  out("        int result = routingKey == null ? 1 : routingKey.hashCode();\n")
+  out("        return 31 * result + (exchange == null ? 5 : exchange.hashCode());\n")
+  out("    }")
+}
 }

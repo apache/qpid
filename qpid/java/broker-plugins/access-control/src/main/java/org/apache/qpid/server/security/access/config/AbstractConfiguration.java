@@ -27,10 +27,10 @@ import org.apache.log4j.Logger;
 
 public abstract class AbstractConfiguration implements ConfigurationFile
 {
-    protected static final Logger _logger = Logger.getLogger(ConfigurationFile.class);
+    private static final Logger _logger = Logger.getLogger(ConfigurationFile.class);
     
-    protected File _file;
-    protected RuleSet _config;
+    private File _file;
+    private RuleSet _config;
     
     public AbstractConfiguration(File file)
     {

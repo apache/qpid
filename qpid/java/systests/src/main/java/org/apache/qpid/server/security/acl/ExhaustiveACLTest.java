@@ -18,13 +18,13 @@
  */
 package org.apache.qpid.server.security.acl;
 
-import javax.jms.Connection;
-import javax.jms.Session;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.protocol.AMQConstant;
+
+import javax.jms.Connection;
+import javax.jms.Session;
 
 /**
  * ACL version 2/3 file testing to verify that ACL entries control queue creation with specific properties.

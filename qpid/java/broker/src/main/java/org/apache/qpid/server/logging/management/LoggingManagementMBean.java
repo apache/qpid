@@ -20,35 +20,22 @@
  */
 package org.apache.qpid.server.logging.management;
 
-import static org.apache.log4j.xml.QpidLog4JConfigurator.LOCK;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-
-import org.apache.qpid.management.common.mbeans.LoggingManagement;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
-import org.apache.qpid.server.management.AMQManagedObject;
-import org.apache.qpid.util.FileUtils;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.Log4jEntityResolver;
 import org.apache.log4j.xml.QpidLog4JConfigurator;
-import org.apache.log4j.xml.QpidLog4JConfigurator.QpidLog4JSaxErrorHandler;
 import org.apache.log4j.xml.QpidLog4JConfigurator.IllegalLoggerLevelException;
+import org.apache.log4j.xml.QpidLog4JConfigurator.QpidLog4JSaxErrorHandler;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
+
+import org.apache.qpid.management.common.mbeans.LoggingManagement;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
+import org.apache.qpid.server.management.AMQManagedObject;
 
 import javax.management.JMException;
 import javax.management.openmbean.CompositeData;
@@ -69,6 +56,16 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
+import static org.apache.log4j.xml.QpidLog4JConfigurator.LOCK;
 
 
 /** MBean class for BrokerLoggingManagerMBean. It implements all the management features exposed for managing logging. */
@@ -85,8 +82,8 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
                                                         Level.WARN.toString(), Level.ERROR.toString(), 
                                                         Level.FATAL.toString(),Level.OFF.toString(),
                                                         INHERITED};   
-    static TabularType _loggerLevelTabularType;
-    static CompositeType _loggerLevelCompositeType;
+    private static TabularType _loggerLevelTabularType;
+    private static CompositeType _loggerLevelCompositeType;
 
     static
     {

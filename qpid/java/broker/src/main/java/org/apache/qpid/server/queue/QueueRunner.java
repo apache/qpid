@@ -20,16 +20,15 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.queue.QueueRunner;
-import org.apache.qpid.server.queue.SimpleAMQQueue;
-
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.transport.TransportException;
 
 /**
  * QueueRunners are Runnables used to process a queue when requiring
@@ -47,15 +46,12 @@ public class QueueRunner implements Runnable
     private static int SCHEDULED = 1;
     private static int RUNNING = 2;
 
-
     private final AtomicInteger _scheduled = new AtomicInteger(IDLE);
 
     private final AtomicBoolean _stateChange = new AtomicBoolean();
 
     private final AtomicLong _lastRunAgain = new AtomicLong();
     private final AtomicLong _lastRunTime = new AtomicLong();
-
-    private long _continues;
 
     public QueueRunner(SimpleAMQQueue queue)
     {
@@ -74,24 +70,35 @@ public class QueueRunner implements Runnable
 
                 runAgain = _queue.processQueue(this);
             }
-            catch (AMQException e)
+            catch (final AMQException e)
             {
                 _logger.error("Exception during asynchronous delivery by " + toString(), e);
+            }
+            catch (final TransportException transe)
+            {
+                final String errorMessage = "Problem during asynchronous delivery by " + toString();
+                if(_logger.isDebugEnabled())
+                {
+                    _logger.debug(errorMessage, transe);
+                }
+                else
+                {
+                    _logger.info(errorMessage + ' ' + transe.getMessage());
+                }
             }
             finally
             {
                 CurrentActor.remove();
-            }
-            _scheduled.compareAndSet(RUNNING, IDLE);
-            long stateChangeCount = _queue.getStateChangeCount();
-            _lastRunAgain.set(runAgain);
-            _lastRunTime.set(System.nanoTime());
-            if(runAgain == 0L || runAgain != stateChangeCount || _stateChange.compareAndSet(true,false))
-            {
-                _continues++;
-                if(_scheduled.compareAndSet(IDLE, SCHEDULED))
+                _scheduled.compareAndSet(RUNNING, IDLE);
+                final long stateChangeCount = _queue.getStateChangeCount();
+                _lastRunAgain.set(runAgain);
+                _lastRunTime.set(System.nanoTime());
+                if(runAgain == 0L || runAgain != stateChangeCount || _stateChange.compareAndSet(true,false))
                 {
-                    _queue.execute(this);
+                    if(_scheduled.compareAndSet(IDLE, SCHEDULED))
+                    {
+                        _queue.execute(this);
+                    }
                 }
             }
 

@@ -18,17 +18,16 @@
  */
 package org.apache.qpid.server.logging;
 
-import java.util.List;
-
-import javax.jms.Connection;
-import javax.jms.JMSException;
-import javax.jms.Session;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.security.acl.AbstractACLTestCase;
+
+import javax.jms.Connection;
+import javax.jms.JMSException;
+import javax.jms.Session;
+import java.util.List;
 
 /**
  * ACL version 2/3 file testing to verify that ACL actor logging works correctly.

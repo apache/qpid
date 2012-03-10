@@ -20,10 +20,15 @@
  */
 package org.apache.qpid.test.unit.client;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.configuration.ClientProperties;
+import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -35,15 +40,10 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
-
-import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.configuration.ClientProperties;
-import org.apache.qpid.server.queue.AMQQueueFactory;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Test that the MaxRedelivery feature works as expected, allowing the client to reject
@@ -298,7 +298,7 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
         consumer.close();
 
         //check the source queue is now empty
-        assertEquals("The queue should have 0 msgs left", 0, ((AMQSession<?,?>) clientSession).getQueueDepth(checkQueue));
+        assertEquals("The queue should have 0 msgs left", 0, ((AMQSession<?,?>) clientSession).getQueueDepth(checkQueue, true));
 
         //check the DLQ has the required number of rejected-without-requeue messages
         verifyDLQdepth(redeliverMsgs.size(), clientSession, durableSub);
@@ -341,7 +341,7 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
         }
 
         assertEquals("The DLQ should have " + expected + " msgs on it", expected,
-                        ((AMQSession<?,?>) clientSession).getQueueDepth(checkQueueDLQ));
+                        ((AMQSession<?,?>) clientSession).getQueueDepth(checkQueueDLQ, true));
     }
 
     private void verifyDLQcontent(Connection clientConnection, List<Integer> redeliverMsgs, String destName, boolean durableSub) throws JMSException

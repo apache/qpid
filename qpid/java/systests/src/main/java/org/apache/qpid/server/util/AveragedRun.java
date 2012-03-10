@@ -20,10 +20,8 @@
  */
 package org.apache.qpid.server.util;
 
-import org.apache.qpid.server.util.TimedRun;
-
-import java.util.concurrent.Callable;
 import java.util.Collection;
+import java.util.concurrent.Callable;
 
 public class AveragedRun implements Callable<RunStats>
 {

@@ -20,6 +20,12 @@
  */
 package org.apache.qpid.client;
 
+import javax.jms.InvalidDestinationException;
+import javax.jms.InvalidSelectorException;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQInternalException;
+import org.apache.qpid.client.filter.JMSSelectorFilter;
+import org.apache.qpid.protocol.AMQConstant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,21 +45,59 @@ public class AMQQueueBrowser implements QueueBrowser
 
     private AtomicBoolean _isClosed = new AtomicBoolean();
     private final AMQSession _session;
-    private final AMQQueue _queue;
+    private final Queue _queue;
     private final ArrayList<BasicMessageConsumer> _consumers = new ArrayList<BasicMessageConsumer>();
     private final String _messageSelector;
 
-    AMQQueueBrowser(AMQSession session, AMQQueue queue, String messageSelector) throws JMSException
+    AMQQueueBrowser(AMQSession session, Queue queue, String messageSelector) throws JMSException
     {
         _session = session;
         _queue = queue;
         _messageSelector = ((messageSelector == null) || (messageSelector.trim().length() == 0)) ? null : messageSelector;
-        // Create Consumer to verify message selector.
-        BasicMessageConsumer consumer =
-                (BasicMessageConsumer) _session.createBrowserConsumer(_queue, _messageSelector, false);
-        // Close this consumer as we are not looking to consume only to establish that, at least for now,
-        // the QB can be created
-        consumer.close();
+
+
+        validateQueue((AMQDestination) queue);
+
+        if(_messageSelector != null)
+        {
+            validateSelector(_messageSelector);
+        }
+    }
+
+    private void validateSelector(String messageSelector) throws InvalidSelectorException
+    {
+        try
+        {
+            new JMSSelectorFilter(messageSelector);
+        }
+        catch (AMQInternalException e)
+        {
+            throw new InvalidSelectorException(e.getMessage());
+        }
+    }
+
+    private void validateQueue(AMQDestination queue) throws JMSException
+    {
+        try
+        {
+            // Essentially just test the connection/session is still active
+            _session.sync();
+            // TODO - should really validate queue exists, but we often rely on creating the consumer to create the queue :(
+            // _session.declareQueuePassive( queue );
+        }
+        catch (AMQException e)
+        {
+            if(e.getErrorCode() == AMQConstant.NOT_FOUND)
+            {
+                throw new InvalidDestinationException(e.getMessage());
+            }
+            else
+            {
+                final JMSException jmsException = new JMSException(e.getMessage(), String.valueOf(e.getErrorCode().getCode()));
+                jmsException.setLinkedException(e);
+                throw jmsException;
+            }
+        }
     }
 
     public Queue getQueue() throws JMSException
@@ -88,6 +132,10 @@ public class AMQQueueBrowser implements QueueBrowser
     public Enumeration getEnumeration() throws JMSException
     {
         checkState();
+        if(!_session.getAMQConnection().started())
+        {
+            throw new IllegalStateException("Cannot enumerate message on the queue while the Connection is stopped");
+        }
         final BasicMessageConsumer consumer =
                 (BasicMessageConsumer) _session.createBrowserConsumer(_queue, _messageSelector, false);
 
@@ -108,7 +156,7 @@ public class AMQQueueBrowser implements QueueBrowser
 
     private class QueueBrowserEnumeration implements Enumeration
     {
-        Message _nextMessage;
+        private Message _nextMessage;
         private BasicMessageConsumer _consumer;
 
         public QueueBrowserEnumeration(BasicMessageConsumer consumer) throws JMSException
@@ -118,12 +166,12 @@ public class AMQQueueBrowser implements QueueBrowser
                 _consumer = consumer;
                 prefetchMessage();
             }
-            _logger.info("QB:created with first element:" + _nextMessage);
+            _logger.debug("QB:created with first element:" + _nextMessage);
         }
 
         public boolean hasMoreElements()
         {
-            _logger.info("QB:hasMoreElements:" + (_nextMessage != null));
+            _logger.debug("QB:hasMoreElements:" + (_nextMessage != null));
             return (_nextMessage != null);
         }
 
@@ -136,9 +184,9 @@ public class AMQQueueBrowser implements QueueBrowser
             }
             try
             {
-                _logger.info("QB:nextElement about to receive");
+                _logger.debug("QB:nextElement about to receive");
                 prefetchMessage();
-                _logger.info("QB:nextElement received:" + _nextMessage);
+                _logger.debug("QB:nextElement received:" + _nextMessage);
             }
             catch (JMSException e)
             {

@@ -20,12 +20,13 @@
  */
 package org.apache.qpid.server.configuration;
 
-import java.util.List;
-
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
+
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+
+import java.util.List;
 
 public class QueueConfiguration extends ConfigurationPlugin
 {
@@ -211,7 +212,7 @@ public class QueueConfiguration extends ConfigurationPlugin
 
         public void validateConfiguration() throws ConfigurationException
         {
-            if (_configuration.isEmpty())
+            if (getConfig().isEmpty())
             {
                 throw new ConfigurationException("Queue section cannot be empty.");
             }

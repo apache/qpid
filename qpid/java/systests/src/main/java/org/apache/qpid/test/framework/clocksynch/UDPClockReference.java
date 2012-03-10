@@ -23,7 +23,11 @@ package org.apache.qpid.test.framework.clocksynch;
 import org.apache.qpid.junit.extensions.ShutdownHookable;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 
 /**

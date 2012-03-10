@@ -20,16 +20,20 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.server.binding.Binding;
 
 import javax.management.JMException;
-import javax.management.openmbean.*;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.OpenDataException;
+import javax.management.openmbean.TabularData;
+import javax.management.openmbean.TabularDataSupport;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.ArrayList;
 
 /** TopicExchangeMBean class implements the management interface for the Topic exchanges. */
 @MBeanDescription("Management Bean for Topic Exchange")
@@ -47,7 +51,7 @@ final class TopicExchangeMBean extends AbstractExchangeMBean<TopicExchange>
     /** returns exchange bindings in tabular form */
     public TabularData bindings() throws OpenDataException
     {
-        TabularDataSupport bindingList = new TabularDataSupport(_bindinglistDataType);
+        TabularDataSupport bindingList = new TabularDataSupport(getBindinglistDataType());
         Map<String, List<String>> bindingData = new HashMap<String, List<String>>();
         for (Binding binding : getExchange().getBindings())
         {
@@ -65,7 +69,7 @@ final class TopicExchangeMBean extends AbstractExchangeMBean<TopicExchange>
         {
             Object[] bindingItemValues = {entry.getKey(), entry.getValue().toArray(new String[entry.getValue().size()]) };
             CompositeData bindingCompositeData =
-                    new CompositeDataSupport(_bindingDataType,
+                    new CompositeDataSupport(getBindingDataType(),
                             COMPOSITE_ITEM_NAMES.toArray(new String[COMPOSITE_ITEM_NAMES.size()]), 
                             bindingItemValues);
             bindingList.put(bindingCompositeData);

@@ -26,7 +26,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.regex.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * CommandLineParser provides a utility for specifying the format of a command line and parsing command lines to ensure
@@ -328,9 +329,6 @@ public class CommandLineParser
                         expectingArgs = true;
                         optionExpectingArgs = matchedOption;
 
-                        // In the mean time set this options argument to the empty string in case no argument is ever
-                        // supplied.
-                        // options.put(matchedOption, "");
                     }
 
                     // Check if the option was matched on its own and is a flag in which case set that flag.
@@ -654,22 +652,22 @@ public class CommandLineParser
     protected static class CommandLineOption
     {
         /** Holds the text for the flag to match this argument with. */
-        public String option = null;
+        private String option = null;
 
         /** Holds a string describing how to use this command line argument. */
-        public String argument = null;
+        private String argument = null;
 
         /** Flag that determines whether or not this command line argument can take arguments. */
-        public boolean expectsArgs = false;
+        private boolean expectsArgs = false;
 
         /** Holds a short comment describing what this command line argument is for. */
-        public String comment = null;
+        private String comment = null;
 
         /** Flag that determines whether or not this is an mandatory command line argument. */
-        public boolean mandatory = false;
+        private boolean mandatory = false;
 
         /** A regular expression describing what format the argument to this option muist have. */
-        public String argumentFormatRegexp = null;
+        private String argumentFormatRegexp = null;
 
         /**
          * Create a command line option object that holds specific information about a command line option.

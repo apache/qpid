@@ -21,7 +21,6 @@
 package org.apache.qpid.util;
 
 import java.io.UnsupportedEncodingException;
-
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
@@ -37,6 +36,9 @@ import java.util.regex.Pattern;
 
 public final class Strings
 {
+    private Strings()
+    {
+    }
 
     private static final byte[] EMPTY = new byte[0];
 

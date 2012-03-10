@@ -17,9 +17,8 @@
  */
 package org.apache.qpid.client;
 
-import javax.transaction.xa.XAException;
-import javax.transaction.xa.XAResource;
-import javax.transaction.xa.Xid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.dtx.XidImpl;
 import org.apache.qpid.transport.DtxXaStatus;
@@ -29,8 +28,10 @@ import org.apache.qpid.transport.Option;
 import org.apache.qpid.transport.RecoverResult;
 import org.apache.qpid.transport.SessionException;
 import org.apache.qpid.transport.XaResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import javax.transaction.xa.XAException;
+import javax.transaction.xa.XAResource;
+import javax.transaction.xa.Xid;
 
 /**
  * This is an implementation of javax.njms.XAResource.
@@ -307,13 +308,16 @@ public class XAResourceImpl implements XAResource
             _xaSession.createSession();
             convertExecutionErrorToXAErr( e.getException().getErrorCode());
         }
-        Xid[] result = new Xid[res.getInDoubt().size()];
-        int i = 0;
-        for (Object obj : res.getInDoubt())
+        Xid[] result =  new Xid[res.getInDoubt() != null ? res.getInDoubt().size() : 0];
+        if(result.length != 0)
         {
-            org.apache.qpid.transport.Xid xid = (org.apache.qpid.transport.Xid) obj;
-            result[i] = new XidImpl(xid.getBranchId(), (int) xid.getFormat(), xid.getGlobalId());
-            i++;
+            int i = 0;
+            for (Object obj : res.getInDoubt())
+            {
+                org.apache.qpid.transport.Xid xid = (org.apache.qpid.transport.Xid) obj;
+                result[i] = new XidImpl(xid.getBranchId(), (int) xid.getFormat(), xid.getGlobalId());
+                i++;
+            }
         }
         return result;
     }
@@ -435,6 +439,16 @@ public class XAResourceImpl implements XAResource
         }
     }
 
+    /**
+     * Is this resource currently enlisted in a transaction?
+     * 
+     * @return true if the resource is associated with a transaction, false otherwise.
+     */
+    public boolean isEnlisted()
+    {
+        return (_xid != null) ;
+    }
+    
     //------------------------------------------------------------------------
     // Private methods
     //------------------------------------------------------------------------

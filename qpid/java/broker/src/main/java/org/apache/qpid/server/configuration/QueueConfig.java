@@ -21,9 +21,9 @@
 
 package org.apache.qpid.server.configuration;
 
-import java.util.Map;
-
 import org.apache.qpid.AMQException;
+
+import java.util.Map;
 
 
 public interface QueueConfig extends ConfiguredObject<QueueConfigType, QueueConfig>

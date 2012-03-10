@@ -22,6 +22,7 @@ package org.apache.qpid.server.logging.subjects;
 
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
+
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.BINDING_FORMAT;
 
 public class BindingLogSubject extends AbstractLogSubject

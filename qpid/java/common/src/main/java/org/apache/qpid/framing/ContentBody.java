@@ -20,20 +20,20 @@
  */
 package org.apache.qpid.framing;
 
+import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
-import org.apache.qpid.AMQException;
-
 public class ContentBody implements AMQBody
 {
     public static final byte TYPE = 3;
 
-    public byte[] _payload;
+    private byte[] _payload;
 
     public ContentBody()
     {
@@ -42,7 +42,7 @@ public class ContentBody implements AMQBody
     public ContentBody(DataInput buffer, long size) throws AMQFrameDecodingException, IOException
     {
         _payload = new byte[(int)size];
-        buffer.readFully(_payload);
+        buffer.readFully(getPayload());
     }
 
 
@@ -58,12 +58,12 @@ public class ContentBody implements AMQBody
 
     public int getSize()
     {
-        return _payload == null ? 0 : _payload.length;
+        return getPayload() == null ? 0 : getPayload().length;
     }
 
     public void writePayload(DataOutput buffer) throws IOException
     {
-        buffer.write(_payload);
+        buffer.write(getPayload());
     }
 
     public void handle(final int channelId, final AMQVersionAwareProtocolSession session)
@@ -77,13 +77,18 @@ public class ContentBody implements AMQBody
         if (size > 0)
         {
             _payload = new byte[(int)size];
-            buffer.read(_payload);
+            buffer.read(getPayload());
         }
 
     }
 
     public void reduceBufferToFit()
     {
+    }
+
+    public byte[] getPayload()
+    {
+        return _payload;
     }
 
     private static class BufferContentBody implements AMQBody

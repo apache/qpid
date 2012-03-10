@@ -20,9 +20,10 @@
  */
 package org.apache.qpid.server.subscription;
 
-import org.apache.qpid.server.transport.ServerSession;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.log4j.Logger;
+
+import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.transport.ServerSession;
 
 class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDispositionChangeListener
 {
@@ -71,8 +72,6 @@ class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
     public boolean acquire()
     {
         boolean acquired = _entry.acquire(getSubscription());
-        //TODO - why acknowledge here??? seems bizarre...
-      //  getSubscription().getSession().acknowledge(getSubscription(), _entry);
         return acquired;
 
     }

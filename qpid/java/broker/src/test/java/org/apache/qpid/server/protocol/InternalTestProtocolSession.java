@@ -20,17 +20,6 @@
  */
 package org.apache.qpid.server.protocol;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-
-import javax.security.auth.Subject;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
@@ -49,10 +38,20 @@ import org.apache.qpid.server.subscription.SubscriptionImpl;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.TestNetworkConnection;
 
+import javax.security.auth.Subject;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
 public class InternalTestProtocolSession extends AMQProtocolEngine implements ProtocolOutputConverter
 {
     // ChannelID(LIST)  -> LinkedList<Pair>
-    final Map<Integer, Map<AMQShortString, LinkedList<DeliveryPair>>> _channelDelivers;
+    private final Map<Integer, Map<AMQShortString, LinkedList<DeliveryPair>>> _channelDelivers;
     private AtomicInteger _deliveryCount = new AtomicInteger(0);
     private static final AtomicLong ID_GENERATOR = new AtomicLong(0);
 
@@ -197,11 +196,6 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         {
             return _deliveryTag;
         }
-    }
-
-    public boolean isClosed()
-    {
-        return _closed;
     }
 
     public void closeProtocolSession()

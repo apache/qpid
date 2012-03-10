@@ -20,8 +20,8 @@
 */
 package org.apache.qpid.server.subscription;
 
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.queue.QueueEntry;
 
 public interface ClientDeliveryMethod
 {

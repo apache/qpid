@@ -21,11 +21,14 @@
 package org.apache.qpid.framing;
 
 import java.io.DataInput;
-import java.io.DataInputStream;
 import java.io.IOException;
 
 public class FieldTableFactory
 {
+    private FieldTableFactory()
+    {
+    }
+
     public static FieldTable newFieldTable()
     {
         return new FieldTable();

@@ -20,12 +20,23 @@
  */
 package org.apache.qpid.client;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.Hashtable;
-import java.util.UUID;
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.url.AMQBindingURL;
+import org.apache.qpid.url.URLSyntaxException;
 
-import javax.jms.*;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+import javax.jms.QueueConnection;
+import javax.jms.QueueConnectionFactory;
+import javax.jms.TopicConnection;
+import javax.jms.TopicConnectionFactory;
+import javax.jms.XAConnection;
+import javax.jms.XAConnectionFactory;
+import javax.jms.XAQueueConnection;
+import javax.jms.XAQueueConnectionFactory;
+import javax.jms.XATopicConnection;
+import javax.jms.XATopicConnectionFactory;
 import javax.naming.Context;
 import javax.naming.Name;
 import javax.naming.NamingException;
@@ -34,10 +45,10 @@ import javax.naming.Reference;
 import javax.naming.Referenceable;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
-
-import org.apache.qpid.jms.ConnectionURL;
-import org.apache.qpid.url.AMQBindingURL;
-import org.apache.qpid.url.URLSyntaxException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Hashtable;
+import java.util.UUID;
 
 
 public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionFactory, TopicConnectionFactory,
@@ -45,12 +56,6 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
                                              XAQueueConnectionFactory, XAConnectionFactory
 {
     private final ConnectionURL _connectionDetails;
-
-    // The default constructor is necessary to allow AMQConnectionFactory to be deserialised from JNDI
-    public AMQConnectionFactory()
-    {
-        _connectionDetails = null;
-    }
 
     public AMQConnectionFactory(final String url) throws URLSyntaxException
     {
@@ -119,35 +124,27 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
     
     public Connection createConnection(String userName, String password, String id) throws JMSException
     {
-        if (_connectionDetails != null)
+        try
         {
-            try
+            _connectionDetails.setUsername(userName);
+            _connectionDetails.setPassword(password);
+            
+            if (id != null && !id.equals(""))
             {
-                ConnectionURL connectionDetails = new AMQConnectionURL(_connectionDetails.toString());
-                connectionDetails.setUsername(userName);
-                connectionDetails.setPassword(password);
-                
-                if (id != null && !id.equals(""))
-                {
-                    connectionDetails.setClientName(id);
-                } 
-                else if (connectionDetails.getClientName() == null || connectionDetails.getClientName().equals(""))
-                {
-                    connectionDetails.setClientName(getUniqueClientID());
-                }
-                return new AMQConnection(connectionDetails);
-            }
-            catch (Exception e)
+                _connectionDetails.setClientName(id);
+            } 
+            else if (_connectionDetails.getClientName() == null || _connectionDetails.getClientName().equals(""))
             {
-                JMSException jmse = new JMSException("Error creating connection: " + e.getMessage());
-                jmse.setLinkedException(e);
-                jmse.initCause(e);
-                throw jmse;
+                _connectionDetails.setClientName(getUniqueClientID());
             }
+            return new AMQConnection(_connectionDetails);
         }
-        else
+        catch (Exception e)
         {
-            throw new JMSException("The connection factory wasn't created with a proper URL, the connection details are empty");
+            JMSException jmse = new JMSException("Error creating connection: " + e.getMessage());
+            jmse.setLinkedException(e);
+            jmse.initCause(e);
+            throw jmse;
         }
     }
 
@@ -266,7 +263,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
      *
      * @return A newly created XAConnection
      * @throws JMSException         If creating the XAConnection fails due to some internal error.
-     * @throws JMSSecurityException If client authentication fails due to an invalid user name or password.
+     * @throws javax.jms.JMSSecurityException If client authentication fails due to an invalid user name or password.
      */
     public XAConnection createXAConnection() throws JMSException
     {
@@ -293,36 +290,25 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
      * @param password the caller's password
      * @return A newly created XAConnection.
      * @throws JMSException         If creating the XAConnection fails due to some internal error.
-     * @throws JMSSecurityException If client authentication fails due to an invalid user name or password.
+     * @throws javax.jms.JMSSecurityException If client authentication fails due to an invalid user name or password.
      */
     public XAConnection createXAConnection(String username, String password) throws JMSException
     {
         if (_connectionDetails != null)
         {
-            try
+            _connectionDetails.setUsername(username);
+            _connectionDetails.setPassword(password);
+
+            if (_connectionDetails.getClientName() == null || _connectionDetails.getClientName().equals(""))
             {
-                ConnectionURL connectionDetails = new AMQConnectionURL(_connectionDetails.toString());
-                connectionDetails.setUsername(username);
-                connectionDetails.setPassword(password);
-    
-                if (connectionDetails.getClientName() == null || connectionDetails.getClientName().equals(""))
-                {
-                    connectionDetails.setClientName(getUniqueClientID());
-                }
-                return new XAConnectionImpl(connectionDetails);
-            }
-            catch (Exception e)
-            {
-                JMSException jmse = new JMSException("Error creating XA Connection: " + e.getMessage());
-                jmse.setLinkedException(e);
-                jmse.initCause(e);
-                throw jmse;
+                _connectionDetails.setClientName(getUniqueClientID());
             }
         }
         else
         {
-            throw new JMSException("The connection factory wasn't created with a proper URL, the connection details are empty");
-        }        
+            throw new JMSException("A URL must be specified to access XA connections");
+        }
+        return createXAConnection();
     }
 
 
@@ -334,7 +320,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
      *
      * @return A newly created XATopicConnection
      * @throws JMSException         If creating the XATopicConnection fails due to some internal error.
-     * @throws JMSSecurityException If client authentication fails due to an invalid user name or password.
+     * @throws javax.jms.JMSSecurityException If client authentication fails due to an invalid user name or password.
      */
     public XATopicConnection createXATopicConnection() throws JMSException
     {
@@ -351,7 +337,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
      * @param password the caller's password
      * @return A newly created XATopicConnection.
      * @throws JMSException         If creating the XATopicConnection fails due to some internal error.
-     * @throws JMSSecurityException If client authentication fails due to an invalid user name or password.
+     * @throws javax.jms.JMSSecurityException If client authentication fails due to an invalid user name or password.
      */
     public XATopicConnection createXATopicConnection(String username, String password) throws JMSException
     {
@@ -366,7 +352,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
      *
      * @return A newly created XAQueueConnection
      * @throws JMSException         If creating the XAQueueConnection fails due to some internal error.
-     * @throws JMSSecurityException If client authentication fails due to an invalid user name or password.
+     * @throws javax.jms.JMSSecurityException If client authentication fails due to an invalid user name or password.
      */
     public XAQueueConnection createXAQueueConnection() throws JMSException
     {
@@ -383,7 +369,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
      * @param password the caller's password
      * @return A newly created XAQueueConnection.
      * @throws JMSException         If creating the XAQueueConnection fails due to some internal error.
-     * @throws JMSSecurityException If client authentication fails due to an invalid user name or password.
+     * @throws javax.jms.JMSSecurityException If client authentication fails due to an invalid user name or password.
      */
     public XAQueueConnection createXAQueueConnection(String username, String password) throws JMSException
     {

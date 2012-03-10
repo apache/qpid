@@ -18,15 +18,9 @@
  */
 package org.apache.qpid.server.security.access;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
+
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.Result;
@@ -34,6 +28,13 @@ import org.apache.qpid.server.security.access.plugins.Firewall;
 import org.apache.qpid.server.security.access.plugins.FirewallConfiguration;
 import org.apache.qpid.server.util.TestApplicationRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 public class FirewallPluginTest extends QpidTestCase
 {

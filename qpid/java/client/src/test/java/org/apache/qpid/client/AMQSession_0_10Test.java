@@ -18,53 +18,18 @@
  */
 package org.apache.qpid.client;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.transport.*;
+import org.apache.qpid.transport.Connection.SessionFactory;
+import org.apache.qpid.transport.Connection.State;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
-
-import junit.framework.TestCase;
-
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.transport.Binary;
-import org.apache.qpid.transport.Connection;
-import org.apache.qpid.transport.Connection.SessionFactory;
-import org.apache.qpid.transport.Connection.State;
-import org.apache.qpid.transport.ExchangeBound;
-import org.apache.qpid.transport.ExchangeBoundResult;
-import org.apache.qpid.transport.ExchangeDeclare;
-import org.apache.qpid.transport.ExchangeDelete;
-import org.apache.qpid.transport.ExchangeQuery;
-import org.apache.qpid.transport.ExchangeQueryResult;
-import org.apache.qpid.transport.ExecutionErrorCode;
-import org.apache.qpid.transport.ExecutionException;
-import org.apache.qpid.transport.ExecutionResult;
-import org.apache.qpid.transport.ExecutionSync;
-import org.apache.qpid.transport.Future;
-import org.apache.qpid.transport.MessageCancel;
-import org.apache.qpid.transport.MessageFlow;
-import org.apache.qpid.transport.MessageRelease;
-import org.apache.qpid.transport.MessageSubscribe;
-import org.apache.qpid.transport.MessageTransfer;
-import org.apache.qpid.transport.Method;
-import org.apache.qpid.transport.Option;
-import org.apache.qpid.transport.ProtocolEvent;
-import org.apache.qpid.transport.QueueDelete;
-import org.apache.qpid.transport.QueueQuery;
-import org.apache.qpid.transport.QueueQueryResult;
-import org.apache.qpid.transport.Sender;
-import org.apache.qpid.transport.Session;
-import org.apache.qpid.transport.SessionAttach;
-import org.apache.qpid.transport.SessionDelegate;
-import org.apache.qpid.transport.SessionDetach;
-import org.apache.qpid.transport.SessionException;
-import org.apache.qpid.transport.SessionRequestTimeout;
-import org.apache.qpid.transport.TxCommit;
-import org.apache.qpid.transport.TxRollback;
-import org.apache.qpid.transport.TxSelect;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Tests AMQSession_0_10 methods.
@@ -73,7 +38,7 @@ import org.apache.qpid.transport.TxSelect;
  * {@link SessionException} is not thrown from methods of
  * {@link AMQSession_0_10}.
  */
-public class AMQSession_0_10Test extends TestCase
+public class AMQSession_0_10Test extends QpidTestCase
 {
 
     public void testExceptionOnCommit()
@@ -311,7 +276,7 @@ public class AMQSession_0_10Test extends TestCase
         {
             BasicMessageConsumer_0_10 consumer = session.createMessageConsumer(createDestination(), 1, 1, true, false,
                     null, null, false, true);
-            session.sendConsume(consumer, new AMQShortString("test"), null, true, null, 1);
+            session.sendConsume(consumer, new AMQShortString("test"), null, true, 1);
         }
         catch (Exception e)
         {
@@ -492,6 +457,28 @@ public class AMQSession_0_10Test extends TestCase
         assertNotNull("MessageTransfer event was not sent", event);
         event = findSentProtocolEventOfClass(session, ExchangeDeclare.class, false);
         assertNotNull("ExchangeDeclare event was not sent", event);
+    }
+
+    public void testGetQueueDepthWithSync()
+    {
+        // slow down a flush thread
+        setTestSystemProperty("qpid.session.max_ack_delay", "10000");
+        AMQSession_0_10 session =  createAMQSession_0_10(false, javax.jms.Session.DUPS_OK_ACKNOWLEDGE);
+        try
+        {
+            session.acknowledgeMessage(-1, false);
+            session.getQueueDepth(createDestination(), true);
+        }
+        catch (Exception e)
+        {
+            fail("Unexpected exception is cought:" + e.getMessage());
+        }
+        ProtocolEvent command = findSentProtocolEventOfClass(session, MessageAccept.class, false);
+        assertNotNull("MessageAccept command was not sent", command);
+        command = findSentProtocolEventOfClass(session, ExecutionSync.class, false);
+        assertNotNull("ExecutionSync command was not sent", command);
+        command = findSentProtocolEventOfClass(session, QueueQuery.class, false);
+        assertNotNull("QueueQuery command was not sent", command);
     }
 
     private AMQAnyDestination createDestination()

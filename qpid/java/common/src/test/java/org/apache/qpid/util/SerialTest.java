@@ -23,10 +23,6 @@ package org.apache.qpid.util;
 
 import junit.framework.TestCase;
 
-import java.util.Random;
-
-import org.apache.qpid.SerialException;
-
 /**
  *Junit tests for the Serial class 
  */

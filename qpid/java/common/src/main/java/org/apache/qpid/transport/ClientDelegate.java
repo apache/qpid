@@ -20,19 +20,19 @@
  */
 package org.apache.qpid.transport;
 
+import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.configuration.ClientProperties;
+import org.apache.qpid.properties.ConnectionStartProperties;
+import org.apache.qpid.transport.util.Logger;
+
 import static org.apache.qpid.transport.Connection.State.OPEN;
 import static org.apache.qpid.transport.Connection.State.RESUMING;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslException;
-
-import org.apache.qpid.transport.util.Logger;
 
 
 /**
@@ -46,11 +46,11 @@ public class ClientDelegate extends ConnectionDelegate
 
 
 
-    protected final ConnectionSettings _conSettings;
+    private final ConnectionSettings _connectionSettings;
 
     public ClientDelegate(ConnectionSettings settings)
     {
-        this._conSettings = settings;
+        _connectionSettings = settings;
     }
 
     public void init(Connection conn, ProtocolHeader hdr)
@@ -66,15 +66,17 @@ public class ClientDelegate extends ConnectionDelegate
     {
         Map<String,Object> clientProperties = new HashMap<String,Object>();
 
-        if(this._conSettings.getClientProperties() != null)
+        if(_connectionSettings.getClientProperties() != null)
         {
-            clientProperties.putAll(_conSettings.getClientProperties());
+            clientProperties.putAll(_connectionSettings.getClientProperties());
         }
 
-        clientProperties.put("qpid.session_flow", 1);
-        clientProperties.put("qpid.client_pid",getPID());
-        clientProperties.put("qpid.client_process",
-                System.getProperty("qpid.client_process","Qpid Java Client"));
+        clientProperties.put(ConnectionStartProperties.SESSION_FLOW, 1);
+        clientProperties.put(ConnectionStartProperties.PID, ConnectionStartProperties.getPID());
+        clientProperties.put(ConnectionStartProperties.PROCESS, System.getProperty(ClientProperties.PROCESS_NAME, "Qpid Java Client"));
+        clientProperties.put(ConnectionStartProperties.VERSION_0_10, QpidProperties.getReleaseVersion());
+        clientProperties.put(ConnectionStartProperties.PRODUCT, QpidProperties.getProductName());
+        clientProperties.put(ConnectionStartProperties.PLATFORM, ConnectionStartProperties.getPlatformInfo());
 
         List<Object> brokerMechs = start.getMechanisms();
         if (brokerMechs == null || brokerMechs.isEmpty())
@@ -131,7 +133,7 @@ public class ClientDelegate extends ConnectionDelegate
     @Override
     public void connectionTune(Connection conn, ConnectionTune tune)
     {
-        int hb_interval = calculateHeartbeatInterval(_conSettings.getHeartbeatInterval(),
+        int hb_interval = calculateHeartbeatInterval(_connectionSettings.getHeartbeatInterval(),
                                                      tune.getHeartbeatMin(),
                                                      tune.getHeartbeatMax()
                                                      );
@@ -146,7 +148,7 @@ public class ClientDelegate extends ConnectionDelegate
         //(or that forced by protocol limitations [0xFFFF])
         conn.setChannelMax(channelMax == 0 ? Connection.MAX_CHANNEL_MAX : channelMax);
 
-        conn.connectionOpen(_conSettings.getVhost(), null, Option.INSIST);
+        conn.connectionOpen(_connectionSettings.getVhost(), null, Option.INSIST);
     }
 
     @Override
@@ -197,31 +199,8 @@ public class ClientDelegate extends ConnectionDelegate
         }
     }
 
-    private int getPID()
+    public ConnectionSettings getConnectionSettings()
     {
-        RuntimeMXBean rtb = ManagementFactory.getRuntimeMXBean();
-        String processName = rtb.getName();
-        if (processName != null && processName.indexOf('@')>0)
-        {
-            try
-            {
-                return Integer.parseInt(processName.substring(0,processName.indexOf('@')));
-            }
-            catch(Exception e)
-            {
-                log.warn("Unable to get the client PID due to error",e);
-                return -1;
-            }
-        }
-        else
-        {
-            log.warn("Unable to get the client PID due to unsupported format : " + processName);
-            return -1;
-        }
-
+        return _connectionSettings;
     }
-
-
-
-
 }

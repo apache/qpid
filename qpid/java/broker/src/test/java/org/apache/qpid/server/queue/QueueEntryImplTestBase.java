@@ -18,13 +18,15 @@
  */
 package org.apache.qpid.server.queue;
 
-import java.lang.reflect.Field;
 import junit.framework.TestCase;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.queue.QueueEntry.EntryState;
 import org.apache.qpid.server.subscription.MockSubscription;
 import org.apache.qpid.server.subscription.Subscription;
+
+import java.lang.reflect.Field;
 
 /**
  * Tests for {@link QueueEntryImpl}

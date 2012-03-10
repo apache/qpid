@@ -21,14 +21,14 @@
 package org.apache.qpid.framing.abstraction;
 
 import junit.framework.TestCase;
+
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 
 public class MessagePublishInfoImplTest extends TestCase
 {
-    MessagePublishInfoImpl _mpi;
-    final AMQShortString _exchange = new AMQShortString("exchange");
-    final AMQShortString _routingKey = new AMQShortString("routingKey");
+    private MessagePublishInfoImpl _mpi;
+    private final AMQShortString _exchange = new AMQShortString("exchange");
+    private final AMQShortString _routingKey = new AMQShortString("routingKey");
 
     public void setUp()
     {

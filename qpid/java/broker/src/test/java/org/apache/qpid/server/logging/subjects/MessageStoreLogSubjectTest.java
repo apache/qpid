@@ -20,15 +20,15 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
-import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 /**
  * Validate MessageStoreLogSubjects are logged as expected
  */
 public class MessageStoreLogSubjectTest extends AbstractTestLogSubject
 {
-    VirtualHost _testVhost;
+    private VirtualHost _testVhost;
 
     public void setUp() throws Exception
     {

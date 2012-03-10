@@ -26,12 +26,13 @@
  */
 package org.apache.qpid.server.output;
 
+import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.server.output.ProtocolOutputConverter.Factory;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.framing.ProtocolVersion;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 public class ProtocolOutputConverterRegistry
 {
@@ -42,20 +43,48 @@ public class ProtocolOutputConverterRegistry
 
     static
     {
-        register(ProtocolVersion.v8_0, org.apache.qpid.server.output.amqp0_8.ProtocolOutputConverterImpl.getInstanceFactory());
-        register(ProtocolVersion.v0_9, org.apache.qpid.server.output.amqp0_9.ProtocolOutputConverterImpl.getInstanceFactory());
-        register(ProtocolVersion.v0_91, org.apache.qpid.server.output.amqp0_9_1.ProtocolOutputConverterImpl.getInstanceFactory());
+        register(ProtocolVersion.v8_0);
+        register(ProtocolVersion.v0_9);
+        register(ProtocolVersion.v0_91);
     }
 
-    private static void register(ProtocolVersion version, Factory converter)
+    private ProtocolOutputConverterRegistry()
+    {
+    }
+
+    private static void register(ProtocolVersion version)
     {
 
-        _registry.put(version,converter);
+        _registry.put(version,new ConverterFactory(version));
     }
 
 
     public static ProtocolOutputConverter getConverter(AMQProtocolSession session)
     {
         return _registry.get(session.getProtocolVersion()).newInstance(session);
+    }
+
+    private static class ConverterFactory implements Factory
+    {
+        private ProtocolVersion _protocolVersion;
+        private MethodRegistry _methodRegistry;
+        private int _classId;
+
+        public ConverterFactory(ProtocolVersion pv)
+        {
+            _protocolVersion = pv;
+
+        }
+
+        public synchronized ProtocolOutputConverter newInstance(AMQProtocolSession session)
+        {
+            if(_methodRegistry == null)
+            {
+
+                _methodRegistry = MethodRegistry.getMethodRegistry(_protocolVersion);
+
+            }
+            return new ProtocolOutputConverterImpl(session, _methodRegistry);
+        }
     }
 }

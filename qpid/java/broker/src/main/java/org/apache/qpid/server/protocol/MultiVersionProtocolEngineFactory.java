@@ -20,38 +20,38 @@
 */
 package org.apache.qpid.server.protocol;
 
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.transport.network.NetworkConnection;
+
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
 {
     private static final AtomicLong ID_GENERATOR = new AtomicLong(0);
 
     private final IApplicationRegistry _appRegistry;
-    private final String _fqdn;
     private final Set<AmqpProtocolVersion> _supported;
+    private final AmqpProtocolVersion _defaultSupportedReply;
 
-    public MultiVersionProtocolEngineFactory(String fqdn, Set<AmqpProtocolVersion> supportedVersions)
+    public MultiVersionProtocolEngineFactory(final Set<AmqpProtocolVersion> supportedVersions, final AmqpProtocolVersion defaultSupportedReply)
     {
+        if(defaultSupportedReply != null && !supportedVersions.contains(defaultSupportedReply))
+        {
+            throw new IllegalArgumentException("The configured default reply (" + defaultSupportedReply
+                                             + ") to an unsupported protocol version initiation is itself not supported!");
+        }
+
         _appRegistry = ApplicationRegistry.getInstance();
-        _fqdn = fqdn;
         _supported = supportedVersions;
-    }
-
-    public ServerProtocolEngine newProtocolEngine(NetworkConnection network)
-    {
-        return new MultiVersionProtocolEngine(_appRegistry, _fqdn, _supported, network, ID_GENERATOR.getAndIncrement());
+        _defaultSupportedReply = defaultSupportedReply;
     }
 
     public ServerProtocolEngine newProtocolEngine()
     {
-        return new MultiVersionProtocolEngine(_appRegistry, _fqdn, _supported, ID_GENERATOR.getAndIncrement());
+        return new MultiVersionProtocolEngine(_appRegistry, _supported, _defaultSupportedReply, ID_GENERATOR.getAndIncrement());
     }
 
 }

@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.management.jmx;
 
-import java.util.List;
-
 import org.apache.qpid.util.LogMonitor;
+
+import java.util.List;
 
 /**
  * Test generation of message statistics reporting.

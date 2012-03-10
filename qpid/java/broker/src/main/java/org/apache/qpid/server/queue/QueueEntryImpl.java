@@ -34,7 +34,6 @@ import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 
@@ -416,11 +415,19 @@ public abstract class QueueEntryImpl implements QueueEntry
 
         if (alternateExchange != null)
         {
-            final List<? extends BaseQueue> rerouteQueues = alternateExchange.route(new InboundMessageAdapter(this));
+            InboundMessageAdapter inboundMessageAdapter = new InboundMessageAdapter(this);
+            List<? extends BaseQueue> queues = alternateExchange.route(inboundMessageAdapter);
             final ServerMessage message = getMessage();
-            if (rerouteQueues != null && rerouteQueues.size() != 0)
+            if ((queues == null || queues.size() == 0) && alternateExchange.getAlternateExchange() != null)
             {
+                queues = alternateExchange.getAlternateExchange().route(inboundMessageAdapter);
+            }
 
+
+
+            if (queues != null && queues.size() != 0)
+            {
+                final List<? extends BaseQueue> rerouteQueues = queues;
                 ServerTransaction txn = new LocalTransaction(getQueue().getVirtualHost().getMessageStore());
 
                 txn.enqueue(rerouteQueues, message, new ServerTransaction.Action()

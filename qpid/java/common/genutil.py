@@ -109,7 +109,7 @@ TYPES = {
   "uint32": "long",
   "uint64": "long",
   "datetime": "long",
-  "uuid": "UUID",
+  "uuid": "java.util.UUID",
   "sequence-no": "int",
   "sequence-set": "RangeSet", # XXX
   "byte-ranges": "RangeSet", # XXX
@@ -120,7 +120,7 @@ TYPES = {
   "vbin32": "byte[]",
   "struct32": "Struct",
   "map": "Map<String,Object>",
-  "array": "List<Object>"
+  "array": "java.util.List<Object>"
   }
 
 def cname(nd, field="@name"):
@@ -232,7 +232,7 @@ def get_parameters(type, fields):
       params.append("%s %s" % (f.type, f.name))
   if type["segments"]:
     params.append("Header header")
-    params.append("ByteBuffer body")
+    params.append("java.nio.ByteBuffer body")
   if options or type.name in ("control", "command"):
     params.append("Option ... _options")
   return params

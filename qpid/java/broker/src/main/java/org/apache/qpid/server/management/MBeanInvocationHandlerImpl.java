@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.server.management;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.util.Map;
-import java.util.Set;
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.server.logging.actors.ManagementActor;
+import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.access.Operation;
 
 import javax.management.Attribute;
 import javax.management.JMException;
@@ -41,14 +41,14 @@ import javax.management.remote.JMXConnectionNotification;
 import javax.management.remote.JMXPrincipal;
 import javax.management.remote.MBeanServerForwarder;
 import javax.security.auth.Subject;
-
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.logging.actors.ManagementActor;
-import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.access.Operation;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * This class can be used by the JMXConnectorServer as an InvocationHandler for the mbean operations. It delegates
@@ -87,8 +87,8 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
             return true;
         }
 
-        // Allow querying available object names
-        if (methodName.equals("queryNames"))
+        // Allow querying available object names and mbeans
+        if (methodName.equals("queryNames") || methodName.equals("queryMBeans"))
         {
             return true;
         }
@@ -108,7 +108,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
 
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
     {
-        final String methodName = getMethodName(method, args);
+        String methodName = method.getName();
 
         if (methodName.equals("getMBeanServer"))
         {
@@ -173,6 +173,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
                 security = _appRegistry.getVirtualHostRegistry().getVirtualHost(vhost).getSecurityManager();
             }
 
+            methodName = getMethodName(method, args);
 			if (isAccessMethod(methodName) || impact == MBeanOperationInfo.INFO)
 			{
 				// Check for read-only method invocation permission
@@ -339,7 +340,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
         // Normally JMXManagedObjectRegistry provides a Map as handback data containing a map
         // between connection id and username.
         String user = null;
-        if (handback != null && handback instanceof Map)
+        if (handback instanceof Map)
         {
             final Map<String, String> connectionIdUsernameMap = (Map<String, String>) handback;
             user = connectionIdUsernameMap.get(connectionId);

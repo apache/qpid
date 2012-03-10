@@ -22,10 +22,17 @@ package org.apache.qpid.client.message;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.client.AMQSession;
 
-import javax.jms.*;
-
+import javax.jms.BytesMessage;
+import javax.jms.JMSException;
+import javax.jms.MapMessage;
+import javax.jms.Message;
+import javax.jms.MessageEOFException;
+import javax.jms.ObjectMessage;
+import javax.jms.StreamMessage;
+import javax.jms.TextMessage;
 import java.util.Enumeration;
 
 public class MessageConverter
@@ -34,7 +41,7 @@ public class MessageConverter
     /**
      * Log4J logger
      */
-    protected final Logger _logger = LoggerFactory.getLogger(getClass());
+    private final Logger _logger = LoggerFactory.getLogger(getClass());
 
     /**
      * AbstractJMSMessage which will hold the converted message

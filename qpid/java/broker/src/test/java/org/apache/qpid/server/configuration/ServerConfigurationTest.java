@@ -20,16 +20,9 @@
  */
 package org.apache.qpid.server.configuration;
 
-import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
-import java.util.Locale;
-
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
+
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -38,6 +31,16 @@ import org.apache.qpid.server.util.TestApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
+
+import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.Locale;
+
+import javax.net.ssl.KeyManagerFactory;
 
 public class ServerConfigurationTest extends QpidTestCase
 {
@@ -490,19 +493,6 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals(false, _serverConfig.getTcpNoDelay());
     }
 
-    public void testGetEnableExecutorPool() throws ConfigurationException
-    {
-        // Check default
-        _serverConfig.initialise();
-        assertEquals(false, _serverConfig.getEnableExecutorPool());
-
-        // Check value we set
-        _config.setProperty("advanced.filterchain[@enableExecutorPool]", true);
-        _serverConfig = new ServerConfiguration(_config);
-        _serverConfig.initialise();
-        assertEquals(true, _serverConfig.getEnableExecutorPool());
-    }
-
     public void testGetEnableSSL() throws ConfigurationException
     {
         // Check default
@@ -587,17 +577,24 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals("b", _serverConfig.getConnectorKeyStorePassword());
     }
 
-    public void testGetConnectorCertType() throws ConfigurationException
+    public void testConnectorGetKeyManagerAlgorithm() throws ConfigurationException
     {
         // Check default
         _serverConfig.initialise();
-        assertEquals("SunX509", _serverConfig.getConnectorCertType());
+        assertEquals(KeyManagerFactory.getDefaultAlgorithm(), _serverConfig.getConnectorKeyManagerFactoryAlgorithm());
 
         // Check value we set
-        _config.setProperty("connector.ssl.certType", "a");
+        _config.setProperty("connector.ssl.keyManagerFactoryAlgorithm", "a");
         _serverConfig = new ServerConfiguration(_config);
         _serverConfig.initialise();
-        assertEquals("a", _serverConfig.getConnectorCertType());
+        assertEquals("a", _serverConfig.getConnectorKeyManagerFactoryAlgorithm());
+
+        // Ensure we continue to support the old name certType
+        _config.clearProperty("connector.ssl.keyManagerFactoryAlgorithm");
+        _config.setProperty("connector.ssl.certType", "b");
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals("b", _serverConfig.getConnectorKeyManagerFactoryAlgorithm());
     }
 
     public void testGetHousekeepingCheckPeriod() throws ConfigurationException
@@ -1537,6 +1534,58 @@ public class ServerConfigurationTest extends QpidTestCase
         assertFalse("Beetle queue DLQ should be disabled, using test vhost default", beetle.isDeadLetterQueueEnabled());
         assertFalse("R2D2 queue DLQ should be configured as disabled", r2d2.isDeadLetterQueueEnabled());
         assertTrue("C3P0 queue DLQ should be enabled, using broker default", c3p0.isDeadLetterQueueEnabled());
+    }
+
+    public void testIsAmqp010enabled() throws ConfigurationException
+    {
+        // Check default
+        _serverConfig.initialise();
+        assertEquals(true, _serverConfig.isAmqp010enabled());
+
+        // Check value we set
+        _config.setProperty(ServerConfiguration.CONNECTOR_AMQP010ENABLED, false);
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals(false, _serverConfig.isAmqp010enabled());
+    }
+
+    public void testIsAmqp091enabled() throws ConfigurationException
+    {
+        // Check default
+        _serverConfig.initialise();
+        assertEquals(true, _serverConfig.isAmqp091enabled());
+
+        // Check value we set
+        _config.setProperty(ServerConfiguration.CONNECTOR_AMQP091ENABLED, false);
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals(false, _serverConfig.isAmqp091enabled());
+    }
+
+    public void testIsAmqp09enabled() throws ConfigurationException
+    {
+        // Check default
+        _serverConfig.initialise();
+        assertEquals(true, _serverConfig.isAmqp09enabled());
+
+        // Check value we set
+        _config.setProperty(ServerConfiguration.CONNECTOR_AMQP09ENABLED, false);
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals(false, _serverConfig.isAmqp09enabled());
+    }
+
+    public void testIsAmqp08enabled() throws ConfigurationException
+    {
+        // Check default
+        _serverConfig.initialise();
+        assertEquals(true, _serverConfig.isAmqp08enabled());
+
+        // Check value we set
+        _config.setProperty(ServerConfiguration.CONNECTOR_AMQP08ENABLED, false);
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals(false, _serverConfig.isAmqp08enabled());
     }
 
     /**

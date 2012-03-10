@@ -21,11 +21,10 @@ package org.apache.qpid.client.message;
  */
 
 
-import javax.jms.JMSException;
-
-import java.nio.ByteBuffer;
-
 import org.apache.qpid.AMQException;
+
+import javax.jms.JMSException;
+import java.nio.ByteBuffer;
 
 public class AMQPEncodedMapMessageFactory extends AbstractJMSMessageFactory
 {

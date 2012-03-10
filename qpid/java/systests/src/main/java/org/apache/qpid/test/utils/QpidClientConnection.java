@@ -21,12 +21,11 @@
 
 package org.apache.qpid.test.utils;
 
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.JMSAMQException;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.JMSAMQException;
 
 import javax.jms.Connection;
 import javax.jms.ExceptionListener;

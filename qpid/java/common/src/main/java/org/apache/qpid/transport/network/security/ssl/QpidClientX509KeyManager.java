@@ -20,6 +20,11 @@
  */
 package org.apache.qpid.transport.network.security.ssl;
 
+import org.apache.qpid.transport.util.Logger;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.X509ExtendedKeyManager;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.GeneralSecurityException;
@@ -28,25 +33,19 @@ import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.X509ExtendedKeyManager;
-
-import org.apache.qpid.transport.util.Logger;
-
 public class QpidClientX509KeyManager extends X509ExtendedKeyManager
 {
     private static final Logger log = Logger.get(QpidClientX509KeyManager.class);
     
-    X509ExtendedKeyManager delegate;
-    String alias;
+    private X509ExtendedKeyManager delegate;
+    private String alias;
     
     public QpidClientX509KeyManager(String alias, String keyStorePath,
-                           String keyStorePassword,String keyStoreCertType) throws GeneralSecurityException, IOException
+                           String keyStorePassword, String keyManagerFactoryAlgorithmName) throws GeneralSecurityException, IOException
     {
         this.alias = alias;    
         KeyStore ks = SSLUtil.getInitializedKeyStore(keyStorePath,keyStorePassword);
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyStoreCertType);
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyManagerFactoryAlgorithmName);
         kmf.init(ks, keyStorePassword.toCharArray());
         this.delegate = (X509ExtendedKeyManager)kmf.getKeyManagers()[0];
     }

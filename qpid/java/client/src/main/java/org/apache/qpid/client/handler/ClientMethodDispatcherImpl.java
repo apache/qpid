@@ -20,16 +20,17 @@
  */
 package org.apache.qpid.client.handler;
 
-import java.util.Map;
-import java.util.HashMap;
-
-import org.apache.qpid.framing.*;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.state.AMQStateManager;
-import org.apache.qpid.client.state.AMQMethodNotImplementedException;
-import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.protocol.AMQProtocolSession;
+import org.apache.qpid.client.state.AMQMethodNotImplementedException;
+import org.apache.qpid.client.state.AMQStateManager;
+import org.apache.qpid.framing.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ClientMethodDispatcherImpl implements MethodDispatcher
 {
@@ -94,16 +95,16 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
 
     public static ClientMethodDispatcherImpl newMethodDispatcher(ProtocolVersion version, AMQProtocolSession session)
     {
-        if (_logger.isInfoEnabled())
+        if (_logger.isDebugEnabled())
         {
-            _logger.info("New Method Dispatcher:" + session);
+            _logger.debug("New Method Dispatcher:" + session);
         }
         
         DispatcherFactory factory = _dispatcherFactories.get(version);
         return factory.createMethodDispatcher(session);
     }
 
-    AMQProtocolSession _session;
+    private AMQProtocolSession _session;
 
     public ClientMethodDispatcherImpl(AMQProtocolSession session)
     {

@@ -1,6 +1,4 @@
-package org.apache.qpid.server.store;
-
-import org.apache.qpid.AMQException;/*
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -20,6 +18,10 @@ import org.apache.qpid.AMQException;/*
  * under the License.
  *
  */
+
+package org.apache.qpid.server.store;
+
+import org.apache.qpid.AMQException;
 
 /**
  * NOTE: this class currently extends AMQException but

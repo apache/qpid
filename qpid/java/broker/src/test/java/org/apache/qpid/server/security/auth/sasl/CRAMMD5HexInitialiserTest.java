@@ -21,6 +21,7 @@
 package org.apache.qpid.server.security.auth.sasl;
 
 import junit.framework.TestCase;
+
 import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabase;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HexInitialiser;
 

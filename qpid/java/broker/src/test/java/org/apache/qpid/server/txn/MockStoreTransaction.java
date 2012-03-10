@@ -22,13 +22,18 @@ package org.apache.qpid.server.txn;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.NotImplementedException;
+
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.EnqueableMessage;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.store.*;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStore.StoreFuture;
 import org.apache.qpid.server.store.MessageStore.Transaction;
+import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
+import org.apache.qpid.server.store.StorableMessageMetaData;
+import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
+import org.apache.qpid.server.store.TransactionLogResource;
 
 /**
  * Mock implementation of a (Store) Transaction allow its state to be observed.
@@ -105,6 +110,14 @@ class MockStoreTransaction implements Transaction
     public void abortTran() throws AMQStoreException
     {
         _state = TransactionState.ABORTED;
+    }
+
+    public void removeXid(long format, byte[] globalId, byte[] branchId)
+    {
+    }
+
+    public void recordXid(long format, byte[] globalId, byte[] branchId, Record[] enqueues, Record[] dequeues)
+    {
     }
 
     public static MessageStore createTestTransactionLog(final MockStoreTransaction storeTransaction)

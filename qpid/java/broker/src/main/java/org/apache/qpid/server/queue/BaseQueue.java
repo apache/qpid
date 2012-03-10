@@ -21,10 +21,10 @@
 
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.store.TransactionLogResource;
 
 public interface BaseQueue extends TransactionLogResource
 {

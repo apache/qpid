@@ -20,18 +20,27 @@
  */
 package org.apache.qpid.server.filter;
 
-import java.util.Map;
+import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.filter.SelectorParsingException;
+import org.apache.qpid.filter.selector.ParseException;
+import org.apache.qpid.filter.selector.TokenMgrError;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.log4j.Logger;
+
+import java.util.Map;
 
 
 public class FilterManagerFactory
 {
  
     private final static Logger _logger = Logger.getLogger(FilterManagerFactory.class);
+
+    private FilterManagerFactory()
+    {
+    }
 
     //fixme move to a common class so it can be refered to from client code.
 
@@ -51,7 +60,22 @@ public class FilterManagerFactory
                 if (selector != null && !selector.equals(""))
                 {
                     manager = new SimpleFilterManager();
-                    manager.add(new JMSSelectorFilter(selector));
+                    try
+                    {
+                        manager.add(new JMSSelectorFilter(selector));
+                    }
+                    catch (ParseException e)
+                    {
+                        throw new AMQInvalidArgumentException("Cannot parse JMS selector \"" + selector + "\"", e);
+                    }
+                    catch (SelectorParsingException e)
+                    {
+                        throw new AMQInvalidArgumentException("Cannot parse JMS selector \"" + selector + "\"", e);
+                    }
+                    catch (TokenMgrError e)
+                    {
+                        throw new AMQInvalidArgumentException("Cannot parse JMS selector \"" + selector + "\"", e);
+                    }
                 }
 
             }

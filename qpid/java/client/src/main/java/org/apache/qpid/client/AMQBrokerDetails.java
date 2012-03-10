@@ -20,15 +20,15 @@
  */
 package org.apache.qpid.client;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.url.URLHelper;
 import org.apache.qpid.url.URLSyntaxException;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class AMQBrokerDetails implements BrokerDetails
 {
@@ -264,30 +264,12 @@ public class AMQBrokerDetails implements BrokerDetails
     
     public boolean getBooleanProperty(String propName)
     {
-        return getBooleanProperty(propName, false);
-    }
-    
-    public boolean getBooleanProperty(String propName, boolean defaultValue)
-    {
-    	if (_options.containsKey(propName))
-    	{
-            if (_options.get(propName).equalsIgnoreCase("false"))
-            {
-                return false;
-            }
-            else if (_options.get(propName).equalsIgnoreCase("true"))
-            {
-                return true;
-            }
-            else
-            {
-               return defaultValue;
-            }
-    	}
-    	else
-    	{
-    		return defaultValue;
-    	}
+        if (_options.containsKey(propName))
+        {
+            return Boolean.parseBoolean(_options.get(propName));
+        }
+
+        return false;
     }    
 
     public void setTimeout(long timeout)
@@ -319,18 +301,18 @@ public class AMQBrokerDetails implements BrokerDetails
 
         BrokerDetails bd = (BrokerDetails) o;
 
-        return _host.equalsIgnoreCase(bd.getHost()) &&
+        return _host.toLowerCase().equals(bd.getHost() == null ? null : bd.getHost().toLowerCase()) &&
                (_port == bd.getPort()) &&
-               _transport.equalsIgnoreCase(bd.getTransport());
+               _transport.toLowerCase().equals(bd.getTransport() == null ? null : bd.getTransport().toLowerCase());
         //TODO do we need to compare all the options as well?
     }
 
     @Override
     public int hashCode()
     {
-        int result = _host != null ? _host.hashCode() : 0;
+        int result = _host != null ? _host.toLowerCase().hashCode() : 0;
         result = 31 * result + _port;
-        result = 31 * result + (_transport != null ? _transport.hashCode() : 0);
+        result = 31 * result + (_transport != null ? _transport.toLowerCase().hashCode() : 0);
         return result;
     }
 
@@ -457,7 +439,7 @@ public class AMQBrokerDetails implements BrokerDetails
         if (getProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY) != null)
         {
             conSettings.setTcpNodelay(
-                    getBooleanProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY,true));
+                    getBooleanProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY));
         }
 
         return conSettings;

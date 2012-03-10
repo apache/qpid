@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.server.store;
 
+import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.message.EnqueableMessage;
 
 /**
@@ -125,7 +125,16 @@ public interface MessageStore
         void abortTran() throws AMQStoreException;
 
 
+        public static interface Record
+        {
+            TransactionLogResource getQueue();
+            EnqueableMessage getMessage();
+        }
 
+        void removeXid(long format, byte[] globalId, byte[] branchId) throws AMQStoreException;
+
+        void recordXid(long format, byte[] globalId, byte[] branchId, Record[] enqueues, Record[] dequeues)
+                throws AMQStoreException;
     }
 
     public void configureTransactionLog(String name,

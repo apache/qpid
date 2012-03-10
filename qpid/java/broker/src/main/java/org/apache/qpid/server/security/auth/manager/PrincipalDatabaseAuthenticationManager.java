@@ -20,29 +20,10 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.security.Security;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
-
-import javax.security.auth.Subject;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.login.AccountNotFoundException;
-import javax.security.sasl.Sasl;
-import javax.security.sasl.SaslException;
-import javax.security.sasl.SaslServer;
-import javax.security.sasl.SaslServerFactory;
-
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.configuration.PropertyException;
 import org.apache.qpid.configuration.PropertyUtils;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
@@ -54,6 +35,25 @@ import org.apache.qpid.server.security.auth.management.AMQUserManagementMBean;
 import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
 import org.apache.qpid.server.security.auth.sasl.JCAProvider;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+
+import javax.security.auth.Subject;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.login.AccountNotFoundException;
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
+import javax.security.sasl.SaslServerFactory;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.security.Security;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 
 
 /**
@@ -95,9 +95,9 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
      */
     private final Map<String, Map<String, ?>> _serverCreationProperties = new HashMap<String, Map<String, ?>>();
 
-    protected PrincipalDatabase _principalDatabase = null;
+    private PrincipalDatabase _principalDatabase = null;
 
-    protected AMQUserManagementMBean _mbean = null;
+    private AMQUserManagementMBean _mbean = null;
 
     public static final AuthenticationManagerPluginFactory<PrincipalDatabaseAuthenticationManager> FACTORY = new AuthenticationManagerPluginFactory<PrincipalDatabaseAuthenticationManager>()
     {
@@ -160,13 +160,13 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
   
         public String getPrincipalDatabaseClass()
         {
-            return _configuration.getString("principal-database.class");
+            return getConfig().getString("principal-database.class");
         }
   
         public Map<String,String> getPdClassAttributeMap() throws ConfigurationException
         {
-            final List<String> argumentNames = _configuration.getList("principal-database.attributes.attribute.name");
-            final List<String> argumentValues = _configuration.getList("principal-database.attributes.attribute.value");
+            final List<String> argumentNames = getConfig().getList("principal-database.attributes.attribute.name");
+            final List<String> argumentValues = getConfig().getList("principal-database.attributes.attribute.value");
             final Map<String,String> attributes = new HashMap<String,String>(argumentNames.size());
 
             for (int i = 0; i < argumentNames.size(); i++)

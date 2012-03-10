@@ -23,6 +23,7 @@ package org.apache.qpid.server.virtualhost.plugins.policies;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
+
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 /**

@@ -1,10 +1,10 @@
 package org.apache.qpid.server.queue;
 
-import java.util.Map;
-
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionList;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.util.Map;
 
 public abstract class OutOfOrderQueue extends SimpleAMQQueue
 {
@@ -20,7 +20,7 @@ public abstract class OutOfOrderQueue extends SimpleAMQQueue
     protected void checkSubscriptionsNotAheadOfDelivery(final QueueEntry entry)
     {
         // check that all subscriptions are not in advance of the entry
-        SubscriptionList.SubscriptionNodeIterator subIter = _subscriptionList.iterator();
+        SubscriptionList.SubscriptionNodeIterator subIter = getSubscriptionList().iterator();
         while(subIter.advance() && !entry.isAcquired())
         {
             final Subscription subscription = subIter.getNode().getSubscription();
@@ -29,7 +29,7 @@ public abstract class OutOfOrderQueue extends SimpleAMQQueue
                 QueueContext context = (QueueContext) subscription.getQueueContext();
                 if(context != null)
                 {
-                    QueueEntry released = context._releasedEntry;
+                    QueueEntry released = context.getReleasedEntry();
                     while(!entry.isAcquired() && (released == null || released.compareTo(entry) > 0))
                     {
                         if(QueueContext._releasedUpdater.compareAndSet(context,released,entry))
@@ -38,7 +38,7 @@ public abstract class OutOfOrderQueue extends SimpleAMQQueue
                         }
                         else
                         {
-                            released = context._releasedEntry;
+                            released = context.getReleasedEntry();
                         }
                     }
                 }

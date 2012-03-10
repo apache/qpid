@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.queue;
 
+import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
@@ -31,12 +32,10 @@ import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageTransferMessage;
-import org.apache.qpid.server.txn.ServerTransaction;
-import org.apache.qpid.server.txn.LocalTransaction;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.transport.MessageProperties;
 
 import javax.management.JMException;
@@ -56,9 +55,10 @@ import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
-import java.text.SimpleDateFormat;
-import java.util.*;
 
 /**
  * AMQQueueMBean is the management bean for an {@link AMQQueue}.
@@ -72,10 +72,12 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
 {
 
     /** Used for debugging purposes. */
-    private static final Logger _logger = Logger.getLogger(AMQQueueMBean.class);
+    private static final Logger LOGGER = Logger.getLogger(AMQQueueMBean.class);
 
     /** Date/time format used for message expiration and message timestamp formatting */
     public static final String JMSTIMESTAMP_DATETIME_FORMAT = "MM-dd-yy HH:mm:ss.SSS z";
+
+    private static final FastDateFormat FAST_DATE_FORMAT = FastDateFormat.getInstance(JMSTIMESTAMP_DATETIME_FORMAT);
 
     private final AMQQueue _queue;
     private final String _queueName;
@@ -347,14 +349,14 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     public void notifyClients(NotificationCheck notification, AMQQueue queue, String notificationMsg)
     {
         // important : add log to the log file - monitoring tools may be looking for this
-        _logger.info(notification.name() + " On Queue " + queue.getNameShortString() + " - " + notificationMsg);
+        LOGGER.info(notification.name() + " On Queue " + queue.getNameShortString() + " - " + notificationMsg);
         notificationMsg = notification.name() + " " + notificationMsg;
 
         _lastNotification =
-            new Notification(MonitorNotification.THRESHOLD_VALUE_EXCEEDED, this, ++_notificationSequenceNumber,
+            new Notification(MonitorNotification.THRESHOLD_VALUE_EXCEEDED, this, incrementAndGetSequenceNumber(),
                 System.currentTimeMillis(), notificationMsg);
 
-        _broadcaster.sendNotification(_lastNotification);
+        getBroadcaster().sendNotification(_lastNotification);
     }
 
     public Notification getLastNotification()
@@ -491,7 +493,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
                     ContentHeaderBody headerBody = msg.getContentHeaderBody();
                     // Create header attributes list
                     headerAttributes = getMessageHeaderProperties(headerBody);
-                    itemValues = new Object[]{msg.getMessageId(), headerAttributes, headerBody.bodySize, queueEntry.isRedelivered(), position, queueEntry.getDeliveryCount()};
+                    itemValues = new Object[]{msg.getMessageId(), headerAttributes, headerBody.getBodySize(), queueEntry.isRedelivered(), position, queueEntry.getDeliveryCount()};
                 }
                 else if(serverMsg instanceof MessageTransferMessage)
                 {
@@ -589,18 +591,8 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     private void addStringifiedJMSTimestamoAndJMSExpiration(final List<String> list,
             final long expirationDate, final long timestampDate)
     {
-        final SimpleDateFormat dateFormat;
-        if (expirationDate != 0 || timestampDate != 0)
-        {
-            dateFormat = new SimpleDateFormat(JMSTIMESTAMP_DATETIME_FORMAT);
-        }
-        else
-        {
-            dateFormat = null;
-        }
-
-        final String formattedExpirationDate = (expirationDate != 0) ? dateFormat.format(new Date(expirationDate)) : null;
-        final String formattedTimestampDate = (timestampDate != 0) ? dateFormat.format(new Date(timestampDate)) : null;
+        final String formattedExpirationDate = (expirationDate != 0) ? FAST_DATE_FORMAT.format(expirationDate) : null;
+        final String formattedTimestampDate = (timestampDate != 0) ? FAST_DATE_FORMAT.format(timestampDate) : null;
         list.add("JMSExpiration = " + formattedExpirationDate);
         list.add("JMSTimestamp = " + formattedTimestampDate);
     }
@@ -619,9 +611,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
             throw new OperationsException("\"From MessageId\" should be greater than 0 and less than \"To MessageId\"");
         }
 
-        ServerTransaction txn = new LocalTransaction(_queue.getVirtualHost().getMessageStore());
-        _queue.moveMessagesToAnotherQueue(fromMessageId, toMessageId, toQueueName, txn);
-        txn.commit();
+        _queue.moveMessagesToAnotherQueue(fromMessageId, toMessageId, toQueueName);
     }
 
     /**
@@ -654,13 +644,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
             throw new OperationsException("\"From MessageId\" should be greater than 0 and less than \"To MessageId\"");
         }
 
-        ServerTransaction txn = new LocalTransaction(_queue.getVirtualHost().getMessageStore());
-
-        _queue.copyMessagesToAnotherQueue(fromMessageId, toMessageId, toQueueName, txn);
-
-        txn.commit();
-
-
+        _queue.copyMessagesToAnotherQueue(fromMessageId, toMessageId, toQueueName);
     }
 
     /**

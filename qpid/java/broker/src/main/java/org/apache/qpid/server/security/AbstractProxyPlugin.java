@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.security;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
@@ -28,8 +27,6 @@ import org.apache.qpid.server.security.access.Operation;
 /**
  * This {@link SecurityPlugin} proxies the authorise calls to a serries of methods, one per {@link Operation}.
  * 
- * Plugins that extend this class should override the relevant authorise method and implement their own
- * {@link #setConfiguration(Configuration)} method.
  */
 public abstract class AbstractProxyPlugin extends AbstractPlugin
 {

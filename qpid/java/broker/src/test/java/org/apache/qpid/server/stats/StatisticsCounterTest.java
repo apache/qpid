@@ -106,7 +106,12 @@ public class StatisticsCounterTest extends TestCase
         Thread.sleep(1500);
         assertEquals(0.0, counter.getPeak());
         counter.registerEvent(2000, start + 1500);
-        Thread.sleep(1000L);
+
+        // make sure, that getPeak invocation occurs at "start + 2500"
+        // if test thread over-sleeps for 500+ mls
+        // the peak value can be incremented and test will fail
+        long sleep = start + 2500 - System.currentTimeMillis();
+        Thread.sleep(sleep < 0 ? 0 : sleep);
         assertEquals(0.0, counter.getPeak());
         counter.registerEvent(1000, start + 500);
         Thread.sleep(1500);

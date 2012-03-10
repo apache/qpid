@@ -27,8 +27,6 @@ import javax.jms.MessageConsumer;
 import javax.jms.Session;
 
 import org.apache.qpid.client.AMQAnyDestination;
-import org.apache.qpid.client.AMQConnection;
-import org.slf4j.Logger;
 
 public class Drain extends OptionParser
 {
@@ -50,13 +48,13 @@ public class Drain extends OptionParser
 
     static 
     {        
-        optDefs.add(BROKER);
-        optDefs.add(HELP);
-        optDefs.add(TIMEOUT);
-        optDefs.add(FOREVER);
-        optDefs.add(COUNT);
-        optDefs.add(CON_OPTIONS);
-        optDefs.add(BROKER_OPTIONS);
+        addOption(BROKER);
+        addOption(HELP);
+        addOption(TIMEOUT);
+        addOption(FOREVER);
+        addOption(COUNT);
+        addOption(CON_OPTIONS);
+        addOption(BROKER_OPTIONS);
     }
     
     public Drain(String[] args, String usage, String desc) throws Exception
@@ -66,7 +64,7 @@ public class Drain extends OptionParser
         Connection con = createConnection();
         con.start();
         Session ssn = con.createSession(false,Session.AUTO_ACKNOWLEDGE);     
-        Destination dest = new AMQAnyDestination(address);
+        Destination dest = new AMQAnyDestination(getAddress());
         MessageConsumer consumer = ssn.createConsumer(dest);
         Message msg;
         
