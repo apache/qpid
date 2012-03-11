@@ -25,10 +25,6 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
-import javax.jms.Session;
-import javax.jms.Topic;
-import javax.jms.TopicPublisher;
-import javax.jms.TopicSession;
 
 /**
  * This tests the behaviour of transactional sessions when the {@code transactionTimeout} configuration
@@ -316,56 +312,29 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
         monitor(0, 0);
     }
 
+    /**
+     * Tests that sending an unroutable persistent message does not result in a long running store transaction [warning].
+     */
     public void testTransactionCommittedOnNonRoutableQueuePersistentMessage() throws Exception
     {
         checkTransactionCommittedOnNonRoutableQueueMessage(DeliveryMode.PERSISTENT);
     }
 
+    /**
+     * Tests that sending an unroutable transient message does not result in a long running store transaction [warning].
+     */
     public void testTransactionCommittedOnNonRoutableQueueTransientMessage() throws Exception
     {
-        checkTransactionCommittedOnNonRoutableQueueMessage(DeliveryMode.PERSISTENT);
+        checkTransactionCommittedOnNonRoutableQueueMessage(DeliveryMode.NON_PERSISTENT);
     }
 
-    public void testTransactionCommittedOnNonRoutableTopicPersistentMessage() throws Exception
+    private void checkTransactionCommittedOnNonRoutableQueueMessage(int deliveryMode) throws JMSException, Exception
     {
-        checkTransactionCommittedOnNonRoutableTopicMessage(DeliveryMode.PERSISTENT);
-    }
-
-    public void testTransactionCommittedOnNonRoutableTopicTransientMessage() throws Exception
-    {
-        checkTransactionCommittedOnNonRoutableTopicMessage(DeliveryMode.PERSISTENT);
-    }
-
-    protected void checkTransactionCommittedOnNonRoutableQueueMessage(int deliveryMode) throws JMSException, Exception
-    {
-        Queue nonExisting = _psession.createQueue("non-existent-queue-" + System.currentTimeMillis());
+        Queue nonExisting = _psession.createQueue(getTestQueueName() + System.currentTimeMillis());
         MessageProducer producer = _psession.createProducer(nonExisting);
         Message message = _psession.createMessage();
-        message.setJMSDeliveryMode(deliveryMode);
-        for (int i=0;i<1000; i++)
-        {
-            producer.send(message);
-        }
+        producer.send(message, deliveryMode, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
         _psession.commit();
-
-        // give time to house keeping thread to log messages
-        sleep(3f);
-        monitor(0, 0);
-    }
-
-    protected void checkTransactionCommittedOnNonRoutableTopicMessage(int deliveryMode) throws JMSException, Exception
-    {
-        final TopicSession session = _con.createTopicSession(true, Session.SESSION_TRANSACTED);
-        Topic nonExisting = session.createTopic("non-existent-topic-" + System.currentTimeMillis());
-
-        TopicPublisher topicPublisher = session.createPublisher(nonExisting);
-        Message message = session.createMessage();
-        message.setJMSDeliveryMode(deliveryMode);
-        for (int i=0;i<1000; i++)
-        {
-            topicPublisher.send(message);
-        }
-        session.commit();
 
         // give time to house keeping thread to log messages
         sleep(3f);
