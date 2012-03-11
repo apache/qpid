@@ -36,7 +36,7 @@ org.apache.qpid.server.queue.AddressBasedSortedQueueTest#*
 
 // Those tests are written against the 0.10 path
 org.apache.qpid.test.unit.message.UTF8Test#*
-org.apache.qpid.client.MessageListenerTest#testSynchronousReceiveNoWait
+org.apache.qpid.client.SynchReceiveTest#testReceiveNoWait
 
 // Tests 0.10 client feature
 org.apache.qpid.test.unit.client.connection.ConnectionTest#testUnsupportedSASLMechanism

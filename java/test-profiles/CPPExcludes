@@ -24,7 +24,6 @@ org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testCreateEx
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testDeleteOptions
 
 org.apache.qpid.test.unit.client.channelclose.ChannelCloseTest#*
-org.apache.qpid.client.ResetMessageListenerTest#*
 
 // Those tests are testing 0.8 specific semantics
 org.apache.qpid.test.client.ImmediateAndMandatoryPublishingTest#*
@@ -169,3 +168,6 @@ org.apache.qpid.server.message.MessageProtocolConversionTest#*
 
 // passwd script is a Java Broker specific command line tool
 org.apache.qpid.scripts.QpidPasswdTest#*
+
+// QPID-3604: Immediate Prefetch no longer supported by 0-10
+org.apache.qpid.client.AsynchMessageListenerTest#testImmediatePrefetchWithMessageListener
