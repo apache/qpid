@@ -20,6 +20,16 @@
  */
 package org.apache.qpid.test.unit.transacted;
 
+import javax.jms.DeliveryMode;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.Session;
+import javax.jms.Topic;
+import javax.jms.TopicPublisher;
+import javax.jms.TopicSession;
+
 /**
  * This tests the behaviour of transactional sessions when the {@code transactionTimeout} configuration
  * is set for a virtual host.
@@ -303,6 +313,62 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
 
         assertEquals("Listener should not have received exception", 0, getNumberOfDeliveredExceptions());
 
+        monitor(0, 0);
+    }
+
+    public void testTransactionCommittedOnNonRoutableQueuePersistentMessage() throws Exception
+    {
+        checkTransactionCommittedOnNonRoutableQueueMessage(DeliveryMode.PERSISTENT);
+    }
+
+    public void testTransactionCommittedOnNonRoutableQueueTransientMessage() throws Exception
+    {
+        checkTransactionCommittedOnNonRoutableQueueMessage(DeliveryMode.PERSISTENT);
+    }
+
+    public void testTransactionCommittedOnNonRoutableTopicPersistentMessage() throws Exception
+    {
+        checkTransactionCommittedOnNonRoutableTopicMessage(DeliveryMode.PERSISTENT);
+    }
+
+    public void testTransactionCommittedOnNonRoutableTopicTransientMessage() throws Exception
+    {
+        checkTransactionCommittedOnNonRoutableTopicMessage(DeliveryMode.PERSISTENT);
+    }
+
+    protected void checkTransactionCommittedOnNonRoutableQueueMessage(int deliveryMode) throws JMSException, Exception
+    {
+        Queue nonExisting = _psession.createQueue("non-existent-queue-" + System.currentTimeMillis());
+        MessageProducer producer = _psession.createProducer(nonExisting);
+        Message message = _psession.createMessage();
+        message.setJMSDeliveryMode(deliveryMode);
+        for (int i=0;i<1000; i++)
+        {
+            producer.send(message);
+        }
+        _psession.commit();
+
+        // give time to house keeping thread to log messages
+        sleep(3f);
+        monitor(0, 0);
+    }
+
+    protected void checkTransactionCommittedOnNonRoutableTopicMessage(int deliveryMode) throws JMSException, Exception
+    {
+        final TopicSession session = _con.createTopicSession(true, Session.SESSION_TRANSACTED);
+        Topic nonExisting = session.createTopic("non-existent-topic-" + System.currentTimeMillis());
+
+        TopicPublisher topicPublisher = session.createPublisher(nonExisting);
+        Message message = session.createMessage();
+        message.setJMSDeliveryMode(deliveryMode);
+        for (int i=0;i<1000; i++)
+        {
+            topicPublisher.send(message);
+        }
+        session.commit();
+
+        // give time to house keeping thread to log messages
+        sleep(3f);
         monitor(0, 0);
     }
 }
