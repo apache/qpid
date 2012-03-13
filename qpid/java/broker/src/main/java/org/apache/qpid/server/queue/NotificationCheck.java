@@ -27,7 +27,7 @@ public enum NotificationCheck
 
     MESSAGE_COUNT_ALERT
     {
-        boolean notifyIfNecessary(ServerMessage msg, AMQQueue queue, QueueNotificationListener listener)
+        public boolean notifyIfNecessary(ServerMessage msg, AMQQueue queue, QueueNotificationListener listener)
         {
             int msgCount;
             final long maximumMessageCount = queue.getMaximumMessageCount();
@@ -41,7 +41,7 @@ public enum NotificationCheck
     },
     MESSAGE_SIZE_ALERT(true)
     {
-        boolean notifyIfNecessary(ServerMessage msg, AMQQueue queue, QueueNotificationListener listener)
+        public boolean notifyIfNecessary(ServerMessage msg, AMQQueue queue, QueueNotificationListener listener)
         {
             final long maximumMessageSize = queue.getMaximumMessageSize();
             if(maximumMessageSize != 0)
@@ -63,7 +63,7 @@ public enum NotificationCheck
     },
     QUEUE_DEPTH_ALERT
     {
-        boolean notifyIfNecessary(ServerMessage msg, AMQQueue queue, QueueNotificationListener listener)
+        public boolean notifyIfNecessary(ServerMessage msg, AMQQueue queue, QueueNotificationListener listener)
         {
             // Check for threshold queue depth in bytes
             final long maximumQueueDepth = queue.getMaximumQueueDepth();
@@ -84,7 +84,7 @@ public enum NotificationCheck
     },
     MESSAGE_AGE_ALERT
     {
-        boolean notifyIfNecessary(ServerMessage msg, AMQQueue queue, QueueNotificationListener listener)
+        public boolean notifyIfNecessary(ServerMessage msg, AMQQueue queue, QueueNotificationListener listener)
         {
 
             final long maxMessageAge = queue.getMaximumMessageAge();
@@ -126,6 +126,6 @@ public enum NotificationCheck
         return _messageSpecific;
     }
 
-    abstract boolean notifyIfNecessary(ServerMessage msg, AMQQueue queue, QueueNotificationListener listener);
+    public abstract boolean notifyIfNecessary(ServerMessage msg, AMQQueue queue, QueueNotificationListener listener);
 
 }

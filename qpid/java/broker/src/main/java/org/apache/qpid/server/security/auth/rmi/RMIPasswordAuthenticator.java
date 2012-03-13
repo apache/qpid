@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.security.auth.rmi;
 
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
@@ -83,7 +84,14 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
         // Verify that an AuthenticationManager has been set.
         if (_authenticationManager == null)
         {
-            throw new SecurityException(UNABLE_TO_LOOKUP);
+            if(ApplicationRegistry.getInstance().getAuthenticationManager() != null)
+            {
+                _authenticationManager = ApplicationRegistry.getInstance().getAuthenticationManager();
+            }
+            else
+            {
+                throw new SecurityException(UNABLE_TO_LOOKUP);
+            }
         }
         final AuthenticationResult result = _authenticationManager.authenticate(username, password);
 

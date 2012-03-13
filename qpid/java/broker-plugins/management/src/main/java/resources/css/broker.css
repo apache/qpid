@@ -1,0 +1,16 @@
+#virtualHosts {
+	width: 560px;
+	height: 110px;
+}
+#exchanges {
+	width: 560px;
+	height: 250px;
+}
+#queues {
+	width: 560px;
+	height: 200px;
+}
+#connections {
+	width: 560px;
+	height: 200px;
+}

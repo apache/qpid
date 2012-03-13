@@ -43,9 +43,20 @@ slf4j-log4j=lib/slf4j-log4j12-1.6.1.jar
 
 xalan=lib/xalan-2.7.0.jar
 
+jetty=lib/jetty-6.1.14.jar
+jetty-util=lib/jetty-util-6.1.14.jar
+jetty-servlet-tester=lib/jetty-servlet-tester-6.1.14.jar
+servlet-api=lib/servlet-api.jar
+
+osgi-core=lib/org.osgi.core-1.0.0.jar
 felix-main=lib/org.apache.felix.main-2.0.5.jar
 
-felix.libs=${felix-main}
+felix.libs=${osgi-core} ${felix-main}
+
+jackson-core=lib/jackson-core-asl-1.9.0.jar
+jackson-mapper=lib/jackson-mapper-asl-1.9.0.jar
+
+mockito=lib/mockito-all-1.9.0.jar
 
 commons-configuration.libs = ${commons-beanutils-core} ${commons-digester} \
   ${commons-codec} ${commons-lang} ${commons-collections} ${commons-configuration}
@@ -56,10 +67,11 @@ tools.libs=${commons-configuration.libs} ${log4j}
 broker.libs=${commons-cli} ${commons-logging} ${log4j} ${slf4j-log4j} \
     ${xalan} ${felix.libs} ${derby-db} ${commons-configuration.libs}
 
+broker-plugins-management.libs=${jetty} ${jetty-util} ${servlet-api} ${jackson-core} ${jackson-mapper}
 broker-plugins.libs=${felix.libs} ${log4j} ${commons-configuration.libs}
 
 junit-toolkit.libs=${log4j} ${junit} ${slf4j-api}
-test.libs=${slf4j-log4j} ${junit-toolkit.libs}
+test.libs=${slf4j-log4j} ${junit-toolkit.libs} ${mockito}
 
 ibm-icu=lib/com.ibm.icu_3.8.1.v20080530.jar
 ecl-core-jface=lib/org.eclipse.jface_3.4.1.M20080827-2000.jar

@@ -26,13 +26,13 @@ import org.apache.log4j.xml.QpidLog4JConfigurator;
 
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.ServerNetworkTransportConfiguration;
-import org.apache.qpid.server.configuration.management.ConfigurationManagementMBean;
-import org.apache.qpid.server.information.management.ServerInformationMBean;
+import org.apache.qpid.server.management.ConfigurationManagementMBean;
+import org.apache.qpid.server.management.LoggingManagementMBean;
+import org.apache.qpid.server.management.ServerInformationMBean;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
-import org.apache.qpid.server.logging.management.LoggingManagementMBean;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;

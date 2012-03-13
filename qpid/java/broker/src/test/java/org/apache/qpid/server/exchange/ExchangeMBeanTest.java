@@ -59,7 +59,6 @@ public class ExchangeMBeanTest  extends InternalBrokerBaseCase
         // test general exchange properties
         assertEquals("Unexpected exchange name", "amq.direct", mbean.getName());
         assertEquals("Unexpected exchange type", "direct", mbean.getExchangeType());
-        assertEquals("Unexpected ticket number", Integer.valueOf(0), mbean.getTicketNo());
         assertFalse("Unexpected durable flag", mbean.isDurable());
         assertTrue("Unexpected auto delete flag", mbean.isAutoDelete());
     }

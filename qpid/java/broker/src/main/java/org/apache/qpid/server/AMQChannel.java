@@ -213,7 +213,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
 
     public void receivedComplete()
     {
-        sync();
+        //sync();
     }
 
 
@@ -1566,7 +1566,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
         _unfinishedCommandsQueue.add(new AsyncCommand(future, action));
     }
 
-    public void completeAsyncCommands()
+    public boolean completeAsyncCommands()
     {
         AsyncCommand cmd;
         while((cmd = _unfinishedCommandsQueue.peek()) != null && cmd.isReadyForCompletion())
@@ -1580,6 +1580,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
             cmd.awaitReadyForCompletion();
             cmd.complete();
         }
+        return _unfinishedCommandsQueue.isEmpty();
     }
 
 

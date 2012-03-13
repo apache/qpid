@@ -29,6 +29,7 @@ import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.transport.TransportException;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -37,6 +38,8 @@ public class ConnectionRegistry implements IConnectionRegistry, Closeable
     private List<AMQConnectionModel> _registry = new CopyOnWriteArrayList<AMQConnectionModel>();
 
     private Logger _logger = Logger.getLogger(ConnectionRegistry.class);
+    private final Collection<RegistryChangeListener> _listeners =
+            new ArrayList<RegistryChangeListener>();
 
     public void initialise()
     {
@@ -73,11 +76,34 @@ public class ConnectionRegistry implements IConnectionRegistry, Closeable
     public void registerConnection(AMQConnectionModel connnection)
     {
         _registry.add(connnection);
+        synchronized (_listeners)
+        {
+            for(RegistryChangeListener listener : _listeners)
+            {
+                listener.connectionRegistered(connnection);
+            }
+        }
     }
 
     public void deregisterConnection(AMQConnectionModel connnection)
     {
         _registry.remove(connnection);
+
+        synchronized (_listeners)
+        {
+            for(RegistryChangeListener listener : _listeners)
+            {
+                listener.connectionUnregistered(connnection);
+            }
+        }
+    }
+
+    public void addRegistryChangeListener(RegistryChangeListener listener)
+    {
+        synchronized (_listeners)
+        {
+            _listeners.add(listener);
+        }
     }
 
     public List<AMQConnectionModel> getConnections()

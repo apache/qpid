@@ -1,0 +1,43 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Broker</title>
+		<!--<link rel="stylesheet" href="/dojo/1.7.2/dojo/resources/dojo.css">
+		<link rel="stylesheet" href="/dojo/1.7.2/dijit/themes/claro/claro.css">
+		<link rel="stylesheet" href="/dojo/1.7.2/dojox/grid/resources/claroGrid.css">-->
+        <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dojo/resources/dojo.css">
+        <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dijit/themes/claro/claro.css">
+        <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dojox/grid/resources/claroGrid.css">
+
+
+        <link rel="stylesheet" href="../css/broker.css" media="screen">
+
+		<link rel="stylesheet" href="../css/common.css" media="screen">
+
+        <!-- load dojo and provide config via data attribute -->
+		<!--<script src="/dojo/1.7.2/dojo/dojo.js.uncompressed.js" data-dojo-config="async: true">
+        </script>                                                                                 -->
+
+        <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dojo/dojo.js"
+                data-dojo-config="async: true">
+        </script>
+
+        <script src="/js/broker.js">
+            </script>
+	</head>
+	<body class="claro">
+		<h1>Broker</h1>
+
+		<br/>
+        <h2>Virtual Hosts</h2>
+		<div id="virtualHosts"></div>
+        <h2>Connections</h2>
+        <div id="connections"></div>
+        <h2>Exchanges</h2>
+        <div id="exchanges"></div>
+        <h2>Queues</h2>
+        <div id="queues"></div>
+	</body>
+</html>
+

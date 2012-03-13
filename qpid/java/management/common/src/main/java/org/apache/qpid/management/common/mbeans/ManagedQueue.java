@@ -341,7 +341,8 @@ public interface ManagedQueue
      * Sets the Alternate Exchange for the queue, for use in dead letter queue functionality.
      *
      * @since Qpid JMX API 2.4
-     * @param the name of the exchange to use. Specifying null or the empty string will clear the alternate exchange.
+     * @param exchangeName the name of the exchange to use. Specifying null or the empty string will clear the
+     *                     alternate exchange.
      * @throws IOException
      */
     void setAlternateExchange(String exchangeName) throws IOException;

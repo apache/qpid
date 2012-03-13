@@ -19,6 +19,7 @@
 package org.apache.qpid.server.queue;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -52,6 +53,7 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.QueueActor;
 import org.apache.qpid.server.logging.messages.QueueMessages;
 import org.apache.qpid.server.logging.subjects.QueueLogSubject;
+import org.apache.qpid.server.management.AMQQueueMBean;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -339,7 +341,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     {
         return _exclusive;
     }
-    
+
     public void setExclusive(boolean exclusive) throws AMQException
     {
         _exclusive = exclusive;
@@ -430,8 +432,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         {
             throw new AMQSecurityException("Permission denied");
         }
-        
-        
+
+
         if (hasExclusiveSubscriber())
         {
             throw new ExistingExclusiveSubscription();
@@ -464,14 +466,14 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                 subscription.setNoLocal(_nolocal);
             }
             _subscriptionList.add(subscription);
-            
+
             //Increment consumerCountHigh if necessary. (un)registerSubscription are both
             //synchronized methods so we don't need additional synchronization here
             if(_counsumerCountHigh.get() < getConsumerCount())
             {
                 _counsumerCountHigh.incrementAndGet();
             }
-            
+
             if (isDeleted())
             {
                 subscription.queueDeleted(this);
@@ -526,6 +528,18 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     }
 
+    public Collection<Subscription> getConsumers()
+    {
+        List<Subscription> consumers = new ArrayList<Subscription>();
+        SubscriptionList.SubscriptionNodeIterator iter = _subscriptionList.iterator();
+        while(iter.advance())
+        {
+            consumers.add(iter.getNode().getSubscription());
+        }
+        return consumers;
+
+    }
+
     public void resetSubPointersForGroups(Subscription subscription, boolean clearAssignments)
     {
         QueueEntry entry = _messageGroupManager.findEarliestAssignedAvailableEntry(subscription);
@@ -576,10 +590,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                 break;
             }
         }
-        
+
         reconfigure();
     }
-    
+
     private void reconfigure()
     {
         //Reconfigure the queue for to reflect this new binding.
@@ -604,7 +618,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     public void removeBinding(final Binding binding)
     {
         _bindings.remove(binding);
-        
+
         reconfigure();
     }
 
@@ -738,8 +752,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         {
             try
             {
-                if (!sub.isSuspended() 
-                    && subscriptionReadyAndHasInterest(sub, entry) 
+                if (!sub.isSuspended()
+                    && subscriptionReadyAndHasInterest(sub, entry)
                     && mightAssign(sub, entry)
                     && !sub.wouldSuspend(entry))
                 {
@@ -800,15 +814,15 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     {
         getAtomicQueueCount().incrementAndGet();
     }
-    
+
     private void incrementTxnEnqueueStats(final ServerMessage message)
     {
         _msgTxnEnqueues.incrementAndGet();
         _byteTxnEnqueues.addAndGet(message.getSize());
     }
-    
+
     private void incrementTxnDequeueStats(QueueEntry entry)
-    {      
+    {
         _msgTxnDequeues.incrementAndGet();
         _byteTxnDequeues.addAndGet(entry.getSize());
     }
@@ -888,7 +902,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         {
             _deliveredMessages.decrementAndGet();
         }
-        
+
         if(sub != null && sub.isSessionTransactional())
         {
             incrementTxnDequeueStats(entry);
@@ -941,11 +955,13 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         }
     }
 
+
+
     public int getConsumerCount()
     {
         return _subscriptionList.size();
     }
-    
+
     public int getConsumerCountHigh()
     {
         return _counsumerCountHigh.get();
@@ -1412,7 +1428,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     }
 
     public long clearQueue() throws AMQException
-    {         
+    {
         return clear(0l);
     }
 
@@ -1423,7 +1439,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         {
             throw new AMQSecurityException("Permission denied: queue " + getName());
         }
-        
+
         QueueEntryIterator queueListIterator = _entries.iterator();
         long count = 0;
 
@@ -1490,7 +1506,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         {
             throw new AMQSecurityException("Permission denied: " + getName());
         }
-        
+
         if (!_deleted.getAndSet(true))
         {
 
@@ -2357,22 +2373,22 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     {
         return _dequeueSize.get();
     }
-    
+
     public long getByteTxnEnqueues()
     {
         return _byteTxnEnqueues.get();
     }
-    
+
     public long getByteTxnDequeues()
     {
         return _byteTxnDequeues.get();
     }
-    
+
     public long getMsgTxnEnqueues()
     {
         return _msgTxnEnqueues.get();
     }
-    
+
     public long getMsgTxnDequeues()
     {
         return _msgTxnDequeues.get();
@@ -2409,21 +2425,21 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     {
         return _unackedMsgCountHigh.get();
     }
-    
+
     public long getUnackedMessageCount()
     {
         return _unackedMsgCount.get();
     }
-    
+
     public void decrementUnackedMsgCount()
     {
         _unackedMsgCount.decrementAndGet();
     }
-    
+
     private void incrementUnackedMsgCount()
     {
         long unackedMsgCount = _unackedMsgCount.incrementAndGet();
-        
+
         long unackedMsgCountHigh;
         while(unackedMsgCount > (unackedMsgCountHigh = _unackedMsgCountHigh.get()))
         {

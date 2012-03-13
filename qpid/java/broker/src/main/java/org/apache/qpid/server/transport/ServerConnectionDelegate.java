@@ -219,7 +219,7 @@ public class ServerConnectionDelegate extends ServerDelegate
     }
 
     @Override
-    protected int getChannelMax()
+    public int getChannelMax()
     {
         return _maxNoOfChannels;
     }

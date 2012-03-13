@@ -27,6 +27,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.management.AMQQueueMBean;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;

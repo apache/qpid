@@ -36,6 +36,7 @@ import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -79,6 +80,7 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
 
     void unregisterSubscription(final Subscription subscription) throws AMQException;
 
+    Collection<Subscription> getConsumers();
 
     int getConsumerCount();
 
@@ -150,9 +152,9 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
     {
         boolean visit(QueueEntry entry);
     }
-    
+
     void visit(Visitor visitor);
-    
+
 
     long getMaximumMessageSize();
 

@@ -32,13 +32,13 @@ public class Activator implements BundleActivator
 
     /** @see org.osgi.framework.BundleActivator#start(org.osgi.framework.BundleContext) */
     public void start(BundleContext ctx) throws Exception {
-        _shutdown = new Shutdown();
+        /*_shutdown = new Shutdown();
         if (ctx != null)
         {
             ctx.registerService(ShutdownMBean.class.getName(), _shutdown, null);
         }
 
-        _shutdown.register();
+        _shutdown.register();*/
 
         _logger.info("Shutdown plugin MBean registered");
     }
@@ -46,11 +46,12 @@ public class Activator implements BundleActivator
     /** @see org.osgi.framework.BundleActivator#stop(org.osgi.framework.BundleContext) */
     public void stop(BundleContext ctx) throws Exception
     {
+    /*
         if (_shutdown != null)
         {
             _shutdown.unregister();
             _shutdown = null;
-        }
+        }*/
 
         _logger.info("Shutdown plugin MBean unregistered");
     }

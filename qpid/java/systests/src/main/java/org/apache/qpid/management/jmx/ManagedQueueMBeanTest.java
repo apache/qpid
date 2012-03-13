@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
-import org.apache.qpid.server.queue.AMQQueueMBean;
+import org.apache.qpid.server.management.AMQQueueMBean;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 

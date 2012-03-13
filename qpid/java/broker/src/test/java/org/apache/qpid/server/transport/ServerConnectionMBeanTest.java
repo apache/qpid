@@ -22,6 +22,7 @@ package org.apache.qpid.server.transport;
 
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
 import org.apache.qpid.server.configuration.MockConnectionConfig;
+import org.apache.qpid.server.management.ServerConnectionMBean;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;

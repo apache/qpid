@@ -29,7 +29,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.AMQBrokerManagerMBean;
+import org.apache.qpid.server.management.AMQBrokerManagerMBean;
 import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.server.configuration.BrokerConfig;
 import org.apache.qpid.server.configuration.ConfigStore;
@@ -51,8 +51,8 @@ import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
-import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.management.VirtualHostMBean;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -69,8 +69,6 @@ import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPlugin;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -151,7 +149,7 @@ public class VirtualHostImpl implements VirtualHost
         _securityManager = new SecurityManager(_appRegistry.getSecurityManager());
         _securityManager.configureHostPlugins(_configuration);
 
-        _virtualHostMBean = new VirtualHostMBean();
+        _virtualHostMBean = new VirtualHostMBean(this);
 
         _connectionRegistry = new ConnectionRegistry();
 
@@ -224,36 +222,6 @@ public class VirtualHostImpl implements VirtualHost
     {
         return false;
     }
-
-    /**
-     * Virtual host JMX MBean class.
-     *
-     * This has some of the methods implemented from management intrerface for exchanges. Any
-     * implementaion of an Exchange MBean should extend this class.
-     */
-    public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtualHost
-    {
-        public VirtualHostMBean() throws NotCompliantMBeanException
-        {
-            super(ManagedVirtualHost.class, ManagedVirtualHost.TYPE);
-        }
-
-        public String getObjectInstanceName()
-        {
-            return ObjectName.quote(_name);
-        }
-
-        public String getName()
-        {
-            return _name;
-        }
-
-        public VirtualHostImpl getVirtualHost()
-        {
-            return VirtualHostImpl.this;
-        }
-    }
-
 
     /**
      * Initialise a housekeeping task to iterate over queues cleaning expired messages with no consumers

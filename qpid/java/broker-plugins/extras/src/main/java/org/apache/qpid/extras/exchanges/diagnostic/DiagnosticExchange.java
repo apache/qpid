@@ -29,7 +29,7 @@ import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.AbstractExchange;
-import org.apache.qpid.server.exchange.AbstractExchangeMBean;
+import org.apache.qpid.server.management.AbstractExchangeMBean;
 import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.queue.AMQQueue;

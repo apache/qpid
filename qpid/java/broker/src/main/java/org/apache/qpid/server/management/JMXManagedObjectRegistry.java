@@ -253,7 +253,6 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         final NotificationListener mapCleanupListener = new NotificationListener()
         {
 
-            @Override
             public void handleNotification(Notification notification, Object handback)
             {
                 final String connectionId = ((JMXConnectionNotification) notification).getConnectionId();

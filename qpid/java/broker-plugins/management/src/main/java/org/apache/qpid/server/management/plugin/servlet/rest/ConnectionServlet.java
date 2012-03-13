@@ -1,0 +1,128 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
+package org.apache.qpid.server.management.plugin.servlet.rest;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Connection;
+import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.model.VirtualHost;
+import org.codehaus.jackson.map.ObjectMapper;
+
+public class ConnectionServlet extends AbstractServlet
+{
+
+
+    private Broker _broker;
+    private static final Comparator DEFAULT_COMPARATOR = new KeyComparator("name");
+
+
+    public ConnectionServlet(Broker broker)
+    {
+        _broker = broker;
+    }
+
+    protected void onGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+    {
+        response.setContentType("application/json");
+        response.setStatus(HttpServletResponse.SC_OK);
+
+        String[] sortKeys = request.getParameterValues("sort");
+        Comparator comparator;
+        if(sortKeys == null || sortKeys.length == 0)
+        {
+            comparator = DEFAULT_COMPARATOR;
+        }
+        else
+        {
+            comparator = new MapComparator(sortKeys);
+        }
+
+
+        Collection<VirtualHost> vhosts = _broker.getVirtualHosts();
+        Collection<Connection> exchanges = new ArrayList<Connection>();
+        List<Map<String,Object>> outputObject = new ArrayList<Map<String,Object>>();
+
+        final PrintWriter writer = response.getWriter();
+
+        ObjectMapper mapper = new ObjectMapper();
+        String vhostName = null;
+        String exchangeName = null;
+
+        if(request.getPathInfo() != null && request.getPathInfo().length()>0)
+        {
+            String path = request.getPathInfo().substring(1);
+            String[] parts = path.split("/");
+            vhostName = parts.length == 0 ? "" : parts[0];
+
+        }
+
+        for(VirtualHost vhost : vhosts)
+        {
+            if(vhostName == null || vhostName.equals(vhost.getName()))
+            {
+                for(Connection connection : vhost.getConnections())
+                {
+                    outputObject.add(convertToObject(connection));
+                }
+                if(vhostName != null)
+                {
+                    break;
+                }
+            }
+        }
+
+        Collections.sort(outputObject, comparator);
+        mapper.writeValue(writer, outputObject);
+
+    }
+
+    private Map<String,Object> convertToObject(final Connection connection)
+    {
+        Map<String, Object> object = new LinkedHashMap<String, Object>();
+        object.put("id",connection.getId());
+        object.put("name",connection.getName());
+
+        object.put("session-count", connection.getSessions().size());
+
+        Statistics stats = connection.getStatistics();
+
+        object.put("bytes-out-total", stats.getStatistic("bytes-out-total"));
+        object.put("bytes-in-total", stats.getStatistic("bytes-in-total"));
+        object.put("msgs-out-total", stats.getStatistic("msgs-out-total"));
+        object.put("msgs-in-total", stats.getStatistic("msgs-in-total"));
+
+        return object;
+    }
+
+}

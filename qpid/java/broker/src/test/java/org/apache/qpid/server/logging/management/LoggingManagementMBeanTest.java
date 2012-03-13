@@ -23,6 +23,7 @@ package org.apache.qpid.server.logging.management;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.management.LoggingManagementMBean;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_LEVEL;

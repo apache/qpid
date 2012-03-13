@@ -90,7 +90,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     private AuthenticationManager _authenticationManager;
 
-    private VirtualHostRegistry _virtualHostRegistry;
+    private final VirtualHostRegistry _virtualHostRegistry = new VirtualHostRegistry(this);
 
     private SecurityManager _securityManager;
 
@@ -109,7 +109,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     private BrokerConfig _broker;
 
     private ConfigStore _configStore;
-    
+
     private Timer _reportingTimer;
     private boolean _statisticsEnabled = false;
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
@@ -121,9 +121,12 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return _logger;
     }
 
-    protected Map<InetSocketAddress, QpidAcceptor> getAcceptors()
+    public Map<InetSocketAddress, QpidAcceptor> getAcceptors()
     {
-        return _acceptors;
+        synchronized (_acceptors)
+        {
+            return new HashMap<InetSocketAddress, QpidAcceptor>(_acceptors);
+        }
     }
 
     protected void setManagedObjectRegistry(ManagedObjectRegistry managedObjectRegistry)
@@ -134,11 +137,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     protected void setAuthenticationManager(AuthenticationManager authenticationManager)
     {
         _authenticationManager = authenticationManager;
-    }
-
-    protected void setVirtualHostRegistry(VirtualHostRegistry virtualHostRegistry)
-    {
-        _virtualHostRegistry = virtualHostRegistry;
     }
 
     protected void setSecurityManager(SecurityManager securityManager)
@@ -303,7 +301,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         //Create the composite (log4j+SystemOut MessageLogger to be used during startup
         RootMessageLogger[] messageLoggers = {new SystemOutMessageLogger(), _rootMessageLogger};
         _startupMessageLogger = new CompositeStartupMessageLogger(messageLoggers);
-        
+
         CurrentActor.set(new BrokerActor(_startupMessageLogger));
 
         try
@@ -315,8 +313,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             _qmfService = new QMFService(getConfigStore(), this);
 
             logStartupMessages(CurrentActor.get());
-
-            _virtualHostRegistry = new VirtualHostRegistry(this);
 
             _securityManager = new SecurityManager(_configuration, _pluginManager);
 
@@ -347,7 +343,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     /**
      * Iterates across all discovered authentication manager factories, offering the security configuration to each.
      * Expects <b>exactly</b> one authentication manager to configure and initialise itself.
-     * 
+     *
      * It is an error to configure more than one authentication manager, or to configure none.
      *
      * @return authentication manager
@@ -357,15 +353,15 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     {
         final SecurityConfiguration securityConfiguration = _configuration.getConfiguration(SecurityConfiguration.class.getName());
         final Collection<AuthenticationManagerPluginFactory<? extends Plugin>> factories = _pluginManager.getAuthenticationManagerPlugins().values();
-        
+
         if (factories.size() == 0)
         {
             throw new ConfigurationException("No authentication manager factory plugins found.  Check the desired authentication" +
                     "manager plugin has been placed in the plugins directory.");
         }
-        
+
         AuthenticationManager authMgr = null;
-        
+
         for (final Iterator<AuthenticationManagerPluginFactory<? extends Plugin>> iterator = factories.iterator(); iterator.hasNext();)
         {
             final AuthenticationManagerPluginFactory<? extends Plugin> factory = (AuthenticationManagerPluginFactory<? extends Plugin>) iterator.next();
@@ -387,7 +383,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         {
             throw new ConfigurationException("No authentication managers configured within the configure file.");
         }
-        
+
         return authMgr;
     }
 
@@ -404,19 +400,19 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     {
         _managedObjectRegistry = new NoopManagedObjectRegistry();
     }
-    
+
     public void initialiseStatisticsReporting()
     {
         long report = _configuration.getStatisticsReportingPeriod() * 1000; // convert to ms
         final boolean broker = _configuration.isStatisticsGenerationBrokerEnabled();
         final boolean virtualhost = _configuration.isStatisticsGenerationVirtualhostsEnabled();
         final boolean reset = _configuration.isStatisticsReportResetEnabled();
-        
+
         /* add a timer task to report statistics if generation is enabled for broker or virtualhosts */
         if (report > 0L && (broker || virtualhost))
         {
             _reportingTimer = new Timer("Statistics-Reporting", true);
-            
+
 
 
             _reportingTimer.scheduleAtFixedRate(new StatisticsReportingTask(broker, virtualhost, reset),
@@ -636,7 +632,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     {
         return _rootMessageLogger;
     }
-    
+
     public RootMessageLogger getCompositeStartupMessageLogger()
     {
         return _startupMessageLogger;
@@ -669,7 +665,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         getBroker().addVirtualHost(virtualHost);
         return virtualHost;
     }
-    
+
     public void registerMessageDelivered(long messageSize)
     {
         if (isStatisticsEnabled())
@@ -678,7 +674,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             _dataDelivered.registerEvent(messageSize);
         }
     }
-    
+
     public void registerMessageReceived(long messageSize, long timestamp)
     {
         if (isStatisticsEnabled())
@@ -687,34 +683,34 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             _dataReceived.registerEvent(messageSize, timestamp);
         }
     }
-    
+
     public StatisticsCounter getMessageReceiptStatistics()
     {
         return _messagesReceived;
     }
-    
+
     public StatisticsCounter getDataReceiptStatistics()
     {
         return _dataReceived;
     }
-    
+
     public StatisticsCounter getMessageDeliveryStatistics()
     {
         return _messagesDelivered;
     }
-    
+
     public StatisticsCounter getDataDeliveryStatistics()
     {
         return _dataDelivered;
     }
-    
+
     public void resetStatistics()
     {
         _messagesDelivered.reset();
         _dataDelivered.reset();
         _messagesReceived.reset();
         _dataReceived.reset();
-        
+
         for (VirtualHost vhost : _virtualHostRegistry.getVirtualHosts())
         {
             vhost.resetStatistics();
@@ -725,7 +721,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     {
         setStatisticsEnabled(!StatisticsCounter.DISABLE_STATISTICS &&
                 getConfiguration().isStatisticsGenerationBrokerEnabled());
-        
+
         _messagesDelivered = new StatisticsCounter("messages-delivered");
         _dataDelivered = new StatisticsCounter("bytes-delivered");
         _messagesReceived = new StatisticsCounter("messages-received");

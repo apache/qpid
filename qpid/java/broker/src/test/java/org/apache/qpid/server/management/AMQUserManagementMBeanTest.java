@@ -23,7 +23,7 @@ package org.apache.qpid.server.management;
 
 import org.apache.qpid.management.common.mbeans.UserManagement;
 import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
-import org.apache.qpid.server.security.auth.management.AMQUserManagementMBean;
+import org.apache.qpid.server.management.AMQUserManagementMBean;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 import javax.management.openmbean.CompositeData;

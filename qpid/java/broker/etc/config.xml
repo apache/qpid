@@ -43,7 +43,7 @@
         <socketSendBuffer>262144</socketSendBuffer>
     </connector>
     <management>
-        <enabled>true</enabled>
+        <enabled>false</enabled>
         <jmxport>
             <registryServer>8999</registryServer>
             <!--

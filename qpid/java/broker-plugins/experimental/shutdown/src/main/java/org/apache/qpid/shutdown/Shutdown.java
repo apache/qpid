@@ -122,7 +122,6 @@ public class Shutdown extends DefaultManagedObject implements ShutdownMBean
     /**
      * @see org.apache.qpid.server.management.ManagedObject#getObjectInstanceName()
      */
-    @Override
     public String getObjectInstanceName()
     {
         return "Shutdown";

@@ -39,4 +39,13 @@ public interface IConnectionRegistry
     public void registerConnection(AMQConnectionModel connnection);
 
     public void deregisterConnection(AMQConnectionModel connnection);
+
+    void addRegistryChangeListener(RegistryChangeListener listener);
+
+    interface RegistryChangeListener
+    {
+        void connectionRegistered(AMQConnectionModel connection);
+        void connectionUnregistered(AMQConnectionModel connection);
+
+    }
 }

@@ -40,4 +40,13 @@ public interface QueueRegistry
     Collection<AMQQueue> getQueues();
 
     AMQQueue getQueue(String queue);
+
+    void addRegistryChangeListener(RegistryChangeListener listener);
+
+    interface RegistryChangeListener
+    {
+        void queueRegistered(AMQQueue queue);
+        void queueUnregistered(AMQQueue queue);
+
+    }
 }

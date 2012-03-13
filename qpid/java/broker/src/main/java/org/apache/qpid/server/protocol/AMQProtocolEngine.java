@@ -46,6 +46,7 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.logging.subjects.ConnectionLogSubject;
+import org.apache.qpid.server.management.AMQProtocolSessionMBean;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
@@ -184,6 +185,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
 
         _registry = virtualHostRegistry.getApplicationRegistry();
         initialiseStatistics();
+
     }
 
     public void setNetworkConnection(NetworkConnection network)
@@ -238,7 +240,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
         return new WriteDeliverMethod(channelId);
     }
 
-    public void received(final ByteBuffer msg)
+    public synchronized void received(final ByteBuffer msg)
     {
         final long arrivalTime = System.currentTimeMillis();
         _lastReceivedTime = arrivalTime;
@@ -1342,12 +1344,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
 
     public List<AMQSessionModel> getSessionModels()
     {
-		List<AMQSessionModel> sessions = new ArrayList<AMQSessionModel>();
-		for (AMQChannel channel : getChannels())
-		{
-		    sessions.add((AMQSessionModel) channel);
-		}
-		return sessions;
+		return new ArrayList<AMQSessionModel>(getChannels());
     }
 
     public LogSubject getLogSubject()

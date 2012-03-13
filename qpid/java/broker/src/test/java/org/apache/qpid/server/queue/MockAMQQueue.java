@@ -36,6 +36,8 @@ import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -98,7 +100,7 @@ public class MockAMQQueue implements AMQQueue
                 return "[MockAMQQueue]";
             }
 
-        }; 
+        };
     }
 
     public ConfigStore getConfigStore()
@@ -219,12 +221,17 @@ public class MockAMQQueue implements AMQQueue
 
     public void registerSubscription(Subscription subscription, boolean exclusive) throws AMQException
     {
-      
+
     }
 
     public void unregisterSubscription(Subscription subscription) throws AMQException
     {
-      
+
+    }
+
+    public Collection<Subscription> getConsumers()
+    {
+        return Collections.emptyList();
     }
 
     public int getConsumerCount()
@@ -283,7 +290,7 @@ public class MockAMQQueue implements AMQQueue
     }
 
     public int delete() throws AMQException
-    {        
+    {
        _deleted = true;
        return getMessageCount();
     }
@@ -358,17 +365,17 @@ public class MockAMQQueue implements AMQQueue
 
     public void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName)
     {
-      
+
     }
 
     public void copyMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName)
     {
-      
+
     }
 
     public void removeMessagesFromQueue(long fromMessageId, long toMessageId)
     {
-      
+
     }
 
     public long getMaximumMessageSize()
@@ -378,7 +385,7 @@ public class MockAMQQueue implements AMQQueue
 
     public void setMaximumMessageSize(long value)
     {
-      
+
     }
 
     public long getMaximumMessageCount()
@@ -388,7 +395,7 @@ public class MockAMQQueue implements AMQQueue
 
     public void setMaximumMessageCount(long value)
     {
-      
+
     }
 
     public long getMaximumQueueDepth()
@@ -398,7 +405,7 @@ public class MockAMQQueue implements AMQQueue
 
     public void setMaximumQueueDepth(long value)
     {
-      
+
     }
 
     public long getMaximumMessageAge()
@@ -408,7 +415,7 @@ public class MockAMQQueue implements AMQQueue
 
     public void setMaximumMessageAge(long maximumMessageAge)
     {
-      
+
     }
 
     public long getMinimumAlertRepeatGap()
@@ -418,7 +425,7 @@ public class MockAMQQueue implements AMQQueue
 
     public void deleteMessageFromTop()
     {
-      
+
     }
 
     public long clearQueue()
@@ -429,7 +436,7 @@ public class MockAMQQueue implements AMQQueue
 
     public void checkMessageStatus() throws AMQException
     {
-      
+
     }
 
     public Set<NotificationCheck> getNotificationChecks()
@@ -439,22 +446,22 @@ public class MockAMQQueue implements AMQQueue
 
     public void flushSubscription(Subscription sub) throws AMQException
     {
-      
+
     }
 
     public void deliverAsync(Subscription sub)
     {
-      
+
     }
 
     public void deliverAsync()
     {
-      
+
     }
 
     public void stop()
     {
-      
+
     }
 
     public boolean isExclusive()
@@ -469,7 +476,7 @@ public class MockAMQQueue implements AMQQueue
 
     public void setAlternateExchange(Exchange exchange)
     {
-      
+
     }
 
     public Map<String, Object> getArguments()
@@ -503,7 +510,7 @@ public class MockAMQQueue implements AMQQueue
 
     public void setCapacity(long capacity)
     {
-      
+
     }
 
     public long getFlowResumeCapacity()
@@ -513,7 +520,7 @@ public class MockAMQQueue implements AMQQueue
 
     public void setFlowResumeCapacity(long flowResumeCapacity)
     {
-      
+
     }
 
     public void configure(ConfigurationPlugin config)

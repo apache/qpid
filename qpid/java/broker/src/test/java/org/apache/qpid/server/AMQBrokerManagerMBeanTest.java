@@ -30,6 +30,8 @@ import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
+import org.apache.qpid.server.management.AMQBrokerManagerMBean;
+import org.apache.qpid.server.management.VirtualHostMBean;
 import org.apache.qpid.server.queue.AMQPriorityQueue;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
@@ -39,7 +41,6 @@ import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.util.TestApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.util.HashMap;
@@ -62,7 +63,7 @@ public class AMQBrokerManagerMBeanTest extends QpidTestCase
         assertTrue(_exchangeRegistry.getExchange(new AMQShortString(exchange3)) == null);
 
 
-        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHostImpl.VirtualHostMBean) _vHost.getManagedObject());
+        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHostMBean) _vHost.getManagedObject());
         mbean.createNewExchange(exchange1, "direct", false);
         mbean.createNewExchange(exchange2, "topic", false);
         mbean.createNewExchange(exchange3, "headers", false);
@@ -84,7 +85,7 @@ public class AMQBrokerManagerMBeanTest extends QpidTestCase
     {
         String queueName = "testQueue_" + System.currentTimeMillis();
 
-        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHostImpl.VirtualHostMBean) _vHost.getManagedObject());
+        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHostMBean) _vHost.getManagedObject());
 
         assertTrue(_queueRegistry.getQueue(new AMQShortString(queueName)) == null);
 
@@ -99,7 +100,7 @@ public class AMQBrokerManagerMBeanTest extends QpidTestCase
     {
         String queueName = "testQueue_" + System.currentTimeMillis();
 
-        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHostImpl.VirtualHostMBean) _vHost.getManagedObject());
+        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHostMBean) _vHost.getManagedObject());
         ExchangeRegistry exReg = _vHost.getExchangeRegistry();
         Exchange defaultExchange =  exReg.getDefaultExchange();
 
@@ -124,7 +125,7 @@ public class AMQBrokerManagerMBeanTest extends QpidTestCase
 
         assertNull("The queue should not yet exist", qReg.getQueue(queueName));
 
-        final ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHostImpl.VirtualHostMBean) _vHost.getManagedObject());
+        final ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHostMBean) _vHost.getManagedObject());
         mbean.createNewQueue(queueName.asString(), "test", false, args);
 
         final AMQQueue createdQueue = qReg.getQueue(queueName);
@@ -148,7 +149,7 @@ public class AMQBrokerManagerMBeanTest extends QpidTestCase
 
         assertNull("The queue should not yet exist", qReg.getQueue(queueName));
 
-        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHostImpl.VirtualHostMBean) _vHost.getManagedObject());
+        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHostMBean) _vHost.getManagedObject());
         mbean.createNewQueue(queueName.asString(), "test", false, args);
 
         AMQQueue queue = qReg.getQueue(queueName);
