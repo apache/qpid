@@ -1033,7 +1033,9 @@ bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
         }
     }
 
-    mgntDeqStats(msg.payload, mgmtObject, brokerMgmtObject);
+    if (!ctxt) {
+        mgntDeqStats(msg.payload, mgmtObject, brokerMgmtObject);
+    }
 
     // This check prevents messages which have been forced persistent on one queue from dequeuing
     // from another on which no forcing has taken place and thus causing a store error.
