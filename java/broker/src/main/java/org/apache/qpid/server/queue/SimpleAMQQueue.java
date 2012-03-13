@@ -2091,9 +2091,13 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
             // Only process nodes that are not currently deleted and not dequeued
             if (!node.isDispensed())
             {
-                // If the node has exired then aquire it
+                // If the node has exired then acquire it
                 if (node.expired() && node.acquire())
                 {
+                    if (_logger.isDebugEnabled())
+                    {
+                        _logger.debug("Dequeuing expired node " + node);
+                    }
                     // Then dequeue it.
                     dequeueEntry(node);
                 }
