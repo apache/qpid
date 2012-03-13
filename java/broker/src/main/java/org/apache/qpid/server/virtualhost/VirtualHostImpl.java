@@ -59,7 +59,6 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
@@ -72,7 +71,6 @@ import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -84,7 +82,25 @@ public class VirtualHostImpl implements VirtualHost
 {
     private static final Logger _logger = Logger.getLogger(VirtualHostImpl.class);
 
+    private static final int HOUSEKEEPING_SHUTDOWN_TIMEOUT = 5;
+
+    private final UUID _id;
+
     private final String _name;
+
+    private final long _createTime = System.currentTimeMillis();
+
+    private final ConcurrentHashMap<BrokerLink,BrokerLink> _links = new ConcurrentHashMap<BrokerLink, BrokerLink>();
+
+    private final ScheduledThreadPoolExecutor _houseKeepingTasks;
+
+    private final IApplicationRegistry _appRegistry;
+
+    private final SecurityManager _securityManager;
+
+    private final BrokerConfig _brokerConfig;
+
+    private final VirtualHostConfiguration _configuration;
 
     private ConnectionRegistry _connectionRegistry;
 
@@ -102,23 +118,82 @@ public class VirtualHostImpl implements VirtualHost
 
     private AMQBrokerManagerMBean _brokerMBean;
 
-    private SecurityManager _securityManager;
 
-    private final ScheduledThreadPoolExecutor _houseKeepingTasks;
-    private final IApplicationRegistry _appRegistry;
-    private VirtualHostConfiguration _configuration;
     private DurableConfigurationStore _durableConfigurationStore;
     private BindingFactory _bindingFactory;
-    private BrokerConfig _broker;
-    private UUID _id;
 
     private boolean _statisticsEnabled = false;
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
-    private final long _createTime = System.currentTimeMillis();
-    private final ConcurrentHashMap<BrokerLink,BrokerLink> _links = new ConcurrentHashMap<BrokerLink, BrokerLink>();
-    private static final int HOUSEKEEPING_SHUTDOWN_TIMEOUT = 5;
 
+    public VirtualHostImpl(IApplicationRegistry appRegistry, VirtualHostConfiguration hostConfig, MessageStore store) throws Exception
+    {
+        if (hostConfig == null)
+        {
+            throw new IllegalArgumentException("HostConfig cannot be null");
+        }
+
+        _appRegistry = appRegistry;
+        _brokerConfig = _appRegistry.getBroker();
+        _configuration = hostConfig;
+        _name = _configuration.getName();
+        _dtxRegistry = new DtxRegistry();
+
+        _id = _appRegistry.getConfigStore().createId();
+
+        CurrentActor.get().message(VirtualHostMessages.CREATED(_name));
+
+        if (_name == null || _name.length() == 0)
+        {
+            throw new IllegalArgumentException("Illegal name (" + _name + ") for virtualhost.");
+        }
+
+        _securityManager = new SecurityManager(_appRegistry.getSecurityManager());
+        _securityManager.configureHostPlugins(_configuration);
+
+        _virtualHostMBean = new VirtualHostMBean();
+
+        _connectionRegistry = new ConnectionRegistry();
+
+        _houseKeepingTasks = new ScheduledThreadPoolExecutor(_configuration.getHouseKeepingThreadCount());
+
+        _queueRegistry = new DefaultQueueRegistry(this);
+
+        _exchangeFactory = new DefaultExchangeFactory(this);
+        _exchangeFactory.initialise(_configuration);
+
+        _exchangeRegistry = new DefaultExchangeRegistry(this);
+
+        StartupRoutingTable configFileRT = new StartupRoutingTable();
+
+        _durableConfigurationStore = configFileRT;
+
+        // This needs to be after the RT has been defined as it creates the default durable exchanges.
+        _exchangeRegistry.initialise();
+
+        _bindingFactory = new BindingFactory(this);
+
+        initialiseModel(_configuration);
+
+        if (store != null)
+        {
+            _messageStore = store;
+            if(store instanceof DurableConfigurationStore)
+            {
+                _durableConfigurationStore = (DurableConfigurationStore) store;
+            }
+        }
+        else
+        {
+            initialiseMessageStore(hostConfig);
+        }
+
+        _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
+        _brokerMBean.register();
+        initialiseHouseKeeping(hostConfig.getHousekeepingCheckPeriod());
+
+        initialiseStatistics();
+    }
 
     public IConnectionRegistry getConnectionRegistry()
     {
@@ -179,75 +254,6 @@ public class VirtualHostImpl implements VirtualHost
         }
     }
 
-    public VirtualHostImpl(IApplicationRegistry appRegistry, VirtualHostConfiguration hostConfig, MessageStore store) throws Exception
-    {
-		if (hostConfig == null)
-		{
-			throw new IllegalArgumentException("HostConfig cannot be null");
-		}
-		
-        _appRegistry = appRegistry;
-        _broker = _appRegistry.getBroker();
-        _configuration = hostConfig;
-        _name = _configuration.getName();
-        _dtxRegistry = new DtxRegistry();
-
-        _id = _appRegistry.getConfigStore().createId();
-
-        CurrentActor.get().message(VirtualHostMessages.CREATED(_name));
-
-        if (_name == null || _name.length() == 0)
-        {
-    		throw new IllegalArgumentException("Illegal name (" + _name + ") for virtualhost.");
-        }
-
-        _securityManager = new SecurityManager(_appRegistry.getSecurityManager());
-        _securityManager.configureHostPlugins(_configuration);
-
-        _virtualHostMBean = new VirtualHostMBean();
-
-        _connectionRegistry = new ConnectionRegistry();
-
-        _houseKeepingTasks = new ScheduledThreadPoolExecutor(_configuration.getHouseKeepingThreadCount());
-
-        _queueRegistry = new DefaultQueueRegistry(this);
-
-        _exchangeFactory = new DefaultExchangeFactory(this);
-        _exchangeFactory.initialise(_configuration);
-
-        _exchangeRegistry = new DefaultExchangeRegistry(this);
-
-        StartupRoutingTable configFileRT = new StartupRoutingTable();
-
-        _durableConfigurationStore = configFileRT;
-
-        // This needs to be after the RT has been defined as it creates the default durable exchanges.
-        _exchangeRegistry.initialise();
-
-        _bindingFactory = new BindingFactory(this);
-
-        initialiseModel(_configuration);
-
-        if (store != null)
-        {
-            _messageStore = store;
-            if(store instanceof DurableConfigurationStore)
-            {
-                _durableConfigurationStore = (DurableConfigurationStore) store;
-            }
-        }
-        else
-        {
-			initialiseMessageStore(hostConfig);
-        }
-		
-
-        _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
-        _brokerMBean.register();
-        initialiseHouseKeeping(hostConfig.getHousekeepingCheckPeriod());
-        
-        initialiseStatistics();
-    }
 
     /**
      * Initialise a housekeeping task to iterate over queues cleaning expired messages with no consumers
@@ -263,8 +269,7 @@ public class VirtualHostImpl implements VirtualHost
 
             scheduleHouseKeepingTask(period, new VirtualHostHouseKeepingTask());
 
-            Map<String, VirtualHostPluginFactory> plugins =
-                ApplicationRegistry.getInstance().getPluginManager().getVirtualHostPlugins();
+            Map<String, VirtualHostPluginFactory> plugins = _appRegistry.getPluginManager().getVirtualHostPlugins();
 
             if (plugins != null)
             {
@@ -389,10 +394,8 @@ public class VirtualHostImpl implements VirtualHost
     {
         String messageStoreClass = hostConfig.getMessageStoreClass();
 
-        Class clazz = Class.forName(messageStoreClass);
+        Class<?> clazz = Class.forName(messageStoreClass);
         Object o = clazz.newInstance();
-
-
 
         if (!(o instanceof MessageStore))
         {
@@ -435,11 +438,10 @@ public class VirtualHostImpl implements VirtualHost
     {
         _logger.debug("Loading configuration for virtualhost: " + config.getName());
 
-    	List exchangeNames = config.getExchanges();
+        List<String> exchangeNames = config.getExchanges();
 
-        for (Object exchangeNameObj : exchangeNames)
+        for (String exchangeName : exchangeNames)
         {
-            String exchangeName = String.valueOf(exchangeNameObj);
             configureExchange(config.getExchangeConfiguration(exchangeName));
         }
 
@@ -538,17 +540,12 @@ public class VirtualHostImpl implements VirtualHost
 
     public BrokerConfig getBroker()
     {
-        return _broker;
+        return _brokerConfig;
     }
 
     public String getFederationTag()
     {
-        return _broker.getFederationTag();
-    }
-
-    public void setBroker(final BrokerConfig broker)
-    {
-        _broker = broker;
+        return _brokerConfig.getFederationTag();
     }
 
     public long getCreateTime()
@@ -634,7 +631,7 @@ public class VirtualHostImpl implements VirtualHost
             }
             catch (Exception e)
             {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                _logger.error("Failed to close message store", e);
             }
         }
 
@@ -805,39 +802,15 @@ public class VirtualHostImpl implements VirtualHost
      */
     private static class StartupRoutingTable implements DurableConfigurationStore
     {
-        private List<Exchange> exchange = new LinkedList<Exchange>();
-        private List<CreateQueueTuple> queue = new LinkedList<CreateQueueTuple>();
-        private List<CreateBindingTuple> bindings = new LinkedList<CreateBindingTuple>();
-        private List<BrokerLink> links = new LinkedList<BrokerLink>();
-        private List<Bridge> bridges = new LinkedList<Bridge>();
-        
-        public void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
-        {
-        }
-
-        public void close() throws Exception
-        {
-        }
-
-        public void removeMessage(Long messageId) throws AMQException
-        {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
         public void configureConfigStore(String name,
                                          ConfigurationRecoveryHandler recoveryHandler,
                                          Configuration config,
                                          LogSubject logSubject) throws Exception
         {
-            //To change body of implemented methods use File | Settings | File Templates.
         }
 
         public void createExchange(Exchange exchange) throws AMQStoreException
         {
-            if (exchange.isDurable())
-            {
-                this.exchange.add(exchange);
-            }
         }
 
         public void removeExchange(Exchange exchange) throws AMQStoreException
@@ -846,10 +819,6 @@ public class VirtualHostImpl implements VirtualHost
 
         public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
         {
-            if (exchange.isDurable() && queue.isDurable())
-            {
-                bindings.add(new CreateBindingTuple(exchange, routingKey, queue, args));
-            }
         }
 
         public void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
@@ -858,48 +827,14 @@ public class VirtualHostImpl implements VirtualHost
 
         public void createQueue(AMQQueue queue) throws AMQStoreException
         {
-            createQueue(queue, null);
         }
 
         public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQStoreException
         {
-            if (queue.isDurable())
-            {
-                this.queue.add(new CreateQueueTuple(queue, arguments));
-            }
         }
 
         public void removeQueue(AMQQueue queue) throws AMQStoreException
         {
-        }
-
-
-        private static class CreateQueueTuple
-        {
-            private AMQQueue queue;
-            private FieldTable arguments;
-
-            public CreateQueueTuple(AMQQueue queue, FieldTable arguments)
-            {
-                this.queue = queue;
-                this.arguments = arguments;
-            }
-        }
-
-        private static class CreateBindingTuple
-        {
-            private AMQQueue queue;
-            private FieldTable arguments;
-            private Exchange exchange;
-            private AMQShortString routingKey;
-
-            public CreateBindingTuple(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args)
-            {
-                this.exchange = exchange;
-                this.routingKey = routingKey;
-                this.queue = queue;
-                arguments = args;
-            }
         }
 
         public void updateQueue(AMQQueue queue) throws AMQStoreException
@@ -908,10 +843,6 @@ public class VirtualHostImpl implements VirtualHost
 
         public void createBrokerLink(final BrokerLink link) throws AMQStoreException
         {
-            if(link.isDurable())
-            {
-                links.add(link);
-            }
         }
 
         public void deleteBrokerLink(final BrokerLink link) throws AMQStoreException
@@ -920,10 +851,6 @@ public class VirtualHostImpl implements VirtualHost
 
         public void createBridge(final Bridge bridge) throws AMQStoreException
         {
-            if(bridge.isDurable())
-            {
-                bridges.add(bridge);
-            }
         }
 
         public void deleteBridge(final Bridge bridge) throws AMQStoreException
