@@ -29,6 +29,4 @@ public interface VirtualHostConfig extends ConfiguredObject<VirtualHostConfigTyp
 
     String getFederationTag();
 
-    void setBroker(BrokerConfig brokerConfig);
-
 }
