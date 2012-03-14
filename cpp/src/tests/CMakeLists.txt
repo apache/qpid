@@ -326,7 +326,7 @@ if (BUILD_MSSQL)
   add_test (store_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_store_tests${test_script_suffix} MSSQL)
 endif (BUILD_MSSQL)
 if (BUILD_MSCLFS)
-  add_test (store_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_store_tests${test_script_suffix} MSSQL-CLFS)
+  add_test (store_tests_clfs ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_store_tests${test_script_suffix} MSSQL-CLFS)
 endif (BUILD_MSCLFS)
 endif (PYTHON_EXECUTABLE)
 
