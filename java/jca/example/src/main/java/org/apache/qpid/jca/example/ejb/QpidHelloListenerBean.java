@@ -53,7 +53,7 @@ public class QpidHelloListenerBean implements MessageListener
     @Resource(@jndi.scheme@="@qpid.xacf.jndi.name@")
     private ConnectionFactory _connectionFactory;
 
-    @Resource(@jndi.scheme@="GoodByeQueue")
+    @Resource(@jndi.scheme@="@qpid.goodbye.queue.jndi.name@")
     private Destination _queue;
 
     @Override
