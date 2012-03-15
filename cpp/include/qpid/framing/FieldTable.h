@@ -1,3 +1,6 @@
+#ifndef _FieldTable_
+#define _FieldTable_
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,16 +21,17 @@
  * under the License.
  *
  */
-#include <iostream>
-#include <vector>
+
+#include "qpid/framing/amqp_types.h"
+#include "qpid/sys/Mutex.h"
+
 #include <boost/shared_ptr.hpp>
 #include <boost/shared_array.hpp>
-#include <map>
-#include "qpid/framing/amqp_types.h"
-#include "qpid/CommonImportExport.h"
 
-#ifndef _FieldTable_
-#define _FieldTable_
+#include <iosfwd>
+#include <map>
+
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
     /**
@@ -114,11 +118,13 @@ class FieldTable
 
   private:
     void realDecode() const;
-    void flushRawCache() const;
+    void flushRawCache();
 
+    mutable qpid::sys::Mutex lock;
     mutable ValueMap values;
     mutable boost::shared_array<uint8_t> cachedBytes;
     mutable uint32_t cachedSize; // if = 0 then non cached size as 0 is not a legal size
+    mutable bool newBytes;
 
     QPID_COMMON_EXTERN friend std::ostream& operator<<(std::ostream& out, const FieldTable& body);
 };
