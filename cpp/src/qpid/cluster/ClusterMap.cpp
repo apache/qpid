@@ -29,7 +29,8 @@
 #include <ostream>
 
 using namespace std;
-using namespace boost;
+using boost::ref;
+using boost::optional;
 
 namespace qpid {
 using namespace framing;
