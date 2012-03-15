@@ -874,7 +874,6 @@ set (qpidcommon_SOURCES
      qpid/framing/AMQHeaderBody.cpp
      qpid/framing/AMQHeartbeatBody.cpp
      qpid/framing/Array.cpp
-     qpid/framing/BodyHandler.cpp
      qpid/framing/Buffer.cpp
      qpid/framing/Endian.cpp
      qpid/framing/FieldTable.cpp

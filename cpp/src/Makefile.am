@@ -398,8 +398,6 @@ libqpidcommon_la_SOURCES +=			\
   qpid/framing/AccumulatedAck.h			\
   qpid/framing/Array.cpp			\
   qpid/framing/BodyFactory.h			\
-  qpid/framing/BodyHandler.cpp			\
-  qpid/framing/BodyHandler.h			\
   qpid/framing/Buffer.cpp			\
   qpid/framing/ResizableBuffer.h		\
   qpid/framing/ChannelHandler.h			\
