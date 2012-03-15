@@ -100,8 +100,10 @@ start_ssl_mux_broker() {
     PORTS=( ${PORTS[@]} $1 )
 }
 
+sasl_config_dir=$builddir/sasl_config
+
 start_authenticating_broker() {
-    start_brokers 1 "--transport ssl --ssl-port 0 --require-encryption --ssl-sasl-no-dict --ssl-require-client-authentication --auth yes"
+    start_brokers 1 "--transport ssl --ssl-port 0 --require-encryption --ssl-sasl-no-dict --ssl-require-client-authentication --auth yes --sasl-config=${sasl_config_dir}"
 }
 
 ssl_cluster_broker() {		# $1 = port
