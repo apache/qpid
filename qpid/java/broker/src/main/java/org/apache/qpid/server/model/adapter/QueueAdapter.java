@@ -22,9 +22,7 @@ package org.apache.qpid.server.model.adapter;
 
 import java.security.AccessControlException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -169,17 +167,7 @@ final class QueueAdapter extends AbstractAdapter implements Queue
 
     private static class QueueStatisticsAdapter implements Statistics
     {
-        private static final String MSGS_QUEUE_SIZE = "msgs-queue-size";
-        private static final String BYTES_QUEUE_SIZE = "bytes-queue-size";
-        private static final String BYTES_TOTAL_IN = "bytes-total-in";
-        private static final String BYTES_TOTAL_OUT = "bytes-total-out";
-        private static final String MSGS_QUEUE_UNDELIVERED_SIZE = "msgs-queue-undelivered-size";
-        
-        private static final Collection<String> STATISTIC_NAMES = 
-                Collections.unmodifiableCollection(Arrays.asList(MSGS_QUEUE_SIZE,BYTES_QUEUE_SIZE, BYTES_TOTAL_IN,
-                                                                 BYTES_TOTAL_OUT,MSGS_QUEUE_UNDELIVERED_SIZE));
-        
-        
+
         private final AMQQueue _queue;
 
         public QueueStatisticsAdapter(AMQQueue queue)
@@ -189,32 +177,84 @@ final class QueueAdapter extends AbstractAdapter implements Queue
 
         public Collection<String> getStatisticNames()
         {
-            return STATISTIC_NAMES;
+            return Queue.AVAILABLE_STATISTICS;
         }
 
         public Number getStatistic(String name)
         {
-            if(MSGS_QUEUE_SIZE.equals(name))
+            if(BINDING_COUNT.equals(name))
             {
-                return _queue.getMessageCount();
+                return _queue.getBindingCount();
             }
-            else if(BYTES_QUEUE_SIZE.equals(name))
+            else if(CONSUMER_COUNT.equals(name))
+            {
+                return _queue.getConsumerCount();
+            }
+            else if(CONSUMER_COUNT_WITH_CREDIT.equals(name))
+            {
+                return _queue.getActiveConsumerCount();
+            }
+            else if(DISCARDS_TTL_BYTES.equals(name))
+            {
+                return null; // TODO
+            }
+            else if(DISCARDS_TTL_MESSAGES.equals(name))
+            {
+                return null; // TODO
+            }
+            else if(PERSISTENT_DEQUEUED_BYTES.equals(name))
+            {
+                return _queue.getPersistentByteDequeues();
+            }
+            else if(PERSISTENT_DEQUEUED_MESSAGES.equals(name))
+            {
+                return _queue.getPersistentMsgDequeues();
+            }
+            else if(PERSISTENT_ENQUEUED_BYTES.equals(name))
+            {
+                return _queue.getPersistentByteEnqueues();
+            }
+            else if(PERSISTENT_ENQUEUED_MESSAGES.equals(name))
+            {
+                return _queue.getPersistentMsgEnqueues();
+            }
+            else if(QUEUE_DEPTH_BYTES.equals(name))
             {
                 return _queue.getQueueDepth();
             }
-            else
-                if(BYTES_TOTAL_IN.equals(name))
+            else if(QUEUE_DEPTH_MESSAGES.equals(name))
             {
-                return _queue.getTotalEnqueueSize();
+                return _queue.getMessageCount();
             }
-            else if(BYTES_TOTAL_OUT.equals(name))
+            else if(STATE_CHANGED.equals(name))
+            {
+                return null; // TODO
+            }
+            else if(TOTAL_DEQUEUED_BYTES.equals(name))
             {
                 return _queue.getTotalDequeueSize();
             }
-            else if(MSGS_QUEUE_UNDELIVERED_SIZE.equals(name))
+            else if(TOTAL_DEQUEUED_MESSAGES.equals(name))
             {
-                return _queue.getUndeliveredMessageCount();
+                return null; // TODO
             }
+            else if(TOTAL_ENQUEUED_BYTES.equals(name))
+            {
+                _queue.getTotalEnqueueSize();
+            }
+            else if(TOTAL_ENQUEUED_MESSAGES.equals(name))
+            {
+                return null; // TODO
+            }
+            else if(UNACKNOWLEDGED_BYTES.equals(name))
+            {
+                return null; // TODO
+            }
+            else if(UNACKNOWLEDGED_MESSAGES.equals(name))
+            {
+                return _queue.getUnackedMessageCount();
+            }
+
             return null;
         }
     }

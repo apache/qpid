@@ -21,20 +21,16 @@
 
 package org.apache.qpid.server.jmx.mbeans;
 
-import org.apache.qpid.management.common.mbeans.ManagedQueue;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
-import org.apache.qpid.server.jmx.AMQManagedObject;
-import org.apache.qpid.server.jmx.ManagedObject;
-import org.apache.qpid.server.jmx.ManagedObjectRegistry;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.Queue;
-
+import java.io.IOException;
 import javax.management.JMException;
-import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularData;
-import java.io.IOException;
+import org.apache.qpid.management.common.mbeans.ManagedQueue;
+import org.apache.qpid.server.jmx.AMQManagedObject;
+import org.apache.qpid.server.jmx.ManagedObject;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Queue;
 
 public class QueueMBean extends AMQManagedObject implements ManagedQueue
 {
@@ -64,192 +60,185 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue
         return _queue.getName();
     }
 
-    public Integer getMessageCount() throws IOException
+    public Integer getMessageCount()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return getStatisticValue(Queue.QUEUE_DEPTH_MESSAGES).intValue();
     }
 
-    public Integer getMaximumDeliveryCount() throws IOException
+    private Number getStatisticValue(String name)
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        final Number statistic = _queue.getStatistics().getStatistic(name);
+        return statistic == null ? Integer.valueOf(0) : statistic;
     }
 
-    public Long getReceivedMessageCount() throws IOException
+    public Integer getMaximumDeliveryCount()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;  // TODO
     }
 
-    public Long getQueueDepth() throws IOException, JMException
+    public Long getReceivedMessageCount()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return getStatisticValue(Queue.TOTAL_ENQUEUED_MESSAGES).longValue();
     }
 
-    public Integer getActiveConsumerCount() throws IOException
+    public Long getQueueDepth()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return getStatisticValue(Queue.QUEUE_DEPTH_BYTES).longValue();
     }
 
-    public Integer getConsumerCount() throws IOException
+    public Integer getActiveConsumerCount()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return getStatisticValue(Queue.CONSUMER_COUNT_WITH_CREDIT).intValue();
     }
 
-    public String getOwner() throws IOException
+    public Integer getConsumerCount()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return getStatisticValue(Queue.CONSUMER_COUNT).intValue();
     }
 
-    public boolean isDurable() throws IOException
+    public String getOwner()
+    {
+        return (String) _queue.getAttribute(Queue.OWNER);
+    }
+
+    public boolean isDurable()
     {
         return _queue.isDurable();
     }
 
-    public boolean isAutoDelete() throws IOException
+    public boolean isAutoDelete()
     {
         return _queue.getLifetimePolicy() == LifetimePolicy.AUTO_DELETE;
     }
 
-    public Long getMaximumMessageAge() throws IOException
+    public Long getMaximumMessageAge()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return (Long) _queue.getAttribute(Queue.ALERT_THRESHOLD_MESSAGE_AGE);
     }
 
-    public void setMaximumMessageAge(Long age) throws IOException
+    public void setMaximumMessageAge(Long age)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        _queue.setAttribute(Queue.ALERT_THRESHOLD_MESSAGE_AGE, getMaximumMessageAge(), age);
     }
 
-    public Long getMaximumMessageSize() throws IOException
+    public Long getMaximumMessageSize()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return (Long) _queue.getAttribute(Queue.ALERT_THRESHOLD_MESSAGE_SIZE);
     }
 
-    public void setMaximumMessageSize(Long size) throws IOException
+    public void setMaximumMessageSize(Long size)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        _queue.setAttribute(Queue.ALERT_THRESHOLD_MESSAGE_SIZE, getMaximumMessageSize(), size);
     }
 
-    public Long getMaximumMessageCount() throws IOException
+    public Long getMaximumMessageCount()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return (Long) _queue.getAttribute(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES);
     }
 
-    public void setMaximumMessageCount(Long value) throws IOException
+    public void setMaximumMessageCount(Long value)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        _queue.setAttribute(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, getMaximumMessageCount(), value);
     }
 
-    public Long getMaximumQueueDepth() throws IOException
+    public Long getMaximumQueueDepth()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return (Long) _queue.getAttribute(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES);
     }
 
-    public void setMaximumQueueDepth(Long value) throws IOException
+    public void setMaximumQueueDepth(Long value)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        _queue.setAttribute(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, getMaximumQueueDepth(), value);
     }
 
-    public Long getCapacity() throws IOException
+    public Long getCapacity()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return (Long) _queue.getAttribute(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES);
     }
 
-    public void setCapacity(Long value) throws IOException, IllegalArgumentException
+    public void setCapacity(Long value)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        _queue.setAttribute(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES, getCapacity(), value);
     }
 
-    public Long getFlowResumeCapacity() throws IOException
+    public Long getFlowResumeCapacity()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return (Long) _queue.getAttribute(Queue.QUEUE_FLOW_RESUME_SIZE_BYTES);
     }
 
-    public void setFlowResumeCapacity(Long value) throws IOException, IllegalArgumentException
+    public void setFlowResumeCapacity(Long value)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        _queue.setAttribute(Queue.QUEUE_FLOW_RESUME_SIZE_BYTES, getFlowResumeCapacity(), value);
     }
 
-    public boolean isFlowOverfull() throws IOException
+    public boolean isFlowOverfull()
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;  // TODO
     }
 
-    public boolean isExclusive() throws IOException
+    public boolean isExclusive()
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return (Boolean) _queue.getAttribute(Queue.EXCLUSIVE);
     }
 
-    public void setExclusive(boolean exclusive) throws IOException, JMException
+    public void setExclusive(boolean exclusive)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        _queue.setAttribute(Queue.EXCLUSIVE, isExclusive(), exclusive);
     }
 
-    public void setAlternateExchange(String exchangeName) throws IOException
+    public void setAlternateExchange(String exchangeName)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // TODO
     }
 
-    public String getAlternateExchange() throws IOException
+    public String getAlternateExchange()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;  // TODO
     }
 
-    public TabularData viewMessages(
-            @MBeanOperationParameter(name = "from index", description = "from index") int fromIndex,
-            @MBeanOperationParameter(name = "to index", description = "to index") int toIndex)
+    public TabularData viewMessages(int fromIndex, int toIndex)
             throws IOException, JMException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return viewMessages((long)fromIndex, (long)toIndex);
     }
 
-    public TabularData viewMessages(
-            @MBeanOperationParameter(name = "start position", description = "start position") long startPosition,
-            @MBeanOperationParameter(name = "end position", description = "end position") long endPosition)
+    public TabularData viewMessages(long startPosition, long endPosition)
             throws IOException, JMException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;  // TODO
     }
 
-    public CompositeData viewMessageContent(
-            @MBeanOperationParameter(name = "Message Id", description = "Message Id") long messageId)
+    public CompositeData viewMessageContent(long messageId)
             throws IOException, JMException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;  // TODO
     }
 
     public void deleteMessageFromTop() throws IOException, JMException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // TODO
     }
 
     public Long clearQueue() throws IOException, JMException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;  // TODO
     }
 
-    public void moveMessages(
-            @MBeanOperationParameter(name = "from MessageId", description = "from MessageId") long fromMessageId,
-            @MBeanOperationParameter(name = "to MessageId", description = "to MessageId") long toMessageId,
-            @MBeanOperationParameter(name = ManagedQueue.TYPE, description = "to Queue Name") String toQueue)
+    public void moveMessages(long fromMessageId, long toMessageId, String toQueue)
             throws IOException, JMException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // TODO
     }
 
-    public void deleteMessages(
-            @MBeanOperationParameter(name = "from MessageId", description = "from MessageId") long fromMessageId,
-            @MBeanOperationParameter(name = "to MessageId", description = "to MessageId") long toMessageId)
+    public void deleteMessages(long fromMessageId, long toMessageId)
             throws IOException, JMException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // TODO
     }
 
-    public void copyMessages(
-            @MBeanOperationParameter(name = "from MessageId", description = "from MessageId") long fromMessageId,
-            @MBeanOperationParameter(name = "to MessageId", description = "to MessageId") long toMessageId,
-            @MBeanOperationParameter(name = ManagedQueue.TYPE, description = "to Queue Name") String toQueue)
+    public void copyMessages(long fromMessageId, long toMessageId, String toQueue)
             throws IOException, JMException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // TODO
     }
 }
