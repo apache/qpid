@@ -19,16 +19,18 @@
  *
  */
 #include "qpid/framing/BodyHandler.h"
+
 #include "qpid/framing/AMQMethodBody.h"
 #include "qpid/framing/AMQHeaderBody.h"
 #include "qpid/framing/AMQContentBody.h"
 #include "qpid/framing/AMQHeartbeatBody.h"
-#include <boost/cast.hpp>
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/Msg.h"
 
+#include <boost/cast.hpp>
+
 using namespace qpid::framing;
-using namespace boost;
+using boost::polymorphic_downcast;
 
 BodyHandler::~BodyHandler() {}
 
