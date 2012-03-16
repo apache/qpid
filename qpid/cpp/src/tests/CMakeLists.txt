@@ -151,13 +151,6 @@ set(unit_tests_to_build
 
 mark_as_advanced(unit_tests_to_build)
 
-# Disabled till we move to amqp_0_10 codec.
-# 	amqp_0_10/serialize.cpp allSegmentTypes.h \
-# 	amqp_0_10/ProxyTemplate.cpp \
-# 	amqp_0_10/apply.cpp \
-# 	amqp_0_10/Map.cpp \
-# 	amqp_0_10/handlers.cpp 
-
 add_executable (unit_test unit_test
                 ${unit_tests_to_build} ${platform_test_additions})
 target_link_libraries (unit_test
