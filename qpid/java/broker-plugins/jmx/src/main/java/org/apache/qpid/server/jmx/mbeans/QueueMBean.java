@@ -22,6 +22,7 @@
 package org.apache.qpid.server.jmx.mbeans;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import javax.management.JMException;
@@ -56,6 +57,10 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue
     private static final OpenType[] MSG_ATTRIBUTE_TYPES;
     private static final CompositeType MSG_DATA_TYPE;
     private static final TabularType MSG_LIST_DATA_TYPE;
+    private static final CompositeType MSG_CONTENT_TYPE;
+    private static final String[] VIEW_MSG_COMPOSIT_ITEM_NAMES_ARRAY = VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES_DESC.toArray(
+            new String[VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES_DESC.size()]);
+
     static
     {
 
@@ -76,6 +81,19 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue
 
             MSG_LIST_DATA_TYPE = new TabularType("Messages", "List of messages", MSG_DATA_TYPE,
                                                 VIEW_MSGS_TABULAR_UNIQUE_INDEX.toArray(new String[VIEW_MSGS_TABULAR_UNIQUE_INDEX.size()]));
+
+            OpenType[] msgContentAttrs = new OpenType[] {
+                    SimpleType.LONG, // For message id
+                    SimpleType.STRING, // For MimeType
+                    SimpleType.STRING, // For MimeType
+                    new ArrayType(SimpleType.BYTE, true) // For message content
+            };
+
+
+            MSG_CONTENT_TYPE = new CompositeType("Message Content", "AMQ Message Content",
+                    VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES_DESC.toArray(new String[VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES_DESC.size()]),
+                    VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES_DESC.toArray(new String[VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES_DESC.size()]),
+                    msgContentAttrs);
 
         }
         catch (OpenDataException e)
@@ -320,7 +338,50 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue
     public CompositeData viewMessageContent(long messageId)
             throws IOException, JMException
     {
-        return null;  // TODO
+        QueueEntry entry = getMessage(messageId);
+        if(entry == null)
+        {
+            throw new OperationsException("AMQMessage with message id = " + messageId + " is not in the " + _queue.getName());
+        }
+
+        ServerMessage serverMsg = entry.getMessage();
+        final int bodySize = (int) serverMsg.getSize();
+
+        byte[] msgContent = new byte[bodySize];
+
+        ByteBuffer buf = ByteBuffer.wrap(msgContent);
+        int position = 0;
+
+        while(position < bodySize)
+        {
+            position += serverMsg.getContent(buf, position);
+
+        }
+
+        AMQMessageHeader header = serverMsg.getMessageHeader();
+
+        String mimeType = null, encoding = null;
+        if (header != null)
+        {
+            mimeType = header.getMimeType();
+
+            encoding = header.getEncoding();
+        }
+
+
+        Object[] itemValues = { messageId, mimeType, encoding, msgContent };
+
+        return new CompositeDataSupport(MSG_CONTENT_TYPE, VIEW_MSG_COMPOSIT_ITEM_NAMES_ARRAY, itemValues);
+
+
+    }
+
+    private QueueEntry getMessage(long messageId)
+    {
+        GetMessageVisitor visitor = new GetMessageVisitor(messageId);
+        _queue.visit(visitor);
+        return visitor.getEntry();
+
     }
 
     public void deleteMessageFromTop() throws IOException, JMException
@@ -371,6 +432,32 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue
     }
 
 
+    private static class GetMessageVisitor implements QueueEntryVisitor
+    {
+
+        private final long _messageNumber;
+        private QueueEntry _entry;
+
+        public GetMessageVisitor(long messageId)
+        {
+            _messageNumber = messageId;
+        }
+
+        public boolean visit(QueueEntry entry)
+        {
+            if(entry.getMessage().getMessageNumber() == _messageNumber)
+            {
+                _entry = entry;
+                return true;
+            }
+            return false;
+        }
+
+        public QueueEntry getEntry()
+        {
+            return _entry;
+        }
+    }
 }
 
 
