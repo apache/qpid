@@ -20,19 +20,18 @@
  */
 package org.apache.qpid.server.model.impl;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.UUID;
 import org.apache.qpid.server.model.Binding;
-import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.Subscription;
 import org.apache.qpid.server.model.VirtualHost;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.UUID;
+import org.apache.qpid.server.queue.QueueEntryVisitor;
 
 class QueueImpl extends AbstractConfiguredObject implements Queue
 {
@@ -69,6 +68,11 @@ class QueueImpl extends AbstractConfiguredObject implements Queue
     public Collection<Subscription> getSubscriptions()
     {
         return null;  //TODO
+    }
+
+    public void visit(QueueEntryVisitor visitor)
+    {
+        //TODO
     }
 
     public State getActualState()

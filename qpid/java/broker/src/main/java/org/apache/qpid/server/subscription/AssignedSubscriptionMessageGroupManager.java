@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.server.subscription;
 
+import org.apache.qpid.server.queue.QueueEntryVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 
 import java.util.Iterator;
@@ -102,7 +102,7 @@ public class AssignedSubscriptionMessageGroupManager implements MessageGroupMana
         return visitor.getEntry();
     }
 
-    private class EntryFinder implements AMQQueue.Visitor
+    private class EntryFinder implements QueueEntryVisitor
     {
         private QueueEntry _entry;
         private Subscription _sub;

@@ -111,6 +111,16 @@ public class QMFMessage implements ServerMessage, InboundMessage, AMQMessageHead
         return 0;
     }
 
+    public String getUserId()
+    {
+        return null;
+    }
+
+    public String getAppId()
+    {
+        return null;
+    }
+
     public String getMessageId()
     {
         return null;

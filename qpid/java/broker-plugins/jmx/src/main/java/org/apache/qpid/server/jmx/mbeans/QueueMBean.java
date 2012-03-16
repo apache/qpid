@@ -22,20 +22,75 @@
 package org.apache.qpid.server.jmx.mbeans;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.management.JMException;
 import javax.management.ObjectName;
+import javax.management.OperationsException;
+import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.CompositeType;
+import javax.management.openmbean.OpenDataException;
+import javax.management.openmbean.OpenType;
+import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.TabularData;
+import javax.management.openmbean.TabularDataSupport;
+import javax.management.openmbean.TabularType;
+import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
+import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.queue.QueueEntryVisitor;
 
 public class QueueMBean extends AMQManagedObject implements ManagedQueue
 {
+    private static final String[] VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC_ARRAY =
+            VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC.toArray(new String[VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC.size()]);
+
+    private static final OpenType[] MSG_ATTRIBUTE_TYPES;
+    private static final CompositeType MSG_DATA_TYPE;
+    private static final TabularType MSG_LIST_DATA_TYPE;
+    static
+    {
+
+        try
+        {
+            MSG_ATTRIBUTE_TYPES = new OpenType[] {
+                SimpleType.LONG, // For message id
+                new ArrayType(1, SimpleType.STRING), // For header attributes
+                SimpleType.LONG, // For size
+                SimpleType.BOOLEAN, // For redelivered
+                SimpleType.LONG, // For queue position
+                SimpleType.INTEGER // For delivery count}
+            };
+
+            MSG_DATA_TYPE = new CompositeType("Message", "AMQ Message",
+                VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC_ARRAY,
+                VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC_ARRAY, MSG_ATTRIBUTE_TYPES);
+
+            MSG_LIST_DATA_TYPE = new TabularType("Messages", "List of messages", MSG_DATA_TYPE,
+                                                VIEW_MSGS_TABULAR_UNIQUE_INDEX.toArray(new String[VIEW_MSGS_TABULAR_UNIQUE_INDEX.size()]));
+
+        }
+        catch (OpenDataException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
     private final Queue _queue;
     private final VirtualHostMBean _vhostMBean;
+
+    /** Date/time format used for message expiration and message timestamp formatting */
+    public static final String JMSTIMESTAMP_DATETIME_FORMAT = "MM-dd-yy HH:mm:ss.SSS z";
+
+    private static final FastDateFormat FAST_DATE_FORMAT = FastDateFormat.getInstance(JMSTIMESTAMP_DATETIME_FORMAT);
 
     public QueueMBean(Queue queue, VirtualHostMBean virtualHostMBean) throws JMException
     {
@@ -73,7 +128,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue
 
     public Integer getMaximumDeliveryCount()
     {
-        return null;  // TODO
+        return (Integer) _queue.getAttribute(Queue.MAXIMUM_DELIVERY_ATTEMPTS);
     }
 
     public Long getReceivedMessageCount()
@@ -205,7 +260,61 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue
     public TabularData viewMessages(long startPosition, long endPosition)
             throws IOException, JMException
     {
-        return null;  // TODO
+        if ((startPosition > endPosition) || (startPosition < 1))
+        {
+            throw new OperationsException("From Index = " + startPosition + ", To Index = " + endPosition
+                + "\n\"From Index\" should be greater than 0 and less than \"To Index\"");
+        }
+
+        if ((endPosition - startPosition) > Integer.MAX_VALUE)
+        {
+            throw new OperationsException("Specified MessageID interval is too large. Intervals must be less than 2^31 in size");
+        }
+
+
+        List<QueueEntry> messages = getMessages(startPosition, endPosition);
+
+        TabularDataSupport messageTable = new TabularDataSupport(MSG_LIST_DATA_TYPE);
+
+
+            // Create the tabular list of message header contents
+            long position = startPosition;
+
+            for (QueueEntry queueEntry : messages)
+            {
+                ServerMessage serverMsg = queueEntry.getMessage();
+                AMQMessageHeader header = serverMsg.getMessageHeader();
+                String[] headerAttributes =
+                    {"reply-to = " + header.getReplyTo(),
+                     "propertyFlags = ",
+                     "ApplicationID = " + header.getAppId(),
+                     "ClusterID = ",
+                     "UserId = " + header.getUserId(),
+                     "JMSMessageID = " + header.getMessageId(),
+                     "JMSCorrelationID = " + header.getCorrelationId(),
+                     "JMSDeliveryMode = " + (serverMsg.isPersistent() ? "Persistent" : "Non_Persistent"),
+                     "JMSPriority = " + header.getPriority(),
+                     "JMSType = " + header.getType(),
+                     "JMSExpiration = " + (header.getExpiration() == 0 ? null : FAST_DATE_FORMAT.format(header.getExpiration())),
+                     "JMSTimestamp = " + (header.getTimestamp() == 0 ? null : FAST_DATE_FORMAT.format(header.getTimestamp()))
+                     };
+
+                Object[] itemValues = new Object[]{ serverMsg.getMessageNumber(),
+                                                    headerAttributes,
+                                                    serverMsg.getSize(),
+                                                    queueEntry.isRedelivered(),
+                                                    position,
+                                                    queueEntry.getDeliveryCount()};
+
+                position++;
+
+                CompositeData messageData =
+                        new CompositeDataSupport(MSG_DATA_TYPE, VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC_ARRAY, itemValues);
+                messageTable.put(messageData);
+            }
+
+        return messageTable;
+
     }
 
     public CompositeData viewMessageContent(long messageId)
@@ -241,4 +350,27 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue
     {
         // TODO
     }
+
+    private List<QueueEntry> getMessages(final long first, final long last)
+    {
+        final List<QueueEntry> messages = new ArrayList<QueueEntry>((int)(last-first)+1);
+        _queue.visit(new QueueEntryVisitor()
+        {
+            private long position = 0;
+            public boolean visit(QueueEntry entry)
+            {
+                if(position >= first && position <= last)
+                {
+                    messages.add(entry);
+                }
+                position++;
+                return position > last;
+            }
+        });
+        return messages;
+    }
+
+
 }
+
+

@@ -28,6 +28,10 @@ public interface AMQMessageHeader
 
     long getExpiration();
 
+    String getUserId();
+
+    String getAppId();
+
     String getMessageId();
 
     String getMimeType();

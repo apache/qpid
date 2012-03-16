@@ -23,6 +23,7 @@ package org.apache.qpid.server.model;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import org.apache.qpid.server.queue.QueueEntryVisitor;
 
 
 public interface Queue extends ConfiguredObject
@@ -113,4 +114,9 @@ public interface Queue extends ConfiguredObject
     //children
     Collection<Binding> getBindings();
     Collection<Subscription> getSubscriptions();
+
+
+    //operations
+
+    void visit(QueueEntryVisitor visitor);
 }

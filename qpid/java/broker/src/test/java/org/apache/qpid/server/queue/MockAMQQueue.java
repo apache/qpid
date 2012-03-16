@@ -622,7 +622,7 @@ public class MockAMQQueue implements AMQQueue
     {
     }
 
-    public void visit(final Visitor visitor)
+    public void visit(final QueueEntryVisitor visitor)
     {
     }
 }

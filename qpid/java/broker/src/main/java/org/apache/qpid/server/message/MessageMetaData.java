@@ -242,6 +242,16 @@ public class MessageMetaData implements StorableMessageMetaData
             return (BasicContentHeaderProperties) getContentHeaderBody().getProperties();
         }
 
+        public String getUserId()
+        {
+            return getProperties().getUserIdAsString();
+        }
+
+        public String getAppId()
+        {
+            return getProperties().getAppIdAsString();
+        }
+
         public String getCorrelationId()
         {
             return getProperties().getCorrelationIdAsString();

@@ -24,6 +24,7 @@ import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import org.apache.qpid.server.binding.Binding;
@@ -33,6 +34,7 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.Subscription;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.QueueEntryVisitor;
 
 final class QueueAdapter extends AbstractAdapter implements Queue
 {
@@ -89,6 +91,11 @@ final class QueueAdapter extends AbstractAdapter implements Queue
 
     }
 
+    public void visit(final QueueEntryVisitor visitor)
+    {
+        _queue.visit(visitor);
+    }
+
     public String getName()
     {
         return _queue.getName();
@@ -136,6 +143,190 @@ final class QueueAdapter extends AbstractAdapter implements Queue
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
         return 0;  //TODO
+    }
+
+
+    @Override
+    public Collection<String> getAttributeNames()
+    {
+        final HashSet<String> names = new HashSet<String>(super.getAttributeNames());
+        names.addAll(Queue.AVAILABLE_ATTRIBUTES);
+        return names;
+    }
+
+    @Override
+    public Object setAttribute(String name, Object expected, Object desired) throws IllegalStateException, AccessControlException, IllegalArgumentException
+    {
+        if(ALERT_REPEAT_GAP.equals(name))
+        {
+            _queue.setMinimumAlertRepeatGap((Long)desired);
+            return desired;
+        }
+        else if(ALERT_THRESHOLD_MESSAGE_AGE.equals(name))
+        {
+            _queue.setMaximumMessageAge((Long)desired);
+            return desired;
+        }
+        else if(ALERT_THRESHOLD_MESSAGE_SIZE.equals(name))
+        {
+            _queue.setMaximumMessageSize((Long)desired);
+            return desired;
+        }
+        else if(ALERT_THRESHOLD_QUEUE_DEPTH_BYTES.equals(name))
+        {
+            _queue.setMaximumQueueDepth((Long)desired);
+            return desired;
+        }
+        else if(ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES.equals(name))
+        {
+            _queue.setMaximumMessageCount((Long)desired);
+            return desired;
+        }
+        else if(ALTERNATE_EXCHANGE.equals(name))
+        {
+            // TODO
+        }
+        else if(EXCLUSIVE.equals(name))
+        {
+            // TODO
+        }
+        else if(MESSAGE_GROUP_KEY.equals(name))
+        {
+            // TODO
+        }
+        else if(MESSAGE_GROUP_DEFAULT_GROUP.equals(name))
+        {
+            // TODO
+        }
+        else if(MESSAGE_GROUP_SHARED_GROUPS.equals(name))
+        {
+            // TODO
+        }
+        else if(LVQ_KEY.equals(name))
+        {
+            // TODO
+        }
+        else if(MAXIMUM_DELIVERY_ATTEMPTS.equals(name))
+        {
+            _queue.setMaximumDeliveryCount((Integer)desired);
+            return desired;
+        }
+        else if(NO_LOCAL.equals(name))
+        {
+            // TODO
+        }
+        else if(OWNER.equals(name))
+        {
+            // TODO
+        }
+        else if(QUEUE_FLOW_CONTROL_SIZE_BYTES.equals(name))
+        {
+            _queue.setCapacity((Long)desired);
+            return desired;
+        }
+        else if(QUEUE_FLOW_RESUME_SIZE_BYTES.equals(name))
+        {
+            _queue.setFlowResumeCapacity((Long)desired);
+            return desired;
+        }
+        else if(QUEUE_FLOW_STOPPED.equals(name))
+        {
+            // TODO
+        }
+        else if(SORT_KEY.equals(name))
+        {
+            // TODO
+        }
+        else if(TYPE.equals(name))
+        {
+            // TODO
+        }
+
+        return super.setAttribute(name, expected, desired);
+    }
+
+    @Override
+    public Object getAttribute(String name)
+    {
+
+        if(ALERT_REPEAT_GAP.equals(name))
+        {
+            return _queue.getMinimumAlertRepeatGap();
+        }
+        else if(ALERT_THRESHOLD_MESSAGE_AGE.equals(name))
+        {
+            return _queue.getMaximumMessageAge();
+        }
+        else if(ALERT_THRESHOLD_MESSAGE_SIZE.equals(name))
+        {
+            return _queue.getMaximumMessageSize();
+        }
+        else if(ALERT_THRESHOLD_QUEUE_DEPTH_BYTES.equals(name))
+        {
+            return _queue.getMaximumQueueDepth();
+        }
+        else if(ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES.equals(name))
+        {
+            return _queue.getMaximumMessageCount();
+        }
+        else if(ALTERNATE_EXCHANGE.equals(name))
+        {
+            // TODO
+        }
+        else if(EXCLUSIVE.equals(name))
+        {
+            // TODO
+        }
+        else if(MESSAGE_GROUP_KEY.equals(name))
+        {
+            // TODO
+        }
+        else if(MESSAGE_GROUP_DEFAULT_GROUP.equals(name))
+        {
+            // TODO
+        }
+        else if(MESSAGE_GROUP_SHARED_GROUPS.equals(name))
+        {
+            // TODO
+        }
+        else if(LVQ_KEY.equals(name))
+        {
+            // TODO
+        }
+        else if(MAXIMUM_DELIVERY_ATTEMPTS.equals(name))
+        {
+            return _queue.getMaximumDeliveryCount();
+        }
+        else if(NO_LOCAL.equals(name))
+        {
+            // TODO
+        }
+        else if(OWNER.equals(name))
+        {
+            // TODO
+        }
+        else if(QUEUE_FLOW_CONTROL_SIZE_BYTES.equals(name))
+        {
+            return _queue.getCapacity();
+        }
+        else if(QUEUE_FLOW_RESUME_SIZE_BYTES.equals(name))
+        {
+            return _queue.getFlowResumeCapacity();
+        }
+        else if(QUEUE_FLOW_STOPPED.equals(name))
+        {
+            // TODO
+        }
+        else if(SORT_KEY.equals(name))
+        {
+            // TODO
+        }
+        else if(TYPE.equals(name))
+        {
+            // TODO
+        }
+
+        return super.getAttribute(name);
     }
 
     public Statistics getStatistics()
@@ -258,4 +449,5 @@ final class QueueAdapter extends AbstractAdapter implements Queue
             return null;
         }
     }
+
 }

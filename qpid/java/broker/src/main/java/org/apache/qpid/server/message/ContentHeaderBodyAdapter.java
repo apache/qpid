@@ -50,6 +50,16 @@ public class ContentHeaderBodyAdapter implements AMQMessageHeader
         return getProperties().getExpiration();
     }
 
+    public String getUserId()
+    {
+        return getProperties().getUserIdAsString();
+    }
+
+    public String getAppId()
+    {
+        return getProperties().getAppIdAsString();
+    }
+
     public String getMessageId()
     {
         return getProperties().getMessageIdAsString();

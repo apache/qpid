@@ -60,6 +60,18 @@ class MessageTransferHeader implements AMQMessageHeader
         return _deliveryProps == null ? 0L : _deliveryProps.getExpiration();
     }
 
+    public String getUserId()
+    {
+        byte[] userIdBytes = _messageProps == null ? null : _messageProps.getUserId();
+        return userIdBytes == null ? null : new String(userIdBytes);
+    }
+
+    public String getAppId()
+    {
+        byte[] appIdBytes = _messageProps == null ? null : _messageProps.getAppId();
+        return appIdBytes == null ? null : new String(appIdBytes);
+    }
+
     public String getMessageId()
     {
         UUID id = _messageProps == null ? null : _messageProps.getMessageId();

@@ -50,6 +50,16 @@ public class HeadersBindingTest extends TestCase
             return 0;
         }
 
+        public String getUserId()
+        {
+            return null;
+        }
+
+        public String getAppId()
+        {
+            return null;
+        }
+
         public String getMessageId()
         {
             return null;
@@ -57,7 +67,7 @@ public class HeadersBindingTest extends TestCase
 
         public String getMimeType()
         {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return null;
         }
 
         public String getEncoding()

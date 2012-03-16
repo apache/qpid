@@ -1165,7 +1165,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     }
 
-    public void visit(final Visitor visitor)
+    public void visit(final QueueEntryVisitor visitor)
     {
         QueueEntryIterator queueListIterator = _entries.iterator();
 
