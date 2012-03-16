@@ -352,7 +352,8 @@ EXTRA_DIST +=								\
   run_queue_flow_limit_tests						\
   run_msg_group_tests							\
   ipv6_test								\
-  ha_tests.py
+  ha_tests.py							\
+  test_env.ps1.in
 
 check_LTLIBRARIES += libdlclose_noop.la
 libdlclose_noop_la_LDFLAGS = -module -rpath $(abs_builddir)
