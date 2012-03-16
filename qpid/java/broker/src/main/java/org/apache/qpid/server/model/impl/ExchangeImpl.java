@@ -24,6 +24,7 @@ import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Publisher;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.VirtualHost;
@@ -81,6 +82,12 @@ class ExchangeImpl extends AbstractConfiguredObject implements Exchange
     public Collection<Publisher> getPublishers()
     {
         return null;  //TODO
+    }
+
+    public Binding createBinding(String bindingKey, Queue queue, Map<String, Object> bindingArguments,
+                                 Map<String, Object> attributes)
+    {
+        return null;  // TODO - Implement
     }
 
     public State getActualState()

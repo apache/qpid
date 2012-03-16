@@ -52,6 +52,8 @@ final class QueueAdapter extends AbstractAdapter implements Queue
     public QueueAdapter(final VirtualHostAdapter virtualHostAdapter, final AMQQueue queue)
     {
         _vhost = virtualHostAdapter;
+        addParent(org.apache.qpid.server.model.VirtualHost.class, virtualHostAdapter);
+
         _queue = queue;
         _statistics = new QueueStatisticsAdapter(queue);
     }
@@ -354,6 +356,11 @@ final class QueueAdapter extends AbstractAdapter implements Queue
         {
             childRemoved(adapter);
         }
+    }
+
+    AMQQueue getAMQQueue()
+    {
+        return _queue;
     }
 
     private static class QueueStatisticsAdapter implements Statistics

@@ -442,4 +442,9 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
         // TODO
         throw new UnsupportedOperationException("Not Yet Implemented");
     }
+
+    org.apache.qpid.server.virtualhost.VirtualHost getVirtualHost()
+    {
+        return _virtualHost;
+    }
 }

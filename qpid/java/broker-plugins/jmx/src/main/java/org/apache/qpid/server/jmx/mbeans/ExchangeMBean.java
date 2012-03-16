@@ -30,6 +30,7 @@ import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.VirtualHost;
 
 import javax.management.JMException;
 import javax.management.MalformedObjectNameException;
@@ -47,6 +48,7 @@ import javax.management.openmbean.TabularType;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +79,7 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
             HEADERS_COMPOSITE_ITEM_DESC.toArray(new String[HEADERS_COMPOSITE_ITEM_DESC.size()]);
     private static final  String[] HEADERS_TABULAR_UNIQUE_INDEX_ARRAY =
             HEADERS_TABULAR_UNIQUE_INDEX.toArray(new String[HEADERS_TABULAR_UNIQUE_INDEX.size()]);
+    public static final   String   HEADERS_EXCHANGE_TYPE              = "headers";
 
     static
     {
@@ -166,7 +169,7 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
 
     public TabularData bindings() throws IOException, JMException
     {
-        if("headers".equals(_exchange.getExchangeType()))
+        if(HEADERS_EXCHANGE_TYPE.equals(_exchange.getExchangeType()))
         {
             return getHeadersBindings(_exchange.getBindings()); 
         }
@@ -254,11 +257,44 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
         return bindingList;
     }
 
-    public void createNewBinding(
-            @MBeanOperationParameter(name = ManagedQueue.TYPE, description = "Queue name") String queueName,
-            @MBeanOperationParameter(name = "Binding", description = "New binding") String binding) throws JMException
+    public void createNewBinding(String queueName, String binding) throws JMException
     {
-        // TODO
+        final Map<String,Object> arguments = new HashMap<String, Object>();
+
+        if(HEADERS_EXCHANGE_TYPE.equals(_exchange.getExchangeType()))
+        {
+            final String[] bindings = binding.split(",");
+            for (int i = 0; i < bindings.length; i++)
+            {
+                final String[] keyAndValue = bindings[i].split("=");
+                if (keyAndValue == null || keyAndValue.length == 0 || keyAndValue.length > 2 || keyAndValue[0].length() == 0)
+                {
+                    throw new JMException("Format for headers binding should be \"<attribute1>=<value1>,<attribute2>=<value2>\" ");
+                }
+
+                if(keyAndValue.length == 1)
+                {
+                    //no value was given, only a key. Use an empty value to signal match on key presence alone
+                    arguments.put(keyAndValue[0], "");
+                }
+                else
+                {
+                    arguments.put(keyAndValue[0], keyAndValue[1]);
+                }
+            }
+        }
+
+        Queue queue = null;
+        VirtualHost vhost = _exchange.getParent(VirtualHost.class);
+        for(Queue aQueue : vhost.getQueues())
+        {
+            if(aQueue.getName().equals(queueName))
+            {
+                queue = aQueue;
+                break;
+            }
+        }
+        _exchange.createBinding(binding, queue, arguments, Collections.EMPTY_MAP);
     }
 
     public void removeBinding(

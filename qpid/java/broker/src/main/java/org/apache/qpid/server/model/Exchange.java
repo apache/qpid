@@ -21,6 +21,7 @@
 package org.apache.qpid.server.model;
 
 import java.util.Collection;
+import java.util.Map;
 
 public interface Exchange extends ConfiguredObject
 {
@@ -33,6 +34,12 @@ public interface Exchange extends ConfiguredObject
     //children
     Collection<Binding> getBindings();
     Collection<Publisher> getPublishers();
+    
+    //operations
+    Binding createBinding(String bindingKey,
+                          Queue queue,
+                          Map<String,Object> bindingArguments,
+                          Map<String, Object> attributes);
 
 
     // Statistics

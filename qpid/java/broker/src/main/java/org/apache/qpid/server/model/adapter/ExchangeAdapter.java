@@ -27,12 +27,18 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+
+import org.apache.qpid.AMQInternalException;
+import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Publisher;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apache.qpid.server.exchange.Exchange.BindingListener
 {
@@ -48,6 +54,8 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
     {
         _vhost = virtualHostAdapter;
         _exchange = exchange;
+        addParent(org.apache.qpid.server.model.VirtualHost.class, virtualHostAdapter);
+
         exchange.addBindingListener(this);
         populateBindings();
     }
@@ -90,6 +98,46 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
     {
         // TODO
         return Collections.emptyList();
+    }
+
+    public org.apache.qpid.server.model.Binding createBinding(String bindingKey, Queue queue,
+                                                              Map<String, Object> bindingArguments,
+                                                              Map<String, Object> attributes)
+            throws AccessControlException, IllegalStateException
+    {
+        VirtualHost virtualHost = _vhost.getVirtualHost();
+
+
+        AMQQueue amqQueue = ((QueueAdapter)queue).getAMQQueue();
+        
+        try
+        {
+            if(!virtualHost.getBindingFactory().addBinding(bindingKey, amqQueue, _exchange, bindingArguments))
+            {
+                Binding oldBinding = virtualHost.getBindingFactory().getBinding(bindingKey, amqQueue, _exchange, 
+                                                                                bindingArguments);
+    
+                Map<String, Object> oldArgs = oldBinding.getArguments();
+                if((oldArgs == null && !bindingArguments.isEmpty()) || (oldArgs != null && !oldArgs.equals(bindingArguments)))
+                {
+                    virtualHost.getBindingFactory().replaceBinding(bindingKey, amqQueue, _exchange, bindingArguments);
+                }
+            }
+            Binding binding = virtualHost.getBindingFactory().getBinding(bindingKey, amqQueue, _exchange, bindingArguments);
+            
+            synchronized (_bindingAdapters)
+            {
+                return binding == null ? null : _bindingAdapters.get(binding);
+            }
+        }
+        catch(AMQSecurityException e)
+        {
+            throw new AccessControlException(e.toString());
+        }
+        catch(AMQInternalException e)
+        {
+            throw new IllegalStateException(e);
+        }
     }
 
     public String getName()
