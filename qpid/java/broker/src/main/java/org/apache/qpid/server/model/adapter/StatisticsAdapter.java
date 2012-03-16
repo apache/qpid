@@ -1,10 +1,9 @@
 package org.apache.qpid.server.model.adapter;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.stats.StatisticsCounter;
@@ -31,29 +30,24 @@ class StatisticsAdapter implements Statistics
 
     private final Map<String, StatisticsCounter> _statistics =
             new HashMap<String, StatisticsCounter>();
-                  
 
-    private static final Collection<String> STATISTIC_NAMES;
+
+    private static final String BYTES_IN = "bytesIn";
+    private static final String BYTES_OUT = "bytesOut";
+    private static final String MESSAGES_IN = "messagesIn";
+    private static final String MESSAGES_OUT = "messagesOut";
+
+    private static final Collection<String> STATISTIC_NAMES =
+            Collections.unmodifiableCollection(Arrays.asList(BYTES_IN, BYTES_OUT, MESSAGES_IN, MESSAGES_OUT));
+
     
-    static 
-    {
-        List<String> names = new ArrayList<String>(16);
-        for(String stat : new String[] {"bytes-in", "bytes-out", "msgs-in", "msgs-out"})
-        {
-            for(String type : new String[] {"total","rate","peak"})
-            {
-                names.add(stat + "-" + type);
-            }
-        }
-        STATISTIC_NAMES = Collections.unmodifiableCollection(names);
-    }
-    
+
     public StatisticsAdapter(StatisticsGatherer applicationRegistry)
     {
-        _statistics.put("bytes-out", applicationRegistry.getDataDeliveryStatistics());
-        _statistics.put("bytes-in", applicationRegistry.getDataReceiptStatistics());
-        _statistics.put("msgs-out", applicationRegistry.getMessageDeliveryStatistics());
-        _statistics.put("msgs-in", applicationRegistry.getMessageReceiptStatistics());
+        _statistics.put(BYTES_OUT, applicationRegistry.getDataDeliveryStatistics());
+        _statistics.put(BYTES_IN, applicationRegistry.getDataReceiptStatistics());
+        _statistics.put(MESSAGES_OUT, applicationRegistry.getMessageDeliveryStatistics());
+        _statistics.put(MESSAGES_IN, applicationRegistry.getMessageReceiptStatistics());
     }
 
     
@@ -64,23 +58,9 @@ class StatisticsAdapter implements Statistics
 
     public Number getStatistic(String name)
     {
-        if(name.endsWith("-total"))
-        {
-            StatisticsCounter counter = _statistics.get(name.substring(0,name.length()-6));
-            return counter == null ? null : counter.getTotal();
-        }
-        else if(name.endsWith("-rate"))
-        {
-            StatisticsCounter counter = _statistics.get(name.substring(0,name.length()-5));
-            return counter == null ? null : counter.getRate();
-        }
-        else if(name.endsWith("-peak"))
-        {
-            StatisticsCounter counter = _statistics.get(name.substring(0,name.length()-5));
-            return counter == null ? null : counter.getPeak();
-        }
+        StatisticsCounter counter = _statistics.get(name);
+        return counter == null ? null : counter.getTotal();
 
-        return null;
     }
     
     

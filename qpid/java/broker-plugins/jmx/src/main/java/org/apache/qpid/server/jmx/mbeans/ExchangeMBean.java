@@ -258,7 +258,7 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
             @MBeanOperationParameter(name = ManagedQueue.TYPE, description = "Queue name") String queueName,
             @MBeanOperationParameter(name = "Binding", description = "New binding") String binding) throws JMException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // TODO
     }
 
     public void removeBinding(
@@ -266,6 +266,6 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
             @MBeanOperationParameter(name = "Binding", description = "Binding key") String binding)
             throws IOException, JMException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // TODO
     }
 }

@@ -73,4 +73,14 @@ public interface AMQConnectionModel extends StatisticsGatherer
     public String getUserName();
 
     public boolean isSessionNameUnique(byte[] name);
+
+    String getRemoteAddressString();
+
+    String getClientId();
+
+    String getClientVersion();
+
+    String getPrincipalAsString();
+
+    long getSessionCountLimit();
 }

@@ -21,27 +21,28 @@
 
 package org.apache.qpid.server.jmx.mbeans;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import javax.management.JMException;
+import javax.management.MBeanException;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedExchange;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
-import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
-import org.apache.qpid.server.model.Queue;
-
-import javax.management.JMException;
-import javax.management.MBeanException;
-import javax.management.MalformedObjectNameException;
-import javax.management.ObjectName;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.VirtualHost;
 
 @MBeanDescription("This MBean exposes the broker level management features")
-public class VirtualHostManagerMBean extends AMQManagedObject implements ManagedBroker
+public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<VirtualHost> implements ManagedBroker
 {
 
     private final VirtualHostMBean _virtualHostMBean;
@@ -49,11 +50,12 @@ public class VirtualHostManagerMBean extends AMQManagedObject implements Managed
     @MBeanConstructor("Creates the Broker Manager MBean")
     public VirtualHostManagerMBean(VirtualHostMBean virtualHostMBean) throws JMException
     {
-        super(ManagedBroker.class, ManagedBroker.TYPE, virtualHostMBean.getRegistry());
+        super(ManagedBroker.class, ManagedBroker.TYPE, virtualHostMBean.getRegistry(), virtualHostMBean.getVirtualHost());
         _virtualHostMBean = virtualHostMBean;
         register();
     }
-    
+
+
     public String getObjectInstanceName()
     {
         return _virtualHostMBean.getName();
@@ -112,14 +114,12 @@ public class VirtualHostManagerMBean extends AMQManagedObject implements Managed
 
     }
 
-    public void createNewExchange(
-            @MBeanOperationParameter(name = "name", description = "Name of the new exchange") String name,
-            @MBeanOperationParameter(name = "ExchangeType", description = "Type of the exchange") String type,
-            @MBeanOperationParameter(name = "durable",
-                                     description = "true if the Exchang should be durable") boolean durable)
+    public void createNewExchange(String name, String type, boolean durable)
             throws IOException, JMException, MBeanException
     {
-        //TODO
+        getConfiguredObject().createExchange(name, State.ACTIVE, durable,
+                                        LifetimePolicy.PERMANENT, 0l, type, Collections.EMPTY_MAP);
+
     }
 
     public void unregisterExchange(
@@ -129,26 +129,17 @@ public class VirtualHostManagerMBean extends AMQManagedObject implements Managed
         //TODO
     }
 
-    public void createNewQueue(
-            @MBeanOperationParameter(name = "queue name", description = "Name of the new queue") String queueName,
-            @MBeanOperationParameter(name = "owner", description = "Owner name") String owner,
-            @MBeanOperationParameter(name = "durable",
-                                     description = "true if the queue should be durable") boolean durable)
+    public void createNewQueue(String queueName, String owner, boolean durable)
             throws IOException, JMException, MBeanException
     {
-        //TODO
+        createNewQueue(queueName, owner, durable, Collections.EMPTY_MAP);
     }
 
-    public void createNewQueue(
-            @MBeanOperationParameter(name = "queue name", description = "Name of the new queue") String queueName,
-            @MBeanOperationParameter(name = "owner", description = "Owner name") String owner,
-            @MBeanOperationParameter(name = "durable",
-                                     description = "true if the queue should be durable") boolean durable,
-            @MBeanOperationParameter(name = "arguments",
-                                     description = "Map of arguments") Map<String, Object> arguments)
+    public void createNewQueue(String queueName, String owner, boolean durable, Map<String, Object> arguments)
             throws IOException, JMException
     {
-        //TODO
+        // TODO - ignores owner (not sure that this isn't actually a good thing though)
+        getConfiguredObject().createQueue(queueName, State.ACTIVE,durable, LifetimePolicy.PERMANENT,0l, arguments);
     }
 
     public void deleteQueue(
@@ -156,76 +147,6 @@ public class VirtualHostManagerMBean extends AMQManagedObject implements Managed
             throws IOException, JMException, MBeanException
     {
         //TODO
-    }
-
-    public void resetStatistics() throws Exception
-    {
-        //TODO
-    }
-
-    public double getPeakMessageDeliveryRate()
-    {
-        return 0;  //TODO
-    }
-
-    public double getPeakDataDeliveryRate()
-    {
-        return 0;  //TODO
-    }
-
-    public double getMessageDeliveryRate()
-    {
-        return 0;  //TODO
-    }
-
-    public double getDataDeliveryRate()
-    {
-        return 0;  //TODO
-    }
-
-    public long getTotalMessagesDelivered()
-    {
-        return 0;  //TODO
-    }
-
-    public long getTotalDataDelivered()
-    {
-        return 0;  //TODO
-    }
-
-    public double getPeakMessageReceiptRate()
-    {
-        return 0;  //TODO
-    }
-
-    public double getPeakDataReceiptRate()
-    {
-        return 0;  //TODO
-    }
-
-    public double getMessageReceiptRate()
-    {
-        return 0;  //TODO
-    }
-
-    public double getDataReceiptRate()
-    {
-        return 0;  //TODO
-    }
-
-    public long getTotalMessagesReceived()
-    {
-        return 0;  //TODO
-    }
-
-    public long getTotalDataReceived()
-    {
-        return 0;  //TODO
-    }
-
-    public boolean isStatisticsEnabled()
-    {
-        return false;  //TODO
     }
 
 

@@ -20,10 +20,41 @@
  */
 package org.apache.qpid.server.model;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 
 public interface Connection extends ConfiguredObject
 {
+
+    // Statistics
+
+    // Attributes
+
+    public static final String CLIENT_ID = "clientId";
+    public static final String CLIENT_VERSION = "clientVersion";
+    public static final String INCOMING = "incoming";
+    public static final String LOCAL_ADDRESS = "localAddress";
+    public static final String PRINCIPAL = "principal";
+    public static final String PROPERTIES = "properties";
+    public static final String REMOTE_ADDRESS = "remoteAddress";
+    public static final String REMOTE_PROCESS_NAME = "remoteProcessName";
+    public static final String REMOTE_PROCESS_PID = "remoteProcessPid";
+    public static final String SESSION_COUNT_LIMIT = "sessionCountLimit";
+
+    public static final Collection<String> AVAILABLE_ATTRIBUTES =
+            Collections.unmodifiableCollection(
+                    Arrays.asList(  CLIENT_ID,
+                                    CLIENT_VERSION,
+                                    INCOMING,
+                                    LOCAL_ADDRESS,
+                                    PRINCIPAL,
+                                    PROPERTIES,
+                                    REMOTE_ADDRESS,
+                                    REMOTE_PROCESS_NAME,
+                                    REMOTE_PROCESS_PID,
+                                    SESSION_COUNT_LIMIT));
+
     //children
     Collection<Session> getSessions();
 }

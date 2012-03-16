@@ -409,6 +409,11 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
         return !super.hasSessionWithName(name);
     }
 
+    public String getRemoteAddressString()
+    {
+        return getConfig().getAddress();
+    }
+
     public String getUserName()
     {
         return _authorizedPrincipal.getName();
@@ -498,5 +503,15 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
     public String getClientVersion()
     {
         return getConnectionDelegate().getClientVersion();
+    }
+
+    public String getPrincipalAsString()
+    {
+        return getAuthorizedPrincipal().getName();
+    }
+
+    public long getSessionCountLimit()
+    {
+        return getChannelMax();
     }
 }

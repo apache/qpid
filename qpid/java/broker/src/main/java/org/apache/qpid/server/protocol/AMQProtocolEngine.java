@@ -1145,6 +1145,16 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
         return _clientVersion;
     }
 
+    public String getPrincipalAsString()
+    {
+        return getAuthId();
+    }
+
+    public long getSessionCountLimit()
+    {
+        return getMaximumNumberOfChannels();
+    }
+
     public Boolean isIncoming()
     {
         return true;
@@ -1425,6 +1435,16 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
     {
         // 0-8/0-9/0-9-1 sessions don't have names
         return true;
+    }
+
+    public String getRemoteAddressString()
+    {
+        return String.valueOf(getRemoteAddress());
+    }
+
+    public String getClientId()
+    {
+        return String.valueOf(getContextKey());
     }
 
     public void setDeferFlush(boolean deferFlush)

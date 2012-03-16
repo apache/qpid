@@ -21,33 +21,29 @@
 
 package org.apache.qpid.server.jmx.mbeans;
 
+import java.io.IOException;
+import java.util.Date;
+import javax.management.JMException;
+import javax.management.ObjectName;
+import javax.management.openmbean.TabularData;
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
-import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.model.Connection;
 
-import javax.management.JMException;
-import javax.management.openmbean.TabularData;
-import java.io.IOException;
-import java.util.Date;
-
-public class ConnectionMBean extends AMQManagedObject implements ManagedConnection
+public class ConnectionMBean extends AbstractStatisticsGatheringMBean<Connection> implements ManagedConnection
 {
     private final VirtualHostMBean _virtualHostMBean;
-    private final Connection _connection;
 
     public ConnectionMBean(Connection conn, VirtualHostMBean virtualHostMBean) throws JMException
     {
-        super(ManagedConnection.class, ManagedConnection.TYPE, virtualHostMBean.getRegistry());
+        super(ManagedConnection.class, ManagedConnection.TYPE, virtualHostMBean.getRegistry(), conn);
         _virtualHostMBean = virtualHostMBean;
-        _connection = conn;
         register();
     }
 
     public String getObjectInstanceName()
     {
-        return _connection.getName();
+        return ObjectName.quote(getRemoteAddress());
     }
 
     @Override
@@ -58,22 +54,22 @@ public class ConnectionMBean extends AMQManagedObject implements ManagedConnecti
 
     public String getClientId()
     {
-        return null;  // TODO - Implement
+        return (String) getConfiguredObject().getAttribute(Connection.CLIENT_ID);
     }
 
     public String getAuthorizedId()
     {
-        return null;  // TODO - Implement
+        return (String) getConfiguredObject().getAttribute(Connection.PRINCIPAL);
     }
 
     public String getVersion()
     {
-        return null;  // TODO - Implement
+        return (String) getConfiguredObject().getAttribute(Connection.CLIENT_VERSION);
     }
 
     public String getRemoteAddress()
     {
-        return null;  // TODO - Implement
+        return (String) getConfiguredObject().getAttribute(Connection.REMOTE_ADDRESS);
     }
 
     public Date getLastIoTime()
@@ -83,7 +79,7 @@ public class ConnectionMBean extends AMQManagedObject implements ManagedConnecti
 
     public Long getMaximumNumberOfChannels()
     {
-        return null;  // TODO - Implement
+        return (Long) getConfiguredObject().getAttribute(Connection.SESSION_COUNT_LIMIT);
     }
 
     public TabularData channels() throws IOException, JMException
@@ -91,14 +87,12 @@ public class ConnectionMBean extends AMQManagedObject implements ManagedConnecti
         return null;  // TODO - Implement
     }
 
-    public void commitTransactions(
-            @MBeanOperationParameter(name = "channel Id", description = "channel Id") int channelId) throws JMException
+    public void commitTransactions(int channelId) throws JMException
     {
         // TODO - Implement
     }
 
-    public void rollbackTransactions(
-            @MBeanOperationParameter(name = "channel Id", description = "channel Id") int channelId) throws JMException
+    public void rollbackTransactions(int channelId) throws JMException
     {
         // TODO - Implement
     }
@@ -108,78 +102,10 @@ public class ConnectionMBean extends AMQManagedObject implements ManagedConnecti
         // TODO - Implement
     }
 
-    public void resetStatistics() throws Exception
-    {
-        // TODO - Implement
-    }
-
-    public double getPeakMessageDeliveryRate()
-    {
-        return 0;  // TODO - Implement
-    }
-
-    public double getPeakDataDeliveryRate()
-    {
-        return 0;  // TODO - Implement
-    }
-
-    public double getMessageDeliveryRate()
-    {
-        return 0;  // TODO - Implement
-    }
-
-    public double getDataDeliveryRate()
-    {
-        return 0;  // TODO - Implement
-    }
-
-    public long getTotalMessagesDelivered()
-    {
-        return 0;  // TODO - Implement
-    }
-
-    public long getTotalDataDelivered()
-    {
-        return 0;  // TODO - Implement
-    }
-
-    public double getPeakMessageReceiptRate()
-    {
-        return 0;  // TODO - Implement
-    }
-
-    public double getPeakDataReceiptRate()
-    {
-        return 0;  // TODO - Implement
-    }
-
-    public double getMessageReceiptRate()
-    {
-        return 0;  // TODO - Implement
-    }
-
-    public double getDataReceiptRate()
-    {
-        return 0;  // TODO - Implement
-    }
-
-    public long getTotalMessagesReceived()
-    {
-        return 0;  // TODO - Implement
-    }
-
-    public long getTotalDataReceived()
-    {
-        return 0;  // TODO - Implement
-    }
-
-    public boolean isStatisticsEnabled()
-    {
-        return false;  // TODO - Implement
-    }
 
     public void setStatisticsEnabled(boolean enabled)
     {
         // TODO - Implement
+        updateStats();
     }
 }

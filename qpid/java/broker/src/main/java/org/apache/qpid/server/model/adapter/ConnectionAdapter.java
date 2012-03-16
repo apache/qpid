@@ -23,7 +23,9 @@ package org.apache.qpid.server.model.adapter;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import org.apache.qpid.server.model.Connection;
@@ -37,6 +39,9 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 final class ConnectionAdapter extends AbstractAdapter implements Connection
 {
 
+
+
+    
     private AMQConnectionModel _connection;
 
     private final Map<AMQSessionModel, SessionAdapter> _sessionAdapters =
@@ -75,7 +80,7 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
 
     public String getName()
     {
-        return _connection.getLogSubject().toLogString();
+        return _connection.getRemoteAddressString();
     }
 
     public String setName(final String currentName, final String desiredName)
@@ -120,6 +125,106 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
         return 0;  //TODO
+    }
+
+    @Override
+    public Object getAttribute(String name)
+    {
+        if(name.equals(CLIENT_ID))
+        {
+            return _connection.getClientId();
+        }
+        else if(name.equals(CLIENT_VERSION))
+        {
+            return _connection.getClientVersion();
+        }
+        else if(name.equals(INCOMING))
+        {
+
+        }
+        else if(name.equals(LOCAL_ADDRESS))
+        {
+
+        }
+        else if(name.equals(PRINCIPAL))
+        {
+            return _connection.getPrincipalAsString();
+        }
+        else if(name.equals(PROPERTIES))
+        {
+
+        }
+        else if(name.equals(REMOTE_ADDRESS))
+        {
+            return _connection.getRemoteAddressString();
+        }
+        else if(name.equals(REMOTE_PROCESS_NAME))
+        {
+
+        }
+        else if(name.equals(REMOTE_PROCESS_PID))
+        {
+
+        }
+        else if(name.equals(SESSION_COUNT_LIMIT))
+        {
+            return _connection.getSessionCountLimit();
+        }
+        return super.getAttribute(name);
+    }
+
+    @Override
+    public Object setAttribute(String name, Object expected, Object desired) throws IllegalStateException, AccessControlException, IllegalArgumentException
+    {
+        if(name.equals(CLIENT_ID))
+        {
+
+        }
+        else if(name.equals(CLIENT_VERSION))
+        {
+
+        }
+        else if(name.equals(INCOMING))
+        {
+
+        }
+        else if(name.equals(LOCAL_ADDRESS))
+        {
+
+        }
+        else if(name.equals(PRINCIPAL))
+        {
+
+        }
+        else if(name.equals(PROPERTIES))
+        {
+
+        }
+        else if(name.equals(REMOTE_ADDRESS))
+        {
+
+        }
+        else if(name.equals(REMOTE_PROCESS_NAME))
+        {
+
+        }
+        else if(name.equals(REMOTE_PROCESS_PID))
+        {
+
+        }
+        else if(name.equals(SESSION_COUNT_LIMIT))
+        {
+
+        }
+        return super.setAttribute(name, expected, desired);
+    }
+
+    @Override
+    public Collection<String> getAttributeNames()
+    {
+        final HashSet<String> attrNames = new HashSet<String>(super.getAttributeNames());
+        attrNames.addAll(Connection.AVAILABLE_ATTRIBUTES);
+        return Collections.unmodifiableCollection(attrNames);
     }
 
     public Statistics getStatistics()
