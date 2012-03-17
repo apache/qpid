@@ -21,5 +21,5 @@ import java.util.Collection;
 public interface Statistics
 {
     Collection<String> getStatisticNames();
-    public Number getStatistic(String name);
+    public Object getStatistic(String name);
 }

@@ -1396,6 +1396,11 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
         return false;
     }
 
+    public int getUnacknowledgedMessageCount()
+    {
+        return getUnacknowledgedMessageMap().size();
+    }
+
     private void flow(boolean flow)
     {
         MethodRegistry methodRegistry = _session.getMethodRegistry();

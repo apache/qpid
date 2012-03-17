@@ -140,7 +140,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue
 
     private Number getStatisticValue(String name)
     {
-        final Number statistic = _queue.getStatistics().getStatistic(name);
+        final Number statistic = (Number) _queue.getStatistics().getStatistic(name);
         return statistic == null ? Integer.valueOf(0) : statistic;
     }
 

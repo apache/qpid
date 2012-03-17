@@ -56,7 +56,7 @@ class StatisticsAdapter implements Statistics
         return STATISTIC_NAMES;
     }
 
-    public Number getStatistic(String name)
+    public Object getStatistic(String name)
     {
         StatisticsCounter counter = _statistics.get(name);
         return counter == null ? null : counter.getTotal();

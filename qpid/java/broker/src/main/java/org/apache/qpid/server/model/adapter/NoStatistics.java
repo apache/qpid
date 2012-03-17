@@ -34,7 +34,7 @@ public class NoStatistics implements Statistics
         return Collections.emptyList();
     }
 
-    public Number getStatistic(String name)
+    public Object getStatistic(String name)
     {
         return null;
     }

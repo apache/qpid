@@ -68,4 +68,12 @@ public interface AMQSessionModel extends Comparable<AMQSessionModel>
 
 
     boolean onSameConnection(InboundMessage inbound);
+
+    int getUnacknowledgedMessageCount();
+
+    Long getTxnCount();
+    Long getTxnCommits();
+    Long getTxnRejects();
+
+    int getChannelId();
 }

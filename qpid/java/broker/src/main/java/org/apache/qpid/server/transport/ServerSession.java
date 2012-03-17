@@ -620,6 +620,11 @@ public class ServerSession extends Session
         return _txnRejects.get();
     }
 
+    public int getChannelId()
+    {
+        return getChannel();
+    }
+
     public Long getTxnCount()
     {
         return _txnCount.get();

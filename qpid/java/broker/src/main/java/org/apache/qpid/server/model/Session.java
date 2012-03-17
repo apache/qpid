@@ -20,10 +20,43 @@
  */
 package org.apache.qpid.server.model;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 
 public interface Session extends ConfiguredObject
 {
+    // Statistics
+
+    public static final String             BYTES_IN             = "bytesIn";
+    public static final String             BYTES_OUT            = "bytesOut";
+    public static final String             CONSUMER_COUNT       = "consumerCount";
+    public static final String             LOCAL_TRANSACTION_BEGINS = "localTransactionBegins";
+    public static final String             LOCAL_TRANSACTION_OPEN   = "localTransactionOpen";
+    public static final String             LOCAL_TRANSACTION_ROLLBACKS = "localTransactionRollbacks";
+    public static final String             STATE_CHANGED               = "stateChanged";
+    public static final String             UNACKNOWLEDGED_BYTES        = "unacknowledgedBytes";
+    public static final String             UNACKNOWLEDGED_MESSAGES     = "unacknowledgedMessages";
+    public static final String             XA_TRANSACTION_BRANCH_ENDS  = "xaTransactionBranchEnds";
+    public static final String             XA_TRANSACTION_BRANCH_STARTS = "xaTransactionBranchStarts";
+    public static final String             XA_TRANSACTION_BRANCH_SUSPENDS = "xaTransactionBranchSuspends";
+
+    public static final Collection<String> AVAILABLE_STATISTICS =
+            Collections.unmodifiableCollection(Arrays.asList(BYTES_IN, BYTES_OUT, CONSUMER_COUNT,
+                                                             LOCAL_TRANSACTION_BEGINS,
+                                                             LOCAL_TRANSACTION_OPEN,
+                                                             LOCAL_TRANSACTION_ROLLBACKS, STATE_CHANGED,
+                                                             UNACKNOWLEDGED_BYTES, UNACKNOWLEDGED_MESSAGES,
+                                                             XA_TRANSACTION_BRANCH_ENDS, XA_TRANSACTION_BRANCH_STARTS,
+                                                             XA_TRANSACTION_BRANCH_SUSPENDS));
+
+
+    public static final String CHANNEL_ID = "channelId";
+
+    public static final Collection<String> AVAILABLE_ATTRIBUTES =
+            Collections.unmodifiableCollection(Arrays.asList(CHANNEL_ID));
+
+
     Collection<Subscription> getSubscriptions();
     Collection<Publisher> getPublishers();
 }

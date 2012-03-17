@@ -21,7 +21,11 @@
 package org.apache.qpid.server.model.adapter;
 
 import java.security.AccessControlException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Publisher;
 import org.apache.qpid.server.model.Session;
@@ -32,11 +36,16 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 
 final class SessionAdapter extends AbstractAdapter implements Session
 {
+    // Attributes
+
+
     private AMQSessionModel _session;
+    private SessionStatistics _statistics;
 
     public SessionAdapter(final AMQSessionModel session)
     {
         _session = session;
+        _statistics = new SessionStatistics();
     }
 
     public Collection<Subscription> getSubscriptions()
@@ -51,7 +60,7 @@ final class SessionAdapter extends AbstractAdapter implements Session
 
     public String getName()
     {
-        return String.valueOf(_session.getID());
+        return String.valueOf(_session.getChannelId());
     }
 
     public String setName(final String currentName, final String desiredName)
@@ -98,8 +107,96 @@ final class SessionAdapter extends AbstractAdapter implements Session
         return 0;  //TODO
     }
 
+    @Override
+    public Collection<String> getAttributeNames()
+    {
+        Collection<String> names = new HashSet<String>(super.getAttributeNames());
+        names.addAll(AVAILABLE_ATTRIBUTES);
+        
+        return Collections.unmodifiableCollection(names);
+    }
+
+    @Override
+    public Object getAttribute(String name)
+    {
+        if(name.equals(CHANNEL_ID))
+        {
+            return _session.getChannelId();
+        }
+        return super.getAttribute(name);    //TODO - Implement
+    }
+
+    @Override
+    public Object setAttribute(String name, Object expected, Object desired)
+            throws IllegalStateException, AccessControlException, IllegalArgumentException
+    {
+        return super.setAttribute(name, expected, desired);    //TODO - Implement
+    }
+
     public Statistics getStatistics()
     {
-        return NoStatistics.getInstance();
+        return _statistics;
+    }
+
+    private class SessionStatistics implements Statistics
+    {
+
+        public SessionStatistics()
+        {
+        }
+
+        public Collection<String> getStatisticNames()
+        {
+            return AVAILABLE_STATISTICS;
+        }
+
+        public Object getStatistic(String name)
+        {
+            if(name.equals(BYTES_IN))
+            {
+            }
+            else if(name.equals(BYTES_OUT))
+            {
+            }
+            else if(name.equals(CONSUMER_COUNT))
+            {
+                return getSubscriptions().size();
+            }
+            else if(name.equals(LOCAL_TRANSACTION_BEGINS))
+            {
+                return _session.getTxnCount();
+            }
+            else if(name.equals(LOCAL_TRANSACTION_OPEN))
+            {
+                long open = _session.getTxnCount() - (_session.getTxnCommits() + _session.getTxnRejects());
+                return (Boolean) (open > 0l);
+            }
+            else if(name.equals(LOCAL_TRANSACTION_ROLLBACKS))
+            {
+                return _session.getTxnCommits();
+            }
+            else if(name.equals(STATE_CHANGED))
+            {
+            }
+            else if(name.equals(UNACKNOWLEDGED_BYTES))
+            {
+            }
+            else if(name.equals(UNACKNOWLEDGED_MESSAGES))
+            {
+                return _session.getUnacknowledgedMessageCount();
+            }
+            else if(name.equals(XA_TRANSACTION_BRANCH_ENDS))
+            {
+            }
+            else if(name.equals(XA_TRANSACTION_BRANCH_STARTS))
+            {
+            }
+            else if(name.equals(XA_TRANSACTION_BRANCH_SUSPENDS))
+            {
+
+            }
+
+            return null;  // TODO - Implement
+        }
     }
 }

@@ -378,7 +378,7 @@ final class QueueAdapter extends AbstractAdapter implements Queue
             return Queue.AVAILABLE_STATISTICS;
         }
 
-        public Number getStatistic(String name)
+        public Object getStatistic(String name)
         {
             if(BINDING_COUNT.equals(name))
             {

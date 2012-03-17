@@ -22,16 +22,49 @@
 package org.apache.qpid.server.jmx.mbeans;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Date;
 import javax.management.JMException;
 import javax.management.ObjectName;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.CompositeType;
+import javax.management.openmbean.OpenType;
+import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.TabularData;
+import javax.management.openmbean.TabularDataSupport;
+import javax.management.openmbean.TabularType;
+
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.model.Connection;
+import org.apache.qpid.server.model.Session;
+import org.apache.qpid.server.model.Statistics;
 
 public class ConnectionMBean extends AbstractStatisticsGatheringMBean<Connection> implements ManagedConnection
 {
+    private static final OpenType[] CHANNEL_ATTRIBUTE_TYPES =
+            { SimpleType.INTEGER, SimpleType.BOOLEAN, SimpleType.STRING, SimpleType.INTEGER, SimpleType.BOOLEAN };
+    private static final CompositeType CHANNEL_TYPE;
+    private static final TabularType CHANNELS_TYPE;
+
+    static
+    {
+        try
+        {
+            CHANNEL_TYPE = new CompositeType("Channel", "Channel Details", COMPOSITE_ITEM_NAMES_DESC.toArray(new String[COMPOSITE_ITEM_NAMES_DESC.size()]),
+                                             COMPOSITE_ITEM_NAMES_DESC.toArray(new String[COMPOSITE_ITEM_NAMES_DESC.size()]),
+                                             CHANNEL_ATTRIBUTE_TYPES);
+            CHANNELS_TYPE = new TabularType("Channels", "Channels", CHANNEL_TYPE, (String[]) TABULAR_UNIQUE_INDEX.toArray(new String[TABULAR_UNIQUE_INDEX.size()]));
+        }
+        catch (JMException ex)
+        {
+            // This is not expected to ever occur.
+            throw new RuntimeException("Got JMException in static initializer.", ex);
+        }
+    }
+
+
     private final VirtualHostMBean _virtualHostMBean;
 
     public ConnectionMBean(Connection conn, VirtualHostMBean virtualHostMBean) throws JMException
@@ -74,7 +107,7 @@ public class ConnectionMBean extends AbstractStatisticsGatheringMBean<Connection
 
     public Date getLastIoTime()
     {
-        return null;  // TODO - Implement
+        return null;  // TODO - Implement connection getLastIoTime
     }
 
     public Long getMaximumNumberOfChannels()
@@ -84,28 +117,56 @@ public class ConnectionMBean extends AbstractStatisticsGatheringMBean<Connection
 
     public TabularData channels() throws IOException, JMException
     {
-        return null;  // TODO - Implement
+        TabularDataSupport sessionTable = new TabularDataSupport(CHANNELS_TYPE);
+        Collection<Session> list = getConfiguredObject().getSessions();
+
+        for (Session session : list)
+        {
+            Statistics statistics = session.getStatistics();
+            Long txnBegins = (Long) statistics.getStatistic(Session.LOCAL_TRANSACTION_BEGINS);
+
+            boolean isTransactional = (txnBegins>0l);
+
+            int unacknowledgedSize = ((Number) statistics.getStatistic(Session.UNACKNOWLEDGED_MESSAGES)).intValue();
+
+            boolean blocked = false; // TODO - implement query as to whether session is blocked
+
+            Object[] itemValues =
+                    {
+                            (Integer) session.getAttribute(Session.CHANNEL_ID),
+                            isTransactional,
+                            null, // TODO - default queue (which is meaningless)
+                            unacknowledgedSize,
+                            blocked
+                    };
+
+            CompositeData sessionData = new CompositeDataSupport(CHANNEL_TYPE,
+                                                                 COMPOSITE_ITEM_NAMES_DESC.toArray(new String[COMPOSITE_ITEM_NAMES_DESC.size()]), itemValues);
+            sessionTable.put(sessionData);
+        }
+
+        return sessionTable;
     }
 
     public void commitTransactions(int channelId) throws JMException
     {
-        // TODO - Implement
+        // TODO - Commiting transaction on a channel makes *no* sense
     }
 
     public void rollbackTransactions(int channelId) throws JMException
     {
-        // TODO - Implement
+        // TODO - rollin back a transaction on a channel makes *no* sense
     }
 
     public void closeConnection() throws Exception
     {
-        // TODO - Implement
+        // TODO - Implement close connection
     }
 
 
     public void setStatisticsEnabled(boolean enabled)
     {
-        // TODO - Implement
+        // TODO - Implement setStatisticsEnables
         updateStats();
     }
 }
