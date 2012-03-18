@@ -230,6 +230,11 @@ class VirtualHostImpl extends AbstractConfiguredObject implements VirtualHost
         }
     }
 
+    public Collection<String> getExchangeTypes()
+    {
+        return null;  // TODO - Implement
+    }
+
     public void executeTransaction(TransactionalOperation op)
     {
         // TODO - Implement

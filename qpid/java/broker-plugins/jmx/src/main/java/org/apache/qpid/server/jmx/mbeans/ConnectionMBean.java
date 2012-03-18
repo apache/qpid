@@ -107,7 +107,8 @@ public class ConnectionMBean extends AbstractStatisticsGatheringMBean<Connection
 
     public Date getLastIoTime()
     {
-        return null;  // TODO - Implement connection getLastIoTime
+        Long lastIo = (Long) getConfiguredObject().getStatistics().getStatistic(Connection.LAST_IO_TIME);
+        return new Date(lastIo);
     }
 
     public Long getMaximumNumberOfChannels()
@@ -167,7 +168,7 @@ public class ConnectionMBean extends AbstractStatisticsGatheringMBean<Connection
     public synchronized boolean isStatisticsEnabled()
     {
         updateStats();
-        return false;  //TODO
+        return false;  //TODO - implement isStatisticsEnabled
     }
 
     public void setStatisticsEnabled(boolean enabled)

@@ -455,9 +455,9 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
         super.send(event);
     }
 
-    public AtomicLong getLastIoTime()
+    public long getLastIoTime()
     {
-        return _lastIoTime;
+        return _lastIoTime.longValue();
     }
 
     void checkForNotification()

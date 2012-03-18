@@ -151,7 +151,7 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
             }
             catch(JMException e)
             {
-                e.printStackTrace();  //TODO
+                e.printStackTrace();  //TODO - report error on adding child MBean
             }
         }
     }
@@ -169,7 +169,7 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
                 }
                 catch(JMException e)
                 {
-                    e.printStackTrace();  //TODO
+                    e.printStackTrace();  //TODO - report error on removing child MBean
                 }
             }
         }

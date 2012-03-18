@@ -119,4 +119,6 @@ public interface Queue extends ConfiguredObject
     //operations
 
     void visit(QueueEntryVisitor visitor);
+
+    void delete();
 }

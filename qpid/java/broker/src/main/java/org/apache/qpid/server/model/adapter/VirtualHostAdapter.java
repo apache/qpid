@@ -24,6 +24,7 @@ import java.security.AccessControlException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -35,6 +36,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Exchange;
@@ -446,6 +448,20 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
     {
         // TODO
         throw new UnsupportedOperationException("Not Yet Implemented");
+    }
+
+    public Collection<String> getExchangeTypes()
+    {
+        Collection<ExchangeType<? extends org.apache.qpid.server.exchange.Exchange>> types =
+                _virtualHost.getExchangeFactory().getRegisteredTypes();
+        
+        Collection<String> exchangeTypes = new ArrayList<String>();
+        
+        for(ExchangeType<? extends org.apache.qpid.server.exchange.Exchange> type : types)
+        {
+            exchangeTypes.add(type.getName().asString());    
+        }
+        return Collections.unmodifiableCollection(exchangeTypes);
     }
 
     public void executeTransaction(TransactionalOperation op)

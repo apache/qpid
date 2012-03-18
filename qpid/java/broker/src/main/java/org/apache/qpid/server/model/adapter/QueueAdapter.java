@@ -27,6 +27,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
@@ -96,6 +99,23 @@ final class QueueAdapter extends AbstractAdapter implements Queue
     public void visit(final QueueEntryVisitor visitor)
     {
         _queue.visit(visitor);
+    }
+
+    public void delete()
+    {
+        try
+        {
+            _queue.delete();
+            if (_queue.isDurable())
+            {
+
+                _queue.getVirtualHost().getDurableConfigurationStore().removeQueue(_queue);
+            }
+        }
+        catch(AMQException e)
+        {
+            throw new IllegalStateException(e);
+        }
     }
 
     public String getName()

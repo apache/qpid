@@ -75,6 +75,11 @@ class QueueImpl extends AbstractConfiguredObject implements Queue
         //TODO
     }
 
+    public void delete()
+    {
+        // TODO - Implement
+    }
+
     public State getActualState()
     {
         State vhostState = _virtualHost.getActualState();

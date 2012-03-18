@@ -38,6 +38,7 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.stats.StatisticsGatherer;
 
 final class ConnectionAdapter extends AbstractAdapter implements Connection
 {
@@ -54,7 +55,7 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
     public ConnectionAdapter(final AMQConnectionModel conn)
     {
         _connection = conn;
-        _statistics = new StatisticsAdapter(conn);
+        _statistics = new ConnectionStatisticsAdapter(conn);
     }
 
     public Collection<Session> getSessions()
@@ -247,4 +248,27 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
         return _statistics;
     }
 
+    private class ConnectionStatisticsAdapter extends StatisticsAdapter
+    {
+        public ConnectionStatisticsAdapter(StatisticsGatherer applicationRegistry)
+        {
+            super(applicationRegistry);
+        }
+
+        @Override
+        public Collection<String> getStatisticNames()
+        {
+            return Connection.AVAILABLE_STATISTICS;
+        }
+
+        @Override
+        public Object getStatistic(String name)
+        {
+            if(LAST_IO_TIME.equals(name))
+            {
+                return _connection.getLastIoTime();
+            }
+            return super.getStatistic(name);
+        }
+    }
 }

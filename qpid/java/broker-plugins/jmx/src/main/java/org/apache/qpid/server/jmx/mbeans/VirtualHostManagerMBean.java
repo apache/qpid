@@ -23,6 +23,7 @@ package org.apache.qpid.server.jmx.mbeans;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,7 @@ import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParame
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 
@@ -70,7 +72,8 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
 
     public String[] getExchangeTypes() throws IOException
     {
-        return new String[0];  //TODO
+        Collection<String> exchangeTypes = _virtualHostMBean.getVirtualHost().getExchangeTypes();
+        return exchangeTypes.toArray(new String[exchangeTypes.size()]);
     }
 
     public List<String> retrieveQueueAttributeNames() throws IOException
@@ -139,7 +142,6 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
         {
             theExchange.delete();
         }
-        //TODO
     }
 
     public void createNewQueue(String queueName, String owner, boolean durable)
@@ -159,7 +161,19 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
             @MBeanOperationParameter(name = ManagedQueue.TYPE, description = "Queue Name") String queueName)
             throws IOException, JMException, MBeanException
     {
-        //TODO
+        Queue theQueue = null;
+        for(Queue queue : _virtualHostMBean.getVirtualHost().getQueues())
+        {
+            if(queue.getName().equals(queueName))
+            {
+                theQueue = queue;
+                break;
+            }
+        }
+        if(theQueue != null)
+        {
+            theQueue.delete();
+        }
     }
 
 
@@ -173,7 +187,7 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
     public synchronized boolean isStatisticsEnabled()
     {
         updateStats();
-        return false;  //TODO
+        return false;  //TODO - implement isStatisticsEnabled
     }
 
 }

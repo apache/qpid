@@ -83,4 +83,6 @@ public interface AMQConnectionModel extends StatisticsGatherer
     String getPrincipalAsString();
 
     long getSessionCountLimit();
+
+    long getLastIoTime();
 }

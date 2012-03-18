@@ -58,7 +58,7 @@ public class JMXService implements ConfigurationChangeListener
 
     public JMXService() throws AMQException, JMException
     {
-        // TODO
+        // TODO - logging actor
         CurrentActor.set(new AbstractActor(new SystemOutMessageLogger())
         {
 
@@ -99,7 +99,7 @@ public class JMXService implements ConfigurationChangeListener
 
     public void stateChanged(ConfiguredObject object, State oldState, State newState)
     {
-        // TODO - Implement
+
     }
 
     public void childAdded(ConfiguredObject object, ConfiguredObject child)
@@ -114,7 +114,7 @@ public class JMXService implements ConfigurationChangeListener
                 }
                 catch(JMException e)
                 {
-                    e.printStackTrace();  // TODO - Implement
+                    e.printStackTrace();  // TODO - Implement error logging on vhost mbean creation
                 }
             }
         }
@@ -122,6 +122,6 @@ public class JMXService implements ConfigurationChangeListener
 
     public void childRemoved(ConfiguredObject object, ConfiguredObject child)
     {
-        // TODO - Implement
+        // TODO - implement vhost removal
     }
 }

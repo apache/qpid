@@ -248,7 +248,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue
 
     public boolean isFlowOverfull()
     {
-        return false;  // TODO
+        return false;  // TODO - implement isFlowOverfull()
     }
 
     public boolean isExclusive()
@@ -263,12 +263,12 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue
 
     public void setAlternateExchange(String exchangeName)
     {
-        // TODO
+        // TODO - implement setAlternateExchange()
     }
 
     public String getAlternateExchange()
     {
-        return null;  // TODO
+        return null;  // TODO - implement getAlternateExchange()
     }
 
     public TabularData viewMessages(int fromIndex, int toIndex)

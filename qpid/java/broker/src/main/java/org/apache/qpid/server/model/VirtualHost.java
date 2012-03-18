@@ -72,6 +72,8 @@ public interface VirtualHost extends ConfiguredObject
 
     void deleteQueue(Queue queue) throws AccessControlException, IllegalStateException;
 
+    Collection<String> getExchangeTypes();
+
     public static interface Transaction
     {
         void dequeue(QueueEntry entry);

@@ -84,7 +84,7 @@ public class ServerConnectionMBean extends AbstractAMQManagedConnectionObject
 
     public Date getLastIoTime()
     {
-        return new Date(_serverConnection.getLastIoTime().longValue());
+        return new Date(_serverConnection.getLastIoTime());
     }
 
     public Long getMaximumNumberOfChannels()

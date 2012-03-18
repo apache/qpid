@@ -117,7 +117,7 @@ abstract class AbstractStatisticsGatheringMBean<T extends ConfiguredObject> exte
     public synchronized void resetStatistics() throws Exception
     {
         updateStats();
-        //TODO
+        //TODO - implement resetStatistics()
     }
 
     public synchronized double getPeakMessageDeliveryRate()
