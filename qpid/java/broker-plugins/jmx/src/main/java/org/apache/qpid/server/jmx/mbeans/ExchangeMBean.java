@@ -297,11 +297,27 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
         _exchange.createBinding(binding, queue, arguments, Collections.EMPTY_MAP);
     }
 
-    public void removeBinding(
-            @MBeanOperationParameter(name = ManagedQueue.TYPE, description = "Queue name") String queueName,
-            @MBeanOperationParameter(name = "Binding", description = "Binding key") String binding)
+    public void removeBinding(String queueName, String bindingKey)
             throws IOException, JMException
     {
-        // TODO
+        Queue queue = null;
+        VirtualHost vhost = _exchange.getParent(VirtualHost.class);
+        for(Queue aQueue : vhost.getQueues())
+        {
+            if(aQueue.getName().equals(queueName))
+            {
+                queue = aQueue;
+                break;
+            }
+        }
+
+        for(Binding binding : _exchange.getBindings())
+        {
+            if(queue.equals(binding.getParent(Queue.class)) && bindingKey.equals(binding.getName()))
+            {
+                binding.delete();
+            }
+        }
+        
     }
 }

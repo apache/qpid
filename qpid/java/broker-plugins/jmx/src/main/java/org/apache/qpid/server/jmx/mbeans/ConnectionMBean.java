@@ -155,18 +155,24 @@ public class ConnectionMBean extends AbstractStatisticsGatheringMBean<Connection
 
     public void rollbackTransactions(int channelId) throws JMException
     {
-        // TODO - rollin back a transaction on a channel makes *no* sense
+        // TODO - rolling back a transaction on a channel makes *no* sense
     }
 
     public void closeConnection() throws Exception
     {
-        // TODO - Implement close connection
+        getConfiguredObject().delete();
     }
 
 
+    public synchronized boolean isStatisticsEnabled()
+    {
+        updateStats();
+        return false;  //TODO
+    }
+
     public void setStatisticsEnabled(boolean enabled)
     {
-        // TODO - Implement setStatisticsEnables
+        // TODO - Implement setStatisticsEnabled
         updateStats();
     }
 }

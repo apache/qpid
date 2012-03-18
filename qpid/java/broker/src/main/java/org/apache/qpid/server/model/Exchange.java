@@ -43,4 +43,6 @@ public interface Exchange extends ConfiguredObject
 
 
     // Statistics
+
+    void delete();
 }

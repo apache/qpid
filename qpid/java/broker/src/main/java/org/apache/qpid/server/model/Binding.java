@@ -25,4 +25,6 @@ import java.util.Map;
 public interface Binding extends ConfiguredObject
 {
     Map<String,Object> getArguments();
+
+    void delete();
 }

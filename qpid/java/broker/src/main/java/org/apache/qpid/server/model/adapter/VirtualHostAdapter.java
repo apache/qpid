@@ -35,6 +35,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -46,8 +47,12 @@ import org.apache.qpid.server.model.VirtualHostAlias;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.txn.LocalTransaction;
+import org.apache.qpid.server.txn.ServerTransaction;
 
 final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, ExchangeRegistry.RegistryChangeListener,
                                                                   QueueRegistry.RegistryChangeListener,
@@ -441,6 +446,102 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
     {
         // TODO
         throw new UnsupportedOperationException("Not Yet Implemented");
+    }
+
+    public void executeTransaction(TransactionalOperation op)
+    {
+        MessageStore store = _virtualHost.getMessageStore();
+        final LocalTransaction txn = new LocalTransaction(store);
+
+        op.withinTransaction(new Transaction()
+        {
+            public void dequeue(final QueueEntry entry)
+            {
+                txn.dequeue(entry.getQueue(), entry.getMessage(), new ServerTransaction.Action()
+                {
+                    public void postCommit()
+                    {
+                        entry.discard();
+                    }
+
+                    public void onRollback()
+                    {
+                    }
+                });
+            }
+
+            public void copy(QueueEntry entry, Queue queue)
+            {
+                final ServerMessage message = entry.getMessage();
+                final AMQQueue toQueue = ((QueueAdapter)queue).getAMQQueue();
+
+                txn.enqueue(toQueue, message, new ServerTransaction.Action()
+                {
+                    public void postCommit()
+                    {
+                        try
+                        {
+                            toQueue.enqueue(message);
+                        }
+                        catch(AMQException e)
+                        {
+                            throw new RuntimeException(e);
+                        }
+                    }
+
+                    public void onRollback()
+                    {
+                    }
+                });
+
+            }
+
+            public void move(final QueueEntry entry, Queue queue)
+            {
+                final ServerMessage message = entry.getMessage();
+                final AMQQueue toQueue = ((QueueAdapter)queue).getAMQQueue();
+                if(entry.acquire())
+                {
+                    txn.enqueue(toQueue, message,
+                                new ServerTransaction.Action()
+                                {
+
+                                    public void postCommit()
+                                    {
+                                        try
+                                        {
+                                            toQueue.enqueue(message);
+                                        }
+                                        catch (AMQException e)
+                                        {
+                                            throw new RuntimeException(e);
+                                        }
+                                    }
+
+                                    public void onRollback()
+                                    {
+                                        entry.release();
+                                    }
+                                });
+                    txn.dequeue(entry.getQueue(), message,
+                                new ServerTransaction.Action()
+                                {
+
+                                    public void postCommit()
+                                    {
+                                        entry.discard();
+                                    }
+
+                                    public void onRollback()
+                                    {
+
+                                    }
+                                });
+                }
+            }
+
+        });
+        txn.commit();
     }
 
     org.apache.qpid.server.virtualhost.VirtualHost getVirtualHost()

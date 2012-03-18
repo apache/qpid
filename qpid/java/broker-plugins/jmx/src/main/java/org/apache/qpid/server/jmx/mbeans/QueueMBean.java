@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.management.JMException;
 import javax.management.ObjectName;
 import javax.management.OperationsException;
@@ -46,6 +47,7 @@ import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
 
@@ -383,33 +385,202 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue
         return visitor.getEntry();
 
     }
-
+    
     public void deleteMessageFromTop() throws IOException, JMException
     {
-        // TODO
+        VirtualHost vhost = _queue.getParent(VirtualHost.class);
+        vhost.executeTransaction(new VirtualHost.TransactionalOperation()
+        {
+            public void withinTransaction(final VirtualHost.Transaction txn)
+            {
+                _queue.visit(new QueueEntryVisitor()
+                {
+
+                    public boolean visit(final QueueEntry entry)
+                    {
+                        if(entry.acquire())
+                        {
+                            txn.dequeue(entry);
+                            return true;
+                        }
+                        return false;
+                    }
+                });
+
+            }
+        });
+
     }
 
     public Long clearQueue() throws IOException, JMException
     {
-        return null;  // TODO
+        VirtualHost vhost = _queue.getParent(VirtualHost.class);
+        final AtomicLong count = new AtomicLong();
+
+        vhost.executeTransaction(new VirtualHost.TransactionalOperation()
+        {
+            public void withinTransaction(final VirtualHost.Transaction txn)
+            {
+                _queue.visit(new QueueEntryVisitor()
+                {
+
+                    public boolean visit(final QueueEntry entry)
+                    {
+                        final ServerMessage message = entry.getMessage();
+                        if(message != null)
+                        {
+                            txn.dequeue(entry);
+                            count.incrementAndGet();
+
+                        }
+                        return false;
+                    }
+                });
+
+            }
+        });
+        return count.get();
     }
 
-    public void moveMessages(long fromMessageId, long toMessageId, String toQueue)
+    public void moveMessages(final long fromMessageId, final long toMessageId, String toQueue)
             throws IOException, JMException
     {
-        // TODO
+        if ((fromMessageId > toMessageId) || (fromMessageId < 1))
+        {
+            throw new OperationsException("\"From MessageId\" should be greater than 0 and less than \"To MessageId\"");
+        }
+
+        VirtualHost vhost = _queue.getParent(VirtualHost.class);
+        Queue destinationQueue = null;
+        for(Queue q : vhost.getQueues())
+        {
+            if(q.getName().equals(toQueue))
+            {
+                destinationQueue = q;
+                break;
+            }
+        }
+        if(destinationQueue == null)
+        {
+            throw new OperationsException("No such queue \""+toQueue+"\"");
+        }
+
+        final Queue queue = destinationQueue;
+
+
+        vhost.executeTransaction(new VirtualHost.TransactionalOperation()
+        {
+            public void withinTransaction(final VirtualHost.Transaction txn)
+            {
+                _queue.visit(new QueueEntryVisitor()
+                {
+
+                    public boolean visit(final QueueEntry entry)
+                    {
+                        final ServerMessage message = entry.getMessage();
+                        if(message != null)
+                        {
+                            final long messageId = message.getMessageNumber();
+
+                            if ((messageId >= fromMessageId)
+                                && (messageId <= toMessageId))
+                            {
+                                txn.move(entry, queue);
+                            }
+
+                        }
+                        return false;
+                    }
+                });
+            }
+        });
     }
 
-    public void deleteMessages(long fromMessageId, long toMessageId)
+    public void deleteMessages(final long fromMessageId, final long toMessageId)
             throws IOException, JMException
     {
-        // TODO
+        VirtualHost vhost = _queue.getParent(VirtualHost.class);
+        vhost.executeTransaction(new VirtualHost.TransactionalOperation()
+        {
+            public void withinTransaction(final VirtualHost.Transaction txn)
+            {
+                _queue.visit(new QueueEntryVisitor()
+                {
+
+                    public boolean visit(final QueueEntry entry)
+                    {
+                        final ServerMessage message = entry.getMessage();
+                        if(message != null)
+                        {
+                            final long messageId = message.getMessageNumber();
+
+                            if ((messageId >= fromMessageId)
+                                && (messageId <= toMessageId))
+                            {
+                                txn.dequeue(entry);
+                                return true;
+                            }
+                            return false;
+                        }
+                        return true;
+                    }
+                });
+            }
+        });
     }
 
-    public void copyMessages(long fromMessageId, long toMessageId, String toQueue)
+    public void copyMessages(final long fromMessageId, final long toMessageId, String toQueue)
             throws IOException, JMException
     {
-        // TODO
+        if ((fromMessageId > toMessageId) || (fromMessageId < 1))
+        {
+            throw new OperationsException("\"From MessageId\" should be greater than 0 and less than \"To MessageId\"");
+        }
+
+        VirtualHost vhost = _queue.getParent(VirtualHost.class);
+        Queue destinationQueue = null;
+        for(Queue q : vhost.getQueues())
+        {
+            if(q.getName().equals(toQueue))
+            {
+                destinationQueue = q;
+                break;
+            }
+        }
+        if(destinationQueue == null)
+        {
+            throw new OperationsException("No such queue \""+toQueue+"\"");
+        }
+
+        final Queue queue = destinationQueue;
+
+
+        vhost.executeTransaction(new VirtualHost.TransactionalOperation()
+        {
+            public void withinTransaction(final VirtualHost.Transaction txn)
+            {
+                _queue.visit(new QueueEntryVisitor()
+                {
+
+                    public boolean visit(final QueueEntry entry)
+                    {
+                        final ServerMessage message = entry.getMessage();
+                        if(message != null)
+                        {
+                            final long messageId = message.getMessageNumber();
+
+                            if ((messageId >= fromMessageId)
+                                && (messageId <= toMessageId))
+                            {
+                                txn.copy(entry, queue);
+                            }
+
+                        }
+                        return false;
+                    }
+                });
+            }
+        });
     }
 
     private List<QueueEntry> getMessages(final long first, final long last)
@@ -417,7 +588,8 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue
         final List<QueueEntry> messages = new ArrayList<QueueEntry>((int)(last-first)+1);
         _queue.visit(new QueueEntryVisitor()
         {
-            private long position = 0;
+            private long position = 1;
+
             public boolean visit(QueueEntry entry)
             {
                 if(position >= first && position <= last)

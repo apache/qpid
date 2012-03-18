@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.server.binding.Binding;
@@ -140,6 +141,18 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
         }
     }
 
+    public void delete()
+    {
+        try
+        {
+            _vhost.getVirtualHost().getExchangeRegistry().unregisterExchange(getName(), false);
+        }
+        catch(AMQException e)
+        {
+            throw new IllegalStateException(e);
+        }
+    }
+
     public String getName()
     {
         return _exchange.getName();
@@ -225,5 +238,10 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
             _vhost.getQueueAdapter(binding.getQueue()).bindingUnregistered(binding);
             childRemoved(adapter);
         }
+    }
+
+    org.apache.qpid.server.exchange.Exchange getExchange()
+    {
+        return _exchange;
     }
 }

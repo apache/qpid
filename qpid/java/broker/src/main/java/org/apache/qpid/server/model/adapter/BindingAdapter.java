@@ -24,6 +24,8 @@ import java.security.AccessControlException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.qpid.AMQInternalException;
+import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -117,5 +119,21 @@ final class BindingAdapter extends AbstractAdapter implements Binding
     public Map<String, Object> getArguments()
     {
         return new HashMap<String, Object> (_binding.getArguments());
+    }
+
+    public void delete()
+    {
+        try
+        {
+            _queue.getAMQQueue().getVirtualHost().getBindingFactory().removeBinding(_binding);
+        }
+        catch(AMQSecurityException e)
+        {
+            throw new AccessControlException(e.getMessage());
+        }
+        catch(AMQInternalException e)
+        {
+            throw new IllegalStateException(e);
+        }
     }
 }

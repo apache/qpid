@@ -216,7 +216,6 @@ class VirtualHostImpl extends AbstractConfiguredObject implements VirtualHost
         }
     }
 
-    @Override
     public void deleteQueue(Queue queue)
     {
         synchronized (getLock())
@@ -229,5 +228,10 @@ class VirtualHostImpl extends AbstractConfiguredObject implements VirtualHost
             _queueMap.remove(queue.getName());
             notifyChildRemovedListener(queue);
         }
+    }
+
+    public void executeTransaction(TransactionalOperation op)
+    {
+        // TODO - Implement
     }
 }

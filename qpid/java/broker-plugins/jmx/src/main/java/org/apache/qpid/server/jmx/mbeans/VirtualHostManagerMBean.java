@@ -37,6 +37,7 @@ import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
 import org.apache.qpid.server.jmx.ManagedObject;
+import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
@@ -122,10 +123,22 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
 
     }
 
-    public void unregisterExchange(
-            @MBeanOperationParameter(name = ManagedExchange.TYPE, description = "Exchange Name") String exchange)
+    public void unregisterExchange(String exchangeName)
             throws IOException, JMException, MBeanException
     {
+        Exchange theExchange = null;
+        for(Exchange exchange : _virtualHostMBean.getVirtualHost().getExchanges())
+        {
+            if(exchange.getName().equals(exchangeName))
+            {
+                theExchange = exchange;
+                break;
+            }
+        }
+        if(theExchange != null)
+        {
+            theExchange.delete();
+        }
         //TODO
     }
 
@@ -154,6 +167,13 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
     public ObjectName getObjectName() throws MalformedObjectNameException
     {
         return getObjectNameForSingleInstanceMBean();
+    }
+
+
+    public synchronized boolean isStatisticsEnabled()
+    {
+        updateStats();
+        return false;  //TODO
     }
 
 }

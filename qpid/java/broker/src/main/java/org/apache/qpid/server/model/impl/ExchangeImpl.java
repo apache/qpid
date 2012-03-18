@@ -90,6 +90,11 @@ class ExchangeImpl extends AbstractConfiguredObject implements Exchange
         return null;  // TODO - Implement
     }
 
+    public void delete()
+    {
+        // TODO - Implement
+    }
+
     public State getActualState()
     {
         State vhostState = _virtualHost.getActualState();

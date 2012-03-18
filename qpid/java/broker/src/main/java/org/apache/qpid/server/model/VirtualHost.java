@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.model;
 
+import org.apache.qpid.server.queue.QueueEntry;
 import java.security.AccessControlException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -70,4 +71,21 @@ public interface VirtualHost extends ConfiguredObject
                     throws AccessControlException, IllegalArgumentException;
 
     void deleteQueue(Queue queue) throws AccessControlException, IllegalStateException;
+
+    public static interface Transaction
+    {
+        void dequeue(QueueEntry entry);
+
+        void copy(QueueEntry entry, Queue queue);
+        
+        void move(QueueEntry entry, Queue queue);
+
+    }
+
+    public static interface TransactionalOperation
+    {
+        void withinTransaction(Transaction txn);
+    }
+
+    void executeTransaction(TransactionalOperation op);
 }

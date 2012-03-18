@@ -197,9 +197,4 @@ abstract class AbstractStatisticsGatheringMBean<T extends ConfiguredObject> exte
         return _bytesReceived;
     }
 
-    public synchronized boolean isStatisticsEnabled()
-    {
-        updateStats();
-        return false;  //TODO
-    }
 }

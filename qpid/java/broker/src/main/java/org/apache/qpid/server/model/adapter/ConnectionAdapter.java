@@ -28,6 +28,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Session;
@@ -75,6 +78,18 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
                 }
             }
             return new ArrayList<Session>(_sessionAdapters.values());
+        }
+    }
+
+    public void delete()
+    {
+        try
+        {
+            _connection.close(AMQConstant.CONNECTION_FORCED, "Connection closed by external action");
+        }
+        catch(AMQException e)
+        {
+            throw new IllegalStateException(e);
         }
     }
 

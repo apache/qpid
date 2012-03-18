@@ -57,4 +57,6 @@ public interface Connection extends ConfiguredObject
 
     //children
     Collection<Session> getSessions();
+
+    void delete();
 }
