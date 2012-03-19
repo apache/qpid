@@ -1123,11 +1123,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
 
     }
 
-    public Object getID()
-    {
-        return _channelId;
-    }
-
     public AMQConnectionModel getConnectionModel()
     {
         return _session;
@@ -1377,7 +1372,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
     {
         if(_blockingQueues.remove(queue))
         {
-            if(_blocking.compareAndSet(true,false))
+            if(_blocking.compareAndSet(true,false) && !isClosing())
             {
                 _actor.message(_logSubject, ChannelMessages.FLOW_REMOVED());
 
@@ -1627,6 +1622,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
 
     public int compareTo(AMQSessionModel session)
     {
-        return getId().toString().compareTo(session.getID().toString());
+        return getId().compareTo(session.getId());
     }
 }

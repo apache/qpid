@@ -21,7 +21,6 @@
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/AMQBody.h"
-#include "qpid/framing/BodyHandler.h"
 #include "qpid/framing/AMQMethodBody.h"
 #include "qpid/framing/AMQHeaderBody.h"
 #include "qpid/framing/AMQContentBody.h"

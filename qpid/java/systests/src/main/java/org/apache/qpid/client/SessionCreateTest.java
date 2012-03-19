@@ -27,7 +27,6 @@ import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.Session;
-import javax.naming.Context;
 
 
 /**
@@ -35,9 +34,7 @@ import javax.naming.Context;
  */
 public class SessionCreateTest extends QpidBrokerTestCase
 {
-    private static final Logger _logger = LoggerFactory.getLogger(MessageListenerTest.class);
-
-    private Context _context;
+    private static final Logger LOGGER = LoggerFactory.getLogger(SessionCreateTest.class);
 
     private Connection _clientConnection;
     protected int maxSessions = 65555;
@@ -54,7 +51,7 @@ public class SessionCreateTest extends QpidBrokerTestCase
             Session sess = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             assertNotNull(sess);
             sess.close();
-            System.out.println("created session: " + i); 
+            LOGGER.debug("created session: " + i);
         }
 
         _clientConnection.close();
