@@ -63,3 +63,7 @@ org.apache.qpid.jms.xa.XAResourceTest#*
 
 //Tests durable subscription selector verification behaviour that 0-8/0-9/0-9-1 cant provide
 org.apache.qpid.test.unit.ct.DurableSubscriberTest#testResubscribeWithChangedSelectorAndRestart
+
+// JCA system tests require XA support (should look to see if we can reduce scope of excludes here)
+org.apache.qpid.ra.QpidRAConnectionTest#*
+
