@@ -144,12 +144,12 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     /** update queue observers, stats, policy, etc when the messages' state changes.
      * messageLock is held by caller */
-    void observeEnqueue(const QueuedMessage& msg, const qpid::sys::Mutex::ScopedLock&);
-    void observeAcquire(const QueuedMessage& msg, const qpid::sys::Mutex::ScopedLock&);
-    void observeRequeue(const QueuedMessage& msg, const qpid::sys::Mutex::ScopedLock&);
-    void observeDequeue(const QueuedMessage& msg, const qpid::sys::Mutex::ScopedLock&);
-    void observeConsumerAdd( const Consumer&, const qpid::sys::Mutex::ScopedLock&);
-    void observeConsumerRemove( const Consumer&, const qpid::sys::Mutex::ScopedLock&);
+    void observeEnqueue(const QueuedMessage& msg, const sys::Mutex::ScopedLock& lock);
+    void observeAcquire(const QueuedMessage& msg, const sys::Mutex::ScopedLock& lock);
+    void observeRequeue(const QueuedMessage& msg, const sys::Mutex::ScopedLock& lock);
+    void observeDequeue(const QueuedMessage& msg, const sys::Mutex::ScopedLock& lock);
+    void observeConsumerAdd( const Consumer&, const sys::Mutex::ScopedLock& lock);
+    void observeConsumerRemove( const Consumer&, const sys::Mutex::ScopedLock& lock);
 
     bool popAndDequeue(QueuedMessage&);
     bool acquire(const qpid::framing::SequenceNumber& position, QueuedMessage& msg);
