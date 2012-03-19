@@ -1315,7 +1315,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
 
     public void closeSession(AMQSessionModel session, AMQConstant cause, String message) throws AMQException
     {
-        closeChannel((Integer)session.getID());
+        int channelId = ((AMQChannel)session).getChannelId();
+        closeChannel(channelId);
 
         MethodRegistry methodRegistry = getMethodRegistry();
         ChannelCloseBody responseBody =
@@ -1324,7 +1325,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
                         new AMQShortString(message),
                         0,0);
 
-        writeFrame(responseBody.generateFrame((Integer)session.getID()));
+        writeFrame(responseBody.generateFrame(channelId));
     }
 
     public void close(AMQConstant cause, String message) throws AMQException
