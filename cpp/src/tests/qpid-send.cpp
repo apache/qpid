@@ -36,14 +36,25 @@
 #include <iostream>
 #include <memory>
 
-using namespace std;
-using namespace qpid::messaging;
-using namespace qpid::types;
+using std::string;
+using std::ios_base;
 
-typedef std::vector<std::string> string_vector;
+using qpid::messaging::Address;
+using qpid::messaging::Connection;
+using qpid::messaging::Duration;
+using qpid::messaging::FailoverUpdates;
+using qpid::messaging::Message;
+using qpid::messaging::Receiver;
+using qpid::messaging::Session;
+using qpid::messaging::Sender;
+using qpid::types::Exception;
+using qpid::types::Uuid;
+using qpid::types::Variant;
 
 namespace qpid {
 namespace tests {
+
+typedef std::vector<std::string> string_vector;
 
 struct Options : public qpid::Options
 {
@@ -223,10 +234,6 @@ const string EOS("eos");
 const string SN("sn");
 const string TS("ts");
 
-}} // namespace qpid::tests
-
-using namespace qpid::tests;
-
 class ContentGenerator {
   public:
     virtual ~ContentGenerator() {}
@@ -328,6 +335,20 @@ public:
         groups.push_back( group );
     }
 };
+
+}} // namespace qpid::tests
+
+using qpid::tests::Options;
+using qpid::tests::Reporter;
+using qpid::tests::Throughput;
+using qpid::tests::ContentGenerator;
+using qpid::tests::GroupGenerator;
+using qpid::tests::GetlineContentGenerator;
+using qpid::tests::MapContentGenerator;
+using qpid::tests::FixedContentGenerator;
+using qpid::tests::SN;
+using qpid::tests::TS;
+using qpid::tests::EOS;
 
 int main(int argc, char ** argv)
 {

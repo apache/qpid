@@ -21,14 +21,14 @@
 
 #include "unit_test.h"
 
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(RefCountedTestSuiteTestSuite)
 
 using boost::intrusive_ptr;
 using namespace std;
 using namespace qpid;
-
-namespace qpid {
-namespace tests {
 
 struct CountMe : public RefCounted {
     static int instances;
