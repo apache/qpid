@@ -31,10 +31,11 @@
 #include <unistd.h>
 #include <sys/utsname.h>
 
-using namespace std;
-using namespace qpid;
-using qpid::broker::Broker;
-using qpid::broker::Daemon;
+using std::cout;
+using std::endl;
+
+namespace qpid {
+namespace broker {
 
 BootstrapOptions::BootstrapOptions(const char* argv0)
   : qpid::Options("Options"),
@@ -197,7 +198,9 @@ int QpiddBroker::execute (QpiddOptions *options) {
     return 0;
 }
 
+}} // namespace qpid::Broker
+
 int main(int argc, char* argv[])
 {
-    return run_broker(argc, argv);
+    return qpid::broker::run_broker(argc, argv);
 }

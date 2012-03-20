@@ -32,7 +32,9 @@
 #include <windows.h>
 #include <iostream>
 
-namespace {
+namespace qpid {
+namespace tests {
+namespace windows {
 
 // Instead of popping up a window for exceptions, just print something out
 LONG _stdcall UnhandledExceptionFilter (PEXCEPTION_POINTERS pExceptionInfo)
@@ -73,4 +75,4 @@ redirect_errors_to_stderr::redirect_errors_to_stderr()
     SetUnhandledExceptionFilter (&UnhandledExceptionFilter);
 }
 
-}  // namespace
+}}}  // namespace
