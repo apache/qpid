@@ -25,6 +25,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntry.SubscriptionAcquiredState;
@@ -124,6 +125,11 @@ public class MockSubscription implements Subscription
     public AMQQueue getQueue()
     {
         return queue;
+    }
+
+    public AMQSessionModel getSession()
+    {
+        return null;
     }
 
     public boolean trySendLock()
@@ -232,7 +238,6 @@ public class MockSubscription implements Subscription
         messages.add(entry);
     }
 
-    @Override
     public void flushBatched()
     {
 
@@ -249,7 +254,7 @@ public class MockSubscription implements Subscription
     }
 
     public void setNoLocal(boolean noLocal)
-    {        
+    {
     }
 
     public void setStateListener(StateListener listener)

@@ -109,7 +109,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
                                                 public void stateChange(Subscription sub, State oldState, State newState)
                                                 {
-                                                    CurrentActor.get().message(SubscriptionMessages.STATE(newState.toString()));    
+                                                    CurrentActor.get().message(SubscriptionMessages.STATE(newState.toString()));
                                                 }
                                             };
     private AMQQueue _queue;
@@ -199,7 +199,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
             CurrentActor.get().message(this, SubscriptionMessages.CREATE(filterLogString, queue.isDurable() && exclusive,
                     filterLogString.length() > 0));
         }
- 
+
     }
 
     public AMQShortString getConsumerTag()
@@ -302,7 +302,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     {
         return getQueue().getConfigStore();
     }
-    
+
     public Long getDelivered()
     {
         return _deliveredCount.get();
@@ -664,7 +664,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
     private void forceDequeue(final QueueEntry entry, final boolean restoreCredit)
     {
-        AutoCommitTransaction dequeueTxn = new AutoCommitTransaction(getQueue().getVirtualHost().getMessageStore()); 
+        AutoCommitTransaction dequeueTxn = new AutoCommitTransaction(getQueue().getVirtualHost().getMessageStore());
         dequeueTxn.dequeue(entry.getQueue(), entry.getMessage(),
                            new ServerTransaction.Action()
                            {
@@ -960,7 +960,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         return false;
     }
 
-    ServerSession getSession()
+    public ServerSession getSession()
     {
         return _session;
     }
@@ -1033,7 +1033,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
     public String toLogString()
     {
-        String queueInfo = MessageFormat.format(QUEUE_FORMAT, _queue.getVirtualHost().getName(), 
+        String queueInfo = MessageFormat.format(QUEUE_FORMAT, _queue.getVirtualHost().getName(),
                   _queue.getNameShortString());
         String result = "[" + MessageFormat.format(SUBSCRIPTION_FORMAT, getSubscriptionID()) + "("
                 // queueString is "vh(/{0})/qu({1}) " so need to trim

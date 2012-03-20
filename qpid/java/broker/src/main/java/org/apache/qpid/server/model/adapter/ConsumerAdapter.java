@@ -36,7 +36,12 @@ public class ConsumerAdapter extends AbstractAdapter implements Consumer
 
     public ConsumerAdapter(final QueueAdapter queueAdapter, final Subscription subscription)
     {
-        super(queueAdapter.getVirtualHost().getName(), queueAdapter.getName(), subscription.getConsumerTag().asString() );
+        super(queueAdapter.getVirtualHost().getName(),
+              queueAdapter.getName(),
+              subscription.getSession().getConnectionModel().getRemoteAddressString(),
+              String.valueOf(subscription.getSession().getChannelId()),
+              subscription.getConsumerTag().asString() );
+
         _subscription = subscription;
         _queue = queueAdapter;
         //TODO

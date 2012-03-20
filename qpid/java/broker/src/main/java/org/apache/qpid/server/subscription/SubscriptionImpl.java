@@ -44,6 +44,7 @@ import org.apache.qpid.server.logging.subjects.SubscriptionLogSubject;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 
@@ -371,11 +372,16 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     }
 
+    public AMQSessionModel getSession()
+    {
+        return _channel;
+    }
+
     public ConfigStore getConfigStore()
     {
         return getQueue().getConfigStore();
     }
-    
+
     public Long getDelivered()
     {
         return _deliveredCount.get();
@@ -810,7 +816,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     {
         return _channel.isTransactional();
     }
-    
+
     public long getCreateTime()
     {
         return _createTime;
