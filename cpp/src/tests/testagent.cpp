@@ -36,9 +36,12 @@
 
 #include <sstream>
 
+namespace qpid {
+namespace tests {
+
 static bool running = true;
 
-using namespace std;
+using std::string;
 using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
@@ -191,12 +194,14 @@ int main_int(int argc, char** argv)
     return 0;
 }
 
+}} // namespace qpid::tests
+
 int main(int argc, char** argv)
 {
     try {
-        return main_int(argc, argv);
+        return qpid::tests::main_int(argc, argv);
     } catch(std::exception& e) {
-        cerr << "Top Level Exception: " << e.what() << endl;
+        std::cerr << "Top Level Exception: " << e.what() << std::endl;
         return 1;
     }
 }

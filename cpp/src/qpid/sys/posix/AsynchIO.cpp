@@ -41,7 +41,9 @@
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
 
-using namespace qpid::sys;
+namespace qpid {
+namespace sys {
+namespace posix {
 
 namespace {
 
@@ -71,10 +73,6 @@ __thread int64_t threadMaxIoTimeNs = 2 * 1000000; // start at 2ms
 /*
  * Asynch Acceptor
  */
-namespace qpid {
-namespace sys {
-namespace posix {
-
 class AsynchAcceptor : public qpid::sys::AsynchAcceptor {
 public:
     AsynchAcceptor(const Socket& s, AsynchAcceptor::Callback callback);

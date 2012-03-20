@@ -25,6 +25,9 @@
 
 #pragma comment(lib, "advapi32.lib")
 
+namespace qpid {
+namespace windows {
+
 namespace {
 
 // Container that will close a SC_HANDLE upon destruction.
@@ -46,9 +49,6 @@ private:
 };
 
 }
-
-namespace qpid {
-namespace windows {
 
 SCM::SCM() : scmHandle(NULL)
 {

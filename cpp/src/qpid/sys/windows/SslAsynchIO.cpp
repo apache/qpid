@@ -38,6 +38,10 @@
 #include <queue>
 #include <boost/bind.hpp>
 
+namespace qpid {
+namespace sys {
+namespace windows {
+
 namespace {
 
     /*
@@ -65,10 +69,6 @@ namespace {
         qpid::sys::AsynchIO::BufferBase* release() { return aioBuff.release(); }
     };
 }
-
-namespace qpid {
-namespace sys {
-namespace windows {
 
 SslAsynchIO::SslAsynchIO(const qpid::sys::Socket& s,
                          CredHandle hCred,

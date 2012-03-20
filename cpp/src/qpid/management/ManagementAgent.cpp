@@ -44,14 +44,15 @@
 #include <sstream>
 #include <typeinfo>
 
+namespace qpid {
+namespace management {
+
 using boost::intrusive_ptr;
 using qpid::framing::Uuid;
 using qpid::types::Variant;
 using qpid::amqp_0_10::MapCodec;
 using qpid::amqp_0_10::ListCodec;
-using qpid::sys::Mutex;
 using namespace qpid::framing;
-using namespace qpid::management;
 using namespace qpid::broker;
 using namespace qpid;
 using namespace std;
@@ -2960,9 +2961,6 @@ bool ManagementAgent::moveDeletedObjectsLH() {
     }
     return !deleteList.empty();
 }
-
-namespace qpid {
-namespace management {
 
 namespace {
 QPID_TSS const qpid::broker::ConnectionState* executionContext = 0;

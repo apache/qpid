@@ -56,7 +56,9 @@
 #include <boost/intrusive_ptr.hpp>
 
 
-using namespace qpid::broker;
+namespace qpid {
+namespace broker {
+
 using namespace qpid::sys;
 using namespace qpid::framing;
 using qpid::management::ManagementAgent;
@@ -1706,3 +1708,5 @@ void Queue::UsageBarrier::destroy()
     parent.deleted = true;
     while (count) parent.messageLock.wait();
 }
+
+}}
