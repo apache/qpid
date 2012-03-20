@@ -45,15 +45,25 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageDistribu
 
     struct GroupState {
         // note: update getState()/setState() when changing this object's state implementation
-        typedef std::deque<framing::SequenceNumber> PositionFifo;
+
+        // track which messages are in this group, and if they have been acquired
+        struct MessageState {
+            framing::SequenceNumber position;
+            bool                    acquired;
+            MessageState() : acquired(false) {}
+            MessageState(const framing::SequenceNumber& p) : position(p), acquired(false) {}
+            bool operator<(const MessageState& b) { return position < b.position; }
+        };
+        typedef std::deque<MessageState> MessageFifo;
 
         std::string group;  // group identifier
         std::string owner;  // consumer with outstanding acquired messages
         uint32_t acquired;  // count of outstanding acquired messages
-        PositionFifo members;   // msgs belonging to this group
+        MessageFifo members;   // msgs belonging to this group, in enqueue order
 
         GroupState() : acquired(0) {}
         bool owned() const {return !owner.empty();}
+        MessageFifo::iterator findMsg(const framing::SequenceNumber &);
     };
 
     typedef sys::unordered_map<std::string, struct GroupState> GroupMap;
