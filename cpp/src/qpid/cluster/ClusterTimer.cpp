@@ -24,6 +24,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/framing/ClusterTimerWakeupBody.h"
 #include "qpid/framing/ClusterTimerDropBody.h"
+#include "qpid/sys/ClusterSafe.h"
 
 namespace qpid {
 namespace cluster {
@@ -107,6 +108,7 @@ void ClusterTimer::drop(intrusive_ptr<TimerTask> t) {
 // Deliver thread
 void ClusterTimer::deliverWakeup(const std::string& name) {
     QPID_LOG(trace, "Cluster timer wakeup delivered for " << name);
+    qpid::sys::assertClusterSafe();
     Map::iterator i = map.find(name);
     if (i == map.end())
         throw Exception(QPID_MSG("Cluster timer wakeup non-existent task " << name));
