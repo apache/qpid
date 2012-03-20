@@ -53,6 +53,7 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
     public ExchangeAdapter(final VirtualHostAdapter virtualHostAdapter,
                            final org.apache.qpid.server.exchange.Exchange exchange)
     {
+        super(virtualHostAdapter.getName(), exchange.getName());
         _vhost = virtualHostAdapter;
         _exchange = exchange;
         addParent(org.apache.qpid.server.model.VirtualHost.class, virtualHostAdapter);
@@ -110,14 +111,14 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
 
 
         AMQQueue amqQueue = ((QueueAdapter)queue).getAMQQueue();
-        
+
         try
         {
             if(!virtualHost.getBindingFactory().addBinding(bindingKey, amqQueue, _exchange, bindingArguments))
             {
-                Binding oldBinding = virtualHost.getBindingFactory().getBinding(bindingKey, amqQueue, _exchange, 
+                Binding oldBinding = virtualHost.getBindingFactory().getBinding(bindingKey, amqQueue, _exchange,
                                                                                 bindingArguments);
-    
+
                 Map<String, Object> oldArgs = oldBinding.getArguments();
                 if((oldArgs == null && !bindingArguments.isEmpty()) || (oldArgs != null && !oldArgs.equals(bindingArguments)))
                 {
@@ -125,7 +126,7 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
                 }
             }
             Binding binding = virtualHost.getBindingFactory().getBinding(bindingKey, amqQueue, _exchange, bindingArguments);
-            
+
             synchronized (_bindingAdapters)
             {
                 return binding == null ? null : _bindingAdapters.get(binding);

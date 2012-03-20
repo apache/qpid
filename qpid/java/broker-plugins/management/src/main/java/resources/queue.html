@@ -1,0 +1,85 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Queue</title>
+		<!--<link rel="stylesheet" href="/dojo/1.7.2/dojo/resources/dojo.css">
+		<link rel="stylesheet" href="/dojo/1.7.2/dijit/themes/claro/claro.css">
+		<link rel="stylesheet" href="/dojo/1.7.2/dojox/grid/resources/claroGrid.css">-->
+        <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dojo/resources/dojo.css">
+        <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dijit/themes/claro/claro.css">
+        <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dojox/grid/resources/claroGrid.css">
+
+
+		<link rel="stylesheet" href="css/common.css" media="screen">
+
+        <!-- load dojo and provide config via data attribute
+         style="height: 800px"-->
+		<!--<script src="/dojo/1.7.2/dojo/dojo.js.uncompressed.js" data-dojo-config="async: true">
+        </script>                                                                                 -->
+
+        <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dojo/dojo.js"
+                data-dojo-config="async: true, parseOnLoad: true">
+        </script>
+
+            <script>
+                require(["dijit/layout/BorderContainer", "dijit/layout/TabContainer", "dijit/layout/ContentPane",
+                "dijit/TitlePane", "dojo/parser"]);
+            </script>
+
+	</head>
+	<body class="claro">
+
+
+    <div id="queueLayout" data-dojo-type="dijit.layout.BorderContainer" data-dojo-props="design: 'headline'">
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'top'">Top pane</div>
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'leading'">Leading pane</div>
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'center'">
+            <span style="">Queue:</span><span style="position:absolute; left:6em">My Queue</span>
+            <span style="position:absolute; left:26em">Size:</span>
+            <span id="queue-count" style="position:absolute; right:9.5em">1,000,000</span>
+            <span style="position:absolute; right: 5em; width: 4em"> msgs</span>
+            <span style="position:absolute; right: 3.3em">(31.7</span> 
+            <span style="position:absolute; right: 0em; width: 3em">Mb)</span>
+            <br/>
+            <span style="">State:</span><span style="position:absolute; left:6em">ACTIVE</span>
+            <span style="position:absolute; left:26em">Pre-fetched:</span>
+            <span id="unack-count" style="position:absolute; right:9.5em">500</span>
+            <span style="position:absolute; right: 5em; width: 4em"> msgs</span>
+            <span style="position:absolute; right: 3.3em">(256</span>
+            <span style="position:absolute; right: 0em; width: 3em">Kb)</span>
+            <br/>
+            <span style="">Durable:</span><span style="position:absolute; left:6em">Yes</span>
+            <span style="position:absolute; left:26em">Inbound:</span>
+            <span id="inbound-rate-msg" style="position:absolute; right:9.5em">347</span>
+            <span style="position:absolute; right: 5em; width: 4em"> msg/s</span>
+            <span style="position:absolute; right: 3.3em">(132</span>
+            <span style="position:absolute; right: 0em; width: 3em">Kb/s)</span>
+            <br/>
+            <span style="">Lifespan:</span><span style="position:absolute; left:6em">Permanent</span>
+            <span style="position:absolute; left:26em">Outbound:</span>
+            <span id="inbound-rate-msg" style="position:absolute; right:9.5em">823</span>
+            <span style="position:absolute; right: 5em; width: 4em"> msg/s</span>
+            <span style="position:absolute; right: 3.3em">(0.92</span>
+            <span style="position:absolute; right: 0em; width: 3em">Mb/s)</span>
+            <br/>
+            <br/>
+            <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Bindings'">
+                I'm pane #1
+            </div>
+            <br/>
+            <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Consumers'">
+                I'm pane #2
+            </div>
+            <br/>
+            <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Alerting Thresholds'">
+                I'm pane #3
+            </div>
+        </div>
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'trailing'">Trailing pane</div>
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'bottom'">Bottom pane</div>
+    </div>
+
+	</body>
+</html>
+

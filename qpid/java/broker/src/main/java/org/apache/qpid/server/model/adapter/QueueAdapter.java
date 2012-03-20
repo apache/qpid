@@ -24,29 +24,28 @@ import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
-import org.apache.qpid.server.model.Subscription;
+import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
+import org.apache.qpid.server.subscription.Subscription;
 
-final class QueueAdapter extends AbstractAdapter implements Queue
+final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.SubscriptionRegistrationListener
 {
 
     private final AMQQueue _queue;
     private final Map<Binding, BindingAdapter> _bindingAdapters =
             new HashMap<Binding, BindingAdapter>();
-    private Map<org.apache.qpid.server.subscription.Subscription, SubscriptionAdapter> _subscriptionAdapters =
-            new HashMap<org.apache.qpid.server.subscription.Subscription, SubscriptionAdapter>();
+    private Map<org.apache.qpid.server.subscription.Subscription, ConsumerAdapter> _consumerAdapters =
+            new HashMap<org.apache.qpid.server.subscription.Subscription, ConsumerAdapter>();
 
 
     private final VirtualHostAdapter _vhost;
@@ -54,11 +53,31 @@ final class QueueAdapter extends AbstractAdapter implements Queue
 
     public QueueAdapter(final VirtualHostAdapter virtualHostAdapter, final AMQQueue queue)
     {
+        super(virtualHostAdapter.getName(), queue.getName());
         _vhost = virtualHostAdapter;
         addParent(org.apache.qpid.server.model.VirtualHost.class, virtualHostAdapter);
 
         _queue = queue;
+        _queue.addSubscriptionRegistrationListener(this);
+        populateConsumers();
         _statistics = new QueueStatisticsAdapter(queue);
+    }
+
+    private void populateConsumers()
+    {
+        Collection<org.apache.qpid.server.subscription.Subscription> actualSubscriptions = _queue.getConsumers();
+
+        synchronized (_consumerAdapters)
+        {
+            Iterator<org.apache.qpid.server.subscription.Subscription> iter = _consumerAdapters.keySet().iterator();
+            for(org.apache.qpid.server.subscription.Subscription subscription : actualSubscriptions)
+            {
+                if(!_consumerAdapters.containsKey(subscription))
+                {
+                    _consumerAdapters.put(subscription, new ConsumerAdapter(this, subscription));
+                }
+            }
+        }
     }
 
     public Collection<org.apache.qpid.server.model.Binding> getBindings()
@@ -69,29 +88,11 @@ final class QueueAdapter extends AbstractAdapter implements Queue
         }
     }
 
-    public Collection<Subscription> getSubscriptions()
+    public Collection<Consumer> getConsumers()
     {
-        Collection<org.apache.qpid.server.subscription.Subscription> actualSubscriptions = _queue.getConsumers();
-
-        synchronized (_subscriptionAdapters)
+        synchronized (_consumerAdapters)
         {
-            Iterator<org.apache.qpid.server.subscription.Subscription> iter = _subscriptionAdapters.keySet().iterator();
-            while(iter.hasNext())
-            {
-                org.apache.qpid.server.subscription.Subscription subscription = iter.next();
-                if(!actualSubscriptions.contains(subscription))
-                {
-                    iter.remove();
-                }
-            }
-            for(org.apache.qpid.server.subscription.Subscription subscription : actualSubscriptions)
-            {
-                if(!_subscriptionAdapters.containsKey(subscription))
-                {
-                    _subscriptionAdapters.put(subscription, _vhost.getOrCreateAdapter(subscription));
-                }
-            }
-            return new ArrayList<Subscription>(_subscriptionAdapters.values());
+            return new ArrayList<Consumer>(_consumerAdapters.values());
         }
 
     }
@@ -171,9 +172,7 @@ final class QueueAdapter extends AbstractAdapter implements Queue
     @Override
     public Collection<String> getAttributeNames()
     {
-        final HashSet<String> names = new HashSet<String>(super.getAttributeNames());
-        names.addAll(Queue.AVAILABLE_ATTRIBUTES);
-        return names;
+        return Queue.AVAILABLE_ATTRIBUTES;
     }
 
     @Override
@@ -293,11 +292,11 @@ final class QueueAdapter extends AbstractAdapter implements Queue
         }
         else if(ALTERNATE_EXCHANGE.equals(name))
         {
-            // TODO
+            return _queue.getAlternateExchange() == null ? null : _queue.getAlternateExchange().getName();
         }
         else if(EXCLUSIVE.equals(name))
         {
-            // TODO
+            return _queue.isExclusive();
         }
         else if(MESSAGE_GROUP_KEY.equals(name))
         {
@@ -347,6 +346,38 @@ final class QueueAdapter extends AbstractAdapter implements Queue
         {
             // TODO
         }
+        else if(CREATED.equals(name))
+        {
+            // TODO
+        }
+        else if(DURABLE.equals(name))
+        {
+            return _queue.isDurable();
+        }
+        else if(ID.equals(name))
+        {
+            return getId();
+        }
+        else if(LIFETIME_POLICY.equals(name))
+        {
+            return _queue.isAutoDelete() ? LifetimePolicy.AUTO_DELETE : LifetimePolicy.PERMANENT;
+        }
+        else if(NAME.equals(name))
+        {
+            return _queue.getName();
+        }
+        else if(STATE.equals(name))
+        {
+            // TODO
+        }
+        else if(TIME_TO_LIVE.equals(name))
+        {
+            // TODO
+        }
+        else if(UPDATED.equals(name))
+        {
+            // TODO
+        }
 
         return super.getAttribute(name);
     }
@@ -382,6 +413,45 @@ final class QueueAdapter extends AbstractAdapter implements Queue
     {
         return _queue;
     }
+
+    public void subscriptionRegistered(final AMQQueue queue, final Subscription subscription)
+    {
+        ConsumerAdapter adapter = null;
+        synchronized (_consumerAdapters)
+        {
+            if(!_consumerAdapters.containsKey(subscription))
+            {
+                adapter = new ConsumerAdapter(this, subscription);
+                _consumerAdapters.put(subscription,adapter);
+                // TODO - register with session
+            }
+        }
+        if(adapter != null)
+        {
+            childAdded(adapter);
+        }
+    }
+
+    public void subscriptionUnregistered(final AMQQueue queue, final Subscription subscription)
+    {
+        ConsumerAdapter adapter = null;
+
+        synchronized (_consumerAdapters)
+        {
+            adapter = _consumerAdapters.remove(subscription);
+            // TODO - register with session
+        }
+        if(adapter != null)
+        {
+            childRemoved(adapter);
+        }
+    }
+
+    VirtualHostAdapter getVirtualHost()
+    {
+        return _vhost;
+    }
+
 
     private static class QueueStatisticsAdapter implements Statistics
     {

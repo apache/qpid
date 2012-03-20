@@ -57,6 +57,6 @@ public interface Session extends ConfiguredObject
             Collections.unmodifiableCollection(Arrays.asList(CHANNEL_ID));
 
 
-    Collection<Subscription> getSubscriptions();
+    Collection<Consumer> getSubscriptions();
     Collection<Publisher> getPublishers();
 }

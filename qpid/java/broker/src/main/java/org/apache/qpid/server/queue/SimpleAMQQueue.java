@@ -193,6 +193,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     private int _maximumDeliveryCount = ApplicationRegistry.getInstance().getConfiguration().getMaxDeliveryCount();
     private final MessageGroupManager _messageGroupManager;
 
+    private final Collection<SubscriptionRegistrationListener> _subscriptionListeners =
+            new ArrayList<SubscriptionRegistrationListener>();
+
     protected SimpleAMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, boolean exclusive, VirtualHost virtualHost, Map<String,Object> arguments)
     {
         this(name, durable, owner, autoDelete, exclusive, virtualHost,new SimpleQueueEntryList.Factory(), arguments);
@@ -465,6 +468,15 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
             {
                 subscription.setNoLocal(_nolocal);
             }
+
+            synchronized (_subscriptionListeners)
+            {
+                for(SubscriptionRegistrationListener listener : _subscriptionListeners)
+                {
+                    listener.subscriptionRegistered(this, subscription);
+                }
+            }
+
             _subscriptionList.add(subscription);
 
             //Increment consumerCountHigh if necessary. (un)registerSubscription are both
@@ -509,6 +521,14 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                 resetSubPointersForGroups(subscription, true);
             }
 
+            synchronized (_subscriptionListeners)
+            {
+                for(SubscriptionRegistrationListener listener : _subscriptionListeners)
+                {
+                    listener.subscriptionUnregistered(this, subscription);
+                }
+            }
+
             // auto-delete queues must be deleted if there are no remaining subscribers
 
             if (_autoDelete && getDeleteOnNoConsumers() && !subscription.isTransient() && getConsumerCount() == 0  )
@@ -538,6 +558,22 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         }
         return consumers;
 
+    }
+
+    public void addSubscriptionRegistrationListener(final SubscriptionRegistrationListener listener)
+    {
+        synchronized (_subscriptionListeners)
+        {
+            _subscriptionListeners.add(listener);
+        }
+    }
+
+    public void removeSubscriptionRegistrationListener(final SubscriptionRegistrationListener listener)
+    {
+        synchronized (_subscriptionListeners)
+        {
+            _subscriptionListeners.remove(listener);
+        }
     }
 
     public void resetSubPointersForGroups(Subscription subscription, boolean clearAssignments)

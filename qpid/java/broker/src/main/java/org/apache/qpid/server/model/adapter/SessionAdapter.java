@@ -21,7 +21,6 @@
 package org.apache.qpid.server.model.adapter;
 
 import java.security.AccessControlException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -31,7 +30,7 @@ import org.apache.qpid.server.model.Publisher;
 import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
-import org.apache.qpid.server.model.Subscription;
+import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 
 final class SessionAdapter extends AbstractAdapter implements Session
@@ -48,7 +47,7 @@ final class SessionAdapter extends AbstractAdapter implements Session
         _statistics = new SessionStatistics();
     }
 
-    public Collection<Subscription> getSubscriptions()
+    public Collection<Consumer> getSubscriptions()
     {
         return null;  //TODO
     }
@@ -112,7 +111,7 @@ final class SessionAdapter extends AbstractAdapter implements Session
     {
         Collection<String> names = new HashSet<String>(super.getAttributeNames());
         names.addAll(AVAILABLE_ATTRIBUTES);
-        
+
         return Collections.unmodifiableCollection(names);
     }
 

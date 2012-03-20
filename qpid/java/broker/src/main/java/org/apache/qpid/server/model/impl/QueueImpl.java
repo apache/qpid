@@ -29,7 +29,7 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
-import org.apache.qpid.server.model.Subscription;
+import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
 
@@ -65,7 +65,7 @@ class QueueImpl extends AbstractConfiguredObject implements Queue
         return null;  //TODO
     }
 
-    public Collection<Subscription> getSubscriptions()
+    public Collection<Consumer> getConsumers()
     {
         return null;  //TODO
     }

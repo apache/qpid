@@ -2,15 +2,20 @@
     outline: none !important;
 }
 
-body {
+html, body {
+    height: 100%;
+    width: 800px;
     margin: 0;
-    padding: 2em;
+    padding: 0;
+    overflow: hidden;
     font-family: Lucida Sans,Lucida Grande,Arial !important;
     font-size: 13px !important;
     background: white;
     color: #333;
 }
-
+#queueLayout {
+    height: 100%;
+}
 button {
 	-webkit-transition: background-color 0.2s linear;
 	border-radius:4px;

@@ -18,8 +18,43 @@
  * under the License.
  *
  */
+
 package org.apache.qpid.server.model;
 
-public interface Subscription extends ConfiguredObject
+public class Attribute<C extends ConfiguredObject, T>
 {
+    private final String _name;
+    private final Class<T> _type;
+
+    public Attribute(String name, Class<T> type)
+    {
+        _name = name;
+        _type = type;
+    }
+
+    public String getName()
+    {
+        return _name;
+    }
+
+    public Class<T> getType()
+    {
+        return _type;
+    }
+    
+    public T getValue(C configuredObject)
+    {
+        Object o = configuredObject.getAttribute(_name);
+        if(_type.isInstance(o))
+        {
+            return (T) o;
+        }
+        return null;
+    }
+    
+    public T setValue(T expected, T desired, C configuredObject)
+    {
+        return (T) configuredObject.setAttribute(_name, expected, desired);
+    }
+
 }

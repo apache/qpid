@@ -234,6 +234,16 @@ public class MockAMQQueue implements AMQQueue
         return Collections.emptyList();
     }
 
+    public void addSubscriptionRegistrationListener(final SubscriptionRegistrationListener listener)
+    {
+
+    }
+
+    public void removeSubscriptionRegistrationListener(final SubscriptionRegistrationListener listener)
+    {
+
+    }
+
     public int getConsumerCount()
     {
         return 0;

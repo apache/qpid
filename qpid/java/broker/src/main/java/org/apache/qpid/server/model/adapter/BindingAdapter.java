@@ -21,6 +21,7 @@
 package org.apache.qpid.server.model.adapter;
 
 import java.security.AccessControlException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,10 +41,14 @@ final class BindingAdapter extends AbstractAdapter implements Binding
     private final ExchangeAdapter _exchange;
     private QueueAdapter _queue;
 
-    public BindingAdapter(final org.apache.qpid.server.binding.Binding binding, 
+    public BindingAdapter(final org.apache.qpid.server.binding.Binding binding,
                           ExchangeAdapter exchangeAdapter,
                           QueueAdapter queueAdapter)
     {
+        super(exchangeAdapter.getExchange().getVirtualHost().getName(),
+              exchangeAdapter.getName(),
+              queueAdapter.getName(),
+              binding.getBindingKey());
         _binding = binding;
         _exchange = exchangeAdapter;
         _queue = queueAdapter;
@@ -135,5 +140,69 @@ final class BindingAdapter extends AbstractAdapter implements Binding
         {
             throw new IllegalStateException(e);
         }
+    }
+
+    @Override
+    public Object getAttribute(final String name)
+    {
+        if(ID.equals(name))
+        {
+            return getId();
+        }
+        else if(NAME.equals(name))
+        {
+            return getName();
+        }
+        else if(STATE.equals(name))
+        {
+
+        }
+        else if(DURABLE.equals(name))
+        {
+            return _queue.isDurable() && _exchange.isDurable();
+        }
+        else if(LIFETIME_POLICY.equals(name))
+        {
+            return _queue.getLifetimePolicy() == LifetimePolicy.AUTO_DELETE || _exchange.getLifetimePolicy() == LifetimePolicy.AUTO_DELETE ? LifetimePolicy.AUTO_DELETE : LifetimePolicy.PERMANENT;
+        }
+        else if(TIME_TO_LIVE.equals(name))
+        {
+
+        }
+        else if(CREATED.equals(name))
+        {
+
+        }
+        else if(UPDATED.equals(name))
+        {
+
+        }
+        else if(EXCHANGE.equals(name))
+        {
+            return _exchange.getName();
+        }
+        else if(QUEUE.equals(name))
+        {
+            return _queue.getName();
+        }
+        else if(ARGUMENTS.equals(name))
+        {
+            return getArguments();
+        }
+
+        return super.getAttribute(name);    //TODO
+    }
+
+    @Override
+    public Object setAttribute(final String name, final Object expected, final Object desired)
+            throws IllegalStateException, AccessControlException, IllegalArgumentException
+    {
+        return super.setAttribute(name, expected, desired);    //TODO
+    }
+
+    @Override
+    public Collection<String> getAttributeNames()
+    {
+        return Binding.AVAILABLE_ATTRIBUTES;
     }
 }

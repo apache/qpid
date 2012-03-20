@@ -71,9 +71,9 @@ public class ServerConnectionMBeanTest extends InternalBrokerBaseCase
                 return null;
             }
             @Override
-            public AtomicLong getLastIoTime()
+            public long getLastIoTime()
             {
-                return new AtomicLong(1);
+                return 1L;
             }
         };
         final MockConnectionConfig config = new MockConnectionConfig(UUID.randomUUID(), null, null,

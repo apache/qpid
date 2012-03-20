@@ -23,24 +23,14 @@ package org.apache.qpid.server.model;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
 
-public interface Binding extends ConfiguredObject
+public interface Consumer extends ConfiguredObject
 {
-
-    public String MATCHED_BYTES = "matchedBytes";
-    public String MATCHED_MESSAGES = "matchedMessages";
-    public String STATE_CHANGED = "stateChanged";
-
-    public static final Collection<String> AVAILABLE_STATISTICS =
-            Collections.unmodifiableCollection(
-                    Arrays.asList(
-            MATCHED_BYTES,
-            MATCHED_MESSAGES,
-            STATE_CHANGED));
-
-
-    public String ARGUMENTS = "arguments";
+    public String DISTRIBUTION_MODE = "distributionMode";
+    public String EXCLUSIVE = "exclusive";
+    public String NO_LOCAL = "noLocal";
+    public String SELECTOR = "selector";
+    public String SETTLEMENT_MODE = "settlementMode";
     public String CREATED = "created";
     public String DURABLE = "durable";
     public String ID = "id";
@@ -49,10 +39,8 @@ public interface Binding extends ConfiguredObject
     public String STATE = "state";
     public String TIME_TO_LIVE = "timeToLive";
     public String UPDATED = "updated";
-    public String QUEUE = "queue";
-    public String EXCHANGE = "exchange";
 
-    public static final Collection<String> AVAILABLE_ATTRIBUTES =
+    public Collection<String> AVAILABLE_ATTRIBUTES =
             Collections.unmodifiableCollection(
                     Arrays.asList(ID,
                                   NAME,
@@ -62,14 +50,24 @@ public interface Binding extends ConfiguredObject
                                   TIME_TO_LIVE,
                                   CREATED,
                                   UPDATED,
-                                  EXCHANGE,
-                                  QUEUE,
-                                  ARGUMENTS)
+                                  DISTRIBUTION_MODE,
+                                  SETTLEMENT_MODE,
+                                  EXCLUSIVE,
+                                  NO_LOCAL,
+                                  SELECTOR));
+
+    public String BYTES_OUT = "bytesOut";
+    public String MESSAGES_OUT = "messagesOut";
+    public String STATE_CHANGED = "stateChanged";
+    public String UNACKNOWLEDGED_BYTES = "unacknowledgedBytes";
+    public String UNACKNOWLEDGED_MESSAGES = "unacknowledgedMessages";
+
+    public Collection<String> AVAILABLE_STATISTICS =
+            Collections.unmodifiableCollection(
+                    Arrays.asList(BYTES_OUT,
+                                  MESSAGES_OUT,
+                                  STATE_CHANGED,
+                                  UNACKNOWLEDGED_BYTES,
+                                  UNACKNOWLEDGED_MESSAGES)
             );
-
-
-
-    Map<String,Object> getArguments();
-
-    void delete();
 }

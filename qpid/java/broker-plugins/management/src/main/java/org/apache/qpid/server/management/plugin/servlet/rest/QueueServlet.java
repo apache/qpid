@@ -21,17 +21,20 @@
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
 
+import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -82,6 +85,7 @@ public class QueueServlet extends AbstractServlet
         final PrintWriter writer = response.getWriter();
 
         ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
         String vhostName = null;
         String queueName = null;
 
@@ -125,26 +129,67 @@ public class QueueServlet extends AbstractServlet
 
     private Map<String,Object> convertToObject(final Queue queue)
     {
-        Map<String, Object> object = new LinkedHashMap<String, Object>();
-        object.put("id",queue.getId());
-        object.put("name",queue.getName());
-        object.put("durable", queue.isDurable());
-        object.put("auto-delete", queue.getLifetimePolicy() == LifetimePolicy.AUTO_DELETE);
-        object.put("binding-count", queue.getBindings().size());
+        Map<String, Object> object = convertObjectToMap(queue);
 
 
-        Map<String,Object> arguments = new HashMap<String, Object>();
-        for(String key : queue.getAttributeNames())
+        List<Map<String,Object>> bindings = new ArrayList<Map<String, Object>>();
+
+        for(Binding binding : queue.getBindings())
         {
-            if(!key.equals(Exchange.EXCHANGE_TYPE))
-            {
-                arguments.put(key, queue.getAttribute(key));
-            }
+            bindings.add(convertObjectToMap(binding));
         }
-        object.put("arguments", arguments);
+
+        if(!bindings.isEmpty())
+        {
+            object.put("bindings", bindings);
+        }
+
+        List<Map<String,Object>> consumers = new ArrayList<Map<String, Object>>();
+
+        for(Consumer consumer : queue.getConsumers())
+        {
+            consumers.add(convertObjectToMap(consumer));
+        }
+
+        if(!consumers.isEmpty())
+        {
+            object.put("consumers", consumers);
+        }
+
+
         return object;
     }
 
+    private Map<String, Object> convertObjectToMap(final ConfiguredObject confObject)
+    {
+        Map<String, Object> object = new LinkedHashMap<String, Object>();
+
+        for(String name : confObject.getAttributeNames())
+        {
+            Object value = confObject.getAttribute(name);
+            if(value != null)
+            {
+                object.put(name, value);
+            }
+        }
+
+        Statistics statistics = confObject.getStatistics();
+        Map<String, Object> statMap = new HashMap<String, Object>();
+        for(String name : statistics.getStatisticNames())
+        {
+            Object value = statistics.getStatistic(name);
+            if(value != null)
+            {
+                statMap.put(name, value);
+            }
+        }
+
+        if(!statMap.isEmpty())
+        {
+            object.put("statistics", statMap);
+        }
+        return object;
+    }
 
 
     @Override

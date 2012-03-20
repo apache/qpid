@@ -82,6 +82,16 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
 
     Collection<Subscription> getConsumers();
 
+    interface SubscriptionRegistrationListener
+    {
+        void subscriptionRegistered(AMQQueue queue, Subscription subscription);
+        void subscriptionUnregistered(AMQQueue queue, Subscription subscription);
+    }
+
+    void addSubscriptionRegistrationListener(SubscriptionRegistrationListener listener);
+    void removeSubscriptionRegistrationListener(SubscriptionRegistrationListener listener);
+
+
     int getConsumerCount();
 
     int getActiveConsumerCount();

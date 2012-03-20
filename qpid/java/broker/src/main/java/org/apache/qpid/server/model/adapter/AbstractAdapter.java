@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.model.adapter;
 
+import org.apache.commons.lang.CharSet;
+
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
@@ -41,6 +43,16 @@ abstract class AbstractAdapter implements ConfiguredObject
             new ArrayList<ConfigurationChangeListener>();
 
     private final UUID _id;
+
+    protected AbstractAdapter(String... names)
+    {
+        StringBuilder sb = new StringBuilder();
+        for(String name : names)
+        {
+            sb.append('/').append(name);
+        }
+        _id = UUID.nameUUIDFromBytes(sb.toString().getBytes());
+    }
 
     protected AbstractAdapter()
     {

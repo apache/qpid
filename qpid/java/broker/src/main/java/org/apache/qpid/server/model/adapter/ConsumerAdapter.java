@@ -20,26 +20,31 @@
  */
 package org.apache.qpid.server.model.adapter;
 
+import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
-import org.apache.qpid.server.model.Subscription;
+import org.apache.qpid.server.subscription.Subscription;
 
 import java.security.AccessControlException;
+import java.util.Collection;
 
-public class SubscriptionAdapter extends AbstractAdapter implements Subscription
+public class ConsumerAdapter extends AbstractAdapter implements Consumer
 {
+    private final Subscription _subscription;
+    private final QueueAdapter _queue;
 
-    private org.apache.qpid.server.subscription.Subscription _subscription;
-
-    public SubscriptionAdapter(final org.apache.qpid.server.subscription.Subscription subscription)
+    public ConsumerAdapter(final QueueAdapter queueAdapter, final Subscription subscription)
     {
+        super(queueAdapter.getVirtualHost().getName(), queueAdapter.getName(), subscription.getConsumerTag().asString() );
         _subscription = subscription;
+        _queue = queueAdapter;
+        //TODO
     }
 
     public String getName()
     {
-        return String.valueOf(_subscription.getSubscriptionID());
+        return _subscription.getConsumerTag().asString();
     }
 
     public String setName(final String currentName, final String desiredName)
@@ -84,6 +89,77 @@ public class SubscriptionAdapter extends AbstractAdapter implements Subscription
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
         return 0;  //TODO
+    }
+
+    @Override
+    public Collection<String> getAttributeNames()
+    {
+        return Consumer.AVAILABLE_ATTRIBUTES;
+    }
+
+    @Override
+    public Object setAttribute(final String name, final Object expected, final Object desired)
+            throws IllegalStateException, AccessControlException, IllegalArgumentException
+    {
+        return super.setAttribute(name, expected, desired);    //TODO
+    }
+
+    @Override
+    public Object getAttribute(final String name)
+    {
+        if(ID.equals(name))
+        {
+            return getId();
+        }
+        else if(NAME.equals(name))
+        {
+            return getName();
+        }
+        else if(STATE.equals(name))
+        {
+
+        }
+        else if(DURABLE.equals(name))
+        {
+            return false;
+        }
+        else if(LIFETIME_POLICY.equals(name))
+        {
+            return LifetimePolicy.AUTO_DELETE;
+        }
+        else if(TIME_TO_LIVE.equals(name))
+        {
+
+        }
+        else if(CREATED.equals(name))
+        {
+
+        }
+        else if(UPDATED.equals(name))
+        {
+
+        }
+        else if(DISTRIBUTION_MODE.equals(name))
+        {
+            return _subscription.acquires() ? "MOVE" : "COPY";
+        }
+        else if(SETTLEMENT_MODE.equals(name))
+        {
+
+        }
+        else if(EXCLUSIVE.equals(name))
+        {
+
+        }
+        else if(NO_LOCAL.equals(name))
+        {
+
+        }
+        else if(SELECTOR.equals(name))
+        {
+
+        }
+        return super.getAttribute(name);    //TODO
     }
 
     public Statistics getStatistics()

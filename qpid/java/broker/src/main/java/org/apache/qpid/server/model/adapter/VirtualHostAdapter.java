@@ -76,6 +76,7 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
 
     public VirtualHostAdapter(final org.apache.qpid.server.virtualhost.VirtualHost virtualHost)
     {
+        super(virtualHost.getName());
         _virtualHost = virtualHost;
         _statistics = new StatisticsAdapter(virtualHost);
         virtualHost.getQueueRegistry().addRegistryChangeListener(this);
@@ -311,23 +312,6 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
         return _statistics;
     }
 
-    private final Map<org.apache.qpid.server.subscription.Subscription, SubscriptionAdapter> _allSubscriptions =
-            new WeakHashMap<org.apache.qpid.server.subscription.Subscription, SubscriptionAdapter>();
-
-    public SubscriptionAdapter getOrCreateAdapter(final org.apache.qpid.server.subscription.Subscription subscription)
-    {
-        synchronized(_allSubscriptions)
-        {
-            SubscriptionAdapter adapter = _allSubscriptions.get(subscription);
-            if(adapter == null)
-            {
-                adapter = new SubscriptionAdapter(subscription);
-                _allSubscriptions.put(subscription, adapter);
-            }
-            return adapter;
-        }
-    }
-
     public void exchangeRegistered(org.apache.qpid.server.exchange.Exchange exchange)
     {
         ExchangeAdapter adapter = null;
@@ -454,12 +438,12 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
     {
         Collection<ExchangeType<? extends org.apache.qpid.server.exchange.Exchange>> types =
                 _virtualHost.getExchangeFactory().getRegisteredTypes();
-        
+
         Collection<String> exchangeTypes = new ArrayList<String>();
-        
+
         for(ExchangeType<? extends org.apache.qpid.server.exchange.Exchange> type : types)
         {
-            exchangeTypes.add(type.getName().asString());    
+            exchangeTypes.add(type.getName().asString());
         }
         return Collections.unmodifiableCollection(exchangeTypes);
     }

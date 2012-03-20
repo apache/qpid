@@ -69,6 +69,16 @@ public interface Queue extends ConfiguredObject
                                   UNACKNOWLEDGED_MESSAGES));
 
 
+
+    public static final String ID = "id";
+    public static final String NAME = "name";
+    public static final String STATE = "state";
+    public static final String DURABLE = "durable";
+    public static final String LIFETIME_POLICY = "lifetimePolicy";
+    public static final String TIME_TO_LIVE = "timeToLive";
+    public static final String CREATED = "created";
+    public static final String UPDATED = "updated";
+
     public static final String ALERT_REPEAT_GAP = "alertRepeatGap";
     public static final String ALERT_THRESHOLD_MESSAGE_AGE = "alertThresholdMessageAge";
     public static final String ALERT_THRESHOLD_MESSAGE_SIZE = "alertThresholdMessageSize";
@@ -89,31 +99,43 @@ public interface Queue extends ConfiguredObject
     public static final String SORT_KEY = "sortKey";
     public static final String TYPE = "type";
 
+
+
+
     public static final Collection<String> AVAILABLE_ATTRIBUTES =
             Collections.unmodifiableList(
-                    Arrays.asList(ALERT_REPEAT_GAP,
-                            ALERT_THRESHOLD_MESSAGE_AGE,
-                            ALERT_THRESHOLD_MESSAGE_SIZE,
-                            ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
-                            ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
-                            ALTERNATE_EXCHANGE,
-                            EXCLUSIVE,
-                            MESSAGE_GROUP_KEY,
-                            MESSAGE_GROUP_DEFAULT_GROUP,
-                            MESSAGE_GROUP_SHARED_GROUPS,
-                            LVQ_KEY,
-                            MAXIMUM_DELIVERY_ATTEMPTS,
-                            NO_LOCAL,
-                            OWNER,
-                            QUEUE_FLOW_CONTROL_SIZE_BYTES,
-                            QUEUE_FLOW_RESUME_SIZE_BYTES,
-                            QUEUE_FLOW_STOPPED,
-                            SORT_KEY,
-                            TYPE));
+                    Arrays.asList(ID,
+                                  NAME,
+                                  STATE,
+                                  DURABLE,
+                                  LIFETIME_POLICY,
+                                  TIME_TO_LIVE,
+                                  CREATED,
+                                  UPDATED,
+                                  TYPE,
+                                  ALTERNATE_EXCHANGE,
+                                  EXCLUSIVE,
+                                  OWNER,
+                                  NO_LOCAL,
+                                  LVQ_KEY,
+                                  SORT_KEY,
+                                  MESSAGE_GROUP_KEY,
+                                  MESSAGE_GROUP_DEFAULT_GROUP,
+                                  MESSAGE_GROUP_SHARED_GROUPS,
+                                  MAXIMUM_DELIVERY_ATTEMPTS,
+                                  QUEUE_FLOW_CONTROL_SIZE_BYTES,
+                                  QUEUE_FLOW_RESUME_SIZE_BYTES,
+                                  QUEUE_FLOW_STOPPED,
+                                  ALERT_THRESHOLD_MESSAGE_AGE,
+                                  ALERT_THRESHOLD_MESSAGE_SIZE,
+                                  ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
+                                  ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
+                                  ALERT_REPEAT_GAP
+                    ));
 
     //children
     Collection<Binding> getBindings();
-    Collection<Subscription> getSubscriptions();
+    Collection<Consumer> getConsumers();
 
 
     //operations
