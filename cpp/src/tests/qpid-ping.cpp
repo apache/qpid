@@ -32,11 +32,20 @@
 #include <string>
 #include <iostream>
 
-using namespace std;
-using namespace qpid::sys;
-using namespace qpid::framing;
-using namespace qpid::client;
-using namespace qpid;
+using std::cerr;
+using std::cout;
+using std::endl;
+using std::exception;
+using std::string;
+using namespace qpid::client::arg; // For keyword args
+using qpid::client::AsyncSession;
+using qpid::client::Connection;
+using qpid::client::Message;
+using qpid::client::SubscriptionManager;
+using qpid::framing::Uuid;
+
+namespace qpid {
+namespace tests {
 
 struct PingOptions : public qpid::TestOptions {
     int timeout;                // Timeout in seconds.
@@ -48,9 +57,11 @@ struct PingOptions : public qpid::TestOptions {
     }
 };
 
+}} // namespace qpid::tests
+
 int main(int argc, char** argv) {
     try {
-        PingOptions opts;
+        qpid::tests::PingOptions opts;
         opts.parse(argc, argv);
         opts.con.heartbeat = (opts.timeout+1)/2;
         Connection connection;
@@ -58,8 +69,8 @@ int main(int argc, char** argv) {
         if (!opts.quiet) cout << "Opened connection." << endl;
         AsyncSession s = connection.newSession();
         string qname(Uuid(true).str());
-        s.queueDeclare(arg::queue=qname,arg::autoDelete=true,arg::exclusive=true);
-        s.messageTransfer(arg::content=Message("hello", qname));
+        s.queueDeclare(queue=qname, autoDelete=true, exclusive=true);
+        s.messageTransfer(content=Message("hello", qname));
         if (!opts.quiet) cout << "Sent message." << endl;
         SubscriptionManager subs(s);
         subs.get(qname);
