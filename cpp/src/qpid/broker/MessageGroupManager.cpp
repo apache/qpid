@@ -43,19 +43,13 @@ const std::string MessageGroupManager::qpidSharedGroup("qpid.shared_msg_group");
 const std::string MessageGroupManager::qpidMessageGroupTimestamp("qpid.group_timestamp");
 
 
+/** return an iterator to the message at position, or members.end() if not found */
 MessageGroupManager::GroupState::MessageFifo::iterator
 MessageGroupManager::GroupState::findMsg(const framing::SequenceNumber &position)
 {
     MessageState mState(position);
     MessageFifo::iterator found = std::lower_bound(members.begin(), members.end(), mState);
     return (found->position == position) ? found : members.end();
-#if 0    
-    MessageFifo::iterator msg = members.begin();
-    const MessageFifo::iterator end = members.end();
-    while (msg != end && msg->position != position)
-        ++msg;
-    return msg;
-#endif    
 }
 
 void MessageGroupManager::unFree( const GroupState& state )
