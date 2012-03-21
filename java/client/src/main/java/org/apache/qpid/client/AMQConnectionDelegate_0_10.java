@@ -327,6 +327,8 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
             }
         }
 
+        _conn.setClosed();
+
         ExceptionListener listener = _conn.getExceptionListenerNoCheck();
         if (listener == null)
         {
