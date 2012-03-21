@@ -45,7 +45,7 @@ const std::string MessageGroupManager::qpidMessageGroupTimestamp("qpid.group_tim
 
 /** return an iterator to the message at position, or members.end() if not found */
 MessageGroupManager::GroupState::MessageFifo::iterator
-MessageGroupManager::GroupState::findMsg(const framing::SequenceNumber &position)
+MessageGroupManager::GroupState::findMsg(const qpid::framing::SequenceNumber &position)
 {
     MessageState mState(position);
     MessageFifo::iterator found = std::lower_bound(members.begin(), members.end(), mState);
