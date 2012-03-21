@@ -48,10 +48,10 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageDistribu
 
         // track which messages are in this group, and if they have been acquired
         struct MessageState {
-            framing::SequenceNumber position;
+            qpid::framing::SequenceNumber position;
             bool                    acquired;
             MessageState() : acquired(false) {}
-            MessageState(const framing::SequenceNumber& p) : position(p), acquired(false) {}
+            MessageState(const qpid::framing::SequenceNumber& p) : position(p), acquired(false) {}
             bool operator<(const MessageState& b) { return position < b.position; }
         };
         typedef std::deque<MessageState> MessageFifo;
@@ -63,11 +63,11 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageDistribu
 
         GroupState() : acquired(0) {}
         bool owned() const {return !owner.empty();}
-        MessageFifo::iterator findMsg(const framing::SequenceNumber &);
+        MessageFifo::iterator findMsg(const qpid::framing::SequenceNumber &);
     };
 
     typedef sys::unordered_map<std::string, struct GroupState> GroupMap;
-    typedef std::map<framing::SequenceNumber, struct GroupState *> GroupFifo;
+    typedef std::map<qpid::framing::SequenceNumber, struct GroupState *> GroupFifo;
 
     GroupMap messageGroups; // index: group name
     GroupFifo freeGroups;   // ordered by oldest free msg
