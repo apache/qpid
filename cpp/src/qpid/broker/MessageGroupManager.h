@@ -52,7 +52,7 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageDistribu
             bool                    acquired;
             MessageState() : acquired(false) {}
             MessageState(const qpid::framing::SequenceNumber& p) : position(p), acquired(false) {}
-            bool operator<(const MessageState& b) { return position < b.position; }
+            bool operator<(const MessageState& b) const { return position < b.position; }
         };
         typedef std::deque<MessageState> MessageFifo;
 
