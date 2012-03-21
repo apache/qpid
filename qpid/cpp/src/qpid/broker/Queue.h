@@ -107,6 +107,22 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     QueueListeners listeners;
     std::auto_ptr<Messages> messages;
     std::deque<QueuedMessage> pendingDequeues;//used to avoid dequeuing during recovery
+    /** messageLock is used to keep the Queue's state consistent while processing message
+     * events, such as message dispatch, enqueue, acquire, and dequeue.  It must be held
+     * while updating certain members in order to keep these members consistent with
+     * each other:
+     *     o  messages
+     *     o  sequence
+     *     o  policy
+     *     o  listeners
+     *     o  allocator
+     *     o  observeXXX() methods
+     *     o  observers
+     *     o  pendingDequeues  (TBD: move under separate lock)
+     *     o  exclusive OwnershipToken (TBD: move under separate lock)
+     *     o  consumerCount  (TBD: move under separate lock)
+     *     o  Queue::UsageBarrier (TBD: move under separate lock)
+     */
     mutable qpid::sys::Monitor messageLock;
     mutable qpid::sys::Mutex ownershipLock;
     mutable uint64_t persistenceId;
