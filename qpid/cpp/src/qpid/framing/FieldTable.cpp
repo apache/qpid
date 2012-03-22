@@ -28,22 +28,45 @@
 #include "qpid/Msg.h"
 #include <assert.h>
 
+// The locking rationale in the FieldTable seems a little odd, but it
+// maintains the concurrent guarantees and requirements that were in
+// place before the cachedBytes/cachedSize were added:
+//
+// The FieldTable client code needs to make sure that they call no write
+// operation in parallel with any other operation on the FieldTable.
+// However multiple parallel read operations are safe.
+//
+// To this end the only code that is locked is code that can transparently
+// change the state of the FieldTable during a read only operation.
+// (In other words the code that required the mutable members in the class
+// definition!)
+//
 namespace qpid {
+
+using sys::Mutex;
+using sys::ScopedLock;
+
 namespace framing {
 
 FieldTable::FieldTable() :
-    cachedSize(0)
+    cachedSize(0),
+    newBytes(false)
 {
 }
 
 FieldTable::FieldTable(const FieldTable& ft) :
     cachedBytes(ft.cachedBytes),
-    cachedSize(ft.cachedSize)
+    cachedSize(ft.cachedSize),
+    newBytes(ft.newBytes)
 {
     // Only copy the values if we have no raw data
     // - copying the map is expensive and we can
     //   reconstruct it if necessary from the raw data
-    if (!cachedBytes && !ft.values.empty()) values = ft.values;
+    if (cachedBytes) {
+        newBytes = true;
+        return;
+    }
+    if (!ft.values.empty()) values = ft.values;
 }
 
 FieldTable& FieldTable::operator=(const FieldTable& ft)
@@ -52,10 +75,13 @@ FieldTable& FieldTable::operator=(const FieldTable& ft)
     values.swap(nft.values);
     cachedBytes.swap(nft.cachedBytes);
     cachedSize = nft.cachedSize;
+    newBytes = nft.newBytes;
     return (*this);
 }
 
 uint32_t FieldTable::encodedSize() const {
+    ScopedLock<Mutex> l(lock);
+
     if (cachedSize != 0) {
         return cachedSize;
     }
@@ -238,6 +264,7 @@ void FieldTable::encode(Buffer& buffer) const {
             i->second->encode(buffer);
         }
         // Now create raw bytes in case we are used again
+        ScopedLock<Mutex> l(lock);
         cachedSize = buffer.getPosition() - p;
         cachedBytes = boost::shared_array<uint8_t>(new uint8_t[cachedSize]);
         buffer.setPosition(p);
@@ -261,14 +288,17 @@ void FieldTable::decode(Buffer& buffer){
     // Copy data into our buffer
     cachedBytes = boost::shared_array<uint8_t>(new uint8_t[len + 4]);
     cachedSize = len + 4;
+    newBytes = true;
     buffer.setPosition(p);
     buffer.getRawData(&cachedBytes[0], cachedSize);
 }
 
 void FieldTable::realDecode() const
 {
+    ScopedLock<Mutex> l(lock);
+
     // If we've got no raw data stored up then nothing to do
-    if (!cachedBytes)
+    if (!newBytes)
         return;
 
     Buffer buffer((char*)&cachedBytes[0], cachedSize);
@@ -286,10 +316,13 @@ void FieldTable::realDecode() const
             values[name] = ValuePtr(value);
         }
     }
+    newBytes = false;
 }
 
-void FieldTable::flushRawCache() const
+void FieldTable::flushRawCache()
 {
+    // We can only flush the cache if there are no cached bytes to decode
+    assert(newBytes==false);
     // Avoid recreating shared array unless we actually have one.
     if (cachedBytes) cachedBytes.reset();
     cachedSize = 0;
@@ -319,6 +352,7 @@ void FieldTable::erase(const std::string& name)
 void FieldTable::clear()
 {
     values.clear();
+    newBytes = false;
     flushRawCache();
 }
 
