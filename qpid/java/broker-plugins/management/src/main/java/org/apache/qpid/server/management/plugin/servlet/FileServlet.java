@@ -20,26 +20,13 @@
  */
 package org.apache.qpid.server.management.plugin.servlet;
 
-import org.apache.qpid.common.QpidProperties;
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.stats.StatisticsCounter;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.codehaus.jackson.map.ObjectMapper;
-
+import java.io.IOException;
+import java.io.InputStream;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.UUID;
 
 public class FileServlet extends HttpServlet
 {
@@ -73,7 +60,7 @@ public class FileServlet extends HttpServlet
 
         final ServletOutputStream output = response.getOutputStream();
         InputStream fileInput = getClass().getResourceAsStream("/resources" + filename);
-System.out.println("Got: " + filename);
+
         if(fileInput != null)
         {
             byte[] buffer = new byte[1024];
@@ -87,7 +74,6 @@ System.out.println("Got: " + filename);
         }
         else
         {
-System.out.println("Not found: " + filename);
             response.sendError(404, "unknown file: "+ filename);
         }
 

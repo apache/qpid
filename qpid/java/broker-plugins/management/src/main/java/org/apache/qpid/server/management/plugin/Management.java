@@ -21,7 +21,7 @@
 package org.apache.qpid.server.management.plugin;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.model.adapter.BrokerAdapter;
+import org.apache.qpid.server.management.plugin.servlet.DefinedFileServlet;
 import org.apache.qpid.server.management.plugin.servlet.FileServlet;
 import org.apache.qpid.server.management.plugin.servlet.api.ExchangesServlet;
 import org.apache.qpid.server.management.plugin.servlet.api.VhostsServlet;
@@ -30,7 +30,7 @@ import org.apache.qpid.server.management.plugin.servlet.rest.ExchangeServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.QueueServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.VirtualHostServlet;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.ServletHolder;
@@ -67,6 +67,11 @@ public class Management
             root.addServlet(new ServletHolder(new ExchangeServlet(_broker)), "/rest/exchange/*");
             root.addServlet(new ServletHolder(new QueueServlet(_broker)), "/rest/queue/*");
             root.addServlet(new ServletHolder(new ConnectionServlet(_broker)), "/rest/connection/*");
+
+            root.addServlet(new ServletHolder(new DefinedFileServlet("queue.html")),"/queue");
+            root.addServlet(new ServletHolder(new DefinedFileServlet("exchange.html")),"/exchange");
+            root.addServlet(new ServletHolder(new DefinedFileServlet("vhost.html")),"/vhost");
+            root.addServlet(new ServletHolder(new DefinedFileServlet("broker.html")),"/broker");
 
             root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.js");
             root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.css");
