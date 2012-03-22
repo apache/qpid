@@ -32,6 +32,10 @@
 #include "MessageLog.h"
 #include "Lsn.h"
 
+namespace qpid {
+namespace store {
+namespace ms_clfs {
+
 namespace {
 
 // Structures that hold log records. Each has a type field at the start.
@@ -96,10 +100,6 @@ struct MessageDequeue {
 };
 
 }   // namespace
-
-namespace qpid {
-namespace store {
-namespace ms_clfs {
 
 void
 MessageLog::initialize()

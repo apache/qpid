@@ -1,6 +1,3 @@
-#ifndef QPID_SYS_LINUX_POLLABLECONDITION_CPP
-#define QPID_SYS_LINUX_POLLABLECONDITION_CPP
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -120,5 +117,3 @@ void PollableCondition::set() { impl->set(); }
 void PollableCondition::clear() { impl->clear(); }
 
 }} // namespace qpid::sys
-
-#endif  /*!QPID_SYS_LINUX_POLLABLECONDITION_CPP*/

@@ -37,8 +37,9 @@
 
 #include <boost/bind.hpp>
 
-using namespace qpid::sys;
-using namespace qpid::sys::ssl;
+namespace qpid {
+namespace sys {
+namespace ssl {
 
 namespace {
 
@@ -448,3 +449,5 @@ SecuritySettings SslIO::getSecuritySettings() {
     settings.authid = socket.getClientAuthId();
     return settings;
 }
+
+}}}

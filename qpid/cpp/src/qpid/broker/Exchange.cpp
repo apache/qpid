@@ -32,7 +32,9 @@
 #include "qpid/sys/ExceptionHolder.h"
 #include <stdexcept>
 
-using namespace qpid::broker;
+namespace qpid {
+namespace broker {
+
 using namespace qpid::framing;
 using qpid::framing::Buffer;
 using qpid::framing::FieldTable;
@@ -408,3 +410,5 @@ bool Exchange::routeWithAlternate(Deliverable& msg)
     }
     return msg.delivered;
 }
+
+}}

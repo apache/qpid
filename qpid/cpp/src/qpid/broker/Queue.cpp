@@ -56,7 +56,9 @@
 #include <boost/intrusive_ptr.hpp>
 
 
-using namespace qpid::broker;
+namespace qpid {
+namespace broker {
+
 using namespace qpid::sys;
 using namespace qpid::framing;
 using qpid::management::ManagementAgent;
@@ -1469,7 +1471,7 @@ struct AutoDeleteTask : qpid::sys::TimerTask
     Queue::shared_ptr queue;
 
     AutoDeleteTask(Broker& b, Queue::shared_ptr q, AbsTime fireTime)
-        : qpid::sys::TimerTask(fireTime, "DelayedAutoDeletion"), broker(b), queue(q) {}
+        : qpid::sys::TimerTask(fireTime, "DelayedAutoDeletion:"+q->getName()), broker(b), queue(q) {}
 
     void fire()
     {
@@ -1824,3 +1826,5 @@ void Queue::UsageBarrier::destroy()
     parent.deleted = true;
     while (count) parent.messageLock.wait();
 }
+
+}}

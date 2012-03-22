@@ -30,6 +30,10 @@
 using std::string;
 using qpid::Exception;
 
+namespace qpid {
+namespace log {
+namespace posix {
+
 namespace {
 
 // SyslogFacilities maps from syslog values to the text equivalents.
@@ -109,10 +113,6 @@ std::string basename(const std::string path) {
 }
 
 } // namespace
-
-namespace qpid {
-namespace log {
-namespace posix {
 
 std::ostream& operator<<(std::ostream& o, const SyslogFacility& f) {
     return o << SyslogFacilities().name(f.value);

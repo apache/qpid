@@ -31,9 +31,11 @@
 #include <fstream>
 #include <boost/lexical_cast.hpp>
 
+namespace qpid {
+namespace management {
+
 using namespace qpid::client;
 using namespace qpid::framing;
-using namespace qpid::management;
 using namespace qpid::sys;
 using namespace std;
 using std::stringstream;
@@ -1260,7 +1262,7 @@ void ManagementAgentImpl::ConnectionThread::run()
              int totalSleep = 0;
              do {
                  sys::Mutex::ScopedUnlock _unlock(connLock);
-                 ::sleep(delayMin);
+                 qpid::sys::sleep(delayMin);
                  totalSleep += delayMin;
              } while (totalSleep < delay && !shutdown);
              sleeping = false;
@@ -1396,8 +1398,10 @@ void ManagementAgentImpl::PublishThread::run()
             sleepTime = 1;
 
         while (totalSleep < agent.getInterval() && !shutdown) {
-            ::sleep(sleepTime);
+            qpid::sys::sleep(sleepTime);
             totalSleep += sleepTime;
         }
     }
 }
+
+}}

@@ -23,9 +23,11 @@
 
 #include "unit_test.h"
 
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(StringUtilsTestSuite)
 
-using namespace qpid;
 using std::string;
 
 QPID_AUTO_TEST_CASE(testSplit_general)
@@ -75,3 +77,5 @@ QPID_AUTO_TEST_CASE(testSplit_empty)
 }
 
 QPID_AUTO_TEST_SUITE_END()
+
+}}
