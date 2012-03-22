@@ -26,7 +26,6 @@
 #include "qpid/framing/TypeFilter.h"
 
 using namespace qpid::framing;
-using namespace boost;
 
 FrameSet::FrameSet(const SequenceNumber& _id) : id(_id),contentSize(0),recalculateSize(true) { }
 FrameSet::FrameSet(const FrameSet& original) : id(original.id), contentSize(0), recalculateSize(true)

@@ -34,7 +34,6 @@ namespace tests {
 QPID_AUTO_TEST_SUITE(SessionStateTestSuite)
 
 using namespace std;
-using namespace boost;
 using namespace qpid::framing;
 
 // ================================================================

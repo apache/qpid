@@ -43,8 +43,8 @@ namespace tests {
 QPID_AUTO_TEST_SUITE(loggingTestSuite)
 
 using namespace std;
-using namespace boost;
 using namespace qpid::log;
+using boost::format;
 
 QPID_AUTO_TEST_CASE(testStatementInit) {
     Statement s=QPID_LOG_STATEMENT_INIT(debug); int line=__LINE__;
