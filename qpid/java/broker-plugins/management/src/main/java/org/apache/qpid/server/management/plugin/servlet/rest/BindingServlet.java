@@ -20,23 +20,6 @@
  */
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
-
-import org.apache.qpid.server.model.Binding;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Consumer;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.Statistics;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.queue.AMQQueue;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -47,8 +30,23 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Consumer;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
 
-public class QueueServlet extends AbstractServlet
+public class BindingServlet extends AbstractServlet
 {
 
 
@@ -56,7 +54,7 @@ public class QueueServlet extends AbstractServlet
     private static final Comparator DEFAULT_COMPARATOR = new KeyComparator("name");
 
 
-    public QueueServlet(Broker broker)
+    public BindingServlet(Broker broker)
     {
         _broker = broker;
     }
@@ -65,10 +63,6 @@ public class QueueServlet extends AbstractServlet
     {
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);
-
-        response.setHeader("Cache-Control","no-cache");
-        response.setHeader("Pragma","no-cache");
-        response.setDateHeader ("Expires", 0);
 
         String[] sortKeys = request.getParameterValues("sort");
         Comparator comparator;
@@ -90,8 +84,10 @@ public class QueueServlet extends AbstractServlet
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
+        
         String vhostName = null;
         String queueName = null;
+        String exchangeName = null;
 
         if(request.getPathInfo() != null && request.getPathInfo().length()>0)
         {
@@ -100,7 +96,11 @@ public class QueueServlet extends AbstractServlet
             vhostName = parts.length == 0 ? "" : parts[0];
             if(parts.length > 1)
             {
-                queueName = parts[1];
+                exchangeName = parts[1];
+                if(parts.length > 2)
+                {
+                    queueName = parts[2];
+                }
             }
         }
 
@@ -108,17 +108,29 @@ public class QueueServlet extends AbstractServlet
         {
             if(vhostName == null || vhostName.equals(vhost.getName()))
             {
-                for(Queue queue : vhost.getQueues())
+                if(exchangeName == null || exchangeName.equals("*"))
                 {
-                    if(queueName == null || queueName.equals(queue.getName()))
+                    for(Queue queue : vhost.getQueues())
                     {
-                        outputObject.add(convertToObject(queue));
-                        if(queueName != null)
+                        if(queueName == null || queueName.equals(queue.getName()))
                         {
-                            break;
+                            for(Binding binding : queue.getBindings())
+                            {
+                                outputObject.add(convertObjectToMap(binding));
+                            }
+
+                            if(queueName != null)
+                            {
+                                break;
+                            }
                         }
-                    }
+                    }    
                 }
+                else
+                {
+                    // TODO
+                }
+                
                 if(vhostName != null)
                 {
                     break;

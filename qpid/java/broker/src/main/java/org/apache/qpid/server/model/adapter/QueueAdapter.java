@@ -368,7 +368,7 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         }
         else if(STATE.equals(name))
         {
-            // TODO
+            return State.ACTIVE; // TODO
         }
         else if(TIME_TO_LIVE.equals(name))
         {
@@ -524,19 +524,19 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
             }
             else if(TOTAL_DEQUEUED_MESSAGES.equals(name))
             {
-                return null; // TODO
+                return _queue.getTotalDequeueCount();
             }
             else if(TOTAL_ENQUEUED_BYTES.equals(name))
             {
-                _queue.getTotalEnqueueSize();
+                return _queue.getTotalEnqueueSize();
             }
             else if(TOTAL_ENQUEUED_MESSAGES.equals(name))
             {
-                return null; // TODO
+                return _queue.getTotalEnqueueCount();
             }
             else if(UNACKNOWLEDGED_BYTES.equals(name))
             {
-                return null; // TODO
+                return _queue.getUnackedMessageBytes();
             }
             else if(UNACKNOWLEDGED_MESSAGES.equals(name))
             {

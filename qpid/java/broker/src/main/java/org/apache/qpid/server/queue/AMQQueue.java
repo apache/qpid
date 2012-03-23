@@ -58,6 +58,12 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
 
     LogSubject getLogSubject();
 
+    long getUnackedMessageBytes();
+
+    long getTotalDequeueCount();
+
+    long getTotalEnqueueCount();
+
     public interface Context
     {
         QueueEntry getLastSeenEntry();
@@ -121,7 +127,7 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
 
     void dequeue(QueueEntry entry, Subscription sub);
 
-    void decrementUnackedMsgCount();
+    void decrementUnackedMsgCount(QueueEntry queueEntry);
 
     boolean resend(final QueueEntry entry, final Subscription subscription) throws AMQException;
 

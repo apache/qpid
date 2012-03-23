@@ -103,6 +103,11 @@ public class MockAMQQueue implements AMQQueue
         };
     }
 
+    public long getUnackedMessageBytes()
+    {
+        return 0;
+    }
+
     public ConfigStore getConfigStore()
     {
         return getVirtualHost().getConfigStore();
@@ -119,6 +124,16 @@ public class MockAMQQueue implements AMQQueue
     }
 
     public long getTotalDequeueSize()
+    {
+        return 0;
+    }
+
+    public long getTotalDequeueCount()
+    {
+        return 0;
+    }
+
+    public long getTotalEnqueueCount()
     {
         return 0;
     }
@@ -599,7 +614,7 @@ public class MockAMQQueue implements AMQQueue
         return 0;
     }
 
-    public void decrementUnackedMsgCount()
+    public void decrementUnackedMsgCount(QueueEntry queueEntry)
     {
 
     }

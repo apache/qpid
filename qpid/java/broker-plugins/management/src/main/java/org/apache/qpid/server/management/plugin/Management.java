@@ -25,6 +25,7 @@ import org.apache.qpid.server.management.plugin.servlet.DefinedFileServlet;
 import org.apache.qpid.server.management.plugin.servlet.FileServlet;
 import org.apache.qpid.server.management.plugin.servlet.api.ExchangesServlet;
 import org.apache.qpid.server.management.plugin.servlet.api.VhostsServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.BindingServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.ConnectionServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.ExchangeServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.QueueServlet;
@@ -67,6 +68,7 @@ public class Management
             root.addServlet(new ServletHolder(new ExchangeServlet(_broker)), "/rest/exchange/*");
             root.addServlet(new ServletHolder(new QueueServlet(_broker)), "/rest/queue/*");
             root.addServlet(new ServletHolder(new ConnectionServlet(_broker)), "/rest/connection/*");
+            root.addServlet(new ServletHolder(new BindingServlet(_broker)), "/rest/binding/*");
 
             root.addServlet(new ServletHolder(new DefinedFileServlet("queue.html")),"/queue");
             root.addServlet(new ServletHolder(new DefinedFileServlet("exchange.html")),"/exchange");

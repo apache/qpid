@@ -232,7 +232,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         {
             if(state instanceof SubscriptionAcquiredState)
             {
-                getQueue().decrementUnackedMsgCount();
+                getQueue().decrementUnackedMsgCount(this);
                 Subscription subscription = ((SubscriptionAcquiredState)state).getSubscription();
                 if (subscription != null)
                 {
@@ -368,7 +368,7 @@ public abstract class QueueEntryImpl implements QueueEntry
             Subscription s = null;
             if (state instanceof SubscriptionAcquiredState)
             {
-                getQueue().decrementUnackedMsgCount();
+                getQueue().decrementUnackedMsgCount(this);
                 s = ((SubscriptionAcquiredState) state).getSubscription();
                 s.onDequeue(this);
             }

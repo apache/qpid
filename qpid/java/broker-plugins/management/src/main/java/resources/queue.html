@@ -10,6 +10,7 @@
         <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dijit/themes/claro/claro.css">
         <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dojox/grid/resources/claroGrid.css">
 
+        <link rel="stylesheet" href="../css/queue.css" media="screen">
 
 		<link rel="stylesheet" href="css/common.css" media="screen">
 
@@ -46,36 +47,36 @@
             <br/>
             <span style="">State:</span><span id="state" style="position:absolute; left:6em"></span>
             <span style="position:absolute; left:26em">Pre-fetched:</span>
-            <span id="unack-count" style="position:absolute; right:9.5em">500</span>
+            <span id="unacknowledgedMessages" style="position:absolute; right:9.5em">500</span>
             <span style="position:absolute; right: 5em; width: 4em"> msgs</span>
-            <span style="position:absolute; right: 3.3em">(256</span>
-            <span style="position:absolute; right: 0em; width: 3em">Kb)</span>
+            <span id="unacknowledgedBytes" style="position:absolute; right: 3.3em">(256</span>
+            <span id="unacknowledgedBytesUnits" style="position:absolute; right: 0em; width: 3em">Kb)</span>
             <br/>
             <span style="">Durable:</span><span id="durable" style="position:absolute; left:6em"></span>
             <span style="position:absolute; left:26em">Inbound:</span>
-            <span id="inbound-rate-msg" style="position:absolute; right:9.5em">347</span>
+            <span id="msgInRate" style="position:absolute; right:9.5em"></span>
             <span style="position:absolute; right: 5em; width: 4em"> msg/s</span>
-            <span style="position:absolute; right: 3.3em">(132</span>
-            <span style="position:absolute; right: 0em; width: 3em">Kb/s)</span>
+            <span id="bytesInRate" style="position:absolute; right: 3.3em"></span>
+            <span id="bytesInRateUnits" style="position:absolute; right: 0em; width: 3em"></span>
             <br/>
             <span style="">Lifespan:</span><span style="position:absolute; left:6em" id="lifetimePolicy"></span>
             <span style="position:absolute; left:26em">Outbound:</span>
-            <span id="outbound-rate-msg" style="position:absolute; right:9.5em">823</span>
+            <span id="msgOutRate" style="position:absolute; right:9.5em"></span>
             <span style="position:absolute; right: 5em; width: 4em"> msg/s</span>
-            <span style="position:absolute; right: 3.3em">(0.92</span>
-            <span style="position:absolute; right: 0em; width: 3em">Mb/s)</span>
+            <span id="bytesOutRate" style="position:absolute; right: 3.3em"></span>
+            <span id="bytesOutRateUnits" style="position:absolute; right: 0em; width: 3em"></span>
             <br/>
             <br/>
             <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Bindings'">
-                I'm pane #1
+                <div id="bindings"></div>
             </div>
             <br/>
             <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Consumers'">
-                I'm pane #2
+                <div id="consumers"></div>
             </div>
             <br/>
             <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Alerting Thresholds'">
-                I'm pane #3
+                TODO
             </div>
         </div>
         <!--<div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'trailing'">Trailing pane</div>-->

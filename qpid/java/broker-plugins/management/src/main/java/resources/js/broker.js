@@ -98,12 +98,12 @@ require(["dojo/store/JsonRest",
          };
 
          exchangeTuple = new UpdatableStore("/rest/exchange", "exchanges",
-                                            [ { name: "Name",        field: "name",          width: "190px"},
-                                              { name: "Type",        field: "type",          width: "90px"},
-                                              { name: "Durable",     field: "durable",       width: "80px"},
-                                              { name: "Auto-Delete", field: "auto-delete",   width: "100px"},
-                                              { name: "Bindings",    field: "binding-count", width: "80px"}
-                                              ]);
+                                                     [ { name: "Name",        field: "name",          width: "190px"},
+                                                       { name: "Type",        field: "type",          width: "90px"},
+                                                       { name: "Durable",     field: "durable",       width: "80px"},
+                                                       { name: "Auto-Delete", field: "auto-delete",   width: "100px"},
+                                                       { name: "Bindings",    field: "binding-count", width: "80px"}
+                                                       ]);
          queueTuple = new UpdatableStore("/rest/queue", "queues",
                                             [ { name: "Name",        field: "name",          width: "240px"},
                                               { name: "Durable",     field: "durable",       width: "100px"},

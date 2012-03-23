@@ -120,6 +120,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     private final AtomicLong _dequeueCount = new AtomicLong();
     private final AtomicLong _dequeueSize = new AtomicLong();
+    private final AtomicLong _enqueueCount = new AtomicLong();
     private final AtomicLong _enqueueSize = new AtomicLong();
     private final AtomicLong _persistentMessageEnqueueSize = new AtomicLong();
     private final AtomicLong _persistentMessageDequeueSize = new AtomicLong();
@@ -132,6 +133,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     private final AtomicLong _byteTxnDequeues = new AtomicLong(0);
     private final AtomicLong _unackedMsgCount = new AtomicLong(0);
     private final AtomicLong _unackedMsgCountHigh = new AtomicLong(0);
+    private final AtomicLong _unackedMsgBytes = new AtomicLong();
 
     private final AtomicInteger _bindingCountHigh = new AtomicInteger();
 
@@ -195,6 +197,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     private final Collection<SubscriptionRegistrationListener> _subscriptionListeners =
             new ArrayList<SubscriptionRegistrationListener>();
+
 
     protected SimpleAMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, boolean exclusive, VirtualHost virtualHost, Map<String,Object> arguments)
     {
@@ -838,12 +841,23 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     {
         long size = message.getSize();
         getAtomicQueueSize().addAndGet(size);
+        _enqueueCount.incrementAndGet();
         _enqueueSize.addAndGet(size);
         if(message.isPersistent() && isDurable())
         {
             _persistentMessageEnqueueSize.addAndGet(size);
             _persistentMessageEnqueueCount.incrementAndGet();
         }
+    }
+
+    public long getTotalDequeueCount()
+    {
+        return _dequeueCount.get();
+    }
+
+    public long getTotalEnqueueCount()
+    {
+        return _enqueueCount.get();
     }
 
     private void incrementQueueCount()
@@ -869,7 +883,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         setLastSeenEntry(sub, entry);
 
         _deliveredMessages.incrementAndGet();
-        incrementUnackedMsgCount();
+        incrementUnackedMsgCount(entry);
 
         sub.send(entry, batch);
     }
@@ -2467,14 +2481,21 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         return _unackedMsgCount.get();
     }
 
-    public void decrementUnackedMsgCount()
+    public long getUnackedMessageBytes()
     {
-        _unackedMsgCount.decrementAndGet();
+        return _unackedMsgBytes.get();
     }
 
-    private void incrementUnackedMsgCount()
+    public void decrementUnackedMsgCount(QueueEntry queueEntry)
+    {
+        _unackedMsgCount.decrementAndGet();
+        _unackedMsgBytes.addAndGet(-queueEntry.getSize());
+    }
+
+    private void incrementUnackedMsgCount(QueueEntry entry)
     {
         long unackedMsgCount = _unackedMsgCount.incrementAndGet();
+        _unackedMsgBytes.addAndGet(entry.getSize());
 
         long unackedMsgCountHigh;
         while(unackedMsgCount > (unackedMsgCountHigh = _unackedMsgCountHigh.get()))

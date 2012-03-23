@@ -1,7 +1,5 @@
-var vhostGrid, dataStore, store, vhostStore;
-var exchangeGrid, exchangeStore, exchangeDataStore;
 var updateList = new Array();
-var vhostTuple, exchangesTuple;
+var bindingsTuple;
 
 
 require(["dojo/store/JsonRest",
@@ -18,132 +16,248 @@ require(["dojo/store/JsonRest",
 	     {
 
 
-         function UpdatableStore( query, divName, structure, func ) {
+             function UpdatableStore( data, divName, structure, func )
+             {
 
 
-             this.query = query;
 
-             var thisObj = this;
-
-             xhr.get({url: query, handleAs: "json"}).then(function(data)
-                             {
-                             thisObj.store = Observable(Memory({data: data, idProperty: "id"}));
-                             thisObj.dataStore = ObjectStore({objectStore: thisObj.store});
-                             thisObj.grid = new DataGrid({
-                                         store: thisObj.dataStore,
-                                         structure: structure,
-             					                }, divName);
-
-                             // since we created this grid programmatically, call startup to render it
-                             thisObj.grid.startup();
-
-                             updateList.push( thisObj );
-                             if( func )
-                             {
-                                 func(thisObj);
-                             }
-                             });
+                 var thisObj = this;
 
 
-         }
+                 thisObj.store = Observable(Memory({data: data, idProperty: "id"}));
+                 thisObj.dataStore = ObjectStore({objectStore: thisObj.store});
+                 thisObj.grid = new DataGrid({
+                             store: thisObj.dataStore,
+                             structure: structure,
+                                    }, divName);
 
-         UpdatableStore.prototype.update = function() {
-             var store = this.store;
+                 // since we created this grid programmatically, call startup to render it
+                 thisObj.grid.startup();
 
 
-             xhr.get({url: this.query, handleAs: "json"}).then(function(data)
+                 if( func )
                  {
-                     // handle deletes
-                     // iterate over existing store... if not in new data then remove
-                     store.query({ }).forEach(function(object)
-                         {
-                             for(var i=0; i < data.length; i++)
-                             {
-                                 if(data[i].id == object.id)
-                                 {
-                                     return;
-                                 }
-                             }
-                             store.remove(object.id);
-                             //store.notify(null, object.id);
-                         });
+                     func(thisObj);
+                 }
 
-                     // iterate over data...
-                     for(var i=0; i < data.length; i++)
+             }
+
+            UpdatableStore.prototype.update = function(bindingData)
+            {
+                 data = bindingData;
+                 var store = this.store;
+
+
+                 // handle deletes
+                 // iterate over existing store... if not in new data then remove
+                 store.query({ }).forEach(function(object)
                      {
-                         if(item = store.get(data[i].id))
+                         for(var i=0; i < data.length; i++)
                          {
-                             var modified;
-                             for(var propName in data[i])
+                             if(data[i].id == object.id)
                              {
-                                 if(item[ propName ] != data[i][ propName ])
-                                 {
-                                     item[ propName ] = data[i][ propName ];
-                                     modified = true;
-                                 }
-                             }
-                             if(modified)
-                             {
-                                 // ... check attributes for updates
-                                 store.notify(item, data[i].id);
+                                 return;
                              }
                          }
-                         else
+                         store.remove(object.id);
+                         //store.notify(null, object.id);
+                     });
+
+                 // iterate over data...
+                 for(var i=0; i < data.length; i++)
+                 {
+                     if(item = store.get(data[i].id))
+                     {
+                         var modified;
+                         for(var propName in data[i])
                          {
-                             // ,,, if not in the store then add
-                             store.put(data[i]);
+                             if(item[ propName ] != data[i][ propName ])
+                             {
+                                 item[ propName ] = data[i][ propName ];
+                                 modified = true;
+                             }
+                         }
+                         if(modified)
+                         {
+                             // ... check attributes for updates
+                             store.notify(item, data[i].id);
                          }
                      }
-                 });
-         };
+                     else
+                     {
+                         // ,,, if not in the store then add
+                         store.put(data[i]);
+                     }
+                 }
+
+            };
 
 
-         queueUpdater = new Object();
 
          function formatBytes(amount)
          {
-            this.units = "bytes";
+            this.units = "B";
             this.value = 0;
 
             if(amount < 1000)
             {
-                this.units = "bytes";
+                this.units = "B";
                 this.value = amount;
             }
             else if(amount < 1000 * 1024)
             {
-                this.units = "Kb";
+                this.units = "KB";
                 this.value = amount / 1024
                 this.value = this.value.toPrecision(3);
             }
             else if(amount < 1000 * 1024 * 1024)
             {
-                this.units = "Mb";
+                this.units = "MB";
                 this.value = amount / (1024 * 1024)
+                this.value = this.value.toPrecision(3);
+            }
+            else if(amount < 1000 * 1024 * 1024 * 1024)
+            {
+                this.units = "GB";
+                this.value = amount / (1024 * 1024 * 1024)
                 this.value = this.value.toPrecision(3);
             }
 
          }
 
-         queueUpdater.update = function() {
+
+         function QueueUpdater()
+         {
+            this.name = dom.byId("name");
+            this.state = dom.byId("state");
+            this.durable = dom.byId("durable");
+            this.lifetimePolicy = dom.byId("lifetimePolicy");
+            this.queueDepthMessages = dom.byId("queueDepthMessages");
+            this.queueDepthBytes = dom.byId("queueDepthBytes");
+            this.queueDepthBytesUnits = dom.byId("queueDepthBytesUnits");
+            this.unacknowledgedMessages = dom.byId("unacknowledgedMessages");
+            this.unacknowledgedBytes = dom.byId("unacknowledgedBytes");
+            this.unacknowledgedBytesUnits = dom.byId("unacknowledgedBytesUnits");
+
+            var thisObj = this;
+
+            xhr.get({url: "/rest/queue/test/queue", handleAs: "json"}).then(function(data)
+                             {
+                                thisObj.queueData = data[0];
+                                var stats = thisObj.queueData[ "statistics" ];
+
+                                // flatten statistics into attributes
+                                for(var propName in stats)
+                                {
+                                    thisObj.queueData[ propName ] = stats[ propName ];
+                                }
+
+                                thisObj.updateHeader();
+                                thisObj.bindingsGrid = new UpdatableStore(thisObj.queueData.bindings, "bindings",
+                                                         [ { name: "Exchange",    field: "exchange",      width: "90px"},
+                                                           { name: "Binding Key", field: "name",          width: "120px"},
+                                                           { name: "Arguments",   field: "arguments",     width: "200px"}
+                                                         ]);
+
+                                thisObj.consumersGrid = new UpdatableStore(thisObj.queueData.consumers, "consumers",
+                                                         [ { name: "Name",    field: "name",      width: "120px"},
+                                                           { name: "Mode", field: "distributionMode",          width: "120px"}
+                                                         ]);
+
+
+
+                             });
+
+         }
+
+         QueueUpdater.prototype.updateHeader = function()
+         {
+            this.name.innerHTML = this.queueData[ "name" ];
+            this.state.innerHTML = this.queueData[ "state" ];
+            this.durable.innerHTML = this.queueData[ "durable" ];
+            this.lifetimePolicy.innerHTML = this.queueData[ "lifetimePolicy" ];
+
+            this.queueDepthMessages.innerHTML = this.queueData["queueDepthMessages"];
+            bytesDepth = new formatBytes( this.queueData["queueDepthBytes"] );
+            this.queueDepthBytes.innerHTML = "(" + bytesDepth.value;
+            this.queueDepthBytesUnits.innerHTML = bytesDepth.units + ")"
+
+            this.unacknowledgedMessages.innerHTML = this.queueData["unacknowledgedMessages"];
+            bytesDepth = new formatBytes( this.queueData["unacknowledgedBytes"] );
+            this.unacknowledgedBytes.innerHTML = "(" + bytesDepth.value;
+            this.unacknowledgedBytesUnits.innerHTML = bytesDepth.units + ")"
+
+         }
+
+         QueueUpdater.prototype.update = function()
+         {
+
+            var thisObj = this;
+
             xhr.get({url: "/rest/queue/test/queue", handleAs: "json"}).then(function(data)
                  {
+                    thisObj.queueData = data[0];
+                    var stats = thisObj.queueData[ "statistics" ];
+
+                    // flatten statistics into attributes
+                    for(var propName in stats)
+                    {
+                        thisObj.queueData[ propName ] = stats[ propName ];
+                    }
+
+                    var bindings = thisObj.queueData[ "bindings" ];
+                    for(var i=0; i < bindings.length; i++)
+                    {
+                        bindings[i].arguments = dojo.toJson(bindings[i].arguments);
+
+                    }
+
+                    thisObj.updateHeader();
 
                     queueData = data[0];
                     stats = queueData[ "statistics" ];
-                    dom.byId("name").innerHTML = queueData[ "name" ];
-                    dom.byId("state").innerHTML = queueData[ "state" ];
-                    dom.byId("durable").innerHTML = queueData[ "durable" ];
-                    dom.byId("lifetimePolicy").innerHTML = queueData[ "lifetimePolicy" ];
 
-                    dom.byId("queueDepthMessages").innerHTML = stats["queueDepthMessages"];
-                    bytesDepth = new formatBytes( stats["queueDepthBytes"] );
-                    dom.byId("queueDepthBytes").innerHTML = "(" + bytesDepth.value;
-                    dom.byId("queueDepthBytesUnits").innerHTML = bytesDepth.units + ")"
+                    var sampleTime = new Date();
+                    var messageIn = stats["totalEnqueuedMessages"];
+                    var bytesIn = stats["totalEnqueuedBytes"];
+                    var messageOut = stats["totalDequeuedMessages"];
+                    var bytesOut = stats["totalDequeuedBytes"];
+
+                    if(thisObj.sampleTime)
+                    {
+                        var samplePeriod = sampleTime.getTime() - thisObj.sampleTime.getTime();
+
+                        var msgInRate = (1000 * (messageIn - thisObj.messageIn)) / samplePeriod;
+                        var msgOutRate = (1000 * (messageOut - thisObj.messageOut)) / samplePeriod;
+                        var bytesInRate = (1000 * (bytesIn - thisObj.bytesIn)) / samplePeriod;
+                        var bytesOutRate = (1000 * (bytesOut - thisObj.bytesOut)) / samplePeriod;
+
+                        dom.byId("msgInRate").innerHTML = msgInRate.toFixed(0);
+                        bytesInFormat = new formatBytes( bytesInRate );
+                        dom.byId("bytesInRate").innerHTML = "(" + bytesInFormat.value;
+                        dom.byId("bytesInRateUnits").innerHTML = bytesInFormat.units + "/s)"
+
+                        dom.byId("msgOutRate").innerHTML = msgOutRate.toFixed(0);
+                        bytesOutFormat = new formatBytes( bytesOutRate );
+                        dom.byId("bytesOutRate").innerHTML = "(" + bytesOutFormat.value;
+                        dom.byId("bytesOutRateUnits").innerHTML = bytesOutFormat.units + "/s)"
+
+                    }
+
+                    thisObj.sampleTime = sampleTime;
+                    thisObj.messageIn = messageIn;
+                    thisObj.bytesIn = bytesIn;
+                    thisObj.messageOut = messageOut;
+                    thisObj.bytesOut = bytesOut;
+
+                    thisObj.bindingsGrid.update(thisObj.queueData.bindings)
+                    thisObj.consumersGrid.update(thisObj.queueData.consumers)
 
 
                  });
          };
+
+         queueUpdater = new QueueUpdater();
 
          updateList.push( queueUpdater );
 
