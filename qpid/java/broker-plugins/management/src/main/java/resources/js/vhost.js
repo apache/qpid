@@ -182,45 +182,86 @@ require(["dojo/store/JsonRest",
 
          }
 
+         function flattenStatistics(data)
+         {
+             var stats = data[ "statistics" ];
 
-         function QueueUpdater()
+             // flatten statistics into attributes
+             for(var propName in stats)
+             {
+                 data[ propName ] = stats[ propName ];
+             }
+
+         }
+
+
+         function Updater()
          {
             this.name = dom.byId("name");
             this.state = dom.byId("state");
             this.durable = dom.byId("durable");
             this.lifetimePolicy = dom.byId("lifetimePolicy");
-            this.queueDepthMessages = dom.byId("queueDepthMessages");
-            this.queueDepthBytes = dom.byId("queueDepthBytes");
-            this.queueDepthBytesUnits = dom.byId("queueDepthBytesUnits");
-            this.unacknowledgedMessages = dom.byId("unacknowledgedMessages");
-            this.unacknowledgedBytes = dom.byId("unacknowledgedBytes");
-            this.unacknowledgedBytesUnits = dom.byId("unacknowledgedBytesUnits");
 
             urlQuery = dojo.queryToObject(dojo.doc.location.search.substr((dojo.doc.location.search[0] === "?" ? 1 : 0)));
-            this.query = "/rest/queue/"+ urlQuery.vhost + "/" + urlQuery.queue;
+            this.query = "/rest/virtualhost/"+ urlQuery.vhost ;
 
 
             var thisObj = this;
 
             xhr.get({url: this.query, handleAs: "json"}).then(function(data)
                              {
-                                thisObj.queueData = data[0];
-                                var stats = thisObj.queueData[ "statistics" ];
+                                thisObj.vhostData = data[0];
+                                var stats = thisObj.vhostData[ "statistics" ];
 
                                 // flatten statistics into attributes
-                                for(var propName in stats)
+                                flattenStatistics( thisObj.vhostData );
+                                if(thisObj.vhostData.queues)
                                 {
-                                    thisObj.queueData[ propName ] = stats[ propName ];
+                                    for(var i = 0; i < thisObj.vhostData.queues.length; i++)
+                                    {
+                                        flattenStatistics( thisObj.vhostData.queues[i]);
+                                    }
+                                }
+                                if(thisObj.vhostData.exchanges)
+                                {
+                                    for(var i = 0; i < thisObj.vhostData.exchanges.length; i++)
+                                    {
+                                        flattenStatistics( thisObj.vhostData.exchanges[i]);
+                                    }
                                 }
 
                                 thisObj.updateHeader();
-                                thisObj.bindingsGrid = new UpdatableStore(thisObj.queueData.bindings, "bindings",
-                                                         [ { name: "Exchange",    field: "exchange",      width: "90px"},
-                                                           { name: "Binding Key", field: "name",          width: "120px"},
+                                thisObj.queuesGrid = new UpdatableStore(thisObj.vhostData.queues, "queues",
+                                                         [ { name: "Name",    field: "name",      width: "90px"},
+                                                           { name: "Messages", field: "queueDepthMessages", width: "90px"},
                                                            { name: "Arguments",   field: "arguments",     width: "200px"}
+                                                         ],
+                                                         function(obj)
+                                                         {
+                                                             dojo.connect(obj.grid, "onRowDblClick", obj.grid,
+                                                             function(evt){
+                                                                    var idx = evt.rowIndex,
+                                                                    item = this.getItem(idx);
+
+                                                                    url = "/queue?vhost="
+                                                                     + thisObj.vhostData.name + "&queue=" +
+                                                                    obj.dataStore.getValue(item,"name");
+
+                                                                    window.location = url;
+
+                                                            });
+                                                         } );
+
+                                thisObj.exchangesGrid = new UpdatableStore(thisObj.vhostData.exchanges, "exchanges",
+                                                         [ { name: "Name",    field: "name",      width: "120px"},
+                                                           { name: "Type", field: "type", width: "120px"},
+                                                           { name: "Binding Count", field: "bindingCount",
+                                                           width: "90px"}
                                                          ]);
 
-                                thisObj.consumersGrid = new UpdatableStore(thisObj.queueData.consumers, "consumers",
+
+                                thisObj.connectionsGrid = new UpdatableStore(thisObj.vhostData.connections,
+                                                         "connections",
                                                          [ { name: "Name",    field: "name",      width: "70px"},
                                                            { name: "Mode", field: "distributionMode", width: "70px"},
                                                            { name: "Msgs Rate", field: "msgRate",
@@ -235,51 +276,35 @@ require(["dojo/store/JsonRest",
 
          }
 
-         QueueUpdater.prototype.updateHeader = function()
+         Updater.prototype.updateHeader = function()
          {
-            this.name.innerHTML = this.queueData[ "name" ];
-            this.state.innerHTML = this.queueData[ "state" ];
-            this.durable.innerHTML = this.queueData[ "durable" ];
-            this.lifetimePolicy.innerHTML = this.queueData[ "lifetimePolicy" ];
+            this.name.innerHTML = this.vhostData[ "name" ];
+            this.state.innerHTML = this.vhostData[ "state" ];
+            this.durable.innerHTML = this.vhostData[ "durable" ];
+            this.lifetimePolicy.innerHTML = this.vhostData[ "lifetimePolicy" ];
 
-            this.queueDepthMessages.innerHTML = this.queueData["queueDepthMessages"];
-            bytesDepth = new formatBytes( this.queueData["queueDepthBytes"] );
-            this.queueDepthBytes.innerHTML = "(" + bytesDepth.value;
-            this.queueDepthBytesUnits.innerHTML = bytesDepth.units + ")"
-
-            this.unacknowledgedMessages.innerHTML = this.queueData["unacknowledgedMessages"];
-            bytesDepth = new formatBytes( this.queueData["unacknowledgedBytes"] );
-            this.unacknowledgedBytes.innerHTML = "(" + bytesDepth.value;
-            this.unacknowledgedBytesUnits.innerHTML = bytesDepth.units + ")"
 
          }
 
-         QueueUpdater.prototype.update = function()
+         Updater.prototype.update = function()
          {
 
             var thisObj = this;
 
             xhr.get({url: this.query, handleAs: "json"}).then(function(data)
                  {
-                    thisObj.queueData = data[0];
-                    var stats = thisObj.queueData[ "statistics" ];
+                    thisObj.vhostData = data[0];
+                    var stats = thisObj.vhostData[ "statistics" ];
 
                     // flatten statistics into attributes
                     for(var propName in stats)
                     {
-                        thisObj.queueData[ propName ] = stats[ propName ];
-                    }
-
-                    var bindings = thisObj.queueData[ "bindings" ];
-                    for(var i=0; i < bindings.length; i++)
-                    {
-                        bindings[i].arguments = dojo.toJson(bindings[i].arguments);
-                        bindings[i].argumentString = dojo.toJson(bindings[i].arguments);
-
+                        thisObj.vhostData[ propName ] = stats[ propName ];
                     }
 
 
-                    var consumers = thisObj.queueData[ "consumers" ];
+
+                    var consumers = thisObj.vhostData[ "consumers" ];
                     if(consumers)
                     {
                         for(var i=0; i < consumers.length; i++)
@@ -297,36 +322,36 @@ require(["dojo/store/JsonRest",
 
 
                     // update alerting info
-                    alertRepeatGap = new formatTime( thisObj.queueData["alertRepeatGap"] );
+                    alertRepeatGap = new formatTime( thisObj.vhostData["alertRepeatGap"] );
 
                     dom.byId("alertRepeatGap").innerHTML = alertRepeatGap.value;
                     dom.byId("alertRepeatGapUnits").innerHTML = alertRepeatGap.units;
 
 
-                    alertMsgAge = new formatTime( thisObj.queueData["alertThresholdMessageAge"] );
+                    alertMsgAge = new formatTime( thisObj.vhostData["alertThresholdMessageAge"] );
 
                     dom.byId("alertThresholdMessageAge").innerHTML = alertMsgAge.value;
                     dom.byId("alertThresholdMessageAgeUnits").innerHTML = alertMsgAge.units;
 
-                    alertMsgSize = new formatBytes( thisObj.queueData["alertThresholdMessageSize"] );
+                    alertMsgSize = new formatBytes( thisObj.vhostData["alertThresholdMessageSize"] );
 
                     dom.byId("alertThresholdMessageSize").innerHTML = alertMsgSize.value;
                     dom.byId("alertThresholdMessageSizeUnits").innerHTML = alertMsgSize.units;
 
-                    alertQueueDepth = new formatBytes( thisObj.queueData["alertThresholdQueueDepthBytes"] );
+                    alertQueueDepth = new formatBytes( thisObj.vhostData["alertThresholdQueueDepthBytes"] );
 
                     dom.byId("alertThresholdQueueDepthBytes").innerHTML = alertQueueDepth.value;
                     dom.byId("alertThresholdQueueDepthBytesUnits").innerHTML = alertQueueDepth.units;
 
-                    dom.byId("alertThresholdQueueDepthMessages").innerHTML = thisObj.queueData["alertThresholdQueueDepthMessages"];
+                    dom.byId("alertThresholdQueueDepthMessages").innerHTML = thisObj.vhostData["alertThresholdQueueDepthMessages"];
 
-                    stats = thisObj.queueData[ "statistics" ];
+                    stats = thisObj.vhostData[ "statistics" ];
 
                     var sampleTime = new Date();
-                    var messageIn = stats["totalEnqueuedMessages"];
-                    var bytesIn = stats["totalEnqueuedBytes"];
-                    var messageOut = stats["totalDequeuedMessages"];
-                    var bytesOut = stats["totalDequeuedBytes"];
+                    var messageIn = stats["messagesIn"];
+                    var bytesIn = stats["bytesIn"];
+                    var messageOut = stats["messagesOut"];
+                    var bytesOut = stats["bytesOut"];
 
                     if(thisObj.sampleTime)
                     {
@@ -380,23 +405,25 @@ require(["dojo/store/JsonRest",
                     thisObj.bytesIn = bytesIn;
                     thisObj.messageOut = messageOut;
                     thisObj.bytesOut = bytesOut;
-                    thisObj.consumers = consumers;
 
-                    // update bindings
-                    thisObj.bindingsGrid.update(thisObj.queueData.bindings)
+                    // update queues
+                    thisObj.queuesGrid.update(thisObj.vhostData.queues)
 
-                    // update consumers
-                    thisObj.consumersGrid.update(thisObj.queueData.consumers)
+                    // update exchanges
+                    thisObj.exchangesGrid.update(thisObj.vhostData.exchanges)
+
+                    // update connections
+                    thisObj.connectionsGrid.update(thisObj.vhostData.connections)
 
 
                  });
          };
 
-         queueUpdater = new QueueUpdater();
+         updater = new Updater();
 
-         updateList.push( queueUpdater );
+         updateList.push( updater );
 
-         queueUpdater.update();
+         updater.update();
 
          setInterval(function(){
                for(var i = 0; i < updateList.length; i++)

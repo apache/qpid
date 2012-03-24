@@ -13,7 +13,8 @@ html, body {
     background: white;
     color: #333;
 }
-#queueLayout {
+
+#pageLayout {
     height: 100%;
 }
 button {

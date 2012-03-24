@@ -52,12 +52,12 @@ public class TestExchange implements Exchange
 
     public void addBindingListener(final BindingListener listener)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+      
     }
 
     public void removeBindingListener(final BindingListener listener)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+      
     }
 
     public AMQShortString getNameShortString()
@@ -107,42 +107,52 @@ public class TestExchange implements Exchange
 
     public Map<String, Object> getArguments()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public long getBindingCount()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public long getBindingCountHigh()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public long getMsgReceives()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public long getMsgRoutes()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
+    }
+
+    public long getMsgDrops()
+    {
+        return 0;
     }
 
     public long getByteReceives()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public long getByteRoutes()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
+    }
+
+    public long getByteDrops()
+    {
+        return 0;
     }
 
     public long getCreateTime()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public void setAlternateExchange(Exchange exchange)
@@ -177,27 +187,23 @@ public class TestExchange implements Exchange
 
     public Collection<Binding> getBindings()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
-    public void initialise(VirtualHost host, AMQShortString name, boolean durable, boolean autoDelete)
-            throws AMQException
-    {
-    }
 
     public VirtualHostConfig getVirtualHost()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public String getName()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public ExchangeType getType()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public boolean isAutoDelete()
@@ -227,17 +233,17 @@ public class TestExchange implements Exchange
 
     public UUID getId()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public ExchangeConfigType getConfigType()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public ConfiguredObject getParent()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public boolean isDurable()

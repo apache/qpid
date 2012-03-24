@@ -49,7 +49,12 @@ public interface ExchangeConfig extends ConfiguredObject<ExchangeConfigType, Exc
 
     long getMsgRoutes();
 
+    long getMsgDrops();
+
     long getByteReceives();
 
     long getByteRoutes();
+
+    long getByteDrops();
+
 }

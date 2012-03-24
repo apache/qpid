@@ -145,7 +145,7 @@ public class ExchangeServlet extends AbstractServlet
         Map<String,Object> arguments = new HashMap<String, Object>();
         for(String key : exchange.getAttributeNames())
         {
-            if(!key.equals(Exchange.EXCHANGE_TYPE))
+            if(!key.equals(Exchange.TYPE))
             {
                 arguments.put(key, exchange.getAttribute(key));
             }

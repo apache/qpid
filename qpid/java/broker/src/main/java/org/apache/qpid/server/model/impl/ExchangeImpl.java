@@ -59,7 +59,7 @@ class ExchangeImpl extends AbstractConfiguredObject implements Exchange
     private static Map<String, Object> fixAttributes(final Map<String, Object> attributes, final String exchangeType)
     {
         Map<String,Object> fixedAttributes = new HashMap<String, Object>(attributes);
-        fixedAttributes.put(EXCHANGE_TYPE, exchangeType);
+        fixedAttributes.put(TYPE, exchangeType);
         return fixedAttributes;
     }
 
@@ -71,7 +71,7 @@ class ExchangeImpl extends AbstractConfiguredObject implements Exchange
 
     public String getExchangeType()
     {
-        return (String) getAttribute(EXCHANGE_TYPE);
+        return (String) getAttribute(TYPE);
     }
 
     public Collection<Binding> getBindings()

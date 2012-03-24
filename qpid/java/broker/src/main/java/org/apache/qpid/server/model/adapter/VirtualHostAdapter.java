@@ -71,6 +71,7 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
 
     private final Map<org.apache.qpid.server.exchange.Exchange, ExchangeAdapter> _exchangeAdapters =
             new HashMap<org.apache.qpid.server.exchange.Exchange, ExchangeAdapter>();
+
     private final StatisticsAdapter _statistics;
 
 
@@ -547,5 +548,137 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
     org.apache.qpid.server.virtualhost.VirtualHost getVirtualHost()
     {
         return _virtualHost;
+    }
+
+    @Override
+    public Object getAttribute(String name)
+    {
+        if(ID.equals(name))
+        {
+            return getId();    
+        }
+        else if(NAME.equals(name))
+        {
+            return getName();
+        }
+        else if(STATE.equals(name))
+        {
+            return State.ACTIVE;
+        }
+        else if(DURABLE.equals(name))
+        {
+            return isDurable();
+        }
+        else if(LIFETIME_POLICY.equals(name))
+        {
+            return LifetimePolicy.PERMANENT;
+        }
+        else if(TIME_TO_LIVE.equals(name))
+        {
+            // TODO
+        }
+        else if(CREATED.equals(name))
+        {
+            // TODO
+        }
+        else if(UPDATED.equals(name))
+        {
+            // TODO
+        }
+        else if(SUPPORTED_EXCHANGE_TYPES.equals(name))
+        {
+            List<String> types = new ArrayList<String>();
+            for(ExchangeType type : _virtualHost.getExchangeFactory().getRegisteredTypes())
+            {
+                types.add(type.getName().asString());
+            }
+            return Collections.unmodifiableCollection(types);
+        }
+        else if(SUPPORTED_QUEUE_TYPES.equals(name))
+        {
+            // TODO
+        }
+        else if(DEAD_LETTER_QUEUE_ENABLED.equals(name))
+        {
+            return _virtualHost.getConfiguration().isDeadLetterQueueEnabled();
+        }
+        else if(FEDERATION_TAG.equals(name))
+        {
+            return _virtualHost.getFederationTag();
+        }
+        else if(HOUSEKEEPING_CHECK_PERIOD.equals(name))
+        {
+            return _virtualHost.getConfiguration().getHousekeepingCheckPeriod();
+        }
+        else if(MAXIMUM_DELIVERY_ATTEMPTS.equals(name))
+        {
+            return _virtualHost.getConfiguration().getMaxDeliveryCount();
+        }
+        else if(QUEUE_FLOW_CONTROL_SIZE_BYTES.equals(name))
+        {
+            return _virtualHost.getConfiguration().getCapacity();
+        }
+        else if(QUEUE_FLOW_RESUME_SIZE_BYTES.equals(name))
+        {
+            return _virtualHost.getConfiguration().getFlowResumeCapacity();
+        }
+        else if(STORE_TYPE.equals(name))
+        {
+            // TODO
+        }
+        else if(STORE_CONFIGURATION.equals(name))
+        {
+            // TODO
+        }
+        else if(STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE.equals(name))
+        {
+            return _virtualHost.getConfiguration().getTransactionTimeoutIdleClose();
+        }
+        else if(STORE_TRANSACTION_IDLE_TIMEOUT_WARN.equals(name))
+        {
+            return _virtualHost.getConfiguration().getTransactionTimeoutIdleWarn();
+        }
+        else if(STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE.equals(name))
+        {
+            return _virtualHost.getConfiguration().getTransactionTimeoutOpenClose();
+        }
+        else if(STORE_TRANSACTION_OPEN_TIMEOUT_WARN.equals(name))
+        {
+            return _virtualHost.getConfiguration().getTransactionTimeoutOpenWarn();
+        }
+        else if(ALERT_REPEAT_GAP.equals(name))
+        {
+            return _virtualHost.getConfiguration().getMinimumAlertRepeatGap();
+        }
+        else if(ALERT_THRESHOLD_MESSAGE_AGE.equals(name))
+        {
+            return _virtualHost.getConfiguration().getMaximumMessageAge();
+        }
+        else if(ALERT_THRESHOLD_MESSAGE_SIZE.equals(name))
+        {
+            return _virtualHost.getConfiguration().getMaximumMessageSize();
+        }
+        else if(ALERT_THRESHOLD_QUEUE_DEPTH_BYTES.equals(name))
+        {
+            return _virtualHost.getConfiguration().getMaximumQueueDepth();
+        }
+        else if(ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES.equals(name))
+        {
+            return _virtualHost.getConfiguration().getMaximumMessageCount();
+        }
+        return super.getAttribute(name);
+    }
+
+    @Override
+    public Object setAttribute(String name, Object expected, Object desired)
+            throws IllegalStateException, AccessControlException, IllegalArgumentException
+    {
+        return super.setAttribute(name, expected, desired);    //TODO - Implement
+    }
+
+    @Override
+    public Collection<String> getAttributeNames()
+    {
+        return AVAILABLE_ATTRIBUTES;
     }
 }

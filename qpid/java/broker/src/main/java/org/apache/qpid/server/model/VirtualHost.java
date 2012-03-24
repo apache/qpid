@@ -50,7 +50,64 @@ public interface VirtualHost extends ConfiguredObject
                             LOCAL_TRANSACTION_ROLLBACKS, MESSAGES_IN, MESSAGES_OUT, MESSAGES_RETAINED, STATE_CHANGED,
                             XA_TRANSACTION_BRANCH_ENDS, XA_TRANSACTION_BRANCH_STARTS, XA_TRANSACTION_BRANCH_SUSPENDS));
 
+    String ALERT_REPEAT_GAP = "alertRepeatGap";
+    String ALERT_THRESHOLD_MESSAGE_AGE = "alertThresholdMessageAge";
+    String ALERT_THRESHOLD_MESSAGE_SIZE = "alertThresholdMessageSize";
+    String ALERT_THRESHOLD_QUEUE_DEPTH_BYTES = "alertThresholdQueueDepthBytes";
+    String ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES = "alertThresholdQueueDepthMessages";
+    String DEAD_LETTER_QUEUE_ENABLED            = "deadLetterQueueEnabled";
+    String FEDERATION_TAG                       = "federationTag";
+    String HOUSEKEEPING_CHECK_PERIOD            = "housekeepingCheckPeriod";
+    String MAXIMUM_DELIVERY_ATTEMPTS            = "maximumDeliveryAttempts";
+    String QUEUE_FLOW_CONTROL_SIZE_BYTES        = "queueFlowControlSizeBytes";
+    String QUEUE_FLOW_RESUME_SIZE_BYTES         = "queueFlowResumeSizeBytes";
+    String STORE_CONFIGURATION                  = "storeConfiguration";
+    String STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE = "storeTransactionIdleTimeoutClose";
+    String STORE_TRANSACTION_IDLE_TIMEOUT_WARN  = "storeTransactionIdleTimeoutWarn";
+    String STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE = "storeTransactionOpenTimeoutClose";
+    String STORE_TRANSACTION_OPEN_TIMEOUT_WARN  = "storeTransactionOpenTimeoutWarn";
+    String STORE_TYPE                           = "storeType";
+    String SUPPORTED_EXCHANGE_TYPES             = "supportedExchangeTypes";
+    String SUPPORTED_QUEUE_TYPES                = "supportedQueueTypes";
+    String CREATED                              = "created";
+    String DURABLE                              = "durable";
+    String ID                                   = "id";
+    String LIFETIME_POLICY                      = "lifetimePolicy";
+    String NAME                                 = "name";
+    String STATE                                = "state";
+    String TIME_TO_LIVE                         = "timeToLive";
+    String UPDATED                              = "updated";
     // Attributes
+    public static final Collection<String> AVAILABLE_ATTRIBUTES =
+            Collections.unmodifiableList(
+                    Arrays.asList(
+                            ID,
+                            NAME,
+                            STATE,
+                            DURABLE,
+                            LIFETIME_POLICY,
+                            TIME_TO_LIVE,
+                            CREATED,
+                            UPDATED,
+                            SUPPORTED_EXCHANGE_TYPES,
+                            SUPPORTED_QUEUE_TYPES,
+                            DEAD_LETTER_QUEUE_ENABLED,
+                            FEDERATION_TAG,
+                            HOUSEKEEPING_CHECK_PERIOD,
+                            MAXIMUM_DELIVERY_ATTEMPTS,
+                            QUEUE_FLOW_CONTROL_SIZE_BYTES,
+                            QUEUE_FLOW_RESUME_SIZE_BYTES,
+                            STORE_TYPE,
+                            STORE_CONFIGURATION,
+                            STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE,
+                            STORE_TRANSACTION_IDLE_TIMEOUT_WARN,
+                            STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE,
+                            STORE_TRANSACTION_OPEN_TIMEOUT_WARN,
+                            ALERT_REPEAT_GAP,
+                            ALERT_THRESHOLD_MESSAGE_AGE,
+                            ALERT_THRESHOLD_MESSAGE_SIZE,
+                            ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
+                            ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES));
 
 
 

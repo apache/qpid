@@ -89,6 +89,8 @@ public abstract class AbstractExchange implements Exchange, Managable
     private final AtomicLong _receivedMessageSize = new AtomicLong();
     private final AtomicLong _routedMessageCount = new AtomicLong();
     private final AtomicLong _routedMessageSize = new AtomicLong();
+    private final AtomicLong _droppedMessageCount = new AtomicLong();
+    private final AtomicLong _droppedMessageSize = new AtomicLong();
 
     private final CopyOnWriteArrayList<Exchange.BindingListener> _listeners = new CopyOnWriteArrayList<Exchange.BindingListener>();
 
@@ -361,6 +363,11 @@ public abstract class AbstractExchange implements Exchange, Managable
             _routedMessageCount.incrementAndGet();
             _routedMessageSize.addAndGet(message.getSize());
         }
+        else
+        {
+            _droppedMessageCount.incrementAndGet();
+            _droppedMessageSize.addAndGet(message.getSize());
+        }
         return queues;
     }
 
@@ -376,6 +383,11 @@ public abstract class AbstractExchange implements Exchange, Managable
         return _routedMessageCount.get();
     }
 
+    public long getMsgDrops()
+    {
+        return _droppedMessageCount.get();
+    }
+
     public long getByteReceives()
     {
         return _receivedMessageSize.get();
@@ -384,6 +396,11 @@ public abstract class AbstractExchange implements Exchange, Managable
     public long getByteRoutes()
     {
         return _routedMessageSize.get();
+    }
+
+    public long getByteDrops()
+    {
+        return _droppedMessageSize.get();
     }
 
     public long getCreateTime()

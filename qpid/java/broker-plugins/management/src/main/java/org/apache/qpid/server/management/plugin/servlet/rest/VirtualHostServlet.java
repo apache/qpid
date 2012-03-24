@@ -27,18 +27,27 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Connection;
+import org.apache.qpid.server.model.Consumer;
+import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.VirtualHost;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
 
 public class VirtualHostServlet extends AbstractServlet
 {
@@ -58,6 +67,11 @@ public class VirtualHostServlet extends AbstractServlet
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);
 
+        response.setHeader("Cache-Control","no-cache");
+        response.setHeader("Pragma","no-cache");
+        response.setDateHeader ("Expires", 0);
+
+
         Collection<VirtualHost> vhosts = _broker.getVirtualHosts();
 
         String[] sortKeys = request.getParameterValues("sort");
@@ -74,6 +88,8 @@ public class VirtualHostServlet extends AbstractServlet
         final PrintWriter writer = response.getWriter();
 
         ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
+
         List<Map> vhostList = new ArrayList<Map>();
 
         if(request.getPathInfo() == null || request.getPathInfo().length()==0)
@@ -81,7 +97,7 @@ public class VirtualHostServlet extends AbstractServlet
 
             for(VirtualHost vhost : vhosts)
             {
-                Map<String, Object> data = convertObject(vhost);
+                Map<String, Object> data = convertToObject(vhost);
 
 
                 vhostList.add(data);
@@ -95,7 +111,7 @@ public class VirtualHostServlet extends AbstractServlet
             {
                 if(vhostName.equals(vhost.getName()))
                 {
-                    Map<String, Object> data = convertObject(vhost);
+                    Map<String, Object> data = convertToObject(vhost);
 
                     vhostList.add(data);
                     break;
@@ -110,22 +126,81 @@ public class VirtualHostServlet extends AbstractServlet
         mapper.writeValue(writer, vhostList);
     }
 
-    private Map<String, Object> convertObject(VirtualHost vhost)
+    private Map<String,Object> convertToObject(final VirtualHost virtualHost)
     {
-        Map<String, Object> data = new HashMap<String, Object>();
-        data.put("id", vhost.getId());
-        data.put("name", vhost.getName());
-        data.put("connection-count", vhost.getConnections().size());
-        data.put("exchange-count", vhost.getExchanges().size());
-        data.put("queue-count", vhost.getQueues().size());
-        Statistics stats = vhost.getStatistics();
+        Map<String, Object> object = convertObjectToMap(virtualHost);
 
-        data.put("bytes-out-total", stats.getStatistic("bytes-out-total"));
-        data.put("bytes-in-total", stats.getStatistic("bytes-in-total"));
-        data.put("msgs-out-total", stats.getStatistic("msgs-out-total"));
-        data.put("msgs-in-total", stats.getStatistic("msgs-in-total"));
 
-        return data;
+        List<Map<String,Object>> queues = new ArrayList<Map<String, Object>>();
+
+        for(Queue queue : virtualHost.getQueues())
+        {
+            queues.add(convertObjectToMap(queue));
+        }
+
+        if(!queues.isEmpty())
+        {
+            object.put("queues", queues);
+        }
+
+        List<Map<String,Object>> exchanges = new ArrayList<Map<String, Object>>();
+
+        for(Exchange exchange : virtualHost.getExchanges())
+        {
+            exchanges.add(convertObjectToMap(exchange));
+        }
+
+        if(!exchanges.isEmpty())
+        {
+            object.put("exchanges", exchanges);
+        }
+
+
+
+        List<Map<String,Object>> connections = new ArrayList<Map<String, Object>>();
+
+        for(Connection connection : virtualHost.getConnections())
+        {
+            connections.add(convertObjectToMap(connection));
+        }
+
+        if(!connections.isEmpty())
+        {
+            object.put("connections", connections);
+        }
+
+        return object;
+    }
+
+    private Map<String, Object> convertObjectToMap(final ConfiguredObject confObject)
+    {
+        Map<String, Object> object = new LinkedHashMap<String, Object>();
+
+        for(String name : confObject.getAttributeNames())
+        {
+            Object value = confObject.getAttribute(name);
+            if(value != null)
+            {
+                object.put(name, value);
+            }
+        }
+
+        Statistics statistics = confObject.getStatistics();
+        Map<String, Object> statMap = new HashMap<String, Object>();
+        for(String name : statistics.getStatisticNames())
+        {
+            Object value = statistics.getStatistic(name);
+            if(value != null)
+            {
+                statMap.put(name, value);
+            }
+        }
+
+        if(!statMap.isEmpty())
+        {
+            object.put("statistics", statMap);
+        }
+        return object;
     }
 
 

@@ -48,12 +48,14 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
     private final Map<Binding, BindingAdapter> _bindingAdapters =
             new HashMap<Binding, BindingAdapter>();
     private VirtualHostAdapter _vhost;
+    private final ExchangeStatistics _statistics;
 
 
     public ExchangeAdapter(final VirtualHostAdapter virtualHostAdapter,
                            final org.apache.qpid.server.exchange.Exchange exchange)
     {
         super(virtualHostAdapter.getName(), exchange.getName());
+        _statistics = new ExchangeStatistics();
         _vhost = virtualHostAdapter;
         _exchange = exchange;
         addParent(org.apache.qpid.server.model.VirtualHost.class, virtualHostAdapter);
@@ -205,7 +207,7 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
 
     public Statistics getStatistics()
     {
-        return NoStatistics.getInstance();
+        return _statistics;
     }
 
     public void bindingAdded(org.apache.qpid.server.exchange.Exchange exchange, Binding binding)
@@ -244,5 +246,106 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
     org.apache.qpid.server.exchange.Exchange getExchange()
     {
         return _exchange;
+    }
+
+    @Override
+    public Object getAttribute(String name)
+    {
+        if(ID.equals(name))
+        {
+            return getId();    
+        }
+        else if(NAME.equals(name))
+        {
+            return getName();
+        }
+        else if(STATE.equals(name))
+        {
+            return State.ACTIVE;
+        }
+        else if(DURABLE.equals(name))
+        {
+            return isDurable();
+        }
+        else if(LIFETIME_POLICY.equals(name))
+        {
+            return LifetimePolicy.PERMANENT;
+        }
+        else if(TIME_TO_LIVE.equals(name))
+        {
+
+        }
+        else if(CREATED.equals(name))
+        {
+
+        }
+        else if(UPDATED.equals(name))
+        {
+
+        }
+        else if(ALTERNATE_EXCHANGE.equals(name))
+        {
+            return _exchange.getAlternateExchange();
+        }
+        else if(TYPE.equals(name))
+        {
+            return _exchange.getType().getName().asString();
+        }
+        return super.getAttribute(name);
+    }
+
+    @Override
+    public Object setAttribute(String name, Object expected, Object desired)
+            throws IllegalStateException, AccessControlException, IllegalArgumentException
+    {
+        return super.setAttribute(name, expected, desired);    //TODO - Implement
+    }
+
+    @Override
+    public Collection<String> getAttributeNames()
+    {
+        return AVAILABLE_ATTRIBUTES;
+    }
+
+    private class ExchangeStatistics implements Statistics
+    {
+
+        public Collection<String> getStatisticNames()
+        {
+            return AVAILABLE_STATISTICS;
+        }
+
+        public Object getStatistic(String name)
+        {
+            if(BINDING_COUNT.equals(name))
+            {
+                return _exchange.getBindingCount();
+            }
+            else if(BYTES_DROPPED.equals(name))
+            {
+                return _exchange.getByteDrops();
+            }
+            else if(BYTES_IN.equals(name))
+            {
+                return _exchange.getByteReceives();
+            }
+            else if(MESSAGES_DROPPED.equals(name))
+            {
+                return _exchange.getMsgDrops();
+            }
+            else if(MESSAGES_IN.equals(name))
+            {
+                return _exchange.getMsgReceives();
+            }
+            else if(PRODUCER_COUNT.equals(name))
+            {
+
+            }
+            else if(STATE_CHANGED.equals(name))
+            {
+
+            }
+            return null;  // TODO - Implement
+        }
     }
 }
