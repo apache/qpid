@@ -122,6 +122,26 @@ public class MockSubscription implements Subscription
         return false;
     }
 
+    public long getBytesOut()
+    {
+        return 0;  // TODO - Implement
+    }
+
+    public long getMessagesOut()
+    {
+        return 0;  // TODO - Implement
+    }
+
+    public long getUnacknowledgedBytes()
+    {
+        return 0;  // TODO - Implement
+    }
+
+    public long getUnacknowledgedMessages()
+    {
+        return 0;  // TODO - Implement
+    }
+
     public AMQQueue getQueue()
     {
         return queue;

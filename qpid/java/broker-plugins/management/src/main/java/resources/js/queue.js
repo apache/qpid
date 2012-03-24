@@ -29,6 +29,7 @@ require(["dojo/store/JsonRest",
                  thisObj.grid = new DataGrid({
                              store: thisObj.dataStore,
                              structure: structure,
+                             autoHeight: true
                                     }, divName);
 
                  // since we created this grid programmatically, call startup to render it
@@ -52,11 +53,14 @@ require(["dojo/store/JsonRest",
                  // iterate over existing store... if not in new data then remove
                  store.query({ }).forEach(function(object)
                      {
-                         for(var i=0; i < data.length; i++)
+                         if(data)
                          {
-                             if(data[i].id == object.id)
+                             for(var i=0; i < data.length; i++)
                              {
-                                 return;
+                                 if(data[i].id == object.id)
+                                 {
+                                     return;
+                                 }
                              }
                          }
                          store.remove(object.id);
@@ -64,29 +68,32 @@ require(["dojo/store/JsonRest",
                      });
 
                  // iterate over data...
-                 for(var i=0; i < data.length; i++)
+                 if(data)
                  {
-                     if(item = store.get(data[i].id))
+                     for(var i=0; i < data.length; i++)
                      {
-                         var modified;
-                         for(var propName in data[i])
+                         if(item = store.get(data[i].id))
                          {
-                             if(item[ propName ] != data[i][ propName ])
+                             var modified;
+                             for(var propName in data[i])
                              {
-                                 item[ propName ] = data[i][ propName ];
-                                 modified = true;
+                                 if(item[ propName ] != data[i][ propName ])
+                                 {
+                                     item[ propName ] = data[i][ propName ];
+                                     modified = true;
+                                 }
+                             }
+                             if(modified)
+                             {
+                                 // ... check attributes for updates
+                                 store.notify(item, data[i].id);
                              }
                          }
-                         if(modified)
+                         else
                          {
-                             // ... check attributes for updates
-                             store.notify(item, data[i].id);
+                             // ,,, if not in the store then add
+                             store.put(data[i]);
                          }
-                     }
-                     else
-                     {
-                         // ,,, if not in the store then add
-                         store.put(data[i]);
                      }
                  }
 
@@ -120,6 +127,56 @@ require(["dojo/store/JsonRest",
             {
                 this.units = "GB";
                 this.value = amount / (1024 * 1024 * 1024)
+                this.value = this.value.toPrecision(3);
+            }
+
+         }
+
+
+         function formatTime(amount)
+         {
+            this.units = "ms";
+            this.value = 0;
+
+            if(amount < 1000)
+            {
+                this.units = "ms";
+                this.value = amount;
+            }
+            else if(amount < 1000 * 60)
+            {
+                this.units = "s";
+                this.value = amount / 1000
+                this.value = this.value.toPrecision(3);
+            }
+            else if(amount < 1000 * 60 * 60)
+            {
+                this.units = "min";
+                this.value = amount / (1000 * 60)
+                this.value = this.value.toPrecision(3);
+            }
+            else if(amount < 1000 * 60 * 60 * 24)
+            {
+                this.units = "hr";
+                this.value = amount / (1000 * 60 * 60)
+                this.value = this.value.toPrecision(3);
+            }
+            else if(amount < 1000 * 60 * 60 * 24 * 7)
+            {
+                this.units = "d";
+                this.value = amount / (1000 * 60 * 60 * 24)
+                this.value = this.value.toPrecision(3);
+            }
+            else if(amount < 1000 * 60 * 60 * 24 * 365)
+            {
+                this.units = "wk";
+                this.value = amount / (1000 * 60 * 60 * 24 * 7)
+                this.value = this.value.toPrecision(3);
+            }
+            else
+            {
+                this.units = "yr";
+                this.value = amount / (1000 * 60 * 60 * 24 * 365)
                 this.value = this.value.toPrecision(3);
             }
 
@@ -160,8 +217,12 @@ require(["dojo/store/JsonRest",
                                                          ]);
 
                                 thisObj.consumersGrid = new UpdatableStore(thisObj.queueData.consumers, "consumers",
-                                                         [ { name: "Name",    field: "name",      width: "120px"},
-                                                           { name: "Mode", field: "distributionMode",          width: "120px"}
+                                                         [ { name: "Name",    field: "name",      width: "70px"},
+                                                           { name: "Mode", field: "distributionMode", width: "70px"},
+                                                           { name: "Msgs Rate", field: "msgRate",
+                                                           width: "150px"},
+                                                           { name: "Bytes Rate", field: "bytesRate",
+                                                              width: "150px"}
                                                          ]);
 
 
@@ -209,13 +270,53 @@ require(["dojo/store/JsonRest",
                     for(var i=0; i < bindings.length; i++)
                     {
                         bindings[i].arguments = dojo.toJson(bindings[i].arguments);
+                        bindings[i].argumentString = dojo.toJson(bindings[i].arguments);
 
                     }
 
+
+                    var consumers = thisObj.queueData[ "consumers" ];
+                    if(consumers)
+                    {
+                        for(var i=0; i < consumers.length; i++)
+                        {
+                            var stats = consumers[i][ "statistics" ];
+
+                            // flatten statistics into attributes
+                            for(var propName in stats)
+                            {
+                                consumers[i][ propName ] = stats[ propName ];
+                            }
+                        }
+                    }
                     thisObj.updateHeader();
 
-                    queueData = data[0];
-                    stats = queueData[ "statistics" ];
+
+                    // update alerting info
+                    alertRepeatGap = new formatTime( thisObj.queueData["alertRepeatGap"] );
+
+                    dom.byId("alertRepeatGap").innerHTML = alertRepeatGap.value;
+                    dom.byId("alertRepeatGapUnits").innerHTML = alertRepeatGap.units;
+
+
+                    alertMsgAge = new formatTime( thisObj.queueData["alertThresholdMessageAge"] );
+
+                    dom.byId("alertThresholdMessageAge").innerHTML = alertMsgAge.value;
+                    dom.byId("alertThresholdMessageAgeUnits").innerHTML = alertMsgAge.units;
+
+                    alertMsgSize = new formatBytes( thisObj.queueData["alertThresholdMessageSize"] );
+
+                    dom.byId("alertThresholdMessageSize").innerHTML = alertMsgSize.value;
+                    dom.byId("alertThresholdMessageSizeUnits").innerHTML = alertMsgSize.units;
+
+                    alertQueueDepth = new formatBytes( thisObj.queueData["alertThresholdQueueDepthBytes"] );
+
+                    dom.byId("alertThresholdQueueDepthBytes").innerHTML = alertQueueDepth.value;
+                    dom.byId("alertThresholdQueueDepthBytesUnits").innerHTML = alertQueueDepth.units;
+
+                    dom.byId("alertThresholdQueueDepthMessages").innerHTML = thisObj.queueData["alertThresholdQueueDepthMessages"];
+
+                    stats = thisObj.queueData[ "statistics" ];
 
                     var sampleTime = new Date();
                     var messageIn = stats["totalEnqueuedMessages"];
@@ -242,6 +343,32 @@ require(["dojo/store/JsonRest",
                         dom.byId("bytesOutRate").innerHTML = "(" + bytesOutFormat.value;
                         dom.byId("bytesOutRateUnits").innerHTML = bytesOutFormat.units + "/s)"
 
+                        if(consumers && thisObj.consumers)
+                        {
+                            for(var i=0; i < consumers.length; i++)
+                            {
+                                var consumer = consumers[i];
+                                for(var j = 0; j < thisObj.consumers.length; j++)
+                                {
+                                    var oldConsumer = thisObj.consumers[j];
+                                    if(oldConsumer.id == consumer.id)
+                                    {
+                                        var msgRate = (1000 * (consumer.messagesOut - oldConsumer.messagesOut)) /
+                                                        samplePeriod;
+                                        consumer.msgRate = msgRate.toFixed(0) + "msg/s";
+
+                                        var bytesRate = (1000 * (consumer.bytesOut - oldConsumer.bytesOut)) /
+                                                        samplePeriod
+                                        var bytesRateFormat = new formatBytes( bytesRate );
+                                        consumer.bytesRate = bytesRateFormat.value + bytesRateFormat.units + "/s";
+                                    }
+
+
+                                }
+
+                            }
+                        }
+
                     }
 
                     thisObj.sampleTime = sampleTime;
@@ -249,8 +376,12 @@ require(["dojo/store/JsonRest",
                     thisObj.bytesIn = bytesIn;
                     thisObj.messageOut = messageOut;
                     thisObj.bytesOut = bytesOut;
+                    thisObj.consumers = consumers;
 
+                    // update bindings
                     thisObj.bindingsGrid.update(thisObj.queueData.bindings)
+
+                    // update consumers
                     thisObj.consumersGrid.update(thisObj.queueData.consumers)
 
 

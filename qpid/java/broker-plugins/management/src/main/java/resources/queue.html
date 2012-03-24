@@ -43,14 +43,14 @@
             <span id="queueDepthMessages" style="position:absolute; right:9.5em"></span>
             <span style="position:absolute; right: 5em; width: 4em"> msgs</span>
             <span id="queueDepthBytes" style="position:absolute; right: 3.3em">(</span>
-            <span id="queueDepthBytesUnits"style="position:absolute; right: 0em; width: 3em">)</span>
+            <span id="queueDepthBytesUnits" style="position:absolute; right: 0em; width: 3em">)</span>
             <br/>
             <span style="">State:</span><span id="state" style="position:absolute; left:6em"></span>
             <span style="position:absolute; left:26em">Pre-fetched:</span>
-            <span id="unacknowledgedMessages" style="position:absolute; right:9.5em">500</span>
+            <span id="unacknowledgedMessages" style="position:absolute; right:9.5em"></span>
             <span style="position:absolute; right: 5em; width: 4em"> msgs</span>
-            <span id="unacknowledgedBytes" style="position:absolute; right: 3.3em">(256</span>
-            <span id="unacknowledgedBytesUnits" style="position:absolute; right: 0em; width: 3em">Kb)</span>
+            <span id="unacknowledgedBytes" style="position:absolute; right: 3.3em"></span>
+            <span id="unacknowledgedBytesUnits" style="position:absolute; right: 0em; width: 3em"></span>
             <br/>
             <span style="">Durable:</span><span id="durable" style="position:absolute; left:6em"></span>
             <span style="position:absolute; left:26em">Inbound:</span>
@@ -76,7 +76,33 @@
             </div>
             <br/>
             <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Alerting Thresholds'">
-                TODO
+                <span style="">Max. Queue Size:</span>
+                <span id="alertThresholdQueueDepthMessages"
+                      style="position:absolute; left:8em; width:8em; text-align:right"></span>
+                <span style="position:absolute; left:16.2em">msgs</span>
+
+                <span id="alertThresholdQueueDepthBytes"
+                      style="position:absolute; left:20em; width:8em; text-align:right"></span>
+                <span id="alertThresholdQueueDepthBytesUnits" style="position:absolute; left:28.2em"></span>
+                <br>
+                <span style="">Max. Message Age:</span>
+                <span id="alertThresholdMessageAge"
+                      style="position:absolute; left:8em; width:8em; text-align:right"></span>
+                <span id="alertThresholdMessageAgeUnits" style="position:absolute; left:16.2em"></span>
+
+                <span style="position:absolute; left:21em">Size: </span>
+                <span id="alertThresholdMessageSize"
+                      style="position:absolute; left:23em; width:5em; text-align:right"></span>
+                <span id="alertThresholdMessageSizeUnits" style="position:absolute; left:28.2em"></span>
+                <br/>
+                <br/>
+                <span style="">Alert frequency:</span>
+                <span id="alertRepeatGap"
+                      style="position:absolute; left:8em; width:8em; text-align:right"></span>
+                <span id="alertRepeatGapUnits" style="position:absolute; left:16.2em"></span>
+
+
+
             </div>
         </div>
         <!--<div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'trailing'">Trailing pane</div>-->

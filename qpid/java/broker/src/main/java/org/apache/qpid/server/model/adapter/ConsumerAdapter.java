@@ -33,6 +33,7 @@ public class ConsumerAdapter extends AbstractAdapter implements Consumer
 {
     private final Subscription _subscription;
     private final QueueAdapter _queue;
+    private final ConsumerStatistics _statistics;
 
     public ConsumerAdapter(final QueueAdapter queueAdapter, final Subscription subscription)
     {
@@ -44,6 +45,7 @@ public class ConsumerAdapter extends AbstractAdapter implements Consumer
 
         _subscription = subscription;
         _queue = queueAdapter;
+        _statistics = new ConsumerStatistics();
         //TODO
     }
 
@@ -169,6 +171,40 @@ public class ConsumerAdapter extends AbstractAdapter implements Consumer
 
     public Statistics getStatistics()
     {
-        return NoStatistics.getInstance();
+        return _statistics;
+    }
+
+    private class ConsumerStatistics implements Statistics
+    {
+
+        public Collection<String> getStatisticNames()
+        {
+            return AVAILABLE_STATISTICS;
+        }
+
+        public Object getStatistic(String name)
+        {
+            if(name.equals(BYTES_OUT))
+            {
+                return _subscription.getBytesOut();
+            }
+            else if(name.equals(MESSAGES_OUT))
+            {
+                return _subscription.getMessagesOut();
+            }
+            else if(name.equals(STATE_CHANGED))
+            {
+
+            }
+            else if(name.equals(UNACKNOWLEDGED_BYTES))
+            {
+                return _subscription.getUnacknowledgedBytes();
+            }
+            else if(name.equals(UNACKNOWLEDGED_MESSAGES))
+            {
+                return _subscription.getUnacknowledgedMessages();
+            }
+            return null;  // TODO - Implement
+        }
     }
 }

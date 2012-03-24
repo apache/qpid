@@ -33,6 +33,14 @@ public interface Subscription
 
     boolean isTransient();
 
+    long getBytesOut();
+
+    long getMessagesOut();
+
+    long getUnacknowledgedBytes();
+
+    long getUnacknowledgedMessages();
+
     public static enum State
     {
         ACTIVE,

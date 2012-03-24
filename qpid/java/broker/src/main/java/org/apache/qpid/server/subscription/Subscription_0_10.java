@@ -130,6 +130,10 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     private String _trace;
     private final long _createTime = System.currentTimeMillis();
     private final AtomicLong _deliveredCount = new AtomicLong(0);
+    private final AtomicLong _deliveredBytes = new AtomicLong(0);
+    private final AtomicLong _unacknowledgedCount = new AtomicLong(0);
+    private final AtomicLong _unacknowledgedBytes = new AtomicLong(0);
+
     private final Map<String, Object> _arguments;
     private int _deferredMessageCredit;
     private long _deferredSizeCredit;
@@ -631,9 +635,14 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
             _session.sendMessage(xfr, _postIdSettingAction);
             entry.incrementDeliveryCount();
             _deliveredCount.incrementAndGet();
+            _deliveredBytes.addAndGet(entry.getSize());
             if(_acceptMode == MessageAcceptMode.NONE && _acquireMode == MessageAcquireMode.PRE_ACQUIRED)
             {
                 forceDequeue(entry, false);
+            }
+            else if(_acquireMode == MessageAcquireMode.PRE_ACQUIRED)
+            {
+                recordUnacknowledged(entry);
             }
         }
         else
@@ -641,6 +650,12 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
             forceDequeue(entry, _flowMode == MessageFlowMode.WINDOW);
 
         }
+    }
+
+    void recordUnacknowledged(QueueEntry entry)
+    {
+        _unacknowledgedCount.incrementAndGet();
+        _unacknowledgedBytes.addAndGet(entry.getSize());
     }
 
     private void deferredAddCredit(final int deferredMessageCredit, final long deferredSizeCredit)
@@ -934,6 +949,8 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         // TODO Fix Store Context / cleanup
         if(entry.isAcquiredBy(this))
         {
+            _unacknowledgedBytes.addAndGet(-entry.getSize());
+            _unacknowledgedCount.decrementAndGet();
             entry.discard();
         }
     }
@@ -1084,5 +1101,25 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     public void flushBatched()
     {
         _session.getConnection().flush();
+    }
+
+    public long getBytesOut()
+    {
+        return _deliveredBytes.longValue();
+    }
+
+    public long getMessagesOut()
+    {
+        return _deliveredCount.longValue();
+    }
+
+    public long getUnacknowledgedBytes()
+    {
+        return _unacknowledgedBytes.longValue();
+    }
+
+    public long getUnacknowledgedMessages()
+    {
+        return _unacknowledgedCount.longValue();
     }
 }
