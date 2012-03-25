@@ -3214,11 +3214,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         {
             synchronized (_lock)
             {
-                boolean stopped = _dispatcher.connectionStopped();
+                boolean stopped = connectionStopped();
 
                 if (!stopped)
                 {
-                    _dispatcher.setConnectionStopped(true);
+                    setConnectionStopped(true);
                 }
 
                 // Reject messages on pre-receive queue
@@ -3231,7 +3231,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 // closeConsumer
                 consumer.markClosed();
 
-                _dispatcher.setConnectionStopped(stopped);
+                setConnectionStopped(stopped);
 
             }
         }
