@@ -2976,3 +2976,4 @@ const qpid::broker::ConnectionState* getManagementExecutionContext()
 }
 
 }}
+
