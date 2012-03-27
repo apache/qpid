@@ -34,3 +34,6 @@ nobase_sysconf_DATA += \
 	$(SASL_CONF)
 
 endif
+
+initddir = $(sysconfdir)/init.d
+nobase_initd_SCRIPTS = qpidd qpidd-primary
