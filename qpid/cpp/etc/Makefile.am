@@ -20,9 +20,10 @@ SASL_CONF = sasl2/qpidd.conf
 
 EXTRA_DIST = \
 	$(SASL_CONF) \
-	qpidd qpidd-primary qpidd.conf qpidc.conf CMakeLists.txt
+	qpidd qpidd-primary qpidd.conf qpidc.conf CMakeLists.txt \
+	cluster.conf-example.xml
 
-confdir=$(sysconfdir)/qpid
+confdir = $(sysconfdir)/qpid
 nobase_conf_DATA=\
 	qpidc.conf
 
@@ -34,6 +35,21 @@ nobase_sysconf_DATA += \
 	$(SASL_CONF)
 
 endif
+
+# Substitute values for directories in init scripts.
+#
+# We can't use autoconf substitution directly because it leaves
+#  ${prefix} and ${exec_prefix} unexpanded. Substitute with sed
+#  scripts.
+SUBST="s|!!sysconfdir!!|${sysconfdir}|;s|!!sbindir!!|${sbindir}|;s|!!bindir!!|${bindir}|"
+qpidd: qpidd.in
+	sed $(SUBST) $< > $@
+qpidd-primary: qpidd-primary.in
+	sed $(SUBST) $< > $@
+cluster.conf-example.xml: cluster.conf-example.in
+	sed $(SUBST) $< > $@
+
+CLEANFILES = qpidd qpidd-primary cluster.conf-example
 
 initddir = $(sysconfdir)/init.d
 nobase_initd_SCRIPTS = qpidd qpidd-primary
