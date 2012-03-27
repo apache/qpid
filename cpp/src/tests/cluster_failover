@@ -1,6 +1,6 @@
 #!/bin/sh
 # A simple manual failover test, sends a stream of numbered messages.
-# You can kill the connected broker and verify that the client reconnects 
+# You can kill the connected broker and verify that the clients reconnect 
 # and no messages are lost.
 
 URL=$1
