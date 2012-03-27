@@ -462,7 +462,8 @@ under the License.
     </clusternode>
   </clusternodes>
   <cman/>
-  <rm>
+  <rm log_level="7"		<!-- Verbose logging -->
+      central_processing="1"> 	<!-- TODO explain-->
     <failoverdomains>
       <failoverdomain name="mrg32-domain" restricted="1">
 	<failoverdomainnode name="mrg32"/>
