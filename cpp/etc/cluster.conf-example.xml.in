@@ -32,11 +32,11 @@ This example assumes a 3 node cluster, with nodes named node1, node2 and node3.
     </failoverdomains>
 
     <resources>
-      <!-- This script starts a qpidd broker initially acting as a backup. -->
-      <script file="/etc/init.d/qpidd" name="qpidd"/>
+      <!-- This script starts a qpidd broker acting as a backup. -->
+      <script file="!!sysconfdir!!/init.d/qpidd" name="qpidd"/>
 
-      <!-- This script promotes the qpidd broker to primary. -->
-      <script file="/etc/init.d/qpidd-primary" name="qpidd-primary"/>
+      <!-- This script promotes the qpidd broker on this node to primary. -->
+      <script file="!!sysconfdir!!/init.d/qpidd-primary" name="qpidd-primary"/>
 
       <!-- This is a virtual IP address for broker replication traffic. -->
       <ip address="20.0.10.200" monitor_link="1"/>
@@ -67,4 +67,3 @@ This example assumes a 3 node cluster, with nodes named node1, node2 and node3.
   <fencedevices/>
   <fence_daemon clean_start="0" post_fail_delay="0" post_join_delay="3"/>
 </cluster>
-
