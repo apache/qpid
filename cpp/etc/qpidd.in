@@ -42,15 +42,15 @@ pidfile=/var/run/qpidd.pid
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-if [ -f /etc/sysconfig/$prog ] ; then
-	. /etc/sysconfig/$prog
+if [ -f !!sysconfdir!!/sysconfig/$prog ] ; then
+	. !!sysconfdir!!/sysconfig/$prog
 fi
 
 RETVAL=0
 
 #ensure binary is present and executable
-if [[ !(-x /usr/sbin/$prog) ]] ; then
-    echo "/usr/sbin/$prog not found or not executable" 
+if [[ !(-x !!sbindir!!/$prog) ]] ; then
+    echo "!!sbindir!!/$prog not found or not executable"
     exit 5
 fi
 
@@ -64,7 +64,7 @@ fi
 start() {
         [[ $QPID_DATA_DIR ]] || QPID_DATA_DIR=/var/lib/qpidd
         echo -n $"Starting Qpid AMQP daemon: "
-	daemon --pidfile $pidfile --check $prog --user qpidd /usr/sbin/$prog --data-dir $QPID_DATA_DIR --daemon $QPIDD_OPTIONS
+	daemon --pidfile $pidfile --check $prog --user qpidd !!sbindir!!/$prog --data-dir $QPID_DATA_DIR --daemon $QPIDD_OPTIONS
 	RETVAL=$?
 	echo
 	[ $RETVAL = 0 ] && touch $lockfile
@@ -72,7 +72,7 @@ start() {
 	    touch $pidfile
 	    chown qpidd.qpidd $pidfile
             [ -x /sbin/restorecon ] && /sbin/restorecon $pidfile
-	    runuser - -s /bin/sh qpidd -c "/usr/sbin/$prog --check > $pidfile"
+	    runuser - -s /bin/sh qpidd -c "!!sbindir!!/$prog --check > $pidfile"
 	fi
 	return $RETVAL
 }
