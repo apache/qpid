@@ -20,10 +20,12 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import org.apache.qpid.server.logging.LogActor;
-
 import java.util.EmptyStackException;
 import java.util.Stack;
+
+import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.LogMessage;
+import org.apache.qpid.server.logging.LogSubject;
 
 /**
  * The CurrentActor is a ThreadLocal wrapper that allows threads in the broker
@@ -125,5 +127,15 @@ public class CurrentActor
     public static void setDefault(LogActor defaultActor)
     {
         _defaultActor = defaultActor;
+    }
+
+    public static void message(LogSubject subject, LogMessage message)
+    {
+        get().message(subject, message);
+    }
+
+    public static void message(LogMessage message)
+    {
+        get().message(message);
     }
 }

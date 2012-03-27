@@ -20,33 +20,29 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import com.sleepycat.bind.EntryBinding;
-import com.sleepycat.bind.tuple.ByteBinding;
-import com.sleepycat.bind.tuple.IntegerBinding;
-import com.sleepycat.bind.tuple.LongBinding;
-import com.sleepycat.bind.tuple.TupleBinding;
-import com.sleepycat.je.CheckpointConfig;
-import com.sleepycat.je.Cursor;
-import com.sleepycat.je.Database;
-import com.sleepycat.je.DatabaseConfig;
-import com.sleepycat.je.DatabaseEntry;
-import com.sleepycat.je.DatabaseException;
-import com.sleepycat.je.Environment;
-import com.sleepycat.je.EnvironmentConfig;
-import com.sleepycat.je.LockConflictException;
-import com.sleepycat.je.LockMode;
-import com.sleepycat.je.OperationStatus;
-import com.sleepycat.je.Transaction;
-import com.sleepycat.je.TransactionConfig;
+import java.io.File;
+import java.lang.ref.SoftReference;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.federation.Bridge;
 import org.apache.qpid.server.federation.BrokerLink;
+import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
@@ -68,33 +64,39 @@ import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
 import org.apache.qpid.server.store.TransactionLogRecoveryHandler.QueueEntryRecoveryHandler;
 import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.store.berkeleydb.keys.MessageContentKey_5;
-import org.apache.qpid.server.store.berkeleydb.keys.Xid;
-import org.apache.qpid.server.store.berkeleydb.records.BindingRecord;
-import org.apache.qpid.server.store.berkeleydb.records.ExchangeRecord;
-import org.apache.qpid.server.store.berkeleydb.records.PreparedTransaction;
-import org.apache.qpid.server.store.berkeleydb.records.QueueRecord;
-import org.apache.qpid.server.store.berkeleydb.tuples.BindingTupleBindingFactory;
-import org.apache.qpid.server.store.berkeleydb.tuples.MessageContentKeyTB_5;
-import org.apache.qpid.server.store.berkeleydb.tuples.MessageMetaDataTupleBindingFactory;
-import org.apache.qpid.server.store.berkeleydb.tuples.PreparedTransactionTB;
-import org.apache.qpid.server.store.berkeleydb.tuples.QueueEntryTB;
-import org.apache.qpid.server.store.berkeleydb.tuples.QueueTupleBindingFactory;
-import org.apache.qpid.server.store.berkeleydb.tuples.XidTB;
+import org.apache.qpid.server.store.berkeleydb.entry.BindingRecord;
+import org.apache.qpid.server.store.berkeleydb.entry.ExchangeRecord;
+import org.apache.qpid.server.store.berkeleydb.entry.PreparedTransaction;
+import org.apache.qpid.server.store.berkeleydb.entry.QueueEntryKey;
+import org.apache.qpid.server.store.berkeleydb.entry.QueueRecord;
+import org.apache.qpid.server.store.berkeleydb.entry.Xid;
+import org.apache.qpid.server.store.berkeleydb.tuple.AMQShortStringBinding;
+import org.apache.qpid.server.store.berkeleydb.tuple.ContentBinding;
+import org.apache.qpid.server.store.berkeleydb.tuple.ExchangeBinding;
+import org.apache.qpid.server.store.berkeleydb.tuple.MessageMetaDataBinding;
+import org.apache.qpid.server.store.berkeleydb.tuple.PreparedTransactionBinding;
+import org.apache.qpid.server.store.berkeleydb.tuple.QueueBinding;
+import org.apache.qpid.server.store.berkeleydb.tuple.QueueBindingTupleBinding;
+import org.apache.qpid.server.store.berkeleydb.tuple.QueueEntryBinding;
+import org.apache.qpid.server.store.berkeleydb.tuple.StringMapBinding;
+import org.apache.qpid.server.store.berkeleydb.tuple.UUIDTupleBinding;
+import org.apache.qpid.server.store.berkeleydb.tuple.XidBinding;
+import org.apache.qpid.server.store.berkeleydb.upgrade.Upgrader;
 
-import java.io.File;
-import java.lang.ref.SoftReference;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Random;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
+import com.sleepycat.bind.tuple.ByteBinding;
+import com.sleepycat.bind.tuple.LongBinding;
+import com.sleepycat.je.CheckpointConfig;
+import com.sleepycat.je.Cursor;
+import com.sleepycat.je.Database;
+import com.sleepycat.je.DatabaseConfig;
+import com.sleepycat.je.DatabaseEntry;
+import com.sleepycat.je.DatabaseException;
+import com.sleepycat.je.Environment;
+import com.sleepycat.je.EnvironmentConfig;
+import com.sleepycat.je.LockConflictException;
+import com.sleepycat.je.LockMode;
+import com.sleepycat.je.OperationStatus;
+import com.sleepycat.je.TransactionConfig;
 
 /**
  * BDBMessageStore implements a persistent {@link MessageStore} using the BDB high performance log.
@@ -111,21 +113,22 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
     private static final int LOCK_RETRY_ATTEMPTS = 5;
 
-    static final int DATABASE_FORMAT_VERSION = 5;
-    private static final String DATABASE_FORMAT_VERSION_PROPERTY = "version";
+    public static final int VERSION = 6;
+
     public static final String ENVIRONMENT_PATH_PROPERTY = "environment-path";
 
     private Environment _environment;
 
-    private String MESSAGEMETADATADB_NAME = "messageMetaDataDb";
-    private String MESSAGECONTENTDB_NAME = "messageContentDb";
-    private String QUEUEBINDINGSDB_NAME = "queueBindingsDb";
-    private String DELIVERYDB_NAME = "deliveryDb";
-    private String EXCHANGEDB_NAME = "exchangeDb";
-    private String QUEUEDB_NAME = "queueDb";
-    private String BRIDGEDB_NAME = "bridges";
-    private String LINKDB_NAME = "links";
-    private String XIDDB_NAME = "xids";
+    private String MESSAGEMETADATADB_NAME = "MESSAGE_METADATA";
+    private String MESSAGECONTENTDB_NAME = "MESSAGE_CONTENT";
+    private String QUEUEBINDINGSDB_NAME = "QUEUE_BINDINGS";
+    private String DELIVERYDB_NAME = "DELIVERIES";
+    private String EXCHANGEDB_NAME = "EXCHANGES";
+    private String QUEUEDB_NAME = "QUEUES";
+    private String BRIDGEDB_NAME = "BRIDGES";
+    private String LINKDB_NAME = "LINKS";
+    private String XIDDB_NAME = "XIDS";
+
 
     private Database _messageMetaDataDb;
     private Database _messageContentDb;
@@ -168,13 +171,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
     private final CommitThread _commitThread = new CommitThread("Commit-Thread");
 
-    // Factory Classes to create the TupleBinding objects that reflect the version instance of this BDBStore
-    private MessageMetaDataTupleBindingFactory _metaDataTupleBindingFactory;
-    private QueueTupleBindingFactory _queueTupleBindingFactory;
-    private BindingTupleBindingFactory _bindingTupleBindingFactory;
-
-    /** The data version this store should run with */
-    private int _version;
     private enum State
     {
         INITIAL,
@@ -197,37 +193,8 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
     public BDBMessageStore()
     {
-        this(DATABASE_FORMAT_VERSION);
     }
 
-    public BDBMessageStore(int version)
-    {
-        _version = version;
-    }
-
-    private void setDatabaseNames(int version)
-    {
-        if (version > 1)
-        {
-            MESSAGEMETADATADB_NAME += "_v" + version;
-
-            MESSAGECONTENTDB_NAME += "_v" + version;
-
-            QUEUEDB_NAME += "_v" + version;
-
-            DELIVERYDB_NAME += "_v" + version;
-
-            EXCHANGEDB_NAME += "_v" + version;
-
-            QUEUEBINDINGSDB_NAME += "_v" + version;
-
-            LINKDB_NAME += "_v" + version;
-
-            BRIDGEDB_NAME += "_v" + version;
-            
-            XIDDB_NAME += "_v" + version;
-        }
-    }
 
     public void configureConfigStore(String name,
                                      ConfigurationRecoveryHandler recoveryHandler,
@@ -281,7 +248,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         }
 
         recoverQueueEntries(recoveryHandler);
-        
+
 
 
     }
@@ -313,11 +280,14 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             }
         }
 
-        CurrentActor.get().message(_logSubject, MessageStoreMessages.STORE_LOCATION(environmentPath.getAbsolutePath()));
-
-        _version = storeConfig.getInt(DATABASE_FORMAT_VERSION_PROPERTY, DATABASE_FORMAT_VERSION);
+        message(MessageStoreMessages.STORE_LOCATION(environmentPath.getAbsolutePath()));
 
         return configure(environmentPath, false);
+    }
+
+    void message(final LogMessage message)
+    {
+        CurrentActor.message(_logSubject, message);
     }
 
     /**
@@ -334,18 +304,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
         _log.info("Configuring BDB message store");
 
-        createTupleBindingFactories(_version);
-
-        setDatabaseNames(_version);
-
         return setupStore(environmentPath, readonly);
-    }
-
-    private void createTupleBindingFactories(int version)
-    {
-            _bindingTupleBindingFactory = new BindingTupleBindingFactory(version);
-            _queueTupleBindingFactory = new QueueTupleBindingFactory(version);
-            _metaDataTupleBindingFactory = new MessageMetaDataTupleBindingFactory(version);
     }
 
     /**
@@ -366,7 +325,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
         boolean newEnvironment = createEnvironment(storePath, readonly);
 
-        verifyVersionByTables();
+        new Upgrader(_environment, _logSubject).upgradeIfNecessary();
 
         openDatabases(readonly);
 
@@ -376,40 +335,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         }
 
         return newEnvironment;
-    }
-
-    private void verifyVersionByTables() throws DatabaseException
-    {
-        for (String s : _environment.getDatabaseNames())
-        {
-            int versionIndex = s.indexOf("_v");
-
-            // lack of _v index suggests DB is v1
-            // so if _version is not v1 then error
-            if (versionIndex == -1)
-            {
-                if (_version != 1)
-                {
-                    closeEnvironment();
-                    throw new IllegalArgumentException("Error: Unable to load BDBStore as version " + _version
-                                            + ". Store on disk contains version 1 data.");
-                }
-                else // DB is v1 and _version is v1
-                {
-                    continue;
-                }
-            }
-
-            // Otherwise Check Versions
-            int version = Integer.parseInt(s.substring(versionIndex + 2));
-
-            if (version != _version)
-            {
-                closeEnvironment();
-                throw new IllegalArgumentException("Error: Unable to load BDBStore as version " + _version
-                                            + ". Store on disk contains version " + version + " data.");
-            }
-        }
     }
 
     private synchronized void stateTransition(State requiredState, State newState) throws AMQStoreException
@@ -586,7 +511,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
         _state = State.CLOSED;
 
-        CurrentActor.get().message(_logSubject,MessageStoreMessages.CLOSED());
+        message(MessageStoreMessages.CLOSED());
     }
 
     private void closeEnvironment() throws DatabaseException
@@ -609,7 +534,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     {
         stateTransition(State.CONFIGURED, State.RECOVERING);
 
-        CurrentActor.get().message(_logSubject,MessageStoreMessages.RECOVERY_START());
+        message(MessageStoreMessages.RECOVERY_START());
 
         try
         {
@@ -641,10 +566,10 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             cursor = _queueDb.openCursor(null, null);
             DatabaseEntry key = new DatabaseEntry();
             DatabaseEntry value = new DatabaseEntry();
-            TupleBinding binding = _queueTupleBindingFactory.getInstance();
+            QueueBinding binding = QueueBinding.getInstance();
             while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
             {
-                QueueRecord queueRecord = (QueueRecord) binding.entryToObject(value);
+                QueueRecord queueRecord = binding.entryToObject(value);
 
                 String queueName = queueRecord.getNameShortString() == null ? null :
                                         queueRecord.getNameShortString().asString();
@@ -677,11 +602,11 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             cursor = _exchangeDb.openCursor(null, null);
             DatabaseEntry key = new DatabaseEntry();
             DatabaseEntry value = new DatabaseEntry();
-            TupleBinding binding = new ExchangeTB();
+            ExchangeBinding binding = ExchangeBinding.getInstance();
 
             while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
             {
-                ExchangeRecord exchangeRec = (ExchangeRecord) binding.entryToObject(value);
+                ExchangeRecord exchangeRec = binding.entryToObject(value);
 
                 String exchangeName = exchangeRec.getNameShortString() == null ? null :
                                       exchangeRec.getNameShortString().asString();
@@ -710,7 +635,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             cursor = _queueBindingsDb.openCursor(null, null);
             DatabaseEntry key = new DatabaseEntry();
             DatabaseEntry value = new DatabaseEntry();
-            TupleBinding<BindingRecord> binding = _bindingTupleBindingFactory.getInstance();
+            QueueBindingTupleBinding binding = QueueBindingTupleBinding.getInstance();
 
             while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
             {
@@ -818,14 +743,14 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             cursor = _messageMetaDataDb.openCursor(null, null);
             DatabaseEntry key = new DatabaseEntry();
             DatabaseEntry value = new DatabaseEntry();
-            EntryBinding valueBinding = _metaDataTupleBindingFactory.getInstance();
+            MessageMetaDataBinding valueBinding = MessageMetaDataBinding.getInstance();
 
             long maxId = 0;
 
             while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
             {
                 long messageId = LongBinding.entryToLong(key);
-                StorableMessageMetaData metaData = (StorableMessageMetaData) valueBinding.entryToObject(value);
+                StorableMessageMetaData metaData = valueBinding.entryToObject(value);
 
                 StoredBDBMessage message = new StoredBDBMessage(messageId, metaData, false);
                 mrh.message(message);
@@ -861,13 +786,13 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         {
             cursor = _deliveryDb.openCursor(null, null);
             DatabaseEntry key = new DatabaseEntry();
-            EntryBinding keyBinding = new QueueEntryTB();
+            QueueEntryBinding keyBinding = QueueEntryBinding.getInstance();
 
             DatabaseEntry value = new DatabaseEntry();
 
             while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
             {
-                QueueEntryKey qek = (QueueEntryKey) keyBinding.entryToObject(key);
+                QueueEntryKey qek = keyBinding.entryToObject(key);
 
                 entries.add(qek);
             }
@@ -902,8 +827,8 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             }
         }
 
-        
-        
+
+
         TransactionLogRecoveryHandler.DtxRecordRecoveryHandler dtxrh = qerh.completeQueueEntryRecovery();
 
         cursor = null;
@@ -911,8 +836,8 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         {
             cursor = _xidDb.openCursor(null, null);
             DatabaseEntry key = new DatabaseEntry();
-            XidTB keyBinding = new XidTB();
-            PreparedTransactionTB valueBinding = new PreparedTransactionTB();
+            XidBinding keyBinding = XidBinding.getInstance();
+            PreparedTransactionBinding valueBinding = new PreparedTransactionBinding();
             DatabaseEntry value = new DatabaseEntry();
 
             while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
@@ -946,7 +871,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             }
         }
 
-        
+
         dtxrh.completeDtxRecordRecovery();
     }
 
@@ -1001,35 +926,14 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
                     }
 
                     //now remove the content data from the store if there is any.
+                    DatabaseEntry contentKeyEntry = new DatabaseEntry();
+                    LongBinding.longToEntry(messageId, contentKeyEntry);
+                    _messageContentDb.delete(tx, contentKeyEntry);
 
-
-
-                    int offset = 0;
-                    do
+                    if (_log.isDebugEnabled())
                     {
-                        DatabaseEntry contentKeyEntry = new DatabaseEntry();
-                        MessageContentKey_5 mck = new MessageContentKey_5(messageId,offset);
-                        TupleBinding<MessageContentKey> contentKeyTupleBinding = new MessageContentKeyTB_5();
-                        contentKeyTupleBinding.objectToEntry(mck, contentKeyEntry);
-                        //Use a partial record for the value to prevent retrieving the
-                        //data itself as we only need the key to identify what to remove.
-                        DatabaseEntry value = new DatabaseEntry();
-                        value.setPartial(0, 4, true);
-
-                        status = _messageContentDb.get(null,contentKeyEntry, value, LockMode.READ_COMMITTED);
-
-                        if(status == OperationStatus.SUCCESS)
-                        {
-
-                            offset += IntegerBinding.entryToInt(value);
-                            _messageContentDb.delete(tx, contentKeyEntry);
-                            if (_log.isDebugEnabled())
-                            {
-                                _log.debug("Deleted content chunk offset " + mck.getOffset() + " for message " + messageId);
-                            }
-                        }
+                        _log.debug("Deleted content for message " + messageId);
                     }
-                    while (status == OperationStatus.SUCCESS);
 
                     commit(tx, sync);
                     complete = true;
@@ -1128,11 +1032,11 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
                                              exchange.getTypeShortString(), exchange.isAutoDelete());
 
             DatabaseEntry key = new DatabaseEntry();
-            EntryBinding keyBinding = new AMQShortStringTB();
+            AMQShortStringBinding keyBinding = AMQShortStringBinding.getInstance();
             keyBinding.objectToEntry(exchange.getNameShortString(), key);
 
             DatabaseEntry value = new DatabaseEntry();
-            TupleBinding exchangeBinding = new ExchangeTB();
+            ExchangeBinding exchangeBinding = ExchangeBinding.getInstance();
             exchangeBinding.objectToEntry(exchangeRec, value);
 
             try
@@ -1152,7 +1056,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     public void removeExchange(Exchange exchange) throws AMQStoreException
     {
         DatabaseEntry key = new DatabaseEntry();
-        EntryBinding keyBinding = new AMQShortStringTB();
+        AMQShortStringBinding keyBinding = AMQShortStringBinding.getInstance();
         keyBinding.objectToEntry(exchange.getNameShortString(), key);
         try
         {
@@ -1182,7 +1086,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         if (_state != State.RECOVERING)
         {
             DatabaseEntry key = new DatabaseEntry();
-            EntryBinding keyBinding = _bindingTupleBindingFactory.getInstance();
+            QueueBindingTupleBinding keyBinding = QueueBindingTupleBinding.getInstance();
 
             keyBinding.objectToEntry(bindingRecord, key);
 
@@ -1211,7 +1115,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             throws AMQStoreException
     {
         DatabaseEntry key = new DatabaseEntry();
-        EntryBinding keyBinding = _bindingTupleBindingFactory.getInstance();
+        QueueBindingTupleBinding keyBinding = QueueBindingTupleBinding.getInstance();
         keyBinding.objectToEntry(new BindingRecord(exchange.getNameShortString(), queue.getNameShortString(), routingKey, args), key);
 
         try
@@ -1268,11 +1172,11 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         if (_state != State.RECOVERING)
         {
             DatabaseEntry key = new DatabaseEntry();
-            EntryBinding keyBinding = new AMQShortStringTB();
+            AMQShortStringBinding keyBinding = AMQShortStringBinding.getInstance();
             keyBinding.objectToEntry(queueRecord.getNameShortString(), key);
 
             DatabaseEntry value = new DatabaseEntry();
-            TupleBinding queueBinding = _queueTupleBindingFactory.getInstance();
+            QueueBinding queueBinding = QueueBinding.getInstance();
 
             queueBinding.objectToEntry(queueRecord, value);
             try
@@ -1306,18 +1210,18 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         try
         {
             DatabaseEntry key = new DatabaseEntry();
-            EntryBinding keyBinding = new AMQShortStringTB();
+            AMQShortStringBinding keyBinding = AMQShortStringBinding.getInstance();
             keyBinding.objectToEntry(queue.getNameShortString(), key);
 
             DatabaseEntry value = new DatabaseEntry();
             DatabaseEntry newValue = new DatabaseEntry();
-            TupleBinding queueBinding = _queueTupleBindingFactory.getInstance();
+            QueueBinding queueBinding = QueueBinding.getInstance();
 
             OperationStatus status = _queueDb.get(null, key, value, LockMode.DEFAULT);
             if(status == OperationStatus.SUCCESS)
             {
                 //read the existing record and apply the new exclusivity setting
-                QueueRecord queueRecord = (QueueRecord) queueBinding.entryToObject(value);
+                QueueRecord queueRecord = queueBinding.entryToObject(value);
                 queueRecord.setExclusive(queue.isExclusive());
 
                 //write the updated entry to the store
@@ -1353,7 +1257,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         }
 
         DatabaseEntry key = new DatabaseEntry();
-        EntryBinding keyBinding = new AMQShortStringTB();
+        AMQShortStringBinding keyBinding = AMQShortStringBinding.getInstance();
         keyBinding.objectToEntry(name, key);
         try
         {
@@ -1468,7 +1372,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         AMQShortString name = AMQShortString.valueOf(queue.getResourceName());
 
         DatabaseEntry key = new DatabaseEntry();
-        EntryBinding keyBinding = new QueueEntryTB();
+        QueueEntryBinding keyBinding = QueueEntryBinding.getInstance();
         QueueEntryKey dd = new QueueEntryKey(name, messageId);
         keyBinding.objectToEntry(dd, key);
         DatabaseEntry value = new DatabaseEntry();
@@ -1505,10 +1409,10 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         AMQShortString name = new AMQShortString(queue.getResourceName());
 
         DatabaseEntry key = new DatabaseEntry();
-        EntryBinding keyBinding = new QueueEntryTB();
-        QueueEntryKey dd = new QueueEntryKey(name, messageId);
+        QueueEntryBinding keyBinding = QueueEntryBinding.getInstance();
+        QueueEntryKey queueEntryKey = new QueueEntryKey(name, messageId);
 
-        keyBinding.objectToEntry(dd, key);
+        keyBinding.objectToEntry(queueEntryKey, key);
 
         if (_log.isDebugEnabled())
         {
@@ -1545,21 +1449,21 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     }
 
 
-    private void recordXid(com.sleepycat.je.Transaction txn, 
-                           long format, 
-                           byte[] globalId, 
-                           byte[] branchId, 
+    private void recordXid(com.sleepycat.je.Transaction txn,
+                           long format,
+                           byte[] globalId,
+                           byte[] branchId,
                            Transaction.Record[] enqueues,
                            Transaction.Record[] dequeues) throws AMQStoreException
     {
         DatabaseEntry key = new DatabaseEntry();
         Xid xid = new Xid(format, globalId, branchId);
-        XidTB keyBinding = new XidTB();
+        XidBinding keyBinding = XidBinding.getInstance();
         keyBinding.objectToEntry(xid,key);
 
         DatabaseEntry value = new DatabaseEntry();
         PreparedTransaction preparedTransaction = new PreparedTransaction(enqueues, dequeues);
-        PreparedTransactionTB valueBinding = new PreparedTransactionTB();
+        PreparedTransactionBinding valueBinding = new PreparedTransactionBinding();
         valueBinding.objectToEntry(preparedTransaction, value);
 
         try
@@ -1578,8 +1482,8 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     {
         DatabaseEntry key = new DatabaseEntry();
         Xid xid = new Xid(format, globalId, branchId);
-        XidTB keyBinding = new XidTB();
-        
+        XidBinding keyBinding = XidBinding.getInstance();
+
         keyBinding.objectToEntry(xid, key);
 
 
@@ -1606,7 +1510,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             throw new AMQStoreException("Error accessing database while removing xid: " + e.getMessage(), e);
         }
     }
-    
+
     /**
      * Commits all operations performed within a given transaction.
      *
@@ -1681,7 +1585,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
             QueueEntryKey dd = new QueueEntryKey(queueName, 0);
 
-            EntryBinding keyBinding = new QueueEntryTB();
+            QueueEntryBinding keyBinding = QueueEntryBinding.getInstance();
             keyBinding.objectToEntry(dd, key);
 
             DatabaseEntry value = new DatabaseEntry();
@@ -1689,7 +1593,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             LinkedList<Long> messageIds = new LinkedList<Long>();
 
             OperationStatus status = cursor.getSearchKeyRange(key, value, LockMode.DEFAULT);
-            dd = (QueueEntryKey) keyBinding.entryToObject(key);
+            dd = keyBinding.entryToObject(key);
 
             while ((status == OperationStatus.SUCCESS) && dd.getQueueName().equals(queueName))
             {
@@ -1698,7 +1602,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
                 status = cursor.getNext(key, value, LockMode.DEFAULT);
                 if (status == OperationStatus.SUCCESS)
                 {
-                    dd = (QueueEntryKey) keyBinding.entryToObject(key);
+                    dd = keyBinding.entryToObject(key);
                 }
             }
 
@@ -1739,32 +1643,29 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
      *
      * @param tx         The transaction for the operation.
      * @param messageId       The message to store the data for.
-     * @param offset          The offset of the data chunk in the message.
      * @param contentBody     The content of the data chunk.
      *
      * @throws AMQStoreException If the operation fails for any reason, or if the specified message does not exist.
      */
-    protected void addContent(final com.sleepycat.je.Transaction tx, long messageId, int offset,
+    protected void addContent(final com.sleepycat.je.Transaction tx, long messageId,
                                       ByteBuffer contentBody) throws AMQStoreException
     {
         DatabaseEntry key = new DatabaseEntry();
-        TupleBinding<MessageContentKey> keyBinding = new MessageContentKeyTB_5();
-        keyBinding.objectToEntry(new MessageContentKey_5(messageId, offset), key);
+        LongBinding.longToEntry(messageId, key);
         DatabaseEntry value = new DatabaseEntry();
-        TupleBinding<ByteBuffer> messageBinding = new ContentTB();
-        messageBinding.objectToEntry(contentBody, value);
+        ContentBinding messageBinding = ContentBinding.getInstance();
+        messageBinding.objectToEntry(contentBody.array(), value);
         try
         {
             OperationStatus status = _messageContentDb.put(tx, key, value);
             if (status != OperationStatus.SUCCESS)
             {
-                throw new AMQStoreException("Error adding content chunk offset" + offset + " for message id " + messageId + ": "
-                                       + status);
+                throw new AMQStoreException("Error adding content for message id " + messageId + ": " + status);
             }
 
             if (_log.isDebugEnabled())
             {
-                _log.debug("Storing content chunk offset" + offset + " for message " + messageId + "[Transaction" + tx + "]");
+                _log.debug("Storing content for message " + messageId + "[Transaction" + tx + "]");
             }
         }
         catch (DatabaseException e)
@@ -1796,7 +1697,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         LongBinding.longToEntry(messageId, key);
         DatabaseEntry value = new DatabaseEntry();
 
-        TupleBinding messageBinding = _metaDataTupleBindingFactory.getInstance();
+        MessageMetaDataBinding messageBinding = MessageMetaDataBinding.getInstance();
         messageBinding.objectToEntry(messageMetaData, value);
         try
         {
@@ -1832,7 +1733,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         DatabaseEntry key = new DatabaseEntry();
         LongBinding.longToEntry(messageId, key);
         DatabaseEntry value = new DatabaseEntry();
-        TupleBinding messageBinding = _metaDataTupleBindingFactory.getInstance();
+        MessageMetaDataBinding messageBinding = MessageMetaDataBinding.getInstance();
 
         try
         {
@@ -1842,7 +1743,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
                 throw new AMQStoreException("Metadata not found for message with id " + messageId);
             }
 
-            StorableMessageMetaData mdd = (StorableMessageMetaData) messageBinding.entryToObject(value);
+            StorableMessageMetaData mdd = messageBinding.entryToObject(value);
 
             return mdd;
         }
@@ -1868,87 +1769,41 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     {
         DatabaseEntry contentKeyEntry = new DatabaseEntry();
 
-        //Start from 0 offset and search for the starting chunk.
-        MessageContentKey_5 mck = new MessageContentKey_5(messageId, 0);
-        TupleBinding<MessageContentKey> contentKeyTupleBinding = new MessageContentKeyTB_5();
-        contentKeyTupleBinding.objectToEntry(mck, contentKeyEntry);
+        LongBinding.longToEntry(messageId, contentKeyEntry);
         DatabaseEntry value = new DatabaseEntry();
-        TupleBinding<ByteBuffer> contentTupleBinding = new ContentTB();
+        ContentBinding contentTupleBinding = ContentBinding.getInstance();
 
         if (_log.isDebugEnabled())
         {
             _log.debug("Message Id: " + messageId + " Getting content body from offset: " + offset);
         }
 
-        int written = 0;
-        int seenSoFar = 0;
-
-        Cursor cursor = null;
         try
         {
-            cursor = _messageContentDb.openCursor(null, null);
-
-            OperationStatus status = cursor.getSearchKeyRange(contentKeyEntry, value, LockMode.READ_UNCOMMITTED);
-
-            while (status == OperationStatus.SUCCESS)
+            int written = 0;
+            OperationStatus status = _messageContentDb.get(null, contentKeyEntry, value, LockMode.READ_UNCOMMITTED);
+            if (status == OperationStatus.SUCCESS)
             {
-                mck = (MessageContentKey_5) contentKeyTupleBinding.entryToObject(contentKeyEntry);
-                long id = mck.getMessageId();
-
-                if(id != messageId)
+                byte[] dataAsBytes = contentTupleBinding.entryToObject(value);
+                int size = dataAsBytes.length;
+                if (offset > size)
                 {
-                    //we have exhausted all chunks for this message id, break
-                    break;
+                    throw new RuntimeException("Offset " + offset + " is greater than message size " + size
+                            + " for message id " + messageId + "!");
                 }
 
-                int offsetInMessage = mck.getOffset();
-                ByteBuffer buf = (ByteBuffer) contentTupleBinding.entryToObject(value);
-
-                final int size = (int) buf.limit();
-
-                seenSoFar += size;
-
-                if(seenSoFar >= offset)
+                written = size - offset;
+                if(written > dst.remaining())
                 {
-                    byte[] dataAsBytes = buf.array();
-
-                    int posInArray = offset + written - offsetInMessage;
-                    int count = size - posInArray;
-                    if(count > dst.remaining())
-                    {
-                        count = dst.remaining();
-                    }
-                    dst.put(dataAsBytes,posInArray,count);
-                    written+=count;
-
-                    if(dst.remaining() == 0)
-                    {
-                        break;
-                    }
+                    written = dst.remaining();
                 }
-
-                status = cursor.getNext(contentKeyEntry, value, LockMode.RMW);
+                dst.put(dataAsBytes, offset, written);
             }
-
             return written;
         }
         catch (DatabaseException e)
         {
-            throw new AMQStoreException("Error writing AMQMessage with id " + messageId + " to database: " + e.getMessage(), e);
-        }
-        finally
-        {
-            if(cursor != null)
-            {
-                try
-                {
-                    cursor.close();
-                }
-                catch (DatabaseException e)
-                {
-		            throw new AMQStoreException("Error writing AMQMessage with id " + messageId + " to database: " + e.getMessage(), e);
-                }
-            }
+            throw new AMQStoreException("Error getting AMQMessage with id " + messageId + " to database: " + e.getMessage(), e);
         }
     }
 
@@ -1961,7 +1816,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     {
         if(metaData.isPersistent())
         {
-            return new StoredBDBMessage(getNewMessageId(), metaData);
+            return (StoredMessage<T>) new StoredBDBMessage(getNewMessageId(), metaData);
         }
         else
         {
@@ -1969,23 +1824,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         }
     }
 
-
-    //protected getters for the TupleBindingFactories
-
-    protected QueueTupleBindingFactory getQueueTupleBindingFactory()
-    {
-        return _queueTupleBindingFactory;
-    }
-
-    protected BindingTupleBindingFactory getBindingTupleBindingFactory()
-    {
-        return _bindingTupleBindingFactory;
-    }
-
-    protected MessageMetaDataTupleBindingFactory getMetaDataTupleBindingFactory()
-    {
-        return _metaDataTupleBindingFactory;
-    }
 
     //Package getters for the various databases used by the Store
 
@@ -2019,65 +1857,9 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         return _queueBindingsDb;
     }
 
-    void visitMetaDataDb(DatabaseVisitor visitor) throws DatabaseException, AMQStoreException
+    Environment getEnvironment()
     {
-        visitDatabase(_messageMetaDataDb, visitor);
-    }
-
-    void visitContentDb(DatabaseVisitor visitor) throws DatabaseException, AMQStoreException
-    {
-        visitDatabase(_messageContentDb, visitor);
-    }
-
-    void visitQueues(DatabaseVisitor visitor) throws DatabaseException, AMQStoreException
-    {
-        visitDatabase(_queueDb, visitor);
-    }
-
-    void visitDelivery(DatabaseVisitor visitor) throws DatabaseException, AMQStoreException
-    {
-        visitDatabase(_deliveryDb, visitor);
-    }
-
-    void visitExchanges(DatabaseVisitor visitor) throws DatabaseException, AMQStoreException
-    {
-        visitDatabase(_exchangeDb, visitor);
-    }
-
-    void visitBindings(DatabaseVisitor visitor) throws DatabaseException, AMQStoreException
-    {
-        visitDatabase(_queueBindingsDb, visitor);
-    }
-
-    /**
-     * Generic visitDatabase allows iteration through the specified database.
-     *
-     * @param database The database to visit
-     * @param visitor  The visitor to give each entry to.
-     *
-     * @throws DatabaseException If there is a problem with the Database structure
-     * @throws AMQStoreException If there is a problem with the Database contents
-     */
-    void visitDatabase(Database database, DatabaseVisitor visitor) throws DatabaseException, AMQStoreException
-    {
-        Cursor cursor = database.openCursor(null, null);
-
-        try
-        {
-            DatabaseEntry key = new DatabaseEntry();
-            DatabaseEntry value = new DatabaseEntry();
-            while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
-            {
-                visitor.visit(key, value);
-            }
-        }
-        finally
-        {
-            if (cursor != null)
-            {
-                cursor.close();
-            }
-        }
+        return _environment;
     }
 
     private StoreFuture commit(com.sleepycat.je.Transaction tx, boolean syncCommit) throws DatabaseException
@@ -2279,7 +2061,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     }
 
 
-    private class StoredBDBMessage implements StoredMessage
+    private class StoredBDBMessage implements StoredMessage<StorableMessageMetaData>
     {
 
         private final long _messageId;
@@ -2376,6 +2158,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
                 }
                 catch (AMQStoreException e)
                 {
+                    // TODO maybe should throw a checked exception, or at least log before throwing
                     throw new RuntimeException(e);
                 }
             }
@@ -2406,7 +2189,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
                 {
                     _dataRef = new SoftReference<byte[]>(_data);
                     BDBMessageStore.this.storeMetaData(txn, _messageId, _metaData);
-                    BDBMessageStore.this.addContent(txn, _messageId, 0,
+                    BDBMessageStore.this.addContent(txn, _messageId,
                                                     _data == null ? ByteBuffer.allocate(0) : ByteBuffer.wrap(_data));
                 }
                 catch(DatabaseException e)
@@ -2484,17 +2267,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         public void dequeueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
         {
             BDBMessageStore.this.dequeueMessage(_txn, queue, message.getMessageNumber());
-        }
-
-        public void enqueueMessage(TransactionLogResource queue, long messageId) throws AMQStoreException
-        {
-            BDBMessageStore.this.enqueueMessage(_txn, queue, messageId);
-        }
-
-        public void dequeueMessage(TransactionLogResource queue, long messageId) throws AMQStoreException
-        {
-            BDBMessageStore.this.dequeueMessage(_txn, queue, messageId);
-
         }
 
         public void commitTran() throws AMQStoreException

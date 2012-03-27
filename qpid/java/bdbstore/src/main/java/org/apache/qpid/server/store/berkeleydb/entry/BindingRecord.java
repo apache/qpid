@@ -1,6 +1,5 @@
-package org.apache.qpid.client.message;
 /*
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,54 +7,56 @@ package org.apache.qpid.client.message;
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- * 
+ *
  */
+package org.apache.qpid.server.store.berkeleydb.entry;
 
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 
-import java.util.HashMap;
-import java.util.Map;
-
-public class FieldTableSupport
+public class BindingRecord extends Object
 {
-    private FieldTableSupport()
+    private final AMQShortString _exchangeName;
+    private final AMQShortString _queueName;
+    private final AMQShortString _routingKey;
+    private final FieldTable _arguments;
+
+    public BindingRecord(AMQShortString exchangeName, AMQShortString queueName, AMQShortString routingKey, FieldTable arguments)
     {
+        _exchangeName = exchangeName;
+        _queueName = queueName;
+        _routingKey = routingKey;
+        _arguments = arguments;
     }
 
-    public static FieldTable convertToFieldTable(Map<String,?> props)
+
+    public AMQShortString getExchangeName()
     {
-        FieldTable ft = new FieldTable();
-        if (props != null)
-        {
-            for (String key : props.keySet())
-            {
-                ft.setObject(key, props.get(key));
-            }
-        }
-        return ft;
+        return _exchangeName;
     }
 
-    public static Map<String,Object> convertToMap(FieldTable ft)
+    public AMQShortString getQueueName()
     {
-        Map<String,Object> map = new HashMap<String,Object>();
-        if(ft != null)
-        {
-            for (AMQShortString key: ft.keySet() )
-            {
-                map.put(key.asString(), ft.getObject(key));
-            }
-        }
-
-        return map;
+        return _queueName;
     }
+
+    public AMQShortString getRoutingKey()
+    {
+        return _routingKey;
+    }
+
+    public FieldTable getArguments()
+    {
+        return _arguments;
+    }
+
 }
