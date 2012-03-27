@@ -11,9 +11,10 @@ This example assumes a 3 node cluster, with nodes named node1, node2 and node3.
     <clusternode name="node2" nodeid="2"/>
     <clusternode name="node3" nodeid="3"/>
   </clusternodes>
-  <!-- Resouce Manager configuration. -->
-  <rm log_level="7"		<!-- Verbose logging -->
-      central_processing="1"> 	<!-- TODO explain-->
+  <!-- Resouce Manager configuration.
+       TODO explain central_processing="1"
+  -->
+  <rm log_level="7" central_processing="1">
     <!--
 	There is a failoverdomain for each node containing just that node.
 	This lets us stipulate that the qpidd service should always run on all nodes.
