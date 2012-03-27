@@ -32,7 +32,7 @@ configure
 .deps
 .libs
 autom4te.cache
-aclocal.m4
+*.m4
 developer.doxygen
 user.doxygen
 qpid/cpp/libtool
