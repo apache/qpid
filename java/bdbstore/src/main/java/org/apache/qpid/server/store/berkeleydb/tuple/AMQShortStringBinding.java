@@ -18,46 +18,34 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
+package org.apache.qpid.server.store.berkeleydb.tuple;
 
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.store.berkeleydb.AMQShortStringEncoding;
+
+import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
 
-import org.apache.qpid.framing.AMQShortString;
-
-public class AMQShortStringEncoding
+public class AMQShortStringBinding extends TupleBinding<AMQShortString>
 {
-    private AMQShortStringEncoding()
+    private static final AMQShortStringBinding INSTANCE = new AMQShortStringBinding();
+
+    public static AMQShortStringBinding getInstance()
     {
+        return INSTANCE;
     }
 
-    public static AMQShortString readShortString(TupleInput tupleInput)
-    {
-        int length = tupleInput.readShort();
-        if (length < 0)
-        {
-            return null;
-        }
-        else
-        {
-            byte[] stringBytes = new byte[length];
-            tupleInput.readFast(stringBytes);
-            return new AMQShortString(stringBytes);
-        }
+    /** private constructor forces getInstance instead */
+    private AMQShortStringBinding() { }
 
+    public AMQShortString entryToObject(TupleInput tupleInput)
+    {
+        return AMQShortStringEncoding.readShortString(tupleInput);
     }
 
-    public  static void writeShortString(AMQShortString shortString, TupleOutput tupleOutput)
+    public void objectToEntry(AMQShortString object, TupleOutput tupleOutput)
     {
-
-        if (shortString == null)
-        {
-            tupleOutput.writeShort(-1);
-        }
-        else
-        {
-            tupleOutput.writeShort(shortString.length());
-            tupleOutput.writeFast(shortString.getBytes(), 0, shortString.length());
-        }
+        AMQShortStringEncoding.writeShortString(object, tupleOutput);
     }
 }
