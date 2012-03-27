@@ -1,6 +1,5 @@
-package org.apache.qpid.client.message;
 /*
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,54 +7,60 @@ package org.apache.qpid.client.message;
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- * 
+ *
  */
+package org.apache.qpid.server.store.berkeleydb.entry;
 
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 
-import java.util.HashMap;
-import java.util.Map;
-
-public class FieldTableSupport
+public class QueueRecord extends Object
 {
-    private FieldTableSupport()
+    private final AMQShortString _queueName;
+    private final AMQShortString _owner;
+    private final FieldTable _arguments;
+    private boolean _exclusive;
+
+    public QueueRecord(AMQShortString queueName, AMQShortString owner, boolean exclusive, FieldTable arguments)
     {
+        _queueName = queueName;
+        _owner = owner;
+        _exclusive = exclusive;
+        _arguments = arguments;
     }
 
-    public static FieldTable convertToFieldTable(Map<String,?> props)
+    public AMQShortString getNameShortString()
     {
-        FieldTable ft = new FieldTable();
-        if (props != null)
-        {
-            for (String key : props.keySet())
-            {
-                ft.setObject(key, props.get(key));
-            }
-        }
-        return ft;
+        return _queueName;
     }
 
-    public static Map<String,Object> convertToMap(FieldTable ft)
+    public AMQShortString getOwner()
     {
-        Map<String,Object> map = new HashMap<String,Object>();
-        if(ft != null)
-        {
-            for (AMQShortString key: ft.keySet() )
-            {
-                map.put(key.asString(), ft.getObject(key));
-            }
-        }
-
-        return map;
+        return _owner;
     }
+
+    public boolean isExclusive()
+    {
+        return _exclusive;
+    }
+
+    public void setExclusive(boolean exclusive)
+    {
+        _exclusive = exclusive;
+    }
+
+    public FieldTable getArguments()
+    {
+        return _arguments;
+    }
+
 }
