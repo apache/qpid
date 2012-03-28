@@ -47,6 +47,7 @@
 #include "qpid/framing/ClusterConnectionAnnounceBody.h"
 #include "qpid/framing/ConnectionCloseBody.h"
 #include "qpid/framing/ConnectionCloseOkBody.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/ClusterSafe.h"
 #include "qpid/types/Variant.h"

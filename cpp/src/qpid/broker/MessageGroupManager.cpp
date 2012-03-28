@@ -19,11 +19,13 @@
  *
  */
 
-#include "qpid/framing/FieldTable.h"
-#include "qpid/types/Variant.h"
-#include "qpid/log/Statement.h"
-#include "qpid/broker/Queue.h"
 #include "qpid/broker/MessageGroupManager.h"
+
+#include "qpid/broker/Queue.h"
+#include "qpid/framing/FieldTable.h"
+#include "qpid/framing/FieldValue.h"
+#include "qpid/log/Statement.h"
+#include "qpid/types/Variant.h"
 
 using namespace qpid::broker;
 

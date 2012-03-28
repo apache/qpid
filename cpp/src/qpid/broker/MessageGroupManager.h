@@ -28,11 +28,14 @@
 #include "qpid/broker/MessageDistributor.h"
 #include "qpid/sys/unordered_map.h"
 
+#include <deque>
+
 namespace qpid {
 namespace broker {
 
 class QueueObserver;
 class MessageDistributor;
+class Messages;
 
 class MessageGroupManager : public StatefulQueueObserver, public MessageDistributor
 {

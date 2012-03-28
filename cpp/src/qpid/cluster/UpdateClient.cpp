@@ -57,6 +57,7 @@
 #include "qpid/framing/ClusterConnectionShadowReadyBody.h"
 #include "qpid/framing/ClusterConnectionSessionStateBody.h"
 #include "qpid/framing/ClusterConnectionConsumerStateBody.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/framing/enum.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/framing/TypeCode.h"

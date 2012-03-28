@@ -36,7 +36,6 @@
 #include "qpid/sys/MemStat.h"
 #include "qpid/types/Variant.h"
 #include <qpid/framing/AMQFrame.h>
-#include <qpid/framing/FieldValue.h>
 #include <qpid/framing/ResizableBuffer.h>
 #include <memory>
 #include <string>
