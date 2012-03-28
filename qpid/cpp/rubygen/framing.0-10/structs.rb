@@ -465,6 +465,7 @@ EOS
       end
       gen <<EOS
 #include "qpid/framing/#{classname}.h"
+#include "qpid/framing/Buffer.h"
 #include "qpid/framing/reply_exceptions.h"
 
 using namespace qpid::framing;

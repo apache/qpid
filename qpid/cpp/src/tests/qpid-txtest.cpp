@@ -33,6 +33,7 @@
 #include "qpid/client/SubscriptionManager.h"
 #include "qpid/framing/Array.h"
 #include "qpid/framing/Buffer.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/Thread.h"
 
@@ -245,10 +246,10 @@ struct Controller : public Client
 
         // Recover DTX transactions (if any)
         if (opts.dtx) {
-            std::vector<std::string> inDoubtXids;
             framing::DtxRecoverResult dtxRes = session.dtxRecover().get();
             const framing::Array& xidArr = dtxRes.getInDoubt();
-            xidArr.collect(inDoubtXids);
+            std::vector<std::string> inDoubtXids(xidArr.size());
+            std::transform(xidArr.begin(), xidArr.end(), inDoubtXids.begin(), framing::Array::get<std::string, framing::Array::ValuePtr>);
 
             if (inDoubtXids.size()) {
                 if (!opts.quiet) std::cout << "Recovering DTX in-doubt transaction(s):" << std::endl;
