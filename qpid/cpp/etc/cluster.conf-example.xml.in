@@ -7,14 +7,18 @@ This example assumes a 3 node cluster, with nodes named node1, node2 and node3.
 <cluster name="qpid-test" config_version="18">
   <!-- The cluster has 3 nodes. Each has a unique nodid and one vote for quorum. -->
   <clusternodes>
-    <clusternode name="node1" nodeid="1"/>
-    <clusternode name="node2" nodeid="2"/>
-    <clusternode name="node3" nodeid="3"/>
+    <clusternode name="node1" nodeid="1">
+      <fence/>
+    </clusternode>
+    <clusternode name="node2" nodeid="2">
+      <fence/>
+    </clusternode>
+    <clusternode name="node3" nodeid="3">
+      <fence/>
+    </clusternode>
   </clusternodes>
-  <!-- Resouce Manager configuration.
-       TODO explain central_processing="1"
-  -->
-  <rm log_level="7" central_processing="1">
+  <!-- Resouce Manager configuration. -->
+  <rm log_level="7">		<!-- Verbose logging -->
     <!--
 	There is a failoverdomain for each node containing just that node.
 	This lets us stipulate that the qpidd service should always run on all nodes.
@@ -59,7 +63,7 @@ This example assumes a 3 node cluster, with nodes named node1, node2 and node3.
     <!-- There should always be a single qpidd-primary service, it can run on any node. -->
     <service name="qpidd-primary-service" autostart="1" exclusive="0" recovery="relocate">
       <script ref="qpidd-primary"/>
-      <!-- The primary has the IP addresses for brokers and clients. -->
+      <!-- The primary has the IP addresses for brokers and clients to connect. -->
       <ip ref="20.0.10.200"/>
       <ip ref="20.0.20.200"/>
     </service>
