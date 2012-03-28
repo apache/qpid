@@ -69,7 +69,7 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
     public void setUp() throws Exception
     {
         assertNotNull("QPID_WORK must be set", QPID_WORK_ORIG);
-        _storeLocation = QPID_WORK_ORIG + "/bdbstore/test-store";
+        _storeLocation = getWorkDirBaseDir() + "/bdbstore/test-store";
 
         //Clear the two target directories if they exist.
         File directory = new File(_storeLocation);
@@ -87,6 +87,11 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
         setConfigurationProperty("management.enabled", "true");
 
         super.setUp();
+    }
+
+    private String getWorkDirBaseDir()
+    {
+        return QPID_WORK_ORIG + (isInternalBroker() ? "" : "/" + getPort());
     }
 
     /**
