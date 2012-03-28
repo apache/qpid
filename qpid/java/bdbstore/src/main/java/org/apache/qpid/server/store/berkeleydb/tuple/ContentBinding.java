@@ -18,46 +18,35 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
+package org.apache.qpid.server.store.berkeleydb.tuple;
 
+import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
 
-import org.apache.qpid.framing.AMQShortString;
-
-public class AMQShortStringEncoding
+public class ContentBinding extends TupleBinding<byte[]>
 {
-    private AMQShortStringEncoding()
+    private static final ContentBinding INSTANCE = new ContentBinding();
+
+    public static ContentBinding getInstance()
     {
+        return INSTANCE;
     }
 
-    public static AMQShortString readShortString(TupleInput tupleInput)
-    {
-        int length = tupleInput.readShort();
-        if (length < 0)
-        {
-            return null;
-        }
-        else
-        {
-            byte[] stringBytes = new byte[length];
-            tupleInput.readFast(stringBytes);
-            return new AMQShortString(stringBytes);
-        }
+    /** private constructor forces getInstance instead */
+    private ContentBinding() { }
 
+    @Override
+    public byte[] entryToObject(final TupleInput input)
+    {
+        byte[] data = new byte[input.available()];
+        input.read(data);
+        return data;
     }
 
-    public  static void writeShortString(AMQShortString shortString, TupleOutput tupleOutput)
+    @Override
+    public void objectToEntry(final byte[] data, final TupleOutput output)
     {
-
-        if (shortString == null)
-        {
-            tupleOutput.writeShort(-1);
-        }
-        else
-        {
-            tupleOutput.writeShort(shortString.length());
-            tupleOutput.writeFast(shortString.getBytes(), 0, shortString.length());
-        }
+        output.write(data);
     }
 }

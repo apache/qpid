@@ -58,9 +58,11 @@ import java.util.List;
  */
 public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageStoreTest
 {
+    private static byte[] CONTENT_BYTES = new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
     /**
-     * Tests that message metadata and content are successfully read back from a 
-     * store after it has been reloaded. Both 0-8 and 0-10 metadata is used to 
+     * Tests that message metadata and content are successfully read back from a
+     * store after it has been reloaded. Both 0-8 and 0-10 metadata is used to
      * verify their ability to co-exist within the store and be successful retrieved.
      */
     public void testBDBMessagePersistence() throws Exception
@@ -73,10 +75,10 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         // Split the content into 2 chunks for the 0-8 message, as per broker behaviour.
         // Use a single chunk for the 0-10 message as per broker behaviour.
         String bodyText = "jfhdjsflsdhfjdshfjdslhfjdslhfsjlhfsjkhfdsjkhfdsjkfhdslkjf";
-        
+
         ByteBuffer firstContentBytes_0_8 = ByteBuffer.wrap(bodyText.substring(0, 10).getBytes());
         ByteBuffer secondContentBytes_0_8 = ByteBuffer.wrap(bodyText.substring(10).getBytes());
-        
+
         ByteBuffer completeContentBody_0_10 = ByteBuffer.wrap(bodyText.getBytes());
         int bodySize = completeContentBody_0_10.limit();
 
@@ -100,12 +102,12 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
 
         /*
          * Create and insert a 0-10 message (metadata and content)
-         */        
+         */
         MessageProperties msgProps_0_10 = createMessageProperties_0_10(bodySize);
         DeliveryProperties delProps_0_10 = createDeliveryProperties_0_10();
         Header header_0_10 = new Header(delProps_0_10, msgProps_0_10);
 
-        MessageTransfer xfr_0_10 = new MessageTransfer("destination", MessageAcceptMode.EXPLICIT, 
+        MessageTransfer xfr_0_10 = new MessageTransfer("destination", MessageAcceptMode.EXPLICIT,
                 MessageAcquireMode.PRE_ACQUIRED, header_0_10, completeContentBody_0_10);
 
         MessageMetaData_0_10 messageMetaData_0_10 = new MessageMetaData_0_10(xfr_0_10);
@@ -190,14 +192,14 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
     private DeliveryProperties createDeliveryProperties_0_10()
     {
         DeliveryProperties delProps_0_10 = new DeliveryProperties();
-        
+
         delProps_0_10.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
         delProps_0_10.setImmediate(true);
         delProps_0_10.setExchange("exchange12345");
         delProps_0_10.setRoutingKey("routingKey12345");
         delProps_0_10.setExpiration(5);
         delProps_0_10.setPriority(MessageDeliveryPriority.ABOVE_AVERAGE);
-        
+
         return delProps_0_10;
     }
 
@@ -207,14 +209,14 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         msgProps_0_10.setContentLength(bodySize);
         msgProps_0_10.setCorrelationId("qwerty".getBytes());
         msgProps_0_10.setContentType("text/html");
-        
+
         return msgProps_0_10;
     }
 
-    /** 
+    /**
      * Close the provided store and create a new (read-only) store to read back the data.
-     * 
-     * Use this method instead of reloading the virtual host like other tests in order 
+     *
+     * Use this method instead of reloading the virtual host like other tests in order
      * to avoid the recovery handler deleting the message for not being on a queue.
      */
     private BDBMessageStore reloadStoreReadOnly(BDBMessageStore messageStore) throws Exception
@@ -275,7 +277,61 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         props.getHeaders().setString("Test", "MST");
         return props;
     }
-    
+
+    public void testGetContentWithOffset() throws Exception
+    {
+        MessageStore store = getVirtualHost().getMessageStore();
+        BDBMessageStore bdbStore = assertBDBStore(store);
+        StoredMessage<MessageMetaData> storedMessage_0_8 = createAndStoreSingleChunkMessage_0_8(store);
+        long messageid_0_8 = storedMessage_0_8.getMessageNumber();
+
+        // normal case: offset is 0
+        ByteBuffer dst = ByteBuffer.allocate(10);
+        int length = bdbStore.getContent(messageid_0_8, 0, dst);
+        assertEquals("Unexpected length", CONTENT_BYTES.length, length);
+        byte[] array = dst.array();
+        assertTrue("Unexpected content", Arrays.equals(CONTENT_BYTES, array));
+
+        // offset is in the middle
+        dst = ByteBuffer.allocate(10);
+        length = bdbStore.getContent(messageid_0_8, 5, dst);
+        assertEquals("Unexpected length", 5, length);
+        array = dst.array();
+        byte[] expected = new byte[10];
+        System.arraycopy(CONTENT_BYTES, 5, expected, 0, 5);
+        assertTrue("Unexpected content", Arrays.equals(expected, array));
+
+        // offset beyond the content length
+        dst = ByteBuffer.allocate(10);
+        try
+        {
+            bdbStore.getContent(messageid_0_8, 15, dst);
+            fail("Should fail for the offset greater than message size");
+        }
+        catch (RuntimeException e)
+        {
+            assertEquals("Unexpected exception message", "Offset 15 is greater than message size 10 for message id "
+                    + messageid_0_8 + "!", e.getMessage());
+        }
+
+        // buffer is smaller then message size
+        dst = ByteBuffer.allocate(5);
+        length = bdbStore.getContent(messageid_0_8, 0, dst);
+        assertEquals("Unexpected length", 5, length);
+        array = dst.array();
+        expected = new byte[5];
+        System.arraycopy(CONTENT_BYTES, 0, expected, 0, 5);
+        assertTrue("Unexpected content", Arrays.equals(expected, array));
+
+        // buffer is smaller then message size, offset is not 0
+        dst = ByteBuffer.allocate(5);
+        length = bdbStore.getContent(messageid_0_8, 2, dst);
+        assertEquals("Unexpected length", 5, length);
+        array = dst.array();
+        expected = new byte[5];
+        System.arraycopy(CONTENT_BYTES, 2, expected, 0, 5);
+        assertTrue("Unexpected content", Arrays.equals(expected, array));
+    }
     /**
      * Tests that messages which are added to the store and then removed using the
      * public MessageStore interfaces are actually removed from the store by then
@@ -287,11 +343,10 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         MessageStore store = getVirtualHost().getMessageStore();
         BDBMessageStore bdbStore = assertBDBStore(store);
 
-        StoredMessage<MessageMetaData> storedMessage_0_8 = createAndStoreMultiChunkMessage_0_8(store);
+        StoredMessage<MessageMetaData> storedMessage_0_8 = createAndStoreSingleChunkMessage_0_8(store);
         long messageid_0_8 = storedMessage_0_8.getMessageNumber();
-        
-        //remove the message in the fashion the broker normally would
-        storedMessage_0_8.remove();
+
+        bdbStore.removeMessage(messageid_0_8, true);
 
         //verify the removal using the BDB store implementation methods directly
         try
@@ -308,10 +363,10 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         //expecting no content, allocate a 1 byte
         ByteBuffer dst = ByteBuffer.allocate(1);
 
-        assertEquals("Retrieved content when none was expected", 
+        assertEquals("Retrieved content when none was expected",
                         0, bdbStore.getContent(messageid_0_8, 0, dst));
     }
-    
+
     private BDBMessageStore assertBDBStore(Object store)
     {
         if(!(store instanceof BDBMessageStore))
@@ -322,15 +377,11 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         return (BDBMessageStore) store;
     }
 
-    private StoredMessage<MessageMetaData> createAndStoreMultiChunkMessage_0_8(MessageStore store)
+    private StoredMessage<MessageMetaData> createAndStoreSingleChunkMessage_0_8(MessageStore store)
     {
-        byte[] body10Bytes = "0123456789".getBytes();
-        byte[] body5Bytes = "01234".getBytes();
+        ByteBuffer chunk1 = ByteBuffer.wrap(CONTENT_BYTES);
 
-        ByteBuffer chunk1 = ByteBuffer.wrap(body10Bytes);
-        ByteBuffer chunk2 = ByteBuffer.wrap(body5Bytes);
-
-        int bodySize = body10Bytes.length + body5Bytes.length;
+        int bodySize = CONTENT_BYTES.length;
 
         //create and store the message using the MessageStore interface
         MessagePublishInfo pubInfoBody_0_8 = createPublishInfoBody_0_8();
@@ -342,7 +393,6 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         StoredMessage<MessageMetaData> storedMessage_0_8 = store.addMessage(messageMetaData_0_8);
 
         storedMessage_0_8.addContent(0, chunk1);
-        storedMessage_0_8.addContent(chunk1.limit(), chunk2);
         storedMessage_0_8.flushToStore();
 
         return storedMessage_0_8;
@@ -360,7 +410,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         BDBMessageStore bdbStore = assertBDBStore(log);
 
         final AMQShortString mockQueueName = new AMQShortString("queueName");
-        
+
         TransactionLogResource mockQueue = new TransactionLogResource()
         {
             public String getResourceName()
@@ -368,27 +418,27 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
                 return mockQueueName.asString();
             }
         };
-        
+
         MessageStore.Transaction txn = log.newTransaction();
-        
+
         txn.enqueueMessage(mockQueue, new MockMessage(1L));
         txn.enqueueMessage(mockQueue, new MockMessage(5L));
         txn.commitTran();
 
         List<Long> enqueuedIds = bdbStore.getEnqueuedMessages(mockQueueName);
-        
+
         assertEquals("Number of enqueued messages is incorrect", 2, enqueuedIds.size());
         Long val = enqueuedIds.get(0);
         assertEquals("First Message is incorrect", 1L, val.longValue());
         val = enqueuedIds.get(1);
         assertEquals("Second Message is incorrect", 5L, val.longValue());
     }
-    
-    
+
+
     /**
-     * Tests transaction rollback before a commit has occurred by utilising the 
-     * enqueue and dequeue methods available in the TransactionLog interface 
-     * implemented by the store, and verifying the behaviour using BDB 
+     * Tests transaction rollback before a commit has occurred by utilising the
+     * enqueue and dequeue methods available in the TransactionLog interface
+     * implemented by the store, and verifying the behaviour using BDB
      * implementation methods.
      */
     public void testTranRollbackBeforeCommit() throws Exception
@@ -398,7 +448,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         BDBMessageStore bdbStore = assertBDBStore(log);
 
         final AMQShortString mockQueueName = new AMQShortString("queueName");
-        
+
         TransactionLogResource mockQueue = new TransactionLogResource()
         {
             public String getResourceName()
@@ -406,30 +456,30 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
                 return mockQueueName.asString();
             }
         };
-        
+
         MessageStore.Transaction txn = log.newTransaction();
-        
+
         txn.enqueueMessage(mockQueue, new MockMessage(21L));
         txn.abortTran();
-        
+
         txn = log.newTransaction();
         txn.enqueueMessage(mockQueue, new MockMessage(22L));
         txn.enqueueMessage(mockQueue, new MockMessage(23L));
         txn.commitTran();
 
         List<Long> enqueuedIds = bdbStore.getEnqueuedMessages(mockQueueName);
-        
+
         assertEquals("Number of enqueued messages is incorrect", 2, enqueuedIds.size());
         Long val = enqueuedIds.get(0);
         assertEquals("First Message is incorrect", 22L, val.longValue());
         val = enqueuedIds.get(1);
         assertEquals("Second Message is incorrect", 23L, val.longValue());
     }
-    
+
     /**
-     * Tests transaction rollback after a commit has occurred by utilising the 
-     * enqueue and dequeue methods available in the TransactionLog interface 
-     * implemented by the store, and verifying the behaviour using BDB 
+     * Tests transaction rollback after a commit has occurred by utilising the
+     * enqueue and dequeue methods available in the TransactionLog interface
+     * implemented by the store, and verifying the behaviour using BDB
      * implementation methods.
      */
     public void testTranRollbackAfterCommit() throws Exception
@@ -439,7 +489,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         BDBMessageStore bdbStore = assertBDBStore(log);
 
         final AMQShortString mockQueueName = new AMQShortString("queueName");
-        
+
         TransactionLogResource mockQueue = new TransactionLogResource()
         {
             public String getResourceName()
@@ -447,22 +497,22 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
                 return mockQueueName.asString();
             }
         };
-        
+
         MessageStore.Transaction txn = log.newTransaction();
-        
+
         txn.enqueueMessage(mockQueue, new MockMessage(30L));
         txn.commitTran();
 
         txn = log.newTransaction();
         txn.enqueueMessage(mockQueue, new MockMessage(31L));
         txn.abortTran();
-        
+
         txn = log.newTransaction();
         txn.enqueueMessage(mockQueue, new MockMessage(32L));
         txn.commitTran();
-        
+
         List<Long> enqueuedIds = bdbStore.getEnqueuedMessages(mockQueueName);
-        
+
         assertEquals("Number of enqueued messages is incorrect", 2, enqueuedIds.size());
         Long val = enqueuedIds.get(0);
         assertEquals("First Message is incorrect", 30L, val.longValue());
@@ -470,6 +520,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         assertEquals("Second Message is incorrect", 32L, val.longValue());
     }
 
+    @SuppressWarnings("rawtypes")
     private static class MockMessage implements ServerMessage, EnqueableMessage
     {
         private long _messageId;

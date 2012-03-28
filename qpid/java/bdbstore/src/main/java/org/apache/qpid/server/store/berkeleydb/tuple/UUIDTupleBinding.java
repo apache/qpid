@@ -18,46 +18,31 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
+package org.apache.qpid.server.store.berkeleydb.tuple;
 
+import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
 
-import org.apache.qpid.framing.AMQShortString;
+import java.util.UUID;
 
-public class AMQShortStringEncoding
+public class UUIDTupleBinding extends TupleBinding<UUID>
 {
-    private AMQShortStringEncoding()
+    private static final UUIDTupleBinding INSTANCE = new UUIDTupleBinding();
+
+    public UUID entryToObject(final TupleInput tupleInput)
     {
+        return new UUID(tupleInput.readLong(), tupleInput.readLong());
     }
 
-    public static AMQShortString readShortString(TupleInput tupleInput)
+    public void objectToEntry(final UUID uuid, final TupleOutput tupleOutput)
     {
-        int length = tupleInput.readShort();
-        if (length < 0)
-        {
-            return null;
-        }
-        else
-        {
-            byte[] stringBytes = new byte[length];
-            tupleInput.readFast(stringBytes);
-            return new AMQShortString(stringBytes);
-        }
-
+        tupleOutput.writeLong(uuid.getMostSignificantBits());
+        tupleOutput.writeLong(uuid.getLeastSignificantBits());
     }
 
-    public  static void writeShortString(AMQShortString shortString, TupleOutput tupleOutput)
+    public static UUIDTupleBinding getInstance()
     {
-
-        if (shortString == null)
-        {
-            tupleOutput.writeShort(-1);
-        }
-        else
-        {
-            tupleOutput.writeShort(shortString.length());
-            tupleOutput.writeFast(shortString.getBytes(), 0, shortString.length());
-        }
+        return INSTANCE;
     }
 }

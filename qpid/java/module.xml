@@ -48,6 +48,7 @@
   <property name="module.api"          location="${build.api}/${module}/"/>
   <property name="module.test.api"     location="${build.test.api}/${module}"/>
   <property name="module.test.classes" location="${module.build}/test/classes"/>
+  <property name="module.test.resources" location="${module.build}/test/resources"/>
   <property name="module.results"      location="${build.results}/${module}"/>
   <property name="module.failed"       location="${module.results}/FAILED"/>
   <property name="module.src"          location="src/main/java"/>
@@ -179,6 +180,7 @@
     <path refid="module.class.path"/>
     <pathelement path="${module.test.depends.path}"/>
     <path refid="module.test.libs"/>
+    <pathelement path="${module.test.resources}"/>
   </path>
 
   <property name="javac.deprecation" value="off"/>
