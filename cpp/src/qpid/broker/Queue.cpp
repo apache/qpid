@@ -19,8 +19,9 @@
  *
  */
 
-#include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
+
+#include "qpid/broker/Broker.h"
 #include "qpid/broker/QueueEvents.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/broker/Fairshare.h"
@@ -41,6 +42,7 @@
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/FieldTable.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/sys/ClusterSafe.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Time.h"

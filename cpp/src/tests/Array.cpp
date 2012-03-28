@@ -58,7 +58,7 @@ QPID_AUTO_TEST_CASE(testEncodeDecode)
     BOOST_CHECK_EQUAL(a, b);
 
     std::vector<std::string> data2;
-    b.collect(data2);
+    std::transform(b.begin(), b.end(), std::back_inserter(data2), Array::get<std::string, Array::ValuePtr>);
     //BOOST_CHECK_EQUAL(data, data2);
     BOOST_CHECK(data == data2);
 }
@@ -74,7 +74,7 @@ QPID_AUTO_TEST_CASE(testArrayAssignment)
         BOOST_CHECK_EQUAL(a, b);
     }
     std::vector<std::string> data2;
-    b.collect(data2);
+    std::transform(b.begin(), b.end(), std::back_inserter(data2), Array::get<std::string, Array::ValuePtr>);
     //BOOST_CHECK_EQUAL(data, data2);
     BOOST_CHECK(data == data2);
 }

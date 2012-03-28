@@ -30,6 +30,7 @@
 #include "qpid/log/Statement.h"
 #include <qpid/broker/Message.h>
 #include "qpid/framing/MessageTransferBody.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/sys/Time.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/broker/ConnectionState.h"

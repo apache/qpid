@@ -21,6 +21,7 @@
 #include "qpid/cluster/ClusterMap.h"
 #include "qpid/Url.h"
 #include "qpid/framing/FieldTable.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/log/Statement.h"
 #include <boost/bind.hpp>
 #include <algorithm>

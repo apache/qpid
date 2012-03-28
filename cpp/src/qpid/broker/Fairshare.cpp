@@ -21,6 +21,7 @@
 #include "qpid/broker/Fairshare.h"
 #include "qpid/broker/QueuedMessage.h"
 #include "qpid/framing/FieldTable.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/log/Statement.h"
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
