@@ -578,6 +578,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     public ProtocolVersion makeBrokerConnection(BrokerDetails brokerDetail) throws IOException, AMQException
     {
+        resetClosedFlag();
         return _delegate.makeBrokerConnection(brokerDetail);
     }
 
