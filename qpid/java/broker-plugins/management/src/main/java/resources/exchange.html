@@ -1,0 +1,72 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Exchange</title>
+		<!--<link rel="stylesheet" href="/dojo/1.7.2/dojo/resources/dojo.css">
+		<link rel="stylesheet" href="/dojo/1.7.2/dijit/themes/claro/claro.css">
+		<link rel="stylesheet" href="/dojo/1.7.2/dojox/grid/resources/claroGrid.css">-->
+        <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dojo/resources/dojo.css">
+        <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dijit/themes/claro/claro.css">
+        <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dojox/grid/resources/claroGrid.css">
+
+        <link rel="stylesheet" href="../css/exchange.css" media="screen">
+
+		<link rel="stylesheet" href="css/common.css" media="screen">
+
+        <!-- load dojo and provide config via data attribute
+         style="height: 800px"-->
+		<!--<script src="/dojo/1.7.2/dojo/dojo.js.uncompressed.js" data-dojo-config="async: true">
+        </script>                                                                                 -->
+
+        <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dojo/dojo.js"
+                data-dojo-config="async: true, parseOnLoad: true">
+        </script>
+
+            <script>
+                require(["dijit/layout/BorderContainer", "dijit/layout/TabContainer", "dijit/layout/ContentPane",
+                "dijit/TitlePane", "dojo/parser"]);
+            </script>
+
+        <script src="/js/exchange.js">
+        </script>
+	</head>
+	<body class="claro">
+
+
+    <div id="pageLayout" data-dojo-type="dijit.layout.BorderContainer" data-dojo-props="design: 'headline'">
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'top'">Top pane</div>
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'leading'">Leading pane</div>
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'center'">
+            <span style="">Exchange:</span><span id="name" style="position:absolute; left:6em"></span>
+            <br/>
+            <span style="">State:</span><span id="state" style="position:absolute; left:6em"></span>
+            <br/>
+            <span style="">Durable:</span><span id="durable" style="position:absolute; left:6em"></span>
+            <span style="position:absolute; left:26em">Inbound:</span>
+            <span id="msgInRate" style="position:absolute; right:9.5em"></span>
+            <span style="position:absolute; right: 5em; width: 4em"> msg/s</span>
+            <span id="bytesInRate" style="position:absolute; right: 3.3em"></span>
+            <span id="bytesInRateUnits" style="position:absolute; right: 0em; width: 3em"></span>
+            <br/>
+            <span style="">Lifespan:</span><span style="position:absolute; left:6em" id="lifetimePolicy"></span>
+            <span style="position:absolute; left:26em">Dropped:</span>
+            <span id="msgDropRate" style="position:absolute; right:9.5em"></span>
+            <span style="position:absolute; right: 5em; width: 4em"> msg/s</span>
+            <span id="bytesDropRate" style="position:absolute; right: 3.3em"></span>
+            <span id="bytesDropRateUnits" style="position:absolute; right: 0em; width: 3em"></span>
+            <br/>
+            <br/>
+            <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Bindings'">
+                <div id="bindings"></div>
+            </div>
+            <br/>
+
+        </div>
+        <!--<div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'trailing'">Trailing pane</div>-->
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'bottom'">Bottom pane</div>
+    </div>
+
+	</body>
+</html>
+

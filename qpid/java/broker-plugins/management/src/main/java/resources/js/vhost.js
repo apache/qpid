@@ -257,7 +257,22 @@ require(["dojo/store/JsonRest",
                                                            { name: "Type", field: "type", width: "120px"},
                                                            { name: "Binding Count", field: "bindingCount",
                                                            width: "90px"}
-                                                         ]);
+                                                         ],
+                                                           function(obj)
+                                                           {
+                                                               dojo.connect(obj.grid, "onRowDblClick", obj.grid,
+                                                               function(evt){
+                                                                      var idx = evt.rowIndex,
+                                                                      item = this.getItem(idx);
+
+                                                                      url = "/exchange?vhost="
+                                                                       + thisObj.vhostData.name + "&exchange=" +
+                                                                      obj.dataStore.getValue(item,"name");
+
+                                                                      window.location = url;
+
+                                                              });
+                                                           } );
 
 
                                 thisObj.connectionsGrid = new UpdatableStore(thisObj.vhostData.connections,

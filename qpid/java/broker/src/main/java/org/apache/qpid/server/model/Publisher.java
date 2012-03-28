@@ -20,6 +20,6 @@
  */
 package org.apache.qpid.server.model;
 
-public interface Publisher
+public interface Publisher extends ConfiguredObject
 {
 }

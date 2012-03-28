@@ -20,29 +20,8 @@
  */
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
-import org.apache.commons.codec.binary.Base64;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.auth.AuthenticationResult;
-import org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.codehaus.jackson.map.ObjectMapper;
-
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Exchange;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.security.SecurityManager;
-
-import javax.security.auth.Subject;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -51,7 +30,20 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Publisher;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.model.VirtualHost;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
 
 public class ExchangeServlet extends AbstractServlet
 {
@@ -71,6 +63,10 @@ public class ExchangeServlet extends AbstractServlet
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);
 
+        response.setHeader("Cache-Control","no-cache");
+        response.setHeader("Pragma","no-cache");
+        response.setDateHeader ("Expires", 0);
+
         String[] sortKeys = request.getParameterValues("sort");
         Comparator comparator;
         if(sortKeys == null || sortKeys.length == 0)
@@ -84,12 +80,12 @@ public class ExchangeServlet extends AbstractServlet
 
 
         Collection<VirtualHost> vhosts = _broker.getVirtualHosts();
-        Collection<Exchange> exchanges = new ArrayList<Exchange>();
         List<Map<String,Object>> outputObject = new ArrayList<Map<String,Object>>();
 
         final PrintWriter writer = response.getWriter();
 
         ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
         String vhostName = null;
         String exchangeName = null;
 
@@ -129,30 +125,75 @@ public class ExchangeServlet extends AbstractServlet
         Collections.sort(outputObject, comparator);
         mapper.writeValue(writer, outputObject);
 
-    }
+        response.setContentType("application/json");
+        response.setStatus(HttpServletResponse.SC_OK);
 
+
+    }
     private Map<String,Object> convertToObject(final Exchange exchange)
     {
-        Map<String, Object> object = new LinkedHashMap<String, Object>();
-        object.put("id",exchange.getId());
-        object.put("name",exchange.getName());
-        object.put("type", exchange.getExchangeType());
-        object.put("durable", exchange.isDurable());
-        object.put("auto-delete", exchange.getLifetimePolicy() == LifetimePolicy.AUTO_DELETE);
-        object.put("binding-count", exchange.getBindings().size());
+        Map<String, Object> object = convertObjectToMap(exchange);
 
 
-        Map<String,Object> arguments = new HashMap<String, Object>();
-        for(String key : exchange.getAttributeNames())
+        List<Map<String,Object>> bindings = new ArrayList<Map<String, Object>>();
+
+        for(Binding binding : exchange.getBindings())
         {
-            if(!key.equals(Exchange.TYPE))
-            {
-                arguments.put(key, exchange.getAttribute(key));
-            }
+            bindings.add(convertObjectToMap(binding));
         }
-        object.put("arguments", arguments);
+
+        if(!bindings.isEmpty())
+        {
+            object.put("bindings", bindings);
+        }
+
+        List<Map<String,Object>> publishers = new ArrayList<Map<String, Object>>();
+
+        for(Publisher publisher : exchange.getPublishers())
+        {
+            publishers.add(convertObjectToMap(publisher));
+        }
+
+        if(!publishers.isEmpty())
+        {
+            object.put("publishers", publishers);
+        }
+
+
         return object;
     }
+
+    private Map<String, Object> convertObjectToMap(final ConfiguredObject confObject)
+    {
+        Map<String, Object> object = new LinkedHashMap<String, Object>();
+
+        for(String name : confObject.getAttributeNames())
+        {
+            Object value = confObject.getAttribute(name);
+            if(value != null)
+            {
+                object.put(name, value);
+            }
+        }
+
+        Statistics statistics = confObject.getStatistics();
+        Map<String, Object> statMap = new HashMap<String, Object>();
+        for(String name : statistics.getStatisticNames())
+        {
+            Object value = statistics.getStatistic(name);
+            if(value != null)
+            {
+                statMap.put(name, value);
+            }
+        }
+
+        if(!statMap.isEmpty())
+        {
+            object.put("statistics", statMap);
+        }
+        return object;
+    }
+
 
     @Override
     protected void onPut(final HttpServletRequest request, final HttpServletResponse response)

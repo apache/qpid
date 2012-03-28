@@ -3,7 +3,6 @@ var bindingsTuple;
 
 
 require(["dojo/store/JsonRest",
-         "dojo/json",
 				"dojo/store/Memory",
 				"dojo/store/Cache",
 				"dojox/grid/DataGrid",
@@ -13,7 +12,7 @@ require(["dojo/store/JsonRest",
                 "dojo/_base/xhr",
                 "dojo/dom",
 				"dojo/domReady!"],
-	     function(JsonRest, json, Memory, Cache, DataGrid, ObjectStore, query, Observable, xhr, dom)
+	     function(JsonRest, Memory, Cache, DataGrid, ObjectStore, query, Observable, xhr, dom)
 	     {
 
 
@@ -184,101 +183,81 @@ require(["dojo/store/JsonRest",
          }
 
 
-         function QueueUpdater()
+         function ExchangeUpdater()
          {
             this.name = dom.byId("name");
             this.state = dom.byId("state");
             this.durable = dom.byId("durable");
             this.lifetimePolicy = dom.byId("lifetimePolicy");
-            this.queueDepthMessages = dom.byId("queueDepthMessages");
-            this.queueDepthBytes = dom.byId("queueDepthBytes");
-            this.queueDepthBytesUnits = dom.byId("queueDepthBytesUnits");
-            this.unacknowledgedMessages = dom.byId("unacknowledgedMessages");
-            this.unacknowledgedBytes = dom.byId("unacknowledgedBytes");
-            this.unacknowledgedBytesUnits = dom.byId("unacknowledgedBytesUnits");
-
+            
             urlQuery = dojo.queryToObject(dojo.doc.location.search.substr((dojo.doc.location.search[0] === "?" ? 1 : 0)));
-            this.query = "/rest/queue/"+ urlQuery.vhost + "/" + urlQuery.queue;
+            this.query = "/rest/exchange/"+ urlQuery.vhost + "/" + urlQuery.exchange;
 
 
             var thisObj = this;
 
             xhr.get({url: this.query, handleAs: "json"}).then(function(data)
                              {
-                                thisObj.queueData = data[0];
-                                var stats = thisObj.queueData[ "statistics" ];
+                                thisObj.exchangeData = data[0];
+                                var stats = thisObj.exchangeData[ "statistics" ];
 
                                 // flatten statistics into attributes
                                 for(var propName in stats)
                                 {
-                                    thisObj.queueData[ propName ] = stats[ propName ];
+                                    thisObj.exchangeData[ propName ] = stats[ propName ];
                                 }
 
                                 thisObj.updateHeader();
-                                thisObj.bindingsGrid = new UpdatableStore(thisObj.queueData.bindings, "bindings",
-                                                         [ { name: "Exchange",    field: "exchange",      width: "90px"},
+                                thisObj.bindingsGrid = new UpdatableStore(thisObj.exchangeData.bindings, "bindings",
+                                                         [ { name: "Queue",    field: "queue",      width: "90px"},
                                                            { name: "Binding Key", field: "name",          width: "120px"},
                                                            { name: "Arguments",   field: "argumentString",     width: "200px"}
                                                          ]);
-
-                                thisObj.consumersGrid = new UpdatableStore(thisObj.queueData.consumers, "consumers",
-                                                         [ { name: "Name",    field: "name",      width: "70px"},
-                                                           { name: "Mode", field: "distributionMode", width: "70px"},
-                                                           { name: "Msgs Rate", field: "msgRate",
-                                                           width: "150px"},
-                                                           { name: "Bytes Rate", field: "bytesRate",
-                                                              width: "150px"}
-                                                         ]);
-
-
 
                              });
 
          }
 
-         QueueUpdater.prototype.updateHeader = function()
+         ExchangeUpdater.prototype.updateHeader = function()
          {
-            this.name.innerHTML = this.queueData[ "name" ];
-            this.state.innerHTML = this.queueData[ "state" ];
-            this.durable.innerHTML = this.queueData[ "durable" ];
-            this.lifetimePolicy.innerHTML = this.queueData[ "lifetimePolicy" ];
-
-            this.queueDepthMessages.innerHTML = this.queueData["queueDepthMessages"];
-            bytesDepth = new formatBytes( this.queueData["queueDepthBytes"] );
-            this.queueDepthBytes.innerHTML = "(" + bytesDepth.value;
-            this.queueDepthBytesUnits.innerHTML = bytesDepth.units + ")"
-
-            this.unacknowledgedMessages.innerHTML = this.queueData["unacknowledgedMessages"];
-            bytesDepth = new formatBytes( this.queueData["unacknowledgedBytes"] );
-            this.unacknowledgedBytes.innerHTML = "(" + bytesDepth.value;
-            this.unacknowledgedBytesUnits.innerHTML = bytesDepth.units + ")"
+            this.name.innerHTML = this.exchangeData[ "name" ];
+            this.state.innerHTML = this.exchangeData[ "state" ];
+            this.durable.innerHTML = this.exchangeData[ "durable" ];
+            this.lifetimePolicy.innerHTML = this.exchangeData[ "lifetimePolicy" ];
 
          }
 
-         QueueUpdater.prototype.update = function()
+         ExchangeUpdater.prototype.update = function()
          {
 
             var thisObj = this;
 
             xhr.get({url: this.query, handleAs: "json"}).then(function(data)
                  {
-                    thisObj.queueData = data[0];
-                    var stats = thisObj.queueData[ "statistics" ];
+                    thisObj.exchangeData = data[0];
+                    var stats = thisObj.exchangeData[ "statistics" ];
 
                     // flatten statistics into attributes
                     for(var propName in stats)
                     {
-                        thisObj.queueData[ propName ] = stats[ propName ];
+                        thisObj.exchangeData[ propName ] = stats[ propName ];
                     }
 
-                    var bindings = thisObj.queueData[ "bindings" ];
+                    var bindings = thisObj.exchangeData[ "bindings" ];
                     for(var i=0; i < bindings.length; i++)
                     {
-                        bindings[i].argumentString = json.stringify(bindings[i].arguments);
+                        if(bindings[i].arguments)
+                        {
+                            bindings[i].argumentString = dojo.toJson(bindings[i].arguments);
+                        }
+                        else
+                        {
+                            bindings[i].argumentString = "";
+                        }
                     }
 
 
-                    var consumers = thisObj.queueData[ "consumers" ];
+                    var consumers = thisObj.exchangeData[ "consumers" ];
                     if(consumers)
                     {
                         for(var i=0; i < consumers.length; i++)
@@ -295,107 +274,53 @@ require(["dojo/store/JsonRest",
                     thisObj.updateHeader();
 
 
-                    // update alerting info
-                    alertRepeatGap = new formatTime( thisObj.queueData["alertRepeatGap"] );
-
-                    dom.byId("alertRepeatGap").innerHTML = alertRepeatGap.value;
-                    dom.byId("alertRepeatGapUnits").innerHTML = alertRepeatGap.units;
-
-
-                    alertMsgAge = new formatTime( thisObj.queueData["alertThresholdMessageAge"] );
-
-                    dom.byId("alertThresholdMessageAge").innerHTML = alertMsgAge.value;
-                    dom.byId("alertThresholdMessageAgeUnits").innerHTML = alertMsgAge.units;
-
-                    alertMsgSize = new formatBytes( thisObj.queueData["alertThresholdMessageSize"] );
-
-                    dom.byId("alertThresholdMessageSize").innerHTML = alertMsgSize.value;
-                    dom.byId("alertThresholdMessageSizeUnits").innerHTML = alertMsgSize.units;
-
-                    alertQueueDepth = new formatBytes( thisObj.queueData["alertThresholdQueueDepthBytes"] );
-
-                    dom.byId("alertThresholdQueueDepthBytes").innerHTML = alertQueueDepth.value;
-                    dom.byId("alertThresholdQueueDepthBytesUnits").innerHTML = alertQueueDepth.units;
-
-                    dom.byId("alertThresholdQueueDepthMessages").innerHTML = thisObj.queueData["alertThresholdQueueDepthMessages"];
-
-                    stats = thisObj.queueData[ "statistics" ];
+                    stats = thisObj.exchangeData[ "statistics" ];
 
                     var sampleTime = new Date();
-                    var messageIn = stats["totalEnqueuedMessages"];
-                    var bytesIn = stats["totalEnqueuedBytes"];
-                    var messageOut = stats["totalDequeuedMessages"];
-                    var bytesOut = stats["totalDequeuedBytes"];
+                    var messageIn = stats["messagesIn"];
+                    var bytesIn = stats["bytesIn"];
+                    var messageDrop = stats["messagesDropped"];
+                    var bytesDrop = stats["bytesDropped"];
 
                     if(thisObj.sampleTime)
                     {
                         var samplePeriod = sampleTime.getTime() - thisObj.sampleTime.getTime();
 
                         var msgInRate = (1000 * (messageIn - thisObj.messageIn)) / samplePeriod;
-                        var msgOutRate = (1000 * (messageOut - thisObj.messageOut)) / samplePeriod;
+                        var msgDropRate = (1000 * (messageDrop - thisObj.messageDrop)) / samplePeriod;
                         var bytesInRate = (1000 * (bytesIn - thisObj.bytesIn)) / samplePeriod;
-                        var bytesOutRate = (1000 * (bytesOut - thisObj.bytesOut)) / samplePeriod;
+                        var bytesDropRate = (1000 * (bytesDrop - thisObj.bytesDrop)) / samplePeriod;
 
                         dom.byId("msgInRate").innerHTML = msgInRate.toFixed(0);
                         bytesInFormat = new formatBytes( bytesInRate );
                         dom.byId("bytesInRate").innerHTML = "(" + bytesInFormat.value;
                         dom.byId("bytesInRateUnits").innerHTML = bytesInFormat.units + "/s)"
 
-                        dom.byId("msgOutRate").innerHTML = msgOutRate.toFixed(0);
-                        bytesOutFormat = new formatBytes( bytesOutRate );
-                        dom.byId("bytesOutRate").innerHTML = "(" + bytesOutFormat.value;
-                        dom.byId("bytesOutRateUnits").innerHTML = bytesOutFormat.units + "/s)"
-
-                        if(consumers && thisObj.consumers)
-                        {
-                            for(var i=0; i < consumers.length; i++)
-                            {
-                                var consumer = consumers[i];
-                                for(var j = 0; j < thisObj.consumers.length; j++)
-                                {
-                                    var oldConsumer = thisObj.consumers[j];
-                                    if(oldConsumer.id == consumer.id)
-                                    {
-                                        var msgRate = (1000 * (consumer.messagesOut - oldConsumer.messagesOut)) /
-                                                        samplePeriod;
-                                        consumer.msgRate = msgRate.toFixed(0) + "msg/s";
-
-                                        var bytesRate = (1000 * (consumer.bytesOut - oldConsumer.bytesOut)) /
-                                                        samplePeriod
-                                        var bytesRateFormat = new formatBytes( bytesRate );
-                                        consumer.bytesRate = bytesRateFormat.value + bytesRateFormat.units + "/s";
-                                    }
-
-
-                                }
-
-                            }
-                        }
+                        dom.byId("msgDropRate").innerHTML = msgDropRate.toFixed(0);
+                        bytesDropFormat = new formatBytes( bytesDropRate );
+                        dom.byId("bytesDropRate").innerHTML = "(" + bytesDropFormat.value;
+                        dom.byId("bytesDropRateUnits").innerHTML = bytesDropFormat.units + "/s)"
 
                     }
 
                     thisObj.sampleTime = sampleTime;
                     thisObj.messageIn = messageIn;
                     thisObj.bytesIn = bytesIn;
-                    thisObj.messageOut = messageOut;
-                    thisObj.bytesOut = bytesOut;
+                    thisObj.messageDrop = messageDrop;
+                    thisObj.bytesDrop = bytesDrop;
                     thisObj.consumers = consumers;
 
                     // update bindings
-                    thisObj.bindingsGrid.update(thisObj.queueData.bindings)
-
-                    // update consumers
-                    thisObj.consumersGrid.update(thisObj.queueData.consumers)
-
+                    thisObj.bindingsGrid.update(thisObj.exchangeData.bindings)
 
                  });
          };
 
-         queueUpdater = new QueueUpdater();
+         exchangeUpdater = new ExchangeUpdater();
 
-         updateList.push( queueUpdater );
+         updateList.push( exchangeUpdater );
 
-         queueUpdater.update();
+         exchangeUpdater.update();
 
          setInterval(function(){
                for(var i = 0; i < updateList.length; i++)
