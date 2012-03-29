@@ -60,7 +60,7 @@ namespace acl {
     // matchProp
     //
     // Compare a rule's property name with a lookup name,
-    // The rule's name may contains a trailing '*' to specify a wildcard match.
+    // The rule's name may contain a trailing '*' to specify a wildcard match.
     //
     bool AclData::matchProp(const std::string& ruleStr,
                             const std::string& lookupStr)
@@ -312,14 +312,14 @@ namespace acl {
         const Action&                   action,
         const ObjectType&               objType,
         const std::string& /*Exchange*/ name,
-        const std::string&              RoutingKey)
+        const std::string&              routingKey)
     {
 
         QPID_LOG(debug, "ACL: Lookup for id:" << id
             << " action:" << AclHelper::getActionStr((Action) action)
             << " objectType:" << AclHelper::getObjectTypeStr((ObjectType) objType)
             << " exchange name:" << name
-            << " with routing key " << RoutingKey);
+            << " with routing key " << routingKey);
 
         AclResult aclresult = decisionMode;
 
@@ -336,6 +336,8 @@ namespace acl {
                 for (int cnt = itrRule->second.size(); cnt != 0; cnt--)
                 {
                     rsItr--;
+
+                    QPID_LOG(debug, "ACL: checking rule " <<  rsItr->toString());
 
                     // loop the names looking for match
                     bool match =true;
@@ -364,17 +366,17 @@ namespace acl {
                             break;
 
                         case acl::SPECPROP_ROUTINGKEY:
-                            if (matchProp(pMItr->second, RoutingKey))
+                            if (matchProp(pMItr->second, routingKey))
                             {
                                 QPID_LOG(debug, "ACL: lookup key name '"
-                                    << name << "' matched with rule routing key '"
+                                    << routingKey << "' matched with rule routing key '"
                                     << pMItr->second << "'");
                             }
                             else
                             {
                                 match= false;
                                 QPID_LOG(debug, "ACL: lookup key name '"
-                                    << name << "' did not match with rule routing key '"
+                                    << routingKey << "' did not match with rule routing key '"
                                     << pMItr->second << "'");
                             }
                             break;
