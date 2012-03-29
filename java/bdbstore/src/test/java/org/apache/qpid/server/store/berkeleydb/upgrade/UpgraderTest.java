@@ -24,7 +24,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.qpid.server.logging.subjects.TestBlankSubject;
 import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
 import org.apache.qpid.server.store.berkeleydb.tuple.ContentBinding;
 
@@ -51,7 +50,7 @@ public class UpgraderTest extends AbstractUpgradeTestCase
     public void setUp() throws Exception
     {
         super.setUp();
-        _upgrader = new Upgrader(_environment, new TestBlankSubject());
+        _upgrader = new Upgrader(_environment);
     }
 
     private int getStoreVersion()
@@ -106,7 +105,7 @@ public class UpgraderTest extends AbstractUpgradeTestCase
 
         nonExistentStoreLocation.mkdir();
         _environment = createEnvironment(nonExistentStoreLocation);
-        _upgrader = new Upgrader(_environment, new TestBlankSubject());
+        _upgrader = new Upgrader(_environment);
         _upgrader.upgradeIfNecessary();
 
         List<String> databaseNames = _environment.getDatabaseNames();
