@@ -43,7 +43,7 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
     public void testPerformUpgrade() throws Exception
     {
         UpgradeFrom5To6 upgrade = new UpgradeFrom5To6();
-        upgrade.performUpgrade(LOG_SUBJECT, _environment, UpgradeInteractionHandler.DEFAULT_HANDLER);
+        upgrade.performUpgrade(_environment, UpgradeInteractionHandler.DEFAULT_HANDLER);
 
         assertDatabaseRecordCounts();
         assertContent();
@@ -54,7 +54,7 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
         corruptDatabase();
 
         UpgradeFrom5To6 upgrade = new UpgradeFrom5To6();
-        upgrade.performUpgrade(LOG_SUBJECT, _environment, new StaticAnswerHandler(UpgradeInteractionResponse.YES));
+        upgrade.performUpgrade(_environment, new StaticAnswerHandler(UpgradeInteractionResponse.YES));
 
         assertDatabaseRecordCounts();
     }
@@ -67,7 +67,7 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
 
         UpgradeInteractionHandler discardMessageInteractionHandler = new StaticAnswerHandler(UpgradeInteractionResponse.NO);
 
-        upgrade.performUpgrade(LOG_SUBJECT, _environment, discardMessageInteractionHandler);
+        upgrade.performUpgrade(_environment, discardMessageInteractionHandler);
 
         assertDatabaseRecordCount("MESSAGE_METADATA", 11);
         assertDatabaseRecordCount("MESSAGE_CONTENT", 11);
