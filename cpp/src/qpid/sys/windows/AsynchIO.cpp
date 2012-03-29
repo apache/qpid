@@ -291,12 +291,12 @@ private:
     volatile LONG opsInProgress;
     // Is there a write in progress?
     volatile bool writeInProgress;
+    // Or a read?
+    volatile bool readInProgress;
     // Deletion requested, but there are callbacks in progress.
     volatile bool queuedDelete;
     // Socket close requested, but there are operations in progress.
     volatile bool queuedClose;
-    // Most recent asynch read request
-    volatile AsynchReadResult* pendingRead;
 
 private:
     // Dispatch events that have completed.
@@ -374,9 +374,9 @@ AsynchIO::AsynchIO(const Socket& s,
     socket(s),
     opsInProgress(0),
     writeInProgress(false),
+    readInProgress(false),
     queuedDelete(false),
     queuedClose(false),
-    pendingRead(0),
     working(false) {
 }
 
@@ -492,6 +492,7 @@ void AsynchIO::startReading() {
                                  readCount);
         DWORD bytesReceived = 0, flags = 0;
         InterlockedIncrement(&opsInProgress);
+        readInProgress = true;
         int status = WSARecv(toSocketHandle(socket),
                              const_cast<LPWSABUF>(result->getWSABUF()), 1,
                              &bytesReceived,
@@ -507,7 +508,6 @@ void AsynchIO::startReading() {
             }
         }
         // On status 0 or WSA_IO_PENDING, completion will handle the rest.
-        pendingRead = result;
     }
     else {
         notifyBuffersEmpty();
@@ -620,6 +620,7 @@ void AsynchIO::close(void) {
 void AsynchIO::readComplete(AsynchReadResult *result) {
     int status = result->getStatus();
     size_t bytes = result->getTransferred();
+    readInProgress = false;
     if (status == 0 && bytes > 0) {
         if (readCallback)
             readCallback(*this, result->getBuff());
@@ -630,7 +631,7 @@ void AsynchIO::readComplete(AsynchReadResult *result) {
         // so "unread" it back to the front of the queue.
         unread(result->getBuff());
         if (queuedClose && status == ERROR_OPERATION_ABORTED) {
-            return; // Expected reap from CancelIoEx
+            return; // Expected draining of cancelled read on close
         }
         notifyEof();
         if (status != 0)
@@ -702,11 +703,8 @@ void AsynchIO::completion(AsynchIoResult *result) {
             {
                 ScopedUnlock<Mutex> ul(completionLock);
                 AsynchReadResult *r = dynamic_cast<AsynchReadResult*>(result);
-                if (r != 0) {
+                if (r != 0)
                     readComplete(r);
-                    // Set pendingRead to 0 if it's still pointing to (newly completed) r
-                    InterlockedCompareExchangePointer((void * volatile *)&pendingRead, 0, r);
-                }
                 else {
                     AsynchWriteResult *w =
                         dynamic_cast<AsynchWriteResult*>(result);
@@ -741,12 +739,11 @@ void AsynchIO::completion(AsynchIoResult *result) {
             delete this;
     }
     else {
-        if (queuedClose && pendingRead) {
-            // Force outstanding read to completion.  Layer above will
-            // call back.
-            CancelIoEx((HANDLE)toSocketHandle(socket),
-                       ((AsynchReadResult *)pendingRead)->overlapped());
-            pendingRead = 0;
+        if (queuedClose && opsInProgress == 1 && readInProgress) {
+            // Cancel outstanding read and force to completion.  Layer
+            // above will call back for official close.  CancelIoEX()
+            // is not available in XP so we make do with closesocket().
+            socket.close();
         }
     }
 }
