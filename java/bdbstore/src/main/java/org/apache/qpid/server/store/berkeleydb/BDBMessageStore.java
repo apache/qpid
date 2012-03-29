@@ -325,7 +325,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
         boolean newEnvironment = createEnvironment(storePath, readonly);
 
-        new Upgrader(_environment, _logSubject).upgradeIfNecessary();
+        new Upgrader(_environment).upgradeIfNecessary();
 
         openDatabases(readonly);
 
