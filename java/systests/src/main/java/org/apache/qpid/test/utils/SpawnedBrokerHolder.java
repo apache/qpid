@@ -114,7 +114,7 @@ public class SpawnedBrokerHolder implements BrokerHolder
             }
             catch (ReflectionUtilsException e)
             {
-                LOGGER.warn("Could not get pid for process, Broker process shutdown will be ungraceful");
+                LOGGER.warn("Could not get pid for process, Broker process shutdown will be graceful");
             }
         }
         return null;

@@ -157,7 +157,7 @@ public class QpidTestCase extends TestCase
      * @param fromPort the port to scan for availability
      * @throws NoSuchElementException if there are no ports available
      */
-    protected int getNextAvailable(int fromPort)
+    public int getNextAvailable(int fromPort)
     {
         if ((fromPort < MIN_PORT_NUMBER) || (fromPort > MAX_PORT_NUMBER))
         {
