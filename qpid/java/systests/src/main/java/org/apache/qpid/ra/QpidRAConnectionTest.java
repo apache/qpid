@@ -86,12 +86,4 @@ public class QpidRAConnectionTest extends QpidBrokerTestCase
             c.close();
         }
     }
-    @Override
-    public void stopBroker(int port) throws Exception
-    {
-        if (isBrokerPresent(port))
-        {
-            super.stopBroker(port);
-        }
-    }
 }
