@@ -23,7 +23,11 @@ include (CTest)
 # Make sure that everything get built before the tests
 # Need to create a var with all the necessary top level targets
 
-add_definitions(-DBOOST_TEST_DYN_LINK)
+# If we're linking Boost for DLLs, turn that on for the unit test too.
+if (QPID_LINK_BOOST_DYNAMIC)
+    add_definitions(-DBOOST_TEST_DYN_LINK)
+endif (QPID_LINK_BOOST_DYNAMIC)
+
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
 include (FindPythonInterp)
