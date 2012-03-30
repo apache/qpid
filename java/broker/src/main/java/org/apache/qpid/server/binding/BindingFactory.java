@@ -34,7 +34,6 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.BindingMessages;
 import org.apache.qpid.server.logging.subjects.BindingLogSubject;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collections;
@@ -44,37 +43,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class BindingFactory
 {
     private final VirtualHost _virtualHost;
-    private final DurableConfigurationStore.Source _configSource;
-    private final Exchange _defaultExchange;
 
     private final ConcurrentHashMap<BindingImpl, BindingImpl> _bindings = new ConcurrentHashMap<BindingImpl, BindingImpl>();
 
-
     public BindingFactory(final VirtualHost vhost)
     {
-        this(vhost, vhost.getExchangeRegistry().getDefaultExchange());
+        _virtualHost = vhost;
     }
-
-    public BindingFactory(final DurableConfigurationStore.Source configSource, final Exchange defaultExchange)
-    {
-        _configSource = configSource;
-        _defaultExchange = defaultExchange;
-        if (configSource instanceof VirtualHost)
-        {
-            _virtualHost = (VirtualHost) configSource;
-        }
-        else
-        {
-            _virtualHost = null;
-        }
-    }
-
-    public VirtualHost getVirtualHost()
-    {
-        return _virtualHost;
-    }
-
-
 
     private final class BindingImpl extends Binding implements AMQQueue.Task, Exchange.Task, BindingConfig
     {
@@ -156,30 +131,38 @@ public class BindingFactory
     private boolean makeBinding(String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments, boolean restore, boolean force) throws AMQSecurityException, AMQInternalException
     {
         assert queue != null;
+        final Exchange defaultExchange = _virtualHost.getExchangeRegistry().getDefaultExchange();
+
         if (bindingKey == null)
         {
             bindingKey = "";
         }
         if (exchange == null)
         {
-            exchange = _defaultExchange;
+            exchange = defaultExchange;
         }
         if (arguments == null)
         {
             arguments = Collections.emptyMap();
         }
 
+        if (exchange == null)
+        {
+            throw new IllegalArgumentException("exchange cannot be null");
+        }
+
         // The default exchange bindings must reflect the existence of queues, allow
         // all operations on it to succeed. It is up to the broker to prevent illegal
         // attempts at binding to this exchange, not the ACLs.
-        if(exchange != _defaultExchange)
+        if(exchange != defaultExchange)
         {
             //Perform ACLs
-            if (!getVirtualHost().getSecurityManager().authoriseBind(exchange, queue, new AMQShortString(bindingKey)))
+            if (!_virtualHost.getSecurityManager().authoriseBind(exchange, queue, new AMQShortString(bindingKey)))
             {
                 throw new AMQSecurityException("Permission denied: binding " + bindingKey);
             }
         }
+
         
         BindingImpl b = new BindingImpl(bindingKey,queue,exchange,arguments);
         BindingImpl existingMapping = _bindings.putIfAbsent(b,b);
@@ -192,7 +175,7 @@ public class BindingFactory
 
             if (b.isDurable() && !restore)
             {
-                _configSource.getMessageStore().bindQueue(exchange,new AMQShortString(bindingKey),queue,FieldTable.convertToFieldTable(arguments));
+                _virtualHost.getMessageStore().bindQueue(exchange,new AMQShortString(bindingKey),queue,FieldTable.convertToFieldTable(arguments));
             }
 
             queue.addQueueDeleteTask(b);
@@ -212,7 +195,7 @@ public class BindingFactory
 
     private ConfigStore getConfigStore()
     {
-        return getVirtualHost().getConfigStore();
+        return _virtualHost.getConfigStore();
     }
 
     public void restoreBinding(final String bindingKey, final AMQQueue queue, final Exchange exchange, final Map<String, Object> argumentMap) throws AMQSecurityException, AMQInternalException
@@ -229,13 +212,15 @@ public class BindingFactory
     public Binding removeBinding(String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments) throws AMQSecurityException, AMQInternalException
     {
         assert queue != null;
+        final Exchange defaultExchange = _virtualHost.getExchangeRegistry().getDefaultExchange();
+
         if (bindingKey == null)
         {
             bindingKey = "";
         }
         if (exchange == null)
         {
-            exchange = _defaultExchange;
+            exchange = defaultExchange;
         }
         if (arguments == null)
         {
@@ -245,10 +230,10 @@ public class BindingFactory
         // The default exchange bindings must reflect the existence of queues, allow
         // all operations on it to succeed. It is up to the broker to prevent illegal
         // attempts at binding to this exchange, not the ACLs.
-        if(exchange != _defaultExchange)
+        if(exchange != defaultExchange)
         {
             // Check access
-            if (!getVirtualHost().getSecurityManager().authoriseUnbind(exchange, new AMQShortString(bindingKey), queue))
+            if (!_virtualHost.getSecurityManager().authoriseUnbind(exchange, new AMQShortString(bindingKey), queue))
             {
                 throw new AMQSecurityException("Permission denied: unbinding " + bindingKey);
             }
@@ -265,7 +250,7 @@ public class BindingFactory
 
             if (b.isDurable())
             {
-                _configSource.getMessageStore().unbindQueue(exchange,
+                _virtualHost.getMessageStore().unbindQueue(exchange,
                                          new AMQShortString(bindingKey),
                                          queue,
                                          FieldTable.convertToFieldTable(arguments));
@@ -280,13 +265,15 @@ public class BindingFactory
     public Binding getBinding(String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments)
     {
         assert queue != null;
+        final Exchange defaultExchange = _virtualHost.getExchangeRegistry().getDefaultExchange();
+
         if(bindingKey == null)
         {
             bindingKey = "";
         }
         if(exchange == null)
         {
-            exchange = _defaultExchange;
+            exchange = defaultExchange;
         }
         if(arguments == null)
         {

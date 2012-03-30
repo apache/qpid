@@ -21,7 +21,7 @@ java.naming.provider.url=${test.profiles}/test-provider.properties
 
 broker.ready=Listening on TCP
 broker.config=build/etc/config-systests.xml
-messagestore.class.name=org.apache.qpid.server.store.MemoryMessageStore
+messagestorefactory.class.name=org.apache.qpid.server.store.MemoryMessageStoreFactory
 broker.protocol.excludes=
 broker.persistent=false
 

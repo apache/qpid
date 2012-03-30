@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
@@ -92,7 +93,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
     public VirtualHostConfigRecoveryHandler begin(MessageStore store)
     {
-        _logSubject = new MessageStoreLogSubject(_virtualHost,store);
+        _logSubject = new MessageStoreLogSubject(_virtualHost,store.getClass().getSimpleName());
         _store = store;
         CurrentActor.get().message(_logSubject, TransactionLogMessages.RECOVERY_START(null, false));
 
@@ -353,31 +354,6 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
             m.remove();
         }
         CurrentActor.get().message(_logSubject, TransactionLogMessages.RECOVERY_COMPLETE(null, false));
-    }
-
-    private static final class ProcessAction
-    {
-        private final AMQQueue _queue;
-        private final AMQMessage _message;
-
-        public ProcessAction(AMQQueue queue, AMQMessage message)
-        {
-            _queue = queue;
-            _message = message;
-        }
-
-        public void process()
-        {
-            try
-            {
-                _queue.enqueue(_message);
-            }
-            catch(AMQException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-
     }
 
     public void binding(String exchangeName, String queueName, String bindingKey, ByteBuffer buf)

@@ -231,11 +231,6 @@ public class HeadersExchange extends AbstractExchange
         return new HeadersExchangeMBean(this);
     }
 
-    public Logger getLogger()
-    {
-        return _logger;
-    }
-
     protected void onBind(final Binding binding)
     {
         String bindingKey = binding.getBindingKey();

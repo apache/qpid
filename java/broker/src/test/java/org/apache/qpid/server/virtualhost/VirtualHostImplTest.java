@@ -27,7 +27,7 @@ import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.store.MemoryMessageStoreFactory;
 import org.apache.qpid.server.util.TestApplicationRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -68,6 +68,64 @@ public class VirtualHostImplTest extends QpidTestCase
         customBindingTestImpl(new String[0]);
     }
 
+    /**
+     * Tests that specifying custom routing keys for a queue in the configuration file results in failure
+     * to create the vhost (since this is illegal, only queue names are used with the default exchange)
+     */
+    public void testSpecifyingCustomBindingForDefaultExchangeThrowsException() throws Exception
+    {
+        File config = writeConfigFile(getName(), getName(), null, false, new String[]{"custom-binding"});
+
+        try
+        {
+            createVirtualHost(getName(), config);
+            fail("virtualhost creation should have failed due to illegal configuration");
+        }
+        catch (RuntimeException e)
+        {
+            assertEquals(ConfigurationException.class, e.getCause().getClass());
+            //expected
+        }
+    }
+
+    public void testVirtualHostBecomesActive() throws Exception
+    {
+        File config = writeConfigFile(getName(), getName(), getName() +".direct", false, new String[0]);
+        VirtualHost vhost = createVirtualHost(getName(), config);
+        assertNotNull(vhost);
+        assertEquals(State.ACTIVE, vhost.getState());
+    }
+
+    public void testVirtualHostBecomesStoppedOnClose() throws Exception
+    {
+        File config = writeConfigFile(getName(), getName(), getName() +".direct", false, new String[0]);
+        VirtualHost vhost = createVirtualHost(getName(), config);
+        assertNotNull(vhost);
+        assertEquals(State.ACTIVE, vhost.getState());
+        vhost.close();
+        assertEquals(State.STOPPED, vhost.getState());
+        assertEquals(0, vhost.getHouseKeepingActiveCount());
+    }
+
+    /**
+     * Tests that specifying an unknown exchange to bind the queue to results in failure to create the vhost
+     */
+    public void testSpecifyingUnknownExchangeThrowsException() throws Exception
+    {
+        File config = writeConfigFile(getName(), getName(), "made-up-exchange", true, new String[0]);
+
+        try
+        {
+            createVirtualHost(getName(), config);
+            fail("virtualhost creation should have failed due to illegal configuration");
+        }
+        catch (RuntimeException e)
+        {
+            assertEquals(ConfigurationException.class, e.getCause().getClass());
+            //expected
+        }
+    }
+
     private void customBindingTestImpl(final String[] routingKeys) throws Exception
     {
         String exchangeName = getName() +".direct";
@@ -93,42 +151,6 @@ public class VirtualHostImplTest extends QpidTestCase
         }
     }
 
-    /**
-     * Tests that specifying custom routing keys for a queue in the configuration file results in failure
-     * to create the vhost (since this is illegal, only queue names are used with the default exchange)
-     */
-    public void testSpecifyingCustomBindingForDefaultExchangeThrowsException() throws Exception
-    {
-        File config = writeConfigFile(getName(), getName(), null, false, new String[]{"custom-binding"});
-
-        try
-        {
-            createVirtualHost(getName(), config);
-            fail("virtualhost creation should have failed due to illegal configuration");
-        }
-        catch (ConfigurationException e)
-        {
-            //expected
-        }
-    }
-
-    /**
-     * Tests that specifying an unknown exchange to bind the queue to results in failure to create the vhost
-     */
-    public void testSpecifyingUnknownExchangeThrowsException() throws Exception
-    {
-        File config = writeConfigFile(getName(), getName(), "made-up-exchange", true, new String[0]);
-
-        try
-        {
-            createVirtualHost(getName(), config);
-            fail("virtualhost creation should have failed due to illegal configuration");
-        }
-        catch (ConfigurationException e)
-        {
-            //expected
-        }
-    }
 
     private VirtualHost createVirtualHost(String vhostName, File config) throws Exception
     {
@@ -167,11 +189,11 @@ public class VirtualHostImplTest extends QpidTestCase
             writer.write("<virtualhosts>");
             writer.write("  <default>" + vhostName + "</default>");
             writer.write("  <virtualhost>");
-            writer.write("      <store>");
-            writer.write("          <class>" + TestableMemoryMessageStore.class.getName() + "</class>");
-            writer.write("      </store>");
             writer.write("      <name>" + vhostName + "</name>");
             writer.write("      <" + vhostName + ">");
+            writer.write("              <store>");
+            writer.write("                <factoryclass>" + MemoryMessageStoreFactory.class.getName() + "</factoryclass>");
+            writer.write("              </store>");
             if(exchangeName != null && !dontDeclare)
             {
                 writer.write("          <exchanges>");

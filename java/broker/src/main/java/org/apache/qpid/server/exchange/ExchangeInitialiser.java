@@ -27,7 +27,8 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 
 public class ExchangeInitialiser
 {
-    public void initialise(ExchangeFactory factory, ExchangeRegistry registry, DurableConfigurationStore store) throws AMQException{
+    public void initialise(ExchangeFactory factory, ExchangeRegistry registry, DurableConfigurationStore store) throws AMQException
+    {
         for (ExchangeType<? extends Exchange> type : factory.getRegisteredTypes())
         {
             define (registry, factory, type.getDefaultExchangeName(), type.getName(), store);
@@ -44,7 +45,6 @@ public class ExchangeInitialiser
         {
             Exchange exchange = f.createExchange(name, type, true, false, 0);
             r.registerExchange(exchange);
-
             if(exchange.isDurable())
             {
                 store.createExchange(exchange);

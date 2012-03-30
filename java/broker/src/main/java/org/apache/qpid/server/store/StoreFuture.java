@@ -31,7 +31,6 @@ public interface StoreFuture
 
         public void waitForCompletion()
         {
-
         }
     };
 
