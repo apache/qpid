@@ -40,4 +40,6 @@ public interface QueueRegistry
     Collection<AMQQueue> getQueues();
 
     AMQQueue getQueue(String queue);
+
+    void stopAllAndUnregisterMBeans();
 }

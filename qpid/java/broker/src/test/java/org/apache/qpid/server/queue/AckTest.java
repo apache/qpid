@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
@@ -37,7 +36,7 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.store.TestMemoryMessageStore;
+import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
@@ -53,13 +52,11 @@ import java.util.Set;
  */
 public class AckTest extends InternalBrokerBaseCase
 {
-    private static final Logger _log = Logger.getLogger(AckTest.class);
-
     private Subscription _subscription;
 
     private AMQProtocolSession _protocolSession;
 
-    private TestMemoryMessageStore _messageStore;
+    private TestableMemoryMessageStore _messageStore;
 
     private AMQChannel _channel;
 
@@ -73,7 +70,7 @@ public class AckTest extends InternalBrokerBaseCase
     {
         super.setUp();
         _virtualHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
-        _messageStore = new TestMemoryMessageStore();
+        _messageStore = new TestableMemoryMessageStore();
         _protocolSession = new InternalTestProtocolSession(_virtualHost);
         _channel = new AMQChannel(_protocolSession,5, _messageStore /*dont need exchange registry*/);
 
@@ -180,7 +177,7 @@ public class AckTest extends InternalBrokerBaseCase
         }
         catch (InterruptedException e)
         {
-            e.printStackTrace();  //TODO.
+            Thread.currentThread().interrupt();
         }
 
     }

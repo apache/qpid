@@ -42,6 +42,7 @@ import org.apache.qpid.server.queue.SimpleAMQQueue.QueueEntryFilter;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.store.TestableMemoryMessageStoreFactory;
 import org.apache.qpid.server.subscription.MockSubscription;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
@@ -105,9 +106,9 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         ApplicationRegistry applicationRegistry = (ApplicationRegistry)ApplicationRegistry.getInstance();
 
         PropertiesConfiguration env = new PropertiesConfiguration();
-        VirtualHostConfiguration vHostConfig = new VirtualHostConfiguration(getClass().getName(), env);
-        vHostConfig.setMessageStoreClass(TestableMemoryMessageStore.class.getName());
-        _virtualHost = new VirtualHostImpl(ApplicationRegistry.getInstance(), vHostConfig);
+        final VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(getClass().getName(), env);
+        vhostConfig.setMessageStoreFactoryClass(TestableMemoryMessageStoreFactory.class.getName());
+        _virtualHost = new VirtualHostImpl(ApplicationRegistry.getInstance(), vhostConfig);
         applicationRegistry.getVirtualHostRegistry().registerVirtualHost(_virtualHost);
 
         _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(_qname, false, _owner, false, false, _virtualHost, _arguments);
@@ -635,7 +636,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
 
         qs.add(_queue);
         MessageMetaData metaData = msg.headersReceived(System.currentTimeMillis());
-        TestableMemoryMessageStore store = (TestableMemoryMessageStore) _virtualHost.getMessageStore();
+        TestableMemoryMessageStore store = (TestableMemoryMessageStore) _virtualHost.getMessageStore().getUnderlyingStore();
         StoredMessage handle = store.addMessage(metaData);
         msg.setStoredMessage(handle);
 

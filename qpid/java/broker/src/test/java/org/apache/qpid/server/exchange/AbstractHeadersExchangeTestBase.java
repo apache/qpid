@@ -20,8 +20,18 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.log4j.Logger;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -31,7 +41,6 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageMetaData;
@@ -44,22 +53,9 @@ import org.apache.qpid.server.queue.MockStoredMessage;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
-
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
 {
@@ -67,24 +63,6 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
 
     private final HeadersExchange exchange = new HeadersExchange();
     protected final Set<TestQueue> queues = new HashSet<TestQueue>();
-
-
-
-    /**
-     * Not used in this test, just there to stub out the routing calls
-     */
-    private MemoryMessageStore _store = new MemoryMessageStore();
-
-
-    private BindingFactory bindingFactory = new BindingFactory(new DurableConfigurationStore.Source()
-                                                        {
-
-                                                            public DurableConfigurationStore getMessageStore()
-                                                            {
-                                                                return _store;
-                                                            }
-                                                        },
-                                                        exchange);
 
     private int count;
 
@@ -103,7 +81,6 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
     protected void unbind(TestQueue queue, String... bindings) throws AMQException
     {
         String queueName = queue.getName();
-        //TODO - check this
         exchange.onUnbind(new Binding(null,queueName, queue, exchange, getHeadersMap(bindings)));
     }
     
@@ -535,12 +512,6 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
                                        final AMQProtocolSession publisher)
             {
                 super(info);
-            }
-
-
-            public AMQMessage getUnderlyingMessage()
-            {
-                return Message.this;
             }
 
 

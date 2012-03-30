@@ -43,6 +43,7 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.store.TestableMemoryMessageStoreFactory;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -65,10 +66,10 @@ public class InternalBrokerBaseCase extends QpidTestCase
         super.setUp();
 
         _configXml.addProperty("virtualhosts.virtualhost.name", "test");
-        _configXml.addProperty("virtualhosts.virtualhost.test.store.class", TestableMemoryMessageStore.class.getName());
+        _configXml.addProperty("virtualhosts.virtualhost.test.store.factoryclass", TestableMemoryMessageStoreFactory.class.getName());
 
         _configXml.addProperty("virtualhosts.virtualhost(-1).name", getName());
-        _configXml.addProperty("virtualhosts.virtualhost(-1)."+getName()+".store.class", TestableMemoryMessageStore.class.getName());
+        _configXml.addProperty("virtualhosts.virtualhost(-1)."+getName()+".store.factoryclass", TestableMemoryMessageStoreFactory.class.getName());
 
         createBroker();
     }
@@ -97,7 +98,7 @@ public class InternalBrokerBaseCase extends QpidTestCase
         _virtualHost.getBindingFactory().addBinding(QUEUE_NAME.toString(), _queue, defaultExchange, null);
 
         _virtualHost = _registry.getVirtualHostRegistry().getVirtualHost("test");
-        _messageStore = _virtualHost.getMessageStore();
+        _messageStore = _virtualHost.getMessageStore().getUnderlyingStore();
 
         _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString(getName()), false, new AMQShortString("testowner"),
                                                     false, false, _virtualHost, null);

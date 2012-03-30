@@ -18,7 +18,8 @@
 * under the License.
 *
 */
-package org.apache.qpid.server.store;
+package org.apache.qpid.server.store.derby;
+
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
@@ -30,13 +31,24 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.federation.Bridge;
 import org.apache.qpid.server.federation.BrokerLink;
-import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
-import org.apache.qpid.server.logging.messages.MessageStoreMessages;
-import org.apache.qpid.server.logging.messages.TransactionLogMessages;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
+import org.apache.qpid.server.store.Event;
+import org.apache.qpid.server.store.EventListener;
+import org.apache.qpid.server.store.MessageMetaDataType;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.MessageStoreConstants;
+import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
+import org.apache.qpid.server.store.State;
+import org.apache.qpid.server.store.StateManager;
+import org.apache.qpid.server.store.StorableMessageMetaData;
+import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.store.StoredMemoryMessage;
+import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.store.Transaction;
+import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
+import org.apache.qpid.server.store.TransactionLogResource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -64,18 +76,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * An implementation of a {@link MessageStore} that uses Apache Derby as the persistance
+ * An implementation of a {@link MessageStore} that uses Apache Derby as the persistence
  * mechanism.
- * 
+ *
  * TODO extract the SQL statements into a generic JDBC store
  */
 public class DerbyMessageStore implements MessageStore
 {
 
     private static final Logger _logger = Logger.getLogger(DerbyMessageStore.class);
-
-    public static final String ENVIRONMENT_PATH_PROPERTY = "environment-path";
-
 
     private static final String SQL_DRIVER_NAME = "org.apache.derby.jdbc.EmbeddedDriver";
 
@@ -94,7 +103,7 @@ public class DerbyMessageStore implements MessageStore
 
     private static final String XID_TABLE_NAME = "QPID_XIDS";
     private static final String XID_ACTIONS_TABLE_NAME = "QPID_XID_ACTIONS";
-    
+
     private static final int DB_VERSION = 3;
 
 
@@ -157,7 +166,7 @@ public class DerbyMessageStore implements MessageStore
                                              + " arguments blob,  PRIMARY KEY ( id_lsb, id_msb ))";
     private static final String SELECT_FROM_LINKS =
             "SELECT create_time, arguments FROM " + LINKS_TABLE_NAME + " WHERE id_lsb = ? and id_msb";
-    private static final String DELETE_FROM_LINKS = "DELETE FROM " + LINKS_TABLE_NAME 
+    private static final String DELETE_FROM_LINKS = "DELETE FROM " + LINKS_TABLE_NAME
                                                     + " WHERE id_lsb = ? and id_msb = ?";
     private static final String SELECT_ALL_FROM_LINKS = "SELECT id_lsb, id_msb, create_time, "
                                                         + "arguments FROM " + LINKS_TABLE_NAME;
@@ -175,12 +184,12 @@ public class DerbyMessageStore implements MessageStore
             + " link_id_msb bigint not null,"
             + " arguments blob,  PRIMARY KEY ( id_lsb, id_msb ))";
     private static final String SELECT_FROM_BRIDGES =
-            "SELECT create_time, link_id_lsb, link_id_msb, arguments FROM " 
+            "SELECT create_time, link_id_lsb, link_id_msb, arguments FROM "
             + BRIDGES_TABLE_NAME + " WHERE id_lsb = ? and id_msb = ?";
-    private static final String DELETE_FROM_BRIDGES = "DELETE FROM " + BRIDGES_TABLE_NAME 
+    private static final String DELETE_FROM_BRIDGES = "DELETE FROM " + BRIDGES_TABLE_NAME
                                                       + " WHERE id_lsb = ? and id_msb = ?";
-    private static final String SELECT_ALL_FROM_BRIDGES = "SELECT id_lsb, id_msb, " 
-                                                          + " create_time," 
+    private static final String SELECT_ALL_FROM_BRIDGES = "SELECT id_lsb, id_msb, "
+                                                          + " create_time,"
                                                           + " link_id_lsb, link_id_msb, "
                                                         + "arguments FROM " + BRIDGES_TABLE_NAME
                                                         + " WHERE link_id_lsb = ? and link_id_msb = ?";
@@ -196,7 +205,7 @@ public class DerbyMessageStore implements MessageStore
             "CREATE TABLE "+XID_TABLE_NAME+" ( format bigint not null,"
             + " global_id varchar(64) for bit data, branch_id varchar(64) for bit data,  PRIMARY KEY ( format, " +
             "global_id, branch_id ))";
-    private static final String INSERT_INTO_XIDS = 
+    private static final String INSERT_INTO_XIDS =
             "INSERT INTO "+XID_TABLE_NAME+" ( format, global_id, branch_id ) values (?, ?, ?)";
     private static final String DELETE_FROM_XIDS = "DELETE FROM " + XID_TABLE_NAME
                                                       + " WHERE format = ? and global_id = ? and branch_id = ?";
@@ -214,104 +223,64 @@ public class DerbyMessageStore implements MessageStore
             "queue_name, message_id ) values (?,?,?,?,?,?) ";
     private static final String DELETE_FROM_XID_ACTIONS = "DELETE FROM " + XID_ACTIONS_TABLE_NAME
                                                    + " WHERE format = ? and global_id = ? and branch_id = ?";
-    private static final String SELECT_ALL_FROM_XID_ACTIONS = 
-            "SELECT action_type, queue_name, message_id FROM " + XID_ACTIONS_TABLE_NAME + 
+    private static final String SELECT_ALL_FROM_XID_ACTIONS =
+            "SELECT action_type, queue_name, message_id FROM " + XID_ACTIONS_TABLE_NAME +
             " WHERE format = ? and global_id = ? and branch_id = ?";
 
     private static final String DERBY_SINGLE_DB_SHUTDOWN_CODE = "08006";
 
+    private final StateManager _stateManager = new StateManager();
 
-    private LogSubject _logSubject;
-    private boolean _configured;
+    private MessageStoreRecoveryHandler _messageRecoveryHandler;
 
+    private TransactionLogRecoveryHandler _tlogRecoveryHandler;
 
-    private static final class CommitStoreFuture implements StoreFuture
-    {
-        public boolean isComplete()
-        {
-            return true;
-        }
+    private ConfigurationRecoveryHandler _configRecoveryHandler;
 
-        public void waitForCompletion()
-        {
-
-        }
-    }
-
-    private enum State
-    {
-        INITIAL,
-        CONFIGURING,
-        RECOVERING,
-        STARTED,
-        CLOSING,
-        CLOSED
-    }
-
-    private State _state = State.INITIAL;
-
-
+    @Override
     public void configureConfigStore(String name,
-                          ConfigurationRecoveryHandler recoveryHandler,
-                          Configuration storeConfiguration,
-                          LogSubject logSubject) throws Exception
+                          ConfigurationRecoveryHandler configRecoveryHandler,
+                          Configuration storeConfiguration) throws Exception
     {
-        stateTransition(State.INITIAL, State.CONFIGURING);
-        _logSubject = logSubject;
-        CurrentActor.get().message(_logSubject, ConfigStoreMessages.CREATED(this.getClass().getName()));
+        _stateManager.stateTransition(State.INITIAL, State.CONFIGURING);
+        _configRecoveryHandler = configRecoveryHandler;
 
-        if(!_configured)
-        {
-            commonConfiguration(name, storeConfiguration, logSubject);
-            _configured = true;
-        }
-
-        // this recovers durable exchanges, queues, and bindings
-        recover(recoveryHandler);
-
-
-        stateTransition(State.RECOVERING, State.STARTED);
+        commonConfiguration(name, storeConfiguration);
 
     }
 
 
+    @Override
     public void configureMessageStore(String name,
                           MessageStoreRecoveryHandler recoveryHandler,
                           TransactionLogRecoveryHandler tlogRecoveryHandler,
-                          Configuration storeConfiguration, LogSubject logSubject) throws Exception
+                          Configuration storeConfiguration) throws Exception
     {
-        if(!_configured)
-        {
-
-            _logSubject = logSubject;
-        }
-
-        CurrentActor.get().message(_logSubject, MessageStoreMessages.CREATED(this.getClass().getName()));
-
-        if(!_configured)
-        {
-
-            commonConfiguration(name, storeConfiguration, logSubject);
-            _configured = true;
-        }
-
-        recoverMessages(recoveryHandler);
-
-        CurrentActor.get().message(_logSubject, TransactionLogMessages.CREATED(this.getClass().getName()));
-
-        TransactionLogRecoveryHandler.DtxRecordRecoveryHandler dtxrh = recoverQueueEntries(tlogRecoveryHandler);
-        recoverXids(dtxrh);
-
+        _tlogRecoveryHandler = tlogRecoveryHandler;
+        _messageRecoveryHandler = recoveryHandler;
     }
 
-    private void commonConfiguration(String name, Configuration storeConfiguration, LogSubject logSubject)
+    @Override
+    public void activate() throws Exception
+    {
+        _stateManager.stateTransition(State.CONFIGURING, State.RECOVERING);
+
+        // this recovers durable exchanges, queues, and bindings
+        recoverConfiguration(_configRecoveryHandler);
+        recoverMessages(_messageRecoveryHandler);
+        TransactionLogRecoveryHandler.DtxRecordRecoveryHandler dtxrh = recoverQueueEntries(_tlogRecoveryHandler);
+        recoverXids(dtxrh);
+        _stateManager.stateTransition(State.RECOVERING, State.ACTIVE);
+    }
+
+    private void commonConfiguration(String name, Configuration storeConfiguration)
             throws ClassNotFoundException, SQLException
     {
         initialiseDriver();
 
         //Update to pick up QPID_WORK and use that as the default location not just derbyDB
 
-        final String databasePath = storeConfiguration.getString(ENVIRONMENT_PATH_PROPERTY, System.getProperty("QPID_WORK")
+        final String databasePath = storeConfiguration.getString(MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY, System.getProperty("QPID_WORK")
                 + File.separator + "derbyDB");
 
         File environmentPath = new File(databasePath);
@@ -323,8 +292,6 @@ public class DerbyMessageStore implements MessageStore
                     + "Ensure the path is correct and that the permissions are correct.");
             }
         }
-
-        CurrentActor.get().message(_logSubject, MessageStoreMessages.STORE_LOCATION(environmentPath.getAbsolutePath()));
 
         createOrOpenDatabase(name, databasePath);
     }
@@ -576,19 +543,15 @@ public class DerbyMessageStore implements MessageStore
         {
             stmt.close();
         }
-
     }
 
-    public void recover(ConfigurationRecoveryHandler recoveryHandler) throws AMQException
+    private void recoverConfiguration(ConfigurationRecoveryHandler recoveryHandler) throws AMQException
     {
-        stateTransition(State.CONFIGURING, State.RECOVERING);
-
-        CurrentActor.get().message(_logSubject,MessageStoreMessages.RECOVERY_START());
 
         try
         {
             ConfigurationRecoveryHandler.QueueRecoveryHandler qrh = recoveryHandler.begin(this);
-            loadQueues(qrh);
+            recoverQueues(qrh);
 
             ConfigurationRecoveryHandler.ExchangeRecoveryHandler erh = qrh.completeQueueRecovery();
             List<String> exchanges = loadExchanges(erh);
@@ -632,12 +595,12 @@ public class DerbyMessageStore implements MessageStore
                         Blob argumentsAsBlob = rs.getBlob(4);
 
                         byte[] dataAsBytes = argumentsAsBlob.getBytes(1,(int) argumentsAsBlob.length());
-                        
+
                         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(dataAsBytes));
                         int size = dis.readInt();
-                        
+
                         Map<String,String> arguments = new HashMap<String, String>();
-                        
+
                         for(int i = 0; i < size; i++)
                         {
                             arguments.put(dis.readUTF(), dis.readUTF());
@@ -744,7 +707,7 @@ public class DerbyMessageStore implements MessageStore
 
     }
 
-    private void loadQueues(ConfigurationRecoveryHandler.QueueRecoveryHandler qrh) throws SQLException
+    private void recoverQueues(ConfigurationRecoveryHandler.QueueRecoveryHandler qrh) throws SQLException
     {
         Connection conn = newAutoCommitConnection();
         try
@@ -759,6 +722,7 @@ public class DerbyMessageStore implements MessageStore
                     while(rs.next())
                     {
                         String queueName = rs.getString(1);
+                        _logger.debug("Got queue " + queueName);
                         String owner = rs.getString(2);
                         boolean exclusive = rs.getBoolean(3);
                         Blob argumentsAsBlob = rs.getBlob(4);
@@ -913,10 +877,11 @@ public class DerbyMessageStore implements MessageStore
 
 
 
+    @Override
     public void close() throws Exception
     {
-        CurrentActor.get().message(_logSubject,MessageStoreMessages.CLOSED());
         _closed.getAndSet(true);
+        _stateManager.stateTransition(State.ACTIVE, State.CLOSING);
 
         try
         {
@@ -926,9 +891,9 @@ public class DerbyMessageStore implements MessageStore
             _logger.error("Unable to shut down the store");
         }
         catch (SQLException e)
-        { 
-            if (e.getSQLState().equalsIgnoreCase(DERBY_SINGLE_DB_SHUTDOWN_CODE)) 
-            {     
+        {
+            if (e.getSQLState().equalsIgnoreCase(DERBY_SINGLE_DB_SHUTDOWN_CODE))
+            {
                 //expected and represents a clean shutdown of this database only, do nothing.
             }
             else
@@ -936,8 +901,11 @@ public class DerbyMessageStore implements MessageStore
                 _logger.error("Exception whilst shutting down the store: " + e);
             }
         }
+
+        _stateManager.stateTransition(State.CLOSING, State.CLOSED);
     }
 
+    @Override
     public StoredMessage addMessage(StorableMessageMetaData metaData)
     {
         if(metaData.isPersistent())
@@ -1015,9 +983,10 @@ public class DerbyMessageStore implements MessageStore
 
     }
 
+    @Override
     public void createExchange(Exchange exchange) throws AMQStoreException
     {
-        if (_state != State.RECOVERING)
+        if (_stateManager.isInState(State.ACTIVE))
         {
             try
             {
@@ -1077,6 +1046,7 @@ public class DerbyMessageStore implements MessageStore
 
     }
 
+    @Override
     public void removeExchange(Exchange exchange) throws AMQStoreException
     {
 
@@ -1112,10 +1082,11 @@ public class DerbyMessageStore implements MessageStore
         }
     }
 
+    @Override
     public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args)
             throws AMQStoreException
     {
-        if (_state != State.RECOVERING)
+        if (_stateManager.isInState(State.ACTIVE))
         {
             try
             {
@@ -1189,6 +1160,7 @@ public class DerbyMessageStore implements MessageStore
 
     }
 
+    @Override
     public void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args)
             throws AMQStoreException
     {
@@ -1224,16 +1196,18 @@ public class DerbyMessageStore implements MessageStore
         }
     }
 
+    @Override
     public void createQueue(AMQQueue queue) throws AMQStoreException
     {
         createQueue(queue, null);
     }
 
+    @Override
     public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQStoreException
     {
         _logger.debug("public void createQueue(AMQQueue queue = " + queue + "): called");
 
-        if (_state != State.RECOVERING)
+        if (_stateManager.isInState(State.ACTIVE))
         {
             try
             {
@@ -1299,7 +1273,7 @@ public class DerbyMessageStore implements MessageStore
             }
         }
     }
-    
+
     /**
      * Updates the specified queue in the persistent store, IF it is already present. If the queue
      * is not present in the store, it will not be added.
@@ -1309,9 +1283,10 @@ public class DerbyMessageStore implements MessageStore
      * @param queue The queue to update the entry for.
      * @throws AMQStoreException If the operation fails for any reason.
      */
+    @Override
     public void updateQueue(final AMQQueue queue) throws AMQStoreException
     {
-        if (_state != State.RECOVERING)
+        if (_stateManager.isInState(State.ACTIVE))
         {
             try
             {
@@ -1363,7 +1338,7 @@ public class DerbyMessageStore implements MessageStore
                 throw new AMQStoreException("Error updating AMQQueue with name " + queue.getNameShortString() + " to database: " + e.getMessage(), e);
             }
         }
-        
+
     }
 
     /**
@@ -1389,7 +1364,7 @@ public class DerbyMessageStore implements MessageStore
                 throw sqlEx;
             }
         }
-        
+
         return connection;
     }
 
@@ -1419,6 +1394,7 @@ public class DerbyMessageStore implements MessageStore
         return connection;
     }
 
+    @Override
     public void removeQueue(final AMQQueue queue) throws AMQStoreException
     {
         AMQShortString name = queue.getNameShortString();
@@ -1450,11 +1426,12 @@ public class DerbyMessageStore implements MessageStore
 
     }
 
+    @Override
     public void createBrokerLink(final BrokerLink link) throws AMQStoreException
     {
         _logger.debug("public void createBrokerLink(BrokerLink = " + link + "): called");
 
-        if (_state != State.RECOVERING)
+        if (_stateManager.isInState(State.ACTIVE))
         {
             try
             {
@@ -1463,7 +1440,7 @@ public class DerbyMessageStore implements MessageStore
                 PreparedStatement stmt = conn.prepareStatement(FIND_LINK);
                 try
                 {
-                    
+
                     stmt.setLong(1, link.getId().getLeastSignificantBits());
                     stmt.setLong(2, link.getId().getMostSignificantBits());
                     ResultSet rs = stmt.executeQuery();
@@ -1477,7 +1454,7 @@ public class DerbyMessageStore implements MessageStore
 
                             try
                             {
-                                
+
                                 insertStmt.setLong(1, link.getId().getLeastSignificantBits());
                                 insertStmt.setLong(2, link.getId().getMostSignificantBits());
                                 insertStmt.setLong(3, link.getCreateTime());
@@ -1546,6 +1523,7 @@ public class DerbyMessageStore implements MessageStore
         return argumentBytes;
     }
 
+    @Override
     public void deleteBrokerLink(final BrokerLink link) throws AMQStoreException
     {
         _logger.debug("public void deleteBrokerLink( " + link + "): called");
@@ -1577,11 +1555,12 @@ public class DerbyMessageStore implements MessageStore
 
     }
 
+    @Override
     public void createBridge(final Bridge bridge) throws AMQStoreException
     {
         _logger.debug("public void createBridge(BrokerLink = " + bridge + "): called");
 
-        if (_state != State.RECOVERING)
+        if (_stateManager.isInState(State.ACTIVE))
         {
             try
             {
@@ -1647,6 +1626,7 @@ public class DerbyMessageStore implements MessageStore
         }
     }
 
+    @Override
     public void deleteBridge(final Bridge bridge) throws AMQStoreException
     {
         _logger.debug("public void deleteBridge( " + bridge + "): called");
@@ -1677,6 +1657,7 @@ public class DerbyMessageStore implements MessageStore
 
     }
 
+    @Override
     public Transaction newTransaction()
     {
         return new DerbyTransaction();
@@ -1695,7 +1676,7 @@ public class DerbyMessageStore implements MessageStore
             {
                 _logger.debug("Enqueuing message " + messageId + " on queue " + name + "[Connection" + conn + "]");
             }
-            
+
             PreparedStatement stmt = conn.prepareStatement(INSERT_INTO_QUEUE_ENTRY);
             try
             {
@@ -1834,7 +1815,7 @@ public class DerbyMessageStore implements MessageStore
             {
                 stmt.close();
             }
-            
+
             stmt = conn.prepareStatement(INSERT_INTO_XID_ACTIONS);
 
             try
@@ -1879,7 +1860,7 @@ public class DerbyMessageStore implements MessageStore
         }
 
     }
-    
+
     private static final class ConnectionWrapper
     {
         private final Connection _connection;
@@ -1924,7 +1905,7 @@ public class DerbyMessageStore implements MessageStore
     public StoreFuture commitTranAsync(ConnectionWrapper connWrapper) throws AMQStoreException
     {
         commitTran(connWrapper);
-        return new CommitStoreFuture();
+        return StoreFuture.IMMEDIATE_FUTURE;
     }
 
     public void abortTran(ConnectionWrapper connWrapper) throws AMQStoreException
@@ -1965,7 +1946,7 @@ public class DerbyMessageStore implements MessageStore
         {
             _logger.debug("Adding metadata for message " +messageId);
         }
-        
+
         PreparedStatement stmt = conn.prepareStatement(INSERT_INTO_META_DATA);
         try
         {
@@ -2008,7 +1989,7 @@ public class DerbyMessageStore implements MessageStore
         {
             stmt.close();
         }
-        
+
     }
 
 
@@ -2154,31 +2135,37 @@ public class DerbyMessageStore implements MessageStore
             _messageNumber = messageNumber;
         }
 
+        @Override
         public TransactionLogResource getQueue()
         {
             return this;
         }
 
+        @Override
         public EnqueableMessage getMessage()
         {
             return this;
         }
 
+        @Override
         public long getMessageNumber()
         {
             return _messageNumber;
         }
 
+        @Override
         public boolean isPersistent()
         {
             return true;
         }
 
+        @Override
         public StoredMessage getStoredMessage()
         {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public String getResourceName()
         {
             return _queueName;
@@ -2191,7 +2178,7 @@ public class DerbyMessageStore implements MessageStore
         try
         {
             List<Xid> xids = new ArrayList<Xid>();
-            
+
             Statement stmt = conn.createStatement();
             try
             {
@@ -2217,15 +2204,15 @@ public class DerbyMessageStore implements MessageStore
                 stmt.close();
             }
 
-            
-            
+
+
             for(Xid xid : xids)
             {
                 List<RecordImpl> enqueues = new ArrayList<RecordImpl>();
                 List<RecordImpl> dequeues = new ArrayList<RecordImpl>();
-                
+
                 PreparedStatement pstmt = conn.prepareStatement(SELECT_ALL_FROM_XID_ACTIONS);
-            
+
                 try
                 {
                     pstmt.setLong(1, xid.getFormat());
@@ -2256,13 +2243,13 @@ public class DerbyMessageStore implements MessageStore
                 {
                     pstmt.close();
                 }
-                
-                dtxrh.dtxRecord(xid.getFormat(), xid.getGlobalId(), xid.getBranchId(), 
-                                enqueues.toArray(new RecordImpl[enqueues.size()]), 
+
+                dtxrh.dtxRecord(xid.getFormat(), xid.getGlobalId(), xid.getBranchId(),
+                                enqueues.toArray(new RecordImpl[enqueues.size()]),
                                 dequeues.toArray(new RecordImpl[dequeues.size()]));
             }
-            
-            
+
+
             dtxrh.completeDtxRecordRecovery();
         }
         finally
@@ -2271,7 +2258,7 @@ public class DerbyMessageStore implements MessageStore
         }
 
     }
-    
+
     StorableMessageMetaData getMetaData(long messageId) throws SQLException
     {
 
@@ -2417,21 +2404,10 @@ public class DerbyMessageStore implements MessageStore
 
     }
 
+    @Override
     public boolean isPersistent()
     {
         return true;
-    }
-
-
-    private synchronized void stateTransition(State requiredState, State newState) throws AMQStoreException
-    {
-        if (_state != requiredState)
-        {
-            throw new AMQStoreException("Cannot transition to the state: " + newState + "; need to be in state: " + requiredState
-                + "; currently in state: " + _state);
-        }
-
-        _state = newState;
     }
 
 
@@ -2452,6 +2428,7 @@ public class DerbyMessageStore implements MessageStore
             }
         }
 
+        @Override
         public void enqueueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
         {
             if(message.getStoredMessage() instanceof StoredDerbyMessage)
@@ -2469,32 +2446,38 @@ public class DerbyMessageStore implements MessageStore
             DerbyMessageStore.this.enqueueMessage(_connWrapper, queue, message.getMessageNumber());
         }
 
+        @Override
         public void dequeueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
         {
             DerbyMessageStore.this.dequeueMessage(_connWrapper, queue, message.getMessageNumber());
 
         }
 
+        @Override
         public void commitTran() throws AMQStoreException
         {
             DerbyMessageStore.this.commitTran(_connWrapper);
         }
 
+        @Override
         public StoreFuture commitTranAsync() throws AMQStoreException
         {
             return DerbyMessageStore.this.commitTranAsync(_connWrapper);
         }
 
+        @Override
         public void abortTran() throws AMQStoreException
         {
             DerbyMessageStore.this.abortTran(_connWrapper);
         }
 
+        @Override
         public void removeXid(long format, byte[] globalId, byte[] branchId) throws AMQStoreException
         {
             DerbyMessageStore.this.removeXid(_connWrapper, format, globalId, branchId);
         }
 
+        @Override
         public void recordXid(long format, byte[] globalId, byte[] branchId, Record[] enqueues, Record[] dequeues)
                 throws AMQStoreException
         {
@@ -2512,7 +2495,7 @@ public class DerbyMessageStore implements MessageStore
         private volatile SoftReference<StorableMessageMetaData> _metaDataRef;
         private byte[] _data;
         private volatile SoftReference<byte[]> _dataRef;
-        
+
 
         StoredDerbyMessage(long messageId, StorableMessageMetaData metaData)
         {
@@ -2524,15 +2507,16 @@ public class DerbyMessageStore implements MessageStore
                            StorableMessageMetaData metaData, boolean persist)
         {
             _messageId = messageId;
-            
+
 
             _metaDataRef = new SoftReference<StorableMessageMetaData>(metaData);
             if(persist)
             {
-                _metaData = metaData;    
+                _metaData = metaData;
             }
         }
 
+        @Override
         public StorableMessageMetaData getMetaData()
         {
             StorableMessageMetaData metaData = _metaData == null ? _metaDataRef.get() : _metaData;
@@ -2552,11 +2536,13 @@ public class DerbyMessageStore implements MessageStore
             return metaData;
         }
 
+        @Override
         public long getMessageNumber()
         {
             return _messageId;
         }
 
+        @Override
         public void addContent(int offsetInMessage, java.nio.ByteBuffer src)
         {
             src = src.slice();
@@ -2576,9 +2562,10 @@ public class DerbyMessageStore implements MessageStore
                 System.arraycopy(oldData,0,_data,0,oldData.length);
                 src.duplicate().get(_data, oldData.length, src.remaining());
             }
-            
+
         }
 
+        @Override
         public int getContent(int offsetInMessage, java.nio.ByteBuffer dst)
         {
             byte[] data = _dataRef == null ? null : _dataRef.get();
@@ -2595,6 +2582,7 @@ public class DerbyMessageStore implements MessageStore
         }
 
 
+        @Override
         public ByteBuffer getContent(int offsetInMessage, int size)
         {
             ByteBuffer buf = ByteBuffer.allocate(size);
@@ -2603,6 +2591,7 @@ public class DerbyMessageStore implements MessageStore
             return  buf;
         }
 
+        @Override
         public synchronized StoreFuture flushToStore()
         {
             try
@@ -2612,7 +2601,7 @@ public class DerbyMessageStore implements MessageStore
                     Connection conn = newConnection();
 
                     store(conn);
-                    
+
                     conn.commit();
                     conn.close();
                 }
@@ -2651,6 +2640,7 @@ public class DerbyMessageStore implements MessageStore
             }
         }
 
+        @Override
         public void remove()
         {
             DerbyMessageStore.this.removeMessage(_messageId);
@@ -2685,6 +2675,23 @@ public class DerbyMessageStore implements MessageStore
                 _logger.error("Problem closing prepared statement", e);
             }
         }
+    }
+
+    @Override
+    public void addEventListener(EventListener eventListener, Event event)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public MessageStore getUnderlyingStore()
+    {
+        return this;
+    }
+
+    public String getDatabaseProviderName()
+    {
+        return DerbyMessageStore.class.getName();
     }
 
 }

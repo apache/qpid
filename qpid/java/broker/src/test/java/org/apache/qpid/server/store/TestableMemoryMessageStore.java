@@ -26,6 +26,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -33,26 +34,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class TestableMemoryMessageStore extends MemoryMessageStore
 {
-
-    private MemoryMessageStore _mms = null;
-    private HashMap<Long, AMQQueue> _messages = new HashMap<Long, AMQQueue>();
-    private AtomicInteger _messageCount = new AtomicInteger(0);
-
-    public TestableMemoryMessageStore(MemoryMessageStore mms)
-    {
-        _mms = mms;
-    }
-
-    public TestableMemoryMessageStore()
-    {
-
-    }
-
-    @Override
-    public void close() throws Exception
-    {
-        // Not required to do anything
-    }
+    private final Map<Long, AMQQueue> _messages = new HashMap<Long, AMQQueue>();
+    private final AtomicInteger _messageCount = new AtomicInteger(0);
 
     @Override
     public StoredMessage addMessage(StorableMessageMetaData metaData)
@@ -65,36 +48,34 @@ public class TestableMemoryMessageStore extends MemoryMessageStore
         return _messageCount.get();
     }
 
+    public Map<Long, AMQQueue> getMessages()
+    {
+        return _messages;
+    }
+
     private class TestableTransaction implements Transaction
     {
+        @Override
         public void enqueueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
         {
             getMessages().put(message.getMessageNumber(), (AMQQueue)queue);
         }
 
+        @Override
         public void dequeueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
         {
             getMessages().remove(message.getMessageNumber());
         }
 
+        @Override
         public void commitTran() throws AMQStoreException
         {
         }
 
+        @Override
         public StoreFuture commitTranAsync() throws AMQStoreException
         {
-            return new StoreFuture()
-                    {
-                        public boolean isComplete()
-                        {
-                            return true;
-                        }
-
-                        public void waitForCompletion()
-                        {
-
-                        }
-                    };
+            return StoreFuture.IMMEDIATE_FUTURE;
         }
 
         public void abortTran() throws AMQStoreException
@@ -117,10 +98,6 @@ public class TestableMemoryMessageStore extends MemoryMessageStore
         return new TestableTransaction();
     }
 
-    public HashMap<Long, AMQQueue> getMessages()
-    {
-        return _messages;
-    }
 
     private class TestableStoredMessage implements StoredMessage
     {

@@ -131,12 +131,6 @@ public class DirectExchange extends AbstractExchange
         return new DirectExchangeMBean(this);
     }
 
-    public Logger getLogger()
-    {
-        return _logger;
-    }
-
-
     public List<? extends BaseQueue> doRoute(InboundMessage payload)
     {
 

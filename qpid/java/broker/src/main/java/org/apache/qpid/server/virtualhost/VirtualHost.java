@@ -97,4 +97,6 @@ public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHo
     void removeBrokerConnection(BrokerLink brokerLink);
 
     ScheduledFuture<?> scheduleTask(long delay, Runnable timeoutTask);
+
+    State getState();
 }

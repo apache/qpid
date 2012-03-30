@@ -367,15 +367,12 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         assertEquals("Retrieved content when none was expected",
                         0, bdbStore.getContent(messageid_0_8, 0, dst));
     }
-
-    private BDBMessageStore assertBDBStore(Object store)
+    private BDBMessageStore assertBDBStore(MessageStore store)
     {
-        if(!(store instanceof BDBMessageStore))
-        {
-            fail("Test requires an instance of BDBMessageStore to proceed");
-        }
+        MessageStore underlyingStore = store.getUnderlyingStore();
+        assertEquals("Test requires an instance of BDBMessageStore to proceed", BDBMessageStore.class, underlyingStore.getClass());
 
-        return (BDBMessageStore) store;
+        return (BDBMessageStore) underlyingStore;
     }
 
     private StoredMessage<MessageMetaData> createAndStoreSingleChunkMessage_0_8(MessageStore store)
