@@ -21,7 +21,6 @@
 package org.apache.qpid.server.store;
 
 import org.apache.commons.configuration.Configuration;
-import org.apache.qpid.server.logging.LogSubject;
 
 /**
  * MessageStore defines the interface to a storage area, which can be used to preserve the state of messages.
@@ -42,9 +41,9 @@ public interface MessageStore extends DurableConfigurationStore
     void configureMessageStore(String name,
                                MessageStoreRecoveryHandler messageRecoveryHandler,
                                TransactionLogRecoveryHandler tlogRecoveryHandler,
-                               Configuration config, LogSubject logSubject) throws Exception;
+                               Configuration config) throws Exception;
 
-
+    void activate() throws Exception;
 
     public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(T metaData);
 
@@ -64,5 +63,9 @@ public interface MessageStore extends DurableConfigurationStore
      * @throws Exception If the close fails.
      */
     void close() throws Exception;
+
+    void addEventListener(EventListener eventListener, Event event);
+
+    MessageStore getUnderlyingStore();
 
 }

@@ -407,11 +407,6 @@ public class TopicExchange extends AbstractExchange
         return new TopicExchangeMBean(this);
     }
 
-    public Logger getLogger()
-    {
-        return _logger;
-    }
-
     private Collection<AMQQueue> getMatchedQueues(InboundMessage message, AMQShortString routingKey)
     {
 

@@ -33,6 +33,7 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.subscription.Subscription_0_10;
+import org.apache.qpid.server.virtualhost.State;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.*;
 import org.slf4j.Logger;
@@ -176,6 +177,11 @@ public class ServerConnectionDelegate extends ServerDelegate
             {
                 sconn.setState(Connection.State.CLOSING);
                 sconn.invoke(new ConnectionClose(ConnectionCloseCode.CONNECTION_FORCED, "Permission denied '"+vhostName+"'"));
+            }
+            else if (vhost.getState() != State.ACTIVE)
+            {
+                sconn.setState(Connection.State.CLOSING);
+                sconn.invoke(new ConnectionClose(ConnectionCloseCode.CONNECTION_FORCED, "Virtual host '"+vhostName+"' is not active"));
             }
             else
             {

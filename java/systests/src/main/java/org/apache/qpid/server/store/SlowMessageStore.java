@@ -29,7 +29,6 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.federation.Bridge;
 import org.apache.qpid.server.federation.BrokerLink;
-import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -55,11 +54,8 @@ public class SlowMessageStore implements MessageStore
 
     public void configureConfigStore(String name,
                           ConfigurationRecoveryHandler recoveryHandler,
-                          Configuration config,
-                          LogSubject logSubject) throws Exception
+                          Configuration config) throws Exception
     {
-        //To change body of implemented methods use File | Settings | File Templates.
-
         _logger.info("Starting SlowMessageStore on Virtualhost:" + name);
         Configuration delays = config.subset(DELAYS);
 
@@ -74,7 +70,7 @@ public class SlowMessageStore implements MessageStore
 
         if (messageStoreClass != null)
         {
-            Class clazz = Class.forName(messageStoreClass);
+            Class<?> clazz = Class.forName(messageStoreClass);
 
             Object o = clazz.newInstance();
 
@@ -89,13 +85,14 @@ public class SlowMessageStore implements MessageStore
                 _durableConfigurationStore = (DurableConfigurationStore)o;
             }
         }
-        _durableConfigurationStore.configureConfigStore(name, recoveryHandler, config, logSubject);
+        _durableConfigurationStore.configureConfigStore(name, recoveryHandler, config);
 
     }
 
     private void configureDelays(Configuration config)
     {
-        Iterator delays = config.getKeys();
+        @SuppressWarnings("unchecked")
+        Iterator<String> delays = config.getKeys();
 
         while (delays.hasNext())
         {
@@ -162,9 +159,9 @@ public class SlowMessageStore implements MessageStore
     public void configureMessageStore(String name,
                                       MessageStoreRecoveryHandler messageRecoveryHandler,
                                       TransactionLogRecoveryHandler tlogRecoveryHandler,
-                                      Configuration config, LogSubject logSubject) throws Exception
+                                      Configuration config) throws Exception
     {
-        _realStore.configureMessageStore(name, messageRecoveryHandler, tlogRecoveryHandler, config, logSubject);
+        _realStore.configureMessageStore(name, messageRecoveryHandler, tlogRecoveryHandler, config);
     }
 
     public void close() throws Exception
@@ -352,5 +349,23 @@ public class SlowMessageStore implements MessageStore
         doPreDelay("deleteBridge");
         _durableConfigurationStore.deleteBridge(bridge);
         doPostDelay("deleteBridge");
+    }
+
+    @Override
+    public void activate() throws Exception
+    {
+       _realStore.activate();
+    }
+
+    @Override
+    public void addEventListener(EventListener eventListener, Event event)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public MessageStore getUnderlyingStore()
+    {
+        return _realStore.getUnderlyingStore();
     }
 }

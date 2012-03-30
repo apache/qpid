@@ -20,103 +20,58 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.federation.Bridge;
-import org.apache.qpid.server.federation.BrokerLink;
-import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
-import org.apache.qpid.server.logging.messages.MessageStoreMessages;
 import org.apache.qpid.server.message.EnqueableMessage;
-import org.apache.qpid.server.queue.AMQQueue;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-/** A simple message store that stores the messages in a threadsafe structure in memory. */
-public class MemoryMessageStore implements MessageStore
+/** A simple message store that stores the messages in a thread-safe structure in memory. */
+public class MemoryMessageStore extends NullMessageStore
 {
-    private static final Logger _log = Logger.getLogger(MemoryMessageStore.class);
-
-    private static final int DEFAULT_HASHTABLE_CAPACITY = 50000;
-
-    private static final String HASHTABLE_CAPACITY_CONFIG = "hashtable-capacity";
-
-
     private final AtomicLong _messageId = new AtomicLong(1);
-    private AtomicBoolean _closed = new AtomicBoolean(false);
-    private LogSubject _logSubject;
+    private final AtomicBoolean _closed = new AtomicBoolean(false);
 
     private static final Transaction IN_MEMORY_TRANSACTION = new Transaction()
     {
-        public void enqueueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
-        {
-        }
-
-        public void dequeueMessage(TransactionLogResource  queue, EnqueableMessage message) throws AMQStoreException
-        {
-        }
-
-        public void commitTran() throws AMQStoreException
-        {
-        }
-
+        @Override
         public StoreFuture commitTranAsync() throws AMQStoreException
         {
             return StoreFuture.IMMEDIATE_FUTURE;
         }
 
+        @Override
+        public void enqueueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
+        {
+        }
+
+        @Override
+        public void dequeueMessage(TransactionLogResource  queue, EnqueableMessage message) throws AMQStoreException
+        {
+        }
+
+        @Override
+        public void commitTran() throws AMQStoreException
+        {
+        }
+
+        @Override
         public void abortTran() throws AMQStoreException
         {
         }
 
+        @Override
         public void removeXid(long format, byte[] globalId, byte[] branchId)
         {
         }
 
+        @Override
         public void recordXid(long format, byte[] globalId, byte[] branchId, Record[] enqueues, Record[] dequeues)
         {
         }
-
     };
 
-    public void configureConfigStore(String name, ConfigurationRecoveryHandler handler, Configuration configuration, LogSubject logSubject) throws Exception
-    {
-        _logSubject = logSubject;
-        CurrentActor.get().message(_logSubject, ConfigStoreMessages.CREATED(this.getClass().getName()));
-
-
-    }
-
-    public void configureMessageStore(String name,
-                                      MessageStoreRecoveryHandler recoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler,
-                                      Configuration config, LogSubject logSubject) throws Exception
-    {
-        if(_logSubject == null)
-        {
-            _logSubject = logSubject;
-        }
-        int hashtableCapacity = config.getInt(name + "." + HASHTABLE_CAPACITY_CONFIG, DEFAULT_HASHTABLE_CAPACITY);
-        _log.info("Using capacity " + hashtableCapacity + " for hash tables");
-        CurrentActor.get().message(_logSubject, MessageStoreMessages.CREATED(this.getClass().getName()));
-    }
-
-    public void close() throws Exception
-    {
-        _closed.getAndSet(true);
-        CurrentActor.get().message(_logSubject,MessageStoreMessages.CLOSED());
-
-    }
-
+    @Override
     public StoredMessage addMessage(StorableMessageMetaData metaData)
     {
         final long id = _messageId.getAndIncrement();
@@ -125,96 +80,21 @@ public class MemoryMessageStore implements MessageStore
         return message;
     }
 
-
-    public void createExchange(Exchange exchange) throws AMQStoreException
-    {
-
-    }
-
-    public void removeExchange(Exchange exchange) throws AMQStoreException
-    {
-
-    }
-
-    public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
-    {
-
-    }
-
-    public void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
-    {
-
-    }
-
-
-    public void createQueue(AMQQueue queue) throws AMQStoreException
-    {
-        // Not requred to do anything
-    }
-
-    public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQStoreException
-    {
-        // Not required to do anything
-    }
-
-    public void removeQueue(final AMQQueue queue) throws AMQStoreException
-    {
-        // Not required to do anything
-    }
-    
-    public void updateQueue(final AMQQueue queue) throws AMQStoreException
-    {
-        // Not required to do anything
-    }
-
-    public void createBrokerLink(final BrokerLink link) throws AMQStoreException
-    {
-
-    }
-
-    public void deleteBrokerLink(final BrokerLink link) throws AMQStoreException
-    {
-
-    }
-
-    public void createBridge(final Bridge bridge) throws AMQStoreException
-    {
-
-    }
-
-    public void deleteBridge(final Bridge bridge) throws AMQStoreException
-    {
-
-    }
-
+    @Override
     public Transaction newTransaction()
     {
         return IN_MEMORY_TRANSACTION;
     }
 
-
-    public List<AMQQueue> createQueues() throws AMQException
-    {
-        return null;
-    }
-
-    public Long getNewMessageId()
-    {
-        return _messageId.getAndIncrement();
-    }
-
+    @Override
     public boolean isPersistent()
     {
         return false;
     }
 
-    private void checkNotClosed() throws MessageStoreClosedException
-     {
-        if (_closed.get())
-        {
-            throw new MessageStoreClosedException();
-        }
+    @Override
+    public void close() throws Exception
+    {
+        _closed.getAndSet(true);
     }
-
-
 }

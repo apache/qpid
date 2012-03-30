@@ -52,11 +52,6 @@ public class FanoutExchange extends AbstractExchange
         return new FanoutExchangeMBean(this);
     }
 
-    public Logger getLogger()
-    {
-        return _logger;
-    }
-
     public static final ExchangeType<FanoutExchange> TYPE = new ExchangeType<FanoutExchange>()
     {
 
