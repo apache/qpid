@@ -25,8 +25,8 @@ import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
 import org.apache.qpid.server.message.EnqueableMessage;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.store.berkeleydb.entry.PreparedTransaction;
 
@@ -35,16 +35,16 @@ public class PreparedTransactionBinding extends TupleBinding<PreparedTransaction
     @Override
     public PreparedTransaction entryToObject(TupleInput input)
     {
-        MessageStore.Transaction.Record[] enqueues = readRecords(input);
+        Transaction.Record[] enqueues = readRecords(input);
 
-        MessageStore.Transaction.Record[] dequeues = readRecords(input);
+        Transaction.Record[] dequeues = readRecords(input);
 
         return new PreparedTransaction(enqueues, dequeues);
     }
 
-    private MessageStore.Transaction.Record[] readRecords(TupleInput input)
+    private Transaction.Record[] readRecords(TupleInput input)
     {
-        MessageStore.Transaction.Record[] records = new MessageStore.Transaction.Record[input.readInt()];
+        Transaction.Record[] records = new Transaction.Record[input.readInt()];
         for(int i = 0; i < records.length; i++)
         {
             records[i] = new RecordImpl(input.readString(), input.readLong());
@@ -60,7 +60,7 @@ public class PreparedTransactionBinding extends TupleBinding<PreparedTransaction
 
     }
 
-    private void writeRecords(MessageStore.Transaction.Record[] records, TupleOutput output)
+    private void writeRecords(Transaction.Record[] records, TupleOutput output)
     {
         if(records == null)
         {
@@ -69,7 +69,7 @@ public class PreparedTransactionBinding extends TupleBinding<PreparedTransaction
         else
         {
             output.writeInt(records.length);
-            for(MessageStore.Transaction.Record record : records)
+            for(Transaction.Record record : records)
             {
                 output.writeString(record.getQueue().getResourceName());
                 output.writeLong(record.getMessage().getMessageNumber());
@@ -77,7 +77,7 @@ public class PreparedTransactionBinding extends TupleBinding<PreparedTransaction
         }
     }
 
-    private static class RecordImpl implements MessageStore.Transaction.Record, TransactionLogResource, EnqueableMessage
+    private static class RecordImpl implements Transaction.Record, TransactionLogResource, EnqueableMessage
     {
 
         private final String _queueName;

@@ -29,6 +29,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.Transaction;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,7 +47,7 @@ public class LocalTransaction implements ServerTransaction
 
     private final List<Action> _postTransactionActions = new ArrayList<Action>();
 
-    private volatile MessageStore.Transaction _transaction;
+    private volatile Transaction _transaction;
     private MessageStore _transactionLog;
     private long _txnStartTime = 0L;
 

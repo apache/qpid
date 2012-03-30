@@ -63,8 +63,12 @@ import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
-import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
+import org.apache.qpid.server.store.StorableMessageMetaData;
+import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.store.Transaction;
+import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
 import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPlugin;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
@@ -118,15 +122,13 @@ public class VirtualHostImpl implements VirtualHost
 
     private AMQBrokerManagerMBean _brokerMBean;
 
-
-    private DurableConfigurationStore _durableConfigurationStore;
     private BindingFactory _bindingFactory;
 
     private boolean _statisticsEnabled = false;
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
 
-    public VirtualHostImpl(IApplicationRegistry appRegistry, VirtualHostConfiguration hostConfig, MessageStore store) throws Exception
+    public VirtualHostImpl(IApplicationRegistry appRegistry, VirtualHostConfiguration hostConfig) throws Exception
     {
         if (hostConfig == null)
         {
@@ -166,7 +168,7 @@ public class VirtualHostImpl implements VirtualHost
 
         StartupRoutingTable configFileRT = new StartupRoutingTable();
 
-        _durableConfigurationStore = configFileRT;
+        _messageStore = configFileRT;
 
         // This needs to be after the RT has been defined as it creates the default durable exchanges.
         _exchangeRegistry.initialise();
@@ -175,18 +177,7 @@ public class VirtualHostImpl implements VirtualHost
 
         initialiseModel(_configuration);
 
-        if (store != null)
-        {
-            _messageStore = store;
-            if(store instanceof DurableConfigurationStore)
-            {
-                _durableConfigurationStore = (DurableConfigurationStore) store;
-            }
-        }
-        else
-        {
-            initialiseMessageStore(hostConfig);
-        }
+        initialiseMessageStore(hostConfig);
 
         _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
         _brokerMBean.register();
@@ -228,8 +219,8 @@ public class VirtualHostImpl implements VirtualHost
     /**
      * Virtual host JMX MBean class.
      *
-     * This has some of the methods implemented from management intrerface for exchanges. Any
-     * implementaion of an Exchange MBean should extend this class.
+     * This has some of the methods implemented from management interface for exchanges. Any
+     * Implementation of an Exchange MBean should extend this class.
      */
     public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtualHost
     {
@@ -407,27 +398,15 @@ public class VirtualHostImpl implements VirtualHost
 
         MessageStoreLogSubject storeLogSubject = new MessageStoreLogSubject(this, messageStore);
 
-
-        if(messageStore instanceof DurableConfigurationStore)
-        {
-            DurableConfigurationStore durableConfigurationStore = (DurableConfigurationStore) messageStore;
-
-            durableConfigurationStore.configureConfigStore(this.getName(),
-                                              recoveryHandler,
-                                              hostConfig.getStoreConfiguration(),
-                                              storeLogSubject);
-
-            _durableConfigurationStore = durableConfigurationStore;
-        }
+        messageStore.configureConfigStore(this.getName(),
+                                          recoveryHandler,
+                                          hostConfig.getStoreConfiguration(),
+                                          storeLogSubject);
 
         messageStore.configureMessageStore(this.getName(),
                                            recoveryHandler,
-                                           hostConfig.getStoreConfiguration(),
-                                           storeLogSubject);
-        messageStore.configureTransactionLog(this.getName(),
                                            recoveryHandler,
-                                           hostConfig.getStoreConfiguration(),
-                                           storeLogSubject);
+                                           hostConfig.getStoreConfiguration(), storeLogSubject);
 
         _messageStore = messageStore;
 
@@ -472,7 +451,7 @@ public class VirtualHostImpl implements VirtualHost
 
             if (newExchange.isDurable())
             {
-                _durableConfigurationStore.createExchange(newExchange);
+                _messageStore.createExchange(newExchange);
             }
         }
     }
@@ -482,10 +461,10 @@ public class VirtualHostImpl implements VirtualHost
     	AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(queueConfiguration, this);
         String queueName = queue.getName();
 
-    	if (queue.isDurable())
-    	{
-    		getDurableConfigurationStore().createQueue(queue);
-    	}
+        if (queue.isDurable())
+        {
+            getMessageStore().createQueue(queue);
+        }
 
         //get the exchange name (returns default exchange name if none was specified)
     	String exchangeName = queueConfiguration.getExchange();
@@ -571,11 +550,6 @@ public class VirtualHostImpl implements VirtualHost
     public MessageStore getMessageStore()
     {
         return _messageStore;
-    }
-
-    public DurableConfigurationStore getDurableConfigurationStore()
-    {
-        return _durableConfigurationStore;
     }
 
     public SecurityManager getSecurityManager()
@@ -800,7 +774,7 @@ public class VirtualHostImpl implements VirtualHost
      * This is so we can replay the creation of queues/exchanges in to the real _RT after it has been loaded.
      * This should be removed after the _RT has been fully split from the the TL
      */
-    private static class StartupRoutingTable implements DurableConfigurationStore
+    private static class StartupRoutingTable implements MessageStore
     {
         public void configureConfigStore(String name,
                                          ConfigurationRecoveryHandler recoveryHandler,
@@ -855,6 +829,37 @@ public class VirtualHostImpl implements VirtualHost
 
         public void deleteBridge(final Bridge bridge) throws AMQStoreException
         {
+        }
+
+        @Override
+        public void configureMessageStore(String name,
+                MessageStoreRecoveryHandler recoveryHandler,
+                TransactionLogRecoveryHandler tlogRecoveryHandler, Configuration config, LogSubject logSubject) throws Exception
+        {
+        }
+
+        @Override
+        public void close() throws Exception
+        {
+        }
+
+        @Override
+        public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(
+                T metaData)
+        {
+            return null;
+        }
+
+        @Override
+        public boolean isPersistent()
+        {
+            return false;
+        }
+
+        @Override
+        public Transaction newTransaction()
+        {
+            return null;
         }
     }
 

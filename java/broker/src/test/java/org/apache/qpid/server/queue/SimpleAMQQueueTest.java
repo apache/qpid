@@ -61,7 +61,6 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
 
     protected SimpleAMQQueue _queue;
     protected VirtualHost _virtualHost;
-    protected TestableMemoryMessageStore _store = new TestableMemoryMessageStore();
     protected AMQShortString _qname = new AMQShortString("qname");
     protected AMQShortString _owner = new AMQShortString("owner");
     protected AMQShortString _routingKey = new AMQShortString("routing key");
@@ -106,7 +105,9 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         ApplicationRegistry applicationRegistry = (ApplicationRegistry)ApplicationRegistry.getInstance();
 
         PropertiesConfiguration env = new PropertiesConfiguration();
-        _virtualHost = new VirtualHostImpl(ApplicationRegistry.getInstance(), new VirtualHostConfiguration(getClass().getName(), env), _store);
+        VirtualHostConfiguration vHostConfig = new VirtualHostConfiguration(getClass().getName(), env);
+        vHostConfig.setMessageStoreClass(TestableMemoryMessageStore.class.getName());
+        _virtualHost = new VirtualHostImpl(ApplicationRegistry.getInstance(), vHostConfig);
         applicationRegistry.getVirtualHostRegistry().registerVirtualHost(_virtualHost);
 
         _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(_qname, false, _owner, false, false, _virtualHost, _arguments);
@@ -634,11 +635,12 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
 
         qs.add(_queue);
         MessageMetaData metaData = msg.headersReceived(System.currentTimeMillis());
-        StoredMessage handle = _store.addMessage(metaData);
+        TestableMemoryMessageStore store = (TestableMemoryMessageStore) _virtualHost.getMessageStore();
+        StoredMessage handle = store.addMessage(metaData);
         msg.setStoredMessage(handle);
 
 
-        ServerTransaction txn = new AutoCommitTransaction(_store);
+        ServerTransaction txn = new AutoCommitTransaction(store);
 
         txn.enqueue(qs, msg, new ServerTransaction.Action()
                                     {
@@ -653,7 +655,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
                                     }, 0L);
 
         // Check that it is enqueued
-        AMQQueue data = _store.getMessages().get(1L);
+        AMQQueue data = store.getMessages().get(1L);
         assertNull(data);
 
         // Dequeue message
@@ -664,7 +666,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         _queue.dequeue(entry,null);
 
         // Check that it is dequeued
-        data = _store.getMessages().get(1L);
+        data = store.getMessages().get(1L);
         assertNull(data);
     }
 
