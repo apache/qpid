@@ -90,15 +90,6 @@ public class XAResourceTest extends QpidBrokerTestCase
     }
 
     @Override
-    public void stopBroker(int port) throws Exception
-    {
-        if (isBrokerPresent(port))
-        {
-            super.stopBroker(port);
-        }
-    }
-
-    @Override
     public void tearDown() throws Exception
     {
         try
