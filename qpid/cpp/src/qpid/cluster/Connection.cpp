@@ -585,9 +585,9 @@ void Connection::queuePosition(const string& qname, const SequenceNumber& positi
     findQueue(qname)->setPosition(position);
 }
 
-void Connection::queueFairshareState(const std::string& qname, const uint8_t priority, const uint8_t count)
+void Connection::queueFairshareState(const std::string& qname, const framing::FieldTable& counts)
 {
-    if (!qpid::broker::Fairshare::setState(findQueue(qname)->getMessages(), priority, count)) {
+    if (!qpid::broker::Fairshare::setState(findQueue(qname)->getMessages(), counts)) {
         QPID_LOG(error, "Failed to set fair share state on queue " << qname << "; this will result in inconsistencies.");
     }
 }

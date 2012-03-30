@@ -513,18 +513,21 @@ class BrokerTest(TestCase):
         finally: r.close()
         return contents
 
-    def assert_browse(self, session, queue, expect_contents, timeout=0, transform=lambda m: m.content):
+    def assert_browse(self, session, queue, expect_contents, timeout=0, transform=lambda m: m.content, msg=None):
         """Assert that the contents of messages on queue (as retrieved
         using session and timeout) exactly match the strings in
         expect_contents"""
         actual_contents = self.browse(session, queue, timeout, transform=transform)
-        self.assertEqual(expect_contents, actual_contents)
+        if msg: msg = "%s: %r != %r"%(msg, expect_contents, actual_contents)
+        self.assertEqual(expect_contents, actual_contents, msg)
 
-    def assert_browse_retry(self, session, queue, expect_contents, timeout=1, delay=.01, transform=lambda m:m.content):
+    def assert_browse_retry(self, session, queue, expect_contents, timeout=1, delay=.01, transform=lambda m:m.content, msg=None):
         """Wait up to timeout for contents of queue to match expect_contents"""
         test = lambda: self.browse(session, queue, 0, transform=transform) == expect_contents
         retry(test, timeout, delay)
-        self.assertEqual(expect_contents, self.browse(session, queue, 0, transform=transform))
+        actual_contents = self.browse(session, queue, 0, transform=transform)
+        if msg: msg = "%s: %r != %r"%(msg, expect_contents, actual_contents)
+        self.assertEqual(expect_contents, actual_contents, msg)
 
 def join(thread, timeout=10):
     thread.join(timeout)

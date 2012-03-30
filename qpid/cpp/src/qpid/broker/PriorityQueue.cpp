@@ -28,120 +28,125 @@ namespace qpid {
 namespace broker {
 
 PriorityQueue::PriorityQueue(int l) : 
-    levels(l),
-    messages(levels, Deque()),
-    frontLevel(0), haveFront(false), cached(false) {}
+    levels(l) {}
 
-bool PriorityQueue::deleted(const QueuedMessage&) { return true; }
-
-size_t PriorityQueue::size()
+bool PriorityQueue::deleted(const QueuedMessage& message)
 {
-    size_t total(0);
-    for (int i = 0; i < levels; ++i) {
-        total += messages[i].size();
-    }
-    return total;
-}
-
-void PriorityQueue::release(const QueuedMessage& message)
-{
-    uint p = getPriorityLevel(message);
-    messages[p].insert(lower_bound(messages[p].begin(), messages[p].end(), message), message);
-    clearCache();
-}
-
-bool PriorityQueue::find(const framing::SequenceNumber& position, QueuedMessage& message, bool remove)
-{
-    QueuedMessage comp;
-    comp.position = position;
-    for (int i = 0; i < levels; ++i) {
-        if (!messages[i].empty()) {
-            unsigned long diff = position.getValue() - messages[i].front().position.getValue();
-            long maxEnd = diff < messages[i].size() ? diff : messages[i].size();        
-            Deque::iterator l = lower_bound(messages[i].begin(),messages[i].begin()+maxEnd,comp);
-            if (l != messages[i].end() && l->position == position) {
-                message = *l;
-                if (remove) {
-                    messages[i].erase(l);
-                    clearCache();
-                }
-                return true;
-            }
+    Index::iterator i = messages.find(message.position);
+    if (i != messages.end()) {
+        //remove from available list if necessary
+        if (i->second.status == QueuedMessage::AVAILABLE) {
+            Available::iterator j = std::find(available.begin(), available.end(), &i->second);
+            if (j != available.end()) available.erase(j);
         }
-    }
-    return false;
-}
-
-bool PriorityQueue::acquire(const framing::SequenceNumber& position, QueuedMessage& message)
-{
-    return find(position, message, true);
-}
-
-bool PriorityQueue::find(const framing::SequenceNumber& position, QueuedMessage& message)
-{
-    return find(position, message, false);
-}
-
-bool PriorityQueue::browse(const framing::SequenceNumber& position, QueuedMessage& message, bool)
-{
-    QueuedMessage match;
-    match.position = position+1;
-    Deque::iterator lowest;
-    bool found = false;
-    for (int i = 0; i < levels; ++i) {
-        Deque::iterator m = lower_bound(messages[i].begin(), messages[i].end(), match); 
-        if (m != messages[i].end()) {
-            if (m->position == match.position) {
-                message = *m;
-                return true;
-            } else if (!found || m->position < lowest->position) {
-                lowest = m;
-                found = true;
-            }
-        }
-    }
-    if (found) {
-        message = *lowest;
-    }
-    return found;
-}
-
-bool PriorityQueue::consume(QueuedMessage& message)
-{
-    if (checkFront()) {
-        message = messages[frontLevel].front();
-        messages[frontLevel].pop_front();
-        clearCache();
+        //remove from messages map
+        messages.erase(i);
         return true;
     } else {
         return false;
     }
 }
 
+size_t PriorityQueue::size()
+{
+    return available.size();
+}
+
+void PriorityQueue::release(const QueuedMessage& message)
+{
+    Index::iterator i = messages.find(message.position);
+    if (i != messages.end() && i->second.status == QueuedMessage::ACQUIRED) {
+        i->second.status = QueuedMessage::AVAILABLE;
+        //insert message back into the correct place in available queue, based on priority:
+        Available::iterator j = upper_bound(available.begin(), available.end(), &i->second, boost::bind(&PriorityQueue::compare, this, _1, _2));
+        available.insert(j, &i->second);
+    }
+}
+
+bool PriorityQueue::acquire(const framing::SequenceNumber& position, QueuedMessage& message)
+{
+    Index::iterator i = messages.find(position);
+    if (i != messages.end() && i->second.status == QueuedMessage::AVAILABLE) {
+        i->second.status = QueuedMessage::ACQUIRED;
+        message = i->second;
+        //remove it from available list (could make this faster by using ordering):
+        Available::iterator j = std::find(available.begin(), available.end(), &i->second);
+        assert(j != available.end());
+        available.erase(j);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool PriorityQueue::find(const framing::SequenceNumber& position, QueuedMessage& message)
+{
+    Index::iterator i = messages.find(position);
+    if (i != messages.end() && i->second.status == QueuedMessage::AVAILABLE) {
+        message = i->second;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool PriorityQueue::browse(const framing::SequenceNumber& position, QueuedMessage& message, bool unacquired)
+{
+    Index::iterator i = messages.lower_bound(position+1);
+    if (i != messages.end() && (i->second.status == QueuedMessage::AVAILABLE  || (!unacquired && i->second.status == QueuedMessage::ACQUIRED))) {
+        message = i->second;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool PriorityQueue::consume(QueuedMessage& message)
+{
+    if (!available.empty()) {
+        QueuedMessage* next = available.front();
+        messages[next->position].status = QueuedMessage::ACQUIRED;
+        message = *next;
+        available.pop_front();
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool PriorityQueue::compare(const QueuedMessage* a, const QueuedMessage* b) const
+{
+    int priorityA = getPriorityLevel(*a);
+    int priorityB = getPriorityLevel(*b);
+    if (priorityA == priorityB) return a->position < b->position;
+    else return priorityA > priorityB;
+}
+
 bool PriorityQueue::push(const QueuedMessage& added, QueuedMessage& /*not needed*/)
 {
-    messages[getPriorityLevel(added)].push_back(added);
-    clearCache();
+    Index::iterator i = messages.insert(Index::value_type(added.position, added)).first;
+    i->second.status = QueuedMessage::AVAILABLE;
+    //insert message into the correct place in available queue, based on priority:
+    Available::iterator j = upper_bound(available.begin(), available.end(), &i->second, boost::bind(&PriorityQueue::compare, this, _1, _2));
+    available.insert(j, &i->second);
     return false;//adding a message never causes one to be removed for deque
 }
 
 void PriorityQueue::foreach(Functor f)
 {
-    for (int i = 0; i < levels; ++i) {
-        std::for_each(messages[i].begin(), messages[i].end(), f);
+    for (Available::iterator i = available.begin(); i != available.end(); ++i) {
+        f(**i);
     }
 }
 
 void PriorityQueue::removeIf(Predicate p)
 {
-    for (int priority = 0; priority < levels; ++priority) {
-        for (Deque::iterator i = messages[priority].begin(); i != messages[priority].end();) {
-            if (p(*i)) {
-                i = messages[priority].erase(i);
-                clearCache();
-            } else {
-                ++i;
-            }
+    for (Available::iterator i = available.begin(); i != available.end();) {
+        if (p(**i)) {
+            messages[(*i)->position].status = QueuedMessage::REMOVED;
+            i = available.erase(i);
+        } else {
+            ++i;
         }
     }
 }
@@ -156,30 +161,6 @@ uint PriorityQueue::getPriorityLevel(const QueuedMessage& m) const
     return std::min(priority - firstLevel, (uint)levels-1);
 }
 
-void PriorityQueue::clearCache()
-{
-    cached = false;
-}
-
-bool PriorityQueue::findFrontLevel(uint& l, PriorityLevels& m)
-{
-    for (int p = levels-1; p >= 0; --p) {
-        if (!m[p].empty()) {
-            l = p;
-            return true;
-        }
-    }
-    return false;
-}
-
-bool PriorityQueue::checkFront()
-{
-    if (!cached) {
-        haveFront = findFrontLevel(frontLevel, messages);
-        cached = true;
-    }
-    return haveFront;
-}
 
 uint PriorityQueue::getPriority(const QueuedMessage& message)
 {

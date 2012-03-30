@@ -43,7 +43,7 @@ class MessageMap : public Messages
     size_t size();
     bool empty();
 
-    bool deleted(const QueuedMessage&);
+    virtual bool deleted(const QueuedMessage&);
     void release(const QueuedMessage&);
     virtual bool acquire(const framing::SequenceNumber&, QueuedMessage&);
     bool find(const framing::SequenceNumber&, QueuedMessage&);
