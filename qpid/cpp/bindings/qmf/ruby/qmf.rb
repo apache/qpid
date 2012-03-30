@@ -34,8 +34,8 @@ module Qmf
   end
 
   module StringHelpers
-    def ensure_encoding(str, enc=nil)
-      enc ||= (Encoding.default_external.name || "UTF-8" rescue "UTF-8")
+    def ensure_encoding(str)
+      enc = (Encoding.default_external.name || "UTF-8" rescue "UTF-8")
       str.respond_to?(:force_encoding) ? str.force_encoding(enc) : str
     end
   end
