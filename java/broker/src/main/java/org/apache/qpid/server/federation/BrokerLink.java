@@ -250,7 +250,7 @@ public class BrokerLink implements LinkConfig, ConnectionListener
         {
             try
             {
-                _virtualHost.getDurableConfigurationStore().createBrokerLink(this);
+                _virtualHost.getMessageStore().createBrokerLink(this);
             }
             catch (AMQStoreException e)
             {
@@ -295,7 +295,7 @@ public class BrokerLink implements LinkConfig, ConnectionListener
         {
             try
             {
-                _virtualHost.getDurableConfigurationStore().createBrokerLink(this);
+                _virtualHost.getMessageStore().createBrokerLink(this);
             }
             catch (AMQStoreException e)
             {

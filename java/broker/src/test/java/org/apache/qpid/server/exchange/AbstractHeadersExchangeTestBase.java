@@ -79,7 +79,7 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
     private BindingFactory bindingFactory = new BindingFactory(new DurableConfigurationStore.Source()
                                                         {
 
-                                                            public DurableConfigurationStore getDurableConfigurationStore()
+                                                            public DurableConfigurationStore getMessageStore()
                                                             {
                                                                 return _store;
                                                             }

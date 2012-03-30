@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /** A simple message store that stores the messages in a threadsafe structure in memory. */
-public class MemoryMessageStore implements MessageStore, DurableConfigurationStore
+public class MemoryMessageStore implements MessageStore
 {
     private static final Logger _log = Logger.getLogger(MemoryMessageStore.class);
 
@@ -71,7 +71,7 @@ public class MemoryMessageStore implements MessageStore, DurableConfigurationSto
 
         public StoreFuture commitTranAsync() throws AMQStoreException
         {
-            return IMMEDIATE_FUTURE;
+            return StoreFuture.IMMEDIATE_FUTURE;
         }
 
         public void abortTran() throws AMQStoreException
@@ -98,8 +98,8 @@ public class MemoryMessageStore implements MessageStore, DurableConfigurationSto
 
     public void configureMessageStore(String name,
                                       MessageStoreRecoveryHandler recoveryHandler,
-                                      Configuration config,
-                                      LogSubject logSubject) throws Exception
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler,
+                                      Configuration config, LogSubject logSubject) throws Exception
     {
         if(_logSubject == null)
         {
@@ -185,14 +185,6 @@ public class MemoryMessageStore implements MessageStore, DurableConfigurationSto
     public void deleteBridge(final Bridge bridge) throws AMQStoreException
     {
 
-    }
-
-    public void configureTransactionLog(String name,
-                                        TransactionLogRecoveryHandler recoveryHandler,
-                                        Configuration storeConfiguration,
-                                        LogSubject logSubject) throws Exception
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public Transaction newTransaction()

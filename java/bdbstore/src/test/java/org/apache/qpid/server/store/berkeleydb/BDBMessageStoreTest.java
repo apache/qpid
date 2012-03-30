@@ -37,6 +37,7 @@ import org.apache.qpid.server.store.MessageMetaDataType;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
@@ -419,7 +420,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
             }
         };
 
-        MessageStore.Transaction txn = log.newTransaction();
+        Transaction txn = log.newTransaction();
 
         txn.enqueueMessage(mockQueue, new MockMessage(1L));
         txn.enqueueMessage(mockQueue, new MockMessage(5L));
@@ -457,7 +458,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
             }
         };
 
-        MessageStore.Transaction txn = log.newTransaction();
+        Transaction txn = log.newTransaction();
 
         txn.enqueueMessage(mockQueue, new MockMessage(21L));
         txn.abortTran();
@@ -498,7 +499,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
             }
         };
 
-        MessageStore.Transaction txn = log.newTransaction();
+        Transaction txn = log.newTransaction();
 
         txn.enqueueMessage(mockQueue, new MockMessage(30L));
         txn.commitTran();

@@ -63,7 +63,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
     public DurableConfigurationStore getDurableConfigurationStore()
     {
-        return _host.getDurableConfigurationStore();
+        return _host.getMessageStore();
     }
 
     public void registerExchange(Exchange exchange) throws AMQException

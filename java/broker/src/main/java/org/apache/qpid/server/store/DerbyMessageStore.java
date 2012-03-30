@@ -69,7 +69,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * 
  * TODO extract the SQL statements into a generic JDBC store
  */
-public class DerbyMessageStore implements MessageStore, DurableConfigurationStore
+public class DerbyMessageStore implements MessageStore
 {
 
     private static final Logger _logger = Logger.getLogger(DerbyMessageStore.class);
@@ -277,8 +277,8 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
 
     public void configureMessageStore(String name,
                           MessageStoreRecoveryHandler recoveryHandler,
-                          Configuration storeConfiguration,
-                          LogSubject logSubject) throws Exception
+                          TransactionLogRecoveryHandler tlogRecoveryHandler,
+                          Configuration storeConfiguration, LogSubject logSubject) throws Exception
     {
         if(!_configured)
         {
@@ -297,37 +297,12 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
 
         recoverMessages(recoveryHandler);
 
-    }
-
-
-
-    public void configureTransactionLog(String name,
-                          TransactionLogRecoveryHandler recoveryHandler,
-                          Configuration storeConfiguration,
-                          LogSubject logSubject) throws Exception
-    {
-
-        if(!_configured)
-        {
-            _logSubject = logSubject;
-        }
         CurrentActor.get().message(_logSubject, TransactionLogMessages.CREATED(this.getClass().getName()));
 
-        if(!_configured)
-        {
-
-            _logSubject = logSubject;
-
-            commonConfiguration(name, storeConfiguration, logSubject);
-            _configured = true;
-        }
-
-        TransactionLogRecoveryHandler.DtxRecordRecoveryHandler dtxrh = recoverQueueEntries(recoveryHandler);
+        TransactionLogRecoveryHandler.DtxRecordRecoveryHandler dtxrh = recoverQueueEntries(tlogRecoveryHandler);
         recoverXids(dtxrh);
 
     }
-
-
 
     private void commonConfiguration(String name, Configuration storeConfiguration, LogSubject logSubject)
             throws ClassNotFoundException, SQLException
@@ -2167,7 +2142,7 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
         }
     }
 
-    private static class RecordImpl implements MessageStore.Transaction.Record, TransactionLogResource, EnqueableMessage
+    private static class RecordImpl implements Transaction.Record, TransactionLogResource, EnqueableMessage
     {
 
         private final String _queueName;
@@ -2650,7 +2625,7 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
                 }
                 throw new RuntimeException(e);
             }
-            return IMMEDIATE_FUTURE;
+            return StoreFuture.IMMEDIATE_FUTURE;
         }
 
         private synchronized void store(final Connection conn) throws SQLException

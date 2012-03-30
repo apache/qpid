@@ -23,9 +23,7 @@ package org.apache.qpid.server.virtualhost;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -52,6 +50,7 @@ import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
 import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.txn.DtxBranch;
@@ -74,11 +73,9 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 {
     private static final Logger _logger = Logger.getLogger(VirtualHostConfigRecoveryHandler.class);
 
-
     private final VirtualHost _virtualHost;
 
     private MessageStoreLogSubject _logSubject;
-    private List<ProcessAction> _actions;
 
     private MessageStore _store;
 
@@ -201,8 +198,8 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
     }
 
     public void dtxRecord(long format, byte[] globalId, byte[] branchId,
-                          MessageStore.Transaction.Record[] enqueues,
-                          MessageStore.Transaction.Record[] dequeues)
+                          Transaction.Record[] enqueues,
+                          Transaction.Record[] dequeues)
     {
         Xid id = new Xid(format, globalId, branchId);
         DtxRegistry dtxRegistry = _virtualHost.getDtxRegistry();
@@ -212,7 +209,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
             branch = new DtxBranch(id, _store, _virtualHost);
             dtxRegistry.registerBranch(branch);
         }
-        for(MessageStore.Transaction.Record record : enqueues)
+        for(Transaction.Record record : enqueues)
         {
             final AMQQueue queue = _virtualHost.getQueueRegistry().getQueue(record.getQueue().getResourceName());
             if(queue != null)
@@ -272,7 +269,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
             }
         }
-        for(MessageStore.Transaction.Record record : dequeues)
+        for(Transaction.Record record : dequeues)
         {
             final AMQQueue queue = _virtualHost.getQueueRegistry().getQueue(record.getQueue().getResourceName());
             if(queue != null)
@@ -385,7 +382,6 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
     public void binding(String exchangeName, String queueName, String bindingKey, ByteBuffer buf)
     {
-        _actions = new ArrayList<ProcessAction>();
         try
         {
             Exchange exchange = _virtualHost.getExchangeRegistry().getExchange(exchangeName);
@@ -482,7 +478,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
                 else
                 {
                     _logger.warn("Message id " + messageId + " referenced in log as enqueued in queue " + queue.getNameShortString() + " is unknown, entry will be discarded");
-                    MessageStore.Transaction txn = _store.newTransaction();
+                    Transaction txn = _store.newTransaction();
                     txn.dequeueMessage(queue, new DummyMessage(messageId));
                     txn.commitTranAsync();
                 }
@@ -490,7 +486,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
             else
             {
                 _logger.warn("Message id " + messageId + " in log references queue " + queueName + " which is not in the configuration, entry will be discarded");
-                MessageStore.Transaction txn = _store.newTransaction();
+                Transaction txn = _store.newTransaction();
                 TransactionLogResource mockQueue =
                         new TransactionLogResource()
                         {

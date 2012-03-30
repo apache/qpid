@@ -192,7 +192,7 @@ public class BindingFactory
 
             if (b.isDurable() && !restore)
             {
-                _configSource.getDurableConfigurationStore().bindQueue(exchange,new AMQShortString(bindingKey),queue,FieldTable.convertToFieldTable(arguments));
+                _configSource.getMessageStore().bindQueue(exchange,new AMQShortString(bindingKey),queue,FieldTable.convertToFieldTable(arguments));
             }
 
             queue.addQueueDeleteTask(b);
@@ -265,7 +265,7 @@ public class BindingFactory
 
             if (b.isDurable())
             {
-                _configSource.getDurableConfigurationStore().unbindQueue(exchange,
+                _configSource.getMessageStore().unbindQueue(exchange,
                                          new AMQShortString(bindingKey),
                                          queue,
                                          FieldTable.convertToFieldTable(arguments));

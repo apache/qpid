@@ -298,7 +298,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
                 1,  queueRegistry.getQueues().size());
         
         //test that removing the queue means it is not recovered next time
-        getVirtualHost().getDurableConfigurationStore().removeQueue(queueRegistry.getQueue(durableQueueName));
+        getVirtualHost().getMessageStore().removeQueue(queueRegistry.getQueue(durableQueueName));
 
         reloadVirtualHost();
         
@@ -351,7 +351,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
                 origExchangeCount + 1,  exchangeRegistry.getExchangeNames().size());
         
         //test that removing the exchange means it is not recovered next time
-        getVirtualHost().getDurableConfigurationStore().removeExchange(exchangeRegistry.getExchange(directExchangeName));
+        getVirtualHost().getMessageStore().removeExchange(exchangeRegistry.getExchange(directExchangeName));
 
         reloadVirtualHost();
         
@@ -707,7 +707,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
             if (queue.isDurable() && !queue.isAutoDelete())
             {
-                getVirtualHost().getDurableConfigurationStore().createQueue(queue, queueArguments);
+                getVirtualHost().getMessageStore().createQueue(queue, queueArguments);
             }
         }
         catch (AMQException e)
@@ -751,7 +751,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
             getVirtualHost().getExchangeRegistry().registerExchange(exchange);
             if (durable)
             {
-                getVirtualHost().getDurableConfigurationStore().createExchange(exchange);
+                getVirtualHost().getMessageStore().createExchange(exchange);
             }
         }
         catch (AMQException e)

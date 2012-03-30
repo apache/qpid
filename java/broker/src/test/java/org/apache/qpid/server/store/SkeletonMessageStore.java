@@ -26,6 +26,8 @@ import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.federation.Bridge;
+import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -45,8 +47,8 @@ public class SkeletonMessageStore implements MessageStore
 
     public void configureMessageStore(String name,
                                       MessageStoreRecoveryHandler recoveryHandler,
-                                      Configuration config,
-                                      LogSubject logSubject) throws Exception
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler,
+                                      Configuration config, LogSubject logSubject) throws Exception
     {
     }
 
@@ -94,14 +96,6 @@ public class SkeletonMessageStore implements MessageStore
     }
 
     public void removeQueue(final AMQQueue queue) throws AMQStoreException
-    {
-
-    }
-
-    public void configureTransactionLog(String name,
-                                        TransactionLogRecoveryHandler recoveryHandler,
-                                        Configuration storeConfiguration,
-                                        LogSubject logSubject) throws Exception
     {
 
     }
@@ -160,6 +154,26 @@ public class SkeletonMessageStore implements MessageStore
     public void updateQueue(AMQQueue queue) throws AMQStoreException
     {
 
+    }
+
+    @Override
+    public void createBrokerLink(BrokerLink link) throws AMQStoreException
+    {
+    }
+
+    @Override
+    public void deleteBrokerLink(BrokerLink link) throws AMQStoreException
+    {
+    }
+
+    @Override
+    public void createBridge(Bridge bridge) throws AMQStoreException
+    {
+    }
+
+    @Override
+    public void deleteBridge(Bridge bridge) throws AMQStoreException
+    {
     }
 
 }

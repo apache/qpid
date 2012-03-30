@@ -36,14 +36,14 @@ public interface DurableConfigurationStore
 
     public static interface Source
     {
-        DurableConfigurationStore getDurableConfigurationStore();
+        DurableConfigurationStore getMessageStore();
     }
 
     /**
      * Called after instantiation in order to configure the message store. A particular implementation can define
      * whatever parameters it wants.
      *
-     * @param name             The name to be used by this storem
+     * @param name             The name to be used by this store
      * @param recoveryHandler  Handler to be called as the store recovers on start up
      * @param config           The apache commons configuration object.
      *
@@ -89,7 +89,7 @@ public interface DurableConfigurationStore
      * @param exchange   The exchange to unbind from.
      * @param routingKey The routing key to unbind.
      * @param queue      The queue to unbind.
-     * @param args       Additonal parameters.
+     * @param args       Additional parameters.
      *
      * @throws AMQStoreException If the operation fails for any reason.
      */
