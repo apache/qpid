@@ -23,8 +23,8 @@
  */
 #include "qpid/broker/Messages.h"
 #include "qpid/sys/IntegerTypes.h"
-#include <deque>
-#include <vector>
+#include <list>
+#include <map>
 
 namespace qpid {
 namespace broker {
@@ -46,28 +46,22 @@ class PriorityQueue : public Messages
     bool acquire(const framing::SequenceNumber&, QueuedMessage&);
     bool find(const framing::SequenceNumber&, QueuedMessage&);
     bool browse(const framing::SequenceNumber&, QueuedMessage&, bool);
-    bool consume(QueuedMessage&);
+    virtual bool consume(QueuedMessage&);
     bool push(const QueuedMessage& added, QueuedMessage& removed);
 
     void foreach(Functor);
     void removeIf(Predicate);
     static uint getPriority(const QueuedMessage&);
   protected:
-    typedef std::deque<QueuedMessage> Deque;
-    typedef std::vector<Deque> PriorityLevels;
-    virtual bool findFrontLevel(uint& p, PriorityLevels&);
+    typedef std::list<QueuedMessage*> Available;
+    typedef std::map<framing::SequenceNumber, QueuedMessage> Index;
 
     const int levels;
-  private:
-    PriorityLevels messages;
-    uint frontLevel;
-    bool haveFront;
-    bool cached;
-    
-    bool find(const framing::SequenceNumber&, QueuedMessage&, bool remove);
-    uint getPriorityLevel(const QueuedMessage&) const;
-    void clearCache();
-    bool checkFront();
+    Index messages;
+    Available available;
+
+    bool compare(const QueuedMessage* a, const QueuedMessage* b) const;
+    uint getPriorityLevel(const QueuedMessage& m) const;
 };
 
 }} // namespace qpid::broker

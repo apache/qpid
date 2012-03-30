@@ -23,6 +23,7 @@
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/log/Statement.h"
+#include <algorithm>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/assign/list_of.hpp>
@@ -32,35 +33,12 @@ namespace broker {
 
 Fairshare::Fairshare(size_t levels, uint limit) :
     PriorityQueue(levels),
-    limits(levels, limit), priority(levels-1), count(0) {}
+    limits(levels, limit), counts(levels, 0) {}
 
 
 void Fairshare::setLimit(size_t level, uint limit)
 {
     limits[level] = limit;
-}
-
-bool Fairshare::limitReached()
-{
-    uint l = limits[priority];
-    return l && ++count > l;
-}
-
-uint Fairshare::currentLevel()
-{
-    if (limitReached()) {
-        return nextLevel();
-    } else {
-        return priority;
-    }
-}
-
-uint Fairshare::nextLevel()
-{
-    count = 1;
-    if (priority) --priority;
-    else priority = levels-1;
-    return priority;
 }
 
 bool Fairshare::isNull()
@@ -69,41 +47,57 @@ bool Fairshare::isNull()
     return true;
 }
 
-bool Fairshare::getState(uint& p, uint& c) const
+bool Fairshare::getState(qpid::framing::FieldTable& state) const
 {
-    p = priority;
-    c = count;
+    for (int i = 0; i < levels; i++) {
+        if (counts[i]) {
+            std::string key = (boost::format("fairshare-count-%1%") % i).str();
+            state.setInt(key, counts[i]);
+        }
+    }
     return true;
 }
 
-bool Fairshare::setState(uint p, uint c)
+bool Fairshare::checkLevel(uint level)
 {
-    priority = p;
-    count = c;
-    return true;
+    if (!limits[level] || counts[level] < limits[level]) {
+        counts[level]++;
+        return true;
+    } else {
+        return false;
+    }
 }
 
-bool Fairshare::findFrontLevel(uint& p, PriorityLevels& messages)
+bool Fairshare::consume(QueuedMessage& message)
 {
-    const uint start = p = currentLevel();
-    do {
-        if (!messages[p].empty()) return true;
-    } while ((p = nextLevel()) != start);
-    return false;
+    for (Available::iterator i = available.begin(); i != available.end(); ++i) {
+        QueuedMessage* next = *i;
+        if (checkLevel(getPriorityLevel(*next))) {
+            messages[next->position].status = QueuedMessage::ACQUIRED;
+            message = *next;
+            available.erase(i);
+            return true;
+        }
+    }
+    if (!available.empty()) {
+        std::fill(counts.begin(), counts.end(), 0);//reset counts
+        return consume(message);
+    } else {
+        return false;
+    }
 }
 
 
-
-bool Fairshare::getState(const Messages& m, uint& priority, uint& count)
+bool Fairshare::getState(const Messages& m, qpid::framing::FieldTable& counts)
 {
     const Fairshare* fairshare = dynamic_cast<const Fairshare*>(&m);
-    return fairshare && fairshare->getState(priority, count);
+    return fairshare && fairshare->getState(counts);
 }
 
-bool Fairshare::setState(Messages& m, uint priority, uint count)
+bool Fairshare::setState(Messages& m, const qpid::framing::FieldTable& counts)
 {
     Fairshare* fairshare = dynamic_cast<Fairshare*>(&m);
-    return fairshare && fairshare->setState(priority, count);
+    return fairshare && fairshare->setState(counts);
 }
 
 int getIntegerSetting(const qpid::framing::FieldTable& settings, const std::vector<std::string>& keys)
@@ -136,7 +130,14 @@ int getIntegerSettingForKey(const qpid::framing::FieldTable& settings, const std
 {
     return getIntegerSetting(settings, boost::assign::list_of<std::string>(key));
 }
-
+bool Fairshare::setState(const qpid::framing::FieldTable& state)
+{
+    for (int i = 0; i < levels; i++) {
+        std::string key = (boost::format("fairshare-count-%1%") % i).str();
+        counts[i] = state.isSet(key) ? getIntegerSettingForKey(state, key) : 0;
+    }
+    return true;
+}
 int getSetting(const qpid::framing::FieldTable& settings, const std::vector<std::string>& keys, int minvalue, int maxvalue)
 {
     return std::max(minvalue,std::min(getIntegerSetting(settings, keys), maxvalue));

@@ -22,6 +22,7 @@
  *
  */
 #include "qpid/broker/PriorityQueue.h"
+#include <vector>
 
 namespace qpid {
 namespace framing {
@@ -38,23 +39,19 @@ class Fairshare : public PriorityQueue
 {
   public:
     Fairshare(size_t levels, uint limit);
-    bool getState(uint& priority, uint& count) const;
-    bool setState(uint priority, uint count);
+    bool getState(qpid::framing::FieldTable& counts) const;
+    bool setState(const qpid::framing::FieldTable& counts);
     void setLimit(size_t level, uint limit);
     bool isNull();
+    bool consume(QueuedMessage&);
     static std::auto_ptr<Messages> create(const qpid::framing::FieldTable& settings);
-    static bool getState(const Messages&, uint& priority, uint& count);
-    static bool setState(Messages&, uint priority, uint count);
+    static bool getState(const Messages&, qpid::framing::FieldTable& counts);
+    static bool setState(Messages&, const qpid::framing::FieldTable& counts);
   private:
     std::vector<uint> limits;
+    std::vector<uint> counts;
 
-    uint priority;
-    uint count;
-
-    uint currentLevel();
-    uint nextLevel();
-    bool limitReached();
-    bool findFrontLevel(uint& p, PriorityLevels&);
+    bool checkLevel(uint level);
 };
 }} // namespace qpid::broker
 
