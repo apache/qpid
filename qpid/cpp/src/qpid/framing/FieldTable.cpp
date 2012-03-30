@@ -54,11 +54,14 @@ FieldTable::FieldTable() :
 {
 }
 
-FieldTable::FieldTable(const FieldTable& ft) :
-    cachedBytes(ft.cachedBytes),
-    cachedSize(ft.cachedSize),
-    newBytes(ft.newBytes)
+FieldTable::FieldTable(const FieldTable& ft)
 {
+    ScopedLock<Mutex> l(ft.lock);   // lock _source_ FieldTable
+
+    cachedBytes = ft.cachedBytes;
+    cachedSize = ft.cachedSize;
+    newBytes = ft.newBytes;
+
     // Only copy the values if we have no raw data
     // - copying the map is expensive and we can
     //   reconstruct it if necessary from the raw data
@@ -251,6 +254,7 @@ bool FieldTable::getDouble(const std::string& name, double& value) const {
 //}
 
 void FieldTable::encode(Buffer& buffer) const {
+    ScopedLock<Mutex> l(lock);
     // If we've still got the input field table
     // we can just copy it directly to the output
     if (cachedBytes) {
@@ -264,7 +268,6 @@ void FieldTable::encode(Buffer& buffer) const {
             i->second->encode(buffer);
         }
         // Now create raw bytes in case we are used again
-        ScopedLock<Mutex> l(lock);
         cachedSize = buffer.getPosition() - p;
         cachedBytes = boost::shared_array<uint8_t>(new uint8_t[cachedSize]);
         buffer.setPosition(p);
@@ -283,6 +286,7 @@ void FieldTable::decode(Buffer& buffer){
         if ((available < len) || (available < 4))
             throw IllegalArgumentException(QPID_MSG("Not enough data for field table."));
     }
+    ScopedLock<Mutex> l(lock);
     // Throw away previous stored values
     values.clear();
     // Copy data into our buffer
@@ -321,6 +325,7 @@ void FieldTable::realDecode() const
 
 void FieldTable::flushRawCache()
 {
+    ScopedLock<Mutex> l(lock);
     // We can only flush the cache if there are no cached bytes to decode
     assert(newBytes==false);
     // Avoid recreating shared array unless we actually have one.
