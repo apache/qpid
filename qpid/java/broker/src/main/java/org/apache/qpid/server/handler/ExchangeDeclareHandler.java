@@ -106,7 +106,7 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
 
                         if (exchange.isDurable())
                         {
-                            virtualHost.getDurableConfigurationStore().createExchange(exchange);
+                            virtualHost.getMessageStore().createExchange(exchange);
                         }
                     }
                     catch(AMQUnknownExchangeType e)

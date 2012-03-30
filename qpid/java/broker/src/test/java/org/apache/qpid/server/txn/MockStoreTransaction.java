@@ -24,14 +24,21 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.NotImplementedException;
 
 import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.federation.Bridge;
+import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStore.StoreFuture;
-import org.apache.qpid.server.store.MessageStore.Transaction;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
 import org.apache.qpid.server.store.StorableMessageMetaData;
+import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
 import org.apache.qpid.server.store.TransactionLogResource;
 
@@ -126,36 +133,105 @@ class MockStoreTransaction implements Transaction
         {
             public void configureMessageStore(final String name,
                                               final MessageStoreRecoveryHandler recoveryHandler,
-                                              final Configuration config,
-                                              final LogSubject logSubject) throws Exception
+                                              TransactionLogRecoveryHandler tlogRecoveryHandler,
+                                              final Configuration config, final LogSubject logSubject) throws Exception
             {
-                //TODO.
             }
 
             public void close() throws Exception
             {
-                //TODO.
             }
 
             public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(final T metaData)
             {
-                return null;  //TODO.
+                return null;
             }
 
             public boolean isPersistent()
             {
-                return false;  //TODO.
-            }
-
-            public void configureTransactionLog(String name, TransactionLogRecoveryHandler recoveryHandler,
-                    Configuration storeConfiguration, LogSubject logSubject) throws Exception
-            {
+                return false;
             }
 
             public Transaction newTransaction()
             {
                 storeTransaction.setState(TransactionState.STARTED);
                 return storeTransaction;
+            }
+
+            @Override
+            public void configureConfigStore(String name,
+                    ConfigurationRecoveryHandler recoveryHandler,
+                    Configuration config, LogSubject logSubject)
+                    throws Exception
+            {
+            }
+
+            @Override
+            public void createExchange(Exchange exchange)
+                    throws AMQStoreException
+            {
+            }
+
+            @Override
+            public void removeExchange(Exchange exchange)
+                    throws AMQStoreException
+            {
+            }
+
+            @Override
+            public void bindQueue(Exchange exchange, AMQShortString routingKey,
+                    AMQQueue queue, FieldTable args) throws AMQStoreException
+            {
+            }
+
+            @Override
+            public void unbindQueue(Exchange exchange,
+                    AMQShortString routingKey, AMQQueue queue, FieldTable args)
+                    throws AMQStoreException
+            {
+            }
+
+            @Override
+            public void createQueue(AMQQueue queue) throws AMQStoreException
+            {
+            }
+
+            @Override
+            public void createQueue(AMQQueue queue, FieldTable arguments)
+                    throws AMQStoreException
+            {
+            }
+
+            @Override
+            public void removeQueue(AMQQueue queue) throws AMQStoreException
+            {
+            }
+
+            @Override
+            public void updateQueue(AMQQueue queue) throws AMQStoreException
+            {
+            }
+
+            @Override
+            public void createBrokerLink(BrokerLink link)
+                    throws AMQStoreException
+            {
+            }
+
+            @Override
+            public void deleteBrokerLink(BrokerLink link)
+                    throws AMQStoreException
+            {
+            }
+
+            @Override
+            public void createBridge(Bridge bridge) throws AMQStoreException
+            {
+            }
+
+            @Override
+            public void deleteBridge(Bridge bridge) throws AMQStoreException
+            {
             }
             
         };

@@ -20,21 +20,22 @@
 */
 package org.apache.qpid.server.store;
 
-import java.nio.ByteBuffer;
-
-public interface StoredMessage<M extends StorableMessageMetaData>
+public interface StoreFuture
 {
-    M getMetaData();
+    StoreFuture IMMEDIATE_FUTURE = new StoreFuture()
+    {
+        public boolean isComplete()
+        {
+            return true;
+        }
 
-    public long getMessageNumber();
+        public void waitForCompletion()
+        {
 
-    void addContent(int offsetInMessage, ByteBuffer src);
+        }
+    };
 
-    int getContent(int offsetInMessage, ByteBuffer dst);
+    boolean isComplete();
 
-    ByteBuffer getContent(int offsetInMessage, int size);
-
-    StoreFuture flushToStore();
-
-    void remove();
+    void waitForCompletion();
 }

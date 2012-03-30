@@ -29,6 +29,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.Transaction;
 
 import java.util.Collection;
 import java.util.List;
@@ -67,7 +68,7 @@ public class AutoCommitTransaction implements ServerTransaction
 
     public void dequeue(BaseQueue queue, EnqueableMessage message, Action postTransactionAction)
     {
-        MessageStore.Transaction txn = null;
+        Transaction txn = null;
         try
         {
             if(message.isPersistent() && queue.isDurable())
@@ -99,7 +100,7 @@ public class AutoCommitTransaction implements ServerTransaction
 
     public void dequeue(Collection<QueueEntry> queueEntries, Action postTransactionAction)
     {
-        MessageStore.Transaction txn = null;
+        Transaction txn = null;
         try
         {
             for(QueueEntry entry : queueEntries)
@@ -146,7 +147,7 @@ public class AutoCommitTransaction implements ServerTransaction
 
     public void enqueue(BaseQueue queue, EnqueableMessage message, Action postTransactionAction)
     {
-        MessageStore.Transaction txn = null;
+        Transaction txn = null;
         try
         {
             if(message.isPersistent() && queue.isDurable())
@@ -179,7 +180,7 @@ public class AutoCommitTransaction implements ServerTransaction
 
     public void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message, Action postTransactionAction, long currentTime)
     {
-        MessageStore.Transaction txn = null;
+        Transaction txn = null;
         try
         {
 
@@ -247,7 +248,7 @@ public class AutoCommitTransaction implements ServerTransaction
         return false;
     }
 
-    private void rollbackIfNecessary(Action postTransactionAction, MessageStore.Transaction txn)
+    private void rollbackIfNecessary(Action postTransactionAction, Transaction txn)
     {
         if (txn != null)
         {

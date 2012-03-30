@@ -33,7 +33,7 @@ public interface TransactionLogRecoveryHandler
 
     public static interface DtxRecordRecoveryHandler
     {
-        void dtxRecord(long format, byte[] globalId, byte[] branchId, MessageStore.Transaction.Record[] enqueues, MessageStore.Transaction.Record[] dequeues);
+        void dtxRecord(long format, byte[] globalId, byte[] branchId, Transaction.Record[] enqueues, Transaction.Record[] dequeues);
 
         void completeDtxRecordRecovery();
     }

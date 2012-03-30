@@ -132,7 +132,7 @@ public class Bridge implements BridgeConfig
         {
             try
             {
-                brokerLink.getVirtualHost().getDurableConfigurationStore().createBridge(this);
+                brokerLink.getVirtualHost().getMessageStore().createBridge(this);
             }
             catch (AMQStoreException e)
             {
@@ -220,7 +220,7 @@ public class Bridge implements BridgeConfig
         {
             try
             {
-                brokerLink.getVirtualHost().getDurableConfigurationStore().createBridge(this);
+                brokerLink.getVirtualHost().getMessageStore().createBridge(this);
             }
             catch (AMQStoreException e)
             {

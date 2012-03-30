@@ -57,8 +57,6 @@ public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHo
 
     MessageStore getMessageStore();
 
-    DurableConfigurationStore getDurableConfigurationStore();
-
     SecurityManager getSecurityManager();
 
     void close();
