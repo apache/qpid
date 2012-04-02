@@ -354,6 +354,7 @@ endif (NOT Boost_REGEX_LIBRARY)
 # Boost on Windows can use automatic linking to pick up the correct
 # Boost libs based on compile-time touching of the headers. Since we don't
 # really need to add them to the link lines, set the names to blanks.
+option(QPID_LINK_BOOST_DYNAMIC "Link with dynamic Boost libs (OFF to link static)" ON)
 if (MSVC)
    install (PROGRAMS
             ${Boost_DATE_TIME_LIBRARY_DEBUG} ${Boost_DATE_TIME_LIBRARY_RELEASE}
@@ -371,7 +372,6 @@ if (MSVC)
                COMPONENT ${QPID_COMPONENT_COMMON})
    endif (NOT Boost_VERSION LESS 103500)
 
-   option(QPID_LINK_BOOST_DYNAMIC "Link with dynamic Boost libs (OFF to link static)" ON)
    if (QPID_LINK_BOOST_DYNAMIC)
       add_definitions( /D BOOST_ALL_DYN_LINK)
       string (REPLACE .lib .dll
