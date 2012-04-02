@@ -19,10 +19,11 @@
  *
  */
 #include "Backup.h"
-#include "Settings.h"
 #include "BrokerReplicator.h"
-#include "ReplicatingSubscription.h"
 #include "ConnectionExcluder.h"
+#include "HaBroker.h"
+#include "ReplicatingSubscription.h"
+#include "Settings.h"
 #include "qpid/Url.h"
 #include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/broker/Bridge.h"
@@ -43,8 +44,8 @@ using namespace broker;
 using types::Variant;
 using std::string;
 
-Backup::Backup(broker::Broker& b, const Settings& s) :
-    broker(b), settings(s), excluder(new ConnectionExcluder())
+Backup::Backup(HaBroker& hb, const Settings& s) :
+    haBroker(hb), broker(hb.getBroker()), settings(s), excluder(new ConnectionExcluder())
 {
     // Empty brokerUrl means delay initialization until setUrl() is called.
     if (!s.brokerUrl.empty()) initialize(Url(s.brokerUrl));
@@ -63,7 +64,7 @@ void Backup::initialize(const Url& url) {
     link = result.first;
     link->setUrl(url);
 
-    replicator.reset(new BrokerReplicator(link));
+    replicator.reset(new BrokerReplicator(haBroker, link));
     broker.getExchanges().registerExchange(replicator);
     broker.getConnectionObservers().add(excluder);
 }

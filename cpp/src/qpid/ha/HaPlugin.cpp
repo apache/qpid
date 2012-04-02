@@ -37,6 +37,9 @@ struct Options : public qpid::Options {
              "URL that backup brokers use to connect and fail over.")
             ("ha-public-brokers", optValue(settings.clientUrl,"URL"),
              "URL that clients use to connect and fail over, defaults to ha-brokers.")
+            ("ha-replicate-default",
+             optValue(settings.replicateDefault, "LEVEL"),
+            "Replication level for creating queues and exchanges if there is no qpid.replicate argument supplied. LEVEL is 'none', 'configuration' or 'all'")
             ("ha-expected-backups", optValue(settings.expectedBackups, "N"),
              "Number of backups expected to be active in the HA cluster.")
             ("ha-username", optValue(settings.username, "USER"),

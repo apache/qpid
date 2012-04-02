@@ -53,7 +53,7 @@ std::string QueueReplicator::replicatorName(const std::string& queueName) {
 QueueReplicator::QueueReplicator(boost::shared_ptr<Queue> q, boost::shared_ptr<Link> l)
     : Exchange(replicatorName(q->getName()), 0, q->getBroker()), queue(q), link(l)
 {
-    logPrefix = "HA: Backup " + queue->getName() + ": ";
+    logPrefix = "HA: Backup of queue " + queue->getName() + ": ";
     QPID_LOG(info, logPrefix << "Created, settings: " << q->getSettings());
 }
 

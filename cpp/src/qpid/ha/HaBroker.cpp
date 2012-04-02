@@ -27,6 +27,7 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Link.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/broker/SignalHandler.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qmf/org/apache/qpid/ha/Package.h"
 #include "qmf/org/apache/qpid/ha/ArgsHaBrokerReplicate.h"
@@ -69,16 +70,18 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
         throw Exception("Cannot start HA: management is disabled");
     _qmf::Package  packageInit(ma);
     mgmtObject = new _qmf::HaBroker(ma, this, "ha-broker");
-    // FIXME aconway 2012-03-01: should start in catch-up state and move to backup
-    // only when caught up.
     mgmtObject->set_status(BACKUP);
+    mgmtObject->set_replicateDefault(str(settings.replicateDefault));
     ma->addObject(mgmtObject);
+
+    // NOTE: lock is not needed in a constructor but we created it just to pass
+    // to the set functions.
     sys::Mutex::ScopedLock l(lock);
     if (!settings.clientUrl.empty()) setClientUrl(Url(settings.clientUrl), l);
     if (!settings.brokerUrl.empty()) setBrokerUrl(Url(settings.brokerUrl), l);
 
     // If we are in a cluster, we start in backup mode.
-    if (settings.cluster) backup.reset(new Backup(b, s));
+    if (settings.cluster) backup.reset(new Backup(*this, s));
 }
 
 HaBroker::~HaBroker() {}
@@ -167,6 +170,11 @@ void HaBroker::setExpectedBackups(size_t n, const sys::Mutex::ScopedLock&) {
 
 std::vector<Url> HaBroker::getKnownBrokers() const {
     return knownBrokers;
+}
+
+void HaBroker::shutdown(const std::string& message) {
+    QPID_LOG(critical, "Shutting down: " << message);
+    broker::SignalHandler::shutdown();
 }
 
 }} // namespace qpid::ha
