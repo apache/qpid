@@ -52,6 +52,11 @@ class HaBroker : public management::Manageable
     management::Manageable::status_t ManagementMethod (
         uint32_t methodId, management::Args& args, std::string& text);
 
+    broker::Broker& getBroker() { return broker; }
+    const Settings& getSettings() const { return settings; }
+
+    // Log a critical error message and shut down the broker.
+    void shutdown(const std::string& message);
   private:
     void setClientUrl(const Url&, const sys::Mutex::ScopedLock&);
     void setBrokerUrl(const Url&, const sys::Mutex::ScopedLock&);

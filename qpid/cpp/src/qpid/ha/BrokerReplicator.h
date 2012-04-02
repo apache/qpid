@@ -22,6 +22,7 @@
  *
  */
 
+#include "ReplicateLevel.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/types/Variant.h"
 #include <boost/shared_ptr.hpp>
@@ -35,7 +36,12 @@ class Bridge;
 class SessionHandler;
 }
 
+namespace framing {
+class FieldTable;
+}
+
 namespace ha {
+class HaBroker;
 
 /**
  * Replicate configuration on a backup broker.
@@ -51,7 +57,7 @@ namespace ha {
 class BrokerReplicator : public broker::Exchange
 {
   public:
-    BrokerReplicator(const boost::shared_ptr<broker::Link>&);
+    BrokerReplicator(HaBroker&, const boost::shared_ptr<broker::Link>&);
     ~BrokerReplicator();
     std::string getType() const;
 
@@ -64,6 +70,10 @@ class BrokerReplicator : public broker::Exchange
   private:
     void initializeBridge(broker::Bridge&, broker::SessionHandler&);
 
+    ReplicateLevel replicateLevel(const std::string&);
+    ReplicateLevel replicateLevel(const framing::FieldTable& args);
+    ReplicateLevel replicateLevel(const types::Variant::Map& args);
+
     void doEventQueueDeclare(types::Variant::Map& values);
     void doEventQueueDelete(types::Variant::Map& values);
     void doEventExchangeDeclare(types::Variant::Map& values);
@@ -74,9 +84,11 @@ class BrokerReplicator : public broker::Exchange
     void doResponseQueue(types::Variant::Map& values);
     void doResponseExchange(types::Variant::Map& values);
     void doResponseBind(types::Variant::Map& values);
+    void doResponseHaBroker(types::Variant::Map& values);
 
     void startQueueReplicator(const boost::shared_ptr<broker::Queue>&);
 
+    HaBroker& haBroker;
     broker::Broker& broker;
     boost::shared_ptr<broker::Link> link;
 };
