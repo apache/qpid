@@ -32,7 +32,11 @@
 	      desc="Multiple-address URL used by clients to connect to the HA brokers."/>
 
     <property name="expectedBackups" type="uint16"
-	      desc="Number of HA backup brokers expected."/>>
+	      desc="Number of HA backup brokers expected."/>
+
+    <property
+	name="replicateDefault" type="sstr"
+	desc="Replicate value for queues/exchanges without a qpid.replicate argument"/>
 
     <method name="promote" desc="Promote a backup broker to primary."/>
 
@@ -48,7 +52,7 @@
       <arg name="expectedBackups" type="uint16" dir="I"/>
     </method>
 
-    <method name="replicate" desc="Replicate from a remote queue to the local broker.">
+    <method name="replicate" desc="Replicate individual queue from remote broker.">
       <arg name="broker" type="sstr" dir="I"/>
       <arg name="queue" type="sstr" dir="I"/>
     </method>

@@ -1,5 +1,5 @@
-#ifndef QPID_HA_SETTINGS_H
-#define QPID_HA_SETTINGS_H
+#ifndef QPID_HA_REPLICATELEVEL_H
+#define QPID_HA_REPLICATELEVEL_H
 
 /*
  *
@@ -22,27 +22,31 @@
  *
  */
 
-#include "ReplicateLevel.h"
 #include <string>
+#include <iosfwd>
 
 namespace qpid {
 namespace ha {
 
-/**
- * Configurable settings for HA.
- */
-class Settings
-{
-  public:
-    Settings() : cluster(false), expectedBackups(0), replicateDefault(RL_NONE) {}
-    bool cluster;               // True if we are a cluster member.
-    std::string clientUrl;
-    std::string brokerUrl;
-    size_t expectedBackups;
-    ReplicateLevel replicateDefault;
-    std::string username, password, mechanism;
-  private:
-};
-}} // namespace qpid::ha
+enum ReplicateLevel { RL_NONE, RL_CONFIGURATION, RL_ALL };
 
-#endif  /*!QPID_HA_SETTINGS_H*/
+/**
+ * If str is a valid replicate level, set out and return true.
+ */
+bool replicateLevel(const std::string& str, ReplicateLevel& out);
+
+/**
+ *@return enum corresponding to string level.
+ *@throw qpid::Exception if level is not a valid replication level.
+ */
+ReplicateLevel replicateLevel(const std::string& level);
+
+/**@return string form of replicate level */
+std::string str(ReplicateLevel l);
+
+std::ostream& operator<<(std::ostream&, ReplicateLevel);
+std::istream& operator>>(std::istream&, ReplicateLevel&);
+
+}} // namespaces qpid::ha
+
+#endif  /*!QPID_HA_REPLICATELEVEL_H*/

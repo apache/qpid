@@ -19,6 +19,7 @@
  *
  */
 #include "BrokerReplicator.h"
+#include "HaBroker.h"
 #include "QueueReplicator.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
@@ -37,6 +38,7 @@
 #include "qmf/org/apache/qpid/broker/EventQueueDelete.h"
 #include "qmf/org/apache/qpid/broker/EventSubscribe.h"
 #include <algorithm>
+#include <sstream>
 
 namespace qpid {
 namespace ha {
@@ -87,6 +89,7 @@ const string QUEUE("queue");
 const string RHOST("rhost");
 const string TYPE("type");
 const string USER("user");
+const string HA_BROKER("habroker");
 
 const string AGENT_IND_EVENT_ORG_APACHE_QPID_BROKER("agent.ind.event.org_apache_qpid_broker.#");
 const string QMF2("qmf2");
@@ -100,6 +103,7 @@ const string _PACKAGE_NAME("_package_name");
 const string _SCHEMA_ID("_schema_id");
 const string OBJECT("OBJECT");
 const string ORG_APACHE_QPID_BROKER("org.apache.qpid.broker");
+const string ORG_APACHE_QPID_HA("org.apache.qpid.ha");
 const string QMF_DEFAULT_DIRECT("qmf.default.direct");
 const string _QUERY_REQUEST("_query_request");
 const string BROKER("broker");
@@ -113,36 +117,13 @@ template <class T> bool match(Variant::Map& schema) {
     return T::match(schema[CLASS_NAME], schema[PACKAGE_NAME]);
 }
 
-enum ReplicateLevel { RL_NONE=0, RL_CONFIGURATION, RL_ALL };
-const string S_NONE="none";
-const string S_CONFIGURATION="configuration";
-const string S_ALL="all";
-
-ReplicateLevel replicateLevel(const string& level) {
-    if (level == S_NONE) return RL_NONE;
-    if (level == S_CONFIGURATION) return RL_CONFIGURATION;
-    if (level == S_ALL) return RL_ALL;
-    throw Exception("Invalid value for "+QPID_REPLICATE+": "+level);
-}
-
-ReplicateLevel replicateLevel(const framing::FieldTable& f) {
-    if (f.isSet(QPID_REPLICATE)) return replicateLevel(f.getAsString(QPID_REPLICATE));
-    else return RL_NONE;
-}
-
-ReplicateLevel replicateLevel(const Variant::Map& m) {
-    Variant::Map::const_iterator i = m.find(QPID_REPLICATE);
-    if (i != m.end()) return replicateLevel(i->second.asString());
-    else return RL_NONE;
-}
-
-void sendQuery(const string className, const string& queueName, SessionHandler& sessionHandler) {
+void sendQuery(const string& packageName, const string& className, const string& queueName, SessionHandler& sessionHandler) {
     framing::AMQP_ServerProxy peer(sessionHandler.out);
     Variant::Map request;
     request[_WHAT] = OBJECT;
     Variant::Map schema;
     schema[_CLASS_NAME] = className;
-    schema[_PACKAGE_NAME] = ORG_APACHE_QPID_BROKER;
+    schema[_PACKAGE_NAME] = packageName;
     request[_SCHEMA_ID] = schema;
 
     AMQFrame method((MessageTransferBody(ProtocolVersion(), QMF_DEFAULT_DIRECT, 0, 0)));
@@ -181,10 +162,33 @@ Variant::Map asMapVoid(const Variant& value) {
 
 } // namespace
 
+
+ReplicateLevel BrokerReplicator::replicateLevel(const std::string& str) {
+    ReplicateLevel rl;
+    if (qpid::ha::replicateLevel(str, rl)) return rl;
+    else return haBroker.getSettings().replicateDefault;
+}
+
+ReplicateLevel BrokerReplicator::replicateLevel(const framing::FieldTable& f) {
+    if (f.isSet(QPID_REPLICATE))
+        return replicateLevel(f.getAsString(QPID_REPLICATE));
+    else
+        return haBroker.getSettings().replicateDefault;
+}
+
+ReplicateLevel BrokerReplicator::replicateLevel(const Variant::Map& m) {
+    Variant::Map::const_iterator i = m.find(QPID_REPLICATE);
+    if (i != m.end())
+        return replicateLevel(i->second.asString());
+    else
+        return haBroker.getSettings().replicateDefault;
+}
+
 BrokerReplicator::~BrokerReplicator() {}
 
-BrokerReplicator::BrokerReplicator(const boost::shared_ptr<Link>& l)
-    : Exchange(QPID_CONFIGURATION_REPLICATOR), broker(*l->getBroker()), link(l)
+BrokerReplicator::BrokerReplicator(HaBroker& hb, const boost::shared_ptr<Link>& l)
+    : Exchange(QPID_CONFIGURATION_REPLICATOR),
+      haBroker(hb), broker(hb.getBroker()), link(l)
 {
     QPID_LOG(info, "HA: Backup replicating from " <<
              link->getTransport() << ":" << link->getHost() << ":" << link->getPort());
@@ -211,17 +215,21 @@ void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionH
     const qmf::org::apache::qpid::broker::ArgsLinkBridge& args(bridge.getArgs());
 
     //declare and bind an event queue
-    peer.getQueue().declare(queueName, "", false, false, true, true, FieldTable());
+    FieldTable declareArgs;
+    declareArgs.setString(QPID_REPLICATE, str(RL_NONE));
+    peer.getQueue().declare(queueName, "", false, false, true, true, declareArgs);
     peer.getExchange().bind(queueName, QMF_DEFAULT_TOPIC, AGENT_IND_EVENT_ORG_APACHE_QPID_BROKER, FieldTable());
     //subscribe to the queue
     peer.getMessage().subscribe(queueName, args.i_dest, 1, 0, false, "", 0, FieldTable());
     peer.getMessage().flow(args.i_dest, 0, 0xFFFFFFFF);
     peer.getMessage().flow(args.i_dest, 1, 0xFFFFFFFF);
 
-    //issue a query request for queues and another for exchanges using event queue as the reply-to address
-    sendQuery(QUEUE, queueName, sessionHandler);
-    sendQuery(EXCHANGE, queueName, sessionHandler);
-    sendQuery(BINDING, queueName, sessionHandler);
+    // Issue a query request for queues, exchanges, bindings and the habroker
+    // using event queue as the reply-to address
+    sendQuery(ORG_APACHE_QPID_HA, HA_BROKER, queueName, sessionHandler);
+    sendQuery(ORG_APACHE_QPID_BROKER, QUEUE, queueName, sessionHandler);
+    sendQuery(ORG_APACHE_QPID_BROKER, EXCHANGE, queueName, sessionHandler);
+    sendQuery(ORG_APACHE_QPID_BROKER, BINDING, queueName, sessionHandler);
     QPID_LOG(debug, "HA: Backup activated configuration bridge: " << queueName);
 }
 
@@ -257,6 +265,7 @@ void BrokerReplicator::route(Deliverable& msg) {
                 if      (type == QUEUE) doResponseQueue(values);
                 else if (type == EXCHANGE) doResponseExchange(values);
                 else if (type == BINDING) doResponseBind(values);
+                else if (type == HA_BROKER) doResponseHaBroker(values);
                 else QPID_LOG(error, "HA: Backup received unknown response type=" << type
                               << " values=" << values);
             }
@@ -288,7 +297,6 @@ void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
             // re-create from event.
             // Events are always up to date, whereas responses may be
             // out of date.
-            QPID_LOG(debug, "HA: Backup created queue: " << name);
             startQueueReplicator(result.first);
         } else {
             // FIXME aconway 2011-12-02: what's the right way to handle this?
@@ -400,7 +408,6 @@ void BrokerReplicator::doEventUnbind(Variant::Map& values) {
 
 void BrokerReplicator::doResponseQueue(Variant::Map& values) {
     QPID_LOG(debug, "HA: Backup queue response " << values);
-    // FIXME aconway 2011-11-22: more flexible ways & defaults to indicate replication
     Variant::Map argsMap(asMapVoid(values[ARGUMENTS]));
     if (!replicateLevel(argsMap)) return;
     framing::FieldTable args;
@@ -417,7 +424,6 @@ void BrokerReplicator::doResponseQueue(Variant::Map& values) {
             ""/*TODO: who is the user?*/,
             ""/*TODO: what should we use as connection id?*/);
     if (result.second) {
-        QPID_LOG(debug, "HA: Backup created catch-up queue: " << values[NAME]);
         startQueueReplicator(result.first);
     } else {
         // FIXME aconway 2011-11-22: Normal to find queue already
@@ -474,7 +480,6 @@ void BrokerReplicator::doResponseBind(Variant::Map& values) {
     std::string qName = getRefName(QUEUE_REF_PREFIX, values[QUEUE_REF]);
     boost::shared_ptr<Exchange> exchange = broker.getExchanges().find(exName);
     boost::shared_ptr<Queue> queue = broker.getQueues().find(qName);
-    // FIXME aconway 2011-11-24: more flexible configuration for binding replication.
 
     // Automatically replicate binding if queue and exchange exist and are replicated
     if (exchange && replicateLevel(exchange->getArgs()) &&
@@ -487,6 +492,28 @@ void BrokerReplicator::doResponseBind(Variant::Map& values) {
         QPID_LOG(debug, "HA: Backup catch-up binding: exchange=" << exchange->getName()
                  << " queue=" << queue->getName()
                  << " key=" << key);
+    }
+}
+
+namespace {
+const string REPLICATE_DEFAULT="replicateDefault";
+}
+
+// Received the ha-broker configuration object for the primary broker.
+void BrokerReplicator::doResponseHaBroker(Variant::Map& values) {
+    try {
+        ReplicateLevel mine = haBroker.getSettings().replicateDefault;
+        ReplicateLevel primary = replicateLevel(values[REPLICATE_DEFAULT].asString());
+        if (mine != primary) {
+            std::ostringstream os;
+            os << "Replicate default on backup (" << mine
+               << ") does not match primary (" <<  primary << ")";
+            haBroker.shutdown(os.str());
+        }
+    } catch (const std::exception& e) {
+        std::ostringstream os;
+        os << "Received invalid replicate default from primary: " << e.what();
+        haBroker.shutdown(os.str());
     }
 }
 
