@@ -69,7 +69,28 @@ FieldTable::FieldTable(const FieldTable& ft)
         newBytes = true;
         return;
     }
-    if (!ft.values.empty()) values = ft.values;
+    // In practice Encoding the source field table and only copying
+    // the encoded bytes is faster than copying the whole value map.
+    // (Because we nearly always copy a field table internally before
+    // encoding it to send, but don't change it after the copy)
+    if (!ft.values.empty()) {
+        // Side effect of getting encoded size will cache it in ft.cachedSize
+        ft.cachedBytes = boost::shared_array<uint8_t>(new uint8_t[ft.encodedSize()]);
+
+        Buffer buffer((char*)&ft.cachedBytes[0], ft.cachedSize);
+
+        // Cut and paste ahead...
+        buffer.putLong(ft.encodedSize() - 4);
+        buffer.putLong(ft.values.size());
+        for (ValueMap::const_iterator i = ft.values.begin(); i!=ft.values.end(); ++i) {
+            buffer.putShortString(i->first);
+            i->second->encode(buffer);
+        }
+
+        cachedBytes = ft.cachedBytes;
+        cachedSize = ft.cachedSize;
+        newBytes = true;
+    }
 }
 
 FieldTable& FieldTable::operator=(const FieldTable& ft)
@@ -254,24 +275,18 @@ bool FieldTable::getDouble(const std::string& name, double& value) const {
 //}
 
 void FieldTable::encode(Buffer& buffer) const {
-    ScopedLock<Mutex> l(lock);
     // If we've still got the input field table
     // we can just copy it directly to the output
     if (cachedBytes) {
+        ScopedLock<Mutex> l(lock);
         buffer.putRawData(&cachedBytes[0], cachedSize);
     } else {
-        uint32_t p = buffer.getPosition();
         buffer.putLong(encodedSize() - 4);
         buffer.putLong(values.size());
         for (ValueMap::const_iterator i = values.begin(); i!=values.end(); ++i) {
             buffer.putShortString(i->first);
             i->second->encode(buffer);
         }
-        // Now create raw bytes in case we are used again
-        cachedSize = buffer.getPosition() - p;
-        cachedBytes = boost::shared_array<uint8_t>(new uint8_t[cachedSize]);
-        buffer.setPosition(p);
-        buffer.getRawData(&cachedBytes[0], cachedSize);
     }
 }
 
