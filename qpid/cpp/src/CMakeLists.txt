@@ -632,6 +632,8 @@ if (BUILD_HA)
         qpid/ha/Settings.h
         qpid/ha/QueueReplicator.h
         qpid/ha/QueueReplicator.cpp
+	qpid/ha/ReplicateLevel.h
+	qpid/ha/ReplicateLevel.cpp
         qpid/ha/ReplicatingSubscription.h
         qpid/ha/ReplicatingSubscription.cpp
         qpid/ha/BrokerReplicator.cpp
