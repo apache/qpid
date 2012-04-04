@@ -77,6 +77,7 @@ public class SupportedProtocolVersionsTest extends QpidBrokerTestCase
     public void testDisabling010() throws Exception
     {
         //disable 0-10 support
+        setConfigurationProperty("connector.amqp10enabled", "false");
         setConfigurationProperty("connector.amqp010enabled", "false");
 
         super.setUp();
@@ -92,6 +93,7 @@ public class SupportedProtocolVersionsTest extends QpidBrokerTestCase
     public void testDisabling091and010() throws Exception
     {
         //disable 0-91 and 0-10 support
+        setConfigurationProperty(ServerConfiguration.CONNECTOR_AMQP10ENABLED, "false");
         setConfigurationProperty(ServerConfiguration.CONNECTOR_AMQP010ENABLED, "false");
         setConfigurationProperty(ServerConfiguration.CONNECTOR_AMQP091ENABLED, "false");
 
@@ -111,6 +113,7 @@ public class SupportedProtocolVersionsTest extends QpidBrokerTestCase
         setConfigurationProperty(ServerConfiguration.CONNECTOR_AMQP09ENABLED, "false");
         setConfigurationProperty(ServerConfiguration.CONNECTOR_AMQP091ENABLED, "false");
         setConfigurationProperty(ServerConfiguration.CONNECTOR_AMQP010ENABLED, "false");
+        setConfigurationProperty(ServerConfiguration.CONNECTOR_AMQP10ENABLED, "false");
 
         super.setUp();
 

@@ -862,7 +862,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     public void requeue(QueueEntry entry)
     {
-
         SubscriptionList.SubscriptionNodeIterator subscriberIter = _subscriptionList.iterator();
         // iterate over all the subscribers, and if they are in advance of this queue entry then move them backwards
         while (subscriberIter.advance() && entry.isAvailable())
@@ -1743,6 +1742,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     {
         boolean atTail = false;
         final boolean keepSendLockHeld = iterations <=  SimpleAMQQueue.MAX_ASYNC_DELIVERIES;
+        boolean queueEmpty = false;
 
         try
         {
@@ -1760,12 +1760,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                     }
 
                     atTail = attemptDelivery(sub, true);
-                    if (atTail && !sub.isSuspended() && sub.isAutoClose())
+                    if (atTail && getNextAvailableEntry(sub) == null)
                     {
-                        unregisterSubscription(sub);
-
-                        sub.confirmAutoClose();
-
+                        queueEmpty = true;
                     }
                     else if (!atTail)
                     {
@@ -1787,6 +1784,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
             {
                 sub.releaseSendLock();
             }
+            if(queueEmpty)
+            {
+                sub.queueEmpty();
+            }
+
             sub.flushBatched();
 
         }
@@ -2009,13 +2011,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                             if (subscriptionDone)
                             {
                                 sub.flushBatched();
-                                //close autoClose subscriptions if we are not currently intent on continuing
-                                if (lastLoop && !sub.isSuspended() && sub.isAutoClose())
+                                if (lastLoop && !sub.isSuspended())
                                 {
-
-                                    unregisterSubscription(sub);
-
-                                    sub.confirmAutoClose();
+                                    sub.queueEmpty();
                                 }
                                 break;
                             }

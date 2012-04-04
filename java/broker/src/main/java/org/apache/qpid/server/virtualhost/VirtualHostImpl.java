@@ -47,6 +47,7 @@ import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -67,7 +68,8 @@ import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 import javax.management.JMException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
-
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -125,6 +127,8 @@ public class VirtualHostImpl implements VirtualHost
     private boolean _statisticsEnabled = false;
 
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
+
+    private final Map<String, LinkRegistry> _linkRegistry = new HashMap<String, LinkRegistry>();
 
     public VirtualHostImpl(IApplicationRegistry appRegistry, VirtualHostConfiguration hostConfig) throws Exception
     {
@@ -671,6 +675,17 @@ public class VirtualHostImpl implements VirtualHost
             blink.close();
             getConfigStore().removeConfiguredObject(blink);
         }
+    }
+
+    public synchronized LinkRegistry getLinkRegistry(String remoteContainerId)
+    {
+        LinkRegistry linkRegistry = _linkRegistry.get(remoteContainerId);
+        if(linkRegistry == null)
+        {
+            linkRegistry = new LinkRegistry();
+            _linkRegistry.put(remoteContainerId, linkRegistry);
+        }
+        return linkRegistry;
     }
 
     public ConfigStore getConfigStore()
