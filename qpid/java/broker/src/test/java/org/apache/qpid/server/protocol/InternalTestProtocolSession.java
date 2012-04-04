@@ -34,6 +34,7 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.subscription.ClientDeliveryMethod;
 import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.subscription.SubscriptionImpl;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.TestNetworkConnection;
 
@@ -239,12 +240,12 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
                     _channelDelivers.put(_channelId, consumers);
                 }
 
-                LinkedList<DeliveryPair> consumerDelivers = consumers.get(sub.getConsumerTag());
+                LinkedList<DeliveryPair> consumerDelivers = consumers.get(((SubscriptionImpl)sub).getConsumerTag());
 
                 if (consumerDelivers == null)
                 {
                     consumerDelivers = new LinkedList<DeliveryPair>();
-                    consumers.put(sub.getConsumerTag(), consumerDelivers);
+                    consumers.put(((SubscriptionImpl)sub).getConsumerTag(), consumerDelivers);
                 }
 
                 consumerDelivers.add(new DeliveryPair(deliveryTag, (AMQMessage)entry.getMessage()));

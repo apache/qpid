@@ -29,6 +29,7 @@ import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 
 import javax.management.remote.JMXPrincipal;
 import javax.security.auth.Subject;
+import javax.security.auth.callback.CallbackHandler;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import java.util.Collections;
@@ -253,6 +254,11 @@ public class RMIPasswordAuthenticatorTest extends TestCase
                 {
                     return new AuthenticationResult(AuthenticationStatus.CONTINUE);
                 }
+            }
+
+            public CallbackHandler getHandler(String mechanism)
+            {
+                return null;
             }
         };
     }

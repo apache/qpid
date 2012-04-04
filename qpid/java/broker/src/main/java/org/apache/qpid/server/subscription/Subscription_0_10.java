@@ -109,7 +109,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
                                                 public void stateChange(Subscription sub, State oldState, State newState)
                                                 {
-                                                    CurrentActor.get().message(SubscriptionMessages.STATE(newState.toString()));    
+                                                    CurrentActor.get().message(SubscriptionMessages.STATE(newState.toString()));
                                                 }
                                             };
     private AMQQueue _queue;
@@ -199,12 +199,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
             CurrentActor.get().message(this, SubscriptionMessages.CREATE(filterLogString, queue.isDurable() && exclusive,
                     filterLogString.length() > 0));
         }
- 
-    }
 
-    public AMQShortString getConsumerTag()
-    {
-        return new AMQShortString(_destination);
     }
 
     public boolean isSuspended()
@@ -242,12 +237,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     private boolean checkFilters(QueueEntry entry)
     {
         return (_filters == null) || _filters.allAllow(entry);
-    }
-
-    public boolean isAutoClose()
-    {
-        // no such thing in 0-10
-        return false;
     }
 
     public boolean isClosed()
@@ -302,7 +291,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     {
         return getQueue().getConfigStore();
     }
-    
+
     public Long getDelivered()
     {
         return _deliveredCount.get();
@@ -823,11 +812,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         return getState() == State.ACTIVE;
     }
 
-    public void confirmAutoClose()
-    {
-        //No such thing in 0-10
-    }
-
     public void set(String key, Object value)
     {
         _properties.put(key, value);
@@ -1026,6 +1010,10 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         return _session.isTransactional();
     }
 
+    public void queueEmpty()
+    {
+    }
+
     public long getCreateTime()
     {
         return _createTime;
@@ -1033,7 +1021,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
     public String toLogString()
     {
-        String queueInfo = MessageFormat.format(QUEUE_FORMAT, _queue.getVirtualHost().getName(), 
+        String queueInfo = MessageFormat.format(QUEUE_FORMAT, _queue.getVirtualHost().getName(),
                   _queue.getNameShortString());
         String result = "[" + MessageFormat.format(SUBSCRIPTION_FORMAT, getSubscriptionID()) + "("
                 // queueString is "vh(/{0})/qu({1}) " so need to trim

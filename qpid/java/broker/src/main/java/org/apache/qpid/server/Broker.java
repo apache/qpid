@@ -53,10 +53,16 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.EnumSet;
+import java.util.Formatter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.FileHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 
 public class Broker
 {
@@ -159,6 +165,12 @@ public class Broker
                 parsePortList(sslPorts, serverConfig.getSSLPorts());
             }
 
+            Set<Integer> exclude_1_0 = new HashSet<Integer>(options.getExcludedPorts(ProtocolExclusion.v1_0));
+            if(exclude_1_0.isEmpty())
+            {
+                parsePortList(exclude_1_0, serverConfig.getPortExclude10());
+            }
+
             Set<Integer> exclude_0_10 = new HashSet<Integer>(options.getExcludedPorts(ProtocolExclusion.v0_10));
             if(exclude_0_10.isEmpty())
             {
@@ -208,7 +220,8 @@ public class Broker
                     final InetSocketAddress inetSocketAddress = new InetSocketAddress(bindAddress, port);
 
                     final Set<AmqpProtocolVersion> supported =
-                                    getSupportedVersions(port, exclude_0_10, exclude_0_9_1, exclude_0_9, exclude_0_8, serverConfig);
+                                    getSupportedVersions(port, exclude_1_0, exclude_0_10, exclude_0_9_1, exclude_0_9,
+                                                         exclude_0_8, serverConfig);
 
                     final NetworkTransportConfiguration settings =
                                     new ServerNetworkTransportConfiguration(serverConfig, inetSocketAddress, Transport.TCP);
@@ -237,7 +250,8 @@ public class Broker
                     final InetSocketAddress inetSocketAddress = new InetSocketAddress(bindAddress, sslPort);
 
                     final Set<AmqpProtocolVersion> supported =
-                                    getSupportedVersions(sslPort, exclude_0_10, exclude_0_9_1, exclude_0_9, exclude_0_8, serverConfig);
+                                    getSupportedVersions(sslPort, exclude_1_0, exclude_0_10, exclude_0_9_1,
+                                                         exclude_0_9, exclude_0_8, serverConfig);
                     final NetworkTransportConfiguration settings =
                         new ServerNetworkTransportConfiguration(serverConfig, inetSocketAddress, Transport.TCP);
 
@@ -262,13 +276,20 @@ public class Broker
         }
     }
 
-    private static Set<AmqpProtocolVersion> getSupportedVersions(final int port, final Set<Integer> exclude_0_10,
-                                                                final Set<Integer> exclude_0_9_1, final Set<Integer> exclude_0_9,
-                                                                final Set<Integer> exclude_0_8,
-                                                                final ServerConfiguration serverConfig)
+    private static Set<AmqpProtocolVersion> getSupportedVersions(final int port,
+                                                                 final Set<Integer> exclude_1_0,
+                                                                 final Set<Integer> exclude_0_10,
+                                                                 final Set<Integer> exclude_0_9_1,
+                                                                 final Set<Integer> exclude_0_9,
+                                                                 final Set<Integer> exclude_0_8,
+                                                                 final ServerConfiguration serverConfig)
     {
         final EnumSet<AmqpProtocolVersion> supported = EnumSet.allOf(AmqpProtocolVersion.class);
 
+        if(exclude_1_0.contains(port) || !serverConfig.isAmqp10enabled())
+        {
+            supported.remove(AmqpProtocolVersion.v1_0_0);
+        }
         if(exclude_0_10.contains(port) || !serverConfig.isAmqp010enabled())
         {
             supported.remove(AmqpProtocolVersion.v0_10);
