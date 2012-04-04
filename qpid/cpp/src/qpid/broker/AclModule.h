@@ -22,6 +22,7 @@
 
 
 #include "qpid/RefCounted.h"
+#include "qpid/Exception.h"
 #include <boost/shared_ptr.hpp>
 #include <map>
 #include <set>
@@ -156,7 +157,7 @@ namespace acl {
             if (str.compare("broker")   == 0) return OBJ_BROKER;
             if (str.compare("link")     == 0) return OBJ_LINK;
             if (str.compare("method")   == 0) return OBJ_METHOD;
-            throw str;
+            throw qpid::Exception(str);
         }
         static inline std::string getObjectTypeStr(const ObjectType o) {
             switch (o) {
@@ -179,7 +180,7 @@ namespace acl {
             if (str.compare("delete")  == 0) return ACT_DELETE;
             if (str.compare("purge")   == 0) return ACT_PURGE;
             if (str.compare("update")  == 0) return ACT_UPDATE;
-            throw str;
+            throw qpid::Exception(str);
         }
         static inline std::string getActionStr(const Action a) {
             switch (a) {
@@ -212,7 +213,7 @@ namespace acl {
             if (str.compare("policytype")    == 0) return PROP_POLICYTYPE;
             if (str.compare("maxqueuesize")  == 0) return PROP_MAXQUEUESIZE;
             if (str.compare("maxqueuecount") == 0) return PROP_MAXQUEUECOUNT;
-            throw str;
+            throw qpid::Exception(str);
         }
         static inline std::string getPropertyStr(const Property p) {
             switch (p) {
@@ -256,7 +257,7 @@ namespace acl {
             // Allow old names in ACL file as aliases for newly-named properties
             if (str.compare("maxqueuesize")             == 0) return SPECPROP_MAXQUEUESIZEUPPERLIMIT;
             if (str.compare("maxqueuecount")            == 0) return SPECPROP_MAXQUEUECOUNTUPPERLIMIT;
-            throw str;
+            throw qpid::Exception(str);
         }
         static inline std::string getPropertyStr(const SpecProperty p) {
             switch (p) {
@@ -286,7 +287,7 @@ namespace acl {
             if (str.compare("allow-log") == 0) return ALLOWLOG;
             if (str.compare("deny")      == 0) return DENY;
             if (str.compare("deny-log")  == 0) return DENYLOG;
-            throw str;
+            throw qpid::Exception(str);
         }
         static inline std::string getAclResultStr(const AclResult r) {
             switch (r) {

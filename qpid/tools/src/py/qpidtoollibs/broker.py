@@ -268,6 +268,20 @@ class BrokerAgent(object):
   def reloadAclFile(self):
     self._method('reloadACLFile', {}, "org.apache.qpid.acl:acl:org.apache.qpid.broker:broker:amqp-broker")
 
+  def acl_lookup(self, userName, action, aclObj, aclObjName, propMap):
+    args = {'userId':      userName,
+            'action':      action,
+            'object':      aclObj,
+            'objectName':  aclObjName,
+            'propertyMap': propMap}
+    return self._method('Lookup', args, "org.apache.qpid.acl:acl:org.apache.qpid.broker:broker:amqp-broker")
+
+  def acl_lookupPublish(self, userName, exchange, key):
+    args = {'userId':       userName,
+            'exchangeName': exchange,
+            'routingKey':   key}
+    return self._method('LookupPublish', args, "org.apache.qpid.acl:acl:org.apache.qpid.broker:broker:amqp-broker")
+
   def create(self, _type, name, properties, strict):
     """Create an object of the specified type"""
     pass

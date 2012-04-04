@@ -55,6 +55,24 @@ class ACLTests(TestBase010):
             result = str(e)
         return result
 
+    def acl_lookup(self, userName, action, aclObj, aclObjName, propMap):
+        result = {}
+        try:
+            result = self.broker_access.acl_lookup(userName, action, aclObj, aclObjName, propMap)
+        except Exception, e:
+            result['text'] = str(e)
+            result['result'] = str(e)
+        return result
+
+    def acl_lookupPublish(self, userName, exchange, key):
+        result = {}
+        try:
+            result = self.broker_access.acl_lookupPublish(userName, exchange, key)
+        except Exception, e:
+            result['text'] = str(e)
+            result['result'] = str(e)
+        return result
+
     def get_acl_file(self):
         return ACLFile(self.config.defines.get("policy-file", "data_dir/policy.acl"))
 
@@ -72,6 +90,37 @@ class ACLTests(TestBase010):
         aclf.close()
         self.reload_acl()
         TestBase010.tearDown(self)
+
+
+    def Lookup(self, userName, action, aclObj, aclObjName, propMap, expectedResult):
+        result = self.acl_lookup(userName, action, aclObj, aclObjName, propMap)
+        if (result['result'] != expectedResult):
+            suffix = ', [ERROR: Expected= ' + expectedResult
+            if (result['result'] is None):
+                suffix = suffix + ', Exception= ' + result['text'] + ']'
+            else:
+                suffix = suffix + ', Actual= ' + result['result'] + ']'
+            self.fail('Lookup: name=' + userName + ', action=' + action + ', aclObj=' + aclObj + ', aclObjName=' + aclObjName + ', propertyMap=' + str(propMap) + suffix)
+
+
+    def LookupPublish(self, userName, exchName, keyName, expectedResult):
+        result = self.acl_lookupPublish(userName, exchName, keyName)
+        if (result['result'] != expectedResult):
+            if (result['result'] is None):
+                suffix = suffix + ', Exception= ' + result['text'] + ']'
+            else:
+                suffix = suffix + ', Actual= ' + result['result'] + ']'
+            self.fail('LookupPublish: name=' + userName + ', exchange=' + exchName + ', key=' + keyName + suffix)
+
+    def AllBut(self, allList, removeList):
+        tmpList = allList[:]
+        for item in removeList:
+            try:
+                tmpList.remove(item)
+            except Exception, e:
+                self.fail("ERROR in AllBut() \nallList =  %s \nremoveList =  %s \nerror =  %s " \
+                    % (allList, removeList, e))
+        return tmpList
 
    #=====================================
    # ACL general tests
@@ -1276,6 +1325,151 @@ class ACLTests(TestBase010):
         admin = BrokerAdmin(self.config.broker, "admin", "admin")
         ts = admin.get_timestamp_cfg() #should pass
         admin.set_timestamp_cfg(ts) #should pass
+
+
+
+   #=====================================
+   # QMF Functional tests
+   #=====================================
+
+    def test_qmf_functional_tests(self):
+        """
+        Test using QMF method hooks into ACL logic
+        """
+        aclf = self.get_acl_file()
+        aclf.write('group admins moe@COMPANY.COM \\\n')
+        aclf.write('             larry@COMPANY.COM \\\n')
+        aclf.write('             curly@COMPANY.COM \\\n')
+        aclf.write('             shemp@COMPANY.COM\n')
+        aclf.write('group auditors aaudit@COMPANY.COM baudit@COMPANY.COM caudit@COMPANY.COM \\\n')
+        aclf.write('               daudit@COMPANY.COM eaduit@COMPANY.COM eaudit@COMPANY.COM\n')
+        aclf.write('group tatunghosts tatung01@COMPANY.COM \\\n')
+        aclf.write('      tatung02/x86.build.company.com@COMPANY.COM \\\n')
+        aclf.write('      tatung03/x86.build.company.com@COMPANY.COM \\\n')
+        aclf.write('      tatung04/x86.build.company.com@COMPANY.COM \n')
+        aclf.write('group publishusers publish@COMPANY.COM x-pubs@COMPANY.COM\n')
+        aclf.write('acl allow-log admins all all\n')
+        aclf.write('# begin hack alert: allow anonymous to access the lookup debug functions\n')
+        aclf.write('acl allow-log anonymous create  queue\n')
+        aclf.write('acl allow-log anonymous all     exchange name=qmf.*\n')
+        aclf.write('acl allow-log anonymous all     exchange name=amq.direct\n')
+        aclf.write('acl allow-log anonymous all     exchange name=qpid.management\n')
+        aclf.write('acl allow-log anonymous access  method   name=*\n')
+        aclf.write('# end hack alert\n')
+        aclf.write('acl allow-log auditors all exchange name=company.topic routingkey=private.audit.*\n')
+        aclf.write('acl allow-log tatunghosts  publish exchange name=company.topic  routingkey=tatung.*\n')
+        aclf.write('acl allow-log tatunghosts  publish exchange name=company.direct routingkey=tatung-service-queue\n')
+        aclf.write('acl allow-log publishusers create queue\n')
+        aclf.write('acl allow-log publishusers publish exchange name=qpid.management routingkey=broker\n')
+        aclf.write('acl allow-log publishusers publish exchange name=qmf.default.topic routingkey=*\n')
+        aclf.write('acl allow-log publishusers publish exchange name=qmf.default.direct routingkey=*\n')
+        aclf.write('acl allow-log all bind exchange name=company.topic  routingkey=tatung.*\n')
+        aclf.write('acl allow-log all bind exchange name=company.direct routingkey=tatung-service-queue\n')
+        aclf.write('acl allow-log all consume queue\n')
+        aclf.write('acl allow-log all access exchange\n')
+        aclf.write('acl allow-log all access queue\n')
+        aclf.write('acl allow-log all create queue name=tmp.* durable=false autodelete=true exclusive=true policytype=ring\n')
+        aclf.write('acl allow mrQ create queue queuemaxsizelowerlimit=100 queuemaxsizeupperlimit=200 queuemaxcountlowerlimit=300 queuemaxcountupperlimit=400\n')
+        aclf.write('acl deny-log all all\n')
+        aclf.close()
+
+        result = self.reload_acl()
+        if (result):
+            self.fail(result)
+
+        #
+        # define some group lists
+        #
+        g_admins = ['moe@COMPANY.COM', \
+                    'larry@COMPANY.COM', \
+                    'curly@COMPANY.COM', \
+                    'shemp@COMPANY.COM']
+
+        g_auditors = [ 'aaudit@COMPANY.COM','baudit@COMPANY.COM','caudit@COMPANY.COM', \
+                       'daudit@COMPANY.COM','eaduit@COMPANY.COM','eaudit@COMPANY.COM']
+
+        g_tatunghosts = ['tatung01@COMPANY.COM', \
+                         'tatung02/x86.build.company.com@COMPANY.COM', \
+                         'tatung03/x86.build.company.com@COMPANY.COM', \
+                         'tatung04/x86.build.company.com@COMPANY.COM']
+
+        g_publishusers = ['publish@COMPANY.COM', 'x-pubs@COMPANY.COM']
+
+        g_public = ['jpublic@COMPANY.COM', 'me@yahoo.com']
+
+        g_all = g_admins + g_auditors + g_tatunghosts + g_publishusers + g_public
+
+        action_all = ['consume','publish','create','access','bind','unbind','delete','purge','update']
+
+        #
+        # Run some tests verifying against users who are in and who are out of given groups.
+        #
+
+        for u in g_admins:
+            self.Lookup(u, "create", "queue", "anything", {"durable":"true"}, "allow-log")
+
+        uInTest = g_auditors + g_admins
+        uOutTest = self.AllBut(g_all, uInTest)
+
+        for u in uInTest:
+            self.LookupPublish(u, "company.topic", "private.audit.This", "allow-log")
+
+        for u in uInTest:
+            for a in action_all:
+                self.Lookup(u, a, "exchange", "company.topic", {"routingkey":"private.audit.This"}, "allow-log")
+
+        for u in uOutTest:
+            self.LookupPublish(u, "company.topic", "private.audit.This", "deny-log")
+            self.Lookup(u, "bind", "exchange", "company.topic", {"routingkey":"private.audit.This"}, "deny-log")
+
+        uInTest = g_admins + g_tatunghosts
+        uOutTest = self.AllBut(g_all, uInTest)
+
+        for u in uInTest:
+            self.LookupPublish(u, "company.topic",  "tatung.this2",         "allow-log")
+            self.LookupPublish(u, "company.direct", "tatung-service-queue", "allow-log")
+
+        for u in uOutTest:
+            self.LookupPublish(u, "company.topic",  "tatung.this2",         "deny-log")
+            self.LookupPublish(u, "company.direct", "tatung-service-queue", "deny-log")
+
+        for u in uOutTest:
+            for a in ["bind", "access"]:
+                self.Lookup(u, a, "exchange", "company.topic",  {"routingkey":"tatung.this2"},         "allow-log")
+                self.Lookup(u, a, "exchange", "company.direct", {"routingkey":"tatung-service-queue"}, "allow-log")
+
+        uInTest = g_admins + g_publishusers
+        uOutTest = self.AllBut(g_all, uInTest)
+
+        for u in uInTest:
+            self.LookupPublish(u, "qpid.management",    "broker",   "allow-log")
+            self.LookupPublish(u, "qmf.default.topic",  "this3",    "allow-log")
+            self.LookupPublish(u, "qmf.default.direct", "this4",    "allow-log")
+
+        for u in uOutTest:
+            self.LookupPublish(u, "qpid.management",    "broker",   "deny-log")
+            self.LookupPublish(u, "qmf.default.topic",  "this3",    "deny-log")
+            self.LookupPublish(u, "qmf.default.direct", "this4",    "deny-log")
+
+        for u in uOutTest:
+            for a in ["bind"]:
+                self.Lookup(u, a, "exchange", "qpid.management",    {"routingkey":"broker"}, "deny-log")
+                self.Lookup(u, a, "exchange", "qmf.default.topic",  {"routingkey":"this3"},  "deny-log")
+                self.Lookup(u, a, "exchange", "qmf.default.direct", {"routingkey":"this4"},  "deny-log")
+            for a in ["access"]:
+                self.Lookup(u, a, "exchange", "qpid.management",    {"routingkey":"broker"}, "allow-log")
+                self.Lookup(u, a, "exchange", "qmf.default.topic",  {"routingkey":"this3"},  "allow-log")
+                self.Lookup(u, a, "exchange", "qmf.default.direct", {"routingkey":"this4"},  "allow-log")
+
+        # Test against queue size limits
+
+        self.Lookup('mrQ', 'create', 'queue', 'abc', {"maxqueuesize":"150", "maxqueuecount":"350"}, "allow")
+        self.Lookup('mrQ', 'create', 'queue', 'def', {"maxqueuesize":"99",  "maxqueuecount":"350"}, "deny")
+        self.Lookup('mrQ', 'create', 'queue', 'uvw', {"maxqueuesize":"201", "maxqueuecount":"350"}, "deny")
+        self.Lookup('mrQ', 'create', 'queue', 'xyz', {"maxqueuesize":"150", "maxqueuecount":"299"}, "deny")
+        self.Lookup('mrQ', 'create', 'queue', '',    {"maxqueuesize":"150", "maxqueuecount":"401"}, "deny")
+        self.Lookup('mrQ', 'create', 'queue', '',    {"maxqueuesize":"0",   "maxqueuecount":"401"}, "deny")
+        self.Lookup('mrQ', 'create', 'queue', '',    {"maxqueuesize":"150", "maxqueuecount":"0"  }, "deny")
 
 
 class BrokerAdmin:
