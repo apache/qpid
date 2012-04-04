@@ -198,7 +198,7 @@ bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {
 //
 // management lookup function performs general query on acl engine
 //
-Manageable::status_t Acl::lookup(management::Args& args, std::string& text)
+Manageable::status_t Acl::lookup(qpid::management::Args& args, std::string& text)
 {
     _qmf::ArgsAclLookup& ioArgs = (_qmf::ArgsAclLookup&) args;
     Manageable::status_t result(STATUS_USER);
@@ -246,7 +246,7 @@ Manageable::status_t Acl::lookup(management::Args& args, std::string& text)
 // management lookupPublish function performs fastpath
 // PUBLISH EXCHANGE query on acl engine
 //
-Manageable::status_t Acl::lookupPublish(management::Args& args, std::string& /*text*/)
+Manageable::status_t Acl::lookupPublish(qpid::management::Args& args, std::string& /*text*/)
 {
     _qmf::ArgsAclLookupPublish& ioArgs = (_qmf::ArgsAclLookupPublish&) args;
     boost::shared_ptr<AclData>       dataLocal;
