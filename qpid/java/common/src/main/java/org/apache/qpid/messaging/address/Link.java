@@ -23,6 +23,7 @@ package org.apache.qpid.messaging.address;
 import static org.apache.qpid.messaging.address.Link.Reliability.AT_LEAST_ONCE;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public class Link
@@ -42,13 +43,16 @@ public class Link
             if (reliability == null)
             {
                 return AT_LEAST_ONCE;
-            } else if (reliability.equalsIgnoreCase("unreliable"))
+            }
+            else if (reliability.equalsIgnoreCase("unreliable"))
             {
                 return UNRELIABLE;
-            } else if (reliability.equalsIgnoreCase("at-least-once"))
+            }
+            else if (reliability.equalsIgnoreCase("at-least-once"))
             {
                 return AT_LEAST_ONCE;
-            } else
+            }
+            else
             {
                 throw new AddressException("The reliability mode '"
                         + reliability + "' is not yet supported");
@@ -65,9 +69,9 @@ public class Link
     protected int producerCapacity = 0;
     protected Reliability reliability = AT_LEAST_ONCE;
 
-    protected Map<String, Object> xDeclareProps = (Map<String, Object>) Collections.EMPTY_MAP;
-    protected Map<String, Object> xBindingProps = (Map<String, Object>) Collections.EMPTY_MAP;
-    protected Map<String, Object> xSubscribeProps = (Map<String, Object>) Collections.EMPTY_MAP;
+    protected Map<String, Object> xDeclareProps = Collections.emptyMap();
+    protected List<Object> xBindingProps = Collections.emptyList();
+    protected Map<String, Object> xSubscribeProps = Collections.emptyMap();
 
     public Reliability getReliability()
     {
@@ -109,17 +113,17 @@ public class Link
         return name;
     }
 
-    public Map<String, Object> getXDeclareProperties()
+    public Map<String, Object> getDeclareProperties()
     {
         return xDeclareProps;
     }
 
-    public Map<String, Object> getXBindingProperties()
+    public List<Object> getBindingProperties()
     {
         return xBindingProps;
     }
 
-    public Map<String, Object> getXSubscribeProperties()
+    public Map<String, Object> getSubscribeProperties()
     {
         return xSubscribeProps;
     }
@@ -164,17 +168,17 @@ public class Link
         this.reliability = reliability;
     }
 
-    public void setxDeclareProps(Map<String, Object> xDeclareProps)
+    public void setDeclareProps(Map<String, Object> xDeclareProps)
     {
         this.xDeclareProps = xDeclareProps;
     }
 
-    public void setxBindingProps(Map<String, Object> xBindingProps)
+    public void setBindingProps(List<Object> xBindingProps)
     {
         this.xBindingProps = xBindingProps;
     }
 
-    public void setxSubscribeProps(Map<String, Object> xSubscribeProps)
+    public void setSubscribeProps(Map<String, Object> xSubscribeProps)
     {
         this.xSubscribeProps = xSubscribeProps;
     }

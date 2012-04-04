@@ -27,12 +27,12 @@ public class QpidQueue extends QpidDestination implements Queue
 {
 	public QpidQueue()
 	{
-		super(Type.QUEUE);
+		super(DestinationType.QUEUE);
 	}
 
 	public QpidQueue(String str) throws JMSException
 	{
-		super(Type.QUEUE);
+		super(DestinationType.QUEUE);
         setDestinationString(str);
 	}
 

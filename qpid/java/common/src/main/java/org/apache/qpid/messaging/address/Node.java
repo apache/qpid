@@ -21,6 +21,7 @@
 package org.apache.qpid.messaging.address;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.messaging.address.Link.Reliability;
@@ -60,13 +61,13 @@ public class Node
 
     public enum NodeType
     {
-        QUEUE, TOPIC, UNRESOLVED;
+        QUEUE, TOPIC;
 
         public static NodeType getNodeType(String type) throws AddressException
         {
             if (type == null)
             {
-                return UNRESOLVED;
+                return QUEUE; // defaults to queue
             }
             else if (type.equalsIgnoreCase("queue"))
             {
@@ -85,14 +86,14 @@ public class Node
     protected String name;
 
     protected boolean durable = false;
-    protected NodeType type = NodeType.UNRESOLVED;
+    protected NodeType type = NodeType.QUEUE;
 
     protected AddressPolicy createPolicy = AddressPolicy.NEVER;
     protected AddressPolicy assertPolicy = AddressPolicy.NEVER;
     protected AddressPolicy deletePolicy = AddressPolicy.NEVER;
 
-    protected Map<String, Object> xDeclareProps = (Map<String, Object>) Collections.EMPTY_MAP;
-    protected Map<String, Object> xBindingProps = (Map<String, Object>) Collections.EMPTY_MAP;
+    protected Map<String, Object> xDeclareProps = Collections.emptyMap();
+    protected List<Object> xBindingProps = Collections.emptyList();
 
     public String getName()
     {
@@ -124,12 +125,12 @@ public class Node
         return deletePolicy;
     }
 
-    public Map<String, Object> getXDeclareProperties()
+    public Map<String, Object> getDeclareProperties()
     {
         return xDeclareProps;
     }
 
-    public Map<String, Object> getXBindingProperties()
+    public List<Object> getBindingProperties()
     {
         return xBindingProps;
     }
@@ -164,12 +165,12 @@ public class Node
         this.deletePolicy = deletePolicy;
     }
 
-    public void setxDeclareProps(Map<String, Object> xDeclareProps)
+    public void setDeclareProps(Map<String, Object> xDeclareProps)
     {
         this.xDeclareProps = xDeclareProps;
     }
 
-    public void setxBindingProps(Map<String, Object> xBindingProps)
+    public void setBindingProps(List<Object> xBindingProps)
     {
         this.xBindingProps = xBindingProps;
     }

@@ -26,7 +26,12 @@ import java.util.Map;
 
 import org.apache.qpid.configuration.Accessor;
 import org.apache.qpid.configuration.Accessor.MapAccessor;
+import org.apache.qpid.configuration.Accessor.NestedMapAccessor;
 import org.apache.qpid.messaging.Address;
+import org.apache.qpid.messaging.address.Node.NodeType;
+import org.apache.qpid.messaging.address.AddressException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
 * Utility class for extracting information from the address class
@@ -62,21 +67,23 @@ public class AddressHelper
    public static final String RELIABILITY = "reliability";
 
    private Address address;
-   private MapAccessor addressProps;
-   private MapAccessor nodeProps;
-   private MapAccessor linkProps;
+   private NestedMapAccessor addressProps;
+   private NestedMapAccessor nodeProps;
+   private NestedMapAccessor linkProps;
+
+   private static final Logger _logger = LoggerFactory.getLogger(AddressHelper.class);
 
    public AddressHelper(Address address)
    {
        this.address = address;
-       addressProps = new MapAccessor(address.getOptions());
+       addressProps = new NestedMapAccessor(address.getOptions());
        Map node_props = address.getOptions() == null
                || address.getOptions().get(NODE) == null ? null
                : (Map) address.getOptions().get(NODE);
 
        if (node_props != null)
        {
-           nodeProps = new MapAccessor(node_props);
+           nodeProps = new NestedMapAccessor(node_props);
        }
 
        Map link_props = address.getOptions() == null
@@ -85,7 +92,7 @@ public class AddressHelper
 
        if (link_props != null)
        {
-           linkProps = new MapAccessor(link_props);
+           linkProps = new NestedMapAccessor(link_props);
        }
    }
 
@@ -104,40 +111,144 @@ public class AddressHelper
        return addressProps.getString(DELETE);
    }
 
-   public boolean isNodeMarkedNoLocal()
-   {
-       Boolean b = nodeProps.getBoolean(NO_LOCAL);
-       return b == null ? false : b;
-   }
-
    public boolean isBrowseOnly()
    {
        String mode = addressProps.getString(MODE);
        return mode != null && mode.equals(BROWSE) ? true : false;
    }
 
-   @SuppressWarnings("unchecked")
-   public List<Object> getNodeBindings()
+   public boolean isNodeDurable()
    {
-       return (List<Object>) nodeProps.getList(X_BINDINGS);
+       return getDurability(nodeProps);
    }
 
-   public Map getDeclareArgs(Map props)
+   public boolean isLinkDurable()
    {
-       if (props != null && props.get(X_DECLARE) != null)
+       return getDurability(linkProps);
+   }
+
+   private boolean getDurability(NestedMapAccessor map)
+   {
+       Boolean result = map.getBoolean(DURABLE);
+       return (result == null) ? false : result.booleanValue();
+   }
+
+   public NodeType getNodeType() throws AddressException
+   {
+       return NodeType.getNodeType(nodeProps.getString(TYPE));
+   }
+
+   public List<Object> getNodeBindings()
+   {
+       return getBindigs(nodeProps);
+   }
+
+   public List<Object> getLinkBindings()
+   {
+       return getBindigs(linkProps);
+   }
+
+   private List<Object> getBindigs(NestedMapAccessor map)
+   {
+       List<Object> bindings = (List<Object>) map.getList(X_BINDINGS);
+       if (bindings == null)
        {
-           return (Map) props.get(X_DECLARE);
+           return Collections.emptyList();
        }
        else
        {
-           return Collections.EMPTY_MAP;
+           return bindings;
        }
    }
 
-   private boolean getDurability(Map map)
+   public Map<String,Object> getNodeDeclareArgs()
    {
-       Accessor access = new MapAccessor(map);
-       Boolean result = access.getBoolean(DURABLE);
-       return (result == null) ? false : result.booleanValue();
+       return getDeclareArgs(nodeProps);
+   }
+
+   public Map<String,Object> getLinkDeclareArgs()
+   {
+       return getDeclareArgs(linkProps);
+   }
+
+   private Map<String,Object> getDeclareArgs(NestedMapAccessor map)
+   {
+       Map<String,Object> args = map.getMap(X_DECLARE);
+       if (args == null)
+       {
+           return Collections.emptyMap();
+       }
+       else
+       {
+           return args;
+       }
+   }
+
+   public Map<String,Object> getLinkSubscribeArgs()
+   {
+       Map<String,Object> args = linkProps.getMap(X_SUBSCRIBE);
+       if (args == null)
+       {
+           return Collections.emptyMap();
+       }
+       else
+       {
+           return args;
+       }
+   }
+
+   public String getLinkName()
+   {
+       return linkProps.getString(NAME);
+   }
+
+   public String getLinkReliability()
+   {
+       return linkProps.getString(RELIABILITY);
+   }
+
+   private int getCapacity(String type)
+   {
+       int capacity = 0;
+       try
+       {
+           capacity = linkProps.getInt(CAPACITY);
+       }
+       catch(Exception e)
+       {
+           try
+           {
+               capacity = linkProps.getInt(getFQN(CAPACITY,type));
+           }
+           catch(Exception ex)
+           {
+               if (ex instanceof NumberFormatException && !ex.getMessage().equals("null"))
+               {
+                   _logger.info("Unable to retrieve capacity from address: " + address,ex);
+               }
+           }
+       }
+
+       return capacity;
+   }
+
+   public int getProducerCapacity()
+   {
+       return getCapacity(CAPACITY_TARGET);
+   }
+
+   public int getConsumeCapacity()
+   {
+       return getCapacity(CAPACITY_SOURCE);
+   }
+
+   public static String getFQN(String... propNames)
+   {
+       StringBuilder sb = new StringBuilder();
+       for(String prop: propNames)
+       {
+           sb.append(prop).append("/");
+       }
+       return sb.substring(0, sb.length() -1);
    }
 }

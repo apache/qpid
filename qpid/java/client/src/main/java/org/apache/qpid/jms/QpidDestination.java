@@ -36,17 +36,17 @@ import org.slf4j.LoggerFactory;
 
 public abstract class QpidDestination implements Destination, Referenceable
 {
-    public enum Type {QUEUE, TOPIC};
+    public enum DestinationType {QUEUE, TOPIC};
 
     private static final Logger _logger = LoggerFactory.getLogger(QpidDestination.class);
     private static final DestSyntax defaultDestSyntax;
     private DestSyntax _destSyntax = DestSyntax.ADDR;
 
-    protected final Type type;
+    protected final DestinationType type;
     protected String destinationString;
     protected Address address;
 
-    protected QpidDestination(Type type)
+    protected QpidDestination(DestinationType type)
     {
         this.type = type;
     }
