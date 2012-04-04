@@ -144,11 +144,13 @@ RecoverableTransaction::shared_ptr RecoveryManagerImpl::recoverTransaction(const
 RecoverableConfig::shared_ptr RecoveryManagerImpl::recoverConfig(framing::Buffer& buffer)
 {
     string kind;
-
+    uint32_t p = buffer.getPosition();
     buffer.getShortString (kind);
-    if      (kind == "link")
+    buffer.setPosition(p);
+
+    if (Link::isEncodedLink(kind))
         return RecoverableConfig::shared_ptr(new RecoverableConfigImpl(Link::decode (links, buffer)));
-    else if (kind == "bridge")
+    else if (Bridge::isEncodedBridge(kind))
         return RecoverableConfig::shared_ptr(new RecoverableConfigImpl(Bridge::decode (links, buffer)));
 
     return RecoverableConfig::shared_ptr(); // TODO: raise an exception instead

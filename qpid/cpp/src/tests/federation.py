@@ -127,18 +127,28 @@ class FederationTests(TestBase010):
         self.verify_cleanup()
 
     def test_pull_from_exchange(self):
+        """ This test uses an alternative method to manage links and bridges
+        via the broker object.
+        """
         session = self.session
-        
+
         self.startQmf()
         qmf = self.qmf
         broker = qmf.getObjects(_class="broker")[0]
-        result = broker.connect(self.remote_host(), self.remote_port(), False, "PLAIN", "guest", "guest", "tcp")
-        self.assertEqual(result.status, 0, result)
 
+        # create link
+        link_args = {"host":self.remote_host(), "port":self.remote_port(), "durable":False,
+                     "authMechanism":"PLAIN", "username":"guest", "password":"guest",
+                     "transport":"tcp"}
+        result = broker.create("link", "test-link-1", link_args, False)
+        self.assertEqual(result.status, 0, result)
         link = qmf.getObjects(_class="link")[0]
-        result = link.bridge(False, "amq.direct", "amq.fanout", "my-key", "", "", False, False, False, 0)
-        self.assertEqual(result.status, 0, result)
 
+        # create bridge
+        bridge_args = {"link":"test-link-1", "src":"amq.direct", "dest":"amq.fanout",
+                       "key":"my-key"}
+        result = broker.create("bridge", "test-bridge-1", bridge_args, False);
+        self.assertEqual(result.status, 0, result)
         bridge = qmf.getObjects(_class="bridge")[0]
 
         #setup queue to receive messages from local broker
@@ -164,9 +174,11 @@ class FederationTests(TestBase010):
             self.fail("Got unexpected message in queue: " + extra.body)
         except Empty: None
 
-        result = bridge.close()
+
+        result = broker.delete("bridge", "test-bridge-1", {})
         self.assertEqual(result.status, 0, result)
-        result = link.close()
+
+        result = broker.delete("link", "test-link-1", {})
         self.assertEqual(result.status, 0, result)
 
         self.verify_cleanup()

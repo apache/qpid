@@ -116,7 +116,9 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
           boost::shared_ptr<broker::Queue> queue = broker.getQueues().get(bq_args.i_queue);
           Url url(bq_args.i_broker);
           string protocol = url[0].protocol.empty() ? "tcp" : url[0].protocol;
+          framing::Uuid uuid(true);
           std::pair<broker::Link::shared_ptr, bool> result = broker.getLinks().declare(
+              broker::QPID_NAME_PREFIX + string("ha.link.") + uuid.str(),
               url[0].host, url[0].port, protocol,
               false,              // durable
               settings.mechanism, settings.username, settings.password);

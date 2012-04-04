@@ -42,9 +42,11 @@ namespace broker {
     class LinkRegistry {
         typedef std::map<std::string, boost::shared_ptr<Link> > LinkMap;
         typedef std::map<std::string, Bridge::shared_ptr> BridgeMap;
+        typedef std::map<std::string, std::string> ConnectionMap;
 
-        LinkMap   links;
-        BridgeMap bridges;
+        LinkMap   links;    /** indexed by name of Link */
+        BridgeMap bridges;  /** indexed by name of Bridge */
+        ConnectionMap   connections;  /** indexed by connection identifier, gives link name */
 
         qpid::sys::Mutex lock;
         Broker* broker;
@@ -54,15 +56,18 @@ namespace broker {
         std::string realm;
 
         boost::shared_ptr<Link> findLink(const std::string& key);
-        static std::string createKey(const Address& address);
-        static std::string createKey(const std::string& host, uint16_t port);
 
-        // Methods called by the connection observer.
+        // Methods called by the connection observer, key is connection identifier
         void notifyConnection (const std::string& key, Connection* c);
         void notifyOpened     (const std::string& key);
         void notifyClosed     (const std::string& key);
         void notifyConnectionForced    (const std::string& key, const std::string& text);
-      friend class LinkRegistryConnectionObserver;
+        friend class LinkRegistryConnectionObserver;
+
+        /** Notify the registry that a Link has been destroyed */
+        void linkDestroyed(const std::string& name);
+        /** Request to destroy a Bridge */
+        void destroyBridge(const std::string& name);
 
     public:
         QPID_BROKER_EXTERN LinkRegistry (); // Only used in store tests
@@ -70,17 +75,25 @@ namespace broker {
         QPID_BROKER_EXTERN ~LinkRegistry();
 
         QPID_BROKER_EXTERN std::pair<boost::shared_ptr<Link>, bool>
-        declare(const std::string& host,
+        declare(const std::string& name,
+                const std::string& host,
                 uint16_t     port,
                 const std::string& transport,
                 bool         durable,
                 const std::string& authMechanism,
                 const std::string& username,
                 const std::string& password);
+        /** determine if Link exists */
+        QPID_BROKER_EXTERN boost::shared_ptr<Link>
+          getLink(const std::string& name);
+        QPID_BROKER_EXTERN boost::shared_ptr<Link>
+          getLink(const std::string& host,
+                  uint16_t           port,
+                  const std::string& transport = std::string());
 
         QPID_BROKER_EXTERN std::pair<Bridge::shared_ptr, bool>
-        declare(const std::string& host,
-                uint16_t     port,
+        declare(const std::string& name,
+                Link& link,
                 bool         durable,
                 const std::string& src,
                 const std::string& dest,
@@ -93,14 +106,14 @@ namespace broker {
                 uint16_t     sync,
                 Bridge::InitializeCallback=0
         );
-
-        QPID_BROKER_EXTERN void destroy(const std::string& host, const uint16_t port);
-
-        QPID_BROKER_EXTERN void destroy(const std::string& host,
-                                        const uint16_t     port,
-                                        const std::string& src,
-                                        const std::string& dest,
-                                        const std::string& key);
+        /** determine if Bridge exists */
+        QPID_BROKER_EXTERN Bridge::shared_ptr
+          getBridge(const std::string&  name);
+        QPID_BROKER_EXTERN Bridge::shared_ptr
+          getBridge(const Link&  link,
+                    const std::string& src,
+                    const std::string& dest,
+                    const std::string& key);
 
         /**
          * Register the manageable parent for declared queues
@@ -124,11 +137,6 @@ namespace broker {
         QPID_BROKER_EXTERN std::string getPassword        (const std::string& key);
         QPID_BROKER_EXTERN std::string getHost            (const std::string& key);
         QPID_BROKER_EXTERN uint16_t    getPort            (const std::string& key);
-
-        /**
-         * Called by links failing over to new address
-         */
-        void changeAddress(const Address& oldAddress, const Address& newAddress);
 
         /**
          * Called to alter passive state. In passive state the links

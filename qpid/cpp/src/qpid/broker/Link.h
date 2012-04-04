@@ -25,7 +25,6 @@
 #include <boost/shared_ptr.hpp>
 #include "qpid/Url.h"
 #include "qpid/broker/BrokerImportExport.h"
-#include "qpid/broker/MessageStore.h"
 #include "qpid/broker/PersistableConfig.h"
 #include "qpid/broker/Bridge.h"
 #include "qpid/broker/BrokerImportExport.h"
@@ -51,8 +50,8 @@ class Connection;
 class Link : public PersistableConfig, public management::Manageable {
   private:
     sys::Mutex          lock;
+    const std::string   name;
     LinkRegistry*       links;
-    MessageStore*       store;
     std::string        host;
     uint16_t      port;
     std::string        transport;
@@ -77,6 +76,7 @@ class Link : public PersistableConfig, public management::Manageable {
     uint channelCounter;
     Connection* connection;
     management::ManagementAgent* agent;
+    boost::function<void(const std::string&)> listener;
 
     boost::intrusive_ptr<sys::TimerTask> timerTask;
 
@@ -91,26 +91,29 @@ class Link : public PersistableConfig, public management::Manageable {
 
     void setStateLH (int newState);
     void startConnectionLH();        // Start the IO Connection
-    void destroy();                  // Called when mgmt deletes this link
+    void destroy();                  // Cleanup connection before link goes away
     void ioThreadProcessing();       // Called on connection's IO thread by request
     bool tryFailoverLH();            // Called during maintenance visit
     bool hideManagement() const;
-
-    void established(Connection*); // Called when connection is create
-    void opened();      // Called when connection is open (after create)
-    void closed(int, std::string);   // Called when connection goes away
     void reconnectLH(const Address&); //called by LinkRegistry
 
-  friend class LinkRegistry; // to call established, opened, closed
+    // connection management (called by LinkRegistry)
+    void established(Connection*); // Called when connection is created
+    void opened();      // Called when connection is open (after create)
+    void closed(int, std::string);   // Called when connection goes away
+    void notifyConnectionForced(const std::string text);
+    friend class LinkRegistry; // to call established, opened, closed
 
   public:
     typedef boost::shared_ptr<Link> shared_ptr;
+    typedef boost::function<void(const std::string&)> DestroyedListener;
 
-    Link(LinkRegistry* links,
-         MessageStore* store,
+    Link(const std::string&       name,
+         LinkRegistry* links,
          const std::string&       host,
          uint16_t      port,
          const std::string&       transport,
+         DestroyedListener        l,
          bool          durable,
          const std::string&       authMechanism,
          const std::string&       username,
@@ -130,15 +133,17 @@ class Link : public PersistableConfig, public management::Manageable {
     void cancel(Bridge::shared_ptr);
 
     QPID_BROKER_EXTERN void setUrl(const Url&); // Set URL for reconnection.
-    QPID_BROKER_EXTERN void close(); // Close the link from within the broker.
+
+    // Close the link.
+    QPID_BROKER_EXTERN void close();
 
     std::string getAuthMechanism() { return authMechanism; }
     std::string getUsername()      { return username; }
     std::string getPassword()      { return password; }
     Broker* getBroker()       { return broker; }
 
-    void notifyConnectionForced(const std::string text);
     void setPassive(bool p);
+    bool isConnecting() const { return state == STATE_CONNECTING; }
 
     // PersistableConfig:
     void     setPersistenceId(uint64_t id) const;
@@ -147,7 +152,10 @@ class Link : public PersistableConfig, public management::Manageable {
     void     encode(framing::Buffer& buffer) const;
     const std::string& getName() const;
 
+    static const std::string ENCODED_IDENTIFIER;
+    static const std::string ENCODED_IDENTIFIER_V1;
     static Link::shared_ptr decode(LinkRegistry& links, framing::Buffer& buffer);
+    static bool isEncodedLink(const std::string& key);
 
     // Manageable entry points
     management::ManagementObject*    GetManagementObject(void) const;

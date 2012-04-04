@@ -53,15 +53,19 @@ std::string QueueReplicator::replicatorName(const std::string& queueName) {
 QueueReplicator::QueueReplicator(boost::shared_ptr<Queue> q, boost::shared_ptr<Link> l)
     : Exchange(replicatorName(q->getName()), 0, q->getBroker()), queue(q), link(l)
 {
+    bridgeName = replicatorName(q->getName());
     logPrefix = "HA: Backup " + queue->getName() + ": ";
     QPID_LOG(info, logPrefix << "Created, settings: " << q->getSettings());
 }
 
 // This must be separate from the constructor so we can call shared_from_this.
 void QueueReplicator::activate() {
-    // Note this may create a new bridge or use an existing one.
+    // Create a new route over the link
+    sys::Mutex::ScopedLock l(lock);
+    std::pair<Bridge::shared_ptr, bool> result =
     queue->getBroker()->getLinks().declare(
-        link->getHost(), link->getPort(),
+        bridgeName,
+        *link,
         false,              // durable
         queue->getName(),   // src
         getName(),          // dest
@@ -76,15 +80,19 @@ void QueueReplicator::activate() {
         // before initializeBridge is called.
         boost::bind(&QueueReplicator::initializeBridge, this, _1, _2, shared_from_this())
     );
+    bridge = result.first;
 }
 
 QueueReplicator::~QueueReplicator() {}
 
 void QueueReplicator::deactivate() {
+    // destroy the route
     sys::Mutex::ScopedLock l(lock);
-    queue->getBroker()->getLinks().destroy(
-        link->getHost(), link->getPort(), queue->getName(), getName(), string());
-    QPID_LOG(debug, logPrefix << "Deactivated bridge " << bridgeName);
+    if (bridge) {
+        bridge->close();
+        bridge.reset();
+        QPID_LOG(debug, logPrefix << "Deactivated bridge " << bridgeName);
+    }
 }
 
 // Called in a broker connection thread when the bridge is created.
@@ -92,7 +100,6 @@ void QueueReplicator::deactivate() {
 void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler,
                                        boost::shared_ptr<QueueReplicator> /*self*/) {
     sys::Mutex::ScopedLock l(lock);
-    bridgeName = bridge.getName();
     framing::AMQP_ServerProxy peer(sessionHandler.out);
     const qmf::org::apache::qpid::broker::ArgsLinkBridge& args(bridge.getArgs());
     framing::FieldTable settings;

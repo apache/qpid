@@ -65,18 +65,19 @@ struct LinkTimerTask : public sys::TimerTask {
     sys::Timer& timer;
 };
 
-Link::Link(LinkRegistry*  _links,
-           MessageStore*  _store,
+Link::Link(const string&  _name,
+           LinkRegistry*  _links,
            const string&        _host,
            uint16_t       _port,
            const string&        _transport,
+           DestroyedListener    l,
            bool           _durable,
            const string&        _authMechanism,
            const string&        _username,
            const string&        _password,
            Broker*        _broker,
            Manageable*    parent)
-    : links(_links), store(_store), host(_host), port(_port),
+    : name(_name), links(_links), host(_host), port(_port),
       transport(_transport),
       durable(_durable),
       authMechanism(_authMechanism), username(_username), password(_password),
@@ -88,6 +89,7 @@ Link::Link(LinkRegistry*  _links,
       channelCounter(1),
       connection(0),
       agent(0),
+      listener(l),
       timerTask(new LinkTimerTask(*this, broker->getTimer()))
 {
     if (parent != 0 && broker != 0)
@@ -95,7 +97,10 @@ Link::Link(LinkRegistry*  _links,
         agent = broker->getManagementAgent();
         if (agent != 0)
         {
-            mgmtObject = new _qmf::Link(agent, this, parent, _host, _port, _transport, _durable);
+            mgmtObject = new _qmf::Link(agent, this, parent, name, durable);
+            mgmtObject->set_host(host);
+            mgmtObject->set_port(port);
+            mgmtObject->set_transport(transport);
             agent->addObject(mgmtObject, 0, durable);
         }
     }
@@ -172,6 +177,10 @@ void Link::established(Connection* c)
     currentInterval = 1;
     visitCount      = 0;
     connection = c;
+    if (!hideManagement() && connection->GetManagementObject()) {
+        mgmtObject->set_connectionRef(connection->GetManagementObject()->getObjectId());
+    }
+
     if (closing)
         destroy();
     else // Process any IO tasks bridges added before established.
@@ -224,13 +233,14 @@ void Link::closed(int, std::string text)
         setStateLH(STATE_WAITING);
         if (!hideManagement())
             mgmtObject->set_lastError (text);
+            mgmtObject->set_connectionRef(qpid::management::ObjectId());
     }
 
     if (closing)
         destroy();
 }
 
-// Called in connection IO thread.
+// Called in connection IO thread, cleans up the connection before destroying Link
 void Link::destroy ()
 {
     Bridges toDelete;
@@ -259,9 +269,9 @@ void Link::destroy ()
     }
     // Now delete all bridges on this link (don't hold the lock for this).
     for (Bridges::iterator i = toDelete.begin(); i != toDelete.end(); i++)
-        (*i)->destroy();
+        (*i)->close();
     toDelete.clear();
-    links->destroy (host, port);
+    listener(name); // notify LinkRegistry that this Link has been destroyed
 }
 
 void Link::add(Bridge::shared_ptr bridge)
@@ -365,12 +375,16 @@ void Link::reconnectLH(const Address& a)
     host = a.host;
     port = a.port;
     transport = a.protocol;
-    startConnectionLH();
+
     if (!hideManagement()) {
         stringstream errorString;
-        errorString << "Failed over to " << a;
+        errorString << "Failing over to '" << transport << ":" << host << ":" << port <<"'";
         mgmtObject->set_lastError(errorString.str());
+        mgmtObject->set_host(host);
+        mgmtObject->set_port(port);
+        mgmtObject->set_transport(transport);
     }
+    startConnectionLH();
 }
 
 bool Link::tryFailoverLH() {
@@ -379,15 +393,14 @@ bool Link::tryFailoverLH() {
     if (url.empty()) return false;
     Address next = url[reconnectNext++];
     if (next.host != host || next.port != port || next.protocol != transport) {
-        links->changeAddress(Address(transport, host, port), next);
-        QPID_LOG(debug, "Inter-broker link failing over to " << next.host << ":" << next.port);
+        QPID_LOG(notice, "Inter-broker link '" << name << "' failing over to " << next.host << ":" << next.port);
         reconnectLH(next);
         return true;
     }
     return false;
 }
 
-// Management updates for a linke are inconsistent in a cluster, so they are
+// Management updates for a link are inconsistent in a cluster, so they are
 // suppressed.
 bool Link::hideManagement() const {
     return !mgmtObject || ( broker && broker->isInCluster());
@@ -415,18 +428,39 @@ void Link::setPersistenceId(uint64_t id) const
 
 const string& Link::getName() const
 {
-    return host;
+    return name;
+}
+
+const std::string Link::ENCODED_IDENTIFIER("link.v2");
+const std::string Link::ENCODED_IDENTIFIER_V1("link");
+
+bool Link::isEncodedLink(const std::string& key)
+{
+    return key == ENCODED_IDENTIFIER || key == ENCODED_IDENTIFIER_V1;
 }
 
 Link::shared_ptr Link::decode(LinkRegistry& links, Buffer& buffer)
 {
+    string kind;
+    buffer.getShortString(kind);
+
     string   host;
     uint16_t port;
     string   transport;
     string   authMechanism;
     string   username;
     string   password;
+    string   name;
 
+    if (kind == ENCODED_IDENTIFIER_V1) {
+        /** previous versions identified the Link by host:port, there was no name
+         * assigned.  So create a unique name for the new Link.
+         */
+        framing::Uuid uuid(true);
+        name = QPID_NAME_PREFIX + uuid.str();
+    } else {
+        buffer.getShortString(name);
+    }
     buffer.getShortString(host);
     port = buffer.getShort();
     buffer.getShortString(transport);
@@ -435,12 +469,14 @@ Link::shared_ptr Link::decode(LinkRegistry& links, Buffer& buffer)
     buffer.getShortString(username);
     buffer.getShortString(password);
 
-    return links.declare(host, port, transport, durable, authMechanism, username, password).first;
+    return links.declare(name, host, port, transport, durable, authMechanism,
+                         username, password).first;
 }
 
 void Link::encode(Buffer& buffer) const
 {
-    buffer.putShortString(string("link"));
+    buffer.putShortString(ENCODED_IDENTIFIER);
+    buffer.putShortString(name);
     buffer.putShortString(host);
     buffer.putShort(port);
     buffer.putShortString(transport);
@@ -452,7 +488,9 @@ void Link::encode(Buffer& buffer) const
 
 uint32_t Link::encodedSize() const
 {
-    return host.size() + 1 // short-string (host)
+    return ENCODED_IDENTIFIER.length() + 1 // +1 byte length
+        + name.length() + 1
+        + host.size() + 1 // short-string (host)
         + 5                // short-string ("link")
         + 2                // port
         + transport.size() + 1 // short-string(transport)
@@ -468,6 +506,7 @@ ManagementObject* Link::GetManagementObject (void) const
 }
 
 void Link::close() {
+    QPID_LOG(debug, "Link::close(), link=" << name );
     Mutex::ScopedLock mutex(lock);
     if (!closing) {
         closing = true;
@@ -488,36 +527,32 @@ Manageable::status_t Link::ManagementMethod (uint32_t op, Args& args, string& te
         return Manageable::STATUS_OK;
 
     case _qmf::Link::METHOD_BRIDGE :
+        /* TBD: deprecate this interface in favor of the Broker::create() method.  The
+         * Broker::create() method allows the user to assign a name to the bridge.
+         */
+        QPID_LOG(warning, "The Link::bridge() method will be removed in a future release of QPID."
+                 " Please use the Broker::create() method with type='bridge' instead.");
         _qmf::ArgsLinkBridge& iargs = (_qmf::ArgsLinkBridge&) args;
-        QPID_LOG(debug, "Link::bridge() request received");
+        QPID_LOG(debug, "Link::bridge() request received; src=" << iargs.i_src <<
+                 "; dest=" << iargs.i_dest << "; key=" << iargs.i_key);
 
-        // Durable bridges are only valid on durable links
-        if (iargs.i_durable && !durable) {
-            text = "Can't create a durable route on a non-durable link";
-            return Manageable::STATUS_USER;
-        }
-
-        if (iargs.i_dynamic) {
-            Exchange::shared_ptr exchange = getBroker()->getExchanges().get(iargs.i_src);
-            if (exchange.get() == 0) {
-                text = "Exchange not found";
-                return Manageable::STATUS_USER;
+        // Does a bridge already exist that has the src/dest/key?  If so, re-use the
+        // existing bridge - this behavior is backward compatible with previous releases.
+        Bridge::shared_ptr bridge = links->getBridge(*this, iargs.i_src, iargs.i_dest, iargs.i_key);
+        if (!bridge) {
+            // need to create a new bridge on this link
+            framing::Uuid uuid(true);
+            const std::string name(QPID_NAME_PREFIX + uuid.str());
+            std::pair<Bridge::shared_ptr, bool> rc =
+              links->declare( name, *this, iargs.i_durable,
+                              iargs.i_src, iargs.i_dest, iargs.i_key, iargs.i_srcIsQueue,
+                              iargs.i_srcIsLocal, iargs.i_tag, iargs.i_excludes,
+                              iargs.i_dynamic, iargs.i_sync);
+            if (!rc.first) {
+                text = "invalid parameters";
+                return Manageable::STATUS_PARAMETER_INVALID;
             }
-            if (!exchange->supportsDynamicBinding()) {
-                text = "Exchange type does not support dynamic routing";
-                return Manageable::STATUS_USER;
-            }
         }
-
-        std::pair<Bridge::shared_ptr, bool> result =
-            links->declare (host, port, iargs.i_durable, iargs.i_src,
-                            iargs.i_dest, iargs.i_key, iargs.i_srcIsQueue,
-                            iargs.i_srcIsLocal, iargs.i_tag, iargs.i_excludes,
-                            iargs.i_dynamic, iargs.i_sync);
-
-        if (result.second && iargs.i_durable)
-            store->create(*result.first);
-
         return Manageable::STATUS_OK;
     }
 

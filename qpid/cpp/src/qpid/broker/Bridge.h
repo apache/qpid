@@ -48,20 +48,21 @@ class Bridge : public PersistableConfig, public management::Manageable, public E
 {
 public:
     typedef boost::shared_ptr<Bridge> shared_ptr;
-    typedef boost::function<void(Bridge*)> CancellationListener;
+    typedef boost::function<void(const std::string&)> CancellationListener;
     typedef boost::function<void(Bridge&, SessionHandler&)> InitializeCallback;
 
-    Bridge(Link* link, framing::ChannelId id, CancellationListener l,
+    Bridge(const std::string& name, Link* link, framing::ChannelId id, CancellationListener l,
            const qmf::org::apache::qpid::broker::ArgsLinkBridge& args,
            InitializeCallback init
     );
     ~Bridge();
 
-    void create(Connection& c);
-    void cancel(Connection& c);
-    void closed();
-    void destroy();
+    void close();
     bool isDurable() { return args.i_durable; }
+    Link *getLink() const { return link; }
+    const std::string getSrc() const { return args.i_src; }
+    const std::string getDest() const { return args.i_dest; }
+    const std::string getKey() const { return args.i_key; }
 
     bool isSessionReady() const;
 
@@ -76,7 +77,11 @@ public:
     uint32_t encodedSize() const;
     void     encode(framing::Buffer& buffer) const;
     const std::string& getName() const { return name; }
+
+    static const std::string ENCODED_IDENTIFIER;
+    static const std::string ENCODED_IDENTIFIER_V1;
     static Bridge::shared_ptr decode(LinkRegistry& links, framing::Buffer& buffer);
+    static bool isEncodedBridge(const std::string& key);
 
     // Exchange::DynamicBridge methods
     void propagateBinding(const std::string& key, const std::string& tagList, const std::string& op, const std::string& origin, qpid::framing::FieldTable* extra_args=0);
@@ -101,7 +106,7 @@ private:
     std::auto_ptr<framing::AMQP_ServerProxy::Session> session;
     std::auto_ptr<framing::AMQP_ServerProxy>          peer;
 
-    Link* link;
+    Link* const link;
     framing::ChannelId          id;
     qmf::org::apache::qpid::broker::ArgsLinkBridge args;
     qmf::org::apache::qpid::broker::Bridge*        mgmtObject;
@@ -114,6 +119,12 @@ private:
     InitializeCallback initialize;
 
     bool resetProxy();
+
+    // connection Management (called by owning Link)
+    void create(Connection& c);
+    void cancel(Connection& c);
+    void closed();
+    friend class Link; // to call create, cancel, closed()
 };
 
 

@@ -32,6 +32,7 @@ namespace qpid {
             NameGenerator(const std::string& base);
             std::string generate();
         };
+        const std::string QPID_NAME_PREFIX("qpid.");  // reserved for private names
     }
 }
 

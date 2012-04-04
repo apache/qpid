@@ -781,16 +781,18 @@ void Connection::managementSetupState(
 void Connection::config(const std::string& encoded) {
     Buffer buf(const_cast<char*>(encoded.data()), encoded.size());
     string kind;
+    uint32_t p = buf.getPosition();
     buf.getShortString (kind);
-    if (kind == "link") {
+    buf.setPosition(p);
+    if (broker::Link::isEncodedLink(kind)) {
         broker::Link::shared_ptr link =
-            broker::Link::decode(cluster.getBroker().getLinks(), buf);
+          broker::Link::decode(cluster.getBroker().getLinks(), buf);
         QPID_LOG(debug, cluster << " updated link "
                  << link->getHost() << ":" << link->getPort());
     }
-    else if (kind == "bridge") {
+    else if (broker::Bridge::isEncodedBridge(kind)) {
         broker::Bridge::shared_ptr bridge =
-            broker::Bridge::decode(cluster.getBroker().getLinks(), buf);
+          broker::Bridge::decode(cluster.getBroker().getLinks(), buf);
         QPID_LOG(debug, cluster << " updated bridge " << bridge->getName());
     }
     else throw Exception(QPID_MSG("Update failed, invalid kind of config: " << kind));
