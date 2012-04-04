@@ -18,7 +18,7 @@
  -->
 <project name="bdbstore" default="build">
     <property name="module.depends" value="common broker" />
-    <property name="module.test.depends" value="test client common/test broker/test management/common perftests systests" />
+    <property name="module.test.depends" value="test client common/test broker/test management/common systests" />
     <property name="module.genpom" value="true"/>
 
     <import file="../module.xml" />
