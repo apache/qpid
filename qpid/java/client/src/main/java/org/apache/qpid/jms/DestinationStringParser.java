@@ -21,8 +21,13 @@
 package org.apache.qpid.jms;
 
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.QpidDestination.DestinationType;
 import org.apache.qpid.messaging.Address;
 import org.apache.qpid.messaging.address.AddressException;
@@ -98,25 +103,42 @@ public class DestinationStringParser
 	   }
 
 	   Address addr;
+	   Node node = new Node();
+	   Link link = new Link();
+
 	   if (type == DestinationType.TOPIC)
 	   {
 	       addr = new Address(burl.getExchangeName().asString(),
                               burl.getRoutingKey().asString(),
-                              Collections.EMPTY_MAP);
+                              Collections.emptyMap());
 
-	      // use the queue name to add x-subscribe props.
+	      link.setName(burl.getQueueName().asString());
+	      node.setBindingProps(Collections.emptyList());
 	   }
 	   else
 	   {
 		   addr = new Address(burl.getQueueName().asString(),
                               burl.getRoutingKey().asString(),
-                              Collections.EMPTY_MAP);
+                              Collections.emptyMap());
 
-		   // use the exchange and binding key to add a binding
+		   List<Object> bindings = new ArrayList<Object>();
+		   Map<String,Object> binding = new HashMap<String,Object>();
+		   binding.put(AddressHelper.EXCHANGE, burl.getExchangeName().asString());
+		   binding.put(AddressHelper.KEY, burl.getRoutingKey());
+		   bindings.add(binding);
+		   node.setBindingProps(bindings);
 	   }
 
-	   Node node = new Node();
-       node.setAssertPolicy(AddressPolicy.NEVER);
+	   List<Object> bindings = node.getBindingProperties();
+	   for (AMQShortString key: burl.getBindingKeys())
+	   {
+	       Map<String,Object> binding = new HashMap<String,Object>();
+           binding.put(AddressHelper.EXCHANGE, burl.getExchangeName().asString());
+           binding.put(AddressHelper.KEY, key.asString());
+           bindings.add(binding);
+	   }
+
+	   node.setAssertPolicy(AddressPolicy.NEVER);
        node.setCreatePolicy(AddressPolicy.RECEIVER);
        node.setDeletePolicy(AddressPolicy.NEVER);
 
