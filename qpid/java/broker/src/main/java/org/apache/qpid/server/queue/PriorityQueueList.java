@@ -25,19 +25,19 @@ import org.apache.qpid.server.message.ServerMessage;
 public class PriorityQueueList implements QueueEntryList<SimpleQueueEntryImpl>
 {
     private final AMQQueue _queue;
-    private final SimpleQueueEntryList[] _priorityLists;
+    private final PriorityQueueEntrySubList[] _priorityLists;
     private final int _priorities;
     private final int _priorityOffset;
 
     public PriorityQueueList(AMQQueue queue, int priorities)
     {
         _queue = queue;
-        _priorityLists = new SimpleQueueEntryList[priorities];
+        _priorityLists = new PriorityQueueEntrySubList[priorities];
         _priorities = priorities;
         _priorityOffset = 5-((priorities + 1)/2);
         for(int i = 0; i < priorities; i++)
         {
-            _priorityLists[i] = new SimpleQueueEntryList(queue);
+            _priorityLists[i] = new PriorityQueueEntrySubList(queue);
         }
     }
 
@@ -159,6 +159,50 @@ public class PriorityQueueList implements QueueEntryList<SimpleQueueEntryImpl>
         public PriorityQueueList createQueueEntryList(AMQQueue queue)
         {
             return new PriorityQueueList(queue, _priorities);
+        }
+    }
+
+    private static class PriorityQueueEntrySubList extends SimpleQueueEntryList
+    {
+        public PriorityQueueEntrySubList(AMQQueue queue)
+        {
+            super(queue);
+        }
+
+        @Override
+        protected PriorityQueueEntryImpl createQueueEntry(ServerMessage<?> message)
+        {
+            return new PriorityQueueEntryImpl(this, message);
+        }
+    }
+
+    private static class PriorityQueueEntryImpl extends SimpleQueueEntryImpl
+    {
+        public PriorityQueueEntryImpl(PriorityQueueEntrySubList queueEntryList, ServerMessage<?> message)
+        {
+            super(queueEntryList, message);
+        }
+
+        @Override
+        public int compareTo(final QueueEntry o)
+        {
+            byte thisPriority = getMessageHeader().getPriority();
+            byte otherPriority = o.getMessageHeader().getPriority();
+
+            if(thisPriority != otherPriority)
+            {
+                /*
+                 * Different priorities, so answer can only be greater than or less than
+                 *
+                 * A message with higher priority (e.g. 5) is conceptually 'earlier' in the
+                 * priority queue than one with a lower priority (e.g. 4).
+                 */
+                return thisPriority > otherPriority ? -1 : 1;
+            }
+            else
+            {
+                return super.compareTo(o);
+            }
         }
     }
 }

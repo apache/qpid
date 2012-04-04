@@ -104,7 +104,7 @@ public class SimpleQueueEntryList implements QueueEntryList<SimpleQueueEntryImpl
         }
     }
 
-    protected SimpleQueueEntryImpl createQueueEntry(ServerMessage message)
+    protected SimpleQueueEntryImpl createQueueEntry(ServerMessage<?> message)
     {
         return new SimpleQueueEntryImpl(this, message);
     }
