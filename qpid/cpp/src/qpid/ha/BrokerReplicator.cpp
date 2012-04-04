@@ -188,9 +188,11 @@ BrokerReplicator::BrokerReplicator(const boost::shared_ptr<Link>& l)
 {
     QPID_LOG(info, "HA: Backup replicating from " <<
              link->getTransport() << ":" << link->getHost() << ":" << link->getPort());
+    framing::Uuid uuid(true);
+    const std::string name(QPID_CONFIGURATION_REPLICATOR + ".bridge." + uuid.str());
     broker.getLinks().declare(
-        QPID_CONFIGURATION_REPLICATOR + ".bridge",    // name for bridge
-        *link,
+        name,               // name for bridge
+        *link,              // parent
         false,              // durable
         QPID_CONFIGURATION_REPLICATOR, // src
         QPID_CONFIGURATION_REPLICATOR, // dest

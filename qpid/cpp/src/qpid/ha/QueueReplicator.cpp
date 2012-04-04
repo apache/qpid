@@ -53,14 +53,14 @@ std::string QueueReplicator::replicatorName(const std::string& queueName) {
 QueueReplicator::QueueReplicator(boost::shared_ptr<Queue> q, boost::shared_ptr<Link> l)
     : Exchange(replicatorName(q->getName()), 0, q->getBroker()), queue(q), link(l)
 {
-    bridgeName = replicatorName(q->getName());
+    framing::Uuid uuid(true);
+    bridgeName = replicatorName(q->getName()) + std::string(".") + uuid.str();
     logPrefix = "HA: Backup " + queue->getName() + ": ";
     QPID_LOG(info, logPrefix << "Created, settings: " << q->getSettings());
 }
 
 // This must be separate from the constructor so we can call shared_from_this.
 void QueueReplicator::activate() {
-    // Create a new route over the link
     sys::Mutex::ScopedLock l(lock);
     std::pair<Bridge::shared_ptr, bool> result =
     queue->getBroker()->getLinks().declare(
