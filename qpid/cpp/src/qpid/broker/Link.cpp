@@ -177,9 +177,6 @@ void Link::established(Connection* c)
     currentInterval = 1;
     visitCount      = 0;
     connection = c;
-    if (!hideManagement() && connection->GetManagementObject()) {
-        mgmtObject->set_connectionRef(connection->GetManagementObject()->getObjectId());
-    }
 
     if (closing)
         destroy();
@@ -197,6 +194,11 @@ void Link::setUrl(const Url& u) {
 void Link::opened() {
     Mutex::ScopedLock mutex(lock);
     if (!connection) return;
+
+    if (!hideManagement() && connection->GetManagementObject()) {
+        mgmtObject->set_connectionRef(connection->GetManagementObject()->getObjectId());
+    }
+
     // Get default URL from known-hosts if not already set
     if (url.empty()) {
         const std::vector<Url>& known = connection->getKnownHosts();
