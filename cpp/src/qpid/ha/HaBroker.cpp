@@ -174,7 +174,7 @@ std::vector<Url> HaBroker::getKnownBrokers() const {
 
 void HaBroker::shutdown(const std::string& message) {
     QPID_LOG(critical, "Shutting down: " << message);
-    broker::SignalHandler::shutdown();
+    broker.shutdown();
 }
 
 }} // namespace qpid::ha
