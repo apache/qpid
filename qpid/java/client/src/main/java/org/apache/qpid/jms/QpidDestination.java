@@ -170,4 +170,10 @@ public abstract class QpidDestination implements Destination, Referenceable
             return str;
         }
     }
+
+    @Override
+    public String toString()
+    {
+        return address == null ? "" : address.toString();
+    }
 }

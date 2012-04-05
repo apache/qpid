@@ -41,4 +41,28 @@ public class QpidQueue extends QpidDestination implements Queue
 	{
        return address.getName();
 	}
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+        {
+            return true;
+        }
+
+        if (!(obj instanceof QpidQueue))
+        {
+            return false;
+        }
+
+        QpidQueue queue = (QpidQueue)obj;
+        try
+        {
+            return getQueueName().equals(queue.getQueueName());
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
+    }
 }

@@ -36,7 +36,7 @@ public class QpidTemporaryTopic extends QpidTopic implements TemporaryTopic
     @Override
     public void delete() throws JMSException
     {
-        provider.delete();
+        //provider.delete();
     }
 
 }

@@ -28,5 +28,5 @@ public interface TemporaryDestinationProvider
 
     public String generateTempTopicAddress();
 
-    public void delete() throws JMSException;
+    public void delete(String queueName) throws JMSException;
 }

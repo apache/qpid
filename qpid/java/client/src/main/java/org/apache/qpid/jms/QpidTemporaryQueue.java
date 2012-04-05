@@ -36,7 +36,7 @@ public class QpidTemporaryQueue extends QpidQueue implements TemporaryQueue
     @Override
     public void delete() throws JMSException
     {
-        provider.delete();
+        provider.delete(getQueueName());
     }
 
 }

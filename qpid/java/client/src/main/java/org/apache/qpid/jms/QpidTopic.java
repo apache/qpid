@@ -44,4 +44,39 @@ public class QpidTopic extends QpidDestination implements Topic
         return address.getSubject() == null ? "" : address.getSubject();
 	}
 
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+        {
+            return true;
+        }
+
+        if (!(obj instanceof QpidTopic))
+        {
+            return false;
+        }
+
+        QpidTopic topic = (QpidTopic)obj;
+
+        try
+        {
+            if (!address.getName().equals(topic.getAddress().getName()))
+            {
+                return false;
+            }
+
+            // The subject being the topic name
+            if (!address.getSubject().equals(topic.getAddress().getSubject()))
+            {
+                return false;
+            }
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
+
+        return true;
+    }
 }
