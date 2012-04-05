@@ -1,0 +1,41 @@
+{
+    "_tests":[
+        {
+            "_name": "Test 1";
+            "_clients":[
+                {
+                    "_name": "producingClient",
+                    "_connections":[
+                        {
+                            "_name": "connection1",
+                            "_factory": "connectionfactory",
+                            "_sessions": [
+                                {
+                                    "_sessionName": "session1",
+                                    "_producers": [
+                                        {
+                                            "_name": "participantProducer1",
+                                            "_destinationName": "direct://amq.direct//producerClient",
+                                            "_numberOfMessages": 10;
+                                            "_messageProviderName": "testProvider1"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ];
+                    "_messageProviders":[
+                        {
+                            "_name": "testProvider1";
+                            "_messageProperties": {
+                                "priority": {"@def": "list"; "_items": [0,1,2,3,4,5,6,7,8,9]};
+                                "id": {"@def": "range"; "_upper": 10; "_type": "int"};
+                                "test": "test-value"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

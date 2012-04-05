@@ -1,0 +1,72 @@
+{
+  "_tests": [
+    {
+      "_name": "Test 1",
+      "_queues": [
+        {
+          "_name": "Json-Queue-Name",
+          "_durable": false,
+          "_attributes": {}
+        },
+        {
+          "_name": "Json Queue Name 2",
+          "_durable": true,
+          "_attributes": {
+            "x-qpid-priorities": 10.0
+          }
+        }
+      ],
+      "_iterations": [
+        {
+          "_messageSize": 100,
+          "_numberOfMessages": 10
+        },
+        {
+          "_messageSize": 200,
+          "_numberOfMessages": 5
+        }
+      ],
+      "_clients": [
+        {
+          "_connections": [
+            {
+              "_name": "connection1",
+              "_sessions": []
+            }
+          ];
+          "_messageProviders":[
+            {
+              "_name": "testProvider1";
+              "_messageProperties": {
+                 "priority": {"@def": "list"; "_items": [1,2,3,4,4]};
+                "id": {"@def": "random"; "_upper": 10};
+                "test": "test-value"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "_name": "Test 2",
+      "_queues": [
+        {
+          "_name": "Json-Queue-Name",
+          "_durable": false,
+          "_attributes": {}
+        }
+      ],
+      "_iterations": [],
+      "_clients": [
+        {
+          "_connections": [
+            {
+              "_name": "connection1",
+              "_sessions": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

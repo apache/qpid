@@ -1,0 +1,77 @@
+{
+    "_tests":[
+    {
+      "_name": "ProducerAndThreeConsumersInSeparateClients";
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//testQueue"
+        }
+      ];
+      "_clients":[
+        {
+          "_name": "producingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_producers": [
+                    {
+                      "_name": "participantProducer1",
+                      "_destinationName": "direct://amq.direct//testQueue",
+                      "_numberOfMessages": 9,
+                      "_batchSize": 2,
+                      "_interval": 50
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "consumingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_consumers": [
+                    {
+                      "_name": "participantConsumer1",
+                      "_destinationName": "direct://amq.direct//testQueue",
+                      "_numberOfMessages": 3
+                    }
+                  ]
+                },
+                {
+                  "_sessionName": "session2",
+                  "_consumers": [
+                    {
+                      "_name": "participantConsumer2",
+                      "_destinationName": "direct://amq.direct//testQueue",
+                      "_numberOfMessages": 3
+                    }
+                  ]
+                },
+                {
+                  "_sessionName": "session3",
+                  "_consumers": [
+                    {
+                      "_name": "participantConsumer3",
+                      "_destinationName": "direct://amq.direct//testQueue",
+                      "_numberOfMessages": 3
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }]
+}
