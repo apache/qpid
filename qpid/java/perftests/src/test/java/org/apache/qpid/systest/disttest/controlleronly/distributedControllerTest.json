@@ -1,0 +1,17 @@
+{
+    "_tests":[
+    {
+      "_name": "Test 1";
+      "_clients":[
+        {
+          "_name": "client1",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory"
+            }
+          ]
+        }
+      ]
+    }]
+}
