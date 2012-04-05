@@ -1,0 +1,162 @@
+{
+    "_tests":[
+    {
+      "_name": "Many producers to one consumer w/producer flow-control";
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//testQueue",
+          "_attributes":
+            {
+              "comment": "does not work yet - configure in virtualhost.xml",
+              "x-qpid-capacity": 10485760,
+              "x-qpid-flow-resume-capacity": 8388608
+            }
+        }
+      ];
+      "_clients":[
+        {
+          "_name": "producingClient1",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 1,
+                  "_producers": [
+                    {
+                      "_name": "Producer1",
+                      "_destinationName": "direct://amq.direct//testQueue",
+                      "_numberOfMessages": 1000000,
+                      "_deliveryMode": 1,
+                      "_messageSize": 10000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "producingClient2",
+          "_connections":[
+            {
+              "_name": "connection2",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session2",
+                  "_acknowledgeMode": 1,
+                  "_producers": [
+                    {
+                      "_name": "Producer2",
+                      "_destinationName": "direct://amq.direct//testQueue",
+                      "_numberOfMessages": 1000000,
+                      "_deliveryMode": 1,
+                      "_messageSize": 10000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "producingClient3",
+          "_connections":[
+            {
+              "_name": "connection3",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session3",
+                  "_acknowledgeMode": 1,
+                  "_producers": [
+                    {
+                      "_name": "Producer3",
+                      "_destinationName": "direct://amq.direct//testQueue",
+                      "_numberOfMessages": 1000000,
+                      "_deliveryMode": 1,
+                      "_messageSize": 10000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "producingClient4",
+          "_connections":[
+            {
+              "_name": "connection4",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session4",
+                  "_acknowledgeMode": 1,
+                  "_producers": [
+                    {
+                      "_name": "Producer4",
+                      "_destinationName": "direct://amq.direct//testQueue",
+                      "_numberOfMessages": 1000000,
+                      "_deliveryMode": 1,
+                      "_messageSize": 10000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "producingClient5",
+          "_connections":[
+            {
+              "_name": "connection5",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session5",
+                  "_acknowledgeMode": "1",
+                  "_producers": [
+                    {
+                      "_name": "Producer5",
+                      "_destinationName": "direct://amq.direct//testQueue",
+                      "_numberOfMessages": 1000000,
+                      "_deliveryMode": 1,
+                      "_messageSize": 10000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "consumingClient",
+          "_connections":[
+            {
+              "_name": "connection5",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session5",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer1",
+                      "_destinationName": "direct://amq.direct//testQueue",
+                      "_numberOfMessages": 5000000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
