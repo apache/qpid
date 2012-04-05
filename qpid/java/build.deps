@@ -53,6 +53,7 @@ commons-configuration.libs = ${commons-beanutils-core} ${commons-digester} \
 
 common.libs=${slf4j-api}
 client.libs=${geronimo-jms}
+amqp-1-0-common.libs=
 amqp-1-0-client.libs=${commons-cli}
 amqp-1-0-client-jms.libs=${geronimo-jms}
 tools.libs=${commons-configuration.libs} ${log4j}
