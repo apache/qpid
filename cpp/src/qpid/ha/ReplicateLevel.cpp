@@ -21,18 +21,21 @@
 #include "ReplicateLevel.h"
 #include "qpid/Exception.h"
 #include <iostream>
+#include <assert.h>
 
 namespace qpid {
 namespace ha {
 
 using namespace std;
 
+//  Note replicateLevel is called during plugin-initialization which
+//  happens in the static construction phase so these constants need
+//  to be POD, they can't be class objects
+//  
 namespace {
-const string S_NONE="none";
-const string S_CONFIGURATION="configuration";
-const string S_ALL="all";
-
-string names[] = { S_NONE, S_CONFIGURATION, S_ALL };
+const char* S_NONE="none";
+const char* S_CONFIGURATION="configuration";
+const char* S_ALL="all";
 }
 
 bool replicateLevel(const string& level, ReplicateLevel& out) {
@@ -44,14 +47,22 @@ bool replicateLevel(const string& level, ReplicateLevel& out) {
 
 ReplicateLevel replicateLevel(const string& level) {
     ReplicateLevel rl;
-    if (!replicateLevel(level, rl))
+    if (!replicateLevel(level, rl)) {
+        assert(0);
         throw Exception("Invalid value for replication level: "+level);
+    }
     return rl;
 }
 
-string str(ReplicateLevel l) { return  names[l]; }
+string str(ReplicateLevel l) {
+    const char* names[] = { S_NONE, S_CONFIGURATION, S_ALL };
+    assert(l >= RL_NONE);
+    assert(l <= RL_ALL);
+    return  names[l];
+}
 
 ostream& operator<<(ostream& o, ReplicateLevel rl) { return o << str(rl); }
+
 istream& operator>>(istream& i, ReplicateLevel& rl) {
     string str;
     i >> str;
