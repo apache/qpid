@@ -30,7 +30,7 @@ log = getLogger("qpid.ha-tests")
 
 class HaBroker(Broker):
     def __init__(self, test, args=[], broker_url=None, ha_cluster=True,
-                 ha_replicate_default="all", **kwargs):
+                 ha_replicate="all", **kwargs):
         assert BrokerTest.ha_lib, "Cannot locate HA plug-in"
         args = copy(args)
         args += ["--load-module", BrokerTest.ha_lib,
@@ -38,8 +38,8 @@ class HaBroker(Broker):
                  # FIXME aconway 2012-02-13: workaround slow link failover.
                  "--link-maintenace-interval=0.1",
                  "--ha-cluster=%s"%ha_cluster]
-        if ha_replicate_default is not None:
-            args += [ "--ha-replicate-default=%s"%ha_replicate_default ]
+        if ha_replicate is not None:
+            args += [ "--ha-replicate=%s"%ha_replicate ]
         if broker_url: args.extend([ "--ha-brokers", broker_url ])
         Broker.__init__(self, test, args, **kwargs)
         self.commands=os.getenv("PYTHON_COMMANDS")
@@ -533,10 +533,10 @@ class ReplicationTests(HaTest):
         for t in tests: t.verify(self, backup2)
 
     def test_replicate_default(self):
-        """Make sure we don't replicate if ha-replicate-default is unspecified or none"""
-        cluster1 = HaCluster(self, 2, ha_replicate_default=None)
+        """Make sure we don't replicate if ha-replicate is unspecified or none"""
+        cluster1 = HaCluster(self, 2, ha_replicate=None)
         c1 = cluster1[0].connect().session().sender("q;{create:always}")
-        cluster2 = HaCluster(self, 2, ha_replicate_default="none")
+        cluster2 = HaCluster(self, 2, ha_replicate="none")
         cluster2[0].connect().session().sender("q;{create:always}")
         time.sleep(.1)               # Give replication a chance.
         try:
@@ -550,7 +550,7 @@ class ReplicationTests(HaTest):
 
     def test_invalid_default(self):
         """Verify that a queue with an invalid qpid.replicate gets default treatment"""
-        cluster = HaCluster(self, 2, ha_replicate_default="all")
+        cluster = HaCluster(self, 2, ha_replicate="all")
         c = cluster[0].connect().session().sender("q;{create:always, node:{x-declare:{arguments:{'qpid.replicate':XXinvalidXX}}}}")
         self.wait_backup(cluster[1], "q")
 
