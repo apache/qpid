@@ -1955,6 +1955,12 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             return _obj.getAckBatching();
         }
 
+        /* support TBD */
+        public String getName()
+        {
+            return null;
+        }
+
         public BrokerSchema.BridgeClass.CloseMethodResponseCommand close(final BrokerSchema.BridgeClass.CloseMethodResponseCommandFactory factory)
         {
             return null;
@@ -2018,6 +2024,18 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
         public String getLastError()
         {
             return _obj.getLastError();
+        }
+
+        /* support TBD */
+        public String getName()
+        {
+            return null;
+        }
+
+        /* support TBD */
+        public BrokerSchema.ConnectionObject getConnectionRef()
+        {
+            return (BrokerSchema.ConnectionObject) null;
         }
 
         public BrokerSchema.LinkClass.CloseMethodResponseCommand close(final BrokerSchema.LinkClass.CloseMethodResponseCommandFactory factory)

@@ -76,7 +76,7 @@ public final class LinkConfigType extends ConfigObjectType<LinkConfigType, LinkC
         }
     };
 
-    public static final LinkReadOnlyProperty<Integer> PORT_PROPERTY = new LinkReadOnlyProperty<Integer>("host")
+    public static final LinkReadOnlyProperty<Integer> PORT_PROPERTY = new LinkReadOnlyProperty<Integer>("port")
     {
         public Integer getValue(LinkConfig object)
         {
