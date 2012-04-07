@@ -59,6 +59,15 @@ public interface Connection extends ConfiguredObject
 
                             // Attributes
 
+    public static final String ID = "id";
+    public static final String NAME = "name";
+    public static final String STATE = "state";
+    public static final String DURABLE = "durable";
+    public static final String LIFETIME_POLICY = "lifetimePolicy";
+    public static final String TIME_TO_LIVE = "timeToLive";
+    public static final String CREATED = "created";
+    public static final String UPDATED = "updated";
+
     public static final String CLIENT_ID = "clientId";
     public static final String CLIENT_VERSION = "clientVersion";
     public static final String INCOMING = "incoming";
@@ -72,7 +81,15 @@ public interface Connection extends ConfiguredObject
 
     public static final Collection<String> AVAILABLE_ATTRIBUTES =
             Collections.unmodifiableCollection(
-                    Arrays.asList(  CLIENT_ID,
+                    Arrays.asList(  ID,
+                                    NAME,
+                                    STATE,
+                                    DURABLE,
+                                    LIFETIME_POLICY,
+                                    TIME_TO_LIVE,
+                                    CREATED,
+                                    UPDATED,
+                                    CLIENT_ID,
                                     CLIENT_VERSION,
                                     INCOMING,
                                     LOCAL_ADDRESS,

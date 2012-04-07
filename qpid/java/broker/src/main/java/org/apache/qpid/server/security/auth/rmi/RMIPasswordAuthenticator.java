@@ -38,7 +38,7 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
     static final String INVALID_CREDENTIALS = "Invalid user details supplied";
     static final String CREDENTIALS_REQUIRED = "User details are required. " +
     		            "Please ensure you are using an up to date management console to connect.";
-    
+
     private AuthenticationManager _authenticationManager = null;
 
     public RMIPasswordAuthenticator()
@@ -80,11 +80,11 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
         {
             throw new SecurityException(SHOULD_BE_NON_NULL);
         }
-        
+
         // Verify that an AuthenticationManager has been set.
         if (_authenticationManager == null)
         {
-            if(ApplicationRegistry.getInstance().getAuthenticationManager() != null)
+            if(ApplicationRegistry.getInstance() != null && ApplicationRegistry.getInstance().getAuthenticationManager() != null)
             {
                 _authenticationManager = ApplicationRegistry.getInstance().getAuthenticationManager();
             }

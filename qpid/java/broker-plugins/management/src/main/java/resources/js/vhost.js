@@ -277,12 +277,16 @@ require(["dojo/store/JsonRest",
 
                                 thisObj.connectionsGrid = new UpdatableStore(thisObj.vhostData.connections,
                                                          "connections",
-                                                         [ { name: "Name",    field: "name",      width: "70px"},
-                                                           { name: "Mode", field: "distributionMode", width: "70px"},
-                                                           { name: "Msgs Rate", field: "msgRate",
-                                                           width: "150px"},
-                                                           { name: "Bytes Rate", field: "bytesRate",
-                                                              width: "150px"}
+                                                         [ { name: "Name",    field: "name",      width: "150px"},
+                                                           { name: "Sessions", field: "sessionCount", width: "70px"},
+                                                           { name: "Msgs In", field: "msgInRate",
+                                                           width: "80px"},
+                                                           { name: "Bytes In", field: "bytesInRate",
+                                                              width: "80px"},
+                                                           { name: "Msgs Out", field: "msgOutRate",
+                                                           width: "80px"},
+                                                           { name: "Bytes Out", field: "bytesOutRate",
+                                                              width: "80px"}
                                                          ]);
 
 
@@ -319,17 +323,45 @@ require(["dojo/store/JsonRest",
 
 
 
-                    var consumers = thisObj.vhostData[ "consumers" ];
-                    if(consumers)
+                    var connections = thisObj.vhostData[ "connections" ];
+                    if(connections)
                     {
-                        for(var i=0; i < consumers.length; i++)
+                        for(var i=0; i < connections.length; i++)
                         {
-                            var stats = consumers[i][ "statistics" ];
+                            var stats = connections[i][ "statistics" ];
 
                             // flatten statistics into attributes
                             for(var propName in stats)
                             {
-                                consumers[i][ propName ] = stats[ propName ];
+                                connections[i][ propName ] = stats[ propName ];
+                            }
+                        }
+                    }
+                    var queues = thisObj.vhostData[ "queues" ];
+                    if(queues)
+                    {
+                        for(var i=0; i < queues.length; i++)
+                        {
+                            var stats = queues[i][ "statistics" ];
+
+                            // flatten statistics into attributes
+                            for(var propName in stats)
+                            {
+                                queues[i][ propName ] = stats[ propName ];
+                            }
+                        }
+                    }
+                    var exchanges = thisObj.vhostData[ "exchanges" ];
+                    if(exchanges)
+                    {
+                        for(var i=0; i < exchanges.length; i++)
+                        {
+                            var stats = exchanges[i][ "statistics" ];
+
+                            // flatten statistics into attributes
+                            for(var propName in stats)
+                            {
+                                exchanges[i][ propName ] = stats[ propName ];
                             }
                         }
                     }
@@ -387,24 +419,34 @@ require(["dojo/store/JsonRest",
                         dom.byId("bytesOutRate").innerHTML = "(" + bytesOutFormat.value;
                         dom.byId("bytesOutRateUnits").innerHTML = bytesOutFormat.units + "/s)"
 
-                        if(consumers && thisObj.consumers)
+                        if(connections && thisObj.connections)
                         {
-                            for(var i=0; i < consumers.length; i++)
+                            for(var i=0; i < connections.length; i++)
                             {
-                                var consumer = consumers[i];
-                                for(var j = 0; j < thisObj.consumers.length; j++)
+                                var connection = connections[i];
+                                for(var j = 0; j < thisObj.connections.length; j++)
                                 {
-                                    var oldConsumer = thisObj.consumers[j];
-                                    if(oldConsumer.id == consumer.id)
+                                    var oldConnection = thisObj.connections[j];
+                                    if(oldConnection.id == connection.id)
                                     {
-                                        var msgRate = (1000 * (consumer.messagesOut - oldConsumer.messagesOut)) /
+                                        var msgOutRate = (1000 * (connection.messagesOut - oldConnection.messagesOut)) /
                                                         samplePeriod;
-                                        consumer.msgRate = msgRate.toFixed(0) + "msg/s";
+                                        connection.msgOutRate = msgOutRate.toFixed(0) + "msg/s";
 
-                                        var bytesRate = (1000 * (consumer.bytesOut - oldConsumer.bytesOut)) /
+                                        var bytesOutRate = (1000 * (connection.bytesOut - oldConnection.bytesOut)) /
                                                         samplePeriod
-                                        var bytesRateFormat = new formatBytes( bytesRate );
-                                        consumer.bytesRate = bytesRateFormat.value + bytesRateFormat.units + "/s";
+                                        var bytesOutRateFormat = new formatBytes( bytesOutRate );
+                                        connection.bytesOutRate = bytesOutRateFormat.value + bytesOutRateFormat.units + "/s";
+
+
+                                        var msgInRate = (1000 * (connection.messagesIn - oldConnection.messagesIn)) /
+                                                                                                samplePeriod;
+                                        connection.msgInRate = msgInRate.toFixed(0) + "msg/s";
+
+                                        var bytesInRate = (1000 * (connection.bytesIn - oldConnection.bytesIn)) /
+                                                        samplePeriod
+                                        var bytesInRateFormat = new formatBytes( bytesInRate );
+                                        connection.bytesInRate = bytesInRateFormat.value + bytesInRateFormat.units + "/s";
                                     }
 
 
@@ -412,7 +454,6 @@ require(["dojo/store/JsonRest",
 
                             }
                         }
-
                     }
 
                     thisObj.sampleTime = sampleTime;
@@ -420,6 +461,7 @@ require(["dojo/store/JsonRest",
                     thisObj.bytesIn = bytesIn;
                     thisObj.messageOut = messageOut;
                     thisObj.bytesOut = bytesOut;
+                    thisObj.connections = connections;
 
                     // update queues
                     thisObj.queuesGrid.update(thisObj.vhostData.queues)

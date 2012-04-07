@@ -45,7 +45,7 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
 
 
 
-    
+
     private AMQConnectionModel _connection;
 
     private final Map<AMQSessionModel, SessionAdapter> _sessionAdapters =
@@ -146,7 +146,16 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
     @Override
     public Object getAttribute(String name)
     {
-        if(name.equals(CLIENT_ID))
+
+        if(name.equals(ID))
+        {
+            return getId();
+        }
+        else if (name.equals(NAME))
+        {
+            return getName();
+        }
+        else if(name.equals(CLIENT_ID))
         {
             return _connection.getClientId();
         }
@@ -267,6 +276,10 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
             if(LAST_IO_TIME.equals(name))
             {
                 return _connection.getLastIoTime();
+            }
+            else if(SESSION_COUNT.equals(name))
+            {
+                return _connection.getSessionModels().size();
             }
             return super.getStatistic(name);
         }
