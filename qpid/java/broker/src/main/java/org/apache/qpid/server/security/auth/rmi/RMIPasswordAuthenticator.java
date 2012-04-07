@@ -84,11 +84,18 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
         // Verify that an AuthenticationManager has been set.
         if (_authenticationManager == null)
         {
-            if(ApplicationRegistry.getInstance() != null && ApplicationRegistry.getInstance().getAuthenticationManager() != null)
+            try
             {
-                _authenticationManager = ApplicationRegistry.getInstance().getAuthenticationManager();
+                if(ApplicationRegistry.getInstance().getAuthenticationManager() != null)
+                {
+                    _authenticationManager = ApplicationRegistry.getInstance().getAuthenticationManager();
+                }
+                else
+                {
+                    throw new SecurityException(UNABLE_TO_LOOKUP);
+                }
             }
-            else
+            catch(IllegalStateException e)
             {
                 throw new SecurityException(UNABLE_TO_LOOKUP);
             }
