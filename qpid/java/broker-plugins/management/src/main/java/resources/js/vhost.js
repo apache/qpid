@@ -15,186 +15,6 @@ require(["dojo/store/JsonRest",
 	     function(JsonRest, Memory, Cache, DataGrid, ObjectStore, query, Observable, xhr, dom)
 	     {
 
-
-             function UpdatableStore( data, divName, structure, func )
-             {
-
-
-
-                 var thisObj = this;
-
-
-                 thisObj.store = Observable(Memory({data: data, idProperty: "id"}));
-                 thisObj.dataStore = ObjectStore({objectStore: thisObj.store});
-                 thisObj.grid = new DataGrid({
-                             store: thisObj.dataStore,
-                             structure: structure,
-                             autoHeight: true
-                                    }, divName);
-
-                 // since we created this grid programmatically, call startup to render it
-                 thisObj.grid.startup();
-
-
-                 if( func )
-                 {
-                     func(thisObj);
-                 }
-
-             }
-
-            UpdatableStore.prototype.update = function(bindingData)
-            {
-                 data = bindingData;
-                 var store = this.store;
-
-
-                 // handle deletes
-                 // iterate over existing store... if not in new data then remove
-                 store.query({ }).forEach(function(object)
-                     {
-                         if(data)
-                         {
-                             for(var i=0; i < data.length; i++)
-                             {
-                                 if(data[i].id == object.id)
-                                 {
-                                     return;
-                                 }
-                             }
-                         }
-                         store.remove(object.id);
-                         //store.notify(null, object.id);
-                     });
-
-                 // iterate over data...
-                 if(data)
-                 {
-                     for(var i=0; i < data.length; i++)
-                     {
-                         if(item = store.get(data[i].id))
-                         {
-                             var modified;
-                             for(var propName in data[i])
-                             {
-                                 if(item[ propName ] != data[i][ propName ])
-                                 {
-                                     item[ propName ] = data[i][ propName ];
-                                     modified = true;
-                                 }
-                             }
-                             if(modified)
-                             {
-                                 // ... check attributes for updates
-                                 store.notify(item, data[i].id);
-                             }
-                         }
-                         else
-                         {
-                             // ,,, if not in the store then add
-                             store.put(data[i]);
-                         }
-                     }
-                 }
-
-            };
-
-
-
-         function formatBytes(amount)
-         {
-            this.units = "B";
-            this.value = 0;
-
-            if(amount < 1000)
-            {
-                this.units = "B";
-                this.value = amount;
-            }
-            else if(amount < 1000 * 1024)
-            {
-                this.units = "KB";
-                this.value = amount / 1024
-                this.value = this.value.toPrecision(3);
-            }
-            else if(amount < 1000 * 1024 * 1024)
-            {
-                this.units = "MB";
-                this.value = amount / (1024 * 1024)
-                this.value = this.value.toPrecision(3);
-            }
-            else if(amount < 1000 * 1024 * 1024 * 1024)
-            {
-                this.units = "GB";
-                this.value = amount / (1024 * 1024 * 1024)
-                this.value = this.value.toPrecision(3);
-            }
-
-         }
-
-
-         function formatTime(amount)
-         {
-            this.units = "ms";
-            this.value = 0;
-
-            if(amount < 1000)
-            {
-                this.units = "ms";
-                this.value = amount;
-            }
-            else if(amount < 1000 * 60)
-            {
-                this.units = "s";
-                this.value = amount / 1000
-                this.value = this.value.toPrecision(3);
-            }
-            else if(amount < 1000 * 60 * 60)
-            {
-                this.units = "min";
-                this.value = amount / (1000 * 60)
-                this.value = this.value.toPrecision(3);
-            }
-            else if(amount < 1000 * 60 * 60 * 24)
-            {
-                this.units = "hr";
-                this.value = amount / (1000 * 60 * 60)
-                this.value = this.value.toPrecision(3);
-            }
-            else if(amount < 1000 * 60 * 60 * 24 * 7)
-            {
-                this.units = "d";
-                this.value = amount / (1000 * 60 * 60 * 24)
-                this.value = this.value.toPrecision(3);
-            }
-            else if(amount < 1000 * 60 * 60 * 24 * 365)
-            {
-                this.units = "wk";
-                this.value = amount / (1000 * 60 * 60 * 24 * 7)
-                this.value = this.value.toPrecision(3);
-            }
-            else
-            {
-                this.units = "yr";
-                this.value = amount / (1000 * 60 * 60 * 24 * 365)
-                this.value = this.value.toPrecision(3);
-            }
-
-         }
-
-         function flattenStatistics(data)
-         {
-             var stats = data[ "statistics" ];
-
-             // flatten statistics into attributes
-             for(var propName in stats)
-             {
-                 data[ propName ] = stats[ propName ];
-             }
-
-         }
-
-
          function Updater()
          {
             this.name = dom.byId("name");
@@ -211,27 +31,13 @@ require(["dojo/store/JsonRest",
             xhr.get({url: this.query, handleAs: "json"}).then(function(data)
                              {
                                 thisObj.vhostData = data[0];
-                                var stats = thisObj.vhostData[ "statistics" ];
 
                                 // flatten statistics into attributes
                                 flattenStatistics( thisObj.vhostData );
-                                if(thisObj.vhostData.queues)
-                                {
-                                    for(var i = 0; i < thisObj.vhostData.queues.length; i++)
-                                    {
-                                        flattenStatistics( thisObj.vhostData.queues[i]);
-                                    }
-                                }
-                                if(thisObj.vhostData.exchanges)
-                                {
-                                    for(var i = 0; i < thisObj.vhostData.exchanges.length; i++)
-                                    {
-                                        flattenStatistics( thisObj.vhostData.exchanges[i]);
-                                    }
-                                }
 
                                 thisObj.updateHeader();
-                                thisObj.queuesGrid = new UpdatableStore(thisObj.vhostData.queues, "queues",
+                                thisObj.queuesGrid = new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
+                                                                        thisObj.vhostData.queues, "queues",
                                                          [ { name: "Name",    field: "name",      width: "90px"},
                                                            { name: "Messages", field: "queueDepthMessages", width: "90px"},
                                                            { name: "Arguments",   field: "arguments",     width: "200px"}
@@ -252,7 +58,8 @@ require(["dojo/store/JsonRest",
                                                             });
                                                          } );
 
-                                thisObj.exchangesGrid = new UpdatableStore(thisObj.vhostData.exchanges, "exchanges",
+                                thisObj.exchangesGrid = new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
+                                                                           thisObj.vhostData.exchanges, "exchanges",
                                                          [ { name: "Name",    field: "name",      width: "120px"},
                                                            { name: "Type", field: "type", width: "120px"},
                                                            { name: "Binding Count", field: "bindingCount",
@@ -266,8 +73,8 @@ require(["dojo/store/JsonRest",
                                                                       item = this.getItem(idx);
 
                                                                       url = "/exchange?vhost="
-                                                                       + thisObj.vhostData.name + "&exchange=" +
-                                                                      obj.dataStore.getValue(item,"name");
+                                                                       + encodeURIComponent(thisObj.vhostData.name) + "&exchange=" +
+                                                                      encodeURIComponent(obj.dataStore.getValue(item,"name"));
 
                                                                       window.location = url;
 
@@ -275,7 +82,8 @@ require(["dojo/store/JsonRest",
                                                            } );
 
 
-                                thisObj.connectionsGrid = new UpdatableStore(thisObj.vhostData.connections,
+                                thisObj.connectionsGrid = new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
+                                                                             thisObj.vhostData.connections,
                                                          "connections",
                                                          [ { name: "Name",    field: "name",      width: "150px"},
                                                            { name: "Sessions", field: "sessionCount", width: "70px"},
@@ -287,7 +95,22 @@ require(["dojo/store/JsonRest",
                                                            width: "80px"},
                                                            { name: "Bytes Out", field: "bytesOutRate",
                                                               width: "80px"}
-                                                         ]);
+                                                         ],
+                                                         function(obj)
+                                                         {
+                                                             dojo.connect(obj.grid, "onRowDblClick", obj.grid,
+                                                             function(evt){
+                                                                    var idx = evt.rowIndex,
+                                                                    item = this.getItem(idx);
+
+                                                                    url = "/connection?vhost="
+                                                                     + encodeURIComponent(thisObj.vhostData.name) + "&connection=" +
+                                                                    encodeURIComponent(obj.dataStore.getValue(item,"name"));
+
+                                                                    window.location = url;
+
+                                                            });
+                                                         } );
 
 
 
@@ -313,58 +136,11 @@ require(["dojo/store/JsonRest",
             xhr.get({url: this.query, handleAs: "json"}).then(function(data)
                  {
                     thisObj.vhostData = data[0];
-                    var stats = thisObj.vhostData[ "statistics" ];
-
-                    // flatten statistics into attributes
-                    for(var propName in stats)
-                    {
-                        thisObj.vhostData[ propName ] = stats[ propName ];
-                    }
-
-
-
+                    flattenStatistics( thisObj.vhostData );
                     var connections = thisObj.vhostData[ "connections" ];
-                    if(connections)
-                    {
-                        for(var i=0; i < connections.length; i++)
-                        {
-                            var stats = connections[i][ "statistics" ];
-
-                            // flatten statistics into attributes
-                            for(var propName in stats)
-                            {
-                                connections[i][ propName ] = stats[ propName ];
-                            }
-                        }
-                    }
                     var queues = thisObj.vhostData[ "queues" ];
-                    if(queues)
-                    {
-                        for(var i=0; i < queues.length; i++)
-                        {
-                            var stats = queues[i][ "statistics" ];
-
-                            // flatten statistics into attributes
-                            for(var propName in stats)
-                            {
-                                queues[i][ propName ] = stats[ propName ];
-                            }
-                        }
-                    }
                     var exchanges = thisObj.vhostData[ "exchanges" ];
-                    if(exchanges)
-                    {
-                        for(var i=0; i < exchanges.length; i++)
-                        {
-                            var stats = exchanges[i][ "statistics" ];
 
-                            // flatten statistics into attributes
-                            for(var propName in stats)
-                            {
-                                exchanges[i][ propName ] = stats[ propName ];
-                            }
-                        }
-                    }
                     thisObj.updateHeader();
 
 

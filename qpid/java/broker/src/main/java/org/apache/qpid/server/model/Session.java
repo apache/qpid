@@ -51,10 +51,27 @@ public interface Session extends ConfiguredObject
                                                              XA_TRANSACTION_BRANCH_SUSPENDS));
 
 
+    public static final String ID = "id";
+    public static final String NAME = "name";
+    public static final String STATE = "state";
+    public static final String DURABLE = "durable";
+    public static final String LIFETIME_POLICY = "lifetimePolicy";
+    public static final String TIME_TO_LIVE = "timeToLive";
+    public static final String CREATED = "created";
+    public static final String UPDATED = "updated";
+
     public static final String CHANNEL_ID = "channelId";
 
     public static final Collection<String> AVAILABLE_ATTRIBUTES =
-            Collections.unmodifiableCollection(Arrays.asList(CHANNEL_ID));
+            Collections.unmodifiableCollection(Arrays.asList(ID,
+                                                             NAME,
+                                                             STATE,
+                                                             DURABLE,
+                                                             LIFETIME_POLICY,
+                                                             TIME_TO_LIVE,
+                                                             CREATED,
+                                                             UPDATED,
+                                                             CHANNEL_ID));
 
 
     Collection<Consumer> getSubscriptions();

@@ -16,175 +16,7 @@ require(["dojo/store/JsonRest",
 	     function(JsonRest, json, Memory, Cache, DataGrid, ObjectStore, query, Observable, xhr, dom)
 	     {
 
-
-             function UpdatableStore( data, divName, structure, func )
-             {
-
-
-
-                 var thisObj = this;
-
-
-                 thisObj.store = Observable(Memory({data: data, idProperty: "id"}));
-                 thisObj.dataStore = ObjectStore({objectStore: thisObj.store});
-                 thisObj.grid = new DataGrid({
-                             store: thisObj.dataStore,
-                             structure: structure,
-                             autoHeight: true
-                                    }, divName);
-
-                 // since we created this grid programmatically, call startup to render it
-                 thisObj.grid.startup();
-
-
-                 if( func )
-                 {
-                     func(thisObj);
-                 }
-
-             }
-
-            UpdatableStore.prototype.update = function(bindingData)
-            {
-                 data = bindingData;
-                 var store = this.store;
-
-
-                 // handle deletes
-                 // iterate over existing store... if not in new data then remove
-                 store.query({ }).forEach(function(object)
-                     {
-                         if(data)
-                         {
-                             for(var i=0; i < data.length; i++)
-                             {
-                                 if(data[i].id == object.id)
-                                 {
-                                     return;
-                                 }
-                             }
-                         }
-                         store.remove(object.id);
-                         //store.notify(null, object.id);
-                     });
-
-                 // iterate over data...
-                 if(data)
-                 {
-                     for(var i=0; i < data.length; i++)
-                     {
-                         if(item = store.get(data[i].id))
-                         {
-                             var modified;
-                             for(var propName in data[i])
-                             {
-                                 if(item[ propName ] != data[i][ propName ])
-                                 {
-                                     item[ propName ] = data[i][ propName ];
-                                     modified = true;
-                                 }
-                             }
-                             if(modified)
-                             {
-                                 // ... check attributes for updates
-                                 store.notify(item, data[i].id);
-                             }
-                         }
-                         else
-                         {
-                             // ,,, if not in the store then add
-                             store.put(data[i]);
-                         }
-                     }
-                 }
-
-            };
-
-
-
-         function formatBytes(amount)
-         {
-            this.units = "B";
-            this.value = 0;
-
-            if(amount < 1000)
-            {
-                this.units = "B";
-                this.value = amount;
-            }
-            else if(amount < 1000 * 1024)
-            {
-                this.units = "KB";
-                this.value = amount / 1024
-                this.value = this.value.toPrecision(3);
-            }
-            else if(amount < 1000 * 1024 * 1024)
-            {
-                this.units = "MB";
-                this.value = amount / (1024 * 1024)
-                this.value = this.value.toPrecision(3);
-            }
-            else if(amount < 1000 * 1024 * 1024 * 1024)
-            {
-                this.units = "GB";
-                this.value = amount / (1024 * 1024 * 1024)
-                this.value = this.value.toPrecision(3);
-            }
-
-         }
-
-
-         function formatTime(amount)
-         {
-            this.units = "ms";
-            this.value = 0;
-
-            if(amount < 1000)
-            {
-                this.units = "ms";
-                this.value = amount;
-            }
-            else if(amount < 1000 * 60)
-            {
-                this.units = "s";
-                this.value = amount / 1000
-                this.value = this.value.toPrecision(3);
-            }
-            else if(amount < 1000 * 60 * 60)
-            {
-                this.units = "min";
-                this.value = amount / (1000 * 60)
-                this.value = this.value.toPrecision(3);
-            }
-            else if(amount < 1000 * 60 * 60 * 24)
-            {
-                this.units = "hr";
-                this.value = amount / (1000 * 60 * 60)
-                this.value = this.value.toPrecision(3);
-            }
-            else if(amount < 1000 * 60 * 60 * 24 * 7)
-            {
-                this.units = "d";
-                this.value = amount / (1000 * 60 * 60 * 24)
-                this.value = this.value.toPrecision(3);
-            }
-            else if(amount < 1000 * 60 * 60 * 24 * 365)
-            {
-                this.units = "wk";
-                this.value = amount / (1000 * 60 * 60 * 24 * 7)
-                this.value = this.value.toPrecision(3);
-            }
-            else
-            {
-                this.units = "yr";
-                this.value = amount / (1000 * 60 * 60 * 24 * 365)
-                this.value = this.value.toPrecision(3);
-            }
-
-         }
-
-
-         function QueueUpdater()
+        function QueueUpdater()
          {
             this.name = dom.byId("name");
             this.state = dom.byId("state");
@@ -206,22 +38,19 @@ require(["dojo/store/JsonRest",
             xhr.get({url: this.query, handleAs: "json"}).then(function(data)
                              {
                                 thisObj.queueData = data[0];
-                                var stats = thisObj.queueData[ "statistics" ];
 
-                                // flatten statistics into attributes
-                                for(var propName in stats)
-                                {
-                                    thisObj.queueData[ propName ] = stats[ propName ];
-                                }
+                                flattenStatistics( thisObj.queueData );
 
                                 thisObj.updateHeader();
-                                thisObj.bindingsGrid = new UpdatableStore(thisObj.queueData.bindings, "bindings",
+                                thisObj.bindingsGrid = new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
+                                                                          thisObj.queueData.bindings, "bindings",
                                                          [ { name: "Exchange",    field: "exchange",      width: "90px"},
                                                            { name: "Binding Key", field: "name",          width: "120px"},
                                                            { name: "Arguments",   field: "argumentString",     width: "200px"}
                                                          ]);
 
-                                thisObj.consumersGrid = new UpdatableStore(thisObj.queueData.consumers, "consumers",
+                                thisObj.consumersGrid = new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
+                                                                           thisObj.queueData.consumers, "consumers",
                                                          [ { name: "Name",    field: "name",      width: "70px"},
                                                            { name: "Mode", field: "distributionMode", width: "70px"},
                                                            { name: "Msgs Rate", field: "msgRate",
@@ -263,35 +92,16 @@ require(["dojo/store/JsonRest",
             xhr.get({url: this.query, handleAs: "json"}).then(function(data)
                  {
                     thisObj.queueData = data[0];
-                    var stats = thisObj.queueData[ "statistics" ];
-
-                    // flatten statistics into attributes
-                    for(var propName in stats)
-                    {
-                        thisObj.queueData[ propName ] = stats[ propName ];
-                    }
+                    flattenStatistics( thisObj.queueData )
 
                     var bindings = thisObj.queueData[ "bindings" ];
+                    var consumers = thisObj.queueData[ "consumers" ];
+
                     for(var i=0; i < bindings.length; i++)
                     {
                         bindings[i].argumentString = json.stringify(bindings[i].arguments);
                     }
 
-
-                    var consumers = thisObj.queueData[ "consumers" ];
-                    if(consumers)
-                    {
-                        for(var i=0; i < consumers.length; i++)
-                        {
-                            var stats = consumers[i][ "statistics" ];
-
-                            // flatten statistics into attributes
-                            for(var propName in stats)
-                            {
-                                consumers[i][ propName ] = stats[ propName ];
-                            }
-                        }
-                    }
                     thisObj.updateHeader();
 
 
@@ -319,13 +129,11 @@ require(["dojo/store/JsonRest",
 
                     dom.byId("alertThresholdQueueDepthMessages").innerHTML = thisObj.queueData["alertThresholdQueueDepthMessages"];
 
-                    stats = thisObj.queueData[ "statistics" ];
-
                     var sampleTime = new Date();
-                    var messageIn = stats["totalEnqueuedMessages"];
-                    var bytesIn = stats["totalEnqueuedBytes"];
-                    var messageOut = stats["totalDequeuedMessages"];
-                    var bytesOut = stats["totalDequeuedBytes"];
+                    var messageIn = thisObj.queueData["totalEnqueuedMessages"];
+                    var bytesIn = thisObj.queueData["totalEnqueuedBytes"];
+                    var messageOut = thisObj.queueData["totalDequeuedMessages"];
+                    var bytesOut = thisObj.queueData["totalDequeuedBytes"];
 
                     if(thisObj.sampleTime)
                     {

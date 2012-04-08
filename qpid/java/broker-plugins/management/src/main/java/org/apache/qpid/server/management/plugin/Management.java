@@ -74,6 +74,8 @@ public class Management
             root.addServlet(new ServletHolder(new DefinedFileServlet("exchange.html")),"/exchange");
             root.addServlet(new ServletHolder(new DefinedFileServlet("vhost.html")),"/vhost");
             root.addServlet(new ServletHolder(new DefinedFileServlet("broker.html")),"/broker");
+            root.addServlet(new ServletHolder(new DefinedFileServlet("connection.html")),"/connection");
+
 
             root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.js");
             root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.css");

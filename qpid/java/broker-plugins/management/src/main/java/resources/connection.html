@@ -2,7 +2,7 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8">
-		<title>Virtual Host</title>
+		<title>Connection</title>
 		<!--<link rel="stylesheet" href="/dojo/1.7.2/dojo/resources/dojo.css">
 		<link rel="stylesheet" href="/dojo/1.7.2/dijit/themes/claro/claro.css">
 		<link rel="stylesheet" href="/dojo/1.7.2/dojox/grid/resources/claroGrid.css">-->
@@ -10,7 +10,7 @@
         <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dijit/themes/claro/claro.css">
         <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dojox/grid/resources/claroGrid.css">
 
-        <link rel="stylesheet" href="../css/vhost.css" media="screen">
+        <link rel="stylesheet" href="../css/connection.css" media="screen">
 
 		<link rel="stylesheet" href="css/common.css" media="screen">
 
@@ -30,7 +30,7 @@
 
         <script src="/js/common.js">
         </script>
-        <script src="/js/vhost.js">
+        <script src="/js/connection.js">
         </script>
 	</head>
 	<body class="claro">
@@ -43,6 +43,7 @@
             <span style="">Name:</span><span id="name" style="position:absolute; left:6em"></span>
             <br/>
             <span style="">State:</span><span id="state" style="position:absolute; left:6em"></span>
+            <span style="position:absolute; left:26em">Pre-fetched:</span>
             <br/>
             <span style="">Durable:</span><span id="durable" style="position:absolute; left:6em"></span>
             <span style="position:absolute; left:26em">Inbound:</span>
@@ -59,47 +60,11 @@
             <span id="bytesOutRateUnits" style="position:absolute; right: 0em; width: 3em"></span>
             <br/>
             <br/>
-            <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Exchanges'">
-                <div id="exchanges"></div>
+            <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Sessions'">
+                <div id="sessions"></div>
             </div>
             <br/>
-            <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Queues'">
-                <div id="queues"></div>
-            </div>
-            <br/>
-            <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Connections'">
-                <div id="connections"></div>
-            </div>
-            <br/>
-            <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Alerting Thresholds'">
-                <span style="">Max. Queue Size:</span>
-                <span id="alertThresholdQueueDepthMessages"
-                      style="position:absolute; left:8em; width:8em; text-align:right"></span>
-                <span style="position:absolute; left:16.2em">msgs</span>
 
-                <span id="alertThresholdQueueDepthBytes"
-                      style="position:absolute; left:20em; width:8em; text-align:right"></span>
-                <span id="alertThresholdQueueDepthBytesUnits" style="position:absolute; left:28.2em"></span>
-                <br>
-                <span style="">Max. Message Age:</span>
-                <span id="alertThresholdMessageAge"
-                      style="position:absolute; left:8em; width:8em; text-align:right"></span>
-                <span id="alertThresholdMessageAgeUnits" style="position:absolute; left:16.2em"></span>
-
-                <span style="position:absolute; left:21em">Size: </span>
-                <span id="alertThresholdMessageSize"
-                      style="position:absolute; left:23em; width:5em; text-align:right"></span>
-                <span id="alertThresholdMessageSizeUnits" style="position:absolute; left:28.2em"></span>
-                <br/>
-                <br/>
-                <span style="">Alert frequency:</span>
-                <span id="alertRepeatGap"
-                      style="position:absolute; left:8em; width:8em; text-align:right"></span>
-                <span id="alertRepeatGapUnits" style="position:absolute; left:16.2em"></span>
-
-
-
-            </div>
         </div>
         <!--<div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'trailing'">Trailing pane</div>-->
         <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'bottom'">Bottom pane</div>

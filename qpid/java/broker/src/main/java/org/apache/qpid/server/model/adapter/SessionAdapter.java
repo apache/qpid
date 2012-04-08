@@ -118,7 +118,15 @@ final class SessionAdapter extends AbstractAdapter implements Session
     @Override
     public Object getAttribute(String name)
     {
-        if(name.equals(CHANNEL_ID))
+        if(name.equals(ID))
+        {
+            return getId();
+        }
+        else if (name.equals(NAME))
+        {
+            return getName();
+        }
+        else if(name.equals(CHANNEL_ID))
         {
             return _session.getChannelId();
         }
@@ -159,7 +167,8 @@ final class SessionAdapter extends AbstractAdapter implements Session
             }
             else if(name.equals(CONSUMER_COUNT))
             {
-                return getSubscriptions().size();
+                final Collection<Consumer> subscriptions = getSubscriptions();
+                return subscriptions == null ? 0 : subscriptions.size();
             }
             else if(name.equals(LOCAL_TRANSACTION_BEGINS))
             {

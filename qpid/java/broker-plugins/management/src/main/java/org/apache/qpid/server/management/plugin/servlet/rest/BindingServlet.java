@@ -37,6 +37,7 @@ import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Consumer;
+import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
@@ -84,10 +85,11 @@ public class BindingServlet extends AbstractServlet
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
-        
+
         String vhostName = null;
         String queueName = null;
         String exchangeName = null;
+        String bindingKey = null;
 
         if(request.getPathInfo() != null && request.getPathInfo().length()>0)
         {
@@ -100,6 +102,10 @@ public class BindingServlet extends AbstractServlet
                 if(parts.length > 2)
                 {
                     queueName = parts[2];
+                    if(parts.length > 3)
+                    {
+                        bindingKey = parts[3];
+                    }
                 }
             }
         }
@@ -108,29 +114,38 @@ public class BindingServlet extends AbstractServlet
         {
             if(vhostName == null || vhostName.equals(vhost.getName()))
             {
-                if(exchangeName == null || exchangeName.equals("*"))
+                for(Exchange exchange : vhost.getExchanges())
                 {
-                    for(Queue queue : vhost.getQueues())
+                    final boolean allExchanges = exchangeName == null || exchangeName.equals("*");
+                    if(allExchanges || exchangeName.equals(exchange.getName()))
                     {
-                        if(queueName == null || queueName.equals(queue.getName()))
+                        for(Queue queue : vhost.getQueues())
                         {
-                            for(Binding binding : queue.getBindings())
+                            if(queueName == null || queueName.equals(queue.getName()))
                             {
-                                outputObject.add(convertObjectToMap(binding));
-                            }
+                                for(Binding binding : queue.getBindings())
+                                {
+                                    if((bindingKey == null || bindingKey.equals(binding.getName()))
+                                       && (allExchanges || exchangeName.equals(binding.getParent(Exchange.class).getName())))
+                                    {
+                                        outputObject.add(convertObjectToMap(binding));
+                                        if(bindingKey != null)
+                                        {
+                                            break;
+                                        }
+                                    }
 
-                            if(queueName != null)
-                            {
-                                break;
+                                }
+
+                                if(queueName != null)
+                                {
+                                    break;
+                                }
                             }
                         }
-                    }    
+                    }
                 }
-                else
-                {
-                    // TODO
-                }
-                
+
                 if(vhostName != null)
                 {
                     break;
@@ -154,24 +169,6 @@ public class BindingServlet extends AbstractServlet
         {
             bindings.add(convertObjectToMap(binding));
         }
-
-        if(!bindings.isEmpty())
-        {
-            object.put("bindings", bindings);
-        }
-
-        List<Map<String,Object>> consumers = new ArrayList<Map<String, Object>>();
-
-        for(Consumer consumer : queue.getConsumers())
-        {
-            consumers.add(convertObjectToMap(consumer));
-        }
-
-        if(!consumers.isEmpty())
-        {
-            object.put("consumers", consumers);
-        }
-
 
         return object;
     }
