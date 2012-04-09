@@ -253,10 +253,9 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
                 else
                 {
                     StringBuilder xidString = xidAsString(id);
-                    String messageNumberString = String.valueOf(message.getMessageNumber());
                     CurrentActor.get().message(_logSubject,
                                                TransactionLogMessages.XA_INCOMPLETE_MESSAGE(xidString.toString(),
-                                                                                            messageNumberString));
+                                                                                            Long.toString(messageId)));
                     
                 }
 
@@ -304,10 +303,9 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
                 else
                 {
                     StringBuilder xidString = xidAsString(id);
-                    String messageNumberString = String.valueOf(message.getMessageNumber());
                     CurrentActor.get().message(_logSubject,
                                                TransactionLogMessages.XA_INCOMPLETE_MESSAGE(xidString.toString(),
-                                                                                            messageNumberString));
+                                                                                            Long.toString(messageId)));
 
                 }
 
@@ -317,7 +315,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
                 StringBuilder xidString = xidAsString(id);
                 CurrentActor.get().message(_logSubject,
                                            TransactionLogMessages.XA_INCOMPLETE_QUEUE(xidString.toString(),
-                                                                                      queue.getName()));
+                                                                                      record.getQueue().getResourceName()));
             }
 
         }
