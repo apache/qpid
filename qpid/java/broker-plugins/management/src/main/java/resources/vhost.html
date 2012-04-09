@@ -32,12 +32,17 @@
         </script>
         <script src="/js/vhost.js">
         </script>
+        <script src="/js/sasl.js">
+        </script>
 	</head>
 	<body class="claro">
 
 
     <div id="pageLayout" data-dojo-type="dijit.layout.BorderContainer" data-dojo-props="design: 'headline'">
         <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'top'">Top pane</div>
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'top'">
+            <div id="login"></div>
+        </div>
         <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'leading'">Leading pane</div>
         <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'center'">
             <span style="">Name:</span><span id="name" style="position:absolute; left:6em"></span>

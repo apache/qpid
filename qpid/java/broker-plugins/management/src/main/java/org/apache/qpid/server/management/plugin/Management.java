@@ -29,10 +29,12 @@ import org.apache.qpid.server.management.plugin.servlet.rest.BindingServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.ConnectionServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.ExchangeServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.QueueServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.SaslServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.VirtualHostServlet;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.mortbay.jetty.Server;
+import org.mortbay.jetty.SessionManager;
 import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.ServletHolder;
 
@@ -69,6 +71,7 @@ public class Management
             root.addServlet(new ServletHolder(new QueueServlet(_broker)), "/rest/queue/*");
             root.addServlet(new ServletHolder(new ConnectionServlet(_broker)), "/rest/connection/*");
             root.addServlet(new ServletHolder(new BindingServlet(_broker)), "/rest/binding/*");
+            root.addServlet(new ServletHolder(new SaslServlet(_broker)), "/rest/sasl");
 
             root.addServlet(new ServletHolder(new DefinedFileServlet("queue.html")),"/queue");
             root.addServlet(new ServletHolder(new DefinedFileServlet("exchange.html")),"/exchange");
@@ -85,6 +88,11 @@ public class Management
             root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.jpg");
             root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.jpeg");
             root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.json");
+
+            final SessionManager sessionManager = root.getSessionHandler().getSessionManager();
+
+            sessionManager.setMaxCookieAge(60 * 30);
+            sessionManager.setMaxInactiveInterval(60 * 15);
 
             server.start();
         }
