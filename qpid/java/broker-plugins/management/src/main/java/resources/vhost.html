@@ -34,6 +34,27 @@
         </script>
         <script src="/js/sasl.js">
         </script>
+        <script>
+            require(["dojo/parser",
+            /* dojox/ validate resources */
+            "dojox/validate/us", "dojox/validate/web",
+            /* basic dijit classes */
+            "dijit/form/CheckBox", "dijit/form/Textarea", "dijit/form/FilteringSelect", "dijit/form/TextBox", "dijit/form/ValidationTextBox", "dijit/form/DateTextBox", "dijit/form/TimeTextBox", "dijit/form/Button", "dijit/form/RadioButton", "dijit/form/Form", "dijit/form/DateTextBox",
+            /* basic dojox classes */
+            "dojox/form/BusyButton", "dojox/form/CheckedMultiSelect", "dojo/domReady!"]);
+
+            // Require the Dialog class
+            require(["dijit/registry", "dijit/Dialog"], function(registry) {
+                // Show the dialog
+                addExchangeDialog = function() {
+                    registry.byId("addExchange").show();
+                }
+                // Hide the dialog
+                hideAddExchange = function() {
+                    registry.byId("addExchange").hide();
+                }
+            });
+        </script>
 	</head>
 	<body class="claro">
 
@@ -66,6 +87,90 @@
             <br/>
             <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Exchanges'">
                 <div id="exchanges"></div>
+                <br/>
+                <button onclick="addExchangeDialog();">Add Exchange</button>
+
+                <div class="dijitHidden">
+                    <div data-dojo-type="dijit.Dialog" style="width:600px;" data-dojo-props="title:'Add Exchange'" id="addExchange">
+                        <h1>Add a new Exchange</h1>
+                        <br/>
+                        <form dojoType="dijit.form.Form" method="post">
+                        <script type="dojo/method" event="onSubmit">
+                            if(this.validate())
+                            {
+                                var exchangeData = {};
+                                exchangeData.name = dojo.byId("addExchangeName").value;
+                                exchangeData.type = dijit.byId("addExchangeType").get('value');
+                                exchangeData.durable = dojo.byId("addExchangeDurable").checked;
+                                exchangeData.lifetimePolicy = dijit.byId("addExchangeLifetimePolicy").get('value');
+
+
+                                var urlQuery = dojo.queryToObject(dojo.doc.location.search.substr((dojo.doc.location.search[0] === "?" ? 1 : 0)));
+                                var postUrl = "/rest/exchange/" + urlQuery.vhost + "/" + exchangeData.name;
+
+
+                                dojo.xhrPut( { url: "/rest/exchange/" + urlQuery.vhost + "/" + exchangeData.name,
+                                             handleAs: "json",
+                                             headers: { "Content-Type": "application/json"},
+                                             putData: dojo.toJson( exchangeData )
+                                            }).then( function(data)
+                                                    {
+                                                        hideAddExchange();
+                                                    },
+                                                    function(error)
+                                                    {
+                                                        alert(error);
+                                                    }
+                                                  );
+                                return false;
+                            }
+                            else
+                            {
+                                alert('Form contains invalid data.  Please correct first');
+                                return false;
+                            }
+                            return false;
+                        </script>
+                        <table cellpadding="0" cellspacing="2">
+                            <tr>
+                                <td valign="top"><strong>Name: </strong></td>
+                                <td><input type="text" required="true" name="name" id="addExchangeName" placeholder="Exchange Name"
+                                           dojoType="dijit.form.ValidationTextBox"/></td>
+                            </tr>
+                            <tr>
+                                <td valign="top"><strong>Type: </strong></td>
+                                <td>
+                                    <select name="type" id="addExchangeType" dojoType="dijit.form.FilteringSelect">
+                                        <option value="direct">direct</option>
+                                        <option value="topic">topic</option>
+                                        <option value="headers">headers</option>
+                                        <option value="fanout">fanout</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td valign="top"><strong>Durable? </strong></td>
+                                <td><input type="checkbox" name="durable" id="addExchangeDurable" dojoType="dijit.form.CheckBox" /></td>
+                            </tr>
+                            <tr>
+                                <td valign="top"><strong>Lifetime Policy: </strong></td>
+                                <td>
+                                    <select name="lifetimePolicy" id="addExchangeLifetimePolicy" dojoType="dijit.form.FilteringSelect">
+                                        <option value="PERMANENT">permanent</option>
+                                        <option value="AUTO_DELETE">auto-delete</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        </table>
+                        <br/>
+                        <input type="submit" value="Submit Form" id="addExchangeOk" dojoType="dojox.form.BusyButton"
+                               label="Add" busyLabel="Submitting Form..." timeout="2000" />
+                        <input type="button" value="Cancel" label="Cancel" id="addExchangeCancel" data-dojo-props="onClick:hideAddExchange" dojoType="dijit.form.Button" />
+
+                        </form>
+
+                    </div>
+                </div>
             </div>
             <br/>
             <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Queues'">

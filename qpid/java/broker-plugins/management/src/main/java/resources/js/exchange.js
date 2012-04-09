@@ -71,24 +71,24 @@ require(["dojo/store/JsonRest",
                     var bindings = thisObj.exchangeData[ "bindings" ];
                     var consumers = thisObj.exchangeData[ "consumers" ];
 
-                    for(var i=0; i < bindings.length; i++)
+                    if(bindings)
                     {
-                        if(bindings[i].arguments)
+                        for(var i=0; i < bindings.length; i++)
                         {
-                            bindings[i].argumentString = dojo.toJson(bindings[i].arguments);
-                        }
-                        else
-                        {
-                            bindings[i].argumentString = "";
+                            if(bindings[i].arguments)
+                            {
+                                bindings[i].argumentString = dojo.toJson(bindings[i].arguments);
+                            }
+                            else
+                            {
+                                bindings[i].argumentString = "";
+                            }
                         }
                     }
 
 
 
                     thisObj.updateHeader();
-
-
-                    stats = thisObj.exchangeData[ "statistics" ];
 
                     var messageIn = thisObj.exchangeData["messagesIn"];
                     var bytesIn = thisObj.exchangeData["bytesIn"];

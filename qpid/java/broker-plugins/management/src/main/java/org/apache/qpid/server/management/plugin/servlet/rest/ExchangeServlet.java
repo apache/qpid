@@ -201,7 +201,7 @@ public class ExchangeServlet extends AbstractServlet
     {
 
         response.setContentType("application/json");
-        
+
         String vhostName = null;
         String exchangeName = null;
         if(request.getPathInfo() != null && request.getPathInfo().length()>0)
@@ -246,20 +246,36 @@ public class ExchangeServlet extends AbstractServlet
                 response.setStatus(HttpServletResponse.SC_NO_CONTENT);
                 ObjectMapper mapper = new ObjectMapper();
                 Map<String,Object> exchangeObject = mapper.readValue(request.getInputStream(), LinkedHashMap.class);
-
                 final boolean isDurable = exchangeObject.get("durable") instanceof Boolean
                                           && ((Boolean)exchangeObject.get("durable"));
-                final boolean isAutoDelete = exchangeObject.get("auto_delete") instanceof Boolean
-                                          && ((Boolean)exchangeObject.get("auto_delete"));
+
+                LifetimePolicy lifetimePolicy = LifetimePolicy.PERMANENT;
+
+                if(exchangeObject.get("lifetimePolicy") != null)
+                {
+                    String policyName = exchangeObject.get("lifetimePolicy").toString();
+                    try
+                    {
+                        lifetimePolicy =
+                                Enum.valueOf(LifetimePolicy.class, policyName);
+
+                    }
+                    catch (IllegalArgumentException e)
+                    {
+
+                    }
+                }
 
                 final String type = (String) exchangeObject.get("type");
                 final Map<String, Object> attributes = new HashMap<String, Object>(exchangeObject);
+
+                attributes.remove("name");
                 attributes.remove("durable");
-                attributes.remove("auto_delete");
+                attributes.remove("lifetimePolicy");
                 attributes.remove("type");
 
                 vhost.createExchange(exchangeName, State.ACTIVE, isDurable,
-                                     isAutoDelete ? LifetimePolicy.AUTO_DELETE : LifetimePolicy.PERMANENT,
+                                     lifetimePolicy,
                                      0l,
                                      type,
                                      attributes);

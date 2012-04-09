@@ -253,7 +253,7 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
     {
         if(ID.equals(name))
         {
-            return getId();    
+            return getId();
         }
         else if(NAME.equals(name))
         {
@@ -269,7 +269,7 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
         }
         else if(LIFETIME_POLICY.equals(name))
         {
-            return LifetimePolicy.PERMANENT;
+            return _exchange.isAutoDelete() ? LifetimePolicy.AUTO_DELETE : LifetimePolicy.PERMANENT;
         }
         else if(TIME_TO_LIVE.equals(name))
         {
