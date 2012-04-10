@@ -549,13 +549,6 @@ void SessionAdapter::TxHandlerImpl::rollback()
     state.rollback();
 }
 
-std::string SessionAdapter::DtxHandlerImpl::convert(const framing::Xid& xid)
-{
-    std::string encoded;
-    encode(xid, encoded);
-    return encoded;
-}
-
 void SessionAdapter::DtxHandlerImpl::select()
 {
     state.selectDtx();
@@ -567,7 +560,7 @@ XaResult SessionAdapter::DtxHandlerImpl::end(const Xid& xid,
 {
     try {
         if (fail) {
-            state.endDtx(convert(xid), true);
+            state.endDtx(DtxManager::convert(xid), true);
             if (suspend) {
                 throw CommandInvalidException(QPID_MSG("End and suspend cannot both be set."));
             } else {
@@ -575,9 +568,9 @@ XaResult SessionAdapter::DtxHandlerImpl::end(const Xid& xid,
             }
         } else {
             if (suspend) {
-                state.suspendDtx(convert(xid));
+                state.suspendDtx(DtxManager::convert(xid));
             } else {
-                state.endDtx(convert(xid), false);
+                state.endDtx(DtxManager::convert(xid), false);
             }
             return XaResult(XA_STATUS_XA_OK);
         }
@@ -595,9 +588,9 @@ XaResult SessionAdapter::DtxHandlerImpl::start(const Xid& xid,
     }
     try {
         if (resume) {
-            state.resumeDtx(convert(xid));
+            state.resumeDtx(DtxManager::convert(xid));
         } else {
-            state.startDtx(convert(xid), getBroker().getDtxManager(), join);
+            state.startDtx(DtxManager::convert(xid), getBroker().getDtxManager(), join);
         }
         return XaResult(XA_STATUS_XA_OK);
     } catch (const DtxTimeoutException& /*e*/) {
@@ -608,7 +601,7 @@ XaResult SessionAdapter::DtxHandlerImpl::start(const Xid& xid,
 XaResult SessionAdapter::DtxHandlerImpl::prepare(const Xid& xid)
 {
     try {
-        bool ok = getBroker().getDtxManager().prepare(convert(xid));
+        bool ok = getBroker().getDtxManager().prepare(DtxManager::convert(xid));
         return XaResult(ok ? XA_STATUS_XA_OK : XA_STATUS_XA_RBROLLBACK);
     } catch (const DtxTimeoutException& /*e*/) {
         return XaResult(XA_STATUS_XA_RBTIMEOUT);
@@ -619,7 +612,7 @@ XaResult SessionAdapter::DtxHandlerImpl::commit(const Xid& xid,
                             bool onePhase)
 {
     try {
-        bool ok = getBroker().getDtxManager().commit(convert(xid), onePhase);
+        bool ok = getBroker().getDtxManager().commit(DtxManager::convert(xid), onePhase);
         return XaResult(ok ? XA_STATUS_XA_OK : XA_STATUS_XA_RBROLLBACK);
     } catch (const DtxTimeoutException& /*e*/) {
         return XaResult(XA_STATUS_XA_RBTIMEOUT);
@@ -630,7 +623,7 @@ XaResult SessionAdapter::DtxHandlerImpl::commit(const Xid& xid,
 XaResult SessionAdapter::DtxHandlerImpl::rollback(const Xid& xid)
 {
     try {
-        getBroker().getDtxManager().rollback(convert(xid));
+        getBroker().getDtxManager().rollback(DtxManager::convert(xid));
         return XaResult(XA_STATUS_XA_OK);
     } catch (const DtxTimeoutException& /*e*/) {
         return XaResult(XA_STATUS_XA_RBTIMEOUT);
@@ -660,7 +653,7 @@ void SessionAdapter::DtxHandlerImpl::forget(const Xid& xid)
 
 DtxGetTimeoutResult SessionAdapter::DtxHandlerImpl::getTimeout(const Xid& xid)
 {
-    uint32_t timeout = getBroker().getDtxManager().getTimeout(convert(xid));
+    uint32_t timeout = getBroker().getDtxManager().getTimeout(DtxManager::convert(xid));
     return DtxGetTimeoutResult(timeout);
 }
 
@@ -668,7 +661,7 @@ DtxGetTimeoutResult SessionAdapter::DtxHandlerImpl::getTimeout(const Xid& xid)
 void SessionAdapter::DtxHandlerImpl::setTimeout(const Xid& xid,
                                                 uint32_t timeout)
 {
-    getBroker().getDtxManager().setTimeout(convert(xid), timeout);
+    getBroker().getDtxManager().setTimeout(DtxManager::convert(xid), timeout);
 }
 
 
