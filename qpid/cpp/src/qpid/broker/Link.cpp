@@ -202,31 +202,34 @@ void Link::opened() {
 
 void Link::closed(int, std::string text)
 {
-    Mutex::ScopedLock mutex(lock);
-    QPID_LOG (info, "Inter-broker link disconnected from " << host << ":" << port << " " << text);
-
-    connection = 0;
-    if (state == STATE_OPERATIONAL) {
-        stringstream addr;
-        addr << host << ":" << port;
-        if (!hideManagement() && agent)
-            agent->raiseEvent(_qmf::EventBrokerLinkDown(addr.str()));
-    }
-
-    for (Bridges::iterator i = active.begin(); i != active.end(); i++) {
-        (*i)->closed();
-        created.push_back(*i);
-    }
-    active.clear();
-
-    if (state != STATE_FAILED && state != STATE_PASSIVE)
+    bool isClosing = false;
     {
-        setStateLH(STATE_WAITING);
-        if (!hideManagement())
-            mgmtObject->set_lastError (text);
-    }
+        Mutex::ScopedLock mutex(lock);
+        QPID_LOG (info, "Inter-broker link disconnected from " << host << ":" << port << " " << text);
 
-    if (closing)
+        connection = 0;
+        if (state == STATE_OPERATIONAL) {
+            stringstream addr;
+            addr << host << ":" << port;
+            if (!hideManagement() && agent)
+                agent->raiseEvent(_qmf::EventBrokerLinkDown(addr.str()));
+        }
+
+        for (Bridges::iterator i = active.begin(); i != active.end(); i++) {
+            (*i)->closed();
+            created.push_back(*i);
+        }
+        active.clear();
+
+        if (state != STATE_FAILED && state != STATE_PASSIVE)
+        {
+            setStateLH(STATE_WAITING);
+            if (!hideManagement())
+                mgmtObject->set_lastError (text);
+        }
+    }
+    // Call destroy outside of the lock, don't want to be deleted with lock held.
+    if (isClosing)
         destroy();
 }
 
