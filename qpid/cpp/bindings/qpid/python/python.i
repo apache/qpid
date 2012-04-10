@@ -132,7 +132,10 @@ static PyObject* pTransportFailure;
          # equivalent in C++, so we will translate them to sasl_mechanism
          # when possible.
          def __init__(self, url=None, **options):
-             args = [url] if url else []
+             if url:
+                 args = [url]
+             else:
+                 args = []
              if options :
                  if "sasl_mechanisms" in options :
                      if ' ' in options.get("sasl_mechanisms",'') :
