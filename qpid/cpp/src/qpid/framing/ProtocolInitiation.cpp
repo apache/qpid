@@ -36,10 +36,17 @@ void ProtocolInitiation::encode(Buffer& buffer) const {
     buffer.putOctet('M');
     buffer.putOctet('Q');
     buffer.putOctet('P');
-    buffer.putOctet(1);//class
-    buffer.putOctet(1);//instance
-    buffer.putOctet(version.getMajor());
-    buffer.putOctet(version.getMinor());    
+    if (version.getMajor() == 1) {
+        buffer.putOctet(0);
+        buffer.putOctet(version.getMajor());
+        buffer.putOctet(version.getMinor());
+        buffer.putOctet(0);//revision
+    } else {
+        buffer.putOctet(1);//class
+        buffer.putOctet(1);//instance
+        buffer.putOctet(version.getMajor());
+        buffer.putOctet(version.getMinor());
+    }
 }
 
 bool ProtocolInitiation::decode(Buffer& buffer){
@@ -48,10 +55,17 @@ bool ProtocolInitiation::decode(Buffer& buffer){
 	buffer.getOctet();//M
 	buffer.getOctet();//Q
 	buffer.getOctet();//P
-	buffer.getOctet();//class
-	buffer.getOctet();//instance
-	version.setMajor(buffer.getOctet());
-	version.setMinor(buffer.getOctet());
+	uint8_t protocolClass = buffer.getOctet();//class
+        if (protocolClass == 1) {
+            //old (pre-1.0) style
+            buffer.getOctet();//instance
+            version.setMajor(buffer.getOctet());
+            version.setMinor(buffer.getOctet());
+        } else {
+            version.setMajor(buffer.getOctet());
+            version.setMinor(buffer.getOctet());
+            buffer.getOctet();//revision
+        }
 	return true;
     }else{
 	return false;

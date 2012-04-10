@@ -107,6 +107,22 @@ AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
 AC_SUBST([LIBTOOL_DEPS])
 
+# Allow integration against external AMQP 1.0 protocol engine
+AC_ARG_WITH([proton],
+  [AS_HELP_STRING([--with-proton],
+    [Base directory for proton project])])
+
+PROTON_BASE=$with_proton
+PROTON_INCLUDE=$PROTON_BASE/include
+PROTON_LIB=$PROTON_BASE
+fail=0
+test -f $PROTON_INCLUDE/proton/engine.h || fail=1
+test $fail = 1 &&
+  AC_MSG_ERROR([Please specify path to proton!])
+CXXFLAGS="$CXXFLAGS -I$PROTON_INCLUDE"
+LDFLAGS="$LDFLAGS -L$PROTON_LIB -lqpidproton"
+AC_SUBST(PROTON_LIB)
+
 # For libraries (libcommon) that use dlopen, dlerror, etc.,
 # test whether we need to link with -ldl.
 gl_saved_libs=$LIBS

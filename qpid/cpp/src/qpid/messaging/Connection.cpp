@@ -25,6 +25,7 @@
 #include "qpid/messaging/SessionImpl.h"
 #include "qpid/messaging/PrivateImplRef.h"
 #include "qpid/client/amqp0_10/ConnectionImpl.h"
+#include "qpid/messaging/amqp/ConnectionHandle.h"
 #include "qpid/log/Statement.h"
 
 namespace qpid {
@@ -44,7 +45,11 @@ Connection::Connection(const std::string& url, const std::string& o)
     Variant::Map options;
     AddressParser parser(o);
     if (o.empty() || parser.parseMap(options)) {
-        PI::ctor(*this, new qpid::client::amqp0_10::ConnectionImpl(url, options));
+        if (options.find("use_amqp1.0") != options.end()) {
+            PI::ctor(*this, new qpid::messaging::amqp::ConnectionHandle(url, options));
+        } else {
+            PI::ctor(*this, new qpid::client::amqp0_10::ConnectionImpl(url, options));
+        }
     } else {
         throw InvalidOptionString("Invalid option string: " + o);
     }
@@ -61,7 +66,14 @@ Connection::Connection()
     PI::ctor(*this, new qpid::client::amqp0_10::ConnectionImpl(url, options));
 }
 
-void Connection::open() { impl->open(); }
+void Connection::open()
+{
+    try {
+        impl->open();
+    } catch (const ConnectionError& e) {
+        QPID_LOG(notice, "In qpid::messaging::Connection::open(), caught: " << e.what());
+    }
+}
 bool Connection::isOpen() { return impl->isOpen(); }
 bool Connection::isOpen() const { return impl->isOpen(); }
 void Connection::close() { impl->close(); }

@@ -797,6 +797,24 @@ libqpidmessaging_la_SOURCES =			\
   qpid/messaging/ReceiverImpl.h			\
   qpid/messaging/SessionImpl.h			\
   qpid/messaging/FailoverUpdates.cpp		\
+  qpid/messaging/amqp/ConnectionContext.h	\
+  qpid/messaging/amqp/ConnectionContext.cpp	\
+  qpid/messaging/amqp/ConnectionHandle.h	\
+  qpid/messaging/amqp/ConnectionHandle.cpp	\
+  qpid/messaging/amqp/Decoder.h		\
+  qpid/messaging/amqp/Decoder.cpp		\
+  qpid/messaging/amqp/ReceiverContext.h	\
+  qpid/messaging/amqp/ReceiverContext.cpp	\
+  qpid/messaging/amqp/ReceiverHandle.h		\
+  qpid/messaging/amqp/ReceiverHandle.cpp	\
+  qpid/messaging/amqp/SenderContext.h		\
+  qpid/messaging/amqp/SenderContext.cpp	\
+  qpid/messaging/amqp/SenderHandle.h		\
+  qpid/messaging/amqp/SenderHandle.cpp		\
+  qpid/messaging/amqp/SessionContext.h		\
+  qpid/messaging/amqp/SessionContext.cpp	\
+  qpid/messaging/amqp/SessionHandle.h		\
+  qpid/messaging/amqp/SessionHandle.cpp	\
   qpid/client/amqp0_10/AcceptTracker.h		\
   qpid/client/amqp0_10/AcceptTracker.cpp	\
   qpid/client/amqp0_10/AddressResolution.h	\

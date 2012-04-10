@@ -61,6 +61,7 @@ void MessageImpl::setHeader(const std::string& key, const qpid::types::Variant& 
 //should these methods be on MessageContent?
 void MessageImpl::setBytes(const std::string& c) { bytes = c; }
 void MessageImpl::setBytes(const char* chars, size_t count) { bytes.assign(chars, count); }
+void MessageImpl::appendBytes(const char* chars, size_t count) { bytes.append(chars, count); }
 const std::string& MessageImpl::getBytes() const { return bytes; }
 std::string& MessageImpl::getBytes() { return bytes; }
 

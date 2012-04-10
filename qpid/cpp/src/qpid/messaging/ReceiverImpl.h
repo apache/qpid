@@ -22,10 +22,12 @@
  *
  */
 #include "qpid/RefCounted.h"
+#include "qpid/sys/IntegerTypes.h"
 
 namespace qpid {
 namespace messaging {
 
+class Duration;
 class Message;
 class MessageListener;
 class Session;

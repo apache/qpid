@@ -64,6 +64,7 @@ struct MessageImpl
     
     void setBytes(const std::string& bytes);
     void setBytes(const char* chars, size_t count);
+    void appendBytes(const char* chars, size_t count);
     const std::string& getBytes() const;
     std::string& getBytes();
 

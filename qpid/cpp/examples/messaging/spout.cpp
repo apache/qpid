@@ -159,7 +159,8 @@ int main(int argc, char** argv)
                 std::stringstream spoutid;
                 spoutid << id << ":" << count;
                 message.getProperties()["spout-id"] = spoutid.str();
-                sender.send(message);
+                sender.send(message, (count + 1 == options.count));
+                //sender.send(message);
             }
             session.sync();
             connection.close();
