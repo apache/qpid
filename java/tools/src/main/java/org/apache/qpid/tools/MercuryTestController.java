@@ -33,6 +33,9 @@ import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 
 import org.apache.qpid.client.message.AMQPEncodedMapMessage;
+import org.apache.qpid.tools.report.Reporter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The Controller coordinates a test run between a number
@@ -62,8 +65,10 @@ import org.apache.qpid.client.message.AMQPEncodedMapMessage;
  * System throughput is calculated as follows
  * totalMsgCount/(totalTestTime)
  */
-public class PerfTestController extends PerfBase implements MessageListener
+public class MercuryTestController extends MercuryBase implements MessageListener
 {
+    private static final Logger _logger = LoggerFactory.getLogger(MercuryProducerController.class);
+
     enum TestMode { SINGLE_RUN, TIME_BASED };
 
     TestMode testMode = TestMode.SINGLE_RUN;
@@ -102,11 +107,13 @@ public class PerfTestController extends PerfBase implements MessageListener
 
     private MessageConsumer consumer;
     private boolean printStdDev = false;
-    FileWriter writer;
+    private FileWriter writer;
+    private Reporter report;
 
-    public PerfTestController()
+    public MercuryTestController(TestConfiguration config)
     {
-        super("");
+        super(config,"");
+
         consumers = new ConcurrentHashMap<String,MapMessage>(consumerCount);
         producers = new ConcurrentHashMap<String,MapMessage>(producerCount);
 
@@ -114,7 +121,7 @@ public class PerfTestController extends PerfBase implements MessageListener
         prodRegistered = new CountDownLatch(producerCount);
         consReady = new CountDownLatch(consumerCount);
         prodReady = new CountDownLatch(producerCount);
-        printStdDev = params.isPrintStdDev();
+        printStdDev = config.isPrintStdDev();
         testMode = (duration == -1) ? TestMode.SINGLE_RUN : TestMode.TIME_BASED;
     }
 
@@ -126,28 +133,28 @@ public class PerfTestController extends PerfBase implements MessageListener
             writer = new FileWriter("stats-csv.log");
         }
         consumer = controllerSession.createConsumer(controllerQueue);
-        System.out.println("\nController: " + producerCount + " producers are expected");
-        System.out.println("Controller: " + consumerCount + " consumers are expected \n");
+        report.log("\nController: " + producerCount + " producers are expected");
+        report.log("Controller: " + consumerCount + " consumers are expected \n");
         consumer.setMessageListener(this);
         consRegistered.await();
         prodRegistered.await();
-        System.out.println("\nController: All producers and consumers have registered......\n");
+        report.log("\nController: All producers and consumers have registered......\n");
     }
 
     public void warmup() throws Exception
     {
-        System.out.println("Controller initiating warm up sequence......");
+        report.log("Controller initiating warm up sequence......");
         sendMessageToNodes(OPCode.CONSUMER_STARTWARMUP,consumers.values());
         sendMessageToNodes(OPCode.PRODUCER_STARTWARMUP,producers.values());
         prodReady.await();
         consReady.await();
-        System.out.println("\nController : All producers and consumers are ready to start the test......\n");
+        report.log("\nController : All producers and consumers are ready to start the test......\n");
     }
 
     public void startTest() throws Exception
     {
         resetCounters();
-        System.out.println("\nController Starting test......");
+        report.log("\nController Starting test......");
         long start = Clock.getTime();
         sendMessageToNodes(OPCode.PRODUCER_START,producers.values());
         receivedEndMsg.await();
@@ -200,7 +207,7 @@ public class PerfTestController extends PerfBase implements MessageListener
         }
         catch(Exception e)
         {
-            System.out.println("Error calculating stats from Consumer : " + conStat);
+            System.err.println("Error calculating stats from Consumer : " + conStat);
         }
 
 
@@ -217,7 +224,7 @@ public class PerfTestController extends PerfBase implements MessageListener
         }
         catch(Exception e)
         {
-            System.out.println("Error calculating stats from Producer : " + conStat);
+            System.err.println("Error calculating stats from Producer : " + conStat);
         }
 
         avgSystemLatency = totLatency/consumers.size();
@@ -225,56 +232,56 @@ public class PerfTestController extends PerfBase implements MessageListener
         avgSystemConsRate = totalConsRate/consumers.size();
         avgSystemProdRate = totalProdRate/producers.size();
 
-        System.out.println("Total test time     : " + totalTestTime + " in " + Clock.getPrecision());
+        report.log("Total test time     : " + totalTestTime + " in " + Clock.getPrecision());
 
         totalSystemThroughput = (totalMsgCount*Clock.convertToSecs()/totalTestTime);
     }
 
     public void printResults() throws Exception
     {
-        System.out.println(new StringBuilder("Total Msgs Received : ").append(totalMsgCount).toString());
-        System.out.println(new StringBuilder("System Throughput   : ").
-                           append(df.format(totalSystemThroughput)).
-                           append(" msg/sec").toString());
-        System.out.println(new StringBuilder("Avg Consumer rate   : ").
-                           append(df.format(avgSystemConsRate)).
-                           append(" msg/sec").toString());
-        System.out.println(new StringBuilder("Min Consumer rate   : ").
-                           append(df.format(minSystemConsRate)).
-                           append(" msg/sec").toString());
-        System.out.println(new StringBuilder("Max Consumer rate   : ").
-                           append(df.format(maxSystemConsRate)).
-                           append(" msg/sec").toString());
+        report.log(new StringBuilder("Total Msgs Received : ").append(totalMsgCount).toString());
+        report.log(new StringBuilder("System Throughput   : ").
+                append(config.getDecimalFormat().format(totalSystemThroughput)).
+                append(" msg/sec").toString());
+        report.log(new StringBuilder("Avg Consumer rate   : ").
+                append(config.getDecimalFormat().format(avgSystemConsRate)).
+                append(" msg/sec").toString());
+        report.log(new StringBuilder("Min Consumer rate   : ").
+                append(config.getDecimalFormat().format(minSystemConsRate)).
+                append(" msg/sec").toString());
+        report.log(new StringBuilder("Max Consumer rate   : ").
+                append(config.getDecimalFormat().format(maxSystemConsRate)).
+                append(" msg/sec").toString());
 
-        System.out.println(new StringBuilder("Avg Producer rate   : ").
-                           append(df.format(avgSystemProdRate)).
-                           append(" msg/sec").toString());
-        System.out.println(new StringBuilder("Min Producer rate   : ").
-                           append(df.format(minSystemProdRate)).
-                           append(" msg/sec").toString());
-        System.out.println(new StringBuilder("Max Producer rate   : ").
-                           append(df.format(maxSystemProdRate)).
-                           append(" msg/sec").toString());
+        report.log(new StringBuilder("Avg Producer rate   : ").
+                append(config.getDecimalFormat().format(avgSystemProdRate)).
+                append(" msg/sec").toString());
+        report.log(new StringBuilder("Min Producer rate   : ").
+                append(config.getDecimalFormat().format(minSystemProdRate)).
+                append(" msg/sec").toString());
+        report.log(new StringBuilder("Max Producer rate   : ").
+                append(config.getDecimalFormat().format(maxSystemProdRate)).
+                append(" msg/sec").toString());
 
-        System.out.println(new StringBuilder("Avg System Latency  : ").
-                           append(df.format(avgSystemLatency)).
-                           append(" ms").toString());
-        System.out.println(new StringBuilder("Min System Latency  : ").
-                           append(df.format(minSystemLatency)).
-                           append(" ms").toString());
-        System.out.println(new StringBuilder("Max System Latency  : ").
-                           append(df.format(maxSystemLatency)).
-                           append(" ms").toString());
+        report.log(new StringBuilder("Avg System Latency  : ").
+                append(config.getDecimalFormat().format(avgSystemLatency)).
+                append(" ms").toString());
+        report.log(new StringBuilder("Min System Latency  : ").
+                append(config.getDecimalFormat().format(minSystemLatency)).
+                append(" ms").toString());
+        report.log(new StringBuilder("Max System Latency  : ").
+                append(config.getDecimalFormat().format(maxSystemLatency)).
+                append(" ms").toString());
         if (printStdDev)
         {
-            System.out.println(new StringBuilder("Avg System Std Dev  : ").
-                               append(avgSystemLatencyStdDev));
+            report.log(new StringBuilder("Avg System Std Dev  : ").
+                    append(avgSystemLatencyStdDev).toString());
         }
     }
 
     private synchronized void sendMessageToNodes(OPCode code,Collection<MapMessage> nodes) throws Exception
     {
-        System.out.println("\nController: Sending code " + code);
+        report.log("\nController: Sending code " + code);
         MessageProducer tmpProd = controllerSession.createProducer(null);
         MapMessage msg = controllerSession.createMapMessage();
         msg.setInt(CODE, code.ordinal());
@@ -282,11 +289,11 @@ public class PerfTestController extends PerfBase implements MessageListener
         {
             if (node.getString(REPLY_ADDR) == null)
             {
-                System.out.println("REPLY_ADDR is null " + node);
+                report.log("REPLY_ADDR is null " + node);
             }
             else
             {
-                System.out.println("Controller: Sending " + code + " to " + node.getString(REPLY_ADDR));
+                report.log("Controller: Sending " + code + " to " + node.getString(REPLY_ADDR));
             }
             tmpProd.send(controllerSession.createQueue(node.getString(REPLY_ADDR)), msg);
         }
@@ -299,16 +306,16 @@ public class PerfTestController extends PerfBase implements MessageListener
             MapMessage m = (MapMessage)msg;
             OPCode code = OPCode.values()[m.getInt(CODE)];
 
-            System.out.println("\n---------Controller Received Code : " + code);
-            System.out.println("---------Data : " + ((AMQPEncodedMapMessage)m).getMap());
+            report.log("\n---------Controller Received Code : " + code);
+            report.log("---------Data : " + ((AMQPEncodedMapMessage)m).getMap());
 
             switch (code)
             {
             case REGISTER_CONSUMER :
                 if (consRegistered.getCount() == 0)
                 {
-                    System.out.println("Warning : Expected number of consumers have already registered," +
-                    		"ignoring extra consumer");
+                    report.log("Warning : Expected number of consumers have already registered," +
+                    "ignoring extra consumer");
                     break;
                 }
                 consumers.put(m.getString(ID),m);
@@ -318,8 +325,8 @@ public class PerfTestController extends PerfBase implements MessageListener
             case REGISTER_PRODUCER :
                 if (prodRegistered.getCount() == 0)
                 {
-                    System.out.println("Warning : Expected number of producers have already registered," +
-                            "ignoring extra producer");
+                    report.log("Warning : Expected number of producers have already registered," +
+                    "ignoring extra producer");
                     break;
                 }
                 producers.put(m.getString(ID),m);
@@ -403,7 +410,7 @@ public class PerfTestController extends PerfBase implements MessageListener
 
     @Override
     public void tearDown() throws Exception {
-        System.out.println("Controller: Completed the test......\n");
+        report.log("Controller: Completed the test......\n");
         if (testMode == TestMode.TIME_BASED)
         {
             writer.close();
@@ -416,16 +423,16 @@ public class PerfTestController extends PerfBase implements MessageListener
     public void writeStatsToFile() throws Exception
     {
         writer.append(String.valueOf(totalMsgCount)).append(",");
-        writer.append(df.format(totalSystemThroughput)).append(",");
-        writer.append(df.format(avgSystemConsRate)).append(",");
-        writer.append(df.format(minSystemConsRate)).append(",");
-        writer.append(df.format(maxSystemConsRate)).append(",");
-        writer.append(df.format(avgSystemProdRate)).append(",");
-        writer.append(df.format(minSystemProdRate)).append(",");
-        writer.append(df.format(maxSystemProdRate)).append(",");
-        writer.append(df.format(avgSystemLatency)).append(",");
-        writer.append(df.format(minSystemLatency)).append(",");
-        writer.append(df.format(maxSystemLatency));
+        writer.append(config.getDecimalFormat().format(totalSystemThroughput)).append(",");
+        writer.append(config.getDecimalFormat().format(avgSystemConsRate)).append(",");
+        writer.append(config.getDecimalFormat().format(minSystemConsRate)).append(",");
+        writer.append(config.getDecimalFormat().format(maxSystemConsRate)).append(",");
+        writer.append(config.getDecimalFormat().format(avgSystemProdRate)).append(",");
+        writer.append(config.getDecimalFormat().format(minSystemProdRate)).append(",");
+        writer.append(config.getDecimalFormat().format(maxSystemProdRate)).append(",");
+        writer.append(config.getDecimalFormat().format(avgSystemLatency)).append(",");
+        writer.append(config.getDecimalFormat().format(minSystemLatency)).append(",");
+        writer.append(config.getDecimalFormat().format(maxSystemLatency));
         if (printStdDev)
         {
             writer.append(",").append(String.valueOf(avgSystemLatencyStdDev));
@@ -436,7 +443,8 @@ public class PerfTestController extends PerfBase implements MessageListener
 
     public static void main(String[] args)
     {
-        PerfTestController controller = new PerfTestController();
+        TestConfiguration config = new JVMArgConfiguration();
+        MercuryTestController controller = new MercuryTestController(config);
         controller.run();
     }
 }

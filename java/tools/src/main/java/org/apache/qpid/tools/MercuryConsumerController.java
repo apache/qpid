@@ -20,18 +20,15 @@
  */
 package org.apache.qpid.tools;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import javax.jms.MapMessage;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageListener;
-import javax.jms.TextMessage;
 
-import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.thread.Threading;
+import org.apache.qpid.tools.report.MercuryReporter;
+import org.apache.qpid.tools.report.MercuryReporter.MercuryThroughputAndLatency;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * PerfConsumer will receive x no of messages in warmup mode.
@@ -74,39 +71,28 @@ import org.apache.qpid.thread.Threading;
  *
  */
 
-public class PerfConsumer extends PerfBase implements MessageListener
+public class MercuryConsumerController extends MercuryBase
 {
-    MessageConsumer consumer;
-    long maxLatency = 0;
-    long minLatency = Long.MAX_VALUE;
-    long totalLatency = 0;  // to calculate avg latency.
-    int rcvdMsgCount = 0;
-    long startTime = 0;     // to measure consumer throughput
-    long rcvdTime = 0;
-    boolean transacted = false;
-    int transSize = 0;
+    private static final Logger _logger = LoggerFactory.getLogger(MercuryConsumerController.class);
+    MercuryReporter reporter;
+    TestConfiguration config;
+    QpidReceive receiver;
 
-    boolean printStdDev = false;
-    List<Long> sample;
-
-    final Object lock = new Object();
-
-    public PerfConsumer(String prefix)
+    public MercuryConsumerController(TestConfiguration config, MercuryReporter reporter, String prefix)
     {
-        super(prefix);
-        System.out.println("Consumer ID : " + id);
+        super(config,prefix);
+        this.reporter = reporter;
+        if (_logger.isInfoEnabled())
+        {
+            _logger.info("Consumer ID : " + id);
+        }
     }
 
     public void setUp() throws Exception
     {
         super.setUp();
-        consumer = session.createConsumer(dest);
-        System.out.println("Consumer: " + id + " Receiving messages from : " + ((AMQDestination)dest).getQueueName() + "\n");
-
-        // Storing the following two for efficiency
-        transacted = params.isTransacted();
-        transSize = params.getTransactionSize();
-        printStdDev = params.isPrintStdDev();
+        receiver = new QpidReceive(reporter,config, con,dest);
+        receiver.setUp();
         MapMessage m = controllerSession.createMapMessage();
         m.setInt(CODE, OPCode.REGISTER_CONSUMER.ordinal());
         sendMessageToController(m);
@@ -115,149 +101,69 @@ public class PerfConsumer extends PerfBase implements MessageListener
     public void warmup()throws Exception
     {
         receiveFromController(OPCode.CONSUMER_STARTWARMUP);
-        Message msg = consumer.receive();
-        // This is to ensure we drain the queue before we start the actual test.
-        while ( msg != null)
-        {
-            if (msg.getBooleanProperty("End") == true)
-            {
-                // It's more realistic for the consumer to signal this.
-                MapMessage m = controllerSession.createMapMessage();
-                m.setInt(CODE, OPCode.PRODUCER_READY.ordinal());
-                sendMessageToController(m);
-            }
-            msg = consumer.receive(1000);
-        }
+        receiver.waitforCompletion(config.getWarmupCount());
 
-        if (params.isTransacted())
-        {
-            session.commit();
-        }
+        // It's more realistic for the consumer to signal this.
+        MapMessage m1 = controllerSession.createMapMessage();
+        m1.setInt(CODE, OPCode.PRODUCER_READY.ordinal());
+        sendMessageToController(m1);
 
-        MapMessage m = controllerSession.createMapMessage();
-        m.setInt(CODE, OPCode.CONSUMER_READY.ordinal());
-        sendMessageToController(m);
-        consumer.setMessageListener(this);
+        MapMessage m2 = controllerSession.createMapMessage();
+        m2.setInt(CODE, OPCode.CONSUMER_READY.ordinal());
+        sendMessageToController(m2);
     }
 
-    public void startTest() throws Exception
+    public void runReceiver() throws Exception
     {
-        System.out.println("Consumer: " + id + " Starting test......" + "\n");
+        if (_logger.isInfoEnabled())
+        {
+            _logger.info("Consumer: " + id + " Starting iteration......" + "\n");
+        }
         resetCounters();
+        receiver.waitforCompletion(config.getMsgCount());
+        MapMessage m = controllerSession.createMapMessage();
+        m.setInt(CODE, OPCode.RECEIVED_END_MSG.ordinal());
+        sendMessageToController(m);
     }
 
     public void resetCounters()
     {
-        rcvdMsgCount = 0;
-        maxLatency = 0;
-        minLatency = Long.MAX_VALUE;
-        totalLatency = 0;
-        if (printStdDev)
-        {
-            sample = null;
-            sample = new ArrayList<Long>(params.getMsgCount());
-        }
+        reporter.clear();
     }
 
     public void sendResults() throws Exception
     {
         receiveFromController(OPCode.CONSUMER_STOP);
+        reporter.report();
 
-        double avgLatency = (double)totalLatency/(double)rcvdMsgCount;
-        double consRate   = (double)rcvdMsgCount*Clock.convertToSecs()/(double)(rcvdTime - startTime);
-        double stdDev = 0.0;
-        if (printStdDev)
-        {
-            stdDev = calculateStdDev(avgLatency);
-        }
         MapMessage m  = controllerSession.createMapMessage();
         m.setInt(CODE, OPCode.RECEIVED_CONSUMER_STATS.ordinal());
-        m.setDouble(AVG_LATENCY, avgLatency/Clock.convertToMiliSecs());
-        m.setDouble(MIN_LATENCY,minLatency/Clock.convertToMiliSecs());
-        m.setDouble(MAX_LATENCY,maxLatency/Clock.convertToMiliSecs());
-        m.setDouble(STD_DEV, stdDev/Clock.convertToMiliSecs());
-        m.setDouble(CONS_RATE, consRate);
-        m.setLong(MSG_COUNT, rcvdMsgCount);
+        m.setDouble(AVG_LATENCY, reporter.getAvgLatency());
+        m.setDouble(MIN_LATENCY, reporter.getMinLatency());
+        m.setDouble(MAX_LATENCY, reporter.getMaxLatency());
+        m.setDouble(STD_DEV, reporter.getStdDev());
+        m.setDouble(CONS_RATE, reporter.getRate());
+        m.setLong(MSG_COUNT, reporter.getSampleSize());
         sendMessageToController(m);
 
-        System.out.println(new StringBuilder("Total Msgs Received : ").append(rcvdMsgCount).toString());
-        System.out.println(new StringBuilder("Consumer rate       : ").
-                           append(df.format(consRate)).
-                           append(" msg/sec").toString());
-        System.out.println(new StringBuilder("Avg Latency         : ").
-                           append(df.format(avgLatency/Clock.convertToMiliSecs())).
-                           append(" ms").toString());
-        System.out.println(new StringBuilder("Min Latency         : ").
-                           append(df.format(minLatency/Clock.convertToMiliSecs())).
-                           append(" ms").toString());
-        System.out.println(new StringBuilder("Max Latency         : ").
-                           append(df.format(maxLatency/Clock.convertToMiliSecs())).
-                           append(" ms").toString());
-        if (printStdDev)
+        reporter.log(new StringBuilder("Total Msgs Received : ").append(reporter.getSampleSize()).toString());
+        reporter.log(new StringBuilder("Consumer rate       : ").
+                append(config.getDecimalFormat().format(reporter.getRate())).
+                append(" msg/sec").toString());
+        reporter.log(new StringBuilder("Avg Latency         : ").
+                append(config.getDecimalFormat().format(reporter.getAvgLatency())).
+                append(" ms").toString());
+        reporter.log(new StringBuilder("Min Latency         : ").
+                append(config.getDecimalFormat().format(reporter.getMinLatency())).
+                append(" ms").toString());
+        reporter.log(new StringBuilder("Max Latency         : ").
+                append(config.getDecimalFormat().format(reporter.getMaxLatency())).
+                append(" ms").toString());
+        if (config.isPrintStdDev())
         {
-            System.out.println(new StringBuilder("Std Dev             : ").
-                               append(stdDev/Clock.convertToMiliSecs()).toString());
+            reporter.log(new StringBuilder("Std Dev             : ").
+                    append(reporter.getStdDev()).toString());
         }
-    }
-
-    public double calculateStdDev(double mean)
-    {
-        double v = 0;
-        for (double latency: sample)
-        {
-            v = v + Math.pow((latency-mean), 2);
-        }
-        v = v/sample.size();
-        return Math.round(Math.sqrt(v));
-    }
-
-    public void onMessage(Message msg)
-    {
-        try
-        {
-            // To figure out the decoding overhead of text
-            if (msgType == MessageType.TEXT)
-            {
-                ((TextMessage)msg).getText();
-            }
-
-            if (msg.getBooleanProperty("End"))
-            {
-                MapMessage m = controllerSession.createMapMessage();
-                m.setInt(CODE, OPCode.RECEIVED_END_MSG.ordinal());
-                sendMessageToController(m);
-            }
-            else
-            {
-                rcvdTime = Clock.getTime();
-                rcvdMsgCount ++;
-
-                if (rcvdMsgCount == 1)
-                {
-                    startTime = rcvdTime;
-                }
-
-                if (transacted && (rcvdMsgCount % transSize == 0))
-                {
-                    session.commit();
-                }
-
-                long latency = rcvdTime - msg.getLongProperty(TIMESTAMP);
-                maxLatency = Math.max(maxLatency, latency);
-                minLatency = Math.min(minLatency, latency);
-                totalLatency = totalLatency + latency;
-                if (printStdDev)
-                {
-                    sample.add(latency);
-                }
-            }
-
-        }
-        catch(Exception e)
-        {
-            handleError(e,"Error when receiving messages");
-        }
-
     }
 
     public void run()
@@ -271,7 +177,7 @@ public class PerfConsumer extends PerfBase implements MessageListener
             {
                 System.out.println("=========================================================\n");
                 System.out.println("Consumer: " + id + " starting a new iteration ......\n");
-                startTest();
+                runReceiver();
                 sendResults();
                 nextIteration = continueTest();
             }
@@ -283,21 +189,22 @@ public class PerfConsumer extends PerfBase implements MessageListener
         }
     }
 
-        @Override
+    @Override
     public void tearDown() throws Exception
     {
         super.tearDown();
     }
 
-    public static void main(String[] args) throws InterruptedException
+    public static void main(String[] args) throws Exception
     {
+        TestConfiguration config = new JVMArgConfiguration();
+        MercuryReporter reporter= new MercuryReporter(MercuryThroughputAndLatency.class,System.out,10,true);
         String scriptId = (args.length == 1) ? args[0] : "";
-        int conCount = Integer.getInteger("con_count",1);
+        int conCount = config.getConnectionCount();
         final CountDownLatch testCompleted = new CountDownLatch(conCount);
         for (int i=0; i < conCount; i++)
         {
-
-            final PerfConsumer cons = new PerfConsumer(scriptId + i);
+            final MercuryConsumerController cons = new MercuryConsumerController(config, reporter, scriptId + i);
             Runnable r = new Runnable()
             {
                 public void run()
@@ -317,9 +224,8 @@ public class PerfConsumer extends PerfBase implements MessageListener
                 throw new Error("Error creating consumer thread",e);
             }
             t.start();
-
         }
         testCompleted.await();
-        System.out.println("Consumers have completed the test......\n");
+        reporter.log("Consumers have completed the test......\n");
     }
 }

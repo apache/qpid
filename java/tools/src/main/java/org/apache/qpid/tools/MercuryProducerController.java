@@ -20,19 +20,15 @@
  */
 package org.apache.qpid.tools;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 
-import javax.jms.BytesMessage;
-import javax.jms.DeliveryMode;
 import javax.jms.MapMessage;
-import javax.jms.Message;
-import javax.jms.MessageProducer;
 
-import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.thread.Threading;
+import org.apache.qpid.tools.report.MercuryReporter;
+import org.apache.qpid.tools.report.MercuryReporter.MercuryThroughput;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * PerfProducer sends an x no of messages in warmup mode and wait for a confirmation
@@ -60,216 +56,68 @@ import org.apache.qpid.thread.Threading;
  * latency is good.
  *
  */
-public class PerfProducer extends PerfBase
+public class MercuryProducerController extends MercuryBase
 {
-    private static long SEC = 60000;
+    private static final Logger _logger = LoggerFactory.getLogger(MercuryProducerController.class);
+    MercuryReporter reporter;
+    QpidSend sender;
 
-    MessageProducer producer;
-    Message msg;
-    Object payload;
-    List<Object> payloads;
-    boolean cacheMsg = false;
-    boolean randomMsgSize = false;
-    boolean durable = false;
-    Random random;
-    int msgSizeRange = 1024;
-    boolean rateLimitProducer = false;
-    double rateFactor = 0.4;
-    double rate = 0.0;
-
-    public PerfProducer(String prefix)
+    public MercuryProducerController(TestConfiguration config, MercuryReporter reporter, String prefix)
     {
-        super(prefix);
+        super(config,prefix);
+        this.reporter = reporter;
         System.out.println("Producer ID : " + id);
     }
 
     public void setUp() throws Exception
     {
         super.setUp();
-        durable = params.isDurable();
-        rateLimitProducer = params.getRate() > 0 ? true : false;
-        if (rateLimitProducer)
-        {
-            System.out.println("The test will attempt to limit the producer to " + params.getRate() + " msg/sec");
-        }
-
-        // if message caching is enabled we pre create the message
-        // else we pre create the payload
-        if (params.isCacheMessage())
-        {
-            cacheMsg = true;
-            msg = createMessage(createPayload(params.getMsgSize()));
-            msg.setJMSDeliveryMode(durable?
-                                   DeliveryMode.PERSISTENT :
-                                   DeliveryMode.NON_PERSISTENT
-                                  );
-        }
-        else if (params.isRandomMsgSize())
-        {
-            random = new Random(20080921);
-            randomMsgSize = true;
-            msgSizeRange = params.getMsgSize();
-            payloads = new ArrayList<Object>(msgSizeRange);
-
-            for (int i=0; i < msgSizeRange; i++)
-            {
-                payloads.add(createPayload(i));
-            }
-        }
-        else
-        {
-            payload = createPayload(params.getMsgSize());
-        }
-
-        producer = session.createProducer(dest);
-        System.out.println("Producer: " + id + " Sending messages to: " + ((AMQDestination)dest).getQueueName());
-        producer.setDisableMessageID(params.isDisableMessageID());
-        producer.setDisableMessageTimestamp(params.isDisableTimestamp());
-
+        sender = new QpidSend(reporter,config, con,dest);
+        sender.setUp();
         MapMessage m = controllerSession.createMapMessage();
         m.setInt(CODE, OPCode.REGISTER_PRODUCER.ordinal());
         sendMessageToController(m);
     }
 
-    Object createPayload(int size)
-    {
-        if (msgType == MessageType.TEXT)
-        {
-           return MessageFactory.createMessagePayload(size);
-        }
-        else
-        {
-            return MessageFactory.createMessagePayload(size).getBytes();
-        }
-    }
-
-    Message createMessage(Object payload) throws Exception
-    {
-        if (msgType == MessageType.TEXT)
-        {
-            return session.createTextMessage((String)payload);
-        }
-        else
-        {
-            BytesMessage m = session.createBytesMessage();
-            m.writeBytes((byte[])payload);
-            return m;
-        }
-    }
-
-    protected Message getNextMessage() throws Exception
-    {
-        if (cacheMsg)
-        {
-            return msg;
-        }
-        else
-        {
-            Message m;
-
-            if (!randomMsgSize)
-            {
-                m = createMessage(payload);
-            }
-            else
-            {
-                m = createMessage(payloads.get(random.nextInt(msgSizeRange)));
-            }
-            m.setJMSDeliveryMode(durable?
-                    DeliveryMode.PERSISTENT :
-                    DeliveryMode.NON_PERSISTENT
-                   );
-            return m;
-        }
-    }
-
     public void warmup()throws Exception
     {
         receiveFromController(OPCode.PRODUCER_STARTWARMUP);
-        System.out.println("Producer: " + id + " Warming up......");
-
-        for (int i=0; i < params.getWarmupCount() -1; i++)
+        if (_logger.isInfoEnabled())
         {
-            producer.send(getNextMessage());
+            _logger.info("Producer: " + id + " Warming up......");
         }
-        sendEndMessage();
-
-        if (params.isTransacted())
-        {
-            session.commit();
-        }
+        sender.send(config.getWarmupCount());
+        sender.sendEndMessage();
     }
 
-    public void startTest() throws Exception
+    public void runSender() throws Exception
     {
         resetCounters();
         receiveFromController(OPCode.PRODUCER_START);
-        int count = params.getMsgCount();
-        boolean transacted = params.isTransacted();
-        int tranSize =  params.getTransactionSize();
-
-        long limit = (long)(params.getRate() * rateFactor); // in msecs
-        long timeLimit = (long)(SEC * rateFactor); // in msecs
-
-        long start = Clock.getTime(); // defaults to nano secs
-        long interval = start;
-        for(int i=0; i < count; i++ )
-        {
-            Message msg = getNextMessage();
-            msg.setLongProperty(TIMESTAMP, Clock.getTime());
-            producer.send(msg);
-            if ( transacted && ((i+1) % tranSize == 0))
-            {
-                session.commit();
-            }
-
-            if (rateLimitProducer && i%limit == 0)
-            {
-                long elapsed = (Clock.getTime() - interval)*Clock.convertToMiliSecs(); // in msecs
-                if (elapsed < timeLimit)
-                {
-                    Thread.sleep(elapsed);
-                }
-                interval = Clock.getTime();
-
-            }
-        }
-        sendEndMessage();
-        if ( transacted)
-        {
-            session.commit();
-        }
-        long time = Clock.getTime() - start;
-        rate = (double)count*Clock.convertToSecs()/(double)time;
-        System.out.println(new StringBuilder("Producer rate: ").
-                               append(df.format(rate)).
-                               append(" msg/sec").
-                               toString());
+        sender.send(config.getMsgCount());
     }
 
     public void resetCounters()
     {
-
-    }
-
-    public void sendEndMessage() throws Exception
-    {
-        Message msg = session.createMessage();
-        msg.setBooleanProperty("End", true);
-        producer.send(msg);
+        sender.resetCounters();
     }
 
     public void sendResults() throws Exception
     {
         MapMessage msg = controllerSession.createMapMessage();
         msg.setInt(CODE, OPCode.RECEIVED_PRODUCER_STATS.ordinal());
-        msg.setDouble(PROD_RATE, rate);
+        msg.setDouble(PROD_RATE, reporter.getRate());
         sendMessageToController(msg);
+        reporter.log(new StringBuilder("Producer rate: ").
+                append(config.getDecimalFormat().format(reporter.getRate())).
+                append(" msg/sec").
+                toString());
     }
 
     @Override
     public void tearDown() throws Exception
     {
+        sender.tearDown();
         super.tearDown();
     }
 
@@ -282,9 +130,12 @@ public class PerfProducer extends PerfBase
             boolean nextIteration = true;
             while (nextIteration)
             {
-                System.out.println("=========================================================\n");
-                System.out.println("Producer: " + id + " starting a new iteration ......\n");
-                startTest();
+                if(_logger.isInfoEnabled())
+                {
+                    _logger.info("=========================================================\n");
+                    _logger.info("Producer: " + id + " starting a new iteration ......\n");
+                }
+                runSender();
                 sendResults();
                 nextIteration = continueTest();
             }
@@ -298,9 +149,9 @@ public class PerfProducer extends PerfBase
 
     public void startControllerIfNeeded()
     {
-        if (!params.isExternalController())
+        if (!config.isExternalController())
         {
-            final PerfTestController controller = new PerfTestController();
+            final MercuryTestController controller = new MercuryTestController(config);
             Runnable r = new Runnable()
             {
                 public void run()
@@ -322,15 +173,16 @@ public class PerfProducer extends PerfBase
         }
     }
 
-
-    public static void main(String[] args) throws InterruptedException
+    public static void main(String[] args) throws Exception
     {
+        TestConfiguration config = new JVMArgConfiguration();
+        MercuryReporter reporter= new MercuryReporter(MercuryThroughput.class,System.out,10,true);
         String scriptId = (args.length == 1) ? args[0] : "";
-        int conCount = Integer.getInteger("con_count",1);
+        int conCount = config.getConnectionCount();
         final CountDownLatch testCompleted = new CountDownLatch(conCount);
         for (int i=0; i < conCount; i++)
         {
-            final PerfProducer prod = new PerfProducer(scriptId + i);
+            final MercuryProducerController prod = new MercuryProducerController(config, reporter, scriptId + i);
             prod.startControllerIfNeeded();
             Runnable r = new Runnable()
             {
@@ -353,6 +205,6 @@ public class PerfProducer extends PerfBase
             t.start();
         }
         testCompleted.await();
-        System.out.println("Producers have completed the test......");
+        reporter.log("Producers have completed the test......");
     }
 }
