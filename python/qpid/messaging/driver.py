@@ -226,7 +226,11 @@ class LinkIn:
 
   def do_link(self, sst, rcv, _rcv, type, subtype, action):
     link_opts = _rcv.options.get("link", {})
-    reliability = link_opts.get("reliability", "at-least-once")
+    if type == "topic":
+      default_reliability = "unreliable"
+    else:
+      default_reliability = "at-least-once"
+    reliability = link_opts.get("reliability", default_reliability)
     declare = link_opts.get("x-declare", {})
     subscribe = link_opts.get("x-subscribe", {})
     acq_mode = acquire_mode.pre_acquired
