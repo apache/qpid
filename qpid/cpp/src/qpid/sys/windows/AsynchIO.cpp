@@ -346,6 +346,11 @@ private:
      * Called when there's a completion to process.
      */
     void completion(AsynchIoResult *result);
+
+    /**
+     * Helper function to facilitate the close operation
+     */
+    void cancelRead();
 };
 
 // This is used to encapsulate pure callbacks into a handle
@@ -469,7 +474,7 @@ bool AsynchIO::writeQueueEmpty() {
  * called when the read is complete and data is available.
  */
 void AsynchIO::startReading() {
-    if (queuedDelete)
+    if (queuedDelete || queuedClose)
         return;
 
     // (Try to) get a buffer; look on the front since there may be an
@@ -630,8 +635,8 @@ void AsynchIO::readComplete(AsynchReadResult *result) {
         // No data read, so put the buffer back. It may be partially filled,
         // so "unread" it back to the front of the queue.
         unread(result->getBuff());
-        if (queuedClose && status == ERROR_OPERATION_ABORTED) {
-            return; // Expected draining of cancelled read on close
+        if (queuedClose) {
+            return; // Expected from cancelRead()
         }
         notifyEof();
         if (status != 0)
@@ -719,6 +724,8 @@ void AsynchIO::completion(AsynchIoResult *result) {
                 delete result;
                 result = 0;
                 InterlockedDecrement(&opsInProgress);
+                if (queuedClose && opsInProgress == 1 && readInProgress)
+                    cancelRead();
             }
             // Lock is held again.
             if (completionQueue.empty())
@@ -732,20 +739,33 @@ void AsynchIO::completion(AsynchIoResult *result) {
     // Layer above will call back to queueForDeletion() if it hasn't
     // already been done. If it already has, go ahead and delete.
     if (opsInProgress == 0) {
-        if (queuedClose)
+        if (queuedDelete)
+            delete this;
+        else if (queuedClose)
             // close() may cause a delete; don't trust 'this' on return
             close();
-        else if (queuedDelete)
-            delete this;
     }
+}
+
+/*
+ * NOTE - this method must be called in the same context as other completions,
+ * so that the resulting readComplete, and final AsynchIO::close() is serialized
+ * after this method returns.
+ */
+void AsynchIO::cancelRead() {
+    if (queuedDelete)
+        return;                 // socket already deleted
     else {
-        if (queuedClose && opsInProgress == 1 && readInProgress) {
-            // Cancel outstanding read and force to completion.  Layer
-            // above will call back for official close.  CancelIoEX()
-            // is not available in XP so we make do with closesocket().
-            socket.close();
-        }
+        ScopedLock<Mutex> l(completionLock);;
+        if (!completionQueue.empty())
+            return;             // process it; come back later if necessary
     }
+    // Cancel outstanding read and force to completion.  Otherwise, on a faulty
+    // physical link, the pending read can remain uncompleted indefinitely.
+    // Draining the pending read will result in the official close (and
+    // notifyClosed).  CancelIoEX() is the natural choice, but not available in
+    // XP, so we make do with closesocket().
+    socket.close();
 }
 
 } // namespace windows
