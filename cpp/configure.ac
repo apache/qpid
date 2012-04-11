@@ -203,12 +203,25 @@ AM_CONDITIONAL([HAVE_RUBY_DEVEL], [test -f $RUBY_INC/ruby.h && test -n "$SWIG"])
 # Python bindings: To build python wrappers, the python-devel files must be present.
 AM_PATH_PYTHON()
 AS_IF([test -n "$PYTHON"], [
-    PKG_CHECK_MODULES([PYTHON], [python], [have_python_dev=yes],[
+    PKG_CHECK_MODULES([PYTHON], [python-$PYTHON_VERSION], [have_python_dev=yes],[
+    # We didn't find pkg-config information for python-2.7 this
+    # may mean we have an earlier python version:
+    # Try to find the include and library files directly in the default
+    # location
+    AC_MSG_WARN([Didn't find Python 2.7 developer libs - looking for older version])
+    PYTHON_INC=$($PYTHON -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc()')
+    AC_CHECK_LIB([python$PYTHON_VERSION],[Py_Initialize])
+    AC_CHECK_FILE(["$PYTHON_INC/Python.h"],[
+        PYTHON_CFLAGS="-I$PYTHON_INC"
+        PYTHON_LIBS="-lpython$PYTHON_VERSION"
+        have_python_dev=yes
+    ],[
         if test yes = "$with_python" ; then
             AC_MSG_ERROR([Couldn't find Python developer libs - you probably need to install a python-dev or python-devel package])
         else
             AC_MSG_WARN([Couldn't find Python developer libs - you probably don't have a python-dev or python-devel package installed])
         fi
+    ])
     ])
     AC_SUBST(PYTHON_CFLAGS)
     AC_SUBST(PYTHON_LIBS)
@@ -523,8 +536,6 @@ AC_CHECK_LIB([socket],[socket],[SOCKET_LIB="-lsocket"],[SOCKET_LIB=""],[])
 AC_CHECK_LIB([nsl],[getipnodebyname],[NSL_LIB="-lnsl"],[NSL_LIB=""],[])
 SOCKLIBS="$SOCKET_LIB $NSL_LIB"
 AC_SUBST([SOCKLIBS])
-
-AM_PATH_PYTHON()
 
 # Used by env scripts to find libraries in cmake or autoconf builds.
 builddir_lib_suffix="/.libs"
