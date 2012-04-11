@@ -590,7 +590,10 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
                         // no point otherwise as the connection will be gone
                         if (!_session.isClosed() || _session.isClosing())
                         {
-                            sendCancel();
+                            synchronized(_session.getMessageDeliveryLock())
+                            {
+                                sendCancel();
+                            }
                             cleanupQueue();
                         }
                     }
