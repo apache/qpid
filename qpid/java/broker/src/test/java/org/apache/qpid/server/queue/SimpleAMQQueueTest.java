@@ -636,7 +636,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
 
         qs.add(_queue);
         MessageMetaData metaData = msg.headersReceived(System.currentTimeMillis());
-        TestableMemoryMessageStore store = (TestableMemoryMessageStore) _virtualHost.getMessageStore().getUnderlyingStore();
+        TestableMemoryMessageStore store = (TestableMemoryMessageStore) _virtualHost.getMessageStore();
         StoredMessage handle = store.addMessage(metaData);
         msg.setStoredMessage(handle);
 

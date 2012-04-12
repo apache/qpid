@@ -22,10 +22,17 @@ package org.apache.qpid.server.store;
 
 public enum State
 {
+    
     INITIAL,
     CONFIGURING,
+    CONFIGURED,
     RECOVERING,
     ACTIVE,
+    QUIESCING,
+    QUIESCED,
     CLOSING,
-    CLOSED
+    CLOSED;
+        
+
+
 }

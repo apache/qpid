@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.store;
 
+import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.message.EnqueableMessage;
 
@@ -71,6 +72,34 @@ public class MemoryMessageStore extends NullMessageStore
         }
     };
 
+    private final StateManager _stateManager;
+    private final EventManager _eventManager = new EventManager();
+
+    public MemoryMessageStore()
+    {
+        _stateManager = new StateManager(_eventManager);
+    }
+
+    @Override
+    public void configureConfigStore(String name, ConfigurationRecoveryHandler recoveryHandler, Configuration config) throws Exception
+    {
+        _stateManager.attainState(State.CONFIGURING);
+    }
+
+    @Override
+    public void configureMessageStore(String name, MessageStoreRecoveryHandler recoveryHandler, TransactionLogRecoveryHandler tlogRecoveryHandler, Configuration config) throws Exception
+    {
+        _stateManager.attainState(State.CONFIGURED);
+    }
+
+    @Override
+    public void activate() throws Exception
+    {
+        _stateManager.attainState(State.RECOVERING);
+        
+        _stateManager.attainState(State.ACTIVE);
+    }
+
     @Override
     public StoredMessage addMessage(StorableMessageMetaData metaData)
     {
@@ -95,6 +124,14 @@ public class MemoryMessageStore extends NullMessageStore
     @Override
     public void close() throws Exception
     {
+        _stateManager.attainState(State.CLOSING);
         _closed.getAndSet(true);
+        _stateManager.attainState(State.CLOSED);
+    }
+
+    @Override
+    public void addEventListener(EventListener eventListener, Event... events)
+    {
+        _eventManager.addEventListener(eventListener, events);
     }
 }

@@ -19,17 +19,13 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.store.decorators.EventDecorator;
-import org.apache.qpid.server.store.decorators.OperationalLoggingDecorator;
-
 public class MemoryMessageStoreFactory implements MessageStoreFactory
 {
 
     @Override
-    public MessageStore createMessageStore(LogSubject logSubject)
+    public MessageStore createMessageStore()
     {
-        return new OperationalLoggingDecorator(new EventDecorator(new MemoryMessageStore()), logSubject);
+        return new MemoryMessageStore();
     }
 
     @Override
