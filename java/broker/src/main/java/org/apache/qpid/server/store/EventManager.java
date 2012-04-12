@@ -20,22 +20,29 @@
 package org.apache.qpid.server.store;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Map;
 
 public class EventManager
 {
-    private ConcurrentMap<Event, List<EventListener>> _listeners = new ConcurrentHashMap<Event, List<EventListener>>();
+    private Map<Event, List<EventListener>> _listeners = new EnumMap<Event, List<EventListener>> (Event.class);
 
-    public void addEventListener(EventListener listener, Event event)
+    public synchronized void addEventListener(EventListener listener, Event... events)
     {
-        _listeners.putIfAbsent(event, new ArrayList<EventListener>());
-        final List<EventListener> list = _listeners.get(event);
-        list.add(listener);
+        for(Event event : events)
+        {
+            List<EventListener> list = _listeners.get(event);
+            if(list == null)
+            {
+                list = new ArrayList<EventListener>();
+                _listeners.put(event,list);
+            }
+            list.add(listener);
+        }
     }
 
-    public void notifyEvent(Event event)
+    public synchronized void notifyEvent(Event event)
     {
         if (_listeners.containsKey(event))
         {

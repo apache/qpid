@@ -21,6 +21,8 @@ package org.apache.qpid.server.store;
 
 public enum Event
 {
+    BEFORE_INIT,
+    AFTER_INIT,
     BEFORE_ACTIVATE,
     AFTER_ACTIVATE,
     BEFORE_PASSIVATE,

@@ -133,13 +133,14 @@ public class NullMessageStore implements MessageStore
     }
 
     @Override
-    public void addEventListener(EventListener eventListener, Event event)
+    public void addEventListener(EventListener eventListener, Event... events)
     {
     }
 
     @Override
-    public MessageStore getUnderlyingStore()
+    public String getStoreLocation()
     {
-        return this;
+        return null;
     }
+
 }

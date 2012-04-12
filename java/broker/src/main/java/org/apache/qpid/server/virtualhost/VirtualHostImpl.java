@@ -61,6 +61,7 @@ import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreFactory;
+import org.apache.qpid.server.store.OperationalLoggingListener;
 import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPlugin;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
@@ -69,7 +70,6 @@ import javax.management.JMException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -336,8 +336,9 @@ public class VirtualHostImpl implements VirtualHost
         }
 
         final MessageStoreFactory messageStoreFactory = (MessageStoreFactory) o;
+        final MessageStore messageStore = messageStoreFactory.createMessageStore();
         final MessageStoreLogSubject storeLogSubject = new MessageStoreLogSubject(this, messageStoreFactory.getStoreClassName());
-        final MessageStore messageStore = messageStoreFactory.createMessageStore(storeLogSubject);
+        OperationalLoggingListener.listen(messageStore, storeLogSubject);
 
         messageStore.addEventListener(new BeforeActivationListener(), Event.BEFORE_ACTIVATE);
         messageStore.addEventListener(new AfterActivationListener(), Event.AFTER_ACTIVATE);
@@ -741,40 +742,38 @@ public class VirtualHostImpl implements VirtualHost
     }
 
     private final class BeforeActivationListener implements EventListener
-   {
-       @Override
-       public void event(Event event)
-       {
-           try
-           {
-               _exchangeRegistry.initialise();
-               initialiseModel(_vhostConfig);
-           }
-           catch (Exception e)
-           {
-               throw new RuntimeException("Failed to initialise virtual host after state change", e);
-           }
-       }
-   }
+    {
+        @Override
+        public void event(Event event)
+        {
+            try
+            {
+                _exchangeRegistry.initialise();
+                initialiseModel(_vhostConfig);
+            } catch (Exception e)
+            {
+                throw new RuntimeException("Failed to initialise virtual host after state change", e);
+            }
+        }
+    }
 
-   private final class AfterActivationListener implements EventListener
-   {
-       @Override
-       public void event(Event event)
-       {
-           initialiseHouseKeeping(_vhostConfig.getHousekeepingCheckPeriod());
-           try
-           {
-               _brokerMBean.register();
-           }
-           catch (JMException e)
-           {
-               throw new RuntimeException("Failed to register virtual host mbean for virtual host " + getName(), e);
-           }
+    private final class AfterActivationListener implements EventListener
+    {
+        @Override
+        public void event(Event event)
+        {
+            initialiseHouseKeeping(_vhostConfig.getHousekeepingCheckPeriod());
+            try
+            {
+                _brokerMBean.register();
+            } catch (JMException e)
+            {
+                throw new RuntimeException("Failed to register virtual host mbean for virtual host " + getName(), e);
+            }
 
-           _state = State.ACTIVE;
-       }
-   }
+            _state = State.ACTIVE;
+        }
+    }
 
     public class BeforePassivationListener implements EventListener
     {
@@ -794,69 +793,67 @@ public class VirtualHostImpl implements VirtualHost
         }
     }
 
-   private final class BeforeCloseListener implements EventListener
-   {
-       @Override
-       public void event(Event event)
-       {
-           _brokerMBean.unregister();
-           shutdownHouseKeeping();
-       }
-   }
+    private final class BeforeCloseListener implements EventListener
+    {
+        @Override
+        public void event(Event event)
+        {
+            _brokerMBean.unregister();
+            shutdownHouseKeeping();
+        }
+    }
 
-   private class VirtualHostHouseKeepingTask extends HouseKeepingTask
-   {
-       public VirtualHostHouseKeepingTask()
-       {
-           super(VirtualHostImpl.this);
-       }
+    private class VirtualHostHouseKeepingTask extends HouseKeepingTask
+    {
+        public VirtualHostHouseKeepingTask()
+        {
+            super(VirtualHostImpl.this);
+        }
 
-       public void execute()
-       {
-           for (AMQQueue q : _queueRegistry.getQueues())
-           {
-               if (_logger.isDebugEnabled())
-               {
-                   _logger.debug("Checking message status for queue: "
-                           + q.getName());
-               }
-               try
-               {
-                   q.checkMessageStatus();
-               }
-               catch (Exception e)
-               {
-                   _logger.error("Exception in housekeeping for queue: "
-                                 + q.getNameShortString().toString(), e);
-                   //Don't throw exceptions as this will stop the
-                   // house keeping task from running.
-               }
-           }
-           for (AMQConnectionModel connection : getConnectionRegistry().getConnections())
-           {
-               if (_logger.isDebugEnabled())
-               {
-                   _logger.debug("Checking for long running open transactions on connection " + connection);
-               }
-               for (AMQSessionModel session : connection.getSessionModels())
-               {
-                   if (_logger.isDebugEnabled())
-                   {
-                       _logger.debug("Checking for long running open transactions on session " + session);
-                   }
-                   try
-                   {
-                       session.checkTransactionStatus(_vhostConfig.getTransactionTimeoutOpenWarn(),
-                                                      _vhostConfig.getTransactionTimeoutOpenClose(),
-                                                      _vhostConfig.getTransactionTimeoutIdleWarn(),
-                                                      _vhostConfig.getTransactionTimeoutIdleClose());
-                   }
-                   catch (Exception e)
-                   {
-                       _logger.error("Exception in housekeeping for connection: " + connection.toString(), e);
-                   }
-               }
-           }
-       }
-   }
+        public void execute()
+        {
+            for (AMQQueue q : _queueRegistry.getQueues())
+            {
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("Checking message status for queue: "
+                            + q.getName());
+                }
+                try
+                {
+                    q.checkMessageStatus();
+                } catch (Exception e)
+                {
+                    _logger.error("Exception in housekeeping for queue: "
+                            + q.getNameShortString().toString(), e);
+                    //Don't throw exceptions as this will stop the
+                    // house keeping task from running.
+                }
+            }
+            for (AMQConnectionModel connection : getConnectionRegistry().getConnections())
+            {
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("Checking for long running open transactions on connection " + connection);
+                }
+                for (AMQSessionModel session : connection.getSessionModels())
+                {
+                    if (_logger.isDebugEnabled())
+                    {
+                        _logger.debug("Checking for long running open transactions on session " + session);
+                    }
+                    try
+                    {
+                        session.checkTransactionStatus(_vhostConfig.getTransactionTimeoutOpenWarn(),
+                                _vhostConfig.getTransactionTimeoutOpenClose(),
+                                _vhostConfig.getTransactionTimeoutIdleWarn(),
+                                _vhostConfig.getTransactionTimeoutIdleClose());
+                    } catch (Exception e)
+                    {
+                        _logger.error("Exception in housekeeping for connection: " + connection.toString(), e);
+                    }
+                }
+            }
+        }
+    }
 }
