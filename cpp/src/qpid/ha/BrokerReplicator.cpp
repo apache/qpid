@@ -447,9 +447,10 @@ void BrokerReplicator::doResponseExchange(Variant::Map& values) {
             ""/*TODO: who is the user?*/,
             ""/*TODO: what should we use as connection id?*/).second)
     {
-        QPID_LOG(debug, "HA: Backup catch-up exchange: " << values[NAME]);
+        QPID_LOG(debug, "HA: Backup catch-up exchange: " << values[NAME].asString());
     } else {
-        QPID_LOG(warning, "HA: Backup catch-up exchange already exists:  " << values[QNAME]);
+        QPID_LOG(warning, "HA: Backup catch-up exchange already exists:  " <<
+                 values[QNAME].asString());
     }
 }
 
