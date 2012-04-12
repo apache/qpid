@@ -33,10 +33,18 @@ import com.sleepycat.je.LockConflictException;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
 import com.sleepycat.je.TransactionConfig;
-
+import java.io.File;
+import java.lang.ref.SoftReference;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -52,6 +60,7 @@ import org.apache.qpid.server.store.ConfigurationRecoveryHandler.QueueRecoveryHa
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
+import org.apache.qpid.server.store.EventManager;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
@@ -82,17 +91,6 @@ import org.apache.qpid.server.store.berkeleydb.tuple.StringMapBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.UUIDTupleBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.XidBinding;
 import org.apache.qpid.server.store.berkeleydb.upgrade.Upgrader;
-
-import java.io.File;
-import java.lang.ref.SoftReference;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class AbstractBDBMessageStore implements MessageStore
 {
@@ -154,7 +152,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
     private final AtomicLong _messageId = new AtomicLong(0);
 
-    protected final StateManager _stateManager = new StateManager();
+    protected final StateManager _stateManager;
 
     protected TransactionConfig _transactionConfig = new TransactionConfig();
 
@@ -165,20 +163,27 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     private TransactionLogRecoveryHandler _tlogRecoveryHandler;
 
     private ConfigurationRecoveryHandler _configRecoveryHandler;
+    
+    private final EventManager _eventManager = new EventManager();
+    private String _storeLocation;
 
     public AbstractBDBMessageStore()
     {
+        _stateManager = new StateManager(_eventManager);
     }
 
     public void configureConfigStore(String name,
                                      ConfigurationRecoveryHandler recoveryHandler,
                                      Configuration storeConfiguration) throws Exception
     {
-        _stateManager.stateTransition(State.INITIAL, State.CONFIGURING);
+        _stateManager.attainState(State.CONFIGURING);
 
         _configRecoveryHandler = recoveryHandler;
 
         configure(name,storeConfiguration);
+
+
+
     }
 
     public void configureMessageStore(String name,
@@ -188,16 +193,19 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     {
         _messageRecoveryHandler = messageRecoveryHandler;
         _tlogRecoveryHandler = tlogRecoveryHandler;
+
+        _stateManager.attainState(State.CONFIGURED);
     }
 
     public void activate() throws Exception
     {
-        _stateManager.stateTransition(State.CONFIGURING, State.RECOVERING);
+        _stateManager.attainState(State.RECOVERING);
 
         recoverConfig(_configRecoveryHandler);
         recoverMessages(_messageRecoveryHandler);
         recoverQueueEntries(_tlogRecoveryHandler);
-        _stateManager.stateTransition(State.RECOVERING, State.ACTIVE);
+
+        _stateManager.attainState(State.ACTIVE);
     }
 
     public org.apache.qpid.server.store.Transaction newTransaction()
@@ -216,8 +224,10 @@ public abstract class AbstractBDBMessageStore implements MessageStore
      */
     public void configure(String name, Configuration storeConfig) throws Exception
     {
-        File environmentPath = new File(storeConfig.getString(ENVIRONMENT_PATH_PROPERTY,
-                                System.getProperty("QPID_WORK") + File.separator + "bdbstore" + File.separator + name));
+        final String storeLocation = storeConfig.getString(ENVIRONMENT_PATH_PROPERTY,
+                System.getProperty("QPID_WORK") + File.separator + "bdbstore" + File.separator + name);
+
+        File environmentPath = new File(storeLocation);
         if (!environmentPath.exists())
         {
             if (!environmentPath.mkdirs())
@@ -226,6 +236,8 @@ public abstract class AbstractBDBMessageStore implements MessageStore
                                                    + "Ensure the path is correct and that the permissions are correct.");
             }
         }
+
+        _storeLocation = storeLocation;
 
         configure(environmentPath, false);
     }
@@ -359,7 +371,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
      */
     public void close() throws Exception
     {
-        if (_stateManager.isInState(State.ACTIVE))
+        if (_stateManager.isInState(State.ACTIVE) || _stateManager.isInState(State.QUIESCED))
         {
             _stateManager.stateTransition(State.ACTIVE, State.CLOSING);
 
@@ -1975,13 +1987,14 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     }
 
     @Override
-    public void addEventListener(EventListener eventListener, Event event)
+    public void addEventListener(EventListener eventListener, Event... events)
     {
-        throw new UnsupportedOperationException();
+        _eventManager.addEventListener(eventListener, events);
     }
 
-    public MessageStore getUnderlyingStore()
+    @Override
+    public String getStoreLocation()
     {
-        return this;
+        return _storeLocation;
     }
 }

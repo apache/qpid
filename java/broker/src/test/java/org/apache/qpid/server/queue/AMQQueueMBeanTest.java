@@ -157,7 +157,7 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
     private void verifyBrokerState()
     {
 
-        TestableMemoryMessageStore store = (TestableMemoryMessageStore) getVirtualHost().getMessageStore().getUnderlyingStore();
+        TestableMemoryMessageStore store = (TestableMemoryMessageStore) getVirtualHost().getMessageStore();
 
         // Unlike MessageReturnTest there is no need for a delay as there this thread does the clean up.
 

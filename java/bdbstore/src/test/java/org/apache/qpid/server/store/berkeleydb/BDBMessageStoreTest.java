@@ -369,10 +369,10 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
     }
     private BDBMessageStore assertBDBStore(MessageStore store)
     {
-        MessageStore underlyingStore = store.getUnderlyingStore();
-        assertEquals("Test requires an instance of BDBMessageStore to proceed", BDBMessageStore.class, underlyingStore.getClass());
 
-        return (BDBMessageStore) underlyingStore;
+        assertEquals("Test requires an instance of BDBMessageStore to proceed", BDBMessageStore.class, store.getClass());
+
+        return (BDBMessageStore) store;
     }
 
     private StoredMessage<MessageMetaData> createAndStoreSingleChunkMessage_0_8(MessageStore store)
