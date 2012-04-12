@@ -52,4 +52,4 @@ CLEANFILES = qpidd qpidd-primary cluster.conf-example.xml
 
 initddir = $(sysconfdir)/init.d
 nobase_initd_SCRIPTS = qpidd qpidd-primary
-nobase_doc_DATA = cluster.conf-example.xml
+
