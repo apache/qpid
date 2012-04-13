@@ -53,6 +53,7 @@ release
 .settings
 generated/
 target
+classes
 qpid/java/lib/bdbstore
 qpid/java/lib/cobertura
 qpid/java/lib/findbugs
