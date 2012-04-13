@@ -50,18 +50,14 @@ public class BDBMessageStore extends AbstractBDBMessageStore
     private final CommitThread _commitThread = new CommitThread("Commit-Thread");
 
     @Override
-    protected void setupStore(File storePath, boolean readonly) throws DatabaseException, AMQStoreException
+    protected void setupStore(File storePath) throws DatabaseException, AMQStoreException
     {
-        super.setupStore(storePath, readonly);
+        super.setupStore(storePath);
 
-        if (!readonly)
-        {
-            startCommitThread();
-        }
+        startCommitThread();
     }
 
-    @Override
-    protected Environment createEnvironment(File environmentPath, boolean readonly) throws DatabaseException
+    protected Environment createEnvironment(File environmentPath) throws DatabaseException
     {
         LOGGER.info("BDB message store using environment path " + environmentPath.getAbsolutePath());
         EnvironmentConfig envConfig = new EnvironmentConfig();
@@ -82,7 +78,7 @@ public class BDBMessageStore extends AbstractBDBMessageStore
         _transactionConfig.setReadCommitted(true);
 
         //This prevents background threads running which will potentially update the store.
-        envConfig.setReadOnly(readonly);
+        envConfig.setReadOnly(false);
         try
         {
             return new Environment(environmentPath, envConfig);
