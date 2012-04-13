@@ -156,8 +156,6 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
     protected TransactionConfig _transactionConfig = new TransactionConfig();
 
-    private boolean _readOnly = false;
-
     private MessageStoreRecoveryHandler _messageRecoveryHandler;
 
     private TransactionLogRecoveryHandler _tlogRecoveryHandler;
@@ -239,53 +237,36 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
         _storeLocation = storeLocation;
 
-        configure(environmentPath, false);
-    }
-
-    /**
-     * @param environmentPath location for the store to be created in/recovered from
-     * @param readonly if true then don't allow modifications to an existing store, and don't create a new store if none exists
-     * @return whether or not a new store environment was created
-     * @throws AMQStoreException
-     * @throws DatabaseException
-     */
-    protected void configure(File environmentPath, boolean readonly) throws AMQStoreException, DatabaseException
-    {
-        if (_stateManager.isInState(State.INITIAL))
-        {
-            // TODO - currently required for BDBUpgrade and BDBMessageStoreTest
-            _stateManager.stateTransition(State.INITIAL, State.CONFIGURING);
-        }
-
-        _readOnly = readonly;
-
         LOGGER.info("Configuring BDB message store");
 
-        setupStore(environmentPath, readonly);
+        setupStore(environmentPath);
     }
 
     /**
-     * Move the store state from CONFIGURING to ACTIVE.
+     * Move the store state from INITIAL to ACTIVE without actually recovering.
      *
      * This is required if you do not want to perform recovery of the store data
      *
      * @throws AMQStoreException if the store is not in the correct state
      */
-    public void start() throws AMQStoreException
+    void startWithNoRecover() throws AMQStoreException
     {
-        _stateManager.stateTransition(State.CONFIGURING, State.ACTIVE);
+        _stateManager.attainState(State.CONFIGURING);
+        _stateManager.attainState(State.CONFIGURED);
+        _stateManager.attainState(State.RECOVERING);
+        _stateManager.attainState(State.ACTIVE);
     }
 
-    protected void setupStore(File storePath, boolean readonly) throws DatabaseException, AMQStoreException
+    protected void setupStore(File storePath) throws DatabaseException, AMQStoreException
     {
-        _environment = createEnvironment(storePath, readonly);
+        _environment = createEnvironment(storePath);
 
         new Upgrader(_environment).upgradeIfNecessary();
 
-        openDatabases(readonly);
+        openDatabases();
     }
 
-    protected Environment createEnvironment(File environmentPath, boolean readonly) throws DatabaseException
+    protected Environment createEnvironment(File environmentPath) throws DatabaseException
     {
         LOGGER.info("BDB message store using environment path " + environmentPath.getAbsolutePath());
         EnvironmentConfig envConfig = new EnvironmentConfig();
@@ -306,7 +287,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         _transactionConfig.setReadCommitted(true);
 
         //This prevents background threads running which will potentially update the store.
-        envConfig.setReadOnly(readonly);
+        envConfig.setReadOnly(false);
         try
         {
             return new Environment(environmentPath, envConfig);
@@ -336,14 +317,14 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         return _environment;
     }
 
-    private void openDatabases(boolean readonly) throws DatabaseException
+    private void openDatabases() throws DatabaseException
     {
         DatabaseConfig dbConfig = new DatabaseConfig();
         dbConfig.setTransactional(true);
         dbConfig.setAllowCreate(true);
 
         //This is required if we are wanting read only access.
-        dbConfig.setReadOnly(readonly);
+        dbConfig.setReadOnly(false);
 
         _messageMetaDataDb = openDatabase(MESSAGEMETADATADB_NAME, dbConfig);
         _queueDb = openDatabase(QUEUEDB_NAME, dbConfig);
@@ -446,13 +427,10 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     {
         if (_environment != null)
         {
-            if(!_readOnly)
-            {
-                // Clean the log before closing. This makes sure it doesn't contain
-                // redundant data. Closing without doing this means the cleaner may not
-                // get a chance to finish.
-                _environment.cleanLog();
-            }
+            // Clean the log before closing. This makes sure it doesn't contain
+            // redundant data. Closing without doing this means the cleaner may not
+            // get a chance to finish.
+            _environment.cleanLog();
             _environment.close();
         }
     }
