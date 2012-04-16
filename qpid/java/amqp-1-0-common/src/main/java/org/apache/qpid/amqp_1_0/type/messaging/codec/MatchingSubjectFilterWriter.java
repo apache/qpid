@@ -25,7 +25,7 @@ package org.apache.qpid.amqp_1_0.type.messaging.codec;
 
 import org.apache.qpid.amqp_1_0.codec.AbstractDescribedTypeWriter;
 import org.apache.qpid.amqp_1_0.codec.ValueWriter;
-import org.apache.qpid.amqp_1_0.type.Symbol;
+import org.apache.qpid.amqp_1_0.type.UnsignedLong;
 import org.apache.qpid.amqp_1_0.type.messaging.MatchingSubjectFilter;
 
 public class MatchingSubjectFilterWriter extends AbstractDescribedTypeWriter<MatchingSubjectFilter>
@@ -53,7 +53,7 @@ public class MatchingSubjectFilterWriter extends AbstractDescribedTypeWriter<Mat
 
     protected Object getDescriptor()
     {
-        return Symbol.valueOf("amqp:matching-subject-filter:string");
+        return UnsignedLong.valueOf(0x0000468C00000001L);
     }
 
     @Override
