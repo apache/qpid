@@ -25,9 +25,7 @@ package org.apache.qpid.amqp_1_0.type.messaging.codec;
 
 import org.apache.qpid.amqp_1_0.codec.AbstractDescribedTypeWriter;
 import org.apache.qpid.amqp_1_0.codec.ValueWriter;
-import org.apache.qpid.amqp_1_0.type.Symbol;
 import org.apache.qpid.amqp_1_0.type.messaging.JMSSelectorFilter;
-import org.apache.qpid.amqp_1_0.type.messaging.MatchingSubjectFilter;
 
 public class JMSSelectorFilterWriter extends AbstractDescribedTypeWriter<JMSSelectorFilter>
 {
@@ -54,7 +52,7 @@ public class JMSSelectorFilterWriter extends AbstractDescribedTypeWriter<JMSSele
 
     protected Object getDescriptor()
     {
-        return Symbol.valueOf("amqp:jms-selector-filter:string");
+        return 0x0000468C00000004L;
     }
 
     @Override

@@ -32,7 +32,8 @@ public class JMSSelectorFilterConstructor extends DescribedTypeConstructor<JMSSe
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("amqp:jms-selector-filter:string"),
+            Symbol.valueOf("apache.org:jms-selector-filter:string"),
+            Long.valueOf(0x0000468C00000004L)
     };
 
     private static final JMSSelectorFilterConstructor INSTANCE = new JMSSelectorFilterConstructor();
