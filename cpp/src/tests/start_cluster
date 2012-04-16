@@ -24,7 +24,8 @@
 
 # Execute command with the ais group set.
 source ./test_env.sh
-. `dirname $0`/ais_check
+source cpg_check.sh
+cpg_enabled || exit 0
 
 rm -f cluster*.log cluster.ports qpidd.port
 
