@@ -26,7 +26,7 @@ from threading import Thread, Lock, Condition
 from logging import getLogger, WARN, ERROR, DEBUG
 from qpidtoollibs import BrokerAgent
 
-log = getLogger("qpid.ha-tests")
+log = getLogger(__name__)
 
 class HaBroker(Broker):
     def __init__(self, test, args=[], broker_url=None, ha_cluster=True,
@@ -44,6 +44,7 @@ class HaBroker(Broker):
         Broker.__init__(self, test, args, **kwargs)
         self.commands=os.getenv("PYTHON_COMMANDS")
         assert os.path.isdir(self.commands)
+        getLogger().setLevel(ERROR) # Hide expected WARNING log messages from failover.
 
     def promote(self):
         assert os.system("%s/qpid-ha promote -b %s"%(self.commands, self.host_port())) == 0
@@ -144,8 +145,6 @@ class ReplicationTests(HaTest):
     def test_replication(self):
         """Test basic replication of configuration and messages before and
         after backup has connected"""
-
-        getLogger().setLevel(ERROR) # Hide expected WARNING log messages from failover.
 
         def queue(name, replicate):
             return "%s;{create:always,node:{x-declare:{arguments:{'qpid.replicate':%s}}}}"%(name, replicate)
@@ -256,7 +255,6 @@ class ReplicationTests(HaTest):
     def test_send_receive(self):
         """Verify sequence numbers of messages sent by qpid-send"""
         brokers = HaCluster(self, 3)
-        getLogger().setLevel(ERROR) # Hide expected WARNING log messages from failover.
         sender = self.popen(
             ["qpid-send",
              "--broker", brokers[0].host_port(),
@@ -280,7 +278,6 @@ class ReplicationTests(HaTest):
 
     def test_failover_python(self):
         """Verify that backups rejects connections and that fail-over works in python client"""
-        getLogger().setLevel(ERROR) # Hide expected WARNING log messages from failover.
         primary = HaBroker(self, name="primary", expect=EXPECT_EXIT_FAIL)
         primary.promote()
         backup = HaBroker(self, name="backup", broker_url=primary.host_port())
@@ -351,7 +348,6 @@ class ReplicationTests(HaTest):
 
     def test_standalone_queue_replica(self):
         """Test replication of individual queues outside of cluster mode"""
-        getLogger().setLevel(ERROR) # Hide expected WARNING log messages from failover.
         primary = HaBroker(self, name="primary", ha_cluster=False)
         pc = primary.connect()
         ps = pc.session().sender("q;{create:always}")
@@ -378,7 +374,6 @@ class ReplicationTests(HaTest):
 
     def test_queue_replica_failover(self):
         """Test individual queue replication from a cluster to a standalone backup broker, verify it fails over."""
-        getLogger().setLevel(ERROR) # Hide expected WARNING log messages from failover.
         cluster = HaCluster(self, 2)
         primary = cluster[0]
         pc = cluster.connect(0)
@@ -426,7 +421,6 @@ class ReplicationTests(HaTest):
 
     def test_reject(self):
         """Test replication with the reject queue policy"""
-        getLogger().setLevel(ERROR) # Hide expected WARNING log messages from failover.
         primary  = HaBroker(self, name="primary")
         primary.promote()
         backup = HaBroker(self, name="backup", broker_url=primary.host_port())
