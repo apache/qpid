@@ -19,8 +19,9 @@
 
 
 source ./test_env.sh
-source $srcdir/ais_check
 source sasl_test_setup.sh
+source cpg_check.sh
+cpg_enabled || exit 0
 
 with_ais_group ./cluster_authentication_soak 
 
