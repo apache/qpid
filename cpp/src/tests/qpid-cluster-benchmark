@@ -22,7 +22,6 @@
 
 # Default options
 MESSAGES="-m 10000"
-FLOW="--flow-control 100"	      # Flow control limit on queue depth for latency.
 REPEAT="--repeat 10"
 QUEUES="-q 6"
 SENDERS="-s 3"
@@ -38,7 +37,6 @@ while getopts "m:f:n:b:q:s:r:c:h:i:txyv-" opt; do
     case $opt in
 	b) BROKERS="-b $OPTARG";;
 	c) CLIENT_HOSTS="-c $OPTARG";;
-	f) FLOW="--flow-control $OPTARG";;
 	h) HEARTBEAT=$OPTARG;;
 	i) RECONNECT=$OPTARG;;
 	m) MESSAGES="-m $OPTARG";;
