@@ -39,7 +39,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * differs from a 'rendezvous' in that sense.
  *
  * <p/>BlockingWaiters are used to coordinate when waiting for an an event that expect a response.
- * They are always used in a 'one-shot' manner, that is, to recieve just one response. Usually the caller has to register
+ * They are always used in a 'one-shot' manner, that is, to receive just one response. Usually the caller has to register
  * them as method listeners with an event dispatcher and remember to de-register them (in a finally block) once they
  * have been completed.
  *
@@ -51,12 +51,12 @@ import java.util.concurrent.locks.ReentrantLock;
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations </td>
  * <tr><td> Accept generic objects as events for processing via {@link #process}. <td>
- * <tr><td> Delegate handling and undserstanding of the object to a concrete implementation. <td>
+ * <tr><td> Delegate handling and understanding of the object to a concrete implementation. <td>
  * <tr><td> Block until {@link #process} determines that waiting is no longer required <td>
  * <tr><td> Propagate the most recent exception to the consumer.<td>
  * </table>
  *
- * @todo Interuption is caught but not handled. This could be allowed to fall through. This might actually be usefull
+ * @todo Interruption is caught but not handled. This could be allowed to fall through. This might actually be useful
  * for fail-over where a thread is blocking when failure happens, it could be interrupted to abandon or retry
  * when this happens. At the very least, restore the interrupted status flag.
  * @todo If the retrotranslator can handle it, could use a SynchronousQueue to implement this rendezvous. Need to
@@ -84,13 +84,13 @@ public abstract class BlockingWaiter<T>
     /** Used to hold the most recent exception that is passed to the {@link #error(Exception)} method. */
     private volatile Exception _error;
 
-    /** Holds the incomming Object. */
+    /** Holds the incoming Object. */
     private Object _doneObject = null;
     private AtomicBoolean _waiting = new AtomicBoolean(false);
     private boolean _closed = false;
 
     /**
-     * Delegates processing of the incomming object to the handler.
+     * Delegates processing of the incoming object to the handler.
      *
      * @param object The object to process.
      *
@@ -146,6 +146,11 @@ public abstract class BlockingWaiter<T>
      */
     public Object block(long timeout) throws AMQException, FailoverException
     {
+        if (timeout < 0)
+        {
+            throw new IllegalArgumentException("timeout must be zero or greater");
+        }
+
         long nanoTimeout = TimeUnit.MILLISECONDS.toNanos(timeout);
 
         _lock.lock();
@@ -165,26 +170,18 @@ public abstract class BlockingWaiter<T>
                 {
                     try
                     {
-                        if (timeout == -1)
-                        {
-                            _receivedCondition.await();
-                        }
-                        else
-                        {
-                            nanoTimeout = _receivedCondition.awaitNanos(nanoTimeout);
+                        nanoTimeout = _receivedCondition.awaitNanos(nanoTimeout);
 
-                            if (nanoTimeout <= 0 && !_ready && _error == null)
-                            {
-                                _error = new AMQTimeoutException("Server did not respond in a timely fashion", null);
-                                _ready = true;
-                            }
+                        if (nanoTimeout <= 0 && !_ready && _error == null)
+                        {
+                            _error = new AMQTimeoutException("Server did not respond in a timely fashion", null);
+                            _ready = true;
                         }
                     }
                     catch (InterruptedException e)
                     {
                         _logger.error(e.getMessage(), e);
-                        // IGNORE    -- //fixme this isn't ideal as being interrupted isn't equivellant to sucess
-
+                        // IGNORE    -- //fixme this isn't ideal as being interrupted isn't equivalent to success
                     }
                 }
             }
@@ -285,8 +282,8 @@ public abstract class BlockingWaiter<T>
     /**
      * Close this Waiter so that no more errors are processed.
      * This is a preventative method to ensure that a second error thread does not get stuck in the error method after
-     * the await has returned. This has not happend but in practise but if two errors occur on the Connection at
-     * the same time then it is conceiveably possible for the second to get stuck if the first one is processed by a
+     * the await has returned. This has not happened but in practise but if two errors occur on the Connection at
+     * the same time then it is conceivably possible for the second to get stuck if the first one is processed by a
      * waiter.
      *
      * Once closed any attempt to wait will throw an exception.
