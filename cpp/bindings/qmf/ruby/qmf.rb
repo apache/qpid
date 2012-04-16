@@ -33,12 +33,21 @@ module Qmf
     end
   end
 
+  module StringHelpers
+    def ensure_encoding(str)
+      enc = (Encoding.default_external.name || "UTF-8" rescue "UTF-8")
+      str.respond_to?(:force_encoding) ? str.force_encoding(enc) : str
+    end
+  end
+
   class Util
+    include StringHelpers
+
     def qmf_to_native(val)
       case val.getType
       when TYPE_UINT8, TYPE_UINT16, TYPE_UINT32 then val.asUint
       when TYPE_UINT64                          then val.asUint64
-      when TYPE_SSTR, TYPE_LSTR                 then val.asString
+      when TYPE_SSTR, TYPE_LSTR                 then ensure_encoding(val.asString)
       when TYPE_ABSTIME                         then val.asInt64
       when TYPE_DELTATIME                       then val.asUint64
       when TYPE_REF                             then ObjectId.new(val.asObjectId)
@@ -162,6 +171,7 @@ module Qmf
   ##==============================================================================
 
   class ConnectionSettings
+    include StringHelpers
     attr_reader :impl
 
     def initialize(url = nil)
@@ -193,7 +203,7 @@ module Qmf
     def get_attr(key)
       _v = @impl.getAttr(key)
       if _v.isString()
-        return _v.asString()
+        return ensure_encoding(_v.asString())
       elsif _v.isUint()
         return _v.asUint()
       elsif _v.isBool()
@@ -708,6 +718,8 @@ module Qmf
   end
 
   class MethodResponse
+    include StringHelpers
+
     def initialize(impl)
       @impl = Qmfengine::MethodResponse.new(impl)
     end
@@ -721,7 +733,7 @@ module Qmf
     end
 
     def text
-      exception.asString
+      ensure_encoding(exception.asString)
     end
 
     def args
@@ -886,6 +898,7 @@ module Qmf
   end
 
   class SchemaClassKey
+    include StringHelpers
     attr_reader :impl
     def initialize(i)
       @impl = Qmfengine::SchemaClassKey.new(i)
@@ -900,7 +913,7 @@ module Qmf
     end
 
     def to_s
-      @impl.asString
+      ensure_encoding(@impl.asString)
     end
   end
 
