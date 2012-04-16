@@ -18,25 +18,21 @@
  */
 package org.apache.qpid.amqp_1_0.jms.impl;
 
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Map;
+import javax.jms.InvalidSelectorException;
+import javax.jms.JMSException;
 import org.apache.qpid.amqp_1_0.client.AcknowledgeMode;
 import org.apache.qpid.amqp_1_0.client.Message;
 import org.apache.qpid.amqp_1_0.client.Receiver;
 import org.apache.qpid.amqp_1_0.jms.QueueBrowser;
 import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
-import org.apache.qpid.amqp_1_0.type.Binary;
-import org.apache.qpid.amqp_1_0.type.DistributionMode;
-import org.apache.qpid.amqp_1_0.type.Outcome;
 import org.apache.qpid.amqp_1_0.type.Symbol;
 import org.apache.qpid.amqp_1_0.type.messaging.Filter;
 import org.apache.qpid.amqp_1_0.type.messaging.JMSSelectorFilter;
 import org.apache.qpid.amqp_1_0.type.messaging.StdDistMode;
 import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
-
-import javax.jms.InvalidSelectorException;
-import javax.jms.JMSException;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Map;
 
 public class QueueBrowserImpl implements QueueBrowser
 {
@@ -77,9 +73,7 @@ public class QueueBrowserImpl implements QueueBrowser
         catch(AmqpErrorException e)
         {
             org.apache.qpid.amqp_1_0.type.transport.Error error = e.getError();
-            if(AmqpError.INVALID_FIELD.equals(error.getCondition())
-               &&  error.getInfo() != null && Symbol.valueOf("filter").equals(error.getInfo().get(Symbol.valueOf
-                    ("field"))))
+            if(AmqpError.INVALID_FIELD.equals(error.getCondition()))
             {
                 throw new InvalidSelectorException(e.getMessage());
             }
