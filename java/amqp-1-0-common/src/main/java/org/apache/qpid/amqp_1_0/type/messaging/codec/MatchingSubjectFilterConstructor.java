@@ -26,13 +26,14 @@ package org.apache.qpid.amqp_1_0.type.messaging.codec;
 import org.apache.qpid.amqp_1_0.codec.DescribedTypeConstructor;
 import org.apache.qpid.amqp_1_0.codec.DescribedTypeConstructorRegistry;
 import org.apache.qpid.amqp_1_0.type.Symbol;
+import org.apache.qpid.amqp_1_0.type.UnsignedLong;
 import org.apache.qpid.amqp_1_0.type.messaging.MatchingSubjectFilter;
 
 public class MatchingSubjectFilterConstructor extends DescribedTypeConstructor<MatchingSubjectFilter>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("amqp:matching-subject-filter:string"),
+            Symbol.valueOf("apache.org:legacy-amqp-topic-binding:string"), UnsignedLong.valueOf(0x0000468C00000001L)
     };
 
     private static final MatchingSubjectFilterConstructor INSTANCE = new MatchingSubjectFilterConstructor();

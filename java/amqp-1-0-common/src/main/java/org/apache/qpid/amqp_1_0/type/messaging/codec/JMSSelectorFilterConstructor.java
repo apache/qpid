@@ -26,6 +26,7 @@ package org.apache.qpid.amqp_1_0.type.messaging.codec;
 import org.apache.qpid.amqp_1_0.codec.DescribedTypeConstructor;
 import org.apache.qpid.amqp_1_0.codec.DescribedTypeConstructorRegistry;
 import org.apache.qpid.amqp_1_0.type.Symbol;
+import org.apache.qpid.amqp_1_0.type.UnsignedLong;
 import org.apache.qpid.amqp_1_0.type.messaging.JMSSelectorFilter;
 
 public class JMSSelectorFilterConstructor extends DescribedTypeConstructor<JMSSelectorFilter>
@@ -33,7 +34,7 @@ public class JMSSelectorFilterConstructor extends DescribedTypeConstructor<JMSSe
     private static final Object[] DESCRIPTORS =
     {
             Symbol.valueOf("apache.org:jms-selector-filter:string"),
-            Long.valueOf(0x0000468C00000004L)
+            UnsignedLong.valueOf(0x0000468C00000004L)
     };
 
     private static final JMSSelectorFilterConstructor INSTANCE = new JMSSelectorFilterConstructor();

@@ -25,7 +25,6 @@ package org.apache.qpid.amqp_1_0.type.messaging.codec;
 
 import org.apache.qpid.amqp_1_0.codec.AbstractDescribedTypeWriter;
 import org.apache.qpid.amqp_1_0.codec.ValueWriter;
-import org.apache.qpid.amqp_1_0.type.Symbol;
 import org.apache.qpid.amqp_1_0.type.messaging.ExactSubjectFilter;
 
 public class ExactSubjectFilterWriter extends AbstractDescribedTypeWriter<ExactSubjectFilter>
@@ -53,7 +52,7 @@ public class ExactSubjectFilterWriter extends AbstractDescribedTypeWriter<ExactS
 
     protected Object getDescriptor()
     {
-        return Symbol.valueOf("amqp:exact-subject-filter:string");
+        return 0x0000468C00000000L;
     }
 
     @Override
