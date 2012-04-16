@@ -169,18 +169,6 @@ def first_line(p):
         raise Exception("Process exit %d: %s"%(p.returncode, error_msg(out,err)))
     return out.split("\n")[0]
 
-def queue_exists(queue,broker):
-    c = qpid.messaging.Connection(broker)
-    c.open()
-    try:
-        s = c.session()
-        try:
-            s.sender(queue)
-            return True
-        except qpid.messaging.exceptions.NotFound:
-            return False
-    finally: c.close()
-
 def recreate_queues(queues, brokers, no_delete, opts):
     c = qpid.messaging.Connection(brokers[0])
     c.open()
@@ -189,15 +177,9 @@ def recreate_queues(queues, brokers, no_delete, opts):
         if not no_delete:
             try: s.sender("%s;{delete:always}"%(q)).close()
             except qpid.messaging.exceptions.NotFound: pass
-            # FIXME aconway 2011-05-04: new cluster async wiring, wait for changes to propagate
-            for b in brokers:
-                while queue_exists(q,b): time.sleep(0.1);
         address = "%s;{%s}"%(q, ",".join(opts.create_option + ["create:always"]))
         if opts.verbose: print "Creating", address
         s.sender(address)
-        # FIXME aconway 2011-05-04: new cluster async wiring, wait for changes to propagate
-        for b in brokers:
-            while not queue_exists(q,b): time.sleep(0.1);
     c.close()
 
 def print_header(timestamp):
