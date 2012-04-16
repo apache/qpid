@@ -57,11 +57,12 @@ done
 shift $(($OPTIND-1))
 
 CONNECTION_OPTIONS="--connection-options {tcp-nodelay:$TCP_NODELAY,reconnect:$RECONNECT,heartbeat:$HEARTBEAT}"
+CREATE_OPTIONS="node:{x-declare:{arguments:{'qpid.replicate':all}}}"
 
-REPLICATE="node:{x-declare:{arguments:{'qpid.replicate':all}}}"
 BROKER=$(echo $BROKERS | sed s/,.*//)
 run_test() { echo $*; shift; "$@"; echo; echo; echo; }
 
 OPTS="$OPTS $REPEAT $BROKERS --summarize $QUEUES $SENDERS $RECEIVERS $MESSAGES $CLIENT_HOSTS $SAVE_RECEIVED $CONNECTION_OPTIONS $NO_DELETE"
-OPTS="$OPTS --create-option $REPLICATE"
+OPTS="$OPTS --create-option $CREATE_OPTIONS"
+
 run_test "Benchmark:" qpid-cpp-benchmark $OPTS "$@"

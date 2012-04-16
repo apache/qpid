@@ -2,36 +2,33 @@
 <!--
 This is an example of a cluster.conf file to run qpidd HA under rgmanager.
 This example assumes a 3 node cluster, with nodes named node1, node2 and node3.
+
+NOTE: fencing is not shown, it should be configured in a real cluster configuration.
 -->
 
 <cluster name="qpid-test" config_version="18">
-  <!-- The cluster has 3 nodes. Each has a unique nodid and one vote for quorum. -->
+  <!-- The cluster has 3 nodes. Each has a unique nodid and one vote
+       for quorum. -->
   <clusternodes>
-    <clusternode name="node1" nodeid="1">
-      <fence/>
-    </clusternode>
-    <clusternode name="node2" nodeid="2">
-      <fence/>
-    </clusternode>
-    <clusternode name="node3" nodeid="3">
-      <fence/>
-    </clusternode>
+    <clusternode name="node1.example.com" nodeid="1"/>
+    <clusternode name="node2.example.com" nodeid="2"/>
+    <clusternode name="node3.example.com" nodeid="3"/>
   </clusternodes>
   <!-- Resouce Manager configuration. -->
-  <rm log_level="7">		<!-- Verbose logging -->
+  <rm>
     <!--
 	There is a failoverdomain for each node containing just that node.
-	This lets us stipulate that the qpidd service should always run on all nodes.
+	This lets us stipulate that the qpidd service should always run on each node.
     -->
     <failoverdomains>
       <failoverdomain name="node1-domain" restricted="1">
-	<failoverdomainnode name="node1"/>
+	<failoverdomainnode name="node1.example.com"/>
       </failoverdomain>
       <failoverdomain name="node2-domain" restricted="1">
-	<failoverdomainnode name="node2"/>
+	<failoverdomainnode name="node2.example.com"/>
       </failoverdomain>
       <failoverdomain name="node3-domain" restricted="1">
-	<failoverdomainnode name="node3"/>
+	<failoverdomainnode name="node3.example.com"/>
       </failoverdomain>
     </failoverdomains>
 
