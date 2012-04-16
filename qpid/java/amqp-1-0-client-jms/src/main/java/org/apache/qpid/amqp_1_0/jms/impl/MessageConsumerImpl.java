@@ -133,9 +133,7 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
         catch (AmqpErrorException e)
         {
             Error error = e.getError();
-            if(AmqpError.INVALID_FIELD.equals(error.getCondition())
-                &&  error.getInfo() != null && Symbol.valueOf("filter").equals(error.getInfo().get(Symbol.valueOf
-                    ("field"))))
+            if(AmqpError.INVALID_FIELD.equals(error.getCondition()))
             {
                 throw new InvalidSelectorException(e.getMessage());
             }
