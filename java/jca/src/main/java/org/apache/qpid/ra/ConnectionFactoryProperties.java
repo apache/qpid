@@ -34,7 +34,7 @@ public class ConnectionFactoryProperties
 
    private boolean _hasBeenUpdated = false;
 
-   private String _clientID;
+   private String _clientId;
 
    private String _connectionURL;
 
@@ -56,7 +56,7 @@ public class ConnectionFactoryProperties
       {
          _log.trace("getClientID()");
       }
-      return _clientID;
+      return _clientId;
    }
 
    public void setClientId(final String clientID)
@@ -66,7 +66,7 @@ public class ConnectionFactoryProperties
          _log.trace("setClientID(" + clientID + ")");
       }
       _hasBeenUpdated = true;
-      this._clientID = clientID;
+      this._clientId = clientID;
    }
 
    public boolean isHasBeenUpdated()
