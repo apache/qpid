@@ -26,6 +26,7 @@ module Qmf
 
   # Pull all the TYPE_* constants into Qmf namespace.  Maybe there's an easier way?
   Qmfengine.constants.each do |c|
+    c = c.to_s
     if c.index('TYPE_') == 0 or c.index('ACCESS_') == 0 or c.index('DIR_') == 0 or
         c.index('CLASS_') == 0 or c.index('SEV_') == 0
       const_set(c, Qmfengine.const_get(c))
@@ -348,7 +349,7 @@ module Qmf
       @broker = kwargs[:broker] if kwargs.include?(:broker)
       @allow_sets = :true
 
-      if cls:
+      if cls
         @event_class = cls
         @impl = Qmfengine::Event.new(@event_class.impl)
       elsif kwargs.include?(:impl)
@@ -434,7 +435,7 @@ module Qmf
       @allow_sets = :false
       @broker = kwargs[:broker] if kwargs.include?(:broker)
 
-      if cls:
+      if cls
         @object_class = cls
         @impl = Qmfengine::Object.new(@object_class.impl)
       elsif kwargs.include?(:impl)
