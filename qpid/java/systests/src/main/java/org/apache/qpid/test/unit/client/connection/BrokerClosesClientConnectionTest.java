@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.qpid.AMQConnectionClosedException;
 import org.apache.qpid.AMQDisconnectedException;
+import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.management.jmx.ManagedConnectionMBeanTest;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.transport.ConnectionException;
@@ -62,10 +63,13 @@ public class BrokerClosesClientConnectionTest extends QpidBrokerTestCase
     {
         final Class<? extends Exception> expectedLinkedException = isBroker010() ? ConnectionException.class : AMQConnectionClosedException.class;
 
+        assertConnectionOpen();
+
         stopBroker();
 
         JMSException exception = _recordingExceptionListener.awaitException(10000);
         assertConnectionCloseWasReported(exception, expectedLinkedException);
+        assertConnectionClosed();
 
         ensureCanCloseWithoutException();
     }
@@ -79,10 +83,13 @@ public class BrokerClosesClientConnectionTest extends QpidBrokerTestCase
             return;
         }
 
+        assertConnectionOpen();
+
         killBroker();
 
         JMSException exception = _recordingExceptionListener.awaitException(10000);
         assertConnectionCloseWasReported(exception, expectedLinkedException);
+        assertConnectionClosed();
 
         ensureCanCloseWithoutException();
     }
@@ -105,6 +112,16 @@ public class BrokerClosesClientConnectionTest extends QpidBrokerTestCase
         assertNotNull("JMXException should have linked exception", exception.getLinkedException());
 
         assertEquals("Unexpected linked exception", linkedExceptionClass, exception.getLinkedException().getClass());
+    }
+
+    private void assertConnectionClosed()
+    {
+        assertTrue("Connection should be marked as closed", ((AMQConnection)_connection).isClosed());
+    }
+
+    private void assertConnectionOpen()
+    {
+        assertFalse("Connection should not be marked as closed", ((AMQConnection)_connection).isClosed());
     }
 
     private final class RecordingExceptionListener implements ExceptionListener

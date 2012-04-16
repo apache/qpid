@@ -725,11 +725,6 @@ public class ServerSession extends Session
         close();
     }
 
-    public Object getID()
-    {
-       return getName();
-    }
-
     public AMQConnectionModel getConnectionModel()
     {
         return getConnection();
@@ -859,7 +854,6 @@ public class ServerSession extends Session
         // unregister subscriptions in order to prevent sending of new messages
         // to subscriptions with closing session
         unregisterSubscriptions();
-
         super.close();
     }
 
@@ -1030,6 +1024,7 @@ public class ServerSession extends Session
 
     public int compareTo(AMQSessionModel session)
     {
-        return getId().toString().compareTo(session.getID().toString());
+        return getId().compareTo(session.getId());
     }
+
 }

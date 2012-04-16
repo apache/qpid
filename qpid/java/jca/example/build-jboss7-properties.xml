@@ -18,17 +18,17 @@
  - under the License.
  -
 -->
-<project name="qpid-jca-example-jboss-properties" basedir="." default="">
+<project name="qpid-jca-example-jboss7-properties" basedir="." default="">
 
-    <property name="jndi.scheme" value="mappedName"/>
+    <property name="jndi.scheme" value="name"/>
 
-    <property name="qpid.xacf.jndi.name" value="java:QpidJMSXA"/>
+    <property name="qpid.xacf.jndi.name" value="java:/QpidJMSXA"/>
     <property name="qpid.cf.jndi.name" value="QpidConnectionFactory"/>
-    <property name="qpid.hello.topic.jndi.name" value="HelloTopic"/>
-    <property name="qpid.goodbye.topic.jndi.name" value="GoodByeTopic"/>
-    <property name="qpid.hello.queue.jndi.name" value="HelloQueue"/>
-    <property name="qpid.goodbye.queue.jndi.name" value="GoodByeQueue"/>
-    <property name="qpid.request.queue.jndi.name" value="QpidRequestQueue"/>
+    <property name="qpid.hello.topic.jndi.name" value="java:/HelloTopic"/>
+    <property name="qpid.goodbye.topic.jndi.name" value="java:/GoodByeTopic"/>
+    <property name="qpid.hello.queue.jndi.name" value="java:/HelloQueue"/>
+    <property name="qpid.goodbye.queue.jndi.name" value="java:/GoodByeQueue"/>
+    <property name="qpid.responder.queue.jndi.name" value="java:/QpidResponderQueue"/>
     <property name="qpid.ejb.jndi.name" value="mappedName=&quot;QpidTestEJB&quot;"/>
     <property name="qpid.ejb.ref.name" value="QpidTestBean/local"/>
     <property name="qpid.ejb.name" value="qpid-jcaex/QpidTestBean/remote"/>
@@ -36,29 +36,30 @@
     <property name="jndi.context" value="org.jnp.interfaces.NamingContextFactory"/>
     <property name="server.host" value="jnp://localhost:1099"/>
 
+
+    <property name="jboss.server.config" value="standalone"/>
+
     <property name="jboss.home" location="${env.JBOSS_HOME}"/>
-    <property name="jboss.server" value="default"/>
-    <property name="jboss.deploy" location="${jboss.home}/server/${jboss.server}/deploy"/>
-    <property name="jboss.client" location="${jboss.home}/client"/>
+    <property name="jboss.server" value="${jboss.server.config}"/>
+    <property name="jboss.deploy" location="${jboss.home}/${jboss.server}/deployments"/>
+    <property name="jboss.modules" location="${jboss.home}/modules"/>
+    <property name="jboss.config.dir" location="${jboss.home}/${jboss.server}/configuration/"/>
 
     <path id="compile.classpath">
-        <fileset dir="${jboss.client}">
-            <!-- JBoss 5-->
-            <include name="jboss-javaee.jar"/>
-
-            <!-- JBoss 6 -->
-            <include name="jboss-servlet-api_3.0_spec.jar"/>
-            <include name="jboss-jms-api_1.1_spec.jar"/>
-            <include name="jboss-ejb-api_3.1_spec.jar"/>
-            <include name="jboss-transaction-api_1.1_spec.jar"/>
-
-            <!-- Common to JBoss 5/6 -->
-            <include name="slf4j-api.jar"/>
+        <fileset dir="${jboss.modules}/javax/jms/api/main">
+            <include name="jboss-jms-api_1.1_spec-1.0.0.Final.jar"/>
         </fileset>
-
-        <!-- JBoss 5 -->
-        <fileset dir="${jboss.home}/common/lib">
-            <include name="servlet-api.jar"/>
+        <fileset dir="${jboss.modules}/javax/ejb/api/main">
+            <include name="jboss-ejb-api_3.1_spec-1.0.1.Final.jar"/>
+        </fileset>
+        <fileset dir="${jboss.modules}/javax/servlet/api/main">
+            <include name="jboss-servlet-api_3.0_spec-1.0.0.Final.jar"/>
+        </fileset>
+        <fileset dir="${jboss.modules}/javax/transaction/api/main">
+            <include name="jboss-transaction-api_1.1_spec-1.0.0.Final.jar"/>
+        </fileset>
+        <fileset dir="${jboss.modules}/org/slf4j/main">
+            <include name="slf4j-api-1.6.1.jar"/>
         </fileset>
     </path>
 
@@ -101,10 +102,10 @@
         <delete file="${jboss.deploy}/${ear.name}"/>
     </target>
 
-    <target name="deploy-ds" depends="generate" description="Deploys the ds.xml file to the JBoss environment.">
-        <copy todir="${jboss.deploy}" overwrite="true">
+    <target name="deploy-config" depends="generate" description="Deploys the standalone file to the JBoss environment.">
+        <copy todir="${jboss.config.dir}" overwrite="true">
             <fileset dir="${gen.dir}">
-                <include name="qpid-jca-ds.xml"/>
+                <include name="${jboss.server.config}.xml"/>
             </fileset>
         </copy>
     </target>

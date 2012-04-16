@@ -58,10 +58,10 @@ public class QpidTestServlet extends HttpServlet
     @Resource(@jndi.scheme@="@qpid.xacf.jndi.name@")
     private ConnectionFactory _connectionFactory;
 
-    @Resource(@jndi.scheme@="HelloQueue")
+    @Resource(@jndi.scheme@="@qpid.hello.queue.jndi.name@")
     private Destination _queue;
 
-    @Resource(@jndi.scheme@="HelloTopic")
+    @Resource(@jndi.scheme@="@qpid.hello.topic.jndi.name@")
     private Destination _topic;
 
     @EJB

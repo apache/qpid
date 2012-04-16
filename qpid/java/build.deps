@@ -35,6 +35,7 @@ geronimo-kernel=lib/geronimo-kernel-2.2.1.jar
 geronimo-openejb=lib/geronimo-ejb_3.0_spec-1.0.1.jar
 
 junit=lib/junit-3.8.1.jar
+mockito-all=lib/mockito-all-1.9.0.jar
 
 log4j=lib/log4j-1.2.12.jar
 
@@ -70,7 +71,7 @@ broker.libs=${commons-cli} ${commons-logging} ${log4j} ${slf4j-log4j} \
 broker-plugins-management.libs=${jetty} ${jetty-util} ${servlet-api} ${jackson-core} ${jackson-mapper}
 broker-plugins.libs=${felix.libs} ${log4j} ${commons-configuration.libs}
 
-junit-toolkit.libs=${log4j} ${junit} ${slf4j-api}
+junit-toolkit.libs=${log4j} ${junit} ${slf4j-api} ${mockito-all}
 test.libs=${slf4j-log4j} ${junit-toolkit.libs} ${mockito}
 
 ibm-icu=lib/com.ibm.icu_3.8.1.v20080530.jar
