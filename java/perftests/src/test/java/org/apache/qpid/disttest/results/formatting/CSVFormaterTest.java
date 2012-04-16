@@ -72,6 +72,7 @@ public class CSVFormaterTest extends TestCase
         Map<ParticipantAttribute, Object> participantAttributes = getParticipantAttributes();
 
         when(participantResult.getAttributes()).thenReturn(participantAttributes);
+        when(participantResult.getParticipantName()).thenReturn(PARTICIPANT);
 
         TestResult testResult = new TestResult(TEST1);
         testResult.addParticipantResult(participantResult);
@@ -134,7 +135,5 @@ public class CSVFormaterTest extends TestCase
 
         return output.toString();
     }
-
-
 
 }
