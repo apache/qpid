@@ -50,7 +50,7 @@ public abstract class MessageImpl implements Message
     static final Set<Class> _supportedClasses =
                 new HashSet<Class>(Arrays.asList(Boolean.class, Byte.class, Short.class, Integer.class, Long.class,
                                                  Float.class, Double.class, Character.class, String.class, byte[].class));
-    private static final Symbol JMS_TYPE = Symbol.valueOf("jms-type");
+    private static final Symbol JMS_TYPE = Symbol.valueOf("x-opt-jms-type");
 
     private Header _header;
     private Properties _properties;
