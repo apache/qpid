@@ -27,7 +27,7 @@
      <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='@rar.name@'</depends>
      <attribute name="Type">org.apache.qpid.ra.admin.QpidTopic</attribute>
      <attribute name="Properties">
-        destinationAddress=@qpid.hello.topic.dest.address@
+        DestinationAddress=@qpid.hello.topic.dest.address@
      </attribute>
   </mbean>
 
@@ -37,7 +37,7 @@
      <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='@rar.name@'</depends>
      <attribute name="Type">org.apache.qpid.ra.admin.QpidTopic</attribute>
      <attribute name="Properties">
-        destinationAddress=@qpid.goodbye.topic.dest.address@
+        DestinationAddress=@qpid.goodbye.topic.dest.address@
      </attribute>
   </mbean>
 
@@ -47,7 +47,7 @@
      <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='@rar.name@'</depends>
      <attribute name="Type">org.apache.qpid.ra.admin.QpidTopic</attribute>
      <attribute name="Properties">
-        destinationAddress=@qpid.hellogoodbye.topic.dest.address@
+        DestinationAddress=@qpid.hellogoodbye.topic.dest.address@
      </attribute>
   </mbean>
 
@@ -57,7 +57,7 @@
      <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='@rar.name@'</depends>
      <attribute name="Type">org.apache.qpid.ra.admin.QpidQueue</attribute>
      <attribute name="Properties">
-        destinationAddress=@qpid.hello.queue.dest.address@
+        DestinationAddress=@qpid.hello.queue.dest.address@
      </attribute>
   </mbean>
 
@@ -67,7 +67,7 @@
      <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='@rar.name@'</depends>
      <attribute name="Type">org.apache.qpid.ra.admin.QpidQueue</attribute>
      <attribute name="Properties">
-        destinationAddress=@qpid.goodbye.queue.dest.address@
+        DestinationAddress=@qpid.goodbye.queue.dest.address@
      </attribute>
   </mbean>
 
@@ -77,7 +77,7 @@
      <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='@rar.name@'</depends>
      <attribute name="Type">org.apache.qpid.ra.admin.QpidQueue</attribute>
      <attribute name="Properties">
-        destinationAddress=@qpid.request.queue.dest.address@
+        DestinationAddress=@qpid.request.queue.dest.address@
      </attribute>
   </mbean>
 
@@ -87,7 +87,7 @@
      <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='@rar.name@'</depends>
      <attribute name="Type">org.apache.qpid.ra.admin.QpidQueue</attribute>
      <attribute name="Properties">
-        destinationAddress=@qpid.response.queue.dest.address@
+        DestinationAddress=@qpid.response.queue.dest.address@
      </attribute>
   </mbean>
   <mbean code="org.jboss.resource.deployment.AdminObject"
@@ -96,7 +96,7 @@
      <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='@rar.name@'</depends>
      <attribute name="Type">javax.jms.ConnectionFactory</attribute>
      <attribute name="Properties">
-        connectionURL=@broker.url@
+        ConnectionURL=@broker.url@
      </attribute>
   </mbean>
 
