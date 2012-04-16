@@ -742,7 +742,7 @@ public class QpidRASessionFactoryImpl implements QpidRASessionFactory, Reference
             QpidRAConnectionRequestInfo info = new QpidRAConnectionRequestInfo(sessionType);
             info.setUserName(_userName);
             info.setPassword(_password);
-            info.setClientID(_clientID);
+            info.setClientId(_clientID);
             info.setDefaults(_mcf.getDefaultAMQConnectionFactory().getConnectionURL());
 
             if (_log.isTraceEnabled())
@@ -839,7 +839,7 @@ public class QpidRASessionFactoryImpl implements QpidRASessionFactory, Reference
                                                                                      sessionType);
             info.setUserName(_userName);
             info.setPassword(_password);
-            info.setClientID(_clientID);
+            info.setClientId(_clientID);
             info.setDefaults(_mcf.getDefaultAMQConnectionFactory().getConnectionURL());
 
             if (_log.isTraceEnabled())
