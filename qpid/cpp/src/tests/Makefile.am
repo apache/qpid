@@ -149,7 +149,7 @@ endif
 
 # Test programs that are installed and therefore built as part of make, not make check
 
-qpidexectest_SCRIPTS += qpid-cpp-benchmark install_env.sh
+qpidexectest_SCRIPTS += qpid-cpp-benchmark qpid-cluster-benchmark install_env.sh
 EXTRA_DIST += qpid-cpp-benchmark install_env.sh
 
 qpidexectest_PROGRAMS += receiver
