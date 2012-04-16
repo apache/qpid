@@ -21,7 +21,9 @@
 # Regression test for http://issues.apache.org/jira/browse/QPID-2086
 
 srcdir=`dirname $0`
-. $srcdir/ais_check
+source cpg_check.sh
+cpg_enabled || exit 0
+
 $srcdir/start_cluster 1 --cluster-read-max=2 || exit 1
 trap $srcdir/stop_cluster EXIT
 seq 1 10000 | ./sender --port `cat cluster.ports` --routing-key no-such-queue

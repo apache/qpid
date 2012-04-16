@@ -29,7 +29,7 @@ CLUSTER_TEST_SCRIPTS_LIST=			\
 
 EXTRA_DIST +=					\
 	$(CLUSTER_TEST_SCRIPTS_LIST)		\
-	ais_check				\
+	cpg_check.sh.in				\
 	run_cluster_test			\
 	cluster_read_credit			\
 	test_watchdog				\
@@ -54,14 +54,12 @@ if HAVE_LIBCPG
 
 #
 # Cluster tests makefile fragment, to be included in Makefile.am
-# 
+#
 
 # NOTE: Programs using the openais library must be run with gid=ais
 # You should do "newgrp ais" before running the tests to run these.
-# 
+#
 
-
-# ais_check checks pre-requisites for cluster tests and runs them if ok.
 TESTS +=					\
 	run_cluster_test			\
 	cluster_read_credit			\
