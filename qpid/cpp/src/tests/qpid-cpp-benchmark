@@ -67,8 +67,6 @@ op.add_option("--sequence", dest="sequence", default=False,
               action="store_true", help="add a sequence number to each message")
 op.add_option("--connection-options", type="str",
               help="Connection options for senders & receivers")
-op.add_option("--flow-control", default=0, type="int", metavar="N",
-              help="Flow control each sender to limit queue depth to 2*N. 0 means no flow control.")
 op.add_option("--durable", default=False, action="store_true",
               help="Use durable queues and messages")
 op.add_option("--save-received", default=False, action="store_true",
@@ -150,7 +148,6 @@ def start_send(queue, opts, broker, host):
                "--report-header=no",
                "--timestamp=%s"%(opts.timestamp and "yes" or "no"),
                "--sequence=%s"%(opts.sequence and "yes" or "no"),
-               "--flow-control", str(opts.flow_control),
                "--durable", str(opts.durable)
                ]
     command += opts.send_arg
