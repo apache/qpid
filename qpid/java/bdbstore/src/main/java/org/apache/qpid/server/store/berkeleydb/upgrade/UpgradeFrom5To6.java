@@ -31,7 +31,6 @@ import java.util.TreeMap;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.logging.LogSubject;
 
 import com.sleepycat.bind.tuple.LongBinding;
 import com.sleepycat.bind.tuple.TupleBinding;
@@ -61,8 +60,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
     private static final String OLD_DB_NAMES[] = { "exchangeDb_v5", "queueDb_v5", "queueBindingsDb_v5", "deliveryDb_v5",
             META_DATA_DB_NAME, OLD_CONTENT_DB_NAME, "bridges_v5", "links_v5", "xids_v5" };
 
-    public void performUpgrade(final LogSubject logSubject, final Environment environment,
-            final UpgradeInteractionHandler handler) throws DatabaseException, AMQStoreException
+    public void performUpgrade(final Environment environment, final UpgradeInteractionHandler handler) throws DatabaseException, AMQStoreException
     {
         _logger.info("Starting store upgrade from version 5");
         Transaction transaction = null;
@@ -70,7 +68,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
         {
             reportStarting(environment, OLD_DB_NAMES, USER_FRIENDLY_NAMES);
             transaction = environment.beginTransaction(null, null);
-            performUpgradeInternal(logSubject, environment, handler, transaction);
+            performUpgradeInternal(environment, handler, transaction);
             transaction.commit();
             reportFinished(environment, NEW_DB_NAMES, USER_FRIENDLY_NAMES);
         }
@@ -107,8 +105,8 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
      *
      * That is we keep only one record per message, which contains all the message content
      */
-    public void performUpgradeInternal(final LogSubject logSubject, final Environment environment,
-            final UpgradeInteractionHandler handler, final Transaction transaction) throws AMQStoreException
+    public void performUpgradeInternal(final Environment environment, final UpgradeInteractionHandler handler,
+            final Transaction transaction) throws AMQStoreException
     {
         _logger.info("Message Contents");
         if (environment.getDatabaseNames().contains(OLD_CONTENT_DB_NAME))

@@ -63,9 +63,12 @@ import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -195,6 +198,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         return QpidBrokerTestCase._logger;
     }
 
+    @Override
     public void runBare() throws Throwable
     {
         String qname = getClass().getName() + "." + getName();
@@ -243,14 +247,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         }
         finally
         {
-            try
-            {
-                stopBroker();
-            }
-            catch (Exception e)
-            {
-                _logger.error("exception stopping broker", e);
-            }
+            stopAllBrokers();
 
             // reset properties used in the test
             revertSystemProperties();
@@ -634,12 +631,21 @@ public class QpidBrokerTestCase extends QpidTestCase
         }
     }
 
-    public void stopBroker() throws Exception
+    public void stopBroker()
     {
         stopBroker(0);
     }
 
-    public void stopBroker(int port) throws Exception
+    public void stopAllBrokers()
+    {
+        Set<Integer> runningBrokerPorts = new HashSet<Integer>(getBrokerPortNumbers());
+        for (int brokerPortNumber : runningBrokerPorts)
+        {
+            stopBroker(brokerPortNumber);
+        }
+    }
+
+    public void stopBroker(int port)
     {
         if (isBrokerPresent(port))
         {
@@ -651,12 +657,12 @@ public class QpidBrokerTestCase extends QpidTestCase
         }
     }
 
-    public void killBroker() throws Exception
+    public void killBroker()
     {
         killBroker(0);
     }
 
-    public void killBroker(int port) throws Exception
+    public void killBroker(int port)
     {
         if (isBrokerPresent(port))
         {
@@ -668,7 +674,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         }
     }
 
-    public boolean isBrokerPresent(int port) throws Exception
+    public boolean isBrokerPresent(int port)
     {
         port = getPort(port);
 
@@ -679,6 +685,11 @@ public class QpidBrokerTestCase extends QpidTestCase
     {
         port = getPort(port);
         return _brokers.get(port);
+    }
+
+    public Set<Integer> getBrokerPortNumbers()
+    {
+        return new HashSet<Integer>(_brokers.keySet());
     }
 
     /**
