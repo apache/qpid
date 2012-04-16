@@ -25,8 +25,7 @@
 CLUSTER_TEST_SCRIPTS_LIST=			\
 	allhosts rsynchosts			\
 	qpid-build-rinstall qpid-src-rinstall	\
-	qpid-test-cluster			\
-	qpid-cluster-benchmark
+	qpid-test-cluster
 
 EXTRA_DIST +=					\
 	$(CLUSTER_TEST_SCRIPTS_LIST)		\

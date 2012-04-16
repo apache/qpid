@@ -39,12 +39,13 @@ prog=qpidd
 lockfile=/var/lock/subsys/$prog
 pidfile=/var/run/qpidd.pid
 
-# Source function library.
-. /etc/rc.d/init.d/functions
-
+# Source configuration
 if [ -f !!sysconfdir!!/sysconfig/$prog ] ; then
 	. !!sysconfdir!!/sysconfig/$prog
 fi
+
+# Source function library.
+. /etc/rc.d/init.d/functions
 
 RETVAL=0
 

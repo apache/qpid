@@ -11,8 +11,9 @@ echo $SEND $RECV
 
 seq 1000000 > $SEND
 
-qpid-receive -f -a 'q;{create:always}' -b $URL --connection-options "{reconnect:true}"  | tee $RECV &
+qpid-send -a 'cluster_failover;{create:always}' -b $URL --connection-options "{reconnect:true}" --send-rate 10 --content-stdin < $SEND &
 
-qpid-send -a 'q;{create:always}' -b $URL --connection-options "{reconnect:true}" --send-rate 10 --content-stdin < $SEND &
-
+while msg=$(qpid-receive -m1 -f -a 'cluster_failover;{create:always}' -b $URL --connection-options "{reconnect:true,heartbeat:1}"); do
+    echo -n $msg; date
+done
 wait

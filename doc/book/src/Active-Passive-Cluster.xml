@@ -316,39 +316,42 @@ under the License.
 <!--
 This is an example of a cluster.conf file to run qpidd HA under rgmanager.
 This example assumes a 3 node cluster, with nodes named node1, node2 and node3.
+
+NOTE: fencing is not shown, you must configure fencing appropriately for your cluster.
 -->
 
 <cluster name="qpid-test" config_version="18">
-  <!-- The cluster has 3 nodes. Each has a unique nodid and one vote for quorum. -->
+  <!-- The cluster has 3 nodes. Each has a unique nodid and one vote
+       for quorum. -->
   <clusternodes>
-    <clusternode name="node1" nodeid="1"/>
-    <clusternode name="node2" nodeid="2"/>
-    <clusternode name="node3" nodeid="3"/>
+    <clusternode name="node1.example.com" nodeid="1"/>
+    <clusternode name="node2.example.com" nodeid="2"/>
+    <clusternode name="node3.example.com" nodeid="3"/>
   </clusternodes>
   <!-- Resouce Manager configuration. -->
-  <rm log_level="7">		<!-- Verbose logging -->
+  <rm>
     <!--
 	There is a failoverdomain for each node containing just that node.
-	This lets us stipulate that the qpidd service should always run on all nodes.
+	This lets us stipulate that the qpidd service should always run on each node.
     -->
     <failoverdomains>
       <failoverdomain name="node1-domain" restricted="1">
-	<failoverdomainnode name="node1"/>
+	<failoverdomainnode name="node1.example.com"/>
       </failoverdomain>
       <failoverdomain name="node2-domain" restricted="1">
-	<failoverdomainnode name="node2"/>
+	<failoverdomainnode name="node2.example.com"/>
       </failoverdomain>
       <failoverdomain name="node3-domain" restricted="1">
-	<failoverdomainnode name="node3"/>
+	<failoverdomainnode name="node3.example.com"/>
       </failoverdomain>
     </failoverdomains>
 
     <resources>
       <!-- This script starts a qpidd broker acting as a backup. -->
-      <script file="!!sysconfdir!!/init.d/qpidd" name="qpidd"/>
+      <script file="/etc/init.d/qpidd" name="qpidd"/>
 
       <!-- This script promotes the qpidd broker on this node to primary. -->
-      <script file="!!sysconfdir!!/init.d/qpidd-primary" name="qpidd-primary"/>
+      <script file="/etc/init.d/qpidd-primary" name="qpidd-primary"/>
 
       <!-- This is a virtual IP address for broker replication traffic. -->
       <ip address="20.0.10.200" monitor_link="1"/>
@@ -376,8 +379,6 @@ This example assumes a 3 node cluster, with nodes named node1, node2 and node3.
       <ip ref="20.0.20.200"/>
     </service>
   </rm>
-  <fencedevices/>
-  <fence_daemon clean_start="0" post_fail_delay="0" post_join_delay="3"/>
 </cluster>
       ]]>
     </programlisting>
