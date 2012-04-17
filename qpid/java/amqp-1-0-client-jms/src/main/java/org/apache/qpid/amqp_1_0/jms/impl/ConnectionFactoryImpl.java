@@ -20,16 +20,14 @@
  */
 package org.apache.qpid.amqp_1_0.jms.impl;
 
-import org.apache.qpid.amqp_1_0.jms.Connection;
-import org.apache.qpid.amqp_1_0.jms.ConnectionFactory;
-
+import java.net.MalformedURLException;
+import java.net.URL;
 import javax.jms.JMSException;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
 import javax.jms.TopicConnection;
 import javax.jms.TopicConnectionFactory;
-import java.net.MalformedURLException;
-import java.net.URL;
+import org.apache.qpid.amqp_1_0.jms.ConnectionFactory;
 
 public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnectionFactory, QueueConnectionFactory
 {
@@ -41,6 +39,14 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
     private String _remoteHost;
     private boolean _ssl;
 
+
+    public ConnectionFactoryImpl(final String host,
+                                 final int port,
+                                 final String username,
+                                 final String password)
+    {
+        this(host,port,username,password,null,false);
+    }
 
     public ConnectionFactoryImpl(final String host,
                                  final int port,
