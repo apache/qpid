@@ -360,7 +360,9 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
     {
         if(_lastTxnUpdate != null)
         {
-            _receiver.updateAll(new Modified(), _lastTxnUpdate);
+            final Modified outcome = new Modified();
+            outcome.setDeliveryFailed(true);
+            _receiver.updateAll(outcome, _lastTxnUpdate);
             _lastTxnUpdate = null;
         }
         for(Binary tag : _txnMsgs)
