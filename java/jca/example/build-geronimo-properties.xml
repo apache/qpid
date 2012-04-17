@@ -22,10 +22,19 @@
 
     <property name="jndi.scheme" value="name"/>
 
-    <!--
-    <property name="qpid.xacf.jndi.name" value="jca:/qpid.jca/QpidJCAAdapter/JCAManagedConnectionFactory/QpidJMSXA"/>
-    -->
     <property name="qpid.xacf.jndi.name" value="QpidJMSXA"/>
+
+    <property name="jndi.prefix" value="jca:/qpid.jca/QpidJCAAdapter/JCAAdminObject/"/>
+
+
+    <property name="qpid.hello.queue.jndi.name" value="HelloQueue"/>
+    <property name="qpid.goodbye.queue.jndi.name" value="GoodByeQueue"/>
+    <property name="qpid.hello.topic.jndi.name" value="HelloTopic"/>
+    <property name="qpid.goodbye.topic.jndi.name" value="GoodByeTopic"/>
+    <property name="qpid.request.queue.jndi.name" value="RequestQueue"/>
+    <property name="qpid.response.queue.jndi.name" value="ResponseQueue"/>
+
+    <!--
     <property name="qpid.cf.jndi.name" value="jca:/qpid.jca/QpidJCAAdapter/JCAAdminObject/QpidConnectionFactory"/>
     <property name="qpid.hello.queue.jndi.name" value="jca:/qpid.jca/QpidJCAAdapter/JCAAdminObject/HelloQueue"/>
     <property name="qpid.goodbye.queue.jndi.name" value="jca:/qpid.jca/QpidJCAAdapter/JCAAdminObject/GoodByeQueue"/>
@@ -33,9 +42,11 @@
     <property name="qpid.goodbye.topic.jndi.name" value="jca:/qpid.jca/QpidJCAAdapter/JCAAdminObject/GoodByeTopic"/>
     <property name="qpid.request.queue.jndi.name" value="jca:/qpid.jca/QpidJCAAdapter/JCAAdminObject/RequestQueue"/>
     <property name="qpid.response.queue.jndi.name" value="jca:/qpid.jca/QpidJCAAdapter/JCAAdminObject/ResponseQueue"/>
-
+    -->
     <property name="qpid.ejb.jndi.name" value="name=&quot;QpidTestEJB&quot;"/>
     <property name="qpid.ejb.name" value="QpidTestBeanRemote"/>
+    <property name="qpid.client.cf.jndi.name" value="${jndi.prefix}/QpidConnectionFactory"/>
+    <property name="qpid.client.dest.jndi.name" value="${jndi.prefix}/${qpid.hello.queue.jndi.name}"/>
 
     <property name="jndi.context" value="org.openejb.client.RemoteInitialContextFactory"/>
     <property name="server.host" value="ejbd://localhost:4201"/>
