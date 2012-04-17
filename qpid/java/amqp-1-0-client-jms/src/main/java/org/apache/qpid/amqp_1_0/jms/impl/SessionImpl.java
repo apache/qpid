@@ -18,6 +18,24 @@
  */
 package org.apache.qpid.amqp_1_0.jms.impl;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.UUID;
+import javax.jms.BytesMessage;
+import javax.jms.Destination;
+import javax.jms.IllegalStateException;
+import javax.jms.InvalidDestinationException;
+import javax.jms.JMSException;
+import javax.jms.MapMessage;
+import javax.jms.MessageEOFException;
+import javax.jms.MessageListener;
+import javax.jms.ObjectMessage;
+import javax.jms.Queue;
+import javax.jms.StreamMessage;
+import javax.jms.TextMessage;
+import javax.jms.Topic;
 import org.apache.qpid.amqp_1_0.client.Connection;
 import org.apache.qpid.amqp_1_0.client.Message;
 import org.apache.qpid.amqp_1_0.client.Receiver;
@@ -32,24 +50,9 @@ import org.apache.qpid.amqp_1_0.jms.TopicPublisher;
 import org.apache.qpid.amqp_1_0.jms.TopicSession;
 import org.apache.qpid.amqp_1_0.jms.TopicSubscriber;
 import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
+import org.apache.qpid.amqp_1_0.type.messaging.Source;
 import org.apache.qpid.amqp_1_0.type.messaging.Target;
 import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
-
-import javax.jms.*;
-import javax.jms.BytesMessage;
-import javax.jms.Destination;
-import javax.jms.IllegalStateException;
-import javax.jms.MapMessage;
-import javax.jms.ObjectMessage;
-import javax.jms.Queue;
-import javax.jms.StreamMessage;
-import javax.jms.TextMessage;
-import javax.jms.Topic;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.UUID;
 
 public class SessionImpl implements Session, QueueSession, TopicSession
 {
@@ -519,6 +522,16 @@ public class SessionImpl implements Session, QueueSession, TopicSession
         {
             Receiver receiver = new Receiver(getClientSession(), s, target, null,
                                              org.apache.qpid.amqp_1_0.client.AcknowledgeMode.ALO, false);
+
+            final org.apache.qpid.amqp_1_0.type.Source receiverSource = receiver.getSource();
+            if(receiverSource instanceof Source)
+            {
+                Source source = (Source) receiverSource;
+                receiver.close();
+                receiver = new Receiver(getClientSession(), s, target, source,
+                        org.apache.qpid.amqp_1_0.client.AcknowledgeMode.ALO, false);
+
+            }
             receiver.close();
         }
         catch(AmqpErrorException e)
