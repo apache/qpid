@@ -85,6 +85,11 @@ public class Receiver implements DeliveryStateHandler
             source.setDurable(TerminusDurability.UNSETTLED_STATE);
             source.setExpiryPolicy(TerminusExpiryPolicy.NEVER);
         }
+        else if(source != null)
+        {
+            source.setDurable(TerminusDurability.NONE);
+            source.setExpiryPolicy(TerminusExpiryPolicy.LINK_DETACH);
+        }
         _endpoint = session.getEndpoint().createReceivingLinkEndpoint(linkName, target, source,
                                                                       UnsignedInteger.ZERO);
 
@@ -535,6 +540,11 @@ public class Receiver implements DeliveryStateHandler
     public Session getSession()
     {
         return _session;
+    }
+
+    public org.apache.qpid.amqp_1_0.type.Source getSource()
+    {
+        return _endpoint.getSource();
     }
 
     public static interface SettledAction
