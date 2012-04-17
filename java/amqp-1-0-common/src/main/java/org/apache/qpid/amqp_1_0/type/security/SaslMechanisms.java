@@ -24,10 +24,10 @@
 package org.apache.qpid.amqp_1_0.type.security;
 
 
+import java.util.Arrays;
 import org.apache.qpid.amqp_1_0.transport.SASLEndpoint;
-
-
-import org.apache.qpid.amqp_1_0.type.*;
+import org.apache.qpid.amqp_1_0.type.SaslFrameBody;
+import org.apache.qpid.amqp_1_0.type.Symbol;
 
 public class SaslMechanisms
   implements SaslFrameBody
@@ -58,7 +58,7 @@ public class SaslMechanisms
             {
                 builder.append(',');
             }
-            builder.append("saslServerMechanisms=").append(_saslServerMechanisms);
+            builder.append("saslServerMechanisms=").append(_saslServerMechanisms == null ? "" : Arrays.asList(_saslServerMechanisms));
         }
 
         builder.append('}');

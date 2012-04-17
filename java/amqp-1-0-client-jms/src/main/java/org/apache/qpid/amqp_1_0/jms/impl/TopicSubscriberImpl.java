@@ -79,6 +79,14 @@ public class TopicSubscriberImpl extends MessageConsumerImpl implements TopicSub
             if(!address.equals(actualAddress) || !filtersEqual(getFilters(), actualFilters))
             {
                 receiver.close();
+                if(isDurable())
+                {
+                    receiver = getSession().getClientSession().createReceiver(address,
+                            StdDistMode.COPY, AcknowledgeMode.ALO,
+                            getLinkName(), false, getFilters(),
+                            null);
+                    receiver.close();
+                }
                 receiver = getSession().getClientSession().createReceiver(address,
                                                                           StdDistMode.COPY, AcknowledgeMode.ALO,
                                                                           getLinkName(), isDurable(), getFilters(),

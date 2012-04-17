@@ -347,10 +347,8 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
     {
         //TODO
         // if not durable or close
-        if(!TerminusDurability.UNSETTLED_STATE.equals(_durability) ||
-           (detach != null && Boolean.TRUE.equals(detach.getClosed())))
+        if(!TerminusDurability.UNSETTLED_STATE.equals(_durability))
         {
-
             AMQQueue queue = _subscription.getQueue();
 
             try
