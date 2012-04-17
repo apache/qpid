@@ -120,6 +120,6 @@ public class TopicSubscriberImpl extends MessageConsumerImpl implements TopicSub
 
     protected void closeUnderlyingReceiver(Receiver receiver)
     {
-        receiver.detach();
+        receiver.close();
     }
 }
