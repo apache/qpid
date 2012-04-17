@@ -137,7 +137,20 @@ public class QpidConnectionFactoryProxy implements Externalizable, Referenceable
     */
    public Connection createConnection() throws JMSException
    {
-       return _delegate.createConnection();
+       try
+       {
+           if(_delegate == null)
+           {
+               getReference();
+           }
+
+           return _delegate.createConnection();
+       }
+       catch(Exception e)
+       {
+          throw new JMSException(e.getMessage());
+       }
+
    }
 
    /**
