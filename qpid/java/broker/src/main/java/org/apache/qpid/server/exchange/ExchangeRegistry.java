@@ -24,6 +24,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 
 import java.util.Collection;
+import java.util.UUID;
 
 
 public interface ExchangeRegistry
@@ -55,6 +56,8 @@ public interface ExchangeRegistry
 
     void clearAndUnregisterMbeans();
 
+    Exchange getExchange(UUID exchangeId);
+
     Collection<Exchange> getExchanges();
 
     void addRegistryChangeListener(RegistryChangeListener listener);
@@ -63,6 +66,5 @@ public interface ExchangeRegistry
     {
         void exchangeRegistered(Exchange exchange);
         void exchangeUnregistered(Exchange exchange);
-        
     }
 }

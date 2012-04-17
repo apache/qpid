@@ -31,39 +31,33 @@ import com.sleepycat.je.Transaction;
 public abstract class AbstractStoreUpgrade implements StoreUpgrade
 {
     private static final Logger _logger = Logger.getLogger(AbstractStoreUpgrade.class);
-    protected static final String[] USER_FRIENDLY_NAMES = new String[] { "Exchanges", "Queues", "Queue bindings",
-            "Message deliveries", "Message metadata", "Message content", "Bridges", "Links", "Distributed transactions" };
 
-    protected void reportFinished(Environment environment, String[] databaseNames, String[] userFriendlyNames)
+    protected void reportFinished(Environment environment, int version)
     {
-        if (_logger.isInfoEnabled())
+        _logger.info("Completed upgrade to version " + version);
+        if (_logger.isDebugEnabled())
         {
-            _logger.info("Upgraded:");
-            List<String> databases = environment.getDatabaseNames();
-            for (int i = 0; i < databaseNames.length; i++)
-            {
-                if (databases.contains(databaseNames[i]))
-                {
-                    _logger.info("    " + getRowCount(databaseNames[i], environment)  + " rows in " + userFriendlyNames[i]);
-                }
-            }
+            _logger.debug("Upgraded:");
+            reportDatabaseRowCount(environment);
         }
     }
 
-
-    protected void reportStarting(Environment environment, String[] databaseNames, String[] userFriendlyNames)
+    private void reportDatabaseRowCount(Environment environment)
     {
-        if (_logger.isInfoEnabled())
+        List<String> databases = environment.getDatabaseNames();
+        for (String database : databases)
         {
-            _logger.info("Upgrading:");
-            List<String> databases = environment.getDatabaseNames();
-            for (int i = 0; i < databaseNames.length; i++)
-            {
-                if (databases.contains(databaseNames[i]))
-                {
-                    _logger.info("    " + getRowCount(databaseNames[i], environment) + " rows from " + userFriendlyNames[i]);
-                }
-            }
+            _logger.debug("    " + getRowCount(database, environment)  + " rows in " + database);
+        }
+    }
+
+    protected void reportStarting(Environment environment, int version)
+    {
+        _logger.info("Starting store upgrade from version " + version);
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Upgrading:");
+            reportDatabaseRowCount(environment);
         }
     }
 

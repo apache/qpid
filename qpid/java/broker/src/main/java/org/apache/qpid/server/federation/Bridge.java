@@ -767,13 +767,13 @@ public class Bridge implements BridgeConfig
 
             try
             {
-                _queue = AMQQueueFactory.createAMQQueueImpl(_tmpQueueName,
+                _queue = AMQQueueFactory.createAMQQueueImpl(null,
+                                                        _tmpQueueName,
                                                         isDurable(),
                                                         _link.getFederationTag(),
                                                         false,
                                                         false,
-                                                        getVirtualHost(),
-                                                        options);
+                                                        getVirtualHost(), options);
             }
             catch (AMQException e)
             {

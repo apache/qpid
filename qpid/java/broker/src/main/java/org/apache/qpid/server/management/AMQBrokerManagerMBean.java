@@ -31,6 +31,7 @@ import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueRegistry;
@@ -45,6 +46,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * This MBean implements the broker management interface and exposes the
@@ -168,7 +170,8 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
                 Exchange exchange = _exchangeRegistry.getExchange(new AMQShortString(exchangeName));
                 if (exchange == null)
                 {
-                    exchange = _exchangeFactory.createExchange(new AMQShortString(exchangeName), new AMQShortString(type),
+                    exchange = _exchangeFactory.createExchange(new AMQShortString(exchangeName),
+                                                               new AMQShortString(type),
                                                                durable, false, 0);
                     _exchangeRegistry.registerExchange(exchange);
                     if (durable)
@@ -241,45 +244,44 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     public void createNewQueue(String queueName, String owner, boolean durable, Map<String,Object> arguments) throws JMException
     {
         final AMQShortString queueNameAsAMQShortString = new AMQShortString(queueName);
-        AMQQueue queue = _queueRegistry.getQueue(queueNameAsAMQShortString);
-        if (queue != null)
+        synchronized (_queueRegistry)
         {
-            throw new JMException("The queue \"" + queueName + "\" already exists.");
-        }
-
-        CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
-        try
-        {
-            AMQShortString ownerShortString = null;
-            if (owner != null)
+            AMQQueue queue = _queueRegistry.getQueue(queueNameAsAMQShortString);
+            if (queue != null)
             {
-                ownerShortString = new AMQShortString(owner);
+                throw new JMException("The queue \"" + queueName + "\" already exists.");
             }
 
-            FieldTable args = null;
-            if(arguments != null)
+            CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
+            try
             {
-                args = FieldTable.convertToFieldTable(arguments);
-            }
-            final VirtualHost virtualHost = getVirtualHost();
+                AMQShortString ownerShortString = null;
 
-            queue = AMQQueueFactory.createAMQQueueImpl(queueNameAsAMQShortString, durable, ownerShortString,
-                                                       false, false, getVirtualHost(), args);
-            if (queue.isDurable() && !queue.isAutoDelete())
+                FieldTable args = null;
+                if(arguments != null)
+                {
+                    args = FieldTable.convertToFieldTable(arguments);
+                }
+                final VirtualHost virtualHost = getVirtualHost();
+
+                queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateUUID(), queueName, durable, owner,
+                        false, false, getVirtualHost(), arguments);
+                if (queue.isDurable() && !queue.isAutoDelete())
+                {
+                    getVirtualHost().getMessageStore().createQueue(queue, args);
+                }
+
+                virtualHost.getBindingFactory().addBinding(queueName, queue, _exchangeRegistry.getDefaultExchange(), null);
+            }
+            catch (AMQException ex)
             {
-                getVirtualHost().getMessageStore().createQueue(queue, args);
+                JMException jme = new JMException(ex.toString());
+                throw new MBeanException(jme, "Error in creating queue " + queueName);
             }
-
-            virtualHost.getBindingFactory().addBinding(queueName, queue, _exchangeRegistry.getDefaultExchange(), null);
-        }
-        catch (AMQException ex)
-        {
-            JMException jme = new JMException(ex.toString());
-            throw new MBeanException(jme, "Error in creating queue " + queueName);
-        }
-        finally
-        {
-            CurrentActor.remove();
+            finally
+            {
+                CurrentActor.remove();
+            }
         }
     }
 

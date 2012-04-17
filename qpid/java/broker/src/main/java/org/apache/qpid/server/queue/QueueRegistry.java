@@ -24,6 +24,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collection;
+import java.util.UUID;
 
 public interface QueueRegistry
 {
@@ -45,10 +46,11 @@ public interface QueueRegistry
 
     void stopAllAndUnregisterMBeans();
 
+    AMQQueue getQueue(UUID queueId);
+
     interface RegistryChangeListener
     {
         void queueRegistered(AMQQueue queue);
         void queueUnregistered(AMQQueue queue);
-
     }
 }

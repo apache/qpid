@@ -38,6 +38,7 @@ import org.apache.qpid.server.model.Publisher;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -124,7 +125,8 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
                 Map<String, Object> oldArgs = oldBinding.getArguments();
                 if((oldArgs == null && !bindingArguments.isEmpty()) || (oldArgs != null && !oldArgs.equals(bindingArguments)))
                 {
-                    virtualHost.getBindingFactory().replaceBinding(bindingKey, amqQueue, _exchange, bindingArguments);
+                    //TODO: generate deterministic UUID
+                    virtualHost.getBindingFactory().replaceBinding(UUIDGenerator.generateUUID(), bindingKey, amqQueue, _exchange, bindingArguments);
                 }
             }
             Binding binding = virtualHost.getBindingFactory().getBinding(bindingKey, amqQueue, _exchange, bindingArguments);

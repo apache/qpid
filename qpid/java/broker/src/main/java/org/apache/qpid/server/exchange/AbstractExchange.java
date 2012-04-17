@@ -117,7 +117,7 @@ public abstract class AbstractExchange implements Exchange, Managable
      */
     protected abstract AbstractExchangeMBean createMBean() throws JMException;
 
-    public void initialise(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete)
+    public void initialise(UUID id, VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete)
             throws AMQException
     {
         _virtualHost = host;
@@ -126,7 +126,7 @@ public abstract class AbstractExchange implements Exchange, Managable
         _autoDelete = autoDelete;
         _ticket = ticket;
 
-        _id = getConfigStore().createId();
+        _id = id;
 
         getConfigStore().addConfiguredObject(this);
         createAndRegisterMBean();

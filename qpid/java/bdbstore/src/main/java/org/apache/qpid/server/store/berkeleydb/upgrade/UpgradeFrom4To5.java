@@ -71,24 +71,16 @@ public class UpgradeFrom4To5 extends AbstractStoreUpgrade
     private static final String OLD_CONTENT_DB_NAME = "messageContentDb_v4";
     private static final String NEW_CONTENT_DB_NAME = "messageContentDb_v5";
 
-    private static final String[] OLD_DATABASE_NAMES = new String[] { EXCHANGE_DB_NAME, OLD_QUEUE_DB_NAME,
-            OLD_BINDINGS_DB_NAME, OLD_DELIVERY_DB, OLD_METADATA_DB_NAME, OLD_CONTENT_DB_NAME, "bridges_v4", "links_v4",
-            "xids_v4" };
-    private static final String[] NEW_DATABASE_NAMES = new String[] { "exchangeDb_v5", NEW_QUEUE_DB_NAME,
-            NEW_BINDINGS_DB_NAME, NEW_DELIVERY_DB, NEW_METADATA_DB_NAME, NEW_CONTENT_DB_NAME, "bridges_v5", "links_v5",
-            "xids_v5" };
-
     private static final byte COLON = (byte) ':';
 
     private static final Logger _logger = Logger.getLogger(UpgradeFrom4To5.class);
 
-    public void performUpgrade(final Environment environment, final UpgradeInteractionHandler handler) throws DatabaseException, AMQStoreException
+    public void performUpgrade(final Environment environment, final UpgradeInteractionHandler handler, String virtualHostName) throws DatabaseException, AMQStoreException
     {
-        _logger.info("Starting store upgrade from version 4");
         Transaction transaction = null;
         try
         {
-            reportStarting(environment, OLD_DATABASE_NAMES, USER_FRIENDLY_NAMES);
+            reportStarting(environment, 4);
 
             transaction = environment.beginTransaction(null, null);
 
@@ -103,7 +95,7 @@ public class UpgradeFrom4To5 extends AbstractStoreUpgrade
             renameRemainingDatabases(environment, handler, transaction);
             transaction.commit();
 
-            reportFinished(environment, NEW_DATABASE_NAMES, USER_FRIENDLY_NAMES);
+            reportFinished(environment, 5);
 
         }
         catch (Exception e)

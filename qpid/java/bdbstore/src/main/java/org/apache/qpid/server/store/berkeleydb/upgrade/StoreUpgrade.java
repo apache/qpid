@@ -26,6 +26,6 @@ import org.apache.qpid.AMQStoreException;
 
 public interface StoreUpgrade
 {
-    void performUpgrade(Environment environment, UpgradeInteractionHandler handler)
+    void performUpgrade(Environment environment, UpgradeInteractionHandler handler, String virtualHostName)
             throws DatabaseException, AMQStoreException;
 }

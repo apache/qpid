@@ -44,6 +44,7 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostAlias;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
@@ -238,9 +239,9 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
         try
         {
             AMQQueue queue =
-                    AMQQueueFactory.createAMQQueueImpl(name, durable, owner, lifetime == LifetimePolicy.AUTO_DELETE,
-                                                       exclusive,
-                                                       _virtualHost, attributes);
+                    AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateUUID(name, _virtualHost.getName()), name,
+                                                       durable, owner, lifetime == LifetimePolicy.AUTO_DELETE,
+                                                       exclusive, _virtualHost, attributes);
             _virtualHost.getQueueRegistry().registerQueue(queue);
             if(durable)
             {

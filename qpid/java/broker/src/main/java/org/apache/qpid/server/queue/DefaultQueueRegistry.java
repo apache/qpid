@@ -28,6 +28,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -122,5 +123,19 @@ public class DefaultQueueRegistry implements QueueRegistry
             }
         }
         _queueMap.clear();
+    }
+
+    @Override
+    public synchronized AMQQueue getQueue(UUID queueId)
+    {
+        Collection<AMQQueue> queues = _queueMap.values();
+        for (AMQQueue queue : queues)
+        {
+            if (queue.getId().equals(queueId))
+            {
+                return queue;
+            }
+        }
+        return null;
     }
 }

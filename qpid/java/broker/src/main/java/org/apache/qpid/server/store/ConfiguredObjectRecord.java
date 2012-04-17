@@ -18,20 +18,48 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.exchange;
+package org.apache.qpid.server.store;
 
 import java.util.UUID;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-
-
-public interface ExchangeType<T extends Exchange>
+public class ConfiguredObjectRecord
 {
-    public AMQShortString getName();
-    public Class<T> getExchangeClass();
-    public T newInstance(UUID id, VirtualHost host, AMQShortString name,
-                         boolean durable, int ticket, boolean autoDelete) throws AMQException;
-    public AMQShortString getDefaultExchangeName();
+    private UUID _id;
+    private String _type;
+    private String _attributes;
+
+    public ConfiguredObjectRecord(UUID id, String type, String attributes)
+    {
+        super();
+        _id = id;
+        _type = type;
+        _attributes = attributes;
+    }
+
+    public UUID getId()
+    {
+        return _id;
+    }
+
+    public void setId(UUID id)
+    {
+        _id = id;
+    }
+
+    public String getType()
+    {
+        return _type;
+    }
+
+    public String getAttributes()
+    {
+        return _attributes;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "ConfiguredObjectRecord [id=" + _id + ", type=" + _type + ", attributes=" + _attributes + "]";
+    }
+
 }

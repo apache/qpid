@@ -18,31 +18,37 @@
  * under the License.
  *
  */
+package org.apache.qpid.server.model;
 
-package org.apache.qpid.server.queue;
-
-import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.exchange.ExchangeDefaults;
 
-public class ConflationQueue extends SimpleAMQQueue
+
+public class UUIDGenerator
 {
-    protected ConflationQueue(UUID id,
-                              String name,
-                              boolean durable,
-                              String owner,
-                              boolean autoDelete,
-                              boolean exclusive,
-                              VirtualHost virtualHost,
-                              Map<String, Object> args, String conflationKey)
+
+    public static UUID generateUUID()
     {
-        super(id, name, durable, owner, autoDelete, exclusive, virtualHost, new ConflationQueueList.Factory(conflationKey), args);
+        return UUID.randomUUID();
     }
 
-    public String getConflationKey()
+    public static UUID generateUUID(String objectName, String virtualHostName)
     {
-        return ((ConflationQueueList) getEntries()).getConflationKey();
+        StringBuilder sb = new StringBuilder();
+        sb.append(virtualHostName).append(objectName);
+        return UUID.nameUUIDFromBytes(sb.toString().getBytes());
     }
 
+    public static UUID generateExchangeUUID(String echangeName, String virtualHostName)
+    {
+        if(ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString().equals(echangeName) || echangeName.startsWith("amq.") || echangeName.startsWith("qpid."))
+        {
+            return generateUUID(echangeName, virtualHostName);
+        }
+        else
+        {
+            return generateUUID();
+        }
+    }
 }

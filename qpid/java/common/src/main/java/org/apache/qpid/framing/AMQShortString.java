@@ -858,4 +858,9 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         }
     }
 
+    public static String toString(AMQShortString amqShortString)
+    {
+        return amqShortString == null ? null : amqShortString.asString();
+    }
+
 }

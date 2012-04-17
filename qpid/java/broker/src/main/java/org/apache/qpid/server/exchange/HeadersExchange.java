@@ -39,6 +39,7 @@ import javax.management.JMException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -95,12 +96,12 @@ public class HeadersExchange extends AbstractExchange
             return HeadersExchange.class;
         }
 
-        public HeadersExchange newInstance(VirtualHost host, AMQShortString name, boolean durable, int ticket,
+        public HeadersExchange newInstance(UUID id, VirtualHost host, AMQShortString name, boolean durable, int ticket,
                 boolean autoDelete) throws AMQException
         {
             HeadersExchange exch = new HeadersExchange();
 
-            exch.initialise(host, name, durable, ticket, autoDelete);
+            exch.initialise(id, host, name, durable, ticket, autoDelete);
             return exch;
         }
 
