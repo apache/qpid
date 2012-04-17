@@ -71,8 +71,7 @@ broker.libs=${commons-cli} ${commons-logging} ${log4j} ${slf4j-log4j} \
 broker-plugins-management.libs=${jetty} ${jetty-util} ${servlet-api} ${jackson-core} ${jackson-mapper}
 broker-plugins.libs=${felix.libs} ${log4j} ${commons-configuration.libs}
 
-junit-toolkit.libs=${log4j} ${junit} ${slf4j-api} ${mockito-all}
-test.libs=${slf4j-log4j} ${junit-toolkit.libs} ${mockito}
+test.libs=${slf4j-log4j} ${log4j} ${junit} ${slf4j-api} ${mockito-all}
 
 ibm-icu=lib/com.ibm.icu_3.8.1.v20080530.jar
 ecl-core-jface=lib/org.eclipse.jface_3.4.1.M20080827-2000.jar
