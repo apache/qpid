@@ -42,6 +42,7 @@ public class QpidTestCase extends TestCase
 {
     public static final String QPID_HOME = System.getProperty("QPID_HOME");
     public static final String TEST_RESOURCES_DIR = QPID_HOME + "/../test-profiles/test_resources/";
+    public static final String TMP_FOLDER = System.getProperty("java.io.tmpdir");
 
     private static final Logger _logger = Logger.getLogger(QpidTestCase.class);
 

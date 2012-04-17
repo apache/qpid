@@ -36,6 +36,7 @@ import javax.management.JMException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -103,14 +104,14 @@ public class DirectExchange extends AbstractExchange
             return DirectExchange.class;
         }
 
-        public DirectExchange newInstance(VirtualHost host,
+        public DirectExchange newInstance(UUID id, VirtualHost host,
                                             AMQShortString name,
                                             boolean durable,
                                             int ticket,
                                             boolean autoDelete) throws AMQException
         {
             DirectExchange exch = new DirectExchange();
-            exch.initialise(host,name,durable,ticket,autoDelete);
+            exch.initialise(id, host,name,durable,ticket,autoDelete);
             return exch;
         }
 

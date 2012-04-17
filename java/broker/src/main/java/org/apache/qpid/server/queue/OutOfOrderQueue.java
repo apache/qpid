@@ -5,15 +5,16 @@ import org.apache.qpid.server.subscription.SubscriptionList;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Map;
+import java.util.UUID;
 
 public abstract class OutOfOrderQueue extends SimpleAMQQueue
 {
 
-    protected OutOfOrderQueue(String name, boolean durable, String owner,
-                              boolean autoDelete, boolean exclusive, VirtualHost virtualHost,
-                              QueueEntryListFactory entryListFactory, Map<String, Object> arguments)
+    protected OutOfOrderQueue(UUID id, String name, boolean durable,
+                              String owner, boolean autoDelete, boolean exclusive,
+                              VirtualHost virtualHost, QueueEntryListFactory entryListFactory, Map<String, Object> arguments)
     {
-        super(name, durable, owner, autoDelete, exclusive, virtualHost, entryListFactory, arguments);
+        super(id, name, durable, owner, autoDelete, exclusive, virtualHost, entryListFactory, arguments);
     }
 
     @Override

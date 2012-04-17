@@ -18,36 +18,36 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb.entry;
+package org.apache.qpid.server.util;
 
-import org.apache.qpid.framing.AMQShortString;
+import java.util.HashMap;
+import java.util.Map;
 
-public class ExchangeRecord extends Object
+import junit.framework.TestCase;
+
+public class MapJsonSerializerTest extends TestCase
 {
-    private final AMQShortString _exchangeName;
-    private final AMQShortString _exchangeType;
-    private final boolean _autoDelete;
+    private MapJsonSerializer _serializer;
 
-    public ExchangeRecord(AMQShortString exchangeName, AMQShortString exchangeType, boolean autoDelete)
+    protected void setUp() throws Exception
     {
-        _exchangeName = exchangeName;
-        _exchangeType = exchangeType;
-        _autoDelete = autoDelete;
+        super.setUp();
+        _serializer = new MapJsonSerializer();
+
     }
 
-    public AMQShortString getNameShortString()
+    public void testSerializeDeserialize()
     {
-        return _exchangeName;
-    }
+        Map<String, Object> testMap = new HashMap<String, Object>();
+        testMap.put("string", "Test String");
+        testMap.put("integer", new Integer(10));
+        testMap.put("long", new Long(Long.MAX_VALUE));
+        testMap.put("boolean", Boolean.TRUE);
 
-    public AMQShortString getType()
-    {
-        return _exchangeType;
-    }
+        String jsonString = _serializer.serialize(testMap);
+        Map<String, Object> deserializedMap = _serializer.deserialize(jsonString);
 
-    public boolean isAutoDelete()
-    {
-        return _autoDelete;
+        assertEquals(deserializedMap, testMap);
     }
 
 }

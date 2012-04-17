@@ -37,6 +37,7 @@ import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.BaseQueue.PostEnqueueAction;
 import org.apache.qpid.server.queue.SimpleAMQQueue.QueueEntryFilter;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -137,7 +138,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         }
 
         try {
-            _queue = new SimpleAMQQueue(_qname, false, _owner, false, false,null, Collections.EMPTY_MAP);
+            _queue = new SimpleAMQQueue(UUIDGenerator.generateUUID(), _qname, false, _owner, false,false, null, Collections.EMPTY_MAP);
             assertNull("Queue was created", _queue);
         }
         catch (IllegalArgumentException e)
@@ -479,7 +480,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
     public void testAutoDeleteQueue() throws Exception
     {
        _queue.stop();
-       _queue = new SimpleAMQQueue(_qname, false, null, true, false, _virtualHost, Collections.EMPTY_MAP);
+       _queue = new SimpleAMQQueue(UUIDGenerator.generateUUID(), _qname, false, null, true, false, _virtualHost, Collections.EMPTY_MAP);
        _queue.setDeleteOnNoConsumers(true);
        _queue.registerSubscription(_subscription, false);
        AMQMessage message = createMessage(new Long(25));
@@ -691,8 +692,8 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
     public void testProcessQueueWithUniqueSelectors() throws Exception
     {
         TestSimpleQueueEntryListFactory factory = new TestSimpleQueueEntryListFactory();
-        SimpleAMQQueue testQueue = new SimpleAMQQueue("testQueue", false, "testOwner",false,
-                                                      false, _virtualHost, factory, null)
+        SimpleAMQQueue testQueue = new SimpleAMQQueue(UUIDGenerator.generateUUID(), "testQueue", false,"testOwner",
+                                                      false, false, _virtualHost, factory, null)
         {
             @Override
             public void deliverAsync(Subscription sub)
@@ -1028,8 +1029,8 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         int dequeueMessageIndex = 1;
 
         // create queue with overridden method deliverAsync
-        SimpleAMQQueue testQueue = new SimpleAMQQueue(new AMQShortString("test"), false,
-                new AMQShortString("testOwner"), false, false, _virtualHost, null)
+        SimpleAMQQueue testQueue = new SimpleAMQQueue(UUIDGenerator.generateUUID(), new AMQShortString("test"),
+                false, new AMQShortString("testOwner"), false, false, _virtualHost, null)
         {
             @Override
             public void deliverAsync(Subscription sub)
@@ -1099,8 +1100,8 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
     public void testEqueueDequeuedEntry()
     {
         // create a queue where each even entry is considered a dequeued
-        SimpleAMQQueue queue = new SimpleAMQQueue(new AMQShortString("test"), false, new AMQShortString("testOwner"),
-                false, false, _virtualHost, new QueueEntryListFactory()
+        SimpleAMQQueue queue = new SimpleAMQQueue(UUIDGenerator.generateUUID(), new AMQShortString("test"), false,
+                new AMQShortString("testOwner"), false, false, _virtualHost, new QueueEntryListFactory()
                 {
                     public QueueEntryList createQueueEntryList(AMQQueue queue)
                     {
@@ -1177,8 +1178,8 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
 
     public void testActiveConsumerCount() throws Exception
     {
-        final SimpleAMQQueue queue = new SimpleAMQQueue(new AMQShortString("testActiveConsumerCount"), false, new AMQShortString("testOwner"),
-                false, false, _virtualHost, new SimpleQueueEntryList.Factory(), null);
+        final SimpleAMQQueue queue = new SimpleAMQQueue(UUIDGenerator.generateUUID(), new AMQShortString("testActiveConsumerCount"), false,
+                new AMQShortString("testOwner"), false, false, _virtualHost, new SimpleQueueEntryList.Factory(), null);
 
         //verify adding an active subscription increases the count
         final MockSubscription subscription1 = new MockSubscription();

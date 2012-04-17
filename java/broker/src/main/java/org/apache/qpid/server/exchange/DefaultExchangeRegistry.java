@@ -30,6 +30,7 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -172,6 +173,27 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         }
         _exchangeMap.clear();
         _exchangeMapStr.clear();
+    }
+
+    @Override
+    public synchronized Exchange getExchange(UUID exchangeId)
+    {
+        if (exchangeId == null)
+        {
+            return getDefaultExchange();
+        }
+        else
+        {
+            Collection<Exchange> exchanges = _exchangeMap.values();
+            for (Exchange exchange : exchanges)
+            {
+                if (exchange.getId().equals(exchangeId))
+                {
+                    return exchange;
+                }
+            }
+            return null;
+        }
     }
 
 }

@@ -46,8 +46,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.federation.Bridge;
 import org.apache.qpid.server.federation.BrokerLink;
@@ -57,6 +57,7 @@ import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.BindingRecoveryHandler;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.ExchangeRecoveryHandler;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.QueueRecoveryHandler;
+import org.apache.qpid.server.store.ConfiguredObjectHelper;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
@@ -73,19 +74,14 @@ import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
 import org.apache.qpid.server.store.TransactionLogRecoveryHandler.QueueEntryRecoveryHandler;
 import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.store.berkeleydb.entry.BindingRecord;
-import org.apache.qpid.server.store.berkeleydb.entry.ExchangeRecord;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.berkeleydb.entry.PreparedTransaction;
 import org.apache.qpid.server.store.berkeleydb.entry.QueueEntryKey;
-import org.apache.qpid.server.store.berkeleydb.entry.QueueRecord;
 import org.apache.qpid.server.store.berkeleydb.entry.Xid;
-import org.apache.qpid.server.store.berkeleydb.tuple.AMQShortStringBinding;
+import org.apache.qpid.server.store.berkeleydb.tuple.ConfiguredObjectBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.ContentBinding;
-import org.apache.qpid.server.store.berkeleydb.tuple.ExchangeBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.MessageMetaDataBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.PreparedTransactionBinding;
-import org.apache.qpid.server.store.berkeleydb.tuple.QueueBinding;
-import org.apache.qpid.server.store.berkeleydb.tuple.QueueBindingTupleBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.QueueEntryBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.StringMapBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.UUIDTupleBinding;
@@ -104,23 +100,18 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
     private Environment _environment;
 
+    private String CONFIGURED_OBJECTS = "CONFIGURED_OBJECTS";
     private String MESSAGEMETADATADB_NAME = "MESSAGE_METADATA";
     private String MESSAGECONTENTDB_NAME = "MESSAGE_CONTENT";
-    private String QUEUEBINDINGSDB_NAME = "QUEUE_BINDINGS";
-    private String DELIVERYDB_NAME = "DELIVERIES";
-    private String EXCHANGEDB_NAME = "EXCHANGES";
-    private String QUEUEDB_NAME = "QUEUES";
+    private String DELIVERYDB_NAME = "QUEUE_ENTRIES";
     private String BRIDGEDB_NAME = "BRIDGES";
     private String LINKDB_NAME = "LINKS";
     private String XIDDB_NAME = "XIDS";
 
-
+    private Database _configuredObjectsDb;
     private Database _messageMetaDataDb;
     private Database _messageContentDb;
-    private Database _queueBindingsDb;
     private Database _deliveryDb;
-    private Database _exchangeDb;
-    private Database _queueDb;
     private Database _bridgeDb;
     private Database _linkDb;
     private Database _xidDb;
@@ -164,6 +155,8 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     
     private final EventManager _eventManager = new EventManager();
     private String _storeLocation;
+
+    private ConfiguredObjectHelper _configuredObjectHelper = new ConfiguredObjectHelper();
 
     public AbstractBDBMessageStore()
     {
@@ -239,7 +232,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
         LOGGER.info("Configuring BDB message store");
 
-        setupStore(environmentPath);
+        setupStore(environmentPath, name);
     }
 
     /**
@@ -257,11 +250,11 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         _stateManager.attainState(State.ACTIVE);
     }
 
-    protected void setupStore(File storePath) throws DatabaseException, AMQStoreException
+    protected void setupStore(File storePath, String name) throws DatabaseException, AMQStoreException
     {
         _environment = createEnvironment(storePath);
 
-        new Upgrader(_environment).upgradeIfNecessary();
+        new Upgrader(_environment, name).upgradeIfNecessary();
 
         openDatabases();
     }
@@ -326,10 +319,8 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         //This is required if we are wanting read only access.
         dbConfig.setReadOnly(false);
 
+        _configuredObjectsDb = openDatabase(CONFIGURED_OBJECTS, dbConfig);
         _messageMetaDataDb = openDatabase(MESSAGEMETADATADB_NAME, dbConfig);
-        _queueDb = openDatabase(QUEUEDB_NAME, dbConfig);
-        _exchangeDb = openDatabase(EXCHANGEDB_NAME, dbConfig);
-        _queueBindingsDb = openDatabase(QUEUEBINDINGSDB_NAME, dbConfig);
         _messageContentDb = openDatabase(MESSAGECONTENTDB_NAME, dbConfig);
         _deliveryDb = openDatabase(DELIVERYDB_NAME, dbConfig);
         _linkDb = openDatabase(LINKDB_NAME, dbConfig);
@@ -376,23 +367,11 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             _messageContentDb.close();
         }
 
-        if (_exchangeDb != null)
-        {
-            LOGGER.info("Closing exchange database");
-            _exchangeDb.close();
-        }
-
-        if (_queueBindingsDb != null)
-        {
-            LOGGER.info("Closing bindings database");
-            _queueBindingsDb.close();
-        }
-
-        if (_queueDb != null)
-        {
-            LOGGER.info("Closing queue database");
-            _queueDb.close();
-        }
+         if (_configuredObjectsDb != null)
+         {
+             LOGGER.info("Closing configurable objects database");
+             _configuredObjectsDb.close();
+         }
 
         if (_deliveryDb != null)
         {
@@ -440,14 +419,15 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     {
         try
         {
+            List<ConfiguredObjectRecord> configuredObjects = loadConfiguredObjects();
             QueueRecoveryHandler qrh = recoveryHandler.begin(this);
-            loadQueues(qrh);
+            _configuredObjectHelper.recoverQueues(qrh, configuredObjects);
 
             ExchangeRecoveryHandler erh = qrh.completeQueueRecovery();
-            loadExchanges(erh);
+            _configuredObjectHelper.recoverExchanges(erh, configuredObjects);
 
             BindingRecoveryHandler brh = erh.completeExchangeRecovery();
-            recoverBindings(brh);
+            _configuredObjectHelper.recoverBindings(brh, configuredObjects);
 
             ConfigurationRecoveryHandler.BrokerLinkRecoveryHandler lrh = brh.completeBindingRecovery();
             recoverBrokerLinks(lrh);
@@ -459,29 +439,21 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
     }
 
-    private void loadQueues(QueueRecoveryHandler qrh) throws DatabaseException
+    private List<ConfiguredObjectRecord> loadConfiguredObjects() throws DatabaseException
     {
         Cursor cursor = null;
-
+        List<ConfiguredObjectRecord> results = new ArrayList<ConfiguredObjectRecord>();
         try
         {
-            cursor = _queueDb.openCursor(null, null);
+            cursor = _configuredObjectsDb.openCursor(null, null);
             DatabaseEntry key = new DatabaseEntry();
             DatabaseEntry value = new DatabaseEntry();
-            QueueBinding binding = QueueBinding.getInstance();
             while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
             {
-                QueueRecord queueRecord = binding.entryToObject(value);
-
-                String queueName = queueRecord.getNameShortString() == null ? null :
-                                        queueRecord.getNameShortString().asString();
-                String owner = queueRecord.getOwner() == null ? null :
-                                        queueRecord.getOwner().asString();
-                boolean exclusive = queueRecord.isExclusive();
-
-                FieldTable arguments = queueRecord.getArguments();
-
-                qrh.queue(queueName, owner, exclusive, arguments);
+                ConfiguredObjectRecord configuredObject = ConfiguredObjectBinding.getInstance().entryToObject(value);
+                UUID id = UUIDTupleBinding.getInstance().entryToObject(key);
+                configuredObject.setId(id);
+                results.add(configuredObject);
             }
 
         }
@@ -489,6 +461,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         {
             closeCursorSafely(cursor);
         }
+        return results;
     }
 
     private void closeCursorSafely(Cursor cursor)
@@ -498,74 +471,6 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             cursor.close();
         }
     }
-
-
-    private void loadExchanges(ExchangeRecoveryHandler erh) throws DatabaseException
-    {
-        Cursor cursor = null;
-
-        try
-        {
-            cursor = _exchangeDb.openCursor(null, null);
-            DatabaseEntry key = new DatabaseEntry();
-            DatabaseEntry value = new DatabaseEntry();
-            ExchangeBinding binding = ExchangeBinding.getInstance();
-
-            while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
-            {
-                ExchangeRecord exchangeRec = binding.entryToObject(value);
-
-                String exchangeName = exchangeRec.getNameShortString() == null ? null :
-                                      exchangeRec.getNameShortString().asString();
-                String type = exchangeRec.getType() == null ? null :
-                              exchangeRec.getType().asString();
-                boolean autoDelete = exchangeRec.isAutoDelete();
-
-                erh.exchange(exchangeName, type, autoDelete);
-            }
-        }
-        finally
-        {
-            closeCursorSafely(cursor);
-        }
-
-    }
-
-    private void recoverBindings(BindingRecoveryHandler brh) throws DatabaseException
-    {
-        Cursor cursor = null;
-        try
-        {
-            cursor = _queueBindingsDb.openCursor(null, null);
-            DatabaseEntry key = new DatabaseEntry();
-            DatabaseEntry value = new DatabaseEntry();
-            QueueBindingTupleBinding binding = QueueBindingTupleBinding.getInstance();
-
-            while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
-            {
-                //yes, this is retrieving all the useful information from the key only.
-                //For table compatibility it shall currently be left as is
-                BindingRecord bindingRecord = binding.entryToObject(key);
-
-                String exchangeName = bindingRecord.getExchangeName() == null ? null :
-                                      bindingRecord.getExchangeName().asString();
-                String queueName = bindingRecord.getQueueName() == null ? null :
-                                   bindingRecord.getQueueName().asString();
-                String routingKey = bindingRecord.getRoutingKey() == null ? null :
-                                    bindingRecord.getRoutingKey().asString();
-                ByteBuffer argumentsBB = (bindingRecord.getArguments() == null ? null :
-                    java.nio.ByteBuffer.wrap(bindingRecord.getArguments().getDataAsBytes()));
-
-                brh.binding(exchangeName, queueName, routingKey, argumentsBB);
-            }
-        }
-        finally
-        {
-            closeCursorSafely(cursor);
-        }
-
-    }
-
 
     private void recoverBrokerLinks(final ConfigurationRecoveryHandler.BrokerLinkRecoveryHandler lrh)
     {
@@ -681,7 +586,6 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             QueueEntryBinding keyBinding = QueueEntryBinding.getInstance();
 
             DatabaseEntry value = new DatabaseEntry();
-
             while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
             {
                 QueueEntryKey qek = keyBinding.entryToObject(key);
@@ -700,10 +604,9 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
             for(QueueEntryKey entry : entries)
             {
-                AMQShortString queueName = entry.getQueueName();
+                UUID queueId = entry.getQueueId();
                 long messageId = entry.getMessageId();
-
-                qerh.queueEntry(queueName.asString(),messageId);
+                qerh.queueEntry(queueId, messageId);
             }
         }
         catch (DatabaseException e)
@@ -892,25 +795,8 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     {
         if (_stateManager.isInState(State.ACTIVE))
         {
-            ExchangeRecord exchangeRec = new ExchangeRecord(exchange.getNameShortString(),
-                                             exchange.getTypeShortString(), exchange.isAutoDelete());
-
-            DatabaseEntry key = new DatabaseEntry();
-            AMQShortStringBinding keyBinding = AMQShortStringBinding.getInstance();
-            keyBinding.objectToEntry(exchange.getNameShortString(), key);
-
-            DatabaseEntry value = new DatabaseEntry();
-            ExchangeBinding exchangeBinding = ExchangeBinding.getInstance();
-            exchangeBinding.objectToEntry(exchangeRec, value);
-
-            try
-            {
-                _exchangeDb.put(null, key, value);
-            }
-            catch (DatabaseException e)
-            {
-                throw new AMQStoreException("Error writing Exchange with name " + exchange.getName() + " to database: " + e.getMessage(), e);
-            }
+            ConfiguredObjectRecord configuredObject = _configuredObjectHelper.createExchangeConfiguredObject(exchange);
+            storeConfiguredObjectEntry(configuredObject);
         }
     }
 
@@ -919,82 +805,47 @@ public abstract class AbstractBDBMessageStore implements MessageStore
      */
     public void removeExchange(Exchange exchange) throws AMQStoreException
     {
-        DatabaseEntry key = new DatabaseEntry();
-        AMQShortStringBinding keyBinding = AMQShortStringBinding.getInstance();
-        keyBinding.objectToEntry(exchange.getNameShortString(), key);
-        try
+        UUID id = exchange.getId();
+        if (LOGGER.isDebugEnabled())
         {
-            OperationStatus status = _exchangeDb.delete(null, key);
-            if (status == OperationStatus.NOTFOUND)
-            {
-                throw new AMQStoreException("Exchange " + exchange.getName() + " not found");
-            }
+            LOGGER.debug("public void removeExchange(String name = " + exchange.getName() + ", uuid = " + id + "): called");
         }
-        catch (DatabaseException e)
+        OperationStatus status = removeConfiguredObject(id);
+        if (status == OperationStatus.NOTFOUND)
         {
-            throw new AMQStoreException("Error writing deleting with name " + exchange.getName() + " from database: " + e.getMessage(), e);
+            throw new AMQStoreException("Exchange " + exchange.getName() + " with id " + id + " not found");
         }
     }
 
 
     /**
-     * @see DurableConfigurationStore#bindQueue(Exchange, AMQShortString, AMQQueue, FieldTable)
+     * @see DurableConfigurationStore#bindQueue(Binding)
      */
-    public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
-    {
-        bindQueue(new BindingRecord(exchange.getNameShortString(), queue.getNameShortString(), routingKey, args));
-    }
-
-    protected void bindQueue(final BindingRecord bindingRecord) throws AMQStoreException
+    public void bindQueue(Binding binding) throws AMQStoreException
     {
         if (_stateManager.isInState(State.ACTIVE))
         {
-            DatabaseEntry key = new DatabaseEntry();
-            QueueBindingTupleBinding keyBinding = QueueBindingTupleBinding.getInstance();
-
-            keyBinding.objectToEntry(bindingRecord, key);
-
-            //yes, this is writing out 0 as a value and putting all the
-            //useful info into the key, don't ask me why. For table
-            //compatibility it shall currently be left as is
-            DatabaseEntry value = new DatabaseEntry();
-            ByteBinding.byteToEntry((byte) 0, value);
-
-            try
-            {
-                _queueBindingsDb.put(null, key, value);
-            }
-            catch (DatabaseException e)
-            {
-                throw new AMQStoreException("Error writing binding for AMQQueue with name " + bindingRecord.getQueueName() + " to exchange "
-                                       + bindingRecord.getExchangeName() + " to database: " + e.getMessage(), e);
-            }
+            ConfiguredObjectRecord configuredObject = _configuredObjectHelper.createBindingConfiguredObject(binding);
+            storeConfiguredObjectEntry(configuredObject);
         }
     }
 
     /**
-     * @see DurableConfigurationStore#unbindQueue(Exchange, AMQShortString, AMQQueue, FieldTable)
+     * @see DurableConfigurationStore#unbindQueue(Binding)
      */
-    public void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args)
+    public void unbindQueue(Binding binding)
             throws AMQStoreException
     {
-        DatabaseEntry key = new DatabaseEntry();
-        QueueBindingTupleBinding keyBinding = QueueBindingTupleBinding.getInstance();
-        keyBinding.objectToEntry(new BindingRecord(exchange.getNameShortString(), queue.getNameShortString(), routingKey, args), key);
-
-        try
+        UUID id = binding.getId();
+        if (LOGGER.isDebugEnabled())
         {
-            OperationStatus status = _queueBindingsDb.delete(null, key);
-            if (status == OperationStatus.NOTFOUND)
-            {
-                throw new AMQStoreException("Queue binding for queue with name " + queue.getName() + " to exchange "
-                                       + exchange.getName() + "  not found");
-            }
+            LOGGER.debug("public void unbindQueue(Binding binding = " + binding + ", uuid = " + id + "): called");
         }
-        catch (DatabaseException e)
+
+        OperationStatus status = removeConfiguredObject(id);
+        if (status == OperationStatus.NOTFOUND)
         {
-            throw new AMQStoreException("Error deleting queue binding for queue with name " + queue.getName() + " to exchange "
-                                   + exchange.getName() + " from database: " + e.getMessage(), e);
+            throw new AMQStoreException("Binding " + binding + " not found");
         }
     }
 
@@ -1011,55 +862,21 @@ public abstract class AbstractBDBMessageStore implements MessageStore
      */
     public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQStoreException
     {
-        if (LOGGER.isDebugEnabled())
-        {
-            LOGGER.debug("public void createQueue(AMQQueue queue(" + queue.getName() + ") = " + queue + "): called");
-        }
-
-        QueueRecord queueRecord= new QueueRecord(queue.getNameShortString(),
-                                                queue.getOwner(), queue.isExclusive(), arguments);
-
-        createQueue(queueRecord);
-    }
-
-    /**
-     * Makes the specified queue persistent.
-     *
-     * Only intended for direct use during store upgrades.
-     *
-     * @param queueRecord     Details of the queue to store.
-     *
-     * @throws AMQStoreException If the operation fails for any reason.
-     */
-    protected void createQueue(QueueRecord queueRecord) throws AMQStoreException
-    {
         if (_stateManager.isInState(State.ACTIVE))
         {
-            DatabaseEntry key = new DatabaseEntry();
-            AMQShortStringBinding keyBinding = AMQShortStringBinding.getInstance();
-            keyBinding.objectToEntry(queueRecord.getNameShortString(), key);
-
-            DatabaseEntry value = new DatabaseEntry();
-            QueueBinding queueBinding = QueueBinding.getInstance();
-
-            queueBinding.objectToEntry(queueRecord, value);
-            try
+            if (LOGGER.isDebugEnabled())
             {
-                _queueDb.put(null, key, value);
+                LOGGER.debug("public void createQueue(AMQQueue queue(" + queue.getName() + "), queue id" + queue.getId()
+                        + ", arguments=" + arguments + "): called");
             }
-            catch (DatabaseException e)
-            {
-                throw new AMQStoreException("Error writing AMQQueue with name " + queueRecord.getNameShortString().asString()
-                        + " to database: " + e.getMessage(), e);
-            }
+            ConfiguredObjectRecord configuredObject = _configuredObjectHelper.createQueueConfiguredObject(queue, arguments);
+            storeConfiguredObjectEntry(configuredObject);
         }
     }
 
     /**
      * Updates the specified queue in the persistent store, IF it is already present. If the queue
      * is not present in the store, it will not be added.
-     *
-     * NOTE: Currently only updates the exclusivity.
      *
      * @param queue The queue to update the entry for.
      * @throws AMQStoreException If the operation fails for any reason.
@@ -1074,28 +891,30 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         try
         {
             DatabaseEntry key = new DatabaseEntry();
-            AMQShortStringBinding keyBinding = AMQShortStringBinding.getInstance();
-            keyBinding.objectToEntry(queue.getNameShortString(), key);
+            UUIDTupleBinding keyBinding = UUIDTupleBinding.getInstance();
+            keyBinding.objectToEntry(queue.getId(), key);
 
             DatabaseEntry value = new DatabaseEntry();
             DatabaseEntry newValue = new DatabaseEntry();
-            QueueBinding queueBinding = QueueBinding.getInstance();
+            ConfiguredObjectBinding configuredObjectBinding = ConfiguredObjectBinding.getInstance();
 
-            OperationStatus status = _queueDb.get(null, key, value, LockMode.DEFAULT);
-            if(status == OperationStatus.SUCCESS)
+            OperationStatus status = _configuredObjectsDb.get(null, key, value, LockMode.DEFAULT);
+            if (status == OperationStatus.SUCCESS)
             {
-                //read the existing record and apply the new exclusivity setting
-                QueueRecord queueRecord = queueBinding.entryToObject(value);
-                queueRecord.setExclusive(queue.isExclusive());
+                ConfiguredObjectRecord queueRecord = configuredObjectBinding.entryToObject(value);
+                ConfiguredObjectRecord newQueueRecord = _configuredObjectHelper.updateQueueConfiguredObject(queue, queueRecord);
 
-                //write the updated entry to the store
-                queueBinding.objectToEntry(queueRecord, newValue);
-
-                _queueDb.put(null, key, newValue);
+                // write the updated entry to the store
+                configuredObjectBinding.objectToEntry(newQueueRecord, newValue);
+                status = _configuredObjectsDb.put(null, key, newValue);
+                if (status != OperationStatus.SUCCESS)
+                {
+                    throw new AMQStoreException("Error updating queue details within the store: " + status);
+                }
             }
-            else if(status != OperationStatus.NOTFOUND)
+            else if (status != OperationStatus.NOTFOUND)
             {
-                throw new AMQStoreException("Error updating queue details within the store: " + status);
+                throw new AMQStoreException("Error finding queue details within the store: " + status);
             }
         }
         catch (DatabaseException e)
@@ -1113,27 +932,16 @@ public abstract class AbstractBDBMessageStore implements MessageStore
      */
     public void removeQueue(final AMQQueue queue) throws AMQStoreException
     {
-        AMQShortString name = queue.getNameShortString();
-
+        UUID id = queue.getId();
         if (LOGGER.isDebugEnabled())
         {
-            LOGGER.debug("public void removeQueue(AMQShortString name = " + name + "): called");
+            LOGGER.debug("public void removeQueue(AMQShortString name = " + queue.getName() + ", uuid = " + id + "): called");
         }
 
-        DatabaseEntry key = new DatabaseEntry();
-        AMQShortStringBinding keyBinding = AMQShortStringBinding.getInstance();
-        keyBinding.objectToEntry(name, key);
-        try
+        OperationStatus status = removeConfiguredObject(id);
+        if (status == OperationStatus.NOTFOUND)
         {
-            OperationStatus status = _queueDb.delete(null, key);
-            if (status == OperationStatus.NOTFOUND)
-            {
-                throw new AMQStoreException("Queue " + name + " not found");
-            }
-        }
-        catch (DatabaseException e)
-        {
-            throw new AMQStoreException("Error writing deleting with name " + name + " from database: " + e.getMessage(), e);
+            throw new AMQStoreException("Queue " + queue.getName() + " with id " + id + " not found");
         }
     }
 
@@ -1233,11 +1041,10 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     public void enqueueMessage(final com.sleepycat.je.Transaction tx, final TransactionLogResource queue,
                                long messageId) throws AMQStoreException
     {
-        AMQShortString name = AMQShortString.valueOf(queue.getResourceName());
 
         DatabaseEntry key = new DatabaseEntry();
         QueueEntryBinding keyBinding = QueueEntryBinding.getInstance();
-        QueueEntryKey dd = new QueueEntryKey(name, messageId);
+        QueueEntryKey dd = new QueueEntryKey(queue.getId(), messageId);
         keyBinding.objectToEntry(dd, key);
         DatabaseEntry value = new DatabaseEntry();
         ByteBinding.byteToEntry((byte) 0, value);
@@ -1246,15 +1053,18 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         {
             if (LOGGER.isDebugEnabled())
             {
-                LOGGER.debug("Enqueuing message " + messageId + " on queue " + name + " [Transaction" + tx + "]");
+                LOGGER.debug("Enqueuing message " + messageId + " on queue "
+                        + (queue instanceof AMQQueue ? ((AMQQueue) queue).getName() + " with id " : "") + queue.getId()
+                        + " [Transaction" + tx + "]");
             }
             _deliveryDb.put(tx, key, value);
         }
         catch (DatabaseException e)
         {
             LOGGER.error("Failed to enqueue: " + e.getMessage(), e);
-            throw new AMQStoreException("Error writing enqueued message with id " + messageId + " for queue " + name
-                                   + " to database", e);
+            throw new AMQStoreException("Error writing enqueued message with id " + messageId + " for queue "
+                    + (queue instanceof AMQQueue ? ((AMQQueue) queue).getName() + " with id " : "") + queue.getId()
+                    + " to database", e);
         }
     }
 
@@ -1262,7 +1072,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
      * Extracts a message from a specified queue, in a given transaction.
      *
      * @param tx   The transaction for the operation.
-     * @param queue     The name queue to take the message from.
+     * @param queue     The queue to take the message from.
      * @param messageId The message to dequeue.
      *
      * @throws AMQStoreException If the operation fails for any reason, or if the specified message does not exist.
@@ -1270,17 +1080,16 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     public void dequeueMessage(final com.sleepycat.je.Transaction tx, final TransactionLogResource queue,
                                long messageId) throws AMQStoreException
     {
-        AMQShortString name = new AMQShortString(queue.getResourceName());
 
         DatabaseEntry key = new DatabaseEntry();
         QueueEntryBinding keyBinding = QueueEntryBinding.getInstance();
-        QueueEntryKey queueEntryKey = new QueueEntryKey(name, messageId);
-
+        QueueEntryKey queueEntryKey = new QueueEntryKey(queue.getId(), messageId);
+        UUID id = queue.getId();
         keyBinding.objectToEntry(queueEntryKey, key);
-
         if (LOGGER.isDebugEnabled())
         {
-            LOGGER.debug("Dequeue message id " + messageId);
+            LOGGER.debug("Dequeue message id " + messageId + " from queue "
+                    + (queue instanceof AMQQueue ? ((AMQQueue) queue).getName() + " with id " : "") + id);
         }
 
         try
@@ -1289,16 +1098,20 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             OperationStatus status = _deliveryDb.delete(tx, key);
             if (status == OperationStatus.NOTFOUND)
             {
-                throw new AMQStoreException("Unable to find message with id " + messageId + " on queue " + name);
+                throw new AMQStoreException("Unable to find message with id " + messageId + " on queue "
+                        + (queue instanceof AMQQueue ? ((AMQQueue) queue).getName() + " with id " : "") + id);
             }
             else if (status != OperationStatus.SUCCESS)
             {
-                throw new AMQStoreException("Unable to remove message with id " + messageId + " on queue " + name);
+                throw new AMQStoreException("Unable to remove message with id " + messageId + " on queue"
+                        + (queue instanceof AMQQueue ? ((AMQQueue) queue).getName() + " with id " : "") + id);
             }
 
             if (LOGGER.isDebugEnabled())
             {
-                LOGGER.debug("Removed message " + messageId + ", " + name + " from delivery db");
+                LOGGER.debug("Removed message " + messageId + " on queue "
+                        + (queue instanceof AMQQueue ? ((AMQQueue) queue).getName() + " with id " : "") + id
+                        + " from delivery db");
 
             }
         }
@@ -1438,7 +1251,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
      *
      * @return a list of message ids for messages enqueued for a particular queue
      */
-    List<Long> getEnqueuedMessages(AMQShortString queueName) throws AMQStoreException
+    List<Long> getEnqueuedMessages(UUID queueId) throws AMQStoreException
     {
         Cursor cursor = null;
         try
@@ -1447,7 +1260,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
             DatabaseEntry key = new DatabaseEntry();
 
-            QueueEntryKey dd = new QueueEntryKey(queueName, 0);
+            QueueEntryKey dd = new QueueEntryKey(queueId, 0);
 
             QueueEntryBinding keyBinding = QueueEntryBinding.getInstance();
             keyBinding.objectToEntry(dd, key);
@@ -1459,7 +1272,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             OperationStatus status = cursor.getSearchKeyRange(key, value, LockMode.DEFAULT);
             dd = keyBinding.entryToObject(key);
 
-            while ((status == OperationStatus.SUCCESS) && dd.getQueueName().equals(queueName))
+            while ((status == OperationStatus.SUCCESS) && dd.getQueueId().equals(queueId))
             {
 
                 messageIds.add(dd.getMessageId());
@@ -1644,7 +1457,6 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             LOGGER.debug("Message Id: " + messageId + " Getting content body from offset: " + offset);
         }
 
-        Cursor cursor = null;
         try
         {
 
@@ -1706,24 +1518,59 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         return _messageContentDb;
     }
 
-    Database getQueuesDb()
-    {
-        return _queueDb;
-    }
-
     Database getDeliveryDb()
     {
         return _deliveryDb;
     }
 
-    Database getExchangesDb()
+    /**
+     * Makes the specified configured object persistent.
+     *
+     * @param configuredObject     Details of the configured object to store.
+     * @throws AMQStoreException If the operation fails for any reason.
+     */
+    private void storeConfiguredObjectEntry(ConfiguredObjectRecord configuredObject) throws AMQStoreException
     {
-        return _exchangeDb;
+        if (_stateManager.isInState(State.ACTIVE))
+        {
+            DatabaseEntry key = new DatabaseEntry();
+            UUIDTupleBinding keyBinding = UUIDTupleBinding.getInstance();
+            keyBinding.objectToEntry(configuredObject.getId(), key);
+
+            DatabaseEntry value = new DatabaseEntry();
+            ConfiguredObjectBinding queueBinding = ConfiguredObjectBinding.getInstance();
+
+            queueBinding.objectToEntry(configuredObject, value);
+            try
+            {
+                OperationStatus status = _configuredObjectsDb.put(null, key, value);
+                if (status != OperationStatus.SUCCESS)
+                {
+                    throw new AMQStoreException("Error writing configured object " + configuredObject + " to database: "
+                            + status);
+                }
+            }
+            catch (DatabaseException e)
+            {
+                throw new AMQStoreException("Error writing configured object " + configuredObject
+                        + " to database: " + e.getMessage(), e);
+            }
+        }
     }
 
-    Database getBindingsDb()
+    private OperationStatus removeConfiguredObject(UUID id) throws AMQStoreException
     {
-        return _queueBindingsDb;
+        DatabaseEntry key = new DatabaseEntry();
+        UUIDTupleBinding uuidBinding = UUIDTupleBinding.getInstance();
+        uuidBinding.objectToEntry(id, key);
+        try
+        {
+            return _configuredObjectsDb.delete(null, key);
+        }
+        catch (DatabaseException e)
+        {
+            throw new AMQStoreException("Error deleting of configured object with id " + id + " from database", e);
+        }
     }
 
     protected abstract StoreFuture commit(com.sleepycat.je.Transaction tx, boolean syncCommit) throws DatabaseException;

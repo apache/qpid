@@ -62,6 +62,7 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.filter.JMSSelectorFilter;
 import org.apache.qpid.server.filter.SimpleFilterManager;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueEntry;
@@ -199,6 +200,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 if(queue == null)
                 {
                     queue = AMQQueueFactory.createAMQQueueImpl(
+                                UUIDGenerator.generateUUID(),
                                 name,
                                 isDurable,
                                 null,

@@ -21,8 +21,8 @@ package org.apache.qpid.server.store;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.federation.Bridge;
 import org.apache.qpid.server.federation.BrokerLink;
@@ -48,12 +48,12 @@ public class NullMessageStore implements MessageStore
     }
 
     @Override
-    public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
+    public void bindQueue(Binding binding) throws AMQStoreException
     {
     }
 
     @Override
-    public void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
+    public void unbindQueue(Binding binding) throws AMQStoreException
     {
     }
 

@@ -23,6 +23,7 @@ package org.apache.qpid.server.store.berkeleydb;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -36,6 +37,7 @@ import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.server.message.MessageMetaData_0_10;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.store.MessageMetaDataType;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StorableMessageMetaData;
@@ -405,13 +407,13 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
 
         BDBMessageStore bdbStore = assertBDBStore(log);
 
-        final AMQShortString mockQueueName = new AMQShortString("queueName");
-
+        final UUID mockQueueId = UUIDGenerator.generateUUID();
         TransactionLogResource mockQueue = new TransactionLogResource()
         {
-            public String getResourceName()
+            @Override
+            public UUID getId()
             {
-                return mockQueueName.asString();
+                return mockQueueId;
             }
         };
 
@@ -421,7 +423,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         txn.enqueueMessage(mockQueue, new MockMessage(5L));
         txn.commitTran();
 
-        List<Long> enqueuedIds = bdbStore.getEnqueuedMessages(mockQueueName);
+        List<Long> enqueuedIds = bdbStore.getEnqueuedMessages(mockQueueId);
 
         assertEquals("Number of enqueued messages is incorrect", 2, enqueuedIds.size());
         Long val = enqueuedIds.get(0);
@@ -443,13 +445,13 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
 
         BDBMessageStore bdbStore = assertBDBStore(log);
 
-        final AMQShortString mockQueueName = new AMQShortString("queueName");
-
+        final UUID mockQueueId = UUIDGenerator.generateUUID();
         TransactionLogResource mockQueue = new TransactionLogResource()
         {
-            public String getResourceName()
+            @Override
+            public UUID getId()
             {
-                return mockQueueName.asString();
+                return mockQueueId;
             }
         };
 
@@ -463,7 +465,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         txn.enqueueMessage(mockQueue, new MockMessage(23L));
         txn.commitTran();
 
-        List<Long> enqueuedIds = bdbStore.getEnqueuedMessages(mockQueueName);
+        List<Long> enqueuedIds = bdbStore.getEnqueuedMessages(mockQueueId);
 
         assertEquals("Number of enqueued messages is incorrect", 2, enqueuedIds.size());
         Long val = enqueuedIds.get(0);
@@ -484,13 +486,13 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
 
         BDBMessageStore bdbStore = assertBDBStore(log);
 
-        final AMQShortString mockQueueName = new AMQShortString("queueName");
-
+        final UUID mockQueueId = UUIDGenerator.generateUUID();
         TransactionLogResource mockQueue = new TransactionLogResource()
         {
-            public String getResourceName()
+            @Override
+            public UUID getId()
             {
-                return mockQueueName.asString();
+                return mockQueueId;
             }
         };
 
@@ -507,7 +509,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         txn.enqueueMessage(mockQueue, new MockMessage(32L));
         txn.commitTran();
 
-        List<Long> enqueuedIds = bdbStore.getEnqueuedMessages(mockQueueName);
+        List<Long> enqueuedIds = bdbStore.getEnqueuedMessages(mockQueueId);
 
         assertEquals("Number of enqueued messages is incorrect", 2, enqueuedIds.size());
         Long val = enqueuedIds.get(0);
