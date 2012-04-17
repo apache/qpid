@@ -44,6 +44,7 @@ import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
 import org.apache.qpid.amqp_1_0.type.messaging.ExactSubjectFilter;
 import org.apache.qpid.amqp_1_0.type.messaging.Filter;
 import org.apache.qpid.amqp_1_0.type.messaging.MatchingSubjectFilter;
+import org.apache.qpid.amqp_1_0.type.messaging.Modified;
 import org.apache.qpid.amqp_1_0.type.messaging.NoLocalFilter;
 import org.apache.qpid.amqp_1_0.type.messaging.Released;
 import org.apache.qpid.amqp_1_0.type.messaging.Source;
@@ -361,7 +362,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 e.printStackTrace();  //TODO
             }
 
-            DeliveryState state = new Released();
+            DeliveryState state = new Modified();
 
             for(UnsettledAction action : _unsettledActionMap.values())
             {
