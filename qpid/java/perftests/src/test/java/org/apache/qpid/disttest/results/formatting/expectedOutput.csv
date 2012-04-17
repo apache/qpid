@@ -1,0 +1,2 @@
+Test Name,Iteration number,Client Name,Participant name,Number of messages,Payload size (bytes),Priority,Time to live (ms),Delivery mode,Batch size,Maximum duration (ms),Producer start delay (ms),Producer interval (ms),Is topic,Is durable subscription,Is browsing subscription,Is selector,Is no local,Is synchronous consumer,Total payload processed (bytes),Throughput (kbytes/s),Time taken (ms),Error message
+TEST1,0,CONFIGURED_CLIENT1,PARTICIPANT,1,2,3,4,5,6,7,8,9,true,false,true,false,true,false,1024,2048,1000,error

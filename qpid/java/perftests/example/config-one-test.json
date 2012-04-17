@@ -1,0 +1,55 @@
+{
+    "_tests":[
+    {
+      "_name": "One producer to one consumer";
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//testQueue"
+        }
+      ];
+      "_clients":[
+        {
+          "_name": "producingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_producers": [
+                    {
+                      "_name": "Producer1",
+                      "_destinationName": "direct://amq.direct//testQueue",
+                      "_numberOfMessages": 5000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "consumingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_consumers": [
+                    {
+                      "_name": "Consumer1",
+                      "_destinationName": "direct://amq.direct//testQueue",
+                      "_numberOfMessages": 5000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }]
+}

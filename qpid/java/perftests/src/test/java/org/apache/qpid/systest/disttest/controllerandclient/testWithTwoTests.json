@@ -1,0 +1,107 @@
+{
+    "_tests":[
+    {
+      "_name": "Test 1";
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//testQueue"
+        }
+      ];
+      "_clients":[
+        {
+          "_name": "producingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_producers": [
+                    {
+                      "_name": "participantProducer1",
+                      "_destinationName": "direct://amq.direct//testQueue",
+                      "_numberOfMessages": 1
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "consumingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_consumers": [
+                    {
+                      "_name": "participantconsumer1",
+                      "_destinationName": "direct://amq.direct//testQueue",
+                      "_numberOfMessages": 1
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+        "_name": "Test 2";
+        "_queues":[
+          {
+            "_name": "direct://amq.direct//testQueue2"
+          }
+        ];
+        "_clients":[
+          {
+            "_name": "producingClient",
+            "_connections":[
+              {
+                "_name": "connection1",
+                "_factory": "connectionfactory",
+                "_sessions": [
+                  {
+                    "_sessionName": "session1",
+                    "_producers": [
+                      {
+                        "_name": "participantProducer2",
+                        "_destinationName": "direct://amq.direct//testQueue2",
+                        "_numberOfMessages": 1
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "_name": "consumingClient",
+            "_connections":[
+              {
+                "_name": "connection1",
+                "_factory": "connectionfactory",
+                "_sessions": [
+                  {
+                    "_sessionName": "session1",
+                    "_consumers": [
+                      {
+                        "_name": "participantConsumer2",
+                        "_destinationName": "direct://amq.direct//testQueue2",
+                        "_numberOfMessages": 1
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }]
+}
