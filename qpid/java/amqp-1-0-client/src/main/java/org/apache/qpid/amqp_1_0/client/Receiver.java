@@ -85,6 +85,11 @@ public class Receiver implements DeliveryStateHandler
             source.setDurable(TerminusDurability.UNSETTLED_STATE);
             source.setExpiryPolicy(TerminusExpiryPolicy.NEVER);
         }
+        else
+        {
+            source.setDurable(TerminusDurability.NONE);
+            source.setExpiryPolicy(TerminusExpiryPolicy.LINK_DETACH);
+        }
         _endpoint = session.getEndpoint().createReceivingLinkEndpoint(linkName, target, source,
                                                                       UnsignedInteger.ZERO);
 
