@@ -154,6 +154,7 @@ Queue::Queue(const string& _name, bool _autodelete,
     store(_store),
     owner(_owner),
     consumerCount(0),
+    browserCount(0),
     exclusive(0),
     noLocal(false),
     persistLastNode(false),
@@ -523,17 +524,27 @@ void Queue::consume(Consumer::shared_ptr c, bool requestExclusive){
     assertClusterSafe();
     {
         Mutex::ScopedLock locker(messageLock);
-        if(exclusive) {
-            throw ResourceLockedException(
-                                          QPID_MSG("Queue " << getName() << " has an exclusive consumer. No more consumers allowed."));
-        } else if(requestExclusive) {
-            if(consumerCount) {
+        // NOTE: consumerCount is actually a count of all
+        // subscriptions, both acquiring and non-acquiring (browsers).
+        // Check for exclusivity of acquiring consumers.
+        size_t acquiringConsumers = consumerCount - browserCount;
+        if (c->preAcquires()) {
+            if(exclusive) {
                 throw ResourceLockedException(
-                                              QPID_MSG("Queue " << getName() << " already has consumers. Exclusive access denied."));
-            } else {
-                exclusive = c->getSession();
+                    QPID_MSG("Queue " << getName()
+                             << " has an exclusive consumer. No more consumers allowed."));
+            } else if(requestExclusive) {
+                if(acquiringConsumers) {
+                    throw ResourceLockedException(
+                        QPID_MSG("Queue " << getName()
+                                 << " already has consumers. Exclusive access denied."));
+                } else {
+                    exclusive = c->getSession();
+                }
             }
         }
+        else
+            browserCount++;
         consumerCount++;
         //reset auto deletion timer if necessary
         if (autoDeleteTimeout && autoDeleteTask) {
@@ -550,6 +561,7 @@ void Queue::cancel(Consumer::shared_ptr c){
     {
         Mutex::ScopedLock locker(messageLock);
         consumerCount--;
+        if (!c->preAcquires()) browserCount--;
         if(exclusive) exclusive = 0;
         observeConsumerRemove(*c, locker);
     }
