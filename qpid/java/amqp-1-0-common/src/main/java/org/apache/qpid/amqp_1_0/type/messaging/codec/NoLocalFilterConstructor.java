@@ -26,14 +26,14 @@ package org.apache.qpid.amqp_1_0.type.messaging.codec;
 import org.apache.qpid.amqp_1_0.codec.DescribedTypeConstructor;
 import org.apache.qpid.amqp_1_0.codec.DescribedTypeConstructorRegistry;
 import org.apache.qpid.amqp_1_0.type.Symbol;
-import org.apache.qpid.amqp_1_0.type.messaging.JMSSelectorFilter;
+import org.apache.qpid.amqp_1_0.type.UnsignedLong;
 import org.apache.qpid.amqp_1_0.type.messaging.NoLocalFilter;
 
 public class NoLocalFilterConstructor extends DescribedTypeConstructor<NoLocalFilter>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("amqp:no-local-filter:list"),
+            Symbol.valueOf("apache.org:jms-no-local-filter:list"), UnsignedLong.valueOf(0x0000468C00000003L)
     };
 
     private static final NoLocalFilterConstructor INSTANCE = new NoLocalFilterConstructor();

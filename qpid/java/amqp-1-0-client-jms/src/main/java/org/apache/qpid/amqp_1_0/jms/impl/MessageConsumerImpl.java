@@ -133,9 +133,7 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
         catch (AmqpErrorException e)
         {
             Error error = e.getError();
-            if(AmqpError.INVALID_FIELD.equals(error.getCondition())
-                &&  error.getInfo() != null && Symbol.valueOf("filter").equals(error.getInfo().get(Symbol.valueOf
-                    ("field"))))
+            if(AmqpError.INVALID_FIELD.equals(error.getCondition()))
             {
                 throw new InvalidSelectorException(e.getMessage());
             }
@@ -362,7 +360,9 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
     {
         if(_lastTxnUpdate != null)
         {
-            _receiver.updateAll(new Modified(), _lastTxnUpdate);
+            final Modified outcome = new Modified();
+            outcome.setDeliveryFailed(true);
+            _receiver.updateAll(outcome, _lastTxnUpdate);
             _lastTxnUpdate = null;
         }
         for(Binary tag : _txnMsgs)

@@ -348,7 +348,10 @@ public class Receiver implements DeliveryStateHandler
 
     public void modified(Binary tag)
     {
-        update(new Modified(), tag, null, null);
+        final Modified outcome = new Modified();
+        outcome.setDeliveryFailed(true);
+
+        update(outcome, tag, null, null);
     }
 
     public void acknowledge(final Message m)

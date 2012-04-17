@@ -47,7 +47,7 @@ import org.apache.qpid.server.store.StorableMessageMetaData;
 public class MessageMetaData_1_0 implements StorableMessageMetaData
 {
     // TODO move to somewhere more useful
-    public static final Symbol JMS_TYPE = Symbol.valueOf("jms-type");
+    public static final Symbol JMS_TYPE = Symbol.valueOf("x-opt-jms-type");
 
 
     private Header _header;

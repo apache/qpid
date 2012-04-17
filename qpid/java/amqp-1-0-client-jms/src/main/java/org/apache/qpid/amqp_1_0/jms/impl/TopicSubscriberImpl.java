@@ -91,9 +91,7 @@ public class TopicSubscriberImpl extends MessageConsumerImpl implements TopicSub
         catch (AmqpErrorException e)
         {
             org.apache.qpid.amqp_1_0.type.transport.Error error = e.getError();
-            if(AmqpError.INVALID_FIELD.equals(error.getCondition())
-               &&  error.getInfo() != null && Symbol.valueOf("filter").equals(error.getInfo().get(Symbol.valueOf
-                    ("field"))))
+            if(AmqpError.INVALID_FIELD.equals(error.getCondition()))
             {
                 throw new InvalidSelectorException(e.getMessage());
             }

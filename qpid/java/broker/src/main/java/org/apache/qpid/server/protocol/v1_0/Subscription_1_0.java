@@ -21,14 +21,12 @@
 package org.apache.qpid.server.protocol.v1_0;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.amqp_1_0.codec.DescribedTypeConstructorRegistry;
 import org.apache.qpid.amqp_1_0.codec.ValueHandler;
 import org.apache.qpid.amqp_1_0.messaging.SectionEncoder;
 import org.apache.qpid.amqp_1_0.messaging.SectionEncoderImpl;
@@ -37,7 +35,6 @@ import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.DeliveryState;
 import org.apache.qpid.amqp_1_0.type.Outcome;
-import org.apache.qpid.amqp_1_0.type.Section;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 import org.apache.qpid.amqp_1_0.type.codec.AMQPDescribedTypeRegistry;
 import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
@@ -488,7 +485,7 @@ class Subscription_1_0 implements Subscription
             _queueEntry = queueEntry;
         }
 
-        public boolean process(DeliveryState state, Boolean settled)
+        public boolean process(DeliveryState state, final Boolean settled)
         {
 
             Binary transactionId = null;
@@ -541,6 +538,13 @@ class Subscription_1_0 implements Subscription
 
                         public void onRollback()
                         {
+                            if(Boolean.TRUE.equals(settled))
+                            {
+                                final Modified modified = new Modified();
+                                modified.setDeliveryFailed(true);
+                                _link.getEndpoint().updateDisposition(_deliveryTag, modified, true);
+                                _link.getEndpoint().sendFlowConditional();
+                            }
                         }
                     });
             }
@@ -570,13 +574,22 @@ class Subscription_1_0 implements Subscription
                     {
 
                         _queueEntry.release();
-                        _queueEntry.incrementDeliveryCount();
+                        if(Boolean.TRUE.equals(((Modified)outcome).getDeliveryFailed()))
+                        {
+                            _queueEntry.incrementDeliveryCount();
+                        }
                         _link.getEndpoint().settle(_deliveryTag);
                     }
 
                     public void onRollback()
                     {
-                        _link.getEndpoint().settle(_deliveryTag);
+                        if(Boolean.TRUE.equals(settled))
+                        {
+                            final Modified modified = new Modified();
+                            modified.setDeliveryFailed(true);
+                            _link.getEndpoint().updateDisposition(_deliveryTag, modified, true);
+                            _link.getEndpoint().sendFlowConditional();
+                        }
                     }
                 });
             }

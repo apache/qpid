@@ -26,7 +26,7 @@ package org.apache.qpid.amqp_1_0.type.messaging.codec;
 import org.apache.qpid.amqp_1_0.codec.AbstractDescribedTypeWriter;
 import org.apache.qpid.amqp_1_0.codec.ListWriter;
 import org.apache.qpid.amqp_1_0.codec.ValueWriter;
-import org.apache.qpid.amqp_1_0.type.Symbol;
+import org.apache.qpid.amqp_1_0.type.UnsignedLong;
 import org.apache.qpid.amqp_1_0.type.messaging.NoLocalFilter;
 
 public class NoLocalFilterWriter extends AbstractDescribedTypeWriter<NoLocalFilter>
@@ -63,7 +63,7 @@ public class NoLocalFilterWriter extends AbstractDescribedTypeWriter<NoLocalFilt
 
     protected Object getDescriptor()
     {
-        return Symbol.valueOf("amqp:no-local-filter:list");
+        return UnsignedLong.valueOf(0x0000468C00000003L);
     }
 
     @Override

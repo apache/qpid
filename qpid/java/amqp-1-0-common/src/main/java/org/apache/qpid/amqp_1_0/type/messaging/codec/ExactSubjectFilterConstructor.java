@@ -32,7 +32,7 @@ public class ExactSubjectFilterConstructor extends DescribedTypeConstructor<Exac
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("amqp:exact-subject-filter:string"),
+            Symbol.valueOf("apache.org:legacy-amqp-direct-binding:string"), 0x0000468C00000000L
     };
 
     private static final ExactSubjectFilterConstructor INSTANCE = new ExactSubjectFilterConstructor();

@@ -51,6 +51,7 @@ import org.mockito.stubbing.Answer;
 public class TestRunnerTest extends TestCase
 {
     private static final String TEST_NAME = "TEST_NAME";
+    private static final String PARTICIPANT_NAME = "TEST_PARTICIPANT_NAME";
     private static final int ITERATION_NUMBER = 1;
 
     private static final String CLIENT1_REGISTERED_NAME = "client-uid1";
@@ -160,7 +161,7 @@ public class TestRunnerTest extends TestCase
         _testInstance = createTestInstanceWithOneParticipant();
         _testRunner = new TestRunner(_participatingClients, _testInstance , _respondingJmsDelegate, COMMAND_RESPONSE_TIMEOUT, TEST_RESULT_TIMEOUT);
 
-        ParticipantResult incomingParticipantResult = new ParticipantResult();
+        ParticipantResult incomingParticipantResult = new ParticipantResult(PARTICIPANT_NAME);
         incomingParticipantResult.setRegisteredClientName(CLIENT1_REGISTERED_NAME);
         sendTestResultsLater(_testRunner, incomingParticipantResult);
 
