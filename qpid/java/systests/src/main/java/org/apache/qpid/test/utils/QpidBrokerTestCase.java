@@ -35,7 +35,8 @@ import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.ProtocolExclusion;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
-import org.apache.qpid.server.store.DerbyMessageStore;
+import org.apache.qpid.server.store.MessageStoreConstants;
+import org.apache.qpid.server.store.derby.DerbyMessageStoreFactory;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.util.FileUtils;
 import org.apache.qpid.util.LogMonitor;
@@ -704,22 +705,22 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected void makeVirtualHostPersistent(String virtualhost)
             throws ConfigurationException, IOException
     {
-        Class<?> storeClass = null;
+        Class<?> storeFactoryClass = null;
         try
         {
             // Try and lookup the BDB class
-            storeClass = Class.forName("org.apache.qpid.server.store.berkeleydb.BDBMessageStore");
+            storeFactoryClass = Class.forName("org.apache.qpid.server.store.berkeleydb.BDBMessageStoreFactory");
         }
         catch (ClassNotFoundException e)
         {
             // No BDB store, we'll use Derby instead.
-            storeClass = DerbyMessageStore.class;
+            storeFactoryClass = DerbyMessageStoreFactory.class;
         }
 
 
-        setConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".store.class",
-                                    storeClass.getName());
-        setConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".store." + DerbyMessageStore.ENVIRONMENT_PATH_PROPERTY,
+        setConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".store.factoryclass",
+                                    storeFactoryClass.getName());
+        setConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".store." + MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY,
                                    "${QPID_WORK}/" + virtualhost);
     }
 

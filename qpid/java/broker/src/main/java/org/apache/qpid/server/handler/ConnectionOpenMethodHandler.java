@@ -32,6 +32,7 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+import org.apache.qpid.server.virtualhost.State;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class ConnectionOpenMethodHandler implements StateAwareMethodListener<ConnectionOpenBody>
@@ -82,6 +83,10 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
             {
                 throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied: '" + virtualHost.getName() + "'");
             }
+            else if (virtualHost.getState() != State.ACTIVE)
+            {
+                throw body.getConnectionException(AMQConstant.CONNECTION_FORCED, "Virtual host '" + virtualHost.getName() + "' is not active");
+            }
 
             session.setVirtualHost(virtualHost);
 
@@ -89,10 +94,10 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
             if (session.getContextKey() == null)
             {
                 session.setContextKey(generateClientID());
-            }            
+            }
 
             MethodRegistry methodRegistry = session.getMethodRegistry();
-            AMQMethodBody responseBody =  methodRegistry.createConnectionOpenOkBody(body.getVirtualHost());            
+            AMQMethodBody responseBody =  methodRegistry.createConnectionOpenOkBody(body.getVirtualHost());
 
             stateManager.changeState(AMQState.CONNECTION_OPEN);
 

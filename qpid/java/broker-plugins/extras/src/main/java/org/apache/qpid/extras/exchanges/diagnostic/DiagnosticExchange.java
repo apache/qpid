@@ -159,11 +159,6 @@ public class DiagnosticExchange extends AbstractExchange
         return new DiagnosticExchange.DiagnosticExchangeMBean();
     }
 
-    public Logger getLogger()
-    {
-        return _logger;
-    }
-
     public void registerQueue(String routingKey, AMQQueue queue, Map<String, Object> args) throws AMQException
     {
         // No op

@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.binding.Binding;
@@ -128,10 +126,18 @@ public abstract class AbstractExchange implements Exchange, Managable
         _autoDelete = autoDelete;
         _ticket = ticket;
 
-        // TODO - fix
         _id = getConfigStore().createId();
 
         getConfigStore().addConfiguredObject(this);
+        createAndRegisterMBean();
+        _logSubject = new ExchangeLogSubject(this, this.getVirtualHost());
+
+        // Log Exchange creation
+        CurrentActor.get().message(ExchangeMessages.CREATED(String.valueOf(getTypeShortString()), String.valueOf(name), durable));
+    }
+
+    private void createAndRegisterMBean()
+    {
         try
         {
             _exchangeMbean = createMBean();
@@ -139,20 +145,14 @@ public abstract class AbstractExchange implements Exchange, Managable
         }
         catch (JMException e)
         {
-            getLogger().error(e);
+            throw new RuntimeException("Failed to register mbean",e);
         }
-        _logSubject = new ExchangeLogSubject(this, this.getVirtualHost());
-
-        // Log Exchange creation
-        CurrentActor.get().message(ExchangeMessages.CREATED(String.valueOf(getTypeShortString()), String.valueOf(name), durable));
     }
 
     public ConfigStore getConfigStore()
     {
         return getVirtualHost().getConfigStore();
     }
-
-    public abstract Logger getLogger();
 
     public boolean isDurable()
     {
@@ -327,8 +327,7 @@ public abstract class AbstractExchange implements Exchange, Managable
 
     public Map<String, Object> getArguments()
     {
-        // TODO - Fix
-        return Collections.EMPTY_MAP;
+        return Collections.emptyMap();
     }
 
     public UUID getId()

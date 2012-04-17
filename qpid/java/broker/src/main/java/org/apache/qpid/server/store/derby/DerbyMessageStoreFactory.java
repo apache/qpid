@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,26 +17,27 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store;
+package org.apache.qpid.server.store.derby;
 
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.messages.MessageStoreMessages;
-import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.MessageStoreFactory;
+import org.apache.qpid.server.store.decorators.EventDecorator;
+import org.apache.qpid.server.store.decorators.OperationalLoggingDecorator;
 
-public abstract class AbstractMessageStore implements MessageStore
+public class DerbyMessageStoreFactory implements MessageStoreFactory
 {
-    private LogSubject _logSubject;
 
-    public void configure(VirtualHost virtualHost) throws Exception
+    @Override
+    public MessageStore createMessageStore(LogSubject logSubject)
     {
-        _logSubject = new MessageStoreLogSubject(virtualHost, this);
-        CurrentActor.get().message(_logSubject, MessageStoreMessages.CREATED(this.getClass().getName()));
+        return new OperationalLoggingDecorator(new EventDecorator(new DerbyMessageStore()), logSubject);
     }
 
-    public void close() throws Exception
+    @Override
+    public String getStoreClassName()
     {
-        CurrentActor.get().message(_logSubject,MessageStoreMessages.CLOSED());
+        return DerbyMessageStore.class.getSimpleName();
     }
+
 }

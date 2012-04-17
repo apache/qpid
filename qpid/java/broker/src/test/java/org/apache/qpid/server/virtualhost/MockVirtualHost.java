@@ -275,4 +275,10 @@ public class MockVirtualHost implements VirtualHost
     {
 
     }
+
+    @Override
+    public State getState()
+    {
+        return State.ACTIVE;
+    }
 }

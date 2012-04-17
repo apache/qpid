@@ -17,6 +17,4 @@
 // under the License.
 //
 
-org.apache.qpid.server.store.berkeleydb.BDBMessageStoreTest#*
-org.apache.qpid.server.store.berkeleydb.BDBUpgradeTest#*
-org.apache.qpid.server.store.berkeleydb.BDBBackupTest#*
+org.apache.qpid.server.store.berkeleydb.*

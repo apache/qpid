@@ -56,8 +56,6 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     private final QueueRegistry _queueRegistry;
     private final ExchangeRegistry _exchangeRegistry;
     private final ExchangeFactory _exchangeFactory;
-    private final Exchange _defaultExchange;
-    private final DurableConfigurationStore _durableConfig;
 
     private final VirtualHostMBean _virtualHostMBean;
 
@@ -71,8 +69,6 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
 
         _queueRegistry = virtualHost.getQueueRegistry();
         _exchangeRegistry = virtualHost.getExchangeRegistry();
-        _defaultExchange = _exchangeRegistry.getDefaultExchange();
-        _durableConfig = virtualHost.getMessageStore();
         _exchangeFactory = virtualHost.getExchangeFactory();
     }
 
@@ -177,7 +173,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
                     _exchangeRegistry.registerExchange(exchange);
                     if (durable)
                     {
-                        _durableConfig.createExchange(exchange);
+                        getVirtualHost().getMessageStore().createExchange(exchange);
                     }
                 }
                 else
@@ -271,10 +267,10 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
                                                        false, false, getVirtualHost(), args);
             if (queue.isDurable() && !queue.isAutoDelete())
             {
-                _durableConfig.createQueue(queue, args);
+                getVirtualHost().getMessageStore().createQueue(queue, args);
             }
 
-            virtualHost.getBindingFactory().addBinding(queueName, queue, _defaultExchange, null);
+            virtualHost.getBindingFactory().addBinding(queueName, queue, _exchangeRegistry.getDefaultExchange(), null);
         }
         catch (AMQException ex)
         {
@@ -313,7 +309,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
             queue.delete();
             if (queue.isDurable())
             {
-                _durableConfig.removeQueue(queue);
+                getVirtualHost().getMessageStore().removeQueue(queue);
             }
         }
         catch (AMQException ex)

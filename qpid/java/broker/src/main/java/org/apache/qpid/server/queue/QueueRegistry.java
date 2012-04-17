@@ -43,6 +43,8 @@ public interface QueueRegistry
 
     void addRegistryChangeListener(RegistryChangeListener listener);
 
+    void stopAllAndUnregisterMBeans();
+
     interface RegistryChangeListener
     {
         void queueRegistered(AMQQueue queue);

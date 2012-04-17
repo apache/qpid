@@ -21,7 +21,6 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -38,7 +37,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public class DefaultExchangeRegistry implements ExchangeRegistry
 {
-    private static final Logger _log = Logger.getLogger(DefaultExchangeRegistry.class);
+    private static final Logger LOGGER = Logger.getLogger(DefaultExchangeRegistry.class);
 
     /**
      * Maps from exchange name to exchange instance
@@ -62,8 +61,6 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
     {
         new ExchangeInitialiser().initialise(_host.getExchangeFactory(), this, getDurableConfigurationStore());
     }
-
-
 
     public DurableConfigurationStore getDurableConfigurationStore()
     {
@@ -182,6 +179,30 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         {
             return _exchangeMapStr.get(name);
         }
+    }
+
+    @Override
+    public void clearAndUnregisterMbeans()
+    {
+        for (final AMQShortString exchangeName : getExchangeNames())
+        {
+            final Exchange exchange = getExchange(exchangeName);
+
+            if (exchange instanceof AbstractExchange)
+            {
+                AbstractExchange abstractExchange = (AbstractExchange) exchange;
+                try
+                {
+                    abstractExchange.getManagedObject().unregister();
+                }
+                catch (AMQException e)
+                {
+                    LOGGER.warn("Failed to unregister mbean", e);
+                }
+            }
+        }
+        _exchangeMap.clear();
+        _exchangeMapStr.clear();
     }
 
 }
