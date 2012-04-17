@@ -59,8 +59,10 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
 import org.apache.qpid.server.store.StorableMessageMetaData;
+import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMemoryMessage;
 import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
 import org.apache.qpid.server.store.TransactionLogRecoveryHandler.QueueEntryRecoveryHandler;
 import org.apache.qpid.server.store.TransactionLogResource;
@@ -107,7 +109,7 @@ import com.sleepycat.je.TransactionConfig;
  * dequeue messages to queues. <tr><td> Generate message identifiers. </table>
  */
 @SuppressWarnings({"unchecked"})
-public class BDBMessageStore implements MessageStore, DurableConfigurationStore
+public class BDBMessageStore implements MessageStore
 {
     private static final Logger _log = Logger.getLogger(BDBMessageStore.class);
 
@@ -217,8 +219,8 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
     public void configureMessageStore(String name,
                                       MessageStoreRecoveryHandler recoveryHandler,
-                                      Configuration storeConfiguration,
-                                      LogSubject logSubject) throws Exception
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler,
+                                      Configuration storeConfiguration, LogSubject logSubject) throws Exception
     {
         CurrentActor.get().message(logSubject, MessageStoreMessages.CREATED(this.getClass().getName()));
 
@@ -231,29 +233,14 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         }
 
         recoverMessages(recoveryHandler);
-    }
 
-    public void configureTransactionLog(String name, TransactionLogRecoveryHandler recoveryHandler,
-            Configuration storeConfiguration, LogSubject logSubject) throws Exception
-    {
         CurrentActor.get().message(logSubject, TransactionLogMessages.CREATED(this.getClass().getName()));
 
-
-        if(!_configured)
-        {
-            _logSubject = logSubject;
-            configure(name,storeConfiguration);
-            _configured = true;
-            stateTransition(State.CONFIGURING, State.CONFIGURED);
-        }
-
-        recoverQueueEntries(recoveryHandler);
-
-
-
+        recoverQueueEntries(tlogRecoveryHandler);
     }
 
-    public org.apache.qpid.server.store.MessageStore.Transaction newTransaction()
+
+    public org.apache.qpid.server.store.Transaction newTransaction()
     {
         return new BDBTransaction();
     }
@@ -2222,7 +2209,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
                 BDBMessageStore.this.commit(txn,true);
 
             }
-            return IMMEDIATE_FUTURE;
+            return StoreFuture.IMMEDIATE_FUTURE;
         }
 
         public void remove()
@@ -2238,7 +2225,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         }
     }
 
-    private class BDBTransaction implements Transaction
+    private class BDBTransaction implements org.apache.qpid.server.store.Transaction
     {
         private com.sleepycat.je.Transaction _txn;
 

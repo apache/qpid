@@ -60,13 +60,4 @@ public interface ConfigurationRecoveryHandler
         void completeBridgeRecoveryForLink();
     }
 
-    public static interface QueueEntryRecoveryHandler
-    {
-        void complete();
-
-        void queueEntry(String queueName, long messageId);
-    }
-
-
-
 }

@@ -33,6 +33,7 @@ import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Xid;
 
@@ -48,7 +49,7 @@ public class DtxBranch
     private final List<Record> _enqueueRecords = new ArrayList<Record>();
     private final List<Record> _dequeueRecords = new ArrayList<Record>();
 
-    private MessageStore.Transaction _transaction;
+    private Transaction _transaction;
     private long _expiration;
     private VirtualHost _vhost;
     private ScheduledFuture<?> _timeoutFuture;
@@ -199,7 +200,7 @@ public class DtxBranch
     public void prepare() throws AMQStoreException
     {
 
-        MessageStore.Transaction txn = _store.newTransaction();
+        Transaction txn = _store.newTransaction();
         txn.recordXid(_xid.getFormat(),
                       _xid.getGlobalId(),
                       _xid.getBranchId(),
@@ -223,7 +224,7 @@ public class DtxBranch
         {
             // prepare has previously been called
 
-            MessageStore.Transaction txn = _store.newTransaction();
+            Transaction txn = _store.newTransaction();
             txn.removeXid(_xid.getFormat(), _xid.getGlobalId(), _xid.getBranchId());
             txn.commitTran();
 
@@ -302,7 +303,7 @@ public class DtxBranch
         _enqueueRecords.add(new Record(queue, message));
     }
 
-    private static final class Record implements MessageStore.Transaction.Record
+    private static final class Record implements Transaction.Record
     {
         private final BaseQueue _queue;
         private final EnqueableMessage _message;

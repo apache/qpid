@@ -26,6 +26,7 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Xid;
 
@@ -38,7 +39,7 @@ public class DistributedTransaction implements ServerTransaction
 
     private final AutoCommitTransaction _autoCommitTransaction;
 
-    private volatile MessageStore.Transaction _transaction;
+    private volatile Transaction _transaction;
 
     private long _txnStartTime = 0L;
 

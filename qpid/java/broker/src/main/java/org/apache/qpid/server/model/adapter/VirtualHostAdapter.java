@@ -194,7 +194,7 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
             _virtualHost.getExchangeRegistry().registerExchange(exchange);
             if(durable)
             {
-                _virtualHost.getDurableConfigurationStore().createExchange(exchange);
+                _virtualHost.getMessageStore().createExchange(exchange);
             }
 
             synchronized (_exchangeAdapters)
@@ -244,7 +244,7 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
             _virtualHost.getQueueRegistry().registerQueue(queue);
             if(durable)
             {
-                _virtualHost.getDurableConfigurationStore().createQueue(queue, FieldTable.convertToFieldTable(attributes));
+                _virtualHost.getMessageStore().createQueue(queue, FieldTable.convertToFieldTable(attributes));
             }
             synchronized (_queueAdapters)
             {

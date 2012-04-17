@@ -660,7 +660,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public VirtualHost createVirtualHost(final VirtualHostConfiguration vhostConfig) throws Exception
     {
-        VirtualHostImpl virtualHost = new VirtualHostImpl(this, vhostConfig, null);
+        VirtualHostImpl virtualHost = new VirtualHostImpl(this, vhostConfig);
         _virtualHostRegistry.registerVirtualHost(virtualHost);
         getBroker().addVirtualHost(virtualHost);
         return virtualHost;

@@ -38,7 +38,7 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Iterator;
 
-public class SlowMessageStore implements MessageStore, DurableConfigurationStore
+public class SlowMessageStore implements MessageStore
 {
     private static final Logger _logger = Logger.getLogger(SlowMessageStore.class);
     private static final String DELAYS = "delays";
@@ -160,11 +160,11 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
 
 
     public void configureMessageStore(String name,
-                                      MessageStoreRecoveryHandler recoveryHandler,
-                                      Configuration config,
-                                      LogSubject logSubject) throws Exception
+                                      MessageStoreRecoveryHandler messageRecoveryHandler,
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler,
+                                      Configuration config, LogSubject logSubject) throws Exception
     {
-        _realStore.configureMessageStore(name, recoveryHandler, config, logSubject);
+        _realStore.configureMessageStore(name, messageRecoveryHandler, tlogRecoveryHandler, config, logSubject);
     }
 
     public void close() throws Exception
@@ -225,14 +225,6 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
         doPreDelay("removeQueue");
         _durableConfigurationStore.removeQueue(queue);
         doPostDelay("removeQueue");
-    }
-
-    public void configureTransactionLog(String name,
-                                        TransactionLogRecoveryHandler recoveryHandler,
-                                        Configuration storeConfiguration, LogSubject logSubject)
-            throws Exception
-    {
-        _realStore.configureTransactionLog(name, recoveryHandler, storeConfiguration, logSubject);
     }
 
     public Transaction newTransaction()

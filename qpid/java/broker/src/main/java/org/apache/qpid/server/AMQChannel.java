@@ -83,6 +83,7 @@ import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.subscription.ClientDeliveryMethod;
 import org.apache.qpid.server.subscription.RecordDeliveryMethod;
@@ -1561,7 +1562,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
         }
     }
 
-    public void recordFuture(final MessageStore.StoreFuture future, final ServerTransaction.Action action)
+    public void recordFuture(final StoreFuture future, final ServerTransaction.Action action)
     {
         _unfinishedCommandsQueue.add(new AsyncCommand(future, action));
     }
@@ -1596,10 +1597,10 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
 
     private static class AsyncCommand
     {
-        private final MessageStore.StoreFuture _future;
+        private final StoreFuture _future;
         private ServerTransaction.Action _action;
 
-        public AsyncCommand(final MessageStore.StoreFuture future, final ServerTransaction.Action action)
+        public AsyncCommand(final StoreFuture future, final ServerTransaction.Action action)
         {
             _future = future;
             _action = action;

@@ -354,7 +354,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
         if(isDurable())
         {
-            getVirtualHost().getDurableConfigurationStore().updateQueue(this);
+            getVirtualHost().getMessageStore().updateQueue(this);
         }
     }
 

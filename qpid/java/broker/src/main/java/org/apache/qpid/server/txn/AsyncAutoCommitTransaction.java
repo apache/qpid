@@ -29,7 +29,8 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStore.StoreFuture;
+import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.store.Transaction;
 
 import java.util.Collection;
 import java.util.List;
@@ -71,16 +72,16 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
      */
     public void addPostTransactionAction(final Action immediateAction)
     {
-        addFuture(MessageStore.IMMEDIATE_FUTURE, immediateAction);
+        addFuture(StoreFuture.IMMEDIATE_FUTURE, immediateAction);
 
     }
 
     public void dequeue(BaseQueue queue, EnqueableMessage message, Action postTransactionAction)
     {
-        MessageStore.Transaction txn = null;
+        Transaction txn = null;
         try
         {
-            MessageStore.StoreFuture future;
+            StoreFuture future;
             if(message.isPersistent() && queue.isDurable())
             {
                 if (_logger.isDebugEnabled())
@@ -96,7 +97,7 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
             }
             else
             {
-                future = MessageStore.IMMEDIATE_FUTURE;
+                future = StoreFuture.IMMEDIATE_FUTURE;
             }
             addFuture(future, postTransactionAction);
             postTransactionAction = null;
@@ -113,7 +114,7 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
 
     }
 
-    private void addFuture(final MessageStore.StoreFuture future, final Action action)
+    private void addFuture(final StoreFuture future, final Action action)
     {
         if(action != null)
         {
@@ -130,7 +131,7 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
 
     public void dequeue(Collection<QueueEntry> queueEntries, Action postTransactionAction)
     {
-        MessageStore.Transaction txn = null;
+        Transaction txn = null;
         try
         {
             for(QueueEntry entry : queueEntries)
@@ -154,7 +155,7 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
                 }
 
             }
-            MessageStore.StoreFuture future;
+            StoreFuture future;
             if(txn != null)
             {
                 future = txn.commitTranAsync();
@@ -162,7 +163,7 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
             }
             else
             {
-                future = MessageStore.IMMEDIATE_FUTURE;    
+                future = StoreFuture.IMMEDIATE_FUTURE;
             }
             addFuture(future, postTransactionAction);
             postTransactionAction = null;
@@ -182,10 +183,10 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
 
     public void enqueue(BaseQueue queue, EnqueableMessage message, Action postTransactionAction)
     {
-        MessageStore.Transaction txn = null;
+        Transaction txn = null;
         try
         {
-            MessageStore.StoreFuture future;
+            StoreFuture future;
             if(message.isPersistent() && queue.isDurable())
             {
                 if (_logger.isDebugEnabled())
@@ -200,7 +201,7 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
             }
             else
             {
-                future = MessageStore.IMMEDIATE_FUTURE;
+                future = StoreFuture.IMMEDIATE_FUTURE;
             }
             addFuture(future, postTransactionAction);
             postTransactionAction = null;
@@ -220,7 +221,7 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
 
     public void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message, Action postTransactionAction, long currentTime)
     {
-        MessageStore.Transaction txn = null;
+        Transaction txn = null;
         try
         {
 
@@ -246,7 +247,7 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
                 }
                 
             }
-            MessageStore.StoreFuture future;
+            StoreFuture future;
             if (txn != null)
             {
                 future = txn.commitTranAsync();
@@ -254,7 +255,7 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
             }
             else
             {
-                future = MessageStore.IMMEDIATE_FUTURE;
+                future = StoreFuture.IMMEDIATE_FUTURE;
             }
             addFuture(future, postTransactionAction);
             postTransactionAction = null;
@@ -278,7 +279,7 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
     {
         if(immediatePostTransactionAction != null)
         {
-            addFuture(MessageStore.IMMEDIATE_FUTURE, new Action()
+            addFuture(StoreFuture.IMMEDIATE_FUTURE, new Action()
             {
                 public void postCommit()
                 {
@@ -305,7 +306,7 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
         return false;
     }
 
-    private void rollbackIfNecessary(Action postTransactionAction, MessageStore.Transaction txn)
+    private void rollbackIfNecessary(Action postTransactionAction, Transaction txn)
     {
         if (txn != null)
         {

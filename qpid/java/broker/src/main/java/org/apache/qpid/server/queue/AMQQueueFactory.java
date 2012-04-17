@@ -292,7 +292,7 @@ public class AMQQueueFactory
                     exchangeRegistry.registerExchange(dlExchange);
 
                     //enter the dle in the persistent store
-                    virtualHost.getDurableConfigurationStore().createExchange(dlExchange);
+                    virtualHost.getMessageStore().createExchange(dlExchange);
                 }
             }
 
@@ -312,7 +312,7 @@ public class AMQQueueFactory
                     dlQueue = createAMQQueueImpl(dlQueueName, true, owner, false, exclusive, virtualHost, args);
 
                     //enter the dlq in the persistent store
-                    virtualHost.getDurableConfigurationStore().createQueue(dlQueue, FieldTable.convertToFieldTable(args));
+                    virtualHost.getMessageStore().createQueue(dlQueue, FieldTable.convertToFieldTable(args));
                 }
             }
 

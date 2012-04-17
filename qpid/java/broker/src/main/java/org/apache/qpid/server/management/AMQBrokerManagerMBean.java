@@ -72,7 +72,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         _queueRegistry = virtualHost.getQueueRegistry();
         _exchangeRegistry = virtualHost.getExchangeRegistry();
         _defaultExchange = _exchangeRegistry.getDefaultExchange();
-        _durableConfig = virtualHost.getDurableConfigurationStore();
+        _durableConfig = virtualHost.getMessageStore();
         _exchangeFactory = virtualHost.getExchangeFactory();
     }
 
