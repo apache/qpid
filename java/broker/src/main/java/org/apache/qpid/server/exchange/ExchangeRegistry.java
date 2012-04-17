@@ -24,6 +24,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 
 import java.util.Collection;
+import java.util.UUID;
 
 
 public interface ExchangeRegistry
@@ -54,4 +55,6 @@ public interface ExchangeRegistry
     void unregisterExchange(String exchange, boolean ifUnused)  throws ExchangeInUseException, AMQException;
 
     void clearAndUnregisterMbeans();
+
+    Exchange getExchange(UUID exchangeId);
 }

@@ -21,6 +21,8 @@
 
 package org.apache.qpid.server.store.berkeleydb.tuple;
 
+import java.util.UUID;
+
 import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
@@ -47,7 +49,7 @@ public class PreparedTransactionBinding extends TupleBinding<PreparedTransaction
         Transaction.Record[] records = new Transaction.Record[input.readInt()];
         for(int i = 0; i < records.length; i++)
         {
-            records[i] = new RecordImpl(input.readString(), input.readLong());
+            records[i] = new RecordImpl(new UUID(input.readLong(), input.readLong()), input.readLong());
         }
         return records;
     }
@@ -71,7 +73,9 @@ public class PreparedTransactionBinding extends TupleBinding<PreparedTransaction
             output.writeInt(records.length);
             for(Transaction.Record record : records)
             {
-                output.writeString(record.getQueue().getResourceName());
+                UUID id = record.getQueue().getId();
+                output.writeLong(id.getMostSignificantBits());
+                output.writeLong(id.getLeastSignificantBits());
                 output.writeLong(record.getMessage().getMessageNumber());
             }
         }
@@ -80,13 +84,13 @@ public class PreparedTransactionBinding extends TupleBinding<PreparedTransaction
     private static class RecordImpl implements Transaction.Record, TransactionLogResource, EnqueableMessage
     {
 
-        private final String _queueName;
         private long _messageNumber;
+        private UUID _queueId;
 
-        public RecordImpl(String queueName, long messageNumber)
+        public RecordImpl(UUID queueId, long messageNumber)
         {
-            _queueName = queueName;
             _messageNumber = messageNumber;
+            _queueId = queueId;
         }
 
         public TransactionLogResource getQueue()
@@ -114,9 +118,10 @@ public class PreparedTransactionBinding extends TupleBinding<PreparedTransaction
             throw new UnsupportedOperationException();
         }
 
-        public String getResourceName()
+        @Override
+        public UUID getId()
         {
-            return _queueName;
+            return _queueId;
         }
     }
 }

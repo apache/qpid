@@ -48,7 +48,7 @@ public abstract class CursorOperation implements DatabaseRunnable
                 CursorOperation.this.processEntry(database, targetDatabase, transaction, key, value);
                 if (getProcessedCount() % 1000 == 0)
                 {
-                    _logger.info("Processed " + getProcessedCount() + " messages of " + getRowCount() + ".");
+                    _logger.info("Processed " + getProcessedCount() + " records of " + getRowCount() + ".");
                 }
             }
 

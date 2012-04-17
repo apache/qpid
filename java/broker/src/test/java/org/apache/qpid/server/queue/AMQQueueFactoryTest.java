@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.queue;
 
+import java.util.UUID;
+
 import org.apache.commons.configuration.XMLConfiguration;
 
 import org.apache.qpid.AMQException;

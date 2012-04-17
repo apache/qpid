@@ -26,6 +26,7 @@ import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.management.common.mbeans.ManagedExchange;
 import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueRegistry;
@@ -52,7 +53,7 @@ public class ExchangeMBeanTest  extends InternalBrokerBaseCase
     public void testGeneralProperties() throws Exception
     {
         DirectExchange exchange = new DirectExchange();
-        exchange.initialise(_virtualHost, ExchangeDefaults.DIRECT_EXCHANGE_NAME, false, 0, true);
+        exchange.initialise(UUIDGenerator.generateUUID(), _virtualHost, ExchangeDefaults.DIRECT_EXCHANGE_NAME, false, 0, true);
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
 
@@ -67,7 +68,7 @@ public class ExchangeMBeanTest  extends InternalBrokerBaseCase
     public void testDirectExchangeMBean() throws Exception
     {
         DirectExchange exchange = new DirectExchange();
-        exchange.initialise(_virtualHost, ExchangeDefaults.DIRECT_EXCHANGE_NAME, false, 0, true);
+        exchange.initialise(UUIDGenerator.generateUUID(), _virtualHost, ExchangeDefaults.DIRECT_EXCHANGE_NAME, false, 0, true);
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
 
@@ -82,7 +83,7 @@ public class ExchangeMBeanTest  extends InternalBrokerBaseCase
     public void testTopicExchangeMBean() throws Exception
     {
         TopicExchange exchange = new TopicExchange();
-        exchange.initialise(_virtualHost,ExchangeDefaults.TOPIC_EXCHANGE_NAME, false, 0, true);
+        exchange.initialise(UUIDGenerator.generateUUID(), _virtualHost,ExchangeDefaults.TOPIC_EXCHANGE_NAME, false, 0, true);
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
 
@@ -97,7 +98,7 @@ public class ExchangeMBeanTest  extends InternalBrokerBaseCase
     public void testHeadersExchangeMBean() throws Exception
     {
         HeadersExchange exchange = new HeadersExchange();
-        exchange.initialise(_virtualHost,ExchangeDefaults.HEADERS_EXCHANGE_NAME, false, 0, true);
+        exchange.initialise(UUIDGenerator.generateUUID(), _virtualHost,ExchangeDefaults.HEADERS_EXCHANGE_NAME, false, 0, true);
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
 
@@ -119,7 +120,7 @@ public class ExchangeMBeanTest  extends InternalBrokerBaseCase
     public void testHeadersExchangeMBeanMatchPropertyNoValue() throws Exception
     {
         HeadersExchange exchange = new HeadersExchange();
-        exchange.initialise(_virtualHost,ExchangeDefaults.HEADERS_EXCHANGE_NAME, false, 0, true);
+        exchange.initialise(UUIDGenerator.generateUUID(), _virtualHost,ExchangeDefaults.HEADERS_EXCHANGE_NAME, false, 0, true);
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
 
@@ -137,7 +138,7 @@ public class ExchangeMBeanTest  extends InternalBrokerBaseCase
     public void testInvalidHeaderBindingMalformed() throws Exception
     {
         HeadersExchange exchange = new HeadersExchange();
-        exchange.initialise(_virtualHost,ExchangeDefaults.HEADERS_EXCHANGE_NAME, false, 0, true);
+        exchange.initialise(UUIDGenerator.generateUUID(), _virtualHost,ExchangeDefaults.HEADERS_EXCHANGE_NAME, false, 0, true);
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
 

@@ -23,8 +23,8 @@ package org.apache.qpid.server.store;
 import org.apache.commons.configuration.Configuration;
 
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.federation.Bridge;
 import org.apache.qpid.server.federation.BrokerLink;
@@ -69,28 +69,22 @@ public interface DurableConfigurationStore
     void removeExchange(Exchange exchange) throws AMQStoreException;
 
     /**
-     * Binds the specified queue to an exchange with a routing key.
+     * Store the queue binding.
      *
-     * @param exchange   The exchange to bind to.
-     * @param routingKey The routing key to bind by.
-     * @param queue      The queue to bind.
-     * @param args       Additional parameters.
+     * @param binding queue binding
      *
      * @throws AMQStoreException if the operation fails for any reason.
      */
-    void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException;
+    void bindQueue(Binding binding) throws AMQStoreException;
 
     /**
-     * Unbinds the specified from an exchange under a particular routing key.
+     * Removes queue binding
      *
-     * @param exchange   The exchange to unbind from.
-     * @param routingKey The routing key to unbind.
-     * @param queue      The queue to unbind.
-     * @param args       Additional parameters.
+     * @param binding queue binding to remove
      *
      * @throws AMQStoreException If the operation fails for any reason.
      */
-    void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException;
+    void unbindQueue(Binding binding) throws AMQStoreException;
 
     /**
      * Makes the specified queue persistent.

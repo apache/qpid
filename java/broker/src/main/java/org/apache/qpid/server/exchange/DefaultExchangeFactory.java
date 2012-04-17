@@ -25,9 +25,11 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.AMQUnknownExchangeType;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.qmf.ManagementExchange;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -35,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class DefaultExchangeFactory implements ExchangeFactory
 {
@@ -76,17 +79,29 @@ public class DefaultExchangeFactory implements ExchangeFactory
         
         return publicTypes;
     }
-    
-    
 
     public Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete)
-            throws AMQException
+    throws AMQException
     {
         return createExchange(new AMQShortString(exchange), new AMQShortString(type), durable, autoDelete, 0);
     }
 
-    public Exchange createExchange(AMQShortString exchange, AMQShortString type, boolean durable, boolean autoDelete,
-                                   int ticket)
+    public Exchange createExchange(UUID id, String exchange, String type, boolean durable, boolean autoDelete)
+            throws AMQException
+    {
+        return createExchange(id, new AMQShortString(exchange), new AMQShortString(type), durable, autoDelete, 0);
+    }
+
+    public Exchange createExchange(AMQShortString exchange, AMQShortString type, boolean durable,
+                                   boolean autoDelete, int ticket)
+            throws AMQException
+    {
+        UUID id = UUIDGenerator.generateExchangeUUID(exchange.asString(), _host.getName());
+        return createExchange(id, exchange, type, durable, autoDelete, ticket);
+    }
+
+    public Exchange createExchange(UUID id, AMQShortString exchange, AMQShortString type, boolean durable,
+                                   boolean autoDelete, int ticket)
             throws AMQException
     {
         // Check access
@@ -102,7 +117,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
             throw new AMQUnknownExchangeType("Unknown exchange type: " + type,null);
         }
         
-        Exchange e = exchType.newInstance(_host, exchange, durable, ticket, autoDelete);
+        Exchange e = exchType.newInstance(id, _host, exchange, durable, ticket, autoDelete);
         return e;
     }
 

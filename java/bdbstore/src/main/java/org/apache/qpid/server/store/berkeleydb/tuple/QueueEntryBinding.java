@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.server.store.berkeleydb.tuple;
 
+import java.util.UUID;
+
 import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
 
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.store.berkeleydb.AMQShortStringEncoding;
 import org.apache.qpid.server.store.berkeleydb.entry.QueueEntryKey;
 
 public class QueueEntryBinding extends TupleBinding<QueueEntryKey>
@@ -43,15 +43,17 @@ public class QueueEntryBinding extends TupleBinding<QueueEntryKey>
 
     public QueueEntryKey entryToObject(TupleInput tupleInput)
     {
-        AMQShortString queueName = AMQShortStringEncoding.readShortString(tupleInput);
+        UUID queueId = new UUID(tupleInput.readLong(), tupleInput.readLong());
         long messageId = tupleInput.readLong();
 
-        return new QueueEntryKey(queueName, messageId);
+        return new QueueEntryKey(queueId, messageId);
     }
 
     public void objectToEntry(QueueEntryKey mk, TupleOutput tupleOutput)
     {
-        AMQShortStringEncoding.writeShortString(mk.getQueueName(),tupleOutput);
+        UUID uuid = mk.getQueueId();
+        tupleOutput.writeLong(uuid.getMostSignificantBits());
+        tupleOutput.writeLong(uuid.getLeastSignificantBits());
         tupleOutput.writeLong(mk.getMessageId());
     }
 }

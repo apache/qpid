@@ -22,10 +22,9 @@ package org.apache.qpid.server.store.berkeleydb.upgrade;
 
 import java.io.File;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.subjects.TestBlankSubject;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 
 import com.sleepycat.je.Database;
@@ -33,7 +32,7 @@ import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.Transaction;
 
-public abstract class AbstractUpgradeTestCase extends TestCase
+public abstract class AbstractUpgradeTestCase extends QpidTestCase
 {
     protected static final class StaticAnswerHandler implements UpgradeInteractionHandler
     {
@@ -57,7 +56,6 @@ public abstract class AbstractUpgradeTestCase extends TestCase
     public static int[] QUEUE_SIZES = { 1, 1, 10, 3 };
     public static int TOTAL_MESSAGE_NUMBER = 15;
     protected static final LogSubject LOG_SUBJECT = new TestBlankSubject();
-    protected static final String TMP_FOLDER = System.getProperty("java.io.tmpdir");
 
     // one binding per exchange
     protected static final int TOTAL_BINDINGS = QUEUE_NAMES.length * 2;
@@ -148,4 +146,8 @@ public abstract class AbstractUpgradeTestCase extends TestCase
         return count.longValue();
     }
 
+    public String getVirtualHostName()
+    {
+        return getName();
+    }
 }

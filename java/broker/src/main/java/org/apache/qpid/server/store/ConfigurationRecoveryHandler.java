@@ -32,19 +32,19 @@ public interface ConfigurationRecoveryHandler
 
     public static interface QueueRecoveryHandler
     {
-        void queue(String queueName, String owner, boolean exclusive, FieldTable arguments);
+        void queue(UUID id, String queueName, String owner, boolean exclusive, FieldTable arguments);
         ExchangeRecoveryHandler completeQueueRecovery();
     }
 
     public static interface ExchangeRecoveryHandler
     {
-        void exchange(String exchangeName, String type, boolean autoDelete);
+        void exchange(UUID id, String exchangeName, String type, boolean autoDelete);
         BindingRecoveryHandler completeExchangeRecovery();
     }
 
     public static interface BindingRecoveryHandler
     {
-        void binding(String exchangeName, String queueName, String bindingKey, ByteBuffer buf);
+        void binding(UUID bindingId, UUID exchangeId, UUID queueId, String bindingName, ByteBuffer buf);
         BrokerLinkRecoveryHandler completeBindingRecovery();
     }
     

@@ -50,9 +50,9 @@ public class BDBMessageStore extends AbstractBDBMessageStore
     private final CommitThread _commitThread = new CommitThread("Commit-Thread");
 
     @Override
-    protected void setupStore(File storePath) throws DatabaseException, AMQStoreException
+    protected void setupStore(File storePath, String name) throws DatabaseException, AMQStoreException
     {
-        super.setupStore(storePath);
+        super.setupStore(storePath, name);
 
         startCommitThread();
     }
