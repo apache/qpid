@@ -362,7 +362,8 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 e.printStackTrace();  //TODO
             }
 
-            DeliveryState state = new Modified();
+            Modified state = new Modified();
+            state.setDeliveryFailed(true);
 
             for(UnsettledAction action : _unsettledActionMap.values())
             {
