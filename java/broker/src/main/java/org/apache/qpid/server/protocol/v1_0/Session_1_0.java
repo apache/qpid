@@ -24,11 +24,10 @@ import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.ReceivingLinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SendingLinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SessionEventListener;
-import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
-import org.apache.qpid.amqp_1_0.type.Binary;
-import org.apache.qpid.amqp_1_0.type.LifetimePolicy;
-import org.apache.qpid.amqp_1_0.type.Symbol;
+import org.apache.qpid.amqp_1_0.type.*;
 import org.apache.qpid.amqp_1_0.type.messaging.*;
+import org.apache.qpid.amqp_1_0.type.messaging.Source;
+import org.apache.qpid.amqp_1_0.type.messaging.Target;
 import org.apache.qpid.amqp_1_0.type.transaction.Coordinator;
 import org.apache.qpid.amqp_1_0.type.transaction.TxnCapability;
 import org.apache.qpid.amqp_1_0.type.transport.*;
@@ -143,13 +142,6 @@ public class Session_1_0 implements SessionEventListener
                         if(TerminusDurability.UNSETTLED_STATE.equals(source.getDurable()))
                         {
                             linkRegistry.registerSendingLink(endpoint.getName(), sendingLink);
-                            sendingLink.setCloseAction(new Runnable() {
-
-                                public void run()
-                                {
-                                    linkRegistry.unregisterSendingLink(endpoint.getName());
-                                }
-                            });
                         }
                     }
                     catch(AmqpErrorException e)
@@ -163,7 +155,19 @@ public class Session_1_0 implements SessionEventListener
             }
             else
             {
-                endpoint.setSource(previousLink.getEndpoint().getSource());
+                Source newSource = (Source) endpoint.getSource();
+
+                Source oldSource = (Source) previousLink.getEndpoint().getSource();
+                final TerminusDurability newSourceDurable = newSource == null ? null : newSource.getDurable();
+                if(newSourceDurable != null)
+                {
+                    oldSource.setDurable(newSourceDurable);
+                    if(newSourceDurable.equals(TerminusDurability.NONE))
+                    {
+                        linkRegistry.unregisterSendingLink(endpoint.getName());
+                    }
+                }
+                endpoint.setSource(oldSource);
                 SendingLinkEndpoint sendingLinkEndpoint = (SendingLinkEndpoint) endpoint;
                 previousLink.setLinkAttachment(new SendingLinkAttachment(this, sendingLinkEndpoint));
                 sendingLinkEndpoint.setLinkEventListener(previousLink);
