@@ -19,7 +19,7 @@
 #
 
 import os, signal, sys, time, imp, re, subprocess, glob, random, logging, shutil, math
-from qpid.messaging import Message, NotFound, ConnectionError, Connection
+from qpid.messaging import Message, NotFound, ConnectionError, ReceiverError, Connection
 from qpid.datatypes import uuid4
 from brokertest import *
 from threading import Thread, Lock, Condition
@@ -548,6 +548,20 @@ class ReplicationTests(HaTest):
         c = cluster[0].connect().session().sender("q;{create:always, node:{x-declare:{arguments:{'qpid.replicate':XXinvalidXX}}}}")
         self.wait_backup(cluster[1], "q")
 
+    def test_exclusive_queue(self):
+        """Ensure that we can back-up exclusive queues, i.e. the replicating
+        subscriptions are exempt from the exclusivity"""
+        cluster = HaCluster(self, 2)
+        def test(addr):
+            c = cluster[0].connect()
+            q = addr.split(";")[0]
+            r = c.session().receiver(addr)
+            try: c.session().receiver(addr); self.fail("Expected exclusive exception")
+            except ReceiverError: pass
+            s = c.session().sender(q).send(q)
+            self.assert_browse_backup(cluster[1], q, [q])
+        test("excl_sub;{create:always, link:{x-subscribe:{exclusive:True}}}");
+        test("excl_queue;{create:always, node:{x-declare:{exclusive:True}}}")
 
 def fairshare(msgs, limit, levels):
     """

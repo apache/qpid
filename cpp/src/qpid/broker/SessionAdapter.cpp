@@ -410,6 +410,7 @@ SessionAdapter::MessageHandlerImpl::subscribe(const string& queueName,
     if(!destination.empty() && state.exists(destination))
         throw NotAllowedException(QPID_MSG("Consumer tags must be unique"));
 
+    // We allow browsing (acquireMode == 1) of exclusive queues, this is required by HA.
     if (queue->hasExclusiveOwner() && !queue->isExclusiveOwner(&session) && acquireMode == 0)
         throw ResourceLockedException(QPID_MSG("Cannot subscribe to exclusive queue "
                                                << queue->getName()));
