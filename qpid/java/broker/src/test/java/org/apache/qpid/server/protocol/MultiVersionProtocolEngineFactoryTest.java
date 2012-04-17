@@ -35,6 +35,7 @@ import java.util.Set;
 
 public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
 {
+
     protected void setUp() throws Exception
     {
         super.setUp();
@@ -93,7 +94,20 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
                      (byte) 0,
                      (byte) 10
         };
-    
+
+
+    private static final byte[] AMQP_1_0_0_HEADER =
+            new byte[] {
+                    (byte)'A',
+                    (byte)'M',
+                    (byte)'Q',
+                    (byte)'P',
+                    (byte) 0,
+                    (byte) 1,
+                    (byte) 0,
+                    (byte) 0
+            };
+
     private byte[] getAmqpHeader(final AmqpProtocolVersion version)
     {
         switch(version)
@@ -106,6 +120,8 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
                 return AMQP_0_9_1_HEADER;
             case v0_10:
                 return AMQP_0_10_HEADER;
+            case v1_0_0:
+                return AMQP_1_0_0_HEADER;
             default:
                 fail("unknown AMQP version, appropriate header must be added for new protocol version");
                 return null;

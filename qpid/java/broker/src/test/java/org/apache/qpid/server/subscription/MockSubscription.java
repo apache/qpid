@@ -92,6 +92,11 @@ public class MockSubscription implements Subscription
         return tag;
     }
 
+    public String getConsumerName()
+    {
+        return tag == null ? null : tag.asString();
+    }
+
     public long getSubscriptionID()
     {
         return _subscriptionID;
@@ -147,7 +152,7 @@ public class MockSubscription implements Subscription
         return queue;
     }
 
-    public AMQSessionModel getSession()
+    public AMQSessionModel getSessionModel()
     {
         return null;
     }
@@ -300,6 +305,10 @@ public class MockSubscription implements Subscription
     public boolean isSessionTransactional()
     {
         return false;
+    }
+
+    public void queueEmpty() throws AMQException
+    {
     }
 
     public void setActive(final boolean isActive)

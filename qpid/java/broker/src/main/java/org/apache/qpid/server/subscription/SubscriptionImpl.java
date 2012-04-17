@@ -368,7 +368,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     }
 
-    public AMQSessionModel getSession()
+    public AMQSessionModel getSessionModel()
     {
         return _channel;
     }
@@ -601,6 +601,11 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         return _consumerTag;
     }
 
+    public String getConsumerName()
+    {
+        return _consumerTag == null ? null : _consumerTag.asString();
+    }
+    
     public long getSubscriptionID()
     {
         return _subscriptionID;
@@ -817,6 +822,16 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     public long getCreateTime()
     {
         return _createTime;
+    }
+
+    public void queueEmpty() throws AMQException
+    {
+        if (isAutoClose())
+        {
+            _queue.unregisterSubscription(this);
+
+            confirmAutoClose();
+        }
     }
 
     public void flushBatched()

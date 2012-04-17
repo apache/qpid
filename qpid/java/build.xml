@@ -26,7 +26,7 @@
   <findSubProjects name="client-plugins" dir="client-plugins"/>
   <findSubProjects name="management" dir="management" excludes="common,example"/>
 
-  <property name="modules.core"       value="common management/common broker client tools"/>
+  <property name="modules.core"       value="common management/common amqp-1-0-common broker client amqp-1-0-client amqp-1-0-client-jms tools"/>
   <property name="modules.examples"   value="client/example management/example"/>
   <property name="modules.tests"      value="systests"/>
   <property name="modules.management" value="${management}"/>

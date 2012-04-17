@@ -203,14 +203,13 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
             CurrentActor.get().message(this, SubscriptionMessages.CREATE(filterLogString, queue.isDurable() && exclusive,
                     filterLogString.length() > 0));
         }
-
     }
 
-    public AMQShortString getConsumerTag()
+    public String getConsumerName()
     {
-        return new AMQShortString(_destination);
+        return _destination;
     }
-
+    
     public boolean isSuspended()
     {
         return !isActive() || _deleted.get() || _session.isClosing(); // TODO check for Session suspension
@@ -246,12 +245,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     private boolean checkFilters(QueueEntry entry)
     {
         return (_filters == null) || _filters.allAllow(entry);
-    }
-
-    public boolean isAutoClose()
-    {
-        // no such thing in 0-10
-        return false;
     }
 
     public boolean isClosed()
@@ -716,7 +709,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
             entry.setRedelivered();
         }
 
-        if (getSession().isClosing() || !setRedelivered)
+        if (getSessionModel().isClosing() || !setRedelivered)
         {
             entry.decrementDeliveryCount();
         }
@@ -836,11 +829,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     public boolean isActive()
     {
         return getState() == State.ACTIVE;
-    }
-
-    public void confirmAutoClose()
-    {
-        //No such thing in 0-10
     }
 
     public void set(String key, Object value)
@@ -977,7 +965,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         return false;
     }
 
-    public ServerSession getSession()
+    public ServerSession getSessionModel()
     {
         return _session;
     }
@@ -985,7 +973,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
     public SessionConfig getSessionConfig()
     {
-        return getSession();
+        return getSessionModel();
     }
 
     public boolean isBrowsing()
@@ -1041,6 +1029,10 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     public boolean isSessionTransactional()
     {
         return _session.isTransactional();
+    }
+
+    public void queueEmpty()
+    {
     }
 
     public long getCreateTime()

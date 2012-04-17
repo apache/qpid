@@ -45,7 +45,7 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
         final Subscription_0_10 subscription = getSubscription();
         if(subscription != null && _entry.isAcquiredBy(_sub))
         {
-            subscription.getSession().acknowledge(subscription, _entry);
+            subscription.getSessionModel().acknowledge(subscription, _entry);
         }
         else
         {

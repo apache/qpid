@@ -52,4 +52,13 @@ final class QueueContext implements AMQQueue.Context
     {
         return _releasedEntry;
     }
+
+    @Override
+    public String toString()
+    {
+        return "QueueContext{" +
+               "_lastSeenEntry=" + _lastSeenEntry +
+               ", _releasedEntry=" + _releasedEntry +
+               '}';
+    }
 }

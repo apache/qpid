@@ -301,6 +301,11 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         }
     }
 
+    public CallbackHandler getHandler(String mechanism)
+    {
+        return _callbackHandlerMap.get(mechanism);
+    }
+
     /**
      * @see org.apache.qpid.server.security.auth.manager.AuthenticationManager#authenticate(String, String)
      */
