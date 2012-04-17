@@ -50,6 +50,9 @@ felix-main=lib/org.apache.felix.main-2.0.5.jar
 
 felix.libs=${felix-main}
 
+jackson-core=lib/jackson-core-asl-1.9.0.jar
+jackson-mapper=lib/jackson-mapper-asl-1.9.0.jar
+
 commons-configuration.libs = ${commons-beanutils-core} ${commons-digester} \
   ${commons-codec} ${commons-lang} ${commons-collections} ${commons-configuration}
 
@@ -60,7 +63,8 @@ amqp-1-0-client.libs=${commons-cli}
 amqp-1-0-client-jms.libs=${geronimo-jms}
 tools.libs=${commons-configuration.libs} ${log4j}
 broker.libs=${commons-cli} ${commons-logging} ${log4j} ${slf4j-log4j} \
-    ${xalan} ${felix.libs} ${derby-db} ${commons-configuration.libs}
+    ${xalan} ${felix.libs} ${derby-db} ${commons-configuration.libs} \
+    ${jackson-core} ${jackson-mapper}
 
 broker-plugins.libs=${felix.libs} ${log4j} ${commons-configuration.libs}
 

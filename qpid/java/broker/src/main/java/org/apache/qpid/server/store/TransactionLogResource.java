@@ -20,7 +20,9 @@
 */
 package org.apache.qpid.server.store;
 
+import java.util.UUID;
+
 public interface TransactionLogResource
 {
-    public String getResourceName();
+    public UUID getId();
 }

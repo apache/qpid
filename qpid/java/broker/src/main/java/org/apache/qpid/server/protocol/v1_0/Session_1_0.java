@@ -37,6 +37,7 @@ import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.IApplicationRegistry;
@@ -314,7 +315,8 @@ public class Session_1_0 implements SessionEventListener
                                             ? null
                                             : (LifetimePolicy) properties.get(LIFETIME_POLICY);
 
-            final AMQQueue tempQueue = queue = AMQQueueFactory.createAMQQueueImpl(queueName,
+            final AMQQueue tempQueue = queue = AMQQueueFactory.createAMQQueueImpl( UUIDGenerator.generateUUID(),
+                                                                                   queueName,
                                                                                    false, // durable
                                                                                    null, // owner
                                                                                    false, // autodelete

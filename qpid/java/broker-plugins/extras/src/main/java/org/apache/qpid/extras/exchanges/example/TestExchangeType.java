@@ -21,6 +21,8 @@
 
 package org.apache.qpid.extras.exchanges.example;
 
+import java.util.UUID;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
@@ -40,12 +42,12 @@ public class TestExchangeType implements ExchangeType
         return null;
     }
 
-    public Exchange newInstance(VirtualHost host, AMQShortString name, boolean durable,
+    public Exchange newInstance(UUID id, VirtualHost host, AMQShortString name, boolean durable,
                                 int token, boolean autoDelete)
             throws AMQException
     {
         TestExchange ex = new TestExchange();
-        ex.initialise(host, name, durable, token, autoDelete);
+        ex.initialise(id, host, name, durable, token, autoDelete);
         return ex;
     }
 

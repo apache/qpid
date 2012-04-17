@@ -20,22 +20,22 @@
  */
 package org.apache.qpid.server.store.berkeleydb.entry;
 
-import org.apache.qpid.framing.AMQShortString;
+import java.util.UUID;
 
 public class QueueEntryKey
 {
-    private AMQShortString _queueName;
+    private UUID _queueId;
     private long _messageId;
 
-    public QueueEntryKey(AMQShortString queueName, long messageId)
+    public QueueEntryKey(UUID queueId, long messageId)
     {
-        _queueName = queueName;
+        _queueId = queueId;
         _messageId = messageId;
     }
 
-    public AMQShortString getQueueName()
+    public UUID getQueueId()
     {
-        return _queueName;
+        return _queueId;
     }
 
     public long getMessageId()

@@ -38,13 +38,15 @@ import com.sleepycat.je.OperationStatus;
 
 public class Upgrader
 {
-    static final String VERSION_DB_NAME = "VERSION";
+    static final String VERSION_DB_NAME = "DB_VERSION";
 
     private Environment _environment;
+    private String _virtualHostName;
 
-    public Upgrader(Environment environment)
+    public Upgrader(Environment environment, String virtualHostName)
     {
         _environment = environment;
+        _virtualHostName = virtualHostName;
     }
 
     public void upgradeIfNecessary() throws AMQStoreException
@@ -125,7 +127,7 @@ public class Upgrader
                                                         + "UpgradeFrom"+fromVersion+"To"+toVersion);
             Constructor<StoreUpgrade> ctr = upgradeClass.getConstructor();
             StoreUpgrade upgrade = ctr.newInstance();
-            upgrade.performUpgrade(_environment, UpgradeInteractionHandler.DEFAULT_HANDLER);
+            upgrade.performUpgrade(_environment, UpgradeInteractionHandler.DEFAULT_HANDLER, _virtualHostName);
         }
         catch (ClassNotFoundException e)
         {

@@ -37,6 +37,7 @@ import org.apache.qpid.server.exchange.topic.TopicNormalizer;
 import org.apache.qpid.server.exchange.topic.TopicParser;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.virtualhost.HouseKeepingTask;
@@ -83,7 +84,8 @@ public class ManagementExchange implements Exchange, QMFService.Listener
 
     private class ManagementQueue implements BaseQueue
     {
-        private final String NAME_AS_STRING = "##__mgmt_pseudo_queue__##" + UUID.randomUUID().toString();
+        private final UUID QUEUE_ID =  UUIDGenerator.generateUUID();
+        private final String NAME_AS_STRING = "##__mgmt_pseudo_queue__##" + QUEUE_ID.toString();
         private final AMQShortString NAME_AS_SHORT_STRING = new AMQShortString(NAME_AS_STRING);
 
         public void enqueue(ServerMessage message) throws AMQException
@@ -129,9 +131,10 @@ public class ManagementExchange implements Exchange, QMFService.Listener
             return NAME_AS_SHORT_STRING;
         }
 
-        public String getResourceName()
+        @Override
+        public UUID getId()
         {
-            return NAME_AS_STRING;
+            return QUEUE_ID;
         }
     }
 
@@ -155,14 +158,14 @@ public class ManagementExchange implements Exchange, QMFService.Listener
             return ManagementExchange.class;
         }
 
-        public ManagementExchange newInstance(VirtualHost host,
+        public ManagementExchange newInstance(UUID id, VirtualHost host,
                                             AMQShortString name,
                                             boolean durable,
                                             int ticket,
                                             boolean autoDelete) throws AMQException
         {
             ManagementExchange exch = new ManagementExchange();
-            exch.initialise(host, name, durable, ticket, autoDelete);
+            exch.initialise(id, host, name, durable, ticket, autoDelete);
             return exch;
         }
 
@@ -183,7 +186,7 @@ public class ManagementExchange implements Exchange, QMFService.Listener
         return QPID_MANAGEMENT_TYPE;
     }
 
-    public void initialise(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete)
+    public void initialise(UUID id, VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete)
             throws AMQException
     {
         if(!QPID_MANAGEMENT.equals(name))
@@ -191,7 +194,7 @@ public class ManagementExchange implements Exchange, QMFService.Listener
             throw new AMQException("Can't create more than one Management exchange");
         }
         _virtualHost = host;
-        _id = host.getConfigStore().createId();
+        _id = id;
         _virtualHost.scheduleHouseKeepingTask(_virtualHost.getBroker().getManagementPublishInterval(), new UpdateTask(_virtualHost));
         getConfigStore().addConfiguredObject(this);
         getQMFService().addListener(this);

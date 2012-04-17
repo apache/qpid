@@ -21,22 +21,23 @@
 
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.virtualhost.VirtualHost;
-
 import java.util.Map;
+import java.util.UUID;
+
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class ConflationQueue extends SimpleAMQQueue
 {
-    protected ConflationQueue(String name,
+    protected ConflationQueue(UUID id,
+                              String name,
                               boolean durable,
                               String owner,
                               boolean autoDelete,
                               boolean exclusive,
                               VirtualHost virtualHost,
-                              Map<String, Object> args,
-                              String conflationKey)
+                              Map<String, Object> args, String conflationKey)
     {
-        super(name, durable, owner, autoDelete, exclusive, virtualHost, new ConflationQueueList.Factory(conflationKey), args);
+        super(id, name, durable, owner, autoDelete, exclusive, virtualHost, new ConflationQueueList.Factory(conflationKey), args);
     }
 
     public String getConflationKey()

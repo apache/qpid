@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.server.queue;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -30,11 +34,9 @@ import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class AMQQueueFactory
 {
@@ -166,8 +168,13 @@ public class AMQQueueFactory
             }
     };
 
-
-    /** @see #createAMQQueueImpl(String, boolean, String, boolean, boolean, VirtualHost, Map) */
+    /**
+     * Creates a new queue with a random id.
+     *
+     * @see #createAMQQueueImpl(UUID, String, boolean, String, boolean, boolean, VirtualHost, Map)
+     * @deprecated because only called from unit tests
+     * */
+    @Deprecated
     public static AMQQueue createAMQQueueImpl(AMQShortString name,
                                               boolean durable,
                                               AMQShortString owner,
@@ -175,22 +182,28 @@ public class AMQQueueFactory
                                               boolean exclusive,
                                               VirtualHost virtualHost, final FieldTable arguments) throws AMQException
     {
-        return createAMQQueueImpl(name == null ? null : name.toString(),
+        return createAMQQueueImpl(UUIDGenerator.generateUUID(),
+                                  name == null ? null : name.toString(),
                                   durable,
                                   owner == null ? null : owner.toString(),
                                   autoDelete,
-                                  exclusive,
-                                  virtualHost, FieldTable.convertToMap(arguments));
+                                  exclusive, virtualHost, FieldTable.convertToMap(arguments));
     }
 
-
-    public static AMQQueue createAMQQueueImpl(String queueName,
+    /**
+     * @param id the id to use. If default then one is generated from queueName. TODO check correctness of calls that pass a null value.
+     */
+    public static AMQQueue createAMQQueueImpl(UUID id,
+                                              String queueName,
                                               boolean durable,
                                               String owner,
                                               boolean autoDelete,
-                                              boolean exclusive,
-                                              VirtualHost virtualHost, Map<String, Object> arguments) throws AMQSecurityException, AMQException
+                                              boolean exclusive, VirtualHost virtualHost, Map<String, Object> arguments) throws AMQSecurityException, AMQException
     {
+        if (id == null)
+        {
+            throw new IllegalArgumentException("Queue id must not be null");
+        }
         if (queueName == null)
         {
             throw new IllegalArgumentException("Queue name must not be null");
@@ -241,19 +254,19 @@ public class AMQQueueFactory
         AMQQueue q;
         if(sortingKey != null)
         {
-            q = new SortedQueue(queueName, durable, owner, autoDelete, exclusive, virtualHost, arguments, sortingKey);
+            q = new SortedQueue(id, queueName, durable, owner, autoDelete, exclusive, virtualHost, arguments, sortingKey);
         }
         else if(conflationKey != null)
         {
-            q = new ConflationQueue(queueName, durable, owner, autoDelete, exclusive, virtualHost, arguments, conflationKey);
+            q = new ConflationQueue(id, queueName, durable, owner, autoDelete, exclusive, virtualHost, arguments, conflationKey);
         }
         else if(priorities > 1)
         {
-            q = new AMQPriorityQueue(queueName, durable, owner, autoDelete, exclusive, virtualHost, arguments, priorities);
+            q = new AMQPriorityQueue(id, queueName, durable, owner, autoDelete, exclusive, virtualHost, arguments, priorities);
         }
         else
         {
-            q = new SimpleAMQQueue(queueName, durable, owner, autoDelete, exclusive, virtualHost, arguments);
+            q = new SimpleAMQQueue(id, queueName, durable, owner, autoDelete, exclusive, virtualHost, arguments);
         }
 
         //Register the new queue
@@ -287,7 +300,7 @@ public class AMQQueueFactory
 
                 if(dlExchange == null)
                 {
-                    dlExchange = exchangeFactory.createExchange(new AMQShortString(dlExchangeName), ExchangeDefaults.FANOUT_EXCHANGE_CLASS, true, false, 0);
+                    dlExchange = exchangeFactory.createExchange(UUIDGenerator.generateUUID(dlExchangeName, virtualHost.getName()), new AMQShortString(dlExchangeName), ExchangeDefaults.FANOUT_EXCHANGE_CLASS, true, false, 0);
 
                     exchangeRegistry.registerExchange(dlExchange);
 
@@ -309,7 +322,7 @@ public class AMQQueueFactory
                     args.put(X_QPID_DLQ_ENABLED, false);
                     args.put(X_QPID_MAXIMUM_DELIVERY_COUNT, 0);
 
-                    dlQueue = createAMQQueueImpl(dlQueueName, true, owner, false, exclusive, virtualHost, args);
+                    dlQueue = createAMQQueueImpl(UUIDGenerator.generateUUID(dlQueueName, virtualHost.getName()), dlQueueName, true, owner, false, exclusive, virtualHost, args);
 
                     //enter the dlq in the persistent store
                     virtualHost.getMessageStore().createQueue(dlQueue, FieldTable.convertToFieldTable(args));
@@ -364,7 +377,10 @@ public class AMQQueueFactory
             arguments.put(X_QPID_DLQ_ENABLED, true);
         }
 
-        AMQQueue q = createAMQQueueImpl(queueName, durable, owner, autodelete, exclusive, host, arguments);
+        // we need queues that are defined in config to have deterministic ids.
+        UUID id = UUIDGenerator.generateUUID(queueName, host.getName());
+
+        AMQQueue q = createAMQQueueImpl(id, queueName, durable, owner, autodelete, exclusive, host, arguments);
         q.configure(config);
         return q;
     }

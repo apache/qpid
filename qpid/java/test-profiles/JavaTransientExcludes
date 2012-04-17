@@ -41,3 +41,5 @@ org.apache.qpid.server.store.MessageStoreTest#testExchangePersistence
 org.apache.qpid.server.store.MessageStoreTest#testDurableExchangeRemoval
 
 org.apache.qpid.server.store.berkeleydb.*
+
+org.apache.qpid.server.store.DurableConfigurationStoreTest#*

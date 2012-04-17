@@ -39,6 +39,7 @@ import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQPriorityQueue;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
@@ -58,6 +59,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * This tests the MessageStores by using the available interfaces.
@@ -739,7 +741,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
         try
         {
-            exchange = type.newInstance(getVirtualHost(), name, durable, 0, false);
+            exchange = type.newInstance(UUIDGenerator.generateUUID(), getVirtualHost(), name, durable, 0, false);
         }
         catch (AMQException e)
         {
