@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.List;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -47,11 +50,6 @@ import org.apache.qpid.transport.MessageDeliveryMode;
 import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.MessageTransfer;
-
-import java.io.File;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Subclass of MessageStoreTest which runs the standard tests from the superclass against
@@ -123,7 +121,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         /*
          * reload the store only (read-only)
          */
-        bdbStore = reloadStoreReadOnly(bdbStore);
+        bdbStore = reloadStore(bdbStore);
 
         /*
          * Read back and validate the 0-8 message metadata and content
@@ -220,14 +218,14 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
      * Use this method instead of reloading the virtual host like other tests in order
      * to avoid the recovery handler deleting the message for not being on a queue.
      */
-    private BDBMessageStore reloadStoreReadOnly(BDBMessageStore messageStore) throws Exception
+    private BDBMessageStore reloadStore(BDBMessageStore messageStore) throws Exception
     {
         messageStore.close();
-        File storePath = new File(String.valueOf(_config.getProperty("store.environment-path")));
 
         BDBMessageStore newStore = new BDBMessageStore();
-        newStore.configure(storePath, false);
-        newStore.start();
+        newStore.configure("", _config.subset("store"));
+
+        newStore.startWithNoRecover();
 
         return newStore;
     }
@@ -369,10 +367,10 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
     }
     private BDBMessageStore assertBDBStore(MessageStore store)
     {
-        MessageStore underlyingStore = store.getUnderlyingStore();
-        assertEquals("Test requires an instance of BDBMessageStore to proceed", BDBMessageStore.class, underlyingStore.getClass());
 
-        return (BDBMessageStore) underlyingStore;
+        assertEquals("Test requires an instance of BDBMessageStore to proceed", BDBMessageStore.class, store.getClass());
+
+        return (BDBMessageStore) store;
     }
 
     private StoredMessage<MessageMetaData> createAndStoreSingleChunkMessage_0_8(MessageStore store)

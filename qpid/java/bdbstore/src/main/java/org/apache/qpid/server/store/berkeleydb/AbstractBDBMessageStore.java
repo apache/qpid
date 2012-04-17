@@ -33,10 +33,18 @@ import com.sleepycat.je.LockConflictException;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
 import com.sleepycat.je.TransactionConfig;
-
+import java.io.File;
+import java.lang.ref.SoftReference;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -52,6 +60,7 @@ import org.apache.qpid.server.store.ConfigurationRecoveryHandler.QueueRecoveryHa
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
+import org.apache.qpid.server.store.EventManager;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
@@ -82,17 +91,6 @@ import org.apache.qpid.server.store.berkeleydb.tuple.StringMapBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.UUIDTupleBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.XidBinding;
 import org.apache.qpid.server.store.berkeleydb.upgrade.Upgrader;
-
-import java.io.File;
-import java.lang.ref.SoftReference;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class AbstractBDBMessageStore implements MessageStore
 {
@@ -154,31 +152,36 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
     private final AtomicLong _messageId = new AtomicLong(0);
 
-    protected final StateManager _stateManager = new StateManager();
+    protected final StateManager _stateManager;
 
     protected TransactionConfig _transactionConfig = new TransactionConfig();
-
-    private boolean _readOnly = false;
 
     private MessageStoreRecoveryHandler _messageRecoveryHandler;
 
     private TransactionLogRecoveryHandler _tlogRecoveryHandler;
 
     private ConfigurationRecoveryHandler _configRecoveryHandler;
+    
+    private final EventManager _eventManager = new EventManager();
+    private String _storeLocation;
 
     public AbstractBDBMessageStore()
     {
+        _stateManager = new StateManager(_eventManager);
     }
 
     public void configureConfigStore(String name,
                                      ConfigurationRecoveryHandler recoveryHandler,
                                      Configuration storeConfiguration) throws Exception
     {
-        _stateManager.stateTransition(State.INITIAL, State.CONFIGURING);
+        _stateManager.attainState(State.CONFIGURING);
 
         _configRecoveryHandler = recoveryHandler;
 
         configure(name,storeConfiguration);
+
+
+
     }
 
     public void configureMessageStore(String name,
@@ -188,16 +191,19 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     {
         _messageRecoveryHandler = messageRecoveryHandler;
         _tlogRecoveryHandler = tlogRecoveryHandler;
+
+        _stateManager.attainState(State.CONFIGURED);
     }
 
     public void activate() throws Exception
     {
-        _stateManager.stateTransition(State.CONFIGURING, State.RECOVERING);
+        _stateManager.attainState(State.RECOVERING);
 
         recoverConfig(_configRecoveryHandler);
         recoverMessages(_messageRecoveryHandler);
         recoverQueueEntries(_tlogRecoveryHandler);
-        _stateManager.stateTransition(State.RECOVERING, State.ACTIVE);
+
+        _stateManager.attainState(State.ACTIVE);
     }
 
     public org.apache.qpid.server.store.Transaction newTransaction()
@@ -216,8 +222,10 @@ public abstract class AbstractBDBMessageStore implements MessageStore
      */
     public void configure(String name, Configuration storeConfig) throws Exception
     {
-        File environmentPath = new File(storeConfig.getString(ENVIRONMENT_PATH_PROPERTY,
-                                System.getProperty("QPID_WORK") + File.separator + "bdbstore" + File.separator + name));
+        final String storeLocation = storeConfig.getString(ENVIRONMENT_PATH_PROPERTY,
+                System.getProperty("QPID_WORK") + File.separator + "bdbstore" + File.separator + name);
+
+        File environmentPath = new File(storeLocation);
         if (!environmentPath.exists())
         {
             if (!environmentPath.mkdirs())
@@ -227,53 +235,38 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             }
         }
 
-        configure(environmentPath, false);
-    }
-
-    /**
-     * @param environmentPath location for the store to be created in/recovered from
-     * @param readonly if true then don't allow modifications to an existing store, and don't create a new store if none exists
-     * @return whether or not a new store environment was created
-     * @throws AMQStoreException
-     * @throws DatabaseException
-     */
-    protected void configure(File environmentPath, boolean readonly) throws AMQStoreException, DatabaseException
-    {
-        if (_stateManager.isInState(State.INITIAL))
-        {
-            // TODO - currently required for BDBUpgrade and BDBMessageStoreTest
-            _stateManager.stateTransition(State.INITIAL, State.CONFIGURING);
-        }
-
-        _readOnly = readonly;
+        _storeLocation = storeLocation;
 
         LOGGER.info("Configuring BDB message store");
 
-        setupStore(environmentPath, readonly);
+        setupStore(environmentPath);
     }
 
     /**
-     * Move the store state from CONFIGURING to ACTIVE.
+     * Move the store state from INITIAL to ACTIVE without actually recovering.
      *
      * This is required if you do not want to perform recovery of the store data
      *
      * @throws AMQStoreException if the store is not in the correct state
      */
-    public void start() throws AMQStoreException
+    void startWithNoRecover() throws AMQStoreException
     {
-        _stateManager.stateTransition(State.CONFIGURING, State.ACTIVE);
+        _stateManager.attainState(State.CONFIGURING);
+        _stateManager.attainState(State.CONFIGURED);
+        _stateManager.attainState(State.RECOVERING);
+        _stateManager.attainState(State.ACTIVE);
     }
 
-    protected void setupStore(File storePath, boolean readonly) throws DatabaseException, AMQStoreException
+    protected void setupStore(File storePath) throws DatabaseException, AMQStoreException
     {
-        _environment = createEnvironment(storePath, readonly);
+        _environment = createEnvironment(storePath);
 
         new Upgrader(_environment).upgradeIfNecessary();
 
-        openDatabases(readonly);
+        openDatabases();
     }
 
-    protected Environment createEnvironment(File environmentPath, boolean readonly) throws DatabaseException
+    protected Environment createEnvironment(File environmentPath) throws DatabaseException
     {
         LOGGER.info("BDB message store using environment path " + environmentPath.getAbsolutePath());
         EnvironmentConfig envConfig = new EnvironmentConfig();
@@ -294,7 +287,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         _transactionConfig.setReadCommitted(true);
 
         //This prevents background threads running which will potentially update the store.
-        envConfig.setReadOnly(readonly);
+        envConfig.setReadOnly(false);
         try
         {
             return new Environment(environmentPath, envConfig);
@@ -324,14 +317,14 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         return _environment;
     }
 
-    private void openDatabases(boolean readonly) throws DatabaseException
+    private void openDatabases() throws DatabaseException
     {
         DatabaseConfig dbConfig = new DatabaseConfig();
         dbConfig.setTransactional(true);
         dbConfig.setAllowCreate(true);
 
         //This is required if we are wanting read only access.
-        dbConfig.setReadOnly(readonly);
+        dbConfig.setReadOnly(false);
 
         _messageMetaDataDb = openDatabase(MESSAGEMETADATADB_NAME, dbConfig);
         _queueDb = openDatabase(QUEUEDB_NAME, dbConfig);
@@ -359,7 +352,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
      */
     public void close() throws Exception
     {
-        if (_stateManager.isInState(State.ACTIVE))
+        if (_stateManager.isInState(State.ACTIVE) || _stateManager.isInState(State.QUIESCED))
         {
             _stateManager.stateTransition(State.ACTIVE, State.CLOSING);
 
@@ -434,13 +427,10 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     {
         if (_environment != null)
         {
-            if(!_readOnly)
-            {
-                // Clean the log before closing. This makes sure it doesn't contain
-                // redundant data. Closing without doing this means the cleaner may not
-                // get a chance to finish.
-                _environment.cleanLog();
-            }
+            // Clean the log before closing. This makes sure it doesn't contain
+            // redundant data. Closing without doing this means the cleaner may not
+            // get a chance to finish.
+            _environment.cleanLog();
             _environment.close();
         }
     }
@@ -1975,13 +1965,14 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     }
 
     @Override
-    public void addEventListener(EventListener eventListener, Event event)
+    public void addEventListener(EventListener eventListener, Event... events)
     {
-        throw new UnsupportedOperationException();
+        _eventManager.addEventListener(eventListener, events);
     }
 
-    public MessageStore getUnderlyingStore()
+    @Override
+    public String getStoreLocation()
     {
-        return this;
+        return _storeLocation;
     }
 }

@@ -358,14 +358,15 @@ public class SlowMessageStore implements MessageStore
     }
 
     @Override
-    public void addEventListener(EventListener eventListener, Event event)
+    public void addEventListener(EventListener eventListener, Event... events)
     {
-        throw new UnsupportedOperationException();
+        _realStore.addEventListener(eventListener, events);
     }
 
     @Override
-    public MessageStore getUnderlyingStore()
+    public String getStoreLocation()
     {
-        return _realStore.getUnderlyingStore();
+        return _realStore.getStoreLocation();
     }
+
 }

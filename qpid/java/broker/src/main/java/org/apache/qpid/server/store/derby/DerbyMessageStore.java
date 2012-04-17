@@ -21,35 +21,6 @@
 package org.apache.qpid.server.store.derby;
 
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.federation.Bridge;
-import org.apache.qpid.server.federation.BrokerLink;
-import org.apache.qpid.server.message.EnqueableMessage;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
-import org.apache.qpid.server.store.Event;
-import org.apache.qpid.server.store.EventListener;
-import org.apache.qpid.server.store.MessageMetaDataType;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreConstants;
-import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
-import org.apache.qpid.server.store.State;
-import org.apache.qpid.server.store.StateManager;
-import org.apache.qpid.server.store.StorableMessageMetaData;
-import org.apache.qpid.server.store.StoreFuture;
-import org.apache.qpid.server.store.StoredMemoryMessage;
-import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.store.Transaction;
-import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
-import org.apache.qpid.server.store.TransactionLogResource;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -74,6 +45,34 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.commons.configuration.Configuration;
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.federation.Bridge;
+import org.apache.qpid.server.federation.BrokerLink;
+import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
+import org.apache.qpid.server.store.Event;
+import org.apache.qpid.server.store.EventListener;
+import org.apache.qpid.server.store.EventManager;
+import org.apache.qpid.server.store.MessageMetaDataType;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.MessageStoreConstants;
+import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
+import org.apache.qpid.server.store.State;
+import org.apache.qpid.server.store.StateManager;
+import org.apache.qpid.server.store.StorableMessageMetaData;
+import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.store.StoredMemoryMessage;
+import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.store.Transaction;
+import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
+import org.apache.qpid.server.store.TransactionLogResource;
 
 /**
  * An implementation of a {@link MessageStore} that uses Apache Derby as the persistence
@@ -229,26 +228,33 @@ public class DerbyMessageStore implements MessageStore
 
     private static final String DERBY_SINGLE_DB_SHUTDOWN_CODE = "08006";
 
-    private final StateManager _stateManager = new StateManager();
+    private final StateManager _stateManager;
+    
+    private final EventManager _eventManager = new EventManager();
 
     private MessageStoreRecoveryHandler _messageRecoveryHandler;
 
     private TransactionLogRecoveryHandler _tlogRecoveryHandler;
 
     private ConfigurationRecoveryHandler _configRecoveryHandler;
+    private String _storeLocation;
+
+    public DerbyMessageStore()
+    {
+        _stateManager = new StateManager(_eventManager);
+    }
 
     @Override
     public void configureConfigStore(String name,
                           ConfigurationRecoveryHandler configRecoveryHandler,
                           Configuration storeConfiguration) throws Exception
     {
-        _stateManager.stateTransition(State.INITIAL, State.CONFIGURING);
+        _stateManager.attainState(State.CONFIGURING);
         _configRecoveryHandler = configRecoveryHandler;
 
         commonConfiguration(name, storeConfiguration);
 
     }
-
 
     @Override
     public void configureMessageStore(String name,
@@ -258,19 +264,22 @@ public class DerbyMessageStore implements MessageStore
     {
         _tlogRecoveryHandler = tlogRecoveryHandler;
         _messageRecoveryHandler = recoveryHandler;
+
+        _stateManager.attainState(State.CONFIGURED);
     }
 
     @Override
     public void activate() throws Exception
     {
-        _stateManager.stateTransition(State.CONFIGURING, State.RECOVERING);
+        _stateManager.attainState(State.RECOVERING);
 
         // this recovers durable exchanges, queues, and bindings
         recoverConfiguration(_configRecoveryHandler);
         recoverMessages(_messageRecoveryHandler);
         TransactionLogRecoveryHandler.DtxRecordRecoveryHandler dtxrh = recoverQueueEntries(_tlogRecoveryHandler);
         recoverXids(dtxrh);
-        _stateManager.stateTransition(State.RECOVERING, State.ACTIVE);
+
+        _stateManager.attainState(State.ACTIVE);
     }
 
     private void commonConfiguration(String name, Configuration storeConfiguration)
@@ -292,6 +301,8 @@ public class DerbyMessageStore implements MessageStore
                     + "Ensure the path is correct and that the permissions are correct.");
             }
         }
+
+        _storeLocation = databasePath;
 
         createOrOpenDatabase(name, databasePath);
     }
@@ -2678,20 +2689,14 @@ public class DerbyMessageStore implements MessageStore
     }
 
     @Override
-    public void addEventListener(EventListener eventListener, Event event)
+    public void addEventListener(EventListener eventListener, Event... events)
     {
-        throw new UnsupportedOperationException();
+        _eventManager.addEventListener(eventListener, events);
     }
 
     @Override
-    public MessageStore getUnderlyingStore()
+    public String getStoreLocation()
     {
-        return this;
+        return _storeLocation;
     }
-
-    public String getDatabaseProviderName()
-    {
-        return DerbyMessageStore.class.getName();
-    }
-
 }

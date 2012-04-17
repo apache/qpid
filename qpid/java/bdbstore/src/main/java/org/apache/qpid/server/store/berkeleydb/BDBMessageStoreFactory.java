@@ -19,19 +19,16 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreFactory;
-import org.apache.qpid.server.store.decorators.EventDecorator;
-import org.apache.qpid.server.store.decorators.OperationalLoggingDecorator;
 
 public class BDBMessageStoreFactory implements MessageStoreFactory
 {
 
     @Override
-    public MessageStore createMessageStore(LogSubject logSubject)
+    public MessageStore createMessageStore()
     {
-        return new OperationalLoggingDecorator(new EventDecorator(new BDBMessageStore()), logSubject);
+        return new BDBMessageStore();
     }
 
     @Override

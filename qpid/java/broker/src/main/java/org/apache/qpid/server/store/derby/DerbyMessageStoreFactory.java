@@ -19,19 +19,16 @@
  */
 package org.apache.qpid.server.store.derby;
 
-import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreFactory;
-import org.apache.qpid.server.store.decorators.EventDecorator;
-import org.apache.qpid.server.store.decorators.OperationalLoggingDecorator;
 
 public class DerbyMessageStoreFactory implements MessageStoreFactory
 {
 
     @Override
-    public MessageStore createMessageStore(LogSubject logSubject)
+    public MessageStore createMessageStore()
     {
-        return new OperationalLoggingDecorator(new EventDecorator(new DerbyMessageStore()), logSubject);
+        return new DerbyMessageStore();
     }
 
     @Override

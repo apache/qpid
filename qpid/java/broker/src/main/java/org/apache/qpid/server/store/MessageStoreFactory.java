@@ -19,11 +19,9 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.logging.LogSubject;
-
 public interface MessageStoreFactory
 {
-    MessageStore createMessageStore(LogSubject logSubject);
+    MessageStore createMessageStore();
 
     String getStoreClassName();
 }

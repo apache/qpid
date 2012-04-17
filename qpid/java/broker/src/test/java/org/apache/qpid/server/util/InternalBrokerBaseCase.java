@@ -98,7 +98,7 @@ public class InternalBrokerBaseCase extends QpidTestCase
         _virtualHost.getBindingFactory().addBinding(QUEUE_NAME.toString(), _queue, defaultExchange, null);
 
         _virtualHost = _registry.getVirtualHostRegistry().getVirtualHost("test");
-        _messageStore = _virtualHost.getMessageStore().getUnderlyingStore();
+        _messageStore = _virtualHost.getMessageStore();
 
         _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString(getName()), false, new AMQShortString("testowner"),
                                                     false, false, _virtualHost, null);
