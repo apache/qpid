@@ -20,8 +20,10 @@
  */
 package org.apache.qpid.ra;
 
+import javax.resource.spi.ResourceAdapterInternalException;
 
 import junit.framework.TestCase;
+
 
 public class QpidResourceAdapterTest extends TestCase
 {
@@ -29,6 +31,35 @@ public class QpidResourceAdapterTest extends TestCase
     {
         QpidResourceAdapter ra = new QpidResourceAdapter();
         assertNull(ra.getXAResources(null));
+    }
+
+    public void testTransactionManagerLocatorException() throws Exception
+    {
+
+        QpidResourceAdapter ra = new QpidResourceAdapter();
+        assertNull(ra.getTransactionManagerLocatorClass());
+        assertNull(ra.getTransactionManagerLocatorMethod());
+
+        try
+        {
+            ra.start(null);
+        }
+        catch(ResourceAdapterInternalException e)
+        {
+
+        }
+
+        ra.setTransactionManagerLocatorClass("DummyLocator");
+
+        try
+        {
+            ra.start(null);
+        }
+        catch(ResourceAdapterInternalException e)
+        {
+
+        }
+
     }
 
 }
