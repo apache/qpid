@@ -102,3 +102,7 @@ std::string FrameSet::getContent() const {
     getContent(out);
     return out;
 }
+
+bool FrameSet::hasContent() const {
+    return parts.size() >= 3;
+}
