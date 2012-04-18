@@ -27,7 +27,7 @@
     <property name="qpid.dest_syntax" value="ADDR"/>
 
     <!-- Properties controlling running sample standalone client -->
-    <property name="client.use.ejb" value="false"/> <!-- uses JNDI/JMS or JNDI/RMI -->
+    <property name="client.use.ejb" value="true"/> <!-- uses JNDI/JMS or JNDI/RMI -->
     <property name="client.message" value="Hello Qpid World"/>
     <property name="client.message.count" value="1"/>
     <property name="client.use.topic" value="false"/> <!-- Use topic/queue -->
@@ -147,6 +147,9 @@
             </classpath>
             <sysproperty key="java.naming.factory.initial" value="${jndi.context}"/>
             <sysproperty key="java.naming.provider.url" value="${server.host}"/>
+            <sysproperty key="java.naming.factory.url.pkgs" value="org.jboss.ejb.client.naming"/>
+            <sysproperty key="jboss.ejb.client.properties.file.path" value="${conf.dir}/jboss-ejb-client.properties"/>
+
             <sysproperty key="qpid.ejb.name" value="${qpid.ejb.name}"/>
             <sysproperty key="qpid.cf.name" value="${qpid.client.cf.jndi.name}"/>
             <sysproperty key="qpid.dest.name" value="${qpid.client.dest.jndi.name}"/>
