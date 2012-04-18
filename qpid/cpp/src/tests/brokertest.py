@@ -455,7 +455,7 @@ def assert_browse(session, queue, expect_contents, timeout=0, transform=lambda m
     expect_contents"""
     actual_contents = browse(session, queue, timeout, transform=transform)
     if msg: msg = "%s: %r != %r"%(msg, expect_contents, actual_contents)
-    assert expect_contents == actual_contents, "%s: %s != %s"%(msg, expect, actual)
+    assert expect_contents == actual_contents, msg
 
 def assert_browse_retry(session, queue, expect_contents, timeout=1, delay=.01, transform=lambda m:m.content, msg="browse failed"):
     """Wait up to timeout for contents of queue to match expect_contents"""
@@ -463,7 +463,7 @@ def assert_browse_retry(session, queue, expect_contents, timeout=1, delay=.01, t
     retry(test, timeout, delay)
     actual_contents = browse(session, queue, 0, transform=transform)
     if msg: msg = "%s: %r != %r"%(msg, expect_contents, actual_contents)
-    assert expect_contents == actual_contents, "%s: %s != %s"%(msg, expect, actual)
+    assert expect_contents == actual_contents, msg
 
 class BrokerTest(TestCase):
     """
