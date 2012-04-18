@@ -251,9 +251,9 @@ public abstract class MessageImpl implements Message
         UnsignedInteger failures = getDeliveryFailures();
         if(redelivered)
         {
-            if(failures == null)
+            if(failures == null || UnsignedInteger.ZERO.equals(failures))
             {
-                setDeliveryFailures(UnsignedInteger.valueOf(1));
+                setDeliveryFailures(UnsignedInteger.ONE);
             }
         }
         else
