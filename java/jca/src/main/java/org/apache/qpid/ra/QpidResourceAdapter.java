@@ -681,7 +681,7 @@ public class QpidResourceAdapter implements ResourceAdapter, Serializable
       return map;
    }
 
-   private void locateTM()
+   private void locateTM() throws ResourceAdapterInternalException
    {
       if(_raProperties.getTransactionManagerLocatorClass() != null && _raProperties.getTransactionManagerLocatorMethod() != null)
       {
@@ -703,8 +703,8 @@ public class QpidResourceAdapter implements ResourceAdapter, Serializable
 
       if (_tm == null)
       {
-         _log.warn("It wasn't possible to lookup a Transaction Manager through the configured properties TransactionManagerLocatorClass and TransactionManagerLocatorMethod");
-         _log.warn("Qpid Resource Adapter won't be able to set and verify transaction timeouts in certain cases.");
+         _log.error("It wasn't possible to locate javax.transaction.TransactionManager via the RA properties TransactionManagerLocatorClass and TransactionManagerLocatorMethod");
+         throw new ResourceAdapterInternalException("Could not locate javax.transaction.TransactionManager");
       }
       else
       {
