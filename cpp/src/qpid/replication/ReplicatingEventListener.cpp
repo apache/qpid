@@ -131,7 +131,7 @@ boost::intrusive_ptr<Message> ReplicatingEventListener::cloneMessage(Queue& queu
     //cloned body:
     AMQFrame header(*original->getFrames().getHeaders());
     header.setBof(false);
-    header.setEof(!original->getFrames().getContentSize());//if there is any content then the header is not the end of the frameset
+    header.setEof(!original->getFrames().hasContent());//if there are any content frames then the header is not the end of the frameset
     header.setBos(true);
     header.setEos(true);
     handler.handle(header);
