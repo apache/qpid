@@ -279,34 +279,39 @@
                         </connection-definition>
                     </connection-definitions>
                     <admin-objects>
-                        <admin-object class-name="org.apache.qpid.ra.admin.QpidConnectionFactoryProxy" jndi-name="QpidJMS" use-java-context="false">
+                        <admin-object class-name="org.apache.qpid.ra.admin.QpidConnectionFactoryProxy" jndi-name="java:jboss/exported/QpidConnectionFactory" use-java-context="false">
                             <config-property name="ConnectionURL">
                                 @broker.url@
                             </config-property>
                         </admin-object>
-                        <admin-object class-name="org.apache.qpid.ra.admin.QpidTopicImpl" jndi-name="GoodByeTopic" use-java-context="false" pool-name="GoodByeTopic">
-                            <config-property name="destinationAddress">
+                        <admin-object class-name="org.apache.qpid.ra.admin.QpidTopicImpl" jndi-name="java:jboss/exported/GoodByeTopic" use-java-context="false" pool-name="GoodByeTopic">
+                            <config-property name="DestinationAddress">
                                 @qpid.hello.topic.dest.address@
                             </config-property>
                         </admin-object>
-                        <admin-object class-name="org.apache.qpid.ra.admin.QpidTopicImpl" jndi-name="HelloTopic" use-java-context="false" pool-name="HelloTopic">
-                            <config-property name="destinationAddress">
+                        <admin-object class-name="org.apache.qpid.ra.admin.QpidTopicImpl" jndi-name="java:jboss/exported/HelloTopic" use-java-context="false" pool-name="HelloTopic">
+                            <config-property name="DestinationAddress">
                                 @qpid.goodbye.topic.dest.address@
                             </config-property>
                         </admin-object>
-                        <admin-object class-name="org.apache.qpid.ra.admin.QpidQueueImpl" jndi-name="GoodByeQueue" use-java-context="false" pool-name="GoodByeQueue">
-                            <config-property name="destinationAddress">
+                        <admin-object class-name="org.apache.qpid.ra.admin.QpidQueueImpl" jndi-name="java:jboss/exported/GoodByeQueue" use-java-context="false" pool-name="GoodByeQueue">
+                            <config-property name="DestinationAddress">
                                 @qpid.goodbye.queue.dest.address@
                             </config-property>
                         </admin-object>
-                        <admin-object class-name="org.apache.qpid.ra.admin.QpidQueueImpl" jndi-name="HelloQueue" use-java-context="false" pool-name="HelloQueue">
-                            <config-property name="destinationAddress">
+                        <admin-object class-name="org.apache.qpid.ra.admin.QpidQueueImpl" jndi-name="java:jboss/exported/HelloQueue" use-java-context="false" pool-name="HelloQueue">
+                            <config-property name="DestinationAddress">
                                 @qpid.hello.queue.dest.address@
                             </config-property>
                         </admin-object>
-                        <admin-object class-name="org.apache.qpid.ra.admin.QpidQueueImpl" jndi-name="QpidResponderQueue" use-java-context="false" pool-name="QpidResponderQueue">
-                            <config-property name="destinationAddress">
-                                @qpid.responder.queue.dest.address@
+                        <admin-object class-name="org.apache.qpid.ra.admin.QpidQueueImpl" jndi-name="java:jboss/exported/QpidRequestQueue" use-java-context="false" pool-name="QpidRequestQueue">
+                            <config-property name="DestinationAddress">
+                                @qpid.request.queue.dest.address@
+                            </config-property>
+                        </admin-object>
+                        <admin-object class-name="org.apache.qpid.ra.admin.QpidQueueImpl" jndi-name="java:jboss/exported/QpidResponseQueue" use-java-context="false" pool-name="QpidResponseQueue">
+                            <config-property name="DestinationAddress">
+                                @qpid.response.queue.dest.address@
                             </config-property>
                         </admin-object>
                     </admin-objects>
