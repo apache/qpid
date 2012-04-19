@@ -233,7 +233,6 @@ void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionH
     QPID_LOG(debug, "HA: Backup activated configuration bridge: " << queueName);
 }
 
-// FIXME aconway 2011-12-02: error handling in route.
 void BrokerReplicator::route(Deliverable& msg) {
     const framing::FieldTable* headers = msg.getMessage().getApplicationHeaders();
     Variant::List list;
@@ -266,12 +265,12 @@ void BrokerReplicator::route(Deliverable& msg) {
                 else if (type == EXCHANGE) doResponseExchange(values);
                 else if (type == BINDING) doResponseBind(values);
                 else if (type == HA_BROKER) doResponseHaBroker(values);
-                else QPID_LOG(error, "HA: Backup received unknown response type=" << type
-                              << " values=" << values);
             }
-        } else QPID_LOG(error, "HA: Backup received unexpected message: " << *headers);
+        }
     } catch (const std::exception& e) {
-        QPID_LOG(error, "HA: Backup replication error: " << e.what() << ": while handling: " << list);
+        QPID_LOG(critical, "HA: Backup configuration replication failed: " << e.what()
+                 << ": while handling: " << list);
+        throw;
     }
 }
 
@@ -521,7 +520,8 @@ void BrokerReplicator::doResponseHaBroker(Variant::Map& values) {
 void BrokerReplicator::startQueueReplicator(const boost::shared_ptr<Queue>& queue) {
     if (replicateLevel(queue->getSettings()) == RL_ALL) {
         boost::shared_ptr<QueueReplicator> qr(new QueueReplicator(queue, link));
-        broker.getExchanges().registerExchange(qr);
+        if (!broker.getExchanges().registerExchange(qr))
+            throw Exception(QPID_MSG("Duplicate queue replicator " << qr->getName()));
         qr->activate();
     }
 }

@@ -52,15 +52,14 @@ Backup::Backup(HaBroker& hb, const Settings& s) :
 }
 
 void Backup::initialize(const Url& url) {
-    assert(!url.empty());
-    QPID_LOG(notice, "HA: Backup started: " << url);
+    if (url.empty()) throw Url::Invalid("HA broker URL is empty");
+    QPID_LOG(notice, "HA: Backup initialized: " << url);
     string protocol = url[0].protocol.empty() ? "tcp" : url[0].protocol;
     // Declare the link
     std::pair<Link::shared_ptr, bool> result = broker.getLinks().declare(
         url[0].host, url[0].port, protocol,
         false,              // durable
         settings.mechanism, settings.username, settings.password);
-    assert(result.second);  // FIXME aconway 2011-11-23: error handling
     link = result.first;
     link->setUrl(url);
 
@@ -74,7 +73,7 @@ void Backup::setBrokerUrl(const Url& url) {
     if (url.empty()) return;
     sys::Mutex::ScopedLock l(lock);
     if (link) {                 // URL changed after we initialized.
-        QPID_LOG(info, "HA: Backup failover URL set to " << url);
+        QPID_LOG(info, "HA: Backup broker URL set to " << url);
         link->setUrl(url);
     }
     else {
