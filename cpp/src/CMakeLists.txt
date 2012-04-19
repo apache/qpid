@@ -1113,6 +1113,7 @@ set (qpidbroker_SOURCES
      qpid/broker/NameGenerator.cpp
      qpid/broker/NullMessageStore.cpp
      qpid/broker/QueueBindings.cpp
+     qpid/broker/QueuedMessage.cpp
      qpid/broker/QueueEvents.cpp
      qpid/broker/QueuePolicy.cpp
      qpid/broker/QueueRegistry.cpp

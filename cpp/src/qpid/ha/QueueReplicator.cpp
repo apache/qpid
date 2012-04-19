@@ -30,6 +30,7 @@
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/log/Statement.h"
+#include "qpid/Msg.h"
 #include <boost/shared_ptr.hpp>
 
 namespace {
@@ -53,8 +54,8 @@ std::string QueueReplicator::replicatorName(const std::string& queueName) {
 QueueReplicator::QueueReplicator(boost::shared_ptr<Queue> q, boost::shared_ptr<Link> l)
     : Exchange(replicatorName(q->getName()), 0, q->getBroker()), queue(q), link(l)
 {
-    logPrefix = "HA: Backup of queue " + queue->getName() + ": ";
-    QPID_LOG(info, logPrefix << "Created, settings: " << q->getSettings());
+    logPrefix = "HA: Backup of " + queue->getName() + ": ";
+    QPID_LOG(info, logPrefix << "Created");
 }
 
 // This must be separate from the constructor so we can call shared_from_this.
@@ -74,7 +75,7 @@ void QueueReplicator::activate() {
         0,                  // sync?
         // Include shared_ptr to self to ensure we are not deleted
         // before initializeBridge is called.
-        boost::bind(&QueueReplicator::initializeBridge, this, _1, _2, shared_from_this())
+        boost::bind(&QueueReplicator::initializeBridge, shared_from_this(), _1, _2)
     );
 }
 
@@ -88,9 +89,7 @@ void QueueReplicator::deactivate() {
 }
 
 // Called in a broker connection thread when the bridge is created.
-// shared_ptr to self ensures we are not deleted before initializeBridge is called.
-void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler,
-                                       boost::shared_ptr<QueueReplicator> /*self*/) {
+void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler) {
     sys::Mutex::ScopedLock l(lock);
     bridgeName = bridge.getName();
     framing::AMQP_ServerProxy peer(sessionHandler.out);
@@ -140,23 +139,33 @@ void QueueReplicator::dequeue(SequenceNumber n,  const sys::Mutex::ScopedLock&) 
 // Called in connection thread of the queues bridge to primary.
 void QueueReplicator::route(Deliverable& msg)
 {
-    const std::string& key = msg.getMessage().getRoutingKey();
-    sys::Mutex::ScopedLock l(lock);
-    if (key == DEQUEUE_EVENT_KEY) {
-        SequenceSet dequeues = decodeContent<SequenceSet>(msg.getMessage());
-        QPID_LOG(trace, logPrefix << "Dequeue: " << dequeues);
-        //TODO: should be able to optimise the following
-        for (SequenceSet::iterator i = dequeues.begin(); i != dequeues.end(); i++)
-            dequeue(*i, l);
-    } else if (key == POSITION_EVENT_KEY) {
-        SequenceNumber position = decodeContent<SequenceNumber>(msg.getMessage());
-        QPID_LOG(trace, logPrefix << "Position moved from " << queue->getPosition()
-                 << " to " << position);
-        assert(queue->getPosition() <= position);
-        queue->setPosition(position);
-    } else {
-        msg.deliverTo(queue);
-        QPID_LOG(trace, logPrefix << "Enqueued message " << queue->getPosition());
+    try {
+        const std::string& key = msg.getMessage().getRoutingKey();
+        sys::Mutex::ScopedLock l(lock);
+        if (key == DEQUEUE_EVENT_KEY) {
+            SequenceSet dequeues = decodeContent<SequenceSet>(msg.getMessage());
+            QPID_LOG(trace, logPrefix << "Dequeue: " << dequeues);
+            //TODO: should be able to optimise the following
+            for (SequenceSet::iterator i = dequeues.begin(); i != dequeues.end(); i++)
+                dequeue(*i, l);
+        } else if (key == POSITION_EVENT_KEY) {
+            SequenceNumber position = decodeContent<SequenceNumber>(msg.getMessage());
+            QPID_LOG(trace, logPrefix << "Position moved from " << queue->getPosition()
+                     << " to " << position);
+            if (queue->getPosition() > position) {
+                throw Exception(
+                    QPID_MSG(logPrefix << "Invalid position update from "
+                             << queue->getPosition() << " to " << position));
+            }
+            queue->setPosition(position);
+        } else {
+            msg.deliverTo(queue);
+            QPID_LOG(trace, logPrefix << "Enqueued message " << queue->getPosition());
+        }
+    }
+    catch (const std::exception& e) {
+        QPID_LOG(critical, logPrefix << "Replication failed: " << e.what());
+        throw;
     }
 }
 

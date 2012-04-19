@@ -94,7 +94,7 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
     bool doDispatch();
   private:
     typedef std::map<framing::SequenceNumber, broker::QueuedMessage> Delayed;
-    std::string logPrefix;
+    std::string logPrefix, logSuffix;
     boost::shared_ptr<broker::Queue> events;
     boost::shared_ptr<broker::Consumer> consumer;
     Delayed delayed;

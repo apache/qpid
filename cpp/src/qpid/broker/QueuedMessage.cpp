@@ -18,38 +18,17 @@
  * under the License.
  *
  */
-#ifndef _QueuedMessage_
-#define _QueuedMessage_
-
-#include "qpid/broker/Message.h"
-#include <iosfwd>
+#include "QueuedMessage.h"
+#include "Queue.h"
+#include <iostream>
 
 namespace qpid {
 namespace broker {
 
-class Queue;
-
-struct QueuedMessage
-{
-    boost::intrusive_ptr<Message> payload;
-    framing::SequenceNumber position;
-    typedef enum { AVAILABLE, ACQUIRED, DELETED, REMOVED } Status;
-    Status status;
-    Queue* queue;
-
-    QueuedMessage(Queue* q=0,
-                  boost::intrusive_ptr<Message> msg=0,
-                  framing::SequenceNumber sn=0,
-                  Status st=AVAILABLE
-    ) :  payload(msg), position(sn), status(st), queue(q) {}
-};
-
-inline bool operator<(const QueuedMessage& a, const QueuedMessage& b) {
-    return a.position < b.position;
+std::ostream& operator<<(std::ostream& o, const QueuedMessage& qm) {
+    o << (qm.queue ? qm.queue->getName() : std::string()) << "[" << qm.position <<"]";
+    return o;
 }
 
-std::ostream& operator<<(std::ostream&, const QueuedMessage&);
-}}
 
-
-#endif
+}} // namespace qpid::broker
