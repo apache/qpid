@@ -37,7 +37,7 @@ op.add_option("-r", "--receivers", default=1, type="int", metavar="N",
 op.add_option("-m", "--messages", default=100000, type="int", metavar="N",
               help="send N messages per sender (default %default)")
 op.add_option("--queue-name", default="benchmark", metavar="NAME",
-               help="base name for queues (default %default)")
+              help="base name for queues (default %default)")
 op.add_option("--send-rate", default=0, metavar="N",
               help="send rate limited to N messages/second, 0 means no limit (default %default)")
 op.add_option("--receive-rate", default=0, metavar="N",
@@ -71,12 +71,12 @@ op.add_option("--durable", default=False, action="store_true",
               help="Use durable queues and messages")
 op.add_option("--save-received", default=False, action="store_true",
               help="Save received message content to files <queuename>-receiver-<n>.msg")
-op.add_option("--group-receivers", default=False, action="store_true",
-              help="Run receivers for the same queue on the same host.")
 op.add_option("--verbose", default=False, action="store_true",
               help="Show commands executed")
 op.add_option("--no-delete", default=False, action="store_true",
               help="Don't delete the test queues.")
+op.add_option("--fill-drain", default=False, action="store_true",
+              help="First fill the queues, then drain them")
 
 single_quote_re = re.compile("'")
 def posix_quote(string):
@@ -274,24 +274,32 @@ def main():
             recreate_queues(queues, opts.broker, opts.no_delete, opts)
             ready_receiver = ReadyReceiver(ready_queue, opts.broker[0])
 
-            if opts.group_receivers: # Run receivers for same queue against same broker.
-                receivers = []
-                for q in queues:
-                    b = brokers.next()
-                    for j in xrange(opts.receivers):
-                        receivers.append(
-                            start_receive(q, j, opts, ready_queue, b, client_hosts.next()))
-            else:                       # Don't group receivers
-                receivers = [start_receive(q, j, opts, ready_queue,
-                                           brokers.next(), client_hosts.next())
-                             for q in queues for j in xrange(opts.receivers)]
+            def start_receivers():
+                return [ start_receive(q, j, opts, ready_queue, brokers.next(), client_hosts.next())
+                         for q in queues for j in xrange(opts.receivers) ]
 
-            ready_receiver.wait(filter(None, receivers)) # Wait for receivers to be ready.
-            start = time.time()
-            senders = [start_send(q, opts,brokers.next(), client_hosts.next())
-                       for q in queues for j in xrange(opts.senders)]
+
+            def start_senders():
+                return  [ start_send(q, opts,brokers.next(), client_hosts.next())
+                          for q in queues for j in xrange(opts.senders) ]
+
             if opts.report_header and i == 0: print_header(opts.timestamp)
-            for p in senders + receivers: p.wait()
+
+            if opts.fill_drain:
+                # First fill the queues, then drain them
+                start = time.time()
+                senders = start_senders()
+                for p in senders: p.wait()
+                receivers = start_receivers()
+                for p in receivers: p.wait()
+            else:
+                # Run senders and receivers in parallel
+                receivers = start_receivers()
+                ready_receiver.wait(filter(None, receivers)) # Wait for receivers ready
+                start = time.time()
+                senders = start_senders()
+                for p in senders + receivers: p.wait()
+
             total_sent = opts.queues * opts.senders * opts.messages
             total_tp = total_sent / (time.time()-start)
             send_stats=parse_senders(senders)
