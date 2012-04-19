@@ -57,6 +57,7 @@ class HaBroker : public management::Manageable
 
     // Log a critical error message and shut down the broker.
     void shutdown(const std::string& message);
+
   private:
     void setClientUrl(const Url&, const sys::Mutex::ScopedLock&);
     void setBrokerUrl(const Url&, const sys::Mutex::ScopedLock&);

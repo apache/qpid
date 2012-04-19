@@ -20,6 +20,7 @@
  */
 #include "ReplicateLevel.h"
 #include "qpid/Exception.h"
+#include "qpid/Msg.h"
 #include <iostream>
 #include <assert.h>
 
@@ -31,7 +32,7 @@ using namespace std;
 //  Note replicateLevel is called during plugin-initialization which
 //  happens in the static construction phase so these constants need
 //  to be POD, they can't be class objects
-//  
+//
 namespace {
 const char* S_NONE="none";
 const char* S_CONFIGURATION="configuration";
@@ -47,17 +48,15 @@ bool replicateLevel(const string& level, ReplicateLevel& out) {
 
 ReplicateLevel replicateLevel(const string& level) {
     ReplicateLevel rl;
-    if (!replicateLevel(level, rl)) {
-        assert(0);
+    if (!replicateLevel(level, rl))
         throw Exception("Invalid value for replication level: "+level);
-    }
     return rl;
 }
 
 string str(ReplicateLevel l) {
     const char* names[] = { S_NONE, S_CONFIGURATION, S_ALL };
-    assert(l >= RL_NONE);
-    assert(l <= RL_ALL);
+    if (l > RL_ALL)
+        throw Exception(QPID_MSG("Invalid value for replication level: " << l));
     return  names[l];
 }
 

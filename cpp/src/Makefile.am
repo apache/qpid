@@ -634,6 +634,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/QueuePolicy.h \
   qpid/broker/QueueRegistry.cpp \
   qpid/broker/QueueRegistry.h \
+  qpid/broker/QueuedMessage.cpp \
   qpid/broker/QueuedMessage.h \
   qpid/broker/QueueFlowLimit.h \
   qpid/broker/QueueFlowLimit.cpp \

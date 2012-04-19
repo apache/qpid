@@ -94,7 +94,7 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
               // NOTE: resetting backup allows client connections, so any
               // primary state should be set up here before backup.reset()
               backup.reset();
-              QPID_LOG(notice, "HA: Primary promoted from backup");
+              QPID_LOG(notice, "HA: Promoted to primary");
               mgmtObject->set_status(PRIMARY);
           }
           break;
@@ -146,7 +146,7 @@ void HaBroker::setClientUrl(const Url& url, const sys::Mutex::ScopedLock& l) {
 
 void HaBroker::updateClientUrl(const sys::Mutex::ScopedLock&) {
     Url url = clientUrl.empty() ? brokerUrl : clientUrl;
-    assert(!url.empty());
+    if (url.empty()) throw Url::Invalid("HA client URL is empty");
     mgmtObject->set_publicBrokers(url.str());
     knownBrokers.clear();
     knownBrokers.push_back(url);
@@ -154,7 +154,7 @@ void HaBroker::updateClientUrl(const sys::Mutex::ScopedLock&) {
 }
 
 void HaBroker::setBrokerUrl(const Url& url, const sys::Mutex::ScopedLock& l) {
-    if (url.empty()) throw Exception("Invalid empty URL for HA broker failover");
+    if (url.empty()) throw Url::Invalid("HA broker URL is empty");
     QPID_LOG(debug, "HA: Setting broker URL to: " << url);
     brokerUrl = url;
     mgmtObject->set_brokers(brokerUrl.str());
