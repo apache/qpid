@@ -65,9 +65,9 @@ namespace broker {
         friend class LinkRegistryConnectionObserver;
 
         /** Notify the registry that a Link has been destroyed */
-        void linkDestroyed(const std::string& name);
+        void linkDestroyed(Link*);
         /** Request to destroy a Bridge */
-        void destroyBridge(const std::string& name);
+        void destroyBridge(Bridge*);
 
     public:
         QPID_BROKER_EXTERN LinkRegistry (); // Only used in store tests

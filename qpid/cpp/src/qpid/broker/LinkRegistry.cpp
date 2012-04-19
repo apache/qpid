@@ -220,12 +220,12 @@ pair<Bridge::shared_ptr, bool> LinkRegistry::declare(const std::string& name,
 }
 
 /** called back by the link when it has completed its cleanup and can be removed. */
-void LinkRegistry::linkDestroyed(const std::string& name)
+void LinkRegistry::linkDestroyed(Link *link)
 {
-    QPID_LOG(debug, "LinkRegistry::destroy(); link= " << name);
+    QPID_LOG(debug, "LinkRegistry::destroy(); link= " << link->getName());
     Mutex::ScopedLock   locker(lock);
 
-    LinkMap::iterator i = links.find(name);
+    LinkMap::iterator i = links.find(link->getName());
     if (i != links.end())
     {
         if (i->second->isDurable() && store)
@@ -235,12 +235,12 @@ void LinkRegistry::linkDestroyed(const std::string& name)
 }
 
 /** called back by bridge when its destruction has been requested */
-void LinkRegistry::destroyBridge(const std::string& name)
+void LinkRegistry::destroyBridge(Bridge *bridge)
 {
-    QPID_LOG(debug, "LinkRegistry::destroy(); bridge= " << name);
+    QPID_LOG(debug, "LinkRegistry::destroy(); bridge= " << bridge->getName());
     Mutex::ScopedLock locker(lock);
 
-    BridgeMap::iterator b = bridges.find(name);
+    BridgeMap::iterator b = bridges.find(bridge->getName());
     if (b == bridges.end())
         return;
 

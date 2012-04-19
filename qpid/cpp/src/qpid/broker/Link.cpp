@@ -273,7 +273,7 @@ void Link::destroy ()
     for (Bridges::iterator i = toDelete.begin(); i != toDelete.end(); i++)
         (*i)->close();
     toDelete.clear();
-    listener(name); // notify LinkRegistry that this Link has been destroyed
+    listener(this); // notify LinkRegistry that this Link has been destroyed
 }
 
 void Link::add(Bridge::shared_ptr bridge)
@@ -380,7 +380,7 @@ void Link::reconnectLH(const Address& a)
 
     if (!hideManagement()) {
         stringstream errorString;
-        errorString << "Failing over to '" << transport << ":" << host << ":" << port <<"'";
+        errorString << "Failing over to " << a;
         mgmtObject->set_lastError(errorString.str());
         mgmtObject->set_host(host);
         mgmtObject->set_port(port);
@@ -395,7 +395,7 @@ bool Link::tryFailoverLH() {
     if (url.empty()) return false;
     Address next = url[reconnectNext++];
     if (next.host != host || next.port != port || next.protocol != transport) {
-        QPID_LOG(notice, "Inter-broker link '" << name << "' failing over to " << next.host << ":" << next.port);
+        QPID_LOG(notice, "Inter-broker link '" << name << "' failing over to " << next);
         reconnectLH(next);
         return true;
     }
@@ -490,8 +490,8 @@ void Link::encode(Buffer& buffer) const
 
 uint32_t Link::encodedSize() const
 {
-    return ENCODED_IDENTIFIER.length() + 1 // +1 byte length
-        + name.length() + 1
+    return ENCODED_IDENTIFIER.size() + 1 // +1 byte length
+        + name.size() + 1
         + host.size() + 1 // short-string (host)
         + 5                // short-string ("link")
         + 2                // port

@@ -179,7 +179,7 @@ void Bridge::closed()
 /** Shut down the bridge */
 void Bridge::close()
 {
-    listener(name); // ask the LinkRegistry to destroy us
+    listener(this); // ask the LinkRegistry to destroy us
 }
 
 bool Bridge::isSessionReady() const
@@ -280,9 +280,9 @@ void Bridge::encode(Buffer& buffer) const
 
 uint32_t Bridge::encodedSize() const
 {
-    return ENCODED_IDENTIFIER.length() + 1  // +1 byte length
-        + name.length() + 1
-        + link->getName().length() + 1
+    return ENCODED_IDENTIFIER.size() + 1  // +1 byte length
+        + name.size() + 1
+        + link->getName().size() + 1
         + 1                // durable
         + args.i_src.size()  + 1
         + args.i_dest.size() + 1

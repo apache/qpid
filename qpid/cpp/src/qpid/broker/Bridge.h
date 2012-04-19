@@ -48,7 +48,7 @@ class Bridge : public PersistableConfig, public management::Manageable, public E
 {
 public:
     typedef boost::shared_ptr<Bridge> shared_ptr;
-    typedef boost::function<void(const std::string&)> CancellationListener;
+    typedef boost::function<void(Bridge*)> CancellationListener;
     typedef boost::function<void(Bridge&, SessionHandler&)> InitializeCallback;
 
     Bridge(const std::string& name, Link* link, framing::ChannelId id, CancellationListener l,

@@ -76,7 +76,7 @@ class Link : public PersistableConfig, public management::Manageable {
     uint channelCounter;
     Connection* connection;
     management::ManagementAgent* agent;
-    boost::function<void(const std::string&)> listener;
+    boost::function<void(Link*)> listener;
 
     boost::intrusive_ptr<sys::TimerTask> timerTask;
 
@@ -106,7 +106,7 @@ class Link : public PersistableConfig, public management::Manageable {
 
   public:
     typedef boost::shared_ptr<Link> shared_ptr;
-    typedef boost::function<void(const std::string&)> DestroyedListener;
+    typedef boost::function<void(Link*)> DestroyedListener;
 
     Link(const std::string&       name,
          LinkRegistry* links,
