@@ -21,6 +21,7 @@
 <project name="qpid-jca-example-jboss-properties" basedir="." default="">
 
     <property name="jndi.scheme" value="mappedName"/>
+    <property name="jndi.prefix" value=""/>
 
     <property name="qpid.xacf.jndi.name" value="java:QpidJMSXA"/>
     <property name="qpid.cf.jndi.name" value="QpidConnectionFactory"/>
@@ -29,9 +30,12 @@
     <property name="qpid.hello.queue.jndi.name" value="HelloQueue"/>
     <property name="qpid.goodbye.queue.jndi.name" value="GoodByeQueue"/>
     <property name="qpid.request.queue.jndi.name" value="QpidRequestQueue"/>
+    <property name="qpid.response.queue.jndi.name" value="QpidResponseQueue"/>
     <property name="qpid.ejb.jndi.name" value="mappedName=&quot;QpidTestEJB&quot;"/>
     <property name="qpid.ejb.ref.name" value="QpidTestBean/local"/>
     <property name="qpid.ejb.name" value="qpid-jcaex/QpidTestBean/remote"/>
+    <property name="qpid.client.cf.jndi.name" value="${jndi.prefix}/QpidConnectionFactory"/>
+    <property name="qpid.client.dest.jndi.name" value="${jndi.prefix}/${qpid.hello.queue.jndi.name}"/>
 
     <property name="jndi.context" value="org.jnp.interfaces.NamingContextFactory"/>
     <property name="server.host" value="jnp://localhost:1099"/>

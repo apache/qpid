@@ -20,30 +20,31 @@
  */
 package org.apache.qpid.server.protocol;
 
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.security.auth.callback.CallbackHandler;
 import org.apache.qpid.amqp_1_0.codec.FrameWriter;
 import org.apache.qpid.amqp_1_0.framing.AMQFrame;
 import org.apache.qpid.amqp_1_0.framing.FrameHandler;
 import org.apache.qpid.amqp_1_0.framing.OversizeFrameException;
-import org.apache.qpid.amqp_1_0.transport.*;
+import org.apache.qpid.amqp_1_0.transport.CallbackHandlerSource;
+import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
+import org.apache.qpid.amqp_1_0.transport.Container;
+import org.apache.qpid.amqp_1_0.transport.FrameOutputHandler;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
-
 import org.apache.qpid.protocol.ServerProtocolEngine;
-import org.apache.qpid.server.configuration.*;
+import org.apache.qpid.server.configuration.ConfigStore;
+import org.apache.qpid.server.configuration.ConnectionConfigType;
 import org.apache.qpid.server.protocol.v1_0.Connection_1_0;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
-
-import javax.security.auth.callback.CallbackHandler;
-import java.io.PrintWriter;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.security.Principal;
-import java.util.UUID;
-import java.util.logging.*;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHandler
 {
@@ -94,6 +95,8 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
     }
 
     private State _state = State.A;
+    
+
 
     public ProtocolEngine_1_0_0(final IApplicationRegistry appRegistry, long id)
     {
@@ -138,7 +141,7 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
         _network = network;
         _sender = sender;
 
-        Container container = new Container();
+        Container container = new Container(_appRegistry.getBrokerId().toString());
 
         _conn = new ConnectionEndpoint(container,asCallbackHandlerSource(_appRegistry.getAuthenticationManager()));
         _conn.setConnectionEventListener(new Connection_1_0(_appRegistry));

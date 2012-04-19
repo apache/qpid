@@ -195,13 +195,12 @@
           </messagelistener>
         </messageadapter>
       </inbound-resourceadapter>
-
       <adminobject>
             <adminobject-interface>org.apache.qpid.ra.admin.QpidQueue</adminobject-interface>
             <adminobject-class> org.apache.qpid.ra.admin.QpidQueueImpl</adminobject-class>
             <config-property>
                 <config-property-name>DestinationAddress </config-property-name>
-                <config-property-type>java.lang.String</config-property-type>
+                <config-property-type>java.lang.String </config-property-type>
             </config-property>
         </adminobject>
       <adminobject>
@@ -209,7 +208,7 @@
             <adminobject-class> org.apache.qpid.ra.admin.QpidTopicImpl</adminobject-class>
             <config-property>
                 <config-property-name>DestinationAddress </config-property-name>
-                <config-property-type>java.lang.String</config-property-type>
+                <config-property-type>java.lang.String </config-property-type>
             </config-property>
         </adminobject>
       <adminobject>

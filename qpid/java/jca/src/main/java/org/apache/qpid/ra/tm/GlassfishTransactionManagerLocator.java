@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -16,25 +15,36 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
+
 package org.apache.qpid.ra.tm;
+
 
 import javax.naming.InitialContext;
 import javax.transaction.TransactionManager;
 
-public class JBoss7TransactionManagerLocator
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class GlassfishTransactionManagerLocator
 {
-    private static final String TM_JNDI_NAME = "java:jboss/TransactionManager";
+    private static final Logger _log = LoggerFactory.getLogger(GlassfishTransactionManagerLocator.class);
+
+    private static final String TM_JNDI_NAME = "java:appserver/TransactionManager";
 
     public TransactionManager getTm() throws Exception
     {
         InitialContext ctx = null;
+        TransactionManager tm = null;
 
         try
         {
             ctx = new InitialContext();
-            return (TransactionManager)ctx.lookup(TM_JNDI_NAME);
+            tm = (TransactionManager)ctx.lookup(TM_JNDI_NAME);
+        }
+        catch(Exception e)
+        {
+            _log.error("Error attempting to location TM " + e.getMessage());
         }
         finally
         {
@@ -45,9 +55,9 @@ public class JBoss7TransactionManagerLocator
                     ctx.close();
                 }
             }
-            catch(Exception ignore)
-            {
-            }
+            catch(Exception ignore){}
         }
+
+        return tm;
     }
 }

@@ -6,8 +6,8 @@ The Qpid JCA example provides a sample JEE application that demonstrates how to
 configure, install and run applications using the Qpid JCA adapter for EE
 connectivity and the Apache Qpid C++ Broker. This example code can be used as a
 convenient starting point for your own development and deployment
-efforts. Currently the example is supported on JBoss EAP 5.x, JBoss 6.x and
-Apache Geronimo 2.x.
+efforts. Currently the example is supported on JBoss EAP 5.x, JBoss 6.x,
+Apache Geronimo 2.x and Glassfish 3.1.1.
 
 Example Components
 ===================
@@ -42,11 +42,12 @@ they should be used. These concepts will be explained later in this document.
 
 The deployment configuration for destinations, and ConnectionFactories varies by platform.
 In JBossEAP, the configuration mechanism is a *-ds.xml file. Geronimo 2.2.x has the notion
-of a deployment plan in the form of a geronimo-ra.xml file.
+of a deployment plan in the form of a geronimo-ra.xml file. Similarly, Glassfish 3.1.1 uses
+the glassfish-resources.xml file.
 
-The Qpid JCA Example provides both a qpid-jca-ds.xml file as well as a geronimo-ra.xml deployment
-plan. Both mechanisms provide a reasonable set of defaults to allow you to deploy the Qpid JCA
-adapter in either environment and get up and running quickly.
+The Qpid JCA Example provides a sample qpid-jca-ds.xml, geronimo-ra.xml and glassfish-resources.xml file.
+Each file provides reasonable set of defaults to allow you to deploy the Qpid JCA
+adapter in the supported environments and get up and running quickly.
 
 EJB 3.x
 
@@ -70,7 +71,7 @@ EE EAR archive
     An EAR wrapper for the ejb and web components.
 
 
-    An RMI client used to excercise the EJB 3.x component.
+An RMI client used to excercise the EJB 3.x component.
 
 Sample *-ds.xml file
     A sample *-ds.xml file is provided to create destinations and ManagedConnectionFactories
@@ -79,6 +80,10 @@ Sample *-ds.xml file
 Sample geronimo-ra.xml
     A sample geronimo-ra.xml file is provided to create destinations and ManagedConnectionFactories
     in the Geronimo environment. This file is semantically equivalent to the JBoss *-ds.xml artifact.
+
+Sample glassfish-resources.xml
+    A sample glassfish-resources.xml file is provided to create JMS destinations and
+    ManagedConnectionFactories in the Glassfish environemnt.
 
 A build.xml file
     An ant build.xml file to configure, install and deploy the aforementioned components.
@@ -107,14 +112,11 @@ Quickstart
 ==========
 After satifsying the above requirements you are ready to deploy and run the example application.
 The steps to deploy and run in the supported application servers are largely the same, however,
-if you are targeting JBoss you will either need to modify the property in the example build.xml file
-
-
-    <property name="target.platform" value="geronimo"/>
-
-to be jboss
+you need to specify the target platform environment to which you are attempting to deploy.
 
     <property name="target.platform" value="jboss"/>
+    <property name="target.platform" value="geronimo"/>
+    <property name="target.platform" value="glassfish"/>
 
 or set this property via the command line.
 
@@ -202,6 +204,16 @@ Geronimo
        adapter is now deployed and ready for use in Geronimo.
 
 
+Glassfish
+    As previously mentioned, the Glassfish environment uses the glassfish-resources.xml file to configure AdminObjects and ManagedConnectionFactories.
+    A sample file is provided. To deploy the file simply execute:
+
+    ant deploy-rar
+
+    If building from the Qpid source tree, this will package and deploy the qpid-ra-<version>.rar file as well as configure the adapter. If you are
+    not building from source, the adapter will be configured correctly via the glassfish-resources.xml file.
+
+
 Step 2 -- Deploy the application component(s).
 
 As previously mentioned, the adapter comes with a variety of EE components for use in your respective application server. You can choose to deploy
@@ -246,6 +258,25 @@ This is the JNDI name of the SLSB component and it varies by application server.
 
 You can set this property if you want to modify the message contents being routed through the system.
 
+JMS
+If you do not want to use EJB and prefer to test the Qpid JCA adapter using the standard JMS API's, simply set the following property
+
+    <property name="client.use.ejb" value="true"/> <!-- uses JNDI/JMS or JNDI/RMI -->
+
+as
+
+    <property name="client.use.ejb" value="false"/> <!-- uses JNDI/JMS or JNDI/RMI -->
+
+
+Request/Reply
+
+The EJB/JMS client simply sends a message to a destination and does not receive a response. The Qpid JCA examples includes a request-reply
+example to allow you to receive a response. The following command:
+
+ant run-reqresp
+
+will execute this example. A variety of configuration options for both the EJB/JMS and Request/Reply are provided. Please see the build.xml file for more details.
+
 Web
 The Qpid JCA Example comes with a web application. To access the web component, simply use a browser of your choice and navigate to
 
@@ -265,6 +296,14 @@ http://<server-host-name>:<server-port>/qpid-jca-web/qpid?useEJB=true
 
 instead of posting to a queue, the web application will use the local interface of the EJB component to send the message. This is functionally equivalent to running the
 RMI client.
+
+
+Similar to the Request/Reply example, a Request/Reploy Servlet is provided as well. To access this servlet navigate to the above URL:
+
+
+http://<server-host-name>:<server-port>/qpid-jca-web/qpid-reqresp
+
+A reasonable set of defaults is provided which can be further tuned and configured to suit your development needs.
 
 
 Summary

@@ -24,9 +24,12 @@ package org.apache.qpid.amqp_1_0.transport;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Container
 {
+
+    private static final AtomicInteger CONTAINER_ID = new AtomicInteger(0);
 
     private String _id;
 
@@ -57,7 +60,7 @@ public class Container
             pid = "unknown";
         }
 
-        _id = hostname + '(' + pid + ')';
+        _id = hostname + '(' + pid + ')' + ':' + CONTAINER_ID.incrementAndGet();
 
     }
 
