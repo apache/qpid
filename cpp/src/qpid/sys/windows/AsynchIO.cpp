@@ -397,21 +397,24 @@ AsynchIO::~AsynchIO() {
 }
 
 void AsynchIO::queueForDeletion() {
-    queuedDelete = true;
-    if (opsInProgress > 0) {
-        QPID_LOG(info, "Delete AsynchIO queued; ops in progress");
-        // AsynchIOHandler calls this then deletes itself; don't do any more
-        // callbacks.
-        readCallback = 0;
-        eofCallback = 0;
-        disCallback = 0;
-        closedCallback = 0;
-        emptyCallback = 0;
-        idleCallback = 0;
+    {
+        ScopedLock<Mutex> l(completionLock);
+        assert(!queuedDelete);
+        queuedDelete = true;
+        if (working || opsInProgress > 0) {
+            QPID_LOG(info, "Delete AsynchIO queued; ops in progress");
+            // AsynchIOHandler calls this then deletes itself; don't do any more
+            // callbacks.
+            readCallback = 0;
+            eofCallback = 0;
+            disCallback = 0;
+            closedCallback = 0;
+            emptyCallback = 0;
+            idleCallback = 0;
+            return;
+        }
     }
-    else {
-        delete this;
-    }
+    delete this;
 }
 
 void AsynchIO::start(Poller::shared_ptr poller0) {
@@ -459,9 +462,14 @@ void AsynchIO::notifyPendingWrite() {
 }
 
 void AsynchIO::queueWriteClose() {
-    queuedClose = true;
-    if (!writeInProgress)
-        notifyPendingWrite();
+    {
+        ScopedLock<Mutex> l(completionLock);
+        queuedClose = true;
+        if (working || writeInProgress)
+            // no need to summon an IO thread
+            return;
+    }
+    notifyPendingWrite();
 }
 
 bool AsynchIO::writeQueueEmpty() {
@@ -693,6 +701,8 @@ void AsynchIO::writeComplete(AsynchWriteResult *result) {
 }
 
 void AsynchIO::completion(AsynchIoResult *result) {
+    bool closing = false;
+    bool deleting = false;
     {
         ScopedLock<Mutex> l(completionLock);
         if (working) {
@@ -734,17 +744,19 @@ void AsynchIO::completion(AsynchIoResult *result) {
             completionQueue.pop();
         }
         working = false;
+        if (opsInProgress == 0) {
+            closing = queuedClose;
+            deleting = queuedDelete;
+        }
     }
     // Lock released; ok to close if ops are done and close requested.
     // Layer above will call back to queueForDeletion() if it hasn't
     // already been done. If it already has, go ahead and delete.
-    if (opsInProgress == 0) {
-        if (queuedDelete)
-            delete this;
-        else if (queuedClose)
-            // close() may cause a delete; don't trust 'this' on return
-            close();
-    }
+    if (deleting)
+        delete this;
+    else if (closing)
+        // close() may cause a delete; don't trust 'this' on return
+        close();
 }
 
 /*
