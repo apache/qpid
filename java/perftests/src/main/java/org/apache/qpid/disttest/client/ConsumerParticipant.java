@@ -143,6 +143,10 @@ public class ConsumerParticipant implements Participant
 
         if (!batchEnabled || batchComplete)
         {
+            if (LOGGER.isTraceEnabled() && batchEnabled)
+            {
+                LOGGER.trace("Committing: batch size " + _command.getBatchSize() );
+            }
             _jmsDelegate.commitOrAcknowledgeMessage(message, _command.getSessionName());
         }
 
@@ -161,6 +165,11 @@ public class ConsumerParticipant implements Participant
 
             if (batchEnabled && !batchComplete)
             {
+                if (LOGGER.isTraceEnabled())
+                {
+                    LOGGER.trace("Committing: batch size " + _command.getBatchSize() );
+                }
+
                 // commit/acknowledge remaining messages if necessary
                 _jmsDelegate.commitOrAcknowledgeMessage(message, _command.getSessionName());
             }
@@ -231,5 +240,11 @@ public class ConsumerParticipant implements Participant
     public String getName()
     {
         return _command.getParticipantName();
+    }
+
+    @Override
+    public String toString()
+    {
+        return "ConsumerParticipant [_command=" + _command + ", _startTime=" + _startTime + "]";
     }
 }
