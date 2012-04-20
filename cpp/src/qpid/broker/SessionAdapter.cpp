@@ -74,18 +74,12 @@ void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const 
     if(passive){
         AclModule* acl = getBroker().getAcl();
         if (acl) {
-            //TODO: why does a passive declare require create
-            //permission? The purpose of the passive flag is to state
-            //that the exchange should *not* created. For
-            //authorisation a passive declare is similar to
-            //exchange-query.
             std::map<acl::Property, std::string> params;
             params.insert(make_pair(acl::PROP_TYPE, type));
             params.insert(make_pair(acl::PROP_ALTERNATE, alternateExchange));
-            params.insert(make_pair(acl::PROP_PASSIVE, _TRUE));
             params.insert(make_pair(acl::PROP_DURABLE, durable ? _TRUE : _FALSE));
-            if (!acl->authorise(getConnection().getUserId(),acl::ACT_CREATE,acl::OBJ_EXCHANGE,exchange,&params) )
-                throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange create request from " << getConnection().getUserId()));
+            if (!acl->authorise(getConnection().getUserId(),acl::ACT_ACCESS,acl::OBJ_EXCHANGE,exchange,&params) )
+                throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange access request from " << getConnection().getUserId()));
         }
         Exchange::shared_ptr actual(getBroker().getExchanges().get(exchange));
         checkType(actual, type);
@@ -275,22 +269,16 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
     if (passive && !name.empty()) {
         AclModule* acl = getBroker().getAcl();
         if (acl) {
-            //TODO: why does a passive declare require create
-            //permission? The purpose of the passive flag is to state
-            //that the queue should *not* created. For
-            //authorisation a passive declare is similar to
-            //queue-query (or indeed a qmf query).
             std::map<acl::Property, std::string> params;
             params.insert(make_pair(acl::PROP_ALTERNATE, alternateExchange));
-            params.insert(make_pair(acl::PROP_PASSIVE, _TRUE));
             params.insert(make_pair(acl::PROP_DURABLE, std::string(durable ? _TRUE : _FALSE)));
             params.insert(make_pair(acl::PROP_EXCLUSIVE, std::string(exclusive ? _TRUE : _FALSE)));
             params.insert(make_pair(acl::PROP_AUTODELETE, std::string(autoDelete ? _TRUE : _FALSE)));
             params.insert(make_pair(acl::PROP_POLICYTYPE, arguments.getAsString("qpid.policy_type")));
             params.insert(make_pair(acl::PROP_MAXQUEUECOUNT, boost::lexical_cast<string>(arguments.getAsInt("qpid.max_count"))));
             params.insert(make_pair(acl::PROP_MAXQUEUESIZE, boost::lexical_cast<string>(arguments.getAsInt64("qpid.max_size"))));
-            if (!acl->authorise(getConnection().getUserId(),acl::ACT_CREATE,acl::OBJ_QUEUE,name,&params) )
-                throw UnauthorizedAccessException(QPID_MSG("ACL denied queue create request from " << getConnection().getUserId()));
+            if (!acl->authorise(getConnection().getUserId(),acl::ACT_ACCESS,acl::OBJ_QUEUE,name,&params) )
+                throw UnauthorizedAccessException(QPID_MSG("ACL denied queue access request from " << getConnection().getUserId()));
         }
         queue = getQueue(name);
         //TODO: check alternate-exchange is as expected
