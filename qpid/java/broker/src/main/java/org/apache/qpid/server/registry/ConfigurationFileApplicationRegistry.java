@@ -45,14 +45,14 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
     @Override
     protected void initialiseManagedObjectRegistry() throws AMQException
     {
-        if (getConfiguration().getManagementEnabled())
-        {
-            setManagedObjectRegistry(new JMXManagedObjectRegistry());
-        }
-        else
-        {
-            setManagedObjectRegistry(new NoopManagedObjectRegistry());
-        }
+//        if (getConfiguration().getManagementEnabled())
+//        {
+//            setManagedObjectRegistry(new JMXManagedObjectRegistry());
+//        }
+//        else
+//        {
+          setManagedObjectRegistry(new NoopManagedObjectRegistry());
+//        }
     }
 
 }

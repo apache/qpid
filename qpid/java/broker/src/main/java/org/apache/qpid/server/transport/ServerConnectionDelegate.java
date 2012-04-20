@@ -61,7 +61,7 @@ public class ServerConnectionDelegate extends ServerDelegate
 
     public ServerConnectionDelegate(IApplicationRegistry appRegistry, String localFQDN)
     {
-        this(createConnectionProperties(appRegistry.getBroker()), Collections.singletonList((Object)"en_US"), appRegistry, localFQDN);
+        this(createConnectionProperties(appRegistry.getBrokerConfig()), Collections.singletonList((Object)"en_US"), appRegistry, localFQDN);
     }
 
     public ServerConnectionDelegate(Map<String, Object> properties,

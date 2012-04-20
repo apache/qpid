@@ -47,6 +47,8 @@ import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.apache.qpid.server.plugins.Plugin;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.SecurityManager;
@@ -106,7 +108,9 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     private QMFService _qmfService;
 
-    private BrokerConfig _broker;
+    private BrokerConfig _brokerConfig;
+
+    private Broker _broker;
 
     private ConfigStore _configStore;
 
@@ -203,11 +207,14 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         store.setRoot(new SystemConfigImpl(store));
         instance.setConfigStore(store);
 
-        BrokerConfig broker = new BrokerConfigAdapter(instance);
+        final BrokerConfig brokerConfig = new BrokerConfigAdapter(instance);
 
-        SystemConfig system = store.getRoot();
-        system.addBroker(broker);
-        instance.setBroker(broker);
+        final SystemConfig system = store.getRoot();
+        system.addBroker(brokerConfig);
+        instance.setBrokerConfig(brokerConfig);
+
+        final Broker brokerAdapter = new BrokerAdapter(instance);
+        instance.setBroker(brokerAdapter);
 
         try
         {
@@ -220,7 +227,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             //remove the Broker instance, then re-throw
             try
             {
-                system.removeBroker(broker);
+                system.removeBroker(brokerConfig);
             }
             catch(Throwable t)
             {
@@ -549,7 +556,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
             close(_managedObjectRegistry);
 
-            BrokerConfig broker = getBroker();
+            BrokerConfig broker = getBrokerConfig();
             if(broker != null)
             {
                 broker.getSystem().removeBroker(broker);
@@ -648,21 +655,21 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return _qmfService;
     }
 
-    public BrokerConfig getBroker()
+    public BrokerConfig getBrokerConfig()
     {
-        return _broker;
+        return _brokerConfig;
     }
 
-    public void setBroker(final BrokerConfig broker)
+    public void setBrokerConfig(final BrokerConfig broker)
     {
-        _broker = broker;
+        _brokerConfig = broker;
     }
 
     public VirtualHost createVirtualHost(final VirtualHostConfiguration vhostConfig) throws Exception
     {
         VirtualHostImpl virtualHost = new VirtualHostImpl(this, vhostConfig);
         _virtualHostRegistry.registerVirtualHost(virtualHost);
-        getBroker().addVirtualHost(virtualHost);
+        getBrokerConfig().addVirtualHost(virtualHost);
         return virtualHost;
     }
 
@@ -749,6 +756,16 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
                                                  System.getProperty("os.arch")));
 
         logActor.message(BrokerMessages.MAX_MEMORY(Runtime.getRuntime().maxMemory()));
+    }
+
+    public void setBroker(final Broker broker)
+    {
+        _broker = broker;
+    }
+
+    public Broker getBroker()
+    {
+        return _broker;
     }
 
 }

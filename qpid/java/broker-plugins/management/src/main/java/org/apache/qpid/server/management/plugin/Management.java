@@ -32,7 +32,7 @@ import org.apache.qpid.server.management.plugin.servlet.rest.QueueServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.SaslServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.VirtualHostServlet;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.adapter.BrokerAdapter;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.SessionManager;
 import org.mortbay.jetty.servlet.Context;
@@ -45,61 +45,57 @@ public class Management
 
     private Broker _broker;
 
+    private Server _server;
+
     public Management()
     {
         _logger.info("Starting up web server on port 8080");
 
-        _broker = BrokerAdapter.getInstance();
+        _broker = ApplicationRegistry.getInstance().getBroker();
 
-        start();
+        _server = new Server(8080);
+
+        Context root = new Context(_server,"/", Context.SESSIONS);
+        root.addServlet(new ServletHolder(new VhostsServlet(_broker)), "/api/vhosts/*");
+        root.addServlet(new ServletHolder(new ExchangesServlet(_broker)), "/api/exchanges/*");
+
+        root.addServlet(new ServletHolder(new VirtualHostServlet(_broker)), "/rest/virtualhost/*");
+        root.addServlet(new ServletHolder(new ExchangeServlet(_broker)), "/rest/exchange/*");
+        root.addServlet(new ServletHolder(new QueueServlet(_broker)), "/rest/queue/*");
+        root.addServlet(new ServletHolder(new ConnectionServlet(_broker)), "/rest/connection/*");
+        root.addServlet(new ServletHolder(new BindingServlet(_broker)), "/rest/binding/*");
+        root.addServlet(new ServletHolder(new SaslServlet(_broker)), "/rest/sasl");
+
+        root.addServlet(new ServletHolder(new DefinedFileServlet("queue.html")),"/queue");
+        root.addServlet(new ServletHolder(new DefinedFileServlet("exchange.html")),"/exchange");
+        root.addServlet(new ServletHolder(new DefinedFileServlet("vhost.html")),"/vhost");
+        root.addServlet(new ServletHolder(new DefinedFileServlet("broker.html")),"/broker");
+        root.addServlet(new ServletHolder(new DefinedFileServlet("connection.html")),"/connection");
 
 
+        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.js");
+        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.css");
+        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.html");
+        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.png");
+        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.gif");
+        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.jpg");
+        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.jpeg");
+        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.json");
 
+        final SessionManager sessionManager = root.getSessionHandler().getSessionManager();
+
+        sessionManager.setMaxCookieAge(60 * 30);
+        sessionManager.setMaxInactiveInterval(60 * 15);
     }
 
-    private void start()
+    public void start() throws Exception
     {
-        Server server = new Server(8080);
-        try
-        {
-            Context root = new Context(server,"/", Context.SESSIONS);
-            root.addServlet(new ServletHolder(new VhostsServlet(_broker)), "/api/vhosts/*");
-            root.addServlet(new ServletHolder(new ExchangesServlet(_broker)), "/api/exchanges/*");
+        _server.start();
+    }
 
-            root.addServlet(new ServletHolder(new VirtualHostServlet(_broker)), "/rest/virtualhost/*");
-            root.addServlet(new ServletHolder(new ExchangeServlet(_broker)), "/rest/exchange/*");
-            root.addServlet(new ServletHolder(new QueueServlet(_broker)), "/rest/queue/*");
-            root.addServlet(new ServletHolder(new ConnectionServlet(_broker)), "/rest/connection/*");
-            root.addServlet(new ServletHolder(new BindingServlet(_broker)), "/rest/binding/*");
-            root.addServlet(new ServletHolder(new SaslServlet(_broker)), "/rest/sasl");
-
-            root.addServlet(new ServletHolder(new DefinedFileServlet("queue.html")),"/queue");
-            root.addServlet(new ServletHolder(new DefinedFileServlet("exchange.html")),"/exchange");
-            root.addServlet(new ServletHolder(new DefinedFileServlet("vhost.html")),"/vhost");
-            root.addServlet(new ServletHolder(new DefinedFileServlet("broker.html")),"/broker");
-            root.addServlet(new ServletHolder(new DefinedFileServlet("connection.html")),"/connection");
-
-
-            root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.js");
-            root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.css");
-            root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.html");
-            root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.png");
-            root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.gif");
-            root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.jpg");
-            root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.jpeg");
-            root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.json");
-
-            final SessionManager sessionManager = root.getSessionHandler().getSessionManager();
-
-            sessionManager.setMaxCookieAge(60 * 30);
-            sessionManager.setMaxInactiveInterval(60 * 15);
-
-            server.start();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();  //TODO
-        }
+    public void stop() throws Exception
+    {
+        _server.stop();
     }
 
 }

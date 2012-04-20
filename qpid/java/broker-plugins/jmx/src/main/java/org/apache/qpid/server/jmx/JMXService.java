@@ -27,10 +27,6 @@ import org.apache.qpid.server.jmx.mbeans.ConfigurationManagementMBean;
 import org.apache.qpid.server.jmx.mbeans.VirtualHostMBean;
 import org.apache.qpid.server.jmx.mbeans.Shutdown;
 
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.LogMessage;
-import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.AbstractActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -39,7 +35,7 @@ import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.model.adapter.BrokerAdapter;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import javax.management.JMException;
 import java.io.IOException;
@@ -69,7 +65,7 @@ public class JMXService implements ConfigurationChangeListener
             }
         });
 
-        _broker = BrokerAdapter.getInstance();
+        _broker = ApplicationRegistry.getInstance().getBroker();
         _objectRegistry = new JMXManagedObjectRegistry();
 
         _broker.addChangeListener(this);
@@ -94,6 +90,8 @@ public class JMXService implements ConfigurationChangeListener
     
     public void close()
     {
+        _broker.removeChangeListener(this);
+
         _objectRegistry.close();
     }
 

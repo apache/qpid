@@ -39,6 +39,7 @@ public class ManagementActivator implements  BundleActivator
     {
         _ctx = ctx;
         _managementService = new Management();
+        _managementService.start();
         _bundleName = ctx.getBundle().getSymbolicName();
 
         // register the service
@@ -50,6 +51,8 @@ public class ManagementActivator implements  BundleActivator
     public void stop(final BundleContext bundleContext) throws Exception
     {
         _logger.info("Stopping management plugin: " + _bundleName);
+
+        _managementService.stop();
 
 	    // null object references
 	    _managementService = null;

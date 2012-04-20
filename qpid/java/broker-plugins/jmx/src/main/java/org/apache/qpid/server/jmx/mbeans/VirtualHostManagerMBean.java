@@ -61,7 +61,7 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
 
     public String getObjectInstanceName()
     {
-        return _virtualHostMBean.getName();
+        return ObjectName.quote(_virtualHostMBean.getName());
     }
 
     @Override

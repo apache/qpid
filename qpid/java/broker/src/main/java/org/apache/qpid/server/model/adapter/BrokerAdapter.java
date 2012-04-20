@@ -33,7 +33,6 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
@@ -48,9 +47,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
             new HashMap<org.apache.qpid.server.virtualhost.VirtualHost, VirtualHostAdapter>();
     private final StatisticsAdapter _statistics;
     
-    private static final BrokerAdapter INSTANCE = new BrokerAdapter(ApplicationRegistry.getInstance());
-
-    private BrokerAdapter(final IApplicationRegistry instance)
+    public BrokerAdapter(final IApplicationRegistry instance)
     {
         _applicationRegistry = instance;
         _name = "Broker";
@@ -75,11 +72,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
             }
 
         }
-    }
-
-    public static Broker getInstance()
-    {
-        return INSTANCE;
     }
 
     public Collection<VirtualHost> getVirtualHosts()

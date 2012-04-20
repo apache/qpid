@@ -28,6 +28,7 @@ import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
@@ -86,9 +87,13 @@ public interface IApplicationRegistry extends StatisticsGatherer
 
     QMFService getQMFService();
 
-    void setBroker(BrokerConfig broker);
+    void setBrokerConfig(BrokerConfig broker);
 
-    BrokerConfig getBroker();
+    BrokerConfig getBrokerConfig();
+
+    void setBroker(Broker broker);
+
+    Broker getBroker();
 
     VirtualHost createVirtualHost(VirtualHostConfiguration vhostConfig) throws Exception;
 
