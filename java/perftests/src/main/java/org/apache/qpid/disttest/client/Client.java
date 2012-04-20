@@ -103,6 +103,10 @@ public class Client
 
     public void processInstruction(final Command command)
     {
+        if (LOGGER.isInfoEnabled())
+        {
+            LOGGER.info("Client " + getClientName() + " received command: " + command);
+        }
         String responseMessage = null;
         try
         {

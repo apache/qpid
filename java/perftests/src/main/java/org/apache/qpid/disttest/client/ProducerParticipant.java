@@ -88,6 +88,10 @@ public class ProducerParticipant implements Participant
 
             if (batchLimitReached)
             {
+                if (LOGGER.isTraceEnabled() && _command.getBatchSize() > 0)
+                {
+                    LOGGER.trace("Committing: batch size " + _command.getBatchSize() );
+                }
                 _jmsDelegate.commitOrAcknowledgeMessage(lastPublishedMessage, _command.getSessionName());
 
                 if (_command.getInterval() > 0)
@@ -107,6 +111,10 @@ public class ProducerParticipant implements Participant
         // commit the remaining batch messages
         if (_command.getBatchSize() > 0 && numberOfMessagesSent % _command.getBatchSize() != 0)
         {
+            if (LOGGER.isTraceEnabled())
+            {
+                LOGGER.trace("Committing: batch size " + _command.getBatchSize() );
+            }
             _jmsDelegate.commitOrAcknowledgeMessage(lastPublishedMessage, _command.getSessionName());
         }
 
@@ -154,5 +162,11 @@ public class ProducerParticipant implements Participant
     public String getName()
     {
         return _command.getParticipantName();
+    }
+
+    @Override
+    public String toString()
+    {
+        return "ProducerParticipant [command=" + _command + "]";
     }
 }

@@ -191,7 +191,10 @@ public class ClientJmsDelegate
                                 command);
             }
             final boolean transacted = command.getAcknowledgeMode() == Session.SESSION_TRANSACTED;
+
             final Session newSession = connection.createSession(transacted, command.getAcknowledgeMode());
+            LOGGER.info("Created session " + command.getSessionName() + " with transacted = " + newSession.getTransacted() + " and acknowledgeMode = " + newSession.getAcknowledgeMode());
+
             addSession(command.getSessionName(), newSession);
         }
         catch (final JMSException jmse)
