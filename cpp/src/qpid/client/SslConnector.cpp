@@ -148,8 +148,10 @@ namespace {
     struct StaticInit {
         StaticInit() {
             try {
+                CommonOptions common("", QPIDC_CONF_FILE);
                 SslOptions options;
-                options.parse (0, 0, QPIDC_CONF_FILE, true);
+                common.parse(0, 0, common.config, true);
+                options.parse (0, 0, common.config, true);
                 if (options.certDbPath.empty()) {
                     QPID_LOG(info, "SSL connector not enabled, you must set QPID_SSL_CERT_DB to enable it.");
                 } else {
