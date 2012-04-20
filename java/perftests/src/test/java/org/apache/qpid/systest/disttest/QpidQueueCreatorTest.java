@@ -38,7 +38,6 @@ public class QpidQueueCreatorTest extends DistributedTestSystemTestBase
     private static final Map<String, Object> EMPTY_ATTRIBUTES = Collections.emptyMap();
 
     private QpidQueueCreator _creator;
-    private Connection _connection;
     private Session _session;
     private List<QueueConfig> _configs;
     private String _queueName;
@@ -47,8 +46,8 @@ public class QpidQueueCreatorTest extends DistributedTestSystemTestBase
     public void setUp() throws Exception
     {
         super.setUp();
-        _connection = getConnection();
-        _session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Connection connection = getConnection();
+        _session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         _creator = new QpidQueueCreator();
         _configs = new ArrayList<QueueConfig>();
         _queueName = "direct://amq.direct//" + getTestQueueName();
@@ -60,7 +59,7 @@ public class QpidQueueCreatorTest extends DistributedTestSystemTestBase
 
         assertQueueBound(_queueName, false);
 
-        _creator.createQueues(_connection, _configs);
+        _creator.createQueues(_session, _configs);
 
         assertQueueBound(_queueName, true);
     }
@@ -73,7 +72,7 @@ public class QpidQueueCreatorTest extends DistributedTestSystemTestBase
 
         assertQueueBound(_queueName, false);
 
-        _creator.createQueues(_connection, _configs);
+        _creator.createQueues(_session, _configs);
 
         assertQueueBound(_queueName, true);
     }
@@ -84,10 +83,10 @@ public class QpidQueueCreatorTest extends DistributedTestSystemTestBase
 
         assertQueueBound(_queueName, false);
 
-        _creator.createQueues(_connection, _configs);
+        _creator.createQueues(_session, _configs);
         assertQueueBound(_queueName, true);
 
-        _creator.deleteQueues(_connection, _configs);
+        _creator.deleteQueues(_session, _configs);
         assertQueueBound(_queueName, false);
     }
 
@@ -100,7 +99,7 @@ public class QpidQueueCreatorTest extends DistributedTestSystemTestBase
 
         try
         {
-            _creator.deleteQueues(_connection, configs);
+            _creator.deleteQueues(_session, configs);
             fail("Exception not thrown");
         }
         catch (DistributedTestException e)
