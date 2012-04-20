@@ -509,7 +509,8 @@ class ACLTests(TestBase010):
         Test cases for queue acl in allow mode
         """
         aclf = self.get_acl_file()
-        aclf.write('acl deny bob@QPID create queue name=q1 durable=true passive=true\n')
+        aclf.write('acl deny bob@QPID access queue name=q1\n')
+        aclf.write('acl deny bob@QPID create queue name=q1 durable=true\n')
         aclf.write('acl deny bob@QPID create queue name=q2 exclusive=true policytype=ring\n')
         aclf.write('acl deny bob@QPID access queue name=q3\n')
         aclf.write('acl deny bob@QPID purge queue name=q3\n')
@@ -525,8 +526,15 @@ class ACLTests(TestBase010):
         session = self.get_session('bob','bob')
 
         try:
+            session.queue_declare(queue="q1", durable=True)
+            self.fail("ACL should deny queue create request with name=q1 durable=true");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
             session.queue_declare(queue="q1", durable=True, passive=True)
-            self.fail("ACL should deny queue create request with name=q1 durable=true passive=true");
+            self.fail("ACL should deny queue passive declare request with name=q1 durable=true");
         except qpid.session.SessionException, e:
             self.assertEqual(403,e.args[0].error_code)
             session = self.get_session('bob','bob')
@@ -612,7 +620,8 @@ class ACLTests(TestBase010):
         Test cases for queue acl in deny mode
         """
         aclf = self.get_acl_file()
-        aclf.write('acl allow bob@QPID create queue name=q1 durable=true passive=true\n')
+        aclf.write('acl allow bob@QPID access queue name=q1\n')
+        aclf.write('acl allow bob@QPID create queue name=q1 durable=true\n')
         aclf.write('acl allow bob@QPID create queue name=q2 exclusive=true policytype=ring\n')
         aclf.write('acl allow bob@QPID access queue name=q3\n')
         aclf.write('acl allow bob@QPID purge queue name=q3\n')
@@ -632,10 +641,16 @@ class ACLTests(TestBase010):
         session = self.get_session('bob','bob')
 
         try:
+            session.queue_declare(queue="q1", durable=True)
+        except qpid.session.SessionException, e:
+            if (403 == e.args[0].error_code):
+                self.fail("ACL should allow queue create request with name=q1 durable=true");
+
+        try:
             session.queue_declare(queue="q1", durable=True, passive=True)
         except qpid.session.SessionException, e:
             if (403 == e.args[0].error_code):
-                self.fail("ACL should allow queue create request with name=q1 durable=true passive=true");
+                self.fail("ACL should allow queue passive declare request with name=q1 durable=true passive=true");
 
         try:
             session.queue_declare(queue="q1", durable=False, passive=False)
@@ -785,7 +800,8 @@ class ACLTests(TestBase010):
         Test cases for exchange acl in allow mode
         """
         aclf = self.get_acl_file()
-        aclf.write('acl deny bob@QPID create exchange name=testEx durable=true passive=true\n')
+        aclf.write('acl deny bob@QPID access exchange name=testEx\n')
+        aclf.write('acl deny bob@QPID create exchange name=testEx durable=true\n')
         aclf.write('acl deny bob@QPID create exchange name=ex1 type=direct\n')
         aclf.write('acl deny bob@QPID access exchange name=myEx queuename=q1 routingkey=rk1.*\n')
         aclf.write('acl deny bob@QPID bind exchange name=myEx queuename=q1 routingkey=rk1\n')
@@ -804,18 +820,25 @@ class ACLTests(TestBase010):
         session.exchange_declare(exchange='myEx', type='direct')
 
         try:
-            session.exchange_declare(exchange='testEx', durable=True, passive=True)
-            self.fail("ACL should deny exchange create request with name=testEx durable=true passive=true");
+            session.exchange_declare(exchange='testEx', durable=True)
+            self.fail("ACL should deny exchange create request with name=testEx durable=true");
         except qpid.session.SessionException, e:
             self.assertEqual(403,e.args[0].error_code)
             session = self.get_session('bob','bob')
 
         try:
-            session.exchange_declare(exchange='testEx', type='direct', durable=True, passive=False)
+            session.exchange_declare(exchange='testEx', durable=True, passive=True)
+            self.fail("ACL should deny passive exchange declare request with name=testEx durable=true passive=true");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            session.exchange_declare(exchange='testEx', type='direct', durable=False)
         except qpid.session.SessionException, e:
             print e
             if (403 == e.args[0].error_code):
-                self.fail("ACL should allow exchange create request for testEx with any parameter other than durable=true and passive=true");
+                self.fail("ACL should allow exchange create request for testEx with any parameter other than durable=true");
 
         try:
             session.exchange_declare(exchange='ex1', type='direct')
@@ -916,7 +939,7 @@ class ACLTests(TestBase010):
         Test cases for exchange acl in deny mode
         """
         aclf = self.get_acl_file()
-        aclf.write('acl allow bob@QPID create exchange name=myEx durable=true passive=false\n')
+        aclf.write('acl allow bob@QPID create exchange name=myEx durable=true\n')
         aclf.write('acl allow bob@QPID bind exchange name=amq.topic queuename=bar routingkey=foo.*\n')
         aclf.write('acl allow bob@QPID unbind exchange name=amq.topic queuename=bar routingkey=foo.*\n')
         aclf.write('acl allow bob@QPID access exchange name=myEx queuename=q1 routingkey=rk1.*\n')
