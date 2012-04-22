@@ -233,7 +233,7 @@ public class Broker
                     transport.accept(settings, protocolEngineFactory, null);
 
                     ApplicationRegistry.getInstance().addAcceptor(inetSocketAddress,
-                                    new QpidAcceptor(transport,"TCP"));
+                                    new QpidAcceptor(transport,QpidAcceptor.Transport.TCP, supported));
                     CurrentActor.get().message(BrokerMessages.LISTENING("TCP", port));
                 }
             }
@@ -262,7 +262,7 @@ public class Broker
                     transport.accept(settings, protocolEngineFactory, sslContext);
 
                     ApplicationRegistry.getInstance().addAcceptor(inetSocketAddress,
-                            new QpidAcceptor(transport,"TCP"));
+                            new QpidAcceptor(transport,QpidAcceptor.Transport.SSL, supported));
                     CurrentActor.get().message(BrokerMessages.LISTENING("TCP/SSL", sslPort));
                 }
             }

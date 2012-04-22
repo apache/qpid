@@ -29,17 +29,7 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 
-import javax.crypto.Mac;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.Subject;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.NameCallback;
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
-import javax.security.sasl.Sasl;
-import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import javax.servlet.ServletException;
@@ -48,12 +38,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.SecureRandom;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
@@ -69,12 +55,9 @@ public class SaslServlet extends AbstractServlet
     private static final long SASL_EXCHANGE_EXPIRY = 1000L;
 
 
-    private Broker _broker;
-
-
     public SaslServlet(Broker broker)
     {
-        _broker = broker;
+        super(broker);
     }
 
     protected void onGet(HttpServletRequest request, HttpServletResponse response) throws

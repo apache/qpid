@@ -20,35 +20,17 @@
  */
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Session;
-import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.VirtualHost;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
 
-public class ConnectionServlet extends AbstractServlet
+public class SessionServlet extends AbstractServlet
 {
 
-    public ConnectionServlet(Broker broker)
+    public SessionServlet(Broker broker)
     {
-        super(broker, VirtualHost.class, Connection.class);
+        super(broker, VirtualHost.class, Connection.class, Session.class);
     }
 
 }

@@ -28,8 +28,10 @@ import org.apache.qpid.server.management.plugin.servlet.api.VhostsServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.BindingServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.ConnectionServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.ExchangeServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.PortServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.QueueServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.SaslServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.SessionServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.VirtualHostServlet;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -64,6 +66,9 @@ public class Management
         root.addServlet(new ServletHolder(new QueueServlet(_broker)), "/rest/queue/*");
         root.addServlet(new ServletHolder(new ConnectionServlet(_broker)), "/rest/connection/*");
         root.addServlet(new ServletHolder(new BindingServlet(_broker)), "/rest/binding/*");
+        root.addServlet(new ServletHolder(new PortServlet(_broker)), "/rest/port/*");
+        root.addServlet(new ServletHolder(new SessionServlet(_broker)), "/rest/session/*");
+
         root.addServlet(new ServletHolder(new SaslServlet(_broker)), "/rest/sasl");
 
         root.addServlet(new ServletHolder(new DefinedFileServlet("queue.html")),"/queue");

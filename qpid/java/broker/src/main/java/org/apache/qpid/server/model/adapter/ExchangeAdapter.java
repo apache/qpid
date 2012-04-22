@@ -32,6 +32,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Publisher;
@@ -210,6 +211,19 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
     public Statistics getStatistics()
     {
         return _statistics;
+    }
+
+    @Override
+    public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
+    {
+        if(clazz == org.apache.qpid.server.model.Binding.class)
+        {
+            return (Collection<C>) getBindings();
+        }
+        else
+        {
+            return Collections.emptySet();
+        }
     }
 
     public void bindingAdded(org.apache.qpid.server.exchange.Exchange exchange, Binding binding)

@@ -23,12 +23,14 @@ package org.apache.qpid.server.model.adapter;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
@@ -385,6 +387,23 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
     public Statistics getStatistics()
     {
         return _statistics;
+    }
+
+    @Override
+    public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
+    {
+        if(clazz == Consumer.class)
+        {
+            return (Collection<C>) getConsumers();
+        }
+        else if(clazz == org.apache.qpid.server.model.Binding.class)
+        {
+            return (Collection<C>) getBindings();
+        }
+        else
+        {
+            return Collections.emptySet();
+        }
     }
 
     void bindingRegistered(Binding binding, BindingAdapter adapter)

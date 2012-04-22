@@ -18,15 +18,10 @@
  * under the License.
  *
  */
+
 package org.apache.qpid.server.model;
 
-public enum Protocol
+abstract public class Event<T extends EventType>
 {
-    AMQP_0_8,
-    AMQP_0_9,
-    AMQP_0_9_1,
-    AMQP_0_10,
-    AMQP_1_0,
-    JMX,
-    HTTP
+    abstract public T getEventType();
 }

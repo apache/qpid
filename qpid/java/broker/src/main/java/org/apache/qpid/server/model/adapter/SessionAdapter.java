@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Publisher;
 import org.apache.qpid.server.model.Session;
@@ -143,6 +144,23 @@ final class SessionAdapter extends AbstractAdapter implements Session
     public Statistics getStatistics()
     {
         return _statistics;
+    }
+
+    @Override
+    public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
+    {
+        if(clazz == Consumer.class)
+        {
+            return (Collection<C>) getSubscriptions();
+        }
+        else if(clazz == Publisher.class)
+        {
+            return (Collection<C>) getPublishers();
+        }
+        else
+        {
+            return Collections.emptySet();
+        }
     }
 
     private class SessionStatistics implements Statistics

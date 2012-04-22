@@ -62,9 +62,11 @@ import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -119,6 +121,8 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
     private BundleContext _bundleContext;
+
+    private final List<PortBindingListener> _portBindingListeners = new ArrayList<PortBindingListener>();
 
     protected static Logger get_logger()
     {
@@ -572,12 +576,14 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     private void unbind()
     {
+        List<QpidAcceptor> removedAcceptors = new ArrayList<QpidAcceptor>();
         synchronized (_acceptors)
         {
             for (InetSocketAddress bindAddress : _acceptors.keySet())
             {
                 QpidAcceptor acceptor = _acceptors.get(bindAddress);
 
+                removedAcceptors.add(acceptor);
                 try
                 {
                     acceptor.getNetworkTransport().close();
@@ -588,6 +594,16 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
                 }
 
                CurrentActor.get().message(BrokerMessages.SHUTTING_DOWN(acceptor.toString(), bindAddress.getPort()));
+            }
+        }
+        synchronized (_portBindingListeners)
+        {
+            for(QpidAcceptor acceptor : removedAcceptors)
+            {
+                for(PortBindingListener listener : _portBindingListeners)
+                {
+                    listener.unbound(acceptor);
+                }
             }
         }
     }
@@ -602,6 +618,13 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         synchronized (_acceptors)
         {
             _acceptors.put(bindAddress, acceptor);
+        }
+        synchronized (_portBindingListeners)
+        {
+            for(PortBindingListener listener : _portBindingListeners)
+            {
+                listener.bound(acceptor, bindAddress);
+            }
         }
     }
 
@@ -768,4 +791,12 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return _broker;
     }
 
+    @Override
+    public void addPortBindingListener(PortBindingListener listener)
+    {
+        synchronized (_portBindingListeners)
+        {
+            _portBindingListeners.add(listener);
+        }
+    }
 }

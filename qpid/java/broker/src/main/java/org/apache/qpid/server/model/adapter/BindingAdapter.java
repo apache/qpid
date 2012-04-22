@@ -22,12 +22,14 @@ package org.apache.qpid.server.model.adapter;
 
 import java.security.AccessControlException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
@@ -119,6 +121,12 @@ final class BindingAdapter extends AbstractAdapter implements Binding
     public Statistics getStatistics()
     {
         return _statistics;
+    }
+
+    @Override
+    public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
+    {
+        return Collections.emptySet();
     }
 
     public Map<String, Object> getArguments()

@@ -38,9 +38,11 @@ import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
@@ -75,10 +77,16 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
 
     private final StatisticsAdapter _statistics;
 
+    private final BrokerAdapter _broker;
 
-    public VirtualHostAdapter(final org.apache.qpid.server.virtualhost.VirtualHost virtualHost)
+    private final List<VirtualHostAlias> _aliases = new ArrayList<VirtualHostAlias>();
+
+
+    VirtualHostAdapter(BrokerAdapter brokerAdapter,
+                       final org.apache.qpid.server.virtualhost.VirtualHost virtualHost)
     {
         super(virtualHost.getName());
+        _broker = brokerAdapter;
         _virtualHost = virtualHost;
         _statistics = new StatisticsAdapter(virtualHost);
         virtualHost.getQueueRegistry().addRegistryChangeListener(this);
@@ -88,6 +96,12 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
         virtualHost.getConnectionRegistry().addRegistryChangeListener(this);
         populateConnections();
 
+
+
+        for(Port port :_broker.getPorts())
+        {
+            _aliases.add(new VirtualHostAliasAdapter(this, port));
+        }
     }
 
 
@@ -150,7 +164,7 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
 
     public Collection<VirtualHostAlias> getAliases()
     {
-        return null;  //TODO
+        return Collections.unmodifiableCollection(_aliases);
     }
 
     public Collection<Connection> getConnections()
@@ -312,6 +326,31 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
     public Statistics getStatistics()
     {
         return _statistics;
+    }
+
+    @Override
+    public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
+    {
+        if(clazz == Exchange.class)
+        {
+            return (Collection<C>) getExchanges();
+        }
+        else if(clazz == Queue.class)
+        {
+            return (Collection<C>) getQueues();
+        }
+        else if(clazz == Connection.class)
+        {
+            return (Collection<C>) getConnections();
+        }
+        else if(clazz == VirtualHostAlias.class)
+        {
+            return (Collection<C>) getAliases();
+        }
+        else
+        {
+            return Collections.emptySet();
+        }
     }
 
     public void exchangeRegistered(org.apache.qpid.server.exchange.Exchange exchange)

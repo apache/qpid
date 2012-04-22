@@ -52,6 +52,9 @@ abstract class AbstractConfiguredObject implements ConfiguredObject
     private final Map<String,Object> _attributes = new HashMap<String, Object>();
     private final Map<Class<? extends ConfiguredObject>, ConfiguredObject> _parents =
             new HashMap<Class<? extends ConfiguredObject>, ConfiguredObject>();
+    private final Map<Class<? extends ConfiguredObject>, Collection<ConfiguredObject>> _children =
+            new HashMap<Class<? extends ConfiguredObject>, Collection<ConfiguredObject>>();
+
 
     private final Collection<ConfigurationChangeListener> _changeListeners =
             new ArrayList<ConfigurationChangeListener>();
@@ -265,6 +268,36 @@ abstract class AbstractConfiguredObject implements ConfiguredObject
         }
     }
 
+    protected <T extends ConfiguredObject> void childAdded(Class<T> clazz, T child)
+    {
+        synchronized (getLock())
+        {
+            Collection<ConfiguredObject> children =  _children.get(clazz);
+            if(children == null)
+            {
+                children = new ArrayList<ConfiguredObject>();
+                _children.put(clazz, children);
+            }
+            children.add(child);
+        }
+        notifyChildAddedListener(child);
+    }
+
+
+    protected <T extends ConfiguredObject> void childRemoved(Class<T> clazz, T child)
+    {
+        synchronized (getLock())
+        {
+            Collection<ConfiguredObject> children =  _children.get(clazz);
+            if(children != null)
+            {
+
+                children.remove(child);
+            }
+        }
+        notifyChildRemovedListener(child);
+    }
+
     protected void notifyChildAddedListener(ConfiguredObject child)
     {
         for (ConfigurationChangeListener listener : _changeListeners)
@@ -281,6 +314,20 @@ abstract class AbstractConfiguredObject implements ConfiguredObject
             {
                 listener.childRemoved(this, child);
             }
+        }
+    }
+
+    @Override
+    public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
+    {
+        synchronized (getLock())
+        {
+            Collection<C> children = new ArrayList<C>();
+            if(_children.containsKey(clazz))
+            {
+                children.addAll((Collection<? extends C>) _children.get(clazz));
+            }
+            return children;
         }
     }
 

@@ -48,149 +48,10 @@ import org.codehaus.jackson.map.SerializationConfig;
 public class QueueServlet extends AbstractServlet
 {
 
-
-    private Broker _broker;
-    private static final Comparator DEFAULT_COMPARATOR = new KeyComparator("name");
-
-
     public QueueServlet(Broker broker)
     {
-        _broker = broker;
+        super(broker, VirtualHost.class, Queue.class);
     }
-
-    protected void onGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
-    {
-        response.setContentType("application/json");
-        response.setStatus(HttpServletResponse.SC_OK);
-
-        response.setHeader("Cache-Control","no-cache");
-        response.setHeader("Pragma","no-cache");
-        response.setDateHeader ("Expires", 0);
-
-        String[] sortKeys = request.getParameterValues("sort");
-        Comparator comparator;
-        if(sortKeys == null || sortKeys.length == 0)
-        {
-            comparator = DEFAULT_COMPARATOR;
-        }
-        else
-        {
-            comparator = new MapComparator(sortKeys);
-        }
-
-
-        Collection<VirtualHost> vhosts = _broker.getVirtualHosts();
-        List<Map<String,Object>> outputObject = new ArrayList<Map<String,Object>>();
-
-        final PrintWriter writer = response.getWriter();
-
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
-        String vhostName = null;
-        String queueName = null;
-
-        if(request.getPathInfo() != null && request.getPathInfo().length()>0)
-        {
-            String path = request.getPathInfo().substring(1);
-            String[] parts = path.split("/");
-            vhostName = parts.length == 0 ? "" : parts[0];
-            if(parts.length > 1)
-            {
-                queueName = parts[1];
-            }
-        }
-
-        for(VirtualHost vhost : vhosts)
-        {
-            if(vhostName == null || vhostName.equals(vhost.getName()))
-            {
-                for(Queue queue : vhost.getQueues())
-                {
-                    if(queueName == null || queueName.equals(queue.getName()))
-                    {
-                        outputObject.add(convertToObject(queue));
-                        if(queueName != null)
-                        {
-                            break;
-                        }
-                    }
-                }
-                if(vhostName != null)
-                {
-                    break;
-                }
-            }
-        }
-
-        Collections.sort(outputObject, comparator);
-        mapper.writeValue(writer, outputObject);
-
-    }
-
-    private Map<String,Object> convertToObject(final Queue queue)
-    {
-        Map<String, Object> object = convertObjectToMap(queue);
-
-
-        List<Map<String,Object>> bindings = new ArrayList<Map<String, Object>>();
-
-        for(Binding binding : queue.getBindings())
-        {
-            bindings.add(convertObjectToMap(binding));
-        }
-
-        if(!bindings.isEmpty())
-        {
-            object.put("bindings", bindings);
-        }
-
-        List<Map<String,Object>> consumers = new ArrayList<Map<String, Object>>();
-
-        for(Consumer consumer : queue.getConsumers())
-        {
-            consumers.add(convertObjectToMap(consumer));
-        }
-
-        if(!consumers.isEmpty())
-        {
-            object.put("consumers", consumers);
-        }
-
-
-        return object;
-    }
-
-    private Map<String, Object> convertObjectToMap(final ConfiguredObject confObject)
-    {
-        Map<String, Object> object = new LinkedHashMap<String, Object>();
-
-        for(String name : confObject.getAttributeNames())
-        {
-            Object value = confObject.getAttribute(name);
-            if(value != null)
-            {
-                object.put(name, value);
-            }
-        }
-
-        Statistics statistics = confObject.getStatistics();
-        Map<String, Object> statMap = new HashMap<String, Object>();
-        for(String name : statistics.getStatisticNames())
-        {
-            Object value = statistics.getStatistic(name);
-            if(value != null)
-            {
-                statMap.put(name, value);
-            }
-        }
-
-        if(!statMap.isEmpty())
-        {
-            object.put("statistics", statMap);
-        }
-        return object;
-    }
-
 
     @Override
     protected void onPut(final HttpServletRequest request, final HttpServletResponse response)
@@ -227,7 +88,7 @@ public class QueueServlet extends AbstractServlet
         else
         {
             VirtualHost vhost = null;
-            for(VirtualHost host : _broker.getVirtualHosts())
+            for(VirtualHost host : getBroker().getVirtualHosts())
             {
                 if(host.getName().equals(vhostName))
                 {

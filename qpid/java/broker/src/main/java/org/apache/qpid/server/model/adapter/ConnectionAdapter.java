@@ -31,6 +31,7 @@ import java.util.Map;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Session;
@@ -255,6 +256,19 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
     public Statistics getStatistics()
     {
         return _statistics;
+    }
+
+    @Override
+    public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
+    {
+        if(clazz == Session.class)
+        {
+            return (Collection<C>) getSessions();
+        }
+        else
+        {
+            return Collections.emptySet();
+        }
     }
 
     private class ConnectionStatisticsAdapter extends StatisticsAdapter

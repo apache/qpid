@@ -124,7 +124,7 @@ public class BrokerImpl extends AbstractConfiguredObject implements Broker
 
             // TODO - create a mapping for each port with "default" authentication provider and alias of the vhost name?
 
-            notifyChildAddedListener(vhost);
+            childAdded(VirtualHost.class, vhost);
             return vhost;
         }
     }
@@ -138,7 +138,7 @@ public class BrokerImpl extends AbstractConfiguredObject implements Broker
             {
                 throw new IllegalArgumentException("A virtual host with the name '" + virtualHost.getName() + "' does not exist");
             }
-            notifyChildRemovedListener(virtualHost);
+            childRemoved(VirtualHost.class, virtualHost);
         }
     }
 

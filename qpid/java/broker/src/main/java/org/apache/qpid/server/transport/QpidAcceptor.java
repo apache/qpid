@@ -20,25 +20,62 @@
  */
 package org.apache.qpid.server.transport;
 
+import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.transport.network.NetworkTransport;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class QpidAcceptor
 {
-    private NetworkTransport _transport;
-    private String _protocol;
-    public QpidAcceptor(NetworkTransport transport, String protocol)
+    public enum Transport
     {
-        _transport = transport;
-        _protocol = protocol;
+        TCP("TCP"),
+        SSL("TCP/SSL");
+
+        private final String _asString;
+
+        Transport(String asString)
+        {
+            _asString = asString;
+        }
+
+        public String toString()
+        {
+            return _asString;
+        }
+    }
+
+    private NetworkTransport _networkTransport;
+    private Transport _transport;
+    private Set<AmqpProtocolVersion> _supported;
+
+
+    public QpidAcceptor(NetworkTransport transport, Transport protocol, Set<AmqpProtocolVersion> supported)
+    {
+        _networkTransport = transport;
+        _transport = protocol;
+        _supported = Collections.unmodifiableSet(new HashSet<AmqpProtocolVersion>(supported));
     }
 
     public NetworkTransport getNetworkTransport()
     {
+        return _networkTransport;
+    }
+
+    public Transport getTransport()
+    {
         return _transport;
+    }
+
+    public Set<AmqpProtocolVersion> getSupported()
+    {
+        return _supported;
     }
 
     public String toString()
     {
-        return _protocol;
+        return _transport.toString();
     }    
 }

@@ -105,4 +105,13 @@ public interface IApplicationRegistry extends StatisticsGatherer
 
     Map<InetSocketAddress, QpidAcceptor> getAcceptors();
 
+    void addPortBindingListener(PortBindingListener listener);
+
+    public interface PortBindingListener
+    {
+        public void bound(QpidAcceptor acceptor, InetSocketAddress bindAddress);
+        public void unbound(QpidAcceptor acceptor);
+
+    }
+
 }

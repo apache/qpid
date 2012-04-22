@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.model.adapter;
 
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.State;
@@ -28,6 +29,7 @@ import org.apache.qpid.server.subscription.Subscription;
 
 import java.security.AccessControlException;
 import java.util.Collection;
+import java.util.Collections;
 
 public class ConsumerAdapter extends AbstractAdapter implements Consumer
 {
@@ -172,6 +174,12 @@ public class ConsumerAdapter extends AbstractAdapter implements Consumer
     public Statistics getStatistics()
     {
         return _statistics;
+    }
+
+    @Override
+    public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
+    {
+        return Collections.emptySet();
     }
 
     private class ConsumerStatistics implements Statistics

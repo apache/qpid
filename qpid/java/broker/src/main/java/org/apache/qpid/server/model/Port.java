@@ -21,10 +21,44 @@
 package org.apache.qpid.server.model;
 
 import java.security.AccessControlException;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 
 public interface Port extends ConfiguredObject
 {
+    String CREATED                              = "created";
+    String DURABLE                              = "durable";
+    String ID                                   = "id";
+    String LIFETIME_POLICY                      = "lifetimePolicy";
+    String NAME                                 = "name";
+    String STATE                                = "state";
+    String TIME_TO_LIVE                         = "timeToLive";
+    String UPDATED                              = "updated";
+    String BINDING_ADDRESS                      = "bindingAddress";
+    String PORT                                 = "port";
+    String PROTOCOLS                            = "protocols";
+    String TRANSPORTS                           = "transports";
+
+    // Attributes
+    public static final Collection<String> AVAILABLE_ATTRIBUTES =
+            Collections.unmodifiableList(
+                    Arrays.asList(
+                            ID,
+                            NAME,
+                            STATE,
+                            DURABLE,
+                            LIFETIME_POLICY,
+                            TIME_TO_LIVE,
+                            CREATED,
+                            UPDATED,
+                            BINDING_ADDRESS,
+                            PORT,
+                            PROTOCOLS,
+                            TRANSPORTS
+                                 ));
+
+
     String getBindingAddress();
 
     int getPort();

@@ -188,7 +188,7 @@ public interface ConfiguredObject
     /**
      * Get the names of attributes that are set on this object
      *
-     * Not that the returned collection is correct at the time the method is called, but will not reflect future
+     * Note that the returned collection is correct at the time the method is called, but will not reflect future
      * additions or removals when they occur
      *
      * @return the collection of attribute names
@@ -226,4 +226,15 @@ public interface ConfiguredObject
      * @return the Statistics holder for the ConfiguredObject (or null if none exists)
      */
     Statistics getStatistics();
+
+    /**
+     * Return children of the ConfiguredObject of the given class
+     *
+     * @param clazz the class of the children to return
+     * @return the children
+     *
+     * @throws NullPointerException if the supplied class null
+     *
+     */
+    <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz);
 }

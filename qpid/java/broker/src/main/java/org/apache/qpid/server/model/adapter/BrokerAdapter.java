@@ -24,10 +24,12 @@ import java.net.InetSocketAddress;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
@@ -37,7 +39,8 @@ import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
-public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHostRegistry.RegistryChangeListener
+public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHostRegistry.RegistryChangeListener,
+                                                              IApplicationRegistry.PortBindingListener
 {
 
 
@@ -46,7 +49,9 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
     private final Map<org.apache.qpid.server.virtualhost.VirtualHost, VirtualHostAdapter> _vhostAdapters =
             new HashMap<org.apache.qpid.server.virtualhost.VirtualHost, VirtualHostAdapter>();
     private final StatisticsAdapter _statistics;
-    
+    private final Map<QpidAcceptor, PortAdapter> _portAdapters = new HashMap<QpidAcceptor, PortAdapter>();
+
+
     public BrokerAdapter(final IApplicationRegistry instance)
     {
         _applicationRegistry = instance;
@@ -55,6 +60,8 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
 
         instance.getVirtualHostRegistry().addRegistryChangeListener(this);
         populateVhosts();
+        instance.addPortBindingListener(this);
+        populatePorts();
     }
 
     private void populateVhosts()
@@ -67,31 +74,44 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
             {
                 if(!_vhostAdapters.containsKey(vh))
                 {
-                    _vhostAdapters.put(vh, new VirtualHostAdapter(vh));
+                    _vhostAdapters.put(vh, new VirtualHostAdapter(this, vh));
                 }
             }
 
         }
     }
 
+
     public Collection<VirtualHost> getVirtualHosts()
     {
-        Collection<org.apache.qpid.server.virtualhost.VirtualHost> actualVhosts =
-                _applicationRegistry.getVirtualHostRegistry().getVirtualHosts();
-
-
         synchronized(_vhostAdapters)
         {
             return new ArrayList<VirtualHost>(_vhostAdapters.values());
         }
 
     }
+    private void populatePorts()
+    {
+        synchronized (_portAdapters)
+        {
+            Map<InetSocketAddress, QpidAcceptor> acceptors = _applicationRegistry.getAcceptors();
+
+            for(Map.Entry<InetSocketAddress, QpidAcceptor> entry : acceptors.entrySet())
+            {
+                if(!_portAdapters.containsKey(entry.getValue()))
+                {
+                    _portAdapters.put(entry.getValue(), new PortAdapter(this, entry.getValue(), entry.getKey()));
+                }
+            }
+        }
+    }
 
     public Collection<Port> getPorts()
     {
-        Map<InetSocketAddress, QpidAcceptor> acceptors = _applicationRegistry.getAcceptors();
-
-        return null;  //TODO
+        synchronized (_portAdapters)
+        {
+            return new ArrayList<Port>(_portAdapters.values());
+        }
     }
 
     public Collection<AuthenticationProvider> getAuthenticationProviders()
@@ -173,6 +193,25 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
         return _statistics;
     }
 
+    @Override
+    public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
+    {
+        if(clazz == VirtualHost.class)
+        {
+            return (Collection<C>) getVirtualHosts();
+        }
+        else if(clazz == Port.class)
+        {
+            return (Collection<C>) getPorts();
+        }
+        else if(clazz == AuthenticationProvider.class)
+        {
+            return (Collection<C>) getAuthenticationProviders();
+        }
+
+        return Collections.emptySet();
+    }
+
 
     public void virtualHostRegistered(org.apache.qpid.server.virtualhost.VirtualHost virtualHost)
     {
@@ -181,7 +220,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
         {
             if(!_vhostAdapters.containsKey(virtualHost))
             {
-                adapter = new VirtualHostAdapter(virtualHost);
+                adapter = new VirtualHostAdapter(this, virtualHost);
                 _vhostAdapters.put(virtualHost, adapter);
             }
         }
@@ -198,6 +237,35 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
         synchronized (_vhostAdapters)
         {
             adapter = _vhostAdapters.remove(virtualHost);
+        }
+        if(adapter != null)
+        {
+            childRemoved(adapter);
+        }
+    }
+
+    @Override
+    public void bound(QpidAcceptor acceptor, InetSocketAddress bindAddress)
+    {
+        synchronized (_portAdapters)
+        {
+            if(!_portAdapters.containsKey(acceptor))
+            {
+                PortAdapter adapter = new PortAdapter(this, acceptor, bindAddress);
+                _portAdapters.put(acceptor, adapter);
+                childAdded(adapter);
+            }
+        }
+    }
+
+    @Override
+    public void unbound(QpidAcceptor acceptor)
+    {
+        PortAdapter adapter = null;
+
+        synchronized (_portAdapters)
+        {
+            adapter = _portAdapters.remove(acceptor);
         }
         if(adapter != null)
         {

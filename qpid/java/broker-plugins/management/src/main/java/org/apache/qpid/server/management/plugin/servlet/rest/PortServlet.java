@@ -18,15 +18,16 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model;
 
-public enum Protocol
+package org.apache.qpid.server.management.plugin.servlet.rest;
+
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Port;
+
+public class PortServlet extends AbstractServlet
 {
-    AMQP_0_8,
-    AMQP_0_9,
-    AMQP_0_9_1,
-    AMQP_0_10,
-    AMQP_1_0,
-    JMX,
-    HTTP
+    public PortServlet(Broker broker)
+    {
+        super(broker, Port.class);
+    }
 }
