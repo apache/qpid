@@ -5,7 +5,7 @@ Overview
 The Qpid Resource Adapter is a JCA 1.5 compliant resource adapter that allows
 for JEE integration between EE applications and AMQP 0.10  message brokers.
 
-The adapter provides both outbound and inbound connectivity and
+The Qpid JCA adapter provides both outbound and inbound connectivity and
 exposes a variety of options to fine tune your messaging applications. Currently
 the adapter only supports C++ based brokers and has only been tested with Apache Qpid C++ broker.
 
@@ -31,10 +31,9 @@ When a ManagedConnectionFactory JavaBean or ActivationSpec JavaBean are deployed
 the configuration properties from the ResourceAdapter or provide specific properties which in turn will override
 the defaults.
 
-While some of the properties from the three componets are specific to the JCA adapter, a majority of the
-properties directly correspond the the Qpid JMS client. As such, it is strongly encouraged your familiarize
-yourself with the correct syntax, configuration options for the JMS client as well as the JCA adapter. Similarly,
-familiarity with the 1.5 JCA specification is encouraged though not strictly required.
+While some of the properties from the three components are specific to the JCA adapter, a majority of the
+properties directly correspond the the Qpid JMS client. As such, familiarity with the Qpid JMS Client is strongly
+encouraged. Similarly, familiarity with the JCA 1.5 specification is encouraged though not strictly required.
 
 The ResourceAdapter JavaBean
 ============================
@@ -65,14 +64,6 @@ UseLocalTx
     Whether or not to use local transactions instead of XA.
 Default: false
 
-DefaultUserName
-    The default user name to use.
-Default: guest
-
-DefaultPassword
-    The default password to use.
-Default: guest
-
 Host
     The hostname/ip address of the broker.
 Default: localhost
@@ -87,23 +78,23 @@ Default: test
 
 ConnectionURL
    The full connection URL to the broker.
-Default:amqp://guest:guest@/test?brokerlist='tcp://localhost:5672'
+Default: amqp://anonymous:passwd@client/test?brokerlist='tcp://localhost?sasl_mechs='PLAIN''
 
 TransactionManagerLocatorClass
-    The class responsible for locating the transaction manager within a specific application server. This is a ResourceAdapter
-    Java Bean specific property and is application server specific. As such, it is currently commented out. Two examples have
-    been provided.
+    The class responsible for locating the transaction manager within a specific application server.
+    This is a ResourceAdapter Java Bean specific property and is application server specific, as such,
+    no default is provided.
 Default: none
 
 TransactionManagerLocatorMethod
-    The specific method on the class above used to acquire a reference to the platform specific transaction manager.
-    This is a ResourceAdapter Java Bean specific property and is application server specific.
-    As such, it is currently commented out. Two examples have been provided.
+    The specific method on the TransactionManagerLocatorClass used to acquire a reference to the platform
+    specific transaction manager. This is a ResourceAdapter Java Bean specific property and is application
+    server specific as such, no default is provided.
 Default:none
 
-Note, if you require XA support, both the TransactionManagerLocatorClass and the TransactionManagerLocatorMethod
-properties MUST be set. While application servers typically provide a mechanism to do this in the form of a specific
-deployment descriptor, or GUI console, the ra.xml file can also be modified directly.
+Note, both the TransactionManagerLocatorClass and the TransactionManagerLocatorMethod
+properties must be set. While application servers typically provide a mechanism to do this in the form of
+a specific deployment descriptor, or GUI console, the ra.xml file can also be modified directly.
 
 The ManagedConnectionFactory JavaBean
 =====================================
@@ -112,27 +103,15 @@ The ManagedConnectionFactory JavaBean provides outbound connectivity for the Qpi
 inherited from the ResourceAdapter JavaBean, the ManagedConnectionFactory JavaBean provides specific properties only applicable
 to outbound connectivity.
 
-sessionDefaulType
+SessionDefaulType
     The default type of Session. Currently unused.
 Default: java.jms.Queue
 
-useTryLock
+UseTryLock
     Multi-purpose property used to specify both that a lock on the underlying managed connection should be used, as well as the
     wait duration to aquire the lock. Primarily used for transaction management. A null or zero value will atttempt to acquire
     the lock without a duration. Anything greater than zero will wait n number of seconds before failing to acquire the lock.
 Default:0
-
-KeyStorePassword
-    The KeyStore password for SSL
-Default:none
-
-KeyStorePath
-    The path to the KeyStore.
-Default:none
-
-CertType
-    The type of certificate.
-Default:SunX509
 
 The ActivationSpec JavaBean
 ===========================
@@ -149,7 +128,7 @@ UseJNDI
 Default: true
 
 Destination
-    The name of the destination on which to listen for messages.
+    The JNDI name of the destination on which to listen for messages.
 Default:none
 
 DestinationType
@@ -187,49 +166,49 @@ PrefetchLow
 PrefetchHigh
     Qpid specific -- TODO more explanation
 
-
+SetupA
 Administered Objects
 ======================
 The JCA specification provides for administered objects. Ass per the specification, administered objects are
-JavaBeans that specific to the messaging provider. The Qpid JCA Resource Adapter provides two administered
+JavaBeans that specific to the messaging provider. The Qpid JCA Resource Adapter provides three administered
 objects that can be used to configure JMS destinations and a specialized JMS Connection Factory respectively.
 Both these administered objects have properities to support configuration and deployment.
 
-QpidDestinationProxy
+QpidQueue/QpidTopic
 ====================
-    The QpidDestinationProxy allows a developer, deployer or adminstrator to create destinations (queues or topic) and
-    bind these destinations into JNDI. The following lists the properties applicable to the QpidDestinationProxy
+    The QpidQueue/QpidTopic AdminObjects allow a developer, deployer or adminstrator to create destinations
+    (queues or topic) and bind these destinations into JNDI. Only one property is required:
 
-destinationType
-    The type of destination to create. Valid values are QUEUE or TOPIC.
-
-destinationAddress
+DestinationAddress
     The address string of the destination. Please see the Qpid Java JMS client documentation for valid values.
 
+Example:
+   DestinationAddress=hello.Queue;{create:always, node:{type:queue, x-declare:{auto-delete:true}}}
+   DestinationAddress=amq.topic/hello.Topic
+
 QpidConnectionFactoryProxy
+==========================
     The QpidConnectionFactoryProxy allows for a non-JCA ConnectionFactory to be bound into the JNDI tree. This
     ConnectionFactory can in turn be used outside of the application server. Typically a ConnectionFactory of
-    this sort is used by Swing or other two-tier clients not requiring JCA. The QpidConnectionFactoryProxy provides
-    one property
+    this sort is used by Java Swing or other non-managed clients not requiring JCA. One one property is
+    required:
 
-connectionURL
+ConnectionURL
     This is the url used to configure the connection factory. Please see the Qpid Java Client documentation for
     further details.
 
+Example:
+    amqp://anonymous:passwd@client/test?brokerlist='tcp://localhost:5672?sasl_mechs='PLAIN''
 
 Transaction Support
 ===================
 The Qpid JCA Resource Adapter provides three levels of transaction support: XA, LocalTransactions and NoTransaction.
 Typical usage of the Qpid JCA Resource adapter implies the use of XA transactions, though there are certain scenarios
 where this is not preferred. Transaction support configuration is application server specific and as such, is explained
-in the corresponding documentation for each supported application server. However, there are two limitations with
-the Qpid JCA adapter at this time:
+in the corresponding documentation for each supported application server. Current limitations with XA are listed
+below:
 
-1) Currently, the Qpid C++ broker does not support he use of XA within the context of clustered brokers. As such, if
-you are running in a cluster, you will need to configure the adapter to use LocalTransactions.
-
-2)XARecovery is currently not implemented. In the case of a system failure, in doubt transactions will have to be
-manually resolved by and administrator or otherwise qualified personnel.
+1)XARecovery is currently only supported for JBoss EAP 5.x and is not supported for clustered broker configurations.
 
 Conclusion
 ==========

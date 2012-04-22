@@ -20,7 +20,7 @@
  -->
 <project name="qpid-jca-example" default="help" basedir="">
 
-    <!-- Valid target platforms are currently geronimo & jboss -->
+    <!-- Valid target platforms are currently geronimo, jboss, jboss7, glassfish -->
     <property name="target.platform" value="geronimo"/>
 
     <!-- Change to BURL for older syntax support -->
