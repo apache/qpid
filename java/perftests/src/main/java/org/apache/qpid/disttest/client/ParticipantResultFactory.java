@@ -42,25 +42,30 @@ public class ParticipantResultFactory
         consumerParticipantResult.setSelector(command.getSelector() != null);
         consumerParticipantResult.setNoLocal(command.isNoLocal());
         consumerParticipantResult.setSynchronousConsumer(command.isSynchronous());
+        consumerParticipantResult.setTotalNumberOfConsumers(1);
+        consumerParticipantResult.setTotalNumberOfProducers(0);
 
         return consumerParticipantResult;
     }
 
     public ProducerParticipantResult createForProducer(String participantName, String clientRegisteredName, CreateProducerCommand command, int numberOfMessagesSent, int payloadSize, long totalPayloadSent, Date start, Date end)
     {
-        final ProducerParticipantResult participantResult = new ProducerParticipantResult();
+        final ProducerParticipantResult producerParticipantResult = new ProducerParticipantResult();
 
-        participantResult.setStartDelay(command.getStartDelay());
-        participantResult.setDeliveryMode(command.getDeliveryMode());
-        participantResult.setPriority(command.getPriority());
-        participantResult.setInterval(command.getInterval());
-        participantResult.setTimeToLive(command.getTimeToLive());
+        producerParticipantResult.setStartDelay(command.getStartDelay());
+        producerParticipantResult.setDeliveryMode(command.getDeliveryMode());
+        producerParticipantResult.setPriority(command.getPriority());
+        producerParticipantResult.setInterval(command.getInterval());
+        producerParticipantResult.setTimeToLive(command.getTimeToLive());
+        producerParticipantResult.setTotalNumberOfConsumers(0);
+        producerParticipantResult.setTotalNumberOfProducers(1);
 
-        setTestProperties(participantResult, command, participantName, clientRegisteredName);
 
-        setTestResultProperties(participantResult, numberOfMessagesSent, payloadSize, totalPayloadSent, start, end);
+        setTestProperties(producerParticipantResult, command, participantName, clientRegisteredName);
 
-        return participantResult;
+        setTestResultProperties(producerParticipantResult, numberOfMessagesSent, payloadSize, totalPayloadSent, start, end);
+
+        return producerParticipantResult;
     }
 
     private void setTestResultProperties(final ParticipantResult participantResult, int numberOfMessagesSent, int payloadSize, long totalPayloadReceived, Date start, Date end)

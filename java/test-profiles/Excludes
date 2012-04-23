@@ -31,9 +31,3 @@ org.apache.qpid.server.logging.DerbyMessageStoreLoggingTest#*
 
 org.apache.qpid.client.ssl.SSLTest#testVerifyLocalHostLocalDomain
 
-// QPID-3936: disable the systests temporarily
-org.apache.qpid.systest.disttest.*
-org.apache.qpid.systest.disttest.clientonly.*
-org.apache.qpid.systest.disttest.controlleronly.*
-org.apache.qpid.systest.disttest.controllerandclient.*
-org.apache.qpid.systest.disttest.endtoend.*

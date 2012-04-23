@@ -1,0 +1,2036 @@
+{
+    "_tests":[
+    {
+      "_name": "Queues with selectors: 1 consumer - 1 producer - non overlapping - PERSISTENT",
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//queue-selectors-durable?durable='true'",
+          "_durable": true,
+          "_attributes":
+            {
+              "x-qpid-capacity": 10485760,
+              "x-qpid-flow-resume-capacity": 8388608
+            }
+        }
+      ],
+      "_clients":[
+        {
+          "_name": "producingClient",
+          "_messageProviders": [
+            {
+                "_name": "messageProvider",
+                "_messageProperties":{ "id": 1 }
+            }
+          ],
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 1,
+                  "_producers": [
+                    {
+                      "_name": "Producer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable?durable='true'",
+                      "_numberOfMessages": 100000,
+                      "_deliveryMode": 2,
+                      "_messageSize": 1024,
+                      "_messageProviderName": "messageProvider"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "consumingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable?durable='true'",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=1"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+
+
+
+    {
+      "_name": "Queues with selectors: 2 consumers - 1 producer - non overlapping - PERSISTENT",
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//queue-selectors-durable?durable='true'",
+          "_durable": true,
+          "_attributes":
+            {
+              "x-qpid-capacity": 10485760,
+              "x-qpid-flow-resume-capacity": 8388608
+            }
+        }
+      ],
+      "_clients":[
+        {
+          "_name": "producingClient",
+          "_messageProviders": [
+            {
+                "_name": "messageProvider",
+                "_messageProperties":{ "id": {"@def": "range", "_lower": 1, "_upper": 2, "_type": "int"} }
+            }
+          ],
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 1,
+                  "_producers": [
+                    {
+                      "_name": "Producer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable?durable='true'",
+                      "_numberOfMessages": 200000,
+                      "_deliveryMode": 2,
+                      "_messageSize": 1024,
+                      "_messageProviderName": "messageProvider"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "consumingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session2",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable?durable='true'",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=1"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection2",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session3",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer2",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable?durable='true'",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=2"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+
+
+
+    {
+      "_name": "Queues with selectors: 5 consumers - 1 producer - non overlapping - PERSISTENT",
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//queue-selectors-durable?durable='true'",
+          "_durable": true,
+          "_attributes":
+            {
+              "x-qpid-capacity": 10485760,
+              "x-qpid-flow-resume-capacity": 8388608
+            }
+        }
+      ],
+      "_clients":[
+        {
+          "_name": "producingClient",
+          "_messageProviders": [
+            {
+                "_name": "messageProvider",
+                "_messageProperties":{ "id": {"@def": "range", "_lower": 1, "_upper": 5, "_type": "int"} }
+            }
+          ],
+          "_connections":[
+            {
+              "_name": "connection0",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session0",
+                  "_acknowledgeMode": 1,
+                  "_producers": [
+                    {
+                      "_name": "Producer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable?durable='true'",
+                      "_numberOfMessages": 500000,
+                      "_deliveryMode": 2,
+                      "_messageSize": 1024,
+                      "_messageProviderName": "messageProvider"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "consumingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable?durable='true'",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=1"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection2",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session2",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer2",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable?durable='true'",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=2"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection3",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session3",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer3",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable?durable='true'",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=3"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection4",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session4",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer4",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable?durable='true'",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=4"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection5",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session5",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer5",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable?durable='true'",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=5"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+
+
+    {
+      "_name": "Queues with selectors: 10 consumers - 1 producer - non overlapping - PERSISTENT",
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//queue-selectors-durable?durable='true'",
+          "_durable": true,
+          "_attributes":
+            {
+              "x-qpid-capacity": 10485760,
+              "x-qpid-flow-resume-capacity": 8388608
+            }
+        }
+      ],
+      "_clients":[
+        {
+          "_name": "producingClient",
+          "_messageProviders": [
+            {
+                "_name": "messageProvider",
+                "_messageProperties":{ "id": {"@def": "range", "_lower": 1, "_upper": 10, "_type": "int"} }
+            }
+          ],
+          "_connections":[
+            {
+              "_name": "connection0",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session0",
+                  "_acknowledgeMode": 1,
+                  "_producers": [
+                    {
+                      "_name": "Producer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable?durable='true'",
+                      "_numberOfMessages": 1000000,
+                      "_deliveryMode": 2,
+                      "_messageSize": 1024,
+                      "_messageProviderName": "messageProvider"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "consumingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable?durable='true'",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=1"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection2",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session2",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer2",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable?durable='true'",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=2"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection3",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session3",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer3",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable?durable='true'",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=3"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection4",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session4",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer4",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable?durable='true'",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=4"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection5",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session5",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer5",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable?durable='true'",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=5"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection6",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session6",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer6",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable?durable='true'",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=6"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection7",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session7",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer7",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable?durable='true'",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=7"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection8",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session8",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer8",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable?durable='true'",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=8"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection9",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session9",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer9",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable?durable='true'",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=9"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection10",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session10",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer10",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable?durable='true'",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=10"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+
+
+
+    {
+      "_name": "Queues with selectors: 2 consumers - 1 producer - overlapping 50% - PERSISTENT",
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+          "_durable": true,
+          "_attributes":
+            {
+              "x-qpid-capacity": 76800000,
+              "x-qpid-flow-resume-capacity": 51200000
+            }
+        }
+      ],
+      "_clients":[
+        {
+          "_name": "producingClient",
+          "_messageProviders": [
+            {
+                "_name": "messageProvider",
+                "_messageProperties":{ "id": {"@def": "range", "_lower": 1, "_upper": 4, "_type": "int"} }
+            }
+          ],
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 1,
+                  "_producers": [
+                    {
+                      "_name": "Producer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+                      "_numberOfMessages": 100000,
+                      "_deliveryMode": 2,
+                      "_messageSize": 1024,
+                      "_messageProviderName": "messageProvider"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "consumingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session2",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id =1 or id= 2 or id= 3"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection2",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session3",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer2",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id =2 or id= 3 or id= 4"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+
+
+
+
+    {
+      "_name": "Queues with selectors: 5 consumers - 1 producer - overlapping 50% - PERSISTENT",
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+          "_durable": true,
+          "_attributes":
+            {
+              "x-qpid-capacity": 307200000,
+              "x-qpid-flow-resume-capacity": 256000000
+            }
+        }
+      ],
+      "_clients":[
+        {
+          "_name": "producingClient",
+          "_messageProviders": [
+            {
+                "_name": "messageProvider",
+                "_messageProperties":{ "id": {"@def": "range", "_lower": 1, "_upper": 10, "_type": "int"} }
+            }
+          ],
+          "_connections":[
+            {
+              "_name": "connection0",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session0",
+                  "_acknowledgeMode": 1,
+                  "_producers": [
+                    {
+                      "_name": "Producer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+                      "_numberOfMessages": 500000,
+                      "_deliveryMode": 2,
+                      "_messageSize": 1024,
+                      "_messageProviderName": "messageProvider"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "consumingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+                      "_numberOfMessages": 50000,
+                      "_selector": "id =1 or id=2 or id= 10"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection2",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session2",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer2",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+                      "_numberOfMessages": 50000,
+                      "_selector": "id =2 or id=3 or id= 4"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection3",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session3",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer3",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+                      "_numberOfMessages": 50000,
+                      "_selector": "id =4 or id= 5 or id= 6"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection4",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session4",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer4",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+                      "_numberOfMessages": 50000,
+                      "_selector": "id =6 or id= 7 or id =8"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection5",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session5",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer5",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+                      "_numberOfMessages": 50000,
+                      "_selector": "id =8 or id =9 or id =10"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+
+
+    {
+      "_name": "Queues with selectors: 10 consumers - 1 producer - overlapping 50% - PERSISTENT",
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+          "_durable": true,
+          "_attributes":
+            {
+              "x-qpid-capacity": 307200000,
+              "x-qpid-flow-resume-capacity": 25600000
+            }
+        }
+      ],
+      "_clients":[
+        {
+          "_name": "producingClient",
+          "_messageProviders": [
+            {
+                "_name": "messageProvider",
+                "_messageProperties":{ "id": {"@def": "range", "_lower": 1, "_upper": 20, "_type": "int"} }
+            }
+          ],
+          "_connections":[
+            {
+              "_name": "connection0",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session0",
+                  "_acknowledgeMode": 1,
+                  "_producers": [
+                    {
+                      "_name": "Producer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+                      "_numberOfMessages": 500000,
+                      "_deliveryMode": 2,
+                      "_messageSize": 1024,
+                      "_messageProviderName": "messageProvider"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "consumingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id =1 or id =2 or id =3"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection2",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session2",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer2",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id =2 or id =3 or id= 4"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection3",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session3",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer3",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id =5 or id=6 or id =7"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection4",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session4",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer4",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id =6 or id =7 or id =8"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection5",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session5",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer5",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id =9 or id = 10 or id = 11"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection6",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session6",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer6",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id =10 or id = 11 or id =12"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection7",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session7",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer7",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id = 13 or id = 14 or id =15"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection8",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session8",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer8",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id = 14 or id =15 or id =16"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection9",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session9",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer9",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id =17 or id =18 or id= 19"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection10",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session10",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer10",
+                      "_destinationName": "direct://amq.direct//queue-selectors-durable-overlapping?durable='true'",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id = 18 or id = 19 or id =20"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+
+{
+      "_name": "Queues with selectors: 1 consumer - 1 producer - non overlapping - NON_PERSISTENT ",
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//queue-selectors?durable='false'",
+          "_attributes":
+            {
+              "x-qpid-capacity": 10485760,
+              "x-qpid-flow-resume-capacity": 8388608
+            }
+        }
+      ],
+      "_clients":[
+        {
+          "_name": "producingClient",
+          "_messageProviders": [
+            {
+                "_name": "messageProvider",
+                "_messageProperties":{ "id": 1 }
+            }
+          ],
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 1,
+                  "_producers": [
+                    {
+                      "_name": "Producer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors",
+                      "_numberOfMessages": 100000,
+                      "_deliveryMode": 1,
+                      "_messageSize": 1024,
+                      "_messageProviderName": "messageProvider"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "consumingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=1"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+
+
+
+    {
+      "_name": "Queues with selectors: 2 consumers - 1 producer - non overlapping - NON_PERSISTENT ",
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//queue-selectors?durable='false'",
+          "_attributes":
+            {
+              "x-qpid-capacity": 10485760,
+              "x-qpid-flow-resume-capacity": 8388608
+            }
+        }
+      ],
+      "_clients":[
+        {
+          "_name": "producingClient",
+          "_messageProviders": [
+            {
+                "_name": "messageProvider",
+                "_messageProperties":{ "id": {"@def": "range", "_lower": 1, "_upper": 2, "_type": "int"} }
+            }
+          ],
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 1,
+                  "_producers": [
+                    {
+                      "_name": "Producer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors",
+                      "_numberOfMessages": 200000,
+                      "_deliveryMode": 1,
+                      "_messageSize": 1024,
+                      "_messageProviderName": "messageProvider"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "consumingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session2",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=1"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection2",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session3",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer2",
+                      "_destinationName": "direct://amq.direct//queue-selectors",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=2"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+
+
+
+
+    {
+      "_name": "Queues with selectors: 5 consumers - 1 producer - non overlapping - NON_PERSISTENT ",
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//queue-selectors?durable='false'",
+          "_attributes":
+            {
+              "x-qpid-capacity": 10485760,
+              "x-qpid-flow-resume-capacity": 8388608
+            }
+        }
+      ],
+      "_clients":[
+        {
+          "_name": "producingClient",
+          "_messageProviders": [
+            {
+                "_name": "messageProvider",
+                "_messageProperties":{ "id": {"@def": "range", "_lower": 1, "_upper": 5, "_type": "int"} }
+            }
+          ],
+          "_connections":[
+            {
+              "_name": "connection0",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session0",
+                  "_acknowledgeMode": 1,
+                  "_producers": [
+                    {
+                      "_name": "Producer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors",
+                      "_numberOfMessages": 500000,
+                      "_deliveryMode": 1,
+                      "_messageSize": 1024,
+                      "_messageProviderName": "messageProvider"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "consumingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=1"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection2",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session2",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer2",
+                      "_destinationName": "direct://amq.direct//queue-selectors",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=2"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection3",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session3",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer3",
+                      "_destinationName": "direct://amq.direct//queue-selectors",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=3"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection4",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session4",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer4",
+                      "_destinationName": "direct://amq.direct//queue-selectors",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=4"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection5",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session5",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer5",
+                      "_destinationName": "direct://amq.direct//queue-selectors",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=5"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+
+
+    {
+      "_name": "Queues with selectors: 10 consumers - 1 producer - non overlapping - NON_PERSISTENT ",
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//queue-selectors?durable='false'",
+          "_attributes":
+            {
+              "x-qpid-capacity": 10485760,
+              "x-qpid-flow-resume-capacity": 8388608
+            }
+        }
+      ],
+      "_clients":[
+        {
+          "_name": "producingClient",
+          "_messageProviders": [
+            {
+                "_name": "messageProvider",
+                "_messageProperties":{ "id": {"@def": "range", "_lower": 1, "_upper": 10, "_type": "int"} }
+            }
+          ],
+          "_connections":[
+            {
+              "_name": "connection0",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session0",
+                  "_acknowledgeMode": 1,
+                  "_producers": [
+                    {
+                      "_name": "Producer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors",
+                      "_numberOfMessages": 1000000,
+                      "_deliveryMode": 1,
+                      "_messageSize": 1024,
+                      "_messageProviderName": "messageProvider"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "consumingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=1"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection2",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session2",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer2",
+                      "_destinationName": "direct://amq.direct//queue-selectors",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=2"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection3",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session3",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer3",
+                      "_destinationName": "direct://amq.direct//queue-selectors",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=3"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection4",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session4",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer4",
+                      "_destinationName": "direct://amq.direct//queue-selectors",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=4"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection5",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session5",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer5",
+                      "_destinationName": "direct://amq.direct//queue-selectors",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=5"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection6",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session6",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer6",
+                      "_destinationName": "direct://amq.direct//queue-selectors",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=6"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection7",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session7",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer7",
+                      "_destinationName": "direct://amq.direct//queue-selectors",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=7"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection8",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session8",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer8",
+                      "_destinationName": "direct://amq.direct//queue-selectors",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=8"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection9",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session9",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer9",
+                      "_destinationName": "direct://amq.direct//queue-selectors",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=9"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection10",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session10",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer10",
+                      "_destinationName": "direct://amq.direct//queue-selectors",
+                      "_numberOfMessages": 100000,
+                      "_selector": "id=10"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+
+
+
+
+    {
+      "_name": "Queues with selectors: 2 consumers - 1 producer - overlapping selectors 50% - NON_PERSISTENT",
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//queue-selectors-overlapping",
+          "_attributes":
+            {
+               "x-qpid-capacity": 61440000,
+               "x-qpid-flow-resume-capacity": 51200000
+            }
+        }
+      ],
+      "_clients":[
+        {
+          "_name": "producingClient",
+          "_messageProviders": [
+            {
+                "_name": "messageProvider",
+                "_messageProperties":{ "id": {"@def": "range", "_lower": 1, "_upper": 4, "_type": "int"} }
+            }
+          ],
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 1,
+                  "_producers": [
+                    {
+                      "_name": "Producer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors-overlapping",
+                      "_numberOfMessages": 200000,
+                      "_deliveryMode": 1,
+                      "_messageSize": 1024,
+                      "_messageProviderName": "messageProvider"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "consumingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session2",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors-overlapping",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id =1 or id= 2 or id= 3"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection2",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session3",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer2",
+                      "_destinationName": "direct://amq.direct//queue-selectors-overlapping",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id =2 or id= 3 or id= 4"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+
+
+
+
+    {
+      "_name": "Queues with selectors: 5 consumers - 1 producer - overlapping selectors 50% - NON_PERSISTENT",
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//queue-selectors-overlapping",
+          "_attributes":
+            {
+              "x-qpid-capacity": 307200000,
+              "x-qpid-flow-resume-capacity": 256000000
+            }
+        }
+      ],
+      "_clients":[
+        {
+          "_name": "producingClient",
+          "_messageProviders": [
+            {
+                "_name": "messageProvider",
+                "_messageProperties":{ "id": {"@def": "range", "_lower": 1, "_upper": 10, "_type": "int"} }
+            }
+          ],
+          "_connections":[
+            {
+              "_name": "connection0",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session0",
+                  "_acknowledgeMode": 1,
+                  "_producers": [
+                    {
+                      "_name": "Producer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors-overlapping",
+                      "_numberOfMessages": 500000,
+                      "_deliveryMode": 1,
+                      "_messageSize": 1024,
+                      "_messageProviderName": "messageProvider"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "consumingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors-overlapping",
+                      "_numberOfMessages": 50000,
+                      "_selector": "id =1 or id=2 or id= 10"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection2",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session2",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer2",
+                      "_destinationName": "direct://amq.direct//queue-selectors-overlapping",
+                      "_numberOfMessages": 50000,
+                      "_selector": "id =2 or id=3 or id= 4"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection3",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session3",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer3",
+                      "_destinationName": "direct://amq.direct//queue-selectors-overlapping",
+                      "_numberOfMessages": 50000,
+                      "_selector": "id =4 or id= 5 or id= 6"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection4",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session4",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer4",
+                      "_destinationName": "direct://amq.direct//queue-selectors-overlapping",
+                      "_numberOfMessages": 50000,
+                      "_selector": "id =6 or id= 7 or id =8"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection5",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session5",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer5",
+                      "_destinationName": "direct://amq.direct//queue-selectors-overlapping",
+                      "_numberOfMessages": 50000,
+                      "_selector": "id =8 or id =9 or id =10"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+
+
+    {
+      "_name": "Queues with selectors: 10 consumers - 1 producer - overlapping selectors 50% - NON_PERSISTENT",
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//queue-selectors-overlapping",
+          "_attributes":
+            {
+              "x-qpid-capacity": 307200000,
+              "x-qpid-flow-resume-capacity": 25600000
+            }
+        }
+      ],
+      "_clients":[
+        {
+          "_name": "producingClient",
+          "_messageProviders": [
+            {
+                "_name": "messageProvider",
+                "_messageProperties":{ "id": {"@def": "range", "_lower": 1, "_upper": 20, "_type": "int"} }
+            }
+          ],
+          "_connections":[
+            {
+              "_name": "connection0",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session0",
+                  "_acknowledgeMode": 1,
+                  "_producers": [
+                    {
+                      "_name": "Producer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors-overlapping",
+                      "_numberOfMessages": 500000,
+                      "_deliveryMode": 1,
+                      "_messageSize": 1024,
+                      "_messageProviderName": "messageProvider"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "consumingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer1",
+                      "_destinationName": "direct://amq.direct//queue-selectors-overlapping",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id =1 or id =2 or id =3"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection2",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session2",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer2",
+                      "_destinationName": "direct://amq.direct//queue-selectors-overlapping",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id =2 or id =3 or id= 4"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection3",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session3",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer3",
+                      "_destinationName": "direct://amq.direct//queue-selectors-overlapping",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id =5 or id=6 or id =7"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection4",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session4",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer4",
+                      "_destinationName": "direct://amq.direct//queue-selectors-overlapping",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id =6 or id =7 or id =8"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection5",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session5",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer5",
+                      "_destinationName": "direct://amq.direct//queue-selectors-overlapping",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id =9 or id = 10 or id = 11"
+
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection6",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session6",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer6",
+                      "_destinationName": "direct://amq.direct//queue-selectors-overlapping",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id =10 or id = 11 or id =12"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection7",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session7",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer7",
+                      "_destinationName": "direct://amq.direct//queue-selectors-overlapping",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id = 13 or id = 14 or id =15"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection8",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session8",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer8",
+                      "_destinationName": "direct://amq.direct//queue-selectors-overlapping",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id = 14 or id =15 or id =16"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection9",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session9",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer9",
+                      "_destinationName": "direct://amq.direct//queue-selectors-overlapping",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id =17 or id =18 or id= 19"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "connection10",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session10",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer10",
+                      "_destinationName": "direct://amq.direct//queue-selectors-overlapping",
+                      "_numberOfMessages": 25000,
+                      "_selector": "id = 18 or id = 19 or id =20"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
