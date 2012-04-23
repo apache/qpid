@@ -167,11 +167,6 @@ public abstract class AbstractServlet extends HttpServlet
         }
     }
 
-    protected void onPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
-    {
-        super.doPut(req, resp);
-    }
-
     @Override
     protected final void doDelete(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException
@@ -395,7 +390,10 @@ public abstract class AbstractServlet extends HttpServlet
         response.setDateHeader ("Expires", 0);
 
         Collection<ConfiguredObject> allObjects = getObjects(request);
+
+        @SuppressWarnings("unchecked")
         Map params = new HashMap(request.getParameterMap());
+
         int depth = 1;
         try
         {
@@ -410,7 +408,7 @@ public abstract class AbstractServlet extends HttpServlet
 
         if(!params.isEmpty())
         {
-            // TODO
+            // TODO - depth and sort special params, everything else should act as a filter
         }
 
         for(ConfiguredObject configuredObject : allObjects)
@@ -427,4 +425,100 @@ public abstract class AbstractServlet extends HttpServlet
         response.setStatus(HttpServletResponse.SC_OK);
 
     }
+
+    protected void onPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+    {
+        response.setContentType("application/json");
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        @SuppressWarnings("unchecked")
+        Map<String,Object> providedObject = mapper.readValue(request.getInputStream(), LinkedHashMap.class);
+
+
+        List<String> names = new ArrayList<String>();
+        if(request.getPathInfo() != null && request.getPathInfo().length()>0)
+        {
+            String path = request.getPathInfo().substring(1);
+            names.addAll(Arrays.asList(path.split("/")));
+
+            if(names.size() != _hierarchy.length)
+            {
+                throw new IllegalArgumentException("Path to object to create must be fully specified");
+            }
+        }
+
+
+        providedObject.put("name", names.get(names.size()-1));
+
+        @SuppressWarnings("unchecked")
+        Collection<ConfiguredObject>[] objects = new Collection[_hierarchy.length];
+        if(_hierarchy.length == 1)
+        {
+            _broker.createChild(_hierarchy[0], providedObject);
+        }
+        else
+        {
+            for(int i = 0; i < _hierarchy.length-1; i++)
+            {
+                objects[i] = new HashSet<ConfiguredObject>();
+                if(i == 0)
+                {
+                    for(ConfiguredObject object : _broker.getChildren(_hierarchy[0]))
+                    {
+                        if(object.getName().equals(names.get(0)))
+                        {
+                            objects[0].add(object);
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    for(int j = i-1; j >=0; j--)
+                    {
+                        if(Model.getChildTypes(_hierarchy[j]).contains(_hierarchy[i]))
+                        {
+                            for(ConfiguredObject parent : objects[j])
+                            {
+                                for(ConfiguredObject object : parent.getChildren(_hierarchy[i]))
+                                {
+                                    if(object.getName().equals(names.get(i)))
+                                    {
+                                        objects[i].add(object);
+                                    }
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+
+            }
+            List<ConfiguredObject> parents = new ArrayList<ConfiguredObject>();
+            Class<? extends ConfiguredObject> objClass = _hierarchy[_hierarchy.length - 1];
+            Collection<Class<? extends ConfiguredObject>> parentClasses = Model.getParentTypes(objClass);
+            for(int i = _hierarchy.length-2; i >=0 ; i--)
+            {
+                if(parentClasses.contains(_hierarchy[i]))
+                {
+                    if(objects[i].size() == 1)
+                    {
+                        parents.add(objects[i].iterator().next());
+                    }
+                    else
+                    {
+                        throw new IllegalArgumentException("Cannot deduce parent of class "
+                                                           + _hierarchy[i].getSimpleName());
+                    }
+                }
+
+            }
+            ConfiguredObject theParent = parents.remove(0);
+            ConfiguredObject[] otherParents = parents.toArray(new ConfiguredObject[parents.size()]);
+
+            theParent.createChild(objClass, providedObject, otherParents);
+        }
+    }
+
 }

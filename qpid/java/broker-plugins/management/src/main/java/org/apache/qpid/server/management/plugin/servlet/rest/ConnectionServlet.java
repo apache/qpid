@@ -45,7 +45,6 @@ import org.codehaus.jackson.map.SerializationConfig;
 
 public class ConnectionServlet extends AbstractServlet
 {
-
     public ConnectionServlet(Broker broker)
     {
         super(broker, VirtualHost.class, Connection.class);

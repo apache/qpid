@@ -48,26 +48,9 @@ import org.codehaus.jackson.map.SerializationConfig;
 
 public class VirtualHostServlet extends AbstractServlet
 {
-
     public VirtualHostServlet(Broker broker)
     {
         super(broker, VirtualHost.class);
-    }
-
-    protected void onPut(final HttpServletRequest request, final HttpServletResponse response)
-            throws ServletException, IOException
-    {
-
-        response.setContentType("application/json");
-        response.setStatus(HttpServletResponse.SC_NO_CONTENT);
-
-        if(request.getPathInfo() != null && request.getPathInfo().length()>0)
-        {
-            String vhostName = request.getPathInfo().substring(1);
-            getBroker().createVirtualHost(vhostName, State.ACTIVE, true, LifetimePolicy.PERMANENT, 0L, Collections.EMPTY_MAP);
-        }
-
-
     }
 
 }
