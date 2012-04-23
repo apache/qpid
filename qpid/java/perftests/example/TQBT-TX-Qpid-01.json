@@ -1,0 +1,843 @@
+{
+    "_tests":[
+    {
+      "_name": "TQBT-TX-Qpid-01";
+      "_description": "16 clients, one 1P 1C each. Non-Persistent, Transactional publisher batch 1, Transactional consumer batch 1000, 10 minutes";
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//testQueue1",
+          "_durable": false,
+          "_attributes":
+            {
+              "x-qpid-capacity": 2000000,
+              "x-qpid-flow-resume-capacity": 1500000
+            }
+        },
+        {
+          "_name": "direct://amq.direct//testQueue2",
+          "_durable": false,
+          "_attributes":
+            {
+              "x-qpid-capacity": 2000000,
+              "x-qpid-flow-resume-capacity": 1500000
+            }
+        },
+        {
+          "_name": "direct://amq.direct//testQueue3",
+          "_durable": false,
+          "_attributes":
+            {
+              "x-qpid-capacity": 2000000,
+              "x-qpid-flow-resume-capacity": 1500000
+            }
+        },
+        {
+          "_name": "direct://amq.direct//testQueue4",
+          "_durable": false,
+          "_attributes":
+            {
+              "x-qpid-capacity": 2000000,
+              "x-qpid-flow-resume-capacity": 1500000
+            }
+        },
+        {
+          "_name": "direct://amq.direct//testQueue5",
+          "_durable": false,
+          "_attributes":
+            {
+              "x-qpid-capacity": 2000000,
+              "x-qpid-flow-resume-capacity": 1500000
+            }
+        },
+        {
+          "_name": "direct://amq.direct//testQueue6",
+          "_durable": false,
+          "_attributes":
+            {
+              "x-qpid-capacity": 2000000,
+              "x-qpid-flow-resume-capacity": 1500000
+            }
+        },
+        {
+          "_name": "direct://amq.direct//testQueue7",
+          "_durable": false,
+          "_attributes":
+            {
+              "x-qpid-capacity": 2000000,
+              "x-qpid-flow-resume-capacity": 1500000
+            }
+        },
+        {
+          "_name": "direct://amq.direct//testQueue8",
+          "_durable": false,
+          "_attributes":
+            {
+              "x-qpid-capacity": 2000000,
+              "x-qpid-flow-resume-capacity": 1500000
+            }
+        },
+        {
+          "_name": "direct://amq.direct//testQueue9",
+          "_durable": false,
+          "_attributes":
+            {
+              "x-qpid-capacity": 2000000,
+              "x-qpid-flow-resume-capacity": 1500000
+            }
+        },
+        {
+          "_name": "direct://amq.direct//testQueue10",
+          "_durable": false,
+          "_attributes":
+            {
+              "x-qpid-capacity": 2000000,
+              "x-qpid-flow-resume-capacity": 1500000
+            }
+        },
+        {
+          "_name": "direct://amq.direct//testQueue11",
+          "_durable": false,
+          "_attributes":
+            {
+              "x-qpid-capacity": 2000000,
+              "x-qpid-flow-resume-capacity": 1500000
+            }
+        },
+        {
+          "_name": "direct://amq.direct//testQueue12",
+          "_durable": false,
+          "_attributes":
+            {
+              "x-qpid-capacity": 2000000,
+              "x-qpid-flow-resume-capacity": 1500000
+            }
+        },
+        {
+          "_name": "direct://amq.direct//testQueue13",
+          "_durable": false,
+          "_attributes":
+            {
+              "x-qpid-capacity": 2000000,
+              "x-qpid-flow-resume-capacity": 1500000
+            }
+        },
+        {
+          "_name": "direct://amq.direct//testQueue14",
+          "_durable": false,
+          "_attributes":
+            {
+              "x-qpid-capacity": 2000000,
+              "x-qpid-flow-resume-capacity": 1500000
+            }
+        },
+        {
+          "_name": "direct://amq.direct//testQueue15",
+          "_durable": false,
+          "_attributes":
+            {
+              "x-qpid-capacity": 2000000,
+              "x-qpid-flow-resume-capacity": 1500000
+            }
+        },
+        {
+          "_name": "direct://amq.direct//testQueue16",
+          "_durable": false,
+          "_attributes":
+            {
+              "x-qpid-capacity": 2000000,
+              "x-qpid-flow-resume-capacity": 1500000
+            }
+        }
+      ];
+      "_clients":[
+        {
+          "_name": "client1",
+          "_connections":[
+            {
+              "_name": "pconnection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "psession1",
+                  "_acknowledgeMode": 0,
+                  "_producers": [
+                    {
+                      "_name": "Producer1",
+                      "_destinationName": "direct://amq.direct//testQueue1",
+                      "_messageSize": 256,
+                      "_deliveryMode": 1,
+                      "_batchSize": 1,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "cconnection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "csession1",
+                  "_acknowledgeMode": 0,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer1",
+                      "_destinationName": "direct://amq.direct//testQueue1",
+                      "_batchSize": 1000,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "client2",
+          "_connections":[
+            {
+              "_name": "pconnection2",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "psession2",
+                  "_acknowledgeMode": 0,
+                  "_producers": [
+                    {
+                      "_name": "Producer2",
+                      "_destinationName": "direct://amq.direct//testQueue2",
+                      "_messageSize": 256,
+                      "_deliveryMode": 1,
+                      "_batchSize": 1,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "cconnection2",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "csession2",
+                  "_acknowledgeMode": 0,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer2",
+                      "_destinationName": "direct://amq.direct//testQueue2",
+                      "_batchSize": 1000,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "client3",
+          "_connections":[
+            {
+              "_name": "pconnection3",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "psession3",
+                  "_acknowledgeMode": 0,
+                  "_producers": [
+                    {
+                      "_name": "Producer3",
+                      "_destinationName": "direct://amq.direct//testQueue3",
+                      "_messageSize": 256,
+                      "_deliveryMode": 1,
+                      "_batchSize": 1,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "cconnection3",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "csession3",
+                  "_acknowledgeMode": 0,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer3",
+                      "_destinationName": "direct://amq.direct//testQueue3",
+                      "_batchSize": 1000,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "client4",
+          "_connections":[
+            {
+              "_name": "pconnection4",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "psession4",
+                  "_acknowledgeMode": 0,
+                  "_producers": [
+                    {
+                      "_name": "Producer4",
+                      "_destinationName": "direct://amq.direct//testQueue4",
+                      "_messageSize": 256,
+                      "_deliveryMode": 1,
+                      "_batchSize": 1,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "cconnection4",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "csession4",
+                  "_acknowledgeMode": 0,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer4",
+                      "_destinationName": "direct://amq.direct//testQueue4",
+                      "_batchSize": 1000,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "client5",
+          "_connections":[
+            {
+              "_name": "pconnection5",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "psession5",
+                  "_acknowledgeMode": 0,
+                  "_producers": [
+                    {
+                      "_name": "Producer5",
+                      "_destinationName": "direct://amq.direct//testQueue5",
+                      "_messageSize": 256,
+                      "_deliveryMode": 1,
+                      "_batchSize": 1,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "cconnection5",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "csession5",
+                  "_acknowledgeMode": 0,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer5",
+                      "_destinationName": "direct://amq.direct//testQueue5",
+                      "_batchSize": 1000,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "client6",
+          "_connections":[
+            {
+              "_name": "pconnection6",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "psession6",
+                  "_acknowledgeMode": 0,
+                  "_producers": [
+                    {
+                      "_name": "Producer6",
+                      "_destinationName": "direct://amq.direct//testQueue6",
+                      "_messageSize": 256,
+                      "_deliveryMode": 1,
+                      "_batchSize": 1,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "cconnection6",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "csession6",
+                  "_acknowledgeMode": 0,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer6",
+                      "_destinationName": "direct://amq.direct//testQueue6",
+                      "_batchSize": 1000,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "client7",
+          "_connections":[
+            {
+              "_name": "pconnection7",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "psession7",
+                  "_acknowledgeMode": 0,
+                  "_producers": [
+                    {
+                      "_name": "Producer7",
+                      "_destinationName": "direct://amq.direct//testQueue7",
+                      "_messageSize": 256,
+                      "_deliveryMode": 1,
+                      "_batchSize": 1,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "cconnection7",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "csession7",
+                  "_acknowledgeMode": 0,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer7",
+                      "_destinationName": "direct://amq.direct//testQueue7",
+                      "_batchSize": 1000,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "client8",
+          "_connections":[
+            {
+              "_name": "pconnection8",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "psession8",
+                  "_acknowledgeMode": 0,
+                  "_producers": [
+                    {
+                      "_name": "Producer8",
+                      "_destinationName": "direct://amq.direct//testQueue8",
+                      "_messageSize": 256,
+                      "_deliveryMode": 1,
+                      "_batchSize": 1,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "cconnection8",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "csession8",
+                  "_acknowledgeMode": 0,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer8",
+                      "_destinationName": "direct://amq.direct//testQueue8",
+                      "_batchSize": 1000,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "client9",
+          "_connections":[
+            {
+              "_name": "pconnection9",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "psession9",
+                  "_acknowledgeMode": 0,
+                  "_producers": [
+                    {
+                      "_name": "Producer9",
+                      "_destinationName": "direct://amq.direct//testQueue9",
+                      "_messageSize": 256,
+                      "_deliveryMode": 1,
+                      "_batchSize": 1,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "cconnection9",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "csession9",
+                  "_acknowledgeMode": 0,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer9",
+                      "_destinationName": "direct://amq.direct//testQueue9",
+                      "_batchSize": 1000,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "client10",
+          "_connections":[
+            {
+              "_name": "pconnection10",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "psession10",
+                  "_acknowledgeMode": 0,
+                  "_producers": [
+                    {
+                      "_name": "Producer10",
+                      "_destinationName": "direct://amq.direct//testQueue10",
+                      "_messageSize": 256,
+                      "_deliveryMode": 1,
+                      "_batchSize": 1,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "cconnection10",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "csession10",
+                  "_acknowledgeMode": 0,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer10",
+                      "_destinationName": "direct://amq.direct//testQueue10",
+                      "_batchSize": 1000,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "client11",
+          "_connections":[
+            {
+              "_name": "pconnection11",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "psession11",
+                  "_acknowledgeMode": 0,
+                  "_producers": [
+                    {
+                      "_name": "Producer11",
+                      "_destinationName": "direct://amq.direct//testQueue11",
+                      "_messageSize": 256,
+                      "_deliveryMode": 1,
+                      "_batchSize": 1,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "cconnection11",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "csession11",
+                  "_acknowledgeMode": 0,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer11",
+                      "_destinationName": "direct://amq.direct//testQueue11",
+                      "_batchSize": 1000,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "client12",
+          "_connections":[
+            {
+              "_name": "pconnection12",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "psession12",
+                  "_acknowledgeMode": 0,
+                  "_producers": [
+                    {
+                      "_name": "Producer12",
+                      "_destinationName": "direct://amq.direct//testQueue12",
+                      "_messageSize": 256,
+                      "_deliveryMode": 1,
+                      "_batchSize": 1,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "cconnection12",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "csession12",
+                  "_acknowledgeMode": 0,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer12",
+                      "_destinationName": "direct://amq.direct//testQueue12",
+                      "_batchSize": 1000,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "client13",
+          "_connections":[
+            {
+              "_name": "pconnection13",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "psession13",
+                  "_acknowledgeMode": 0,
+                  "_producers": [
+                    {
+                      "_name": "Producer13",
+                      "_destinationName": "direct://amq.direct//testQueue13",
+                      "_messageSize": 256,
+                      "_deliveryMode": 1,
+                      "_batchSize": 1,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "cconnection13",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "csession13",
+                  "_acknowledgeMode": 0,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer13",
+                      "_destinationName": "direct://amq.direct//testQueue13",
+                      "_batchSize": 1000,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "client14",
+          "_connections":[
+            {
+              "_name": "pconnection14",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "psession14",
+                  "_acknowledgeMode": 0,
+                  "_producers": [
+                    {
+                      "_name": "Producer14",
+                      "_destinationName": "direct://amq.direct//testQueue14",
+                      "_messageSize": 256,
+                      "_deliveryMode": 1,
+                      "_batchSize": 1,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "cconnection14",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "csession14",
+                  "_acknowledgeMode": 0,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer14",
+                      "_destinationName": "direct://amq.direct//testQueue14",
+                      "_batchSize": 1000,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "client15",
+          "_connections":[
+            {
+              "_name": "pconnection15",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "psession15",
+                  "_acknowledgeMode": 0,
+                  "_producers": [
+                    {
+                      "_name": "Producer15",
+                      "_destinationName": "direct://amq.direct//testQueue15",
+                      "_messageSize": 256,
+                      "_deliveryMode": 1,
+                      "_batchSize": 1,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "cconnection15",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "csession15",
+                  "_acknowledgeMode": 0,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer15",
+                      "_destinationName": "direct://amq.direct//testQueue15",
+                      "_batchSize": 1000,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "client16",
+          "_connections":[
+            {
+              "_name": "pconnection16",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "psession16",
+                  "_acknowledgeMode": 0,
+                  "_producers": [
+                    {
+                      "_name": "Producer16",
+                      "_destinationName": "direct://amq.direct//testQueue16",
+                      "_messageSize": 256,
+                      "_deliveryMode": 1,
+                      "_batchSize": 1,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_name": "cconnection16",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "csession16",
+                  "_acknowledgeMode": 0,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer16",
+                      "_destinationName": "direct://amq.direct//testQueue16",
+                      "_batchSize": 1000,
+                      "_numberOfMessages": 1500000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }]
+}

@@ -78,17 +78,17 @@ public class TestResultAggregatorTest extends TestCase
         assertMinimalAggregatedResults(
                 aggregatedTestResult.getAllParticipantResult(),
                 TEST1_NAME, TEST1_ITERATION_NUMBER,
-                NUMBER_OF_MESSAGES_CONSUMED_IN_TOTAL);
+                NUMBER_OF_MESSAGES_CONSUMED_IN_TOTAL, 2, 1);
 
         assertMinimalAggregatedResults(
                 aggregatedTestResult.getAllConsumerParticipantResult(),
                 TEST1_NAME, TEST1_ITERATION_NUMBER,
-                NUMBER_OF_MESSAGES_CONSUMED_IN_TOTAL);
+                NUMBER_OF_MESSAGES_CONSUMED_IN_TOTAL, 2, 0);
 
         assertMinimalAggregatedResults(
                 aggregatedTestResult.getAllProducerParticipantResult(),
                 TEST1_NAME, TEST1_ITERATION_NUMBER,
-                NUMBER_OF_MESSAGES_PRODUCED);
+                NUMBER_OF_MESSAGES_PRODUCED, 0, 1);
     }
 
     public void testAggregateResultsWhenParticipantErrored()
@@ -103,11 +103,13 @@ public class TestResultAggregatorTest extends TestCase
         assertEquals(TestResultAggregator.AGGREGATED_ERROR_MESSAGE, aggregatedTestResult.getAllParticipantResult().getErrorMessage());
     }
 
-    private void assertMinimalAggregatedResults(ParticipantResult result, String expectedTestName, int expectedIterationNumber, long expectedNumberOfMessagesProcessed)
+    private void assertMinimalAggregatedResults(ParticipantResult result, String expectedTestName, int expectedIterationNumber, long expectedNumberOfMessagesProcessed, int expectedTotalNumberOfConsumers, int expectedTotalNumberOfProducers)
     {
         assertEquals("Unexpected test name in " + result.getParticipantName(), expectedTestName, result.getTestName());
         assertEquals("Unexpected iteration number in " + result.getParticipantName(), expectedIterationNumber, result.getIterationNumber());
         assertEquals("Unexpected number of messages processed in " + result.getParticipantName(), expectedNumberOfMessagesProcessed, result.getNumberOfMessagesProcessed());
+        assertEquals("Unexpected total number of consumers " + result.getParticipantName(), expectedTotalNumberOfConsumers, result.getTotalNumberOfConsumers());
+        assertEquals("Unexpected total number of producers " + result.getParticipantName(), expectedTotalNumberOfProducers, result.getTotalNumberOfProducers());
     }
 
     private TestResult createResultsFromTest()
@@ -115,25 +117,27 @@ public class TestResultAggregatorTest extends TestCase
         TestResult testResult = new TestResult(TEST1_NAME);
 
         ConsumerParticipantResult consumerResult1 = new ConsumerParticipantResult();
-        setPropertiesOn(consumerResult1, TEST1_NAME, TEST1_ITERATION_NUMBER, CONSUMER_PARTICIPANT_NAME1, NUMBER_OF_MESSAGES_PROCESSED_PER_CONSUMER, PAYLOAD_SIZE, TOTAL_PAYLOAD_PROCESSED_PER_CONSUMER, CONSUMER1_STARTDATE, CONSUMER1_ENDDATE);
+        setPropertiesOn(consumerResult1, TEST1_NAME, TEST1_ITERATION_NUMBER, CONSUMER_PARTICIPANT_NAME1, NUMBER_OF_MESSAGES_PROCESSED_PER_CONSUMER, PAYLOAD_SIZE, TOTAL_PAYLOAD_PROCESSED_PER_CONSUMER, CONSUMER1_STARTDATE, CONSUMER1_ENDDATE, 1, 0);
         testResult.addParticipantResult(consumerResult1);
 
         ConsumerParticipantResult consumerResult2 = new ConsumerParticipantResult();
-        setPropertiesOn(consumerResult2, TEST1_NAME, TEST1_ITERATION_NUMBER, CONSUMER_PARTICIPANT_NAME2, NUMBER_OF_MESSAGES_PROCESSED_PER_CONSUMER, PAYLOAD_SIZE, TOTAL_PAYLOAD_PROCESSED_PER_CONSUMER, CONSUMER2_STARTDATE, CONSUMER2_ENDDATE);
+        setPropertiesOn(consumerResult2, TEST1_NAME, TEST1_ITERATION_NUMBER, CONSUMER_PARTICIPANT_NAME2, NUMBER_OF_MESSAGES_PROCESSED_PER_CONSUMER, PAYLOAD_SIZE, TOTAL_PAYLOAD_PROCESSED_PER_CONSUMER, CONSUMER2_STARTDATE, CONSUMER2_ENDDATE, 1, 0);
         testResult.addParticipantResult(consumerResult2);
 
         ParticipantResult producerResult = new ProducerParticipantResult();
-        setPropertiesOn(producerResult, TEST1_NAME, TEST1_ITERATION_NUMBER, PRODUCER_PARTICIPANT_NAME, NUMBER_OF_MESSAGES_PRODUCED, PAYLOAD_SIZE, TOTAL_PAYLOAD_PRODUCED_IN_TOTAL, PRODUCER_STARTDATE, PRODUCER_ENDDATE);
+        setPropertiesOn(producerResult, TEST1_NAME, TEST1_ITERATION_NUMBER, PRODUCER_PARTICIPANT_NAME, NUMBER_OF_MESSAGES_PRODUCED, PAYLOAD_SIZE, TOTAL_PAYLOAD_PRODUCED_IN_TOTAL, PRODUCER_STARTDATE, PRODUCER_ENDDATE, 0, 1);
         testResult.addParticipantResult(producerResult);
 
         return testResult;
     }
 
-    private void setPropertiesOn(ParticipantResult participantResult, String testName, int iterationNumber, String participantName, long numberOfMessagesProcessed, int payloadSize, long totalPayloadProcessed, long start, long end)
+    private void setPropertiesOn(ParticipantResult participantResult, String testName, int iterationNumber, String participantName, long numberOfMessagesProcessed, int payloadSize, long totalPayloadProcessed, long start, long end, int totalNumberOfConsumers, int totalNumberOfProducers)
     {
         participantResult.setParticipantName(participantName);
         participantResult.setTestName(testName);
         participantResult.setIterationNumber(iterationNumber);
+        participantResult.setTotalNumberOfConsumers(totalNumberOfConsumers);
+        participantResult.setTotalNumberOfProducers(totalNumberOfProducers);
 
         participantResult.setNumberOfMessagesProcessed(numberOfMessagesProcessed);
         participantResult.setPayloadSize(payloadSize);

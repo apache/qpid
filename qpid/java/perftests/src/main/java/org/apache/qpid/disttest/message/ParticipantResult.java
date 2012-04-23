@@ -49,6 +49,10 @@ public class ParticipantResult extends Response
     private int _payloadSize;
     private double _throughput;
 
+    private int _totalNumberOfConsumers;
+    private int _totalNumberOfProducers;
+
+
     public static final Comparator<? super ParticipantResult> PARTICIPANT_NAME_COMPARATOR = new Comparator<ParticipantResult>()
     {
         @Override
@@ -226,6 +230,28 @@ public class ParticipantResult extends Response
     public void setThroughput(double throughput)
     {
         _throughput = throughput;
+    }
+
+    public void setTotalNumberOfConsumers(int totalNumberOfConsumers)
+    {
+        _totalNumberOfConsumers = totalNumberOfConsumers;
+    }
+
+    @OutputAttribute(attribute=ParticipantAttribute.TOTAL_NUMBER_OF_CONSUMERS)
+    public int getTotalNumberOfConsumers()
+    {
+        return _totalNumberOfConsumers;
+    }
+
+    public void setTotalNumberOfProducers(int totalNumberOfProducers)
+    {
+        _totalNumberOfProducers = totalNumberOfProducers;
+    }
+
+    @OutputAttribute(attribute=ParticipantAttribute.TOTAL_NUMBER_OF_PRODUCERS)
+    public int getTotalNumberOfProducers()
+    {
+        return _totalNumberOfProducers;
     }
 
 }

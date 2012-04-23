@@ -179,4 +179,27 @@ public class ParticipantResultAggregatorTest extends TestCase
         assertEquals(0, aggregratedResult.getPayloadSize());
     }
 
+    public void testSumNumberOfConsumerAndProducers() throws Exception
+    {
+        final int expectedNumberOfProducers = 1;
+        final int expectedNumberOfConsumers = 2;
+
+        ParticipantResult result1 = new ParticipantResult();
+        result1.setTotalNumberOfConsumers(1);
+
+        ParticipantResult result2 = new ParticipantResult();
+        result2.setTotalNumberOfConsumers(1);
+
+        ParticipantResult result3 = new ParticipantResult();
+        result2.setTotalNumberOfProducers(1);
+
+        _aggregator.aggregate(result1);
+        _aggregator.aggregate(result2);
+        _aggregator.aggregate(result3);
+
+        ParticipantResult aggregratedResult = _aggregator.getAggregatedResult();
+        assertEquals(expectedNumberOfConsumers, aggregratedResult.getTotalNumberOfConsumers());
+        assertEquals(expectedNumberOfProducers, aggregratedResult.getTotalNumberOfProducers());
+    }
+
 }

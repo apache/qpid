@@ -35,14 +35,17 @@ public class ParticipantResultAggregator
     private long _numberOfMessagesProcessed = 0;
     private long _totalPayloadProcessed = 0;
 
+    private int _totalNumberOfConsumers = 0;
+    private int _totalNumberOfProducers = 0;
+
     private NavigableSet<Integer> _encounteredPayloadSizes = new TreeSet<Integer>();
     private NavigableSet<Integer> _encounteredIterationNumbers = new TreeSet<Integer>();
     private NavigableSet<String> _encountedTestNames = new TreeSet<String>();
 
-    public ParticipantResultAggregator(Class<? extends ParticipantResult> taregtClass, String aggregateResultName)
+    public ParticipantResultAggregator(Class<? extends ParticipantResult> targetClass, String aggregateResultName)
     {
         _aggregatedResultName = aggregateResultName;
-        _targetClass = taregtClass;
+        _targetClass = targetClass;
     }
 
     public void aggregate(ParticipantResult result)
@@ -73,6 +76,8 @@ public class ParticipantResultAggregator
     {
         _numberOfMessagesProcessed += result.getNumberOfMessagesProcessed();
         _totalPayloadProcessed += result.getTotalPayloadProcessed();
+        _totalNumberOfConsumers += result.getTotalNumberOfConsumers();
+        _totalNumberOfProducers += result.getTotalNumberOfProducers();
         _minStartDate = Math.min(_minStartDate, result.getStartInMillis());
         _maxEndDate = Math.max(_maxEndDate, result.getEndInMillis());
     }
@@ -91,6 +96,8 @@ public class ParticipantResultAggregator
     {
         aggregatedResult.setNumberOfMessagesProcessed(_numberOfMessagesProcessed);
         aggregatedResult.setTotalPayloadProcessed(_totalPayloadProcessed);
+        aggregatedResult.setTotalNumberOfConsumers(_totalNumberOfConsumers);
+        aggregatedResult.setTotalNumberOfProducers(_totalNumberOfProducers);
         aggregatedResult.setStartDate(new Date(_minStartDate));
         aggregatedResult.setEndDate(new Date(_maxEndDate));
         aggregatedResult.setThroughput(calculateThroughputInKiloBytesPerSecond());

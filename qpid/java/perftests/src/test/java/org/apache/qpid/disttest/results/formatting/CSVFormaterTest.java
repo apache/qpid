@@ -30,16 +30,18 @@ import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_SYNCHRONO
 import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_TOPIC;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.ITERATION_NUMBER;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.MAXIMUM_DURATION;
-import static org.apache.qpid.disttest.message.ParticipantAttribute.PAYLOAD_SIZE;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.NUMBER_OF_MESSAGES_PROCESSED;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.PARTICIPANT_NAME;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.PAYLOAD_SIZE;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.PRIORITY;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.PRODUCER_INTERVAL;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.PRODUCER_START_DELAY;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.TEST_NAME;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.THROUGHPUT;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.TIME_TAKEN;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.TIME_TO_LIVE;
-import static org.apache.qpid.disttest.message.ParticipantAttribute.THROUGHPUT;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.TOTAL_NUMBER_OF_CONSUMERS;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.TOTAL_NUMBER_OF_PRODUCERS;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.TOTAL_PAYLOAD_PROCESSED;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -56,7 +58,6 @@ import org.apache.qpid.disttest.controller.ResultsForAllTests;
 import org.apache.qpid.disttest.controller.TestResult;
 import org.apache.qpid.disttest.message.ParticipantAttribute;
 import org.apache.qpid.disttest.message.ParticipantResult;
-import org.apache.qpid.disttest.results.formatting.CSVFormater;
 
 public class CSVFormaterTest extends TestCase
 {
@@ -110,6 +111,8 @@ public class CSVFormaterTest extends TestCase
         participantAttributes.put(IS_SELECTOR, false);
         participantAttributes.put(IS_NO_LOCAL, true);
         participantAttributes.put(IS_SYNCHRONOUS_CONSUMER, false);
+        participantAttributes.put(TOTAL_NUMBER_OF_CONSUMERS, 1);
+        participantAttributes.put(TOTAL_NUMBER_OF_PRODUCERS, 2);
         participantAttributes.put(TOTAL_PAYLOAD_PROCESSED, 1024);
         participantAttributes.put(THROUGHPUT, 2048);
         participantAttributes.put(TIME_TAKEN, 1000);
