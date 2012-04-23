@@ -468,6 +468,7 @@ class ReplicationTests(BrokerTest):
         s = primary.connect().session().sender("q; {create:always, node:{x-declare:{arguments:{'qpid.policy_type':ring, 'qpid.max_count':5, 'qpid.priorities':10}}}}")
         priorities = [8,9,5,1,2,2,3,4,9,7,8,9,9,2]
         for p in priorities: s.send(Message(priority=p))
+
         # FIXME aconway 2012-02-22: there is a bug in priority ring
         # queues that allows a low priority message to displace a high
         # one. The following commented-out assert_browse is for the

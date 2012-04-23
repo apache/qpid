@@ -304,7 +304,8 @@
     <!-- Set the fairshare delivery related state of a replicated queue. -->
     <control name="queue-fairshare-state" code="0x38">
       <field name="queue" type="str8"/>
-      <field name="counts" type="map"/>
+      <field name="position" type="uint8"/>
+      <field name="count" type="uint8"/>
     </control>
 
     <!-- Replicate a QueueObserver for a given queue. -->
