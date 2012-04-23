@@ -22,6 +22,7 @@
 #define _QueuedMessage_
 
 #include "qpid/broker/Message.h"
+#include "BrokerImportExport.h"
 #include <iosfwd>
 
 namespace qpid {
@@ -48,7 +49,7 @@ inline bool operator<(const QueuedMessage& a, const QueuedMessage& b) {
     return a.position < b.position;
 }
 
-std::ostream& operator<<(std::ostream&, const QueuedMessage&);
+QPID_BROKER_EXTERN std::ostream& operator<<(std::ostream&, const QueuedMessage&);
 }}
 
 
