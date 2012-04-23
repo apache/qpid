@@ -1625,9 +1625,14 @@ Manageable::status_t Queue::ManagementMethod (uint32_t methodId, Args& args, str
         {
             _qmf::ArgsQueueReroute& rerouteArgs = (_qmf::ArgsQueueReroute&) args;
             boost::shared_ptr<Exchange> dest;
-            if (rerouteArgs.i_useAltExchange)
+            if (rerouteArgs.i_useAltExchange) {
+                if (!alternateExchange) {
+                    status = Manageable::STATUS_PARAMETER_INVALID;
+                    etext = "No alternate-exchange defined";
+                    break;
+                }
                 dest = alternateExchange;
-            else {
+            } else {
                 try {
                     dest = broker->getExchanges().get(rerouteArgs.i_exchange);
                 } catch(const std::exception&) {
