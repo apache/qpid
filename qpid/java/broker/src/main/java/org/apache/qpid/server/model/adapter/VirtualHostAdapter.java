@@ -226,28 +226,20 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
     public Queue createQueue(final String name,
                              final State initialState,
                              final boolean durable,
+                             boolean exclusive,
                              final LifetimePolicy lifetime,
                              final long ttl,
                              final Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException
     {
-        boolean exclusive = false;
-        String owner;
+        String owner = null;
         if(exclusive)
-        {
-            owner = null;
-        }
-        else
         {
             Set<Principal> principals =
                     SecurityManager.getThreadSubject().getPrincipals();
             if(principals != null && !principals.isEmpty())
             {
                 owner = principals.iterator().next().getName();
-            }
-            else
-            {
-                owner = null;
             }
         }
         try
@@ -256,7 +248,8 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
                     AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateUUID(name, _virtualHost.getName()), name,
                                                        durable, owner, lifetime == LifetimePolicy.AUTO_DELETE,
                                                        exclusive, _virtualHost, attributes);
-            _virtualHost.getQueueRegistry().registerQueue(queue);
+            _virtualHost.getBindingFactory().addBinding(name, queue, _virtualHost.getExchangeRegistry().getDefaultExchange(), null);
+
             if(durable)
             {
                 _virtualHost.getMessageStore().createQueue(queue, FieldTable.convertToFieldTable(attributes));

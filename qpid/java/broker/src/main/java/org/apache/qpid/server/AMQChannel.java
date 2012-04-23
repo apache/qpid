@@ -264,6 +264,11 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
         return _txnCount.get();
     }
 
+    public Long getTxnStart()
+    {
+        return _txnStarts.get();
+    }
+
     public int getChannelId()
     {
         return _channelId;

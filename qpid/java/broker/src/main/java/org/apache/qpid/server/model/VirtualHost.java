@@ -124,7 +124,7 @@ public interface VirtualHost extends ConfiguredObject
             throws AccessControlException, IllegalArgumentException;
 
     Queue createQueue(String name, State initialState, boolean durable,
-                      LifetimePolicy lifetime, long ttl, Map<String, Object> attributes)
+                      boolean exclusive, LifetimePolicy lifetime, long ttl, Map<String, Object> attributes)
                     throws AccessControlException, IllegalArgumentException;
 
     void deleteQueue(Queue queue) throws AccessControlException, IllegalStateException;

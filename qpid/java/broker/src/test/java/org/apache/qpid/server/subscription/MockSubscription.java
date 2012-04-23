@@ -399,6 +399,12 @@ public class MockSubscription implements Subscription
         }
 
         @Override
+        public Long getTxnStart()
+        {
+            return null;
+        }
+
+        @Override
         public Long getTxnCommits()
         {
             return null;

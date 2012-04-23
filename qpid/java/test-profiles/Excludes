@@ -37,3 +37,16 @@ org.apache.qpid.systest.disttest.clientonly.*
 org.apache.qpid.systest.disttest.controlleronly.*
 org.apache.qpid.systest.disttest.controllerandclient.*
 org.apache.qpid.systest.disttest.endtoend.*
+
+
+//Temp Excludes for branch
+org.apache.qpid.management.jmx.ManagementActorLoggingTest#*
+org.apache.qpid.management.jmx.ManagedConnectionMBeanTest#testCommit
+org.apache.qpid.management.jmx.ManagedConnectionMBeanTest#testRollback
+# Combination of ServerInformation mbean not being ported yet and possible change in statistics behaviour
+org.apache.qpid.management.jmx.MessageConnectionStatisticsTest#*
+org.apache.qpid.management.jmx.MessageStatisticsConfigurationTest#*
+org.apache.qpid.management.jmx.MessageStatisticsDeliveryTest#*
+org.apache.qpid.management.jmx.MessageStatisticsTest#*
+# Expects management log messages in SystemOut that arent present anymore due to move to plugin
+org.apache.qpid.server.logging.ManagementLoggingTest#*

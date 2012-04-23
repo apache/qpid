@@ -114,7 +114,7 @@ public class QueueServlet extends AbstractServlet
                 attributes.remove("durable");
                 attributes.remove("auto_delete");
 
-                vhost.createQueue(queueName, State.ACTIVE, isDurable,
+                vhost.createQueue(queueName, State.ACTIVE, isDurable, false,
                                      isAutoDelete ? LifetimePolicy.AUTO_DELETE : LifetimePolicy.PERMANENT,
                                      0l,
                                      attributes);

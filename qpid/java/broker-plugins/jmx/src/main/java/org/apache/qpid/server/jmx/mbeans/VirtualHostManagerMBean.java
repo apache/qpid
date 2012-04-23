@@ -27,12 +27,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
 import javax.management.JMException;
 import javax.management.MBeanException;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
+
+import org.apache.qpid.AMQException;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
-import org.apache.qpid.management.common.mbeans.ManagedExchange;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
@@ -140,7 +142,15 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
         }
         if(theExchange != null)
         {
-            theExchange.delete();
+            try
+            {
+                theExchange.delete();
+            }
+            catch (IllegalStateException ex)
+            {
+                final JMException jme = new JMException(ex.toString());
+                throw new MBeanException(jme, "Error in unregistering exchange " + exchangeName);
+            }
         }
     }
 
@@ -154,7 +164,7 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
             throws IOException, JMException
     {
         // TODO - ignores owner (not sure that this isn't actually a good thing though)
-        getConfiguredObject().createQueue(queueName, State.ACTIVE,durable, LifetimePolicy.PERMANENT,0l, arguments);
+        getConfiguredObject().createQueue(queueName, State.ACTIVE, durable, false, LifetimePolicy.PERMANENT, 0l, arguments);
     }
 
     public void deleteQueue(

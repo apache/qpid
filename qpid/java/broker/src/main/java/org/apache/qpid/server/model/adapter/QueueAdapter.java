@@ -326,7 +326,7 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         }
         else if(OWNER.equals(name))
         {
-            // TODO
+            return _queue.getOwner() == null ? null : _queue.getOwner().asString();
         }
         else if(QUEUE_FLOW_CONTROL_SIZE_BYTES.equals(name))
         {

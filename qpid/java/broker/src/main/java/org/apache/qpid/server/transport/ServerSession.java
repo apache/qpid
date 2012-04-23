@@ -631,6 +631,11 @@ public class ServerSession extends Session
         return _txnCount.get();
     }
 
+    public Long getTxnStart()
+    {
+        return _txnStarts.get();
+    }
+
     public Principal getAuthorizedPrincipal()
     {
         return getConnection().getAuthorizedPrincipal();
@@ -1027,5 +1032,4 @@ public class ServerSession extends Session
     {
         return getId().compareTo(session.getId());
     }
-
 }

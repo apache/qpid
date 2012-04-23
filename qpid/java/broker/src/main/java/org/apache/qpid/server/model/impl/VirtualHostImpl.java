@@ -182,7 +182,7 @@ class VirtualHostImpl extends AbstractConfiguredObject implements VirtualHost
 
 
     public Queue createQueue(String name, State initialState,boolean durable,
-                                   LifetimePolicy lifetime, long ttl, Map<String, Object> attributes)
+                                   boolean exclusive, LifetimePolicy lifetime, long ttl, Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException
     {
         // TODO - check name is valid and not reserved

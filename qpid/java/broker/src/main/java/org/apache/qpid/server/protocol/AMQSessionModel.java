@@ -55,7 +55,7 @@ public interface AMQSessionModel extends Comparable<AMQSessionModel>
      * is logged or the connection is closed, depending on the configuration. An open
      * transaction is one that has recent activity. The transaction age is counted
      * from the time the transaction was started. An idle transaction is one that 
-     * has had no activity, such as publishing or acknowledgeing messages.
+     * has had no activity, such as publishing or acknowledging messages.
      * 
      * @param openWarn time in milliseconds before alerting on open transaction
      * @param openClose time in milliseconds before closing connection with open transaction
@@ -74,6 +74,7 @@ public interface AMQSessionModel extends Comparable<AMQSessionModel>
     int getUnacknowledgedMessageCount();
 
     Long getTxnCount();
+    Long getTxnStart();
     Long getTxnCommits();
     Long getTxnRejects();
 

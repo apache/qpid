@@ -190,7 +190,7 @@ final class SessionAdapter extends AbstractAdapter implements Session
             }
             else if(name.equals(LOCAL_TRANSACTION_BEGINS))
             {
-                return _session.getTxnCount();
+                return _session.getTxnStart();
             }
             else if(name.equals(LOCAL_TRANSACTION_OPEN))
             {

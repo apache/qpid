@@ -55,7 +55,7 @@ public class VirtualHostImplTest extends TestCase
     {
         _virtualHost.addChangeListener(_childAddedRemovedListener);
 
-        Queue queue = _virtualHost.createQueue("queue", State.INITIALISING, true, LifetimePolicy.PERMANENT, 0, EMPTY_ATTRIBUTE_MAP);
+        Queue queue = _virtualHost.createQueue("queue", State.INITIALISING, true, false, LifetimePolicy.PERMANENT, 0, EMPTY_ATTRIBUTE_MAP);
 
         verify(_childAddedRemovedListener).childAdded(_virtualHost, queue);
         verifyNoMoreInteractions(_childAddedRemovedListener);
@@ -78,7 +78,7 @@ public class VirtualHostImplTest extends TestCase
 
     public void testQueueDeletedTwiceDisallowed()
     {
-        Queue queue = _virtualHost.createQueue("queue", State.INITIALISING, true, LifetimePolicy.PERMANENT, 0, EMPTY_ATTRIBUTE_MAP);
+        Queue queue = _virtualHost.createQueue("queue", State.INITIALISING, true, false, LifetimePolicy.PERMANENT, 0, EMPTY_ATTRIBUTE_MAP);
 
         _virtualHost.deleteQueue(queue);
 
