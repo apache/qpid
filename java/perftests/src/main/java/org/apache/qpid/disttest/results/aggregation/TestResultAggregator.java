@@ -79,19 +79,21 @@ public class TestResultAggregator
     }
 
     private ParticipantResult buildAllResultFromOtherAggregatedResults(
-            ParticipantResult aggregatedProducerResult, ParticipantResult aggregaredConsumerResult)
+            ParticipantResult aggregatedProducerResult, ParticipantResult aggregatedConsumerResult)
     {
         ParticipantResult aggregatedAllResult = new ParticipantResult(ALL_PARTICIPANTS_NAME);
         aggregatedAllResult.setStartDate(aggregatedProducerResult.getStartDate());
 
-        aggregatedAllResult.setEndDate(aggregaredConsumerResult.getEndDate());
+        aggregatedAllResult.setEndDate(aggregatedConsumerResult.getEndDate());
 
-        aggregatedAllResult.setIterationNumber(aggregaredConsumerResult.getIterationNumber());
-        aggregatedAllResult.setTestName(aggregaredConsumerResult.getTestName());
-        aggregatedAllResult.setNumberOfMessagesProcessed(aggregaredConsumerResult.getNumberOfMessagesProcessed());
-        aggregatedAllResult.setPayloadSize(aggregaredConsumerResult.getPayloadSize());
-        aggregatedAllResult.setTotalPayloadProcessed(aggregaredConsumerResult.getTotalPayloadProcessed());
-        aggregatedAllResult.setThroughput(aggregaredConsumerResult.getThroughput());
+        aggregatedAllResult.setIterationNumber(aggregatedConsumerResult.getIterationNumber());
+        aggregatedAllResult.setTestName(aggregatedConsumerResult.getTestName());
+        aggregatedAllResult.setNumberOfMessagesProcessed(aggregatedConsumerResult.getNumberOfMessagesProcessed());
+        aggregatedAllResult.setPayloadSize(aggregatedConsumerResult.getPayloadSize());
+        aggregatedAllResult.setTotalPayloadProcessed(aggregatedConsumerResult.getTotalPayloadProcessed());
+        aggregatedAllResult.setThroughput(aggregatedConsumerResult.getThroughput());
+        aggregatedAllResult.setTotalNumberOfProducers(aggregatedProducerResult.getTotalNumberOfProducers());
+        aggregatedAllResult.setTotalNumberOfConsumers(aggregatedConsumerResult.getTotalNumberOfConsumers());
 
         return aggregatedAllResult;
     }

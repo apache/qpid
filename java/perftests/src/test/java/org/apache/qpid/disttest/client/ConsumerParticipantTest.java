@@ -18,7 +18,7 @@
  */
 package org.apache.qpid.disttest.client;
 
-import static org.apache.qpid.disttest.client.ParticipantTestHelper.assertExpectedResults;
+import static org.apache.qpid.disttest.client.ParticipantTestHelper.assertExpectedConsumerResults;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
@@ -104,7 +104,7 @@ public class ConsumerParticipantTest extends TestCase
 
         ParticipantResult result = _consumerParticipant.doIt(CLIENT_NAME);
 
-        assertExpectedResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, numberOfMessages, PAYLOAD_SIZE_PER_MESSAGE, totalPayloadSize, null);
+        assertExpectedConsumerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, numberOfMessages, PAYLOAD_SIZE_PER_MESSAGE, totalPayloadSize, null);
 
         _inOrder.verify(_delegate).consumeMessage(PARTICIPANT_NAME1, RECEIVE_TIMEOUT);
         _inOrder.verify(_delegate).calculatePayloadSizeFrom(_mockMessage);
@@ -118,7 +118,7 @@ public class ConsumerParticipantTest extends TestCase
 
         ParticipantResult result = _consumerParticipant.doIt(CLIENT_NAME);
 
-        assertExpectedResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, null, PAYLOAD_SIZE_PER_MESSAGE, null, duration);
+        assertExpectedConsumerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, null, PAYLOAD_SIZE_PER_MESSAGE, null, duration);
 
         verify(_delegate, atLeastOnce()).consumeMessage(PARTICIPANT_NAME1, RECEIVE_TIMEOUT);
         verify(_delegate, atLeastOnce()).calculatePayloadSizeFrom(_mockMessage);
@@ -134,7 +134,7 @@ public class ConsumerParticipantTest extends TestCase
 
         ParticipantResult result = _consumerParticipant.doIt(CLIENT_NAME);
 
-        assertExpectedResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, numberOfMessages, PAYLOAD_SIZE_PER_MESSAGE, totalPayloadSize, null);
+        assertExpectedConsumerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, numberOfMessages, PAYLOAD_SIZE_PER_MESSAGE, totalPayloadSize, null);
 
         verify(_delegate, times(numberOfMessages)).consumeMessage(PARTICIPANT_NAME1, RECEIVE_TIMEOUT);
         verify(_delegate, times(numberOfMessages)).calculatePayloadSizeFrom(_mockMessage);
@@ -157,7 +157,7 @@ public class ConsumerParticipantTest extends TestCase
 
         final int expectedPayloadResultPayloadSize = 0;
         final long totalPayloadSize = firstPayloadSize + secondPayloadSize + thirdPayloadSize;
-        assertExpectedResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, numberOfMessages, expectedPayloadResultPayloadSize, totalPayloadSize, null);
+        assertExpectedConsumerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, numberOfMessages, expectedPayloadResultPayloadSize, totalPayloadSize, null);
 
         verify(_delegate, times(numberOfMessages)).consumeMessage(PARTICIPANT_NAME1, RECEIVE_TIMEOUT);
         verify(_delegate, times(numberOfMessages)).calculatePayloadSizeFrom(_mockMessage);

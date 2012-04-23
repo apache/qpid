@@ -18,7 +18,7 @@
  */
 package org.apache.qpid.disttest.client;
 
-import static org.apache.qpid.disttest.client.ParticipantTestHelper.assertExpectedResults;
+import static org.apache.qpid.disttest.client.ParticipantTestHelper.assertExpectedProducerResults;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.inOrder;
@@ -87,7 +87,7 @@ public class ProducerParticipantTest extends TestCase
         ParticipantResult result = _producer.doIt(CLIENT_NAME);
 
         long expectedPublishedStartTime = _testStartTime + delay;
-        assertExpectedResults(result, PARTICIPANT_NAME1, CLIENT_NAME, expectedPublishedStartTime, numberOfMessages, PAYLOAD_SIZE_PER_MESSAGE, totalPayloadSize, null);
+        assertExpectedProducerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, expectedPublishedStartTime, numberOfMessages, PAYLOAD_SIZE_PER_MESSAGE, totalPayloadSize, null);
     }
 
 
@@ -120,7 +120,7 @@ public class ProducerParticipantTest extends TestCase
         _command.setDeliveryMode(deliveryMode);
 
         ParticipantResult result = (ParticipantResult) _producer.doIt(CLIENT_NAME);
-        assertExpectedResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, numberOfMessages, PAYLOAD_SIZE_PER_MESSAGE, totalPayloadSize, null);
+        assertExpectedProducerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, numberOfMessages, PAYLOAD_SIZE_PER_MESSAGE, totalPayloadSize, null);
 
         _inOrder.verify(_delegate).sendNextMessage(isA(CreateProducerCommand.class));
         _inOrder.verify(_delegate).calculatePayloadSizeFrom(_mockMessage);
@@ -134,7 +134,7 @@ public class ProducerParticipantTest extends TestCase
         _command.setMaximumDuration(duration);
 
         ParticipantResult result = _producer.doIt(CLIENT_NAME);
-        assertExpectedResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, null, PAYLOAD_SIZE_PER_MESSAGE, null, duration);
+        assertExpectedProducerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, null, PAYLOAD_SIZE_PER_MESSAGE, null, duration);
 
         verify(_delegate, atLeastOnce()).sendNextMessage(isA(CreateProducerCommand.class));
         verify(_delegate, atLeastOnce()).calculatePayloadSizeFrom(_mockMessage);
@@ -151,7 +151,7 @@ public class ProducerParticipantTest extends TestCase
         _command.setBatchSize(3);
 
         ParticipantResult result = _producer.doIt(CLIENT_NAME);
-        assertExpectedResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, numberOfMessages, PAYLOAD_SIZE_PER_MESSAGE, totalPayloadSize, null);
+        assertExpectedProducerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, numberOfMessages, PAYLOAD_SIZE_PER_MESSAGE, totalPayloadSize, null);
 
         verify(_delegate, times(numberOfMessages)).sendNextMessage(isA(CreateProducerCommand.class));
         verify(_delegate, times(numberOfMessages)).calculatePayloadSizeFrom(_mockMessage);
@@ -172,7 +172,7 @@ public class ProducerParticipantTest extends TestCase
         _command.setInterval(publishInterval);
 
         ParticipantResult result = _producer.doIt(CLIENT_NAME);
-        assertExpectedResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, numberOfMessages, null, totalPayloadSize, expectedTimeToRunTest);
+        assertExpectedProducerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, numberOfMessages, null, totalPayloadSize, expectedTimeToRunTest);
 
         verify(_delegate, times(numberOfMessages)).sendNextMessage(isA(CreateProducerCommand.class));
         verify(_delegate, times(numberOfMessages)).calculatePayloadSizeFrom(_mockMessage);
@@ -196,7 +196,7 @@ public class ProducerParticipantTest extends TestCase
         ParticipantResult result = _producer.doIt(CLIENT_NAME);
 
         final int expectedPayloadResultPayloadSize = 0;
-        assertExpectedResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, numberOfMessages, expectedPayloadResultPayloadSize, totalPayloadSize, null);
+        assertExpectedProducerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, numberOfMessages, expectedPayloadResultPayloadSize, totalPayloadSize, null);
 
         verify(_delegate, times(numberOfMessages)).sendNextMessage(isA(CreateProducerCommand.class));
         verify(_delegate, times(numberOfMessages)).calculatePayloadSizeFrom(_mockMessage);

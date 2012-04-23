@@ -172,3 +172,8 @@ org.apache.qpid.scripts.QpidPasswdTest#*
 
 // QPID-3604: Immediate Prefetch no longer supported by 0-10
 org.apache.qpid.client.AsynchMessageListenerTest#testImmediatePrefetchWithMessageListener
+
+// QPID-3936: Exclude Performance Test Framework tests
+org.apache.qpid.systest.disttest.*
+org.apache.qpid.disttest.*
+

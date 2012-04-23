@@ -76,6 +76,9 @@ public class ParticipantResultFactoryTest extends TestCase
         long timeToLive = 60;
         command.setTimeToLive(timeToLive);
 
+        int totalNumberOfConsumers = 0;
+        int totalNumberOfProducers = 1;
+
         ProducerParticipantResult result = _participantResultFactory.createForProducer(PARTICIPANT_NAME,
                                                                                        REGISTERED_CLIENT_NAME,
                                                                                        command,
@@ -92,6 +95,8 @@ public class ParticipantResultFactoryTest extends TestCase
         assertEquals(producerInterval, result.getInterval());
         assertEquals(producerStartDelay, result.getStartDelay());
         assertEquals(timeToLive, result.getTimeToLive());
+        assertEquals(totalNumberOfConsumers, result.getTotalNumberOfConsumers());
+        assertEquals(totalNumberOfProducers, result.getTotalNumberOfProducers());
     }
 
     public void testCreateForConsumer()
@@ -118,6 +123,9 @@ public class ParticipantResultFactoryTest extends TestCase
         boolean synchronousConsumer = true;
         command.setSynchronous(synchronousConsumer);
 
+        int totalNumberOfConsumers = 1;
+        int totalNumberOfProducers = 0;
+
         ConsumerParticipantResult result = _participantResultFactory.createForConsumer(PARTICIPANT_NAME,
                                                                                        REGISTERED_CLIENT_NAME,
                                                                                        command,
@@ -135,6 +143,8 @@ public class ParticipantResultFactoryTest extends TestCase
         assertEquals(isSelector,             result.isSelector());
         assertEquals(noLocal,                result.isNoLocal());
         assertEquals(synchronousConsumer,    result.isSynchronousConsumer());
+        assertEquals(totalNumberOfConsumers, result.getTotalNumberOfConsumers());
+        assertEquals(totalNumberOfProducers, result.getTotalNumberOfProducers());
     }
 
     public void testCreateForError()

@@ -18,6 +18,9 @@
  */
 package org.apache.qpid.disttest.controller;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 import junit.framework.TestCase;
 
 import org.apache.qpid.disttest.DistributedTestException;
@@ -25,6 +28,8 @@ import org.apache.qpid.disttest.DistributedTestException;
 public class ClientRegistryTest extends TestCase
 {
     private static final String CLIENT1_REGISTERED_NAME = "CLIENT1_REGISTERED_NAME";
+    private static final String CLIENT2_REGISTERED_NAME = "CLIENT2_REGISTERED_NAME";
+    private static final int AWAIT_DELAY = 100;
 
     private ClientRegistry _clientRegistry = new ClientRegistry();
 
@@ -51,7 +56,44 @@ public class ClientRegistryTest extends TestCase
         }
     }
 
+    public void testAwaitOneClientWhenClientNotRegistered()
+    {
+        int numberOfClientsAbsent = _clientRegistry.awaitClients(1, AWAIT_DELAY);
+        assertEquals(1, numberOfClientsAbsent);
+    }
 
+    public void testAwaitOneClientWhenClientAlreadyRegistered()
+    {
+        _clientRegistry.registerClient(CLIENT1_REGISTERED_NAME);
 
+        int numberOfClientsAbsent = _clientRegistry.awaitClients(1, AWAIT_DELAY);
+        assertEquals(0, numberOfClientsAbsent);
+    }
 
+    public void testAwaitTwoClientWhenClientRegistersWhilstWaiting()
+    {
+        _clientRegistry.registerClient(CLIENT1_REGISTERED_NAME);
+        registerClientLater(CLIENT2_REGISTERED_NAME, 50);
+
+        int numberOfClientsAbsent = _clientRegistry.awaitClients(2, AWAIT_DELAY);
+        assertEquals(0, numberOfClientsAbsent);
+    }
+
+    private void registerClientLater(final String clientName, long delayInMillis)
+    {
+        doLater(new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                _clientRegistry.registerClient(clientName);
+            }
+        }, delayInMillis);
+    }
+
+    private void doLater(TimerTask task, long delayInMillis)
+    {
+        Timer timer = new Timer();
+        timer.schedule(task, delayInMillis);
+    }
 }

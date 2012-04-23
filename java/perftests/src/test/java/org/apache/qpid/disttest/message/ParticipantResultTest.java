@@ -18,7 +18,7 @@
  */
 package org.apache.qpid.disttest.message;
 
-import static org.apache.qpid.disttest.message.ParticipantAttribute.BATCH_SIZE;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.*;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.CONFIGURED_CLIENT_NAME;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.DELIVERY_MODE;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.ERROR_MESSAGE;
@@ -67,6 +67,9 @@ public class ParticipantResultTest extends TestCase
         long endTime = startTime + timeTaken;
         long maximumDuration = 1000;
 
+        int totalNumberOfConsumers = 1;
+        int totalNumberOfProducers = 1;
+
         result.setParticipantName(participantName);
         result.setTestName(testName);
         result.setIterationNumber(iterationNumber);
@@ -74,11 +77,14 @@ public class ParticipantResultTest extends TestCase
 
         result.setNumberOfMessagesProcessed(numberOfMessages);
         result.setConfiguredClientName(clientConfiguredName);
-        result.setBatchSize(10);
+        result.setBatchSize(batchSize);
 
         result.setStartDate(new Date(startTime));
         result.setEndDate(new Date(endTime));
         result.setMaximumDuration(maximumDuration);
+
+        result.setTotalNumberOfConsumers(totalNumberOfConsumers);
+        result.setTotalNumberOfProducers(totalNumberOfProducers);
 
         result.setErrorMessage(errorMessage);
 
@@ -87,8 +93,12 @@ public class ParticipantResultTest extends TestCase
         assertEquals(clientConfiguredName,   result.getAttributes().get(CONFIGURED_CLIENT_NAME));
         assertEquals(numberOfMessages,       result.getAttributes().get(NUMBER_OF_MESSAGES_PROCESSED));
         assertEquals(timeTaken,              result.getAttributes().get(TIME_TAKEN));
+        assertEquals(timeTaken,              result.getAttributes().get(TIME_TAKEN));
+        assertEquals(timeTaken,              result.getAttributes().get(TIME_TAKEN));
         assertEquals(batchSize,              result.getAttributes().get(BATCH_SIZE));
         assertEquals(maximumDuration,        result.getAttributes().get(MAXIMUM_DURATION));
+        assertEquals(totalNumberOfConsumers, result.getAttributes().get(TOTAL_NUMBER_OF_CONSUMERS));
+        assertEquals(totalNumberOfProducers, result.getAttributes().get(TOTAL_NUMBER_OF_PRODUCERS));
         assertEquals(errorMessage,           result.getAttributes().get(ERROR_MESSAGE));
         assertEquals(iterationNumber,         result.getAttributes().get(ITERATION_NUMBER));
     }
