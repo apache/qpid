@@ -156,7 +156,7 @@ class Connection :
                         uint32_t credit);
 
     void queuePosition(const std::string&, const framing::SequenceNumber&);
-    void queueFairshareState(const std::string&, const framing::FieldTable& count);
+    void queueFairshareState(const std::string&, const uint8_t priority, const uint8_t count);
     void queueObserverState(const std::string&, const std::string&, const framing::FieldTable&);
 
     void txStart();
