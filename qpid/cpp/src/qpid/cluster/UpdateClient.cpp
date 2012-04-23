@@ -389,9 +389,9 @@ void UpdateClient::updateQueue(client::AsyncSession& s, const boost::shared_ptr<
     q->eachMessage(boost::bind(&MessageUpdater::updateQueuedMessage, &updater, _1));
     q->eachBinding(boost::bind(&UpdateClient::updateBinding, this, s, q->getName(), _1));
     ClusterConnectionProxy(s).queuePosition(q->getName(), q->getPosition());
-    qpid::framing::FieldTable counts;
-    if (qpid::broker::Fairshare::getState(q->getMessages(), counts)) {
-        ClusterConnectionProxy(s).queueFairshareState(q->getName(), counts);
+    uint priority, count;
+    if (qpid::broker::Fairshare::getState(q->getMessages(), priority, count)) {
+        ClusterConnectionProxy(s).queueFairshareState(q->getName(), priority, count);
     }
 
     ClusterConnectionProxy(s).queueDequeueSincePurgeState(q->getName(), q->getDequeueSincePurge());
