@@ -271,6 +271,19 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
         }
     }
 
+    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    {
+        if(childClass == Session.class)
+        {
+            throw new IllegalStateException();
+        }
+        else
+        {
+            throw new IllegalArgumentException("Cannot create a child of class " + childClass.getSimpleName());
+        }
+
+    }
+
     private class ConnectionStatisticsAdapter extends StatisticsAdapter
     {
         public ConnectionStatisticsAdapter(StatisticsGatherer applicationRegistry)

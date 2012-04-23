@@ -21,6 +21,7 @@
 
 package org.apache.qpid.server.model.adapter;
 
+import java.util.Map;
 import org.apache.qpid.server.model.AuthenticationMethod;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -131,5 +132,11 @@ public class VirtualHostAliasAdapter  extends AbstractAdapter implements Virtual
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
         return Collections.emptySet();
+    }
+
+    @Override
+    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    {
+        throw new UnsupportedOperationException();
     }
 }

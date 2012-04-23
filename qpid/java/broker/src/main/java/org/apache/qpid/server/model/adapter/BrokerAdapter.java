@@ -130,6 +130,12 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
         return null;  //TODO
     }
 
+    public VirtualHost createVirtualHost(final Map<String, Object> attributes)
+            throws AccessControlException, IllegalArgumentException
+    {
+        return null;  //TODO
+    }
+    
     public void deleteVirtualHost(final VirtualHost vhost)
         throws AccessControlException, IllegalStateException
     {
@@ -210,6 +216,39 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
         }
 
         return Collections.emptySet();
+    }
+
+    @Override
+    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    {
+        if(childClass == VirtualHost.class)
+        {
+            return (C) createVirtualHost(attributes);
+        }
+        else if(childClass == Port.class)
+        {
+            return (C) createPort(attributes);
+        }
+        else if(childClass == AuthenticationProvider.class)
+        {
+            return (C) createAuthenticationProvider(attributes);
+        }
+        else
+        {
+            throw new IllegalArgumentException("Cannot create child of class " + childClass.getSimpleName());
+        }
+    }
+
+    private Port createPort(Map<String, Object> attributes)
+    {
+        // TODO
+        return null;
+    }
+    
+    private AuthenticationProvider createAuthenticationProvider(Map<String,Object> attributes)
+    {
+        // TODO
+        return null;
     }
 
 

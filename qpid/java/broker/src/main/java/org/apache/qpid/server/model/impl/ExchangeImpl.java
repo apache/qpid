@@ -21,6 +21,7 @@
 package org.apache.qpid.server.model.impl;
 
 import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Publisher;
@@ -104,5 +105,11 @@ class ExchangeImpl extends AbstractConfiguredObject implements Exchange
     public Statistics getStatistics()
     {
         return null; // TODO
+    }
+
+    @Override
+    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    {
+        throw new UnsupportedOperationException(); //TODO
     }
 }

@@ -129,6 +129,12 @@ final class BindingAdapter extends AbstractAdapter implements Binding
         return Collections.emptySet();
     }
 
+    @Override
+    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    {
+        throw new IllegalArgumentException("Cannot add children to a binding");
+    }
+
     public Map<String, Object> getArguments()
     {
         return new HashMap<String, Object> (_binding.getArguments());

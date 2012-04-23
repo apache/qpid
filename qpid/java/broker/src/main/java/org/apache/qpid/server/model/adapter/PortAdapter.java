@@ -21,6 +21,7 @@
 
 package org.apache.qpid.server.model.adapter;
 
+import java.util.Map;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -239,6 +240,12 @@ public class PortAdapter extends AbstractAdapter implements Port
         {
             return Collections.emptySet();
         }
+    }
+
+    @Override
+    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    {
+        throw new UnsupportedOperationException();
     }
 
     @Override

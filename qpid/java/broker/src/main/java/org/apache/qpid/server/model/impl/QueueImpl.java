@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
@@ -89,5 +90,11 @@ class QueueImpl extends AbstractConfiguredObject implements Queue
     public Statistics getStatistics()
     {
         return null;  //TODO
+    }
+
+    @Override
+    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    {
+        throw new UnsupportedOperationException(); // TODO
     }
 }

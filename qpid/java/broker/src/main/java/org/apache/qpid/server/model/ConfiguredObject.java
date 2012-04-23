@@ -22,6 +22,7 @@ package org.apache.qpid.server.model;
 
 import java.security.AccessControlException;
 import java.util.Collection;
+import java.util.Map;
 import java.util.UUID;
 
 public interface ConfiguredObject
@@ -237,4 +238,9 @@ public interface ConfiguredObject
      *
      */
     <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz);
+
+
+    <C extends ConfiguredObject> C createChild(Class<C> childClass,
+                                               Map<String, Object> attributes,
+                                               ConfiguredObject... otherParents);
 }

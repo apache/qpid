@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 
+import java.util.Map;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Publisher;
@@ -161,6 +162,12 @@ final class SessionAdapter extends AbstractAdapter implements Session
         {
             return Collections.emptySet();
         }
+    }
+
+    @Override
+    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    {
+        throw new  UnsupportedOperationException();
     }
 
     private class SessionStatistics implements Statistics

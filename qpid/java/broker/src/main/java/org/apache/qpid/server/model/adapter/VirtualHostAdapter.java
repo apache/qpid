@@ -26,12 +26,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.WeakHashMap;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.connection.IConnectionRegistry;
@@ -192,6 +189,30 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
         }
     }
 
+
+    public Exchange createExchange(Map<String, Object> attributes)
+            throws AccessControlException, IllegalArgumentException
+    {
+        attributes = new HashMap<String, Object>(attributes);
+        
+        String         name     = getStringAttribute(Exchange.NAME, attributes, null);
+        State          state    = getEnumAttribute(State.class, Exchange.STATE, attributes, State.ACTIVE);
+        boolean        durable  = getBooleanAttribute(Exchange.DURABLE, attributes, false);        
+        LifetimePolicy lifetime = getEnumAttribute(LifetimePolicy.class, Exchange.LIFETIME_POLICY, attributes, LifetimePolicy.PERMANENT);
+        String         type     = getStringAttribute(Exchange.TYPE, attributes, null);
+        long           ttl      = getLongAttribute(Exchange.TIME_TO_LIVE, attributes, 0l);
+        
+        attributes.remove(Exchange.NAME);
+        attributes.remove(Exchange.STATE);
+        attributes.remove(Exchange.DURABLE);
+        attributes.remove(Exchange.LIFETIME_POLICY);
+        attributes.remove(Exchange.TYPE);
+        attributes.remove(Exchange.TIME_TO_LIVE);
+        
+        return createExchange(name, state, durable, lifetime, ttl, type, attributes);
+    }
+
+
     public Exchange createExchange(final String name,
                                    final State initialState,
                                    final boolean durable,
@@ -221,6 +242,27 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
         {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    public Queue createQueue(Map<String, Object> attributes)
+            throws AccessControlException, IllegalArgumentException
+    {
+        attributes = new HashMap<String, Object>(attributes);
+
+        String         name     = getStringAttribute(Queue.NAME, attributes, null);
+        State          state    = getEnumAttribute(State.class, Queue.STATE, attributes, State.ACTIVE);
+        boolean        durable  = getBooleanAttribute(Queue.DURABLE, attributes, false);
+        LifetimePolicy lifetime = getEnumAttribute(LifetimePolicy.class, Queue.LIFETIME_POLICY, attributes, LifetimePolicy.PERMANENT);
+        long           ttl      = getLongAttribute(Queue.TIME_TO_LIVE, attributes, 0l);
+        boolean        exclusive= getBooleanAttribute(Queue.EXCLUSIVE, attributes, false);
+
+        attributes.remove(Queue.NAME);
+        attributes.remove(Queue.STATE);
+        attributes.remove(Queue.DURABLE);
+        attributes.remove(Queue.LIFETIME_POLICY);
+        attributes.remove(Queue.TIME_TO_LIVE);
+
+        return createQueue(name, state, durable, exclusive, lifetime, ttl, attributes);
     }
 
     public Queue createQueue(final String name,
@@ -344,6 +386,28 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
         {
             return Collections.emptySet();
         }
+    }
+
+    @Override
+    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    {
+        if(childClass == Exchange.class)
+        {
+            return (C) createExchange(attributes);
+        }
+        else if(childClass == Queue.class)
+        {
+            return (C) createQueue(attributes);
+        }
+        else if(childClass == VirtualHostAlias.class)
+        {
+            throw new UnsupportedOperationException();
+        }
+        else if(childClass == Connection.class)
+        {
+            throw new UnsupportedOperationException();
+        }
+        throw new IllegalArgumentException("Cannot create a child of class " + childClass.getSimpleName());
     }
 
     public void exchangeRegistered(org.apache.qpid.server.exchange.Exchange exchange)

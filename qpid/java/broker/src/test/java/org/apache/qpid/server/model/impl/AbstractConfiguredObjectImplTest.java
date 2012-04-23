@@ -143,6 +143,12 @@ public class AbstractConfiguredObjectImplTest extends TestCase
         {
             return null;
         }
+
+        @Override
+        public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+        {
+            return null;
+        }
     }
 
     private final class TestChildCO extends AbstractConfiguredObject
@@ -168,6 +174,12 @@ public class AbstractConfiguredObjectImplTest extends TestCase
 
         @Override
         public Statistics getStatistics()
+        {
+            return null;
+        }
+
+        @Override
+        public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
         {
             return null;
         }

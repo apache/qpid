@@ -27,15 +27,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Consumer;
+import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
-import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
 import org.apache.qpid.server.subscription.Subscription;
@@ -403,6 +403,50 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         else
         {
             return Collections.emptySet();
+        }
+    }
+
+    public org.apache.qpid.server.model.Binding createBinding(Exchange exchange, Map<String, Object> attributes)
+            throws AccessControlException, IllegalStateException
+    {
+        attributes = new HashMap<String, Object>(attributes);
+        String bindingKey = getStringAttribute(org.apache.qpid.server.model.Binding.NAME, attributes, "");
+        Map<String, Object> bindingArgs = getMapAttribute(org.apache.qpid.server.model.Binding.ARGUMENTS, attributes, Collections.EMPTY_MAP);
+
+        attributes.remove(org.apache.qpid.server.model.Binding.NAME);
+        attributes.remove(org.apache.qpid.server.model.Binding.ARGUMENTS);
+
+        return exchange.createBinding(bindingKey, this, bindingArgs, attributes);
+
+    }
+
+
+
+    @Override
+    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    {
+        if(childClass == org.apache.qpid.server.model.Binding.class)
+        {
+            if(otherParents != null && otherParents.length == 1 && otherParents[0] instanceof Exchange)
+            {
+                Exchange exchange = (Exchange) otherParents[0];
+                if(exchange.getParent(org.apache.qpid.server.model.VirtualHost.class) == getParent(org.apache.qpid.server.model.VirtualHost.class))
+                {
+                    return (C) createBinding(exchange, attributes);
+                }
+                else
+                {
+                    throw new IllegalArgumentException("Queue and Exchange parents of a binding must be on same virtual host");
+                }
+            }
+            else
+            {
+                throw new IllegalArgumentException("Other parent must be an exchange");
+            }
+        }
+        else
+        {
+            throw new IllegalArgumentException();
         }
     }
 

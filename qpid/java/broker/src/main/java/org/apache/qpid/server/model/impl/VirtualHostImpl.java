@@ -107,6 +107,12 @@ class VirtualHostImpl extends AbstractConfiguredObject implements VirtualHost
         return null;  //TODO
     }
 
+    @Override
+    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
     public Collection<VirtualHostAlias> getAliases()
     {
         synchronized(getLock())
