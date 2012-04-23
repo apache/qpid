@@ -34,7 +34,7 @@ class HaBroker(Broker):
         assert BrokerTest.ha_lib, "Cannot locate HA plug-in"
         args = copy(args)
         args += ["--load-module", BrokerTest.ha_lib,
-                 "--log-enable=info+", "--log-enable=trace+:ha::", # FIXME aconway 2012-04-18: trace
+                 "--log-enable=info+", "--log-enable=debug+:ha::",
                  # FIXME aconway 2012-02-13: workaround slow link failover.
                  "--link-maintenace-interval=0.1",
                  "--ha-cluster=%s"%ha_cluster]
@@ -325,7 +325,7 @@ class ReplicationTests(BrokerTest):
         """Verify that a backup broker fails over and recovers queue state"""
         brokers = HaCluster(self, 3)
         brokers[0].connect().session().sender("q;{create:always}").send("a")
-        for b in brokers[1:]: b.assert_browse_backup("q", ["a"])
+        for b in brokers[1:]: b.assert_browse_backup("q", ["a"], msg=b)
         brokers[0].expect = EXPECT_EXIT_FAIL
         brokers.kill(0)
         brokers[1].connect().session().sender("q").send("b")

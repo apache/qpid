@@ -190,8 +190,6 @@ BrokerReplicator::BrokerReplicator(HaBroker& hb, const boost::shared_ptr<Link>& 
     : Exchange(QPID_CONFIGURATION_REPLICATOR),
       haBroker(hb), broker(hb.getBroker()), link(l)
 {
-    QPID_LOG(info, "HA: Backup replicating from " <<
-             link->getTransport() << ":" << link->getHost() << ":" << link->getPort());
     broker.getLinks().declare(
         link->getHost(), link->getPort(),
         false,              // durable
@@ -230,7 +228,7 @@ void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionH
     sendQuery(ORG_APACHE_QPID_BROKER, QUEUE, queueName, sessionHandler);
     sendQuery(ORG_APACHE_QPID_BROKER, EXCHANGE, queueName, sessionHandler);
     sendQuery(ORG_APACHE_QPID_BROKER, BINDING, queueName, sessionHandler);
-    QPID_LOG(debug, "HA: Backup activated configuration bridge: " << queueName);
+    QPID_LOG(debug, "HA: Backup configuration bridge: " << queueName);
 }
 
 void BrokerReplicator::route(Deliverable& msg) {
@@ -246,6 +244,7 @@ void BrokerReplicator::route(Deliverable& msg) {
         if (headers->getAsString(QMF_CONTENT) == EVENT) {
             for (Variant::List::iterator i = list.begin(); i != list.end(); ++i) {
                 Variant::Map& map = i->asMap();
+                QPID_LOG(trace, "HA: Backup received event: " << map);
                 Variant::Map& schema = map[SCHEMA_ID].asMap();
                 Variant::Map& values = map[VALUES].asMap();
                 if      (match<EventQueueDeclare>(schema)) doEventQueueDeclare(values);
@@ -257,8 +256,10 @@ void BrokerReplicator::route(Deliverable& msg) {
             }
         } else if (headers->getAsString(QMF_OPCODE) == QUERY_RESPONSE) {
             for (Variant::List::iterator i = list.begin(); i != list.end(); ++i) {
-                string type = i->asMap()[SCHEMA_ID].asMap()[CLASS_NAME];
-                Variant::Map& values = i->asMap()[VALUES].asMap();
+                Variant::Map& map = i->asMap();
+                QPID_LOG(trace, "HA: Backup received event: " << map);
+                string type = map[SCHEMA_ID].asMap()[CLASS_NAME];
+                Variant::Map& values = map[VALUES].asMap();
                 framing::FieldTable args;
                 amqp_0_10::translate(asMapVoid(values[ARGUMENTS]), args);
                 if      (type == QUEUE) doResponseQueue(values);
@@ -268,14 +269,13 @@ void BrokerReplicator::route(Deliverable& msg) {
             }
         }
     } catch (const std::exception& e) {
-        QPID_LOG(critical, "HA: Backup configuration replication failed: " << e.what()
+        QPID_LOG(critical, "HA: Backup configuration failed: " << e.what()
                  << ": while handling: " << list);
         throw;
     }
 }
 
 void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
-    QPID_LOG(debug, "HA: Backup queue declare event " << values);
     string name = values[QNAME].asString();
     Variant::Map argsMap = asMapVoid(values[ARGS]);
     if (values[DISP] == CREATED && replicateLevel(argsMap)) {
@@ -292,26 +292,27 @@ void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
                 values[USER].asString(),
                 values[RHOST].asString());
         if (result.second) {
-            // FIXME aconway 2011-11-22: should delete old queue and
-            // re-create from event.
-            // Events are always up to date, whereas responses may be
-            // out of date.
+            QPID_LOG(debug, "HA: Backup queue declare event: " << name);
             startQueueReplicator(result.first);
         } else {
             // FIXME aconway 2011-12-02: what's the right way to handle this?
-            QPID_LOG(warning, "HA: Backup queue already exists: " << name);
+            // Should we delete the old & re-create form the event? Responses
+            // may be old but events are always up-to-date.
+            QPID_LOG(warning, "HA: Backup queue declare event, already exists: " << name);
         }
     }
 }
 
 void BrokerReplicator::doEventQueueDelete(Variant::Map& values) {
-    QPID_LOG(debug, "HA: Backup queue delete event " << values);
     // The remote queue has already been deleted so replicator
     // sessions may be closed by a "queue deleted" exception.
     string name = values[QNAME].asString();
     boost::shared_ptr<Queue> queue = broker.getQueues().find(name);
-    if (queue && replicateLevel(queue->getSettings())) {
-        QPID_LOG(debug, "HA: Backup deleting queue: " << name);
+    if (!queue) {
+        QPID_LOG(warning, "HA: Backup queue delete event, does not exist: " << name);
+    } else if (!replicateLevel(queue->getSettings())) {
+        QPID_LOG(warning, "HA: Backup queue delete event, not replicated: " << name);
+    } else {
         string rname = QueueReplicator::replicatorName(name);
         boost::shared_ptr<broker::Exchange> ex = broker.getExchanges().find(rname);
         boost::shared_ptr<QueueReplicator> qr = boost::dynamic_pointer_cast<QueueReplicator>(ex);
@@ -320,11 +321,11 @@ void BrokerReplicator::doEventQueueDelete(Variant::Map& values) {
         // actually be destroyed, deleting the exhange
         broker.getExchanges().destroy(rname);
         broker.deleteQueue(name, values[USER].asString(), values[RHOST].asString());
+        QPID_LOG(debug, "HA: Backup queue delete event: " << name);
     }
 }
 
 void BrokerReplicator::doEventExchangeDeclare(Variant::Map& values) {
-    QPID_LOG(debug, "HA: Backup exchange declare event " << values);
     Variant::Map argsMap(asMapVoid(values[ARGS]));
     if (values[DISP] == CREATED && replicateLevel(argsMap)) {
         string name = values[EXNAME].asString();
@@ -339,32 +340,32 @@ void BrokerReplicator::doEventExchangeDeclare(Variant::Map& values) {
                 values[USER].asString(),
                 values[RHOST].asString()).second)
         {
-                    QPID_LOG(debug, "HA: Backup created exchange: " << name);
+            QPID_LOG(debug, "HA: Backup exchange declare event: " << name);
         } else {
-            // FIXME aconway 2011-11-22: should delete pre-exisitng exchange
+            // FIXME aconway 2011-11-22: should delete pre-existing exchange
             // and re-create from event. See comment in doEventQueueDeclare.
-            QPID_LOG(warning, "HA: Backup exchange already exists: " << name);
+            QPID_LOG(debug, "HA: Backup exchange declare event, already exists: " << name);
         }
     }
 }
 
 void BrokerReplicator::doEventExchangeDelete(Variant::Map& values) {
-    QPID_LOG(debug, "HA: Backup exchange delete event " << values);
     string name = values[EXNAME].asString();
-    try {
-        boost::shared_ptr<Exchange> exchange = broker.getExchanges().find(name);
-        if (exchange && replicateLevel(exchange->getArgs())) {
-            QPID_LOG(debug, "HA: Backup deleting exchange:" << name);
-            broker.deleteExchange(
-                name,
-                values[USER].asString(),
-                values[RHOST].asString());
-        }
-    } catch (const framing::NotFoundException&) {}
+    boost::shared_ptr<Exchange> exchange = broker.getExchanges().find(name);
+    if (!exchange) {
+        QPID_LOG(warning, "HA: Backup exchange delete event, does not exist: " << name);
+    } else if (!replicateLevel(exchange->getArgs())) {
+        QPID_LOG(warning, "HA: Backup exchange delete event, not replicated: " << name);
+    } else {
+        QPID_LOG(debug, "HA: Backup exchange delete event:" << name);
+        broker.deleteExchange(
+            name,
+            values[USER].asString(),
+            values[RHOST].asString());
+    }
 }
 
 void BrokerReplicator::doEventBind(Variant::Map& values) {
-    QPID_LOG(debug, "HA: Backup bind event " << values);
     boost::shared_ptr<Exchange> exchange =
         broker.getExchanges().find(values[EXNAME].asString());
     boost::shared_ptr<Queue> queue =
@@ -377,15 +378,14 @@ void BrokerReplicator::doEventBind(Variant::Map& values) {
         framing::FieldTable args;
         amqp_0_10::translate(asMapVoid(values[ARGS]), args);
         string key = values[KEY].asString();
-        QPID_LOG(debug, "HA: Backup replicated binding exchange=" << exchange->getName()
+        exchange->bind(queue, key, &args);
+        QPID_LOG(debug, "HA: Backup bind event: exchange=" << exchange->getName()
                  << " queue=" << queue->getName()
                  << " key=" << key);
-        exchange->bind(queue, key, &args);
     }
 }
 
 void BrokerReplicator::doEventUnbind(Variant::Map& values) {
-    QPID_LOG(debug, "HA: Backup unbind event " << values);
     boost::shared_ptr<Exchange> exchange =
         broker.getExchanges().find(values[EXNAME].asString());
     boost::shared_ptr<Queue> queue =
@@ -398,15 +398,14 @@ void BrokerReplicator::doEventUnbind(Variant::Map& values) {
         framing::FieldTable args;
         amqp_0_10::translate(asMapVoid(values[ARGS]), args);
         string key = values[KEY].asString();
-        QPID_LOG(debug, "HA: Backup replicated unbinding exchange=" << exchange->getName()
+        exchange->unbind(queue, key, &args);
+        QPID_LOG(debug, "HA: Backup unbind event: exchange=" << exchange->getName()
                  << " queue=" << queue->getName()
                  << " key=" << key);
-        exchange->unbind(queue, key, &args);
     }
 }
 
 void BrokerReplicator::doResponseQueue(Variant::Map& values) {
-    QPID_LOG(debug, "HA: Backup queue response " << values);
     Variant::Map argsMap(asMapVoid(values[ARGUMENTS]));
     if (!replicateLevel(argsMap)) return;
     framing::FieldTable args;
@@ -423,16 +422,16 @@ void BrokerReplicator::doResponseQueue(Variant::Map& values) {
             ""/*TODO: who is the user?*/,
             ""/*TODO: what should we use as connection id?*/);
     if (result.second) {
+        QPID_LOG(debug, "HA: Backup queue response: " << name);
         startQueueReplicator(result.first);
     } else {
         // FIXME aconway 2011-11-22: Normal to find queue already
         // exists if we're failing over.
-        QPID_LOG(warning, "HA: Backup catch-up queue already exists: " << name);
+        QPID_LOG(warning, "HA: Backup queue response, already exists: " << name);
     }
 }
 
 void BrokerReplicator::doResponseExchange(Variant::Map& values) {
-    QPID_LOG(debug, "HA: Backup exchange response " << values);
     Variant::Map argsMap(asMapVoid(values[ARGUMENTS]));
     if (!replicateLevel(argsMap)) return;
     framing::FieldTable args;
@@ -446,9 +445,9 @@ void BrokerReplicator::doResponseExchange(Variant::Map& values) {
             ""/*TODO: who is the user?*/,
             ""/*TODO: what should we use as connection id?*/).second)
     {
-        QPID_LOG(debug, "HA: Backup catch-up exchange: " << values[NAME].asString());
+        QPID_LOG(debug, "HA: Backup exchange response: " << values[NAME].asString());
     } else {
-        QPID_LOG(warning, "HA: Backup catch-up exchange already exists:  " <<
+        QPID_LOG(warning, "HA: Backup exchange query, already exists: " <<
                  values[QNAME].asString());
     }
 }
@@ -475,7 +474,6 @@ const std::string QUEUE_REF("queueRef");
 } // namespace
 
 void BrokerReplicator::doResponseBind(Variant::Map& values) {
-    QPID_LOG(debug, "HA: Backup bind response " << values);
     std::string exName = getRefName(EXCHANGE_REF_PREFIX, values[EXCHANGE_REF]);
     std::string qName = getRefName(QUEUE_REF_PREFIX, values[QUEUE_REF]);
     boost::shared_ptr<Exchange> exchange = broker.getExchanges().find(exName);
@@ -489,7 +487,7 @@ void BrokerReplicator::doResponseBind(Variant::Map& values) {
         amqp_0_10::translate(asMapVoid(values[ARGUMENTS]), args);
         string key = values[KEY].asString();
         exchange->bind(queue, key, &args);
-        QPID_LOG(debug, "HA: Backup catch-up binding: exchange=" << exchange->getName()
+        QPID_LOG(debug, "HA: Backup bind response: exchange=" << exchange->getName()
                  << " queue=" << queue->getName()
                  << " key=" << key);
     }
