@@ -39,11 +39,11 @@ namespace {
 
 struct LoadtimeInitialise {
     LoadtimeInitialise() {
-        CommonOptions common("", QPIDC_CONF_FILE);
+        CommonOptions common("", "", QPIDC_CONF_FILE);
         qpid::ModuleOptions moduleOptions(QPIDC_MODULE_DIR);
         string              defaultPath (moduleOptions.loadDir);
-        common.parse(0, 0, common.config, true);
-        moduleOptions.parse (0, 0, common.config, true);
+        common.parse(0, 0, common.clientConfig, true);
+        moduleOptions.parse (0, 0, common.clientConfig, true);
 
         for (vector<string>::iterator iter = moduleOptions.load.begin();
              iter != moduleOptions.load.end();

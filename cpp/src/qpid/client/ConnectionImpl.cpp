@@ -115,10 +115,10 @@ public:
         ioThreads(0),
         connections(0)
     {
-        CommonOptions common("", QPIDC_CONF_FILE);
+        CommonOptions common("", "", QPIDC_CONF_FILE);
         IOThreadOptions options(c);
-        common.parse(0, 0, common.config, true);
-        options.parse(0, 0, common.config, true);
+        common.parse(0, 0, common.clientConfig, true);
+        options.parse(0, 0, common.clientConfig, true);
         maxIOThreads = (options.maxIOThreads != -1) ?
             options.maxIOThreads : 1;
     }

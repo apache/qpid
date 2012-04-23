@@ -37,7 +37,7 @@ namespace broker {
 
 BootstrapOptions::BootstrapOptions(const char* argv0)
   : qpid::Options("Options"),
-    common("", QPIDD_CONF_FILE),
+    common("", QPIDD_CONF_FILE, QPIDC_CONF_FILE),
     module(QPIDD_MODULE_DIR),
     log(argv0)
 {
@@ -315,7 +315,7 @@ struct QpiddWindowsOptions : public QpiddOptionsPrivate {
 
 QpiddOptions::QpiddOptions(const char* argv0)
   : qpid::Options("Options"),
-    common("", QPIDD_CONF_FILE),
+    common("", QPIDD_CONF_FILE, QPIDC_CONF_FILE),
     module(QPIDD_MODULE_DIR),
     log(argv0)
 {
