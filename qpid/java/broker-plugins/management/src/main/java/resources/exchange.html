@@ -34,6 +34,74 @@
         </script>
         <script src="/js/sasl.js">
         </script>
+        <script>
+            require(["dojo/parser",
+                     "dojox/validate/us",
+                     "dojox/validate/web",
+                     "dijit/form/CheckBox",
+                     "dijit/form/Textarea",
+                     "dijit/form/FilteringSelect",
+                     "dijit/form/TextBox",
+                     "dijit/form/ValidationTextBox",
+                     "dijit/form/DateTextBox",
+                     "dijit/form/TimeTextBox",
+                     "dijit/form/Button",
+                     "dijit/form/RadioButton",
+                     "dijit/form/Form",
+                     "dijit/form/DateTextBox",
+                     "dojox/form/BusyButton",
+                     "dojox/form/CheckedMultiSelect",
+                     "dojo/domReady!"]);
+
+            // Require the Dialog class
+            require(["dojo/dom", "dojo/dom-construct", "dijit/registry", "dojo/_base/xhr", "dojo/store/Memory", "dijit/form/FilteringSelect", "dijit/Dialog"],
+                    function(dom, domConstruct, registry, xhr, Memory, FilteringSelect)
+              {
+
+                var thisObj = this;
+
+                // Show the dialog
+                addBindingDialog = function() {
+
+                  if(thisObj.queueChooser)
+                  {
+                      thisObj.queueChooser.destroy( false );
+                  }
+
+                  var queueDiv = dom.byId("addQueuesDiv");
+                  domConstruct.create("input", { id: "queueSelect" }, queueDiv);
+
+                  var urlQuery = dojo.queryToObject(dojo.doc.location.search.substr((dojo.doc.location.search[0] === "?" ? 1 : 0)));
+                  xhr.get({url: "/rest/queue/" + encodeURIComponent(urlQuery.vhost) + "?depth=0", handleAs: "json"}).then(function(data)
+                    {
+
+                      var queues =  [];
+                      for(var i=0; i < data.length; i++)
+                      {
+                        queues[i] = {id: data[i].name, name: data[i].name};
+                      }
+
+                      var queueStore = new Memory({ data: queues });
+
+                      thisObj.queueChooser = new FilteringSelect({ id: "queueSelect",
+                                                               name: "addQueueName",
+                                                               store: queueStore,
+                                                               searchAttr: "name"}, "queueSelect");
+
+
+                      registry.byId("addBinding").show();
+
+                    });
+
+                }
+
+                // Hide the dialog
+                hideAddBinding = function() {
+                  registry.byId("addBinding").hide();
+                }
+            });
+        </script>
+    </head>
 	</head>
 	<body class="claro">
 
@@ -69,6 +137,59 @@
             <br/>
             <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Bindings'">
                 <div id="bindings"></div>
+                <button onclick="addBindingDialog();">Add Binding</button>
+
+                <div class="dijitHidden">
+                    <div data-dojo-type="dijit.Dialog" style="width:600px;" data-dojo-props="title:'Add Binding'" id="addBinding">
+                        <h1>Add a new Binding</h1>
+                        <br/>
+                        <form id="addBindingsForm" dojoType="dijit.form.Form" method="post">
+                            <script>
+                                validateAndPut = function()
+                                {
+
+                                    var exchangeData = {};
+                                    exchangeData.name = dojo.byId("addBindingName").value;
+
+                                    var urlQuery = dojo.queryToObject(dojo.doc.location.search.substr((dojo.doc.location.search[0] === "?" ? 1 : 0)));
+                                    var postUrl = "/rest/binding/" + encodeURIComponent(urlQuery.vhost) + "/" + encodeURIComponent(urlQuery.exchange) + "/" + encodeURIComponent(dijit.byId("queueSelect").get('value')) + "/" + encodeURIComponent(dijit.byId("addBindingName").value);
+
+
+                                    dojo.xhrPut( {  url: postUrl,
+                                                    handleAs: "json",
+                                                    headers: { "Content-Type": "application/json"},
+                                                    putData: dojo.toJson( exchangeData )}).then( function(data)
+                                                        {
+                                                            hideAddBinding();
+                                                        },
+                                                        function(error)
+                                                        {
+                                                            alert(error);
+                                                        });
+                                    return false;
+                                };
+                            </script>
+                            <table cellpadding="0" cellspacing="2">
+                                <tr>
+                                    <td valign="top"><strong>Binding Key: </strong></td>
+                                    <td><input type="text" required="true" name="name" id="addBindingName" placeholder="<binding-key>"
+                                               dojoType="dijit.form.ValidationTextBox"/></td>
+                                </tr>
+                                <tr>
+                                    <td valign="top"><strong>Queue: </strong></td>
+                                    <td><div id="addQueuesDiv"></div>
+                                    </td>
+                                </tr>
+                            </table>
+                            <br/>
+                            <input type="button" value="Submit Form" id="addBindingOk" dojoType="dojox.form.BusyButton" data-dojo-props="onClick:validateAndPut"
+                                   label="Add" busyLabel="Submitting Form..." timeout="2000" />
+                            <input type="button" value="Cancel" label="Cancel" id="addBindingCancel" data-dojo-props="onClick:hideAddBinding" dojoType="dijit.form.Button" />
+
+                        </form>
+
+                    </div>
+                </div>
             </div>
             <br/>
 

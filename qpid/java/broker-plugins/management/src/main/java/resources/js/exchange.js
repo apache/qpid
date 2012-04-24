@@ -87,6 +87,7 @@ require(["dojo/store/JsonRest",
                     }
 
 
+                    var sampleTime = new Date();
 
                     thisObj.updateHeader();
 

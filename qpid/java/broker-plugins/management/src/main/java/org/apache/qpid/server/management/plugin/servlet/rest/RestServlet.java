@@ -39,6 +39,7 @@ import org.codehaus.jackson.map.SerializationConfig;
  */
 public class RestServlet extends AbstractServlet
 {
+    public static final String DEPTH_PARAM = "depth";
     private Class<? extends ConfiguredObject>[] _hierarchy;
 
     public RestServlet(Broker broker, Class<? extends ConfiguredObject>... hierarchy)
@@ -261,9 +262,17 @@ public class RestServlet extends AbstractServlet
 
         List<Map<String, Object>> output = new ArrayList<Map<String, Object>>();
 
-        if(!params.isEmpty())
+        // TODO - depth and sort special params, everything else should act as a filter
+        if(request.getParameter(DEPTH_PARAM)!=null)
         {
-            // TODO - depth and sort special params, everything else should act as a filter
+            try
+            {
+                depth = Integer.parseInt(request.getParameter(DEPTH_PARAM));
+            }
+            catch (NumberFormatException e)
+            {
+
+            }
         }
 
         for(ConfiguredObject configuredObject : allObjects)
