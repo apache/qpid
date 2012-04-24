@@ -39,3 +39,16 @@ button:hover {
 h1 {
 	font-size:1.5em;
 }
+
+.header {
+    height:100px;
+    background:url(/images/qpid-logo.png) left center no-repeat
+}
+
+.logo {
+    text-align:center;
+    font-weight:600;
+    padding:0 0 0 0;
+    font-size:14px;
+    font-family:"Verdana", cursive;
+}
