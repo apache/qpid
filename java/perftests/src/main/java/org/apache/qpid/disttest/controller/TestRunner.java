@@ -213,9 +213,14 @@ public class TestRunner
     void sendCommandToParticipatingClients(final Command command)
     {
         Collection<String> participatingRegisteredClients = _participatingClients.getRegisteredNames();
-        _commandResponseLatch = new CountDownLatch(participatingRegisteredClients.size());
+        final int numberOfClients = participatingRegisteredClients.size();
+        _commandResponseLatch = new CountDownLatch(numberOfClients);
+
+        LOGGER.debug("About to send command {} to {} clients", command, numberOfClients);
+
         for (final String clientName : participatingRegisteredClients)
         {
+            LOGGER.debug("Sending command : {} ", command);
             sendCommandInternal(clientName, command);
         }
     }
