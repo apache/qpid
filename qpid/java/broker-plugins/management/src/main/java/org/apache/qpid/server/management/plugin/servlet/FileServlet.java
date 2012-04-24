@@ -22,6 +22,9 @@ package org.apache.qpid.server.management.plugin.servlet;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
@@ -31,6 +34,22 @@ import javax.servlet.http.HttpServletResponse;
 public class FileServlet extends HttpServlet
 {
     public static final FileServlet INSTANCE = new FileServlet();
+    
+    private static final Map<String, String> CONTENT_TYPES;
+    
+    static
+    {
+
+        Map<String, String> contentTypes = new HashMap<String, String>();
+        contentTypes.put("js",   "application/javascript");
+        contentTypes.put("html", "text/html");
+        contentTypes.put("css",  "text/css");
+        contentTypes.put("json", "application/json");
+        contentTypes.put("jpg",  "image/jpg");
+        contentTypes.put("png",  "image/png");
+        contentTypes.put("gif",  "image/gif");
+        CONTENT_TYPES = Collections.unmodifiableMap(contentTypes);
+    }
 
 
     public FileServlet()
@@ -41,21 +60,14 @@ public class FileServlet extends HttpServlet
     {
         String filename = request.getServletPath();
 
-        if(filename.endsWith(".js"))
+        if(filename.contains("."))
         {
-            response.setContentType("application/javascript");
-        }
-        else if(filename.endsWith(".html"))
-        {
-            response.setContentType("text/html");
-        }
-        else if(filename.endsWith(".css"))
-        {
-            response.setContentType("text/css");
-        }
-        else if(filename.endsWith(".json"))
-        {
-            response.setContentType("application/json");
+            String suffix = filename.substring(filename.lastIndexOf('.')+1);
+            String contentType = CONTENT_TYPES.get(suffix);
+            if(contentType != null)
+            {
+                response.setContentType(contentType);
+            }
         }
 
         final ServletOutputStream output = response.getOutputStream();
