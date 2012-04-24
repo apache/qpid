@@ -133,13 +133,20 @@ public class TestRunner
     void sendTestSetupCommands()
     {
         List<CommandForClient> commandsForAllClients = _testInstance.createCommands();
-        _commandResponseLatch = new CountDownLatch(commandsForAllClients.size());
+        final int numberOfCommandsToSend = commandsForAllClients.size();
+        _commandResponseLatch = new CountDownLatch(numberOfCommandsToSend);
+
+        LOGGER.debug("About to send {} command(s)", numberOfCommandsToSend);
+
         for (CommandForClient commandForClient : commandsForAllClients)
         {
             String configuredClientName = commandForClient.getClientName();
             String registeredClientName = _participatingClients.getRegisteredNameFromConfiguredName(configuredClientName);
 
             Command command = commandForClient.getCommand();
+
+            LOGGER.debug("Sending command : {} ", command);
+
             sendCommandInternal(registeredClientName, command);
         }
     }
