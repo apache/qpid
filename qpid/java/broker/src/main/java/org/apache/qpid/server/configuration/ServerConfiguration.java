@@ -589,7 +589,7 @@ public class ServerConfiguration extends ConfigurationPlugin
 
     public boolean getManagementSSLEnabled()
     {
-        return getBooleanValue("management.ssl.enabled", true);
+        return getBooleanValue("management.ssl.enabled", false);
     }
 
     public String getManagementKeyStorePassword()

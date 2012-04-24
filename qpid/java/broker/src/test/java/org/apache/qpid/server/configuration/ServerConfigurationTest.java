@@ -251,13 +251,13 @@ public class ServerConfigurationTest extends QpidTestCase
     {
         // Check default
         _serverConfig.initialise();
-        assertEquals(true, _serverConfig.getManagementSSLEnabled());
+        assertEquals(false, _serverConfig.getManagementSSLEnabled());
 
         // Check value we set
-        _config.setProperty("management.ssl.enabled", false);
+        _config.setProperty("management.ssl.enabled", true);
         _serverConfig = new ServerConfiguration(_config);
         _serverConfig.initialise();
-        assertEquals(false, _serverConfig.getManagementSSLEnabled());
+        assertEquals(true, _serverConfig.getManagementSSLEnabled());
     }
 
     public void testGetManagementKeystorePassword() throws ConfigurationException

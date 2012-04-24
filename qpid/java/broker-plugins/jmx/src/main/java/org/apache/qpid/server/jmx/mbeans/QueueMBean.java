@@ -248,7 +248,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue
 
     public boolean isFlowOverfull()
     {
-        return false;  // TODO - implement isFlowOverfull()
+        return (Boolean)_queue.getAttribute(Queue.QUEUE_FLOW_STOPPED);
     }
 
     public boolean isExclusive()

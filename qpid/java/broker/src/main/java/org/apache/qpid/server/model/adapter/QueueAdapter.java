@@ -338,7 +338,7 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         }
         else if(QUEUE_FLOW_STOPPED.equals(name))
         {
-            // TODO
+            return _queue.isOverfull();
         }
         else if(SORT_KEY.equals(name))
         {
