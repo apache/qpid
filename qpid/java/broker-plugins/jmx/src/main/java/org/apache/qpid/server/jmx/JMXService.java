@@ -21,12 +21,18 @@
 
 package org.apache.qpid.server.jmx;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.management.JMException;
+
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.jmx.mbeans.ConfigurationManagementMBean;
-import org.apache.qpid.server.jmx.mbeans.VirtualHostMBean;
+import org.apache.qpid.server.jmx.mbeans.ServerInformationMBean;
 import org.apache.qpid.server.jmx.mbeans.Shutdown;
-
+import org.apache.qpid.server.jmx.mbeans.VirtualHostMBean;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.AbstractActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -37,16 +43,12 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
-import javax.management.JMException;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
 public class JMXService implements ConfigurationChangeListener
 {
     private final Broker _broker;
     private final JMXManagedObjectRegistry _objectRegistry;
     private final Shutdown _shutdown;
+    private final ServerInformationMBean _serverInfo;
     private final ConfigurationManagementMBean _configManagement;
 
     private final Map<ConfiguredObject, AMQManagedObject> _children =
@@ -80,6 +82,7 @@ public class JMXService implements ConfigurationChangeListener
             }
         }
         _shutdown = new Shutdown(_objectRegistry);
+        _serverInfo = new ServerInformationMBean(_objectRegistry, _broker);
         _configManagement = new ConfigurationManagementMBean(_objectRegistry);
     }
     

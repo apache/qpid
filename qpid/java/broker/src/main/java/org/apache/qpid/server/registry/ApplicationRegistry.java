@@ -217,9 +217,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         system.addBroker(brokerConfig);
         instance.setBrokerConfig(brokerConfig);
 
-        final Broker brokerAdapter = new BrokerAdapter(instance);
-        instance.setBroker(brokerAdapter);
-
         try
         {
             instance.initialise();
@@ -317,6 +314,9 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
         try
         {
+            initialiseStatistics();
+            _broker = new BrokerAdapter(this);
+
             initialiseManagedObjectRegistry();
 
             configure();
@@ -340,7 +340,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         try
         {
             initialiseVirtualHosts();
-            initialiseStatistics();
             initialiseStatisticsReporting();
         }
         finally
@@ -779,11 +778,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
                                                  System.getProperty("os.arch")));
 
         logActor.message(BrokerMessages.MAX_MEMORY(Runtime.getRuntime().maxMemory()));
-    }
-
-    public void setBroker(final Broker broker)
-    {
-        _broker = broker;
     }
 
     public Broker getBroker()

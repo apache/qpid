@@ -42,12 +42,12 @@ class StatisticsAdapter implements Statistics
 
     
 
-    public StatisticsAdapter(StatisticsGatherer applicationRegistry)
+    public StatisticsAdapter(StatisticsGatherer statGatherer)
     {
-        _statistics.put(BYTES_OUT, applicationRegistry.getDataDeliveryStatistics());
-        _statistics.put(BYTES_IN, applicationRegistry.getDataReceiptStatistics());
-        _statistics.put(MESSAGES_OUT, applicationRegistry.getMessageDeliveryStatistics());
-        _statistics.put(MESSAGES_IN, applicationRegistry.getMessageReceiptStatistics());
+        _statistics.put(BYTES_OUT, statGatherer.getDataDeliveryStatistics());
+        _statistics.put(BYTES_IN, statGatherer.getDataReceiptStatistics());
+        _statistics.put(MESSAGES_OUT, statGatherer.getMessageDeliveryStatistics());
+        _statistics.put(MESSAGES_IN, statGatherer.getMessageReceiptStatistics());
     }
 
     
