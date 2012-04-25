@@ -31,9 +31,9 @@
 
 # DOCBOOK XSL STYLESHEET LOCATION
 # Fedora, RHEL:
-DOCBOOK_XSL=/usr/share/sgml/docbook/xsl-stylesheets
+#DOCBOOK_XSL=/usr/share/sgml/docbook/xsl-stylesheets
 # Ubuntu:
-# DOCBOOK_XSL=/usr/share/sgml/docbook/stylesheet/xsl/nwalsh
+DOCBOOK_XSL=/usr/share/sgml/docbook/stylesheet/xsl/nwalsh
 # Ubuntu 10.4 installed it here:
 # DOCBOOK_XSL=/usr/share/xml/docbook/stylesheet/docbook-xsl-ns
 
@@ -52,8 +52,9 @@ xsltproc --xinclude --stringparam  section.autolabel 1  --stringparam  callout.g
 
 # Create chunked .html
 INFILE=$(readlink -f src/$1.xml)
+XSLFILE=$(readlink -f html-custom.xsl)
 pushd build/$1/html
-xsltproc --xinclude --stringparam  chunk.section.depth 1  --stringparam  section.autolabel 1  --stringparam  callout.graphics 0  --stringparam  callout.unicode 0 --stringparam section.label.includes.component.label 1 --stringparam use.id.as.filename 1 --stringparam html.stylesheet css/style.css --stringparam section.autolabel.max.depth 3 --stringparam toc.section.depth 2 --stringparam chunker.output.encoding UTF-8 ${DOCBOOK_XSL}/html/chunk.xsl $INFILE
+xsltproc --xinclude --stringparam  chunk.section.depth 1  --stringparam  section.autolabel 1  --stringparam  callout.graphics 0  --stringparam  callout.unicode 0 --stringparam section.label.includes.component.label 1 --stringparam use.id.as.filename 1 --stringparam html.stylesheet css/style.css --stringparam section.autolabel.max.depth 3 --stringparam toc.section.depth 2 --stringparam chunker.output.encoding UTF-8 --stringparam css.decoration 0 $XSLFILE $INFILE
 popd
 
 # Create the .fo
