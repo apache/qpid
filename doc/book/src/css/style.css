@@ -127,3 +127,145 @@ div.titlepage {
     font-size:9pt;
 }
 
+.header {
+    height:100px;
+    width:950px;
+    background:url(http://qpid.apache.org/images/header.png)
+}
+
+.logo {
+    text-align:center;
+    font-weight:600;
+    padding:0 0 0 0;
+    font-size:14px;
+    font-family:"Verdana", cursive;
+}
+
+.logo a {
+    color:#000000;
+    text-decoration:none;
+}
+
+.main_text_area {
+    margin-left:200px;
+}
+
+.main_text_area_top {
+    height:14px;
+    font-size:1px;
+}
+
+.main_text_area_bottom {
+    display:none;
+/*  height:14px;
+    margin-bottom:4px;*/
+}
+
+.main_text_area_body {
+    padding:5px 24px;
+}
+
+.main_text_area_body p {
+    text-align:justify;
+}
+
+.main_text_area br {
+    line-height:10px;
+}
+
+.main_text_area h1 {
+    font-size:28px;
+    font-weight:600;
+    margin:0 0 24px 0;
+    color:#0c3b82;
+    font-family:"Verdana", Times, serif;
+}
+
+.main_text_area h2 {
+    font-size:24px;
+    font-weight:600;
+    margin:24px 0 8px 0;
+    color:#0c3b82;
+    font-family:"Verdana",Times, serif;
+}
+
+.main_text_area ol, .main_text_area ul {
+    padding:0;
+    margin:10px 0;
+    margin-left:20px;
+}
+
+.main_text_area li {
+/*    margin-left:40px; */
+}
+
+.main_text_area, .menu_box {
+    font-size:13px;
+    line-height:17px;
+    color:#000000;
+}
+
+.main_text_area {
+    font-size:14px;
+}
+
+.main_text_area a {
+    color:#000000;
+}
+
+.main_text_area a:hover {
+    color:#000000;
+}
+
+.menu_box {
+    width:196px;
+    float:left;
+    margin-left:4px;
+}
+
+.menu_box_top {
+    background:url(http://qpid.apache.org/images/menu_top.png) no-repeat; 
+    height:14px;
+    font-size:1px;
+}
+
+.menu_box_body {
+    background:url(http://qpid.apache.org/images/menu_body.png) repeat-y; 
+    padding:5px 24px 5px 24px;
+}
+
+.menu_box_bottom {
+    background:url(http://qpid.apache.org/images/menu_bottom.png) no-repeat; 
+    height:14px;
+    font-size:1px;
+    margin-bottom:1px;
+}
+
+.menu_box h3 {
+    font-size:20px;
+    font-weight:500;
+    margin:0 0 8px 0;
+    color:#0c3b82;
+    font-family:"Verdana",Times, serif;
+}
+
+.menu_box ul {
+    margin:12px;
+    padding:0px;
+}
+
+.menu_box li {
+    list-style:square; 
+}
+
+.menu_box a {
+    color:#000000;
+    text-decoration:none;
+}
+
+.menu_box a:hover {
+    color:#000000;
+    text-decoration:underline;
+}
+
+
