@@ -230,11 +230,11 @@ public class ServerConnectionMBean extends AbstractAMQManagedConnectionObject
 
     public boolean isStatisticsEnabled()
     {
-        return _serverConnection.isStatisticsEnabled();
+        return true;
     }
 
     public void setStatisticsEnabled(boolean enabled)
     {
-        _serverConnection.setStatisticsEnabled(enabled);
+        //TODO decide to deprecate and/or remove
     }
 }

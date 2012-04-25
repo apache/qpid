@@ -2,6 +2,7 @@ package org.apache.qpid.server.jmx.mbeans;
 
 import javax.management.NotCompliantMBeanException;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.model.VirtualHost;
@@ -24,12 +25,12 @@ import org.apache.qpid.server.model.VirtualHost;
  */
 abstract class AbstractStatisticsGatheringMBean<T extends ConfiguredObject> extends AMQManagedObject
 {
-    private long _lastStatupDateTime;
+    private long _lastStatUpdateTime;
     private long _statUpdatePeriod = 5000L;
-    private long _messagesReceived;
-    private long _messagesSent;
-    private long _bytesReceived;
-    private long _bytesSent;
+    private long _lastMessagesReceived;
+    private long _lastMessagesSent;
+    private long _lastBytesReceived;
+    private long _lastBytesSent;
     private double _messageReceivedRate;
     private double _messageSentRate;
     private double _bytesReceivedRate;
@@ -52,18 +53,13 @@ abstract class AbstractStatisticsGatheringMBean<T extends ConfiguredObject> exte
 
     protected void initStats()
     {
-        _lastStatupDateTime = System.currentTimeMillis();
-
-        _messagesReceived = getStatistic(VirtualHost.MESSAGES_IN);
-        _messagesSent = getStatistic(VirtualHost.MESSAGES_OUT);
-        _bytesReceived = getStatistic(VirtualHost.BYTES_IN);
-        _bytesSent = getStatistic(VirtualHost.BYTES_OUT);
+        _lastStatUpdateTime = System.currentTimeMillis();
     }
 
     protected synchronized void updateStats()
     {
         long time = System.currentTimeMillis();
-        final long period = time - _lastStatupDateTime;
+        final long period = time - _lastStatUpdateTime;
         if(period > _statUpdatePeriod)
         {
             long messagesReceived = getStatistic(VirtualHost.MESSAGES_IN);
@@ -71,15 +67,15 @@ abstract class AbstractStatisticsGatheringMBean<T extends ConfiguredObject> exte
             long bytesReceived = getStatistic(VirtualHost.BYTES_IN);
             long bytesSent = getStatistic(VirtualHost.BYTES_OUT);
 
-            double messageReceivedRate = (double)(messagesReceived - _messagesReceived) / (double)period;
-            double messageSentRate = (double)(messagesSent - _messagesSent) / (double)period;
-            double bytesReceivedRate = (double)(bytesReceived - _bytesReceived) / (double)period;
-            double bytesSentRate = (double)(bytesSent - _bytesSent) / (double)period;
+            double messageReceivedRate = (double)(messagesReceived - _lastMessagesReceived) / (double)period;
+            double messageSentRate = (double)(messagesSent - _lastMessagesSent) / (double)period;
+            double bytesReceivedRate = (double)(bytesReceived - _lastBytesReceived) / (double)period;
+            double bytesSentRate = (double)(bytesSent - _lastBytesSent) / (double)period;
 
-            _messagesReceived = messagesReceived;
-            _messagesSent = messagesSent;
-            _bytesReceived = bytesReceived;
-            _bytesSent = bytesSent;
+            _lastMessagesReceived = messagesReceived;
+            _lastMessagesSent = messagesSent;
+            _lastBytesReceived = bytesReceived;
+            _lastBytesSent = bytesSent;
             
             _messageReceivedRate = messageReceivedRate;
             _messageSentRate = messageSentRate;
@@ -147,13 +143,13 @@ abstract class AbstractStatisticsGatheringMBean<T extends ConfiguredObject> exte
     public synchronized long getTotalMessagesDelivered()
     {
         updateStats();
-        return _messagesSent;
+        return getStatistic(Connection.MESSAGES_OUT);
     }
 
     public synchronized long getTotalDataDelivered()
     {
         updateStats();
-        return _bytesSent;
+        return getStatistic(Connection.BYTES_OUT);
     }
 
     protected final T getConfiguredObject()
@@ -188,13 +184,13 @@ abstract class AbstractStatisticsGatheringMBean<T extends ConfiguredObject> exte
     public synchronized long getTotalMessagesReceived()
     {
         updateStats();
-        return _messagesReceived;
+        return getStatistic(Connection.MESSAGES_IN);
     }
 
     public synchronized long getTotalDataReceived()
     {
         updateStats();
-        return _bytesReceived;
+        return getStatistic(Connection.BYTES_IN);
     }
 
 }

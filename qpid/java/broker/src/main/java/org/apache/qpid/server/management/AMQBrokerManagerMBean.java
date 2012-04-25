@@ -405,6 +405,6 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
 
     public boolean isStatisticsEnabled()
     {
-        return getVirtualHost().isStatisticsEnabled();
+        return true;
     }
 }

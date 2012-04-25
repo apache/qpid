@@ -257,11 +257,6 @@ public class MockVirtualHost implements VirtualHost
 
     }
 
-    public boolean isStatisticsEnabled()
-    {
-        return false;
-    }
-
     public void registerMessageDelivered(long messageSize)
     {
 
@@ -273,11 +268,6 @@ public class MockVirtualHost implements VirtualHost
     }
 
     public void resetStatistics()
-    {
-
-    }
-
-    public void setStatisticsEnabled(boolean enabled)
     {
 
     }

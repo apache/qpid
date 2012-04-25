@@ -474,18 +474,6 @@ public class MockSubscription implements Subscription
         }
 
         @Override
-        public boolean isStatisticsEnabled()
-        {
-            return false;
-        }
-
-        @Override
-        public void setStatisticsEnabled(boolean enabled)
-        {
-
-        }
-
-        @Override
         public UUID getId()
         {
             return null;

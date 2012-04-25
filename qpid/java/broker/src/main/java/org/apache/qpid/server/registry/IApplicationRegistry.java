@@ -91,8 +91,6 @@ public interface IApplicationRegistry extends StatisticsGatherer
 
     BrokerConfig getBrokerConfig();
 
-    void setBroker(Broker broker);
-
     Broker getBroker();
 
     VirtualHost createVirtualHost(VirtualHostConfiguration vhostConfig) throws Exception;

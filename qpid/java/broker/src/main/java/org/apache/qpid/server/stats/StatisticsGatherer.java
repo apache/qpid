@@ -103,16 +103,4 @@ public interface StatisticsGatherer
      * Reset the counters for this, and any child {@link StatisticsGatherer}s.
      */
     void resetStatistics();
-    
-    /**
-     * Check if this object has statistics generation enabled.
-     * 
-     * @return true if statistics generation is enabled
-     */
-    boolean isStatisticsEnabled();
-    
-    /**
-     * Enable or disable statistics generation for this object.
-     */
-    void setStatisticsEnabled(boolean enabled);
 }

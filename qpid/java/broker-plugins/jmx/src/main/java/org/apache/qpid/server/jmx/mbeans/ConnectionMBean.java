@@ -167,8 +167,7 @@ public class ConnectionMBean extends AbstractStatisticsGatheringMBean<Connection
 
     public synchronized boolean isStatisticsEnabled()
     {
-        updateStats();
-        return false;  //TODO - implement isStatisticsEnabled
+        return true;
     }
 
     public void setStatisticsEnabled(boolean enabled)

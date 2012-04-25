@@ -335,11 +335,11 @@ public class AMQProtocolSessionMBean extends AbstractAMQManagedConnectionObject
 
     public boolean isStatisticsEnabled()
     {
-        return _protocolSession.isStatisticsEnabled();
+        return true;
     }
 
     public void setStatisticsEnabled(boolean enabled)
     {
-        _protocolSession.setStatisticsEnabled(enabled);
+        //TODO decide to remove or not
     }
 }

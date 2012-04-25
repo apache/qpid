@@ -139,7 +139,7 @@ public class ServerInformationMBean extends AMQManagedObject implements ServerIn
 
     public boolean isStatisticsEnabled()
     {
-        return registry.isStatisticsEnabled();
+        return true;
     }
     
 }
