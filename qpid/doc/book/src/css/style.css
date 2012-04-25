@@ -88,6 +88,12 @@ div.titlepage {
     padding-right:6px;
 }
 
+div.breadcrumbs {
+    font-size:9pt;
+    margin-right:10pt;
+    padding-bottom:16px;
+}
+
 .chapter h2.title {
     font-size:20pt;
     color:#0c3b82;
