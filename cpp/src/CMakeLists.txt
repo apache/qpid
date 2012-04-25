@@ -644,7 +644,7 @@ if (BUILD_HA)
 
     add_library (ha MODULE ${ha_SOURCES})
     set_target_properties (ha PROPERTIES PREFIX "")
-    target_link_libraries (ha qpidbroker ${Boost_PROGRAM_OPTIONS_LIBRARY})
+    target_link_libraries (ha qpidcommon qpidbroker ${Boost_PROGRAM_OPTIONS_LIBRARY})
     if (CMAKE_COMPILER_IS_GNUCXX)
       set_target_properties (ha PROPERTIES
                              PREFIX ""
