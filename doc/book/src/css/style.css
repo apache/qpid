@@ -35,13 +35,15 @@ th {
 }
 
 body {
-    width:950px;
-    margin-left:100px;
-    margin-top:40px;
-
+    margin:0;
     background:#FFFFFF;
     font-family:"Verdana", sans-serif;
     font-size:10pt;
+}
+
+.container {
+    width:950px;
+    margin:0 auto;
 }
 
 body a {
