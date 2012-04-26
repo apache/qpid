@@ -1,0 +1,279 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
+ul {
+    list-style-type:square;
+}
+
+th { 
+    font-weight: bold;
+}
+
+.navfooter td { 
+    font-size:10pt;
+}
+
+.navheader td { 
+    font-size:10pt;
+}
+
+body {
+    margin:0;
+    background:#FFFFFF;
+    font-family:"Verdana", sans-serif;
+    font-size:10pt;
+}
+
+.container {
+    width:950px;
+    margin:0 auto;
+}
+
+body a {
+    color:#000000;
+}
+
+
+div.book {
+    margin-left:10pt;
+    margin-right:10pt;
+}
+
+div.preface {
+    margin-left:10pt;
+    margin-right:10pt;
+}
+
+div.chapter {
+    margin-left:10pt;
+    margin-right:10pt;
+}
+
+div.section {
+    margin-left:10pt;
+    margin-right:10pt;
+}
+
+div.titlepage {
+    margin-left:-10pt;
+    margin-right:-10pt;
+}
+
+.calloutlist td {
+    font-size:10pt;
+}
+
+.table-contents table {
+    border-spacing: 0px;
+}
+
+.table-contents td {
+    font-size:10pt;
+    padding-left:6px;
+    padding-right:6px;
+}
+
+div.breadcrumbs {
+    font-size:9pt;
+    margin-right:10pt;
+    padding-bottom:16px;
+}
+
+.chapter h2.title {
+    font-size:20pt;
+    color:#0c3b82;
+}
+
+.chapter .section h2.title {
+    font-size:18pt;
+    color:#0c3b82;
+}
+
+.section h2.title {
+    font-size:16pt;
+    color:#0c3b82;
+}
+
+.section h3.title {
+    font-size:14pt;
+    color:#0c3b82;
+}
+
+.section h4.title {
+    font-size:12pt;
+    color:#0c3b82;
+}
+
+.section h5.title {
+    font-size:12pt;
+    color:#0c3b82;
+}
+
+.section h6.title {
+    font-size:12pt;
+    color:#0c3b82;
+}
+
+.toc a {
+    font-size:9pt;
+}
+
+.header {
+    height:100px;
+    width:950px;
+    background:url(http://qpid.apache.org/images/header.png)
+}
+
+.logo {
+    text-align:center;
+    font-weight:600;
+    padding:0 0 0 0;
+    font-size:14px;
+    font-family:"Verdana", cursive;
+}
+
+.logo a {
+    color:#000000;
+    text-decoration:none;
+}
+
+.main_text_area {
+    margin-left:200px;
+}
+
+.main_text_area_top {
+    height:14px;
+    font-size:1px;
+}
+
+.main_text_area_bottom {
+    display:none;
+/*  height:14px;
+    margin-bottom:4px;*/
+}
+
+.main_text_area_body {
+    padding:5px 24px;
+}
+
+.main_text_area_body p {
+    text-align:justify;
+}
+
+.main_text_area br {
+    line-height:10px;
+}
+
+.main_text_area h1 {
+    font-size:28px;
+    font-weight:600;
+    margin:0 0 24px 0;
+    color:#0c3b82;
+    font-family:"Verdana", Times, serif;
+}
+
+.main_text_area h2 {
+    font-size:24px;
+    font-weight:600;
+    margin:24px 0 8px 0;
+    color:#0c3b82;
+    font-family:"Verdana",Times, serif;
+}
+
+.main_text_area ol, .main_text_area ul {
+    padding:0;
+    margin:10px 0;
+    margin-left:20px;
+}
+
+.main_text_area li {
+/*    margin-left:40px; */
+}
+
+.main_text_area, .menu_box {
+    font-size:13px;
+    line-height:17px;
+    color:#000000;
+}
+
+.main_text_area {
+    font-size:14px;
+}
+
+.main_text_area a {
+    color:#000000;
+}
+
+.main_text_area a:hover {
+    color:#000000;
+}
+
+.menu_box {
+    width:196px;
+    float:left;
+    margin-left:4px;
+}
+
+.menu_box_top {
+    background:url(http://qpid.apache.org/images/menu_top.png) no-repeat; 
+    height:14px;
+    font-size:1px;
+}
+
+.menu_box_body {
+    background:url(http://qpid.apache.org/images/menu_body.png) repeat-y; 
+    padding:5px 24px 5px 24px;
+}
+
+.menu_box_bottom {
+    background:url(http://qpid.apache.org/images/menu_bottom.png) no-repeat; 
+    height:14px;
+    font-size:1px;
+    margin-bottom:1px;
+}
+
+.menu_box h3 {
+    font-size:20px;
+    font-weight:500;
+    margin:0 0 8px 0;
+    color:#0c3b82;
+    font-family:"Verdana",Times, serif;
+}
+
+.menu_box ul {
+    margin:12px;
+    padding:0px;
+}
+
+.menu_box li {
+    list-style:square; 
+}
+
+.menu_box a {
+    color:#000000;
+    text-decoration:none;
+}
+
+.menu_box a:hover {
+    color:#000000;
+    text-decoration:underline;
+}
+
+

@@ -17,15 +17,15 @@
 # under the License.
 #
 
-DIRS = src/java-broker src/cpp-broker src/programming
+DIRS = java-broker cpp-broker programming
 
 
 .PHONY: all $(DIRS)
 
 all: $(DIRS)     
 
-clean: 
-	rm -rf build
+clean: TARGET = clean
+clean: all
 
 html: TARGET = html
 html: all

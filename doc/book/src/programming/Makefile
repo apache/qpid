@@ -17,22 +17,4 @@
 # under the License.
 #
 
-DIRS = src/java-broker src/cpp-broker src/programming
-
-
-.PHONY: all $(DIRS)
-
-all: $(DIRS)     
-
-clean: 
-	rm -rf build
-
-html: TARGET = html
-html: all
-
-pdf: TARGET = pdf
-pdf: all
-
-$(DIRS):
-	$(MAKE) -C $@ $(TARGET) OUTPUTDIR=../../build/
-
+include ../Makefile.inc
