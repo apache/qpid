@@ -30,6 +30,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import javax.jms.Message;
+import javax.jms.Session;
 
 import junit.framework.TestCase;
 
@@ -72,6 +73,7 @@ public class ConsumerParticipantTest extends TestCase
 
         when(_delegate.consumeMessage(PARTICIPANT_NAME1, RECEIVE_TIMEOUT)).thenReturn(_mockMessage);
         when(_delegate.calculatePayloadSizeFrom(_mockMessage)).thenReturn(PAYLOAD_SIZE_PER_MESSAGE);
+        when(_delegate.getAcknowledgeMode(SESSION_NAME1)).thenReturn(Session.CLIENT_ACKNOWLEDGE);
 
         _testStartTime = System.currentTimeMillis();
     }
@@ -104,7 +106,8 @@ public class ConsumerParticipantTest extends TestCase
 
         ParticipantResult result = _consumerParticipant.doIt(CLIENT_NAME);
 
-        assertExpectedConsumerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, numberOfMessages, PAYLOAD_SIZE_PER_MESSAGE, totalPayloadSize, null);
+        assertExpectedConsumerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime,
+                                      Session.CLIENT_ACKNOWLEDGE, null, numberOfMessages, PAYLOAD_SIZE_PER_MESSAGE, totalPayloadSize, null);
 
         _inOrder.verify(_delegate).consumeMessage(PARTICIPANT_NAME1, RECEIVE_TIMEOUT);
         _inOrder.verify(_delegate).calculatePayloadSizeFrom(_mockMessage);
@@ -118,7 +121,8 @@ public class ConsumerParticipantTest extends TestCase
 
         ParticipantResult result = _consumerParticipant.doIt(CLIENT_NAME);
 
-        assertExpectedConsumerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, null, PAYLOAD_SIZE_PER_MESSAGE, null, duration);
+        assertExpectedConsumerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime,
+                                      Session.CLIENT_ACKNOWLEDGE, null, null, PAYLOAD_SIZE_PER_MESSAGE, null, duration);
 
         verify(_delegate, atLeastOnce()).consumeMessage(PARTICIPANT_NAME1, RECEIVE_TIMEOUT);
         verify(_delegate, atLeastOnce()).calculatePayloadSizeFrom(_mockMessage);
@@ -128,13 +132,15 @@ public class ConsumerParticipantTest extends TestCase
     public void testReceiveMessagesBatchedSynch() throws Exception
     {
         int numberOfMessages = 10;
+        final int batchSize = 3;
         long totalPayloadSize = PAYLOAD_SIZE_PER_MESSAGE * numberOfMessages;
         _command.setNumberOfMessages(numberOfMessages);
-        _command.setBatchSize(3);
+        _command.setBatchSize(batchSize);
 
         ParticipantResult result = _consumerParticipant.doIt(CLIENT_NAME);
 
-        assertExpectedConsumerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, numberOfMessages, PAYLOAD_SIZE_PER_MESSAGE, totalPayloadSize, null);
+        assertExpectedConsumerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime,
+                                      Session.CLIENT_ACKNOWLEDGE, batchSize, numberOfMessages, PAYLOAD_SIZE_PER_MESSAGE, totalPayloadSize, null);
 
         verify(_delegate, times(numberOfMessages)).consumeMessage(PARTICIPANT_NAME1, RECEIVE_TIMEOUT);
         verify(_delegate, times(numberOfMessages)).calculatePayloadSizeFrom(_mockMessage);
@@ -157,7 +163,8 @@ public class ConsumerParticipantTest extends TestCase
 
         final int expectedPayloadResultPayloadSize = 0;
         final long totalPayloadSize = firstPayloadSize + secondPayloadSize + thirdPayloadSize;
-        assertExpectedConsumerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, numberOfMessages, expectedPayloadResultPayloadSize, totalPayloadSize, null);
+        assertExpectedConsumerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime,
+                                      Session.CLIENT_ACKNOWLEDGE, null, numberOfMessages, expectedPayloadResultPayloadSize, totalPayloadSize, null);
 
         verify(_delegate, times(numberOfMessages)).consumeMessage(PARTICIPANT_NAME1, RECEIVE_TIMEOUT);
         verify(_delegate, times(numberOfMessages)).calculatePayloadSizeFrom(_mockMessage);

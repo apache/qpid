@@ -37,6 +37,7 @@ public enum ParticipantAttribute
     PAYLOAD_SIZE("payloadSizeB"),
     PRIORITY("priority"),
     TIME_TO_LIVE("timeToLiveMs"),
+    ACKNOWLEDGE_MODE("acknowledgeMode"),
     DELIVERY_MODE("deliveryMode"),
     BATCH_SIZE("batchSize"),
     MAXIMUM_DURATION("maximumDurationMs"),

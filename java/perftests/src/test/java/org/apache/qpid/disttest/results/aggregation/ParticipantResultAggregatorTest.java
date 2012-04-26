@@ -21,6 +21,8 @@ package org.apache.qpid.disttest.results.aggregation;
 
 import java.util.Date;
 
+import javax.jms.Session;
+
 import org.apache.qpid.disttest.message.ParticipantResult;
 import org.apache.qpid.disttest.results.aggregation.ParticipantResultAggregator;
 
@@ -177,6 +179,71 @@ public class ParticipantResultAggregatorTest extends TestCase
 
         ParticipantResult aggregratedResult = _aggregator.getAggregatedResult();
         assertEquals(0, aggregratedResult.getPayloadSize());
+    }
+
+    public void testConstantBatchSizesRolledUp() throws Exception
+    {
+        final int batchSize = 10;
+
+        ParticipantResult result1 = new ParticipantResult();
+        result1.setBatchSize(batchSize);
+
+        ParticipantResult result2 = new ParticipantResult();
+        result2.setBatchSize(batchSize);
+
+        _aggregator.aggregate(result1);
+        _aggregator.aggregate(result2);
+
+        ParticipantResult aggregratedResult = _aggregator.getAggregatedResult();
+        assertEquals(batchSize, aggregratedResult.getBatchSize());
+    }
+
+    public void testDifferingBatchSizesNotRolledUp() throws Exception
+    {
+        final int batch1Size = 10;
+        final int batch2Size = 20;
+
+        ParticipantResult result1 = new ParticipantResult();
+        result1.setBatchSize(batch1Size);
+
+        ParticipantResult result2 = new ParticipantResult();
+        result2.setBatchSize(batch2Size);
+
+        _aggregator.aggregate(result1);
+        _aggregator.aggregate(result2);
+
+        ParticipantResult aggregratedResult = _aggregator.getAggregatedResult();
+        assertEquals(0, aggregratedResult.getBatchSize());
+    }
+
+    public void testConstantAcknowledgeModesRolledUp() throws Exception
+    {
+        ParticipantResult result1 = new ParticipantResult();
+        result1.setAcknowledgeMode(Session.DUPS_OK_ACKNOWLEDGE);
+
+        ParticipantResult result2 = new ParticipantResult();
+        result2.setAcknowledgeMode(Session.DUPS_OK_ACKNOWLEDGE);
+
+        _aggregator.aggregate(result1);
+        _aggregator.aggregate(result2);
+
+        ParticipantResult aggregratedResult = _aggregator.getAggregatedResult();
+        assertEquals(Session.DUPS_OK_ACKNOWLEDGE, aggregratedResult.getAcknowledgeMode());
+    }
+
+    public void testDifferingAcknowledgeModesNotRolledUp() throws Exception
+    {
+        ParticipantResult result1 = new ParticipantResult();
+        result1.setBatchSize(Session.AUTO_ACKNOWLEDGE);
+
+        ParticipantResult result2 = new ParticipantResult();
+        result2.setBatchSize(Session.SESSION_TRANSACTED);
+
+        _aggregator.aggregate(result1);
+        _aggregator.aggregate(result2);
+
+        ParticipantResult aggregratedResult = _aggregator.getAggregatedResult();
+        assertEquals(-1, aggregratedResult.getAcknowledgeMode());
     }
 
     public void testSumNumberOfConsumerAndProducers() throws Exception

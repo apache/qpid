@@ -57,6 +57,8 @@ public class ProducerParticipant implements Participant
             throw new DistributedTestException("number of messages and duration cannot both be zero");
         }
 
+        int acknowledgeMode = _jmsDelegate.getAcknowledgeMode(_command.getSessionName());
+
         long expectedDuration = _command.getMaximumDuration() - _command.getStartDelay();
 
         doSleepForStartDelay();
@@ -126,9 +128,9 @@ public class ProducerParticipant implements Participant
                 getName(),
                 registeredClientName,
                 _command,
+                acknowledgeMode,
                 numberOfMessagesSent,
-                payloadSize,
-                totalPayloadSizeOfAllMessagesSent, start, end);
+                payloadSize, totalPayloadSizeOfAllMessagesSent, start, end);
     }
 
     private int getPayloadSizeForResultIfConstantOrZeroOtherwise(NavigableSet<Integer> allPayloadSizes)
