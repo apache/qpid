@@ -65,6 +65,7 @@ public class ConsumerParticipant implements Participant
     public ParticipantResult doIt(String registeredClientName) throws Exception
     {
         final Date start = new Date();
+        final int acknowledgeMode = _jmsDelegate.getAcknowledgeMode(_command.getSessionName());
 
         if (_command.getMaximumDuration() == 0 && _command.getNumberOfMessages() == 0)
         {
@@ -100,11 +101,11 @@ public class ConsumerParticipant implements Participant
                 getName(),
                 registeredClientName,
                 _command,
+                acknowledgeMode,
                 numberOfMessagesSent,
                 payloadSize,
                 totalPayloadSize,
-                start,
-                end);
+                start, end);
 
         return result;
     }

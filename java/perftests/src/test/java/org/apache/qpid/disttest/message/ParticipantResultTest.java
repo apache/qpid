@@ -70,11 +70,14 @@ public class ParticipantResultTest extends TestCase
         int totalNumberOfConsumers = 1;
         int totalNumberOfProducers = 1;
 
+        int acknowledgeMode = 1;
+
         result.setParticipantName(participantName);
         result.setTestName(testName);
         result.setIterationNumber(iterationNumber);
         result.setConfiguredClientName(clientConfiguredName);
 
+        result.setAcknowledgeMode(acknowledgeMode);
         result.setNumberOfMessagesProcessed(numberOfMessages);
         result.setConfiguredClientName(clientConfiguredName);
         result.setBatchSize(batchSize);
@@ -90,6 +93,7 @@ public class ParticipantResultTest extends TestCase
 
         assertEquals(participantName,      result.getAttributes().get(PARTICIPANT_NAME));
         assertEquals(testName,             result.getAttributes().get(TEST_NAME));
+        assertEquals(iterationNumber,         result.getAttributes().get(ITERATION_NUMBER));
         assertEquals(clientConfiguredName,   result.getAttributes().get(CONFIGURED_CLIENT_NAME));
         assertEquals(numberOfMessages,       result.getAttributes().get(NUMBER_OF_MESSAGES_PROCESSED));
         assertEquals(timeTaken,              result.getAttributes().get(TIME_TAKEN));
@@ -99,8 +103,8 @@ public class ParticipantResultTest extends TestCase
         assertEquals(maximumDuration,        result.getAttributes().get(MAXIMUM_DURATION));
         assertEquals(totalNumberOfConsumers, result.getAttributes().get(TOTAL_NUMBER_OF_CONSUMERS));
         assertEquals(totalNumberOfProducers, result.getAttributes().get(TOTAL_NUMBER_OF_PRODUCERS));
+        assertEquals(acknowledgeMode,        result.getAttributes().get(ACKNOWLEDGE_MODE));
         assertEquals(errorMessage,           result.getAttributes().get(ERROR_MESSAGE));
-        assertEquals(iterationNumber,         result.getAttributes().get(ITERATION_NUMBER));
     }
 
     public void testConsumerParticipantResultAttributes() throws Exception

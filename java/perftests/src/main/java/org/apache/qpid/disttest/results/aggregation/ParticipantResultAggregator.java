@@ -40,6 +40,8 @@ public class ParticipantResultAggregator
 
     private NavigableSet<Integer> _encounteredPayloadSizes = new TreeSet<Integer>();
     private NavigableSet<Integer> _encounteredIterationNumbers = new TreeSet<Integer>();
+    private NavigableSet<Integer> _encounteredBatchSizes = new TreeSet<Integer>();
+    private NavigableSet<Integer> _encounteredAcknowledgeMode = new TreeSet<Integer>();
     private NavigableSet<String> _encountedTestNames = new TreeSet<String>();
 
     public ParticipantResultAggregator(Class<? extends ParticipantResult> targetClass, String aggregateResultName)
@@ -90,6 +92,8 @@ public class ParticipantResultAggregator
         }
         _encounteredPayloadSizes.add(result.getPayloadSize());
         _encounteredIterationNumbers.add(result.getIterationNumber());
+        _encounteredBatchSizes.add(result.getBatchSize());
+        _encounteredAcknowledgeMode.add(result.getAcknowledgeMode());
     }
 
     private void setComputedVariableAttributes(ParticipantResult aggregatedResult)
@@ -116,6 +120,14 @@ public class ParticipantResultAggregator
         if (_encountedTestNames.size() == 1)
         {
             aggregatedResult.setTestName(_encountedTestNames.first());
+        }
+        if (_encounteredBatchSizes.size() == 1)
+        {
+            aggregatedResult.setBatchSize(_encounteredBatchSizes.first());
+        }
+        if (_encounteredAcknowledgeMode.size() == 1)
+        {
+            aggregatedResult.setAcknowledgeMode(_encounteredAcknowledgeMode.first());
         }
     }
 
