@@ -20,6 +20,7 @@
     </xsl:call-template>
 
     <body>
+<div class="container">
       <xsl:call-template name="body.attributes"/>
       <xsl:call-template name="user.header.navigation"/>
 
@@ -47,6 +48,7 @@
       <xsl:call-template name="user.footer.navigation"/>
  <div class="main_text_area_bottom">
  </div>
+</div>
 </div>
     </body>
   </html>
