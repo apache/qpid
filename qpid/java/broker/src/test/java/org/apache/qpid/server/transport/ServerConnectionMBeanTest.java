@@ -159,13 +159,6 @@ public class ServerConnectionMBeanTest extends InternalBrokerBaseCase
         assertEquals("Unexpected Object Instance Name", "\"address\"", _mbean.getObjectInstanceName());
     }
 
-    public void testEnableStatistics()
-    {
-        assertFalse("Unexpected statistics enable flag", _mbean.isStatisticsEnabled());
-        _mbean.setStatisticsEnabled(true);
-        assertTrue("Unexpected statistics enable flag", _mbean.isStatisticsEnabled());
-    }
-
     public void testLastIOTime()
     {
         assertEquals("Unexpected last IO time", new Date(1), _mbean.getLastIoTime());

@@ -20,28 +20,80 @@
  */
 package org.apache.qpid.management.jmx;
 
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.test.utils.JMXTestUtils;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.util.LogMonitor;
 
 import java.util.List;
 
+import javax.jms.Connection;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+
 /**
  * Test generation of message statistics reporting.
  */
-public class MessageStatisticsReportingTest extends MessageStatisticsTestCase
+public class MessageStatisticsReportingTest extends QpidBrokerTestCase
 {
     protected LogMonitor _monitor;
-    
-    public void configureStatistics() throws Exception
+    protected static final String USER = "admin";
+
+    protected JMXTestUtils _jmxUtils;
+    protected Connection _test, _dev, _local;
+    protected String _queueName = "statistics";
+    protected Destination _queue;
+    protected String _brokerUrl;
+
+    @Override
+    public void setUp() throws Exception
     {
+        _jmxUtils = new JMXTestUtils(this, USER, USER);
+        _jmxUtils.setUp();
+
         setConfigurationProperty("statistics.generation.broker", "true");
         setConfigurationProperty("statistics.generation.virtualhosts", "true");
-        
+
         if (getName().equals("testEnabledStatisticsReporting"))
         {
             setConfigurationProperty("statistics.reporting.period", "10");
         }
-        
+
         _monitor = new LogMonitor(_outputFile);
+
+        super.setUp();
+
+        _brokerUrl = getBroker().toString();
+        _test = new AMQConnection(_brokerUrl, USER, USER, "clientid", "test");
+        _dev = new AMQConnection(_brokerUrl, USER, USER, "clientid", "development");
+        _local = new AMQConnection(_brokerUrl, USER, USER, "clientid", "localhost");
+
+        _test.start();
+        _dev.start();
+        _local.start();
+
+        _jmxUtils.open();
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        _jmxUtils.close();
+
+        _test.close();
+        _dev.close();
+        _local.close();
+
+        super.tearDown();
     }
 
     /**
@@ -86,5 +138,28 @@ public class MessageStatisticsReportingTest extends MessageStatisticsTestCase
         assertEquals("Incorrect number of broker message stats log messages", 0, brokerStatsMessages.size());
         assertEquals("Incorrect number of virtualhost data stats log messages", 0, vhostStatsData.size());
         assertEquals("Incorrect number of virtualhost message stats log messages", 0, vhostStatsMessages.size());
+    }
+
+    private void sendUsing(Connection con, int number, int size) throws Exception
+    {
+        Session session = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        createQueue(session);
+        MessageProducer producer = session.createProducer(_queue);
+        String content = new String(new byte[size]);
+        TextMessage msg = session.createTextMessage(content);
+        for (int i = 0; i < number; i++)
+        {
+            producer.send(msg);
+        }
+    }
+
+    private void createQueue(Session session) throws AMQException, JMSException
+    {
+        _queue = new AMQQueue(ExchangeDefaults.DIRECT_EXCHANGE_NAME, _queueName);
+        if (!((AMQSession<?,?>) session).isQueueBound((AMQDestination) _queue))
+        {
+            ((AMQSession<?,?>) session).createQueue(new AMQShortString(_queueName), false, true, false, null);
+            ((AMQSession<?,?>) session).declareAndBind((AMQDestination) new AMQQueue(ExchangeDefaults.DIRECT_EXCHANGE_NAME, _queueName));
+        }
     }
 }

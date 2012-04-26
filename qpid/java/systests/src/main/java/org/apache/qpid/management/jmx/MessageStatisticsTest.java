@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,177 +19,186 @@
  */
 package org.apache.qpid.management.jmx;
 
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.management.common.mbeans.ManagedBroker;
-import org.apache.qpid.management.common.mbeans.ManagedConnection;
+import java.util.List;
 
 import javax.jms.Connection;
+import javax.jms.MessageConsumer;
+import javax.jms.Queue;
+import javax.jms.Session;
 
-/**
- * Test generation of message statistics.
- */
-public class MessageStatisticsTest extends MessageStatisticsTestCase
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.management.common.mbeans.ManagedBroker;
+import org.apache.qpid.management.common.mbeans.ManagedConnection;
+import org.apache.qpid.management.common.mbeans.ServerInformation;
+import org.apache.qpid.test.utils.JMXTestUtils;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+
+public class MessageStatisticsTest extends QpidBrokerTestCase
 {
-    public void configureStatistics() throws Exception
+    private static final String TEST_USER = "admin";
+    private static final String TEST_PASSWORD = "admin";
+    private static final int MESSAGE_COUNT_TEST = 5;
+    private static final int MESSAGE_COUNT_DEV = 9;
+
+    private JMXTestUtils _jmxUtils;
+    private Connection _test1, _dev;
+    private Session _testSession, _developmentSession;
+    private Queue _developmentQueue, _testQueue;
+    protected String _brokerUrl;
+
+    @Override
+    public void setUp() throws Exception
     {
-        setConfigurationProperty("statistics.generation.broker", "true");
-        setConfigurationProperty("statistics.generation.virtualhosts", "true");
-        setConfigurationProperty("statistics.generation.connections", "true");
+        super.setUp();
+
+        _jmxUtils = new JMXTestUtils(this, TEST_USER, TEST_PASSWORD);
+        _jmxUtils.setUp();
+
+        _brokerUrl = getBroker().toString();
+        _test1 = new AMQConnection(_brokerUrl, TEST_USER, TEST_PASSWORD, "clientid", "test");
+        _dev = new AMQConnection(_brokerUrl, TEST_USER, TEST_PASSWORD, "clientid", "development");
+        _test1.start();
+        _dev.start();
+
+        _testSession = _test1.createSession(true, Session.SESSION_TRANSACTED);
+        _developmentSession = _dev.createSession(true, Session.SESSION_TRANSACTED);
+
+        _developmentQueue = _developmentSession.createQueue(getTestQueueName());
+        _testQueue = _testSession.createQueue(getTestQueueName());
+
+        //Create queues by opening and closing consumers
+        final MessageConsumer testConsumer = _testSession.createConsumer(_testQueue);
+        testConsumer.close();
+        final MessageConsumer developmentConsumer = _developmentSession.createConsumer(_developmentQueue);
+        developmentConsumer.close();
+
+        _jmxUtils.open();
     }
 
-    /**
-     * Test message totals.
-     */
-    public void testMessageTotals() throws Exception
+    @Override
+    public void tearDown() throws Exception
     {
-        sendUsing(_test, 10, 100);
-        sendUsing(_dev, 20, 100);
-        sendUsing(_local, 5, 100);
-        sendUsing(_local, 5, 100);
-        sendUsing(_local, 5, 100);
-        Thread.sleep(2000);
-        
-        ManagedBroker test = _jmxUtils.getManagedBroker("test");
-        ManagedBroker dev = _jmxUtils.getManagedBroker("development");
-        ManagedBroker local = _jmxUtils.getManagedBroker("localhost");
+        _jmxUtils.close();
 
-        if (!isBroker010())
-        {
-            long total = 0;
-            long data = 0;
-            for (ManagedConnection mc : _jmxUtils.getAllManagedConnections())
-            {
-                total += mc.getTotalMessagesReceived();
-                data += mc.getTotalDataReceived();
-            }
-            assertEquals("Incorrect connection total", 45, total);
-            assertEquals("Incorrect connection data", 4500, data);
-        }
-        assertEquals("Incorrect server total", 45, _jmxUtils.getServerInformation().getTotalMessagesReceived());
-        assertEquals("Incorrect server data", 4500, _jmxUtils.getServerInformation().getTotalDataReceived());
-        
-        if (!isBroker010())
-        {
-            long testTotal = 0;
-            long testData = 0;
-            for (ManagedConnection mc : _jmxUtils.getManagedConnections("test"))
-            {
-                testTotal += mc.getTotalMessagesReceived();
-                testData += mc.getTotalDataReceived();
-            }
-            assertEquals("Incorrect test connection total", 10, testTotal);
-            assertEquals("Incorrect test connection data", 1000, testData);
-        }
-        assertEquals("Incorrect test vhost total", 10, test.getTotalMessagesReceived());
-        assertEquals("Incorrect test vhost data", 1000, test.getTotalDataReceived());
-        
-        if (!isBroker010())
-        {
-            long devTotal = 0;
-            long devData = 0;
-            for (ManagedConnection mc : _jmxUtils.getManagedConnections("development"))
-            {
-                devTotal += mc.getTotalMessagesReceived();
-                devData += mc.getTotalDataReceived();
-            }
-            assertEquals("Incorrect test connection total", 20, devTotal);
-            assertEquals("Incorrect test connection data", 2000, devData);
-        }
-        assertEquals("Incorrect development total", 20, dev.getTotalMessagesReceived());
-        assertEquals("Incorrect development data", 2000, dev.getTotalDataReceived());
-        
-        if (!isBroker010())
-        {
-            long localTotal = 0;
-            long localData = 0;
-            for (ManagedConnection mc : _jmxUtils.getManagedConnections("localhost"))
-            {
-                localTotal += mc.getTotalMessagesReceived();
-                localData += mc.getTotalDataReceived();
-            }
-            assertEquals("Incorrect test connection total", 15, localTotal);
-            assertEquals("Incorrect test connection data", 1500, localData);
-        }
-        assertEquals("Incorrect localhost total", 15, local.getTotalMessagesReceived());
-        assertEquals("Incorrect localhost data", 1500, local.getTotalDataReceived());
+        super.tearDown();
     }
 
-    /**
-     * Test message totals when a connection is closed.
-     */
-    public void testMessageTotalsWithClosedConnections() throws Exception
+    public void testInitialStatisticValues() throws Exception
     {
-        Connection temp = new AMQConnection(_brokerUrl, USER, USER, "clientid", "test");
-        temp.start();
-        
-        sendUsing(_test, 10, 100);
-        sendUsing(temp, 10, 100);
-        sendUsing(_test, 10, 100);
-        Thread.sleep(2000);
-        
-        temp.close();
-        
-        ManagedBroker test = _jmxUtils.getManagedBroker("test");
-
-        if (!isBroker010())
-        {
-            long total = 0;
-            long data = 0;
-            for (ManagedConnection mc : _jmxUtils.getAllManagedConnections())
-            {
-                total += mc.getTotalMessagesReceived();
-                data += mc.getTotalDataReceived();
-            }
-            assertEquals("Incorrect active connection total", 20, total);
-            assertEquals("Incorrect active connection data", 2000, data);
-        }
-        assertEquals("Incorrect server total", 30, _jmxUtils.getServerInformation().getTotalMessagesReceived());
-        assertEquals("Incorrect server data", 3000, _jmxUtils.getServerInformation().getTotalDataReceived());
-        
-        if (!isBroker010())
-        {
-            long testTotal = 0;
-            long testData = 0;
-            for (ManagedConnection mc : _jmxUtils.getManagedConnections("test"))
-            {
-                testTotal += mc.getTotalMessagesReceived();
-                testData += mc.getTotalDataReceived();
-            }
-            assertEquals("Incorrect test active connection total", 20, testTotal);
-            assertEquals("Incorrect test active connection data", 20 * 100, testData);
-        }
-        assertEquals("Incorrect test vhost total", 30, test.getTotalMessagesReceived());
-        assertEquals("Incorrect test vhost data", 30 * 100, test.getTotalDataReceived());
+        //Check initial values
+        checkSingleConnectionOnVHostStatistics("test", 0, 0, 0, 0);
+        checkVHostStatistics("test", 0, 0, 0, 0);
+        checkSingleConnectionOnVHostStatistics("development", 0, 0, 0, 0);
+        checkVHostStatistics("development", 0, 0, 0, 0);
+        checkBrokerStatistics(0, 0, 0, 0);
     }
 
-    /**
-     * Test message totals when a vhost has its statistics reset
-     */
-    public void testMessageTotalVhostReset() throws Exception
+    public void testSendOnSingleVHost() throws Exception
     {
-        sendUsing(_test, 10, 10);
-        sendUsing(_dev, 10, 10);
-        Thread.sleep(2000);
-        
-        ManagedBroker test = _jmxUtils.getManagedBroker("test");
-        ManagedBroker dev = _jmxUtils.getManagedBroker("development");
-        
-        assertEquals("Incorrect test vhost total messages", 10, test.getTotalMessagesReceived());
-        assertEquals("Incorrect test vhost total data", 100, test.getTotalDataReceived());
-        assertEquals("Incorrect dev vhost total messages", 10, dev.getTotalMessagesReceived());
-        assertEquals("Incorrect dev vhost total data", 100, dev.getTotalDataReceived());
+        sendMessagesAndSync(_testSession, _testQueue, MESSAGE_COUNT_TEST);
 
-        assertEquals("Incorrect server total messages", 20, _jmxUtils.getServerInformation().getTotalMessagesReceived());
-        assertEquals("Incorrect server total data", 200, _jmxUtils.getServerInformation().getTotalDataReceived());
-        
-        test.resetStatistics();
-        
-        assertEquals("Incorrect test vhost total messages", 0, test.getTotalMessagesReceived());
-        assertEquals("Incorrect test vhost total data", 0, test.getTotalDataReceived());
-        assertEquals("Incorrect dev vhost total messages", 10, dev.getTotalMessagesReceived());
-        assertEquals("Incorrect dev vhost total data", 100, dev.getTotalDataReceived());
+        //Check values
+        checkSingleConnectionOnVHostStatistics("test", MESSAGE_COUNT_TEST, 0, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, 0);
+        checkVHostStatistics("test", MESSAGE_COUNT_TEST, 0, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, 0);
+        checkSingleConnectionOnVHostStatistics("development", 0, 0, 0, 0);
+        checkVHostStatistics("development", 0, 0, 0, 0);
+        checkBrokerStatistics(MESSAGE_COUNT_TEST, 0, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, 0);
+    }
 
-        assertEquals("Incorrect server total messages", 20, _jmxUtils.getServerInformation().getTotalMessagesReceived());
-        assertEquals("Incorrect server total data", 200, _jmxUtils.getServerInformation().getTotalDataReceived());
+    public void testSendOnTwoVHosts() throws Exception
+    {
+        sendMessagesAndSync(_testSession, _testQueue, MESSAGE_COUNT_TEST);
+        sendMessagesAndSync(_developmentSession, _developmentQueue, MESSAGE_COUNT_DEV);
+
+        //Check values
+        checkSingleConnectionOnVHostStatistics("test", MESSAGE_COUNT_TEST, 0, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, 0);
+        checkVHostStatistics("test", MESSAGE_COUNT_TEST, 0, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, 0);
+        checkSingleConnectionOnVHostStatistics("development",  MESSAGE_COUNT_DEV, 0, MESSAGE_COUNT_DEV * DEFAULT_MESSAGE_SIZE, 0);
+        checkVHostStatistics("development",  MESSAGE_COUNT_DEV, 0, MESSAGE_COUNT_DEV * DEFAULT_MESSAGE_SIZE, 0);
+        checkBrokerStatistics(MESSAGE_COUNT_TEST + MESSAGE_COUNT_DEV, 0, (MESSAGE_COUNT_TEST + MESSAGE_COUNT_DEV) * DEFAULT_MESSAGE_SIZE, 0);
+    }
+
+    public void testSendAndConsumeOnSingleVHost() throws Exception
+    {
+        sendMessagesAndSync(_testSession, _testQueue, MESSAGE_COUNT_TEST);
+        consumeMessages(_testSession, _testQueue, MESSAGE_COUNT_TEST);
+
+        //Check values
+        checkSingleConnectionOnVHostStatistics("test", MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE);
+        checkVHostStatistics("test", MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE);
+        checkSingleConnectionOnVHostStatistics("development", 0, 0, 0, 0);
+        checkVHostStatistics("development", 0, 0, 0, 0);
+        checkBrokerStatistics(MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE);
+    }
+
+    public void testSendAndConsumeOnTwoVHosts() throws Exception
+    {
+        sendMessagesAndSync(_testSession, _testQueue, MESSAGE_COUNT_TEST);
+        sendMessagesAndSync(_developmentSession, _developmentQueue, MESSAGE_COUNT_DEV);
+        consumeMessages(_testSession, _testQueue, MESSAGE_COUNT_TEST);
+        consumeMessages(_developmentSession, _developmentQueue, MESSAGE_COUNT_DEV);
+
+        //Check values
+        checkSingleConnectionOnVHostStatistics("test", MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE);
+        checkVHostStatistics("test", MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE);
+        checkSingleConnectionOnVHostStatistics("development",  MESSAGE_COUNT_DEV, MESSAGE_COUNT_DEV, MESSAGE_COUNT_DEV * DEFAULT_MESSAGE_SIZE, MESSAGE_COUNT_DEV * DEFAULT_MESSAGE_SIZE);
+        checkVHostStatistics("development",  MESSAGE_COUNT_DEV, MESSAGE_COUNT_DEV, MESSAGE_COUNT_DEV * DEFAULT_MESSAGE_SIZE, MESSAGE_COUNT_DEV * DEFAULT_MESSAGE_SIZE);
+        checkBrokerStatistics(MESSAGE_COUNT_TEST + MESSAGE_COUNT_DEV, MESSAGE_COUNT_TEST + MESSAGE_COUNT_DEV, (MESSAGE_COUNT_TEST + MESSAGE_COUNT_DEV) * DEFAULT_MESSAGE_SIZE, (MESSAGE_COUNT_TEST + MESSAGE_COUNT_DEV) * DEFAULT_MESSAGE_SIZE);
+    }
+
+    private void sendMessagesAndSync(Session session, Queue queue, int numberOfMessages) throws Exception
+    {
+        //Send messages via connection on and sync
+        sendMessage(session, queue, numberOfMessages);
+        ((AMQSession<?,?>)session).sync();
+    }
+
+    private void consumeMessages(Session session, Queue queue, int numberOfMessages) throws Exception
+    {
+        //consume the messages on the virtual host
+        final MessageConsumer consumer = session.createConsumer(queue);
+        for (int i = 0 ; i < numberOfMessages ; i++)
+        {
+            assertNotNull("an expected message was not recieved", consumer.receive(1500));
+        }
+        session.commit();
+        consumer.close();
+    }
+
+    private void checkSingleConnectionOnVHostStatistics(String vHostName, long messagesSent, long messagesReceived, long dataSent, long dataReceived)
+    {
+        List<ManagedConnection> managedConnections = _jmxUtils.getManagedConnections(vHostName);
+        assertEquals(1, managedConnections.size());
+
+        ManagedConnection managedConnection = managedConnections.get(0);
+
+        assertEquals(messagesSent, managedConnection.getTotalMessagesReceived());
+        assertEquals(messagesReceived, managedConnection.getTotalMessagesDelivered());
+
+        assertEquals(dataSent, managedConnection.getTotalDataReceived());
+        assertEquals(dataReceived, managedConnection.getTotalDataDelivered());
+    }
+
+    private void checkVHostStatistics(String vHostName, long messagesSent, long messagesReceived, long dataSent, long dataReceived)
+    {
+        ManagedBroker vhost = _jmxUtils.getManagedBroker(vHostName);
+
+        assertEquals(messagesSent, vhost.getTotalMessagesReceived());
+        assertEquals(messagesReceived, vhost.getTotalMessagesDelivered());
+
+        assertEquals(dataSent, vhost.getTotalDataReceived());
+        assertEquals(dataReceived, vhost.getTotalDataDelivered());
+    }
+
+    private void checkBrokerStatistics(long messagesSent, long messagesReceived, long dataSent, long dataReceived)
+    {
+        ServerInformation broker = _jmxUtils.getServerInformation();
+
+        assertEquals(messagesSent, broker.getTotalMessagesReceived());
+        assertEquals(messagesReceived, broker.getTotalMessagesDelivered());
+
+        assertEquals(dataSent, broker.getTotalDataReceived());
+        assertEquals(dataReceived, broker.getTotalDataDelivered());
     }
 }
