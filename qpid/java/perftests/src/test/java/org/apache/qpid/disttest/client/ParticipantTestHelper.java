@@ -32,21 +32,22 @@ public class ParticipantTestHelper
         assertTrue(message + " " + actual, actual >= minimumExpected);
     }
 
-    public static void assertExpectedConsumerResults(ParticipantResult result, String participantName, String registeredClientName, long expectedTestStartTime, Integer expectedNumberOfMessages, Integer expectedPayloadSize, Long expectedTotalPayloadProcessed, Long expectedMinimumExpectedDuration)
+    public static void assertExpectedConsumerResults(ParticipantResult result, String participantName, String registeredClientName, long expectedTestStartTime, int expectedAcknowledgeMode, Integer expectedBatchSize, Integer expectedNumberOfMessages, Integer expectedPayloadSize, Long expectedTotalPayloadProcessed, Long expectedMinimumExpectedDuration)
     {
-        assertExpectedResults(result, participantName, registeredClientName, expectedTestStartTime, expectedNumberOfMessages, expectedPayloadSize, expectedTotalPayloadProcessed, expectedMinimumExpectedDuration);
+        assertExpectedResults(result, participantName, registeredClientName, expectedTestStartTime,
+                expectedAcknowledgeMode, expectedBatchSize, expectedNumberOfMessages, expectedPayloadSize, expectedTotalPayloadProcessed, expectedMinimumExpectedDuration);
         assertEquals("Unexpected number of consumers", 1, result.getTotalNumberOfConsumers());
         assertEquals("Unexpected number of producers", 0, result.getTotalNumberOfProducers());
     }
 
-    public static void assertExpectedProducerResults(ParticipantResult result, String participantName, String registeredClientName, long expectedTestStartTime, Integer expectedNumberOfMessages, Integer expectedPayloadSize, Long expectedTotalPayloadProcessed, Long expectedMinimumExpectedDuration)
+    public static void assertExpectedProducerResults(ParticipantResult result, String participantName, String registeredClientName, long expectedTestStartTime, int expectedAcknowledgeMode, Integer expectedBatchSize, Integer expectedNumberOfMessages, Integer expectedPayloadSize, Long expectedTotalPayloadProcessed, Long expectedMinimumExpectedDuration)
     {
-        assertExpectedResults(result, participantName, registeredClientName, expectedTestStartTime, expectedNumberOfMessages, expectedPayloadSize, expectedTotalPayloadProcessed, expectedMinimumExpectedDuration);
+        assertExpectedResults(result, participantName, registeredClientName, expectedTestStartTime, expectedAcknowledgeMode, expectedBatchSize, expectedNumberOfMessages, expectedPayloadSize, expectedTotalPayloadProcessed, expectedMinimumExpectedDuration);
         assertEquals("Unexpected number of producers", 1, result.getTotalNumberOfProducers());
         assertEquals("Unexpected number of consumers", 0, result.getTotalNumberOfConsumers());
     }
 
-    private static void assertExpectedResults(ParticipantResult result, String participantName, String registeredClientName, long expectedTestStartTime, Integer expectedNumberOfMessages, Integer expectedPayloadSize, Long expectedTotalPayloadProcessed, Long expectedMinimumExpectedDuration)
+    private static void assertExpectedResults(ParticipantResult result, String participantName, String registeredClientName, long expectedTestStartTime, int expectedAcknowledgeMode, Integer expectedBatchSize, Integer expectedNumberOfMessages, Integer expectedPayloadSize, Long expectedTotalPayloadProcessed, Long expectedMinimumExpectedDuration)
     {
         assertFalse(result.hasError());
 
@@ -55,9 +56,16 @@ public class ParticipantTestHelper
 
         assertAtLeast("start time of result is too low", expectedTestStartTime, result.getStartInMillis());
         assertAtLeast("end time of result should be after start time", result.getStartInMillis(), result.getEndInMillis());
+
+        assertEquals("unexpected acknowledge mode", expectedAcknowledgeMode, result.getAcknowledgeMode());
+
         if(expectedNumberOfMessages != null)
         {
             assertEquals("unexpected number of messages", expectedNumberOfMessages.intValue(), result.getNumberOfMessagesProcessed());
+        }
+        if(expectedBatchSize != null)
+        {
+            assertEquals("unexpected batch size", expectedBatchSize.intValue(), result.getBatchSize());
         }
         if (expectedPayloadSize != null)
         {

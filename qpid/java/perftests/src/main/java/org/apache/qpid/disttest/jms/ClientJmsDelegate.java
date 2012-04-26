@@ -360,6 +360,20 @@ public class ClientJmsDelegate
         }
     }
 
+    public int getAcknowledgeMode(final String sessionName)
+    {
+        try
+        {
+            final Session session = _testSessions.get(sessionName);
+            return session.getAcknowledgeMode();
+        }
+        catch (final JMSException jmse)
+        {
+            throw new DistributedTestException("Unable to determine acknowledgement mode for session: " +
+                            sessionName, jmse);
+        }
+    }
+
     public Message sendNextMessage(final CreateProducerCommand command)
     {
         Message sentMessage = null;

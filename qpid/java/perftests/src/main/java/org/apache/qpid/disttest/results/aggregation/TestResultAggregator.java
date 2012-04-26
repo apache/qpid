@@ -31,36 +31,52 @@ public class TestResultAggregator
 
     public AggregatedTestResult aggregateTestResult(ITestResult originalTestResult)
     {
-        AggregatedTestResult newTestResult = new AggregatedTestResult(originalTestResult);
+        ParticipantResultAggregator consumerResultAggregator = new ParticipantResultAggregator(ConsumerParticipantResult.class,
+                                                                                               ALL_CONSUMER_PARTICIPANTS_NAME);
+        ParticipantResultAggregator producerResultAggregator = new ParticipantResultAggregator(ProducerParticipantResult.class,
+                                                                                               ALL_PRODUCER_PARTICIPANTS_NAME);
+        ParticipantResultAggregator aggregatedResultsAggregator = new ParticipantResultAggregator(ParticipantResult.class,
+                                                                                               ALL_PARTICIPANTS_NAME);
 
-        ParticipantResultAggregator consumerParticipantResultAggregator = new ParticipantResultAggregator(ConsumerParticipantResult.class,
-                                                                                                          ALL_CONSUMER_PARTICIPANTS_NAME);
-        ParticipantResultAggregator producerParticipantResultAggregator = new ParticipantResultAggregator(ProducerParticipantResult.class,
-                                                                                                          ALL_PRODUCER_PARTICIPANTS_NAME);
+        boolean hasError = aggregateOriginalResults(originalTestResult,
+                                     consumerResultAggregator,
+                                     producerResultAggregator);
 
-        boolean hasError = aggregate(originalTestResult,
-                                     consumerParticipantResultAggregator,
-                                     producerParticipantResultAggregator);
+        ParticipantResult aggregatedProducerResult = producerResultAggregator.getAggregatedResult();
+        ParticipantResult aggregaredConsumerResult = consumerResultAggregator.getAggregatedResult();
 
-        ParticipantResult aggregatedProducerResult = producerParticipantResultAggregator.getAggregatedResult();
-        newTestResult.setAllProducerParticipantResult(aggregatedProducerResult);
+        ParticipantResult aggregatedAllResult = aggregateAggregatedResults(
+                aggregatedResultsAggregator, aggregatedProducerResult,
+                aggregaredConsumerResult);
 
-        ParticipantResult aggregaredConsumerResult = consumerParticipantResultAggregator.getAggregatedResult();
-        newTestResult.setAllConsumerParticipantResult(aggregaredConsumerResult);
-
-        ParticipantResult aggregatedAllResult = buildAllResultFromOtherAggregatedResults(
+        applyNonAggregateablesToAll(aggregatedAllResult,
                 aggregatedProducerResult, aggregaredConsumerResult);
+
+        AggregatedTestResult newTestResult = new AggregatedTestResult(originalTestResult);
+        newTestResult.setAllProducerParticipantResult(aggregatedProducerResult);
+        newTestResult.setAllConsumerParticipantResult(aggregaredConsumerResult);
+        newTestResult.setAllParticipantResult(aggregatedAllResult);
 
         if (hasError)
         {
             aggregatedAllResult.setErrorMessage(TestResultAggregator.AGGREGATED_ERROR_MESSAGE);
         }
-        newTestResult.setAllParticipantResult(aggregatedAllResult);
 
         return newTestResult;
     }
 
-    private boolean aggregate(ITestResult originalTestResult,
+    private ParticipantResult aggregateAggregatedResults(
+            ParticipantResultAggregator aggregatedResultsAggregator,
+            ParticipantResult aggregatedProducerResult,
+            ParticipantResult aggregaredConsumerResult)
+    {
+        aggregatedResultsAggregator.aggregate(aggregatedProducerResult);
+        aggregatedResultsAggregator.aggregate(aggregaredConsumerResult);
+        ParticipantResult aggregatedAllResult = aggregatedResultsAggregator.getAggregatedResult();
+        return aggregatedAllResult;
+    }
+
+    private boolean aggregateOriginalResults(ITestResult originalTestResult,
             ParticipantResultAggregator consumerParticipantResultAggregator,
             ParticipantResultAggregator producerParticipantResultAggregator)
     {
@@ -78,23 +94,13 @@ public class TestResultAggregator
         return hasError;
     }
 
-    private ParticipantResult buildAllResultFromOtherAggregatedResults(
-            ParticipantResult aggregatedProducerResult, ParticipantResult aggregatedConsumerResult)
+    private void applyNonAggregateablesToAll(ParticipantResult aggregatedAllResult, ParticipantResult aggregatedProducerResult, ParticipantResult aggregatedConsumerResult)
     {
-        ParticipantResult aggregatedAllResult = new ParticipantResult(ALL_PARTICIPANTS_NAME);
         aggregatedAllResult.setStartDate(aggregatedProducerResult.getStartDate());
-
         aggregatedAllResult.setEndDate(aggregatedConsumerResult.getEndDate());
 
-        aggregatedAllResult.setIterationNumber(aggregatedConsumerResult.getIterationNumber());
-        aggregatedAllResult.setTestName(aggregatedConsumerResult.getTestName());
         aggregatedAllResult.setNumberOfMessagesProcessed(aggregatedConsumerResult.getNumberOfMessagesProcessed());
-        aggregatedAllResult.setPayloadSize(aggregatedConsumerResult.getPayloadSize());
         aggregatedAllResult.setTotalPayloadProcessed(aggregatedConsumerResult.getTotalPayloadProcessed());
         aggregatedAllResult.setThroughput(aggregatedConsumerResult.getThroughput());
-        aggregatedAllResult.setTotalNumberOfProducers(aggregatedProducerResult.getTotalNumberOfProducers());
-        aggregatedAllResult.setTotalNumberOfConsumers(aggregatedConsumerResult.getTotalNumberOfConsumers());
-
-        return aggregatedAllResult;
     }
 }

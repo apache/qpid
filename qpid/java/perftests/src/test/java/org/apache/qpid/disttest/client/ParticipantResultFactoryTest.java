@@ -79,18 +79,21 @@ public class ParticipantResultFactoryTest extends TestCase
         int totalNumberOfConsumers = 0;
         int totalNumberOfProducers = 1;
 
+        int acknowledgeMode = 1;
+
         ProducerParticipantResult result = _participantResultFactory.createForProducer(PARTICIPANT_NAME,
                                                                                        REGISTERED_CLIENT_NAME,
                                                                                        command,
+                                                                                       acknowledgeMode,
                                                                                        NUMBER_OF_MESSAGES_PROCESSED,
                                                                                        PAYLOAD_SIZE,
                                                                                        TOTAL_PAYLOAD_PROCESSED,
-                                                                                       START,
-                                                                                       END);
+                                                                                       START, END);
 
         assertCommonResultProperties(result);
 
         assertEquals(deliveryMode, result.getDeliveryMode());
+        assertEquals(acknowledgeMode, result.getAcknowledgeMode());
         assertEquals(priority, result.getPriority());
         assertEquals(producerInterval, result.getInterval());
         assertEquals(producerStartDelay, result.getStartDelay());
@@ -126,14 +129,16 @@ public class ParticipantResultFactoryTest extends TestCase
         int totalNumberOfConsumers = 1;
         int totalNumberOfProducers = 0;
 
+        int acknowledgeMode = 2;
+
         ConsumerParticipantResult result = _participantResultFactory.createForConsumer(PARTICIPANT_NAME,
                                                                                        REGISTERED_CLIENT_NAME,
                                                                                        command,
+                                                                                       acknowledgeMode,
                                                                                        NUMBER_OF_MESSAGES_PROCESSED,
                                                                                        PAYLOAD_SIZE,
                                                                                        TOTAL_PAYLOAD_PROCESSED,
-                                                                                       START,
-                                                                                       END);
+                                                                                       START, END);
 
         assertCommonResultProperties(result);
 

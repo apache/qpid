@@ -20,7 +20,7 @@ package org.apache.qpid.disttest.results.formatting;
 
 import static org.apache.qpid.disttest.message.ParticipantAttribute.BATCH_SIZE;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.CONFIGURED_CLIENT_NAME;
-import static org.apache.qpid.disttest.message.ParticipantAttribute.DELIVERY_MODE;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.*;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.ERROR_MESSAGE;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_BROWSIING_SUBSCRIPTION;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_DURABLE_SUBSCRIPTION;
@@ -58,6 +58,7 @@ import org.apache.qpid.disttest.controller.ResultsForAllTests;
 import org.apache.qpid.disttest.controller.TestResult;
 import org.apache.qpid.disttest.message.ParticipantAttribute;
 import org.apache.qpid.disttest.message.ParticipantResult;
+import org.apache.qpid.qmf.QMFProperty.AccessCode;
 
 public class CSVFormaterTest extends TestCase
 {
@@ -96,10 +97,11 @@ public class CSVFormaterTest extends TestCase
         participantAttributes.put(ITERATION_NUMBER, 0);
         participantAttributes.put(CONFIGURED_CLIENT_NAME, CONFIGURED_CLIENT1);
         participantAttributes.put(PARTICIPANT_NAME, PARTICIPANT);
-        participantAttributes.put(NUMBER_OF_MESSAGES_PROCESSED, 1);
-        participantAttributes.put(PAYLOAD_SIZE, 2);
-        participantAttributes.put(PRIORITY, 3);
-        participantAttributes.put(TIME_TO_LIVE, 4);
+        participantAttributes.put(NUMBER_OF_MESSAGES_PROCESSED, 0);
+        participantAttributes.put(PAYLOAD_SIZE, 1);
+        participantAttributes.put(PRIORITY, 2);
+        participantAttributes.put(TIME_TO_LIVE, 3);
+        participantAttributes.put(ACKNOWLEDGE_MODE, 4);
         participantAttributes.put(DELIVERY_MODE, 5);
         participantAttributes.put(BATCH_SIZE, 6);
         participantAttributes.put(MAXIMUM_DURATION, 7);

@@ -36,11 +36,12 @@ public class ParticipantResult extends Response
 {
     private String _testName;
     private String _participantName;
+    private int _iterationNumber;
+
     private long _startInMillis;
     private long _endInMillis;
     private int _batchSize;
     private long _maximumDuration;
-    private int _iterationNumber;
 
     private String _configuredClientName;
 
@@ -52,6 +53,9 @@ public class ParticipantResult extends Response
     private int _totalNumberOfConsumers;
     private int _totalNumberOfProducers;
 
+    // As Session.SESSION_TRANSACTED is 0, we use value -1 so we can distinguish the case where an aggregated result
+    // summarizes results from participants using different session acknowledge modes.
+    private int _acknowledgeMode = -1;
 
     public static final Comparator<? super ParticipantResult> PARTICIPANT_NAME_COMPARATOR = new Comparator<ParticipantResult>()
     {
@@ -252,6 +256,17 @@ public class ParticipantResult extends Response
     public int getTotalNumberOfProducers()
     {
         return _totalNumberOfProducers;
+    }
+
+    @OutputAttribute(attribute=ParticipantAttribute.ACKNOWLEDGE_MODE)
+    public int getAcknowledgeMode()
+    {
+        return _acknowledgeMode;
+    }
+
+    public void setAcknowledgeMode(int acknowledgeMode)
+    {
+        _acknowledgeMode = acknowledgeMode;
     }
 
 }

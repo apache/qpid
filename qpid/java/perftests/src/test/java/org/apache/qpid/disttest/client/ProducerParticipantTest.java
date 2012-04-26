@@ -29,6 +29,7 @@ import static org.mockito.Mockito.when;
 
 import javax.jms.DeliveryMode;
 import javax.jms.Message;
+import javax.jms.Session;
 
 import junit.framework.TestCase;
 
@@ -69,6 +70,7 @@ public class ProducerParticipantTest extends TestCase
 
         when(_delegate.sendNextMessage(isA(CreateProducerCommand.class))).thenReturn(_mockMessage);
         when(_delegate.calculatePayloadSizeFrom(_mockMessage)).thenReturn(PAYLOAD_SIZE_PER_MESSAGE);
+        when(_delegate.getAcknowledgeMode(SESSION_NAME1)).thenReturn(Session.AUTO_ACKNOWLEDGE);
 
         _producer = new ProducerParticipant(_delegate, _command);
 
@@ -87,7 +89,7 @@ public class ProducerParticipantTest extends TestCase
         ParticipantResult result = _producer.doIt(CLIENT_NAME);
 
         long expectedPublishedStartTime = _testStartTime + delay;
-        assertExpectedProducerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, expectedPublishedStartTime, numberOfMessages, PAYLOAD_SIZE_PER_MESSAGE, totalPayloadSize, null);
+        assertExpectedProducerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, expectedPublishedStartTime, Session.AUTO_ACKNOWLEDGE, null, numberOfMessages, PAYLOAD_SIZE_PER_MESSAGE, totalPayloadSize, null);
     }
 
 
@@ -120,7 +122,8 @@ public class ProducerParticipantTest extends TestCase
         _command.setDeliveryMode(deliveryMode);
 
         ParticipantResult result = (ParticipantResult) _producer.doIt(CLIENT_NAME);
-        assertExpectedProducerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, numberOfMessages, PAYLOAD_SIZE_PER_MESSAGE, totalPayloadSize, null);
+        assertExpectedProducerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime,
+                                      Session.AUTO_ACKNOWLEDGE, null, numberOfMessages, PAYLOAD_SIZE_PER_MESSAGE, totalPayloadSize, null);
 
         _inOrder.verify(_delegate).sendNextMessage(isA(CreateProducerCommand.class));
         _inOrder.verify(_delegate).calculatePayloadSizeFrom(_mockMessage);
@@ -134,7 +137,8 @@ public class ProducerParticipantTest extends TestCase
         _command.setMaximumDuration(duration);
 
         ParticipantResult result = _producer.doIt(CLIENT_NAME);
-        assertExpectedProducerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, null, PAYLOAD_SIZE_PER_MESSAGE, null, duration);
+        assertExpectedProducerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime,
+                                      Session.AUTO_ACKNOWLEDGE, null, null, PAYLOAD_SIZE_PER_MESSAGE, null, duration);
 
         verify(_delegate, atLeastOnce()).sendNextMessage(isA(CreateProducerCommand.class));
         verify(_delegate, atLeastOnce()).calculatePayloadSizeFrom(_mockMessage);
@@ -143,15 +147,17 @@ public class ProducerParticipantTest extends TestCase
 
     public void testSendMessageBatches() throws Exception
     {
+        final int batchSize = 3;
         final int numberOfMessages = 10;
         final int expectedNumberOfCommits = 4; // one for each batch of 3 messages, plus one more at the end of the test for the tenth msg.
         long totalPayloadSize = PAYLOAD_SIZE_PER_MESSAGE * numberOfMessages;
 
         _command.setNumberOfMessages(numberOfMessages);
-        _command.setBatchSize(3);
+        _command.setBatchSize(batchSize);
 
         ParticipantResult result = _producer.doIt(CLIENT_NAME);
-        assertExpectedProducerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, numberOfMessages, PAYLOAD_SIZE_PER_MESSAGE, totalPayloadSize, null);
+        assertExpectedProducerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime,
+                                      Session.AUTO_ACKNOWLEDGE, batchSize, numberOfMessages, PAYLOAD_SIZE_PER_MESSAGE, totalPayloadSize, null);
 
         verify(_delegate, times(numberOfMessages)).sendNextMessage(isA(CreateProducerCommand.class));
         verify(_delegate, times(numberOfMessages)).calculatePayloadSizeFrom(_mockMessage);
@@ -172,7 +178,8 @@ public class ProducerParticipantTest extends TestCase
         _command.setInterval(publishInterval);
 
         ParticipantResult result = _producer.doIt(CLIENT_NAME);
-        assertExpectedProducerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, numberOfMessages, null, totalPayloadSize, expectedTimeToRunTest);
+        assertExpectedProducerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime,
+                                      Session.AUTO_ACKNOWLEDGE, null, numberOfMessages, null, totalPayloadSize, expectedTimeToRunTest);
 
         verify(_delegate, times(numberOfMessages)).sendNextMessage(isA(CreateProducerCommand.class));
         verify(_delegate, times(numberOfMessages)).calculatePayloadSizeFrom(_mockMessage);
@@ -196,7 +203,8 @@ public class ProducerParticipantTest extends TestCase
         ParticipantResult result = _producer.doIt(CLIENT_NAME);
 
         final int expectedPayloadResultPayloadSize = 0;
-        assertExpectedProducerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime, numberOfMessages, expectedPayloadResultPayloadSize, totalPayloadSize, null);
+        assertExpectedProducerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime,
+                                      Session.AUTO_ACKNOWLEDGE, null, numberOfMessages, expectedPayloadResultPayloadSize, totalPayloadSize, null);
 
         verify(_delegate, times(numberOfMessages)).sendNextMessage(isA(CreateProducerCommand.class));
         verify(_delegate, times(numberOfMessages)).calculatePayloadSizeFrom(_mockMessage);
