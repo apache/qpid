@@ -1,3 +1,4 @@
+<?xml version='1.0'?> 
 <!--
  -
  - Licensed to the Apache Software Foundation (ASF) under one
@@ -18,7 +19,6 @@
  - under the License.
  -
  -->
-<?xml version='1.0'?> 
 <xsl:stylesheet  
        xmlns:xsl="http://www.w3.org/1999/XSL/Transform"  version="1.0"> 
   <xsl:import href="http://docbook.sourceforge.net/release/xsl/current/html/chunk.xsl"/>

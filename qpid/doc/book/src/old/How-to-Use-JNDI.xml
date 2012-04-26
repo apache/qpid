@@ -167,7 +167,7 @@ ctx.close();
 
 	  <section>
 	    <title>Using Qpid with Other JNDI Providers</title>
-	    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Using Qpid with other JNDI Providers.xml"/>
+	    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Using-Qpid-with-other-JNDI-Providers.xml"/>
 	  </section>
 <!--h2-->
 	  </section>
