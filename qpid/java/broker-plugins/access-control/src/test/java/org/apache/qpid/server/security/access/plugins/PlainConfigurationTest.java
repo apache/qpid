@@ -318,17 +318,17 @@ public class PlainConfigurationTest extends TestCase
      */
     public void testMixedCaseRuleInterpretation() throws Exception
     {
-        final PlainConfiguration config = writeACLConfig("AcL deny-LOG user1 BiND Exchange name=AmQ.dIrect");
+        final PlainConfiguration config = writeACLConfig("AcL deny-LOG User1 BiND Exchange Name=AmQ.dIrect");
         final RuleSet rs = config.getConfiguration();
         assertEquals(1, rs.getRuleCount());
 
         final Map<Integer, Rule> rules = rs.getAllRules();
         assertEquals(1, rules.size());
         final Rule rule = rules.get(0);
-        assertEquals("Rule has unexpected identity", "user1", rule.getIdentity());
+        assertEquals("Rule has unexpected identity", "User1", rule.getIdentity());
         assertEquals("Rule has unexpected operation", Operation.BIND, rule.getAction().getOperation());
         assertEquals("Rule has unexpected operation", ObjectType.EXCHANGE, rule.getAction().getObjectType());
-        final ObjectProperties expectedProperties = new ObjectProperties("amq.direct");
+        final ObjectProperties expectedProperties = new ObjectProperties("AmQ.dIrect");
         assertEquals("Rule has unexpected object properties", expectedProperties, rule.getAction().getProperties());
     }
 
