@@ -30,6 +30,7 @@
 #include "qmf/org/apache/qpid/acl/Acl.h"
 #include "qpid/sys/Mutex.h"
 
+#include <boost/shared_ptr.hpp>
 #include <map>
 #include <string>
 
@@ -40,9 +41,12 @@ class Broker;
 }
 
 namespace acl {
+class ConnectionCounter;
 
 struct AclValues {
-	std::string aclFile;
+    std::string aclFile;
+    uint32_t    aclMaxConnectPerUser;
+    uint32_t    aclMaxConnectPerIp;
 };
 
 
@@ -50,54 +54,55 @@ class Acl : public broker::AclModule, public RefCounted, public management::Mana
 {
 
 private:
-   acl::AclValues aclValues;
-   broker::Broker* broker;
-   bool transferAcl;
-   boost::shared_ptr<AclData> data;
-   qmf::org::apache::qpid::acl::Acl* mgmtObject; // mgnt owns lifecycle
-   qpid::management::ManagementAgent* agent;
-   mutable qpid::sys::Mutex dataLock;
+    acl::AclValues                       aclValues;
+    broker::Broker*                      broker;
+    bool                                 transferAcl;
+    boost::shared_ptr<AclData>           data;
+    qmf::org::apache::qpid::acl::Acl*    mgmtObject; // mgnt owns lifecycle
+    qpid::management::ManagementAgent*   agent;
+    mutable qpid::sys::Mutex             dataLock;
+    boost::shared_ptr<ConnectionCounter> connectionCounter;
 
 public:
-   Acl (AclValues& av, broker::Broker& b);
+    Acl (AclValues& av, broker::Broker& b);
 
-   void initialize();
+    void initialize();
 
-   inline virtual bool doTransferAcl() {return transferAcl;};
+    inline virtual bool doTransferAcl() {
+        return transferAcl;
+    };
 
-   // create specilied authorise methods for cases that need faster matching as needed.
-   virtual bool authorise(
-       const std::string& id,
-       const Action& action,
-       const ObjectType& objType,
-       const std::string& name,
-       std::map<Property, std::string>* params=0);
+// create specilied authorise methods for cases that need faster matching as needed.
+    virtual bool authorise(
+        const std::string&               id,
+        const Action&                    action,
+        const ObjectType&                objType,
+        const std::string&               name,
+        std::map<Property, std::string>* params=0);
 
-   virtual bool authorise(
-       const std::string& id,
-       const Action& action,
-       const ObjectType& objType,
-       const std::string& ExchangeName,
-       const std::string& RoutingKey);
+    virtual bool authorise(
+        const std::string&               id,
+        const Action&                    action,
+        const ObjectType&                objType,
+        const std::string&               ExchangeName,
+        const std::string&               RoutingKey);
 
-   virtual ~Acl();
+    virtual ~Acl();
 private:
-   bool result(
-       const AclResult& aclreslt,
-       const std::string& id,
-       const Action& action,
-       const ObjectType& objType,
-       const std::string& name);
-   bool readAclFile(std::string& errorText);
-   bool readAclFile(std::string& aclFile, std::string& errorText);
-   Manageable::status_t lookup       (management::Args& args, std::string& text);
-   Manageable::status_t lookupPublish(management::Args& args, std::string& text);
-   virtual qpid::management::ManagementObject* GetManagementObject(void) const;
-   virtual management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
+    bool result(
+        const AclResult&   aclreslt,
+        const std::string& id,
+        const Action&      action,
+        const ObjectType&  objType,
+        const std::string& name);
+    bool readAclFile(std::string& errorText);
+    bool readAclFile(std::string& aclFile, std::string& errorText);
+    Manageable::status_t lookup       (management::Args& args, std::string& text);
+    Manageable::status_t lookupPublish(management::Args& args, std::string& text);
+    virtual qpid::management::ManagementObject* GetManagementObject(void) const;
+    virtual management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
 
 };
-
-
 
 }} // namespace qpid::acl
 
