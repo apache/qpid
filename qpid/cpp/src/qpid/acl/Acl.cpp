@@ -17,6 +17,7 @@
  */
 
 #include "qpid/acl/Acl.h"
+#include "qpid/acl/AclConnectionCounter.h"
 #include "qpid/acl/AclData.h"
 #include "qpid/acl/AclValidator.h"
 #include "qpid/sys/Mutex.h"
@@ -48,7 +49,8 @@ using qpid::management::Manageable;
 using qpid::management::Args;
 namespace _qmf = qmf::org::apache::qpid::acl;
 
-Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(false), mgmtObject(0)
+Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(false), mgmtObject(0),
+    connectionCounter(new ConnectionCounter(aclValues.aclMaxConnectPerUser, aclValues.aclMaxConnectPerIp))
 {
 
     agent = broker->getManagementAgent();
@@ -63,6 +65,7 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
         throw Exception("Could not read ACL file " + errorString);
         if (mgmtObject!=0) mgmtObject->set_enforcingAcl(0);
     }
+    broker->getConnectionObservers().add(connectionCounter);
     QPID_LOG(info, "ACL Plugin loaded");
     if (mgmtObject!=0) mgmtObject->set_enforcingAcl(1);
 }
@@ -267,7 +270,9 @@ Manageable::status_t Acl::lookupPublish(qpid::management::Args& args, std::strin
 }
 
 
-Acl::~Acl(){}
+Acl::~Acl(){
+    broker->getConnectionObservers().remove(connectionCounter);
+}
 
 ManagementObject* Acl::GetManagementObject(void) const
 {
