@@ -18,8 +18,21 @@
  * under the License.
  *
  */
-#sessions {
-	width: 100%;
-	height: 100px;
-}
+
+
+
+
+function Header(title)
+{
+
+    var headerHTML = "<div class=\"logo\"><h2>"+title+"</h2></div>";
+
+    require(["dojo/dom", "dojo/domReady!"],
+                    function(dom)
+              {
+                  var headerDiv = dom.byId("header");
+                  headerDiv.innerHTML = headerHTML;
+
+              });
+};
 

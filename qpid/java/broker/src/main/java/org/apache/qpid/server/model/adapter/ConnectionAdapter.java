@@ -97,7 +97,8 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
 
     public String getName()
     {
-        return _connection.getRemoteAddressString();
+        final String remoteAddressString = _connection.getRemoteAddressString();
+        return remoteAddressString.replaceAll("/","");
     }
 
     public String setName(final String currentName, final String desiredName)

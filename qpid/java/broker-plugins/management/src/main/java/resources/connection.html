@@ -1,4 +1,24 @@
 <!DOCTYPE HTML>
+<!--
+ -
+ - Licensed to the Apache Software Foundation (ASF) under one
+ - or more contributor license agreements.  See the NOTICE file
+ - distributed with this work for additional information
+ - regarding copyright ownership.  The ASF licenses this file
+ - to you under the Apache License, Version 2.0 (the
+ - "License"); you may not use this file except in compliance
+ - with the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing,
+ - software distributed under the License is distributed on an
+ - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ - KIND, either express or implied.  See the License for the
+ - specific language governing permissions and limitations
+ - under the License.
+ -
+ -->
 <html lang="en">
 	<head>
 		<meta charset="utf-8">
@@ -26,6 +46,7 @@
             <script>
                 require(["dijit/layout/BorderContainer", "dijit/layout/TabContainer", "dijit/layout/ContentPane",
                 "dijit/TitlePane", "dojo/parser"]);
+
             </script>
 
         <script src="/js/common.js">
@@ -34,19 +55,34 @@
         </script>
         <script src="/js/sasl.js">
         </script>
+        <script src="/js/header.js"></script>
+        <script src="/js/footer.js"></script>
+        <script src="/js/structure.js"></script>
+
+        <script>
+
+
+            require(["dojo/io-query", "dojo/domReady!"],
+                    function(ioQuery){
+                      var query = dojo.doc.location.search.substr((dojo.doc.location.search[0] === "?" ? 1 : 0));
+                      var urlQuery = ioQuery.queryToObject(query);
+                    new Header("Virtual Host: "+urlQuery.vhost +"<br/>Connection: "+urlQuery.connection);
+                });
+
+        </script>
 	</head>
 	<body class="claro">
 
 
-    <div id="pageLayout" data-dojo-type="dijit.layout.BorderContainer" data-dojo-props="design: 'headline'">
-        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'top'"><div class="header">
-            <div class="logo">
-            </div>
-        </div> </div>
+    <div id="pageLayout" data-dojo-type="dijit.layout.BorderContainer" data-dojo-props="design: 'headline', gutters: false">
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'top'"><div id="header" class="header"></div>
+        </div>
         <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'top'">
             <div id="login"></div>
         </div>
-        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'leading'">Leading pane</div>
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'leading', splitter: true">
+            <div id="structure"></div>
+        </div>
         <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'center'">
             <span style="">Name:</span><span id="name" style="position:absolute; left:6em"></span>
             <br/>
@@ -75,7 +111,7 @@
 
         </div>
         <!--<div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'trailing'">Trailing pane</div>-->
-        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'bottom'">Bottom pane</div>
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'bottom'"><div id="footer"></div></div>
     </div>
 
 	</body>

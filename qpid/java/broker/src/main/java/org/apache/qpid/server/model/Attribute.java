@@ -21,15 +21,12 @@
 
 package org.apache.qpid.server.model;
 
-public class Attribute<C extends ConfiguredObject, T>
+public abstract class Attribute<C extends ConfiguredObject, T>
 {
     private final String _name;
-    private final Class<T> _type;
-
-    public Attribute(String name, Class<T> type)
+    public Attribute(String name)
     {
         _name = name;
-        _type = type;
     }
 
     public String getName()
@@ -37,15 +34,12 @@ public class Attribute<C extends ConfiguredObject, T>
         return _name;
     }
 
-    public Class<T> getType()
-    {
-        return _type;
-    }
+    abstract public Class<T> getType();
     
     public T getValue(C configuredObject)
     {
         Object o = configuredObject.getAttribute(_name);
-        if(_type.isInstance(o))
+        if(getType().isInstance(o))            
         {
             return (T) o;
         }
@@ -56,5 +50,150 @@ public class Attribute<C extends ConfiguredObject, T>
     {
         return (T) configuredObject.setAttribute(_name, expected, desired);
     }
+
+    abstract public T setValue(String stringValue, C configuredObject);
+
+    static class StringAttribute<C extends ConfiguredObject> extends Attribute<C, String>
+    {
+
+        public StringAttribute(String name)
+        {
+            super(name);
+        }
+
+        @Override
+        public Class<String> getType()
+        {
+            return String.class;
+        }
+
+        @Override
+        public String setValue(String stringValue, C configuredObject)
+        {
+            return setValue(getValue(configuredObject), stringValue, configuredObject);
+        }
+
+    }
+    
+    static class IntegerAttribute<C extends ConfiguredObject> extends Attribute<C, Integer>
+    {
+
+        public IntegerAttribute(String name)
+        {
+            super(name);
+        }
+
+        @Override
+        public Class<Integer> getType()
+        {
+            return Integer.class;
+        }
+
+        @Override
+        public Integer setValue(String stringValue, C configuredObject)
+        {
+            try
+            {
+                Integer val = Integer.valueOf(stringValue);
+                return setValue(getValue(configuredObject), val, configuredObject);
+            }
+            catch (NumberFormatException e)
+            {
+                throw new IllegalArgumentException(e);
+            }
+        }
+    }
+
+
+    static class LongAttribute<C extends ConfiguredObject> extends Attribute<C, Long>
+    {
+
+        public LongAttribute(String name)
+        {
+            super(name);
+        }
+
+        @Override
+        public Class<Long> getType()
+        {
+            return Long.class;
+        }
+
+        @Override
+        public Long setValue(String stringValue, C configuredObject)
+        {
+            try
+            {
+                Long val = Long.valueOf(stringValue);
+                return setValue(getValue(configuredObject), val, configuredObject);
+            }
+            catch (NumberFormatException e)
+            {
+                throw new IllegalArgumentException(e);
+            }
+        }
+    }
+
+
+    static class DoubleAttribute<C extends ConfiguredObject> extends Attribute<C, Double>
+    {
+
+        public DoubleAttribute(String name)
+        {
+            super(name);
+        }
+
+        @Override
+        public Class<Double> getType()
+        {
+            return Double.class;
+        }
+
+        @Override
+        public Double setValue(String stringValue, C configuredObject)
+        {
+            try
+            {
+                Double val = Double.valueOf(stringValue);
+                return setValue(getValue(configuredObject), val, configuredObject);
+            }
+            catch (NumberFormatException e)
+            {
+                throw new IllegalArgumentException(e);
+            }
+        }
+    }
+
+
+    static class FloatAttribute<C extends ConfiguredObject> extends Attribute<C, Float>
+    {
+
+        public FloatAttribute(String name)
+        {
+            super(name);
+        }
+
+        @Override
+        public Class<Float> getType()
+        {
+            return Float.class;
+        }
+
+        @Override
+        public Float setValue(String stringValue, C configuredObject)
+        {
+            try
+            {
+                Float val = Float.valueOf(stringValue);
+                return setValue(getValue(configuredObject), val, configuredObject);
+            }
+            catch (NumberFormatException e)
+            {
+                throw new IllegalArgumentException(e);
+            }
+        }
+    }
+
+
 
 }

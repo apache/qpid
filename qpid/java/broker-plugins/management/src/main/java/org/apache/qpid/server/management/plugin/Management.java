@@ -27,6 +27,7 @@ import org.apache.qpid.server.management.plugin.servlet.api.ExchangesServlet;
 import org.apache.qpid.server.management.plugin.servlet.api.VhostsServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.RestServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.SaslServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.StructureServlet;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -71,6 +72,8 @@ public class Management
         addRestServlet("binding", VirtualHost.class, Exchange.class, Queue.class, Binding.class);
         addRestServlet("port", Port.class);
         addRestServlet("session", VirtualHost.class, Connection.class, Session.class);
+
+        _root.addServlet(new ServletHolder(new StructureServlet(_broker)), "/rest/structure");
 
         _root.addServlet(new ServletHolder(new SaslServlet(_broker)), "/rest/sasl");
 

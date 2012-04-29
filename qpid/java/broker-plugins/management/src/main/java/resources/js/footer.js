@@ -18,8 +18,19 @@
  * under the License.
  *
  */
-#sessions {
-	width: 100%;
-	height: 100px;
-}
+
+
+var footerHTML = "<div class=\"footer\"><p>&#xA9; 2004-"+ (new Date()).getFullYear()
+                 +" The Apache Software Foundation.<br />Apache Qpid, Qpid, Apache, the Apache feather logo, and the "
+                 +"Apache Qpid project logo are trademarks of The Apache Software Foundation.<br />"
+                 +"All other marks mentioned may be trademarks or registered trademarks of their respective owners."
+                 +"</p></div>";
+
+require(["dojo/dom", "dojo/domReady!"],
+                    function(dom)
+              {
+                  var footerDiv = dom.byId("footer");
+                  footerDiv.innerHTML = footerHTML;
+
+              });
 

@@ -21,6 +21,7 @@
 package org.apache.qpid.server.registry;
 
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.model.Broker;
 import org.osgi.framework.BundleContext;
 
 import org.apache.qpid.AMQException;
