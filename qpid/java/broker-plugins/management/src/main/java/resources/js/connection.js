@@ -55,7 +55,7 @@ require(["dojo/store/JsonRest",
 
             var thisObj = this;
 
-            xhr.get({url: this.query, handleAs: "json"}).then(function(data)
+            xhr.get({url: this.query, sync: useSyncGet, handleAs: "json"}).then(function(data)
                              {
                                 thisObj.connectionData = data[0];
 
@@ -94,7 +94,7 @@ require(["dojo/store/JsonRest",
 
             var thisObj = this;
 
-            xhr.get({url: this.query, handleAs: "json"}).then(function(data)
+            xhr.get({url: this.query, sync: useSyncGet, handleAs: "json"}).then(function(data)
                  {
                     thisObj.connectionData = data[0];
 

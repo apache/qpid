@@ -105,6 +105,10 @@ public interface IApplicationRegistry extends StatisticsGatherer
 
     void addPortBindingListener(PortBindingListener listener);
 
+    boolean useHTTPManagement();
+
+    int getHTTPManagementPort();
+
     public interface PortBindingListener
     {
         public void bound(QpidAcceptor acceptor, InetSocketAddress bindAddress);

@@ -82,6 +82,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public abstract class ApplicationRegistry implements IApplicationRegistry
 {
+
     private static final Logger _logger = Logger.getLogger(ApplicationRegistry.class);
 
     private static AtomicReference<IApplicationRegistry> _instance = new AtomicReference<IApplicationRegistry>(null);
@@ -122,6 +123,8 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     private BundleContext _bundleContext;
 
     private final List<PortBindingListener> _portBindingListeners = new ArrayList<PortBindingListener>();
+    
+    private int _httpManagementPort = -1;
 
     protected static Logger get_logger()
     {
@@ -314,6 +317,12 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         try
         {
             initialiseStatistics();
+
+            if(_configuration.getHTTPManagementEnabled())
+            {
+                _httpManagementPort = _configuration.getHTTPManagementPort();
+            }
+
             _broker = new BrokerAdapter(this);
 
             initialiseManagedObjectRegistry();
@@ -772,5 +781,19 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         {
             _portBindingListeners.add(listener);
         }
+    }
+
+
+    @Override
+    public boolean useHTTPManagement()
+    {
+System.err.println("_httpManagementPort: " + _httpManagementPort );
+        return _httpManagementPort != -1;
+    }
+
+    @Override
+    public int getHTTPManagementPort()
+    {
+        return _httpManagementPort;
     }
 }

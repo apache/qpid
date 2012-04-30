@@ -161,10 +161,10 @@ BrokerTreeModel.prototype.fetchItemByIdentity = function(id)
                 {
                     for(var i = 0 ; i < prop.length; i++)
                     {
-                        var item = fetchItem(id, prop[i]);
-                        if( item )
+                        var theItem = fetchItem(id, prop[i]);
+                        if( theItem )
                         {
-                            return item;
+                            return theItem;
                         }
                     }
                 }
@@ -178,43 +178,58 @@ BrokerTreeModel.prototype.fetchItemByIdentity = function(id)
 
 BrokerTreeModel.prototype.getChildren = function(parentItem, onComplete)
 {
-    if(parentItem._dummyChild)
+    if(parentItem)
     {
-        onComplete(parentItem.data[ parentItem._dummyChild ]);
-    }
-    else
-    {
-        var children = [];
-        for(var propName in parentItem)
+        if(parentItem._dummyChild)
         {
-            var prop = parentItem[ propName ];
-
-            if(isArray(prop))
-            {
-                children.push({ id: parentItem.id+propName, _dummyChild: propName, data: parentItem });
-            }
-        }
-        onComplete( children );
-    }
-};
-
-BrokerTreeModel.prototype.getIdentity = function (item)
-{
-    return item.id;
-};
-
-BrokerTreeModel.prototype.getLabel = function (item)
-{
-    if(item)
-    {
-        if(item._dummyChild)
-        {
-            return item._dummyChild;
+            onComplete(parentItem.data[ parentItem._dummyChild ]);
         }
         else
         {
-            return item.name;
+            var children = [];
+            for(var propName in parentItem)
+            {
+                var prop = parentItem[ propName ];
+
+                if(isArray(prop))
+                {
+                    children.push({ id: parentItem.id+propName, _dummyChild: propName, data: parentItem });
+                }
+            }
+            onComplete( children );
         }
+    }
+    else
+    {
+        onComplete([]);
+    }
+};
+
+BrokerTreeModel.prototype.getIdentity = function (theItem)
+{
+    if(theItem)
+    {
+        return theItem.id;
+    }
+
+};
+
+BrokerTreeModel.prototype.getLabel = function (theItem)
+{
+    if(theItem)
+    {
+        if(theItem._dummyChild)
+        {
+            return theItem._dummyChild;
+        }
+        else
+        {
+            return theItem.name;
+        }
+    }
+    else
+    {
+        return "";
     }
 };
 
@@ -223,22 +238,29 @@ BrokerTreeModel.prototype.getRoot = function (onItem)
     onItem( this.model );
 };
 
-BrokerTreeModel.prototype.mayHaveChildren = function (item)
+BrokerTreeModel.prototype.mayHaveChildren = function (theItem)
 {
-    if(item._dummyChild)
+    if(theItem)
     {
-        return true;
+        if(theItem._dummyChild)
+        {
+            return true;
+        }
+        else
+        {
+            for(var propName in theItem)
+            {
+                var prop = theItem[ propName ];
+                if(isArray(prop))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
     else
     {
-        for(var propName in item)
-        {
-            var prop = item[ propName ];
-            if(isArray(prop))
-            {
-                return true;
-            }
-        }
         return false;
     }
 };
@@ -247,12 +269,12 @@ require(["dojo/io-query", "dojo/domReady!"],
     function(ioQuery)
     {
 
-        BrokerTreeModel.prototype.relocate = function (item)
+        BrokerTreeModel.prototype.relocate = function (theItem)
         {
 
-            function findItemDetails(item, details, type, object)
+            function findItemDetails(theItem, details, type, object)
             {
-                if(item.id == object.id)
+                if(theItem.id == object.id)
                 {
                     details.type = type;
                     details[ type ] = object.name;
@@ -269,7 +291,7 @@ require(["dojo/io-query", "dojo/domReady!"],
                         {
                             for(var i = 0 ; i < prop.length; i++)
                             {
-                                findItemDetails(item, details, propName.substring(0, propName.length-1),prop[i])
+                                findItemDetails(theItem, details, propName.substring(0, propName.length-1),prop[i])
 
                                 if(details.type)
                                 {
@@ -294,7 +316,7 @@ require(["dojo/io-query", "dojo/domReady!"],
 
             var details = new Object();
 
-            findItemDetails(item, details, "broker", this.model);
+            findItemDetails(theItem, details, "broker", this.model);
 
             var uri;
 
@@ -338,7 +360,7 @@ require(["dojo/_base/xhr", "dojo/domReady!"],
              {
                  var thisObj = this;
 
-                 xhr.get({url: this.query, handleAs: "json"})
+                 xhr.get({url: this.query, sync: useSyncGet, handleAs: "json"})
                      .then(function(data)
                            {
                                if(thisObj.model)
@@ -361,7 +383,7 @@ require(["dojo/_base/xhr", "dojo/domReady!"],
                  tree.on("dblclick",
                          function(object)
                          {
-                             if(!object._dummyChild)
+                             if(object && !object._dummyChild)
                              {
                                 structure.relocate(object);
                              }

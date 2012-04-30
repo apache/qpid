@@ -20,12 +20,27 @@
  */
 var updateList = new Array();
 
-setInterval(function(){
-      for(var i = 0; i < updateList.length; i++)
-      {
-          var obj = updateList[i];
-          obj.update();
-      }}, 5000);
+var useSyncGet = false;
+
+require(["dojo/has", "dojo/_base/sniff"], function(has)
+{
+  if(has("ie") <= 8)
+  {
+    useSyncGet = true;
+  }
+});
+
+setInterval(function()
+{
+  for(var i = 0; i < updateList.length; i++)
+  {
+      var obj = updateList[i];
+      obj.update();
+
+
+  }
+}, 5000);
+
 
 
 function formatBytes(amount)
@@ -184,21 +199,21 @@ UpdatableStore.prototype.update = function(bindingData)
     {
         for(var i=0; i < data.length; i++)
         {
-            if(item = store.get(data[i].id))
+            if(theItem = store.get(data[i].id))
             {
                 var modified;
                 for(var propName in data[i])
                 {
-                    if(item[ propName ] != data[i][ propName ])
+                    if(theItem[ propName ] != data[i][ propName ])
                     {
-                        item[ propName ] = data[i][ propName ];
+                        theItem[ propName ] = data[i][ propName ];
                         modified = true;
                     }
                 }
                 if(modified)
                 {
                     // ... check attributes for updates
-                    store.notify(item, data[i].id);
+                    store.notify(theItem, data[i].id);
                 }
             }
             else

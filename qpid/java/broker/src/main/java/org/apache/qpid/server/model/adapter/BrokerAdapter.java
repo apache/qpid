@@ -50,6 +50,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
             new HashMap<org.apache.qpid.server.virtualhost.VirtualHost, VirtualHostAdapter>();
     private final StatisticsAdapter _statistics;
     private final Map<QpidAcceptor, PortAdapter> _portAdapters = new HashMap<QpidAcceptor, PortAdapter>();
+    private HTTPPortAdapter _httpManagementPort;
 
 
     public BrokerAdapter(final IApplicationRegistry instance)
@@ -103,6 +104,11 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
                     _portAdapters.put(entry.getValue(), new PortAdapter(this, entry.getValue(), entry.getKey()));
                 }
             }
+            if(_applicationRegistry.useHTTPManagement())
+            {
+                _httpManagementPort = new HTTPPortAdapter(this, _applicationRegistry.getHTTPManagementPort());
+            }
+
         }
     }
 
@@ -110,7 +116,12 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
     {
         synchronized (_portAdapters)
         {
-            return new ArrayList<Port>(_portAdapters.values());
+            final ArrayList<Port> ports = new ArrayList<Port>(_portAdapters.values());
+            if(_httpManagementPort != null)
+            {
+                ports.add(_httpManagementPort);
+            }
+            return ports;
         }
     }
 

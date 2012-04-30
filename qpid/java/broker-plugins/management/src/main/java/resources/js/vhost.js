@@ -47,7 +47,7 @@ require(["dojo/store/JsonRest",
 
             var thisObj = this;
 
-            xhr.get({url: this.query, handleAs: "json"}).then(function(data)
+            xhr.get({url: this.query, sync: useSyncGet, handleAs: "json"}).then(function(data)
                              {
                                 thisObj.vhostData = data[0];
 
@@ -66,11 +66,11 @@ require(["dojo/store/JsonRest",
                                                              dojo.connect(obj.grid, "onRowDblClick", obj.grid,
                                                              function(evt){
                                                                     var idx = evt.rowIndex,
-                                                                    item = this.getItem(idx);
+                                                                    theItem = this.getItem(idx);
 
                                                                     url = "/queue?vhost="
                                                                      + thisObj.vhostData.name + "&queue=" +
-                                                                    obj.dataStore.getValue(item,"name");
+                                                                    obj.dataStore.getValue(theItem,"name");
 
                                                                     window.location = url;
 
@@ -89,11 +89,11 @@ require(["dojo/store/JsonRest",
                                                                dojo.connect(obj.grid, "onRowDblClick", obj.grid,
                                                                function(evt){
                                                                       var idx = evt.rowIndex,
-                                                                      item = this.getItem(idx);
+                                                                      theItem = this.getItem(idx);
 
                                                                       url = "/exchange?vhost="
                                                                        + encodeURIComponent(thisObj.vhostData.name) + "&exchange=" +
-                                                                      encodeURIComponent(obj.dataStore.getValue(item,"name"));
+                                                                      encodeURIComponent(obj.dataStore.getValue(theItem,"name"));
 
                                                                       window.location = url;
 
@@ -120,11 +120,11 @@ require(["dojo/store/JsonRest",
                                                              dojo.connect(obj.grid, "onRowDblClick", obj.grid,
                                                              function(evt){
                                                                     var idx = evt.rowIndex,
-                                                                    item = this.getItem(idx);
+                                                                    theItem = this.getItem(idx);
 
                                                                     url = "/connection?vhost="
                                                                      + encodeURIComponent(thisObj.vhostData.name) + "&connection=" +
-                                                                    encodeURIComponent(obj.dataStore.getValue(item,"name"));
+                                                                    encodeURIComponent(obj.dataStore.getValue(theItem,"name"));
 
                                                                     window.location = url;
 
@@ -152,7 +152,7 @@ require(["dojo/store/JsonRest",
 
             var thisObj = this;
 
-            xhr.get({url: this.query, handleAs: "json"}).then(function(data)
+            xhr.get({url: this.query, sync: useSyncGet, handleAs: "json"}).then(function(data)
                  {
                     thisObj.vhostData = data[0];
                     flattenStatistics( thisObj.vhostData );

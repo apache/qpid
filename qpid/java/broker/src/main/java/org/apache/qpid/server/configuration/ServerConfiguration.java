@@ -66,6 +66,7 @@ public class ServerConfiguration extends ConfigurationPlugin
     public static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
     public static final int DEFAULT_JMXPORT_REGISTRYSERVER = 8999;
     public static final int JMXPORT_CONNECTORSERVER_OFFSET = 100;
+    public static final int DEFAULT_HTTP_MANAGEMENT_PORT = 8080;
 
     public static final String QPID_HOME = "QPID_HOME";
     public static final String QPID_WORK = "QPID_WORK";
@@ -104,6 +105,8 @@ public class ServerConfiguration extends ConfigurationPlugin
         envVarMap.put("QPID_MSGAUTH", "security.msg-auth");
         envVarMap.put("QPID_AUTOREGISTER", "auto_register");
         envVarMap.put("QPID_MANAGEMENTENABLED", "management.enabled");
+        envVarMap.put("QPID_HTTPMANAGEMENTENABLED", "management.http.enabled");
+        envVarMap.put("QPID_HTTPMANAGEMENTPORT", "management.http.port");
         envVarMap.put("QPID_HEARTBEATDELAY", "heartbeat.delay");
         envVarMap.put("QPID_HEARTBEATTIMEOUTFACTOR", "heartbeat.timeoutFactor");
         envVarMap.put("QPID_MAXIMUMMESSAGEAGE", "maximumMessageAge");
@@ -539,6 +542,16 @@ public class ServerConfiguration extends ConfigurationPlugin
     public boolean getPlatformMbeanserver()
     {
         return getBooleanValue("management.platform-mbeanserver", true);
+    }
+
+    public boolean getHTTPManagementEnabled()
+    {
+        return getBooleanValue("management.http.enabled", true);
+    }
+
+    public int getHTTPManagementPort()
+    {
+        return getIntValue("management.http.port", 8080);
     }
 
     public String[] getVirtualHosts()

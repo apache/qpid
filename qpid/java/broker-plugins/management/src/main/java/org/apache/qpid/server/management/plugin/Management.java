@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.management.plugin;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.management.plugin.servlet.DefinedFileServlet;
 import org.apache.qpid.server.management.plugin.servlet.FileServlet;
@@ -34,8 +36,10 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.Session;
+import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.mortbay.jetty.Server;
@@ -50,8 +54,8 @@ public class Management
 
     private Broker _broker;
 
-    private Server _server;
-    private Context _root;
+    private Collection<Server> _servers = new ArrayList<Server>();
+    
 
     public Management()
     {
@@ -59,59 +63,87 @@ public class Management
 
         _broker = ApplicationRegistry.getInstance().getBroker();
 
-        _server = new Server(8080);
+        Collection<Port> ports = _broker.getPorts();
+        for(Port port : ports)
+        {
+            // TODO - cover cases where more than just HTTP supported, and SSL as a transport
+            if(port.getProtocols().contains(Protocol.HTTP))
+            {
+                if(port.getTransports().contains(Transport.TCP))
+                {
+                    _servers.add(createServer(port.getPort()));
+                }
+            }
+        }
 
-        _root = new Context(_server,"/", Context.SESSIONS);
-        _root.addServlet(new ServletHolder(new VhostsServlet(_broker)), "/api/vhosts/*");
-        _root.addServlet(new ServletHolder(new ExchangesServlet(_broker)), "/api/exchanges/*");
+        
+    }
 
-        addRestServlet("virtualhost", VirtualHost.class);
-        addRestServlet("exchange", VirtualHost.class, Exchange.class);
-        addRestServlet("queue", VirtualHost.class, Queue.class);
-        addRestServlet("connection", VirtualHost.class, Connection.class);
-        addRestServlet("binding", VirtualHost.class, Exchange.class, Queue.class, Binding.class);
-        addRestServlet("port", Port.class);
-        addRestServlet("session", VirtualHost.class, Connection.class, Session.class);
+    private Server createServer(int port)
+    {
+        Server server = new Server(port);
+        Context root;
+        root = new Context(server,"/", Context.SESSIONS);
+        root.addServlet(new ServletHolder(new VhostsServlet(_broker)), "/api/vhosts/*");
+        root.addServlet(new ServletHolder(new ExchangesServlet(_broker)), "/api/exchanges/*");
 
-        _root.addServlet(new ServletHolder(new StructureServlet(_broker)), "/rest/structure");
+        addRestServlet(root, "virtualhost", VirtualHost.class);
+        addRestServlet(root, "exchange", VirtualHost.class, Exchange.class);
+        addRestServlet(root, "queue", VirtualHost.class, Queue.class);
+        addRestServlet(root, "connection", VirtualHost.class, Connection.class);
+        addRestServlet(root, "binding", VirtualHost.class, Exchange.class, Queue.class, Binding.class);
+        addRestServlet(root, "port", Port.class);
+        addRestServlet(root, "session", VirtualHost.class, Connection.class, Session.class);
 
-        _root.addServlet(new ServletHolder(new SaslServlet(_broker)), "/rest/sasl");
+        root.addServlet(new ServletHolder(new StructureServlet(_broker)), "/rest/structure");
 
-        _root.addServlet(new ServletHolder(new DefinedFileServlet("queue.html")),"/queue");
-        _root.addServlet(new ServletHolder(new DefinedFileServlet("exchange.html")),"/exchange");
-        _root.addServlet(new ServletHolder(new DefinedFileServlet("vhost.html")),"/vhost");
-        _root.addServlet(new ServletHolder(new DefinedFileServlet("broker.html")),"/broker");
-        _root.addServlet(new ServletHolder(new DefinedFileServlet("connection.html")),"/connection");
+        root.addServlet(new ServletHolder(new SaslServlet(_broker)), "/rest/sasl");
+
+        root.addServlet(new ServletHolder(new DefinedFileServlet("queue.html")),"/queue");
+        root.addServlet(new ServletHolder(new DefinedFileServlet("exchange.html")),"/exchange");
+        root.addServlet(new ServletHolder(new DefinedFileServlet("vhost.html")),"/vhost");
+        root.addServlet(new ServletHolder(new DefinedFileServlet("broker.html")),"/broker");
+        root.addServlet(new ServletHolder(new DefinedFileServlet("connection.html")),"/connection");
 
 
-        _root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.js");
-        _root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.css");
-        _root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.html");
-        _root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.png");
-        _root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.gif");
-        _root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.jpg");
-        _root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.jpeg");
-        _root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.json");
+        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.js");
+        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.css");
+        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.html");
+        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.png");
+        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.gif");
+        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.jpg");
+        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.jpeg");
+        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.json");
+        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.txt");
+        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.xsl");
 
-        final SessionManager sessionManager = _root.getSessionHandler().getSessionManager();
+        final SessionManager sessionManager = root.getSessionHandler().getSessionManager();
 
         sessionManager.setMaxCookieAge(60 * 30);
         sessionManager.setMaxInactiveInterval(60 * 15);
+        
+        return server;
     }
 
-    private void addRestServlet(String name, Class<? extends ConfiguredObject>... hierarchy)
+    private void addRestServlet(Context root, String name, Class<? extends ConfiguredObject>... hierarchy)
     {
-        _root.addServlet(new ServletHolder(new RestServlet(_broker, hierarchy)), "/rest/"+name+"/*");
+        root.addServlet(new ServletHolder(new RestServlet(_broker, hierarchy)), "/rest/"+name+"/*");
     }
 
     public void start() throws Exception
     {
-        _server.start();
+        for(Server server : _servers)
+        {
+            server.start();
+        }
     }
 
     public void stop() throws Exception
     {
-        _server.stop();
+        for(Server server : _servers)
+        {
+            server.stop();
+        }
     }
 
 }
