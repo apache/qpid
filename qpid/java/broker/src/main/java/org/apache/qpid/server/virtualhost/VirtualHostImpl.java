@@ -20,11 +20,20 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.management.AMQBrokerManagerMBean;
 import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.server.configuration.BrokerConfig;
 import org.apache.qpid.server.configuration.ConfigStore;
@@ -46,9 +55,9 @@ import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.management.VirtualHostMBean;
-import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
@@ -64,18 +73,6 @@ import org.apache.qpid.server.store.OperationalLoggingListener;
 import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPlugin;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import javax.management.JMException;
 
 public class VirtualHostImpl implements VirtualHost
 {
@@ -100,10 +97,8 @@ public class VirtualHostImpl implements VirtualHost
     private final BrokerConfig _brokerConfig;
 
     private final VirtualHostConfiguration _vhostConfig;
-
+    
     private final VirtualHostMBean _virtualHostMBean;
-
-    private final AMQBrokerManagerMBean _brokerMBean;
 
     private final QueueRegistry _queueRegistry;
 
@@ -148,6 +143,7 @@ public class VirtualHostImpl implements VirtualHost
         CurrentActor.get().message(VirtualHostMessages.CREATED(_name));
 
         _virtualHostMBean = new VirtualHostMBean(this);
+
         _securityManager = new SecurityManager(_appRegistry.getSecurityManager());
         _securityManager.configureHostPlugins(_vhostConfig);
 
@@ -163,8 +159,6 @@ public class VirtualHostImpl implements VirtualHost
         _exchangeRegistry = new DefaultExchangeRegistry(this);
 
         _bindingFactory = new BindingFactory(this);
-
-        _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
 
         _messageStore = initialiseMessageStore(hostConfig.getMessageStoreFactoryClass());
 
@@ -529,11 +523,6 @@ public class VirtualHostImpl implements VirtualHost
         CurrentActor.get().message(VirtualHostMessages.CLOSED());
     }
 
-    public ManagedObject getBrokerMBean()
-    {
-        return _brokerMBean;
-    }
-
     public ManagedObject getManagedObject()
     {
         return _virtualHostMBean;
@@ -709,14 +698,6 @@ public class VirtualHostImpl implements VirtualHost
         public void event(Event event)
         {
             initialiseHouseKeeping(_vhostConfig.getHousekeepingCheckPeriod());
-            try
-            {
-                _brokerMBean.register();
-            } catch (JMException e)
-            {
-                throw new RuntimeException("Failed to register virtual host mbean for virtual host " + getName(), e);
-            }
-
             _state = State.ACTIVE;
         }
     }
@@ -728,7 +709,6 @@ public class VirtualHostImpl implements VirtualHost
         public void event(Event event)
         {
             _connectionRegistry.close(IConnectionRegistry.VHOST_PASSIVATE_REPLY_TEXT);
-            _brokerMBean.unregister();
             removeHouseKeepingTasks();
 
             _queueRegistry.stopAllAndUnregisterMBeans();
@@ -744,7 +724,6 @@ public class VirtualHostImpl implements VirtualHost
         @Override
         public void event(Event event)
         {
-            _brokerMBean.unregister();
             shutdownHouseKeeping();
         }
     }

@@ -20,20 +20,32 @@
  */
 package org.apache.qpid.server;
 
+import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
+
+import javax.net.ssl.SSLContext;
+
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.xml.QpidLog4JConfigurator;
-
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.ServerNetworkTransportConfiguration;
-import org.apache.qpid.server.management.ConfigurationManagementMBean;
-import org.apache.qpid.server.management.LoggingManagementMBean;
-import org.apache.qpid.server.management.ServerInformationMBean;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
+import org.apache.qpid.server.management.LoggingManagementMBean;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -43,26 +55,6 @@ import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
 import org.apache.qpid.transport.network.IncomingNetworkTransport;
 import org.apache.qpid.transport.network.Transport;
-
-import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
-
-import javax.net.ssl.SSLContext;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.util.EnumSet;
-import java.util.Formatter;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.FileHandler;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
 
 public class Broker
 {
@@ -146,12 +138,6 @@ public class Broker
         try
         {
             configureLoggingManagementMBean(logConfigFile, options.getLogWatchFrequency());
-
-            ConfigurationManagementMBean configMBean = new ConfigurationManagementMBean();
-            configMBean.register();
-
-            ServerInformationMBean sysInfoMBean = new ServerInformationMBean(config);
-            sysInfoMBean.register();
 
             Set<Integer> ports = new HashSet<Integer>(options.getPorts());
             if(ports.isEmpty())
