@@ -62,6 +62,22 @@ public class TestRunner
     /** Length of time to await test results or {@value #WAIT_FOREVER} */
     private final long _testResultTimeout;
 
+    private Thread _removeQueuesShutdownHook = new Thread()
+    {
+        @Override
+        public void run()
+        {
+            LOGGER.info("Shutdown intercepted: deleting test queues");
+            try
+            {
+                deleteQueues();
+            }
+            catch (Throwable t)
+            {
+                LOGGER.error("Failed to delete test queues during shutdown", t);
+            }
+        }
+    };
 
     public TestRunner(ParticipatingClients participatingClients, TestInstance testInstance, ControllerJmsDelegate jmsDelegate, long commandResponseTimeout, long testResultTimeout)
     {
@@ -98,10 +114,13 @@ public class TestRunner
     private void runParts()
     {
         boolean queuesCreated = false;
+
         try
         {
             createQueues();
             queuesCreated = true;
+            Runtime.getRuntime().addShutdownHook(_removeQueuesShutdownHook);
+
             sendTestSetupCommands();
             awaitCommandResponses();
             sendCommandToParticipatingClients(new StartTestCommand());
@@ -114,10 +133,14 @@ public class TestRunner
         }
         finally
         {
+
             if (queuesCreated)
             {
                 deleteQueues();
             }
+
+            Runtime.getRuntime().removeShutdownHook(_removeQueuesShutdownHook);
+
         }
     }
 
