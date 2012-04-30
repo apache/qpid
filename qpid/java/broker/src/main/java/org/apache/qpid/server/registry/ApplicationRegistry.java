@@ -787,7 +787,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     @Override
     public boolean useHTTPManagement()
     {
-System.err.println("_httpManagementPort: " + _httpManagementPort );
         return _httpManagementPort != -1;
     }
 
