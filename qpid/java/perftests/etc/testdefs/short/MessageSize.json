@@ -5,52 +5,52 @@
       "_iterations":[
         {
           "_messageSize": 256,
-          "_numberOfMessages": 10000000
+          "_numberOfMessages": 1000000
         },
         {
           "_messageSize": 512,
-          "_numberOfMessages": 5000000
+          "_numberOfMessages": 500000
         },
         {
           "_messageSize": 1024,
-          "_numberOfMessages": "2500000"
+          "_numberOfMessages": "250000"
         },
         {
           "_messageSize": 2048,
-          "_numberOfMessages": "1250000"
+          "_numberOfMessages": "125000"
         },
         {
           "_messageSize": 4096,
-          "_numberOfMessages": "625000"
+          "_numberOfMessages": "62500"
         },
         {
           "_messageSize": 8192,
-          "_numberOfMessages": 312500
+          "_numberOfMessages": 31250
         },
         {
           "_messageSize": 16384,
-          "_numberOfMessages": 156250
+          "_numberOfMessages": 15625
         },
         {
           "_messageSize": 32768,
-          "_numberOfMessages": 78125
+          "_numberOfMessages": 7812
         },
         {
           "_messageSize": 65536,
-          "_numberOfMessages": 39062
+          "_numberOfMessages": 3906
         },
         {
           "_messageSize": 131072,
-          "_numberOfMessages": 1953
+          "_numberOfMessages": 195
         },
         {
           "_messageSize": 262144,
-          "_numberOfMessages": 9765
+          "_numberOfMessages": 97
         }
       ],
       "_queues":[
         {
-          "_name": "direct://amq.direct//testQueue",
+          "_name": "direct://amq.direct//messageSize",
           "_attributes":
             {
               "x-qpid-capacity": 10485760,
@@ -72,7 +72,7 @@
                   "_producers": [
                     {
                       "_name": "Producer1",
-                      "_destinationName": "direct://amq.direct//testQueue",
+                      "_destinationName": "direct://amq.direct//messageSize",
                       "_deliveryMode": 1
                     }
                   ]
@@ -94,7 +94,7 @@
                   "_consumers": [
                     {
                       "_name": "Consumer1",
-                      "_destinationName": "direct://amq.direct//testQueue"
+                      "_destinationName": "direct://amq.direct//messageSize"
                     }
                   ]
                 }
@@ -109,52 +109,52 @@
       "_iterations":[
         {
           "_messageSize": 256,
-          "_numberOfMessages": 200000
+          "_numberOfMessages": 20000
         },
         {
           "_messageSize": 512,
-          "_numberOfMessages": 200000
+          "_numberOfMessages": 20000
         },
         {
           "_messageSize": 1024,
-          "_numberOfMessages": 200000
+          "_numberOfMessages": 20000
         },
         {
           "_messageSize": 2048,
-          "_numberOfMessages": 200000
+          "_numberOfMessages": 20000
         },
         {
           "_messageSize": 4096,
-          "_numberOfMessages": 40000
+          "_numberOfMessages": 4000
         },
         {
           "_messageSize": 8192,
-          "_numberOfMessages": 40000
+          "_numberOfMessages": 4000
         },
         {
           "_messageSize": 16384,
-          "_numberOfMessages": 40000
+          "_numberOfMessages": 4000
         },
         {
           "_messageSize": 32768,
-          "_numberOfMessages": 20000
+          "_numberOfMessages": 2000
         },
         {
           "_messageSize": 65536,
-          "_numberOfMessages": 20000
+          "_numberOfMessages": 2000
         },
         {
           "_messageSize": 131072,
-          "_numberOfMessages": 20000
+          "_numberOfMessages": 2000
         },
         {
           "_messageSize": 262144,
-          "_numberOfMessages": 20000
+          "_numberOfMessages": 2000
         }
       ],
       "_queues":[
         {
-          "_name": "direct://amq.direct//testQueuei?durable='true'",
+          "_name": "direct://amq.direct//messageSize?durable='true'",
           "_durable": true,
           "_attributes":
             {
@@ -177,7 +177,7 @@
                   "_producers": [
                     {
                       "_name": "Producer1",
-                      "_destinationName": "direct://amq.direct//testQueue",
+                      "_destinationName": "direct://amq.direct//messageSize?durable='true'",
                       "_deliveryMode": 2
                     }
                   ]
@@ -199,7 +199,7 @@
                   "_consumers": [
                     {
                       "_name": "Consumer1",
-                      "_destinationName": "direct://amq.direct//testQueue"
+                      "_destinationName": "direct://amq.direct//messageSize?durable='true'"
                     }
                   ]
                 }
