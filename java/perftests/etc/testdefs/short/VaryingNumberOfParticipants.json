@@ -5,12 +5,7 @@
       "_queues":[
         {
           "_name": "direct://amq.direct//varying-consumers?durable='true'",
-          "_durable": true,
-          "_attributes":
-            {
-              "x-qpid-capacity": 10485760,
-              "x-qpid-flow-resume-capacity": 8388608
-            }
+          "_durable": true
         }
       ],
       "_clients":[
@@ -28,7 +23,7 @@
                     {
                       "_name": "Producer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -52,7 +47,7 @@
                     {
                       "_name": "Consumer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -67,12 +62,7 @@
       "_queues":[
         {
           "_name": "direct://amq.direct//varying-consumers?durable='true'",
-          "_durable": true,
-          "_attributes":
-            {
-              "x-qpid-capacity": 10485760,
-              "x-qpid-flow-resume-capacity": 8388608
-            }
+          "_durable": true
         }
       ],
       "_clients":[
@@ -90,7 +80,7 @@
                     {
                       "_name": "Producer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -114,7 +104,7 @@
                     {
                       "_name": "Consumer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -131,7 +121,7 @@
                     {
                       "_name": "Consumer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -146,12 +136,7 @@
       "_queues":[
         {
           "_name": "direct://amq.direct//varying-consumers?durable='true'",
-          "_durable": true,
-          "_attributes":
-            {
-              "x-qpid-capacity": 10485760,
-              "x-qpid-flow-resume-capacity": 8388608
-            }
+          "_durable": true
         }
       ],
       "_clients":[
@@ -169,7 +154,7 @@
                     {
                       "_name": "Producer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -193,7 +178,7 @@
                     {
                       "_name": "Consumer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -210,7 +195,7 @@
                     {
                       "_name": "Consumer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -227,7 +212,7 @@
                     {
                       "_name": "Consumer3",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -244,7 +229,7 @@
                     {
                       "_name": "Consumer4",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -261,7 +246,7 @@
                     {
                       "_name": "Consumer5",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -279,12 +264,7 @@
       "_queues":[
         {
           "_name": "direct://amq.direct//varying-consumers?durable='true'",
-          "_durable": true,
-          "_attributes":
-            {
-              "x-qpid-capacity": 10485760,
-              "x-qpid-flow-resume-capacity": 8388608
-            }
+          "_durable": true
         }
       ],
       "_clients":[
@@ -302,7 +282,7 @@
                     {
                       "_name": "Producer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -326,7 +306,7 @@
                     {
                       "_name": "Consumer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -343,7 +323,7 @@
                     {
                       "_name": "Consumer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -360,7 +340,7 @@
                     {
                       "_name": "Consumer3",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -377,7 +357,7 @@
                     {
                       "_name": "Consumer4",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -394,7 +374,7 @@
                     {
                       "_name": "Consumer5",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -411,7 +391,7 @@
                     {
                       "_name": "Consumer6",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -428,7 +408,7 @@
                     {
                       "_name": "Consumer7",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -445,7 +425,7 @@
                     {
                       "_name": "Consumer8",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -462,7 +442,7 @@
                     {
                       "_name": "Consumer9",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -479,7 +459,7 @@
                     {
                       "_name": "Consumer10",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -497,12 +477,7 @@
       "_queues":[
         {
           "_name": "direct://amq.direct//varying-consumers?durable='true'",
-          "_durable": true,
-          "_attributes":
-            {
-              "x-qpid-capacity": 10485760,
-              "x-qpid-flow-resume-capacity": 8388608
-            }
+          "_durable": true
         }
       ],
       "_clients":[
@@ -520,7 +495,7 @@
                     {
                       "_name": "Producer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -539,7 +514,7 @@
                     {
                       "_name": "Producer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -563,7 +538,7 @@
                     {
                       "_name": "Consumer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -582,12 +557,7 @@
       "_queues":[
         {
           "_name": "direct://amq.direct//varying-consumers?durable='true'",
-          "_durable": true,
-          "_attributes":
-            {
-              "x-qpid-capacity": 10485760,
-              "x-qpid-flow-resume-capacity": 8388608
-            }
+          "_durable": true
         }
       ],
       "_clients":[
@@ -605,7 +575,7 @@
                     {
                       "_name": "Producer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -624,7 +594,7 @@
                     {
                       "_name": "Producer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -648,7 +618,7 @@
                     {
                       "_name": "Consumer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -665,7 +635,7 @@
                     {
                       "_name": "Consumer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -684,12 +654,7 @@
       "_queues":[
         {
           "_name": "direct://amq.direct//varying-consumers?durable='true'",
-          "_durable": true,
-          "_attributes":
-            {
-              "x-qpid-capacity": 10485760,
-              "x-qpid-flow-resume-capacity": 8388608
-            }
+          "_durable": true
         }
       ],
       "_clients":[
@@ -707,7 +672,7 @@
                     {
                       "_name": "Producer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -726,7 +691,7 @@
                     {
                       "_name": "Producer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -750,7 +715,7 @@
                     {
                       "_name": "Consumer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -767,7 +732,7 @@
                     {
                       "_name": "Consumer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -784,7 +749,7 @@
                     {
                       "_name": "Consumer3",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -801,7 +766,7 @@
                     {
                       "_name": "Consumer4",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -818,7 +783,7 @@
                     {
                       "_name": "Consumer5",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -836,12 +801,7 @@
       "_queues":[
         {
           "_name": "direct://amq.direct//varying-consumers?durable='true'",
-          "_durable": true,
-          "_attributes":
-            {
-              "x-qpid-capacity": 10485760,
-              "x-qpid-flow-resume-capacity": 8388608
-            }
+          "_durable": true
         }
       ],
       "_clients":[
@@ -859,7 +819,7 @@
                     {
                       "_name": "Producer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -878,7 +838,7 @@
                     {
                       "_name": "Producer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -902,7 +862,7 @@
                     {
                       "_name": "Consumer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -919,7 +879,7 @@
                     {
                       "_name": "Consumer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -936,7 +896,7 @@
                     {
                       "_name": "Consumer3",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -953,7 +913,7 @@
                     {
                       "_name": "Consumer4",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -970,7 +930,7 @@
                     {
                       "_name": "Consumer5",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -987,7 +947,7 @@
                     {
                       "_name": "Consumer6",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1004,7 +964,7 @@
                     {
                       "_name": "Consumer7",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1021,7 +981,7 @@
                     {
                       "_name": "Consumer8",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1038,7 +998,7 @@
                     {
                       "_name": "Consumer9",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1055,7 +1015,7 @@
                     {
                       "_name": "Consumer10",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1073,12 +1033,7 @@
       "_queues":[
         {
           "_name": "direct://amq.direct//varying-consumers?durable='true'",
-          "_durable": true,
-          "_attributes":
-            {
-              "x-qpid-capacity": 10485760,
-              "x-qpid-flow-resume-capacity": 8388608
-            }
+          "_durable": true
         }
       ],
       "_clients":[
@@ -1096,7 +1051,7 @@
                     {
                       "_name": "Producer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1115,7 +1070,7 @@
                     {
                       "_name": "Producer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1134,7 +1089,7 @@
                     {
                       "_name": "Producer3",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1153,7 +1108,7 @@
                     {
                       "_name": "Producer4",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1172,7 +1127,7 @@
                     {
                       "_name": "Producer5",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1196,7 +1151,7 @@
                     {
                       "_name": "Consumer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1215,12 +1170,7 @@
       "_queues":[
         {
           "_name": "direct://amq.direct//varying-consumers?durable='true'",
-          "_durable": true,
-          "_attributes":
-            {
-              "x-qpid-capacity": 10485760,
-              "x-qpid-flow-resume-capacity": 8388608
-            }
+          "_durable": true
         }
       ],
       "_clients":[
@@ -1238,7 +1188,7 @@
                     {
                       "_name": "Producer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1257,7 +1207,7 @@
                     {
                       "_name": "Producer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1276,7 +1226,7 @@
                     {
                       "_name": "Producer3",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1295,7 +1245,7 @@
                     {
                       "_name": "Producer4",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1314,7 +1264,7 @@
                     {
                       "_name": "Producer5",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1338,7 +1288,7 @@
                     {
                       "_name": "Consumer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1355,7 +1305,7 @@
                     {
                       "_name": "Consumer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1375,12 +1325,7 @@
       "_queues":[
         {
           "_name": "direct://amq.direct//varying-consumers?durable='true'",
-          "_durable": true,
-          "_attributes":
-            {
-              "x-qpid-capacity": 10485760,
-              "x-qpid-flow-resume-capacity": 8388608
-            }
+          "_durable": true
         }
       ],
       "_clients":[
@@ -1398,7 +1343,7 @@
                     {
                       "_name": "Producer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1417,7 +1362,7 @@
                     {
                       "_name": "Producer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1436,7 +1381,7 @@
                     {
                       "_name": "Producer3",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1455,7 +1400,7 @@
                     {
                       "_name": "Producer4",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1474,7 +1419,7 @@
                     {
                       "_name": "Producer5",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1498,7 +1443,7 @@
                     {
                       "_name": "Consumer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1515,7 +1460,7 @@
                     {
                       "_name": "Consumer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1532,7 +1477,7 @@
                     {
                       "_name": "Consumer3",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1549,7 +1494,7 @@
                     {
                       "_name": "Consumer4",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1566,7 +1511,7 @@
                     {
                       "_name": "Consumer5",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1584,12 +1529,7 @@
       "_queues":[
         {
           "_name": "direct://amq.direct//varying-consumers?durable='true'",
-          "_durable": true,
-          "_attributes":
-            {
-              "x-qpid-capacity": 10485760,
-              "x-qpid-flow-resume-capacity": 8388608
-            }
+          "_durable": true
         }
       ],
       "_clients":[
@@ -1607,7 +1547,7 @@
                     {
                       "_name": "Producer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1626,7 +1566,7 @@
                     {
                       "_name": "Producer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1645,7 +1585,7 @@
                     {
                       "_name": "Producer3",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1664,7 +1604,7 @@
                     {
                       "_name": "Producer4",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1683,7 +1623,7 @@
                     {
                       "_name": "Producer5",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1707,7 +1647,7 @@
                     {
                       "_name": "Consumer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1724,7 +1664,7 @@
                     {
                       "_name": "Consumer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1741,7 +1681,7 @@
                     {
                       "_name": "Consumer3",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1758,7 +1698,7 @@
                     {
                       "_name": "Consumer4",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1775,7 +1715,7 @@
                     {
                       "_name": "Consumer5",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1792,7 +1732,7 @@
                     {
                       "_name": "Consumer6",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1809,7 +1749,7 @@
                     {
                       "_name": "Consumer7",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1826,7 +1766,7 @@
                     {
                       "_name": "Consumer8",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1843,7 +1783,7 @@
                     {
                       "_name": "Consumer9",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1860,7 +1800,7 @@
                     {
                       "_name": "Consumer10",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -1879,12 +1819,7 @@
       "_queues":[
         {
           "_name": "direct://amq.direct//varying-consumers?durable='true'",
-          "_durable": true,
-          "_attributes":
-            {
-              "x-qpid-capacity": 10485760,
-              "x-qpid-flow-resume-capacity": 8388608
-            }
+          "_durable": true
         }
       ],
       "_clients":[
@@ -1902,7 +1837,7 @@
                     {
                       "_name": "Producer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1921,7 +1856,7 @@
                     {
                       "_name": "Producer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1940,7 +1875,7 @@
                     {
                       "_name": "Producer3",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1959,7 +1894,7 @@
                     {
                       "_name": "Producer4",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1978,7 +1913,7 @@
                     {
                       "_name": "Producer5",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -1997,7 +1932,7 @@
                     {
                       "_name": "Producer6",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2016,7 +1951,7 @@
                     {
                       "_name": "Producer7",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2035,7 +1970,7 @@
                     {
                       "_name": "Producer8",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2054,7 +1989,7 @@
                     {
                       "_name": "Producer9",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2073,7 +2008,7 @@
                     {
                       "_name": "Producer10",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2097,7 +2032,7 @@
                     {
                       "_name": "Consumer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -2116,12 +2051,7 @@
       "_queues":[
         {
           "_name": "direct://amq.direct//varying-consumers?durable='true'",
-          "_durable": true,
-          "_attributes":
-            {
-              "x-qpid-capacity": 10485760,
-              "x-qpid-flow-resume-capacity": 8388608
-            }
+          "_durable": true
         }
       ],
       "_clients":[
@@ -2139,7 +2069,7 @@
                     {
                       "_name": "Producer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2158,7 +2088,7 @@
                     {
                       "_name": "Producer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2177,7 +2107,7 @@
                     {
                       "_name": "Producer3",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2196,7 +2126,7 @@
                     {
                       "_name": "Producer4",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2215,7 +2145,7 @@
                     {
                       "_name": "Producer5",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2234,7 +2164,7 @@
                     {
                       "_name": "Producer6",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2253,7 +2183,7 @@
                     {
                       "_name": "Producer7",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2272,7 +2202,7 @@
                     {
                       "_name": "Producer8",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2291,7 +2221,7 @@
                     {
                       "_name": "Producer9",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2310,7 +2240,7 @@
                     {
                       "_name": "Producer10",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2334,7 +2264,7 @@
                     {
                       "_name": "Consumer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -2351,7 +2281,7 @@
                     {
                       "_name": "Consumer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -2371,12 +2301,7 @@
       "_queues":[
         {
           "_name": "direct://amq.direct//varying-consumers?durable='true'",
-          "_durable": true,
-          "_attributes":
-            {
-              "x-qpid-capacity": 10485760,
-              "x-qpid-flow-resume-capacity": 8388608
-            }
+          "_durable": true
         }
       ],
       "_clients":[
@@ -2394,7 +2319,7 @@
                     {
                       "_name": "Producer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2413,7 +2338,7 @@
                     {
                       "_name": "Producer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2432,7 +2357,7 @@
                     {
                       "_name": "Producer3",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2451,7 +2376,7 @@
                     {
                       "_name": "Producer4",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2470,7 +2395,7 @@
                     {
                       "_name": "Producer5",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2489,7 +2414,7 @@
                     {
                       "_name": "Producer6",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2508,7 +2433,7 @@
                     {
                       "_name": "Producer7",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2527,7 +2452,7 @@
                     {
                       "_name": "Producer8",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2546,7 +2471,7 @@
                     {
                       "_name": "Producer9",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2565,7 +2490,7 @@
                     {
                       "_name": "Producer10",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2589,7 +2514,7 @@
                     {
                       "_name": "Consumer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -2606,7 +2531,7 @@
                     {
                       "_name": "Consumer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -2623,7 +2548,7 @@
                     {
                       "_name": "Consumer3",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -2640,7 +2565,7 @@
                     {
                       "_name": "Consumer4",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -2657,7 +2582,7 @@
                     {
                       "_name": "Consumer5",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -2676,12 +2601,7 @@
       "_queues":[
         {
           "_name": "direct://amq.direct//varying-consumers?durable='true'",
-          "_durable": true,
-          "_attributes":
-            {
-              "x-qpid-capacity": 10485760,
-              "x-qpid-flow-resume-capacity": 8388608
-            }
+          "_durable": true
         }
       ],
       "_clients":[
@@ -2699,7 +2619,7 @@
                     {
                       "_name": "Producer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2718,7 +2638,7 @@
                     {
                       "_name": "Producer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2737,7 +2657,7 @@
                     {
                       "_name": "Producer3",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2756,7 +2676,7 @@
                     {
                       "_name": "Producer4",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2775,7 +2695,7 @@
                     {
                       "_name": "Producer5",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2794,7 +2714,7 @@
                     {
                       "_name": "Producer6",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2813,7 +2733,7 @@
                     {
                       "_name": "Producer7",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2832,7 +2752,7 @@
                     {
                       "_name": "Producer8",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2851,7 +2771,7 @@
                     {
                       "_name": "Producer9",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2870,7 +2790,7 @@
                     {
                       "_name": "Producer10",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000,
+                      "_maximumDuration": 30000,
                       "_deliveryMode": 2,
                       "_messageSize": 1024
                     }
@@ -2894,7 +2814,7 @@
                     {
                       "_name": "Consumer1",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -2911,7 +2831,7 @@
                     {
                       "_name": "Consumer2",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -2928,7 +2848,7 @@
                     {
                       "_name": "Consumer3",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -2945,7 +2865,7 @@
                     {
                       "_name": "Consumer4",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -2962,7 +2882,7 @@
                     {
                       "_name": "Consumer5",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -2979,7 +2899,7 @@
                     {
                       "_name": "Consumer6",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -2996,7 +2916,7 @@
                     {
                       "_name": "Consumer7",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -3013,7 +2933,7 @@
                     {
                       "_name": "Consumer8",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -3030,7 +2950,7 @@
                     {
                       "_name": "Consumer9",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -3047,7 +2967,7 @@
                     {
                       "_name": "Consumer10",
                       "_destinationName": "direct://amq.direct//varying-consumers?durable='true'",
-                      "_maximumDuration": 180000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
