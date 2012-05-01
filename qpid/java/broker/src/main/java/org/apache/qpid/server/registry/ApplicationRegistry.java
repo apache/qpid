@@ -22,6 +22,7 @@ package org.apache.qpid.server.registry;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.logging.*;
 import org.osgi.framework.BundleContext;
 
 import org.apache.qpid.AMQException;
@@ -35,11 +36,6 @@ import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.SystemConfig;
 import org.apache.qpid.server.configuration.SystemConfigImpl;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.logging.CompositeStartupMessageLogger;
-import org.apache.qpid.server.logging.Log4jMessageLogger;
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.AbstractActor;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -123,8 +119,10 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     private BundleContext _bundleContext;
 
     private final List<PortBindingListener> _portBindingListeners = new ArrayList<PortBindingListener>();
-    
+
     private int _httpManagementPort = -1;
+
+    private LogRecorder _logRecorder;
 
     protected static Logger get_logger()
     {
@@ -305,6 +303,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public void initialise() throws Exception
     {
+        _logRecorder = new LogRecorder();
         //Create the RootLogger to be used during broker operation
         _rootMessageLogger = new Log4jMessageLogger(_configuration);
 
@@ -794,5 +793,10 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     public int getHTTPManagementPort()
     {
         return _httpManagementPort;
+    }
+
+    public LogRecorder getLogRecorder()
+    {
+        return _logRecorder;
     }
 }

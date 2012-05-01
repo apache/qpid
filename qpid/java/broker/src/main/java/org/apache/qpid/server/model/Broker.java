@@ -21,13 +21,53 @@
 package org.apache.qpid.server.model;
 
 import java.security.AccessControlException;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 public interface Broker extends ConfiguredObject
 {
+
+    String BUILD_VERSION = "buildVersion";
+    String BYTES_RETAINED = "bytesRetained";
+    String OPERATING_SYSTEM = "operatingSystem";
+    String PLATFORM = "platform";
+    String PROCESS_PID = "processPid";
+    String PRODUCT_VERSION = "productVersion";
+    String STATISTICS_ENABLED = "statisticsEnabled";
+    String SUPPORTED_STORE_TYPES = "supportedStoreTypes";
+    String CREATED = "created";
+    String DURABLE = "durable";
+    String ID = "id";
+    String LIFETIME_POLICY = "lifetimePolicy";
+    String NAME = "name";
+    String STATE = "state";
+    String TIME_TO_LIVE = "timeToLive";
+    String UPDATED = "updated";
+
+    // Attributes
+    public static final Collection<String> AVAILABLE_ATTRIBUTES =
+            Collections.unmodifiableList(
+                Arrays.asList(BUILD_VERSION,
+                              BYTES_RETAINED,
+                              OPERATING_SYSTEM,
+                              PLATFORM,
+                              PROCESS_PID,
+                              PRODUCT_VERSION,
+                              STATISTICS_ENABLED,
+                              SUPPORTED_STORE_TYPES,
+                              CREATED,
+                              DURABLE,
+                              ID,
+                              LIFETIME_POLICY,
+                              NAME,
+                              STATE,
+                              TIME_TO_LIVE,
+                              UPDATED));
+
     //children
-    Collection<VirtualHost> getVirtualHosts();
+    Collection < VirtualHost > getVirtualHosts();
 
     Collection<Port> getPorts();
 

@@ -27,6 +27,7 @@ import org.apache.qpid.server.management.plugin.servlet.DefinedFileServlet;
 import org.apache.qpid.server.management.plugin.servlet.FileServlet;
 import org.apache.qpid.server.management.plugin.servlet.api.ExchangesServlet;
 import org.apache.qpid.server.management.plugin.servlet.api.VhostsServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.LogRecordsServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.RestServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.SaslServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.StructureServlet;
@@ -55,7 +56,7 @@ public class Management
     private Broker _broker;
 
     private Collection<Server> _servers = new ArrayList<Server>();
-    
+
 
     public Management()
     {
@@ -76,7 +77,7 @@ public class Management
             }
         }
 
-        
+
     }
 
     private Server createServer(int port)
@@ -87,6 +88,7 @@ public class Management
         root.addServlet(new ServletHolder(new VhostsServlet(_broker)), "/api/vhosts/*");
         root.addServlet(new ServletHolder(new ExchangesServlet(_broker)), "/api/exchanges/*");
 
+        addRestServlet(root, "broker");
         addRestServlet(root, "virtualhost", VirtualHost.class);
         addRestServlet(root, "exchange", VirtualHost.class, Exchange.class);
         addRestServlet(root, "queue", VirtualHost.class, Queue.class);
@@ -96,6 +98,9 @@ public class Management
         addRestServlet(root, "session", VirtualHost.class, Connection.class, Session.class);
 
         root.addServlet(new ServletHolder(new StructureServlet(_broker)), "/rest/structure");
+
+        root.addServlet(new ServletHolder(new LogRecordsServlet(_broker)), "/rest/logrecords");
+
 
         root.addServlet(new ServletHolder(new SaslServlet(_broker)), "/rest/sasl");
 
@@ -121,7 +126,7 @@ public class Management
 
         sessionManager.setMaxCookieAge(60 * 30);
         sessionManager.setMaxInactiveInterval(60 * 15);
-        
+
         return server;
     }
 

@@ -123,7 +123,7 @@ public class RestServlet extends AbstractServlet
                 for(Map.Entry<Class<? extends ConfiguredObject>, String> entry : filters.entrySet())
                 {
                     Collection<? extends ConfiguredObject> ancestors =
-                            getAncestors(_hierarchy[_hierarchy.length-1],entry.getKey(), o);
+                            getAncestors(getConfiguredClass(),entry.getKey(), o);
                     match = false;
                     for(ConfiguredObject ancestor : ancestors)
                     {
@@ -277,7 +277,7 @@ public class RestServlet extends AbstractServlet
 
         for(ConfiguredObject configuredObject : allObjects)
         {
-            output.add(convertObjectToMap(configuredObject, _hierarchy[_hierarchy.length-1],depth));
+            output.add(convertObjectToMap(configuredObject, getConfiguredClass(),depth));
         }
 
         final PrintWriter writer = response.getWriter();
@@ -288,6 +288,11 @@ public class RestServlet extends AbstractServlet
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);
 
+    }
+
+    private Class<? extends ConfiguredObject> getConfiguredClass()
+    {
+        return _hierarchy.length == 0 ? Broker.class : _hierarchy[_hierarchy.length-1];
     }
 
     @Override
@@ -361,7 +366,7 @@ public class RestServlet extends AbstractServlet
 
             }
             List<ConfiguredObject> parents = new ArrayList<ConfiguredObject>();
-            Class<? extends ConfiguredObject> objClass = _hierarchy[_hierarchy.length - 1];
+            Class<? extends ConfiguredObject> objClass = getConfiguredClass();
             Collection<Class<? extends ConfiguredObject>> parentClasses = Model.getParentTypes(objClass);
             for(int i = _hierarchy.length-2; i >=0 ; i--)
             {

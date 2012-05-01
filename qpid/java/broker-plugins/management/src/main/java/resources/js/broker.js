@@ -18,156 +18,125 @@
  * under the License.
  *
  */
-var vhostGrid, dataStore, store, vhostStore;
-var exchangeGrid, exchangeStore, exchangeDataStore;
-var updateList = new Array();
-var vhostTuple, exchangesTuple;
-
-
 require(["dojo/store/JsonRest",
-				"dojo/store/Memory",
-				"dojo/store/Cache",
-				"dojox/grid/DataGrid",
-				"dojo/data/ObjectStore",
-				"dojo/query",
-				"dojo/store/Observable",
-                "dojo/_base/xhr",
-				"dojo/domReady!"],
-	     function(JsonRest, Memory, Cache, DataGrid, ObjectStore, query, Observable, xhr)
+         "dojo/json",
+         "dojo/store/Memory",
+         "dojo/store/Cache",
+         "dojox/grid/DataGrid",
+         "dojo/data/ObjectStore",
+         "dojo/query",
+         "dojo/store/Observable",
+         "dojo/_base/xhr",
+         "dojo/dom",
+         "dojo/domReady!"],
+	     function(JsonRest, json, Memory, Cache, DataGrid, ObjectStore, query, Observable, xhr, dom)
 	     {
 
+         function BrokerUpdater()
+         {
+            this.name = dom.byId("name");
+            this.state = dom.byId("state");
+            this.durable = dom.byId("durable");
+            this.lifetimePolicy = dom.byId("lifetimePolicy");
 
-         function UpdatableStore( query, divName, structure, func ) {
+            this.query = "/rest/broker";
+
+            var thisObj = this;
+
+            xhr.get({url: this.query, sync: useSyncGet, handleAs: "json"})
+                .then(function(data)
+                      {
+                        thisObj.brokerData = data[0];
+
+                        flattenStatistics( thisObj.brokerData );
+
+                        thisObj.updateHeader();
+                        thisObj.vhostsGrid =
+                            new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
+                                               thisObj.brokerData.vhosts, "virtualhosts",
+                                                         [ { name: "Virtual Host",    field: "name",      width: "100%"}
+                                                         ]);
+
+                        thisObj.portsGrid =
+                            new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
+                                               thisObj.brokerData.ports, "ports",
+                                                         [ { name: "Address",    field: "bindingAddress",      width: "70px"},
+                                                           { name: "Port", field: "port", width: "70px"},
+                                                           { name: "Transports", field: "transports", width: "150px"},
+                                                           { name: "Protocols", field: "protocols", width: "100%"}
+                                                         ]);
 
 
-             this.query = query;
 
-             var thisObj = this;
-
-             xhr.get({url: query, handleAs: "json"}).then(function(data)
-                             {
-                             thisObj.store = Observable(Memory({data: data, idProperty: "id"}));
-                             thisObj.dataStore = ObjectStore({objectStore: thisObj.store});
-                             thisObj.grid = new DataGrid({
-                                         store: thisObj.dataStore,
-                                         structure: structure,
-             					                }, divName);
-
-                             // since we created this grid programmatically, call startup to render it
-                             thisObj.grid.startup();
-
-                             updateList.push( thisObj );
-                             if( func )
-                             {
-                                 func(thisObj);
-                             }
                              });
 
+             xhr.get({url: "/rest/logrecords", sync: useSyncGet, handleAs: "json"})
+                 .then(function(data)
+                       {
+                            this.logData = data;
+
+                            thisObj.logfileGrid =
+                                         new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
+                                                            thisObj.logData, "logfile",
+                                                                     [   { name: "ID", field: "id", width: "30px"},
+                                                                         { name: "Level", field: "level", width: "60px"},
+                                                                         { name: "Logger", field: "logger", width: "100px"},
+                                                                         { name: "Thread", field: "thread", width: "60px"},
+                                                                         { name: "Log Message", field: "message", width: "100%"}
+
+                                                                     ]);
+                       });
+         }
+
+         BrokerUpdater.prototype.updateHeader = function()
+         {
+            this.name.innerHTML = this.brokerData[ "name" ];
+            this.state.innerHTML = this.brokerData[ "state" ];
+            this.durable.innerHTML = this.brokerData[ "durable" ];
+            this.lifetimePolicy.innerHTML = this.brokerData[ "lifetimePolicy" ];
 
          }
 
-         UpdatableStore.prototype.update = function() {
-             var store = this.store;
+         BrokerUpdater.prototype.update = function()
+         {
 
+            var thisObj = this;
 
-             xhr.get({url: this.query, handleAs: "json"}).then(function(data)
+            xhr.get({url: this.query, sync: useSyncGet, handleAs: "json"}).then(function(data)
                  {
-                     // handle deletes
-                     // iterate over existing store... if not in new data then remove
-                     store.query({ }).forEach(function(object)
-                         {
-                             for(var i=0; i < data.length; i++)
-                             {
-                                 if(data[i].id == object.id)
-                                 {
-                                     return;
-                                 }
-                             }
-                             store.remove(object.id);
-                             //store.notify(null, object.id);
-                         });
+                    thisObj.brokerData = data[0];
+                    flattenStatistics( thisObj.brokerData )
 
-                     // iterate over data...
-                     for(var i=0; i < data.length; i++)
-                     {
-                         if(item = store.get(data[i].id))
-                         {
-                             var modified;
-                             for(var propName in data[i])
-                             {
-                                 if(item[ propName ] != data[i][ propName ])
-                                 {
-                                     item[ propName ] = data[i][ propName ];
-                                     modified = true;
-                                 }
-                             }
-                             if(modified)
-                             {
-                                 // ... check attributes for updates
-                                 store.notify(item, data[i].id);
-                             }
-                         }
-                         else
-                         {
-                             // ,,, if not in the store then add
-                             store.put(data[i]);
-                             //store.notify(data[i], null);
-                         }
-                     }
+                    var virtualhosts = thisObj.brokerData[ "virtualhosts" ];
+                    var ports = thisObj.brokerData[ "ports" ];
+
+
+                    thisObj.updateHeader();
+
+
+                    // update alerting info
+                    var sampleTime = new Date();
+
+                    thisObj.vhostsGrid.update(thisObj.brokerData.virtualhosts);
+
+                    thisObj.portsGrid.update(thisObj.brokerData.ports);
+
+
                  });
+
+
+             xhr.get({url: "/rest/logrecords", sync: useSyncGet, handleAs: "json"})
+                 .then(function(data)
+                       {
+                           this.logData = data;
+                           thisObj.logfileGrid.update(this.logData);
+                       });
          };
 
-         exchangeTuple = new UpdatableStore("/rest/exchange", "exchanges",
-                                                     [ { name: "Name",        field: "name",          width: "190px"},
-                                                       { name: "Type",        field: "type",          width: "90px"},
-                                                       { name: "Durable",     field: "durable",       width: "80px"},
-                                                       { name: "Auto-Delete", field: "auto-delete",   width: "100px"},
-                                                       { name: "Bindings",    field: "binding-count", width: "80px"}
-                                                       ]);
-         queueTuple = new UpdatableStore("/rest/queue", "queues",
-                                            [ { name: "Name",        field: "name",          width: "240px"},
-                                              { name: "Durable",     field: "durable",       width: "100px"},
-                                              { name: "Auto-Delete", field: "auto-delete",   width: "100px"},
-                                              { name: "Bindings",    field: "binding-count", width: "100px"} ]);
-         connectionTuple = new UpdatableStore("/rest/connection", "connections",
-                                                     [ { name: "Name",        field: "name",          width: "160px"},
-                                                       { name: "Sessions",    field: "session-count", width: "80px"},
-                                                       { name: "Msgs In",     field: "msgs-in-total", width: "80px"},
-                                                       { name: "Msgs Out",    field: "msgs-out-total",width: "80px"},
-                                                       { name: "Bytes In",    field: "bytes-in-total", width: "80px"},
-                                                       { name: "Bytes Out",   field: "bytes-out-total",width: "80px"}]);
+         brokerUpdater = new BrokerUpdater();
 
-         vhostTuple = new UpdatableStore("/rest/virtualhost", "virtualHosts",
-                                                 [ { name: "Name",        field: "name",             width: "180px"},
-                                                   { name: "Connections", field: "connection-count", width: "90px"},
-                                                   { name: "Queues",      field: "queue-count",      width: "90px"},
-                                                   { name: "Exchanges",   field: "exchange-count",   width: "90px"},
-                                                   { name: "Msgs In",     field: "msgs-in-total", width: "80px"},
-                                                   { name: "Msgs Out",    field: "msgs-out-total",width: "80px"},
-                                                   { name: "Bytes In",    field: "bytes-in-total", width: "80px"},
-                                                   { name: "Bytes Out",   field: "bytes-out-total",width: "80px"} ],
-                                        function(obj)
-                                        {
-                                            dojo.connect(obj.grid, "onRowClick", obj.grid, function(evt){
-                                                        					var idx = evt.rowIndex,
-                                                        				    item = this.getItem(idx);
+         updateList.push( brokerUpdater );
 
-                                                                            exchangeTuple.query = "/rest/exchange/"+obj.dataStore.getValue(item, "name")+"/";
-                                                                            exchangeTuple.update();
-                                                                            queueTuple.query =  "/rest/queue/"+obj.dataStore.getValue(item, "name")+"/";
-                                                                            queueTuple.update();
-                                                                            connectionTuple.query = "/rest/connection/"+obj.dataStore.getValue(item, "name")+"/";
-                                                                            connectionTuple.update();
+         brokerUpdater.update();
 
-                                                        				});
-                                        });
-
-
-                setInterval(function(){
-                   for(var i = 0; i < updateList.length; i++)
-                   {
-                       var obj = updateList[i];
-                       obj.update();
-                   }}, 5000); // every second
-		 });
-
+     });

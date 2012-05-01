@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -146,7 +147,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
     {
         return null;  //TODO
     }
-    
+
     public void deleteVirtualHost(final VirtualHost vhost)
         throws AccessControlException, IllegalStateException
     {
@@ -255,7 +256,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
         // TODO
         return null;
     }
-    
+
     private AuthenticationProvider createAuthenticationProvider(Map<String,Object> attributes)
     {
         // TODO
@@ -321,5 +322,92 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
         {
             childRemoved(adapter);
         }
+    }
+
+    @Override
+    public Collection<String> getAttributeNames()
+    {
+        return AVAILABLE_ATTRIBUTES;
+    }
+
+    @Override
+    public Object getAttribute(String name)
+    {
+        if(ID.equals(name))
+        {
+            return getId();
+        }
+        else if(NAME.equals(name))
+        {
+            return getName();
+        }
+        else if(STATE.equals(name))
+        {
+            return State.ACTIVE;
+        }
+        else if(DURABLE.equals(name))
+        {
+            return isDurable();
+        }
+        else if(LIFETIME_POLICY.equals(name))
+        {
+            return LifetimePolicy.PERMANENT;
+        }
+        else if(TIME_TO_LIVE.equals(name))
+        {
+            // TODO
+        }
+        else if(CREATED.equals(name))
+        {
+            // TODO
+        }
+        else if(UPDATED.equals(name))
+        {
+            // TODO
+        }
+        else if(BUILD_VERSION.equals(name))
+        {
+            return QpidProperties.getBuildVersion();
+        }
+        else if(BYTES_RETAINED.equals(name))
+        {
+            // TODO
+        }
+        else if(OPERATING_SYSTEM.equals(name))
+        {
+            return System.getProperty("os.name") + " "
+                   + System.getProperty("os.version") + " "
+                   + System.getProperty("os.arch");
+        }
+        else if(PLATFORM.equals(name))
+        {
+            return System.getProperty("java.vendor") + " "
+                   + System.getProperty("java.runtime.version", System.getProperty("java.version"));
+        }
+        else if(PROCESS_PID.equals(name))
+        {
+            // TODO
+        }
+        else if(PRODUCT_VERSION.equals(name))
+        {
+            return QpidProperties.getReleaseVersion();
+        }
+        else if(STATISTICS_ENABLED.equals(name))
+        {
+            // TODO
+        }
+        else if(SUPPORTED_STORE_TYPES.equals(name))
+        {
+            // TODO
+        }
+
+        return super.getAttribute(name);    //TODO - Implement.
+    }
+
+    @Override
+    public Object setAttribute(String name, Object expected, Object desired)
+            throws IllegalStateException, AccessControlException, IllegalArgumentException
+    {
+        return super.setAttribute(name, expected, desired);    //TODO - Implement.
     }
 }

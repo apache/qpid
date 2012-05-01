@@ -18,19 +18,19 @@
  * under the License.
  *
  */
-#virtualHosts {
-	width: 560px;
-	height: 110px;
+
+#virtualhosts {
+	width: 100%;
+	height: 100px;
 }
-#exchanges {
-	width: 560px;
-	height: 250px;
+
+#ports {
+	width: 100%;
+	height: 100px;
 }
-#queues {
-	width: 560px;
-	height: 200px;
+
+#logfile {
+	width: 100%;
+	height: 100px;
 }
-#connections {
-	width: 560px;
-	height: 200px;
-}
+

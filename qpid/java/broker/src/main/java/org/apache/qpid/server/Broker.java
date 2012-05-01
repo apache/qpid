@@ -20,21 +20,13 @@
  */
 package org.apache.qpid.server;
 
-import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
-
+import java.util.*;
 import javax.net.ssl.SSLContext;
-
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.xml.QpidLog4JConfigurator;
@@ -55,6 +47,8 @@ import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
 import org.apache.qpid.transport.network.IncomingNetworkTransport;
 import org.apache.qpid.transport.network.Transport;
+
+import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
 
 public class Broker
 {
