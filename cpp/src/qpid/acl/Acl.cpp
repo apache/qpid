@@ -31,6 +31,7 @@
 #include "qmf/org/apache/qpid/acl/ArgsAclLookupPublish.h"
 #include "qmf/org/apache/qpid/acl/Package.h"
 #include "qmf/org/apache/qpid/acl/EventAllow.h"
+#include "qmf/org/apache/qpid/acl/EventConnectionDeny.h"
 #include "qmf/org/apache/qpid/acl/EventDeny.h"
 #include "qmf/org/apache/qpid/acl/EventFileLoaded.h"
 #include "qmf/org/apache/qpid/acl/EventFileLoadFailed.h"
@@ -50,7 +51,7 @@ using qpid::management::Args;
 namespace _qmf = qmf::org::apache::qpid::acl;
 
 Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(false), mgmtObject(0),
-    connectionCounter(new ConnectionCounter(aclValues.aclMaxConnectPerUser, aclValues.aclMaxConnectPerIp))
+    connectionCounter(new ConnectionCounter(*this, aclValues.aclMaxConnectPerUser, aclValues.aclMaxConnectPerIp))
 {
 
     agent = broker->getManagementAgent();
@@ -69,6 +70,16 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
     QPID_LOG(info, "ACL Plugin loaded");
     if (mgmtObject!=0) mgmtObject->set_enforcingAcl(1);
 }
+
+
+void Acl::reportConnectLimit(const std::string user, const std::string addr)
+{
+    if (mgmtObject!=0)
+        mgmtObject->inc_connectionDenyCount();
+
+    agent->raiseEvent(_qmf::EventConnectionDeny(user, addr));
+}
+
 
 bool Acl::authorise(
     const std::string&               id,

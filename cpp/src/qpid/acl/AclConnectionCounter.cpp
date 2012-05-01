@@ -20,6 +20,7 @@
  */
 
 #include "AclConnectionCounter.h"
+#include "Acl.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/Mutex.h"
@@ -40,8 +41,8 @@ namespace acl {
 //
 //
 //
-ConnectionCounter::ConnectionCounter(uint32_t nl, uint32_t hl) :
-    nameLimit(nl), hostLimit(hl) {}
+ConnectionCounter::ConnectionCounter(Acl& a, uint32_t nl, uint32_t hl) :
+    acl(a), nameLimit(nl), hostLimit(hl) {}
 
 ConnectionCounter::~ConnectionCounter() {}
 
@@ -131,7 +132,8 @@ void ConnectionCounter::opened(broker::Connection& connection) {
 
     if (!nameOk) {
         // User has too many
-        QPID_LOG(info, "ACL ConnectionCounter User '" << userName
+        acl.reportConnectLimit(userName, hostName);
+        QPID_LOG(notice, "ACL ConnectionCounter User '" << userName
             << "' exceeded maximum allowed connections");
         throw Exception(
             QPID_MSG("User '" << userName
@@ -140,7 +142,8 @@ void ConnectionCounter::opened(broker::Connection& connection) {
 
     if (!hostOk) {
         // Host has too many
-        QPID_LOG(info, "ACL ConnectionCounter Client host '" << hostName
+        acl.reportConnectLimit(userName, hostName);
+        QPID_LOG(notice, "ACL ConnectionCounter Client host '" << hostName
             << "' exceeded maximum allowed connections");
         throw Exception(
             QPID_MSG("Client host '" << hostName

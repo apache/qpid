@@ -66,7 +66,7 @@ private:
 public:
     Acl (AclValues& av, broker::Broker& b);
 
-    void initialize();
+    void reportConnectLimit(const std::string user, const std::string addr);
 
     inline virtual bool doTransferAcl() {
         return transferAcl;
