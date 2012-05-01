@@ -35,6 +35,7 @@ class Connection;
 }
 
 namespace acl {
+class Acl;
 
  /**
  * Terminate client connections when a user tries to create 'too many'.
@@ -46,6 +47,7 @@ private:
     typedef std::map<std::string, uint32_t> connectCountsMap_t;
     enum CONNECTION_PROGRESS { C_CREATED=1, C_OPENED=2 };
 
+    Acl&             acl;
     uint32_t         nameLimit;
     uint32_t         hostLimit;
     qpid::sys::Mutex dataLock;
@@ -65,7 +67,7 @@ private:
                    uint32_t theLimit);
 
 public:
-    ConnectionCounter(uint32_t nl, uint32_t hl);
+    ConnectionCounter(Acl& acl, uint32_t nl, uint32_t hl);
     ~ConnectionCounter();
 
     void connection(broker::Connection& connection);
