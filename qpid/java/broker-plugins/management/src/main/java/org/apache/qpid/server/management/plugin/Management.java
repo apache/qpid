@@ -27,10 +27,7 @@ import org.apache.qpid.server.management.plugin.servlet.DefinedFileServlet;
 import org.apache.qpid.server.management.plugin.servlet.FileServlet;
 import org.apache.qpid.server.management.plugin.servlet.api.ExchangesServlet;
 import org.apache.qpid.server.management.plugin.servlet.api.VhostsServlet;
-import org.apache.qpid.server.management.plugin.servlet.rest.LogRecordsServlet;
-import org.apache.qpid.server.management.plugin.servlet.rest.RestServlet;
-import org.apache.qpid.server.management.plugin.servlet.rest.SaslServlet;
-import org.apache.qpid.server.management.plugin.servlet.rest.StructureServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.*;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -98,6 +95,7 @@ public class Management
         addRestServlet(root, "session", VirtualHost.class, Connection.class, Session.class);
 
         root.addServlet(new ServletHolder(new StructureServlet(_broker)), "/rest/structure");
+        root.addServlet(new ServletHolder(new MessageServlet(_broker)), "/rest/message/*");
 
         root.addServlet(new ServletHolder(new LogRecordsServlet(_broker)), "/rest/logrecords");
 

@@ -226,3 +226,25 @@ require(["dojo/store/JsonRest",
 
      });
 
+require(["dojo/store/JsonRest"], function(JsonRest)
+{
+    urlQuery = dojo.queryToObject(dojo.doc.location.search.substr((dojo.doc.location.search[0] === "?" ? 1 : 0)));
+    myStore = new JsonRest({target:"/rest/message/"+ urlQuery.vhost + "/" + urlQuery.queue});
+});
+
+require([
+    "dojox/grid/DataGrid",
+    "dojo/data/ObjectStore",
+    "dojo/domReady!"
+], function(DataGrid, ObjectStore){
+    var grid = new DataGrid({
+        store: dataStore = ObjectStore({objectStore: myStore}),
+        structure: [
+            {name:"Id", field:"id", width: "50px"},
+            {name:"Size", field:"size", width: "60px"},
+            {name:"State", field:"state", width: "120px"},
+            {name:"Arrival", field:"arrivalTime", width: "100%"}
+        ]
+    }, "messages"); // make sure you have a target HTML element with this id
+    grid.startup();
+});
