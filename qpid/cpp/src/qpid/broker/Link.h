@@ -47,6 +47,7 @@ namespace broker {
 class LinkRegistry;
 class Broker;
 class Connection;
+class LinkExchange;
 
 class Link : public PersistableConfig, public management::Manageable {
   private:
@@ -77,8 +78,8 @@ class Link : public PersistableConfig, public management::Manageable {
     uint channelCounter;
     Connection* connection;
     management::ManagementAgent* agent;
-
     boost::intrusive_ptr<sys::TimerTask> timerTask;
+    boost::shared_ptr<broker::LinkExchange> exchange;
 
     static const int STATE_WAITING     = 1;
     static const int STATE_CONNECTING  = 2;
@@ -100,8 +101,9 @@ class Link : public PersistableConfig, public management::Manageable {
     void opened();      // Called when connection is open (after create)
     void closed(int, std::string);   // Called when connection goes away
     void reconnectLH(const Address&); //called by LinkRegistry
+    void closeConnection(const std::string& reason);
 
-  friend class LinkRegistry; // to call established, opened, closed
+    friend class LinkRegistry; // to call established, opened, closed
 
   public:
     typedef boost::shared_ptr<Link> shared_ptr;
