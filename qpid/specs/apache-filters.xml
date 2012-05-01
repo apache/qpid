@@ -147,9 +147,13 @@
 		<descriptor name="apache.org:selector-filter:string" code="0x0000468C:0x00000004"/>
         <doc>
           <p>
-            The Java Message Service "selector" defines an SQL like syntax for filtering messages.
-            The selector filters based on the values of "headers" and "properties". The defined
-            JMS headers can be mapped to equivalent fields within the AMQP message sections:
+            The Java Message Service "selector" defines an SQL like
+            syntax for filtering messages.  The selector filters based
+            on the values of "headers" and "properties". The
+            selector-filter uses the selector as defined by JMS but
+            with the names of JMS headers translated into their AMQP
+            equivalents. The defined JMS headers can be mapped to
+            equivalent fields within the AMQP message sections:
           </p>
 <picture title="Mapping JMS Headers to AMQP fields">
 JMS Header Name   | AMQP 1.0 Field
