@@ -810,10 +810,10 @@ acl deny all all
             self.assertTrue(active, "Bridge failed to become active")
 
 
-        # 1 node cluster source, 1 node cluster destination
-        src_cluster = self.cluster(1, expect=EXPECT_EXIT_FAIL)
+        # 2 node cluster source, 2 node cluster destination
+        src_cluster = self.cluster(2, expect=EXPECT_EXIT_FAIL)
         src_cluster.ready();
-        dst_cluster = self.cluster(1, expect=EXPECT_EXIT_FAIL)
+        dst_cluster = self.cluster(2, expect=EXPECT_EXIT_FAIL)
         dst_cluster.ready();
 
         cmd = self.popen(["qpid-config",
@@ -850,36 +850,39 @@ acl deny all all
         # check that traffic passes
         verify(src_cluster[0], "srcQ", dst_cluster[0], "destQ")
 
-        # add src[1] and src[2] brokers to source cluster
-        src_cluster.start(expect=EXPECT_EXIT_FAIL);
-        src_cluster.ready();
+        # add src[2] broker to source cluster
         src_cluster.start(expect=EXPECT_EXIT_FAIL);
         src_cluster.ready();
         verify(src_cluster[2], "srcQ", dst_cluster[0], "destQ")
 
-        # Kill src[0]. dst[0] should've learned about src[1,2]
+        # Kill src[0]. dst[0] should fail over to src[1]
         src_cluster[0].kill()
         for b in src_cluster[1:]: b.ready()
         verify(src_cluster[1], "srcQ", dst_cluster[0], "destQ")
 
-        # Kill src[1], dst[0] should still be connected
+        # Kill src[1], dst[0] should fail over to src[2]
         src_cluster[1].kill()
         for b in src_cluster[2:]: b.ready()
         verify(src_cluster[2], "srcQ", dst_cluster[0], "destQ")
-
-        # Add dest[1]
-        # dest[0] syncs dest[1] to current remote state
-        dst_cluster.start(expect=EXPECT_EXIT_FAIL);
-        dst_cluster.ready();
-        verify(src_cluster[2], "srcQ", dst_cluster[1], "destQ")
 
         # Kill dest[0], force failover to dest[1]
         dst_cluster[0].kill()
         for b in dst_cluster[1:]: b.ready()
         verify(src_cluster[2], "srcQ", dst_cluster[1], "destQ")
 
+        # Add dest[2]
+        # dest[1] syncs dest[2] to current remote state
+        dst_cluster.start(expect=EXPECT_EXIT_FAIL);
+        for b in dst_cluster[1:]: b.ready()
+        verify(src_cluster[2], "srcQ", dst_cluster[1], "destQ")
+
+        # Kill dest[1], force failover to dest[2]
+        dst_cluster[1].kill()
+        for b in dst_cluster[2:]: b.ready()
+        verify(src_cluster[2], "srcQ", dst_cluster[2], "destQ")
+
         for i in range(2, len(src_cluster)): src_cluster[i].kill()
-        for i in range(1, len(dst_cluster)): dst_cluster[i].kill()
+        for i in range(2, len(dst_cluster)): dst_cluster[i].kill()
 
 
 # Some utility code for transaction tests
