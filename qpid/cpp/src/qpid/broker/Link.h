@@ -51,7 +51,7 @@ class LinkExchange;
 
 class Link : public PersistableConfig, public management::Manageable {
   private:
-    sys::Mutex          lock;
+    mutable sys::Mutex  lock;
     LinkRegistry*       links;
     MessageStore*       store;
 
@@ -174,6 +174,10 @@ class Link : public PersistableConfig, public management::Manageable {
     // manage the exchange owned by this link
     static const std::string exchangeTypeName;
     static boost::shared_ptr<Exchange> linkExchangeFactory(const std::string& name);
+
+    // replicate internal state of this Link for clustering
+    void getState(framing::FieldTable& state) const;
+    void setState(const framing::FieldTable& state);
 };
 }
 }

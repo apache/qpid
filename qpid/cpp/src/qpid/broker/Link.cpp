@@ -104,7 +104,7 @@ public:
             urlVec = urlArrayToVector(addresses);
             for(size_t i = 0; i < urlVec.size(); ++i)
                 urls.insert(urls.end(), urlVec[i].begin(), urlVec[i].end());
-            QPID_LOG(notice, "Remote broker has provided these failover addresses= " << urls);
+            QPID_LOG(debug, "Remote broker has provided these failover addresses= " << urls);
             link->setUrl(urls);
         }
     }
@@ -253,6 +253,7 @@ void Link::established(Connection* c)
 
 
 void Link::setUrl(const Url& u) {
+    QPID_LOG(info, "Setting remote broker failover addresses for link '" << getName() << "' to these urls: " << u);
     Mutex::ScopedLock mutex(lock);
     url = u;
     reconnectNext = 0;
@@ -684,6 +685,35 @@ bool Link::getRemoteAddress(qpid::Address& addr) const
     addr.port = port;
 
     return state == STATE_OPERATIONAL;
+}
+
+
+// FieldTable keys for internal state data
+namespace {
+    const std::string FAILOVER_ADDRESSES("failover-addresses");
+    const std::string FAILOVER_INDEX("failover-index");
+}
+
+void Link::getState(framing::FieldTable& state) const
+{
+    state.clear();
+    Mutex::ScopedLock mutex(lock);
+    if (!url.empty()) {
+        state.setString(FAILOVER_ADDRESSES, url.str());
+        state.setInt(FAILOVER_INDEX, reconnectNext);
+    }
+}
+
+void Link::setState(const framing::FieldTable& state)
+{
+    Mutex::ScopedLock mutex(lock);
+    if (state.isSet(FAILOVER_ADDRESSES)) {
+        Url failovers(state.getAsString(FAILOVER_ADDRESSES));
+        setUrl(failovers);
+    }
+    if (state.isSet(FAILOVER_INDEX)) {
+        reconnectNext = state.getAsInt(FAILOVER_INDEX);
+    }
 }
 
 
