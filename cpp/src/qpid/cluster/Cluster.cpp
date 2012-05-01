@@ -203,7 +203,7 @@ namespace arg=client::arg;
  * Currently use SVN revision to avoid clashes with versions from
  * different branches.
  */
-const uint32_t Cluster::CLUSTER_VERSION = 1207877;
+const uint32_t Cluster::CLUSTER_VERSION = 1332342;
 
 struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
     qpid::cluster::Cluster& cluster;
