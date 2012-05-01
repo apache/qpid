@@ -326,6 +326,12 @@
       <field name="dequeueSincePurge" type="uint32"/>
     </control>
 
+    <!-- Replicate the internal state for an object - e.g. Links, bridges, etc -->
+    <control name="internal-state" code="0x42">
+      <field name="type" type="str8"/> <!-- The type of object the state is for (e.g. 'link') -->
+      <field name="name" type="str8"/> <!-- Identifies the particular object to be updated -->
+      <field name="state" type="map"/> <!-- The internal state for the object -->
+    </control>
 
   </class>
 
