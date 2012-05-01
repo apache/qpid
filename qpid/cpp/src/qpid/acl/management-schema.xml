@@ -23,6 +23,7 @@
     <property name="transferAcl"   type="bool"    access="RO"    desc="Any transfer ACL rules in force"/>
     <property name="lastAclLoad"   type="absTime" access="RO"    desc="Timestamp of last successful load of ACL"/>
     <statistic name="aclDenyCount" type="count64" unit="request" desc="Number of ACL requests denied"/>
+    <statistic name="connectionDenyCount" type="count64" unit="connection" desc="Number of connections denied"/>
 
     <method name="reloadACLFile" desc="Reload the ACL file"/>
 
@@ -65,10 +66,12 @@
     <arg name="objectType" type="sstr"/>
     <arg name="reason"     type="lstr"/>
     <arg name="userId"     type="sstr"/>
+    <arg name="clientAddr" type="sstr"/>
   </eventArguments>
 
   <event name="allow"          sev="inform" args="userId, action, objectType, objectName, arguments"/>
   <event name="deny"           sev="notice" args="userId, action, objectType, objectName, arguments"/>
+  <event name="connectionDeny" sev="notice" args="userId, clientAddr"/>
   <event name="fileLoaded"     sev="inform" args="userId"/>
   <event name="fileLoadFailed" sev="error"  args="userId, reason"/>
 
