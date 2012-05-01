@@ -262,11 +262,6 @@ void Link::setUrl(const Url& u) {
 namespace {
     /** invoked when session used to subscribe to remote's amq.failover exchange detaches */
     void sessionDetached(Link *link) {
-        // ??? really not sure what the right thing to do here, if anything...
-        // ??? Q: do I need to cancel the subscription and detached the session in the I/O thread (???)
-        // e.g:
-        //peer->getMessage().cancel(args.i_dest);
-        //peer->getSession().detach(name);
         QPID_LOG(debug, "detached from 'amq.failover' for link: " << link->getName());
     }
 }
@@ -290,12 +285,13 @@ void Link::opened() {
     // attempt to subscribe to failover exchange for updates from remote
     //
 
-    const std::string queueName = "qpid.link." + failoverExchange->getName();
+    const std::string queueName = "qpid.link." + framing::Uuid(true).str();
     failoverChannel = nextChannel();
 
     SessionHandler& sessionHandler = connection->getChannel(failoverChannel);
     sessionHandler.setDetachedCallback( boost::bind(&sessionDetached, this) );
-    sessionHandler.attachAs(failoverExchange->getName());
+    failoverSession = queueName;
+    sessionHandler.attachAs(failoverSession);
 
     framing::AMQP_ServerProxy remoteBroker(sessionHandler.out);
 
@@ -673,7 +669,7 @@ void Link::closeConnection( const std::string& reason)
         if (sessionHandler.getSession()) {
             framing::AMQP_ServerProxy remoteBroker(sessionHandler.out);
             remoteBroker.getMessage().cancel(failoverExchange->getName());
-            remoteBroker.getSession().detach(failoverExchange->getName());
+            remoteBroker.getSession().detach(failoverSession);
         }
         connection->close(CLOSE_CODE_CONNECTION_FORCED, reason);
         connection = 0;
