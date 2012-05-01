@@ -88,6 +88,7 @@ class Link : public PersistableConfig, public management::Manageable {
     boost::intrusive_ptr<sys::TimerTask> timerTask;
     boost::shared_ptr<broker::LinkExchange> failoverExchange;  // subscribed to remote's amq.failover exchange
     uint failoverChannel;
+    std::string failoverSession;
 
     static const int STATE_WAITING     = 1;
     static const int STATE_CONNECTING  = 2;
