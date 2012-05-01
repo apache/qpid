@@ -299,22 +299,29 @@ std::string LinkRegistry::getUsername(const std::string& key)
     return link->getUsername();
 }
 
+/** note: returns the current remote host (may be different from the host originally
+    configured for the Link due to failover) */
 std::string LinkRegistry::getHost(const std::string& key)
 {
-    Link::shared_ptr link = findLink(key);
-    if (!link)
-        return string();
+     Link::shared_ptr link = findLink(key);
+     if (!link)
+         return string();
 
-    return link->getHost();
+     qpid::Address addr;
+     link->getRemoteAddress(addr);
+     return addr.host;
 }
 
+/** returns the current remote port (ditto above) */
 uint16_t LinkRegistry::getPort(const std::string& key)
 {
     Link::shared_ptr link = findLink(key);
     if (!link)
         return 0;
 
-    return link->getPort();
+     qpid::Address addr;
+     link->getRemoteAddress(addr);
+     return addr.port;
 }
 
 std::string LinkRegistry::getPassword(const std::string& key)
