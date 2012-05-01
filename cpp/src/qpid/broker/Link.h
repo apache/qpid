@@ -54,9 +54,16 @@ class Link : public PersistableConfig, public management::Manageable {
     sys::Mutex          lock;
     LinkRegistry*       links;
     MessageStore*       store;
-    std::string        host;
-    uint16_t      port;
-    std::string        transport;
+
+    // these remain constant across failover - used to identify this link
+    const std::string   configuredTransport;
+    const std::string   configuredHost;
+    const uint16_t      configuredPort;
+    // these reflect the current address of remote - will change during failover
+    std::string         host;
+    uint16_t            port;
+    std::string         transport;
+
     bool          durable;
     std::string        authMechanism;
     std::string        username;
@@ -121,9 +128,16 @@ class Link : public PersistableConfig, public management::Manageable {
          management::Manageable* parent = 0);
     virtual ~Link();
 
-    std::string getHost() { return host; }
-    uint16_t    getPort() { return port; }
-    std::string getTransport() { return transport; }
+    /** these return the *configured* transport/host/port, which does not change over the
+        lifetime of the Link */
+    std::string getHost() const { return configuredHost; }
+    uint16_t    getPort() const { return configuredPort; }
+    std::string getTransport() const { return configuredTransport; }
+
+    /** returns the current address of the remote, which may be different from the
+        configured transport/host/port due to failover. Returns true if connection is
+        active */
+    bool getRemoteAddress(qpid::Address& addr) const;
 
     bool isDurable() { return durable; }
     void maintenanceVisit ();
@@ -155,6 +169,9 @@ class Link : public PersistableConfig, public management::Manageable {
     management::ManagementObject*    GetManagementObject(void) const;
     management::Manageable::status_t ManagementMethod(uint32_t, management::Args&, std::string&);
 
+    // manage the exchange owned by this link
+    static const std::string exchangeTypeName;
+    static boost::shared_ptr<Exchange> linkExchangeFactory(const std::string& name);
 };
 }
 }

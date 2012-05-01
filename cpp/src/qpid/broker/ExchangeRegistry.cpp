@@ -24,6 +24,7 @@
 #include "qpid/broker/FanOutExchange.h"
 #include "qpid/broker/HeadersExchange.h"
 #include "qpid/broker/TopicExchange.h"
+#include "qpid/broker/Link.h"
 #include "qpid/management/ManagementDirectExchange.h"
 #include "qpid/management/ManagementTopicExchange.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -58,6 +59,8 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, c
             exchange = Exchange::shared_ptr(new ManagementDirectExchange(name, durable, args, parent, broker));
         }else if (type == ManagementTopicExchange::typeName) {
             exchange = Exchange::shared_ptr(new ManagementTopicExchange(name, durable, args, parent, broker));
+        }else if (type == Link::exchangeTypeName) {
+            exchange = Link::linkExchangeFactory(name);
         }else{
             FunctionMap::iterator i =  factory.find(type);
             if (i == factory.end()) {
