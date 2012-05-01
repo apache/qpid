@@ -233,8 +233,9 @@ require(["dojo/store/JsonRest"], function(JsonRest)
 });
 
 require([
-    "dojox/grid/DataGrid",
+    "dojox/grid/EnhancedGrid",
     "dojo/data/ObjectStore",
+    "dojox/grid/enhanced/plugins/Pagination",
     "dojo/domReady!"
 ], function(DataGrid, ObjectStore){
     var grid = new DataGrid({
@@ -244,7 +245,20 @@ require([
             {name:"Size", field:"size", width: "60px"},
             {name:"State", field:"state", width: "120px"},
             {name:"Arrival", field:"arrivalTime", width: "100%"}
-        ]
-    }, "messages"); // make sure you have a target HTML element with this id
+        ],
+        plugins: {
+                  pagination: {
+                      pageSizes: ["10", "25", "50", "100"],
+                      description: true,
+                      sizeSwitch: true,
+                      pageStepper: true,
+                      gotoButton: true,
+                      maxPageStep: 4,
+                              /*position of the pagination bar*/
+                      position: "bottom"
+                  }
+        }
+    }, "messages");
+
     grid.startup();
 });
