@@ -336,55 +336,6 @@ acl deny all all
 acl allow rajith@QPID all all
 </programlisting>
 		 <para>
-			In deny mode, denying rights to an action is redundant and has no effect.
-		</para>
-
-<programlisting>
-acl allow rajith@QPID all all
-acl deny jonathan@QPID all all # This rule is redundant, and has no effect
-acl deny all all
-</programlisting>
-		 <para>
-			If the last line in an ACL file is <literal>acl allow all all</literal>, ACL uses <firstterm>allow mode</firstterm>, and all rights are granted except those that are explicitly denied. The following ACL file allows everyone else to perform any action, but denies <literal>jonathan@QPID</literal> all permissions.
-		</para>
-
-<programlisting>
-acl deny jonathan@QPID all all
-acl allow all all
-</programlisting>
-		 <para>
-			In allow mode, allowing rights to an action is redundant and has no effect.
-		</para>
-
-<programlisting>
-acl allow rajith@QPID all all # This rule is redundant, and has no effect
-acl deny jonathan@QPID all all
-acl allow all all
-</programlisting>
-		 <important>
-			<title>Important</title>
-			 <para>
-				ACL processing ends when one of the following lines is encountered:
-			</para>
-
-<programlisting>
-acl allow all all
-</programlisting>
-
-<programlisting>
-acl deny all all
-</programlisting>
-			 <para>
-				Any lines that occur after one of these statements will be ignored:
-			</para>
-
-<programlisting>
-acl allow all all
-acl deny jonathan@QPID all all # This line is ignored !!!
-</programlisting>
-
-		</important>
-		 <para>
 			ACL syntax allows fine-grained access rights for specific actions:
 		</para>
 
@@ -408,8 +359,25 @@ acl deny all all
 			<title>ACL Syntax</title>
 			 <para>
 				ACL rules must be on a single line and follow this syntax:
-<programlisting>acl permission {&#60;group-name&#62;|&#60;user-name&#62;|&#34;all&#34;} {action|&#34;all&#34;} [object|&#34;all&#34;] [property=&#60;property-value&#62;]
-</programlisting>
+<programlisting><![CDATA[
+user = username[/domain[@realm]]
+user-list = user1 user2 user3 ...
+group-name-list = group1 group2 group3 ...
+
+group <group-name> = [user-list] [group-name-list]
+
+permission = [allow|allow-log|deny|deny-log]
+action = [consume|publish|create|access|bind|unbind|delete|purge|update]
+object = [virtualhost|queue|exchange|broker|link|route|method]
+property = [name|durable|owner|routingkey|autodelete|exclusive|
+            type|alternate|queuename|schemapackage|schemaclass|
+            queuemaxsizelowerlimit|queuemaxsizeupperlimit|
+            queuemaxcountlowerlimit|queuemaxcountupperlimit]
+
+acl permission {<group-name>|<user-name>|"all"} {action|"all"} [object|"all" 
+            [property=<property-value> ...]]
+]]></programlisting>
+
 				 ACL rules can also include a single object name (or the keyword <parameter>all</parameter>) and one or more property name value pairs in the form <command>property=value</command>
 			</para>
 			 <para>
@@ -665,142 +633,102 @@ acl deny all all
         <para>
           Wild cards can be used on properties that are a string. The following properties are supported:          --> <table id="tabl-Messaging_User_Guide-ACL_Syntax-ACL_Rulesproperty">
 				<title>ACL Rules:property</title>
-				 <tgroup cols="2">
-					<tbody>
-						<row>
-							<entry>
-								<command>name</command>
-							</entry>
-							 <entry>
-								<para>
-									String. Object name, such as a queue name or exchange name.
-								</para>
-
-							</entry>
-
-						</row>
-						 <row>
-							<entry>
-								<command>durable</command>
-							</entry>
-							 <entry>
-								<para>
-									Boolean. Indicates the object is durable
-								</para>
-
-							</entry>
-
-						</row>
-						 <row>
-							<entry>
-								<command>routingkey</command>
-							</entry>
-							 <entry>
-								<para>
-									Sring. Specifies routing key
-								</para>
-
-							</entry>
-
-						</row>
-						 <row>
-							<entry>
-								<command>passive</command>
-							</entry>
-							 <entry>
-								<para>
-									Boolean. Indicates the presence of a <parameter>passive</parameter> flag
-								</para>
-
-							</entry>
-
-						</row>
-						 <row>
-							<entry>
-								<command>autodelete</command>
-							</entry>
-							 <entry>
-								<para>
-									Boolean. Indicates whether or not the object gets deleted when the connection is closed
-								</para>
-
-							</entry>
-
-						</row>
-						 <row>
-							<entry>
-								<command>exclusive</command>
-							</entry>
-							 <entry>
-								<para>
-									Boolean. Indicates the presence of an <parameter>exclusive</parameter> flag
-								</para>
-
-							</entry>
-
-						</row>
-						 <row>
-							<entry>
-								<command>type</command>
-							</entry>
-							 <entry>
-								<para>
-									String. Type of object, such as topic, fanout, or xml
-								</para>
-
-							</entry>
-
-						</row>
-						 <row>
-							<entry>
-								<command>alternate</command>
-							</entry>
-							 <entry>
-								<para>
-									String. Name of the alternate exchange
-								</para>
-
-							</entry>
-
-						</row>
-						 <row>
-							<entry>
-								<command>queuename</command>
-							</entry>
-							 <entry>
-								<para>
-									String. Name of the queue (used only when the object is something other than <parameter>queue</parameter>
-								</para>
-
-							</entry>
-
-						</row>
-						 <row>
-							<entry>
-								<command>schemapackage</command>
-							</entry>
-							 <entry>
-								<para>
-									String. QMF schema package name
-								</para>
-
-							</entry>
-
-						</row>
-						 <row>
-							<entry>
-								<command>schemaclass</command>
-							</entry>
-							 <entry>
-								<para>
-									String. QMF schema class name
-								</para>
-
-							</entry>
-
-						</row>
-
-					</tbody>
+				 <tgroup cols="4">
+				   <thead>
+				     <row>
+				       <entry>Property</entry>
+				       <entry>Type</entry>
+				       <entry>Description</entry>
+				       <entry>Usage</entry>
+				     </row>
+				   </thead>
+				   <tbody>
+				     <row>
+				       <entry> <command>name</command> </entry>
+				       <entry>String</entry>
+				       <entry>Object name, such as a queue name or exchange name.</entry>
+				       <entry>.</entry>
+				     </row>
+				     <row>
+				       <entry> <command>durable</command> </entry>
+				       <entry>Boolean</entry>
+				       <entry>Indicates the object is durable</entry>
+				       <entry>CREATE QUEUE, CREATE EXCHANGE</entry>
+				     </row>
+				     <row>
+				       <entry> <command>routingkey</command> </entry>
+				       <entry>String</entry>
+				       <entry>Specifies routing key</entry>
+				       <entry>BIND EXCHANGE, UNBIND EXCHANGE, ACCESS EXCHANGE</entry>
+				     </row>
+				     <row>
+				       <entry> <command>autodelete</command> </entry>
+				       <entry>Boolean</entry>
+				       <entry>Indicates whether or not the object gets deleted when the connection is closed</entry>
+				       <entry>CREATE QUEUE</entry>
+				     </row>
+				     <row>
+				       <entry> <command>exclusive</command> </entry>
+				       <entry>Boolean</entry>
+				       <entry>Indicates the presence of an <parameter>exclusive</parameter> flag</entry>
+				       <entry>CREATE QUEUE</entry>
+				     </row>
+				     <row>
+				       <entry> <command>type</command> </entry>
+				       <entry>String</entry>
+				       <entry>Type of exchange, such as topic, fanout, or xml</entry>
+				       <entry>CREATE EXCHANGE</entry>
+				     </row>
+				     <row>
+				       <entry> <command>alternate</command> </entry>
+				       <entry>String</entry>
+				       <entry>Name of the alternate exchange</entry>
+				       <entry>CREATE EXCHANGE, CREATE QUEUE</entry>
+				     </row>
+				     <row>
+				       <entry> <command>queuename</command> </entry>
+				       <entry>String</entry>
+				       <entry>Name of the queue</entry>
+				       <entry>ACCESS EXCHANGE</entry>
+				     </row>
+				     <row>
+				       <entry> <command>schemapackage</command> </entry>
+				       <entry>String</entry>
+				       <entry>QMF schema package name</entry>
+				       <entry>ACCESS METHOD</entry>
+				     </row>
+				     <row>
+				       <entry> <command>schemaclass</command> </entry>
+				       <entry>String</entry>
+				       <entry>QMF schema class name</entry>
+				       <entry>ACCESS METHOD</entry>
+				     </row>
+				     <row>
+				       <entry> <command>queuemaxsizelowerlimit</command> </entry>
+				       <entry>Integer</entry>
+				       <entry>Minimum value for queue.max_size</entry>
+				       <entry>CREATE QUEUE</entry>
+				     </row>
+				     <row>
+				       <entry> <command>queuemaxsizeupperlimit</command> </entry>
+				       <entry>Integer</entry>
+				       <entry>Maximum value for queue.max_size</entry>
+				       <entry>CREATE QUEUE</entry>
+				     </row>
+				     <row>
+				       <entry> <command>queuemaxcountlowerlimit</command> </entry>
+				       <entry>Integer</entry>
+				       <entry>Minimum value for queue.max_count</entry>
+				       <entry>CREATE QUEUE</entry>
+				     </row>
+				     <row>
+				       <entry> <command>queuemaxcountupperlimit</command> </entry>
+				       <entry>Integer</entry>
+				       <entry>Maximum value for queue.max_count</entry>
+				       <entry>CREATE QUEUE</entry>
+				     </row>
+				     
+				   </tbody>
 
 				</tgroup>
 
@@ -821,19 +749,19 @@ acl deny all all
 					</listitem>
 					 <listitem>
 						<para>
-							Empty lines and lines that contain only whitespace are ignored
+							Empty lines and lines that contain only whitespace (' ', '\f', '\n', '\r', '\t', '\v') are ignored.
 						</para>
 
 					</listitem>
 					 <listitem>
 						<para>
-							All tokens are case sensitive. <parameter>name1</parameter> is not the same as <parameter>Name1</parameter> and <parameter>create</parameter> is not the same as <parameter>CREATE</parameter>
+							All tokens are case sensitive. <parameter>name1</parameter> is not the same as <parameter>Name1</parameter> and <parameter>create</parameter> is not the same as <parameter>CREATE</parameter>.
 						</para>
 
 					</listitem>
 					 <listitem>
 						<para>
-							Group lists can be extended to the following line by terminating the line with the <command>\</command> character
+							Group lists can be extended to the following line by terminating the line with the <command>\</command> character.
 						</para>
 
 					</listitem>
@@ -845,31 +773,37 @@ acl deny all all
 					</listitem>
 					 <listitem>
 						<para>
-							All ACL rules are limited to a single line
+							All ACL rules are limited to a single line of at most 1024 characters.
 						</para>
 
 					</listitem>
 					 <listitem>
 						<para>
-							Rules are interpreted from the top of the file down until the name match is obtained; at which point processing stops.
+							Rules are interpreted from the top of the file down until a matching rule is obtained. The matching rule then controls the allow or deny decision.
 						</para>
 
 					</listitem>
 					 <listitem>
 						<para>
-							The keyword <parameter>all</parameter> matches all individuals, groups and actions
+							The keyword <parameter>all</parameter> is reserved and may be used in ACL rules to match all individuals and groups, all actions, or all objects.
 						</para>
 
 					</listitem>
 					 <listitem>
 						<para>
-							The last line of the file - whether present or not - will be assumed to be <command>acl deny all all</command>. If present in the file, all lines below it are ignored.
+							By default ACL files are in 'Deny Mode' and deny all actions by all users. That is, there is an implicit <parameter>acl deny all all</parameter> rule appended to the ACL rule list.
 						</para>
 
 					</listitem>
 					 <listitem>
 						<para>
-							Names and group names may contain only <parameter>a-z</parameter>, <parameter>A-Z</parameter>, <parameter>0-9</parameter>, <parameter>-</parameter> and <parameter>_</parameter>
+							Group names may contain only <parameter>a-z</parameter>, <parameter>A-Z</parameter>, <parameter>0-9</parameter>, <parameter>- hyphen</parameter> and <parameter>_ underscore</parameter>.
+						</para>
+
+					</listitem>
+					 <listitem>
+						<para>
+							Individual user names may contain only <parameter>a-z</parameter>, <parameter>A-Z</parameter>, <parameter>0-9</parameter>, <parameter>- hyphen</parameter>, <parameter>_ underscore</parameter>, <parameter>. period</parameter>, <parameter>@ ampersand</parameter>, and  <parameter>/ slash</parameter>.
 						</para>
 
 					</listitem>
@@ -885,6 +819,75 @@ acl deny all all
 			</para>
 
 		</section>
+
+		 <section id="sect-Messaging_User_Guide-Authorization-ACL_Rule_Matching">
+			<title>ACL Rule Matching</title>
+			 <para>
+			   The minimum matching criteria for ACL rules are:
+			   <itemizedlist>
+			     <listitem>An actor (individually named or group member)</listitem>
+			     <listitem>An action</listitem>
+			     <listitem>An object</listitem>
+			   </itemizedlist>
+			 </para>
+			 <para>
+			   If a rule does not match the minimum criteria then that rule does not control the ACL allow or deny decision.
+			 </para>
+			 <para>
+			   ACL rules optionally specify object names and property name=value pairs. If an ACL rule specifies an object name or property values than all of them must match to cause the rule to match.
+			 </para>
+			 <para>
+			   The following illustration shows how ACL rules are processed to find matching rules.
+<programlisting><![CDATA[
+# Example of rule matching
+#
+# Using this ACL file content:
+
+(1)  acl deny bob create exchange name=test durable=true passive=true
+(2)  acl deny bob create exchange name=myEx type=direct
+(3)  acl allow all all
+
+#
+# Lookup 1. id:bob action:create objectType:exchange name=test 
+#           {durable=false passive=false type=direct alternate=}
+#
+# ACL Match Processing:
+#  1. Rule 1 passes minimum criteria with user bob, action create, 
+#     and object exchange.
+#  2. Rule 1 matches name=test.
+#  3. Rule 1 does not match the rule's durable=true with the requested 
+#     lookup of durable=false.
+#  4. Rule 1 does not control the decision and processing continues 
+#     to Rule 2.
+#  5. Rule 2 passes minimum criteria with user bob, action create, 
+#     and object exchange.
+#  6. Rule 2 does not match the rule's name=myEx with the requested 
+#     lookup of name=test.
+#  7. Rule 2 does not control the decision and processing continues 
+#     to Rule 3.
+#  8. Rule 3 matches everything and the decision is 'allow'.
+#
+# Lookup 2. id:bob action:create objectType:exchange name=myEx 
+#           {durable=true passive=true type=direct alternate=}
+#
+# ACL Match Processing:
+#  1. Rule 1 passes minimum criteria with user bob, action create, 
+#     and object exchange.
+#  6. Rule 1 does not match the rule's name=test with the requested 
+#     lookup of name=myEx.
+#  4. Rule 1 does not control the decision and processing continues
+#     to Rule 2.
+#  5. Rule 2 passes minimum criteria with user bob, action create, 
+#     and object exchange.
+#  2. Rule 2 matches name=myEx.
+#  3. Rule 2 matches the rule's type=direct with the requested 
+#     lookup of type=direct.
+#  8. Rule 2 is the matching rule and the decision is 'deny'.
+#
+]]></programlisting>
+			 </para>
+
+		 </section>
 
 		 <section id="sect-Messaging_User_Guide-Authorization-Specifying_ACL_Permissions">
 			<title>Specifying ACL Permissions</title>
@@ -925,6 +928,20 @@ acl deny all all
 			 <para>
 				In the previous example, the last line, <literal>acl deny all all</literal>, denies all authorizations that have not been specifically granted. This is the default, but it is useful to include it explicitly on the last line for the sake of clarity. If you want to grant all rights by default, you can specify <literal>acl allow all all</literal> in the last line.
 			</para>
+			<para>
+			  ACL allows specification of conflicting rules. Be sure to specify the most specific rules first followed by more general rules. Here is an example:
+			</para>
+			<para>
+<programlisting>
+group users alice@QPID bob@QPID charlie@QPID
+acl deny  charlie@QPID create queue
+acl allow users        create queue
+acl deny all all
+</programlisting>
+			</para>
+			<para>
+			  In this example users alice and bob would be able to create queues due to their membership in the users group. However, user charlie is denied from creating a queue despite his membership in the users group because a deny rule for him is stated before the allow rule for the users group.
+			</para>
 			 <para>
 				Do not allow <parameter>guest</parameter> to access and log QMF management methods that could cause security breaches:
 			</para>
@@ -940,6 +957,30 @@ acl allow all all
 
 		</section>
 
+		 <section id="sect-Messaging_User_Guide-Authorization-Specifying_ACL_Connection_Limits">
+			<title>Specifying ACL Connection Limits</title>
+			 <para>
+			   The ACL module creates two broker command line switches that set limits on the number of connections allowed per user or per client host address. These settings are not specified in the ACL file.
+			 </para>
+			 <para>
+<programlisting>
+--acl-max-connect-per-user N_USER
+--acl-max-connect-per-ip N_IP
+</programlisting>
+			 </para>
+			 <para>
+			   If either of these switches is not specified or the value specified is zero then the corresponding connection limit is not enforced.
+			 </para>
+			 <para>
+			   If a limit is set for user connections then all users are limited to that number of connections regardless of the client IP address the users are coming from.
+			 </para>
+			 <para>
+			   If a limit is set for IP connections then connections for a given IP address are limited regardless of the user credentials presented with the connection.
+			 </para>
+			 <para>
+			   Note that addresses using different transports are counted separately even though the host is actually the same physical machine. In the setting illustrated above a host would allow N_IP connections from [::1] IPv6 transport localhost and another N_IP connections from [127.0.0.1] IPv4 transport localhost.
+			 </para>
+		 </section>
 
 	</section>
 
