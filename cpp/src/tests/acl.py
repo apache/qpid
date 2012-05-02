@@ -1518,29 +1518,41 @@ class ACLTests(TestBase010):
         """
         # By username should be able to connect twice per user
         try:
-            sessiona1 = self.get_session_by_port('anonymous','anonymous', self.port_u())
-            sessiona2 = self.get_session_by_port('anonymous','anonymous', self.port_u())
+            sessiona1 = self.get_session_by_port('alice','alice', self.port_u())
+            sessiona2 = self.get_session_by_port('alice','alice', self.port_u())
         except Exception, e:
-            self.fail("Could not create two connections per user: " + str(e))
+            self.fail("Could not create two connections for user alice: " + str(e))
 
         # Third session should fail
         try:
-            sessiona3 = self.get_session_by_port('anonymous','anonymous', self.port_u())
-            self.fail("Should not be able to create third connection")
+            sessiona3 = self.get_session_by_port('alice','alice', self.port_u())
+            self.fail("Should not be able to create third connection for user alice")
+        except Exception, e:
+            result = None
+
+        try:
+            sessionb1 = self.get_session_by_port('bob','bob', self.port_u())
+            sessionb2 = self.get_session_by_port('bob','bob', self.port_u())
+        except Exception, e:
+            self.fail("Could not create two connections for user bob: " + str(e))
+
+        try:
+            sessionb3 = self.get_session_by_port('bob','bob', self.port_u())
+            self.fail("Should not be able to create third connection for user bob")
         except Exception, e:
             result = None
 
         # By IP address should be able to connect twice per client address
         try:
-            sessionb1 = self.get_session_by_port('anonymous','anonymous', self.port_i())
-            sessionb2 = self.get_session_by_port('anonymous','anonymous', self.port_i())
+            sessionb1 = self.get_session_by_port('alice','alice', self.port_i())
+            sessionb2 = self.get_session_by_port('bob','bob', self.port_i())
         except Exception, e:
-            self.fail("Could not create two connections per user: " + str(e))
+            self.fail("Could not create two connections for client address: " + str(e))
 
         # Third session should fail
         try:
-            sessionb3 = self.get_session_by_port('anonymous','anonymous', self.port_i())
-            self.fail("Should not be able to create third connection")
+            sessionb3 = self.get_session_by_port('charlie','charlie', self.port_i())
+            self.fail("Should not be able to create third connection for client address")
         except Exception, e:
             result = None
 
