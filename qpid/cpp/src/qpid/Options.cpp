@@ -186,13 +186,14 @@ void Options::parse(int argc, char const* const* argv, const std::string& config
     }
 }
 
-CommonOptions::CommonOptions(const string& name, const string& configfile)
-    : Options(name), config(configfile)
+CommonOptions::CommonOptions(const string& name, const string& configfile, const string& clientfile)
+    : Options(name), config(configfile), clientConfig(clientfile)
 {
     addOptions()
         ("help,h", optValue(help), "Displays the help message")
         ("version,v", optValue(version), "Displays version information")
-        ("config", optValue(config, "FILE"), "Reads configuration from FILE");
+        ("config", optValue(config, "FILE"), "Reads configuration from FILE")
+        ("client-config", optValue(clientConfig, "FILE"), "Reads client configuration from FILE (for cluster interconnect)");
 }
 
 

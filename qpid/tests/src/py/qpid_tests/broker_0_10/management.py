@@ -385,6 +385,30 @@ class ManagementTest (TestBase010):
         # Cleanup
         for e in ["A", "B"]: session.exchange_delete(exchange=e)
 
+    def test_reroute_invalid_alt_exchange(self):
+        """
+        Test that an error is returned for an attempt to reroute to
+        alternate exchange on a queue for which no such exchange has
+        been defined.
+        """
+        self.startQmf()
+        session = self.session
+        # create queue with no alt-exchange, and send a message to it
+        session.queue_declare(queue="q", exclusive=True, auto_delete=True)
+        props = session.delivery_properties(routing_key="q")
+        session.message_transfer(message=Message(props, "don't reroute me!"))
+
+        # attempt to reroute the message to alt-exchange
+        q = self.qmf.getObjects(_class="queue", name="q")[0]
+        result = q.reroute(1, True, "", {})
+        # verify the attempt fails...
+        self.assertEqual(result.status, 4) #invalid parameter
+
+        # ...and message is still on the queue
+        self.subscribe(destination="d", queue="q")
+        self.assertEqual("don't reroute me!", session.incoming("d").get(timeout=1).body)
+
+
     def test_methods_async (self):
         """
         """

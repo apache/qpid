@@ -3,13 +3,13 @@
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
+ * regarding copyright ownersip.  The ASF licenses this file
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,96 +22,87 @@
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueuedMessage.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/log/Statement.h"
 #include <cmath>
 
 namespace qpid {
 namespace broker {
 
-PriorityQueue::PriorityQueue(int l) : 
+PriorityQueue::PriorityQueue(int l) :
     levels(l),
     messages(levels, Deque()),
     frontLevel(0), haveFront(false), cached(false) {}
 
-bool PriorityQueue::deleted(const QueuedMessage&) { return true; }
+bool PriorityQueue::deleted(const QueuedMessage& qm) {
+    bool deleted = fifo.deleted(qm);
+    if (deleted) erase(qm);
+    return deleted;
+}
 
 size_t PriorityQueue::size()
 {
-    size_t total(0);
-    for (int i = 0; i < levels; ++i) {
-        total += messages[i].size();
-    }
-    return total;
+    return fifo.size();
+}
+
+namespace {
+bool before(QueuedMessage* a, QueuedMessage* b) { return *a < *b; }
 }
 
 void PriorityQueue::release(const QueuedMessage& message)
 {
-    uint p = getPriorityLevel(message);
-    messages[p].insert(lower_bound(messages[p].begin(), messages[p].end(), message), message);
-    clearCache();
+    QueuedMessage* qm = fifo.releasePtr(message);
+    if (qm) {
+        uint p = getPriorityLevel(message);
+        messages[p].insert(
+            lower_bound(messages[p].begin(), messages[p].end(), qm, before), qm);
+        clearCache();
+    }
 }
 
-bool PriorityQueue::find(const framing::SequenceNumber& position, QueuedMessage& message, bool remove)
-{
-    QueuedMessage comp;
-    comp.position = position;
-    for (int i = 0; i < levels; ++i) {
-        if (!messages[i].empty()) {
-            unsigned long diff = position.getValue() - messages[i].front().position.getValue();
-            long maxEnd = diff < messages[i].size() ? diff : messages[i].size();        
-            Deque::iterator l = lower_bound(messages[i].begin(),messages[i].begin()+maxEnd,comp);
-            if (l != messages[i].end() && l->position == position) {
-                message = *l;
-                if (remove) {
-                    messages[i].erase(l);
-                    clearCache();
-                }
-                return true;
-            }
+
+void PriorityQueue::erase(const QueuedMessage& qm) {
+    size_t i = getPriorityLevel(qm);
+    if (!messages[i].empty()) {
+        long diff = qm.position.getValue() - messages[i].front()->position.getValue();
+        if (diff < 0) return;
+        long maxEnd = std::min(size_t(diff), messages[i].size());
+        QueuedMessage mutableQm = qm; // need non-const qm for lower_bound
+        Deque::iterator l =
+            lower_bound(messages[i].begin(),messages[i].begin()+maxEnd, &mutableQm, before);
+        if (l != messages[i].end() && (*l)->position == qm.position) {
+            messages[i].erase(l);
+            clearCache();
+            return;
         }
     }
-    return false;
 }
 
 bool PriorityQueue::acquire(const framing::SequenceNumber& position, QueuedMessage& message)
 {
-    return find(position, message, true);
+    bool acquired = fifo.acquire(position, message);
+    if (acquired) erase(message); // No longer available
+    return acquired;
 }
 
 bool PriorityQueue::find(const framing::SequenceNumber& position, QueuedMessage& message)
 {
-    return find(position, message, false);
+    return fifo.find(position, message);
 }
 
-bool PriorityQueue::browse(const framing::SequenceNumber& position, QueuedMessage& message, bool)
+bool PriorityQueue::browse(
+    const framing::SequenceNumber& position, QueuedMessage& message, bool unacquired)
 {
-    QueuedMessage match;
-    match.position = position+1;
-    Deque::iterator lowest;
-    bool found = false;
-    for (int i = 0; i < levels; ++i) {
-        Deque::iterator m = lower_bound(messages[i].begin(), messages[i].end(), match); 
-        if (m != messages[i].end()) {
-            if (m->position == match.position) {
-                message = *m;
-                return true;
-            } else if (!found || m->position < lowest->position) {
-                lowest = m;
-                found = true;
-            }
-        }
-    }
-    if (found) {
-        message = *lowest;
-    }
-    return found;
+    return fifo.browse(position, message, unacquired);
 }
 
 bool PriorityQueue::consume(QueuedMessage& message)
 {
     if (checkFront()) {
-        message = messages[frontLevel].front();
+        QueuedMessage* pm = messages[frontLevel].front();
         messages[frontLevel].pop_front();
         clearCache();
+        pm->status = QueuedMessage::ACQUIRED; // Updates FIFO index
+        message = *pm;
         return true;
     } else {
         return false;
@@ -120,23 +111,27 @@ bool PriorityQueue::consume(QueuedMessage& message)
 
 bool PriorityQueue::push(const QueuedMessage& added, QueuedMessage& /*not needed*/)
 {
-    messages[getPriorityLevel(added)].push_back(added);
+    QueuedMessage* qmp = fifo.pushPtr(added);
+    messages[getPriorityLevel(added)].push_back(qmp);
     clearCache();
-    return false;//adding a message never causes one to be removed for deque
+    return false; // Adding a message never causes one to be removed for deque
+}
+
+void PriorityQueue::updateAcquired(const QueuedMessage& acquired) {
+    fifo.updateAcquired(acquired);
 }
 
 void PriorityQueue::foreach(Functor f)
 {
-    for (int i = 0; i < levels; ++i) {
-        std::for_each(messages[i].begin(), messages[i].end(), f);
-    }
+    fifo.foreach(f);
 }
 
 void PriorityQueue::removeIf(Predicate p)
 {
     for (int priority = 0; priority < levels; ++priority) {
         for (Deque::iterator i = messages[priority].begin(); i != messages[priority].end();) {
-            if (p(*i)) {
+            if (p(**i)) {
+                (*i)->status = QueuedMessage::DELETED; // Updates fifo index
                 i = messages[priority].erase(i);
                 clearCache();
             } else {
@@ -144,6 +139,7 @@ void PriorityQueue::removeIf(Predicate p)
             }
         }
     }
+    fifo.clean();
 }
 
 uint PriorityQueue::getPriorityLevel(const QueuedMessage& m) const

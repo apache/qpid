@@ -22,13 +22,19 @@ package org.apache.qpid.server.security.auth.rmi;
 
 import junit.framework.TestCase;
 
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.util.TestApplicationRegistry;
 
 import javax.management.remote.JMXPrincipal;
 import javax.security.auth.Subject;
+import javax.security.auth.callback.CallbackHandler;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import java.util.Collections;
@@ -47,7 +53,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
     protected void setUp() throws Exception
     {
         _rmipa = new RMIPasswordAuthenticator();
-        
+
         _credentials = new String[] {USERNAME, PASSWORD};
     }
 
@@ -114,8 +120,19 @@ public class RMIPasswordAuthenticatorTest extends TestCase
     /**
      * Tests case where authentication manager is not set.
      */
-    public void testNullAuthenticationManager()
+    public void testNullAuthenticationManager() throws Exception
     {
+        ServerConfiguration serverConfig = new ServerConfiguration(new XMLConfiguration());
+        TestApplicationRegistry reg = new TestApplicationRegistry(serverConfig)
+        {
+            @Override
+            protected AuthenticationManager createAuthenticationManager() throws ConfigurationException
+            {
+                return null;
+            }
+        };
+        ApplicationRegistry.initialise(reg);
+
         try
         {
             _rmipa.authenticate(_credentials);
@@ -125,6 +142,10 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         {
             assertEquals("Unexpected exception message",
                     RMIPasswordAuthenticator.UNABLE_TO_LOOKUP, se.getMessage());
+        }
+        finally
+        {
+            ApplicationRegistry.remove();
         }
     }
 
@@ -253,6 +274,11 @@ public class RMIPasswordAuthenticatorTest extends TestCase
                 {
                     return new AuthenticationResult(AuthenticationStatus.CONTINUE);
                 }
+            }
+
+            public CallbackHandler getHandler(String mechanism)
+            {
+                return null;
             }
         };
     }

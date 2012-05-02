@@ -33,6 +33,7 @@ import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
@@ -56,8 +57,6 @@ public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHo
     ExchangeFactory getExchangeFactory();
 
     MessageStore getMessageStore();
-
-    DurableConfigurationStore getDurableConfigurationStore();
 
     SecurityManager getSecurityManager();
 
@@ -98,5 +97,9 @@ public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHo
 
     void removeBrokerConnection(BrokerLink brokerLink);
 
+    LinkRegistry getLinkRegistry(String remoteContainerId);
+
     ScheduledFuture<?> scheduleTask(long delay, Runnable timeoutTask);
+
+    State getState();
 }

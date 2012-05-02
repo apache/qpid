@@ -33,7 +33,6 @@ nobase_sysconf_DATA = \
 if HAVE_SASL
 nobase_sysconf_DATA += \
 	$(SASL_CONF)
-
 endif
 
 # Substitute values for directories in init scripts.
@@ -46,10 +45,11 @@ qpidd: qpidd.in
 	sed $(SUBST) $< > $@
 qpidd-primary: qpidd-primary.in
 	sed $(SUBST) $< > $@
-cluster.conf-example.xml: cluster.conf-example.in
+cluster.conf-example.xml: cluster.conf-example.xml.in
 	sed $(SUBST) $< > $@
 
-CLEANFILES = qpidd qpidd-primary cluster.conf-example
+CLEANFILES = qpidd qpidd-primary cluster.conf-example.xml
 
 initddir = $(sysconfdir)/init.d
 nobase_initd_SCRIPTS = qpidd qpidd-primary
+

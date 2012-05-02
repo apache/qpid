@@ -1,0 +1,661 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+h"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+
+-->
+
+<section id="chap-Messaging_User_Guide-Active_Passive_Cluster">
+
+  <title>Active-passive Messaging Clusters (Preview)</title>
+
+  <section>
+    <title>Overview</title>
+    <para>
+      This release provides a preview of a new module for High Availability (HA). The new module is
+      not yet complete or ready for production use. It being made available so that users can
+      experiment with the new approach and provide feedback early in the development process.
+      Feedback should go to <ulink url="mailto:user@qpid.apache.org">dev@qpid.apache.org</ulink>.
+    </para>
+    <para>
+      The old cluster module takes an <firstterm>active-active</firstterm> approach, i.e. all the
+      brokers in a cluster are able to handle client requests simultaneously. The new HA module
+      takes an <firstterm>active-passive</firstterm>, <firstterm>hot-standby</firstterm> approach.
+    </para>
+    <para>
+      In an active-passive cluster only one broker, known as the <firstterm>primary</firstterm>, is
+      active and serving clients at a time. The other brokers are standing by as
+      <firstterm>backups</firstterm>. Changes on the primary are immediately replicated to all the
+      backups so they are always up-to-date or "hot".  If the primary fails, one of the backups is
+      promoted to take over as the new primary. Clients fail-over to the new primary
+      automatically. If there are multiple backups, the backups also fail-over to become backups of
+      the new primary.  Backup brokers reject connection attempts, to enforce the requirement that
+      only the primary be active.
+    </para>
+    <para>
+      This approach depends on an external <firstterm>cluster resource manager</firstterm> to detect
+      failures and choose the primary. <ulink
+      url="https://fedorahosted.org/cluster/wiki/RGManager">Rgmanager</ulink> is supported
+      initially, but others may be supported in the future.
+    </para>
+    <section>
+      <title>Why the new approach?</title>
+      <para>
+	The new active-passive approach has several advantages compared to the
+	existing active-active cluster module.
+	<itemizedlist>
+	  <listitem>
+	    It does not depend directly on openais or corosync. It does not use multicast
+	    which simplifies deployment.
+	  </listitem>
+	  <listitem>
+	    It is more portable: in environments that don't support corosync, it can be
+	    integrated with a resource manager available in that environment.
+	  </listitem>
+	  <listitem>
+	    Replication to a <firstterm>disaster recovery</firstterm> site can be handled as
+	    simply another node in the cluster, it does not require a separate replication
+	    mechanism.
+	  </listitem>
+	  <listitem>
+	    It can take advantage of features provided by the resource manager, for example
+	    virtual IP addresses.
+	  </listitem>
+	  <listitem>
+	    Improved performance and scalability due to better use of multiple CPU s
+	  </listitem>
+	</itemizedlist>
+      </para>
+    </section>
+    <section>
+      <title>Limitations</title>
+
+      <para>
+	There are a number of known limitations in the current preview implementation. These
+	will be fixed in the production versions.
+      </para>
+
+      <itemizedlist>
+	<listitem>
+	  Transactional changes to queue state are not replicated atomically. If the primary crashes
+	  during a transaction, it is possible that the backup could contain only part of the
+	  changes introduced by a transaction.
+	</listitem>
+	<listitem>
+	  During a fail-over one backup is promoted to primary and any other backups switch to
+	  the new primary. Messages sent to the new primary before all the backups have
+	  switched could be lost if the new primary itself fails before all the backups have
+	  switched.
+	</listitem>
+	<listitem>
+	  Acknowledgments are confirmed to clients before the message has been dequeued
+	  from replicas or indeed from the local store if that is asynchronous.
+	</listitem>
+	<listitem>
+	  When used with a persistent store: if the entire cluster fails, there are no tools to help
+	  identify the most recent store.
+	</listitem>
+	<listitem>
+	  A persistent broker must have its store erased before joining an existing cluster.
+	  In the production version a persistent broker will be able to load its store and
+	  avoid downloading messages that are in the store from the primary.
+	</listitem>
+	<listitem>
+	  Configuration changes (creating or deleting queues, exchanges and bindings) are
+	  replicated asynchronously. Management tools used to make changes will consider the
+	  change complete when it is complete on the primary, it may not yet be replicated
+	  to all the backups.
+	</listitem>
+	<listitem>
+	  Deletions made immediately after a failure (before all the backups are ready) may
+	  be lost on a backup. Queues, exchange or bindings that were deleted on the primary could
+	  re-appear if that backup is promoted to primary on a subsequent failure.
+	</listitem>
+	<listitem>
+	  Better control is needed over which queues/exchanges are replicated and which are not.
+	</listitem>
+	<listitem>
+	  There are some known issues affecting performance, both the throughput of
+	  replication and the time taken for backups to fail-over. Performance will improve
+	  in the production version.
+	</listitem>
+	<listitem>
+	  Federated links from the primary will be lost in fail over, they will not be
+	  re-connected on the new primary. Federation links to the primary can fail over.
+	</listitem>
+	<listitem>
+	  Only plain FIFO queues can be replicated. LVQ and ring queues are not yet supported.
+	</listitem>
+      </itemizedlist>
+    </section>
+  </section>
+
+  <section>
+    <title>Virtual IP Addresses</title>
+    <para>
+      Some resource managers (including <command>rgmanager</command>) support
+      <firstterm>virtual IP addresses</firstterm>. A virtual IP address is an IP
+      address that can be relocated to any of the nodes in a cluster.  The
+      resource manager associates this address with the primary node in the
+      cluster, and relocates it to the new primary when there is a failure. This
+      simplifies configuration as you can publish a single IP address rather
+      than a list.
+    </para>
+    <para>
+      A virtual IP address can be used by clients and backup brokers to connect
+      to the primary. The following sections will explain how to configure
+      virtual IP addresses for clients or brokers.
+    </para>
+  </section>
+  
+  <section>
+    <title>Configuring the Brokers</title>
+    <para>
+      The broker must load the <filename>ha</filename> module, it is loaded by
+      default. The following broker options are available for the HA module.
+    </para>
+    <table frame="all" id="ha-broker-options">
+      <title>Options for High Availability Messaging Cluster</title>
+      <tgroup align="left" cols="2" colsep="1" rowsep="1">
+	<colspec colname="c1" colwidth="1*"/>
+	<colspec colname="c2" colwidth="3*"/>
+	<thead>
+	  <row>
+	    <entry align="center" nameend="c2" namest="c1">
+	      Options for High Availability Messaging Cluster
+	    </entry>
+	  </row>
+	</thead>
+	<tbody>
+	  <row>
+	    <entry>
+	      <literal>--ha-cluster <replaceable>yes|no</replaceable></literal>
+	    </entry>
+	    <entry>
+	      Set to "yes" to have the broker join a cluster.
+	    </entry>
+	  </row>
+	  <row>
+	    <entry>
+	      <literal>--ha-brokers <replaceable>URL</replaceable></literal>
+	    </entry>
+	    <entry>
+	      <para>
+		The URL
+		<footnote>
+		  <para>
+		  The full format of the URL is given by this grammar:
+		  <programlisting>
+		    url = ["amqp:"][ user ["/" password] "@" ] addr ("," addr)*
+		    addr = tcp_addr / rmda_addr / ssl_addr / ...
+		    tcp_addr = ["tcp:"] host [":" port]
+		    rdma_addr = "rdma:" host [":" port]
+		    ssl_addr = "ssl:" host [":" port]'
+		  </programlisting>
+		  </para>
+		</footnote>
+		used by brokers to connect to each other. If you use a virtual IP address
+		then this is a single address, for example
+		<literal>amqp:20.0.20.200</literal>. If you do not use a virtual IP
+		address then the URL must list all the addresses of brokers in the
+		cluster, for example <literal>amqp:node1,node2,node3</literal>
+	      </para>
+	    </entry>
+	  </row>
+	  <row>
+	    <entry><literal>--ha-public-brokers <replaceable>URL</replaceable></literal> </entry>
+	    <entry>
+	      <para>
+		The URL used by clients to connect to the brokers. This has the same
+		format as the <literal>--ha-brokers</literal> URL above.
+	      </para>
+	      <para>
+		If this option is not set, clients will use the same URL as brokers.
+		This option allows you to put client traffic on a different network from
+		broker traffic, which is recommended.
+	      </para>
+	    </entry>
+	  </row>
+	  <row>
+	    <entry><literal>--ha-replicate</literal></entry>
+	    <foo/>
+	    <entry>
+	      <para> 
+		Specifies whether queues and exchanges are replicated by default.
+		For details see <xref linkend="creating-replicated"/>
+	      </para>
+	    </entry>
+	  </row>
+	  <row>
+	    <entry>
+	      <para><literal>--ha-username <replaceable>USER</replaceable></literal></para>
+	      <para><literal>--ha-password <replaceable>PASS</replaceable></literal></para>
+	      <para><literal>--ha-mechanism <replaceable>MECH</replaceable></literal></para>
+	    </entry>
+	    <entry>
+	      Authentication settings used by brokers to connect to each other.
+	    </entry>
+	  </row>
+	</tbody>
+      </tgroup>
+    </table>
+    <para>
+      To configure a HA cluster you must set at least <literal>ha-cluster</literal> and
+      <literal>ha-brokers</literal>.
+    </para>
+  </section>
+
+  <section>
+    <title>The Cluster Resource Manager</title>
+    <para>
+      Broker fail-over is managed by a <firstterm>cluster resource
+      manager</firstterm>.  An integration with <ulink
+      url="https://fedorahosted.org/cluster/wiki/RGManager">rgmanager</ulink> is
+      provided, but it is possible to integrate with other resource managers.
+    </para>
+    <para>
+      The resource manager is responsible for starting the <command>qpidd</command> broker
+      on each node in the cluster. The resource manager <firstterm>promotes</firstterm>
+      one of the brokers to be the primary. The other brokers connect to the primary as
+      backups, using the URL provided in the <literal>ha-brokers</literal> configuration
+      option.
+    </para>
+    <para>
+      Once connected, the backup brokers synchronize their state with the
+      primary.  When a backup is synchronized, or "hot", it is ready to take
+      over if the primary fails.  Backup brokers continually receive updates
+      from the primary in order to stay synchronized.
+    </para>
+    <para>
+      If the primary fails, backup brokers go into fail-over mode. The resource
+      manager must detect the failure and promote one of the backups to be the
+      new primary.  The other backups connect to the new primary and synchronize
+      their state with it.
+    </para>
+    <para>
+      The resource manager is also responsible for protecting the cluster from
+      <firstterm>split-brain</firstterm> conditions resulting from a network partition.  A
+      network partition divide a cluster into two sub-groups which cannot see each other.
+      Usually a <firstterm>quorum</firstterm> voting algorithm is used that disables nodes
+      in the inquorate sub-group.
+    </para>
+  </section>
+
+  <section>
+    <title>Configuring <command>rgmanager</command> as resource manager</title>
+    <para>
+      This section assumes that you are already familiar with setting up and configuring
+      clustered services using <command>cman</command> and
+      <command>rgmanager</command>. It will show you how to configure an active-passive,
+      hot-standby <command>qpidd</command> HA cluster with <command>rgmanager</command>.
+    </para>
+    <para>
+      You must provide a <literal>cluster.conf</literal> file to configure
+      <command>cman</command> and <command>rgmanager</command>.  Here is
+      an example <literal>cluster.conf</literal> file for a cluster of 3 nodes named
+      node1, node2 and node3. We will go through the configuration step-by-step.
+    </para>
+    <programlisting>
+      <![CDATA[
+<?xml version="1.0"?>
+<!--
+This is an example of a cluster.conf file to run qpidd HA under rgmanager.
+This example assumes a 3 node cluster, with nodes named node1, node2 and node3.
+
+NOTE: fencing is not shown, you must configure fencing appropriately for your cluster.
+-->
+
+<cluster name="qpid-test" config_version="18">
+  <!-- The cluster has 3 nodes. Each has a unique nodid and one vote
+       for quorum. -->
+  <clusternodes>
+    <clusternode name="node1.example.com" nodeid="1"/>
+    <clusternode name="node2.example.com" nodeid="2"/>
+    <clusternode name="node3.example.com" nodeid="3"/>
+  </clusternodes>
+  <!-- Resouce Manager configuration. -->
+  <rm>
+    <!--
+	There is a failoverdomain for each node containing just that node.
+	This lets us stipulate that the qpidd service should always run on each node.
+    -->
+    <failoverdomains>
+      <failoverdomain name="node1-domain" restricted="1">
+	<failoverdomainnode name="node1.example.com"/>
+      </failoverdomain>
+      <failoverdomain name="node2-domain" restricted="1">
+	<failoverdomainnode name="node2.example.com"/>
+      </failoverdomain>
+      <failoverdomain name="node3-domain" restricted="1">
+	<failoverdomainnode name="node3.example.com"/>
+      </failoverdomain>
+    </failoverdomains>
+
+    <resources>
+      <!-- This script starts a qpidd broker acting as a backup. -->
+      <script file="/etc/init.d/qpidd" name="qpidd"/>
+
+      <!-- This script promotes the qpidd broker on this node to primary. -->
+      <script file="/etc/init.d/qpidd-primary" name="qpidd-primary"/>
+
+      <!-- This is a virtual IP address for broker replication traffic. -->
+      <ip address="20.0.10.200" monitor_link="1"/>
+
+      <!-- This is a virtual IP address on a seprate network for client traffic. -->
+      <ip address="20.0.20.200" monitor_link="1"/>
+    </resources>
+
+    <!-- There is a qpidd service on each node, it should be restarted if it fails. -->
+    <service name="node1-qpidd-service" domain="node1-domain" recovery="restart">
+      <script ref="qpidd"/>
+    </service>
+    <service name="node2-qpidd-service" domain="node2-domain" recovery="restart">
+      <script ref="qpidd"/>
+    </service>
+    <service name="node3-qpidd-service" domain="node3-domain"  recovery="restart">
+      <script ref="qpidd"/>
+    </service>
+
+    <!-- There should always be a single qpidd-primary service, it can run on any node. -->
+    <service name="qpidd-primary-service" autostart="1" exclusive="0" recovery="relocate">
+      <script ref="qpidd-primary"/>
+      <!-- The primary has the IP addresses for brokers and clients to connect. -->
+      <ip ref="20.0.10.200"/>
+      <ip ref="20.0.20.200"/>
+    </service>
+  </rm>
+</cluster>
+      ]]>
+    </programlisting>
+
+    <para>
+      There is a <literal>failoverdomain</literal> for each node containing just that
+      one node.  This lets us stipulate that the qpidd service should always run on all
+      nodes.
+    </para>
+    <para>
+      The <literal>resources</literal> section defines the <command>qpidd</command>
+      script used to start the <command>qpidd</command> service. It also defines the
+      <command>qpid-primary</command> script which does not
+      actually start a new service, rather it promotes the existing
+      <command>qpidd</command> broker to primary status.
+    </para>
+    <para>
+      The <literal>resources</literal> section also defines a pair of virtual IP
+      addresses on different sub-nets. One will be used for broker-to-broker
+      communication, the other for client-to-broker. 
+    </para>
+    <para>
+      To take advantage of the virtual IP addresses, <filename>qpidd.conf</filename>
+      should contain these  lines:
+    </para>
+    <programlisting>
+      ha-cluster=yes
+      ha-brokers=20.0.20.200
+      ha-public-brokers=20.0.10.200
+    </programlisting>
+    <para>
+      This configuration specifies that backup brokers will use 20.0.20.200
+      to connect to the primary and will advertise 20.0.10.200 to clients.
+      Clients should connect to 20.0.10.200.
+    </para>
+    <para>
+      The <literal>service</literal> section defines 3 <literal>qpidd</literal>
+      services, one for each node. Each service is in a restricted fail-over
+      domain containing just that node, and has the <literal>restart</literal>
+      recovery policy. The effect of this is that rgmanager will run
+      <command>qpidd</command> on each node, restarting if it fails.
+    </para>
+    <para>
+      There is a single <literal>qpidd-primary-service</literal> using the
+      <command>qpidd-primary</command> script which is not restricted to a
+      domain and has the <literal>relocate</literal> recovery policy. This means
+      rgmanager will start <command>qpidd-primary</command> on one of the nodes
+      when the cluster starts and will relocate it to another node if the
+      original node fails. Running the <literal>qpidd-primary</literal> script
+      does not start a new broker process, it promotes the existing broker to
+      become the primary.
+    </para>
+  </section>
+
+  <section>
+    <title>Broker Administration Tools</title>
+    <para>
+      Normally, clients are not allowed to connect to a backup broker. However management tools are
+      allowed to connect to a backup brokers. If you use these tools you <emphasis>must
+      not</emphasis> add or remove messages from replicated queues, or delete replicated queues or
+      exchanges as this will corrupt the replication process and may cause message loss.
+    </para>
+    <para>
+      <command>qpid-ha</command> allows you to view and change HA configuration settings.
+    </para>
+    <para>
+      The tools <command>qpid-config</command>, <command>qpid-route</command> and
+      <command>qpid-stat</command> will connect to a backup if you pass the flag <command>--ha-admin</command> on the
+      command line.
+    </para>
+  </section>
+  
+  <section id="ha-creating-replicated">
+    <title>Creating replicated queues and exchanges</title>
+    <para>
+      By default, queues and exchanges are not replicated automatically. You can change
+      the default behavior by setting the <literal>ha-replicate</literal> configuration
+      option. It has one of the following values:
+      <itemizedlist>
+	<listitem>
+	  <firstterm>all</firstterm>: Replicate everything automatically: queues, exchanges, bindings and messages.
+	</listitem>
+	<listitem>
+	  <firstterm>configuration</firstterm>: Replicate the existence of queues,
+	  exchange and bindings but don't replicate messages.
+	</listitem>
+	<listitem>
+	  <firstterm>none</firstterm>: Don't replicate anything, this is the default.
+	</listitem>
+      </itemizedlist>
+    </para>
+    <para>
+      You can over-ride the default for a particular queue or exchange by passing the
+      argument <literal>qpid.replicate</literal> when creating the queue or exchange. It
+      takes the same values as <literal>ha-replicate</literal>
+    </para>
+    <para>
+      Bindings are automatically replicated if the queue and exchange being bound both
+      have replication <literal>all</literal> or <literal>configuration</literal>, they
+      are not replicated otherwise.
+    </para>
+    <para>
+      You can create replicated queues and exchanges with the
+      <command>qpid-config</command> management tool like this:
+    </para>
+    <programlisting>
+      qpid-config add queue myqueue --replicate all
+    </programlisting>
+    <para>
+      To create replicated queues and exchanges via the client API, add a
+      <literal>node</literal> entry to the address like this:
+    </para>
+    <programlisting>
+      "myqueue;{create:always,node:{x-declare:{arguments:{'qpid.replicate':all}}}}"
+    </programlisting>
+  </section>
+
+  <section>
+    <title>Client Connection and Fail-over</title>
+    <para>
+      Clients can only connect to the primary broker. Backup brokers
+      automatically reject any connection attempt by a client.
+    </para>
+    <para>
+      Clients are configured with the URL for the cluster (details below for
+      each type of client). There are two possibilities
+      <itemizedlist>
+	<listitem>
+	  The URL contains multiple addresses, one for each broker in the cluster.
+	</listitem>
+	<listitem>
+	  The URL contains a single <firstterm>virtual IP address</firstterm>
+	  that is assigned to the primary broker by the resource manager.
+	  <footnote><para>Only if the resource manager supports virtual IP addresses</para></footnote>
+	</listitem>
+      </itemizedlist>
+      In the first case, clients will repeatedly re-try each address in the URL
+      until they successfully connect to the primary. In the second case the
+      resource manager will assign the virtual IP address to the primary broker,
+      so clients only need to re-try on a single address.
+    </para>
+    <para>
+      When the primary broker fails, clients re-try all known cluster addresses
+      until they connect to the new primary.  The client re-sends any messages
+      that were previously sent but not acknowledged by the broker at the time
+      of the failure.  Similarly messages that have been sent by the broker, but
+      not acknowledged by the client, are re-queued.
+    </para>
+    <para>
+      TCP can be slow to detect connection failures. A client can configure a
+      connection to use a <firstterm>heartbeat</firstterm> to detect connection
+      failure, and can specify a time interval for the heartbeat. If heartbeats
+      are in use, failures will be detected no later than twice the heartbeat
+      interval. The following sections explain how to enable heartbeat in each
+      client.
+    </para>
+    <para>
+      See &#34;Cluster Failover&#34; in <citetitle>Programming in Apache
+      Qpid</citetitle> for details on how to keep the client aware of cluster
+      membership.
+    </para>
+    <para>
+      Suppose your cluster has 3 nodes: <literal>node1</literal>, <literal>node2</literal>
+      and <literal>node3</literal> all using the default AMQP port. To connect a client you
+      need to specify the address(es) and set the <literal>reconnect</literal> property to
+      <literal>true</literal>. Here's how to connect each type of client:
+    </para>
+    <section>
+      <title>C++ clients</title>
+      <para>
+	With the C++ client, you specify multiple cluster addresses in a single URL
+	<footnote>
+	  <para>
+	    The full grammar for the URL is:
+	  </para>
+	  <programlisting>
+	    url = ["amqp:"][ user ["/" password] "@" ] addr ("," addr)*
+	    addr = tcp_addr / rmda_addr / ssl_addr / ...
+	    tcp_addr = ["tcp:"] host [":" port]
+	    rdma_addr = "rdma:" host [":" port]
+	    ssl_addr = "ssl:" host [":" port]'
+	  </programlisting>
+	</footnote>
+	You also need to specify the connection option
+	<literal>reconnect</literal> to be true.  For example:
+      </para>
+      <programlisting>
+	qpid::messaging::Connection c("node1,node2,node3","{reconnect:true}");
+      </programlisting>
+      <para>
+	Heartbeats are disabled by default. You can enable them by specifying a
+	heartbeat interval (in seconds) for the connection via the
+	<literal>heartbeat</literal> option. For example:
+	<programlisting>
+	  qpid::messaging::Connection c("node1,node2,node3","{reconnect:true,heartbeat:10}");
+	</programlisting>
+      </para>
+    </section>
+    <section>
+      <title>Python clients</title>
+      <para>
+	With the python client, you specify <literal>reconnect=True</literal>
+	and a list of <replaceable>host:port</replaceable> addresses as
+	<literal>reconnect_urls</literal> when calling
+	<literal>Connection.establish</literal> or
+	<literal>Connection.open</literal>
+      </para>
+      <programlisting>
+	connection = qpid.messaging.Connection.establish("node1", reconnect=True, reconnect_urls=["node1", "node2", "node3"])
+      </programlisting>
+      <para>
+	Heartbeats are disabled by default. You can
+	enable them by specifying a heartbeat interval (in seconds) for the
+	connection via the &#39;heartbeat&#39; option. For example:
+      </para>
+      <programlisting>
+	connection = qpid.messaging.Connection.establish("node1", reconnect=True, reconnect_urls=["node1", "node2", "node3"], heartbeat=10)
+      </programlisting>
+    </section>
+    <section>
+      <title>Java JMS Clients</title>
+      <para>
+	In Java JMS clients, client fail-over is handled automatically if it is
+	enabled in the connection.  You can configure a connection to use
+	fail-over using the <command>failover</command> property:
+      </para>
+
+      <screen>
+	connectionfactory.qpidConnectionfactory = amqp://guest:guest@clientid/test?brokerlist=&#39;tcp://localhost:5672&#39;&amp;failover=&#39;failover_exchange&#39;
+      </screen>
+      <para>
+	This property can take three values:
+      </para>
+      <variablelist>
+	<title>Fail-over Modes</title>
+	<varlistentry>
+	  <term>failover_exchange</term>
+	  <listitem>
+	    <para>
+	      If the connection fails, fail over to any other broker in the cluster.
+	    </para>
+
+	  </listitem>
+
+	</varlistentry>
+	<varlistentry>
+	  <term>roundrobin</term>
+	  <listitem>
+	    <para>
+	      If the connection fails, fail over to one of the brokers specified in the <command>brokerlist</command>.
+	    </para>
+
+	  </listitem>
+
+	</varlistentry>
+	<varlistentry>
+	  <term>singlebroker</term>
+	  <listitem>
+	    <para>
+	      Fail-over is not supported; the connection is to a single broker only.
+	    </para>
+
+	  </listitem>
+
+	</varlistentry>
+
+      </variablelist>
+      <para>
+	In a Connection URL, heartbeat is set using the <command>idle_timeout</command> property, which is an integer corresponding to the heartbeat period in seconds. For instance, the following line from a JNDI properties file sets the heartbeat time out to 3 seconds:
+      </para>
+
+      <screen>
+	connectionfactory.qpidConnectionfactory = amqp://guest:guest@clientid/test?brokerlist=&#39;tcp://localhost:5672&#39;,idle_timeout=3
+      </screen>
+    </section>
+  </section>
+</section>
+
+<!-- LocalWords:  scalability rgmanager multicast RGManager mailto LVQ qpidd IP dequeued Transactional username
+-->

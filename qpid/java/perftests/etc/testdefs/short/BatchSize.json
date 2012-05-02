@@ -1,0 +1,84 @@
+{
+    "_tests":[
+    {
+      "_name": "Batch Size- PERSISTENT";
+      "_iterations":[
+        {
+          "_batchSize": 1
+        },
+        {
+          "_batchSize": 2
+        },
+        {
+          "_batchSize": 5
+        },
+        {
+          "_batchSize": 10
+        },
+        {
+          "_batchSize": 20
+        },
+        {
+          "_batchSize": 50
+        },
+        {
+          "_batchSize": 100
+        }
+      ],
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//batchSize?durable='true'",
+          "_durable": true
+        }
+      ],
+      "_clients":[
+        {
+          "_name": "producingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 0,
+                  "_producers": [
+                    {
+                      "_name": "Producer1",
+                      "_destinationName": "direct://amq.direct//batchSize?durable='true'",
+                      "_messageSize": 1024,
+                      "_maximumDuration": 30000,
+                      "_deliveryMode": 2
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "consumingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 0,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer1",
+                      "_destinationName": "direct://amq.direct//batchSize?durable='true'",
+                      "_maximumDuration": 30000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

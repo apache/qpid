@@ -1056,7 +1056,6 @@ std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
     if (acl) {
         std::map<acl::Property, std::string> params;
         params.insert(make_pair(acl::PROP_ALTERNATE, alternateExchange));
-        params.insert(make_pair(acl::PROP_PASSIVE, _FALSE));
         params.insert(make_pair(acl::PROP_DURABLE, durable ? _TRUE : _FALSE));
         params.insert(make_pair(acl::PROP_EXCLUSIVE, owner ? _TRUE : _FALSE));
         params.insert(make_pair(acl::PROP_AUTODELETE, autodelete ? _TRUE : _FALSE));
@@ -1127,7 +1126,6 @@ std::pair<Exchange::shared_ptr, bool> Broker::createExchange(
         std::map<acl::Property, std::string> params;
         params.insert(make_pair(acl::PROP_TYPE, type));
         params.insert(make_pair(acl::PROP_ALTERNATE, alternateExchange));
-        params.insert(make_pair(acl::PROP_PASSIVE, _FALSE));
         params.insert(make_pair(acl::PROP_DURABLE, durable ? _TRUE : _FALSE));
         if (!acl->authorise(userId,acl::ACT_CREATE,acl::OBJ_EXCHANGE,name,&params) )
             throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange create request from " << userId));

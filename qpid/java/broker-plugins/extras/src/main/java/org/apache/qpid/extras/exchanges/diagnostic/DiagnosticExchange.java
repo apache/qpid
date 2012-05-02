@@ -40,6 +40,7 @@ import javax.management.openmbean.OpenDataException;
 import javax.management.openmbean.TabularData;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * This is a special diagnostic exchange type which doesn't actually do anything
@@ -125,14 +126,14 @@ public class DiagnosticExchange extends AbstractExchange
             return DiagnosticExchange.class;
         }
 
-        public DiagnosticExchange newInstance(VirtualHost host,
+        public DiagnosticExchange newInstance(UUID id, VirtualHost host,
                                             AMQShortString name,
                                             boolean durable,
                                             int ticket,
                                             boolean autoDelete) throws AMQException
         {
             DiagnosticExchange exch = new DiagnosticExchange();
-            exch.initialise(host,name,durable,ticket,autoDelete);
+            exch.initialise(id, host,name,durable,ticket,autoDelete);
             return exch;
         }
 
@@ -157,11 +158,6 @@ public class DiagnosticExchange extends AbstractExchange
     protected AbstractExchangeMBean createMBean() throws JMException
     {
         return new DiagnosticExchange.DiagnosticExchangeMBean();
-    }
-
-    public Logger getLogger()
-    {
-        return _logger;
     }
 
     public void registerQueue(String routingKey, AMQQueue queue, Map<String, Object> args) throws AMQException

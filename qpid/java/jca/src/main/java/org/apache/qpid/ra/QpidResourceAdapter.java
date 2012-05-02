@@ -223,65 +223,6 @@ public class QpidResourceAdapter implements ResourceAdapter, Serializable
       _log.info("Qpid resource adapter stopped");
    }
 
-   /**
-    * Get the user name
-    *
-    * @return The value
-    */
-   public String getDefaultUserName()
-   {
-      if (_log.isTraceEnabled())
-      {
-         _log.trace("getUserName()");
-      }
-
-      return _raProperties.getUserName();
-   }
-
-   /**
-    * Set the user name
-    *
-    * @param userName The value
-    */
-   public void setDefaultUserName(final String userName)
-   {
-      if (_log.isTraceEnabled())
-      {
-         _log.trace("setUserName(" + userName + ")");
-      }
-
-      _raProperties.setUserName(userName);
-   }
-
-   /**
-    * Get the password
-    *
-    * @return The value
-    */
-   public String getDefaultPassword()
-   {
-      if (_log.isTraceEnabled())
-      {
-         _log.trace("getPassword()");
-      }
-
-      return _raProperties.getPassword();
-   }
-
-   /**
-    * Set the password
-    *
-    * @param password The value
-    */
-   public void setDefaultPassword(final String password)
-   {
-      if (_log.isTraceEnabled())
-      {
-         _log.trace("setPassword(****)");
-      }
-
-      _raProperties.setPassword(password);
-   }
 
    /**
     * Get the client ID
@@ -403,6 +344,26 @@ public class QpidResourceAdapter implements ResourceAdapter, Serializable
       _raProperties.setPath(path);
    }
 
+   public String getUserName()
+   {
+       return _raProperties.getUserName();
+   }
+
+   public void setUserName(String userName)
+   {
+      _raProperties.setUserName(userName);
+   }
+
+   public String getPassword()
+   {
+       return _raProperties.getPassword();
+   }
+
+   public void setPassword(String password)
+   {
+       _raProperties.setPassword(password);
+   }
+
    /**
     * Get the connection url
     *
@@ -493,14 +454,14 @@ public class QpidResourceAdapter implements ResourceAdapter, Serializable
     *
     * @return The value
     */
-   public Boolean getUseLocalTx()
+   public Boolean isUseLocalTx()
    {
       if (_log.isTraceEnabled())
       {
          _log.trace("getUseLocalTx()");
       }
 
-      return _raProperties.getUseLocalTx();
+      return _raProperties.isUseLocalTx();
    }
 
    /**
@@ -720,7 +681,7 @@ public class QpidResourceAdapter implements ResourceAdapter, Serializable
       return map;
    }
 
-   private void locateTM()
+   private void locateTM() throws ResourceAdapterInternalException
    {
       if(_raProperties.getTransactionManagerLocatorClass() != null && _raProperties.getTransactionManagerLocatorMethod() != null)
       {
@@ -742,8 +703,8 @@ public class QpidResourceAdapter implements ResourceAdapter, Serializable
 
       if (_tm == null)
       {
-         _log.warn("It wasn't possible to lookup a Transaction Manager through the configured properties TransactionManagerLocatorClass and TransactionManagerLocatorMethod");
-         _log.warn("Qpid Resource Adapter won't be able to set and verify transaction timeouts in certain cases.");
+         _log.error("It wasn't possible to locate javax.transaction.TransactionManager via the RA properties TransactionManagerLocatorClass and TransactionManagerLocatorMethod");
+         throw new ResourceAdapterInternalException("Could not locate javax.transaction.TransactionManager");
       }
       else
       {

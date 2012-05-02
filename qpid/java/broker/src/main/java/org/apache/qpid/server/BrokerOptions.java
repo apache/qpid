@@ -47,7 +47,6 @@ public class BrokerOptions
 
     private Integer _logWatchFrequency = 0;
 
-
     public void addPort(final int port)
     {
         _ports.add(port);
@@ -107,7 +106,6 @@ public class BrokerOptions
     {
         _jmxPortConnectorServer = jmxPortConnectorServer;
     }
-
     public String getQpidHome()
     {
         return System.getProperty(QPID_HOME);
@@ -163,5 +161,4 @@ public class BrokerOptions
     {
         _bundleContext = bundleContext;
     }
-
 }

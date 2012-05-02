@@ -57,6 +57,7 @@
 #include "qpid/framing/ClusterConnectionShadowReadyBody.h"
 #include "qpid/framing/ClusterConnectionSessionStateBody.h"
 #include "qpid/framing/ClusterConnectionConsumerStateBody.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/framing/enum.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/framing/TypeCode.h"
@@ -687,7 +688,15 @@ void UpdateClient::updateLinks() {
 void UpdateClient::updateLink(const boost::shared_ptr<broker::Link>& link) {
     QPID_LOG(debug, *this << " updating link "
              << link->getHost() << ":" << link->getPort());
-    ClusterConnectionProxy(session).config(encode(*link));
+    ClusterConnectionProxy(session).config(encode(*link));  // push the configuration
+    // now push the current state
+    framing::FieldTable state;
+    link->getState(state);
+    std::ostringstream os;
+    os << qpid::Address(link->getTransport(), link->getHost(), link->getPort());
+    ClusterConnectionProxy(session).internalState(std::string("link"),
+                                                  os.str(),
+                                                  state);
 }
 
 void UpdateClient::updateBridge(const boost::shared_ptr<broker::Bridge>& bridge) {

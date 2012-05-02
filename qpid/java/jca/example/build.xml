@@ -20,7 +20,7 @@
  -->
 <project name="qpid-jca-example" default="help" basedir="">
 
-    <!-- Valid target platforms are currently geronimo & jboss -->
+    <!-- Valid target platforms are currently geronimo, jboss, jboss7, glassfish -->
     <property name="target.platform" value="geronimo"/>
 
     <!-- Change to BURL for older syntax support -->
@@ -72,7 +72,6 @@
                 <filter token="rar.name" value="${rar.name}"/>
                 <filter token="ejb.name" value="${ejb.name}"/>
                 <filter token="war.name" value="${war.name}"/>
-
                 <filter token="broker.url" value="${broker.url}"/>
 
                 <filter token="qpid.hello.topic.dest.address" value="${qpid.hello.topic.dest.address}"/>
@@ -92,12 +91,14 @@
                 <filter token="rar.name" value="${rar.name}"/>
                 <filter token="broker.url" value="${broker.url}"/>
                 <filter token="jndi.scheme" value="${jndi.scheme}"/>
+                <filter token="jndi.prefix" value="${jndi.prefix}"/>
                 <filter token="qpid.xacf.jndi.name" value="${qpid.xacf.jndi.name}"/>
                 <filter token="qpid.hello.topic.jndi.name" value="${qpid.hello.topic.jndi.name}"/>
                 <filter token="qpid.goodbye.topic.jndi.name" value="${qpid.goodbye.topic.jndi.name}"/>
                 <filter token="qpid.hello.queue.jndi.name" value="${qpid.hello.queue.jndi.name}"/>
                 <filter token="qpid.goodbye.queue.jndi.name" value="${qpid.goodbye.queue.jndi.name}"/>
                 <filter token="qpid.request.queue.jndi.name" value="${qpid.request.queue.jndi.name}"/>
+                <filter token="qpid.response.queue.jndi.name" value="${qpid.response.queue.jndi.name}"/>
                 <filter token="qpid.ejb.jndi.name" value="${qpid.ejb.jndi.name}"/>
             </filterset>
         </copy>
@@ -112,6 +113,9 @@
             <classes dir="${build.classes.dir}">
                 <include name="org/apache/qpid/jca/example/web/**"/>
             </classes>
+            <metainf dir="${gen.dir}">
+                <include name="glassfish-web.xml"/>
+            </metainf>
         </war>
     </target>
 
@@ -120,6 +124,7 @@
             <include name="org/apache/qpid/jca/example/ejb/**/*.class"/>
             <metainf dir="${gen.dir}">
                 <include name="jboss.xml"/>
+                <include name="glassfish-ejb-jar.xml"/>
             </metainf>
         </jar>
     </target>
@@ -142,10 +147,13 @@
             </classpath>
             <sysproperty key="java.naming.factory.initial" value="${jndi.context}"/>
             <sysproperty key="java.naming.provider.url" value="${server.host}"/>
+            <sysproperty key="java.naming.factory.url.pkgs" value="org.jboss.ejb.client.naming"/>
+            <sysproperty key="jboss.ejb.client.properties.file.path" value="${conf.dir}/jboss-ejb-client.properties"/>
+
             <sysproperty key="qpid.ejb.name" value="${qpid.ejb.name}"/>
-            <sysproperty key="qpid.cf.name" value="${qpid.cf.jndi.name}"/>
+            <sysproperty key="qpid.cf.name" value="${qpid.client.cf.jndi.name}"/>
+            <sysproperty key="qpid.dest.name" value="${qpid.client.dest.jndi.name}"/>
             <sysproperty key="qpid.dest_syntax" value="${qpid.dest_syntax}"/>
-            <sysproperty key="qpid.dest.name" value="${qpid.hello.queue.jndi.name}"/>
             <sysproperty key="log4j.configuration" value="file://${conf.dir}/log4j.properties"/>
 
             <sysproperty key="qpid.message" value="${client.message}"/>
@@ -167,8 +175,8 @@
             <sysproperty key="qpid.message" value="Hello, World"/>
             <sysproperty key="message.count" value="1"/>
             <sysproperty key="thread.count" value="5"/>
-            <sysproperty key="qpid.cf.name" value="${qpid.cf.jndi.name}"/>
-            <sysproperty key="qpid.dest.name" value="${qpid.responder.queue.jndi.name}"/>
+            <sysproperty key="qpid.cf.name" value="${qpid.client.cf.jndi.name}"/>
+            <sysproperty key="qpid.dest.name" value="${qpid.client.dest.jndi.name}"/>
             <sysproperty key="log4j.configuration" value="file://${conf.dir}/log4j.properties"/>
             <sysproperty key="qpid.dest_syntax" value="${qpid.dest_syntax}"/>
         </java>

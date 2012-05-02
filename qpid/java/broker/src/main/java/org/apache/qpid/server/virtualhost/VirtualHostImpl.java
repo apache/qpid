@@ -20,15 +20,11 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-import java.util.concurrent.ScheduledFuture;
-import org.apache.commons.configuration.Configuration;
+
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQBrokerManagerMBean;
 import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.server.configuration.BrokerConfig;
@@ -45,14 +41,13 @@ import org.apache.qpid.server.exchange.DefaultExchangeRegistry;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.federation.Bridge;
 import org.apache.qpid.server.federation.BrokerLink;
-import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -62,21 +57,28 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
-import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
-import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.Event;
+import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.MessageStoreFactory;
+import org.apache.qpid.server.store.OperationalLoggingListener;
 import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPlugin;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 
+import javax.management.JMException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
 
 public class VirtualHostImpl implements VirtualHost
 {
@@ -100,97 +102,80 @@ public class VirtualHostImpl implements VirtualHost
 
     private final BrokerConfig _brokerConfig;
 
-    private final VirtualHostConfiguration _configuration;
+    private final VirtualHostConfiguration _vhostConfig;
 
-    private ConnectionRegistry _connectionRegistry;
+    private final VirtualHostMBean _virtualHostMBean;
 
-    private QueueRegistry _queueRegistry;
+    private final AMQBrokerManagerMBean _brokerMBean;
 
-    private ExchangeRegistry _exchangeRegistry;
+    private final QueueRegistry _queueRegistry;
 
-    private ExchangeFactory _exchangeFactory;
+    private final ExchangeRegistry _exchangeRegistry;
 
-    private MessageStore _messageStore;
+    private final ExchangeFactory _exchangeFactory;
 
-    private DtxRegistry _dtxRegistry;
+    private final ConnectionRegistry _connectionRegistry;
 
-    private VirtualHostMBean _virtualHostMBean;
+    private final BindingFactory _bindingFactory;
 
-    private AMQBrokerManagerMBean _brokerMBean;
+    private final DtxRegistry _dtxRegistry;
 
+    private final MessageStore _messageStore;
 
-    private DurableConfigurationStore _durableConfigurationStore;
-    private BindingFactory _bindingFactory;
+    private State _state = State.INITIALISING;
 
     private boolean _statisticsEnabled = false;
+
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
+    private final Map<String, LinkRegistry> _linkRegistry = new HashMap<String, LinkRegistry>();
 
-    public VirtualHostImpl(IApplicationRegistry appRegistry, VirtualHostConfiguration hostConfig, MessageStore store) throws Exception
+    public VirtualHostImpl(IApplicationRegistry appRegistry, VirtualHostConfiguration hostConfig) throws Exception
     {
         if (hostConfig == null)
         {
             throw new IllegalArgumentException("HostConfig cannot be null");
         }
 
+        if (hostConfig.getName() == null || hostConfig.getName().length() == 0)
+        {
+            throw new IllegalArgumentException("Illegal name (" + hostConfig.getName() + ") for virtualhost.");
+        }
+
         _appRegistry = appRegistry;
         _brokerConfig = _appRegistry.getBroker();
-        _configuration = hostConfig;
-        _name = _configuration.getName();
+        _vhostConfig = hostConfig;
+        _name = _vhostConfig.getName();
         _dtxRegistry = new DtxRegistry();
 
         _id = _appRegistry.getConfigStore().createId();
 
         CurrentActor.get().message(VirtualHostMessages.CREATED(_name));
 
-        if (_name == null || _name.length() == 0)
-        {
-            throw new IllegalArgumentException("Illegal name (" + _name + ") for virtualhost.");
-        }
-
-        _securityManager = new SecurityManager(_appRegistry.getSecurityManager());
-        _securityManager.configureHostPlugins(_configuration);
-
         _virtualHostMBean = new VirtualHostMBean();
+        _securityManager = new SecurityManager(_appRegistry.getSecurityManager());
+        _securityManager.configureHostPlugins(_vhostConfig);
 
         _connectionRegistry = new ConnectionRegistry();
 
-        _houseKeepingTasks = new ScheduledThreadPoolExecutor(_configuration.getHouseKeepingThreadCount());
+        _houseKeepingTasks = new ScheduledThreadPoolExecutor(_vhostConfig.getHouseKeepingThreadCount());
 
         _queueRegistry = new DefaultQueueRegistry(this);
 
         _exchangeFactory = new DefaultExchangeFactory(this);
-        _exchangeFactory.initialise(_configuration);
+        _exchangeFactory.initialise(_vhostConfig);
 
         _exchangeRegistry = new DefaultExchangeRegistry(this);
 
-        StartupRoutingTable configFileRT = new StartupRoutingTable();
-
-        _durableConfigurationStore = configFileRT;
-
-        // This needs to be after the RT has been defined as it creates the default durable exchanges.
-        _exchangeRegistry.initialise();
-
         _bindingFactory = new BindingFactory(this);
 
-        initialiseModel(_configuration);
-
-        if (store != null)
-        {
-            _messageStore = store;
-            if(store instanceof DurableConfigurationStore)
-            {
-                _durableConfigurationStore = (DurableConfigurationStore) store;
-            }
-        }
-        else
-        {
-            initialiseMessageStore(hostConfig);
-        }
-
         _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
-        _brokerMBean.register();
-        initialiseHouseKeeping(hostConfig.getHousekeepingCheckPeriod());
+
+        _messageStore = initialiseMessageStore(hostConfig.getMessageStoreFactoryClass());
+
+        configureMessageStore(hostConfig);
+
+        activateNonHAMessageStore();
 
         initialiseStatistics();
     }
@@ -202,7 +187,7 @@ public class VirtualHostImpl implements VirtualHost
 
     public VirtualHostConfiguration getConfiguration()
     {
-        return _configuration;
+        return _vhostConfig;
     }
 
     public UUID getId()
@@ -226,47 +211,16 @@ public class VirtualHostImpl implements VirtualHost
     }
 
     /**
-     * Virtual host JMX MBean class.
-     *
-     * This has some of the methods implemented from management intrerface for exchanges. Any
-     * implementaion of an Exchange MBean should extend this class.
-     */
-    public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtualHost
-    {
-        public VirtualHostMBean() throws NotCompliantMBeanException
-        {
-            super(ManagedVirtualHost.class, ManagedVirtualHost.TYPE);
-        }
-
-        public String getObjectInstanceName()
-        {
-            return ObjectName.quote(_name);
-        }
-
-        public String getName()
-        {
-            return _name;
-        }
-
-        public VirtualHostImpl getVirtualHost()
-        {
-            return VirtualHostImpl.this;
-        }
-    }
-
-
-    /**
      * Initialise a housekeeping task to iterate over queues cleaning expired messages with no consumers
      * and checking for idle or open transactions that have exceeded the permitted thresholds.
      *
      * @param period
      */
-	private void initialiseHouseKeeping(long period)
+    private void initialiseHouseKeeping(long period)
     {
+
         if (period != 0L)
         {
-
-
             scheduleHouseKeepingTask(period, new VirtualHostHouseKeepingTask());
 
             Map<String, VirtualHostPluginFactory> plugins = _appRegistry.getPluginManager().getVirtualHostPlugins();
@@ -299,50 +253,30 @@ public class VirtualHostImpl implements VirtualHost
         }
     }
 
-    private class VirtualHostHouseKeepingTask extends HouseKeepingTask
+    private void shutdownHouseKeeping()
     {
-        public VirtualHostHouseKeepingTask()
-        {
-            super(VirtualHostImpl.this);
-        }
+        _houseKeepingTasks.shutdown();
 
-        public void execute()
+           try
+           {
+               if (!_houseKeepingTasks.awaitTermination(HOUSEKEEPING_SHUTDOWN_TIMEOUT, TimeUnit.SECONDS))
+               {
+                   _houseKeepingTasks.shutdownNow();
+               }
+           }
+           catch (InterruptedException e)
+           {
+               _logger.warn("Interrupted during Housekeeping shutdown:", e);
+               Thread.currentThread().interrupt();
+           }
+    }
+
+    private void removeHouseKeepingTasks()
+    {
+        BlockingQueue<Runnable> taskQueue = _houseKeepingTasks.getQueue();
+        for (final Runnable runnable : taskQueue)
         {
-            for (AMQQueue q : _queueRegistry.getQueues())
-            {
-                _logger.debug("Checking message status for queue: "
-                              + q.getName());
-                try
-                {
-                    q.checkMessageStatus();
-                }
-                catch (Exception e)
-                {
-                    _logger.error("Exception in housekeeping for queue: "
-                                  + q.getNameShortString().toString(), e);
-                    //Don't throw exceptions as this will stop the
-                    // house keeping task from running.
-                }
-            }
-            for (AMQConnectionModel connection : getConnectionRegistry().getConnections())
-            {
-                _logger.debug("Checking for long running open transactions on connection " + connection);
-                for (AMQSessionModel session : connection.getSessionModels())
-                {
-                    _logger.debug("Checking for long running open transactions on session " + session);
-                    try
-                    {
-                        session.checkTransactionStatus(_configuration.getTransactionTimeoutOpenWarn(),
-                                                       _configuration.getTransactionTimeoutOpenClose(),
-                                                       _configuration.getTransactionTimeoutIdleWarn(),
-                                                       _configuration.getTransactionTimeoutIdleClose());
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.error("Exception in housekeeping for connection: " + connection.toString(), e);
-                    }
-                }
-            }
+            _houseKeepingTasks.remove(runnable);
         }
     }
 
@@ -390,48 +324,44 @@ public class VirtualHostImpl implements VirtualHost
     }
 
 
-    private void initialiseMessageStore(VirtualHostConfiguration hostConfig) throws Exception
+    private MessageStore initialiseMessageStore(final String messageStoreFactoryClass) throws Exception
     {
-        String messageStoreClass = hostConfig.getMessageStoreClass();
+        final Class<?> clazz = Class.forName(messageStoreFactoryClass);
+        final Object o = clazz.newInstance();
 
-        Class<?> clazz = Class.forName(messageStoreClass);
-        Object o = clazz.newInstance();
-
-        if (!(o instanceof MessageStore))
+        if (!(o instanceof MessageStoreFactory))
         {
-            throw new ClassCastException("Message store class must implement " + MessageStore.class + ". Class " + clazz +
-                                         " does not.");
+            throw new ClassCastException("Message store factory class must implement " + MessageStoreFactory.class +
+                                        ". Class " + clazz + " does not.");
         }
-        MessageStore messageStore = (MessageStore) o;
+
+        final MessageStoreFactory messageStoreFactory = (MessageStoreFactory) o;
+        final MessageStore messageStore = messageStoreFactory.createMessageStore();
+        final MessageStoreLogSubject storeLogSubject = new MessageStoreLogSubject(this, messageStoreFactory.getStoreClassName());
+        OperationalLoggingListener.listen(messageStore, storeLogSubject);
+
+        messageStore.addEventListener(new BeforeActivationListener(), Event.BEFORE_ACTIVATE);
+        messageStore.addEventListener(new AfterActivationListener(), Event.AFTER_ACTIVATE);
+        messageStore.addEventListener(new BeforeCloseListener(), Event.BEFORE_CLOSE);
+        messageStore.addEventListener(new BeforePassivationListener(), Event.BEFORE_PASSIVATE);
+
+        return messageStore;
+    }
+
+    private void configureMessageStore(VirtualHostConfiguration hostConfig) throws Exception
+    {
+
         VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this);
 
-        MessageStoreLogSubject storeLogSubject = new MessageStoreLogSubject(this, messageStore);
+        // TODO perhaps pass config on construction??
+        _messageStore.configureConfigStore(getName(), recoveryHandler, hostConfig.getStoreConfiguration());
+        _messageStore.configureMessageStore(getName(), recoveryHandler, recoveryHandler, hostConfig.getStoreConfiguration());
 
+    }
 
-        if(messageStore instanceof DurableConfigurationStore)
-        {
-            DurableConfigurationStore durableConfigurationStore = (DurableConfigurationStore) messageStore;
-
-            durableConfigurationStore.configureConfigStore(this.getName(),
-                                              recoveryHandler,
-                                              hostConfig.getStoreConfiguration(),
-                                              storeLogSubject);
-
-            _durableConfigurationStore = durableConfigurationStore;
-        }
-
-        messageStore.configureMessageStore(this.getName(),
-                                           recoveryHandler,
-                                           hostConfig.getStoreConfiguration(),
-                                           storeLogSubject);
-        messageStore.configureTransactionLog(this.getName(),
-                                           recoveryHandler,
-                                           hostConfig.getStoreConfiguration(),
-                                           storeLogSubject);
-
-        _messageStore = messageStore;
-
-
+    private void activateNonHAMessageStore() throws Exception
+    {
+        _messageStore.activate();
     }
 
     private void initialiseModel(VirtualHostConfiguration config) throws ConfigurationException, AMQException
@@ -445,7 +375,7 @@ public class VirtualHostImpl implements VirtualHost
             configureExchange(config.getExchangeConfiguration(exchangeName));
         }
 
-    	String[] queueNames = config.getQueueNames();
+        String[] queueNames = config.getQueueNames();
 
         for (Object queueNameObj : queueNames)
         {
@@ -456,45 +386,45 @@ public class VirtualHostImpl implements VirtualHost
 
     private void configureExchange(ExchangeConfiguration exchangeConfiguration) throws AMQException
     {
-    	AMQShortString exchangeName = new AMQShortString(exchangeConfiguration.getName());
+        AMQShortString exchangeName = new AMQShortString(exchangeConfiguration.getName());
 
         Exchange exchange;
         exchange = _exchangeRegistry.getExchange(exchangeName);
         if (exchange == null)
         {
 
-    		AMQShortString type = new AMQShortString(exchangeConfiguration.getType());
-    		boolean durable = exchangeConfiguration.getDurable();
-    		boolean autodelete = exchangeConfiguration.getAutoDelete();
+            AMQShortString type = new AMQShortString(exchangeConfiguration.getType());
+            boolean durable = exchangeConfiguration.getDurable();
+            boolean autodelete = exchangeConfiguration.getAutoDelete();
 
             Exchange newExchange = _exchangeFactory.createExchange(exchangeName, type, durable, autodelete, 0);
             _exchangeRegistry.registerExchange(newExchange);
 
             if (newExchange.isDurable())
             {
-                _durableConfigurationStore.createExchange(newExchange);
+                _messageStore.createExchange(newExchange);
             }
         }
     }
 
     private void configureQueue(QueueConfiguration queueConfiguration) throws AMQException, ConfigurationException
     {
-    	AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(queueConfiguration, this);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(queueConfiguration, this);
         String queueName = queue.getName();
 
-    	if (queue.isDurable())
-    	{
-    		getDurableConfigurationStore().createQueue(queue);
-    	}
+        if (queue.isDurable())
+        {
+            getMessageStore().createQueue(queue);
+        }
 
         //get the exchange name (returns default exchange name if none was specified)
-    	String exchangeName = queueConfiguration.getExchange();
+        String exchangeName = queueConfiguration.getExchange();
 
         Exchange exchange = _exchangeRegistry.getExchange(exchangeName);
-    	if (exchange == null)
-    	{
+        if (exchange == null)
+        {
             throw new ConfigurationException("Attempt to bind queue '" + queueName + "' to unknown exchange:" + exchangeName);
-    	}
+        }
 
         Exchange defaultExchange = _exchangeRegistry.getDefaultExchange();
 
@@ -573,11 +503,6 @@ public class VirtualHostImpl implements VirtualHost
         return _messageStore;
     }
 
-    public DurableConfigurationStore getDurableConfigurationStore()
-    {
-        return _durableConfigurationStore;
-    }
-
     public SecurityManager getSecurityManager()
     {
         return _securityManager;
@@ -587,39 +512,8 @@ public class VirtualHostImpl implements VirtualHost
     {
         //Stop Connections
         _connectionRegistry.close();
-
-        //Stop the Queues processing
-        if (_queueRegistry != null)
-        {
-            for (AMQQueue queue : _queueRegistry.getQueues())
-            {
-                queue.stop();
-            }
-        }
-
-        //Stop Housekeeping
-        if (_houseKeepingTasks != null)
-        {
-            _houseKeepingTasks.shutdown();
-
-            try
-            {
-                if (!_houseKeepingTasks.awaitTermination(HOUSEKEEPING_SHUTDOWN_TIMEOUT, TimeUnit.SECONDS))
-                {
-                    _houseKeepingTasks.shutdownNow();
-                }
-            }
-            catch (InterruptedException e)
-            {
-                _logger.warn("Interrupted during Housekeeping shutdown:" + e.getMessage());
-                // Swallowing InterruptedException ok as we are shutting down.
-            }
-        }
-
-        if(_dtxRegistry != null)
-        {
-            _dtxRegistry.close();
-        }
+        _queueRegistry.stopAllAndUnregisterMBeans();
+        _dtxRegistry.close();
 
         //Close MessageStore
         if (_messageStore != null)
@@ -634,6 +528,8 @@ public class VirtualHostImpl implements VirtualHost
                 _logger.error("Failed to close message store", e);
             }
         }
+
+        _state = State.STOPPED;
 
         CurrentActor.get().message(VirtualHostMessages.CLOSED());
     }
@@ -746,7 +642,6 @@ public class VirtualHostImpl implements VirtualHost
         return blink;
     }
 
-    
     public void createBrokerConnection(final String transport,
                                        final String host,
                                        final int port,
@@ -783,6 +678,17 @@ public class VirtualHostImpl implements VirtualHost
         }
     }
 
+    public synchronized LinkRegistry getLinkRegistry(String remoteContainerId)
+    {
+        LinkRegistry linkRegistry = _linkRegistry.get(remoteContainerId);
+        if(linkRegistry == null)
+        {
+            linkRegistry = new LinkRegistry();
+            _linkRegistry.put(remoteContainerId, linkRegistry);
+        }
+        return linkRegistry;
+    }
+
     public ConfigStore getConfigStore()
     {
         return getApplicationRegistry().getConfigStore();
@@ -793,74 +699,161 @@ public class VirtualHostImpl implements VirtualHost
         return _dtxRegistry;
     }
 
-    /**
-     * Temporary Startup RT class to record the creation of persistent queues / exchanges.
-     *
-     *
-     * This is so we can replay the creation of queues/exchanges in to the real _RT after it has been loaded.
-     * This should be removed after the _RT has been fully split from the the TL
-     */
-    private static class StartupRoutingTable implements DurableConfigurationStore
-    {
-        public void configureConfigStore(String name,
-                                         ConfigurationRecoveryHandler recoveryHandler,
-                                         Configuration config,
-                                         LogSubject logSubject) throws Exception
-        {
-        }
-
-        public void createExchange(Exchange exchange) throws AMQStoreException
-        {
-        }
-
-        public void removeExchange(Exchange exchange) throws AMQStoreException
-        {
-        }
-
-        public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
-        {
-        }
-
-        public void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
-        {
-        }
-
-        public void createQueue(AMQQueue queue) throws AMQStoreException
-        {
-        }
-
-        public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQStoreException
-        {
-        }
-
-        public void removeQueue(AMQQueue queue) throws AMQStoreException
-        {
-        }
-
-        public void updateQueue(AMQQueue queue) throws AMQStoreException
-        {
-        }
-
-        public void createBrokerLink(final BrokerLink link) throws AMQStoreException
-        {
-        }
-
-        public void deleteBrokerLink(final BrokerLink link) throws AMQStoreException
-        {
-        }
-
-        public void createBridge(final Bridge bridge) throws AMQStoreException
-        {
-        }
-
-        public void deleteBridge(final Bridge bridge) throws AMQStoreException
-        {
-        }
-    }
-
     @Override
     public String toString()
     {
         return _name;
+    }
+
+    @Override
+    public State getState()
+    {
+        return _state;
+    }
+
+
+    /**
+     * Virtual host JMX MBean class.
+     *
+     * This has some of the methods implemented from management interface for exchanges. Any
+     * Implementation of an Exchange MBean should extend this class.
+     */
+    public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtualHost
+    {
+        public VirtualHostMBean() throws NotCompliantMBeanException
+        {
+            super(ManagedVirtualHost.class, ManagedVirtualHost.TYPE);
+        }
+
+        public String getObjectInstanceName()
+        {
+            return ObjectName.quote(_name);
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public VirtualHostImpl getVirtualHost()
+        {
+            return VirtualHostImpl.this;
+        }
+    }
+
+    private final class BeforeActivationListener implements EventListener
+    {
+        @Override
+        public void event(Event event)
+        {
+            try
+            {
+                _exchangeRegistry.initialise();
+                initialiseModel(_vhostConfig);
+            } catch (Exception e)
+            {
+                throw new RuntimeException("Failed to initialise virtual host after state change", e);
+            }
+        }
+    }
+
+    private final class AfterActivationListener implements EventListener
+    {
+        @Override
+        public void event(Event event)
+        {
+            initialiseHouseKeeping(_vhostConfig.getHousekeepingCheckPeriod());
+            try
+            {
+                _brokerMBean.register();
+            } catch (JMException e)
+            {
+                throw new RuntimeException("Failed to register virtual host mbean for virtual host " + getName(), e);
+            }
+
+            _state = State.ACTIVE;
+        }
+    }
+
+    public class BeforePassivationListener implements EventListener
+    {
+
+        @Override
+        public void event(Event event)
+        {
+            _connectionRegistry.close(IConnectionRegistry.VHOST_PASSIVATE_REPLY_TEXT);
+            _brokerMBean.unregister();
+            removeHouseKeepingTasks();
+
+            _queueRegistry.stopAllAndUnregisterMBeans();
+            _exchangeRegistry.clearAndUnregisterMbeans();
+            _dtxRegistry.close();
+
+            _state = State.PASSIVE;
+        }
+    }
+
+    private final class BeforeCloseListener implements EventListener
+    {
+        @Override
+        public void event(Event event)
+        {
+            _brokerMBean.unregister();
+            shutdownHouseKeeping();
+        }
+    }
+
+    private class VirtualHostHouseKeepingTask extends HouseKeepingTask
+    {
+        public VirtualHostHouseKeepingTask()
+        {
+            super(VirtualHostImpl.this);
+        }
+
+        public void execute()
+        {
+            for (AMQQueue q : _queueRegistry.getQueues())
+            {
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("Checking message status for queue: "
+                            + q.getName());
+                }
+                try
+                {
+                    q.checkMessageStatus();
+                } catch (Exception e)
+                {
+                    _logger.error("Exception in housekeeping for queue: "
+                            + q.getNameShortString().toString(), e);
+                    //Don't throw exceptions as this will stop the
+                    // house keeping task from running.
+                }
+            }
+            for (AMQConnectionModel connection : getConnectionRegistry().getConnections())
+            {
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("Checking for long running open transactions on connection " + connection);
+                }
+                for (AMQSessionModel session : connection.getSessionModels())
+                {
+                    if (_logger.isDebugEnabled())
+                    {
+                        _logger.debug("Checking for long running open transactions on session " + session);
+                    }
+                    try
+                    {
+                        session.checkTransactionStatus(_vhostConfig.getTransactionTimeoutOpenWarn(),
+                                _vhostConfig.getTransactionTimeoutOpenClose(),
+                                _vhostConfig.getTransactionTimeoutIdleWarn(),
+                                _vhostConfig.getTransactionTimeoutIdleClose());
+                    } catch (Exception e)
+                    {
+                        _logger.error("Exception in housekeeping for connection: " + connection.toString(), e);
+                    }
+                }
+            }
+        }
     }
 }

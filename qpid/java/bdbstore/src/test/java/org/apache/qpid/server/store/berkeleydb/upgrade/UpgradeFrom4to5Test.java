@@ -66,7 +66,7 @@ public class UpgradeFrom4to5Test extends AbstractUpgradeTestCase
     public void testPerformUpgradeWithHandlerAnsweringYes() throws Exception
     {
         UpgradeFrom4To5 upgrade = new UpgradeFrom4To5();
-        upgrade.performUpgrade(LOG_SUBJECT, _environment, new StaticAnswerHandler(UpgradeInteractionResponse.YES));
+        upgrade.performUpgrade(_environment, new StaticAnswerHandler(UpgradeInteractionResponse.YES), getVirtualHostName());
 
         assertQueues(new HashSet<String>(Arrays.asList(QUEUE_NAMES)));
 
@@ -93,7 +93,7 @@ public class UpgradeFrom4to5Test extends AbstractUpgradeTestCase
     public void testPerformUpgradeWithHandlerAnsweringNo() throws Exception
     {
         UpgradeFrom4To5 upgrade = new UpgradeFrom4To5();
-        upgrade.performUpgrade(LOG_SUBJECT, _environment, new StaticAnswerHandler(UpgradeInteractionResponse.NO));
+        upgrade.performUpgrade(_environment, new StaticAnswerHandler(UpgradeInteractionResponse.NO), getVirtualHostName());
         assertQueues(new HashSet<String>(Arrays.asList(DURABLE_SUBSCRIPTION_QUEUE, DURABLE_SUBSCRIPTION_QUEUE_WITH_SELECTOR, DURABLE_QUEUE)));
 
         assertDatabaseRecordCount(DELIVERY_DB_NAME, 12);

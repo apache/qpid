@@ -42,6 +42,7 @@ public class QpidTestCase extends TestCase
 {
     public static final String QPID_HOME = System.getProperty("QPID_HOME");
     public static final String TEST_RESOURCES_DIR = QPID_HOME + "/../test-profiles/test_resources/";
+    public static final String TMP_FOLDER = System.getProperty("java.io.tmpdir");
 
     private static final Logger _logger = Logger.getLogger(QpidTestCase.class);
 
@@ -108,10 +109,10 @@ public class QpidTestCase extends TestCase
             _exclusionList = exclusionList;
         }
     }
-    
-    protected static final String MS_CLASS_NAME_KEY = "messagestore.class.name";
-    protected static final String MEMORY_STORE_CLASS_NAME = "org.apache.qpid.server.store.MemoryMessageStore";
-    
+
+    protected static final String MS_FACTORY_CLASS_NAME_KEY = "messagestorefactory.class.name";
+    protected static final String MEMORY_STORE_FACTORY_CLASS_NAME = "org.apache.qpid.server.store.MemoryMessageStoreFactory";
+
     private static List<String> _exclusionList;
     
     public QpidTestCase()
@@ -139,11 +140,12 @@ public class QpidTestCase extends TestCase
         }
     }
 
-    public String getTestProfileMessageStoreClassName()
+    public String getTestProfileMessageStoreFactoryClassName()
     {
-        String storeClass = System.getProperty(MS_CLASS_NAME_KEY);
+        final String storeFactoryClass = System.getProperty(MS_FACTORY_CLASS_NAME_KEY);
+        _logger.debug("MS_FACTORY_CLASS_NAME_KEY " + storeFactoryClass);
         
-        return storeClass != null ? storeClass : MEMORY_STORE_CLASS_NAME ;
+        return storeFactoryClass != null ? storeFactoryClass : MEMORY_STORE_FACTORY_CLASS_NAME ;
     }
 
 
@@ -157,7 +159,7 @@ public class QpidTestCase extends TestCase
      * @param fromPort the port to scan for availability
      * @throws NoSuchElementException if there are no ports available
      */
-    protected int getNextAvailable(int fromPort)
+    public int getNextAvailable(int fromPort)
     {
         if ((fromPort < MIN_PORT_NUMBER) || (fromPort > MAX_PORT_NUMBER))
         {

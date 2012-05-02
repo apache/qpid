@@ -191,29 +191,29 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     private int _maximumDeliveryCount = ApplicationRegistry.getInstance().getConfiguration().getMaxDeliveryCount();
     private final MessageGroupManager _messageGroupManager;
 
-    protected SimpleAMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, boolean exclusive, VirtualHost virtualHost, Map<String,Object> arguments)
+    protected SimpleAMQQueue(UUID id, AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, boolean exclusive, VirtualHost virtualHost, Map<String,Object> arguments)
     {
-        this(name, durable, owner, autoDelete, exclusive, virtualHost,new SimpleQueueEntryList.Factory(), arguments);
+        this(id, name, durable, owner, autoDelete, exclusive,virtualHost, new SimpleQueueEntryList.Factory(), arguments);
     }
 
-    public SimpleAMQQueue(String queueName, boolean durable, String owner, boolean autoDelete, boolean exclusive, VirtualHost virtualHost, Map<String, Object> arguments)
+    public SimpleAMQQueue(UUID id, String queueName, boolean durable, String owner, boolean autoDelete, boolean exclusive, VirtualHost virtualHost, Map<String, Object> arguments)
     {
-        this(queueName, durable, owner, autoDelete, exclusive, virtualHost, new SimpleQueueEntryList.Factory(), arguments);
+        this(id, queueName, durable, owner, autoDelete, exclusive, virtualHost, new SimpleQueueEntryList.Factory(), arguments);
     }
 
-    public SimpleAMQQueue(String queueName, boolean durable, String owner, boolean autoDelete, boolean exclusive, VirtualHost virtualHost, QueueEntryListFactory entryListFactory, Map<String, Object> arguments)
+    public SimpleAMQQueue(UUID id, String queueName, boolean durable, String owner, boolean autoDelete, boolean exclusive, VirtualHost virtualHost, QueueEntryListFactory entryListFactory, Map<String, Object> arguments)
     {
-        this(queueName == null ? null : new AMQShortString(queueName), durable, owner == null ? null : new AMQShortString(owner), autoDelete, exclusive, virtualHost, entryListFactory, arguments);
+        this(id, queueName == null ? null : new AMQShortString(queueName), durable, owner == null ? null : new AMQShortString(owner), autoDelete, exclusive, virtualHost, entryListFactory, arguments);
     }
 
-    protected SimpleAMQQueue(AMQShortString name,
+    protected SimpleAMQQueue(UUID id,
+                             AMQShortString name,
                              boolean durable,
                              AMQShortString owner,
                              boolean autoDelete,
                              boolean exclusive,
                              VirtualHost virtualHost,
-                             QueueEntryListFactory entryListFactory,
-                             Map<String,Object> arguments)
+                             QueueEntryListFactory entryListFactory, Map<String,Object> arguments)
     {
 
         if (name == null)
@@ -236,7 +236,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         _entries = entryListFactory.createQueueEntryList(this);
         _arguments = arguments;
 
-        _id = virtualHost.getConfigStore().createId();
+        _id = id;
 
         _asyncDelivery = ReferenceCountingExecutorService.getInstance().acquireExecutorService();
 
@@ -346,7 +346,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
         if(isDurable())
         {
-            getVirtualHost().getDurableConfigurationStore().updateQueue(this);
+            getVirtualHost().getMessageStore().updateQueue(this);
         }
     }
 
@@ -862,7 +862,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     public void requeue(QueueEntry entry)
     {
-
         SubscriptionList.SubscriptionNodeIterator subscriberIter = _subscriptionList.iterator();
         // iterate over all the subscribers, and if they are in advance of this queue entry then move them backwards
         while (subscriberIter.advance() && entry.isAvailable())
@@ -1743,6 +1742,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     {
         boolean atTail = false;
         final boolean keepSendLockHeld = iterations <=  SimpleAMQQueue.MAX_ASYNC_DELIVERIES;
+        boolean queueEmpty = false;
 
         try
         {
@@ -1760,12 +1760,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                     }
 
                     atTail = attemptDelivery(sub, true);
-                    if (atTail && !sub.isSuspended() && sub.isAutoClose())
+                    if (atTail && getNextAvailableEntry(sub) == null)
                     {
-                        unregisterSubscription(sub);
-
-                        sub.confirmAutoClose();
-
+                        queueEmpty = true;
                     }
                     else if (!atTail)
                     {
@@ -1787,6 +1784,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
             {
                 sub.releaseSendLock();
             }
+            if(queueEmpty)
+            {
+                sub.queueEmpty();
+            }
+
             sub.flushBatched();
 
         }
@@ -2009,13 +2011,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                             if (subscriptionDone)
                             {
                                 sub.flushBatched();
-                                //close autoClose subscriptions if we are not currently intent on continuing
-                                if (lastLoop && !sub.isSuspended() && sub.isAutoClose())
+                                if (lastLoop && !sub.isSuspended())
                                 {
-
-                                    unregisterSubscription(sub);
-
-                                    sub.confirmAutoClose();
+                                    sub.queueEmpty();
                                 }
                                 break;
                             }

@@ -20,6 +20,8 @@
  */
 #include "UrlArray.h"
 
+#include <qpid/framing/FieldValue.h>
+
 namespace qpid {
 
 std::vector<Url> urlArrayToVector(const framing::Array& array) {

@@ -125,8 +125,8 @@
     <statistic name="abandonedViaAlt"     type="count64" unit="message" desc="Messages routed to alternate exchange from a deleted queue"/>
 
     <method name="echo" desc="Request a response to test the path to the management broker">
-      <arg name="sequence" dir="IO" type="uint32" default="0"/>
-      <arg name="body"     dir="IO" type="lstr"   default=""/>
+      <arg name="sequence" dir="IO" type="uint32"/>
+      <arg name="body"     dir="IO" type="lstr"/>
     </method>
 
     <method name="connect" desc="Establish a connection to another broker">
@@ -143,7 +143,7 @@
       <arg name="srcQueue"          dir="I" type="sstr" desc="Source queue"/>
       <arg name="destQueue"         dir="I" type="sstr" desc="Destination queue"/>
       <arg name="qty"               dir="I" type="uint32" desc="# of messages to move. 0 means all messages"/>
-      <arg name="filter"  dir="I" type="map" default="{}"   desc="if specified, move only those messages matching this filter"/>
+      <arg name="filter"  dir="I" type="map" desc="if specified, move only those messages matching this filter"/>
     </method>
 
     <method name="setLogLevel" desc="Set the log level">
@@ -272,14 +272,14 @@
 
     <method name="purge" desc="Discard all or some messages on a queue">
       <arg name="request" dir="I" type="uint32" desc="0 for all messages or n>0 for n messages"/>
-      <arg name="filter"  dir="I" type="map" default="{}"  desc="if specified, purge only those messages matching this filter"/>
+      <arg name="filter"  dir="I" type="map"    desc="if specified, purge only those messages matching this filter"/>
     </method>
 
     <method name="reroute" desc="Remove all or some messages on this queue and route them to an exchange">
       <arg name="request"        dir="I" type="uint32" desc="0 for all messages or n>0 for n messages"/>
       <arg name="useAltExchange" dir="I" type="bool"   desc="Iff true, use the queue's configured alternate exchange; iff false, use exchange named in the 'exchange' argument"/>
       <arg name="exchange"       dir="I" type="sstr"   desc="Name of the exchange to route the messages through"/>
-      <arg name="filter"  dir="I" type="map" default="{}" desc="if specified, reroute only those messages matching this filter"/>
+      <arg name="filter"  dir="I" type="map"           desc="if specified, reroute only those messages matching this filter"/>
     </method>
   </class>
 

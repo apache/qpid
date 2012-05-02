@@ -64,6 +64,7 @@ void SessionHandler::handleDetach() {
     if (session.get())
         connection.getBroker().getSessionManager().detach(session);
     assert(!session.get());
+    if (detachedCallback) detachedCallback();
     connection.closeChannel(channel.get());
 }
 
@@ -115,6 +116,10 @@ void SessionHandler::attached(const std::string& name)
         session.reset(new SessionState(connection.getBroker(), *this, id, config));
         markReadyToSend();
     }
+}
+
+void SessionHandler::setDetachedCallback(boost::function<void()> cb) {
+    detachedCallback = cb;
 }
 
 }} // namespace qpid::broker

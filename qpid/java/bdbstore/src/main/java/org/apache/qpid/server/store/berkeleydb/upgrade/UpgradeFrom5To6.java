@@ -24,14 +24,30 @@ import static org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeInteraction
 import static org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeInteractionResponse.NO;
 import static org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeInteractionResponse.YES;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.UUID;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.store.berkeleydb.AMQShortStringEncoding;
+import org.apache.qpid.server.store.berkeleydb.FieldTableEncoding;
+import org.apache.qpid.server.util.MapJsonSerializer;
 
 import com.sleepycat.bind.tuple.LongBinding;
 import com.sleepycat.bind.tuple.TupleBinding;
@@ -52,27 +68,71 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
 
     private static final Logger _logger = Logger.getLogger(UpgradeFrom5To6.class);
 
-    private static final String OLD_CONTENT_DB_NAME = "messageContentDb_v5";
-    private static final String NEW_CONTENT_DB_NAME = "MESSAGE_CONTENT";
-    private static final String META_DATA_DB_NAME = "messageMetaDataDb_v5";
+    static final String OLD_CONTENT_DB_NAME = "messageContentDb_v5";
+    static final String NEW_CONTENT_DB_NAME = "MESSAGE_CONTENT";
+    static final String NEW_METADATA_DB_NAME = "MESSAGE_METADATA";
+    static final String OLD_META_DATA_DB_NAME = "messageMetaDataDb_v5";
+    static final String OLD_EXCHANGE_DB_NAME = "exchangeDb_v5";
+    static final String OLD_QUEUE_DB_NAME = "queueDb_v5";
+    static final String OLD_DELIVERY_DB_NAME = "deliveryDb_v5";
+    static final String OLD_QUEUE_BINDINGS_DB_NAME = "queueBindingsDb_v5";
+    static final String OLD_XID_DB_NAME = "xids_v5";
+    static final String NEW_XID_DB_NAME = "XIDS";
+    static final String CONFIGURED_OBJECTS_DB_NAME = "CONFIGURED_OBJECTS";
+    static final String NEW_DELIVERY_DB_NAME = "QUEUE_ENTRIES";
+    static final String NEW_BRIDGES_DB_NAME = "BRIDGES";
+    static final String NEW_LINKS_DB_NAME = "LINKS";
+    static final String OLD_BRIDGES_DB_NAME = "bridges_v5";
+    static final String OLD_LINKS_DB_NAME = "links_v5";
 
-    private static final String NEW_DB_NAMES[] = { "EXCHANGES", "QUEUES", "QUEUE_BINDINGS", "DELIVERIES",
-            "MESSAGE_METADATA", NEW_CONTENT_DB_NAME, "BRIDGES", "LINKS", "XIDS" };
-    private static final String OLD_DB_NAMES[] = { "exchangeDb_v5", "queueDb_v5", "queueBindingsDb_v5", "deliveryDb_v5",
-            META_DATA_DB_NAME, OLD_CONTENT_DB_NAME, "bridges_v5", "links_v5", "xids_v5" };
+    static final String[] DEFAULT_EXCHANGES = { ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString(),
+            ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString(), ExchangeDefaults.FANOUT_EXCHANGE_NAME.asString(),
+            ExchangeDefaults.HEADERS_EXCHANGE_NAME.asString(), ExchangeDefaults.TOPIC_EXCHANGE_NAME.asString(),
+            ExchangeDefaults.DIRECT_EXCHANGE_NAME.asString() };
+    private static final Set<String> DEFAULT_EXCHANGES_SET = new HashSet<String>(Arrays.asList(DEFAULT_EXCHANGES));
 
-    public void performUpgrade(final LogSubject logSubject, final Environment environment,
-            final UpgradeInteractionHandler handler) throws DatabaseException, AMQStoreException
+    private MapJsonSerializer _serializer = new MapJsonSerializer();
+
+    /**
+     * Upgrades from a v5 database to a v6 database
+     *
+     * v6 is the first "new style" schema where we don't version every table,
+     * and the upgrade is re-runnable
+     *
+     * Change in this version:
+     *
+     * Message content is moved from the database messageContentDb_v5 to
+     * MESSAGE_CONTENT. The structure of the database changes from ( message-id:
+     * long, chunk-id: int ) -> ( size: int, byte[] data ) to ( message-id:
+     * long) -> ( byte[] data )
+     *
+     * That is we keep only one record per message, which contains all the
+     * message content
+     *
+     * Queue, Exchange, Bindings entries are stored now as configurable objects
+     * in "CONFIGURED_OBJECTS" table.
+     */
+    public void performUpgrade(final Environment environment, final UpgradeInteractionHandler handler, String virtualHostName)
+            throws DatabaseException, AMQStoreException
     {
-        _logger.info("Starting store upgrade from version 5");
+        reportStarting(environment, 5);
+        upgradeMessages(environment, handler);
+        upgradeConfiguredObjectsAndDependencies(environment, handler, virtualHostName);
+        renameDatabases(environment, null);
+        reportFinished(environment, 6);
+    }
+
+    private void upgradeConfiguredObjectsAndDependencies(Environment environment, UpgradeInteractionHandler handler, String virtualHostName)
+            throws AMQStoreException
+    {
         Transaction transaction = null;
         try
         {
-            reportStarting(environment, OLD_DB_NAMES, USER_FRIENDLY_NAMES);
             transaction = environment.beginTransaction(null, null);
-            performUpgradeInternal(logSubject, environment, handler, transaction);
+            upgradeConfiguredObjects(environment, handler, transaction, virtualHostName);
+            upgradeQueueEntries(environment, transaction, virtualHostName);
+            upgradeXidEntries(environment, transaction, virtualHostName);
             transaction.commit();
-            reportFinished(environment, NEW_DB_NAMES, USER_FRIENDLY_NAMES);
         }
         catch (Exception e)
         {
@@ -92,23 +152,54 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
         }
     }
 
-    /**
-     * Upgrades from a v5 database to a v6 database
-     *
-     * v6 is the first "new style" schema where we don't version every table, and the upgrade is re-runnable
-     *
-     * Change in this version:
-     *
-     * Message content is moved from the database messageContentDb_v5 to MESSAGE_CONTENT.
-     * The structure of the database changes from
-     *    ( message-id: long, chunk-id: int ) -> ( size: int, byte[] data )
-     * to
-     *    ( message-id: long) -> ( byte[] data )
-     *
-     * That is we keep only one record per message, which contains all the message content
-     */
-    public void performUpgradeInternal(final LogSubject logSubject, final Environment environment,
-            final UpgradeInteractionHandler handler, final Transaction transaction) throws AMQStoreException
+    private void upgradeMessages(final Environment environment, final UpgradeInteractionHandler handler)
+            throws AMQStoreException
+    {
+        Transaction transaction = null;
+        try
+        {
+            transaction = environment.beginTransaction(null, null);
+            upgradeMessages(environment, handler, transaction);
+            transaction.commit();
+        }
+        catch (Exception e)
+        {
+            transaction.abort();
+            if (e instanceof DatabaseException)
+            {
+                throw (DatabaseException) e;
+            }
+            else if (e instanceof AMQStoreException)
+            {
+                throw (AMQStoreException) e;
+            }
+            else
+            {
+                throw new AMQStoreException("Unexpected exception", e);
+            }
+        }
+    }
+
+    private void renameDatabases(Environment environment, Transaction transaction)
+    {
+        List<String> databases = environment.getDatabaseNames();
+        String[] oldDatabases = { OLD_META_DATA_DB_NAME, OLD_BRIDGES_DB_NAME, OLD_LINKS_DB_NAME };
+        String[] newDatabases = { NEW_METADATA_DB_NAME, NEW_BRIDGES_DB_NAME, NEW_LINKS_DB_NAME };
+
+        for (int i = 0; i < oldDatabases.length; i++)
+        {
+            String oldName = oldDatabases[i];
+            String newName = newDatabases[i];
+            if (databases.contains(oldName))
+            {
+                _logger.info("Renaming " + oldName + " into " + newName);
+                environment.renameDatabase(transaction, oldName, newName);
+            }
+        }
+    }
+
+    private void upgradeMessages(final Environment environment, final UpgradeInteractionHandler handler,
+            final Transaction transaction) throws AMQStoreException
     {
         _logger.info("Message Contents");
         if (environment.getDatabaseNames().contains(OLD_CONTENT_DB_NAME))
@@ -131,27 +222,13 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
                                     metadataDatabase);
                         }
                     };
-                    new DatabaseTemplate(environment, META_DATA_DB_NAME, contentTransaction).run(metaDataDatabaseOperation);
+                    new DatabaseTemplate(environment, OLD_META_DATA_DB_NAME, contentTransaction)
+                            .run(metaDataDatabaseOperation);
                     _logger.info(metaDataDatabaseOperation.getRowCount() + " Message Content Entries");
                 }
             };
             new DatabaseTemplate(environment, OLD_CONTENT_DB_NAME, NEW_CONTENT_DB_NAME, transaction).run(contentOperation);
-        }
-        renameDatabases(environment, transaction);
-    }
-
-    private void renameDatabases(Environment environment, Transaction transaction)
-    {
-        List<String> databases = environment.getDatabaseNames();
-        for (int i = 0; i < OLD_DB_NAMES.length; i++)
-        {
-            String oldName = OLD_DB_NAMES[i];
-            String newName = NEW_DB_NAMES[i];
-            if (databases.contains(oldName))
-            {
-                _logger.info("Renaming " + oldName + " into " + newName);
-                environment.renameDatabase(transaction, oldName, newName);
-            }
+            environment.removeDatabase(transaction, OLD_CONTENT_DB_NAME);
         }
     }
 
@@ -223,7 +300,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
         DatabaseEntry value = new DatabaseEntry();
         dataBinding.objectToEntry(consolidatedData, value);
 
-        newDatabase.put(txn, key, value);
+        put(newDatabase, txn, key, value);
     }
 
     /**
@@ -268,6 +345,264 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
         }
 
         return data;
+    }
+
+    private void upgradeConfiguredObjects(Environment environment, UpgradeInteractionHandler handler, Transaction transaction, String virtualHostName)
+            throws AMQStoreException
+    {
+        upgradeQueues(environment, transaction, virtualHostName);
+        upgradeExchanges(environment, transaction, virtualHostName);
+        upgradeQueueBindings(environment, transaction, handler, virtualHostName);
+    }
+
+    private void upgradeXidEntries(Environment environment, Transaction transaction, final String virtualHostName)
+    {
+        if (environment.getDatabaseNames().contains(OLD_XID_DB_NAME))
+        {
+            _logger.info("Xid Records");
+            final OldPreparedTransactionBinding oldTransactionBinding = new OldPreparedTransactionBinding();
+            final NewPreparedTransactionBinding newTransactionBinding = new NewPreparedTransactionBinding();
+            CursorOperation xidEntriesCursor = new CursorOperation()
+            {
+                @Override
+                public void processEntry(Database oldXidDatabase, Database newXidDatabase, Transaction transaction,
+                        DatabaseEntry key, DatabaseEntry value)
+                {
+                    OldPreparedTransaction oldPreparedTransaction = oldTransactionBinding.entryToObject(value);
+                    OldRecordImpl[] oldDequeues = oldPreparedTransaction.getDequeues();
+                    OldRecordImpl[] oldEnqueues = oldPreparedTransaction.getEnqueues();
+
+                    NewRecordImpl[] newEnqueues = null;
+                    NewRecordImpl[] newDequeues = null;
+                    if (oldDequeues != null)
+                    {
+                        newDequeues = new NewRecordImpl[oldDequeues.length];
+                        for (int i = 0; i < newDequeues.length; i++)
+                        {
+                            OldRecordImpl dequeue = oldDequeues[i];
+                            UUID id = UUIDGenerator.generateUUID(dequeue.getQueueName(), virtualHostName);
+                            newDequeues[i] = new NewRecordImpl(id, dequeue.getMessageNumber());
+                        }
+                    }
+                    if (oldEnqueues != null)
+                    {
+                        newEnqueues = new NewRecordImpl[oldEnqueues.length];
+                        for (int i = 0; i < newEnqueues.length; i++)
+                        {
+                            OldRecordImpl enqueue = oldEnqueues[i];
+                            UUID id = UUIDGenerator.generateUUID(enqueue.getQueueName(), virtualHostName);
+                            newEnqueues[i] = new NewRecordImpl(id, enqueue.getMessageNumber());
+                        }
+                    }
+                    NewPreparedTransaction newPreparedTransaction = new NewPreparedTransaction(newEnqueues, newDequeues);
+                    DatabaseEntry newValue = new DatabaseEntry();
+                    newTransactionBinding.objectToEntry(newPreparedTransaction, newValue);
+                    put(newXidDatabase, transaction, key, newValue);
+                }
+            };
+            new DatabaseTemplate(environment, OLD_XID_DB_NAME, NEW_XID_DB_NAME, transaction).run(xidEntriesCursor);
+            environment.removeDatabase(transaction, OLD_XID_DB_NAME);
+            _logger.info(xidEntriesCursor.getRowCount() + " Xid Entries");
+        }
+    }
+
+    private void upgradeQueueEntries(Environment environment, Transaction transaction, final String virtualHostName)
+    {
+        _logger.info("Queue Delivery Records");
+        if (environment.getDatabaseNames().contains(OLD_DELIVERY_DB_NAME))
+        {
+            final OldQueueEntryBinding oldBinding = new OldQueueEntryBinding();
+            final NewQueueEntryBinding newBinding = new NewQueueEntryBinding();
+            CursorOperation queueEntriesCursor = new CursorOperation()
+            {
+                @Override
+                public void processEntry(Database oldDeliveryDatabase, Database newDeliveryDatabase,
+                        Transaction transaction, DatabaseEntry key, DatabaseEntry value)
+                {
+                    OldQueueEntryKey oldEntryRecord = oldBinding.entryToObject(key);
+                    UUID queueId = UUIDGenerator.generateUUID(oldEntryRecord.getQueueName().asString(), virtualHostName);
+
+                    NewQueueEntryKey newEntryRecord = new NewQueueEntryKey(queueId, oldEntryRecord.getMessageId());
+                    DatabaseEntry newKey = new DatabaseEntry();
+                    newBinding.objectToEntry(newEntryRecord, newKey);
+                    put(newDeliveryDatabase, transaction, newKey, value);
+                }
+            };
+            new DatabaseTemplate(environment, OLD_DELIVERY_DB_NAME, NEW_DELIVERY_DB_NAME, transaction)
+                    .run(queueEntriesCursor);
+            environment.removeDatabase(transaction, OLD_DELIVERY_DB_NAME);
+            _logger.info(queueEntriesCursor.getRowCount() + " Queue Delivery Record Entries");
+        }
+    }
+
+    private void upgradeQueueBindings(Environment environment, Transaction transaction, final UpgradeInteractionHandler handler, final String virtualHostName)
+    {
+        _logger.info("Queue Bindings");
+        if (environment.getDatabaseNames().contains(OLD_QUEUE_BINDINGS_DB_NAME))
+        {
+            final QueueBindingBinding binding = new QueueBindingBinding();
+            CursorOperation bindingCursor = new CursorOperation()
+            {
+                @Override
+                public void processEntry(Database exchangeDatabase, Database configuredObjectsDatabase,
+                        Transaction transaction, DatabaseEntry key, DatabaseEntry value)
+                {
+                    // TODO: check and remove orphaned bindings
+                    BindingRecord bindingRecord = binding.entryToObject(key);
+                    String exchangeName = bindingRecord.getExchangeName() == null ? ExchangeDefaults.DEFAULT_EXCHANGE_NAME
+                            .asString() : bindingRecord.getExchangeName().asString();
+                    String queueName = bindingRecord.getQueueName().asString();
+                    String routingKey = bindingRecord.getRoutingKey().asString();
+                    FieldTable arguments = bindingRecord.getArguments();
+
+                    UUID bindingId = UUIDGenerator.generateUUID();
+                    UpgradeConfiguredObjectRecord configuredObject = createBindingConfiguredObjectRecord(exchangeName, queueName,
+                            routingKey, arguments, virtualHostName);
+                    storeConfiguredObjectEntry(configuredObjectsDatabase, bindingId, configuredObject, transaction);
+                }
+
+            };
+            new DatabaseTemplate(environment, OLD_QUEUE_BINDINGS_DB_NAME, CONFIGURED_OBJECTS_DB_NAME, transaction)
+                    .run(bindingCursor);
+            environment.removeDatabase(transaction, OLD_QUEUE_BINDINGS_DB_NAME);
+            _logger.info(bindingCursor.getRowCount() + " Queue Binding Entries");
+        }
+    }
+
+    private List<String> upgradeExchanges(Environment environment, Transaction transaction, final String virtualHostName)
+    {
+        final List<String> exchangeNames = new ArrayList<String>();
+        _logger.info("Exchanges");
+        if (environment.getDatabaseNames().contains(OLD_EXCHANGE_DB_NAME))
+        {
+            final ExchangeBinding exchangeBinding = new ExchangeBinding();
+            CursorOperation exchangeCursor = new CursorOperation()
+            {
+                @Override
+                public void processEntry(Database exchangeDatabase, Database configuredObjectsDatabase,
+                        Transaction transaction, DatabaseEntry key, DatabaseEntry value)
+                {
+                    ExchangeRecord exchangeRecord = exchangeBinding.entryToObject(value);
+                    String exchangeName = exchangeRecord.getNameShortString().asString();
+                    if (!DEFAULT_EXCHANGES_SET.contains(exchangeName))
+                    {
+                        String exchangeType = exchangeRecord.getType().asString();
+                        boolean autoDelete = exchangeRecord.isAutoDelete();
+
+                        UUID exchangeId = UUIDGenerator.generateUUID(exchangeName, virtualHostName);
+
+                        UpgradeConfiguredObjectRecord configuredObject = createExchangeConfiguredObjectRecord(exchangeName,
+                                exchangeType, autoDelete);
+                        storeConfiguredObjectEntry(configuredObjectsDatabase, exchangeId, configuredObject, transaction);
+                        exchangeNames.add(exchangeName);
+                    }
+                }
+            };
+            new DatabaseTemplate(environment, OLD_EXCHANGE_DB_NAME, CONFIGURED_OBJECTS_DB_NAME, transaction)
+                    .run(exchangeCursor);
+            environment.removeDatabase(transaction, OLD_EXCHANGE_DB_NAME);
+            _logger.info(exchangeCursor.getRowCount() + " Exchange Entries");
+        }
+        return exchangeNames;
+    }
+
+    private List<String> upgradeQueues(Environment environment, Transaction transaction, final String virtualHostName)
+    {
+        final List<String> queueNames = new ArrayList<String>();
+        _logger.info("Queues");
+        if (environment.getDatabaseNames().contains(OLD_QUEUE_DB_NAME))
+        {
+            final UpgradeQueueBinding queueBinding = new UpgradeQueueBinding();
+            CursorOperation queueCursor = new CursorOperation()
+            {
+                @Override
+                public void processEntry(Database queueDatabase, Database configuredObjectsDatabase,
+                        Transaction transaction, DatabaseEntry key, DatabaseEntry value)
+                {
+                    OldQueueRecord queueRecord = queueBinding.entryToObject(value);
+                    String queueName = queueRecord.getNameShortString().asString();
+                    queueNames.add(queueName);
+                    String owner = queueRecord.getOwner() == null ? null : queueRecord.getOwner().asString();
+                    boolean exclusive = queueRecord.isExclusive();
+                    FieldTable arguments = queueRecord.getArguments();
+
+                    UUID queueId = UUIDGenerator.generateUUID(queueName, virtualHostName);
+                    UpgradeConfiguredObjectRecord configuredObject = createQueueConfiguredObjectRecord(queueName, owner, exclusive,
+                            arguments);
+                    storeConfiguredObjectEntry(configuredObjectsDatabase, queueId, configuredObject, transaction);
+                }
+            };
+            new DatabaseTemplate(environment, OLD_QUEUE_DB_NAME, CONFIGURED_OBJECTS_DB_NAME, transaction).run(queueCursor);
+            environment.removeDatabase(transaction, OLD_QUEUE_DB_NAME);
+            _logger.info(queueCursor.getRowCount() + " Queue Entries");
+        }
+        return queueNames;
+    }
+
+    private void storeConfiguredObjectEntry(Database configuredObjectsDatabase, UUID id,
+            UpgradeConfiguredObjectRecord configuredObject, Transaction transaction)
+    {
+        DatabaseEntry key = new DatabaseEntry();
+        DatabaseEntry value = new DatabaseEntry();
+        UpgradeUUIDBinding uuidBinding = new UpgradeUUIDBinding();
+        uuidBinding.objectToEntry(id, key);
+        ConfiguredObjectBinding configuredBinding = new ConfiguredObjectBinding();
+        configuredBinding.objectToEntry(configuredObject, value);
+        put(configuredObjectsDatabase, transaction, key, value);
+    }
+
+    private UpgradeConfiguredObjectRecord createQueueConfiguredObjectRecord(String queueName, String owner, boolean exclusive,
+            FieldTable arguments)
+    {
+        Map<String, Object> attributesMap = new HashMap<String, Object>();
+        attributesMap.put(Queue.NAME, queueName);
+        attributesMap.put(Queue.OWNER, owner);
+        attributesMap.put(Queue.EXCLUSIVE, exclusive);
+        if (arguments != null)
+        {
+            attributesMap.put("ARGUMENTS", FieldTable.convertToMap(arguments));
+        }
+        String json = _serializer.serialize(attributesMap);
+        UpgradeConfiguredObjectRecord configuredObject = new UpgradeConfiguredObjectRecord(Queue.class.getName(), json);
+        return configuredObject;
+    }
+
+    private UpgradeConfiguredObjectRecord createExchangeConfiguredObjectRecord(String exchangeName, String exchangeType,
+            boolean autoDelete)
+    {
+        Map<String, Object> attributesMap = new HashMap<String, Object>();
+        attributesMap.put(Exchange.NAME, exchangeName);
+        attributesMap.put(Exchange.TYPE, exchangeType);
+        attributesMap.put(Exchange.LIFETIME_POLICY, autoDelete ? LifetimePolicy.AUTO_DELETE.name()
+                : LifetimePolicy.PERMANENT.name());
+        String json = _serializer.serialize(attributesMap);
+        UpgradeConfiguredObjectRecord configuredObject = new UpgradeConfiguredObjectRecord(Exchange.class.getName(), json);
+        return configuredObject;
+    }
+
+    private UpgradeConfiguredObjectRecord createBindingConfiguredObjectRecord(String exchangeName, String queueName,
+            String routingKey, FieldTable arguments, String virtualHostName)
+    {
+        Map<String, Object> attributesMap = new HashMap<String, Object>();
+        attributesMap.put(Binding.NAME, routingKey);
+        attributesMap.put(Binding.EXCHANGE, UUIDGenerator.generateUUID(exchangeName, virtualHostName));
+        attributesMap.put(Binding.QUEUE, UUIDGenerator.generateUUID(queueName, virtualHostName));
+        if (arguments != null)
+        {
+            attributesMap.put(Binding.ARGUMENTS, FieldTable.convertToMap(arguments));
+        }
+        String json = _serializer.serialize(attributesMap);
+        UpgradeConfiguredObjectRecord configuredObject = new UpgradeConfiguredObjectRecord(Binding.class.getName(), json);
+        return configuredObject;
+    }
+
+    private void put(final Database database, Transaction txn, DatabaseEntry key, DatabaseEntry value)
+    {
+        OperationStatus status = database.put(txn, key, value);
+        if (status != OperationStatus.SUCCESS)
+        {
+            throw new RuntimeException("Cannot add record into " + database.getDatabaseName() + ":" + status);
+        }
     }
 
     static final class CompoundKey
@@ -369,4 +704,504 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
         }
     }
 
+    static class OldQueueRecord extends Object
+    {
+        private final AMQShortString _queueName;
+        private final AMQShortString _owner;
+        private final FieldTable _arguments;
+        private boolean _exclusive;
+
+        public OldQueueRecord(AMQShortString queueName, AMQShortString owner, boolean exclusive, FieldTable arguments)
+        {
+            _queueName = queueName;
+            _owner = owner;
+            _exclusive = exclusive;
+            _arguments = arguments;
+        }
+
+        public AMQShortString getNameShortString()
+        {
+            return _queueName;
+        }
+
+        public AMQShortString getOwner()
+        {
+            return _owner;
+        }
+
+        public boolean isExclusive()
+        {
+            return _exclusive;
+        }
+
+        public void setExclusive(boolean exclusive)
+        {
+            _exclusive = exclusive;
+        }
+
+        public FieldTable getArguments()
+        {
+            return _arguments;
+        }
+
+    }
+
+    static class UpgradeConfiguredObjectRecord
+    {
+        private String _attributes;
+        private String _type;
+
+        public UpgradeConfiguredObjectRecord(String type, String attributes)
+        {
+            super();
+            _attributes = attributes;
+            _type = type;
+        }
+
+        public String getAttributes()
+        {
+            return _attributes;
+        }
+
+        public String getType()
+        {
+            return _type;
+        }
+
+    }
+
+    static class UpgradeQueueBinding extends TupleBinding<OldQueueRecord>
+    {
+        public OldQueueRecord entryToObject(TupleInput tupleInput)
+        {
+            AMQShortString name = AMQShortStringEncoding.readShortString(tupleInput);
+            AMQShortString owner = AMQShortStringEncoding.readShortString(tupleInput);
+            FieldTable arguments = FieldTableEncoding.readFieldTable(tupleInput);
+            boolean exclusive = tupleInput.readBoolean();
+            return new OldQueueRecord(name, owner, exclusive, arguments);
+        }
+
+        public void objectToEntry(OldQueueRecord queue, TupleOutput tupleOutput)
+        {
+            AMQShortStringEncoding.writeShortString(queue.getNameShortString(), tupleOutput);
+            AMQShortStringEncoding.writeShortString(queue.getOwner(), tupleOutput);
+            FieldTableEncoding.writeFieldTable(queue.getArguments(), tupleOutput);
+            tupleOutput.writeBoolean(queue.isExclusive());
+        }
+    }
+
+    static class UpgradeUUIDBinding extends TupleBinding<UUID>
+    {
+        public UUID entryToObject(final TupleInput tupleInput)
+        {
+            return new UUID(tupleInput.readLong(), tupleInput.readLong());
+        }
+
+        public void objectToEntry(final UUID uuid, final TupleOutput tupleOutput)
+        {
+            tupleOutput.writeLong(uuid.getMostSignificantBits());
+            tupleOutput.writeLong(uuid.getLeastSignificantBits());
+        }
+    }
+
+    static class ConfiguredObjectBinding extends TupleBinding<UpgradeConfiguredObjectRecord>
+    {
+
+        public UpgradeConfiguredObjectRecord entryToObject(TupleInput tupleInput)
+        {
+            String type = tupleInput.readString();
+            String json = tupleInput.readString();
+            UpgradeConfiguredObjectRecord configuredObject = new UpgradeConfiguredObjectRecord(type, json);
+            return configuredObject;
+        }
+
+        public void objectToEntry(UpgradeConfiguredObjectRecord object, TupleOutput tupleOutput)
+        {
+            tupleOutput.writeString(object.getType());
+            tupleOutput.writeString(object.getAttributes());
+        }
+
+    }
+
+    static class ExchangeRecord extends Object
+    {
+        private final AMQShortString _exchangeName;
+        private final AMQShortString _exchangeType;
+        private final boolean _autoDelete;
+
+        public ExchangeRecord(AMQShortString exchangeName, AMQShortString exchangeType, boolean autoDelete)
+        {
+            _exchangeName = exchangeName;
+            _exchangeType = exchangeType;
+            _autoDelete = autoDelete;
+        }
+
+        public AMQShortString getNameShortString()
+        {
+            return _exchangeName;
+        }
+
+        public AMQShortString getType()
+        {
+            return _exchangeType;
+        }
+
+        public boolean isAutoDelete()
+        {
+            return _autoDelete;
+        }
+
+    }
+
+    static class ExchangeBinding extends TupleBinding<ExchangeRecord>
+    {
+
+        public ExchangeRecord entryToObject(TupleInput tupleInput)
+        {
+            AMQShortString name = AMQShortStringEncoding.readShortString(tupleInput);
+            AMQShortString typeName = AMQShortStringEncoding.readShortString(tupleInput);
+
+            boolean autoDelete = tupleInput.readBoolean();
+
+            return new ExchangeRecord(name, typeName, autoDelete);
+        }
+
+        public void objectToEntry(ExchangeRecord exchange, TupleOutput tupleOutput)
+        {
+            AMQShortStringEncoding.writeShortString(exchange.getNameShortString(), tupleOutput);
+            AMQShortStringEncoding.writeShortString(exchange.getType(), tupleOutput);
+
+            tupleOutput.writeBoolean(exchange.isAutoDelete());
+        }
+    }
+
+    static class BindingRecord extends Object
+    {
+        private final AMQShortString _exchangeName;
+        private final AMQShortString _queueName;
+        private final AMQShortString _routingKey;
+        private final FieldTable _arguments;
+
+        public BindingRecord(AMQShortString exchangeName, AMQShortString queueName, AMQShortString routingKey,
+                FieldTable arguments)
+        {
+            _exchangeName = exchangeName;
+            _queueName = queueName;
+            _routingKey = routingKey;
+            _arguments = arguments;
+        }
+
+        public AMQShortString getExchangeName()
+        {
+            return _exchangeName;
+        }
+
+        public AMQShortString getQueueName()
+        {
+            return _queueName;
+        }
+
+        public AMQShortString getRoutingKey()
+        {
+            return _routingKey;
+        }
+
+        public FieldTable getArguments()
+        {
+            return _arguments;
+        }
+
+    }
+
+    static class QueueBindingBinding extends TupleBinding<BindingRecord>
+    {
+
+        public BindingRecord entryToObject(TupleInput tupleInput)
+        {
+            AMQShortString exchangeName = AMQShortStringEncoding.readShortString(tupleInput);
+            AMQShortString queueName = AMQShortStringEncoding.readShortString(tupleInput);
+            AMQShortString routingKey = AMQShortStringEncoding.readShortString(tupleInput);
+
+            FieldTable arguments = FieldTableEncoding.readFieldTable(tupleInput);
+
+            return new BindingRecord(exchangeName, queueName, routingKey, arguments);
+        }
+
+        public void objectToEntry(BindingRecord binding, TupleOutput tupleOutput)
+        {
+            AMQShortStringEncoding.writeShortString(binding.getExchangeName(), tupleOutput);
+            AMQShortStringEncoding.writeShortString(binding.getQueueName(), tupleOutput);
+            AMQShortStringEncoding.writeShortString(binding.getRoutingKey(), tupleOutput);
+
+            FieldTableEncoding.writeFieldTable(binding.getArguments(), tupleOutput);
+        }
+    }
+
+    static class OldQueueEntryKey
+    {
+        private AMQShortString _queueName;
+        private long _messageId;
+
+        public OldQueueEntryKey(AMQShortString queueName, long messageId)
+        {
+            _queueName = queueName;
+            _messageId = messageId;
+        }
+
+        public AMQShortString getQueueName()
+        {
+            return _queueName;
+        }
+
+        public long getMessageId()
+        {
+            return _messageId;
+        }
+    }
+
+    static class OldQueueEntryBinding extends TupleBinding<OldQueueEntryKey>
+    {
+
+        public OldQueueEntryKey entryToObject(TupleInput tupleInput)
+        {
+            AMQShortString queueName = AMQShortStringEncoding.readShortString(tupleInput);
+            long messageId = tupleInput.readLong();
+
+            return new OldQueueEntryKey(queueName, messageId);
+        }
+
+        public void objectToEntry(OldQueueEntryKey mk, TupleOutput tupleOutput)
+        {
+            AMQShortStringEncoding.writeShortString(mk.getQueueName(), tupleOutput);
+            tupleOutput.writeLong(mk.getMessageId());
+        }
+    }
+
+    static class NewQueueEntryKey
+    {
+        private UUID _queueId;
+        private long _messageId;
+
+        public NewQueueEntryKey(UUID queueId, long messageId)
+        {
+            _queueId = queueId;
+            _messageId = messageId;
+        }
+
+        public UUID getQueueId()
+        {
+            return _queueId;
+        }
+
+        public long getMessageId()
+        {
+            return _messageId;
+        }
+    }
+
+    static class NewQueueEntryBinding extends TupleBinding<NewQueueEntryKey>
+    {
+
+        public NewQueueEntryKey entryToObject(TupleInput tupleInput)
+        {
+            UUID queueId = new UUID(tupleInput.readLong(), tupleInput.readLong());
+            long messageId = tupleInput.readLong();
+
+            return new NewQueueEntryKey(queueId, messageId);
+        }
+
+        public void objectToEntry(NewQueueEntryKey mk, TupleOutput tupleOutput)
+        {
+            UUID uuid = mk.getQueueId();
+            tupleOutput.writeLong(uuid.getMostSignificantBits());
+            tupleOutput.writeLong(uuid.getLeastSignificantBits());
+            tupleOutput.writeLong(mk.getMessageId());
+        }
+    }
+
+    static class NewPreparedTransaction
+    {
+        private final NewRecordImpl[] _enqueues;
+        private final NewRecordImpl[] _dequeues;
+
+        public NewPreparedTransaction(NewRecordImpl[] enqueues, NewRecordImpl[] dequeues)
+        {
+            _enqueues = enqueues;
+            _dequeues = dequeues;
+        }
+
+        public NewRecordImpl[] getEnqueues()
+        {
+            return _enqueues;
+        }
+
+        public NewRecordImpl[] getDequeues()
+        {
+            return _dequeues;
+        }
+    }
+
+    static class NewRecordImpl
+    {
+
+        private long _messageNumber;
+        private UUID _queueId;
+
+        public NewRecordImpl(UUID queueId, long messageNumber)
+        {
+            _messageNumber = messageNumber;
+            _queueId = queueId;
+        }
+
+        public long getMessageNumber()
+        {
+            return _messageNumber;
+        }
+
+        public UUID getId()
+        {
+            return _queueId;
+        }
+    }
+
+    static class NewPreparedTransactionBinding extends TupleBinding<NewPreparedTransaction>
+    {
+        @Override
+        public NewPreparedTransaction entryToObject(TupleInput input)
+        {
+            NewRecordImpl[] enqueues = readRecords(input);
+
+            NewRecordImpl[] dequeues = readRecords(input);
+
+            return new NewPreparedTransaction(enqueues, dequeues);
+        }
+
+        private NewRecordImpl[] readRecords(TupleInput input)
+        {
+            NewRecordImpl[] records = new NewRecordImpl[input.readInt()];
+            for (int i = 0; i < records.length; i++)
+            {
+                records[i] = new NewRecordImpl(new UUID(input.readLong(), input.readLong()), input.readLong());
+            }
+            return records;
+        }
+
+        @Override
+        public void objectToEntry(NewPreparedTransaction preparedTransaction, TupleOutput output)
+        {
+            writeRecords(preparedTransaction.getEnqueues(), output);
+            writeRecords(preparedTransaction.getDequeues(), output);
+        }
+
+        private void writeRecords(NewRecordImpl[] records, TupleOutput output)
+        {
+            if (records == null)
+            {
+                output.writeInt(0);
+            }
+            else
+            {
+                output.writeInt(records.length);
+                for (NewRecordImpl record : records)
+                {
+                    UUID id = record.getId();
+                    output.writeLong(id.getMostSignificantBits());
+                    output.writeLong(id.getLeastSignificantBits());
+                    output.writeLong(record.getMessageNumber());
+                }
+            }
+        }
+    }
+
+    static class OldRecordImpl
+    {
+
+        private long _messageNumber;
+        private String _queueName;
+
+        public OldRecordImpl(String queueName, long messageNumber)
+        {
+            _messageNumber = messageNumber;
+            _queueName = queueName;
+        }
+
+        public long getMessageNumber()
+        {
+            return _messageNumber;
+        }
+
+        public String getQueueName()
+        {
+            return _queueName;
+        }
+    }
+
+    static class OldPreparedTransaction
+    {
+        private final OldRecordImpl[] _enqueues;
+        private final OldRecordImpl[] _dequeues;
+
+        public OldPreparedTransaction(OldRecordImpl[] enqueues, OldRecordImpl[] dequeues)
+        {
+            _enqueues = enqueues;
+            _dequeues = dequeues;
+        }
+
+        public OldRecordImpl[] getEnqueues()
+        {
+            return _enqueues;
+        }
+
+        public OldRecordImpl[] getDequeues()
+        {
+            return _dequeues;
+        }
+    }
+
+    static class OldPreparedTransactionBinding extends TupleBinding<OldPreparedTransaction>
+    {
+        @Override
+        public OldPreparedTransaction entryToObject(TupleInput input)
+        {
+            OldRecordImpl[] enqueues = readRecords(input);
+
+            OldRecordImpl[] dequeues = readRecords(input);
+
+            return new OldPreparedTransaction(enqueues, dequeues);
+        }
+
+        private OldRecordImpl[] readRecords(TupleInput input)
+        {
+            OldRecordImpl[] records = new OldRecordImpl[input.readInt()];
+            for (int i = 0; i < records.length; i++)
+            {
+                records[i] = new OldRecordImpl(input.readString(), input.readLong());
+            }
+            return records;
+        }
+
+        @Override
+        public void objectToEntry(OldPreparedTransaction preparedTransaction, TupleOutput output)
+        {
+            writeRecords(preparedTransaction.getEnqueues(), output);
+            writeRecords(preparedTransaction.getDequeues(), output);
+        }
+
+        private void writeRecords(OldRecordImpl[] records, TupleOutput output)
+        {
+            if (records == null)
+            {
+                output.writeInt(0);
+            }
+            else
+            {
+                output.writeInt(records.length);
+                for (OldRecordImpl record : records)
+                {
+                    output.writeString(record.getQueueName());
+                    output.writeLong(record.getMessageNumber());
+                }
+            }
+        }
+    }
 }

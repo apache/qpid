@@ -255,7 +255,7 @@ public class TestExchange implements Exchange
         return 0;
     }
 
-    public void initialise(VirtualHost arg0, AMQShortString arg1, boolean arg2, int arg3, boolean arg4)
+    public void initialise(UUID id, VirtualHost arg0, AMQShortString arg1, boolean arg2, int arg3, boolean arg4)
             throws AMQException
     {
     }

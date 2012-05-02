@@ -20,20 +20,22 @@
 */
 package org.apache.qpid.server.store;
 
+import java.util.UUID;
+
 public interface TransactionLogRecoveryHandler
 {
     QueueEntryRecoveryHandler begin(MessageStore log);
 
     public static interface QueueEntryRecoveryHandler
     {
-        void queueEntry(String queuename, long messageId);
-
         DtxRecordRecoveryHandler completeQueueEntryRecovery();
+
+        void queueEntry(UUID queueId, long messageId);
     }
 
     public static interface DtxRecordRecoveryHandler
     {
-        void dtxRecord(long format, byte[] globalId, byte[] branchId, MessageStore.Transaction.Record[] enqueues, MessageStore.Transaction.Record[] dequeues);
+        void dtxRecord(long format, byte[] globalId, byte[] branchId, Transaction.Record[] enqueues, Transaction.Record[] dequeues);
 
         void completeDtxRecordRecovery();
     }

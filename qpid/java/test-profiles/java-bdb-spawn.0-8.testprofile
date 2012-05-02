@@ -23,11 +23,11 @@ broker.command=build/bin/qpid-server -p @PORT -m @MPORT @EXCLUDES -c @CONFIG_FIL
 broker.ready=BRK-1004
 broker.stopped=Exception
 broker.config=build/etc/config-systests-bdb.xml
-messagestore.class.name=org.apache.qpid.server.store.berkeleydb.BDBMessageStore
+messagestorefactory.class.name=org.apache.qpid.server.store.berkeleydb.BDBMessageStoreFactory
 profile.excludes=JavaExcludes JavaPersistentExcludes XAExcludes JavaPre010Excludes JavaBDBExcludes
 broker.clean.between.tests=true
 broker.persistent=true
-broker.protocol.excludes=--exclude-0-10 @PORT --exclude-0-10 @SSL_PORT --exclude-0-9-1 @PORT --exclude-0-9-1 @SSL_PORT --exclude-0-9 @PORT --exclude-0-9 @SSL_PORT
+broker.protocol.excludes=--exclude-0-10 @PORT --exclude-0-10 @SSL_PORT --exclude-1-0 @PORT --exclude-1-0 @SSL_PORT --exclude-0-9-1 @PORT --exclude-0-9-1 @SSL_PORT --exclude-0-9 @PORT --exclude-0-9 @SSL_PORT
 broker.version=v0_8
 #
 # Do not enable. Allow client to attempt 0-10 and negotiate downwards

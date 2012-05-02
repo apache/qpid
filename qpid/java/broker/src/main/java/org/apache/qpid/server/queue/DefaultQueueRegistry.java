@@ -20,15 +20,21 @@
  */
 package org.apache.qpid.server.queue;
 
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.exchange.DefaultExchangeRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class DefaultQueueRegistry implements QueueRegistry
 {
+    private static final Logger LOGGER = Logger.getLogger(DefaultExchangeRegistry.class);
+
     private ConcurrentMap<AMQShortString, AMQQueue> _queueMap = new ConcurrentHashMap<AMQShortString, AMQQueue>();
 
     private final VirtualHost _virtualHost;
@@ -71,5 +77,37 @@ public class DefaultQueueRegistry implements QueueRegistry
     public AMQQueue getQueue(String queue)
     {
         return getQueue(new AMQShortString(queue));
+    }
+
+    @Override
+    public void stopAllAndUnregisterMBeans()
+    {
+        for (final AMQQueue queue : getQueues())
+        {
+            queue.stop();
+            try
+            {
+                queue.getManagedObject().unregister();
+            }
+            catch (AMQException e)
+            {
+                LOGGER.warn("Failed to unregister mbean", e);
+            }
+        }
+        _queueMap.clear();
+    }
+
+    @Override
+    public synchronized AMQQueue getQueue(UUID queueId)
+    {
+        Collection<AMQQueue> queues = _queueMap.values();
+        for (AMQQueue queue : queues)
+        {
+            if (queue.getId().equals(queueId))
+            {
+                return queue;
+            }
+        }
+        return null;
     }
 }

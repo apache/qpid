@@ -27,6 +27,7 @@
 #include "qpid/broker/QueueFlowLimit.h"
 #include "qpid/sys/Time.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/framing/FieldValue.h"
 #include "MessageUtils.h"
 #include "BrokerFixture.h"
 

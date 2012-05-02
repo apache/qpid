@@ -66,34 +66,6 @@ public class QpidRAProperties extends ConnectionFactoryProperties implements Ser
       }
    }
 
-   /**
-    * Get the use XA flag
-    * @return The value
-    */
-   public Boolean getUseLocalTx()
-   {
-      if (_log.isTraceEnabled())
-      {
-         _log.trace("getUseLocalTx()");
-      }
-
-      return _localTx;
-   }
-
-   /**
-    * Set the use XA flag
-    * @param localTx The value
-    */
-   public void setUseLocalTx(final Boolean localTx)
-   {
-      if (_log.isTraceEnabled())
-      {
-         _log.trace("setUseLocalTx(" + localTx + ")");
-      }
-
-      this._localTx = localTx;
-   }
-
    public void setTransactionManagerLocatorClass(final String transactionManagerLocatorClass)
    {
       if (_log.isTraceEnabled())

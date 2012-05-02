@@ -30,3 +30,4 @@ org.apache.qpid.server.logging.MemoryMessageStoreLoggingTest#testMessageStoreClo
 org.apache.qpid.server.logging.DerbyMessageStoreLoggingTest#*
 
 org.apache.qpid.client.ssl.SSLTest#testVerifyLocalHostLocalDomain
+

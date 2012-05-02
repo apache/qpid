@@ -192,7 +192,8 @@ stop_brokers
 test -z $CLUSTER_LIB && exit 0	# Exit if cluster not supported.
 
 ## Test failover in a cluster using SSL only
-. $srcdir/ais_check		# Will exit if clustering not enabled.
+source cpg_check.sh
+cpg_enabled || exit 0
 
 PORT1=`pick_port`; ssl_cluster_broker $PORT1
 echo "Running SSL cluster broker on port $PORT1"

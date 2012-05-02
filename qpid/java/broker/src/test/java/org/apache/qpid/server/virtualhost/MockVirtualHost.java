@@ -33,12 +33,12 @@ import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
-import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.DtxRegistry;
 
@@ -111,11 +111,6 @@ public class MockVirtualHost implements VirtualHost
         return null;
     }
 
-    public DurableConfigurationStore getDurableConfigurationStore()
-    {
-        return null;
-    }
-
     public ExchangeFactory getExchangeFactory()
     {
         return null;
@@ -175,6 +170,11 @@ public class MockVirtualHost implements VirtualHost
     public void removeBrokerConnection(BrokerLink brokerLink)
     {
 
+    }
+
+    public LinkRegistry getLinkRegistry(String remoteContainerId)
+    {
+        return null;
     }
 
     public ScheduledFuture<?> scheduleTask(long delay, Runnable timeoutTask)
@@ -280,5 +280,11 @@ public class MockVirtualHost implements VirtualHost
     public void setStatisticsEnabled(boolean enabled)
     {
 
+    }
+
+    @Override
+    public State getState()
+    {
+        return State.ACTIVE;
     }
 }

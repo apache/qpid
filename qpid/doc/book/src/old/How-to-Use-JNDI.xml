@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ 
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ 
+-->
+
+<chapter id="How-to-Use-JNDI">
+  <title>
+    How to Use JNDI
+  </title>
+  <section role="h2" id="HowtoUseJNDI-HowtousethePropertiesFileInitialContextFactory">
+      <title>
+	How to use the PropertiesFileInitialContextFactory
+      </title>
+
+	  <para>
+            This ContextFactory uses a java properties formatted file to
+            setup initial values.
+          </para>
+	  <section role="h3" id="HowtoUseJNDI-JNDIPropertysetup">
+	    <title>
+	      JNDI Property setup
+	    </title>
+	    <para>
+            By setting the JNDI Initial Context Factory and URL as
+            below it is possible to load any File from the locally
+            mounted file system to use for JNDI purposes. The format
+            of the file is described in the next section.
+	    </para>
+            <programlisting>
+java.naming.factory.initial = org.apache.qpid.jndi.PropertiesFileInitialContextFactory
+java.naming.provider.url = &lt;path to JNDI File&gt;
+</programlisting>
+            <para>
+	      By simply setting these two system properties you can jump
+	      straight to the InitialContext creation in your code.
+	    </para>
+	  </section>
+	  <section role="h3" id="HowtoUseJNDI-Examplepropertiesfile">
+	    <title>
+            Example properties file </title>
+	    <para>
+	      This is the example properties file.
+	    </para>
+            <programlisting>
+# register some connection factories
+# connectionfactory.[jndiname] = [ConnectionURL]
+connectionfactory.local = amqp://guest:guest@clientid/testpath?brokerlist='vm://:1'
+
+# register some queues in JNDI using the form
+# queue.[jndiName] = [physicalName]
+queue.MyQueue = example.MyQueue
+
+# register some topics in JNDI using the form
+# topic.[jndiName] = [physicalName]
+topic.ibmStocks = stocks.nyse.ibm
+
+# Register an AMQP destination in JNDI
+#   NOTE: Qpid currently only supports direct,topics and headers
+# destination.[jniName] = [BindingURL]
+destination.direct = direct://amq.direct//directQueue
+</programlisting>
+          <para>
+            The property file allows a number of queues to be defined that
+            can then be discovered via JNDI. There are four properties used
+            by the PFICFactory.
+            <emphasis>connectionfactory.&lt;jndiname&gt;</emphasis> this is the <xref linkend="Connection-URL-Format"/> that the connection
+            factory will use to perform connections.
+            <emphasis>queue.&lt;jndiname&gt;</emphasis> this defines a jms queue or in
+            amqp a amq.direct exchange
+            <emphasis>topic.&lt;jndiname&gt;</emphasis> this defines a jms topic or in
+            amqp a amq.topic exchange
+            <emphasis>destination.&lt;jndiname&gt;</emphasis> this takes a <xref linkend="BindingURLFormat"/>
+            and so can be used for defining all amq destinations, queues,
+            topics and header matching.
+          </para><para>
+            In all of these properties the <emphasis>&lt;jndiname&gt;</emphasis> is the
+            string value that would be given when performing a lookup.
+          </para><para>
+            <emphasis>NOTE</emphasis>: This does not create the queue on the broker. You
+            should ensure that you have created the queue before publishing
+            to it. Queues can be declared in the virtualhosts.xml file so
+            that they are created on broker startup, or created dynamically
+            by consuming clients. Topics and other destinations that use
+            temporary queues cannot be created in this way, so a consumer
+            must be created first before publishing messages with mandatory
+            routing.
+          </para>
+	  </section>
+	  <section role="h3" id="HowtoUseJNDI-Examplelookupcode">
+	    <title>
+	      Example lookup code 
+	    </title><!--h3-->
+
+	    <para>
+            The <emphasis>bindingValue</emphasis> is the String that would be placed in
+            <emphasis>&lt;jndiname&gt;</emphasis> above.
+          </para>
+
+	  <example>
+	    <title>Simple JNDI lookup using files</title>
+              <programlisting>
+//Ensure you have your system properties set
+final String INITIAL_CONTEXT_FACTORY = "org.apache.qpid.jndi.PropertiesFileInitialContextFactory";
+
+System.setProperty(Context.INITIAL_CONTEXT_FACTORY, INITIAL_CONTEXT_FACTORY);
+System.setProperty(Context.PROVIDER_URL, _JNDIFile);
+
+// Create the initial context
+Context ctx = new InitialContext();
+
+// Perform the binds
+object = ctx.lookup(bindingValue);
+
+// Close the context when we're done
+ctx.close();
+</programlisting>
+</example>            
+          
+<example>
+<title>Simple JNDI lookup using properties</title>
+            
+              <programlisting>
+
+final String INITIAL_CONTEXT_FACTORY = "org.apache.qpid.jndi.PropertiesFileInitialContextFactory";
+
+final String CONNECTION_JNDI_NAME = "local";
+final String CONNECTION_NAME = "amqp://guest:guest@clientid/testpath?brokerlist='vm://:1'";
+
+final String QUEUE_JNDI_NAME = "queue";
+final String QUEUE_NAME = "example.MyQueue";
+
+// Set the properties ... 
+Properties properties = new Properties();
+properties.put(Context.INITIAL_CONTEXT_FACTORY, INITIAL_CONTEXT_FACTORY);
+properties.put("connectionfactory."+CONNECTION_JNDI_NAME , CONNECTION_NAME);
+properties.put("queue."+QUEUE_JNDI_NAME , QUEUE_NAME);
+
+// Create the initial context
+Context ctx = new InitialContext(properties);
+
+// Perform the lookups
+ConnectionFactory factory = (ConnectionFactory)ctx.lookup(CONNECTION_JNDI_NAME);
+Queue queue = (Queue)ctx.lookup(QUEUE_JNDI_NAME);
+
+// Close the context when we're done
+ctx.close();
+</programlisting>
+</example>
+	  </section>
+
+	  <section>
+	    <title>Using Qpid with Other JNDI Providers</title>
+	    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Using-Qpid-with-other-JNDI-Providers.xml"/>
+	  </section>
+<!--h2-->
+	  </section>
+
+</chapter>

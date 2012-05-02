@@ -25,7 +25,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.message.MessageMetaData;
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
 
 import java.nio.ByteBuffer;
@@ -105,9 +105,9 @@ public class MockStoredMessage implements StoredMessage<MessageMetaData>
         return  buf;
     }
 
-    public MessageStore.StoreFuture flushToStore()
+    public StoreFuture flushToStore()
     {
-        return MessageStore.IMMEDIATE_FUTURE;
+        return StoreFuture.IMMEDIATE_FUTURE;
     }
 
     public void remove()

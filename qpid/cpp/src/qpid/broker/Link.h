@@ -46,15 +46,23 @@ namespace broker {
 class LinkRegistry;
 class Broker;
 class Connection;
+class LinkExchange;
 
 class Link : public PersistableConfig, public management::Manageable {
   private:
-    sys::Mutex          lock;
+    mutable sys::Mutex  lock;
     const std::string   name;
     LinkRegistry*       links;
-    std::string        host;
-    uint16_t      port;
-    std::string        transport;
+
+    // these remain constant across failover - used to identify this link
+    const std::string   configuredTransport;
+    const std::string   configuredHost;
+    const uint16_t      configuredPort;
+    // these reflect the current address of remote - will change during failover
+    std::string         host;
+    uint16_t            port;
+    std::string         transport;
+
     bool          durable;
     std::string        authMechanism;
     std::string        username;
@@ -77,8 +85,10 @@ class Link : public PersistableConfig, public management::Manageable {
     Connection* connection;
     management::ManagementAgent* agent;
     boost::function<void(Link*)> listener;
-
     boost::intrusive_ptr<sys::TimerTask> timerTask;
+    boost::shared_ptr<broker::LinkExchange> failoverExchange;  // subscribed to remote's amq.failover exchange
+    uint failoverChannel;
+    std::string failoverSession;
 
     static const int STATE_WAITING     = 1;
     static const int STATE_CONNECTING  = 2;
@@ -102,6 +112,8 @@ class Link : public PersistableConfig, public management::Manageable {
     void opened();      // Called when connection is open (after create)
     void closed(int, std::string);   // Called when connection goes away
     void notifyConnectionForced(const std::string text);
+    void closeConnection(const std::string& reason);
+
     friend class LinkRegistry; // to call established, opened, closed
 
   public:
@@ -122,9 +134,16 @@ class Link : public PersistableConfig, public management::Manageable {
          management::Manageable* parent = 0);
     virtual ~Link();
 
-    std::string getHost() { return host; }
-    uint16_t    getPort() { return port; }
-    std::string getTransport() { return transport; }
+    /** these return the *configured* transport/host/port, which does not change over the
+        lifetime of the Link */
+    std::string getHost() const { return configuredHost; }
+    uint16_t    getPort() const { return configuredPort; }
+    std::string getTransport() const { return configuredTransport; }
+
+    /** returns the current address of the remote, which may be different from the
+        configured transport/host/port due to failover. Returns true if connection is
+        active */
+    bool getRemoteAddress(qpid::Address& addr) const;
 
     bool isDurable() { return durable; }
     void maintenanceVisit ();
@@ -161,6 +180,13 @@ class Link : public PersistableConfig, public management::Manageable {
     management::ManagementObject*    GetManagementObject(void) const;
     management::Manageable::status_t ManagementMethod(uint32_t, management::Args&, std::string&);
 
+    // manage the exchange owned by this link
+    static const std::string exchangeTypeName;
+    static boost::shared_ptr<Exchange> linkExchangeFactory(const std::string& name);
+
+    // replicate internal state of this Link for clustering
+    void getState(framing::FieldTable& state) const;
+    void setState(const framing::FieldTable& state);
 };
 }
 }

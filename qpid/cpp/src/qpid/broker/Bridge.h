@@ -33,6 +33,7 @@
 #include "qmf/org/apache/qpid/broker/Bridge.h"
 
 #include <boost/function.hpp>
+#include <boost/enable_shared_from_this.hpp>
 #include <memory>
 
 namespace qpid {
@@ -44,7 +45,10 @@ class Link;
 class LinkRegistry;
 class SessionHandler;
 
-class Bridge : public PersistableConfig, public management::Manageable, public Exchange::DynamicBridge
+class Bridge : public PersistableConfig,
+               public management::Manageable,
+               public Exchange::DynamicBridge,
+               public boost::enable_shared_from_this<Bridge>
 {
 public:
     typedef boost::shared_ptr<Bridge> shared_ptr;
@@ -64,7 +68,7 @@ public:
     const std::string getDest() const { return args.i_dest; }
     const std::string getKey() const { return args.i_key; }
 
-    bool isSessionReady() const;
+    bool isDetached() const { return detached; }
 
     management::ManagementObject* GetManagementObject() const;
     management::Manageable::status_t ManagementMethod(uint32_t methodId,
@@ -95,6 +99,9 @@ public:
     const qmf::org::apache::qpid::broker::ArgsLinkBridge& getArgs() { return args; }
 
 private:
+    // Callback when the bridge's session is detached.
+    void sessionDetached();
+
     struct PushHandler : framing::FrameHandler {
         PushHandler(Connection* c) { conn = c; }
         void handle(framing::AMQFrame& frame);
@@ -117,7 +124,7 @@ private:
     ConnectionState* connState;
     Connection* conn;
     InitializeCallback initialize;
-
+    bool detached;              // Set when session is detached.
     bool resetProxy();
 
     // connection Management (called by owning Link)

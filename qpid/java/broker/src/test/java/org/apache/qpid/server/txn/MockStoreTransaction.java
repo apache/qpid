@@ -20,19 +20,13 @@
  */
 package org.apache.qpid.server.txn;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.NotImplementedException;
-
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStore.StoreFuture;
-import org.apache.qpid.server.store.MessageStore.Transaction;
-import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
-import org.apache.qpid.server.store.StorableMessageMetaData;
-import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
+import org.apache.qpid.server.store.NullMessageStore;
+import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.store.TransactionLogResource;
 
 /**
@@ -122,42 +116,14 @@ class MockStoreTransaction implements Transaction
 
     public static MessageStore createTestTransactionLog(final MockStoreTransaction storeTransaction)
     {
-        return new MessageStore()
+        return new NullMessageStore()
         {
-            public void configureMessageStore(final String name,
-                                              final MessageStoreRecoveryHandler recoveryHandler,
-                                              final Configuration config,
-                                              final LogSubject logSubject) throws Exception
-            {
-                //TODO.
-            }
-
-            public void close() throws Exception
-            {
-                //TODO.
-            }
-
-            public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(final T metaData)
-            {
-                return null;  //TODO.
-            }
-
-            public boolean isPersistent()
-            {
-                return false;  //TODO.
-            }
-
-            public void configureTransactionLog(String name, TransactionLogRecoveryHandler recoveryHandler,
-                    Configuration storeConfiguration, LogSubject logSubject) throws Exception
-            {
-            }
-
+            @Override
             public Transaction newTransaction()
             {
                 storeTransaction.setState(TransactionState.STARTED);
                 return storeTransaction;
             }
-            
-        };
+       };
     }
 }

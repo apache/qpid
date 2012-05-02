@@ -17,6 +17,7 @@
  */
 
 #include "qpid/acl/Acl.h"
+#include "qpid/acl/AclConnectionCounter.h"
 #include "qpid/acl/AclData.h"
 #include "qpid/acl/AclValidator.h"
 #include "qpid/sys/Mutex.h"
@@ -26,6 +27,8 @@
 #include "qpid/Options.h"
 #include "qpid/log/Logger.h"
 #include "qpid/types/Variant.h"
+#include "qmf/org/apache/qpid/acl/ArgsAclLookup.h"
+#include "qmf/org/apache/qpid/acl/ArgsAclLookupPublish.h"
 #include "qmf/org/apache/qpid/acl/Package.h"
 #include "qmf/org/apache/qpid/acl/EventAllow.h"
 #include "qmf/org/apache/qpid/acl/EventDeny.h"
@@ -35,7 +38,6 @@
 #include <map>
 
 #include <boost/shared_ptr.hpp>
-#include <boost/utility/in_place_factory.hpp>
 
 using namespace std;
 using namespace qpid::acl;
@@ -47,7 +49,8 @@ using qpid::management::Manageable;
 using qpid::management::Args;
 namespace _qmf = qmf::org::apache::qpid::acl;
 
-Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(false), mgmtObject(0)
+Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(false), mgmtObject(0),
+    connectionCounter(new ConnectionCounter(aclValues.aclMaxConnectPerUser, aclValues.aclMaxConnectPerIp))
 {
 
     agent = broker->getManagementAgent();
@@ -62,6 +65,7 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
         throw Exception("Could not read ACL file " + errorString);
         if (mgmtObject!=0) mgmtObject->set_enforcingAcl(0);
     }
+    broker->getConnectionObservers().add(connectionCounter);
     QPID_LOG(info, "ACL Plugin loaded");
     if (mgmtObject!=0) mgmtObject->set_enforcingAcl(1);
 }
@@ -193,14 +197,89 @@ bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {
     return true;
 }
 
-Acl::~Acl(){}
+
+//
+// management lookup function performs general query on acl engine
+//
+Manageable::status_t Acl::lookup(qpid::management::Args& args, std::string& text)
+{
+    _qmf::ArgsAclLookup& ioArgs = (_qmf::ArgsAclLookup&) args;
+    Manageable::status_t result(STATUS_USER);
+
+   try {
+        ObjectType   objType = AclHelper::getObjectType(ioArgs.i_object);
+        Action       action  = AclHelper::getAction(    ioArgs.i_action);
+        std::map<Property, std::string> propertyMap;
+        for (::qpid::types::Variant::Map::const_iterator
+             iMapIter  = ioArgs.i_propertyMap.begin();
+             iMapIter != ioArgs.i_propertyMap.end();
+             iMapIter++)
+        {
+            Property property = AclHelper::getProperty(iMapIter->first);
+            propertyMap.insert(make_pair(property, iMapIter->second));
+        }
+
+        boost::shared_ptr<AclData> dataLocal;
+        {
+            Mutex::ScopedLock locker(dataLock);
+            dataLocal = data;  //rcu copy
+        }
+        AclResult aclResult = dataLocal->lookup(
+            ioArgs.i_userId,
+            action,
+            objType,
+            ioArgs.i_objectName,
+            &propertyMap);
+
+        ioArgs.o_result = AclHelper::getAclResultStr(aclResult);
+        result = STATUS_OK;
+
+    } catch (const std::exception& e) {
+        std::ostringstream oss;
+        oss << "AclLookup invalid name : " << e.what();
+        ioArgs.o_result =  oss.str();
+        text = oss.str();
+    }
+
+    return result;
+}
+
+
+//
+// management lookupPublish function performs fastpath
+// PUBLISH EXCHANGE query on acl engine
+//
+Manageable::status_t Acl::lookupPublish(qpid::management::Args& args, std::string& /*text*/)
+{
+    _qmf::ArgsAclLookupPublish& ioArgs = (_qmf::ArgsAclLookupPublish&) args;
+    boost::shared_ptr<AclData>       dataLocal;
+    {
+        Mutex::ScopedLock locker(dataLock);
+        dataLocal = data;  //rcu copy
+    }
+    AclResult aclResult = dataLocal->lookup(
+        ioArgs.i_userId,
+        ACT_PUBLISH,
+        OBJ_EXCHANGE,
+        ioArgs.i_exchangeName,
+        ioArgs.i_routingKey);
+
+    ioArgs.o_result = AclHelper::getAclResultStr(aclResult);
+
+    return STATUS_OK;
+}
+
+
+Acl::~Acl(){
+    broker->getConnectionObservers().remove(connectionCounter);
+}
 
 ManagementObject* Acl::GetManagementObject(void) const
 {
     return (ManagementObject*) mgmtObject;
 }
 
-Manageable::status_t Acl::ManagementMethod (uint32_t methodId, Args& /*args*/, string& text)
+Manageable::status_t Acl::ManagementMethod (uint32_t methodId, Args& args, string& text)
 {
     Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
     QPID_LOG (debug, "ACL: Queue::ManagementMethod [id=" << methodId << "]");
@@ -213,6 +292,14 @@ Manageable::status_t Acl::ManagementMethod (uint32_t methodId, Args& /*args*/, s
             status = Manageable::STATUS_OK;
         else
             status = Manageable::STATUS_USER;
+        break;
+
+    case _qmf::Acl::METHOD_LOOKUP :
+        status = lookup(args, text);
+        break;
+
+    case _qmf::Acl::METHOD_LOOKUPPUBLISH :
+        status = lookupPublish(args, text);
         break;
     }
 

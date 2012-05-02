@@ -24,7 +24,6 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.configuration.BindingConfig;
 import org.apache.qpid.server.configuration.BindingConfigType;
 import org.apache.qpid.server.configuration.ConfigStore;
@@ -33,48 +32,25 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.BindingMessages;
 import org.apache.qpid.server.logging.subjects.BindingLogSubject;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class BindingFactory
 {
     private final VirtualHost _virtualHost;
-    private final DurableConfigurationStore.Source _configSource;
-    private final Exchange _defaultExchange;
 
     private final ConcurrentHashMap<BindingImpl, BindingImpl> _bindings = new ConcurrentHashMap<BindingImpl, BindingImpl>();
 
-
     public BindingFactory(final VirtualHost vhost)
     {
-        this(vhost, vhost.getExchangeRegistry().getDefaultExchange());
+        _virtualHost = vhost;
     }
-
-    public BindingFactory(final DurableConfigurationStore.Source configSource, final Exchange defaultExchange)
-    {
-        _configSource = configSource;
-        _defaultExchange = defaultExchange;
-        if (configSource instanceof VirtualHost)
-        {
-            _virtualHost = (VirtualHost) configSource;
-        }
-        else
-        {
-            _virtualHost = null;
-        }
-    }
-
-    public VirtualHost getVirtualHost()
-    {
-        return _virtualHost;
-    }
-
-
 
     private final class BindingImpl extends Binding implements AMQQueue.Task, Exchange.Task, BindingConfig
     {
@@ -82,9 +58,9 @@ public class BindingFactory
         //TODO : persist creation time
         private long _createTime = System.currentTimeMillis();
 
-        private BindingImpl(String bindingKey, final AMQQueue queue, final Exchange exchange, final Map<String, Object> arguments)
+        private BindingImpl(UUID id, String bindingKey, final AMQQueue queue, final Exchange exchange, final Map<String, Object> arguments)
         {
-            super(queue.getVirtualHost().getConfigStore().createId(), bindingKey, queue, exchange, arguments);
+            super(id, bindingKey, queue, exchange, arguments);
             _logSubject = new BindingLogSubject(bindingKey,exchange,queue);
 
         }
@@ -141,48 +117,59 @@ public class BindingFactory
 
     public boolean addBinding(String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments) throws AMQSecurityException, AMQInternalException 
     {
-        return makeBinding(bindingKey, queue, exchange, arguments, false, false);
+        return makeBinding(null, bindingKey, queue, exchange, arguments, false, false);
     }
 
 
-    public boolean replaceBinding(final String bindingKey,
+    public boolean replaceBinding(final UUID id, final String bindingKey,
                                final AMQQueue queue,
                                final Exchange exchange,
                                final Map<String, Object> arguments) throws AMQSecurityException, AMQInternalException
     {
-        return makeBinding(bindingKey, queue, exchange, arguments, false, true);
+        return makeBinding(id, bindingKey, queue, exchange, arguments, false, true);
     }
 
-    private boolean makeBinding(String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments, boolean restore, boolean force) throws AMQSecurityException, AMQInternalException
+    private boolean makeBinding(UUID id, String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments, boolean restore, boolean force) throws AMQSecurityException, AMQInternalException
     {
         assert queue != null;
+        final Exchange defaultExchange = _virtualHost.getExchangeRegistry().getDefaultExchange();
+
         if (bindingKey == null)
         {
             bindingKey = "";
         }
         if (exchange == null)
         {
-            exchange = _defaultExchange;
+            exchange = defaultExchange;
         }
         if (arguments == null)
         {
             arguments = Collections.emptyMap();
         }
 
+        if (exchange == null)
+        {
+            throw new IllegalArgumentException("exchange cannot be null");
+        }
+
         // The default exchange bindings must reflect the existence of queues, allow
         // all operations on it to succeed. It is up to the broker to prevent illegal
         // attempts at binding to this exchange, not the ACLs.
-        if(exchange != _defaultExchange)
+        if(exchange != defaultExchange)
         {
             //Perform ACLs
-            if (!getVirtualHost().getSecurityManager().authoriseBind(exchange, queue, new AMQShortString(bindingKey)))
+            if (!_virtualHost.getSecurityManager().authoriseBind(exchange, queue, new AMQShortString(bindingKey)))
             {
                 throw new AMQSecurityException("Permission denied: binding " + bindingKey);
             }
         }
-        
-        BindingImpl b = new BindingImpl(bindingKey,queue,exchange,arguments);
-        BindingImpl existingMapping = _bindings.putIfAbsent(b,b);
+
+        if (id == null)
+        {
+            id = UUIDGenerator.generateUUID();
+        }
+        BindingImpl b = new BindingImpl(id, bindingKey, queue, exchange, arguments);
+        BindingImpl existingMapping = _bindings.putIfAbsent(b, b);
         if (existingMapping == null || force)
         {
             if (existingMapping != null)
@@ -192,7 +179,7 @@ public class BindingFactory
 
             if (b.isDurable() && !restore)
             {
-                _configSource.getDurableConfigurationStore().bindQueue(exchange,new AMQShortString(bindingKey),queue,FieldTable.convertToFieldTable(arguments));
+                _virtualHost.getMessageStore().bindQueue(b);
             }
 
             queue.addQueueDeleteTask(b);
@@ -212,12 +199,12 @@ public class BindingFactory
 
     private ConfigStore getConfigStore()
     {
-        return getVirtualHost().getConfigStore();
+        return _virtualHost.getConfigStore();
     }
 
-    public void restoreBinding(final String bindingKey, final AMQQueue queue, final Exchange exchange, final Map<String, Object> argumentMap) throws AMQSecurityException, AMQInternalException
+    public void restoreBinding(final UUID id, final String bindingKey, final AMQQueue queue, final Exchange exchange, final Map<String, Object> argumentMap) throws AMQSecurityException, AMQInternalException
     {
-        makeBinding(bindingKey,queue,exchange,argumentMap,true, false);
+        makeBinding(id, bindingKey,queue,exchange,argumentMap,true, false);
     }
 
     public void removeBinding(final Binding b) throws AMQSecurityException, AMQInternalException
@@ -229,13 +216,15 @@ public class BindingFactory
     public Binding removeBinding(String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments) throws AMQSecurityException, AMQInternalException
     {
         assert queue != null;
+        final Exchange defaultExchange = _virtualHost.getExchangeRegistry().getDefaultExchange();
+
         if (bindingKey == null)
         {
             bindingKey = "";
         }
         if (exchange == null)
         {
-            exchange = _defaultExchange;
+            exchange = defaultExchange;
         }
         if (arguments == null)
         {
@@ -245,16 +234,16 @@ public class BindingFactory
         // The default exchange bindings must reflect the existence of queues, allow
         // all operations on it to succeed. It is up to the broker to prevent illegal
         // attempts at binding to this exchange, not the ACLs.
-        if(exchange != _defaultExchange)
+        if(exchange != defaultExchange)
         {
             // Check access
-            if (!getVirtualHost().getSecurityManager().authoriseUnbind(exchange, new AMQShortString(bindingKey), queue))
+            if (!_virtualHost.getSecurityManager().authoriseUnbind(exchange, new AMQShortString(bindingKey), queue))
             {
                 throw new AMQSecurityException("Permission denied: unbinding " + bindingKey);
             }
         }
         
-        BindingImpl b = _bindings.remove(new BindingImpl(bindingKey,queue,exchange,arguments));
+        BindingImpl b = _bindings.remove(new BindingImpl(null, bindingKey,queue,exchange,arguments));
 
         if (b != null)
         {
@@ -265,10 +254,7 @@ public class BindingFactory
 
             if (b.isDurable())
             {
-                _configSource.getDurableConfigurationStore().unbindQueue(exchange,
-                                         new AMQShortString(bindingKey),
-                                         queue,
-                                         FieldTable.convertToFieldTable(arguments));
+                _virtualHost.getMessageStore().unbindQueue(b);
             }
             b.logDestruction();
             getConfigStore().removeConfiguredObject(b);
@@ -280,20 +266,22 @@ public class BindingFactory
     public Binding getBinding(String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments)
     {
         assert queue != null;
+        final Exchange defaultExchange = _virtualHost.getExchangeRegistry().getDefaultExchange();
+
         if(bindingKey == null)
         {
             bindingKey = "";
         }
         if(exchange == null)
         {
-            exchange = _defaultExchange;
+            exchange = defaultExchange;
         }
         if(arguments == null)
         {
             arguments = Collections.emptyMap();
         }
 
-        BindingImpl b = new BindingImpl(bindingKey,queue,exchange,arguments);
+        BindingImpl b = new BindingImpl(null, bindingKey,queue,exchange,arguments);
         return _bindings.get(b);
     }
 }

@@ -88,6 +88,7 @@ public class ServerConfiguration extends ConfigurationPlugin
     public static final String MGMT_JMXPORT_CONNECTORSERVER = "management.jmxport.connectorServer";
     public static final String STATUS_UPDATES = "status-updates";
     public static final String ADVANCED_LOCALE = "advanced.locale";
+    public static final String CONNECTOR_AMQP10ENABLED = "connector.amqp10enabled";
     public static final String CONNECTOR_AMQP010ENABLED = "connector.amqp010enabled";
     public static final String CONNECTOR_AMQP091ENABLED = "connector.amqp091enabled";
     public static final String CONNECTOR_AMQP09ENABLED = "connector.amqp09enabled";
@@ -667,6 +668,11 @@ public class ServerConfiguration extends ConfigurationPlugin
         return getListValue("connector.port", Collections.<Integer>singletonList(DEFAULT_PORT));
     }
 
+    public List getPortExclude10()
+    {
+        return getListValue("connector.non10port");
+    }
+
     public List getPortExclude010()
     {
         return getListValue("connector.non010port");
@@ -841,6 +847,11 @@ public class ServerConfiguration extends ConfigurationPlugin
     public String getDeadLetterQueueSuffix()
     {
         return getConfig().getString("deadLetterQueueSuffix", AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
+    }
+
+    public boolean isAmqp10enabled()
+    {
+        return getConfig().getBoolean(CONNECTOR_AMQP10ENABLED, true);
     }
 
     public boolean isAmqp010enabled()

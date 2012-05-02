@@ -25,6 +25,7 @@
 #include "qpid/framing/all_method_bodies.h"
 #include "qpid/framing/amqp_framing.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/framing/FieldValue.h"
 #include "unit_test.h"
 
 #include <boost/bind.hpp>

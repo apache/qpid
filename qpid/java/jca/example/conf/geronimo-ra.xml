@@ -67,71 +67,73 @@
       <adminobject-class>org.apache.qpid.ra.admin.QpidTopicImpl</adminobject-class>
       <adminobject-instance>
          <message-destination-name>Dummy</message-destination-name>
-         <config-property-setting name="destinationAddress">amq.topic</config-property-setting>
+         <config-property-setting name="DestinationAddress">amq.topic</config-property-setting>
       </adminobject-instance>
     </adminobject>
     <adminobject>
       <adminobject-interface>org.apache.qpid.ra.admin.QpidTopic</adminobject-interface>
       <adminobject-class>org.apache.qpid.ra.admin.QpidTopicImpl</adminobject-class>
       <adminobject-instance>
-         <message-destination-name>HelloTopic</message-destination-name>
-         <config-property-setting name="destinationAddress">@qpid.hello.topic.dest.address@</config-property-setting>
+          <message-destination-name>HelloTopic</message-destination-name>
+         <config-property-setting name="DestinationAddress">@qpid.hello.topic.dest.address@</config-property-setting>
       </adminobject-instance>
     </adminobject>
     <adminobject>
       <adminobject-interface>org.apache.qpid.ra.admin.QpidTopic</adminobject-interface>
       <adminobject-class>org.apache.qpid.ra.admin.QpidTopicImpl</adminobject-class>
       <adminobject-instance>
-         <message-destination-name>GoodByeTopic</message-destination-name>
-         <config-property-setting name="destinationAddress">@qpid.goodbye.topic.dest.address@</config-property-setting>
+          <message-destination-name>GoodByeTopic</message-destination-name>
+         <config-property-setting name="DestinationAddress">@qpid.goodbye.topic.dest.address@</config-property-setting>
       </adminobject-instance>
     </adminobject>
+    <!--
     <adminobject>
       <adminobject-interface>org.apache.qpid.ra.admin.QpidTopic</adminobject-interface>
       <adminobject-class>org.apache.qpid.ra.admin.QpidTopicImpl</adminobject-class>
       <adminobject-instance>
-         <message-destination-name>HelloGoodByeTopic</message-destination-name>
-         <config-property-setting name="destinationAddress">@qpid.hellogoodbye.topic.dest.address@</config-property-setting>
+          <message-destination-name>jms/HelloGoodByeTopic</message-destination-name>
+         <config-property-setting name="DestinationAddress">@qpid.hellogoodbye.topic.dest.address@</config-property-setting>
+      </adminobject-instance>
+    </adminobject>
+    -->
+    <adminobject>
+      <adminobject-interface>org.apache.qpid.ra.admin.QpidQueue</adminobject-interface>
+      <adminobject-class>org.apache.qpid.ra.admin.QpidQueueImpl</adminobject-class>
+      <adminobject-instance>
+          <message-destination-name>HelloQueue</message-destination-name>
+         <config-property-setting name="DestinationAddress">@qpid.hello.queue.dest.address@</config-property-setting>
       </adminobject-instance>
     </adminobject>
     <adminobject>
       <adminobject-interface>org.apache.qpid.ra.admin.QpidQueue</adminobject-interface>
       <adminobject-class>org.apache.qpid.ra.admin.QpidQueueImpl</adminobject-class>
       <adminobject-instance>
-         <message-destination-name>HelloQueue</message-destination-name>
-         <config-property-setting name="destinationAddress">@qpid.hello.queue.dest.address@</config-property-setting>
+          <message-destination-name>GoodByeQueue</message-destination-name>
+         <config-property-setting name="DestinationAddress">@qpid.goodbye.queue.dest.address@</config-property-setting>
       </adminobject-instance>
     </adminobject>
     <adminobject>
       <adminobject-interface>org.apache.qpid.ra.admin.QpidQueue</adminobject-interface>
       <adminobject-class>org.apache.qpid.ra.admin.QpidQueueImpl</adminobject-class>
       <adminobject-instance>
-         <message-destination-name>GoodByeQueue</message-destination-name>
-         <config-property-setting name="destinationAddress">@qpid.goodbye.queue.dest.address@</config-property-setting>
+          <message-destination-name>RequestQueue</message-destination-name>
+         <config-property-setting name="DestinationAddress">@qpid.request.queue.dest.address@</config-property-setting>
       </adminobject-instance>
     </adminobject>
     <adminobject>
       <adminobject-interface>org.apache.qpid.ra.admin.QpidQueue</adminobject-interface>
       <adminobject-class>org.apache.qpid.ra.admin.QpidQueueImpl</adminobject-class>
       <adminobject-instance>
-         <message-destination-name>RequestQueue</message-destination-name>
-         <config-property-setting name="destinationAddress">@qpid.request.queue.dest.address@</config-property-setting>
-      </adminobject-instance>
-    </adminobject>
-    <adminobject>
-      <adminobject-interface>org.apache.qpid.ra.admin.QpidQueue</adminobject-interface>
-      <adminobject-class>org.apache.qpid.ra.admin.QpidQueueImpl</adminobject-class>
-      <adminobject-instance>
-         <message-destination-name>ResponseQueue</message-destination-name>
-         <config-property-setting name="destinationAddress">@qpid.response.queue.dest.address@</config-property-setting>
+          <message-destination-name>ResponseQueue</message-destination-name>
+         <config-property-setting name="DestinationAddress">@qpid.response.queue.dest.address@</config-property-setting>
       </adminobject-instance>
     </adminobject>
     <adminobject>
       <adminobject-interface>javax.jms.ConnectionFactory</adminobject-interface>
       <adminobject-class>org.apache.qpid.ra.admin.QpidConnectionFactoryProxy</adminobject-class>
       <adminobject-instance>
-         <message-destination-name>QpidConnectionFactory</message-destination-name>
-         <config-property-setting name="connectionURL">@broker.url@</config-property-setting>
+          <message-destination-name>QpidConnectionFactory</message-destination-name>
+         <config-property-setting name="ConnectionURL">@broker.url@</config-property-setting>
       </adminobject-instance>
     </adminobject>
   </resourceadapter>

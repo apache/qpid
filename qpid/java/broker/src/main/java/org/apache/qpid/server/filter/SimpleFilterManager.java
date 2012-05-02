@@ -39,6 +39,12 @@ public class SimpleFilterManager implements FilterManager
         _filters = new ConcurrentLinkedQueue<MessageFilter>();
     }
 
+    public SimpleFilterManager(JMSSelectorFilter messageFilter)
+    {
+        this();
+        add(messageFilter);
+    }
+
     public void add(MessageFilter filter)
     {
         _filters.add(filter);

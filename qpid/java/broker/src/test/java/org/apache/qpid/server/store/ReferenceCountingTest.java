@@ -34,12 +34,12 @@ import org.apache.qpid.test.utils.QpidTestCase;
  */
 public class ReferenceCountingTest extends QpidTestCase
 {
-    private TestMemoryMessageStore _store;
+    private TestableMemoryMessageStore _store;
 
 
     protected void setUp() throws Exception
     {
-        _store = new TestMemoryMessageStore();
+        _store = new TestableMemoryMessageStore();
     }
 
     /**

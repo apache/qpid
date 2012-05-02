@@ -24,7 +24,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
 
 import com.sleepycat.bind.tuple.IntegerBinding;
@@ -39,15 +38,15 @@ import com.sleepycat.je.OperationStatus;
 
 public class Upgrader
 {
-    static final String VERSION_DB_NAME = "VERSION";
+    static final String VERSION_DB_NAME = "DB_VERSION";
 
     private Environment _environment;
-    private LogSubject _logSubject;
+    private String _virtualHostName;
 
-    public Upgrader(Environment environment, LogSubject logSubject)
+    public Upgrader(Environment environment, String virtualHostName)
     {
         _environment = environment;
-        _logSubject = logSubject;
+        _virtualHostName = virtualHostName;
     }
 
     public void upgradeIfNecessary() throws AMQStoreException
@@ -128,7 +127,7 @@ public class Upgrader
                                                         + "UpgradeFrom"+fromVersion+"To"+toVersion);
             Constructor<StoreUpgrade> ctr = upgradeClass.getConstructor();
             StoreUpgrade upgrade = ctr.newInstance();
-            upgrade.performUpgrade(_logSubject, _environment, UpgradeInteractionHandler.DEFAULT_HANDLER);
+            upgrade.performUpgrade(_environment, UpgradeInteractionHandler.DEFAULT_HANDLER, _virtualHostName);
         }
         catch (ClassNotFoundException e)
         {

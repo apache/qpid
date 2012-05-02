@@ -59,10 +59,10 @@ public class QpidRequestResponseServlet extends HttpServlet
     @Resource(@jndi.scheme@="@qpid.xacf.jndi.name@")
     private ConnectionFactory _connectionFactory;
 
-    @Resource(@jndi.scheme@="QpidRequestQueue")
+    @Resource(@jndi.scheme@="@qpid.request.queue.jndi.name@")
     private Destination _queue;
 
-    @Resource(@jndi.scheme@="QpidResponseQueue")
+    @Resource(@jndi.scheme@="@qpid.response.queue.jndi.name@")
     private Destination _responseQueue;
 
 

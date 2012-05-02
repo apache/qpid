@@ -349,7 +349,7 @@
       <sysproperty key="log4j.configuration" value="${log4j.configuration}"/>
       <sysproperty key="java.naming.factory.initial" value="${java.naming.factory.initial}"/>
       <sysproperty key="java.naming.provider.url" value="${java.naming.provider.url}"/>
-      <sysproperty key="messagestore.class.name" value="${messagestore.class.name}" />
+      <sysproperty key="messagestorefactory.class.name" value="${messagestorefactory.class.name}" />
       <sysproperty key="test.output" value="${module.results}"/>
       <sysproperty key="qpid.amqp.version" value="${qpid.amqp.version}"/>
 

@@ -57,7 +57,7 @@ class GeneralTests(Base):
         sess2 = self.setup_session()
 
         tx = sess1.sender("amq.direct/key")
-        rx_main = sess1.receiver("amq.direct/key;{link:{x-declare:{alternate-exchange:'amq.fanout'}}}")
+        rx_main = sess1.receiver("amq.direct/key;{link:{reliability:at-least-once,x-declare:{alternate-exchange:'amq.fanout'}}}")
         rx_alt  = sess2.receiver("amq.fanout")
         rx_alt.capacity = 10
 

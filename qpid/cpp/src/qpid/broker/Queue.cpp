@@ -19,8 +19,9 @@
  *
  */
 
-#include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
+
+#include "qpid/broker/Broker.h"
 #include "qpid/broker/QueueEvents.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/broker/Fairshare.h"
@@ -41,6 +42,7 @@
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/FieldTable.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/sys/ClusterSafe.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Time.h"
@@ -152,6 +154,7 @@ Queue::Queue(const string& _name, bool _autodelete,
     store(_store),
     owner(_owner),
     consumerCount(0),
+    browserCount(0),
     exclusive(0),
     noLocal(false),
     persistLastNode(false),
@@ -521,17 +524,27 @@ void Queue::consume(Consumer::shared_ptr c, bool requestExclusive){
     assertClusterSafe();
     {
         Mutex::ScopedLock locker(messageLock);
-        if(exclusive) {
-            throw ResourceLockedException(
-                                          QPID_MSG("Queue " << getName() << " has an exclusive consumer. No more consumers allowed."));
-        } else if(requestExclusive) {
-            if(consumerCount) {
+        // NOTE: consumerCount is actually a count of all
+        // subscriptions, both acquiring and non-acquiring (browsers).
+        // Check for exclusivity of acquiring consumers.
+        size_t acquiringConsumers = consumerCount - browserCount;
+        if (c->preAcquires()) {
+            if(exclusive) {
                 throw ResourceLockedException(
-                                              QPID_MSG("Queue " << getName() << " already has consumers. Exclusive access denied."));
-            } else {
-                exclusive = c->getSession();
+                    QPID_MSG("Queue " << getName()
+                             << " has an exclusive consumer. No more consumers allowed."));
+            } else if(requestExclusive) {
+                if(acquiringConsumers) {
+                    throw ResourceLockedException(
+                        QPID_MSG("Queue " << getName()
+                                 << " already has consumers. Exclusive access denied."));
+                } else {
+                    exclusive = c->getSession();
+                }
             }
         }
+        else
+            browserCount++;
         consumerCount++;
         //reset auto deletion timer if necessary
         if (autoDeleteTimeout && autoDeleteTask) {
@@ -548,6 +561,7 @@ void Queue::cancel(Consumer::shared_ptr c){
     {
         Mutex::ScopedLock locker(messageLock);
         consumerCount--;
+        if (!c->preAcquires()) browserCount--;
         if(exclusive) exclusive = 0;
         observeConsumerRemove(*c, locker);
     }
@@ -1611,9 +1625,14 @@ Manageable::status_t Queue::ManagementMethod (uint32_t methodId, Args& args, str
         {
             _qmf::ArgsQueueReroute& rerouteArgs = (_qmf::ArgsQueueReroute&) args;
             boost::shared_ptr<Exchange> dest;
-            if (rerouteArgs.i_useAltExchange)
+            if (rerouteArgs.i_useAltExchange) {
+                if (!alternateExchange) {
+                    status = Manageable::STATUS_PARAMETER_INVALID;
+                    etext = "No alternate-exchange defined";
+                    break;
+                }
                 dest = alternateExchange;
-            else {
+            } else {
                 try {
                     dest = broker->getExchanges().get(rerouteArgs.i_exchange);
                 } catch(const std::exception&) {

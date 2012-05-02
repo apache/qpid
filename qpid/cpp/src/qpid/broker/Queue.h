@@ -97,7 +97,8 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     const bool autodelete;
     MessageStore* store;
     const OwnershipToken* owner;
-    uint32_t consumerCount;
+    uint32_t consumerCount;     // Actually a count of all subscriptions, acquiring or not.
+    uint32_t browserCount;      // Count of non-acquiring subscriptions.
     OwnershipToken* exclusive;
     bool noLocal;
     bool persistLastNode;

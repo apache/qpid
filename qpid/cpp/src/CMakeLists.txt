@@ -354,6 +354,7 @@ endif (NOT Boost_REGEX_LIBRARY)
 # Boost on Windows can use automatic linking to pick up the correct
 # Boost libs based on compile-time touching of the headers. Since we don't
 # really need to add them to the link lines, set the names to blanks.
+option(QPID_LINK_BOOST_DYNAMIC "Link with dynamic Boost libs (OFF to link static)" ON)
 if (MSVC)
    install (PROGRAMS
             ${Boost_DATE_TIME_LIBRARY_DEBUG} ${Boost_DATE_TIME_LIBRARY_RELEASE}
@@ -371,7 +372,6 @@ if (MSVC)
                COMPONENT ${QPID_COMPONENT_COMMON})
    endif (NOT Boost_VERSION LESS 103500)
 
-   option(QPID_LINK_BOOST_DYNAMIC "Link with dynamic Boost libs (OFF to link static)" ON)
    if (QPID_LINK_BOOST_DYNAMIC)
       add_definitions( /D BOOST_ALL_DYN_LINK)
       string (REPLACE .lib .dll
@@ -594,6 +594,8 @@ if (BUILD_ACL)
   set (acl_SOURCES
        qpid/acl/Acl.cpp
        qpid/acl/Acl.h
+       qpid/acl/AclConnectionCounter.cpp
+       qpid/acl/AclConnectionCounter.h
        qpid/acl/AclData.cpp
        qpid/acl/AclData.h
        qpid/acl/AclPlugin.cpp
@@ -632,6 +634,8 @@ if (BUILD_HA)
         qpid/ha/Settings.h
         qpid/ha/QueueReplicator.h
         qpid/ha/QueueReplicator.cpp
+	qpid/ha/ReplicateLevel.h
+	qpid/ha/ReplicateLevel.cpp
         qpid/ha/ReplicatingSubscription.h
         qpid/ha/ReplicatingSubscription.cpp
         qpid/ha/BrokerReplicator.cpp
@@ -642,7 +646,7 @@ if (BUILD_HA)
 
     add_library (ha MODULE ${ha_SOURCES})
     set_target_properties (ha PROPERTIES PREFIX "")
-    target_link_libraries (ha qpidbroker ${Boost_PROGRAM_OPTIONS_LIBRARY})
+    target_link_libraries (ha qpidcommon qpidbroker ${Boost_PROGRAM_OPTIONS_LIBRARY})
     if (CMAKE_COMPILER_IS_GNUCXX)
       set_target_properties (ha PROPERTIES
                              PREFIX ""
@@ -1111,6 +1115,7 @@ set (qpidbroker_SOURCES
      qpid/broker/NameGenerator.cpp
      qpid/broker/NullMessageStore.cpp
      qpid/broker/QueueBindings.cpp
+     qpid/broker/QueuedMessage.cpp
      qpid/broker/QueueEvents.cpp
      qpid/broker/QueuePolicy.cpp
      qpid/broker/QueueRegistry.cpp

@@ -113,7 +113,8 @@ class QueryCmd(Command):
         for x in [("Status:", hb.status),
                   ("Brokers URL:", hb.brokers),
                   ("Public URL:", hb.publicBrokers),
-                  ("Expected Backups:", hb.expectedBackups)
+                  ("Expected Backups:", hb.expectedBackups),
+                  ("Replicate: ", hb.replicateDefault)
                   ]:
             print "%-20s %s"%(x[0], x[1])
 QueryCmd()

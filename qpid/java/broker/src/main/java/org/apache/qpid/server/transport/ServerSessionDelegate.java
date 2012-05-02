@@ -40,6 +40,7 @@ import org.apache.qpid.server.flow.WindowCreditManager;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.message.MessageMetaData_0_10;
 import org.apache.qpid.server.message.MessageTransferMessage;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.BaseQueue;
@@ -48,6 +49,7 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.subscription.Subscription_0_10;
@@ -126,7 +128,7 @@ public class ServerSessionDelegate extends SessionDelegate
         serverSession.accept(method.getTransfers());
         if(!serverSession.isTransactional())
         {
-            serverSession.recordFuture(MessageStore.IMMEDIATE_FUTURE,
+            serverSession.recordFuture(StoreFuture.IMMEDIATE_FUTURE,
                                        new CommandProcessedAction(serverSession, method));
         }
     }
@@ -356,7 +358,7 @@ public class ServerSessionDelegate extends SessionDelegate
         }
         else
         {
-            serverSession.recordFuture(MessageStore.IMMEDIATE_FUTURE, new CommandProcessedAction(serverSession, xfr));
+            serverSession.recordFuture(StoreFuture.IMMEDIATE_FUTURE, new CommandProcessedAction(serverSession, xfr));
         }
     }
 
@@ -682,13 +684,12 @@ public class ServerSessionDelegate extends SessionDelegate
     {
         String exchangeName = method.getExchange();
         VirtualHost virtualHost = getVirtualHost(session);
-        Exchange exchange = getExchange(session, exchangeName);
+        ExchangeRegistry exchangeRegistry = getExchangeRegistry(session);
 
         //we must check for any unsupported arguments present and throw not-implemented
         if(method.hasArguments())
         {
             Map<String,Object> args = method.getArguments();
-
             //QPID-3392: currently we don't support any!
             if(!args.isEmpty())
             {
@@ -696,120 +697,113 @@ public class ServerSessionDelegate extends SessionDelegate
                 return;
             }
         }
-
-        if(method.getPassive())
+        synchronized(exchangeRegistry)
         {
-            if(exchange == null)
-            {
-                exception(session, method, ExecutionErrorCode.NOT_FOUND, "not-found: exchange-name '"+exchangeName+"'");
+            Exchange exchange = getExchange(session, exchangeName);
 
-            }
-            else
+            if(method.getPassive())
             {
-                if(!exchange.getTypeShortString().toString().equals(method.getType()) && (method.getType() != null && method.getType().length() > 0))
+                if(exchange == null)
                 {
-                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Attempt to redeclare exchange: " + exchangeName + " of type " + exchange.getTypeShortString() + " to " + method.getType() +".");
-                }
-            }
-
-        }
-        else
-        {
-            if (exchange == null)
-            {
-                if(exchangeName.startsWith("amq."))
-                {
-                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
-                              "Attempt to declare exchange: " + exchangeName +
-                              " which begins with reserved prefix 'amq.'.");
-                }
-                else if(exchangeName.startsWith("qpid."))
-                {
-                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
-                              "Attempt to declare exchange: " + exchangeName +
-                              " which begins with reserved prefix 'qpid.'.");
+                    exception(session, method, ExecutionErrorCode.NOT_FOUND, "not-found: exchange-name '" + exchangeName + "'");
                 }
                 else
                 {
-                    ExchangeRegistry exchangeRegistry = getExchangeRegistry(session);
-                    ExchangeFactory exchangeFactory = virtualHost.getExchangeFactory();
-
-
-
-                    try
+                    if (!exchange.getTypeShortString().toString().equals(method.getType())
+                            && (method.getType() != null && method.getType().length() > 0))
                     {
-
-                        exchange = exchangeFactory.createExchange(method.getExchange(),
-                                                                  method.getType(),
-                                                                  method.getDurable(),
-                                                                  method.getAutoDelete());
-
-                        String alternateExchangeName = method.getAlternateExchange();
-                        boolean validAlternate;
-                        if(alternateExchangeName != null && alternateExchangeName.length() != 0)
-                        {
-                            Exchange alternate = getExchange(session, alternateExchangeName);
-                            if(alternate == null)
-                            {
-                                validAlternate = false;
-                            }
-                            else
-                            {
-                                exchange.setAlternateExchange(alternate);
-                                validAlternate = true;
-                            }
-                        }
-                        else
-                        {
-                            validAlternate = true;
-                        }
-
-                        if(validAlternate)
-                        {
-                            if (exchange.isDurable())
-                            {
-                                DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
-                                store.createExchange(exchange);
-                            }
-
-                            exchangeRegistry.registerExchange(exchange);
-                        }
-                        else
-                        {
-                            exception(session, method, ExecutionErrorCode.NOT_FOUND,
-                                        "Unknown alternate exchange " + alternateExchangeName);
-                        }
-                    }
-                    catch(AMQUnknownExchangeType e)
-                    {
-                        exception(session, method, ExecutionErrorCode.NOT_FOUND, "Unknown Exchange Type: " + method.getType());
-                    }
-                    catch (AMQException e)
-                    {
-                        exception(session, method, e, "Cannot declare exchange '" + exchangeName);
+                        exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Attempt to redeclare exchange: "
+                                + exchangeName + " of type " + exchange.getTypeShortString() + " to " + method.getType() + ".");
                     }
                 }
             }
             else
             {
-                if(!exchange.getTypeShortString().toString().equals(method.getType()))
+                if (exchange == null)
                 {
-                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
-                            "Attempt to redeclare exchange: " + exchangeName
-                                    + " of type " + exchange.getTypeShortString()
-                                    + " to " + method.getType() +".");
+                    if (exchangeName.startsWith("amq."))
+                    {
+                        exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Attempt to declare exchange: "
+                                + exchangeName + " which begins with reserved prefix 'amq.'.");
+                    }
+                    else if (exchangeName.startsWith("qpid."))
+                    {
+                        exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Attempt to declare exchange: "
+                                + exchangeName + " which begins with reserved prefix 'qpid.'.");
+                    }
+                    else
+                    {
+                        ExchangeFactory exchangeFactory = virtualHost.getExchangeFactory();
+                        try
+                        {
+                            exchange = exchangeFactory.createExchange(method.getExchange(),
+                                                                      method.getType(),
+                                                                      method.getDurable(),
+                                                                      method.getAutoDelete());
+                            String alternateExchangeName = method.getAlternateExchange();
+                            boolean validAlternate;
+                            if(alternateExchangeName != null && alternateExchangeName.length() != 0)
+                            {
+                                Exchange alternate = getExchange(session, alternateExchangeName);
+                                if(alternate == null)
+                                {
+                                    validAlternate = false;
+                                }
+                                else
+                                {
+                                    exchange.setAlternateExchange(alternate);
+                                    validAlternate = true;
+                                }
+                            }
+                            else
+                            {
+                                validAlternate = true;
+                            }
+                            if(validAlternate)
+                            {
+                                if (exchange.isDurable())
+                                {
+                                    DurableConfigurationStore store = virtualHost.getMessageStore();
+                                    store.createExchange(exchange);
+                                }
+                                exchangeRegistry.registerExchange(exchange);
+                            }
+                            else
+                            {
+                                exception(session, method, ExecutionErrorCode.NOT_FOUND,
+                                            "Unknown alternate exchange " + alternateExchangeName);
+                            }
+                        }
+                        catch(AMQUnknownExchangeType e)
+                        {
+                            exception(session, method, ExecutionErrorCode.NOT_FOUND, "Unknown Exchange Type: " + method.getType());
+                        }
+                        catch (AMQException e)
+                        {
+                            exception(session, method, e, "Cannot declare exchange '" + exchangeName);
+                        }
+                    }
                 }
-                else if(method.hasAlternateExchange()
-                          && (exchange.getAlternateExchange() == null ||
-                              !method.getAlternateExchange().equals(exchange.getAlternateExchange().getName())))
+                else
                 {
-                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
-                            "Attempt to change alternate exchange of: " + exchangeName
-                                    + " from " + exchange.getAlternateExchange()
-                                    + " to " + method.getAlternateExchange() +".");
+                    if(!exchange.getTypeShortString().toString().equals(method.getType()))
+                    {
+                        exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
+                                "Attempt to redeclare exchange: " + exchangeName
+                                        + " of type " + exchange.getTypeShortString()
+                                        + " to " + method.getType() +".");
+                    }
+                    else if(method.hasAlternateExchange()
+                              && (exchange.getAlternateExchange() == null ||
+                                  !method.getAlternateExchange().equals(exchange.getAlternateExchange().getName())))
+                    {
+                        exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
+                                "Attempt to change alternate exchange of: " + exchangeName
+                                        + " from " + exchange.getAlternateExchange()
+                                        + " to " + method.getAlternateExchange() +".");
+                    }
                 }
             }
-
         }
     }
 
@@ -924,7 +918,7 @@ public class ServerSessionDelegate extends SessionDelegate
 
                 if (exchange.isDurable() && !exchange.isAutoDelete())
                 {
-                    DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
+                    DurableConfigurationStore store = virtualHost.getMessageStore();
                     store.removeExchange(exchange);
                 }
             }
@@ -1205,7 +1199,7 @@ public class ServerSessionDelegate extends SessionDelegate
     {
 
         VirtualHost virtualHost = getVirtualHost(session);
-        DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
+        DurableConfigurationStore store = virtualHost.getMessageStore();
 
         String queueName = method.getQueue();
         AMQQueue queue;
@@ -1395,8 +1389,8 @@ public class ServerSessionDelegate extends SessionDelegate
     {
         String owner = body.getExclusive() ? session.getClientID() : null;
 
-        final AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(queueName, body.getDurable(), owner, body.getAutoDelete(),
-                                                                  body.getExclusive(), virtualHost, body.getArguments());
+        final AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateUUID(), queueName, body.getDurable(), owner,
+                                                                  body.getAutoDelete(), body.getExclusive(), virtualHost, body.getArguments());
 
         return queue;
     }
@@ -1448,7 +1442,7 @@ public class ServerSessionDelegate extends SessionDelegate
                         queue.delete();
                         if (queue.isDurable() && !queue.isAutoDelete())
                         {
-                            DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
+                            DurableConfigurationStore store = virtualHost.getMessageStore();
                             store.removeQueue(queue);
                         }
                     }

@@ -72,6 +72,7 @@ import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.subscription.Subscription_0_10;
 import org.apache.qpid.server.txn.AlreadyKnownDtxException;
 import org.apache.qpid.server.txn.AsyncAutoCommitTransaction;
@@ -133,7 +134,7 @@ public class ServerSession extends Session
             new ConcurrentSkipListMap<Integer, MessageDispositionChangeListener>();
 
     private ServerTransaction _transaction;
-    
+
     private final AtomicLong _txnStarts = new AtomicLong(0);
     private final AtomicLong _txnCommits = new AtomicLong(0);
     private final AtomicLong _txnRejects = new AtomicLong(0);
@@ -152,7 +153,7 @@ public class ServerSession extends Session
     public ServerSession(Connection connection, SessionDelegate delegate, Binary name, long expiry, ConnectionConfig connConfig)
     {
         super(connection, delegate, name, expiry);
-        _connectionConfig = connConfig;        
+        _connectionConfig = connConfig;
         _transaction = new AsyncAutoCommitTransaction(this.getMessageStore(),this);
         _logSubject = new ChannelLogSubject(this);
         _id = getConfigStore().createId();
@@ -352,7 +353,7 @@ public class ServerSession extends Session
         }
     }
 
-    public void removeDispositionListener(Method method)                               
+    public void removeDispositionListener(Method method)
     {
         _messageDispositionListenerMap.remove(method.getId());
     }
@@ -380,7 +381,7 @@ public class ServerSession extends Session
         {
             task.doTask(this);
         }
-        
+
         CurrentActor.get().message(getLogSubject(), ChannelMessages.CLOSE());
     }
 
@@ -429,7 +430,7 @@ public class ServerSession extends Session
 
     public void unregister(Subscription_0_10 sub)
     {
-        _subscriptions.remove(sub.getConsumerTag().toString());
+        _subscriptions.remove(sub.getName());
         try
         {
             sub.getSendLock();
@@ -558,7 +559,7 @@ public class ServerSession extends Session
     public void commit()
     {
         _transaction.commit();
-        
+
         _txnCommits.incrementAndGet();
         _txnStarts.incrementAndGet();
         decrementOutstandingTxnsIfNecessary();
@@ -567,13 +568,13 @@ public class ServerSession extends Session
     public void rollback()
     {
         _transaction.rollback();
-        
+
         _txnRejects.incrementAndGet();
         _txnStarts.incrementAndGet();
         decrementOutstandingTxnsIfNecessary();
     }
 
-    
+
     private void incrementOutstandingTxnsIfNecessary()
     {
         if(isTransactional())
@@ -583,7 +584,7 @@ public class ServerSession extends Session
             _txnCount.compareAndSet(0,1);
         }
     }
-    
+
     private void decrementOutstandingTxnsIfNecessary()
     {
         if(isTransactional())
@@ -624,7 +625,7 @@ public class ServerSession extends Session
     {
         return _txnCount.get();
     }
-    
+
     public Principal getAuthorizedPrincipal()
     {
         return getConnection().getAuthorizedPrincipal();
@@ -975,17 +976,17 @@ public class ServerSession extends Session
         return _unfinishedCommandsQueue.isEmpty() ? null : _unfinishedCommandsQueue.getLast();
     }
 
-    public void recordFuture(final MessageStore.StoreFuture future, final ServerTransaction.Action action)
+    public void recordFuture(final StoreFuture future, final ServerTransaction.Action action)
     {
         _unfinishedCommandsQueue.add(new AsyncCommand(future, action));
     }
 
     private static class AsyncCommand
     {
-        private final MessageStore.StoreFuture _future;
+        private final StoreFuture _future;
         private ServerTransaction.Action _action;
 
-        public AsyncCommand(final MessageStore.StoreFuture future, final ServerTransaction.Action action)
+        public AsyncCommand(final StoreFuture future, final ServerTransaction.Action action)
         {
             _future = future;
             _action = action;

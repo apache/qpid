@@ -1,0 +1,142 @@
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one
+ - or more contributor license agreements.  See the NOTICE file
+ - distributed with this work for additional information
+ - regarding copyright ownership.  The ASF licenses this file
+ - to you under the Apache License, Version 2.0 (the
+ - "License"); you may not use this file except in compliance
+ - with the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing,
+ - software distributed under the License is distributed on an
+ - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ - KIND, either express or implied.  See the License for the
+ - specific language governing permissions and limitations
+ - under the License.
+ -->
+<project name="visualisation-jfc" default="build">
+    <property name="module.depends" value="common perftests" />
+    <property name="module.test.depends" value="test" />
+
+    <import file="../../module.xml" />
+
+
+    <!-- JFreeChart and JFreeCommon -->
+
+    <property name="jfree.lib.dir" value="${project.root}/lib/jfree" />
+    <property name="jfreechart.version" value="1.0.13" />
+    <property name="jfreecommon.version" value="1.0.16" />
+    <property name="jfreechart.download.url" value="http://repo1.maven.org/maven2/jfree/jfreechart/${jfreechart.version}/jfreechart-${jfreechart.version}.jar" />
+    <property name="jfreecommon.download.url" value="http://repo1.maven.org/maven2/jfree/jcommon/${jfreecommon.version}/jcommon-${jfreecommon.version}.jar" />
+    <property name="jfreechart.jar.file" value="${jfree.lib.dir}/jfreechart-${jfreechart.version}.jar" />
+    <property name="jfreecommon.jar.file" value="${jfree.lib.dir}/jfreecommon-${jfreecommon.version}.jar" />
+
+    <!-- CSVJDBC -->
+
+    <property name="csvjdbc.lib.dir" value="${project.root}/lib/csvjdbc" />
+    <property name="csvjdbc.version" value="1.0.8" />
+    <property name="csvjdbc.download.url" value="http://csvjdbc.sourceforge.net/maven2/net/sourceforge/csvjdbc/csvjdbc/${csvjdbc.version}/csvjdbc-${csvjdbc.version}.jar" />
+
+    <property name="csvjdbc.jar.file" value="${csvjdbc.lib.dir}/csvjdbc-${csvjdbc.version}.jar" />
+
+    <!--check whether the JFree jar is present, possibly after download-->
+    <target name="check-jfree-jars">
+        <condition property="jfree.available">
+            <and>
+                <available file="${jfreechart.jar.file}"/>
+                <available file="${jfreecommon.jar.file}"/>
+            </and>
+        </condition>
+    </target>
+
+    <!--echo that BDB is required if it isnt present, with associated licencing note-->
+    <target name="jfree-jar-required" depends="jfree-licence-note-optional" unless="jfree.available">
+       <echo>The JFreeChart library is required to use this optional module.
+
+The jar file may be downloaded by either:
+
+   Seperately running the following command from the qpid/java/perftests/visualisation-jfc dir: ant download-jfree
+
+   OR
+
+   Adding -Ddownload-jfree=true to your regular build command.</echo>
+        <fail>The JFreechart JARs were not found</fail>
+    </target>
+
+    <!--issue JFree licencing note if JFree isnt already present-->
+    <target name="jfree-licence-note-optional" depends="check-jfree-jars" unless="jfree.available">
+        <antcall target="jfree-licence-note"/>
+    </target>
+
+    <!--issue JFree licencing note-->
+    <target name="jfree-licence-note">
+       <echo>*NOTE* The JFreeChart and JFreeCommon libraries required by this optional module are licensed under the LGPL Licence, which is not compatible with the Apache Licence v2.0.
+
+For a copy of the LGPL Licence, please see:
+http://www.gnu.org/licenses/lgpl.html
+       </echo>
+    </target>
+
+    <target name="check-csvjdbc-jars">
+        <condition property="csvjdbc.available">
+            <available file="${csvjdbc.jar.file}"/>
+        </condition>
+    </target>
+
+    <!--check if an inline JFree download was requested with the build-->
+    <target name="checkjfree-request-props" if="download-jfree">
+        <antcall target="download-jfree"/>
+    </target>
+
+    <!--echo that CSVJDBC is required if it isnt present, with associated licencing note-->
+    <target name="csvjdbc-jar-required" depends="csvjdbc-licence-note-optional" unless="csvjdbc.available">
+       <echo>The CSVJDBC library is required to use this optional module.
+
+The jar file may be downloaded by either:
+
+   Seperately running the following command from the qpid/java/perftests/visualisation-jfc dir: ant download-csvjdbc
+
+   OR
+
+   Adding -Ddownload-csvjdbc=true to your regular build command.</echo>
+        <fail>The CSVJDBC JAR was not found</fail>
+    </target>
+
+    <!--issue CSVJDBC licencing note-->
+    <target name="csvjdbc-licence-note">
+       <echo>*NOTE* The CSVJDBC library required by this optional module is licensed under the LGPL Licence, which is not compatible with the Apache Licence v2.0.
+
+For a copy of the LGPL Licence, please see:
+http://www.gnu.org/licenses/lgpl.html
+       </echo>
+    </target>
+
+    <!--issue CSVJDBC licencing note if CSVJDBC isnt already present-->
+    <target name="csvjdbc-licence-note-optional" depends="check-csvjdbc-jars" unless="csvjdbc.available">
+        <antcall target="csvjdbc-licence-note"/>
+    </target>
+
+    <!--download JFree, with licencing note-->
+    <target name="download-jfree" depends="jfree-licence-note">
+        <mkdir dir="${jfree.lib.dir}"/>
+        <echo>Downloading JFreeChart</echo>
+        <get src="${jfreechart.download.url}" dest="${jfreechart.jar.file}" usetimestamp="true" />
+        <get src="${jfreecommon.download.url}" dest="${jfreecommon.jar.file}" usetimestamp="true" />
+    </target>
+
+    <target name="checkcsvjdbc-request-props" if="download-csvjdbc">
+        <antcall target="download-csvjdbc"/>
+    </target>
+
+    <target name="download-csvjdbc" depends="csvjdbc-licence-note">
+        <mkdir dir="${csvjdbc.lib.dir}"/>
+        <echo>Downloading csvjdbc</echo>
+        <get src="${csvjdbc.download.url}" dest="${csvjdbc.jar.file}" usetimestamp="true" />
+    </target>
+
+    <target name="build" depends="checkjfree-request-props, jfree-jar-required, checkcsvjdbc-request-props, csvjdbc-jar-required, module.build" />
+
+
+</project>

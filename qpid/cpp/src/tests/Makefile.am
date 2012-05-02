@@ -149,7 +149,7 @@ endif
 
 # Test programs that are installed and therefore built as part of make, not make check
 
-qpidexectest_SCRIPTS += qpid-cpp-benchmark install_env.sh
+qpidexectest_SCRIPTS += qpid-cpp-benchmark qpid-cluster-benchmark install_env.sh
 EXTRA_DIST += qpid-cpp-benchmark install_env.sh
 
 qpidexectest_PROGRAMS += receiver
@@ -320,7 +320,7 @@ EXTRA_DIST +=								\
   header_test.py							\
   ssl_test								\
   config.null								\
-  ais_check								\
+  cpg_check.sh.in							\
   run_federation_tests							\
   run_federation_sys_tests                  \
   run_long_federation_sys_tests             \
@@ -368,9 +368,15 @@ LONG_TESTS+=start_broker \
  fanout_perftest shared_perftest multiq_perftest topic_perftest run_ring_queue_test \
  run_msg_group_tests_soak \
  stop_broker \
- run_long_federation_sys_tests \
- run_failover_soak reliable_replication_test \
- federated_cluster_test_with_node_failure
+ run_long_federation_sys_tests
+
+if HAVE_LIBCPG
+
+LONG_TESTS+=	federated_cluster_test_with_node_failure	\
+		run_failover_soak				\
+		reliable_replication_test
+
+endif HAVE_LIBCPG
 
 EXTRA_DIST+=						\
 	fanout_perftest					\
@@ -381,7 +387,8 @@ EXTRA_DIST+=						\
 	reliable_replication_test			\
 	federated_cluster_test_with_node_failure        \
 	sasl_test_setup.sh                              \
-	run_msg_group_tests_soak
+	run_msg_group_tests_soak			\
+	qpidd-empty.conf
 
 check-long:
 	$(MAKE) check TESTS="$(LONG_TESTS)" VALGRIND=

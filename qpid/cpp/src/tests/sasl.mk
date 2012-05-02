@@ -20,18 +20,37 @@
 # Test that are only relevant if SASL is enabled.
 if HAVE_SASL
 
+if HAVE_LIBCPG
 check_PROGRAMS+=cluster_authentication_soak
 cluster_authentication_soak_INCLUDES=$(PUBLIC_INCLUDES)
 cluster_authentication_soak_SOURCES=cluster_authentication_soak.cpp  ForkedBroker.h ForkedBroker.cpp
 cluster_authentication_soak_LDADD=$(lib_client) $(lib_broker)
+endif HAVE_LIBCPG
 
 # Note: sasl_version is not a test -- it is a tool used by tests.
 check_PROGRAMS+=sasl_version
 sasl_version_SOURCES=sasl_version.cpp
 sasl_version_LDADD=$(lib_client)
 
-TESTS += run_cluster_authentication_test sasl_fed sasl_fed_ex_dynamic sasl_fed_ex_link sasl_fed_ex_queue sasl_fed_ex_route sasl_fed_ex_route_cluster sasl_fed_ex_link_cluster sasl_fed_ex_queue_cluster sasl_fed_ex_dynamic_cluster sasl_no_dir
+TESTS += 	sasl_fed
+		sasl_fed_ex_dynamic
+		sasl_fed_ex_link
+		sasl_fed_ex_queue
+		sasl_fed_ex_route
+		sasl_no_dir
+
+if HAVE_LIBCPG
+
+TESTS +=	run_cluster_authentication_test 	\
+		sasl_fed_ex_route_cluster		\
+		sasl_fed_ex_link_cluster		\
+		sasl_fed_ex_queue_cluster		\
+		sasl_fed_ex_dynamic_cluster
+
 LONG_TESTS += run_cluster_authentication_soak
+
+endif HAVE_LIBCPG
+
 EXTRA_DIST += run_cluster_authentication_test \
               sasl_fed                        \
               sasl_fed_ex                     \

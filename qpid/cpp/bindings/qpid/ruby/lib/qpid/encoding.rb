@@ -45,8 +45,10 @@ module Qpid
       content_type = message.content_type unless content_type
 
       case content_type
-        when "amqp/map":  Cqpid.decodeMap message.message_impl
-        when "amqp/list": Cqpid.decodeList message.message_impl
+        when "amqp/map"
+          Cqpid.decodeMap message.message_impl
+        when "amqp/list"
+          Cqpid.decodeList message.message_impl
       end
 
       message.content

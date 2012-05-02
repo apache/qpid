@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 @MessageDriven(activationConfig = {
     @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge"),
     @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
-    @ActivationConfigProperty(propertyName = "destination", propertyValue = "@qpid.goodbye.topic.jndi.name@"),
+    @ActivationConfigProperty(propertyName = "destination", propertyValue = "@jndi.prefix@@qpid.goodbye.topic.jndi.name@"),
     @ActivationConfigProperty(propertyName = "connectionURL", propertyValue = "@broker.url@"),
     @ActivationConfigProperty(propertyName = "subscriptionDurability", propertyValue = "NotDurable"),
     @ActivationConfigProperty(propertyName = "maxSession", propertyValue = "10")

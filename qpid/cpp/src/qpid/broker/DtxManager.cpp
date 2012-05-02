@@ -21,6 +21,7 @@
 #include "qpid/broker/DtxManager.h"
 #include "qpid/broker/DtxTimeout.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/framing/StructHelper.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/Timer.h"
 #include "qpid/ptr_map.h"
@@ -55,7 +56,7 @@ void DtxManager::recover(const std::string& xid, std::auto_ptr<TPCTransactionCon
 
 bool DtxManager::prepare(const std::string& xid)
 {
-    QPID_LOG(debug, "preparing: " << xid);
+    QPID_LOG(debug, "preparing: " << convert(xid));
     try {
         return getWork(xid)->prepare();
     } catch (DtxTimeoutException& e) {
@@ -66,7 +67,7 @@ bool DtxManager::prepare(const std::string& xid)
 
 bool DtxManager::commit(const std::string& xid, bool onePhase)
 {
-    QPID_LOG(debug, "committing: " << xid);
+    QPID_LOG(debug, "committing: " << convert(xid));
     try {
         bool result = getWork(xid)->commit(onePhase);
         remove(xid);
@@ -79,7 +80,7 @@ bool DtxManager::commit(const std::string& xid, bool onePhase)
 
 void DtxManager::rollback(const std::string& xid)
 {
-    QPID_LOG(debug, "rolling back: " << xid);
+    QPID_LOG(debug, "rolling back: " << convert(xid));
     try {
         getWork(xid)->rollback();
         remove(xid);
@@ -94,7 +95,7 @@ DtxWorkRecord* DtxManager::getWork(const std::string& xid)
     Mutex::ScopedLock locker(lock);
     WorkMap::iterator i = work.find(xid);
     if (i == work.end()) {
-        throw NotFoundException(QPID_MSG("Unrecognised xid " << xid));
+        throw NotFoundException(QPID_MSG("Unrecognised xid " << convert(xid)));
     }
     return ptr_map_ptr(i);
 }
@@ -109,7 +110,7 @@ void DtxManager::remove(const std::string& xid)
     Mutex::ScopedLock locker(lock);
     WorkMap::iterator i = work.find(xid);
     if (i == work.end()) {
-        throw NotFoundException(QPID_MSG("Unrecognised xid " << xid));
+        throw NotFoundException(QPID_MSG("Unrecognised xid " << convert(xid)));
     } else {
         work.erase(i);
     }
@@ -120,7 +121,7 @@ DtxWorkRecord* DtxManager::createWork(const std::string& xid)
     Mutex::ScopedLock locker(lock);
     WorkMap::iterator i = work.find(xid);
     if (i != work.end()) {
-        throw NotAllowedException(QPID_MSG("Xid " << xid << " is already known (use 'join' to add work to an existing xid)"));
+        throw NotAllowedException(QPID_MSG("Xid " << convert(xid) << " is already known (use 'join' to add work to an existing xid)"));
     } else {
         std::string ncxid = xid; // Work around const correctness problems in ptr_map.
         return ptr_map_ptr(work.insert(ncxid, new DtxWorkRecord(ncxid, store)).first);
@@ -174,4 +175,20 @@ void DtxManager::DtxCleanup::fire()
 void DtxManager::setStore (TransactionalStore* _store)
 {
     store = _store;
+}
+
+std::string DtxManager::convert(const qpid::framing::Xid& xid)
+{
+    qpid::framing::StructHelper helper;
+    std::string encoded;
+    helper.encode(xid, encoded);
+    return encoded;
+}
+
+qpid::framing::Xid DtxManager::convert(const std::string& xid)
+{
+    qpid::framing::StructHelper helper;
+    qpid::framing::Xid decoded;
+    helper.decode(decoded, xid);
+    return decoded;
 }

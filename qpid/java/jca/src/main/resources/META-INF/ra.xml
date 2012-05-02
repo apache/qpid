@@ -69,7 +69,7 @@
     </config-property>
 
     <config-property>
-      <description>Interval between setup attempts</description>
+      <description>Interval between setup attempts in milliseconds</description>
       <config-property-name>SetupInterval</config-property-name>
       <config-property-type>java.lang.Long</config-property-type>
       <config-property-value>5000</config-property-value>
@@ -104,10 +104,10 @@
     </config-property>
 
     <config-property>
-      <description>connection URL</description>
+      <description>Connection URL</description>
       <config-property-name>ConnectionURL</config-property-name>
       <config-property-type>java.lang.String</config-property-type>
-      <config-property-value>amqp://guest:guest@/test?brokerlist='tcp://localhost:5672'</config-property-value>
+      <config-property-value>amqp://anonymous:passwd@client/test?brokerlist='tcp://localhost?sasl_mechs='PLAIN''</config-property-value>
     </config-property>
 
     <outbound-resourceadapter>
@@ -116,14 +116,14 @@
 
         <config-property>
           <description>Default session type</description>
-          <config-property-name>sessionDefaultType</config-property-name>
+          <config-property-name>SessionDefaultType</config-property-name>
           <config-property-type>java.lang.String</config-property-type>
           <config-property-value>javax.jms.Queue</config-property-value>
         </config-property>
 
         <config-property>
           <description>Specify lock timeout in seconds</description>
-          <config-property-name>useTryLock</config-property-name>
+          <config-property-name>UseTryLock</config-property-name>
           <config-property-type>java.lang.Integer</config-property-type>
           <config-property-value>0</config-property-value>
         </config-property>
@@ -137,7 +137,7 @@
 
         <config-property>
           <description>Client ID for the connection</description>
-          <config-property-name>ClientID</config-property-name>
+          <config-property-name>ClientId</config-property-name>
           <config-property-type>java.lang.String</config-property-type>
           <config-property-value>client_id</config-property-value>
         </config-property>
@@ -195,12 +195,11 @@
           </messagelistener>
         </messageadapter>
       </inbound-resourceadapter>
-
       <adminobject>
             <adminobject-interface>org.apache.qpid.ra.admin.QpidQueue</adminobject-interface>
             <adminobject-class> org.apache.qpid.ra.admin.QpidQueueImpl</adminobject-class>
             <config-property>
-                <config-property-name>destinationAddress </config-property-name>
+                <config-property-name>DestinationAddress </config-property-name>
                 <config-property-type>java.lang.String </config-property-type>
             </config-property>
         </adminobject>
@@ -208,30 +207,16 @@
             <adminobject-interface>org.apache.qpid.ra.admin.QpidTopic</adminobject-interface>
             <adminobject-class> org.apache.qpid.ra.admin.QpidTopicImpl</adminobject-class>
             <config-property>
-                <config-property-name>destinationAddress </config-property-name>
+                <config-property-name>DestinationAddress </config-property-name>
                 <config-property-type>java.lang.String </config-property-type>
             </config-property>
         </adminobject>
-      <!--
-      <adminobject>
-            <adminobject-interface>javax.jms.Destination</adminobject-interface>
-            <adminobject-class> org.apache.qpid.ra.admin.QpidDestinationProxy</adminobject-class>
-            <config-property>
-                <config-property-name>destinationAddress </config-property-name>
-                <config-property-type>java.lang.String </config-property-type>
-            </config-property>
-            <config-property>
-                <config-property-name>destinationType</config-property-name>
-                <config-property-type>java.lang.String </config-property-type>
-            </config-property>
-        </adminobject>
-      -->
       <adminobject>
             <adminobject-interface>javax.jms.ConnectionFactory</adminobject-interface>
             <adminobject-class> org.apache.qpid.ra.admin.QpidConnectionFactoryProxy</adminobject-class>
             <config-property>
-                <config-property-name>connectionURL</config-property-name>
-                <config-property-type>java.lang.String </config-property-type>
+                <config-property-name>ConnectionURL</config-property-name>
+                <config-property-type>java.lang.String</config-property-type>
             </config-property>
         </adminobject>
    </resourceadapter>

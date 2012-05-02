@@ -46,11 +46,19 @@ public class ConnectionRegistry implements IConnectionRegistry, Closeable
     /** Close all of the currently open connections. */
     public void close()
     {
-        _logger.debug("Closing connection registry :" + _registry.size() + " connections.");
+        close(IConnectionRegistry.BROKER_SHUTDOWN_REPLY_TEXT);
+    }
+
+    public void close(final String replyText)
+    {
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Closing connection registry :" + _registry.size() + " connections.");
+        }
         while (!_registry.isEmpty())
         {
             AMQConnectionModel connection = _registry.get(0);
-            closeConnection(connection, AMQConstant.CONNECTION_FORCED, "Broker is shutting down");
+            closeConnection(connection, AMQConstant.CONNECTION_FORCED, replyText);
         }
     }
 

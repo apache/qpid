@@ -25,7 +25,11 @@ static PyObject* pUuidModule;
 %}
 
 %init %{
-  pUuidModule = PyImport_ImportModule("uuid");
+  /* Instead of directly referencing the uuid module (which is not available
+   * on older versions of Python), reference the wrapper defined in
+   * qpid.datatypes.
+   */
+  pUuidModule = PyImport_ImportModule("qpid.datatypes");
 
   /* Although it is not required, we'll publish the uuid module in our
    * module, as if this module was a python module and we called

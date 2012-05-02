@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -33,10 +37,12 @@ import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.server.message.MessageMetaData_0_10;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.store.MessageMetaDataType;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
@@ -46,11 +52,6 @@ import org.apache.qpid.transport.MessageDeliveryMode;
 import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.MessageTransfer;
-
-import java.io.File;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Subclass of MessageStoreTest which runs the standard tests from the superclass against
@@ -122,7 +123,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         /*
          * reload the store only (read-only)
          */
-        bdbStore = reloadStoreReadOnly(bdbStore);
+        bdbStore = reloadStore(bdbStore);
 
         /*
          * Read back and validate the 0-8 message metadata and content
@@ -219,14 +220,14 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
      * Use this method instead of reloading the virtual host like other tests in order
      * to avoid the recovery handler deleting the message for not being on a queue.
      */
-    private BDBMessageStore reloadStoreReadOnly(BDBMessageStore messageStore) throws Exception
+    private BDBMessageStore reloadStore(BDBMessageStore messageStore) throws Exception
     {
         messageStore.close();
-        File storePath = new File(String.valueOf(_config.getProperty("store.environment-path")));
 
         BDBMessageStore newStore = new BDBMessageStore();
-        newStore.configure(storePath, false);
-        newStore.start();
+        newStore.configure("", _config.subset("store"));
+
+        newStore.startWithNoRecover();
 
         return newStore;
     }
@@ -366,13 +367,10 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         assertEquals("Retrieved content when none was expected",
                         0, bdbStore.getContent(messageid_0_8, 0, dst));
     }
-
-    private BDBMessageStore assertBDBStore(Object store)
+    private BDBMessageStore assertBDBStore(MessageStore store)
     {
-        if(!(store instanceof BDBMessageStore))
-        {
-            fail("Test requires an instance of BDBMessageStore to proceed");
-        }
+
+        assertEquals("Test requires an instance of BDBMessageStore to proceed", BDBMessageStore.class, store.getClass());
 
         return (BDBMessageStore) store;
     }
@@ -409,23 +407,23 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
 
         BDBMessageStore bdbStore = assertBDBStore(log);
 
-        final AMQShortString mockQueueName = new AMQShortString("queueName");
-
+        final UUID mockQueueId = UUIDGenerator.generateUUID();
         TransactionLogResource mockQueue = new TransactionLogResource()
         {
-            public String getResourceName()
+            @Override
+            public UUID getId()
             {
-                return mockQueueName.asString();
+                return mockQueueId;
             }
         };
 
-        MessageStore.Transaction txn = log.newTransaction();
+        Transaction txn = log.newTransaction();
 
         txn.enqueueMessage(mockQueue, new MockMessage(1L));
         txn.enqueueMessage(mockQueue, new MockMessage(5L));
         txn.commitTran();
 
-        List<Long> enqueuedIds = bdbStore.getEnqueuedMessages(mockQueueName);
+        List<Long> enqueuedIds = bdbStore.getEnqueuedMessages(mockQueueId);
 
         assertEquals("Number of enqueued messages is incorrect", 2, enqueuedIds.size());
         Long val = enqueuedIds.get(0);
@@ -447,17 +445,17 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
 
         BDBMessageStore bdbStore = assertBDBStore(log);
 
-        final AMQShortString mockQueueName = new AMQShortString("queueName");
-
+        final UUID mockQueueId = UUIDGenerator.generateUUID();
         TransactionLogResource mockQueue = new TransactionLogResource()
         {
-            public String getResourceName()
+            @Override
+            public UUID getId()
             {
-                return mockQueueName.asString();
+                return mockQueueId;
             }
         };
 
-        MessageStore.Transaction txn = log.newTransaction();
+        Transaction txn = log.newTransaction();
 
         txn.enqueueMessage(mockQueue, new MockMessage(21L));
         txn.abortTran();
@@ -467,7 +465,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         txn.enqueueMessage(mockQueue, new MockMessage(23L));
         txn.commitTran();
 
-        List<Long> enqueuedIds = bdbStore.getEnqueuedMessages(mockQueueName);
+        List<Long> enqueuedIds = bdbStore.getEnqueuedMessages(mockQueueId);
 
         assertEquals("Number of enqueued messages is incorrect", 2, enqueuedIds.size());
         Long val = enqueuedIds.get(0);
@@ -488,17 +486,17 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
 
         BDBMessageStore bdbStore = assertBDBStore(log);
 
-        final AMQShortString mockQueueName = new AMQShortString("queueName");
-
+        final UUID mockQueueId = UUIDGenerator.generateUUID();
         TransactionLogResource mockQueue = new TransactionLogResource()
         {
-            public String getResourceName()
+            @Override
+            public UUID getId()
             {
-                return mockQueueName.asString();
+                return mockQueueId;
             }
         };
 
-        MessageStore.Transaction txn = log.newTransaction();
+        Transaction txn = log.newTransaction();
 
         txn.enqueueMessage(mockQueue, new MockMessage(30L));
         txn.commitTran();
@@ -511,7 +509,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         txn.enqueueMessage(mockQueue, new MockMessage(32L));
         txn.commitTran();
 
-        List<Long> enqueuedIds = bdbStore.getEnqueuedMessages(mockQueueName);
+        List<Long> enqueuedIds = bdbStore.getEnqueuedMessages(mockQueueId);
 
         assertEquals("Number of enqueued messages is incorrect", 2, enqueuedIds.size());
         Long val = enqueuedIds.get(0);

@@ -47,12 +47,43 @@ class ACLTests(TestBase010):
         connection.start()
         return connection.session(str(uuid4()))
 
+    def port_i(self):
+        return int(self.defines["port-i"])
+
+    def port_u(self):
+        return int(self.defines["port-u"])
+
+    def get_session_by_port(self, user, passwd, byPort):
+        socket = connect(self.broker.host, byPort)
+        connection = Connection (sock=socket, username=user, password=passwd,
+                                 mechanism="PLAIN")
+        connection.start()
+        return connection.session(str(uuid4()))
+
     def reload_acl(self):
         result = None
         try:
             self.broker_access.reloadAclFile()
         except Exception, e:
             result = str(e)
+        return result
+
+    def acl_lookup(self, userName, action, aclObj, aclObjName, propMap):
+        result = {}
+        try:
+            result = self.broker_access.acl_lookup(userName, action, aclObj, aclObjName, propMap)
+        except Exception, e:
+            result['text'] = str(e)
+            result['result'] = str(e)
+        return result
+
+    def acl_lookupPublish(self, userName, exchange, key):
+        result = {}
+        try:
+            result = self.broker_access.acl_lookupPublish(userName, exchange, key)
+        except Exception, e:
+            result['text'] = str(e)
+            result['result'] = str(e)
         return result
 
     def get_acl_file(self):
@@ -72,6 +103,37 @@ class ACLTests(TestBase010):
         aclf.close()
         self.reload_acl()
         TestBase010.tearDown(self)
+
+
+    def Lookup(self, userName, action, aclObj, aclObjName, propMap, expectedResult):
+        result = self.acl_lookup(userName, action, aclObj, aclObjName, propMap)
+        if (result['result'] != expectedResult):
+            suffix = ', [ERROR: Expected= ' + expectedResult
+            if (result['result'] is None):
+                suffix = suffix + ', Exception= ' + result['text'] + ']'
+            else:
+                suffix = suffix + ', Actual= ' + result['result'] + ']'
+            self.fail('Lookup: name=' + userName + ', action=' + action + ', aclObj=' + aclObj + ', aclObjName=' + aclObjName + ', propertyMap=' + str(propMap) + suffix)
+
+
+    def LookupPublish(self, userName, exchName, keyName, expectedResult):
+        result = self.acl_lookupPublish(userName, exchName, keyName)
+        if (result['result'] != expectedResult):
+            if (result['result'] is None):
+                suffix = suffix + ', Exception= ' + result['text'] + ']'
+            else:
+                suffix = suffix + ', Actual= ' + result['result'] + ']'
+            self.fail('LookupPublish: name=' + userName + ', exchange=' + exchName + ', key=' + keyName + suffix)
+
+    def AllBut(self, allList, removeList):
+        tmpList = allList[:]
+        for item in removeList:
+            try:
+                tmpList.remove(item)
+            except Exception, e:
+                self.fail("ERROR in AllBut() \nallList =  %s \nremoveList =  %s \nerror =  %s " \
+                    % (allList, removeList, e))
+        return tmpList
 
    #=====================================
    # ACL general tests
@@ -460,7 +522,8 @@ class ACLTests(TestBase010):
         Test cases for queue acl in allow mode
         """
         aclf = self.get_acl_file()
-        aclf.write('acl deny bob@QPID create queue name=q1 durable=true passive=true\n')
+        aclf.write('acl deny bob@QPID access queue name=q1\n')
+        aclf.write('acl deny bob@QPID create queue name=q1 durable=true\n')
         aclf.write('acl deny bob@QPID create queue name=q2 exclusive=true policytype=ring\n')
         aclf.write('acl deny bob@QPID access queue name=q3\n')
         aclf.write('acl deny bob@QPID purge queue name=q3\n')
@@ -476,8 +539,15 @@ class ACLTests(TestBase010):
         session = self.get_session('bob','bob')
 
         try:
+            session.queue_declare(queue="q1", durable=True)
+            self.fail("ACL should deny queue create request with name=q1 durable=true");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
             session.queue_declare(queue="q1", durable=True, passive=True)
-            self.fail("ACL should deny queue create request with name=q1 durable=true passive=true");
+            self.fail("ACL should deny queue passive declare request with name=q1 durable=true");
         except qpid.session.SessionException, e:
             self.assertEqual(403,e.args[0].error_code)
             session = self.get_session('bob','bob')
@@ -563,7 +633,8 @@ class ACLTests(TestBase010):
         Test cases for queue acl in deny mode
         """
         aclf = self.get_acl_file()
-        aclf.write('acl allow bob@QPID create queue name=q1 durable=true passive=true\n')
+        aclf.write('acl allow bob@QPID access queue name=q1\n')
+        aclf.write('acl allow bob@QPID create queue name=q1 durable=true\n')
         aclf.write('acl allow bob@QPID create queue name=q2 exclusive=true policytype=ring\n')
         aclf.write('acl allow bob@QPID access queue name=q3\n')
         aclf.write('acl allow bob@QPID purge queue name=q3\n')
@@ -583,10 +654,16 @@ class ACLTests(TestBase010):
         session = self.get_session('bob','bob')
 
         try:
+            session.queue_declare(queue="q1", durable=True)
+        except qpid.session.SessionException, e:
+            if (403 == e.args[0].error_code):
+                self.fail("ACL should allow queue create request with name=q1 durable=true");
+
+        try:
             session.queue_declare(queue="q1", durable=True, passive=True)
         except qpid.session.SessionException, e:
             if (403 == e.args[0].error_code):
-                self.fail("ACL should allow queue create request with name=q1 durable=true passive=true");
+                self.fail("ACL should allow queue passive declare request with name=q1 durable=true passive=true");
 
         try:
             session.queue_declare(queue="q1", durable=False, passive=False)
@@ -736,7 +813,8 @@ class ACLTests(TestBase010):
         Test cases for exchange acl in allow mode
         """
         aclf = self.get_acl_file()
-        aclf.write('acl deny bob@QPID create exchange name=testEx durable=true passive=true\n')
+        aclf.write('acl deny bob@QPID access exchange name=testEx\n')
+        aclf.write('acl deny bob@QPID create exchange name=testEx durable=true\n')
         aclf.write('acl deny bob@QPID create exchange name=ex1 type=direct\n')
         aclf.write('acl deny bob@QPID access exchange name=myEx queuename=q1 routingkey=rk1.*\n')
         aclf.write('acl deny bob@QPID bind exchange name=myEx queuename=q1 routingkey=rk1\n')
@@ -755,18 +833,25 @@ class ACLTests(TestBase010):
         session.exchange_declare(exchange='myEx', type='direct')
 
         try:
-            session.exchange_declare(exchange='testEx', durable=True, passive=True)
-            self.fail("ACL should deny exchange create request with name=testEx durable=true passive=true");
+            session.exchange_declare(exchange='testEx', durable=True)
+            self.fail("ACL should deny exchange create request with name=testEx durable=true");
         except qpid.session.SessionException, e:
             self.assertEqual(403,e.args[0].error_code)
             session = self.get_session('bob','bob')
 
         try:
-            session.exchange_declare(exchange='testEx', type='direct', durable=True, passive=False)
+            session.exchange_declare(exchange='testEx', durable=True, passive=True)
+            self.fail("ACL should deny passive exchange declare request with name=testEx durable=true passive=true");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            session.exchange_declare(exchange='testEx', type='direct', durable=False)
         except qpid.session.SessionException, e:
             print e
             if (403 == e.args[0].error_code):
-                self.fail("ACL should allow exchange create request for testEx with any parameter other than durable=true and passive=true");
+                self.fail("ACL should allow exchange create request for testEx with any parameter other than durable=true");
 
         try:
             session.exchange_declare(exchange='ex1', type='direct')
@@ -867,7 +952,7 @@ class ACLTests(TestBase010):
         Test cases for exchange acl in deny mode
         """
         aclf = self.get_acl_file()
-        aclf.write('acl allow bob@QPID create exchange name=myEx durable=true passive=false\n')
+        aclf.write('acl allow bob@QPID create exchange name=myEx durable=true\n')
         aclf.write('acl allow bob@QPID bind exchange name=amq.topic queuename=bar routingkey=foo.*\n')
         aclf.write('acl allow bob@QPID unbind exchange name=amq.topic queuename=bar routingkey=foo.*\n')
         aclf.write('acl allow bob@QPID access exchange name=myEx queuename=q1 routingkey=rk1.*\n')
@@ -1276,6 +1361,188 @@ class ACLTests(TestBase010):
         admin = BrokerAdmin(self.config.broker, "admin", "admin")
         ts = admin.get_timestamp_cfg() #should pass
         admin.set_timestamp_cfg(ts) #should pass
+
+
+
+   #=====================================
+   # QMF Functional tests
+   #=====================================
+
+    def test_qmf_functional_tests(self):
+        """
+        Test using QMF method hooks into ACL logic
+        """
+        aclf = self.get_acl_file()
+        aclf.write('group admins moe@COMPANY.COM \\\n')
+        aclf.write('             larry@COMPANY.COM \\\n')
+        aclf.write('             curly@COMPANY.COM \\\n')
+        aclf.write('             shemp@COMPANY.COM\n')
+        aclf.write('group auditors aaudit@COMPANY.COM baudit@COMPANY.COM caudit@COMPANY.COM \\\n')
+        aclf.write('               daudit@COMPANY.COM eaduit@COMPANY.COM eaudit@COMPANY.COM\n')
+        aclf.write('group tatunghosts tatung01@COMPANY.COM \\\n')
+        aclf.write('      tatung02/x86.build.company.com@COMPANY.COM \\\n')
+        aclf.write('      tatung03/x86.build.company.com@COMPANY.COM \\\n')
+        aclf.write('      tatung04/x86.build.company.com@COMPANY.COM \n')
+        aclf.write('group publishusers publish@COMPANY.COM x-pubs@COMPANY.COM\n')
+        aclf.write('acl allow-log admins all all\n')
+        aclf.write('# begin hack alert: allow anonymous to access the lookup debug functions\n')
+        aclf.write('acl allow-log anonymous create  queue\n')
+        aclf.write('acl allow-log anonymous all     exchange name=qmf.*\n')
+        aclf.write('acl allow-log anonymous all     exchange name=amq.direct\n')
+        aclf.write('acl allow-log anonymous all     exchange name=qpid.management\n')
+        aclf.write('acl allow-log anonymous access  method   name=*\n')
+        aclf.write('# end hack alert\n')
+        aclf.write('acl allow-log auditors all exchange name=company.topic routingkey=private.audit.*\n')
+        aclf.write('acl allow-log tatunghosts  publish exchange name=company.topic  routingkey=tatung.*\n')
+        aclf.write('acl allow-log tatunghosts  publish exchange name=company.direct routingkey=tatung-service-queue\n')
+        aclf.write('acl allow-log publishusers create queue\n')
+        aclf.write('acl allow-log publishusers publish exchange name=qpid.management routingkey=broker\n')
+        aclf.write('acl allow-log publishusers publish exchange name=qmf.default.topic routingkey=*\n')
+        aclf.write('acl allow-log publishusers publish exchange name=qmf.default.direct routingkey=*\n')
+        aclf.write('acl allow-log all bind exchange name=company.topic  routingkey=tatung.*\n')
+        aclf.write('acl allow-log all bind exchange name=company.direct routingkey=tatung-service-queue\n')
+        aclf.write('acl allow-log all consume queue\n')
+        aclf.write('acl allow-log all access exchange\n')
+        aclf.write('acl allow-log all access queue\n')
+        aclf.write('acl allow-log all create queue name=tmp.* durable=false autodelete=true exclusive=true policytype=ring\n')
+        aclf.write('acl allow mrQ create queue queuemaxsizelowerlimit=100 queuemaxsizeupperlimit=200 queuemaxcountlowerlimit=300 queuemaxcountupperlimit=400\n')
+        aclf.write('acl deny-log all all\n')
+        aclf.close()
+
+        result = self.reload_acl()
+        if (result):
+            self.fail(result)
+
+        #
+        # define some group lists
+        #
+        g_admins = ['moe@COMPANY.COM', \
+                    'larry@COMPANY.COM', \
+                    'curly@COMPANY.COM', \
+                    'shemp@COMPANY.COM']
+
+        g_auditors = [ 'aaudit@COMPANY.COM','baudit@COMPANY.COM','caudit@COMPANY.COM', \
+                       'daudit@COMPANY.COM','eaduit@COMPANY.COM','eaudit@COMPANY.COM']
+
+        g_tatunghosts = ['tatung01@COMPANY.COM', \
+                         'tatung02/x86.build.company.com@COMPANY.COM', \
+                         'tatung03/x86.build.company.com@COMPANY.COM', \
+                         'tatung04/x86.build.company.com@COMPANY.COM']
+
+        g_publishusers = ['publish@COMPANY.COM', 'x-pubs@COMPANY.COM']
+
+        g_public = ['jpublic@COMPANY.COM', 'me@yahoo.com']
+
+        g_all = g_admins + g_auditors + g_tatunghosts + g_publishusers + g_public
+
+        action_all = ['consume','publish','create','access','bind','unbind','delete','purge','update']
+
+        #
+        # Run some tests verifying against users who are in and who are out of given groups.
+        #
+
+        for u in g_admins:
+            self.Lookup(u, "create", "queue", "anything", {"durable":"true"}, "allow-log")
+
+        uInTest = g_auditors + g_admins
+        uOutTest = self.AllBut(g_all, uInTest)
+
+        for u in uInTest:
+            self.LookupPublish(u, "company.topic", "private.audit.This", "allow-log")
+
+        for u in uInTest:
+            for a in action_all:
+                self.Lookup(u, a, "exchange", "company.topic", {"routingkey":"private.audit.This"}, "allow-log")
+
+        for u in uOutTest:
+            self.LookupPublish(u, "company.topic", "private.audit.This", "deny-log")
+            self.Lookup(u, "bind", "exchange", "company.topic", {"routingkey":"private.audit.This"}, "deny-log")
+
+        uInTest = g_admins + g_tatunghosts
+        uOutTest = self.AllBut(g_all, uInTest)
+
+        for u in uInTest:
+            self.LookupPublish(u, "company.topic",  "tatung.this2",         "allow-log")
+            self.LookupPublish(u, "company.direct", "tatung-service-queue", "allow-log")
+
+        for u in uOutTest:
+            self.LookupPublish(u, "company.topic",  "tatung.this2",         "deny-log")
+            self.LookupPublish(u, "company.direct", "tatung-service-queue", "deny-log")
+
+        for u in uOutTest:
+            for a in ["bind", "access"]:
+                self.Lookup(u, a, "exchange", "company.topic",  {"routingkey":"tatung.this2"},         "allow-log")
+                self.Lookup(u, a, "exchange", "company.direct", {"routingkey":"tatung-service-queue"}, "allow-log")
+
+        uInTest = g_admins + g_publishusers
+        uOutTest = self.AllBut(g_all, uInTest)
+
+        for u in uInTest:
+            self.LookupPublish(u, "qpid.management",    "broker",   "allow-log")
+            self.LookupPublish(u, "qmf.default.topic",  "this3",    "allow-log")
+            self.LookupPublish(u, "qmf.default.direct", "this4",    "allow-log")
+
+        for u in uOutTest:
+            self.LookupPublish(u, "qpid.management",    "broker",   "deny-log")
+            self.LookupPublish(u, "qmf.default.topic",  "this3",    "deny-log")
+            self.LookupPublish(u, "qmf.default.direct", "this4",    "deny-log")
+
+        for u in uOutTest:
+            for a in ["bind"]:
+                self.Lookup(u, a, "exchange", "qpid.management",    {"routingkey":"broker"}, "deny-log")
+                self.Lookup(u, a, "exchange", "qmf.default.topic",  {"routingkey":"this3"},  "deny-log")
+                self.Lookup(u, a, "exchange", "qmf.default.direct", {"routingkey":"this4"},  "deny-log")
+            for a in ["access"]:
+                self.Lookup(u, a, "exchange", "qpid.management",    {"routingkey":"broker"}, "allow-log")
+                self.Lookup(u, a, "exchange", "qmf.default.topic",  {"routingkey":"this3"},  "allow-log")
+                self.Lookup(u, a, "exchange", "qmf.default.direct", {"routingkey":"this4"},  "allow-log")
+
+        # Test against queue size limits
+
+        self.Lookup('mrQ', 'create', 'queue', 'abc', {"maxqueuesize":"150", "maxqueuecount":"350"}, "allow")
+        self.Lookup('mrQ', 'create', 'queue', 'def', {"maxqueuesize":"99",  "maxqueuecount":"350"}, "deny")
+        self.Lookup('mrQ', 'create', 'queue', 'uvw', {"maxqueuesize":"201", "maxqueuecount":"350"}, "deny")
+        self.Lookup('mrQ', 'create', 'queue', 'xyz', {"maxqueuesize":"150", "maxqueuecount":"299"}, "deny")
+        self.Lookup('mrQ', 'create', 'queue', '',    {"maxqueuesize":"150", "maxqueuecount":"401"}, "deny")
+        self.Lookup('mrQ', 'create', 'queue', '',    {"maxqueuesize":"0",   "maxqueuecount":"401"}, "deny")
+        self.Lookup('mrQ', 'create', 'queue', '',    {"maxqueuesize":"150", "maxqueuecount":"0"  }, "deny")
+
+
+   #=====================================
+   # Connection limits
+   #=====================================
+
+    def test_connection_limits(self):
+        """
+        Test ACL control connection limits
+        """
+        # By username should be able to connect twice per user
+        try:
+            sessiona1 = self.get_session_by_port('anonymous','anonymous', self.port_u())
+            sessiona2 = self.get_session_by_port('anonymous','anonymous', self.port_u())
+        except Exception, e:
+            self.fail("Could not create two connections per user: " + str(e))
+
+        # Third session should fail
+        try:
+            sessiona3 = self.get_session_by_port('anonymous','anonymous', self.port_u())
+            self.fail("Should not be able to create third connection")
+        except Exception, e:
+            result = None
+
+        # By IP address should be able to connect twice per client address
+        try:
+            sessionb1 = self.get_session_by_port('anonymous','anonymous', self.port_i())
+            sessionb2 = self.get_session_by_port('anonymous','anonymous', self.port_i())
+        except Exception, e:
+            self.fail("Could not create two connections per user: " + str(e))
+
+        # Third session should fail
+        try:
+            sessionb3 = self.get_session_by_port('anonymous','anonymous', self.port_i())
+            self.fail("Should not be able to create third connection")
+        except Exception, e:
+            result = None
 
 
 class BrokerAdmin:

@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.management.JMException;
@@ -70,14 +71,14 @@ public class TopicExchange extends AbstractExchange
             return TopicExchange.class;
         }
 
-        public TopicExchange newInstance(VirtualHost host,
+        public TopicExchange newInstance(UUID id, VirtualHost host,
                                             AMQShortString name,
                                             boolean durable,
                                             int ticket,
                                             boolean autoDelete) throws AMQException
         {
             TopicExchange exch = new TopicExchange();
-            exch.initialise(host, name, durable, ticket, autoDelete);
+            exch.initialise(id, host, name, durable, ticket, autoDelete);
             return exch;
         }
 
@@ -405,11 +406,6 @@ public class TopicExchange extends AbstractExchange
     protected AbstractExchangeMBean createMBean() throws JMException
     {
         return new TopicExchangeMBean(this);
-    }
-
-    public Logger getLogger()
-    {
-        return _logger;
     }
 
     private Collection<AMQQueue> getMatchedQueues(InboundMessage message, AMQShortString routingKey)

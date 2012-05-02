@@ -59,6 +59,12 @@ public class Main
                     .withDescription("SSL port. Overrides any value in the config file")
                     .withLongOpt("sslport").create("s");
 
+
+    private static final Option OPTION_EXCLUDE_1_0 =
+            OptionBuilder.withArgName("port").hasArg()
+                         .withDescription("when listening on the specified port do not accept AMQP1-0 connections. The specified port must be one specified on the command line")
+                         .withLongOpt("exclude-1-0").create();
+
     private static final Option OPTION_EXCLUDE_0_10 =
             OptionBuilder.withArgName("port").hasArg()
                     .withDescription("when listening on the specified port do not accept AMQP0-10 connections. The specified port must be one specified on the command line")
@@ -116,6 +122,7 @@ public class Main
         OPTIONS.addOption(OPTION_LOG_WATCH);
         OPTIONS.addOption(OPTION_PORT);
         OPTIONS.addOption(OPTION_SSLPORT);
+        OPTIONS.addOption(OPTION_EXCLUDE_1_0);
         OPTIONS.addOption(OPTION_EXCLUDE_0_10);
         OPTIONS.addOption(OPTION_EXCLUDE_0_9_1);
         OPTIONS.addOption(OPTION_EXCLUDE_0_9);

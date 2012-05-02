@@ -227,9 +227,10 @@ public abstract class QueueEntryImpl implements QueueEntry
     public void release()
     {
         EntryState state = _state;
-        
+
         if((state.getState() == State.ACQUIRED) &&_stateUpdater.compareAndSet(this, state, AVAILABLE_STATE))
         {
+
             if(state instanceof SubscriptionAcquiredState)
             {
                 getQueue().decrementUnackedMsgCount();
@@ -254,6 +255,7 @@ public abstract class QueueEntryImpl implements QueueEntry
                 routeToAlternate();
             }
         }
+
     }
 
     public boolean releaseButRetain()
@@ -267,7 +269,6 @@ public abstract class QueueEntryImpl implements QueueEntry
             Subscription sub = ((SubscriptionAcquiredState) state).getSubscription();
             if(_stateUpdater.compareAndSet(this, state, sub.getAssignedState()))
             {
-                System.err.println("Message released (and retained)" + getMessage().getMessageNumber());
                 getQueue().requeue(this);
                 if(_stateChangeListeners != null)
                 {

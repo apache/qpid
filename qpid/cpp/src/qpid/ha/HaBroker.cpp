@@ -27,6 +27,7 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Link.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/broker/SignalHandler.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qmf/org/apache/qpid/ha/Package.h"
 #include "qmf/org/apache/qpid/ha/ArgsHaBrokerReplicate.h"
@@ -69,16 +70,18 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
         throw Exception("Cannot start HA: management is disabled");
     _qmf::Package  packageInit(ma);
     mgmtObject = new _qmf::HaBroker(ma, this, "ha-broker");
-    // FIXME aconway 2012-03-01: should start in catch-up state and move to backup
-    // only when caught up.
-    mgmtObject->set_status(BACKUP);
+    mgmtObject->set_status(settings.cluster ? BACKUP : STANDALONE);
+    mgmtObject->set_replicateDefault(str(settings.replicateDefault));
     ma->addObject(mgmtObject);
+
+    // NOTE: lock is not needed in a constructor but we created it just to pass
+    // to the set functions.
     sys::Mutex::ScopedLock l(lock);
     if (!settings.clientUrl.empty()) setClientUrl(Url(settings.clientUrl), l);
     if (!settings.brokerUrl.empty()) setBrokerUrl(Url(settings.brokerUrl), l);
 
     // If we are in a cluster, we start in backup mode.
-    if (settings.cluster) backup.reset(new Backup(b, s));
+    if (settings.cluster) backup.reset(new Backup(*this, s));
 }
 
 HaBroker::~HaBroker() {}
@@ -91,7 +94,7 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
               // NOTE: resetting backup allows client connections, so any
               // primary state should be set up here before backup.reset()
               backup.reset();
-              QPID_LOG(notice, "HA: Primary promoted from backup");
+              QPID_LOG(notice, "HA: Promoted to primary");
               mgmtObject->set_status(PRIMARY);
           }
           break;
@@ -126,8 +129,8 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
           link->setUrl(url);
           // Create a queue replicator
           boost::shared_ptr<QueueReplicator> qr(new QueueReplicator(queue, link));
-          broker.getExchanges().registerExchange(qr);
           qr->activate();
+          broker.getExchanges().registerExchange(qr);
           break;
       }
 
@@ -145,7 +148,7 @@ void HaBroker::setClientUrl(const Url& url, const sys::Mutex::ScopedLock& l) {
 
 void HaBroker::updateClientUrl(const sys::Mutex::ScopedLock&) {
     Url url = clientUrl.empty() ? brokerUrl : clientUrl;
-    assert(!url.empty());
+    if (url.empty()) throw Url::Invalid("HA client URL is empty");
     mgmtObject->set_publicBrokers(url.str());
     knownBrokers.clear();
     knownBrokers.push_back(url);
@@ -153,7 +156,7 @@ void HaBroker::updateClientUrl(const sys::Mutex::ScopedLock&) {
 }
 
 void HaBroker::setBrokerUrl(const Url& url, const sys::Mutex::ScopedLock& l) {
-    if (url.empty()) throw Exception("Invalid empty URL for HA broker failover");
+    if (url.empty()) throw Url::Invalid("HA broker URL is empty");
     QPID_LOG(debug, "HA: Setting broker URL to: " << url);
     brokerUrl = url;
     mgmtObject->set_brokers(brokerUrl.str());
@@ -169,6 +172,11 @@ void HaBroker::setExpectedBackups(size_t n, const sys::Mutex::ScopedLock&) {
 
 std::vector<Url> HaBroker::getKnownBrokers() const {
     return knownBrokers;
+}
+
+void HaBroker::shutdown(const std::string& message) {
+    QPID_LOG(critical, "Shutting down: " << message);
+    broker.shutdown();
 }
 
 }} // namespace qpid::ha

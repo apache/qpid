@@ -49,6 +49,7 @@
 
 #include "qpid/client/AsyncSession.h"
 #include "qpid/client/Connection.h"
+#include "qpid/framing/FieldValue.h"
 
 
 #include <map>
@@ -472,13 +473,15 @@ INT ResourceManager::recover(XID *xids, long count, long flags) {
 	try {
 	    // status if we can't talk to the broker
 	    status = XAER_RMFAIL;
-	    std::vector<std::string> wireFormatXids;
 
 	    DtxRecoverResult dtxrr = qpidSession.dtxRecover(true);
 
 	    // status if we can't process the xids
 	    status = XAER_RMERR;
-	    dtxrr.getInDoubt().collect(wireFormatXids);
+
+        std::vector<std::string> wireFormatXids(dtxrr.getInDoubt().size());
+        std::transform(dtxrr.getInDoubt().begin(), dtxrr.getInDoubt().end(), wireFormatXids.begin(), Array::get<std::string, Array::ValuePtr>);
+
 	    size_t nXids = wireFormatXids.size();
 
 	    if (nXids > 0) {

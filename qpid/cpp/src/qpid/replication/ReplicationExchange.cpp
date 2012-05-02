@@ -60,7 +60,13 @@ void ReplicationExchange::route(Deliverable& msg)
     if (args) {
         int eventType = args->getAsInt(REPLICATION_EVENT_TYPE);
         if (eventType) {
-            if (isDuplicate(args)) return;
+            if (isDuplicate(args)) {
+                if (mgmtExchange != 0) {
+                    mgmtExchange->inc_msgDrops();
+                    mgmtExchange->inc_byteDrops(msg.contentSize());
+                }
+	        return;
+	    }
             switch (eventType) {
               case ENQUEUE:
                 handleEnqueueEvent(args, msg);

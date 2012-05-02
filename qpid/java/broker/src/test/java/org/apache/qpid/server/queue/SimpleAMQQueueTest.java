@@ -37,11 +37,13 @@ import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.BaseQueue.PostEnqueueAction;
 import org.apache.qpid.server.queue.SimpleAMQQueue.QueueEntryFilter;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.store.TestableMemoryMessageStoreFactory;
 import org.apache.qpid.server.subscription.MockSubscription;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
@@ -61,7 +63,6 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
 
     protected SimpleAMQQueue _queue;
     protected VirtualHost _virtualHost;
-    protected TestableMemoryMessageStore _store = new TestableMemoryMessageStore();
     protected AMQShortString _qname = new AMQShortString("qname");
     protected AMQShortString _owner = new AMQShortString("owner");
     protected AMQShortString _routingKey = new AMQShortString("routing key");
@@ -106,7 +107,9 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         ApplicationRegistry applicationRegistry = (ApplicationRegistry)ApplicationRegistry.getInstance();
 
         PropertiesConfiguration env = new PropertiesConfiguration();
-        _virtualHost = new VirtualHostImpl(ApplicationRegistry.getInstance(), new VirtualHostConfiguration(getClass().getName(), env), _store);
+        final VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(getClass().getName(), env);
+        vhostConfig.setMessageStoreFactoryClass(TestableMemoryMessageStoreFactory.class.getName());
+        _virtualHost = new VirtualHostImpl(ApplicationRegistry.getInstance(), vhostConfig);
         applicationRegistry.getVirtualHostRegistry().registerVirtualHost(_virtualHost);
 
         _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(_qname, false, _owner, false, false, _virtualHost, _arguments);
@@ -135,7 +138,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         }
 
         try {
-            _queue = new SimpleAMQQueue(_qname, false, _owner, false, false,null, Collections.EMPTY_MAP);
+            _queue = new SimpleAMQQueue(UUIDGenerator.generateUUID(), _qname, false, _owner, false,false, null, Collections.EMPTY_MAP);
             assertNull("Queue was created", _queue);
         }
         catch (IllegalArgumentException e)
@@ -477,7 +480,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
     public void testAutoDeleteQueue() throws Exception
     {
        _queue.stop();
-       _queue = new SimpleAMQQueue(_qname, false, null, true, false, _virtualHost, Collections.EMPTY_MAP);
+       _queue = new SimpleAMQQueue(UUIDGenerator.generateUUID(), _qname, false, null, true, false, _virtualHost, Collections.EMPTY_MAP);
        _queue.setDeleteOnNoConsumers(true);
        _queue.registerSubscription(_subscription, false);
        AMQMessage message = createMessage(new Long(25));
@@ -634,11 +637,12 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
 
         qs.add(_queue);
         MessageMetaData metaData = msg.headersReceived(System.currentTimeMillis());
-        StoredMessage handle = _store.addMessage(metaData);
+        TestableMemoryMessageStore store = (TestableMemoryMessageStore) _virtualHost.getMessageStore();
+        StoredMessage handle = store.addMessage(metaData);
         msg.setStoredMessage(handle);
 
 
-        ServerTransaction txn = new AutoCommitTransaction(_store);
+        ServerTransaction txn = new AutoCommitTransaction(store);
 
         txn.enqueue(qs, msg, new ServerTransaction.Action()
                                     {
@@ -653,7 +657,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
                                     }, 0L);
 
         // Check that it is enqueued
-        AMQQueue data = _store.getMessages().get(1L);
+        AMQQueue data = store.getMessages().get(1L);
         assertNull(data);
 
         // Dequeue message
@@ -664,7 +668,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         _queue.dequeue(entry,null);
 
         // Check that it is dequeued
-        data = _store.getMessages().get(1L);
+        data = store.getMessages().get(1L);
         assertNull(data);
     }
 
@@ -688,8 +692,8 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
     public void testProcessQueueWithUniqueSelectors() throws Exception
     {
         TestSimpleQueueEntryListFactory factory = new TestSimpleQueueEntryListFactory();
-        SimpleAMQQueue testQueue = new SimpleAMQQueue("testQueue", false, "testOwner",false,
-                                                      false, _virtualHost, factory, null)
+        SimpleAMQQueue testQueue = new SimpleAMQQueue(UUIDGenerator.generateUUID(), "testQueue", false,"testOwner",
+                                                      false, false, _virtualHost, factory, null)
         {
             @Override
             public void deliverAsync(Subscription sub)
@@ -1025,8 +1029,8 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         int dequeueMessageIndex = 1;
 
         // create queue with overridden method deliverAsync
-        SimpleAMQQueue testQueue = new SimpleAMQQueue(new AMQShortString("test"), false,
-                new AMQShortString("testOwner"), false, false, _virtualHost, null)
+        SimpleAMQQueue testQueue = new SimpleAMQQueue(UUIDGenerator.generateUUID(), new AMQShortString("test"),
+                false, new AMQShortString("testOwner"), false, false, _virtualHost, null)
         {
             @Override
             public void deliverAsync(Subscription sub)
@@ -1096,8 +1100,8 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
     public void testEqueueDequeuedEntry()
     {
         // create a queue where each even entry is considered a dequeued
-        SimpleAMQQueue queue = new SimpleAMQQueue(new AMQShortString("test"), false, new AMQShortString("testOwner"),
-                false, false, _virtualHost, new QueueEntryListFactory()
+        SimpleAMQQueue queue = new SimpleAMQQueue(UUIDGenerator.generateUUID(), new AMQShortString("test"), false,
+                new AMQShortString("testOwner"), false, false, _virtualHost, new QueueEntryListFactory()
                 {
                     public QueueEntryList createQueueEntryList(AMQQueue queue)
                     {
@@ -1174,8 +1178,8 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
 
     public void testActiveConsumerCount() throws Exception
     {
-        final SimpleAMQQueue queue = new SimpleAMQQueue(new AMQShortString("testActiveConsumerCount"), false, new AMQShortString("testOwner"),
-                false, false, _virtualHost, new SimpleQueueEntryList.Factory(), null);
+        final SimpleAMQQueue queue = new SimpleAMQQueue(UUIDGenerator.generateUUID(), new AMQShortString("testActiveConsumerCount"), false,
+                new AMQShortString("testOwner"), false, false, _virtualHost, new SimpleQueueEntryList.Factory(), null);
 
         //verify adding an active subscription increases the count
         final MockSubscription subscription1 = new MockSubscription();

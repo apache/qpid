@@ -31,6 +31,8 @@
 #include "qpid/framing/enum.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/broker/AclModule.h"
+#include "qpid/broker/Exchange.h"
+#include "qpid/UrlArray.h"
 
 namespace qpid {
 namespace broker {
@@ -47,6 +49,13 @@ using sys::Mutex;
 using std::stringstream;
 using std::string;
 namespace _qmf = ::qmf::org::apache::qpid::broker;
+
+
+namespace {
+    const std::string FAILOVER_EXCHANGE("amq.failover");
+    const std::string FAILOVER_HEADER_KEY("amq.failover");
+}
+
 
 struct LinkTimerTask : public sys::TimerTask {
     LinkTimerTask(Link& l, sys::Timer& t)
@@ -65,6 +74,57 @@ struct LinkTimerTask : public sys::TimerTask {
     sys::Timer& timer;
 };
 
+
+
+/** LinkExchange is used by the link to subscribe to the remote broker's amq.failover exchange.
+ */
+class LinkExchange : public broker::Exchange
+{
+public:
+    LinkExchange(const std::string& name) : Exchange(name), link(0) {}
+    ~LinkExchange() {};
+    std::string getType() const { return Link::exchangeTypeName; }
+
+    // Exchange methods - set up to prevent binding/unbinding etc from clients!
+    bool bind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*) { return false; }
+    bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*) { return false; }
+    bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const) {return false;}
+
+    // Process messages sent from the remote's amq.failover exchange by extracting the failover URLs
+    // and saving them should the Link need to reconnect.
+    void route(broker::Deliverable& msg)
+    {
+        if (!link) return;
+        const framing::FieldTable* headers = msg.getMessage().getApplicationHeaders();
+        framing::Array addresses;
+        if (headers && headers->getArray(FAILOVER_HEADER_KEY, addresses)) {
+            // convert the Array of addresses to a single Url container for used with setUrl():
+            std::vector<Url> urlVec;
+            Url urls;
+            urlVec = urlArrayToVector(addresses);
+            for(size_t i = 0; i < urlVec.size(); ++i)
+                urls.insert(urls.end(), urlVec[i].begin(), urlVec[i].end());
+            QPID_LOG(debug, "Remote broker has provided these failover addresses= " << urls);
+            link->setUrl(urls);
+        }
+    }
+
+    void setLink(Link *_link)
+    {
+        assert(!link);
+        link = _link;
+    }
+
+private:
+    Link *link;
+};
+
+
+boost::shared_ptr<Exchange> Link::linkExchangeFactory( const std::string& _name )
+{
+    return Exchange::shared_ptr(new LinkExchange(_name));
+}
+
 Link::Link(const string&  _name,
            LinkRegistry*  _links,
            const string&        _host,
@@ -77,8 +137,9 @@ Link::Link(const string&  _name,
            const string&        _password,
            Broker*        _broker,
            Manageable*    parent)
-    : name(_name), links(_links), host(_host), port(_port),
-      transport(_transport),
+    : name(_name), links(_links),
+      configuredTransport(_transport), configuredHost(_host), configuredPort(_port),
+      host(_host), port(_port), transport(_transport),
       durable(_durable),
       authMechanism(_authMechanism), username(_username), password(_password),
       persistenceId(0), mgmtObject(0), broker(_broker), state(0),
@@ -90,7 +151,8 @@ Link::Link(const string&  _name,
       connection(0),
       agent(0),
       listener(l),
-      timerTask(new LinkTimerTask(*this, broker->getTimer()))
+      timerTask(new LinkTimerTask(*this, broker->getTimer())),
+      failoverChannel(0)
 {
     if (parent != 0 && broker != 0)
     {
@@ -111,15 +173,26 @@ Link::Link(const string&  _name,
         startConnectionLH();
     }
     broker->getTimer().add(timerTask);
+
+    stringstream exchangeName;
+    exchangeName << "qpid.link." << transport << ":" << host << ":" << port;
+    std::pair<Exchange::shared_ptr, bool> rc = broker->getExchanges().declare(exchangeName.str(),
+                                                                              exchangeTypeName);
+    failoverExchange = boost::static_pointer_cast<LinkExchange>(rc.first);
+    assert(failoverExchange);
+    failoverExchange->setLink(this);
 }
 
 Link::~Link ()
 {
-    if (state == STATE_OPERATIONAL && connection != 0)
-        connection->close(CLOSE_CODE_CONNECTION_FORCED, "closed by management");
+    if (state == STATE_OPERATIONAL && connection != 0) {
+        closeConnection("closed by management");
+    }
 
     if (mgmtObject != 0)
         mgmtObject->resourceDestroy ();
+
+    broker->getExchanges().destroy(failoverExchange->getName());
 }
 
 void Link::setStateLH (int newState)
@@ -186,10 +259,20 @@ void Link::established(Connection* c)
 
 
 void Link::setUrl(const Url& u) {
+    QPID_LOG(info, "Setting remote broker failover addresses for link '" << getName() << "' to these urls: " << u);
     Mutex::ScopedLock mutex(lock);
     url = u;
     reconnectNext = 0;
 }
+
+
+namespace {
+    /** invoked when session used to subscribe to remote's amq.failover exchange detaches */
+    void sessionDetached(Link *link) {
+        QPID_LOG(debug, "detached from 'amq.failover' for link: " << link->getName());
+    }
+}
+
 
 void Link::opened() {
     Mutex::ScopedLock mutex(lock);
@@ -209,36 +292,75 @@ void Link::opened() {
         reconnectNext = 0;
         QPID_LOG(debug, "Known hosts for peer of inter-broker link: " << url);
     }
+
+    //
+    // attempt to subscribe to failover exchange for updates from remote
+    //
+
+    const std::string queueName = "qpid.link." + framing::Uuid(true).str();
+    failoverChannel = nextChannel();
+
+    SessionHandler& sessionHandler = connection->getChannel(failoverChannel);
+    sessionHandler.setDetachedCallback( boost::bind(&sessionDetached, this) );
+    failoverSession = queueName;
+    sessionHandler.attachAs(failoverSession);
+
+    framing::AMQP_ServerProxy remoteBroker(sessionHandler.out);
+
+    remoteBroker.getQueue().declare(queueName,
+                                    "",         // alt-exchange
+                                    false,      // passive
+                                    false,      // durable
+                                    true,       // exclusive
+                                    true,       // auto-delete
+                                    FieldTable());
+    remoteBroker.getExchange().bind(queueName,
+                                    FAILOVER_EXCHANGE,
+                                    "",     // no key
+                                    FieldTable());
+    remoteBroker.getMessage().subscribe(queueName,
+                                        failoverExchange->getName(),
+                                        1,           // implied-accept mode
+                                        0,           // pre-acquire mode
+                                        false,       // exclusive
+                                        "",          // resume-id
+                                        0,           // resume-ttl
+                                        FieldTable());
+    remoteBroker.getMessage().flow(failoverExchange->getName(), 0, 0xFFFFFFFF);
+    remoteBroker.getMessage().flow(failoverExchange->getName(), 1, 0xFFFFFFFF);
 }
 
 void Link::closed(int, std::string text)
 {
-    Mutex::ScopedLock mutex(lock);
-    QPID_LOG (info, "Inter-broker link disconnected from " << host << ":" << port << " " << text);
-
-    connection = 0;
-    if (state == STATE_OPERATIONAL) {
-        stringstream addr;
-        addr << host << ":" << port;
-        if (!hideManagement() && agent)
-            agent->raiseEvent(_qmf::EventBrokerLinkDown(addr.str()));
-    }
-
-    for (Bridges::iterator i = active.begin(); i != active.end(); i++) {
-        (*i)->closed();
-        created.push_back(*i);
-    }
-    active.clear();
-
-    if (state != STATE_FAILED && state != STATE_PASSIVE)
+    bool isClosing = false;
     {
-        setStateLH(STATE_WAITING);
-        if (!hideManagement())
-            mgmtObject->set_lastError (text);
+        Mutex::ScopedLock mutex(lock);
+        QPID_LOG (info, "Inter-broker link disconnected from " << host << ":" << port << " " << text);
+
+        connection = 0;
+        if (state == STATE_OPERATIONAL) {
+            stringstream addr;
+            addr << host << ":" << port;
+            if (!hideManagement() && agent)
+                agent->raiseEvent(_qmf::EventBrokerLinkDown(addr.str()));
+        }
+
+        for (Bridges::iterator i = active.begin(); i != active.end(); i++) {
+            (*i)->closed();
+            created.push_back(*i);
+        }
+        active.clear();
+
+        if (state != STATE_FAILED && state != STATE_PASSIVE)
+        {
+            setStateLH(STATE_WAITING);
+            if (!hideManagement())
+                mgmtObject->set_lastError (text);
+        }
             mgmtObject->set_connectionRef(qpid::management::ObjectId());
     }
-
-    if (closing)
+    // Call destroy outside of the lock, don't want to be deleted with lock held.
+    if (isClosing)
         destroy();
 }
 
@@ -249,10 +371,8 @@ void Link::destroy ()
     {
         Mutex::ScopedLock mutex(lock);
 
-        QPID_LOG (info, "Inter-broker link to " << host << ":" << port << " removed by management");
-        if (connection)
-            connection->close(CLOSE_CODE_CONNECTION_FORCED, "closed by management");
-        connection = 0;
+        QPID_LOG (info, "Inter-broker link to " << configuredHost << ":" << configuredPort << " removed by management");
+        closeConnection("closed by management");
         setStateLH(STATE_CLOSED);
 
         // Move the bridges to be deleted into a local vector so there is no
@@ -321,7 +441,7 @@ void Link::ioThreadProcessing()
     // check for bridge session errors and recover
     if (!active.empty()) {
         Bridges::iterator removed = std::remove_if(
-            active.begin(), active.end(), !boost::bind(&Bridge::isSessionReady, _1));
+            active.begin(), active.end(), boost::bind(&Bridge::isDetached, _1));
         for (Bridges::iterator i = removed; i != active.end(); ++i) {
             Bridge::shared_ptr  bridge = *i;
             bridge->closed();
@@ -411,7 +531,8 @@ bool Link::hideManagement() const {
 uint Link::nextChannel()
 {
     Mutex::ScopedLock mutex(lock);
-
+    if (channelCounter >= framing::CHANNEL_MAX)
+        channelCounter = 1;
     return channelCounter++;
 }
 
@@ -479,9 +600,9 @@ void Link::encode(Buffer& buffer) const
 {
     buffer.putShortString(ENCODED_IDENTIFIER);
     buffer.putShortString(name);
-    buffer.putShortString(host);
-    buffer.putShort(port);
-    buffer.putShortString(transport);
+    buffer.putShortString(configuredHost);
+    buffer.putShort(configuredPort);
+    buffer.putShortString(configuredTransport);
     buffer.putOctet(durable ? 1 : 0);
     buffer.putShortString(authMechanism);
     buffer.putShortString(username);
@@ -492,10 +613,9 @@ uint32_t Link::encodedSize() const
 {
     return ENCODED_IDENTIFIER.size() + 1 // +1 byte length
         + name.size() + 1
-        + host.size() + 1 // short-string (host)
-        + 5                // short-string ("link")
+        + configuredHost.size() + 1 // short-string (host)
         + 2                // port
-        + transport.size() + 1 // short-string(transport)
+        + configuredTransport.size() + 1 // short-string(transport)
         + 1                // durable
         + authMechanism.size() + 1
         + username.size() + 1
@@ -575,5 +695,64 @@ void Link::setPassive(bool passive)
         }
     }
 }
+
+
+/** utility to clean up connection resources correctly */
+void Link::closeConnection( const std::string& reason)
+{
+    if (connection != 0) {
+        // cancel our subscription to the failover exchange
+        SessionHandler& sessionHandler = connection->getChannel(failoverChannel);
+        if (sessionHandler.getSession()) {
+            framing::AMQP_ServerProxy remoteBroker(sessionHandler.out);
+            remoteBroker.getMessage().cancel(failoverExchange->getName());
+            remoteBroker.getSession().detach(failoverSession);
+        }
+        connection->close(CLOSE_CODE_CONNECTION_FORCED, reason);
+        connection = 0;
+    }
+}
+
+/** returns the current remote's address, and connection state */
+bool Link::getRemoteAddress(qpid::Address& addr) const
+{
+    addr.protocol = transport;
+    addr.host = host;
+    addr.port = port;
+
+    return state == STATE_OPERATIONAL;
+}
+
+
+// FieldTable keys for internal state data
+namespace {
+    const std::string FAILOVER_ADDRESSES("failover-addresses");
+    const std::string FAILOVER_INDEX("failover-index");
+}
+
+void Link::getState(framing::FieldTable& state) const
+{
+    state.clear();
+    Mutex::ScopedLock mutex(lock);
+    if (!url.empty()) {
+        state.setString(FAILOVER_ADDRESSES, url.str());
+        state.setInt(FAILOVER_INDEX, reconnectNext);
+    }
+}
+
+void Link::setState(const framing::FieldTable& state)
+{
+    Mutex::ScopedLock mutex(lock);
+    if (state.isSet(FAILOVER_ADDRESSES)) {
+        Url failovers(state.getAsString(FAILOVER_ADDRESSES));
+        setUrl(failovers);
+    }
+    if (state.isSet(FAILOVER_INDEX)) {
+        reconnectNext = state.getAsInt(FAILOVER_INDEX);
+    }
+}
+
+
+const std::string Link::exchangeTypeName("qpid.LinkExchange");
 
 }} // namespace qpid::broker

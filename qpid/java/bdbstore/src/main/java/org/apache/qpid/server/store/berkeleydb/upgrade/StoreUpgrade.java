@@ -23,10 +23,9 @@ package org.apache.qpid.server.store.berkeleydb.upgrade;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.logging.LogSubject;
 
 public interface StoreUpgrade
 {
-    void performUpgrade(LogSubject logSubject, Environment environment, UpgradeInteractionHandler handler)
+    void performUpgrade(Environment environment, UpgradeInteractionHandler handler, String virtualHostName)
             throws DatabaseException, AMQStoreException;
 }

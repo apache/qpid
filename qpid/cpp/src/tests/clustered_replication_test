@@ -8,9 +8,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -34,11 +34,11 @@ stop_brokers() {
     if [[ $PRIMARY1 ]] ; then
         $QPIDD_EXEC --no-module-dir -q --port $PRIMARY1
         unset PRIMARY1
-    fi      
+    fi
     if [[ $PRIMARY2 ]] ; then
         $QPIDD_EXEC --no-module-dir -q --port $PRIMARY2
         unset PRIMARY2
-    fi      
+    fi
     if [[ $DR1 ]] ; then
         $QPIDD_EXEC --no-module-dir -q --port $DR1
         unset DR1
@@ -50,7 +50,8 @@ stop_brokers() {
 }
 
 if test -d $PYTHON_DIR; then
-    . $srcdir/ais_check
+    . cpg_check.sh
+    cpg_enabled || exit 0
 
     #todo: these cluster names need to be unique to prevent clashes
     PRIMARY_CLUSTER=PRIMARY_$(hostname)_$$
@@ -89,20 +90,20 @@ if test -d $PYTHON_DIR; then
     #send more messages to primary
     for i in `seq 11 20`; do echo Message$i; done | ./sender --port $PRIMARY1 --send-eos 1
 
-    #wait for replication events to all be processed:        
+    #wait for replication events to all be processed:
     echo Waiting for replication to complete
     echo Done | ./sender --port $PRIMARY1 --routing-key control-queue --send-eos 1
     ./receiver --queue control-queue --port $DR1 > /dev/null
 
     #verify contents of test queue on dr cluster:
-    echo Verifying...    
+    echo Verifying...
     ./receiver --port $DR2 > repl.out.tmp
     for i in `seq 6 20`; do echo Message$i; done | diff repl.out.tmp - || FAIL=1
 
     if [[ $FAIL ]]; then
         echo Clustered replication test failed: expectations not met!
         exit 1
-    else 
+    else
         echo Clustered replication test passed
         rm -f repl*.tmp
     fi

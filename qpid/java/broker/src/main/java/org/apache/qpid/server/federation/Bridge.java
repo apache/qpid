@@ -132,7 +132,7 @@ public class Bridge implements BridgeConfig
         {
             try
             {
-                brokerLink.getVirtualHost().getDurableConfigurationStore().createBridge(this);
+                brokerLink.getVirtualHost().getMessageStore().createBridge(this);
             }
             catch (AMQStoreException e)
             {
@@ -220,7 +220,7 @@ public class Bridge implements BridgeConfig
         {
             try
             {
-                brokerLink.getVirtualHost().getDurableConfigurationStore().createBridge(this);
+                brokerLink.getVirtualHost().getMessageStore().createBridge(this);
             }
             catch (AMQStoreException e)
             {
@@ -767,13 +767,13 @@ public class Bridge implements BridgeConfig
 
             try
             {
-                _queue = AMQQueueFactory.createAMQQueueImpl(_tmpQueueName,
+                _queue = AMQQueueFactory.createAMQQueueImpl(null,
+                                                        _tmpQueueName,
                                                         isDurable(),
                                                         _link.getFederationTag(),
                                                         false,
                                                         false,
-                                                        getVirtualHost(),
-                                                        options);
+                                                        getVirtualHost(), options);
             }
             catch (AMQException e)
             {

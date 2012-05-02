@@ -40,7 +40,6 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.berkeleydb.AMQShortStringEncoding;
@@ -72,41 +71,31 @@ public class UpgradeFrom4To5 extends AbstractStoreUpgrade
     private static final String OLD_CONTENT_DB_NAME = "messageContentDb_v4";
     private static final String NEW_CONTENT_DB_NAME = "messageContentDb_v5";
 
-    private static final String[] OLD_DATABASE_NAMES = new String[] { EXCHANGE_DB_NAME, OLD_QUEUE_DB_NAME,
-            OLD_BINDINGS_DB_NAME, OLD_DELIVERY_DB, OLD_METADATA_DB_NAME, OLD_CONTENT_DB_NAME, "bridges_v4", "links_v4",
-            "xids_v4" };
-    private static final String[] NEW_DATABASE_NAMES = new String[] { "exchangeDb_v5", NEW_QUEUE_DB_NAME,
-            NEW_BINDINGS_DB_NAME, NEW_DELIVERY_DB, NEW_METADATA_DB_NAME, NEW_CONTENT_DB_NAME, "bridges_v5", "links_v5",
-            "xids_v5" };
-
     private static final byte COLON = (byte) ':';
 
     private static final Logger _logger = Logger.getLogger(UpgradeFrom4To5.class);
 
-    public void performUpgrade(final LogSubject logSubject, final Environment environment,
-            final UpgradeInteractionHandler handler) throws DatabaseException, AMQStoreException
+    public void performUpgrade(final Environment environment, final UpgradeInteractionHandler handler, String virtualHostName) throws DatabaseException, AMQStoreException
     {
-        _logger.info("Starting store upgrade from version 4");
         Transaction transaction = null;
         try
         {
-            reportStarting(environment, OLD_DATABASE_NAMES, USER_FRIENDLY_NAMES);
+            reportStarting(environment, 4);
 
             transaction = environment.beginTransaction(null, null);
 
             // find all queues which are bound to a topic exchange and which have a colon in their name
-            final List<AMQShortString> potentialDurableSubs = findPotentialDurableSubscriptions(logSubject, environment,
-                    transaction);
+            final List<AMQShortString> potentialDurableSubs = findPotentialDurableSubscriptions(environment, transaction);
 
-            Set<String> existingQueues = upgradeQueues(logSubject, environment, handler, potentialDurableSubs, transaction);
-            upgradeQueueBindings(logSubject, environment, handler, potentialDurableSubs, transaction);
-            Set<Long> messagesToDiscard = upgradeDelivery(logSubject, environment, existingQueues, handler, transaction);
-            upgradeContent(logSubject, environment, handler, messagesToDiscard, transaction);
-            upgradeMetaData(logSubject, environment, handler, messagesToDiscard, transaction);
-            renameRemainingDatabases(logSubject, environment, handler, transaction);
+            Set<String> existingQueues = upgradeQueues(environment, handler, potentialDurableSubs, transaction);
+            upgradeQueueBindings(environment, handler, potentialDurableSubs, transaction);
+            Set<Long> messagesToDiscard = upgradeDelivery(environment, existingQueues, handler, transaction);
+            upgradeContent(environment, handler, messagesToDiscard, transaction);
+            upgradeMetaData(environment, handler, messagesToDiscard, transaction);
+            renameRemainingDatabases(environment, handler, transaction);
             transaction.commit();
 
-            reportFinished(environment, NEW_DATABASE_NAMES, USER_FRIENDLY_NAMES);
+            reportFinished(environment, 5);
 
         }
         catch (Exception e)
@@ -127,8 +116,8 @@ public class UpgradeFrom4To5 extends AbstractStoreUpgrade
         }
     }
 
-    private void upgradeQueueBindings(LogSubject logSubject, Environment environment, UpgradeInteractionHandler handler,
-            final List<AMQShortString> potentialDurableSubs, Transaction transaction)
+    private void upgradeQueueBindings(Environment environment, UpgradeInteractionHandler handler, final List<AMQShortString> potentialDurableSubs,
+            Transaction transaction)
     {
         if (environment.getDatabaseNames().contains(OLD_BINDINGS_DB_NAME))
         {
@@ -188,8 +177,8 @@ public class UpgradeFrom4To5 extends AbstractStoreUpgrade
         }
     }
 
-    private Set<String> upgradeQueues(final LogSubject logSubject, final Environment environment,
-            final UpgradeInteractionHandler handler, List<AMQShortString> potentialDurableSubs, Transaction transaction)
+    private Set<String> upgradeQueues(final Environment environment, final UpgradeInteractionHandler handler,
+            List<AMQShortString> potentialDurableSubs, Transaction transaction)
     {
         _logger.info("Queues");
         final Set<String> existingQueues = new HashSet<String>();
@@ -217,10 +206,10 @@ public class UpgradeFrom4To5 extends AbstractStoreUpgrade
         return existingQueues;
     }
 
-    private List<AMQShortString> findPotentialDurableSubscriptions(final LogSubject logSubject,
-            final Environment environment, Transaction transaction)
+    private List<AMQShortString> findPotentialDurableSubscriptions(final Environment environment,
+            Transaction transaction)
     {
-        final List<AMQShortString> exchangeNames = findTopicExchanges(logSubject, environment);
+        final List<AMQShortString> exchangeNames = findTopicExchanges(environment);
         final List<AMQShortString> queues = new ArrayList<AMQShortString>();
         final PartialBindingRecordBinding binding = new PartialBindingRecordBinding();
 
@@ -241,8 +230,8 @@ public class UpgradeFrom4To5 extends AbstractStoreUpgrade
         return queues;
     }
 
-    private Set<Long> upgradeDelivery(final LogSubject logSubject, final Environment environment,
-            final Set<String> existingQueues, final UpgradeInteractionHandler handler, Transaction transaction)
+    private Set<Long> upgradeDelivery(final Environment environment, final Set<String> existingQueues,
+            final UpgradeInteractionHandler handler, Transaction transaction)
     {
         final Set<Long> messagesToDiscard = new HashSet<Long>();
         final Set<String> queuesToDiscard = new HashSet<String>();
@@ -363,7 +352,7 @@ public class UpgradeFrom4To5 extends AbstractStoreUpgrade
         new DatabaseTemplate(environment, NEW_QUEUE_DB_NAME, NEW_BINDINGS_DB_NAME, transaction).run(queueCreateOperation);
     }
 
-    private List<AMQShortString> findTopicExchanges(final LogSubject logSubject, final Environment environment)
+    private List<AMQShortString> findTopicExchanges(final Environment environment)
     {
         final List<AMQShortString> topicExchanges = new ArrayList<AMQShortString>();
         final ExchangeRecordBinding binding = new ExchangeRecordBinding();
@@ -385,8 +374,8 @@ public class UpgradeFrom4To5 extends AbstractStoreUpgrade
         return topicExchanges;
     }
 
-    private void upgradeMetaData(final LogSubject logSubject, final Environment environment,
-            final UpgradeInteractionHandler handler, final Set<Long> messagesToDiscard, Transaction transaction)
+    private void upgradeMetaData(final Environment environment, final UpgradeInteractionHandler handler,
+            final Set<Long> messagesToDiscard, Transaction transaction)
     {
         _logger.info("Message MetaData");
         if (environment.getDatabaseNames().contains(OLD_METADATA_DB_NAME))
@@ -426,8 +415,8 @@ public class UpgradeFrom4To5 extends AbstractStoreUpgrade
         }
     }
 
-    private void upgradeContent(final LogSubject logSubject, final Environment environment,
-            final UpgradeInteractionHandler handler, final Set<Long> messagesToDiscard, Transaction transaction)
+    private void upgradeContent(final Environment environment, final UpgradeInteractionHandler handler,
+            final Set<Long> messagesToDiscard, Transaction transaction)
     {
         _logger.info("Message Contents");
         if (environment.getDatabaseNames().contains(OLD_CONTENT_DB_NAME))
@@ -486,8 +475,8 @@ public class UpgradeFrom4To5 extends AbstractStoreUpgrade
      * For all databases which haven't been otherwise upgraded, we still need to
      * rename them from _v4 to _v5
      */
-    private void renameRemainingDatabases(final LogSubject logSubject, final Environment environment,
-            final UpgradeInteractionHandler handler, Transaction transaction)
+    private void renameRemainingDatabases(final Environment environment, final UpgradeInteractionHandler handler,
+            Transaction transaction)
     {
         for (String dbName : environment.getDatabaseNames())
         {
