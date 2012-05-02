@@ -104,7 +104,7 @@ void ConnectionCounter::releaseLH(
 //
 void ConnectionCounter::connection(broker::Connection& connection) {
     QPID_LOG(trace, "ACL ConnectionCounter connection IP:" << connection.getMgmtId()
-        << ", user:" << connection.getUsername());
+        << ", userId:" << connection.getUserId());
 
     Mutex::ScopedLock locker(dataLock);
 
@@ -117,11 +117,11 @@ void ConnectionCounter::connection(broker::Connection& connection) {
 //
 void ConnectionCounter::opened(broker::Connection& connection) {
     QPID_LOG(trace, "ACL ConnectionCounter Opened IP:" << connection.getMgmtId()
-        << ", user:" << connection.getUsername());
+        << ", userId:" << connection.getUserId());
 
     Mutex::ScopedLock locker(dataLock);
 
-    const std::string& userName(              connection.getUsername());
+    const std::string& userName(              connection.getUserId());
     const std::string& hostName(getClientHost(connection.getMgmtId()));
 
     // Bump state from CREATED to OPENED
@@ -157,7 +157,7 @@ void ConnectionCounter::opened(broker::Connection& connection) {
 //
 void ConnectionCounter::closed(broker::Connection& connection) {
     QPID_LOG(trace, "ACL ConnectionCounter Closed IP:" << connection.getMgmtId()
-        << ", user:" << connection.getUsername());
+        << ", userId:" << connection.getUserId());
 
     Mutex::ScopedLock locker(dataLock);
 
@@ -167,7 +167,7 @@ void ConnectionCounter::closed(broker::Connection& connection) {
             // Normal case: connection was created and opened.
             // Decrement in-use counts
             releaseLH(connectByNameMap,
-                      connection.getUsername(),
+                      connection.getUserId(),
                       nameLimit);
 
             releaseLH(connectByHostMap,

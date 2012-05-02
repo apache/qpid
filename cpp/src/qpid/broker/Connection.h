@@ -113,15 +113,20 @@ class Connection : public sys::ConnectionInputHandler,
     void requestIOProcessing (boost::function0<void>);
     void recordFromServer (const framing::AMQFrame& frame);
     void recordFromClient (const framing::AMQFrame& frame);
+
+    // gets for configured federation links
     std::string getAuthMechanism();
     std::string getAuthCredentials();
     std::string getUsername();
     std::string getPassword();
     std::string getHost();
     uint16_t    getPort();
+
     void notifyConnectionForced(const std::string& text);
     void setUserId(const std::string& uid);
     void raiseConnectEvent();
+
+    // credentials for connected client
     const std::string& getUserId() const { return ConnectionState::getUserId(); }
     const std::string& getMgmtId() const { return mgmtId; }
     management::ManagementAgent* getAgent() const { return agent; }
