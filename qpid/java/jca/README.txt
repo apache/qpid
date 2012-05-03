@@ -201,7 +201,10 @@ provides one property
 
 ConnectionURL
     This is the url used to configure the connection factory. Please see the Qpid JMS client documentation for
-    further details.
+    The QpidConnectionFactoryProxy allows for a non-JCA ConnectionFactory to be bound into the JNDI tree. This
+    ConnectionFactory can in turn be used outside of the application server. Typically a ConnectionFactory of
+    this sort is used by Java Swing or other non-managed clients not requiring JCA. One one property is
+    required:
 
 Example:
     amqp://anonymous:passwd@client/test?brokerlist='tcp://localhost:5672?sasl_mechs='PLAIN''
