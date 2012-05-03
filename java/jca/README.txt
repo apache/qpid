@@ -169,7 +169,7 @@ PrefetchLow
 PrefetchHigh
     Qpid specific -- TODO more explanation
 
-SetupA
+Setup
 Administered Objects
 ======================
 The JCA specification provides for administered objects. Ass per the specification, administered objects are
@@ -188,6 +188,9 @@ DestinationAddress
 Example:
    DestinationAddress=hello.Queue;{create:always, node:{type:queue, x-declare:{auto-delete:true}}}
    DestinationAddress=amq.topic/hello.Topic
+    The QpidQueue/QpidTopic AdminObjects allow a developer, deployer or adminstrator to create destinations
+    (queues or topic) and bind these destinations into JNDI. Only one property is required:
+
 
 QpidConnectionFactoryProxy
 ==========================
