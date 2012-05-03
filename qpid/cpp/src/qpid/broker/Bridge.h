@@ -61,7 +61,7 @@ public:
     );
     ~Bridge();
 
-    void close();
+    QPID_BROKER_EXTERN void close();
     bool isDurable() { return args.i_durable; }
     Link *getLink() const { return link; }
     const std::string getSrc() const { return args.i_src; }
