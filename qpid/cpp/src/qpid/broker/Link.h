@@ -187,6 +187,11 @@ class Link : public PersistableConfig, public management::Manageable {
     // replicate internal state of this Link for clustering
     void getState(framing::FieldTable& state) const;
     void setState(const framing::FieldTable& state);
+
+    /** create a name for a link (if none supplied by user config) */
+    static std::string createName(const std::string& transport,
+                                  const std::string& host,
+                                  uint16_t  port);
 };
 }
 }

@@ -98,6 +98,12 @@ public:
     std::string getQueueName() const { return queueName; }
     const qmf::org::apache::qpid::broker::ArgsLinkBridge& getArgs() { return args; }
 
+    /** create a name for a bridge (if none supplied by user config) */
+    static std::string createName(const std::string& linkName,
+                                  const std::string& src,
+                                  const std::string& dest,
+                                  const std::string& key);
+
 private:
     // Callback when the bridge's session is detached.
     void sessionDetached();
@@ -114,7 +120,7 @@ private:
     std::auto_ptr<framing::AMQP_ServerProxy>          peer;
 
     Link* const link;
-    framing::ChannelId          id;
+    const framing::ChannelId          channel;
     qmf::org::apache::qpid::broker::ArgsLinkBridge args;
     qmf::org::apache::qpid::broker::Bridge*        mgmtObject;
     CancellationListener        listener;

@@ -175,7 +175,7 @@ Link::Link(const string&  _name,
     broker->getTimer().add(timerTask);
 
     stringstream exchangeName;
-    exchangeName << "qpid.link." << transport << ":" << host << ":" << port;
+    exchangeName << "qpid.link." << name;
     std::pair<Exchange::shared_ptr, bool> rc = broker->getExchanges().declare(exchangeName.str(),
                                                                               exchangeTypeName);
     failoverExchange = boost::static_pointer_cast<LinkExchange>(rc.first);
@@ -575,13 +575,8 @@ Link::shared_ptr Link::decode(LinkRegistry& links, Buffer& buffer)
     string   password;
     string   name;
 
-    if (kind == ENCODED_IDENTIFIER_V1) {
-        /** previous versions identified the Link by host:port, there was no name
-         * assigned.  So create a unique name for the new Link.
-         */
-        framing::Uuid uuid(true);
-        name = QPID_NAME_PREFIX + uuid.str();
-    } else {
+    if (kind == ENCODED_IDENTIFIER) {
+        // newer version provides a link name.
         buffer.getShortString(name);
     }
     buffer.getShortString(host);
@@ -591,6 +586,13 @@ Link::shared_ptr Link::decode(LinkRegistry& links, Buffer& buffer)
     buffer.getShortString(authMechanism);
     buffer.getShortString(username);
     buffer.getShortString(password);
+
+    if (kind == ENCODED_IDENTIFIER_V1) {
+        /** previous versions identified the Link by host:port, there was no name
+         * assigned.  So create a name for the new Link.
+         */
+        name = createName(transport, host, port);
+    }
 
     return links.declare(name, host, port, transport, durable, authMechanism,
                          username, password).first;
@@ -652,7 +654,7 @@ Manageable::status_t Link::ManagementMethod (uint32_t op, Args& args, string& te
         /* TBD: deprecate this interface in favor of the Broker::create() method.  The
          * Broker::create() method allows the user to assign a name to the bridge.
          */
-        QPID_LOG(warning, "The Link::bridge() method will be removed in a future release of QPID."
+        QPID_LOG(info, "The Link::bridge() method will be removed in a future release of QPID."
                  " Please use the Broker::create() method with type='bridge' instead.");
         _qmf::ArgsLinkBridge& iargs = (_qmf::ArgsLinkBridge&) args;
         QPID_LOG(debug, "Link::bridge() request received; src=" << iargs.i_src <<
@@ -662,11 +664,10 @@ Manageable::status_t Link::ManagementMethod (uint32_t op, Args& args, string& te
         // existing bridge - this behavior is backward compatible with previous releases.
         Bridge::shared_ptr bridge = links->getBridge(*this, iargs.i_src, iargs.i_dest, iargs.i_key);
         if (!bridge) {
-            // need to create a new bridge on this link
-            framing::Uuid uuid(true);
-            const std::string name(QPID_NAME_PREFIX + uuid.str());
+            // need to create a new bridge on this link.
             std::pair<Bridge::shared_ptr, bool> rc =
-              links->declare( name, *this, iargs.i_durable,
+              links->declare( Bridge::createName(name, iargs.i_src, iargs.i_dest, iargs.i_key),
+                              *this, iargs.i_durable,
                               iargs.i_src, iargs.i_dest, iargs.i_key, iargs.i_srcIsQueue,
                               iargs.i_srcIsLocal, iargs.i_tag, iargs.i_excludes,
                               iargs.i_dynamic, iargs.i_sync);
@@ -752,6 +753,15 @@ void Link::setState(const framing::FieldTable& state)
     }
 }
 
+std::string Link::createName(const std::string& transport,
+                             const std::string& host,
+                             uint16_t  port)
+{
+    stringstream linkName;
+    linkName << QPID_NAME_PREFIX << transport << std::string(":")
+             << host << std::string(":") << port;
+    return linkName.str();
+}
 
 const std::string Link::exchangeTypeName("qpid.LinkExchange");
 

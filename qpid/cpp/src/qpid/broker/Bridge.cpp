@@ -60,20 +60,18 @@ void Bridge::PushHandler::handle(framing::AMQFrame& frame)
 Bridge::Bridge(const std::string& _name, Link* _link, framing::ChannelId _id,
                CancellationListener l, const _qmf::ArgsLinkBridge& _args,
                InitializeCallback init) :
-    link(_link), id(_id), args(_args), mgmtObject(0),
+    link(_link), channel(_id), args(_args), mgmtObject(0),
     listener(l), name(_name), queueName("qpid.bridge_queue_"), persistenceId(0),
     initialize(init), detached(false)
 {
-    std::stringstream title;
-    title << id << "_" << name;
-    queueName += title.str();
+    queueName += Uuid(true).str();
     ManagementAgent* agent = link->getBroker()->getManagementAgent();
     if (agent != 0) {
         mgmtObject = new _qmf::Bridge
             (agent, this, link, name, args.i_durable, args.i_src, args.i_dest,
              args.i_key, args.i_srcIsQueue, args.i_srcIsLocal,
              args.i_tag, args.i_excludes, args.i_dynamic, args.i_sync);
-        mgmtObject->set_channelId(id);
+        mgmtObject->set_channelId(channel);
         agent->addObject(mgmtObject);
     }
     QPID_LOG(debug, "Bridge " << name << " created from " << args.i_src << " to " << args.i_dest);
@@ -91,7 +89,7 @@ void Bridge::create(Connection& c)
     conn = &c;
     FieldTable options;
     if (args.i_sync) options.setInt("qpid.sync_frequency", args.i_sync);
-    SessionHandler& sessionHandler = c.getChannel(id);
+    SessionHandler& sessionHandler = c.getChannel(channel);
     sessionHandler.setDetachedCallback(
         boost::bind(&Bridge::sessionDetached, shared_from_this()));
     if (args.i_srcIsLocal) {
@@ -99,15 +97,15 @@ void Bridge::create(Connection& c)
             throw Exception("Dynamic routing not supported for push routes");
         // Point the bridging commands at the local connection handler
         pushHandler.reset(new PushHandler(&c));
-        channelHandler.reset(new framing::ChannelHandler(id, pushHandler.get()));
+        channelHandler.reset(new framing::ChannelHandler(channel, pushHandler.get()));
 
         session.reset(new framing::AMQP_ServerProxy::Session(*channelHandler));
         peer.reset(new framing::AMQP_ServerProxy(*channelHandler));
 
-        session->attach(name, false);
+        session->attach(queueName, false);
         session->commandPoint(0,0);
     } else {
-        sessionHandler.attachAs(name);
+        sessionHandler.attachAs(queueName);
         // Point the bridging commands at the remote peer broker
         peer.reset(new framing::AMQP_ServerProxy(sessionHandler.out));
     }
@@ -217,12 +215,8 @@ Bridge::shared_ptr Bridge::decode(LinkRegistry& links, Buffer& buffer)
     Link::shared_ptr link;
     if (kind == ENCODED_IDENTIFIER_V1) {
         /** previous versions identified the bridge by host:port, not by name, and
-         * transport wasn't provided.  So create a unique name for the new bridge.
+         * transport wasn't provided.  Try to find a link using those paramters.
          */
-
-        framing::Uuid uuid(true);
-        name = QPID_NAME_PREFIX + uuid.str();
-
         buffer.getShortString(host);
         port = buffer.getShort();
 
@@ -253,6 +247,12 @@ Bridge::shared_ptr Bridge::decode(LinkRegistry& links, Buffer& buffer)
     buffer.getShortString(excludes);
     bool dynamic(buffer.getOctet());
     uint16_t sync = buffer.getShort();
+
+    if (kind == ENCODED_IDENTIFIER_V1) {
+        /** previous versions did not provide a name for the bridge, so create one
+         */
+        name = createName(link->getName(), src, dest, key);
+    }
 
     return links.declare(name, *link, durable, src, dest, key, is_queue,
                          is_local, id, excludes, dynamic, sync).first;
@@ -351,7 +351,7 @@ void Bridge::sendReorigin()
 }
 bool Bridge::resetProxy()
 {
-    SessionHandler& sessionHandler = conn->getChannel(id);
+    SessionHandler& sessionHandler = conn->getChannel(channel);
     if (!sessionHandler.getSession()) peer.reset();
     else peer.reset(new framing::AMQP_ServerProxy(sessionHandler.out));
     return peer.get();
@@ -379,6 +379,16 @@ const string& Bridge::getLocalTag() const
 }
 void Bridge::sessionDetached() {
     detached = true;
+}
+
+std::string Bridge::createName(const std::string& linkName,
+                               const std::string& src,
+                               const std::string& dest,
+                               const std::string& key)
+{
+    std::stringstream keystream;
+    keystream << linkName << "!" << src << "!" << dest << "!" << key;
+    return keystream.str();
 }
 
 }}

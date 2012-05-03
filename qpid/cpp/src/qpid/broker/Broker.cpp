@@ -459,7 +459,7 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
          * "create()" broker method if these features are needed.
          * TBD: deprecate this interface.
          */
-        QPID_LOG(warning, "The Broker::connect() method will be removed in a future release of QPID."
+        QPID_LOG(info, "The Broker::connect() method will be removed in a future release of QPID."
                  " Please use the Broker::create() method with type='link' instead.");
         _qmf::ArgsBrokerConnect& hp=
             dynamic_cast<_qmf::ArgsBrokerConnect&>(args);
@@ -477,9 +477,9 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
         // - this behavior is backward compatible with previous releases.
         if (!links.getLink(hp.i_host, hp.i_port, transport)) {
             // new link, need to generate a unique name for it
-            framing::Uuid uuid(true);
             std::pair<Link::shared_ptr, bool> response =
-              links.declare(QPID_NAME_PREFIX + uuid.str(), hp.i_host, hp.i_port, transport,
+              links.declare(Link::createName(transport, hp.i_host, hp.i_port),
+                            hp.i_host, hp.i_port, transport,
                             hp.i_durable, hp.i_authMechanism, hp.i_username, hp.i_password);
             if (!response.first) {
                 text = "Unable to create Link";
