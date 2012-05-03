@@ -20,8 +20,26 @@
  */
 package org.apache.qpid.jndi;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.jms.ConnectionFactory;
+import javax.jms.Destination;
+import javax.jms.Queue;
+import javax.jms.Topic;
+import javax.naming.ConfigurationException;
+import javax.naming.Context;
+import javax.naming.NamingException;
+import javax.naming.spi.InitialContextFactory;
 
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQDestination;
@@ -33,23 +51,10 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.util.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.jms.ConnectionFactory;
-import javax.jms.Destination;
-import javax.jms.Queue;
-import javax.jms.Topic;
-import javax.naming.ConfigurationException;
-import javax.naming.Context;
-import javax.naming.NamingException;
-import javax.naming.spi.InitialContextFactory;
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
+
 
 public class PropertiesFileInitialContextFactory implements InitialContextFactory
 {
@@ -60,6 +65,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
     private String QUEUE_PREFIX = "queue.";
     private String TOPIC_PREFIX = "topic.";
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public Context getInitialContext(Hashtable environment) throws NamingException
     {
         Map data = new ConcurrentHashMap();
@@ -68,6 +74,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
         {
 
             String file = null;
+            
             if (environment.containsKey(Context.PROVIDER_URL))
             {
                 file = (String) environment.get(Context.PROVIDER_URL);
@@ -77,13 +84,23 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
                 file = System.getProperty(Context.PROVIDER_URL);
             }
 
+            // Load the properties specified                
             if (file != null)
             {
                 _logger.info("Loading Properties from:" + file);
+                BufferedInputStream inputStream = null;
 
-                // Load the properties specified
-                BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream(file));
+                if(file.contains("file:"))
+                {
+                    inputStream = new BufferedInputStream(new FileInputStream(new File(new URI(file))));
+                }
+                else
+                {
+                    inputStream = new BufferedInputStream(new FileInputStream(file));                    
+                }
+                
                 Properties p = new Properties();
+                
                 try
                 {
                     p.load(inputStream);
@@ -118,6 +135,11 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
         {
             _logger.warn("Unable to load property file specified in Provider_URL:" + environment.get(Context.PROVIDER_URL) +"\n" +
                          "Due to:"+ioe.getMessage());
+        }
+        catch(URISyntaxException uoe)
+        {
+            _logger.warn("Unable to load property file specified in Provider_URL:" + environment.get(Context.PROVIDER_URL) +"\n" +
+                            "Due to:"+uoe.getMessage());            
         }
 
         createConnectionFactories(data, environment);
