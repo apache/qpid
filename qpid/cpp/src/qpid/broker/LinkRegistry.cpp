@@ -68,7 +68,7 @@ LinkRegistry::LinkRegistry (Broker* _broker) :
 
 LinkRegistry::~LinkRegistry() {}
 
-/** find link by current remote address */
+/** find link by the *configured* remote address */
 boost::shared_ptr<Link> LinkRegistry::getLink(const std::string& host,
                                               uint16_t           port,
                                               const std::string& transport)
@@ -319,18 +319,16 @@ void LinkRegistry::notifyConnection(const std::string& key, Connection* c)
     {
         Mutex::ScopedLock locker(lock);
         for (LinkMap::iterator l = links.begin(); l != links.end(); ++l) {
-            if (l->second->isConnecting() &&
-                l->second->getHost() == host &&
-                l->second->getPort() == port) {
+            if (l->second->pendingConnection(host, port)) {
                 link = l->second;
                 connections[key] = link->getName();
+                link->established(c);
                 break;
             }
         }
     }
 
     if (link) {
-        link->established(c);
         c->setUserId(str(format("%1%@%2%") % link->getUsername() % realm));
     }
 }

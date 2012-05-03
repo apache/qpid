@@ -269,7 +269,7 @@ void Link::setUrl(const Url& u) {
 namespace {
     /** invoked when session used to subscribe to remote's amq.failover exchange detaches */
     void sessionDetached(Link *link) {
-        QPID_LOG(debug, "detached from 'amq.failover' for link: " << link->getName());
+        QPID_LOG(notice, "detached from 'amq.failover' for link: " << link->getName());
     }
 }
 
@@ -762,6 +762,14 @@ std::string Link::createName(const std::string& transport,
              << host << std::string(":") << port;
     return linkName.str();
 }
+
+
+bool Link::pendingConnection(const std::string& _host, uint16_t _port) const
+{
+    Mutex::ScopedLock mutex(lock);
+    return (isConnecting() && _port == port && _host == host);
+}
+
 
 const std::string Link::exchangeTypeName("qpid.LinkExchange");
 

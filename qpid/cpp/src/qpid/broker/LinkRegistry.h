@@ -86,10 +86,12 @@ namespace broker {
         /** determine if Link exists */
         QPID_BROKER_EXTERN boost::shared_ptr<Link>
           getLink(const std::string& name);
+        /** host,port,transport will be matched against the configured values, which may
+            be different from the current values due to failover */
         QPID_BROKER_EXTERN boost::shared_ptr<Link>
-          getLink(const std::string& host,
-                  uint16_t           port,
-                  const std::string& transport = std::string());
+          getLink(const std::string& configHost,
+                  uint16_t           configPort,
+                  const std::string& configTransport = std::string());
 
         QPID_BROKER_EXTERN std::pair<Bridge::shared_ptr, bool>
         declare(const std::string& name,
