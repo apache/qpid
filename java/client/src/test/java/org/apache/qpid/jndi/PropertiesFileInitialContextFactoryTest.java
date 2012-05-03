@@ -51,25 +51,6 @@ public class PropertiesFileInitialContextFactoryTest extends TestCase
         ctx = new InitialContext(properties);
     }
 
-    public void testInitialContextProviderURL() throws Exception
-    {
-        Destination d = null;
-
-        System.setProperty("java.naming.factory.initial", "org.apache.qpid.jndi.PropertiesFileInitialContextFactory");
-        System.setProperty("java.naming.provider.url",  FILE_URL_PATH + FILE_NAME);
-
-        InitialContext ctx = new InitialContext();
-        d = (Destination)ctx.lookup("topicExchange");
-        assertNotNull("Lookup for Destination from file path should not be null", d);
-
-        ctx.close();
-
-        System.setProperty("java.naming.provider.url", "file:///" + FILE_URL_PATH + FILE_NAME);
-
-        ctx = new InitialContext();
-        d = (Destination)ctx.lookup("topicExchange");
-        assertNotNull("Lookup for Destination from file URI should not be null", d);
-    }
 
     public void testQueueNamesWithTrailingSpaces() throws Exception
     {
