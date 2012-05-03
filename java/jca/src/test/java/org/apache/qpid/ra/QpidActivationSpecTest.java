@@ -20,59 +20,26 @@
  */
 package org.apache.qpid.ra;
 
-import javax.resource.spi.ResourceAdapterInternalException;
-
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
 
+import javax.resource.spi.ResourceAdapterInternalException;
+
+import org.apache.qpid.ra.inflow.QpidActivationSpec;
+
 import junit.framework.TestCase;
 
-
-public class QpidResourceAdapterTest extends TestCase
+public class QpidActivationSpecTest extends TestCase
 {
-    public void testGetXAResources() throws Exception
+
+    public void testActivationSpecBasicSerialization() throws Exception
     {
-        QpidResourceAdapter ra = new QpidResourceAdapter();
-        assertNull(ra.getXAResources(null));
-    }
-
-    public void testTransactionManagerLocatorException() throws Exception
-    {
-
-        QpidResourceAdapter ra = new QpidResourceAdapter();
-        assertNull(ra.getTransactionManagerLocatorClass());
-        assertNull(ra.getTransactionManagerLocatorMethod());
-
-        try
-        {
-            ra.start(null);
-        }
-        catch(ResourceAdapterInternalException e)
-        {
-
-        }
-
-        ra.setTransactionManagerLocatorClass("DummyLocator");
-
-        try
-        {
-            ra.start(null);
-        }
-        catch(ResourceAdapterInternalException e)
-        {
-
-        }
-
-    }
-
-    public void testResourceAdapterBasicSerialization() throws Exception
-    {
-
-        QpidResourceAdapter ra = new QpidResourceAdapter();
+        QpidActivationSpec spec = new QpidActivationSpec();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(out);
-        oos.writeObject(ra);
+        oos.writeObject(spec);
         oos.close();
         assertTrue(out.toByteArray().length > 0);
     }
+
 }
