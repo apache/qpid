@@ -7,7 +7,8 @@ for JEE integration between EE applications and AMQP 0.10  message brokers.
 
 The Qpid JCA adapter provides both outbound and inbound connectivity and
 exposes a variety of options to fine tune your messaging applications. Currently
-the adapter only supports C++ based brokers and has only been tested with Apache Qpid C++ broker.
+the adapter only supports C++ based brokers and has only been tested with Apache
+Qpid C++ broker.
 
 The following document explains general configuration information for the Qpid JCA RA. Details for
 specific application server platforms are provided in separate README files typically designated as
@@ -38,22 +39,22 @@ encouraged. Similarly, familiarity with the JCA 1.5 specification is encouraged 
 The ResourceAdapter JavaBean
 ============================
 
-The ResourceAdapter JavaBean provides global configuration options for both inbound and outbound connectivity.
-The set of ResourceAdapter properties are described below. The ResourceAdapter properties can be found in the META-INF/ra.xml
-deployment descriptor which is provided with the adapter. Note, deploying a ResourceAdapter, ManagedConnectionFactory
-or ActivationSpec is application server specific. As such, this document provides an explanation of these properties
-but not how they are configured as this is environment specific.
+The ResourceAdapter JavaBean provides global configuration options for both inbound and outbound
+connectivity. The set of ResourceAdapter properties are described below. The ResourceAdapter properties
+can be found in the META-INF/ra.xml deployment descriptor which is provided with the adapter. Note,
+deploying a ResourceAdapter, ManagedConnectionFactory or ActivationSpec is application server specific.
+As such, this document provides an explanation of these properties but not how they are configured.
 
 ResourceAdapter JavaBean Properties
 ===================================
 
-ClientID
+ClientId
    The unique client identifier. From the JMS API this is used only in the context of durable subscriptions.
 Default: client_id
 
 SetupAttempts
-    The number of attempts the ResourceAdapter will make to successfully setup an inbound activation on deployment, or when an exception
-    occurs at runtime.
+    The number of attempts the ResourceAdapter will make to successfully setup an inbound activation on deployment,
+    or when an exception occurs at runtime.
 Default: 5
 
 SetupInterval
@@ -92,9 +93,11 @@ TransactionManagerLocatorMethod
     server specific as such, no default is provided.
 Default:none
 
-Note, both the TransactionManagerLocatorClass and the TransactionManagerLocatorMethod
-properties must be set. While application servers typically provide a mechanism to do this in the form of
-a specific deployment descriptor, or GUI console, the ra.xml file can also be modified directly.
+UseConnectionPerHandler
+    The Apache C++ Broker multiplexes on the physical connection rather than the session. As a result, performance
+    improvements can be gained by allocating and assigning a connection per inbound listener. The alternative is
+    to share a connection across each handler for a given endpoint (MDB).
+Default:true
 
 The ManagedConnectionFactory JavaBean
 =====================================
@@ -176,11 +179,11 @@ Both these administered objects have properities to support configuration and de
 
 QpidQueue/QpidTopic
 ====================
-    The QpidQueue/QpidTopic AdminObjects allow a developer, deployer or adminstrator to create destinations
-    (queues or topic) and bind these destinations into JNDI. Only one property is required:
+The QpidQueue and QpidTopic AdminObjects allow binding JMS destintations into the JEE JNDI namespace. Both
+objects support one property:
 
 DestinationAddress
-    The address string of the destination. Please see the Qpid Java JMS client documentation for valid values.
+    The address string of the destination. Please see the Qpid JMS client documentation for valid values.
 
 Example:
    DestinationAddress=hello.Queue;{create:always, node:{type:queue, x-declare:{auto-delete:true}}}
@@ -188,13 +191,13 @@ Example:
 
 QpidConnectionFactoryProxy
 ==========================
-    The QpidConnectionFactoryProxy allows for a non-JCA ConnectionFactory to be bound into the JNDI tree. This
-    ConnectionFactory can in turn be used outside of the application server. Typically a ConnectionFactory of
-    this sort is used by Java Swing or other non-managed clients not requiring JCA. One one property is
-    required:
+The QpidConnectionFactoryProxy allows for a non-JCA ConnectionFactory to be bound into the JNDI tree. This
+ConnectionFactory can in turn be used outside of the application server. Typically a ConnectionFactory of
+this sort is used by Swing or other non-managed clients not requiring JCA. The QpidConnectionFactoryProxy
+provides one property
 
 ConnectionURL
-    This is the url used to configure the connection factory. Please see the Qpid Java Client documentation for
+    This is the url used to configure the connection factory. Please see the Qpid JMS client documentation for
     further details.
 
 Example:
@@ -205,10 +208,11 @@ Transaction Support
 The Qpid JCA Resource Adapter provides three levels of transaction support: XA, LocalTransactions and NoTransaction.
 Typical usage of the Qpid JCA Resource adapter implies the use of XA transactions, though there are certain scenarios
 where this is not preferred. Transaction support configuration is application server specific and as such, is explained
-in the corresponding documentation for each supported application server. Current limitations with XA are listed
-below:
+in the corresponding documentation for each supported application server.
 
-1)XARecovery is currently only supported for JBoss EAP 5.x and is not supported for clustered broker configurations.
+XA recovery, that is being able to recover 'in-doubt' transactions for a given resource manager is non-standardized,
+and as such is application server specific. Currently, the Qpid JCA adapter only supports recovery for JBoss EAP 5.x
+as a separate module.
 
 Conclusion
 ==========
