@@ -38,8 +38,6 @@ import javax.resource.spi.work.WorkManager;
 import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQConnectionURL;
@@ -47,6 +45,8 @@ import org.apache.qpid.client.XAConnectionImpl;
 import org.apache.qpid.ra.inflow.QpidActivation;
 import org.apache.qpid.ra.inflow.QpidActivationSpec;
 import org.apache.qpid.url.URLSyntaxException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The resource adapter for Qpid
@@ -54,43 +54,22 @@ import org.apache.qpid.url.URLSyntaxException;
  */
 public class QpidResourceAdapter implements ResourceAdapter, Serializable
 {
-   /**
-    *
-    */
    private static final long serialVersionUID = -2446231446818098726L;
 
-   /**
-    * The logger
-    */
-   private static final Logger _log = LoggerFactory.getLogger(QpidResourceAdapter.class);
+   private static final transient Logger _log = LoggerFactory.getLogger(QpidResourceAdapter.class);
 
-   /**
-    * The bootstrap context
-    */
    private BootstrapContext _ctx;
 
-   /**
-    * The resource adapter properties
-    */
    private final QpidRAProperties _raProperties;
 
-   /**
-    * Have the factory been configured
-    */
    private final AtomicBoolean _configured;
 
-   /**
-    * The activations by activation spec
-    */
    private final Map<ActivationSpec, QpidActivation> _activations;
 
    private AMQConnectionFactory _defaultAMQConnectionFactory;
 
    private TransactionManager _tm;
 
-   /**
-    * Constructor
-    */
    public QpidResourceAdapter()
    {
       if (_log.isTraceEnabled())
@@ -514,7 +493,27 @@ public class QpidResourceAdapter implements ResourceAdapter, Serializable
       }
       _raProperties.setSetupInterval(interval);
    }
+   
+   public Boolean isUseConnectionPerHandler()
+   {
+       if (_log.isTraceEnabled())
+       {
+          _log.trace("isConnectionPerHandler()");
+       }
+       
+       return _raProperties.isUseConnectionPerHandler();
+   }
 
+   public void setUseConnectionPerHandler(Boolean connectionPerHandler)
+   {
+       if (_log.isTraceEnabled())
+       {
+          _log.trace("setConnectionPerHandler(" + connectionPerHandler + ")");
+       }  
+       
+       _raProperties.setUseConnectionPerHandler(connectionPerHandler);
+   }
+   
    /**
     * Indicates whether some other object is "equal to" this one.
     *
@@ -683,7 +682,8 @@ public class QpidResourceAdapter implements ResourceAdapter, Serializable
 
    private void locateTM() throws ResourceAdapterInternalException
    {
-      if(_raProperties.getTransactionManagerLocatorClass() != null && _raProperties.getTransactionManagerLocatorMethod() != null)
+      if(_raProperties.getTransactionManagerLocatorClass() != null 
+                      && _raProperties.getTransactionManagerLocatorMethod() != null)
       {
 
           String locatorClasses[] = _raProperties.getTransactionManagerLocatorClass().split(";");
@@ -703,7 +703,7 @@ public class QpidResourceAdapter implements ResourceAdapter, Serializable
 
       if (_tm == null)
       {
-         _log.error("It wasn't possible to locate javax.transaction.TransactionManager via the RA properties TransactionManagerLocatorClass and TransactionManagerLocatorMethod");
+         _log.error("It was not possible to locate javax.transaction.TransactionManager via the RA properties TransactionManagerLocatorClass and TransactionManagerLocatorMethod");
          throw new ResourceAdapterInternalException("Could not locate javax.transaction.TransactionManager");
       }
       else
@@ -763,6 +763,7 @@ public class QpidResourceAdapter implements ResourceAdapter, Serializable
          final String client = (clientID != null ? clientID : "") ;
 
          final String newurl = AMQConnectionURL.AMQ_PROTOCOL + "://" + username +":" + password + "@" + client + "/" + path + '?' + AMQConnectionURL.OPTIONS_BROKERLIST + "='tcp://" + host + ':' + port + '\'' ;
+         
          if (_log.isDebugEnabled())
          {
             _log.debug("Initialising connectionURL to " + newurl) ;

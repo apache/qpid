@@ -31,10 +31,8 @@ import org.slf4j.LoggerFactory;
  */
 public class QpidRAProperties extends ConnectionFactoryProperties implements Serializable
 {
-   /** Serial version UID */
    private static final long serialVersionUID = -4823893873707374791L;
 
-   /** The logger */
    private static final Logger _log = LoggerFactory.getLogger(QpidRAProperties.class);
 
    private static final int DEFAULT_SETUP_ATTEMPTS = 10;
@@ -45,16 +43,14 @@ public class QpidRAProperties extends ConnectionFactoryProperties implements Ser
 
    private long _setupInterval = DEFAULT_SETUP_INTERVAL;
 
-   /** Use Local TX instead of XA */
-   private Boolean _localTx = false;
-
    /** Class used to locate the Transaction Manager. */
    private String _transactionManagerLocatorClass ;
 
    /** Method used to locate the TM */
    private String _transactionManagerLocatorMethod ;
 
-
+   private boolean _useConnectionPerHandler = true;
+   
    /**
     * Constructor
     */
@@ -146,10 +142,20 @@ public class QpidRAProperties extends ConnectionFactoryProperties implements Ser
       this._setupInterval = setupInterval;
    }
 
+   public boolean isUseConnectionPerHandler()
+   {
+       return _useConnectionPerHandler;
+   }
+   
+   public void setUseConnectionPerHandler(boolean connectionPerHandler)
+   {
+       this._useConnectionPerHandler = connectionPerHandler;                       
+   }
+   
    @Override
    public String toString()
    {
-      return "QpidRAProperties[localTx=" + _localTx +
+      return "QpidRAProperties[" +
             ", transactionManagerLocatorClass=" + _transactionManagerLocatorClass +
             ", transactionManagerLocatorMethod=" + _transactionManagerLocatorMethod +
             ", setupAttempts=" + _setupAttempts +

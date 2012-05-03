@@ -66,10 +66,6 @@ public class QpidHelloListenerBean implements MessageListener
 
         try
         {
-            _log.info(message.getJMSDestination().getClass().getName());
-
-            javax.jms.Queue queue = (javax.jms.Queue)message.getJMSDestination();
-            _log.info("QueueName is: " + queue.getQueueName());
             if(message instanceof TextMessage)
             {
                 String content = ((TextMessage)message).getText();
