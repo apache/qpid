@@ -57,8 +57,10 @@ void Backup::initialize(const Url& url) {
     if (url.empty()) throw Url::Invalid("HA broker URL is empty");
     QPID_LOG(notice, "HA: Backup initialized: " << url);
     string protocol = url[0].protocol.empty() ? "tcp" : url[0].protocol;
+    framing::Uuid uuid(true);
     // Declare the link
     std::pair<Link::shared_ptr, bool> result = broker.getLinks().declare(
+        broker::QPID_NAME_PREFIX + string("ha.link.") + uuid.str(),
         url[0].host, url[0].port, protocol,
         false,              // durable
         settings.mechanism, settings.username, settings.password);
