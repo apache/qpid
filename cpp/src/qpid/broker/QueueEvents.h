@@ -35,7 +35,7 @@ namespace broker {
 
 /**
  * Event manager for queue events. Allows queues to indicate when
- * events have occured; allows listeners to register for notification
+ * events have occurred; allows listeners to register for notification
  * of this. The notification happens asynchronously, in a separate
  * thread.
  */

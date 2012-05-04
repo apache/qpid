@@ -22,137 +22,30 @@
 namespace qpid {
 namespace broker {
 
-    AsyncStorePlus::storeConfigDataReturn_t
-    AsyncStorePlus::storeConfigData(const boost::intrusive_ptr<StoredData> configData,
-                                    const successCbFn_t successCb,
-                                    const failCbFn_t failCb,
-                                    const void* cbCtxt)
-    {
-        boost::intrusive_ptr<ConfigToken> configTok(nextConfigToken());
-        AsyncStoreOp op(AsyncStoreOp::OP_CONFIG_CREATE, configData, configTok, 0, 0, successCb, failCb, cbCtxt);
-        return AsyncStorePlus::storeConfigDataReturn_t(submit(op), configTok);
-    }
+DataSource::~DataSource()
+{}
 
-    int
-    AsyncStorePlus::destroyConfigData(const boost::intrusive_ptr<ConfigToken> configTok,
-                                      const successCbFn_t successCb,
-                                      const failCbFn_t failCb,
-                                      const void* cbCtxt)
-    {
-        AsyncStoreOp op(AsyncStoreOp::OP_CONFIG_DESTROY, 0, configTok, 0, 0, successCb, failCb, cbCtxt);
-        return submit(op);
-    }
+AsyncStore::AsyncStore()
+{}
 
-    AsyncStorePlus::createQueueReturn_t
-    AsyncStorePlus::createQueue(const std::string& name,
-                                const qpid::types::Variant::Map& options,
-                                const boost::intrusive_ptr<StoredData> queueData,
-                                const successCbFn_t successCb,
-                                const failCbFn_t failCb,
-                                const void* cbCtxt)
-    {
-        boost::intrusive_ptr<QueueToken> queueTok(nextQueueToken(name, options));
-        AsyncStoreOp op(AsyncStoreOp::OP_CONFIG_CREATE, queueData, queueTok, 0, 0, successCb, failCb, cbCtxt);
-        return AsyncStorePlus::createQueueReturn_t(submit(op), queueTok);
-    }
+AsyncStore::~AsyncStore()
+{}
 
-    int
-    AsyncStorePlus::destroyQueue(const boost::intrusive_ptr<QueueToken> queueTok,
-                                 const successCbFn_t successCb,
-                                 const failCbFn_t failCb,
-                                 const void* cbCtxt)
-    {
-        AsyncStoreOp op(AsyncStoreOp::OP_CONFIG_DESTROY, 0, queueTok, 0, 0, successCb, failCb, cbCtxt);
-        return submit(op);
-    }
+AsyncResult::AsyncResult() :
+        errNo(0),
+        errMsg()
+{}
 
-    AsyncStorePlus::txnReturn_t
-    AsyncStorePlus::beginTxn(const std::string xid,
-                             const successCbFn_t successCb,
-                             const failCbFn_t failCb,
-                             const void* cbCtxt)
-    {
-        boost::intrusive_ptr<TxnToken> txnTok(nextTxnToken(xid));
-        AsyncStoreOp op(AsyncStoreOp::OP_TXN_BEGIN, 0, 0, 0, txnTok, successCb, failCb, cbCtxt);
-        return AsyncStorePlus::txnReturn_t(submit(op), txnTok);
-    }
+AsyncResult::AsyncResult(const int errNo,
+                         const std::string& errMsg) :
+        errNo(errNo),
+        errMsg(errMsg)
+{}
 
-    int
-    AsyncStorePlus::prepareTxn(const boost::intrusive_ptr<TxnToken> txnTok,
-                               const successCbFn_t successCb,
-                               const failCbFn_t failCb,
-                               const void* cbCtxt)
-    {
-        AsyncStoreOp op(AsyncStoreOp::OP_TXN_PREPARE, 0, 0, 0, txnTok, successCb, failCb, cbCtxt);
-        return submit(op);
-    }
-
-    int
-    AsyncStorePlus::commitTxn(const boost::intrusive_ptr<TxnToken> txnTok,
-                              const successCbFn_t successCb,
-                              const failCbFn_t failCb,
-                              const void* cbCtxt)
-    {
-        AsyncStoreOp op(AsyncStoreOp::OP_TXN_COMMIT, 0, 0, 0, txnTok, successCb, failCb, cbCtxt);
-        return submit(op);
-    }
-
-    int
-    AsyncStorePlus::abortTxn(const boost::intrusive_ptr<TxnToken> txnTok,
-                             const successCbFn_t successCb,
-                             const failCbFn_t failCb,
-                             const void* cbCtxt)
-    {
-        AsyncStoreOp op(AsyncStoreOp::OP_TXN_ABORT, 0, 0, 0, txnTok, successCb, failCb, cbCtxt);
-        return submit(op);
-    }
-
-    AsyncStorePlus::enqReturn_t
-    AsyncStorePlus::enqueueMsg(const boost::intrusive_ptr<StoredData> msgData,
-                            const boost::intrusive_ptr<QueueToken> queueTok,
-                            const boost::intrusive_ptr<TxnToken> txnTok,
-                            const successCbFn_t successCb,
-                            const failCbFn_t failCb,
-                            const void* cbCtxt)
-    {
-        boost::intrusive_ptr<MessageToken> msgTok(nextMessageToken());
-        AsyncStoreOp op(AsyncStoreOp::OP_ENQUEUE, msgData, msgTok, queueTok, txnTok, successCb, failCb, cbCtxt);
-        return AsyncStorePlus::enqReturn_t(submit(op), msgTok);
-    }
-
-    int
-    AsyncStorePlus::dequeueMsg(const boost::intrusive_ptr<MessageToken> msgTok,
-                            const boost::intrusive_ptr<QueueToken> queueTok,
-                            const boost::intrusive_ptr<TxnToken> txnTok,
-                            const successCbFn_t successCb,
-                            const failCbFn_t failCb,
-                            const void* cbCtxt)
-    {
-        AsyncStoreOp op(AsyncStoreOp::OP_DEQUEUE, 0, msgTok, queueTok, txnTok, successCb, failCb, cbCtxt);
-        return submit(op);
-    }
-
-    AsyncStorePlus::storeEventReturn_t
-    AsyncStorePlus::storeQueueEvent(const boost::intrusive_ptr<StoredData> eventData,
-                               const boost::intrusive_ptr<QueueToken> queueTok,
-                               const boost::intrusive_ptr<TxnToken> txnTok,
-                               const successCbFn_t successCb,
-                               const failCbFn_t failCb,
-                               const void* cbCtxt)
-    {
-        boost::intrusive_ptr<EventToken> eventTok(nextEventToken());
-        AsyncStoreOp op(AsyncStoreOp::OP_EVENT_STORE, eventData, eventTok, queueTok, txnTok, successCb, failCb, cbCtxt);
-        return AsyncStorePlus::storeEventReturn_t(submit(op), eventTok);
-    }
-
-    int
-    AsyncStorePlus::flushQueue(const boost::intrusive_ptr<QueueToken> queueTok,
-                          const successCbFn_t successCb,
-                          const failCbFn_t failCb,
-                          const void* cbCtxt)
-    {
-        AsyncStoreOp op(AsyncStoreOp::OP_FLUSH, 0, 0, queueTok, 0, successCb, failCb, cbCtxt);
-        return submit(op);
-    }
+void
+AsyncResult::destroy()
+{
+    delete this;
+}
 
 }} // namespace qpid::broker

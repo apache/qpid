@@ -1043,6 +1043,7 @@ set (qpidbroker_SOURCES
      qpid/amqp_0_10/Connection.cpp
      qpid/broker/AsyncStore.cpp
      qpid/broker/Broker.cpp
+     qpid/broker/BrokerContext.h
      qpid/broker/Credit.cpp
      qpid/broker/Exchange.cpp
      qpid/broker/ExpiryPolicy.cpp

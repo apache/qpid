@@ -38,7 +38,7 @@ namespace messaging {
  *
  * === Foo.h
  *
- * template <class T> PrivateImplRef;
+ * template <class T> class PrivateImplRef;
  * class FooImpl;
  *
  * Foo : public Handle<FooImpl> {

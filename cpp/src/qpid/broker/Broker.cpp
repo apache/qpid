@@ -377,6 +377,11 @@ void Broker::setStore (boost::shared_ptr<MessageStore>& _store)
     setStore();
 }
 
+void Broker::setAsyncStore(boost::shared_ptr<AsyncStore>& /*asyncStore*/)
+{
+    // TODO: Provide implementation for async store interface
+}
+
 void Broker::setStore () {
     queues.setStore     (store.get());
     dtxManager.setStore (store.get());
