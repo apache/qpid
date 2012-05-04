@@ -455,6 +455,7 @@ class QmfData(Console):
           rows.append(row)
       else:
         print "No object found with ID %d" % dispId
+        return
     finally:
       self.lock.release()
     self.disp.table(caption, heads, rows)
