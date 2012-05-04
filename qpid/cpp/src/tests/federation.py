@@ -23,6 +23,7 @@ from qpid.testlib import TestBase010
 from qpid.datatypes import Message
 from qpid.queue import Empty
 from qpid.util import URL
+import qpid.messaging
 from time import sleep, time
 
 
@@ -94,6 +95,11 @@ class FederationTests(TestBase010):
                     break
             self._brokers.append(_b)
 
+        # add a new-style messaging connection to each broker
+        for _b in self._brokers:
+            _b.connection = qpid.messaging.Connection(_b.url)
+            _b.connection.open()
+
     def _teardown_brokers(self):
         """ Un-does _setup_brokers()
         """
@@ -103,7 +109,7 @@ class FederationTests(TestBase010):
             if not _b.client_session.error():
                 _b.client_session.close(timeout=10)
             _b.client_conn.close(timeout=10)
-
+            _b.connection.close()
 
     def test_bridge_create_and_close(self):
         self.startQmf();
@@ -2165,3 +2171,158 @@ class FederationTests(TestBase010):
         self.verify_cleanup()
 
 
+    def test_multilink_direct(self):
+        """ Verify that two distinct links can be created between federated
+        brokers.
+        """
+        self.startQmf()
+        qmf = self.qmf
+        self._setup_brokers()
+        src_broker = self._brokers[0]
+        dst_broker = self._brokers[1]
+
+        # create a direct exchange on each broker
+        for _b in [src_broker, dst_broker]:
+            _b.client_session.exchange_declare(exchange="fedX.direct", type="direct")
+            self.assertEqual(_b.client_session.exchange_query(name="fedX.direct").type,
+                             "direct", "exchange_declare failed!")
+
+        # create destination queues
+        for _q in [("HiQ", "high"), ("MedQ", "medium"), ("LoQ", "low")]:
+            dst_broker.client_session.queue_declare(queue=_q[0], auto_delete=True)
+            dst_broker.client_session.exchange_bind(queue=_q[0], exchange="fedX.direct", binding_key=_q[1])
+
+        # create two connections, one for high priority traffic
+        for _q in ["HiPri", "Traffic"]:
+            result = dst_broker.qmf_object.create("link", _q,
+                                                  {"host":src_broker.host,
+                                                   "port":src_broker.port},
+                                                  False)
+            self.assertEqual(result.status, 0);
+
+        links = qmf.getObjects(_broker=dst_broker.qmf_broker, _class="link")
+        for _l in links:
+            if _l.name == "HiPri":
+                hi_link = _l
+            elif _l.name == "Traffic":
+                data_link = _l
+            else:
+                self.fail("Unexpected Link found: " + _l.name)
+
+        # now create a route for messages sent with key "high" to use the
+        # hi_link
+        result = dst_broker.qmf_object.create("bridge", "HiPriBridge",
+                                              {"link":hi_link.name,
+                                               "src":"fedX.direct",
+                                               "dest":"fedX.direct",
+                                               "key":"high"}, False)
+        self.assertEqual(result.status, 0);
+
+
+        # create routes for the "medium" and "low" links to use the normal
+        # data_link
+        for _b in [("MediumBridge", "medium"), ("LowBridge", "low")]:
+            result = dst_broker.qmf_object.create("bridge", _b[0],
+                                                  {"link":data_link.name,
+                                                   "src":"fedX.direct",
+                                                   "dest":"fedX.direct",
+                                                   "key":_b[1]}, False)
+            self.assertEqual(result.status, 0);
+
+        # now wait for the links to become operational
+        for _l in [hi_link, data_link]:
+            expire_time = time() + 30
+            while _l.state != "Operational" and time() < expire_time:
+                _l.update()
+            self.assertEqual(_l.state, "Operational", "Link failed to become operational")
+
+        # verify each link uses a different connection
+        self.assertNotEqual(hi_link.connectionRef, data_link.connectionRef,
+                            "Different links using the same connection")
+
+        hi_conn = qmf.getObjects(_broker=dst_broker.qmf_broker,
+                                 _objectId=hi_link.connectionRef)[0]
+        data_conn = qmf.getObjects(_broker=dst_broker.qmf_broker,
+                                 _objectId=data_link.connectionRef)[0]
+
+
+        # send hi data, verify only goes over hi link
+
+        r_ssn = dst_broker.connection.session()
+        hi_receiver = r_ssn.receiver("HiQ");
+        med_receiver = r_ssn.receiver("MedQ");
+        low_receiver = r_ssn.receiver("LoQ");
+
+        for _c in [hi_conn, data_conn]:
+            _c.update()
+            self.assertEqual(_c.msgsToClient, 0, "Unexpected messages received")
+
+        s_ssn = src_broker.connection.session()
+        hi_sender = s_ssn.sender("fedX.direct/high")
+        med_sender = s_ssn.sender("fedX.direct/medium")
+        low_sender = s_ssn.sender("fedX.direct/low")
+
+        try:
+            hi_sender.send(qpid.messaging.Message(content="hi priority"))
+            msg = hi_receiver.fetch(timeout=10)
+            r_ssn.acknowledge()
+            self.assertEqual(msg.content, "hi priority");
+        except:
+            self.fail("Hi Pri message failure")
+
+        hi_conn.update()
+        data_conn.update()
+        self.assertEqual(hi_conn.msgsToClient, 1, "Expected 1 hi pri message")
+        self.assertEqual(data_conn.msgsToClient, 0, "Expected 0 data messages")
+
+        # send low and medium, verify it does not go over hi link
+
+        try:
+            med_sender.send(qpid.messaging.Message(content="medium priority"))
+            msg = med_receiver.fetch(timeout=10)
+            r_ssn.acknowledge()
+            self.assertEqual(msg.content, "medium priority");
+        except:
+            self.fail("Medium Pri message failure")
+
+        hi_conn.update()
+        data_conn.update()
+        self.assertEqual(hi_conn.msgsToClient, 1, "Expected 1 hi pri message")
+        self.assertEqual(data_conn.msgsToClient, 1, "Expected 1 data message")
+
+        try:
+            low_sender.send(qpid.messaging.Message(content="low priority"))
+            msg = low_receiver.fetch(timeout=10)
+            r_ssn.acknowledge()
+            self.assertEqual(msg.content, "low priority");
+        except:
+            self.fail("Low Pri message failure")
+
+        hi_conn.update()
+        data_conn.update()
+        self.assertEqual(hi_conn.msgsToClient, 1, "Expected 1 hi pri message")
+        self.assertEqual(data_conn.msgsToClient, 2, "Expected 2 data message")
+
+        # cleanup
+
+        for _b in qmf.getObjects(_broker=dst_broker.qmf_broker,_class="bridge"):
+            result = _b.close()
+            self.assertEqual(result.status, 0)
+
+        for _l in qmf.getObjects(_broker=dst_broker.qmf_broker,_class="link"):
+            result = _l.close()
+            self.assertEqual(result.status, 0)
+
+        for _q in [("HiQ", "high"), ("MedQ", "medium"), ("LoQ", "low")]:
+            dst_broker.client_session.exchange_unbind(queue=_q[0], exchange="fedX.direct", binding_key=_q[1])
+            dst_broker.client_session.queue_delete(queue=_q[0])
+
+        for _b in [src_broker, dst_broker]:
+            _b.client_session.exchange_delete(exchange="fedX.direct")
+
+        self._teardown_brokers()
+
+        self.verify_cleanup()
+
+
+        
