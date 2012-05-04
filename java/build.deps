@@ -33,6 +33,7 @@ geronimo-j2ee=lib/geronimo-j2ee-connector_1.5_spec-2.0.0.jar
 geronimo-jta=lib/geronimo-jta_1.1_spec-1.1.1.jar
 geronimo-kernel=lib/geronimo-kernel-2.2.1.jar
 geronimo-openejb=lib/geronimo-ejb_3.0_spec-1.0.1.jar
+geronimo-servlet=lib/geronimo-servlet_2.5_spec-1.2.jar
 
 junit=lib/junit-3.8.1.jar
 mockito-all=lib/mockito-all-1.9.0.jar
@@ -139,17 +140,13 @@ testkit.test.libs=${test.libs}
 systests.libs=${test.libs}
 perftests.test.libs=${test.libs}
 
-broker-plugins.test.libs=${test.libs} 
+broker-plugins.test.libs=${test.libs}
 
 management-eclipse-plugin.test.libs=${test.libs}
 management-common.test.libs=${test.libs}
 
 # JCA Resource adapter
-ra.libs=${geronimo-j2ee} ${geronimo-jta} ${geronimo-jms} ${test.libs} ${geronimo-kernel} ${geronimo-openejb}
-ra.test.libs=${test.libs}
-
-#note this is a hack because systests is looking for 'jca' versus 'ra' we need to do this twice
-jca.libs=${geronimo-j2ee} ${geronimo-jta} ${geronimo-jms} ${test.libs} ${geronimo-kernel} ${geronimo-openejb}
+jca.libs=${geronimo-j2ee} ${geronimo-jta} ${geronimo-jms} ${test.libs} ${geronimo-kernel} ${geronimo-openejb} ${geronimo-servlet}
 jca.test.libs=${test.libs}
 
 # optional bdbstore module deps

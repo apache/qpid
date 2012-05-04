@@ -18,18 +18,20 @@
  - under the License.
  -
  -->
-<project name="Qpid JCA RA" default="build">
+<project name="Qpid JCA" default="build">
 
   <property name="module.depends" value="common client"/>
-  <property name="module.name" value="ra"/>
+  <property name="module.name" value="jca"/>
 
   <import file="../module.xml"/>
 
-  <property name="module.rar" value="${build.lib}/${project.name}-${module.name}-${project.version}.rar"/>
+  <property name="module.rar" value="${build.lib}/${project.name}-ra-${project.version}.rar"/>
+
   <property name="module.resources" value="src/main/resources"/>
 
-
   <target name="rar" depends="jar">
+      <!--Note we need to do this as we need to keep the ra in the name of the artificats but we can't override the module.jar property which is based on the directory name-->
+    <move file="${build.lib}/${project.name}-${module.name}-${project.version}.jar" tofile="${build.lib}/${project.name}-ra-${project.version}.jar"/>
     <jar destfile="${module.rar}">
       <fileset dir="${module.resources}">
         <include name="**/*.xml"/>
