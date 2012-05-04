@@ -54,6 +54,8 @@ std::string QueueReplicator::replicatorName(const std::string& queueName) {
 QueueReplicator::QueueReplicator(boost::shared_ptr<Queue> q, boost::shared_ptr<Link> l)
     : Exchange(replicatorName(q->getName()), 0, q->getBroker()), queue(q), link(l)
 {
+    framing::Uuid uuid(true);
+    bridgeName = replicatorName(q->getName()) + std::string(".") + uuid.str();
     logPrefix = "HA: Backup of " + queue->getName() + ": ";
     QPID_LOG(info, logPrefix << "Created");
 }
