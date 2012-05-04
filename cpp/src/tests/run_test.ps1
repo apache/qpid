@@ -20,8 +20,7 @@
 $srcdir = Split-Path $myInvocation.InvocationName
 
 # Set up environment and run a test executable or script.
-$env:QPID_DATA_DIR = ""
-$env:BOOST_TEST_SHOW_PROGRESS = "yes"
+. .\test_env.ps1
 
 # The test exe is probably not in the current binary dir - it's usually
 # placed in a subdirectory based on the configuration built in Visual Studio.
@@ -30,7 +29,7 @@ $env:BOOST_TEST_SHOW_PROGRESS = "yes"
 # one level up.
 $prog = $args[0]
 $is_script = $prog -match ".ps1$"
-if (!$is_script) {
+if (!$is_script -and !(Test-Path "$prog")) {
    . $srcdir\find_prog.ps1 $prog
    $args[0] = $prog
    $env:QPID_LIB_DIR = "..\$sub"

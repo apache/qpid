@@ -34,6 +34,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.management.JMException;
 import java.util.ArrayList;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class FanoutExchange extends AbstractExchange
@@ -52,11 +53,6 @@ public class FanoutExchange extends AbstractExchange
         return new FanoutExchangeMBean(this);
     }
 
-    public Logger getLogger()
-    {
-        return _logger;
-    }
-
     public static final ExchangeType<FanoutExchange> TYPE = new ExchangeType<FanoutExchange>()
     {
 
@@ -70,14 +66,14 @@ public class FanoutExchange extends AbstractExchange
     		return FanoutExchange.class;
     	}
 
-    	public FanoutExchange newInstance(VirtualHost host,
+        public FanoutExchange newInstance(UUID id, VirtualHost host,
     									  AMQShortString name,
     									  boolean durable,
     									  int ticket,
     									  boolean autoDelete) throws AMQException
     	{
     		FanoutExchange exch = new FanoutExchange();
-    		exch.initialise(host, name, durable, ticket, autoDelete);
+            exch.initialise(id, host, name, durable, ticket, autoDelete);
     		return exch;
     	}
 

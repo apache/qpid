@@ -20,6 +20,12 @@
  */
 package org.apache.qpid.test.unit.transacted;
 
+import javax.jms.DeliveryMode;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+
 /**
  * This tests the behaviour of transactional sessions when the {@code transactionTimeout} configuration
  * is set for a virtual host.
@@ -303,6 +309,35 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
 
         assertEquals("Listener should not have received exception", 0, getNumberOfDeliveredExceptions());
 
+        monitor(0, 0);
+    }
+
+    /**
+     * Tests that sending an unroutable persistent message does not result in a long running store transaction [warning].
+     */
+    public void testTransactionCommittedOnNonRoutableQueuePersistentMessage() throws Exception
+    {
+        checkTransactionCommittedOnNonRoutableQueueMessage(DeliveryMode.PERSISTENT);
+    }
+
+    /**
+     * Tests that sending an unroutable transient message does not result in a long running store transaction [warning].
+     */
+    public void testTransactionCommittedOnNonRoutableQueueTransientMessage() throws Exception
+    {
+        checkTransactionCommittedOnNonRoutableQueueMessage(DeliveryMode.NON_PERSISTENT);
+    }
+
+    private void checkTransactionCommittedOnNonRoutableQueueMessage(int deliveryMode) throws JMSException, Exception
+    {
+        Queue nonExisting = _psession.createQueue(getTestQueueName() + System.currentTimeMillis());
+        MessageProducer producer = _psession.createProducer(nonExisting);
+        Message message = _psession.createMessage();
+        producer.send(message, deliveryMode, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+        _psession.commit();
+
+        // give time to house keeping thread to log messages
+        sleep(3f);
         monitor(0, 0);
     }
 }

@@ -56,7 +56,6 @@ public class AcknowledgeTest extends QpidBrokerTestCase
 
         _queue = getTestQueue();
 
-        _logger.info("AT: setup");
         //Create Producer put some messages on the queue
         _connection = getConnection();
     }
@@ -70,13 +69,10 @@ public class AcknowledgeTest extends QpidBrokerTestCase
         // These should all end up being prefetched by session
         sendMessage(_consumerSession, _queue, 1);
 
-        if(!transacted)
-        {
-            ((AMQSession)_consumerSession).sync();
-        }
+        syncIfNotTransacted(transacted);
 
         assertEquals("Wrong number of messages on queue", 1,
-                     ((AMQSession) _consumerSession).getQueueDepth((AMQDestination) _queue));
+                     ((AMQSession<?,?>) _consumerSession).getQueueDepth((AMQDestination) _queue));
     }
 
     /**
@@ -114,6 +110,7 @@ public class AcknowledgeTest extends QpidBrokerTestCase
             {
                 //Send the next message
                 _producer.send(createNextMessage(_consumerSession, count));
+                syncIfNotTransacted(transacted);
             }
 
             doAcknowlegement(msg);
@@ -128,7 +125,7 @@ public class AcknowledgeTest extends QpidBrokerTestCase
         }
 
         assertEquals("Wrong number of messages on queue", 0,
-                     ((AMQSession) _consumerSession).getQueueDepth((AMQDestination) _queue));
+                     ((AMQSession<?,?>) _consumerSession).getQueueDepth((AMQDestination) _queue));
     }
 
     /**
@@ -181,4 +178,11 @@ public class AcknowledgeTest extends QpidBrokerTestCase
         testAcking(false, AMQSession.PRE_ACKNOWLEDGE);
     }
 
+    private void syncIfNotTransacted(boolean transacted) throws Exception
+    {
+        if(!transacted)
+        {
+            ((AMQSession<?,?>)_consumerSession).sync();
+        }
+    }
 }

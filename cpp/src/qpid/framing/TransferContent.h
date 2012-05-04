@@ -40,7 +40,7 @@ public:
     QPID_COMMON_EXTERN	TransferContent(const std::string& data = std::string(), const std::string& key=std::string());
 
     ///@internal
-    QPID_COMMON_EXTERN AMQHeaderBody getHeader() const;
+    QPID_COMMON_EXTERN const AMQHeaderBody& getHeader() const;
 
     QPID_COMMON_EXTERN void setData(const std::string&);
     QPID_COMMON_EXTERN const std::string& getData() const;

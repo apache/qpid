@@ -37,13 +37,13 @@ public class MessageStoreLogSubjectTest extends AbstractTestLogSubject
         _testVhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().
                 getVirtualHost("test");
 
-        _subject = new MessageStoreLogSubject(_testVhost, _testVhost.getMessageStore());
+        _subject = new MessageStoreLogSubject(_testVhost, _testVhost.getMessageStore().getClass().getSimpleName());
     }
 
     /**
      * Validate that the logged Subject  message is as expected:
      * MESSAGE [Blank][vh(/test)/ms(MemoryMessageStore)] <Log Message>
-     * @param message the message whos format needs validation
+     * @param message the message who's format needs validation
      */
     @Override
     protected void validateLogStatement(String message)

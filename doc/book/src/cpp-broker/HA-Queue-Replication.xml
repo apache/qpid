@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+
+-->
+
+<section>
+  <title>Queue Replication with the HA module</title>
+  <para>
+    As well as support for an active-passive cluster, the <filename>ha</filename> module
+    also allows you to replicate individual queues. The <firstterm>original</firstterm>
+    queue is used as normal.  The <firstterm>replica</firstterm> queue is updated
+    automatically as messages are added to or removed from the original queue.
+  </para>
+  <para>
+    To create a replica you need the HA module to be loaded on both the orignal and replica
+    brokers. Note that it is not safe to modify the replica queue other than via the
+    automatic updates from the original. Adding or removing messages on the replica queue
+    will make replication inconsistent and may cause message loss. The HA module does
+    <emphasis>not</emphasis> enforce restricted access to the replica queue (as it does in
+    the case of a cluster) so it is up to the application to ensure the replca is not used
+    until it has been disconnected from the original.
+  </para>
+  <para>
+    Suppose that <command>myqueue</command> is a queue on <command>node1</command> and
+    we want to create a replica of <command>myqueue</command> on <command>node2</command>
+    (where both brokers are using the default AMQP port.) This is accomplished by the command:
+    <programlisting>
+      qpid-config --broker=node2 add queue --start-replica node1 myqueue
+    </programlisting>
+  </para>
+  <para>
+    If <command>myqueue</command> already exists on the replica broker you  can start replication from the original queue like this:
+    <programlisting>
+      qpid-ha replicate -b node2 node1 myqueue
+    </programlisting>
+  </para>
+</section>

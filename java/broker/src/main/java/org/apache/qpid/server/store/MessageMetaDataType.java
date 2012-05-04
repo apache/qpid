@@ -22,13 +22,16 @@ package org.apache.qpid.server.store;
 
 import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.server.message.MessageMetaData_0_10;
+import org.apache.qpid.server.message.MessageMetaData_1_0;
 
 import java.nio.ByteBuffer;
 
 public enum MessageMetaDataType
 {
     META_DATA_0_8  {   public Factory<MessageMetaData> getFactory() { return MessageMetaData.FACTORY; } },
-    META_DATA_0_10 {   public Factory<MessageMetaData_0_10> getFactory() { return MessageMetaData_0_10.FACTORY; } };
+    META_DATA_0_10 {   public Factory<MessageMetaData_0_10> getFactory() { return MessageMetaData_0_10.FACTORY; } },
+    META_DATA_1_0 {   public Factory<MessageMetaData_1_0> getFactory() { return MessageMetaData_1_0.FACTORY; } };
+
 
 
     public static interface Factory<M extends StorableMessageMetaData>

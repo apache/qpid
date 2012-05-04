@@ -436,6 +436,35 @@ class Cluster:
     def __getitem__(self,index): return self._brokers[index]
     def __iter__(self): return self._brokers.__iter__()
 
+
+def browse(session, queue, timeout=0, transform=lambda m: m.content):
+    """Return a list with the contents of each message on queue."""
+    r = session.receiver("%s;{mode:browse}"%(queue))
+    r.capacity = 100
+    try:
+        contents = []
+        try:
+            while True: contents.append(transform(r.fetch(timeout=timeout)))
+        except messaging.Empty: pass
+    finally: r.close()
+    return contents
+
+def assert_browse(session, queue, expect_contents, timeout=0, transform=lambda m: m.content, msg="browse failed"):
+    """Assert that the contents of messages on queue (as retrieved
+    using session and timeout) exactly match the strings in
+    expect_contents"""
+    actual_contents = browse(session, queue, timeout, transform=transform)
+    if msg: msg = "%s: %r != %r"%(msg, expect_contents, actual_contents)
+    assert expect_contents == actual_contents, msg
+
+def assert_browse_retry(session, queue, expect_contents, timeout=1, delay=.01, transform=lambda m:m.content, msg="browse failed"):
+    """Wait up to timeout for contents of queue to match expect_contents"""
+    test = lambda: browse(session, queue, 0, transform=transform) == expect_contents
+    retry(test, timeout, delay)
+    actual_contents = browse(session, queue, 0, transform=transform)
+    if msg: msg = "%s: %r != %r"%(msg, expect_contents, actual_contents)
+    assert expect_contents == actual_contents, msg
+
 class BrokerTest(TestCase):
     """
     Tracks processes started by test and kills at end of test.
@@ -501,30 +530,9 @@ class BrokerTest(TestCase):
         cluster = Cluster(self, count, args, expect=expect, wait=wait, show_cmd=show_cmd)
         return cluster
 
-    def browse(self, session, queue, timeout=0, transform=lambda m: m.content):
-        """Return a list with the contents of each message on queue."""
-        r = session.receiver("%s;{mode:browse}"%(queue))
-        r.capacity = 100
-        try:
-            contents = []
-            try:
-                while True: contents.append(transform(r.fetch(timeout=timeout)))
-            except messaging.Empty: pass
-        finally: r.close()
-        return contents
-
-    def assert_browse(self, session, queue, expect_contents, timeout=0, transform=lambda m: m.content):
-        """Assert that the contents of messages on queue (as retrieved
-        using session and timeout) exactly match the strings in
-        expect_contents"""
-        actual_contents = self.browse(session, queue, timeout, transform=transform)
-        self.assertEqual(expect_contents, actual_contents)
-
-    def assert_browse_retry(self, session, queue, expect_contents, timeout=1, delay=.01, transform=lambda m:m.content):
-        """Wait up to timeout for contents of queue to match expect_contents"""
-        test = lambda: self.browse(session, queue, 0, transform=transform) == expect_contents
-        retry(test, timeout, delay)
-        self.assertEqual(expect_contents, self.browse(session, queue, 0, transform=transform))
+    def browse(self, *args, **kwargs): browse(*args, **kwargs)
+    def assert_browse(self, *args, **kwargs): assert_browse(*args, **kwargs)
+    def assert_browse_retry(self, *args, **kwargs): assert_browse_retry(*args, **kwargs)
 
 def join(thread, timeout=10):
     thread.join(timeout)

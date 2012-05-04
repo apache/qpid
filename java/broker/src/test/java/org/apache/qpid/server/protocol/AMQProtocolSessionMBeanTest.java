@@ -30,7 +30,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.SkeletonMessageStore;
+import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -45,7 +45,7 @@ public class AMQProtocolSessionMBeanTest extends InternalBrokerBaseCase
     /** Used for debugging. */
     private static final Logger log = Logger.getLogger(AMQProtocolSessionMBeanTest.class);
 
-    private MessageStore _messageStore = new SkeletonMessageStore();
+    private MessageStore _messageStore = new TestableMemoryMessageStore();
     private AMQProtocolEngine _protocolSession;
     private AMQChannel _channel;
     private AMQProtocolSessionMBean _mbean;

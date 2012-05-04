@@ -37,6 +37,7 @@ import javax.management.JMException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -93,12 +94,12 @@ public class HeadersExchange extends AbstractExchange
             return HeadersExchange.class;
         }
 
-        public HeadersExchange newInstance(VirtualHost host, AMQShortString name, boolean durable, int ticket,
+        public HeadersExchange newInstance(UUID id, VirtualHost host, AMQShortString name, boolean durable, int ticket,
                 boolean autoDelete) throws AMQException
         {
             HeadersExchange exch = new HeadersExchange();
 
-            exch.initialise(host, name, durable, ticket, autoDelete);
+            exch.initialise(id, host, name, durable, ticket, autoDelete);
             return exch;
         }
 
@@ -144,6 +145,33 @@ public class HeadersExchange extends AbstractExchange
         }
         
         return new ArrayList<BaseQueue>(queues);
+    }
+
+
+    public boolean isBound(String bindingKey, Map<String, Object> arguments, AMQQueue queue)
+    {
+        CopyOnWriteArraySet<Binding> bindings;
+        if(bindingKey == null)
+        {
+            bindings = new CopyOnWriteArraySet<Binding>(getBindings());
+        }
+        else
+        {
+            bindings = _bindingsByKey.get(bindingKey);
+        }
+
+        if(bindings != null)
+        {
+            for(Binding binding : bindings)
+            {
+                if(queue == null || binding.getQueue().equals(queue))
+                {
+                    return arguments == null ? binding.getArguments() == null : binding.getArguments().equals(arguments);
+                }
+            }
+        }
+
+        return false;
     }
 
     public boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue)
@@ -204,11 +232,6 @@ public class HeadersExchange extends AbstractExchange
         return new HeadersExchangeMBean(this);
     }
 
-    public Logger getLogger()
-    {
-        return _logger;
-    }
-
     protected void onBind(final Binding binding)
     {
         String bindingKey = binding.getBindingKey();
@@ -251,10 +274,11 @@ public class HeadersExchange extends AbstractExchange
         {
             bindings.remove(binding);
         }
-        
+
+        boolean removedBinding = _bindingHeaderMatchers.remove(new HeadersBinding(binding));
         if(_logger.isDebugEnabled())
         {
-            _logger.debug("Removing Binding: " + _bindingHeaderMatchers.remove(new HeadersBinding(binding)));
+            _logger.debug("Removing Binding: " + removedBinding);
         }
     }
 

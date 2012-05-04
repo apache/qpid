@@ -241,7 +241,7 @@ public class ReturnUnroutableMandatoryMessageTest extends QpidBrokerTestCase imp
         con2.start();
 
         MessageProducer nonMandatoryProducer = producerSession.createProducer(valid_topic, false, false);
-        MessageProducer mandatoryProducer = producerSession.createProducer(invalid_topic);
+        MessageProducer mandatoryProducer = producerSession.createProducer(invalid_topic, false, true);
 
         // First test - should be routed
         _logger.info("Sending non-mandatory message");

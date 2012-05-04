@@ -42,7 +42,7 @@ public class QpidRequestResponseClient implements MessageListener, Runnable
     private static final Logger _log = LoggerFactory.getLogger(QpidRequestResponseClient.class);
 
     private static final String DEFAULT_CF_JNDI = "QpidConnectionFactory";
-    private static final String DEFAULT_DESTINATION_JNDI = "QpidResponderQueue";
+    private static final String DEFAULT_DESTINATION_JNDI = "QpidRequestQueue";
     private static final String DEFAULT_MESSAGE = "Hello, World!";
     private static final int DEFAULT_MESSAGE_COUNT = 1;
     private static final int DEFAULT_THREAD_COUNT = 1;

@@ -35,7 +35,7 @@
 <type name="int16"     base="S16"       cpp="int16_t"       encode="@.putInt16(#)"       decode="# = @.getInt16()"     stream="#" size="2" accessor="direct" init="0"/>
 <type name="int32"     base="S32"       cpp="int32_t"       encode="@.putInt32(#)"       decode="# = @.getInt32()"     stream="#" size="4" accessor="direct" init="0"/>
 <type name="int64"     base="S64"       cpp="int64_t"       encode="@.putInt64(#)"       decode="# = @.getInt64()"     stream="#" size="8" accessor="direct" init="0"/>
-<type name="bool"      base="BOOL"      cpp="bool"       encode="@.putOctet(#?1:0)"   decode="# = @.getOctet()==1"  stream="#" size="1" accessor="direct" init="0"/>
+<type name="bool"      base="BOOL"      cpp="bool"          encode="@.putOctet(#?1:0)"   decode="# = @.getOctet()==1"  stream="#" size="1" accessor="direct" init="false"/>
 <type name="sstr"      base="SSTR"      cpp="std::string"   encode="@.putShortString(#)" decode="@.getShortString(#)"  stream="#" size="(1 + #.length())" accessor="direct" init='""' byRef="y" unmap="(#).getString()"/>
 <type name="lstr"      base="LSTR"      cpp="std::string"   encode="@.putMediumString(#)" decode="@.getMediumString(#)" stream="#" size="(2 + #.length())" accessor="direct" init='""' byRef="y" unmap="(#).getString()"/>
 <type name="absTime"   base="ABSTIME"   cpp="int64_t"       encode="@.putLongLong(#)"    decode="# = @.getLongLong()"  stream="#" size="8" accessor="direct" init="0"/>

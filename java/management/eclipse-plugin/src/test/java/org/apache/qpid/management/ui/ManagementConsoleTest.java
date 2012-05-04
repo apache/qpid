@@ -24,6 +24,7 @@ import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.management.AMQManagedObject;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.AMQQueueMBean;
@@ -36,6 +37,7 @@ import javax.management.MBeanFeatureInfo;
 import javax.management.MBeanInfo;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 
 /**
@@ -86,7 +88,7 @@ public class ManagementConsoleTest extends InternalBrokerBaseCase
         // If this test fails due to changes in the broker code,
         // then the constants in the Constants.java shoule be updated accordingly 
         DirectExchange exchange = new DirectExchange();
-        exchange.initialise(_virtualHost, ExchangeDefaults.DIRECT_EXCHANGE_NAME, false, 0, true);
+        exchange.initialise(UUIDGenerator.generateUUID(), _virtualHost, ExchangeDefaults.DIRECT_EXCHANGE_NAME, false, 0, true);
         AMQManagedObject mbean = (AMQManagedObject)exchange.getManagedObject();
         MBeanInfo mbeanInfo = mbean.getMBeanInfo();
 

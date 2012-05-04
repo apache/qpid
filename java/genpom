@@ -73,12 +73,14 @@ if opts.name is None:
 if opts.artifact is None:
   opts.artifact = opts.name
 
-def lookup(dep, attr):
-  nd = dep["dep"][attr]
+def lookup(doc, attr):
+  nd = doc[attr]
   if nd is None:
-    if nd is None:
-      return None
+    return None
   return nd.text()
+
+def lookupElement(doc, attr):
+  return doc[attr]
 
 def search(path, file):
   for d in path:
@@ -120,6 +122,7 @@ for jar in jars:
       continue
     else:
       die("unable to locate xml for %s" % jar)
+  dep = dep["dep"]
   group = lookup(dep, "groupId")
   artifactId = lookup(dep, "artifactId")
   version = lookup(dep, "version")
@@ -128,10 +131,27 @@ for jar in jars:
       <groupId>%s</groupId>
       <artifactId>%s</artifactId>
       <version>%s</version>
-      <scope>%s</scope>
-    </dependency>
-""" % (group, artifactId, version,
+      <scope>%s</scope>""" % (group, artifactId, version,
        scopes.get(artifactId, "compile")))
+
+  exclusions = lookupElement(dep, "exclusions")
+  if exclusions is not None:
+    deps.append("""
+      <exclusions>""")
+    for exclusion in list(exclusions.query["exclusion"]):
+          group = lookup(exclusion, "groupId")
+          artifactId = lookup(exclusion, "artifactId")
+          deps.append("""
+        <exclusion>
+          <groupId>%s</groupId>
+          <artifactId>%s</artifactId>
+        </exclusion>""" % (group, artifactId))
+    deps.append("""
+      </exclusions>""")
+
+  deps.append("""
+    </dependency>
+""")
 
 TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"

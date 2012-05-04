@@ -189,7 +189,7 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
             command = Method.create(commandType);
             command.setSync((0x0001 & hdr) != 0);
             command.read(dec);
-            if (command.hasPayload())
+            if (command.hasPayload() && !frame.isLastSegment())
             {
                 setIncompleteCommand(channel, command);
             }

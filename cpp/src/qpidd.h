@@ -26,6 +26,9 @@
 
 #include <memory>
 
+namespace qpid {
+namespace broker {
+
 // BootstrapOptions is a minimal subset of options used for a pre-parse
 // of the command line to discover which plugin modules need to be loaded.
 // The pre-parse is necessary because plugin modules may supply their own
@@ -70,4 +73,5 @@ public:
 // Broker real entry; various system-invoked entrypoints call here.
 int run_broker(int argc, char *argv[], bool hidden = false);
 
+}}
 #endif  /*!QPID_H*/

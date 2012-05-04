@@ -44,6 +44,7 @@ export PYTHONPATH=$srcdir:$PYTHON_DIR:$PYTHON_COMMANDS:$QPID_TESTS_PY:$QMF_LIB:$
 export QPID_CONFIG_EXEC=$PYTHON_COMMANDS/qpid-config
 export QPID_ROUTE_EXEC=$PYTHON_COMMANDS/qpid-route
 export QPID_CLUSTER_EXEC=$PYTHON_COMMANDS/qpid-cluster
+export QPID_HA_EXEC=$PYTHON_COMMANDS/qpid-ha
 
 # Executables
 export QPIDD_EXEC=$top_builddir/src/qpidd
@@ -74,6 +75,7 @@ exportmodule XML_LIB xml.so
 # Qpid options
 export QPID_NO_MODULE_DIR=1	# Don't accidentally load installed modules
 export QPID_DATA_DIR=
+export QPID_CONFIG=$srcdir/qpidd-empty.conf
 
 # Use temporary directory if $HOME does not exist
 if [ ! -e "$HOME" ]; then

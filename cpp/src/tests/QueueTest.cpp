@@ -254,8 +254,8 @@ QPID_AUTO_TEST_CASE(testBound){
 
     //ensure the remaining exchanges don't still have the queue bound to them:
     FailOnDeliver deliverable;
-    exchange1->route(deliverable, key, &args);
-    exchange3->route(deliverable, key, &args);
+    exchange1->route(deliverable);
+    exchange3->route(deliverable);
 }
 
 QPID_AUTO_TEST_CASE(testPersistLastNodeStanding){
@@ -1151,7 +1151,7 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
 
     intrusive_ptr<Message> msg01 = mkMsg(testStore, std::string(5, 'X'));  // transient w/ content
     DeliverableMessage dmsg01(msg01);
-    sbtFanout1.route(dmsg01, "", 0); // Brings queue 1 to capacity limit
+    sbtFanout1.route(dmsg01); // Brings queue 1 to capacity limit
     msg01->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg01->isContentReleased(), false);
     BOOST_CHECK_EQUAL(1u, tq1->getMessageCount());
@@ -1160,7 +1160,7 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
     DeliverableMessage dmsg02(msg02);
     {
         ScopedSuppressLogging sl; // suppress expected error messages.
-        BOOST_CHECK_THROW(sbtFanout1.route(dmsg02, "", 0), ResourceLimitExceededException);
+        BOOST_CHECK_THROW(sbtFanout1.route(dmsg02), ResourceLimitExceededException);
     }
     msg02->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg02->isContentReleased(), false);
@@ -1170,7 +1170,7 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
     DeliverableMessage dmsg03(msg03);
     {
         ScopedSuppressLogging sl; // suppress expected error messages.
-        BOOST_CHECK_THROW(sbtFanout1.route(dmsg03, "", 0), ResourceLimitExceededException);
+        BOOST_CHECK_THROW(sbtFanout1.route(dmsg03), ResourceLimitExceededException);
     }
     msg03->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg03->isContentReleased(), false);
@@ -1180,7 +1180,7 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
     DeliverableMessage dmsg04(msg04);
     {
         ScopedSuppressLogging sl; // suppress expected error messages.
-        BOOST_CHECK_THROW(sbtFanout1.route(dmsg04, "", 0), ResourceLimitExceededException);
+        BOOST_CHECK_THROW(sbtFanout1.route(dmsg04), ResourceLimitExceededException);
     }
     msg04->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg04->isContentReleased(), false);
@@ -1190,7 +1190,7 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
     DeliverableMessage dmsg05(msg05);
     {
         ScopedSuppressLogging sl; // suppress expected error messages.
-        BOOST_CHECK_THROW(sbtFanout1.route(dmsg05, "", 0), ResourceLimitExceededException);
+        BOOST_CHECK_THROW(sbtFanout1.route(dmsg05), ResourceLimitExceededException);
     }
     msg05->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg05->isContentReleased(), false);
@@ -1205,35 +1205,35 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
 
     intrusive_ptr<Message> msg06 = mkMsg(testStore, std::string(5, 'X'));  // transient w/ content
     DeliverableMessage dmsg06(msg06);
-    sbdFanout2.route(dmsg06, "", 0); // Brings queue 2 to capacity limit
+    sbdFanout2.route(dmsg06); // Brings queue 2 to capacity limit
     msg06->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg06->isContentReleased(), false);
     BOOST_CHECK_EQUAL(1u, dq2->getMessageCount());
 
     intrusive_ptr<Message> msg07 = mkMsg(testStore, std::string(5, 'X'));  // transient w/ content
     DeliverableMessage dmsg07(msg07);
-    sbdFanout2.route(dmsg07, "", 0);
+    sbdFanout2.route(dmsg07);
     msg07->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg07->isContentReleased(), true);
     BOOST_CHECK_EQUAL(2u, dq2->getMessageCount());
 
     intrusive_ptr<Message> msg08 = mkMsg(testStore, std::string(5, 'X'), true);  // durable w/ content
     DeliverableMessage dmsg08(msg08);
-    sbdFanout2.route(dmsg08, "", 0);
+    sbdFanout2.route(dmsg08);
     msg08->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg08->isContentReleased(), true);
     BOOST_CHECK_EQUAL(3u, dq2->getMessageCount());
 
     intrusive_ptr<Message> msg09 = mkMsg(testStore);  // transient no content
     DeliverableMessage dmsg09(msg09);
-    sbdFanout2.route(dmsg09, "", 0);
+    sbdFanout2.route(dmsg09);
     msg09->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg09->isContentReleased(), true);
     BOOST_CHECK_EQUAL(4u, dq2->getMessageCount());
 
     intrusive_ptr<Message> msg10 = mkMsg(testStore, "", true);  // durable no content
     DeliverableMessage dmsg10(msg10);
-    sbdFanout2.route(dmsg10, "", 0);
+    sbdFanout2.route(dmsg10);
     msg10->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg10->isContentReleased(), true);
     BOOST_CHECK_EQUAL(5u, dq2->getMessageCount());
@@ -1253,7 +1253,7 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
 
     intrusive_ptr<Message> msg11 = mkMsg(testStore, std::string(5, 'X'));  // transient w/ content
     DeliverableMessage dmsg11(msg11);
-    mbdFanout3.route(dmsg11, "", 0); // Brings queues 3 and 4 to capacity limit
+    mbdFanout3.route(dmsg11); // Brings queues 3 and 4 to capacity limit
     msg11->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg11->isContentReleased(), false);
     BOOST_CHECK_EQUAL(1u, dq3->getMessageCount());
@@ -1262,7 +1262,7 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
 
     intrusive_ptr<Message> msg12 = mkMsg(testStore, std::string(5, 'X'));  // transient w/ content
     DeliverableMessage dmsg12(msg12);
-    mbdFanout3.route(dmsg12, "", 0);
+    mbdFanout3.route(dmsg12);
     msg12->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg12->isContentReleased(), false); // XXXX - consequence of transient msg multi-queue ftd policy-handling limitations, fix in broker at some point!
     BOOST_CHECK_EQUAL(2u, dq3->getMessageCount());
@@ -1271,7 +1271,7 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
 
     intrusive_ptr<Message> msg13 = mkMsg(testStore, std::string(5, 'X'), true);  // durable w/ content
     DeliverableMessage dmsg13(msg13);
-    mbdFanout3.route(dmsg13, "", 0);
+    mbdFanout3.route(dmsg13);
     msg13->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg13->isContentReleased(), true);
     BOOST_CHECK_EQUAL(3u, dq3->getMessageCount());
@@ -1280,7 +1280,7 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
 
     intrusive_ptr<Message> msg14 = mkMsg(testStore);  // transient no content
     DeliverableMessage dmsg14(msg14);
-    mbdFanout3.route(dmsg14, "", 0);
+    mbdFanout3.route(dmsg14);
     msg14->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg14->isContentReleased(), false); // XXXX - consequence of transient msg multi-queue ftd policy-handling limitations, fix in broker at some point!
     BOOST_CHECK_EQUAL(4u, dq3->getMessageCount());
@@ -1289,7 +1289,7 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
 
     intrusive_ptr<Message> msg15 = mkMsg(testStore, "", true);  // durable no content
     DeliverableMessage dmsg15(msg15);
-    mbdFanout3.route(dmsg15, "", 0);
+    mbdFanout3.route(dmsg15);
     msg15->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg15->isContentReleased(), true);
     BOOST_CHECK_EQUAL(5u, dq3->getMessageCount());
@@ -1307,7 +1307,7 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
 
     intrusive_ptr<Message> msg16 = mkMsg(testStore, std::string(5, 'X'));  // transient w/ content
     DeliverableMessage dmsg16(msg16);
-    mbdFanout3.route(dmsg16, "", 0);
+    mbdFanout3.route(dmsg16);
     msg16->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg16->isContentReleased(), false);
     BOOST_CHECK_EQUAL(6u, dq3->getMessageCount());
@@ -1316,7 +1316,7 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
 
     intrusive_ptr<Message> msg17 = mkMsg(testStore, std::string(5, 'X'), true);  // durable w/ content
     DeliverableMessage dmsg17(msg17);
-    mbdFanout3.route(dmsg17, "", 0);
+    mbdFanout3.route(dmsg17);
     msg17->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg17->isContentReleased(), false);
     BOOST_CHECK_EQUAL(7u, dq3->getMessageCount());
@@ -1325,7 +1325,7 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
 
     intrusive_ptr<Message> msg18 = mkMsg(testStore);  // transient no content
     DeliverableMessage dmsg18(msg18);
-    mbdFanout3.route(dmsg18, "", 0);
+    mbdFanout3.route(dmsg18);
     msg18->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg18->isContentReleased(), false);
     BOOST_CHECK_EQUAL(8u, dq3->getMessageCount());
@@ -1334,7 +1334,7 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
 
     intrusive_ptr<Message> msg19 = mkMsg(testStore, "", true);  // durable no content
     DeliverableMessage dmsg19(msg19);
-    mbdFanout3.route(dmsg19, "", 0);
+    mbdFanout3.route(dmsg19);
     msg19->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg19->isContentReleased(), false);
     BOOST_CHECK_EQUAL(9u, dq3->getMessageCount());
@@ -1357,7 +1357,7 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
 
     intrusive_ptr<Message> msg20 = mkMsg(testStore, std::string(5, 'X'));  // transient w/ content
     DeliverableMessage dmsg20(msg20);
-    mbmFanout4.route(dmsg20, "", 0); // Brings queue 7 to capacity limit
+    mbmFanout4.route(dmsg20); // Brings queue 7 to capacity limit
     msg20->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg20->isContentReleased(), false);
     BOOST_CHECK_EQUAL(1u, dq7->getMessageCount());
@@ -1366,7 +1366,7 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
 
     intrusive_ptr<Message> msg21 = mkMsg(testStore, std::string(5, 'X'));  // transient w/ content
     DeliverableMessage dmsg21(msg21);
-    mbmFanout4.route(dmsg21, "", 0);
+    mbmFanout4.route(dmsg21);
     msg21->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg21->isContentReleased(), false);
     BOOST_CHECK_EQUAL(2u, dq7->getMessageCount()); // over limit
@@ -1375,7 +1375,7 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
 
     intrusive_ptr<Message> msg22 = mkMsg(testStore, std::string(5, 'X'), true);  // durable w/ content
     DeliverableMessage dmsg22(msg22);
-    mbmFanout4.route(dmsg22, "", 0);
+    mbmFanout4.route(dmsg22);
     msg22->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg22->isContentReleased(), false);
     BOOST_CHECK_EQUAL(3u, dq7->getMessageCount()); // over limit
@@ -1384,7 +1384,7 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
 
     intrusive_ptr<Message> msg23 = mkMsg(testStore);  // transient no content
     DeliverableMessage dmsg23(msg23);
-    mbmFanout4.route(dmsg23, "", 0);
+    mbmFanout4.route(dmsg23);
     msg23->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg23->isContentReleased(), false);
     BOOST_CHECK_EQUAL(4u, dq7->getMessageCount()); // over limit
@@ -1393,7 +1393,7 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
 
     intrusive_ptr<Message> msg24 = mkMsg(testStore, "", true);  // durable no content
     DeliverableMessage dmsg24(msg24);
-    mbmFanout4.route(dmsg24, "", 0);
+    mbmFanout4.route(dmsg24);
     msg24->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg24->isContentReleased(), false);
     BOOST_CHECK_EQUAL(5u, dq7->getMessageCount()); // over limit

@@ -83,7 +83,6 @@ public class PlainConfiguration extends AbstractConfiguration
                 
             _st.commentChar(COMMENT); // single line comments
             _st.eolIsSignificant(true); // return EOL as a token
-            _st.lowerCaseMode(true); // case insensitive tokens
             _st.ordinaryChar('='); // equals is a token
             _st.ordinaryChar(CONTINUATION); // continuation character (when followed by EOL)
             _st.quoteChar('"'); // double quote

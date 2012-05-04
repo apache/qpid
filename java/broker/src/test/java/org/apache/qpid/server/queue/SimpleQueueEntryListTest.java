@@ -23,6 +23,7 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.queue.SimpleQueueEntryList.QueueEntryIteratorImpl;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -59,11 +60,24 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
             System.clearProperty(SCAVENGE_PROP);
         }
     }
-    
+
     @Override
     public QueueEntryList getTestList()
     {
-        return _sqel;
+        return getTestList(false);
+    }
+
+    @Override
+    public QueueEntryList getTestList(boolean newList)
+    {
+        if(newList)
+        {
+            return new SimpleQueueEntryList(_testQueue);
+        }
+        else
+        {
+            return _sqel;
+        }
     }
 
     @Override
@@ -216,5 +230,4 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
         next = next.getNextValidEntry();
         assertNull("The next entry after the last should be null", next);
     }
-
 }

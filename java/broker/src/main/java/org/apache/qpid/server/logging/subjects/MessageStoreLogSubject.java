@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.STORE_FORMAT;
@@ -28,10 +27,9 @@ import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.STORE_FOR
 public class MessageStoreLogSubject extends AbstractLogSubject
 {
 
-    /** Create an ExchangeLogSubject that Logs in the following format. */
-    public MessageStoreLogSubject(VirtualHost vhost, MessageStore store)
+    /** Create an MessageStoreLogSubject that Logs in the following format. */
+    public MessageStoreLogSubject(VirtualHost vhost, String messageStoreName)
     {
-        setLogStringWithFormat(STORE_FORMAT, vhost.getName(),
-                               store.getClass().getSimpleName());
+        setLogStringWithFormat(STORE_FORMAT, vhost.getName(), messageStoreName);
     }
 }

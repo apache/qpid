@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server;
 
+import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.xml.QpidLog4JConfigurator;
 
@@ -52,15 +53,24 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.EnumSet;
+import java.util.Formatter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.FileHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 
 public class Broker
 {
+    private static final Logger LOGGER = Logger.getLogger(Broker.class);
+
     private static final int IPV4_ADDRESS_LENGTH = 4;
     private static final char IPV4_LITERAL_SEPARATOR = '.';
+    private volatile Thread _shutdownHookThread;
 
     protected static class InitException extends RuntimeException
     {
@@ -74,7 +84,14 @@ public class Broker
 
     public void shutdown()
     {
-        ApplicationRegistry.remove();
+        try
+        {
+            removeShutdownHook();
+        }
+        finally
+        {
+            ApplicationRegistry.remove();
+        }
     }
 
     public void startup() throws Exception
@@ -88,6 +105,7 @@ public class Broker
         {
             CurrentActor.set(new BrokerActor(new SystemOutMessageLogger()));
             startupImpl(options);
+            addShutdownHook();
         }
         finally
         {
@@ -147,6 +165,12 @@ public class Broker
                 parsePortList(sslPorts, serverConfig.getSSLPorts());
             }
 
+            Set<Integer> exclude_1_0 = new HashSet<Integer>(options.getExcludedPorts(ProtocolExclusion.v1_0));
+            if(exclude_1_0.isEmpty())
+            {
+                parsePortList(exclude_1_0, serverConfig.getPortExclude10());
+            }
+
             Set<Integer> exclude_0_10 = new HashSet<Integer>(options.getExcludedPorts(ProtocolExclusion.v0_10));
             if(exclude_0_10.isEmpty())
             {
@@ -177,14 +201,14 @@ public class Broker
                 bindAddr = serverConfig.getBind();
             }
 
-            InetAddress bindAddress = null;
+            InetAddress bindAddress;
             if (bindAddr.equals(WILDCARD_ADDRESS))
             {
-                bindAddress = new InetSocketAddress(0).getAddress();
+                bindAddress = null;
             }
             else
             {
-                bindAddress = InetAddress.getByAddress(parseIP(bindAddr));
+                bindAddress = InetAddress.getByName(bindAddr);
             }
 
             final AmqpProtocolVersion defaultSupportedProtocolReply = serverConfig.getDefaultSupportedProtocolReply();
@@ -193,18 +217,22 @@ public class Broker
             {
                 for(int port : ports)
                 {
+                    final InetSocketAddress inetSocketAddress = new InetSocketAddress(bindAddress, port);
+
                     final Set<AmqpProtocolVersion> supported =
-                                    getSupportedVersions(port, exclude_0_10, exclude_0_9_1, exclude_0_9, exclude_0_8, serverConfig);
+                                    getSupportedVersions(port, exclude_1_0, exclude_0_10, exclude_0_9_1, exclude_0_9,
+                                                         exclude_0_8, serverConfig);
 
                     final NetworkTransportConfiguration settings =
-                                    new ServerNetworkTransportConfiguration(serverConfig, port, bindAddress.getHostName(), Transport.TCP);
+                                    new ServerNetworkTransportConfiguration(serverConfig, inetSocketAddress, Transport.TCP);
 
                     final IncomingNetworkTransport transport = Transport.getIncomingTransportInstance();
                     final MultiVersionProtocolEngineFactory protocolEngineFactory =
                                     new MultiVersionProtocolEngineFactory(supported, defaultSupportedProtocolReply);
 
                     transport.accept(settings, protocolEngineFactory, null);
-                    ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, port),
+
+                    ApplicationRegistry.getInstance().addAcceptor(inetSocketAddress,
                                     new QpidAcceptor(transport,"TCP"));
                     CurrentActor.get().message(BrokerMessages.LISTENING("TCP", port));
                 }
@@ -219,17 +247,21 @@ public class Broker
 
                 for(int sslPort : sslPorts)
                 {
+                    final InetSocketAddress inetSocketAddress = new InetSocketAddress(bindAddress, sslPort);
+
                     final Set<AmqpProtocolVersion> supported =
-                                    getSupportedVersions(sslPort, exclude_0_10, exclude_0_9_1, exclude_0_9, exclude_0_8, serverConfig);
+                                    getSupportedVersions(sslPort, exclude_1_0, exclude_0_10, exclude_0_9_1,
+                                                         exclude_0_9, exclude_0_8, serverConfig);
                     final NetworkTransportConfiguration settings =
-                        new ServerNetworkTransportConfiguration(serverConfig, sslPort, bindAddress.getHostName(), Transport.TCP);
+                        new ServerNetworkTransportConfiguration(serverConfig, inetSocketAddress, Transport.TCP);
 
                     final IncomingNetworkTransport transport = Transport.getIncomingTransportInstance();
                     final MultiVersionProtocolEngineFactory protocolEngineFactory =
                                     new MultiVersionProtocolEngineFactory(supported, defaultSupportedProtocolReply);
 
                     transport.accept(settings, protocolEngineFactory, sslContext);
-                    ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, sslPort),
+
+                    ApplicationRegistry.getInstance().addAcceptor(inetSocketAddress,
                             new QpidAcceptor(transport,"TCP"));
                     CurrentActor.get().message(BrokerMessages.LISTENING("TCP/SSL", sslPort));
                 }
@@ -244,13 +276,20 @@ public class Broker
         }
     }
 
-    private static Set<AmqpProtocolVersion> getSupportedVersions(final int port, final Set<Integer> exclude_0_10,
-                                                                final Set<Integer> exclude_0_9_1, final Set<Integer> exclude_0_9,
-                                                                final Set<Integer> exclude_0_8,
-                                                                final ServerConfiguration serverConfig)
+    private static Set<AmqpProtocolVersion> getSupportedVersions(final int port,
+                                                                 final Set<Integer> exclude_1_0,
+                                                                 final Set<Integer> exclude_0_10,
+                                                                 final Set<Integer> exclude_0_9_1,
+                                                                 final Set<Integer> exclude_0_9,
+                                                                 final Set<Integer> exclude_0_8,
+                                                                 final ServerConfiguration serverConfig)
     {
         final EnumSet<AmqpProtocolVersion> supported = EnumSet.allOf(AmqpProtocolVersion.class);
 
+        if(exclude_1_0.contains(port) || !serverConfig.isAmqp10enabled())
+        {
+            supported.remove(AmqpProtocolVersion.v1_0_0);
+        }
         if(exclude_0_10.contains(port) || !serverConfig.isAmqp010enabled())
         {
             supported.remove(AmqpProtocolVersion.v0_10);
@@ -349,34 +388,6 @@ public class Broker
         }
     }
 
-    private byte[] parseIP(String address) throws Exception
-    {
-        char[] literalBuffer = address.toCharArray();
-        int byteCount = 0;
-        int currByte = 0;
-        byte[] ip = new byte[IPV4_ADDRESS_LENGTH];
-        for (int i = 0; i < literalBuffer.length; i++)
-        {
-            char currChar = literalBuffer[i];
-            if ((currChar >= '0') && (currChar <= '9'))
-            {
-                currByte = (currByte * 10) + (Character.digit(currChar, 10) & 0xFF);
-            }
-
-            if (currChar == IPV4_LITERAL_SEPARATOR || (i + 1 == literalBuffer.length))
-            {
-                ip[byteCount++] = (byte) currByte;
-                currByte = 0;
-            }
-        }
-
-        if (byteCount != 4)
-        {
-            throw new Exception("Invalid IP address: " + address);
-        }
-        return ip;
-    }
-
     private void configureLogging(File logConfigFile, long logWatchTime) throws InitException, IOException
     {
         if (logConfigFile.exists() && logConfigFile.canRead())
@@ -440,5 +451,57 @@ public class Broker
         LoggingManagementMBean blm = new LoggingManagementMBean(logConfigFile.getPath(),logWatchTime);
 
         blm.register();
+    }
+
+    private void addShutdownHook()
+    {
+        Thread shutdownHookThread = new Thread(new ShutdownService());
+        shutdownHookThread.setName("QpidBrokerShutdownHook");
+
+        Runtime.getRuntime().addShutdownHook(shutdownHookThread);
+        _shutdownHookThread = shutdownHookThread;
+
+        LOGGER.debug("Added shutdown hook");
+    }
+
+    private void removeShutdownHook()
+    {
+        Thread shutdownThread = _shutdownHookThread;
+
+        //if there is a shutdown thread and we aren't it, we should remove it
+        if(shutdownThread != null && !(Thread.currentThread() == shutdownThread))
+        {
+            LOGGER.debug("Removing shutdown hook");
+
+            _shutdownHookThread = null;
+
+            boolean removed = false;
+            try
+            {
+                removed = Runtime.getRuntime().removeShutdownHook(shutdownThread);
+            }
+            catch(IllegalStateException ise)
+            {
+                //ignore, means the JVM is already shutting down
+            }
+
+            if(LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Removed shutdown hook: " + removed);
+            }
+        }
+        else
+        {
+            LOGGER.debug("Skipping shutdown hook removal as there either isnt one, or we are it.");
+        }
+    }
+
+    private class ShutdownService implements Runnable
+    {
+        public void run()
+        {
+            LOGGER.debug("Shutdown hook running");
+            Broker.this.shutdown();
+        }
     }
 }

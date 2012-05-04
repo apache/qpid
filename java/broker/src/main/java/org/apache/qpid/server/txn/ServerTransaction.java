@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.server.txn;
 
+import java.util.Collection;
+import java.util.List;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueEntry;
-
-import java.util.Collection;
-import java.util.List;
 
 
 /**

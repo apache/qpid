@@ -35,7 +35,8 @@ import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.ProtocolExclusion;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
-import org.apache.qpid.server.store.DerbyMessageStore;
+import org.apache.qpid.server.store.MessageStoreConstants;
+import org.apache.qpid.server.store.derby.DerbyMessageStoreFactory;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.util.FileUtils;
 import org.apache.qpid.util.LogMonitor;
@@ -63,9 +64,12 @@ import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -195,6 +199,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         return QpidBrokerTestCase._logger;
     }
 
+    @Override
     public void runBare() throws Throwable
     {
         String qname = getClass().getName() + "." + getName();
@@ -243,14 +248,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         }
         finally
         {
-            try
-            {
-                stopBroker();
-            }
-            catch (Exception e)
-            {
-                _logger.error("exception stopping broker", e);
-            }
+            stopAllBrokers();
 
             // reset properties used in the test
             revertSystemProperties();
@@ -634,12 +632,21 @@ public class QpidBrokerTestCase extends QpidTestCase
         }
     }
 
-    public void stopBroker() throws Exception
+    public void stopBroker()
     {
         stopBroker(0);
     }
 
-    public void stopBroker(int port) throws Exception
+    public void stopAllBrokers()
+    {
+        Set<Integer> runningBrokerPorts = new HashSet<Integer>(getBrokerPortNumbers());
+        for (int brokerPortNumber : runningBrokerPorts)
+        {
+            stopBroker(brokerPortNumber);
+        }
+    }
+
+    public void stopBroker(int port)
     {
         if (isBrokerPresent(port))
         {
@@ -651,12 +658,12 @@ public class QpidBrokerTestCase extends QpidTestCase
         }
     }
 
-    public void killBroker() throws Exception
+    public void killBroker()
     {
         killBroker(0);
     }
 
-    public void killBroker(int port) throws Exception
+    public void killBroker(int port)
     {
         if (isBrokerPresent(port))
         {
@@ -668,7 +675,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         }
     }
 
-    public boolean isBrokerPresent(int port) throws Exception
+    public boolean isBrokerPresent(int port)
     {
         port = getPort(port);
 
@@ -679,6 +686,11 @@ public class QpidBrokerTestCase extends QpidTestCase
     {
         port = getPort(port);
         return _brokers.get(port);
+    }
+
+    public Set<Integer> getBrokerPortNumbers()
+    {
+        return new HashSet<Integer>(_brokers.keySet());
     }
 
     /**
@@ -693,22 +705,22 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected void makeVirtualHostPersistent(String virtualhost)
             throws ConfigurationException, IOException
     {
-        Class<?> storeClass = null;
+        Class<?> storeFactoryClass = null;
         try
         {
             // Try and lookup the BDB class
-            storeClass = Class.forName("org.apache.qpid.server.store.berkeleydb.BDBMessageStore");
+            storeFactoryClass = Class.forName("org.apache.qpid.server.store.berkeleydb.BDBMessageStoreFactory");
         }
         catch (ClassNotFoundException e)
         {
             // No BDB store, we'll use Derby instead.
-            storeClass = DerbyMessageStore.class;
+            storeFactoryClass = DerbyMessageStoreFactory.class;
         }
 
 
-        setConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".store.class",
-                                    storeClass.getName());
-        setConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".store." + DerbyMessageStore.ENVIRONMENT_PATH_PROPERTY,
+        setConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".store.factoryclass",
+                                    storeFactoryClass.getName());
+        setConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".store." + MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY,
                                    "${QPID_WORK}/" + virtualhost);
     }
 

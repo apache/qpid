@@ -24,8 +24,17 @@ from threading import Condition
 from time import sleep
 import qmf.console
 import qpid.messaging
+from qpidtoollibs import BrokerAgent
 
 class ManagementTest (TestBase010):
+
+    def setup_access(self):
+        if 'broker_agent' not in self.__dict__:
+            self.conn2 = qpid.messaging.Connection(self.broker)
+            self.conn2.open()
+            self.broker_agent = BrokerAgent(self.conn2)
+        return self.broker_agent
+
     """
     Tests for the management hooks
     """
@@ -376,6 +385,30 @@ class ManagementTest (TestBase010):
         # Cleanup
         for e in ["A", "B"]: session.exchange_delete(exchange=e)
 
+    def test_reroute_invalid_alt_exchange(self):
+        """
+        Test that an error is returned for an attempt to reroute to
+        alternate exchange on a queue for which no such exchange has
+        been defined.
+        """
+        self.startQmf()
+        session = self.session
+        # create queue with no alt-exchange, and send a message to it
+        session.queue_declare(queue="q", exclusive=True, auto_delete=True)
+        props = session.delivery_properties(routing_key="q")
+        session.message_transfer(message=Message(props, "don't reroute me!"))
+
+        # attempt to reroute the message to alt-exchange
+        q = self.qmf.getObjects(_class="queue", name="q")[0]
+        result = q.reroute(1, True, "", {})
+        # verify the attempt fails...
+        self.assertEqual(result.status, 4) #invalid parameter
+
+        # ...and message is still on the queue
+        self.subscribe(destination="d", queue="q")
+        self.assertEqual("don't reroute me!", session.incoming("d").get(timeout=1).body)
+
+
     def test_methods_async (self):
         """
         """
@@ -559,12 +592,18 @@ class ManagementTest (TestBase010):
         """
         Test message in/out stats for connection
         """
-        self.startQmf()
+        agent = self.setup_access()
         conn = self.connect()
         session = conn.session("stats-session")
 
         #using qmf find named session and the corresponding connection:
-        conn_qmf = self.qmf.getObjects(_class="session", name="stats-session")[0]._connectionRef_
+        conn_qmf = None
+        sessions = agent.getAllSessions()
+        for s in sessions:
+            if s.name == "stats-session":
+                conn_qmf = agent.getConnection(s.connectionRef)
+
+        assert(conn_qmf)
         
         #send a message to a queue
         session.queue_declare(queue="stats-q", exclusive=True, auto_delete=True)

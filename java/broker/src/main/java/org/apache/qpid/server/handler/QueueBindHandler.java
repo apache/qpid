@@ -134,7 +134,7 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
                     Map<String, Object> oldArgs = oldBinding.getArguments();
                     if((oldArgs == null && !arguments.isEmpty()) || (oldArgs != null && !oldArgs.equals(arguments)))
                     {
-                        virtualHost.getBindingFactory().replaceBinding(bindingKey, queue, exch, arguments);    
+                        virtualHost.getBindingFactory().replaceBinding(oldBinding.getId(), bindingKey, queue, exch, arguments);
                     }
                 }
             }

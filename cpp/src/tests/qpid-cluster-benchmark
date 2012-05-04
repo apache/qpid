@@ -22,38 +22,45 @@
 
 # Default options
 MESSAGES="-m 10000"
-FLOW="--flow-control 100"	      # Flow control limit on queue depth for latency.
 REPEAT="--repeat 10"
 QUEUES="-q 6"
 SENDERS="-s 3"
 RECEIVERS="-r 3"
 BROKERS=			# Local broker
 CLIENT_HOSTS=			# No ssh, all clients are local
+# Connection options
+TCP_NODELAY=false
+RECONNECT=true
+HEARTBEAT=1
 
-while getopts "m:f:n:b:q:s:r:c:txyv-" opt; do
+while getopts "m:f:n:b:q:s:r:c:h:i:txyv-" opt; do
     case $opt in
-	m) MESSAGES="-m $OPTARG";;
-	f) FLOW="--flow-control $OPTARG";;
-	n) REPEAT="--repeat $OPTARG";;
 	b) BROKERS="-b $OPTARG";;
-	q) QUEUES="-q $OPTARG";;
-	s) SENDERS="-s $OPTARG";;
-	r) RECEIVERS="-r $OPTARG";;
 	c) CLIENT_HOSTS="-c $OPTARG";;
-	t) TCP_NODELAY="--connection-options {tcp-nodelay:true}";;
+	h) HEARTBEAT=$OPTARG;;
+	i) RECONNECT=$OPTARG;;
+	m) MESSAGES="-m $OPTARG";;
+	n) REPEAT="--repeat $OPTARG";;
+	q) QUEUES="-q $OPTARG";;
+	r) RECEIVERS="-r $OPTARG";;
+	s) SENDERS="-s $OPTARG";;
+	t) TCP_NODELAY=true;;
+	v) OPTS="--verbose";;
 	x) SAVE_RECEIVED="--save-received";;
 	y) NO_DELETE="--no-delete";;
-	v) OPTS="--verbose";;
 	-) break ;;
 	*) echo "Unknown option"; exit 1;;
     esac
 done
 shift $(($OPTIND-1))
 
-REPLICATE="node:{x-declare:{arguments:{'qpid.replicate':all}}}"
+CONNECTION_OPTIONS="--connection-options {tcp-nodelay:$TCP_NODELAY,reconnect:$RECONNECT,heartbeat:$HEARTBEAT}"
+CREATE_OPTIONS="node:{x-declare:{arguments:{'qpid.replicate':all}}}"
+
 BROKER=$(echo $BROKERS | sed s/,.*//)
 run_test() { echo $*; shift; "$@"; echo; echo; echo; }
 
-OPTS="$OPTS $REPEAT $BROKERS --summarize $QUEUES $SENDERS $RECEIVERS $MESSAGES $CLIENT_HOSTS $SAVE_RECEIVED $TCP_NODELAY $NO_DELETE"
-OPTS="$OPTS --create-option $REPLICATE"
+OPTS="$OPTS $REPEAT $BROKERS --summarize $QUEUES $SENDERS $RECEIVERS $MESSAGES $CLIENT_HOSTS $SAVE_RECEIVED $CONNECTION_OPTIONS $NO_DELETE"
+OPTS="$OPTS --create-option $CREATE_OPTIONS"
+
 run_test "Benchmark:" qpid-cpp-benchmark $OPTS "$@"

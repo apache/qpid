@@ -264,7 +264,6 @@ public class EncodingUtils
 
     public static void writeLongStringBytes(DataOutput buffer, String s) throws IOException
     {
-        assert (s == null) || (s.length() <= 0xFFFE);
         if (s != null)
         {
             int len = s.length();
@@ -286,7 +285,6 @@ public class EncodingUtils
 
     public static void writeLongStringBytes(DataOutput buffer, char[] s) throws IOException
     {
-        assert (s == null) || (s.length <= 0xFFFE);
         if (s != null)
         {
             int len = s.length;
@@ -307,7 +305,6 @@ public class EncodingUtils
 
     public static void writeLongStringBytes(DataOutput buffer, byte[] bytes) throws IOException
     {
-        assert (bytes == null) || (bytes.length <= 0xFFFE);
         if (bytes != null)
         {
             writeUnsignedInteger(buffer, bytes.length);

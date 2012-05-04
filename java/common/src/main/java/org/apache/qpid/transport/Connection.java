@@ -216,6 +216,7 @@ public class Connection extends ConnectionInvoker
             conSettings = settings;
             state = OPENING;
             userID = settings.getUsername();
+            connectionLost.set(false);
 
             securityLayer = SecurityLayerFactory.newInstance(getConnectionSettings());
 

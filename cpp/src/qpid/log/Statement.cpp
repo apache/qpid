@@ -55,6 +55,50 @@ void Statement::log(const std::string& message) {
 }
 
 Statement::Initializer::Initializer(Statement& s) : statement(s) {
+    // QPID-3891
+    // From the given BOOST_CURRENT_FUNCTION name extract only the
+    // namespace-qualified-functionName, skipping return and calling args.
+    // Given:
+    //   <possible return value type> qpid::name::space::Function(args)
+    // Return:
+    //   "qpid::name::space::Function".
+    if (s.function != NULL) {
+        bool         foundOParen(false);
+        const char * opPtr;
+        for (opPtr = s.function; *opPtr != '\0'; opPtr++) {
+            if (*opPtr == '(') {
+                foundOParen = true;
+                break;
+            }
+        }
+
+        if (foundOParen) {
+            const char * bPtr = opPtr;
+            for (bPtr = opPtr; bPtr > s.function; bPtr--) {
+                if (bPtr[-1] == ' ') {
+                    break;
+                }
+            }
+
+            size_t nStoreSize = opPtr - bPtr;
+            if (nStoreSize > 0) {
+                // Note: the struct into which this name is stored
+                // is static and is never deleted.
+                char * nStore = new char[nStoreSize + 1];
+                std::copy (bPtr, opPtr, nStore);
+                nStore[nStoreSize] = '\0';
+
+                s.function = nStore;
+            } else {
+                // Ignore zero length name
+            }
+        } else {
+            // No name found - do nothing
+        }
+    } else {
+        // no function-name pointer to process
+    }
+
     Logger::instance().add(s);
 }
 

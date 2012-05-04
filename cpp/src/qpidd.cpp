@@ -29,6 +29,9 @@
 #include <memory>
 using namespace std;
 
+namespace qpid {
+namespace broker {
+
 auto_ptr<QpiddOptions> options;
 
 // Broker real entry; various system-invoked entrypoints call here.
@@ -87,3 +90,4 @@ int run_broker(int argc, char *argv[], bool hidden)
     }
     return 1;
 }
+}}

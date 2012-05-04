@@ -175,6 +175,28 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
                          (byte) 10
             };
 
+    private static final byte[] AMQP_1_0_0_HEADER =
+            new byte[] { (byte) 'A',
+                         (byte) 'M',
+                         (byte) 'Q',
+                         (byte) 'P',
+                         (byte) 0,
+                         (byte) 1,
+                         (byte) 0,
+                         (byte) 0
+            };
+
+    private static final byte[] AMQP_SASL_1_0_0_HEADER =
+            new byte[] { (byte) 'A',
+                         (byte) 'M',
+                         (byte) 'Q',
+                         (byte) 'P',
+                         (byte) 3,
+                         (byte) 1,
+                         (byte) 0,
+                         (byte) 0
+            };
+
     public void setNetworkConnection(NetworkConnection networkConnection)
     {
         setNetworkConnection(networkConnection, networkConnection.getSender());
@@ -289,8 +311,48 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         }
     };
 
+    private DelegateCreator creator_1_0_0 = new DelegateCreator()
+    {
+
+        public AmqpProtocolVersion getVersion()
+        {
+            return AmqpProtocolVersion.v1_0_0;
+        }
+
+
+        public byte[] getHeaderIdentifier()
+        {
+            return AMQP_1_0_0_HEADER;
+        }
+
+        public ServerProtocolEngine getProtocolEngine()
+        {
+            return new ProtocolEngine_1_0_0(_appRegistry,_id);
+        }
+    };
+
+    private DelegateCreator creator_1_0_0_SASL = new DelegateCreator()
+    {
+
+        public AmqpProtocolVersion getVersion()
+        {
+            return AmqpProtocolVersion.v1_0_0;
+        }
+
+
+        public byte[] getHeaderIdentifier()
+        {
+            return AMQP_SASL_1_0_0_HEADER;
+        }
+
+        public ServerProtocolEngine getProtocolEngine()
+        {
+            return new ProtocolEngine_1_0_0_SASL(_network, _appRegistry, _id);
+        }
+    };
+
     private final DelegateCreator[] _creators =
-            new DelegateCreator[] { creator_0_8, creator_0_9, creator_0_9_1, creator_0_10 };
+            new DelegateCreator[] { creator_0_8, creator_0_9, creator_0_9_1, creator_0_10, creator_1_0_0_SASL, creator_1_0_0 };
 
 
     private class ClosedDelegateProtocolEngine implements ServerProtocolEngine

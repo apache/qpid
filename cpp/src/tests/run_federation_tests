@@ -33,16 +33,13 @@ else
     SKIPTESTS='-i *_xml'    # note: single quotes prevent expansion of *
 fi
 
+QPIDD_CMD="../qpidd --daemon --port 0 --no-data-dir $MODULES --auth no --log-enable=info+ --log-enable=debug+:Bridge --log-to-file"
 start_brokers() {
-    ../qpidd --daemon --port 0 --no-data-dir $MODULES --auth no > qpidd.port
-    LOCAL_PORT=`cat qpidd.port`
-    ../qpidd --daemon --port 0 --no-data-dir $MODULES --auth no > qpidd.port
-    REMOTE_PORT=`cat qpidd.port`
-
-    ../qpidd --daemon --port 0 --no-data-dir $MODULES --auth no > qpidd.port
-    REMOTE_B1=`cat qpidd.port`
-    ../qpidd --daemon --port 0 --no-data-dir $MODULES --auth no > qpidd.port
-    REMOTE_B2=`cat qpidd.port`
+    rm -f fed_local.log fed_remote.log fed_b1.log fed_b2.log
+    LOCAL_PORT=$($QPIDD_CMD fed_local.log)
+    REMOTE_PORT=$($QPIDD_CMD fed_remote.log)
+    REMOTE_B1=$($QPIDD_CMD fed_b1.log)
+    REMOTE_B2=$($QPIDD_CMD fed_b2.log)
 }
 
 stop_brokers() {

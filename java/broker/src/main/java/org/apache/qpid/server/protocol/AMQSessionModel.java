@@ -20,10 +20,12 @@
  */
 package org.apache.qpid.server.protocol;
 
+import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
 
@@ -34,7 +36,8 @@ import org.apache.qpid.server.queue.SimpleAMQQueue;
  */
 public interface AMQSessionModel extends Comparable<AMQSessionModel>
 {
-    public Object getID();
+    /** Unique session ID across entire broker*/
+    public UUID getId();
 
     public AMQConnectionModel getConnectionModel();
 
@@ -64,4 +67,7 @@ public interface AMQSessionModel extends Comparable<AMQSessionModel>
     void block(AMQQueue queue);
 
     void unblock(AMQQueue queue);
+
+
+    boolean onSameConnection(InboundMessage inbound);
 }

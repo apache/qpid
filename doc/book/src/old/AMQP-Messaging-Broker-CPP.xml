@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<!--
+ 
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ 
+-->
+
+<part>
+  <title>AMQP Messaging Broker (Implemented in C++)</title>
+  <partintro>
+    <para>Qpid provides two AMQP messaging brokers:</para>
+
+    <itemizedlist>
+      <listitem><para>Implemented in C++ - high performance, low latency, and RDMA support.</para></listitem>
+      <listitem><para>Implemented in Java - Fully JMS compliant, runs on any Java platform.</para></listitem>
+    </itemizedlist>
+
+    <para>Both AMQP messaging brokers support clients in multiple languages, as long as the messaging client and the messaging broker use the same version of AMQP. See <link linkend="AMQP-Compatibility"/> to see which messaging clients work with each broker.</para>
+
+    <para>This section contains information specific to the broker that is implemented in C++.</para>
+  </partintro>
+
+<chapter>
+    <title>            
+      Running the AMQP Messaging Broker
+    </title>
+    
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Running-CPP-Broker.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Cheat-Sheet-for-configuring-Queue-Options.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Cheat-Sheet-for-configuring-Exchange-Options.xml"/>
+
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Using-Broker-Federation.xml"/>
+
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="SSL.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="LVQ.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="queue-state-replication.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Active-Active-Cluster.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="ACL.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="producer-flow-control.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Using-message-groups.xml"/>
+</chapter>
+ 
+
+<chapter id="chapter-Managing-CPP-Broker">
+    <title>            
+      Managing the AMQP Messaging Broker
+    </title>
+
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Managing-CPP-Broker.xml"/> 
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="QMan-Qpid-Management-bridge.xml"/> 
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid-Management-Framework.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Management-Design-notes.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="QMF-Python-Console-Tutorial.xml"/> 
+</chapter>
+</part>

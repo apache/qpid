@@ -1,3 +1,6 @@
+#ifndef _FieldTable_
+#define _FieldTable_
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,15 +21,17 @@
  * under the License.
  *
  */
-#include <iostream>
-#include <vector>
-#include <boost/shared_ptr.hpp>
-#include <map>
-#include "qpid/framing/amqp_types.h"
-#include "qpid/CommonImportExport.h"
 
-#ifndef _FieldTable_
-#define _FieldTable_
+#include "qpid/framing/amqp_types.h"
+#include "qpid/sys/Mutex.h"
+
+#include <boost/shared_ptr.hpp>
+#include <boost/shared_array.hpp>
+
+#include <iosfwd>
+#include <map>
+
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
     /**
@@ -56,10 +61,10 @@ class FieldTable
     typedef ValueMap::reference reference;
     typedef ValueMap::value_type value_type;
 
-    QPID_COMMON_INLINE_EXTERN FieldTable() {};
-    QPID_COMMON_EXTERN FieldTable(const FieldTable& ft);
-    QPID_COMMON_EXTERN ~FieldTable();
-    QPID_COMMON_EXTERN FieldTable& operator=(const FieldTable& ft);
+    QPID_COMMON_EXTERN FieldTable();
+    QPID_COMMON_EXTERN FieldTable(const FieldTable&);
+    QPID_COMMON_EXTERN FieldTable& operator=(const FieldTable&);
+    // Compiler default destructor fine
     QPID_COMMON_EXTERN uint32_t encodedSize() const;
     QPID_COMMON_EXTERN void encode(Buffer& buffer) const;
     QPID_COMMON_EXTERN void decode(Buffer& buffer);
@@ -91,32 +96,35 @@ class FieldTable
     QPID_COMMON_EXTERN bool getArray(const std::string& name, Array& value) const;
     QPID_COMMON_EXTERN bool getFloat(const std::string& name, float& value) const;
     QPID_COMMON_EXTERN bool getDouble(const std::string& name, double& value) const;
-    //bool getTimestamp(const std::string& name, uint64_t& value) const;
-    //bool getDecimal(string& name, xxx& value);
+    //QPID_COMMON_EXTERN bool getTimestamp(const std::string& name, uint64_t& value) const;
+    //QPID_COMMON_EXTERN bool getDecimal(string& name, xxx& value);
     QPID_COMMON_EXTERN void erase(const std::string& name);
 
 
     QPID_COMMON_EXTERN bool operator==(const FieldTable& other) const;
 
     // Map-like interface.
-    ValueMap::const_iterator begin() const { return values.begin(); }
-    ValueMap::const_iterator end() const { return values.end(); }
-    ValueMap::const_iterator find(const std::string& s) const { return values.find(s); }
+    QPID_COMMON_EXTERN ValueMap::const_iterator begin() const;
+    QPID_COMMON_EXTERN ValueMap::const_iterator end() const;
+    QPID_COMMON_EXTERN ValueMap::const_iterator find(const std::string& s) const;
 
-    ValueMap::iterator begin() { return values.begin(); }
-    ValueMap::iterator end() { return values.end(); }
-    ValueMap::iterator find(const std::string& s) { return values.find(s); }
+    QPID_COMMON_EXTERN ValueMap::iterator begin();
+    QPID_COMMON_EXTERN ValueMap::iterator end();
+    QPID_COMMON_EXTERN ValueMap::iterator find(const std::string& s);
 
     QPID_COMMON_EXTERN std::pair <ValueMap::iterator, bool> insert(const ValueMap::value_type&);
     QPID_COMMON_EXTERN ValueMap::iterator insert(ValueMap::iterator, const ValueMap::value_type&);
-    void clear() { values.clear(); }
-
-    // ### Hack Alert
-
-    ValueMap::iterator getValues() { return values.begin(); }
+    QPID_COMMON_EXTERN void clear();
 
   private:
-    ValueMap values;
+    void realDecode() const;
+    void flushRawCache();
+
+    mutable qpid::sys::Mutex lock;
+    mutable ValueMap values;
+    mutable boost::shared_array<uint8_t> cachedBytes;
+    mutable uint32_t cachedSize; // if = 0 then non cached size as 0 is not a legal size
+    mutable bool newBytes;
 
     QPID_COMMON_EXTERN friend std::ostream& operator<<(std::ostream& out, const FieldTable& body);
 };

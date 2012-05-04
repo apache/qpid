@@ -40,7 +40,9 @@ struct AclOptions : public Options {
 
     AclOptions(AclValues& v) : Options("ACL Options"), values(v) {
         addOptions()
-            ("acl-file", optValue(values.aclFile, "FILE"), "The policy file to load from, loaded from data dir");
+            ("acl-file",           optValue(values.aclFile, "FILE"), "The policy file to load from, loaded from data dir")
+            ("acl-max-connect-per-user", optValue(values.aclMaxConnectPerUser, "N"), "The maximum number of connections allowed per user")
+            ("acl-max-connect-per-ip"  , optValue(values.aclMaxConnectPerIp, "N"),   "The maximum number of connections allowed per host IP address");
     }
 };
 

@@ -68,7 +68,7 @@ public class AccessControlTest extends TestCase
     private RuleSet createGroupRuleSet()
     {
         final RuleSet rs = new RuleSet();
-        rs.addGroup("aclGroup1", Arrays.asList(new String[] {"member1", "member2"}));
+        rs.addGroup("aclGroup1", Arrays.asList(new String[] {"member1", "Member2"}));
 
         // Rule expressed with username
         rs.grant(0, "user1", Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
@@ -122,7 +122,12 @@ public class AccessControlTest extends TestCase
         setUpGroupAccessControl();
         SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("member1"));
 
-        final Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+        Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+        assertEquals(Result.ALLOWED, result);
+
+        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("Member2"));
+
+        result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
         assertEquals(Result.ALLOWED, result);
     }
 

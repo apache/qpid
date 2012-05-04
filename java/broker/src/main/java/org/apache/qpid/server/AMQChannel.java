@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -82,11 +83,13 @@ import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.subscription.ClientDeliveryMethod;
 import org.apache.qpid.server.subscription.RecordDeliveryMethod;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
+import org.apache.qpid.server.subscription.SubscriptionImpl;
 import org.apache.qpid.server.txn.AsyncAutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -273,7 +276,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
         {
             throw new AMQSecurityException("Permission denied: " + e.getName());
         }
-        _currentMessage = new IncomingMessage(info);
+        _currentMessage = new IncomingMessage(info, getProtocolSession().getReference());
         _currentMessage.setExchange(e);
     }
 
@@ -295,26 +298,9 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
 
             _currentMessage.setExpiration();
 
+            _currentMessage.headersReceived(getProtocolSession().getLastReceivedTime());
 
-            MessageMetaData mmd = _currentMessage.headersReceived(getProtocolSession().getLastReceivedTime());
-            final StoredMessage<MessageMetaData> handle = _messageStore.addMessage(mmd);
-            _currentMessage.setStoredMessage(handle);
-
-            routeCurrentMessage();
-
-
-            _transaction.addPostTransactionAction(new ServerTransaction.Action()
-            {
-
-                public void postCommit()
-                {
-                }
-
-                public void onRollback()
-                {
-                    handle.remove();
-                }
-            });
+            _currentMessage.route();
 
             deliverCurrentMessageIfComplete();
         }
@@ -346,17 +332,41 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
                         {
                             _actor.message(ExchangeMessages.DISCARDMSG(_currentMessage.getExchange().asString(), _currentMessage.getRoutingKey()));
                         }
-
                     }
                     else
                     {
+                        final StoredMessage<MessageMetaData> handle = _messageStore.addMessage(_currentMessage.getMessageMetaData());
+                        _currentMessage.setStoredMessage(handle);
+                        int bodyCount = _currentMessage.getBodyCount();
+                        if(bodyCount > 0)
+                        {
+                            long bodyLengthReceived = 0;
+                            for(int i = 0 ; i < bodyCount ; i++)
+                            {
+                                ContentChunk contentChunk = _currentMessage.getContentChunk(i);
+                                handle.addContent((int)bodyLengthReceived, ByteBuffer.wrap(contentChunk.getData()));
+                                bodyLengthReceived += contentChunk.getSize();
+                            }
+                        }
+
+                        _transaction.addPostTransactionAction(new ServerTransaction.Action()
+                        {
+                            public void postCommit()
+                            {
+                            }
+
+                            public void onRollback()
+                            {
+                                handle.remove();
+                            }
+                        });
+
                         _transaction.enqueue(destinationQueues, _currentMessage, new MessageDeliveryAction(_currentMessage, destinationQueues), getProtocolSession().getLastReceivedTime());
                         incrementOutstandingTxnsIfNecessary();
-			            updateTransactionalActivity();
+                        updateTransactionalActivity();
+                        _currentMessage.getStoredMessage().flushToStore();
                     }
                 }
-                _currentMessage.getStoredMessage().flushToStore();
-
             }
             finally
             {
@@ -383,9 +393,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
 
         try
         {
-
-            // returns true iff the message was delivered (i.e. if all data was
-            // received
             final ContentChunk contentChunk =
                     _session.getMethodRegistry().getProtocolVersionMethodConverter().convertToContentChunk(contentBody);
 
@@ -407,11 +414,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
             _currentMessage = null;
             throw e;
         }
-    }
-
-    protected void routeCurrentMessage() throws AMQException
-    {
-        _currentMessage.route();
     }
 
     public long getNextDeliveryTag()
@@ -1123,11 +1125,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
 
     }
 
-    public Object getID()
-    {
-        return _channelId;
-    }
-
     public AMQConnectionModel getConnectionModel()
     {
         return _session;
@@ -1377,13 +1374,23 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
     {
         if(_blockingQueues.remove(queue))
         {
-            if(_blocking.compareAndSet(true,false))
+            if(_blocking.compareAndSet(true,false) && !isClosing())
             {
                 _actor.message(_logSubject, ChannelMessages.FLOW_REMOVED());
 
                 flow(true);
             }
         }
+    }
+
+    public boolean onSameConnection(InboundMessage inbound)
+    {
+        if(inbound instanceof IncomingMessage)
+        {
+            IncomingMessage incoming = (IncomingMessage) inbound;
+            return getProtocolSession().getReference() == incoming.getConnectionReference();
+        }
+        return false;
     }
 
     private void flow(boolean flow)
@@ -1551,7 +1558,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
         }
     }
 
-    public void recordFuture(final MessageStore.StoreFuture future, final ServerTransaction.Action action)
+    public void recordFuture(final StoreFuture future, final ServerTransaction.Action action)
     {
         _unfinishedCommandsQueue.add(new AsyncCommand(future, action));
     }
@@ -1585,10 +1592,10 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
 
     private static class AsyncCommand
     {
-        private final MessageStore.StoreFuture _future;
+        private final StoreFuture _future;
         private ServerTransaction.Action _action;
 
-        public AsyncCommand(final MessageStore.StoreFuture future, final ServerTransaction.Action action)
+        public AsyncCommand(final StoreFuture future, final ServerTransaction.Action action)
         {
             _future = future;
             _action = action;
@@ -1615,9 +1622,8 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
         }
     }
 
-    @Override
     public int compareTo(AMQSessionModel session)
     {
-        return getId().toString().compareTo(session.getID().toString());
+        return getId().compareTo(session.getId());
     }
 }

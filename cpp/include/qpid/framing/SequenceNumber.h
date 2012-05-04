@@ -52,9 +52,9 @@ boost::equality_comparable<
     uint32_t getValue() const { return uint32_t(value); }
     operator uint32_t() const { return uint32_t(value); }
 
-    void encode(Buffer& buffer) const;
-    void decode(Buffer& buffer);
-    uint32_t encodedSize() const;
+    QPID_COMMON_EXTERN void encode(Buffer& buffer) const;
+    QPID_COMMON_EXTERN void decode(Buffer& buffer);
+    QPID_COMMON_EXTERN uint32_t encodedSize() const;
 
     template <class S> void serialize(S& s) { s(value); }
 

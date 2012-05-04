@@ -357,13 +357,45 @@ public class ProducerFlowControlTest extends AbstractTestLogging
         consumer.receive();
     }
 
+    public void testQueueDeleteWithBlockedFlow() throws Exception
+    {
+        String queueName = getTestQueueName();
+        createAndBindQueueWithFlowControlEnabled(producerSession, queueName, 1000, 800, true, false);
+
+        producer = producerSession.createProducer(queue);
+
+        // try to send 5 messages (should block after 4)
+        sendMessagesAsync(producer, producerSession, 5, 50L);
+
+        Thread.sleep(5000);
+
+        assertEquals("Incorrect number of message sent before blocking", 4, _sentMessages.get());
+
+        // close blocked producer session and connection
+        producerConnection.close();
+
+        // delete queue with a consumer session
+        ((AMQSession<?,?>) consumerSession).sendQueueDelete(new AMQShortString(queueName));
+
+        consumer = consumerSession.createConsumer(queue);
+        consumerConnection.start();
+
+        Message message = consumer.receive(1000l);
+        assertNull("Unexpected message", message);
+    }
+
     private void createAndBindQueueWithFlowControlEnabled(Session session, String queueName, int capacity, int resumeCapacity) throws Exception
+    {
+        createAndBindQueueWithFlowControlEnabled(session, queueName, capacity, resumeCapacity, false, true);
+    }
+
+    private void createAndBindQueueWithFlowControlEnabled(Session session, String queueName, int capacity, int resumeCapacity, boolean durable, boolean autoDelete) throws Exception
     {
         final Map<String,Object> arguments = new HashMap<String, Object>();
         arguments.put("x-qpid-capacity",capacity);
         arguments.put("x-qpid-flow-resume-capacity",resumeCapacity);
-        ((AMQSession<?,?>) session).createQueue(new AMQShortString(queueName), true, false, false, arguments);
-        queue = session.createQueue("direct://amq.direct/"+queueName+"/"+queueName+"?durable='false'&autodelete='true'");
+        ((AMQSession<?,?>) session).createQueue(new AMQShortString(queueName), autoDelete, durable, false, arguments);
+        queue = session.createQueue("direct://amq.direct/"+queueName+"/"+queueName+"?durable='" + durable + "'&autodelete='" + autoDelete + "'");
         ((AMQSession<?,?>) session).declareAndBind((AMQDestination)queue);
     }
 

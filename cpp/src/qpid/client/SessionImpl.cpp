@@ -324,7 +324,7 @@ struct MethodContentAdaptor : MethodContent
 
     MethodContentAdaptor(const FrameSet& f) : header(*f.getHeaders()), content(f.getContent()) {}
 
-    AMQHeaderBody getHeader() const
+    const AMQHeaderBody& getHeader() const
     {
         return header;
     }

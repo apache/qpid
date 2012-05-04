@@ -54,7 +54,7 @@ class FailoverExchange : public broker::Exchange
     bool bind(boost::shared_ptr<broker::Queue> queue, const std::string& routingKey, const framing::FieldTable* args);
     bool unbind(boost::shared_ptr<broker::Queue> queue, const std::string& routingKey, const framing::FieldTable* args);
     bool isBound(boost::shared_ptr<broker::Queue> queue, const std::string* const routingKey, const framing::FieldTable* const args);
-    void route(broker::Deliverable& msg, const std::string& routingKey, const framing::FieldTable* args);
+    void route(broker::Deliverable& msg);
 
   private:
     void sendUpdate(const boost::shared_ptr<broker::Queue>&);

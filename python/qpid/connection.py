@@ -170,6 +170,10 @@ class Connection(Framer):
           if not status:
             self.detach_all()
             break
+      # When we do not use SSL transport, we get periodic 
+      # spurious timeout events on the socket.  When using SSL,
+      # these events show up as timeout *errors*.  Both should be
+      # ignored unless we have aborted.
       except socket.timeout:
         if self.aborted():
           self.close_code = (None, "connection timed out")
@@ -178,9 +182,12 @@ class Connection(Framer):
         else:
           continue
       except socket.error, e:
-        self.close_code = (None, str(e))
-        self.detach_all()
-        break
+        if self.aborted() or str(e) != "The read operation timed out":
+          self.close_code = (None, str(e))
+          self.detach_all()
+          break
+        else:
+          continue
       frame_dec.write(data)
       seg_dec.write(*frame_dec.read())
       op_dec.write(*seg_dec.read())

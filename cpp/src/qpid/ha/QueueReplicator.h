@@ -66,12 +66,11 @@ class QueueReplicator : public broker::Exchange,
     bool bind(boost::shared_ptr<broker::Queue
               >, const std::string&, const framing::FieldTable*);
     bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
-    void route(broker::Deliverable&, const std::string&, const framing::FieldTable*);
+    void route(broker::Deliverable&);
     bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const);
 
   private:
-    void initializeBridge(broker::Bridge& bridge, broker::SessionHandler& sessionHandler,
-                          boost::shared_ptr<QueueReplicator> self);
+    void initializeBridge(broker::Bridge& bridge, broker::SessionHandler& sessionHandler);
     void dequeue(framing::SequenceNumber, const sys::Mutex::ScopedLock&);
 
     std::string logPrefix;

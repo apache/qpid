@@ -28,6 +28,7 @@
 #include "qpid/framing/AllInvoker.h"
 #include "qpid/framing/ConnectionStartOkBody.h"
 #include "qpid/framing/enum.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/SecurityLayer.h"
 #include "qpid/broker/AclModule.h"

@@ -24,6 +24,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Map;
+import java.util.UUID;
 
 public class SortedQueue extends OutOfOrderQueue
 {
@@ -33,12 +34,12 @@ public class SortedQueue extends OutOfOrderQueue
     private final Object _sortedQueueLock = new Object();
     private final String _sortedPropertyName;
 
-    protected SortedQueue(final String name, final boolean durable,
-                            final String owner, final boolean autoDelete, final boolean exclusive,
-                            final VirtualHost virtualHost, Map<String, Object> arguments, String sortedPropertyName)
+    protected SortedQueue(UUID id, final String name,
+                            final boolean durable, final String owner, final boolean autoDelete,
+                            final boolean exclusive, final VirtualHost virtualHost, Map<String, Object> arguments, String sortedPropertyName)
     {
-        super(name, durable, owner, autoDelete, exclusive, virtualHost,
-                new SortedQueueEntryListFactory(sortedPropertyName), arguments);
+        super(id, name, durable, owner, autoDelete, exclusive,
+                virtualHost, new SortedQueueEntryListFactory(sortedPropertyName), arguments);
         this._sortedPropertyName = sortedPropertyName;
     }
 

@@ -28,16 +28,26 @@ namespace broker {
 LegacyLVQ::LegacyLVQ(const std::string& k, bool b, Broker* br) : MessageMap(k), noBrowse(b), broker(br) {}
 
 void LegacyLVQ::setNoBrowse(bool b)
-{ 
+{
     noBrowse = b;
+}
+bool LegacyLVQ::deleted(const QueuedMessage& message)
+{
+    Ordering::iterator i = messages.find(message.position);
+    if (i != messages.end() && i->second.payload == message.payload) {
+        erase(i);
+        return true;
+    } else {
+        return false;
+    }
 }
 
 bool LegacyLVQ::acquire(const framing::SequenceNumber& position, QueuedMessage& message)
 {
     Ordering::iterator i = messages.find(position);
-    if (i != messages.end() && i->second.payload == message.payload) {
+    if (i != messages.end() && i->second.payload == message.payload && i->second.status == QueuedMessage::AVAILABLE) {
+        i->second.status = QueuedMessage::ACQUIRED;
         message = i->second;
-        erase(i);
         return true;
     } else {
         return false;
@@ -66,12 +76,17 @@ bool LegacyLVQ::push(const QueuedMessage& added, QueuedMessage& removed)
 }
 
 const QueuedMessage& LegacyLVQ::replace(const QueuedMessage& original, const QueuedMessage& update)
-{ 
+{
     //add the new message into the original position of the replaced message
     Ordering::iterator i = messages.find(original.position);
-    i->second = update;
-    i->second.position = original.position;
-    return i->second;
+    if (i != messages.end()) {
+        i->second = update;
+        i->second.position = original.position;
+        return i->second;
+    } else {
+        QPID_LOG(error, "Failed to replace message at " << original.position);
+        return update;
+    }
 }
 
 void LegacyLVQ::removeIf(Predicate p)

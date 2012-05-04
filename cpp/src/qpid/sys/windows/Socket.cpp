@@ -32,6 +32,9 @@
 
 #include <winsock2.h>
 
+namespace qpid {
+namespace sys {
+
 // Need to initialize WinSock. Ideally, this would be a singleton or embedded
 // in some one-time initialization function. I tried boost singleton and could
 // not get it to compile (and others located in google had the same problem).
@@ -75,13 +78,6 @@ protected:
 };
 
 static WinSockSetup setup;
-
-} /* namespace */
-
-namespace qpid {
-namespace sys {
-
-namespace {
 
 std::string getName(SOCKET fd, bool local)
 {

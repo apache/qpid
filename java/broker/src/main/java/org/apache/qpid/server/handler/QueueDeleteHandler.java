@@ -62,7 +62,7 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
         AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
         VirtualHost virtualHost = protocolConnection.getVirtualHost();
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
-        DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
+        DurableConfigurationStore store = virtualHost.getMessageStore();
 
 
         AMQChannel channel = protocolConnection.getChannel(channelId);

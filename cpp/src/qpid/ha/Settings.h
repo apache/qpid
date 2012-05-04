@@ -22,6 +22,7 @@
  *
  */
 
+#include "ReplicateLevel.h"
 #include <string>
 
 namespace qpid {
@@ -33,10 +34,12 @@ namespace ha {
 class Settings
 {
   public:
-    Settings() : enabled(false) {}
-    bool enabled;
+    Settings() : cluster(false), expectedBackups(0), replicateDefault(RL_NONE) {}
+    bool cluster;               // True if we are a cluster member.
     std::string clientUrl;
     std::string brokerUrl;
+    size_t expectedBackups;
+    ReplicateLevel replicateDefault;
     std::string username, password, mechanism;
   private:
 };

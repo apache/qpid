@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.logging;
 
+import javax.jms.QueueBrowser;
 import junit.framework.AssertionFailedError;
 
 import org.apache.qpid.client.AMQConnection;
@@ -166,8 +167,10 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
      */
     public void testSubscriptionCreateQueueBrowser() throws JMSException, IOException
     {
-        _session.createBrowser(_queue);
+        _connection.start();
+        QueueBrowser browser = _session.createBrowser(_queue);
 
+        browser.getEnumeration();
         //Validate
         //Ensure that we wait for the SUB log message
         waitAndFindMatches("SUB-1001");

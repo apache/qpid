@@ -40,9 +40,9 @@ UpdateDataExchange::UpdateDataExchange(Cluster& cluster) :
     Exchange(EXCHANGE_NAME, &cluster)
 {}
 
-void UpdateDataExchange::route(broker::Deliverable& msg, const std::string& routingKey,
-                               const qpid::framing::FieldTable* )
+void UpdateDataExchange::route(broker::Deliverable& msg)
 {
+    const std::string& routingKey = msg.getMessage().getRoutingKey();
     std::string data = msg.getMessage().getFrames().getContent();
     if (routingKey == MANAGEMENT_AGENTS_KEY) managementAgents = data;
     else if (routingKey == MANAGEMENT_SCHEMAS_KEY) managementSchemas = data;

@@ -35,6 +35,8 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import javax.management.JMException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public interface Exchange extends ExchangeReferrer, ExchangeConfig
 {
@@ -49,7 +51,7 @@ public interface Exchange extends ExchangeReferrer, ExchangeConfig
 
     AMQShortString getTypeShortString();
 
-    void initialise(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete)
+    void initialise(UUID id, VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete)
             throws AMQException, JMException;
 
     boolean isDurable();
@@ -110,6 +112,8 @@ public interface Exchange extends ExchangeReferrer, ExchangeConfig
 
 
     boolean isBound(String bindingKey, AMQQueue queue);
+
+    public boolean isBound(String bindingKey, Map<String,Object> arguments, AMQQueue queue);
 
     boolean isBound(String bindingKey);
 

@@ -58,5 +58,5 @@ public interface QpidRASessionFactory extends Connection, TopicConnection, Queue
     * @param session The session
     * @throws JMSException for any error
     */
-   void closeSession(QpidRASessionImpl session) throws JMSException;
+   void closeSession(QpidRASession session) throws JMSException;
 }

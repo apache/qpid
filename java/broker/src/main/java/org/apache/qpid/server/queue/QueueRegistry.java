@@ -24,6 +24,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collection;
+import java.util.UUID;
 
 public interface QueueRegistry
 {
@@ -40,4 +41,8 @@ public interface QueueRegistry
     Collection<AMQQueue> getQueues();
 
     AMQQueue getQueue(String queue);
+
+    void stopAllAndUnregisterMBeans();
+
+    AMQQueue getQueue(UUID queueId);
 }

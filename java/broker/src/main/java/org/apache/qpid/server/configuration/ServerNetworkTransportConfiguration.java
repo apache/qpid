@@ -19,22 +19,21 @@
  */
 package org.apache.qpid.server.configuration;
 
+import java.net.InetSocketAddress;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
 
 public class ServerNetworkTransportConfiguration implements NetworkTransportConfiguration
 {
     private final ServerConfiguration _serverConfig;
-    private final int _port;
-    private final String _host;
     private final String _transport;
+    private InetSocketAddress _address;
 
     public ServerNetworkTransportConfiguration(final ServerConfiguration serverConfig, 
-                                               final int port, final String host,
+                                               final InetSocketAddress address,
                                                final String transport)
     {
         _serverConfig = serverConfig;
-        _port = port;
-        _host = host;
+        _address = address;
         _transport = transport;
     }
 
@@ -55,12 +54,12 @@ public class ServerNetworkTransportConfiguration implements NetworkTransportConf
 
     public Integer getPort()
     {
-        return _port;
+        return _address.getPort();
     }
 
     public String getHost()
     {
-        return _host;
+        return _address.getHostName();
     }
 
     public String getTransport()
@@ -71,5 +70,10 @@ public class ServerNetworkTransportConfiguration implements NetworkTransportConf
     public Integer getConnectorProcessors()
     {
         return _serverConfig.getConnectorProcessors();
+    }
+
+    public InetSocketAddress getAddress()
+    {
+        return _address;
     }
 }

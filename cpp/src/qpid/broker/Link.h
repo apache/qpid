@@ -24,9 +24,11 @@
 
 #include <boost/shared_ptr.hpp>
 #include "qpid/Url.h"
+#include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/MessageStore.h"
 #include "qpid/broker/PersistableConfig.h"
 #include "qpid/broker/Bridge.h"
+#include "qpid/broker/BrokerImportExport.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/management/Manageable.h"
@@ -45,15 +47,23 @@ namespace broker {
 class LinkRegistry;
 class Broker;
 class Connection;
+class LinkExchange;
 
 class Link : public PersistableConfig, public management::Manageable {
   private:
-    sys::Mutex          lock;
+    mutable sys::Mutex  lock;
     LinkRegistry*       links;
     MessageStore*       store;
-    std::string        host;
-    uint16_t      port;
-    std::string        transport;
+
+    // these remain constant across failover - used to identify this link
+    const std::string   configuredTransport;
+    const std::string   configuredHost;
+    const uint16_t      configuredPort;
+    // these reflect the current address of remote - will change during failover
+    std::string         host;
+    uint16_t            port;
+    std::string         transport;
+
     bool          durable;
     std::string        authMechanism;
     std::string        username;
@@ -75,8 +85,10 @@ class Link : public PersistableConfig, public management::Manageable {
     uint channelCounter;
     Connection* connection;
     management::ManagementAgent* agent;
-
     boost::intrusive_ptr<sys::TimerTask> timerTask;
+    boost::shared_ptr<broker::LinkExchange> failoverExchange;  // subscribed to remote's amq.failover exchange
+    uint failoverChannel;
+    std::string failoverSession;
 
     static const int STATE_WAITING     = 1;
     static const int STATE_CONNECTING  = 2;
@@ -94,6 +106,14 @@ class Link : public PersistableConfig, public management::Manageable {
     bool tryFailoverLH();            // Called during maintenance visit
     bool hideManagement() const;
 
+    void established(Connection*); // Called when connection is create
+    void opened();      // Called when connection is open (after create)
+    void closed(int, std::string);   // Called when connection goes away
+    void reconnectLH(const Address&); //called by LinkRegistry
+    void closeConnection(const std::string& reason);
+
+    friend class LinkRegistry; // to call established, opened, closed
+
   public:
     typedef boost::shared_ptr<Link> shared_ptr;
 
@@ -110,22 +130,25 @@ class Link : public PersistableConfig, public management::Manageable {
          management::Manageable* parent = 0);
     virtual ~Link();
 
-    std::string getHost() { return host; }
-    uint16_t    getPort() { return port; }
-    std::string getTransport() { return transport; }
+    /** these return the *configured* transport/host/port, which does not change over the
+        lifetime of the Link */
+    std::string getHost() const { return configuredHost; }
+    uint16_t    getPort() const { return configuredPort; }
+    std::string getTransport() const { return configuredTransport; }
+
+    /** returns the current address of the remote, which may be different from the
+        configured transport/host/port due to failover. Returns true if connection is
+        active */
+    bool getRemoteAddress(qpid::Address& addr) const;
 
     bool isDurable() { return durable; }
     void maintenanceVisit ();
     uint nextChannel();
     void add(Bridge::shared_ptr);
     void cancel(Bridge::shared_ptr);
-    void setUrl(const Url&); // Set URL for reconnection.
 
-    void established(Connection*); // Called when connection is create
-    void opened();      // Called when connection is open (after create)
-    void closed(int, std::string);   // Called when connection goes away
-    void reconnectLH(const Address&); //called by LinkRegistry
-    void close();       // Close the link from within the broker.
+    QPID_BROKER_EXTERN void setUrl(const Url&); // Set URL for reconnection.
+    QPID_BROKER_EXTERN void close(); // Close the link from within the broker.
 
     std::string getAuthMechanism() { return authMechanism; }
     std::string getUsername()      { return username; }
@@ -148,6 +171,13 @@ class Link : public PersistableConfig, public management::Manageable {
     management::ManagementObject*    GetManagementObject(void) const;
     management::Manageable::status_t ManagementMethod(uint32_t, management::Args&, std::string&);
 
+    // manage the exchange owned by this link
+    static const std::string exchangeTypeName;
+    static boost::shared_ptr<Exchange> linkExchangeFactory(const std::string& name);
+
+    // replicate internal state of this Link for clustering
+    void getState(framing::FieldTable& state) const;
+    void setState(const framing::FieldTable& state);
 };
 }
 }

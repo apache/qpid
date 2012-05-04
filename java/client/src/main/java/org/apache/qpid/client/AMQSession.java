@@ -120,18 +120,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public static final long DEFAULT_FLOW_CONTROL_WAIT_FAILURE = 120000L;
 
     /**
-     * The default value for immediate flag used by producers created by this session is false. That is, a consumer does
-     * not need to be attached to a queue.
-     */
-    private final boolean _defaultImmediateValue = Boolean.parseBoolean(System.getProperty("qpid.default_immediate", "false"));
-
-    /**
-     * The default value for mandatory flag used by producers created by this session is true. That is, server will not
-     * silently drop messages where no queue is connected to the exchange for the message.
-     */
-    private final boolean _defaultMandatoryValue = Boolean.parseBoolean(System.getProperty("qpid.default_mandatory", "true"));
-
-    /**
      * The period to wait while flow controlled before sending a log message confirming that the session is still
      * waiting on flow control being revoked
      */
@@ -542,9 +530,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
 
         // Add creation logging to tie in with the existing close logging
-        if (_logger.isInfoEnabled())
+        if (_logger.isDebugEnabled())
         {
-            _logger.info("Created session:" + this);
+            _logger.debug("Created session:" + this);
         }
     }
 
@@ -733,9 +721,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     private void close(long timeout, boolean sendClose) throws JMSException
     {
-        if (_logger.isInfoEnabled())
+        if (_logger.isDebugEnabled())
         {
-            _logger.info("Closing session: " + this);
+            _logger.debug("Closing session: " + this);
         }
 
         // Ensure we only try and close an open session.
@@ -904,11 +892,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 // Flush any pending messages for this consumerTag
                 if (_dispatcher != null)
                 {
-                    _logger.info("Dispatcher is not null");
+                    _logger.debug("Dispatcher is not null");
                 }
                 else
                 {
-                    _logger.info("Dispatcher is null so created stopped dispatcher");
+                    _logger.debug("Dispatcher is null so created stopped dispatcher");
                     startDispatcherIfNecessary(true);
                 }
 
@@ -926,9 +914,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     // There is a small window where the message is between the two queues in the dispatcher.
                     if (consumer.isClosed())
                     {
-                        if (_logger.isInfoEnabled())
+                        if (_logger.isDebugEnabled())
                         {
-                            _logger.info("Closing consumer:" + consumer.debugIdentity());
+                            _logger.debug("Closing consumer:" + consumer.debugIdentity());
                         }
 
                         deregisterConsumer(consumer);
@@ -1101,6 +1089,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     // possible to determine  when querying the broker whether there are no arguments or just a non-matching selector
                     // argument, as specifying null for the arguments when querying means they should not be checked at all
                     args.put(AMQPFilterTypes.JMS_SELECTOR.getValue().toString(), messageSelector == null ? "" : messageSelector);
+                    if(noLocal)
+                    {
+                        args.put(AMQPFilterTypes.NO_LOCAL.getValue().toString(), true);
+                    }
 
                     // if the queue is bound to the exchange but NOT for this topic and selector, then the JMS spec
                     // says we must trash the subscription.
@@ -1198,12 +1190,12 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     public P createProducer(Destination destination) throws JMSException
     {
-        return createProducerImpl(destination, _defaultMandatoryValue, _defaultImmediateValue);
+        return createProducerImpl(destination, null, null);
     }
 
     public P createProducer(Destination destination, boolean immediate) throws JMSException
     {
-        return createProducerImpl(destination, _defaultMandatoryValue, immediate);
+        return createProducerImpl(destination, null, immediate);
     }
 
     public P createProducer(Destination destination, boolean mandatory, boolean immediate)
@@ -1692,7 +1684,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         AMQProtocolHandler protocolHandler = getProtocolHandler();
         declareExchange(amqd, protocolHandler, false);
-        AMQShortString queueName = declareQueue(amqd, protocolHandler, false);
+        AMQShortString queueName = declareQueue(amqd, false);
         bindQueue(queueName, amqd.getRoutingKey(), new FieldTable(), amqd.getExchangeName(), amqd);
     }
 
@@ -2378,9 +2370,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             _dispatcherThread.setDaemon(DEAMON_DISPATCHER_THREAD);
             _dispatcher.setConnectionStopped(initiallyStopped);
             _dispatcherThread.start();
-            if (_dispatcherLogger.isInfoEnabled())
+            if (_dispatcherLogger.isDebugEnabled())
             {
-                _dispatcherLogger.info(_dispatcherThread.getName() + " created");
+                _dispatcherLogger.debug(_dispatcherThread.getName() + " created");
             }
         }
         else
@@ -2613,7 +2605,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public abstract void sendConsume(C consumer, AMQShortString queueName,
                                      AMQProtocolHandler protocolHandler, boolean nowait, int tag) throws AMQException, FailoverException;
 
-    private P createProducerImpl(final Destination destination, final boolean mandatory, final boolean immediate)
+    private P createProducerImpl(final Destination destination, final Boolean mandatory, final Boolean immediate)
             throws JMSException
     {
         return new FailoverRetrySupport<P, JMSException>(
@@ -2642,8 +2634,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 }, _connection).execute();
     }
 
-    public abstract P createMessageProducer(final Destination destination, final boolean mandatory,
-                                                               final boolean immediate, final long producerId) throws JMSException;
+    public abstract P createMessageProducer(final Destination destination, final Boolean mandatory,
+                                            final Boolean immediate, final long producerId) throws JMSException;
 
     private void declareExchange(AMQDestination amqd, AMQProtocolHandler protocolHandler, boolean nowait) throws AMQException
     {
@@ -2726,6 +2718,12 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public abstract void sendExchangeDeclare(final AMQShortString name, final AMQShortString type, final AMQProtocolHandler protocolHandler,
                                              final boolean nowait) throws AMQException, FailoverException;
 
+
+    void declareQueuePassive(AMQDestination queue) throws AMQException
+    {
+        declareQueue(queue,false,false,true);
+    }
+
     /**
      * Declares a queue for a JMS destination.
      *
@@ -2735,27 +2733,35 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      *
      * <p/>Note that this operation automatically retries in the event of fail-over.
      *
-     * @param amqd            The destination to declare as a queue.
-     * @param protocolHandler The protocol handler to communicate through.
      *
+     * @param amqd            The destination to declare as a queue.
      * @return The name of the decalred queue. This is useful where the broker is generating a queue name on behalf of
      *         the client.
+     *
+     *
      *
      * @throws AMQException If the queue cannot be declared for any reason.
      * @todo Verify the destiation is valid or throw an exception.
      * @todo Be aware of possible changes to parameter order as versions change.
      */
-    protected AMQShortString declareQueue(final AMQDestination amqd, final AMQProtocolHandler protocolHandler,
+    protected AMQShortString declareQueue(final AMQDestination amqd,
                                           final boolean noLocal) throws AMQException
     {
-        return declareQueue(amqd, protocolHandler, noLocal, false);
+        return declareQueue(amqd, noLocal, false);
     }
 
-    protected AMQShortString declareQueue(final AMQDestination amqd, final AMQProtocolHandler protocolHandler,
+    protected AMQShortString declareQueue(final AMQDestination amqd,
                                           final boolean noLocal, final boolean nowait)
+                throws AMQException
+    {
+        return declareQueue(amqd, noLocal, nowait, false);
+    }
+
+    protected AMQShortString declareQueue(final AMQDestination amqd,
+                                          final boolean noLocal, final boolean nowait, final boolean passive)
             throws AMQException
     {
-        /*return new FailoverRetrySupport<AMQShortString, AMQException>(*/
+        final AMQProtocolHandler protocolHandler = getProtocolHandler();
         return new FailoverNoopSupport<AMQShortString, AMQException>(
                 new FailoverProtectedOperation<AMQShortString, AMQException>()
                 {
@@ -2767,7 +2773,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                             amqd.setQueueName(protocolHandler.generateQueueName());
                         }
 
-                        sendQueueDeclare(amqd, protocolHandler, nowait);
+                        sendQueueDeclare(amqd, protocolHandler, nowait, passive);
 
                         return amqd.getAMQQueueName();
                     }
@@ -2775,7 +2781,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     }
 
     public abstract void sendQueueDeclare(final AMQDestination amqd, final AMQProtocolHandler protocolHandler,
-                                          final boolean nowait) throws AMQException, FailoverException;
+                                          final boolean nowait, boolean passive) throws AMQException, FailoverException;
 
     /**
      * Undeclares the specified queue.
@@ -2916,7 +2922,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     
             if (_delareQueues || amqd.isNameRequired())
             {
-                declareQueue(amqd, protocolHandler, consumer.isNoLocal(), nowait);
+                declareQueue(amqd, consumer.isNoLocal(), nowait);
             }
             bindQueue(amqd.getAMQQueueName(), amqd.getRoutingKey(), consumer.getArguments(), amqd.getExchangeName(), amqd, nowait);
         }
@@ -2939,7 +2945,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     try
                     {
                         suspendChannel(true);
-                        _logger.info(
+                        _logger.debug(
                                 "Prefetching delayed existing messages will not flow until requested via receive*() or setML().");
                     }
                     catch (AMQException e)
@@ -2951,7 +2957,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
         else
         {
-            _logger.info("Immediately prefetching existing messages to new consumer.");
+            _logger.debug("Immediately prefetching existing messages to new consumer.");
         }
 
         try
@@ -2983,18 +2989,18 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     private void rejectMessagesForConsumerTag(int consumerTag, boolean requeue, boolean rejectAllConsumers)
     {
         Iterator messages = _queue.iterator();
-        if (_logger.isInfoEnabled())
+        if (_logger.isDebugEnabled())
         {
-            _logger.info("Rejecting messages from _queue for Consumer tag(" + consumerTag + ") (PDispatchQ) requeue:"
+            _logger.debug("Rejecting messages from _queue for Consumer tag(" + consumerTag + ") (PDispatchQ) requeue:"
                          + requeue);
 
             if (messages.hasNext())
             {
-                _logger.info("Checking all messages in _queue for Consumer tag(" + consumerTag + ")");
+                _logger.debug("Checking all messages in _queue for Consumer tag(" + consumerTag + ")");
             }
             else
             {
-                _logger.info("No messages in _queue to reject");
+                _logger.debug("No messages in _queue to reject");
             }
         }
         while (messages.hasNext())
@@ -3037,7 +3043,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     private void resubscribeProducers() throws AMQException
     {
         ArrayList producers = new ArrayList(_producers.values());
-        _logger.info(MessageFormat.format("Resubscribing producers = {0} producers.size={1}", producers, producers.size())); // FIXME: removeKey
+        _logger.debug(MessageFormat.format("Resubscribing producers = {0} producers.size={1}", producers, producers.size())); // FIXME: removeKey
         for (Iterator it = producers.iterator(); it.hasNext();)
         {
             P producer = (P) it.next();
@@ -3127,7 +3133,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public void setFlowControl(final boolean active)
     {
         _flowControl.setFlowControl(active);
-        _logger.warn("Broker enforced flow control " + (active ? "no longer in effect" : "has been enforced"));
+        if (_logger.isInfoEnabled())
+        {
+            _logger.info("Broker enforced flow control " + (active ? "no longer in effect" : "has been enforced"));
+        }
     }
 
     public void checkFlowControl() throws InterruptedException, JMSException
@@ -3141,7 +3150,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             {
 
                 _flowControl.wait(_flowControlWaitPeriod);
-                _logger.warn("Message send delayed by " + (System.currentTimeMillis() + _flowControlWaitFailure - expiryTime)/1000 + "s due to broker enforced flow control");
+                if (_logger.isInfoEnabled())
+                {
+                    _logger.info("Message send delayed by " + (System.currentTimeMillis() + _flowControlWaitFailure - expiryTime)/1000 + "s due to broker enforced flow control");
+                }
             }
             if(!_flowControl.getFlowControl())
             {
@@ -3200,28 +3212,15 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         public void rejectPending(C consumer)
         {
-            synchronized (_lock)
-            {
-                boolean stopped = _dispatcher.connectionStopped();
+            // Reject messages on pre-receive queue
+            consumer.rollbackPendingMessages();
 
-                if (!stopped)
-                {
-                    _dispatcher.setConnectionStopped(true);
-                }
+            // Reject messages on pre-dispatch queue
+            rejectMessagesForConsumerTag(consumer.getConsumerTag(), true, false);
 
-                // Reject messages on pre-receive queue
-                consumer.rollbackPendingMessages();
+            // closeConsumer
+            consumer.markClosed();
 
-                // Reject messages on pre-dispatch queue
-                rejectMessagesForConsumerTag(consumer.getConsumerTag(), true, false);
-                //Let the dispatcher deal with this when it gets to them.
-
-                // closeConsumer
-                consumer.markClosed();
-
-                _dispatcher.setConnectionStopped(stopped);
-
-            }
         }
 
         public void rollback()
@@ -3294,9 +3293,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         
         public void run()
         {
-            if (_dispatcherLogger.isInfoEnabled())
+            if (_dispatcherLogger.isDebugEnabled())
             {
-                _dispatcherLogger.info(_dispatcherThread.getName() + " started");
+                _dispatcherLogger.debug(_dispatcherThread.getName() + " started");
             }
 
             // Allow disptacher to start stopped
@@ -3318,7 +3317,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             try
             {
                 Dispatchable disp;
-                while (!_closed.get() && ((disp = (Dispatchable) _queue.take()) != null))
+                while (((disp = (Dispatchable) _queue.take()) != null) && !_closed.get())
                 {
                     disp.dispatch(AMQSession.this);
                 }
@@ -3328,9 +3327,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 // ignored as run will exit immediately
             }
 
-            if (_dispatcherLogger.isInfoEnabled())
+            if (_dispatcherLogger.isDebugEnabled())
             {
-                _dispatcherLogger.info(_dispatcherThread.getName() + " thread terminating for channel " + _channelId + ":" + AMQSession.this);
+                _dispatcherLogger.debug(_dispatcherThread.getName() + " thread terminating for channel " + _channelId + ":" + AMQSession.this);
             }
 
         }
@@ -3413,7 +3412,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         {
             final C consumer = _consumers.get(message.getConsumerTag());
 
-            if ((consumer == null) || consumer.isClosed())
+            if ((consumer == null) || consumer.isClosed() || consumer.isClosing())
             {
                 if (_dispatcherLogger.isInfoEnabled())
                 {

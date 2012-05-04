@@ -23,8 +23,40 @@
     <property name="transferAcl"   type="bool"    access="RO"    desc="Any transfer ACL rules in force"/>
     <property name="lastAclLoad"   type="absTime" access="RO"    desc="Timestamp of last successful load of ACL"/>
     <statistic name="aclDenyCount" type="count64" unit="request" desc="Number of ACL requests denied"/>
+    <statistic name="connectionDenyCount" type="count64" unit="connection" desc="Number of connections denied"/>
 
     <method name="reloadACLFile" desc="Reload the ACL file"/>
+
+    <!--
+    Lookup is a general object lookup
+        User Name
+        Action
+        Object
+        Object Name
+        Property Map consisting of <"name" "value"> string pairs.
+    -->
+    <method name="Lookup" desc="Lookup: user action object [objectName [propertyMap]]">
+        <arg name="userId"      dir="I" type="lstr"/>
+        <arg name="action"      dir="I" type="lstr"/>
+        <arg name="object"      dir="I" type="lstr"/>
+        <arg name="objectName"  dir="I" type="lstr"/>
+        <arg name="propertyMap" dir="I" type="map"/>
+        <arg name="result"      dir="O" type="lstr"/>
+    </method>
+
+    <!--
+    LookupPublish is a specific lookup for a PUBLISH EXCHANGE fastpath
+        User Name
+        Exchange Name
+        Routing Key
+    -->
+    <method name="LookupPublish" desc="Lookup PUBLISH EXCHANGE: user exchangeName routingKey">
+        <arg name="userId"       dir="I" type="lstr"/>
+        <arg name="exchangeName" dir="I" type="lstr"/>
+        <arg name="routingKey"   dir="I" type="lstr"/>
+        <arg name="result"       dir="O" type="lstr"/>
+    </method>
+
   </class>
 
   <eventArguments>
@@ -34,10 +66,12 @@
     <arg name="objectType" type="sstr"/>
     <arg name="reason"     type="lstr"/>
     <arg name="userId"     type="sstr"/>
+    <arg name="clientAddr" type="sstr"/>
   </eventArguments>
 
   <event name="allow"          sev="inform" args="userId, action, objectType, objectName, arguments"/>
   <event name="deny"           sev="notice" args="userId, action, objectType, objectName, arguments"/>
+  <event name="connectionDeny" sev="notice" args="userId, clientAddr"/>
   <event name="fileLoaded"     sev="inform" args="userId"/>
   <event name="fileLoadFailed" sev="error"  args="userId, reason"/>
 

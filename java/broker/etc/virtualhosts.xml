@@ -25,8 +25,8 @@
         <name>localhost</name>
         <localhost>
             <store>
-                <class>org.apache.qpid.server.store.MemoryMessageStore</class>
-                <!--<class>org.apache.qpid.server.store.DerbyMessageStore</class>
+                <factoryclass>org.apache.qpid.server.store.MemoryMessageStoreFactory</factoryclass>
+                <!--<factoryclass>org.apache.qpid.server.store.derby.DerbyMessageStoreFactory</factoryclass>
                 <environment-path>${QPID_WORK}/derbystore</environment-path>-->
             </store>
 
@@ -86,8 +86,8 @@
         <name>development</name>
         <development>
             <store>
-                <class>org.apache.qpid.server.store.MemoryMessageStore</class>
-                <!--<class>org.apache.qpid.server.store.DerbyMessageStore</class>
+                <factoryclass>org.apache.qpid.server.store.MemoryMessageStoreFactory</factoryclass>
+                <!--<factoryclass>org.apache.qpid.server.store.derby.DerbyMessageStoreFactory</factoryclass>
                 <environment-path>${QPID_WORK}/derbystore</environment-path>-->
             </store>
 
@@ -125,8 +125,8 @@
         <name>test</name>
         <test>
             <store>
-                <class>org.apache.qpid.server.store.MemoryMessageStore</class>
-                <!--<class>org.apache.qpid.server.store.DerbyMessageStore</class>
+                <factoryclass>org.apache.qpid.server.store.MemoryMessageStoreFactory</factoryclass>
+                <!--<factoryclass>org.apache.qpid.server.store.derby.DerbyMessageStoreFactory</factoryclass>
                 <environment-path>${QPID_WORK}/derbystore</environment-path>-->
             </store>
 

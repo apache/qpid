@@ -1446,7 +1446,7 @@ public class QpidRASessionImpl implements Session, QueueSession, TopicSession, X
     * Close session
     * @exception JMSException Thrown if an error occurs
     */
-   void closeSession() throws JMSException
+   public void closeSession() throws JMSException
    {
       final QpidRAManagedConnection mc = this._mc;
       if (mc != null)

@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.util;
 
+import java.util.UUID;
+
 import org.apache.commons.configuration.XMLConfiguration;
 
 import org.apache.qpid.AMQException;
@@ -43,6 +45,7 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.store.TestableMemoryMessageStoreFactory;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -65,10 +68,10 @@ public class InternalBrokerBaseCase extends QpidTestCase
         super.setUp();
 
         _configXml.addProperty("virtualhosts.virtualhost.name", "test");
-        _configXml.addProperty("virtualhosts.virtualhost.test.store.class", TestableMemoryMessageStore.class.getName());
+        _configXml.addProperty("virtualhosts.virtualhost.test.store.factoryclass", TestableMemoryMessageStoreFactory.class.getName());
 
         _configXml.addProperty("virtualhosts.virtualhost(-1).name", getName());
-        _configXml.addProperty("virtualhosts.virtualhost(-1)."+getName()+".store.class", TestableMemoryMessageStore.class.getName());
+        _configXml.addProperty("virtualhosts.virtualhost(-1)."+getName()+".store.factoryclass", TestableMemoryMessageStoreFactory.class.getName());
 
         createBroker();
     }

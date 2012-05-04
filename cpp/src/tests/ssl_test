@@ -100,8 +100,10 @@ start_ssl_mux_broker() {
     PORTS=( ${PORTS[@]} $1 )
 }
 
+sasl_config_dir=$builddir/sasl_config
+
 start_authenticating_broker() {
-    start_brokers 1 "--transport ssl --ssl-port 0 --require-encryption --ssl-sasl-no-dict --ssl-require-client-authentication --auth yes"
+    start_brokers 1 "--transport ssl --ssl-port 0 --require-encryption --ssl-sasl-no-dict --ssl-require-client-authentication --auth yes --sasl-config=${sasl_config_dir}"
 }
 
 ssl_cluster_broker() {		# $1 = port
@@ -139,6 +141,12 @@ URL=amqp:ssl:$TEST_HOSTNAME:$PORT
 ./qpid-send -b $URL --content-string=hello -a "foo;{create:always}"
 MSG=`./qpid-receive -b $URL -a "foo;{create:always}" --messages 1`
 test "$MSG" = "hello" || { echo "receive failed '$MSG' != 'hello'"; exit 1; }
+
+## Test connection with a combination of URL and connection options (in messaging API)
+URL=$TEST_HOSTNAME:$PORT
+./qpid-send -b $URL --connection-options '{transport:ssl,heartbeat:2}' --content-string='hello again' -a "foo;{create:always}"
+MSG=`./qpid-receive -b $URL --connection-options '{transport:ssl,heartbeat:2}' -a "foo;{create:always}" --messages 1`
+test "$MSG" = "hello again" || { echo "receive failed '$MSG' != 'hello again'"; exit 1; }
 
 #### Client Authentication tests
 
@@ -184,7 +192,8 @@ stop_brokers
 test -z $CLUSTER_LIB && exit 0	# Exit if cluster not supported.
 
 ## Test failover in a cluster using SSL only
-. $srcdir/ais_check		# Will exit if clustering not enabled.
+source cpg_check.sh
+cpg_enabled || exit 0
 
 PORT1=`pick_port`; ssl_cluster_broker $PORT1
 echo "Running SSL cluster broker on port $PORT1"

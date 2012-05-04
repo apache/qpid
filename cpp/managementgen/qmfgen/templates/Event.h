@@ -24,11 +24,12 @@
 /*MGEN:Root.Disclaimer*/
 
 #include "qpid/management/ManagementEvent.h"
+#include "qmf/BrokerImportExport.h"
 
 namespace qmf {
 /*MGEN:Event.OpenNamespaces*/
 
-class Event/*MGEN:Event.NameCap*/ : public ::qpid::management::ManagementEvent
+QPID_BROKER_CLASS_EXTERN class Event/*MGEN:Event.NameCap*/ : public ::qpid::management::ManagementEvent
 {
   private:
     static void writeSchema (std::string& schema);
@@ -41,18 +42,18 @@ class Event/*MGEN:Event.NameCap*/ : public ::qpid::management::ManagementEvent
   public:
     writeSchemaCall_t getWriteSchemaCall(void) { return writeSchema; }
 
-    Event/*MGEN:Event.NameCap*/(/*MGEN:Event.ConstructorArgs*/);
-    ~Event/*MGEN:Event.NameCap*/() {};
+    QPID_BROKER_EXTERN Event/*MGEN:Event.NameCap*/(/*MGEN:Event.ConstructorArgs*/);
+    QPID_BROKER_EXTERN ~Event/*MGEN:Event.NameCap*/() {};
 
     static void registerSelf(::qpid::management::ManagementAgent* agent);
     std::string& getPackageName() const { return packageName; }
     std::string& getEventName() const { return eventName; }
     uint8_t* getMd5Sum() const { return md5Sum; }
     uint8_t getSeverity() const { return /*MGEN:Event.Severity*/; }
-    void encode(std::string& buffer) const;
-    void mapEncode(::qpid::types::Variant::Map& map) const;
+    QPID_BROKER_EXTERN void encode(std::string& buffer) const;
+    QPID_BROKER_EXTERN void mapEncode(::qpid::types::Variant::Map& map) const;
 
-    static bool match(const std::string& evt, const std::string& pkg);
+    QPID_BROKER_EXTERN static bool match(const std::string& evt, const std::string& pkg);
 };
 
 }/*MGEN:Event.CloseNamespaces*/

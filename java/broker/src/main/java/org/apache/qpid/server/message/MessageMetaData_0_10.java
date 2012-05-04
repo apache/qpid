@@ -50,6 +50,7 @@ public class MessageMetaData_0_10 implements StorableMessageMetaData, InboundMes
     public static final MessageMetaDataType.Factory<MessageMetaData_0_10> FACTORY = new MetaDataFactory();
 
     private volatile ByteBuffer _encoded;
+    private Object _connectionReference;
 
 
     public MessageMetaData_0_10(MessageTransfer xfr)
@@ -217,6 +218,16 @@ public class MessageMetaData_0_10 implements StorableMessageMetaData, InboundMes
     public Header getHeader()
     {
         return _header;
+    }
+
+    public void setConnectionReference(Object connectionReference)
+    {
+        _connectionReference = connectionReference;
+    }
+
+    public Object getConnectionReference()
+    {
+        return _connectionReference;
     }
 
     private static class MetaDataFactory implements MessageMetaDataType.Factory<MessageMetaData_0_10>

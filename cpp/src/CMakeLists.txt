@@ -354,6 +354,7 @@ endif (NOT Boost_REGEX_LIBRARY)
 # Boost on Windows can use automatic linking to pick up the correct
 # Boost libs based on compile-time touching of the headers. Since we don't
 # really need to add them to the link lines, set the names to blanks.
+option(QPID_LINK_BOOST_DYNAMIC "Link with dynamic Boost libs (OFF to link static)" ON)
 if (MSVC)
    install (PROGRAMS
             ${Boost_DATE_TIME_LIBRARY_DEBUG} ${Boost_DATE_TIME_LIBRARY_RELEASE}
@@ -371,7 +372,6 @@ if (MSVC)
                COMPONENT ${QPID_COMPONENT_COMMON})
    endif (NOT Boost_VERSION LESS 103500)
 
-   option(QPID_LINK_BOOST_DYNAMIC "Link with dynamic Boost libs (OFF to link static)" ON)
    if (QPID_LINK_BOOST_DYNAMIC)
       add_definitions( /D BOOST_ALL_DYN_LINK)
       string (REPLACE .lib .dll
@@ -477,6 +477,29 @@ else (NOT CLOCK_GETTIME_IN_RT)
   set(QPID_HAS_CLOCK_GETTIME YES CACHE BOOL "Platform has clock_gettime")
 endif (NOT CLOCK_GETTIME_IN_RT)
 
+# Check for header file for dtrace static probes
+check_include_files(sys/sdt.h HAVE_SYS_SDT_H)
+if (HAVE_SYS_SDT_H)
+  set(probes_default ON)
+endif (HAVE_SYS_SDT_H)
+option(BUILD_PROBES "Build with DTrace/systemtap static probes" ${probes_default})
+if (NOT BUILD_PROBES)
+  set (HAVE_SYS_SDT_H 0)
+endif (NOT BUILD_PROBES)
+
+# Check for poll/epoll header files
+check_include_files(sys/poll.h HAVE_POLL)
+check_include_files(sys/epoll.h HAVE_EPOLL)
+
+# Set default poller implementation (check from general to specific to allow overriding)
+if (HAVE_POLL)
+  set(poller_default poll)
+endif (HAVE_POLL)
+if (HAVE_EPOLL)
+  set(poller_default epoll)
+endif (HAVE_EPOLL)
+set(POLLER ${poller_default} CACHE STRING "Poller implementation (poll/epoll)")
+
 # If not windows ensure that we have uuid library
 if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
   CHECK_LIBRARY_EXISTS (uuid uuid_compare "" HAVE_UUID)
@@ -571,6 +594,8 @@ if (BUILD_ACL)
   set (acl_SOURCES
        qpid/acl/Acl.cpp
        qpid/acl/Acl.h
+       qpid/acl/AclConnectionCounter.cpp
+       qpid/acl/AclConnectionCounter.h
        qpid/acl/AclData.cpp
        qpid/acl/AclData.h
        qpid/acl/AclPlugin.cpp
@@ -609,6 +634,8 @@ if (BUILD_HA)
         qpid/ha/Settings.h
         qpid/ha/QueueReplicator.h
         qpid/ha/QueueReplicator.cpp
+	qpid/ha/ReplicateLevel.h
+	qpid/ha/ReplicateLevel.cpp
         qpid/ha/ReplicatingSubscription.h
         qpid/ha/ReplicatingSubscription.cpp
         qpid/ha/BrokerReplicator.cpp
@@ -619,7 +646,7 @@ if (BUILD_HA)
 
     add_library (ha MODULE ${ha_SOURCES})
     set_target_properties (ha PROPERTIES PREFIX "")
-    target_link_libraries (ha qpidbroker ${Boost_PROGRAM_OPTIONS_LIBRARY})
+    target_link_libraries (ha qpidcommon qpidbroker ${Boost_PROGRAM_OPTIONS_LIBRARY})
     if (CMAKE_COMPILER_IS_GNUCXX)
       set_target_properties (ha PROPERTIES
                              PREFIX ""
@@ -740,9 +767,18 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
   # POSIX (Non-Windows) platforms have a lot of overlap in sources; the only
   # major difference is the poller module.
-  if (CMAKE_SYSTEM_NAME STREQUAL Linux)
+  if (POLLER STREQUAL poll)
+    set (qpid_poller_module
+      qpid/sys/posix/PosixPoller.cpp
+    )
+  elseif (POLLER STREQUAL epoll)
     set (qpid_poller_module
       qpid/sys/epoll/EpollPoller.cpp
+    )
+  endif (POLLER STREQUAL poll)
+
+  if (CMAKE_SYSTEM_NAME STREQUAL Linux)
+    set (qpid_system_module
       qpid/sys/posix/SystemInfo.cpp
     )
     add_definitions(-pthread)
@@ -754,13 +790,12 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
   set (qpidtypes_platform_SOURCES)
   set (qpidtypes_platform_LIBS
-    uuid
-    ${Boost_SYSTEM_LIBRARY}
+       uuid
+       ${Boost_SYSTEM_LIBRARY}
   )
 
   if (CMAKE_SYSTEM_NAME STREQUAL SunOS)
-    set (qpid_poller_module
-      qpid/sys/posix/PosixPoller.cpp
+    set (qpid_system_module
       qpid/sys/solaris/SystemInfo.cpp
     )
 #   On Sun we want -lpthread -lthread as the 2nd last and last libs passed to linker
@@ -789,6 +824,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/posix/Time.cpp
     qpid/SaslFactory.cpp
 
+    ${qpid_system_module}
     ${qpid_poller_module}
   )
   set (qpidcommon_platform_LIBS
@@ -842,7 +878,6 @@ set (qpidcommon_SOURCES
      qpid/framing/AMQHeaderBody.cpp
      qpid/framing/AMQHeartbeatBody.cpp
      qpid/framing/Array.cpp
-     qpid/framing/BodyHandler.cpp
      qpid/framing/Buffer.cpp
      qpid/framing/Endian.cpp
      qpid/framing/FieldTable.cpp
@@ -1082,6 +1117,7 @@ set (qpidbroker_SOURCES
      qpid/broker/NameGenerator.cpp
      qpid/broker/NullMessageStore.cpp
      qpid/broker/QueueBindings.cpp
+     qpid/broker/QueuedMessage.cpp
      qpid/broker/QueueEvents.cpp
      qpid/broker/QueuePolicy.cpp
      qpid/broker/QueueRegistry.cpp

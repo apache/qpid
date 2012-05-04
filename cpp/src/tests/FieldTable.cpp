@@ -19,11 +19,11 @@
  *
  */
 #include <iostream>
+#include <algorithm>
 #include "qpid/framing/Array.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/framing/List.h"
-#include "qpid/sys/alloca.h"
 
 #include "unit_test.h"
 
@@ -127,7 +127,7 @@ QPID_AUTO_TEST_CASE(testNestedValues)
         BOOST_CHECK(string("B") == b.getAsString("id"));
         a.getArray("C", c);
         std::vector<std::string> items;
-        c.collect(items);
+        std::transform(c.begin(), c.end(), std::back_inserter(items), Array::get<std::string, Array::ValuePtr>);
         BOOST_CHECK((uint) 2 == items.size());
         BOOST_CHECK(string("one") == items[0]);
         BOOST_CHECK(string("two") == items[1]);

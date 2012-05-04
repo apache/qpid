@@ -28,9 +28,12 @@
 #include "qpid/framing/all_method_bodies.h"
 #include "qpid/framing/ClientInvoker.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/log/Helpers.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/SystemInfo.h"
+
+#include <algorithm>
 
 using namespace qpid::client;
 using namespace qpid::framing;
@@ -238,15 +241,16 @@ void ConnectionHandler::start(const FieldTable& /*serverProps*/, const Array& me
                                             );
 
     std::vector<std::string> mechlist;
+    mechlist.reserve(mechanisms.size());
     if (mechanism.empty()) {
         //mechlist is simply what the server offers
-        mechanisms.collect(mechlist);
+        std::transform(mechanisms.begin(), mechanisms.end(), std::back_inserter(mechlist), Array::get<std::string, Array::ValuePtr>);
     } else {
         //mechlist is the intersection of those indicated by user and
         //those supported by server, in the order listed by user
         std::vector<std::string> allowed = split(mechanism, " ");
-        std::vector<std::string> supported;
-        mechanisms.collect(supported);
+        std::vector<std::string> supported(mechanisms.size());
+        std::transform(mechanisms.begin(), mechanisms.end(), std::back_inserter(supported), Array::get<std::string, Array::ValuePtr>);
         intersection(allowed, supported, mechlist);
         if (mechlist.empty()) {
             throw Exception(QPID_MSG("Desired mechanism(s) not valid: " << mechanism << " (supported: " << join(supported) << ")"));

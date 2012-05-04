@@ -20,7 +20,8 @@
 #
 
 source ./test_env.sh
-. $srcdir/ais_check
+source cpg_check.sh
+cpg_enabled || exit 0
 
 host=127.0.0.1
 

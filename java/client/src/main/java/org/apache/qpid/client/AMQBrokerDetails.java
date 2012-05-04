@@ -319,18 +319,18 @@ public class AMQBrokerDetails implements BrokerDetails
 
         BrokerDetails bd = (BrokerDetails) o;
 
-        return _host.equalsIgnoreCase(bd.getHost()) &&
+        return _host.toLowerCase().equals(bd.getHost() == null ? null : bd.getHost().toLowerCase()) &&
                (_port == bd.getPort()) &&
-               _transport.equalsIgnoreCase(bd.getTransport());
+               _transport.toLowerCase().equals(bd.getTransport() == null ? null : bd.getTransport().toLowerCase());
         //TODO do we need to compare all the options as well?
     }
 
     @Override
     public int hashCode()
     {
-        int result = _host != null ? _host.hashCode() : 0;
+        int result = _host != null ? _host.toLowerCase().hashCode() : 0;
         result = 31 * result + _port;
-        result = 31 * result + (_transport != null ? _transport.hashCode() : 0);
+        result = 31 * result + (_transport != null ? _transport.toLowerCase().hashCode() : 0);
         return result;
     }
 

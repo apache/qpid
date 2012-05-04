@@ -45,7 +45,7 @@ public class QpidRAConnectionRequestInfo implements ConnectionRequestInfo
    private String _password;
 
    /** The client id */
-   private String _clientID;
+   private String _clientId;
 
    /** The type */
    private final int _type;
@@ -76,13 +76,13 @@ public class QpidRAConnectionRequestInfo implements ConnectionRequestInfo
          final ConnectionURL connectionURL = ra.getDefaultAMQConnectionFactory().getConnectionURL() ;
          _userName = connectionURL.getUsername();
          _password = connectionURL.getPassword();
-         _clientID = connectionURL.getClientName();
+         _clientId = connectionURL.getClientName();
       }
       else
       {
-         _userName = ra.getDefaultUserName();
-         _password = ra.getDefaultPassword();
-         _clientID = ra.getClientId();
+         _userName = ra.getUserName();
+         _password = ra.getPassword();
+         _clientId = ra.getClientId();
       }
       this._type = type;
       _transacted = true;
@@ -142,9 +142,9 @@ public class QpidRAConnectionRequestInfo implements ConnectionRequestInfo
       {
          _password = connectionURL.getPassword();
       }
-      if (_clientID == null)
+      if (_clientId == null)
       {
-         _clientID = connectionURL.getClientName();
+         _clientId = connectionURL.getClientName();
       }
    }
 
@@ -170,15 +170,15 @@ public class QpidRAConnectionRequestInfo implements ConnectionRequestInfo
       {
          if (_userName == null)
          {
-            _userName = ra.getDefaultUserName();
+            _userName = ra.getUserName();
          }
          if (_password == null)
          {
-            _password = ra.getDefaultPassword();
+            _password = ra.getPassword();
          }
-         if (_clientID == null)
+         if (_clientId == null)
          {
-            _clientID = ra.getClientId();
+            _clientId = ra.getClientId();
          }
       }
    }
@@ -243,28 +243,28 @@ public class QpidRAConnectionRequestInfo implements ConnectionRequestInfo
     * Get the client id
     * @return The value
     */
-   public String getClientID()
+   public String getClientId()
    {
       if (_log.isTraceEnabled())
       {
          _log.trace("getClientID()");
       }
 
-      return _clientID;
+      return _clientId;
    }
 
    /**
     * Set the client id
     * @param clientID The value
     */
-   public void setClientID(final String clientID)
+   public void setClientId(final String clientID)
    {
       if (_log.isTraceEnabled())
       {
          _log.trace("setClientID(" + clientID + ")");
       }
 
-      this._clientID = clientID;
+      this._clientId = clientID;
    }
 
    /**
@@ -321,7 +321,7 @@ public class QpidRAConnectionRequestInfo implements ConnectionRequestInfo
       {
          QpidRAConnectionRequestInfo you = (QpidRAConnectionRequestInfo)obj;
          return Util.compare(_userName, you.getUserName()) && Util.compare(_password, you.getPassword()) &&
-                Util.compare(_clientID, you.getClientID()) &&
+                Util.compare(_clientId, you.getClientId()) &&
                 _type == you.getType() &&
                 _transacted == you.isTransacted() &&
                 _acknowledgeMode == you.getAcknowledgeMode();
@@ -343,7 +343,7 @@ public class QpidRAConnectionRequestInfo implements ConnectionRequestInfo
 
       hash += 31 * hash + (_userName != null ? _userName.hashCode() : 0);
       hash += 31 * hash + (_password != null ? _password.hashCode() : 0);
-      hash += 31 * hash + (_clientID != null ? _clientID.hashCode() : 0);
+      hash += 31 * hash + (_clientId != null ? _clientId.hashCode() : 0);
       hash += 31 * hash + _type;
       hash += 31 * hash + (_transacted ? 1 : 0);
       hash += 31 * hash + _acknowledgeMode;
@@ -356,6 +356,6 @@ public class QpidRAConnectionRequestInfo implements ConnectionRequestInfo
    {
       return "QpidRAConnectionRequestInfo[type=" + _type +
          ", transacted=" + _transacted + ", acknowledgeMode=" + _acknowledgeMode +
-         ", clientID=" + _clientID + ", userName=" + _userName + ((_password != null) ? ", password=********]" :"]");
+         ", clientID=" + _clientId + ", userName=" + _userName + ((_password != null) ? ", password=********]" :"]");
    }
 }

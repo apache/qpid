@@ -28,6 +28,8 @@ if (!(Test-Path $PYTHON_DIR -pathType Container)) {
     exit 0
 }
 
+. .\test_env.ps1
+
 if (Test-Path qpidd.port) {
    set-item -path env:QPID_PORT -value (get-content -path qpidd.port -totalcount 1)
 }
@@ -42,6 +44,5 @@ if (!(Test-Path $prog)) {
 }
 
 Invoke-Expression "$prog -p $env:QPID_PORT" | Write-Output
-$env:PYTHONPATH="$PYTHON_DIR;$env:PYTHONPATH"
 Invoke-Expression "python $srcdir/header_test.py localhost $env:QPID_PORT" | Write-Output
 exit $LASTEXITCODE

@@ -32,6 +32,7 @@ import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MemoryMessageStore;
+import org.apache.qpid.server.store.MemoryMessageStoreFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,9 +43,9 @@ import java.util.Map;
 
 public class VirtualHostConfiguration extends ConfigurationPlugin
 {
-    private String _name;
-    private Map<String, QueueConfiguration> _queues = new HashMap<String, QueueConfiguration>();
-    private Map<String, ExchangeConfiguration> _exchanges = new HashMap<String, ExchangeConfiguration>();
+    private final String _name;
+    private final Map<String, QueueConfiguration> _queues = new HashMap<String, QueueConfiguration>();
+    private final Map<String, ExchangeConfiguration> _exchanges = new HashMap<String, ExchangeConfiguration>();
 
     public VirtualHostConfiguration(String name, Configuration config) throws ConfigurationException
     {
@@ -92,11 +93,6 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
         return getLongValue("housekeeping.checkPeriod", ApplicationRegistry.getInstance().getConfiguration().getHousekeepingCheckPeriod());
     }
 
-    public String getAuthenticationDatabase()
-    {
-        return getStringValue("security.authentication.name");
-    }
-
     public List getCustomExchanges()
     {
         return getListValue("custom-exchanges.class-name");
@@ -107,14 +103,14 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
         return getConfig().subset("store");
     }
 
-    public String getMessageStoreClass()
+    public String getMessageStoreFactoryClass()
     {
-        return getStringValue("store.class", MemoryMessageStore.class.getName());
+        return getStringValue("store.factoryclass", MemoryMessageStoreFactory.class.getName());
     }
 
-    public void setMessageStoreClass(String storeClass)
+    public void setMessageStoreFactoryClass(String storeFactoryClass)
     {
-        getConfig().setProperty("store.class", storeClass);
+        getConfig().setProperty("store.factoryclass", storeFactoryClass);
     }
 
     public List getExchanges()
@@ -251,16 +247,6 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
         }
 
         return queueConfig;
-    }
-
-    public long getMemoryUsageMaximum()
-    {
-        return getLongValue("queues.maximumMemoryUsage");
-    }
-
-    public long getMemoryUsageMinimum()
-    {
-        return getLongValue("queues.minimumMemoryUsage");
     }
 
     public int getMaximumMessageAge()

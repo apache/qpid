@@ -42,10 +42,9 @@ import org.slf4j.LoggerFactory;
 @MessageDriven(activationConfig = {
    @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge"),
    @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
-   @ActivationConfigProperty(propertyName = "destination", propertyValue = "@qpid.hello.topic.jndi.name@"),
+   @ActivationConfigProperty(propertyName = "destination", propertyValue = "@jndi.prefix@@qpid.hello.topic.jndi.name@"),
    @ActivationConfigProperty(propertyName = "connectionURL", propertyValue = "@broker.url@"),
    @ActivationConfigProperty(propertyName = "subscriptionDurability", propertyValue = "NotDurable"),
-   @ActivationConfigProperty(propertyName = "subscriptionName", propertyValue = "hello.Topic"),
    @ActivationConfigProperty(propertyName = "maxSession", propertyValue = "10")
 })
 public class QpidHelloSubscriberBean implements MessageListener
@@ -55,7 +54,7 @@ public class QpidHelloSubscriberBean implements MessageListener
     @Resource(@jndi.scheme@="@qpid.xacf.jndi.name@")
     private ConnectionFactory _connectionFactory;
 
-    @Resource(@jndi.scheme@="GoodByeTopic")
+    @Resource(@jndi.scheme@="@qpid.goodbye.topic.jndi.name@")
     private Destination _topic;
 
     @Override

@@ -1,0 +1,65 @@
+{
+    "_tests":[
+    {
+      "_name": "End To End 1";
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//testQueue"
+        }
+      ];
+      "_clients":[
+        {
+          "_name": "producingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_producers": [
+                    {
+                      "_name": "participantProducer1",
+                      "_destinationName": "direct://amq.direct//testQueue",
+                      "_numberOfMessages": 1
+                    }
+                  ]
+                }
+              ];
+              "_messageProviders":[
+                {
+                  "_name": "testProvider1";
+                  "_messageProperties": {
+                     "priority": {"@def": "list"; "_items": [1,2,3,4,4]};
+                    "id": {"@def": "random"; "_upper": 10};
+                    "test": "test-value"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "consumingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_consumers": [
+                    {
+                      "_name": "participantConsumer1",
+                      "_destinationName": "direct://amq.direct//testQueue",
+                      "_numberOfMessages": 1
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }]
+}

@@ -28,7 +28,8 @@ public enum ProtocolExclusion
     v0_8("exclude-0-8","--exclude-0-8"),
     v0_9("exclude-0-9", "--exclude-0-9"),
     v0_9_1("exclude-0-9-1", "--exclude-0-9-1"),
-    v0_10("exclude-0-10", "--exclude-0-10");
+    v0_10("exclude-0-10", "--exclude-0-10"),
+    v1_0("exclude-1-0", "--exclude-1-0");
 
     private static final Map<String, ProtocolExclusion> MAP = new HashMap<String,ProtocolExclusion>();
 

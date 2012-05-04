@@ -350,8 +350,9 @@ TopicExchange::BindingKey *TopicExchange::getQueueBinding(Queue::shared_ptr queu
     return (q != qv.end()) ? bk : 0;
 }
 
-void TopicExchange::route(Deliverable& msg, const string& routingKey, const FieldTable* /*args*/)
+void TopicExchange::route(Deliverable& msg)
 {
+    const string& routingKey = msg.getMessage().getRoutingKey();
     // Note: PERFORMANCE CRITICAL!!!
     BindingList b;
     std::map<std::string, BindingList>::iterator it;

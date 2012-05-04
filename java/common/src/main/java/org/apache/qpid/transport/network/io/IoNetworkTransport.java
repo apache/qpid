@@ -157,7 +157,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
             _factory = factory;
             _sslContext = sslContext;
 
-            InetSocketAddress address = new InetSocketAddress(config.getHost(), config.getPort());
+            InetSocketAddress address = config.getAddress();
 
             if(sslContext == null)
             {

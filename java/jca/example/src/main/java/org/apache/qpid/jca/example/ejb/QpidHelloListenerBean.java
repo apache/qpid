@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
 @MessageDriven(activationConfig = {
    @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge"),
    @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
-   @ActivationConfigProperty(propertyName = "destination", propertyValue = "@qpid.hello.queue.jndi.name@"),
+   @ActivationConfigProperty(propertyName = "destination", propertyValue = "@jndi.prefix@@qpid.hello.queue.jndi.name@"),
    @ActivationConfigProperty(propertyName = "connectionURL", propertyValue = "@broker.url@"),
    @ActivationConfigProperty(propertyName = "maxSession", propertyValue = "10")
 })
@@ -53,7 +53,7 @@ public class QpidHelloListenerBean implements MessageListener
     @Resource(@jndi.scheme@="@qpid.xacf.jndi.name@")
     private ConnectionFactory _connectionFactory;
 
-    @Resource(@jndi.scheme@="GoodByeQueue")
+    @Resource(@jndi.scheme@="@qpid.goodbye.queue.jndi.name@")
     private Destination _queue;
 
     @Override

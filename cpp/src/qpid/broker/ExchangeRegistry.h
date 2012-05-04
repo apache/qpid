@@ -54,7 +54,7 @@ class ExchangeRegistry{
        bool durable,
        const qpid::framing::FieldTable& args = framing::FieldTable());
     QPID_BROKER_EXTERN void destroy(const std::string& name);
-    Exchange::shared_ptr getDefault();
+    QPID_BROKER_EXTERN Exchange::shared_ptr getDefault();
 
     /**
      * Find the named exchange. Return 0 if not found.
@@ -75,7 +75,7 @@ class ExchangeRegistry{
     /** Register an exchange instance.
      *@return true if registered, false if exchange with same name is already  registered.
      */
-    bool registerExchange(const Exchange::shared_ptr&);
+    QPID_BROKER_EXTERN bool registerExchange(const Exchange::shared_ptr&);
 
     QPID_BROKER_EXTERN void registerType(const std::string& type, FactoryFunction);
 
@@ -85,7 +85,7 @@ class ExchangeRegistry{
         for (ExchangeMap::const_iterator i = exchanges.begin(); i != exchanges.end(); ++i)
             f(i->second);
     }
-        
+
   private:
     typedef std::map<std::string, Exchange::shared_ptr> ExchangeMap;
     typedef std::map<std::string, FactoryFunction > FunctionMap;

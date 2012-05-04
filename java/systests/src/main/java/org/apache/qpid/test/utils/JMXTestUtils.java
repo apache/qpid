@@ -329,7 +329,11 @@ public class JMXTestUtils
     public boolean isManagedObjectExist(String query)
     {
         return !queryObjects(query).isEmpty();
+    }
 
+    public int getNumberOfObjects(String query)
+    {
+        return queryObjects(query).size();
     }
 
     public <T> T getManagedObject(Class<T> managedClass, ObjectName objectName)
@@ -430,8 +434,7 @@ public class JMXTestUtils
     }
 
     /**
-     * Returns the Set of ObjectNames returned by the broker for the given query,
-     * or null if there is problem while performing the query.
+     * Returns the Set of ObjectNames returned by the broker for the given query.
      */
     private Set<ObjectName> queryObjects(String query)
     {
@@ -441,8 +444,7 @@ public class JMXTestUtils
         }
         catch (Exception e)
         {
-            e.printStackTrace();
-            return null;
+            throw new RuntimeException("Error using query: " + query, e);
         }
     }
 }

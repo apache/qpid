@@ -21,25 +21,15 @@
 package org.apache.qpid.ra.admin;
 
 import java.io.Externalizable;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInput;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
-import java.util.Hashtable;
 
-import javax.naming.Context;
-import javax.naming.Name;
 import javax.naming.NamingException;
-import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.StringRefAddr;
-import javax.naming.spi.ObjectFactory;
 
 import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.ra.admin.AdminObjectFactory;
 
 public class QpidQueueImpl extends AMQQueue implements QpidQueue, Externalizable
 {
@@ -101,19 +91,4 @@ public class QpidQueueImpl extends AMQQueue implements QpidQueue, Externalizable
         out.writeObject(this._url);
     }
 
-    //TODO move to tests
-    public static void main(String[] args) throws Exception
-    {
-        QpidQueueImpl q = new QpidQueueImpl();
-        q.setDestinationAddress("hello.Queue;{create:always, node:{type:queue, x-declare:{auto-delete:true}}}");
-        ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream("queue.out"));
-        os.writeObject(q);
-        os.close();
-
-
-        ObjectInputStream is = new ObjectInputStream(new FileInputStream("queue.out"));
-        q = (QpidQueueImpl)is.readObject();
-        System.out.println(q);
-
-    }
 }

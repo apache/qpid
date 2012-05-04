@@ -36,8 +36,6 @@ import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageTransferMessage;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.txn.LocalTransaction;
-import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.transport.MessageProperties;
 
 import javax.management.JMException;
@@ -613,9 +611,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
             throw new OperationsException("\"From MessageId\" should be greater than 0 and less than \"To MessageId\"");
         }
 
-        ServerTransaction txn = new LocalTransaction(_queue.getVirtualHost().getMessageStore());
-        _queue.moveMessagesToAnotherQueue(fromMessageId, toMessageId, toQueueName, txn);
-        txn.commit();
+        _queue.moveMessagesToAnotherQueue(fromMessageId, toMessageId, toQueueName);
     }
 
     /**
@@ -648,11 +644,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
             throw new OperationsException("\"From MessageId\" should be greater than 0 and less than \"To MessageId\"");
         }
 
-        ServerTransaction txn = new LocalTransaction(_queue.getVirtualHost().getMessageStore());
-
-        _queue.copyMessagesToAnotherQueue(fromMessageId, toMessageId, toQueueName, txn);
-
-        txn.commit();
+        _queue.copyMessagesToAnotherQueue(fromMessageId, toMessageId, toQueueName);
     }
 
     /**

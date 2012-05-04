@@ -30,9 +30,9 @@ namespace qpid {
 namespace cluster {
 
 using namespace std;
-using namespace boost;
 using namespace framing::cluster;
 using namespace framing;
+using boost::optional;
 
 InitialStatusMap::InitialStatusMap(const MemberId& self_, size_t size_)
     : self(self_), completed(), resendNeeded(), size(size_)

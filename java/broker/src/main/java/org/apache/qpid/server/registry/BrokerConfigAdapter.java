@@ -114,7 +114,6 @@ public class BrokerConfigAdapter implements BrokerConfig
 
     public void addVirtualHost(final VirtualHostConfig virtualHost)
     {
-        virtualHost.setBroker(this);
         _vhosts.put(virtualHost.getId(), virtualHost);
         getConfigStore().addConfiguredObject(virtualHost);
 

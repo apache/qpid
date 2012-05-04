@@ -57,9 +57,7 @@ public:
                                          const std::string& routingKey,
                                          const qpid::framing::FieldTable* args);
     virtual bool unbind(boost::shared_ptr<Queue> queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
-    QPID_BROKER_EXTERN virtual void route(Deliverable& msg,
-                                          const std::string& routingKey,
-                                          const qpid::framing::FieldTable* args);
+    QPID_BROKER_EXTERN virtual void route(Deliverable& msg);
     QPID_BROKER_EXTERN virtual bool isBound(boost::shared_ptr<Queue> queue,
                                             const std::string* const routingKey,
                                             const qpid::framing::FieldTable* const args);

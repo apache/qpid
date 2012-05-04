@@ -30,13 +30,13 @@ if ($test_store -ne "MSSQL" -and $test_store -ne "MSSQL-CLFS") {
 }
 
 $srcdir = Split-Path $myInvocation.InvocationName
-$PYTHON_DIR = "$srcdir\..\..\..\python"
+
+. .\test_env.ps1
+
 if (!(Test-Path $PYTHON_DIR -pathType Container)) {
     "Skipping store tests as python libs not found"
     exit 1
 }
-
-$QMF_LIB = "$srcdir\..\..\..\extras\qmf\src\py"
 
 # Test runs from the tests directory but the broker executable is one level
 # up, and most likely in a subdirectory from there based on what build type.
@@ -97,7 +97,7 @@ set-item -path env:QPID_PORT -value (get-content -path qpidd-store.port -totalco
 Remove-Item qpidd-store.port
 
 $PYTHON_TEST_DIR = "$srcdir\..\..\..\tests\src\py\qpid_tests\broker_0_10"
-$env:PYTHONPATH="$PYTHON_DIR;$PYTHON_TEST_DIR;$env:PYTHONPATH;$QMF_LIB"
+$env:PYTHONPATH="$PYTHON_TEST_DIR;$srcdir;$env:PYTHONPATH"
 python $PYTHON_DIR/qpid-python-test -m dtx -m persistence -b localhost:$env:QPID_PORT $fails $tests
 $RETCODE=$LASTEXITCODE
 if ($RETCODE -ne 0) {
@@ -111,7 +111,6 @@ Invoke-Expression "$prog --quit --port $env:QPID_PORT" | Write-Output
 # Test 2... store.py starts/stops/restarts its own brokers
 
 $tests = "*"
-$env:PYTHONPATH="$PYTHON_DIR;$QMF_LIB;$srcdir"
 $env:QPIDD_EXEC="$prog"
 $env:STORE_LIB="$store_dir\store$suffix.dll"
 if ($test_store -eq "MSSQL") {

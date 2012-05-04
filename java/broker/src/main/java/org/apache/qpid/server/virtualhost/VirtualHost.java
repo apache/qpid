@@ -20,6 +20,9 @@
 */
 package org.apache.qpid.server.virtualhost;
 
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ScheduledFuture;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.server.configuration.ConfigStore;
@@ -30,16 +33,14 @@ import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
-
-import java.util.Map;
-import java.util.UUID;
+import org.apache.qpid.server.txn.DtxRegistry;
 
 public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHostConfig, Closeable, StatisticsGatherer
 {
@@ -56,10 +57,6 @@ public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHo
     ExchangeFactory getExchangeFactory();
 
     MessageStore getMessageStore();
-
-    DurableConfigurationStore getDurableConfigurationStore();
-
-    AuthenticationManager getAuthenticationManager();
 
     SecurityManager getSecurityManager();
 
@@ -96,5 +93,13 @@ public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHo
 
     ConfigStore getConfigStore();
 
+    DtxRegistry getDtxRegistry();
+
     void removeBrokerConnection(BrokerLink brokerLink);
+
+    LinkRegistry getLinkRegistry(String remoteContainerId);
+
+    ScheduledFuture<?> scheduleTask(long delay, Runnable timeoutTask);
+
+    State getState();
 }

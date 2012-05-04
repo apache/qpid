@@ -25,6 +25,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 
 import java.util.Collection;
+import java.util.UUID;
 
 
 public interface ExchangeFactory
@@ -40,4 +41,10 @@ public interface ExchangeFactory
     Collection<ExchangeType<? extends Exchange>> getPublicCreatableTypes();
 
     Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete) throws AMQException;
+
+    Exchange createExchange(UUID id, String exchange, String type, boolean durable, boolean autoDelete) throws AMQException;
+
+    Exchange createExchange(UUID id, AMQShortString exchange, AMQShortString type, boolean durable,
+                            boolean autoDelete, int ticket)
+            throws AMQException;
 }

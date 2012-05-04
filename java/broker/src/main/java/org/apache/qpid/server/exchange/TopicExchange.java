@@ -20,13 +20,24 @@
  */
 package org.apache.qpid.server.exchange;
 
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.UUID;
+import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import javax.management.JMException;
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.filter.SelectorParsingException;
+import org.apache.qpid.filter.selector.ParseException;
 import org.apache.qpid.filter.selector.TokenMgrError;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -36,22 +47,13 @@ import org.apache.qpid.server.exchange.topic.TopicMatcherResult;
 import org.apache.qpid.server.exchange.topic.TopicNormalizer;
 import org.apache.qpid.server.exchange.topic.TopicParser;
 import org.apache.qpid.server.filter.JMSSelectorFilter;
-import org.apache.qpid.filter.selector.ParseException;
+import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.queue.Filterable;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-
-import javax.management.JMException;
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.WeakHashMap;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class TopicExchange extends AbstractExchange
 {
@@ -69,14 +71,14 @@ public class TopicExchange extends AbstractExchange
             return TopicExchange.class;
         }
 
-        public TopicExchange newInstance(VirtualHost host,
+        public TopicExchange newInstance(UUID id, VirtualHost host,
                                             AMQShortString name,
                                             boolean durable,
                                             int ticket,
                                             boolean autoDelete) throws AMQException
         {
             TopicExchange exch = new TopicExchange();
-            exch.initialise(host, name, durable, ticket, autoDelete);
+            exch.initialise(id, host, name, durable, ticket, autoDelete);
             return exch;
         }
 
@@ -122,24 +124,26 @@ public class TopicExchange extends AbstractExchange
             FieldTable oldArgs = _bindings.get(binding);
             TopicExchangeResult result = _topicExchangeResults.get(routingKey);
 
-            if(argumentsContainSelector(args))
+            if(argumentsContainFilter(args))
             {
-                if(argumentsContainSelector(oldArgs))
+                if(argumentsContainFilter(oldArgs))
                 {
-                    result.replaceQueueFilter(queue,createSelectorFilter(oldArgs), createSelectorFilter(args));
+                    result.replaceQueueFilter(queue,
+                                              createMessageFilter(oldArgs, queue),
+                                              createMessageFilter(args, queue));
                 }
                 else
                 {
-                    result.addFilteredQueue(queue,createSelectorFilter(args));
+                    result.addFilteredQueue(queue, createMessageFilter(args, queue));
                     result.removeUnfilteredQueue(queue);
                 }
             }
             else
             {
-                if(argumentsContainSelector(oldArgs))
+                if(argumentsContainFilter(oldArgs))
                 {
                     result.addUnfilteredQueue(queue);
-                    result.removeFilteredQueue(queue, createSelectorFilter(oldArgs));
+                    result.removeFilteredQueue(queue, createMessageFilter(oldArgs, queue));
                 }
                 else
                 {
@@ -158,9 +162,9 @@ public class TopicExchange extends AbstractExchange
             if(result == null)
             {
                 result = new TopicExchangeResult();
-                if(argumentsContainSelector(args))
+                if(argumentsContainFilter(args))
                 {
-                    result.addFilteredQueue(queue, createSelectorFilter(args));
+                    result.addFilteredQueue(queue, createMessageFilter(args, queue));
                 }
                 else
                 {
@@ -171,9 +175,9 @@ public class TopicExchange extends AbstractExchange
             }
             else
             {
-                if(argumentsContainSelector(args))
+                if(argumentsContainFilter(args))
                 {
-                    result.addFilteredQueue(queue, createSelectorFilter(args));
+                    result.addFilteredQueue(queue, createMessageFilter(args, queue));
                 }
                 else
                 {
@@ -187,9 +191,28 @@ public class TopicExchange extends AbstractExchange
 
     }
 
-    private JMSSelectorFilter createSelectorFilter(final FieldTable args) throws AMQInvalidArgumentException
+    private MessageFilter createMessageFilter(final FieldTable args, AMQQueue queue) throws AMQInvalidArgumentException
     {
+        if(argumentsContainNoLocal(args))
+        {
+            MessageFilter filter = new NoLocalFilter(queue);
 
+            if(argumentsContainJMSSelector(args))
+            {
+                filter = new CompoundFilter(filter, createJMSSelectorFilter(args));
+            }
+            return filter;
+        }
+        else
+        {
+            return createJMSSelectorFilter(args);
+        }
+
+    }
+
+
+    private MessageFilter createJMSSelectorFilter(FieldTable args) throws AMQInvalidArgumentException
+    {
         final String selectorString = args.getString(AMQPFilterTypes.JMS_SELECTOR.getValue());
         WeakReference<JMSSelectorFilter> selectorRef = _selectorCache.get(selectorString);
         JMSSelectorFilter selector = null;
@@ -217,10 +240,24 @@ public class TopicExchange extends AbstractExchange
         return selector;
     }
 
-    private static boolean argumentsContainSelector(final FieldTable args)
+    private static boolean argumentsContainFilter(final FieldTable args)
     {
-        return args != null && args.containsKey(AMQPFilterTypes.JMS_SELECTOR.getValue()) && args.getString(AMQPFilterTypes.JMS_SELECTOR.getValue()).trim().length() != 0;
+        return argumentsContainNoLocal(args) || argumentsContainJMSSelector(args);
     }
+
+    private static boolean argumentsContainNoLocal(final FieldTable args)
+    {
+        return args != null
+                && args.containsKey(AMQPFilterTypes.NO_LOCAL.getValue())
+                && Boolean.TRUE.equals(args.get(AMQPFilterTypes.NO_LOCAL.getValue()));
+    }
+
+    private static boolean argumentsContainJMSSelector(final FieldTable args)
+    {
+        return args != null && (args.containsKey(AMQPFilterTypes.JMS_SELECTOR.getValue())
+                       && args.getString(AMQPFilterTypes.JMS_SELECTOR.getValue()).trim().length() != 0);
+    }
+
 
     public ArrayList<BaseQueue> doRoute(InboundMessage payload)
     {
@@ -275,6 +312,28 @@ public class TopicExchange extends AbstractExchange
         }
     }
 
+    public boolean isBound(String bindingKey, Map<String, Object> arguments, AMQQueue queue)
+    {
+        Binding binding = new Binding(null, bindingKey, queue, this, arguments);
+        if (arguments == null)
+        {
+            return _bindings.containsKey(binding);
+        }
+        else
+        {
+            FieldTable o = _bindings.get(binding);
+            if (o != null)
+            {
+                return arguments.equals(FieldTable.convertToMap(o));
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+    }
+
     public boolean isBound(AMQShortString routingKey, AMQQueue queue)
     {
         return isBound(routingKey, null, queue);
@@ -321,11 +380,11 @@ public class TopicExchange extends AbstractExchange
             
             result.removeBinding(binding);
             
-            if(argumentsContainSelector(bindingArgs))
+            if(argumentsContainFilter(bindingArgs))
             {
                 try
                 {
-                    result.removeFilteredQueue(binding.getQueue(), createSelectorFilter(bindingArgs));
+                    result.removeFilteredQueue(binding.getQueue(), createMessageFilter(bindingArgs, binding.getQueue()));
                 }
                 catch (AMQInvalidArgumentException e)
                 {
@@ -347,11 +406,6 @@ public class TopicExchange extends AbstractExchange
     protected AbstractExchangeMBean createMBean() throws JMException
     {
         return new TopicExchangeMBean(this);
-    }
-
-    public Logger getLogger()
-    {
-        return _logger;
     }
 
     private Collection<AMQQueue> getMatchedQueues(InboundMessage message, AMQShortString routingKey)
@@ -402,4 +456,96 @@ public class TopicExchange extends AbstractExchange
         deregisterQueue(binding);
     }
 
+    private static final class NoLocalFilter implements MessageFilter
+    {
+        private final AMQQueue _queue;
+
+        public NoLocalFilter(AMQQueue queue)
+        {
+            _queue = queue;
+        }
+
+        public boolean matches(Filterable message)
+        {
+            InboundMessage inbound = (InboundMessage) message;
+            final AMQSessionModel exclusiveOwningSession = _queue.getExclusiveOwningSession();
+            return exclusiveOwningSession == null || !exclusiveOwningSession.onSameConnection(inbound);
+
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o)
+            {
+                return true;
+            }
+
+            if (o == null || getClass() != o.getClass())
+            {
+                return false;
+            }
+
+            NoLocalFilter that = (NoLocalFilter) o;
+
+            return _queue == null ? that._queue == null : _queue.equals(that._queue);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return _queue != null ? _queue.hashCode() : 0;
+        }
+    }
+
+    private static final class CompoundFilter implements MessageFilter
+    {
+        private MessageFilter _noLocalFilter;
+        private MessageFilter _jmsSelectorFilter;
+
+        public CompoundFilter(MessageFilter filter, MessageFilter jmsSelectorFilter)
+        {
+            _noLocalFilter = filter;
+            _jmsSelectorFilter = jmsSelectorFilter;
+        }
+
+        public boolean matches(Filterable message)
+        {
+            return _noLocalFilter.matches(message) && _jmsSelectorFilter.matches(message);
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o)
+            {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass())
+            {
+                return false;
+            }
+
+            CompoundFilter that = (CompoundFilter) o;
+
+            if (_jmsSelectorFilter != null ? !_jmsSelectorFilter.equals(that._jmsSelectorFilter) : that._jmsSelectorFilter != null)
+            {
+                return false;
+            }
+            if (_noLocalFilter != null ? !_noLocalFilter.equals(that._noLocalFilter) : that._noLocalFilter != null)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = _noLocalFilter != null ? _noLocalFilter.hashCode() : 0;
+            result = 31 * result + (_jmsSelectorFilter != null ? _jmsSelectorFilter.hashCode() : 0);
+            return result;
+        }
+    }
 }

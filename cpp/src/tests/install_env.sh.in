@@ -23,4 +23,4 @@ prefix=`absdir @prefix@`
 export QPID_INSTALL_PREFIX=$prefix
 export PATH=$prefix/bin:$prefix/sbin:$prefix/libexec/qpid/tests:$PATH
 export LD_LIBRARY_PATH=$prefix/lib:$LD_LIBRARY_PATH
-export PYTHONPATH=$prefix/lib/python2.4/site-packages:$PYTHONPATH
+export PYTHONPATH=$prefix/lib/python2.6/site-packages:$PYTHONPATH

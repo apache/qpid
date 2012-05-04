@@ -163,10 +163,12 @@ struct Options : public po::options_description {
  */
 struct CommonOptions : public Options {
     QPID_COMMON_EXTERN CommonOptions(const std::string& name=std::string(),
-                  const std::string& configfile=std::string());
+                                     const std::string& configfile=std::string(),
+                                     const std::string& clientConfigFile=std::string());
     bool help;
     bool version;
     std::string config;
+    std::string clientConfig;
 };
 
 

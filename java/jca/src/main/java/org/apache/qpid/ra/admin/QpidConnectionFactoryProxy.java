@@ -77,17 +77,17 @@ public class QpidConnectionFactoryProxy implements Externalizable, Referenceable
 
     public void writeExternal(ObjectOutput out) throws IOException
     {
-        if (_delegate == null)
-        {
-            _log.error("Null Destination ");
-            throw new IOException("Null ConnectionFactory!");
-        }
 
         try
         {
+            if(_delegate == null)
+            {
+                getReference();
+            }
+
             out.writeObject(((Referenceable) _delegate).getReference());
         }
-        catch (NamingException e)
+        catch (Exception e)
         {
             _log.error("Failed to dereference ConnectionFactory " + e.getMessage(), e);
             throw new IOException("Failed to dereference ConnectionFactory: " + e.getMessage());
@@ -137,7 +137,20 @@ public class QpidConnectionFactoryProxy implements Externalizable, Referenceable
     */
    public Connection createConnection() throws JMSException
    {
-       return _delegate.createConnection();
+       try
+       {
+           if(_delegate == null)
+           {
+               getReference();
+           }
+
+           return _delegate.createConnection();
+       }
+       catch(Exception e)
+       {
+          throw new JMSException(e.getMessage());
+       }
+
    }
 
    /**

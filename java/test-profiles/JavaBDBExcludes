@@ -20,3 +20,4 @@
 //This test is subclassed within the bdbstore module to enable it to run and
 //also add some bdb-specific tests. It is excluded to prevent running twice.
 org.apache.qpid.server.store.MessageStoreTest#*
+org.apache.qpid.server.store.DurableConfigurationStoreTest#*

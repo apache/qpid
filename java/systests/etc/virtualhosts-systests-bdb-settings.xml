@@ -26,7 +26,7 @@
         <name>localhost</name>
         <localhost>
             <store>
-                <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>
+                <factoryclass>org.apache.qpid.server.store.berkeleydb.BDBMessageStoreFactory</factoryclass>
                 <environment-path>${work}/bdbstore/localhost-store</environment-path>
             </store>
         </localhost>
@@ -36,7 +36,7 @@
         <name>development</name>
         <development>
             <store>
-                <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>
+                <factoryclass>org.apache.qpid.server.store.berkeleydb.BDBMessageStoreFactory</factoryclass>
                 <environment-path>${work}/bdbstore/development-store</environment-path>
             </store>
         </development>
@@ -46,7 +46,7 @@
         <name>test</name>
         <test>
             <store>
-                <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>
+                <factoryclass>org.apache.qpid.server.store.berkeleydb.BDBMessageStoreFactory</factoryclass>
                 <environment-path>${work}/bdbstore/test-store</environment-path>
             </store>
         </test>

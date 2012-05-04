@@ -33,7 +33,7 @@ public class AMQShortStringEncoding
 
     public static AMQShortString readShortString(TupleInput tupleInput)
     {
-        int length = (int) tupleInput.readShort();
+        int length = tupleInput.readShort();
         if (length < 0)
         {
             return null;

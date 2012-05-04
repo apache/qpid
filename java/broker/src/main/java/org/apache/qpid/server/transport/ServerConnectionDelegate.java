@@ -33,6 +33,7 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.subscription.Subscription_0_10;
+import org.apache.qpid.server.virtualhost.State;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.*;
 import org.slf4j.Logger;
@@ -177,6 +178,11 @@ public class ServerConnectionDelegate extends ServerDelegate
                 sconn.setState(Connection.State.CLOSING);
                 sconn.invoke(new ConnectionClose(ConnectionCloseCode.CONNECTION_FORCED, "Permission denied '"+vhostName+"'"));
             }
+            else if (vhost.getState() != State.ACTIVE)
+            {
+                sconn.setState(Connection.State.CLOSING);
+                sconn.invoke(new ConnectionClose(ConnectionCloseCode.CONNECTION_FORCED, "Virtual host '"+vhostName+"' is not active"));
+            }
             else
             {
                 sconn.setState(Connection.State.OPEN);
@@ -231,22 +237,25 @@ public class ServerConnectionDelegate extends ServerDelegate
 
     @Override public void sessionDetach(Connection conn, SessionDetach dtc)
     {
-        // To ensure a clean detach, we unregister any remaining subscriptions. Unregister ensures
-        // that any in-progress delivery (SubFlushRunner/QueueRunner) is completed before the unregister
+        // To ensure a clean detach, we stop any remaining subscriptions. Stop ensures
+        // that any in-progress delivery (SubFlushRunner/QueueRunner) is completed before the stop
         // completes.
-        unregisterAllSubscriptions(conn, dtc);
+        stopAllSubscriptions(conn, dtc);
+        Session ssn = conn.getSession(dtc.getChannel());
+        ((ServerSession)ssn).setClose(true);
         super.sessionDetach(conn, dtc);
     }
 
-    private void unregisterAllSubscriptions(Connection conn, SessionDetach dtc)
+    private void stopAllSubscriptions(Connection conn, SessionDetach dtc)
     {
         final ServerSession ssn = (ServerSession) conn.getSession(dtc.getChannel());
         final Collection<Subscription_0_10> subs = ssn.getSubscriptions();
         for (Subscription_0_10 subscription_0_10 : subs)
         {
-            ssn.unregister(subscription_0_10);
+            subscription_0_10.stop();
         }
     }
+
 
     @Override
     public void sessionAttach(final Connection conn, final SessionAttach atc)
@@ -255,8 +264,7 @@ public class ServerConnectionDelegate extends ServerDelegate
 
         if(isSessionNameUnique(atc.getName(), conn))
         {
-            ssn = sessionAttachImpl(conn, atc);
-            conn.registerSession(ssn);
+            super.sessionAttach(conn, atc);
             ((ServerConnection)conn).checkForNotification();
         }
         else

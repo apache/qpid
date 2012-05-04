@@ -81,13 +81,18 @@ public abstract class Closeable
     }
 
     /**
-     * Checks if this is closis.
+     * Checks if this is closing.
      *
      * @return <tt>true</tt> if we are closing, <tt>false</tt> otherwise.
      */
     public boolean isClosing()
     {
         return _closing.get();
+    }
+
+    public void resetClosedFlag()
+    {
+        _closed.set(false);
     }
 
     protected boolean setClosed()

@@ -145,7 +145,7 @@ public class TestAMQSession extends AMQSession_0_8
     }
 
     public void sendQueueDeclare(AMQDestination amqd, AMQProtocolHandler protocolHandler,
-                                 boolean nowait) throws AMQException, FailoverException
+                                 boolean nowait, boolean passive) throws AMQException, FailoverException
     {
 
     }

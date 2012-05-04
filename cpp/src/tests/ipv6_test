@@ -93,10 +93,10 @@ else
     BROKER1="[::1]:${PORTS[1]}"
     TEST_QUEUE=ipv6-fed-test
 
-    $QPID_CONFIG_EXEC -a $BROKER0 add queue $TEST_QUEUE
-    $QPID_CONFIG_EXEC -a $BROKER1 add queue $TEST_QUEUE
+    $QPID_CONFIG_EXEC -b $BROKER0 add queue $TEST_QUEUE
+    $QPID_CONFIG_EXEC -b $BROKER1 add queue $TEST_QUEUE
     $QPID_ROUTE_EXEC dynamic add $BROKER1 $BROKER0 amq.direct
-    $QPID_CONFIG_EXEC -a $BROKER1 bind amq.direct $TEST_QUEUE $TEST_QUEUE
+    $QPID_CONFIG_EXEC -b $BROKER1 bind amq.direct $TEST_QUEUE $TEST_QUEUE
     $QPID_ROUTE_EXEC route map $BROKER1
 
     ./datagen --count 100 | tee rdata-in |
@@ -113,7 +113,8 @@ fi
 test -z $CLUSTER_LIB && exit 0	# Exit if cluster not supported.
 
 ## Test failover in a cluster using IPv6 only
-. $srcdir/ais_check		# Will exit if clustering not enabled.
+. cpg_check.sh
+cpg_enabled || exit 0
 
 pick_port() {
     # We need a fixed port to set --cluster-url. Use qpidd to pick a free port.

@@ -27,6 +27,8 @@ package org.apache.qpid.tools;
 
 public class Clock
 {
+    public final static long SEC = 60000;
+
     private static Precision precision;
     private static long offset = -1;  // in nano secs
 

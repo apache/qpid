@@ -1139,6 +1139,13 @@ QPID_AUTO_TEST_CASE(testHeadersExchange)
     }
 }
 
+QPID_AUTO_TEST_CASE(testLargeRoutingKey)
+{
+    MessagingFixture fix;
+    std::string address = "amq.direct/" + std::string(300, 'x');//routing/binding key can be at most 225 chars in 0-10
+    BOOST_CHECK_THROW(fix.session.createReceiver(address), qpid::messaging::MessagingException);
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests

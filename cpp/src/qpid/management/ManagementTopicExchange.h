@@ -43,9 +43,7 @@ class ManagementTopicExchange : public virtual TopicExchange
 
     virtual std::string getType() const { return typeName; }
 
-    virtual void route(Deliverable& msg,
-                       const std::string& routingKey,
-                       const qpid::framing::FieldTable* args);
+    virtual void route(Deliverable& msg);
 
     virtual bool bind(Queue::shared_ptr queue,
                       const std::string& routingKey,

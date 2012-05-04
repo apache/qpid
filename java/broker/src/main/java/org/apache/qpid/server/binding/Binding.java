@@ -117,7 +117,7 @@ public class Binding
 
     public String toString()
     {
-        return "Binding{bindingKey="+_bindingKey+", exchange="+_exchange+", queue="+_queue+"}";
+        return "Binding{bindingKey="+_bindingKey+", exchange="+_exchange+", queue="+_queue+", id= " + _id + " }";
     }
 
 }

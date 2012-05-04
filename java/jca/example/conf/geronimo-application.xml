@@ -21,7 +21,7 @@
  -->
 <application xmlns="http://geronimo.apache.org/xml/ns/j2ee/application-2.0"
     xmlns:sys="http://geronimo.apache.org/xml/ns/deployment-1.2"
-    xmlns:naming="http://geronimo.apache.org/xml/ns/naming-1.2"
+    xmlns:nam="http://geronimo.apache.org/xml/ns/naming-1.2"
     application-name="QpidJCAExampleApplication">
 
     <sys:environment>

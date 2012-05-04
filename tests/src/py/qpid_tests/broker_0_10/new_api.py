@@ -57,7 +57,7 @@ class GeneralTests(Base):
         sess2 = self.setup_session()
 
         tx = sess1.sender("amq.direct/key")
-        rx_main = sess1.receiver("amq.direct/key;{link:{x-declare:{alternate-exchange:'amq.fanout'}}}")
+        rx_main = sess1.receiver("amq.direct/key;{link:{reliability:at-least-once,x-declare:{alternate-exchange:'amq.fanout'}}}")
         rx_alt  = sess2.receiver("amq.fanout")
         rx_alt.capacity = 10
 
@@ -74,7 +74,7 @@ class GeneralTests(Base):
         self.assertEqual(rx_alt.available(), 0, "No messages should have been routed to the alt_exchange")
 
         sess1.close()
-
+        sleep(1)
         self.assertEqual(rx_alt.available(), 5, "All 5 messages should have been routed to the alt_exchange")
 
         sess2.close()
@@ -108,6 +108,7 @@ class GeneralTests(Base):
 
         # Close sess1; This will cause the queue to be deleted
         sess1.close()
+        sleep(1)
         self.assertEqual(rx_alt.available(), 2, "2 of the messages should have been routed to the alt_exchange")
 
         # Close sess2; This will cause the acquired messages to be requeued and routed to the alternate

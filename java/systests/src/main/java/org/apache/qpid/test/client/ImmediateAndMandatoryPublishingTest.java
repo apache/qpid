@@ -18,11 +18,9 @@
  */
 package org.apache.qpid.test.client;
 
-import org.apache.qpid.client.AMQNoConsumersException;
-import org.apache.qpid.client.AMQNoRouteException;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.ExceptionListener;
@@ -32,9 +30,10 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.Topic;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
+import org.apache.qpid.client.AMQNoConsumersException;
+import org.apache.qpid.client.AMQNoRouteException;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class ImmediateAndMandatoryPublishingTest extends QpidBrokerTestCase implements ExceptionListener
 {
@@ -202,7 +201,88 @@ public class ImmediateAndMandatoryPublishingTest extends QpidBrokerTestCase impl
         return message;
     }
 
-    @Override
+    public void testMandatoryAndImmediateDefaults() throws JMSException, InterruptedException
+    {
+        Session session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+        // publish to non-existent queue - should get mandatory failure
+        MessageProducer producer = session.createProducer(session.createQueue(getTestQueueName()));
+        Message message = session.createMessage();
+        producer.send(message);
+
+        JMSException exception = _exceptions.poll(10, TimeUnit.SECONDS);
+        assertNotNull("JMSException is expected", exception);
+        AMQNoRouteException noRouteException = (AMQNoRouteException) exception.getLinkedException();
+        assertNotNull("AMQNoRouteException should be linked to JMSEXception", noRouteException);
+        Message bounceMessage = (Message) noRouteException.getUndeliveredMessage();
+        assertNotNull("Bounced Message is expected", bounceMessage);
+        assertEquals("Unexpected message is bounced", message.getJMSMessageID(), bounceMessage.getJMSMessageID());
+
+        producer = session.createProducer(null);
+        message = session.createMessage();
+        producer.send(session.createQueue(getTestQueueName()), message);
+
+        exception = _exceptions.poll(10, TimeUnit.SECONDS);
+        assertNotNull("JMSException is expected", exception);
+        noRouteException = (AMQNoRouteException) exception.getLinkedException();
+        assertNotNull("AMQNoRouteException should be linked to JMSEXception", noRouteException);
+        bounceMessage = (Message) noRouteException.getUndeliveredMessage();
+        assertNotNull("Bounced Message is expected", bounceMessage);
+        assertEquals("Unexpected message is bounced", message.getJMSMessageID(), bounceMessage.getJMSMessageID());
+
+
+        // publish to non-existent topic - should get no failure
+        producer = session.createProducer(session.createTopic(getTestQueueName()));
+        message = session.createMessage();
+        producer.send(message);
+
+        exception = _exceptions.poll(1, TimeUnit.SECONDS);
+        assertNull("Unexpected JMSException", exception);
+
+        producer = session.createProducer(null);
+        message = session.createMessage();
+        producer.send(session.createTopic(getTestQueueName()), message);
+
+        exception = _exceptions.poll(1, TimeUnit.SECONDS);
+        assertNull("Unexpected JMSException", exception);
+
+        session.close();
+    }
+
+    public void testMandatoryAndImmediateSystemProperties() throws JMSException, InterruptedException
+    {
+        setTestClientSystemProperty("qpid.default_mandatory","true");
+        Session session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+        // publish to non-existent topic - should get mandatory failure
+
+        MessageProducer producer = session.createProducer(session.createTopic(getTestQueueName()));
+        Message message = session.createMessage();
+        producer.send(message);
+
+        JMSException exception = _exceptions.poll(10, TimeUnit.SECONDS);
+        assertNotNull("JMSException is expected", exception);
+        AMQNoRouteException noRouteException = (AMQNoRouteException) exception.getLinkedException();
+        assertNotNull("AMQNoRouteException should be linked to JMSEXception", noRouteException);
+        Message bounceMessage = (Message) noRouteException.getUndeliveredMessage();
+        assertNotNull("Bounced Message is expected", bounceMessage);
+        assertEquals("Unexpected message is bounced", message.getJMSMessageID(), bounceMessage.getJMSMessageID());
+
+        // now set topic specific system property to false - should no longer get mandatory failure on new producer
+        setTestClientSystemProperty("qpid.default_mandatory_topic","false");
+        producer = session.createProducer(null);
+        message = session.createMessage();
+        producer.send(session.createTopic(getTestQueueName()), message);
+
+        exception = _exceptions.poll(1, TimeUnit.SECONDS);
+        if(exception != null)
+        {
+            exception.printStackTrace();
+        }
+        assertNull("Unexpected JMSException", exception);
+
+    }
+
     public void onException(JMSException exception)
     {
         _exceptions.add(exception);

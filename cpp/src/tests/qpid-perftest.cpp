@@ -85,6 +85,7 @@ struct Opts : public TestOptions {
     size_t pubs;
     size_t count ;
     size_t size;
+    size_t headers;
     bool confirm;
     bool durable;
     bool uniqueData;
@@ -112,7 +113,7 @@ struct Opts : public TestOptions {
     Opts() :
         TestOptions(helpText),
         setup(false), control(false), publish(false), subscribe(false), baseName("qpid-perftest"),
-        pubs(1), count(500000), size(1024), confirm(true), durable(false), uniqueData(false), syncPub(false),
+        pubs(1), count(500000), size(1024), headers(0), confirm(true), durable(false), uniqueData(false), syncPub(false),
         subs(1), ack(0),
         qt(1),singleConnect(false), iterations(1), mode(SHARED), summary(false),
         intervalSub(0), intervalPub(0), tx(0), txPub(0), txSub(0), commitAsync(false)
@@ -131,6 +132,7 @@ struct Opts : public TestOptions {
             ("npubs", optValue(pubs, "N"), "Create N publishers.")
             ("count", optValue(count, "N"), "Each publisher sends N messages.")
             ("size", optValue(size, "BYTES"), "Size of messages in bytes.")
+            ("headers", optValue(headers, "N"), "Number of headers to add to each message.")
             ("pub-confirm", optValue(confirm, "yes|no"), "Publisher use confirm-mode.")
             ("durable", optValue(durable, "yes|no"), "Publish messages as durable.")
             ("unique-data", optValue(uniqueData, "yes|no"), "Make data for each message unique.")
@@ -503,7 +505,13 @@ struct PublishThread : public Client {
             Message msg(data, routingKey);
             if (opts.durable)
                 msg.getDeliveryProperties().setDeliveryMode(framing::PERSISTENT);
-
+            if (opts.headers) {
+                for (size_t i = 0; i < opts.headers; ++i) {
+                    std::stringstream h;
+                    h << "hdr" << i;
+                    msg.getMessageProperties().getApplicationHeaders().setString(h.str(), h.str());
+                }
+            }
 
             if (opts.txPub){
                 session.txSelect();

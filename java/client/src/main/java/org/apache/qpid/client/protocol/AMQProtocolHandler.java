@@ -652,7 +652,8 @@ public class AMQProtocolHandler implements ProtocolEngine
             }
             writeFrame(frame);
 
-            return listener.blockForFrame(timeout);
+            long actualTimeout = timeout == -1 ? DEFAULT_SYNC_TIMEOUT : timeout;
+            return listener.blockForFrame(actualTimeout);
             // When control resumes before this line, a reply will have been received
             // that matches the criteria defined in the blocking listener
         }

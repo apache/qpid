@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,7 +21,7 @@
  * under the License.
  *
  */
-#include "qpid/broker/Messages.h"
+#include "qpid/broker/MessageDeque.h"
 #include "qpid/sys/IntegerTypes.h"
 #include <deque>
 #include <vector>
@@ -32,7 +32,10 @@ namespace broker {
 /**
  * Basic priority queue with a configurable number of recognised
  * priority levels. This is implemented as a separate deque per
- * priority level. Browsing is FIFO not priority order.
+ * priority level.
+ *
+ * Browsing is FIFO not priority order. There is a MessageDeque
+ * for fast browsing.
  */
 class PriorityQueue : public Messages
 {
@@ -48,23 +51,31 @@ class PriorityQueue : public Messages
     bool browse(const framing::SequenceNumber&, QueuedMessage&, bool);
     bool consume(QueuedMessage&);
     bool push(const QueuedMessage& added, QueuedMessage& removed);
-
+    void updateAcquired(const QueuedMessage& acquired);
     void foreach(Functor);
     void removeIf(Predicate);
+
     static uint getPriority(const QueuedMessage&);
+
   protected:
-    typedef std::deque<QueuedMessage> Deque;
+    typedef std::deque<QueuedMessage*> Deque;
     typedef std::vector<Deque> PriorityLevels;
     virtual bool findFrontLevel(uint& p, PriorityLevels&);
 
     const int levels;
+
   private:
+    /** Available messages separated by priority and sorted in priority order.
+     *  Holds pointers to the QueuedMessages in fifo
+     */
     PriorityLevels messages;
+    /** FIFO index of all messsagse (including acquired messages)  for fast browsing and indexing */
+    MessageDeque fifo;
     uint frontLevel;
     bool haveFront;
     bool cached;
-    
-    bool find(const framing::SequenceNumber&, QueuedMessage&, bool remove);
+
+    void erase(const QueuedMessage&);
     uint getPriorityLevel(const QueuedMessage&) const;
     void clearCache();
     bool checkFront();

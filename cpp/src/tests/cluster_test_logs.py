@@ -60,11 +60,13 @@ def filter_log(log):
         'task late',
         'task overran',
         'warning CLOSING .* unsent data',
-        'Inter-broker link ',
+        'Inter-broker link ',      # ignore link state changes
+        'Updated link key from ',  # ignore link state changes
         'Running in a cluster, marking store',
         'debug Sending keepalive signal to watchdog', # Watchdog timer thread
         'last broker standing joined by 1 replicas, updating queue policies.',
-        'Connection .* timed out: closing' # heartbeat connection close
+        'Connection .* timed out: closing', # heartbeat connection close
+        "org.apache.qpid.broker:bridge:"  # ignore bridge index
         ])
     # Regex to match a UUID
     uuid='\w\w\w\w\w\w\w\w-\w\w\w\w-\w\w\w\w-\w\w\w\w-\w\w\w\w\w\w\w\w\w\w\w\w'

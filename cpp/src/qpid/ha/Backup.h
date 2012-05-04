@@ -38,6 +38,7 @@ namespace ha {
 class Settings;
 class ConnectionExcluder;
 class BrokerReplicator;
+class HaBroker;
 
 /**
  * State associated with a backup broker. Manages connections to primary.
@@ -47,7 +48,7 @@ class BrokerReplicator;
 class Backup
 {
   public:
-    Backup(broker::Broker&, const Settings&);
+    Backup(HaBroker&, const Settings&);
     ~Backup();
     void setBrokerUrl(const Url&);
 
@@ -55,6 +56,7 @@ class Backup
     void initialize(const Url&);
 
     sys::Mutex lock;
+    HaBroker& haBroker;
     broker::Broker& broker;
     Settings settings;
     boost::shared_ptr<broker::Link> link;

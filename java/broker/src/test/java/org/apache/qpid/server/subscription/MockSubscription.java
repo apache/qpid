@@ -277,6 +277,10 @@ public class MockSubscription implements Subscription
         return false;
     }
 
+    public void queueEmpty() throws AMQException
+    {
+    }
+
     public void setActive(final boolean isActive)
     {
         _isActive = isActive;

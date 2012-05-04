@@ -24,6 +24,7 @@ import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.plugins.Plugin;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 
+import javax.security.auth.callback.CallbackHandler;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
@@ -88,4 +89,6 @@ public interface AuthenticationManager extends Closeable, Plugin
      * @return authentication result
      */
     AuthenticationResult authenticate(String username, String password);
+
+    CallbackHandler getHandler(String mechanism);
 }

@@ -96,6 +96,7 @@ libqmf2_la_SOURCES = 		\
   qmf/AgentSessionImpl.h	\
   qmf/AgentSubscription.cpp	\
   qmf/AgentSubscription.h	\
+  qmf/BrokerImportExport.h	\
   qmf/ConsoleEvent.cpp		\
   qmf/ConsoleEventImpl.h	\
   qmf/ConsoleSession.cpp	\

@@ -62,7 +62,8 @@ bool CredentialsExchange::check(MemberId member) {
     return valid;
 }
 
-void CredentialsExchange::route(broker::Deliverable& msg, const string& /*routingKey*/, const framing::FieldTable* args) {
+void CredentialsExchange::route(broker::Deliverable& msg) {
+    const framing::FieldTable* args = msg.getMessage().getApplicationHeaders();
     sys::Mutex::ScopedLock l(lock);
     const broker::ConnectionState* connection =
         static_cast<const broker::ConnectionState*>(msg.getMessage().getPublisher());

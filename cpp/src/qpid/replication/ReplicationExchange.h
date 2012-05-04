@@ -52,7 +52,7 @@ class ReplicationExchange : public qpid::broker::Exchange
 
     std::string getType() const;
 
-    void route(qpid::broker::Deliverable& msg, const std::string& routingKey, const qpid::framing::FieldTable* args);
+    void route(qpid::broker::Deliverable& msg);
         
     bool bind(boost::shared_ptr<broker::Queue> queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
     bool unbind(boost::shared_ptr<broker::Queue> queue, const std::string& routingKey, const qpid::framing::FieldTable* args);

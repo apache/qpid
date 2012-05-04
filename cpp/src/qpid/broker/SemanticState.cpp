@@ -489,14 +489,14 @@ void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
                                                exchangeName << " with routing-key " << msg->getRoutingKey()));
     }
 
-    cacheExchange->route(strategy, msg->getRoutingKey(), msg->getApplicationHeaders());
+    cacheExchange->route(strategy);
 
     if (!strategy.delivered) {
         //TODO:if discard-unroutable, just drop it
         //TODO:else if accept-mode is explicit, reject it
         //else route it to alternate exchange
         if (cacheExchange->getAlternate()) {
-            cacheExchange->getAlternate()->route(strategy, msg->getRoutingKey(), msg->getApplicationHeaders());
+            cacheExchange->getAlternate()->route(strategy);
         }
         if (!strategy.delivered) {
             msg->destroy();

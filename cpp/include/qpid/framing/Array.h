@@ -1,3 +1,6 @@
+#ifndef QPID_FRAMING_ARRAY_H
+#define QPID_FRAMING_ARRAY_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,21 +21,22 @@
  * under the License.
  *
  */
+
 #include "qpid/framing/amqp_types.h"
-#include "qpid/framing/FieldValue.h"
 #include "qpid/framing/TypeCode.h"
+
 #include <boost/shared_ptr.hpp>
+
 #include <iostream>
 #include <vector>
-#include "qpid/CommonImportExport.h"
 
-#ifndef _Array_
-#define _Array_
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 namespace framing {
 
 class Buffer;
+class FieldValue;
 
 class QPID_COMMON_CLASS_EXTERN Array
 {
@@ -75,12 +79,10 @@ class QPID_COMMON_CLASS_EXTERN Array
     // Non-std interface
     QPID_COMMON_INLINE_EXTERN void add(ValuePtr value) { push_back(value); }
 
-    template <class T>
-    void collect(std::vector<T>& out) const
-    {
-        for (ValueVector::const_iterator i = values.begin(); i != values.end(); ++i) {
-            out.push_back((*i)->get<T>());
-        }
+    // For use in standard algorithms
+    template <typename R, typename V>
+    static R get(const V& v) {
+        return v->get<R>();
     }
 
   private:

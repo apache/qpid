@@ -27,6 +27,7 @@ import static org.apache.qpid.util.Serial.eq;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -236,4 +237,117 @@ public class RangeSetTest extends TestCase
         assertEquals(d.getUpper(), 10);
     }
 
+    public void testSetSubtract1()
+    {
+        final RangeSet orig = createRangeSet(0, 10) ;
+        final RangeSet update = createRangeSet(3, 15) ;
+        orig.subtract(update) ;
+        checkRange(orig, 0, 2) ;
+    }
+
+    public void testSetSubtract2()
+    {
+        final RangeSet orig = createRangeSet(0, 10) ;
+        final RangeSet update = createRangeSet(3, 10) ;
+        orig.subtract(update) ;
+        checkRange(orig, 0, 2) ;
+    }
+
+    public void testSetSubtract3()
+    {
+        final RangeSet orig = createRangeSet(0, 10) ;
+        final RangeSet update = createRangeSet(3, 4) ;
+        orig.subtract(update) ;
+        checkRange(orig, 0, 2, 5, 10) ;
+    }
+
+    public void testSetSubtract4()
+    {
+        final RangeSet orig = createRangeSet(3, 15) ;
+        final RangeSet update = createRangeSet(0, 10) ;
+        orig.subtract(update) ;
+        checkRange(orig, 11, 15) ;
+    }
+
+    public void testSetSubtract5()
+    {
+        final RangeSet orig = createRangeSet(3, 10) ;
+        final RangeSet update = createRangeSet(0, 10) ;
+        orig.subtract(update) ;
+        checkRange(orig) ;
+    }
+
+    public void testSetSubtract6()
+    {
+        final RangeSet orig = createRangeSet(3, 10) ;
+        final RangeSet update = createRangeSet(0, 15) ;
+        orig.subtract(update) ;
+        checkRange(orig) ;
+    }
+
+    public void testSetSubtract7()
+    {
+        final RangeSet orig = createRangeSet(0, 10) ;
+        final RangeSet update = createRangeSet(0, 15) ;
+        orig.subtract(update) ;
+        checkRange(orig) ;
+    }
+
+    public void testSetSubtract8()
+    {
+        final RangeSet orig = createRangeSet(0, 15) ;
+        final RangeSet update = createRangeSet(0, 10) ;
+        orig.subtract(update) ;
+        checkRange(orig, 11, 15) ;
+    }
+
+    public void testSetSubtract9()
+    {
+        final RangeSet orig = createRangeSet(0, 15, 20, 30) ;
+        final RangeSet update = createRangeSet(2, 3, 5, 6, 8, 9, 22, 23, 27, 28) ;
+        orig.subtract(update) ;
+        checkRange(orig, 0, 1, 4, 4, 7, 7, 10, 15, 20, 21, 24, 26, 29, 30) ;
+    }
+
+    public void testSetSubtract10()
+    {
+        final RangeSet orig = createRangeSet(0, 15, 20, 30) ;
+        final RangeSet update = createRangeSet(0, 2, 4, 6, 10, 22, 24, 24, 27, 30) ;
+        orig.subtract(update) ;
+        checkRange(orig, 3, 3, 7, 9, 23, 23, 25, 26) ;
+    }
+
+    public void testSetSubtract11()
+    {
+        final RangeSet orig = createRangeSet(0, 2, 4, 6, 10, 22, 24, 24, 27, 30) ;
+        final RangeSet update = createRangeSet(0, 2, 4, 6, 10, 22, 24, 24, 27, 30) ;
+        orig.subtract(update) ;
+        checkRange(orig) ;
+    }
+    
+    private RangeSet createRangeSet(int ... bounds)
+    {
+        RangeSet set = RangeSetFactory.createRangeSet();
+        final int length = (bounds == null ? 0 : bounds.length) ;
+        int count = 0 ;
+        while(count < length)
+        {
+            set.add(bounds[count++], bounds[count++]) ;
+        }
+        return set ;
+    }
+    
+    private void checkRange(final RangeSet rangeSet, int ... bounds)
+    {
+        final int length = (bounds == null ? 0 : bounds.length) ;
+        assertEquals("Range count", length/2, rangeSet.size()) ;
+        final Iterator<Range> iter = rangeSet.iterator() ;
+        int count = 0 ;
+        while(count < length)
+        {
+            final Range range = iter.next() ;
+            assertEquals("Range lower", bounds[count++], range.getLower()) ;
+            assertEquals("Range upper", bounds[count++], range.getUpper()) ;
+        }
+    }
 }

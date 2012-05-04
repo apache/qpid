@@ -23,6 +23,7 @@
  */
 
 #include <map>
+#include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/Bridge.h"
 #include "qpid/broker/MessageStore.h"
 #include "qpid/Address.h"
@@ -56,43 +57,50 @@ namespace broker {
         static std::string createKey(const Address& address);
         static std::string createKey(const std::string& host, uint16_t port);
 
+        // Methods called by the connection observer.
+        void notifyConnection (const std::string& key, Connection* c);
+        void notifyOpened     (const std::string& key);
+        void notifyClosed     (const std::string& key);
+        void notifyConnectionForced    (const std::string& key, const std::string& text);
+      friend class LinkRegistryConnectionObserver;
+
     public:
-        LinkRegistry (); // Only used in store tests
-        LinkRegistry (Broker* _broker);
-        ~LinkRegistry();
+        QPID_BROKER_EXTERN LinkRegistry (); // Only used in store tests
+        QPID_BROKER_EXTERN LinkRegistry (Broker* _broker);
+        QPID_BROKER_EXTERN ~LinkRegistry();
 
-        std::pair<boost::shared_ptr<Link>, bool>
-            declare(const std::string& host,
-                    uint16_t     port,
-                    const std::string& transport,
-                    bool         durable,
-                    const std::string& authMechanism,
-                    const std::string& username,
-                    const std::string& password);
+        QPID_BROKER_EXTERN std::pair<boost::shared_ptr<Link>, bool>
+        declare(const std::string& host,
+                uint16_t     port,
+                const std::string& transport,
+                bool         durable,
+                const std::string& authMechanism,
+                const std::string& username,
+                const std::string& password);
 
-        std::pair<Bridge::shared_ptr, bool>
-            declare(const std::string& host,
-                    uint16_t     port,
-                    bool         durable,
-                    const std::string& src,
-                    const std::string& dest,
-                    const std::string& key,
-                    bool         isQueue,
-                    bool         isLocal,
-                    const std::string& id,
-                    const std::string& excludes,
-                    bool         dynamic,
-                    uint16_t     sync,
-                    Bridge::InitializeCallback=0
-            );
+        QPID_BROKER_EXTERN std::pair<Bridge::shared_ptr, bool>
+        declare(const std::string& host,
+                uint16_t     port,
+                bool         durable,
+                const std::string& src,
+                const std::string& dest,
+                const std::string& key,
+                bool         isQueue,
+                bool         isLocal,
+                const std::string& id,
+                const std::string& excludes,
+                bool         dynamic,
+                uint16_t     sync,
+                Bridge::InitializeCallback=0
+        );
 
-        void destroy(const std::string& host, const uint16_t port);
+        QPID_BROKER_EXTERN void destroy(const std::string& host, const uint16_t port);
 
-        void destroy(const std::string& host,
-                     const uint16_t     port,
-                     const std::string& src,
-                     const std::string& dest,
-                     const std::string& key);
+        QPID_BROKER_EXTERN void destroy(const std::string& host,
+                                        const uint16_t     port,
+                                        const std::string& src,
+                                        const std::string& dest,
+                                        const std::string& key);
 
         /**
          * Register the manageable parent for declared queues
@@ -102,24 +110,20 @@ namespace broker {
         /**
          * Set the store to use.  May only be called once.
          */
-        void setStore (MessageStore*);
+        QPID_BROKER_EXTERN void setStore (MessageStore*);
 
         /**
          * Return the message store used.
          */
-        MessageStore* getStore() const;
+        QPID_BROKER_EXTERN MessageStore* getStore() const;
 
-        void notifyConnection (const std::string& key, Connection* c);
-        void notifyOpened     (const std::string& key);
-        void notifyClosed     (const std::string& key);
-        void notifyConnectionForced    (const std::string& key, const std::string& text);
-        std::string getAuthMechanism   (const std::string& key);
-        std::string getAuthCredentials (const std::string& key);
-        std::string getAuthIdentity    (const std::string& key);
-        std::string getUsername        (const std::string& key);
-        std::string getPassword        (const std::string& key);
-        std::string getHost            (const std::string& key);
-        uint16_t    getPort            (const std::string& key);
+        QPID_BROKER_EXTERN std::string getAuthMechanism   (const std::string& key);
+        QPID_BROKER_EXTERN std::string getAuthCredentials (const std::string& key);
+        QPID_BROKER_EXTERN std::string getAuthIdentity    (const std::string& key);
+        QPID_BROKER_EXTERN std::string getUsername        (const std::string& key);
+        QPID_BROKER_EXTERN std::string getPassword        (const std::string& key);
+        QPID_BROKER_EXTERN std::string getHost            (const std::string& key);
+        QPID_BROKER_EXTERN uint16_t    getPort            (const std::string& key);
 
         /**
          * Called by links failing over to new address
@@ -132,13 +136,13 @@ namespace broker {
          * updated but links won't actually establish connections and
          * bridges won't therefore pull or push any messages.
          */
-        void setPassive(bool);
-        bool isPassive() { return passive; }
+        QPID_BROKER_EXTERN void setPassive(bool);
+        QPID_BROKER_EXTERN bool isPassive() { return passive; }
 
         /** Iterate over each link in the registry. Used for cluster updates. */
-        void eachLink(boost::function<void(boost::shared_ptr<Link>)> f);
+        QPID_BROKER_EXTERN void eachLink(boost::function<void(boost::shared_ptr<Link>)> f);
         /** Iterate over each bridge in the registry. Used for cluster updates. */
-        void eachBridge(boost::function<void(boost::shared_ptr< Bridge>)> f);
+        QPID_BROKER_EXTERN void eachBridge(boost::function<void(boost::shared_ptr< Bridge>)> f);
     };
 }
 }

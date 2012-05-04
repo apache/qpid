@@ -32,7 +32,9 @@
 #include "qpid/sys/ExceptionHolder.h"
 #include <stdexcept>
 
-using namespace qpid::broker;
+namespace qpid {
+namespace broker {
+
 using namespace qpid::framing;
 using qpid::framing::Buffer;
 using qpid::framing::FieldTable;
@@ -135,20 +137,23 @@ void Exchange::doRoute(Deliverable& msg, ConstBindingList b)
 
     if (mgmtExchange != 0)
     {
-        mgmtExchange->inc_msgReceives  ();
-        mgmtExchange->inc_byteReceives (msg.contentSize ());
+        qmf::org::apache::qpid::broker::Exchange::PerThreadStats *eStats = mgmtExchange->getStatistics();
+        uint64_t contentSize = msg.contentSize();
+
+        eStats->msgReceives += 1;
+        eStats->byteReceives += contentSize;
         if (count == 0)
         {
             //QPID_LOG(warning, "Exchange " << getName() << " could not route message; no matching binding found");
-            mgmtExchange->inc_msgDrops  ();
-            mgmtExchange->inc_byteDrops (msg.contentSize ());
+            eStats->msgDrops += 1;
+            eStats->byteDrops += contentSize;
             if (brokerMgmtObject)
                 brokerMgmtObject->inc_discardsNoRoute();
         }
         else
         {
-            mgmtExchange->inc_msgRoutes  (count);
-            mgmtExchange->inc_byteRoutes (count * msg.contentSize ());
+            eStats->msgRoutes += count;
+            eStats->byteRoutes += count * contentSize;
         }
     }
 }
@@ -156,7 +161,7 @@ void Exchange::doRoute(Deliverable& msg, ConstBindingList b)
 void Exchange::routeIVE(){
     if (ive && lastMsg.get()){
         DeliverableMessage dmsg(lastMsg);
-        route(dmsg, lastMsg->getRoutingKey(), lastMsg->getApplicationHeaders());
+        route(dmsg);
     }
 }
 
@@ -399,9 +404,12 @@ void Exchange::setProperties(const boost::intrusive_ptr<Message>& msg) {
 
 bool Exchange::routeWithAlternate(Deliverable& msg)
 {
-    route(msg, msg.getMessage().getRoutingKey(), msg.getMessage().getApplicationHeaders());
+    route(msg);
     if (!msg.delivered && alternate) {
-        alternate->route(msg, msg.getMessage().getRoutingKey(), msg.getMessage().getApplicationHeaders());
+        alternate->route(msg);
     }
     return msg.delivered;
 }
+
+}}
+

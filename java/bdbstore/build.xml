@@ -18,7 +18,7 @@
  -->
 <project name="bdbstore" default="build">
     <property name="module.depends" value="common broker" />
-    <property name="module.test.depends" value="test client common/test broker/test management/common perftests systests" />
+    <property name="module.test.depends" value="test client common/test broker/test management/common systests" />
     <property name="module.genpom" value="true"/>
 
     <import file="../module.xml" />
@@ -80,5 +80,12 @@ http://www.oracle.com/technetwork/database/berkeleydb/downloads/jeoslicense-0868
       <copy todir="${qpid.home}" failonerror="true">
         <fileset dir="src/test/resources/upgrade"/>
       </copy>
+    </target>
+
+    <target name="precompile-tests">
+        <mkdir dir="${module.test.resources}"/>
+        <copy todir="${module.test.resources}">
+            <fileset dir="src/test/resources"/>
+        </copy>
     </target>
 </project>

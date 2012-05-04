@@ -20,19 +20,36 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
+import javax.jms.Connection;
+import javax.jms.DeliveryMode;
+import javax.jms.Destination;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.Session;
+import javax.jms.Topic;
+import javax.jms.TopicConnection;
+import javax.jms.TopicPublisher;
+import javax.jms.TopicSession;
+import javax.jms.TopicSubscriber;
+
 import org.apache.qpid.client.AMQConnectionFactory;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.url.URLSyntaxException;
 
-import javax.jms.*;
-
 /**
- * Prepares an older version brokers BDB store with the required 
+ * Prepares an older version brokers BDB store with the required
  * contents for use in the BDBStoreUpgradeTest.
  *
  * NOTE: Must be used with the equivalent older version client!
  *
- * The store will then be used to verify that the upgraded is 
- * completed properly and that once upgraded it functions as 
+ * The store will then be used to verify that the upgraded is
+ * completed properly and that once upgraded it functions as
  * expected with the new broker.
  *
  */
@@ -43,9 +60,10 @@ public class BDBStoreUpgradeTestPreparer
     public static final String SELECTOR_SUB_NAME="mySelectorDurSubName";
     public static final String SELECTOR_TOPIC_NAME="mySelectorUpgradeTopic";
     public static final String QUEUE_NAME="myUpgradeQueue";
+    public static final String NON_DURABLE_QUEUE_NAME="queue-non-durable";
 
     private static AMQConnectionFactory _connFac;
-    private static final String CONN_URL = 
+    private static final String CONN_URL =
         "amqp://guest:guest@clientid/test?brokerlist='tcp://localhost:5672'";
 
     /**
@@ -59,14 +77,28 @@ public class BDBStoreUpgradeTestPreparer
     private void prepareBroker() throws Exception
     {
         prepareQueues();
+        prepareNonDurableQueue();
         prepareDurableSubscriptionWithSelector();
         prepareDurableSubscriptionWithoutSelector();
+    }
+
+    private void prepareNonDurableQueue() throws Exception
+    {
+        Connection connection = _connFac.createConnection();
+        AMQSession<?, ?> session = (AMQSession<?,?>)connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        AMQShortString queueName = AMQShortString.valueOf(NON_DURABLE_QUEUE_NAME);
+        AMQDestination destination = (AMQDestination) session.createQueue(NON_DURABLE_QUEUE_NAME);
+        session.sendCreateQueue(queueName, false, false, false, null);
+        session.bindQueue(queueName, queueName, null, AMQShortString.valueOf("amq.direct"), destination);
+        MessageProducer messageProducer = session.createProducer(destination);
+        sendMessages(session, messageProducer, destination, DeliveryMode.PERSISTENT, 1024, 3);
+        connection.close();
     }
 
     /**
      * Prepare a queue for use in testing message and binding recovery
      * after the upgrade is performed.
-     * 
+     *
      * - Create a transacted session on the connection.
      * - Use a consumer to create the (durable by default) queue.
      * - Send 5 large messages to test (multi-frame) content recovery.
@@ -74,7 +106,7 @@ public class BDBStoreUpgradeTestPreparer
      * - Commit the session.
      * - Send 5 small messages to test that uncommitted messages are not recovered.
      *   following the upgrade.
-     * - Close the session.  
+     * - Close the session.
      */
     private void prepareQueues() throws Exception
     {
@@ -114,9 +146,9 @@ public class BDBStoreUpgradeTestPreparer
     }
 
     /**
-     * Prepare a DurableSubscription backing queue for use in testing selector 
+     * Prepare a DurableSubscription backing queue for use in testing selector
      * recovery and queue exclusivity marking during the upgrade process.
-     * 
+     *
      * - Create a transacted session on the connection.
      * - Open and close a DurableSubscription with selector to create the backing queue.
      * - Send a message which matches the selector.
@@ -145,7 +177,7 @@ public class BDBStoreUpgradeTestPreparer
         TopicSubscriber durSub1 = session.createDurableSubscriber(topic, SELECTOR_SUB_NAME,"testprop='true'", false);
         durSub1.close();
 
-        // Create a publisher and send a persistent message which matches the selector 
+        // Create a publisher and send a persistent message which matches the selector
         // followed by one that does not match, and another which matches but is not
         // committed and so should be 'lost'
         TopicSession pubSession = connection.createTopicSession(true, Session.SESSION_TRANSACTED);
@@ -202,7 +234,7 @@ public class BDBStoreUpgradeTestPreparer
         connection.close();
     }
 
-    public static void sendMessages(Session session, MessageProducer messageProducer, 
+    public static void sendMessages(Session session, MessageProducer messageProducer,
             Destination dest, int deliveryMode, int length, int numMesages) throws JMSException
     {
         for (int i = 1; i <= numMesages; i++)
@@ -213,7 +245,7 @@ public class BDBStoreUpgradeTestPreparer
         }
     }
 
-    public static void publishMessages(Session session, TopicPublisher publisher, 
+    public static void publishMessages(Session session, TopicPublisher publisher,
             Destination dest, int deliveryMode, int length, int numMesages, String selectorProperty) throws JMSException
     {
         for (int i = 1; i <= numMesages; i++)
@@ -227,8 +259,8 @@ public class BDBStoreUpgradeTestPreparer
 
     /**
      * Generates a string of a given length consisting of the sequence 0,1,2,..,9,0,1,2.
-     * 
-     * @param length number of characters in the string 
+     *
+     * @param length number of characters in the string
      * @return string sequence of the given length
      */
     public static String generateString(int length)
@@ -248,6 +280,7 @@ public class BDBStoreUpgradeTestPreparer
      */
     public static void main(String[] args) throws Exception
     {
+        System.setProperty("qpid.dest_syntax", "BURL");
         BDBStoreUpgradeTestPreparer producer = new BDBStoreUpgradeTestPreparer();
         producer.prepareBroker();
     }

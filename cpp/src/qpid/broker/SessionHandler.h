@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -25,6 +25,7 @@
 #include "qpid/amqp_0_10/SessionHandler.h"
 #include "qpid/broker/SessionHandler.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
+#include <boost/function.hpp>
 
 namespace qpid {
 class SessionState;
@@ -61,7 +62,7 @@ class SessionHandler : public amqp_0_10::SessionHandler {
      * This proxy is for sending such commands. In a clustered broker it will take steps
      * to synchronize command order across the cluster. In a stand-alone broker
      * it is just a synonym for getProxy()
-     */  
+     */
     framing::AMQP_ClientProxy& getClusterOrderProxy() {
         return clusterOrderProxy.get() ? *clusterOrderProxy : proxy;
     }
@@ -69,6 +70,8 @@ class SessionHandler : public amqp_0_10::SessionHandler {
     virtual void handleDetach();
     void attached(const std::string& name);//used by 'pushing' inter-broker bridges
     void attachAs(const std::string& name);//used by 'pulling' inter-broker bridges
+
+    void setDetachedCallback(boost::function<void()> cb);
 
   protected:
     virtual void setState(const std::string& sessionName, bool force);
@@ -91,6 +94,7 @@ class SessionHandler : public amqp_0_10::SessionHandler {
     framing::AMQP_ClientProxy proxy;
     std::auto_ptr<SessionState> session;
     std::auto_ptr<SetChannelProxy> clusterOrderProxy;
+    boost::function<void ()> detachedCallback;
 };
 
 }} // namespace qpid::broker

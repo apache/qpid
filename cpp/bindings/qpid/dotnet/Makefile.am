@@ -80,7 +80,6 @@ EXTRA_DIST = configure-windows.ps1 \
    examples/msvc9/csharp.map.callback.sender/csharp.map.callback.sender.csproj \
    examples/msvc9/csharp.map.receiver/csharp.map.receiver.csproj \
    examples/msvc9/csharp.map.sender/csharp.map.sender.csproj \
-   extra_dist.txt \
    Makefile.am \
    msvc10/org.apache.qpid.messaging.sessionreceiver.sln \
    msvc10/org.apache.qpid.messaging.sln \
@@ -93,7 +92,6 @@ EXTRA_DIST = configure-windows.ps1 \
    src/AssemblyInfo.cpp \
    src/Connection.cpp \
    src/Connection.h \
-   src/Duration.cpp \
    src/Duration.h \
    src/FailoverUpdates.cpp \
    src/FailoverUpdates.h \

@@ -26,6 +26,7 @@
 #include "qpid/broker/DtxWorkRecord.h"
 #include "qpid/broker/TransactionalStore.h"
 #include "qpid/framing/amqp_types.h"
+#include "qpid/framing/Xid.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/ptr_map.h"
 
@@ -74,6 +75,8 @@ public:
     }
     DtxWorkRecord* getWork(const std::string& xid);
     bool exists(const std::string& xid);
+    static std::string convert(const framing::Xid& xid);
+    static framing::Xid convert(const std::string& xid);
 };
 
 }

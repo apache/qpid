@@ -200,6 +200,8 @@ class Connection :
                               const std::string& instance);
 
     void config(const std::string& encoded);
+    void internalState(const std::string& type, const std::string& name,
+                       const framing::FieldTable& state);
 
     void setSecureConnection ( broker::SecureConnection * sc );
 

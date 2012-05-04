@@ -32,7 +32,7 @@ class MethodContent
 public:
     virtual ~MethodContent() {}
     //TODO: rethink this interface
-    virtual AMQHeaderBody getHeader() const = 0;
+    virtual const AMQHeaderBody& getHeader() const = 0;
     virtual const std::string& getData() const = 0;
 };
 

@@ -48,9 +48,12 @@ public class FieldTableSupport
     public static Map<String,Object> convertToMap(FieldTable ft)
     {
         Map<String,Object> map = new HashMap<String,Object>();
-        for (AMQShortString key: ft.keySet() )
+        if(ft != null)
         {
-            map.put(key.asString(), ft.getObject(key));
+            for (AMQShortString key: ft.keySet() )
+            {
+                map.put(key.asString(), ft.getObject(key));
+            }
         }
 
         return map;

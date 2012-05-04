@@ -48,7 +48,7 @@ QPID_AUTO_TEST_CASE(testUuidCtor) {
     for_each(uuids.begin(), uuids.end(), unique);
 }
 
-boost::array<uint8_t, 16>  sample =  {{'\x1b', '\x4e', '\x28', '\xba', '\x2f', '\xa1', '\x11', '\xd2', '\x88', '\x3f', '\xb9', '\xa7', '\x61', '\xbd', '\xe3', '\xfb'}};
+boost::array<uint8_t, 16>  sample =  {{0x1b, 0x4e, 0x28, 0xba, 0x2f, 0xa1, 0x11, 0xd2, 0x88, 0x3f, 0xb9, 0xa7, 0x61, 0xbd, 0xe3, 0xfb}};
 const string sampleStr("1b4e28ba-2fa1-11d2-883f-b9a761bde3fb");
 const string zeroStr("00000000-0000-0000-0000-000000000000");
 

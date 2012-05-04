@@ -62,7 +62,7 @@ Bridge::Bridge(Link* _link, framing::ChannelId _id, CancellationListener l,
                InitializeCallback init) :
     link(_link), id(_id), args(_args), mgmtObject(0),
     listener(l), name(Uuid(true).str()), queueName("qpid.bridge_queue_"), persistenceId(0),
-    initialize(init)
+    initialize(init), detached(false)
 {
     std::stringstream title;
     title << id << "_" << name;
@@ -85,11 +85,14 @@ Bridge::~Bridge()
 
 void Bridge::create(Connection& c)
 {
+    detached = false;           // Reset detached in case we are recovering.
     connState = &c;
     conn = &c;
     FieldTable options;
     if (args.i_sync) options.setInt("qpid.sync_frequency", args.i_sync);
     SessionHandler& sessionHandler = c.getChannel(id);
+    sessionHandler.setDetachedCallback(
+        boost::bind(&Bridge::sessionDetached, shared_from_this()));
     if (args.i_srcIsLocal) {
         if (args.i_dynamic)
             throw Exception("Dynamic routing not supported for push routes");
@@ -177,12 +180,6 @@ void Bridge::closed()
 void Bridge::destroy()
 {
     listener(this);
-}
-
-bool Bridge::isSessionReady() const
-{
-    SessionHandler& sessionHandler = conn->getChannel(id);
-    return sessionHandler.ready();
 }
 
 void Bridge::setPersistenceId(uint64_t pId) const
@@ -334,6 +331,10 @@ bool Bridge::containsLocalTag(const string& tagList) const
 const string& Bridge::getLocalTag() const
 {
     return link->getBroker()->getFederationTag();
+}
+
+void Bridge::sessionDetached() {
+    detached = true;
 }
 
 }}

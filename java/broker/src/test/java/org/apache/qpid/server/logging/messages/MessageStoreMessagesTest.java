@@ -29,12 +29,10 @@ public class MessageStoreMessagesTest extends AbstractTestMessages
 {
     public void testMessageStoreCreated()
     {
-        String name = "DerbyMessageStore";
-
-        _logMessage = MessageStoreMessages.CREATED(name);
+        _logMessage = MessageStoreMessages.CREATED();
         List<Object> log = performLog();
 
-        String[] expected = {"Created :", name};
+        String[] expected = {"Created"};
 
         validateLogMessage(log, "MST-1001", expected);
     }
@@ -70,56 +68,4 @@ public class MessageStoreMessagesTest extends AbstractTestMessages
 
         validateLogMessage(log, "MST-1004", expected);
     }
-/*
-    public void testMessageStoreRecoveryStart_withQueue()
-    {
-        String queueName = "testQueue";
-
-        _logMessage = MessageStoreMessages.RECOVERY_START(queueName, true);
-        List<Object> log = performLog();
-
-        String[] expected = {"Recovery Start :", queueName};
-
-        validateLogMessage(log, "MST-1004", expected);
-    }
-
-    public void testMessageStoreRecovered()
-    {
-        String queueName = "testQueue";
-        Integer messasgeCount = 2000;
-
-        _logMessage = MessageStoreMessages.MST_RECOVERED(messasgeCount, queueName);
-        List<Object> log = performLog();
-
-        // Here we use MessageFormat to ensure the messasgeCount of 2000 is
-        // reformated for display as '2,000'
-        String[] expected = {"Recovered ",
-                             MessageFormat.format("{0,number}", messasgeCount),
-                             "messages for queue", queueName};
-
-        validateLogMessage(log, "MST-1005", expected);
-    }
-
-    public void testMessageStoreRecoveryComplete()
-    {
-        _logMessage = MessageStoreMessages.MST_RECOVERY_COMPLETE(null,false);
-        List<Object> log = performLog();
-
-        String[] expected = {"Recovery Complete"};
-
-        validateLogMessage(log, "MST-1006", expected);
-    }
-
-    public void testMessageStoreRecoveryComplete_withQueue()
-    {
-        String queueName = "testQueue";
-
-        _logMessage = MessageStoreMessages.MST_RECOVERY_COMPLETE(queueName, true);
-        List<Object> log = performLog();
-
-        String[] expected = {"Recovery Complete :", queueName};
-
-        validateLogMessage(log, "MST-1006", expected);
-    }
-    */
 }

@@ -199,6 +199,10 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         // possible to determine  when querying the broker whether there are no arguments or just a non-matching selector
         // argument, as specifying null for the arguments when querying means they should not be checked at all
         ft.put(AMQPFilterTypes.JMS_SELECTOR.getValue(), messageSelector == null ? "" : messageSelector);
+        if(noLocal)
+        {
+            ft.put(AMQPFilterTypes.NO_LOCAL.getValue(), noLocal);
+        }
 
         _arguments = ft;
 
@@ -275,7 +279,10 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
                 throw new javax.jms.IllegalStateException("Attempt to alter listener while session is started.");
             }
 
-            _logger.debug("Message listener set for destination " + _destination);
+            if (_logger.isDebugEnabled())
+            {
+            	_logger.debug("Message listener set for destination " + _destination);
+            }
 
             if (messageListener != null)
             {
@@ -553,9 +560,9 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
 
     public void close(boolean sendClose) throws JMSException
     {
-        if (_logger.isInfoEnabled())
+        if (_logger.isDebugEnabled())
         {
-            _logger.info("Closing consumer:" + debugIdentity());
+            _logger.debug("Closing consumer:" + debugIdentity());
         }
 
         if (!setClosed())
@@ -586,7 +593,10 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
                         // no point otherwise as the connection will be gone
                         if (!_session.isClosed() || _session.isClosing())
                         {
-                            sendCancel();
+                            synchronized(_session.getMessageDeliveryLock())
+                            {
+                                sendCancel();
+                            }
                             cleanupQueue();
                         }
                     }

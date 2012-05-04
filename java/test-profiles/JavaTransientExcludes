@@ -24,6 +24,13 @@ org.apache.qpid.test.unit.ack.ClientAcknowledgeTest#testClientAckWithLargeFlushe
 
 org.apache.qpid.test.unit.ct.DurableSubscriberTest#*
 
+org.apache.qpid.test.unit.xa.QueueTest#testRecover
+org.apache.qpid.test.unit.xa.QueueTest#testSendAndRecover
+org.apache.qpid.test.unit.xa.TopicTest#testMultiMessagesDurSubCrash
+org.apache.qpid.test.unit.xa.TopicTest#testDurSubCrash
+org.apache.qpid.test.unit.xa.TopicTest#testRecover
+
+
 org.apache.qpid.server.store.MessageStoreTest#testMessagePersistence
 org.apache.qpid.server.store.MessageStoreTest#testMessageRemoval
 org.apache.qpid.server.store.MessageStoreTest#testBindingPersistence
@@ -33,6 +40,6 @@ org.apache.qpid.server.store.MessageStoreTest#testDurableQueueRemoval
 org.apache.qpid.server.store.MessageStoreTest#testExchangePersistence
 org.apache.qpid.server.store.MessageStoreTest#testDurableExchangeRemoval
 
-org.apache.qpid.server.store.berkeleydb.BDBMessageStoreTest#*
-org.apache.qpid.server.store.berkeleydb.BDBUpgradeTest#*
-org.apache.qpid.server.store.berkeleydb.BDBBackupTest#*
+org.apache.qpid.server.store.berkeleydb.*
+
+org.apache.qpid.server.store.DurableConfigurationStoreTest#*

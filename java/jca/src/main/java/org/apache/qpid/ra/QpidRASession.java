@@ -30,4 +30,6 @@ public interface QpidRASession
     public void start() throws JMSException;
 
     public void close() throws JMSException;
+
+    public void closeSession() throws JMSException;
 }

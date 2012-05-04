@@ -60,10 +60,10 @@ QPID_AUTO_TEST_CASE(testMe)
     queue.reset();
     queue2.reset();
 
-    intrusive_ptr<Message> msgPtr(MessageUtils::createMessage("exchange", "key", false, "id"));
+    intrusive_ptr<Message> msgPtr(MessageUtils::createMessage("exchange", "abc", false, "id"));
     DeliverableMessage msg(msgPtr);
-    topic.route(msg, "abc", 0);
-    direct.route(msg, "abc", 0);
+    topic.route(msg);
+    direct.route(msg);
 
 }
 
@@ -187,17 +187,17 @@ QPID_AUTO_TEST_CASE(testSequenceOptions)
     {
         DirectExchange direct("direct1", false, args);
 
-        intrusive_ptr<Message> msg1 = cmessage("e", "A");
-        intrusive_ptr<Message> msg2 = cmessage("e", "B");
-        intrusive_ptr<Message> msg3 = cmessage("e", "C");
+        intrusive_ptr<Message> msg1 = cmessage("e", "abc");
+        intrusive_ptr<Message> msg2 = cmessage("e", "abc");
+        intrusive_ptr<Message> msg3 = cmessage("e", "abc");
 
         DeliverableMessage dmsg1(msg1);
         DeliverableMessage dmsg2(msg2);
         DeliverableMessage dmsg3(msg3);
 
-        direct.route(dmsg1, "abc", 0);
-        direct.route(dmsg2, "abc", 0);
-        direct.route(dmsg3, "abc", 0);
+        direct.route(dmsg1);
+        direct.route(dmsg2);
+        direct.route(dmsg3);
 
         BOOST_CHECK_EQUAL(1, msg1->getApplicationHeaders()->getAsInt64("qpid.msg_sequence"));
         BOOST_CHECK_EQUAL(2, msg2->getApplicationHeaders()->getAsInt64("qpid.msg_sequence"));
@@ -208,22 +208,24 @@ QPID_AUTO_TEST_CASE(testSequenceOptions)
         TopicExchange topic ("topic1", false, args);
 
         // check other exchanges, that they preroute
-        intrusive_ptr<Message> msg4 = cmessage("e", "A");
-        intrusive_ptr<Message> msg5 = cmessage("e", "B");
-        intrusive_ptr<Message> msg6 = cmessage("e", "C");
+        intrusive_ptr<Message> msg4 = cmessage("e", "abc");
+        intrusive_ptr<Message> msg5 = cmessage("e", "abc");
+
+        // Need at least empty header for the HeadersExchange to route at all
+        msg5->insertCustomProperty("", "");
+        intrusive_ptr<Message> msg6 = cmessage("e", "abc");
 
         DeliverableMessage dmsg4(msg4);
         DeliverableMessage dmsg5(msg5);
         DeliverableMessage dmsg6(msg6);
 
-        fanout.route(dmsg4, "abc", 0);
+        fanout.route(dmsg4);
         BOOST_CHECK_EQUAL(1, msg4->getApplicationHeaders()->getAsInt64("qpid.msg_sequence"));
 
-        FieldTable headers;
-        header.route(dmsg5, "abc", &headers);
+        header.route(dmsg5);
         BOOST_CHECK_EQUAL(1, msg5->getApplicationHeaders()->getAsInt64("qpid.msg_sequence"));
 
-        topic.route(dmsg6, "abc", 0);
+        topic.route(dmsg6);
         BOOST_CHECK_EQUAL(1, msg6->getApplicationHeaders()->getAsInt64("qpid.msg_sequence"));
         direct.encode(buffer);
     }
@@ -233,9 +235,9 @@ QPID_AUTO_TEST_CASE(testSequenceOptions)
         buffer.reset();
         DirectExchange::shared_ptr exch_dec = Exchange::decode(exchanges, buffer);
 
-        intrusive_ptr<Message> msg1 = cmessage("e", "A");
+        intrusive_ptr<Message> msg1 = cmessage("e", "abc");
         DeliverableMessage dmsg1(msg1);
-        exch_dec->route(dmsg1, "abc", 0);
+        exch_dec->route(dmsg1);
 
         BOOST_CHECK_EQUAL(4, msg1->getApplicationHeaders()->getAsInt64("qpid.msg_sequence"));
 
@@ -260,10 +262,10 @@ QPID_AUTO_TEST_CASE(testIVEOption)
     args2.setString("x-match", "any");
     args2.setString("a", "abc");
 
-    direct.route(dmsg1, "abc", 0);
-    fanout.route(dmsg1, "abc", 0);
-    header.route(dmsg1, "abc", &args2);
-    topic.route(dmsg1, "abc", 0);
+    direct.route(dmsg1);
+    fanout.route(dmsg1);
+    header.route(dmsg1);
+    topic.route(dmsg1);
     Queue::shared_ptr queue(new Queue("queue", true));
     Queue::shared_ptr queue1(new Queue("queue1", true));
     Queue::shared_ptr queue2(new Queue("queue2", true));

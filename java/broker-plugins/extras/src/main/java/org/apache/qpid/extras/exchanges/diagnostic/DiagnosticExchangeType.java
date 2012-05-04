@@ -21,6 +21,8 @@
 
 package org.apache.qpid.extras.exchanges.diagnostic;
 
+import java.util.UUID;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.ExchangeType;
@@ -42,11 +44,11 @@ public final class DiagnosticExchangeType implements ExchangeType<DiagnosticExch
         return DiagnosticExchange.class;
     }
 
-    public DiagnosticExchange newInstance(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete)
+    public DiagnosticExchange newInstance(UUID id, VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete)
             throws AMQException
     {
         DiagnosticExchange exch = new DiagnosticExchange();
-        exch.initialise(host, name, durable, ticket, autoDelete);
+        exch.initialise(id, host, name, durable, ticket, autoDelete);
         return exch;
     }
 

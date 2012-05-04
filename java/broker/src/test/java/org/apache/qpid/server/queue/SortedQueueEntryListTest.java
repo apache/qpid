@@ -77,9 +77,23 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase
 
     }
 
+    @Override
     public QueueEntryList getTestList()
     {
-        return _sqel;
+        return getTestList(false);
+    }
+
+    @Override
+    public QueueEntryList getTestList(boolean newList)
+    {
+        if(newList)
+        {
+            return new SelfValidatingSortedQueueEntryList(_testQueue, "KEY");
+        }
+        else
+        {
+            return _sqel;
+        }
     }
 
     public int getExpectedListLength()

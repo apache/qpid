@@ -365,12 +365,12 @@ public class QpidRAManagedConnectionFactory implements ManagedConnectionFactory,
       _mcfProperties.setSessionDefaultType(type);
    }
 
-   public String getClientID()
+   public String getClientId()
    {
       return _mcfProperties.getClientId();
    }
 
-   public void setClientID(final String clientID)
+   public void setClientId(final String clientID)
    {
       _mcfProperties.setClientId(clientID);
    }

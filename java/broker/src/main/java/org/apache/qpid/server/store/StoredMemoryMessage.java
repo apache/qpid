@@ -122,9 +122,9 @@ public class StoredMemoryMessage implements StoredMessage
         return buf;
     }
 
-    public MessageStore.StoreFuture flushToStore()
+    public StoreFuture flushToStore()
     {
-        return MessageStore.IMMEDIATE_FUTURE;
+        return StoreFuture.IMMEDIATE_FUTURE;
     }
 
 

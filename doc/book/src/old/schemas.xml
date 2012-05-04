@@ -1,0 +1,102 @@
+<?xml version="1.0"?>
+<!--
+
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+
+-->
+
+<locatingRules xmlns="http://thaiopensource.com/ns/locating-rules/1.0">
+  <uri resource="foo.xml" typeId="DocBook"/>
+  <uri resource="foo.xml" typeId="DocBook"/>
+  <uri resource="Programming-In-Apache-Qpid.xml" typeId="DocBook"/>
+  <uri resource="queue-state-replication.xml" typeId="DocBook"/>
+  <uri resource="AMQP-Messaging-Broker-Java-Book.xml" typeId="DocBook"/>
+  <uri resource="AMQP-Messaging-Broker-CPP-Book.xml" typeId="DocBook"/>
+  <uri resource="High-Level-API.xml" typeId="DocBook"/>
+  <uri resource="High-Level-API.xml" typeId="DocBook"/>
+  <uri resource="Java-JMS-Selector-Syntax.xml" typeId="DocBook"/>
+  <uri resource="ACL.xml" typeId="DocBook"/>
+  <uri resource="Add-New-Users.xml" typeId="DocBook"/>
+  <uri resource="AMQP-C++-Messaging-Client.xml" typeId="DocBook"/>
+  <uri resource="AMQP-Compatibility.xml" typeId="DocBook"/>
+  <uri resource="AMQP-Java-JMS-Messaging-Client.xml" typeId="DocBook"/>
+  <uri resource="AMQP-Messaging-Broker-CPP.xml" typeId="DocBook"/>
+  <uri resource="AMQP-Messaging-Broker-Java.xml" typeId="DocBook"/>
+  <uri resource="AMQP-.NET-Messaging-Client.xml" typeId="DocBook"/>
+  <uri resource="AMQP-Python-Messaging-Client.xml" typeId="DocBook"/>
+  <uri resource="AMQP-Ruby-Messaging-Client.xml" typeId="DocBook"/>
+  <uri resource="AMQP.xml" typeId="DocBook"/>
+  <uri resource="Binding-URL-Format.xml" typeId="DocBook"/>
+  <uri resource="Book-Info.xml" typeId="DocBook"/>
+  <uri resource="Book.xml" typeId="DocBook"/>
+  <uri resource="Broker-CPP.xml" typeId="DocBook"/>
+  <uri resource="Broker-Java.xml" typeId="DocBook"/>
+  <uri resource="Cheat-Sheet-for-configuring-Exchange-Options.xml" typeId="DocBook"/>
+  <uri resource="Cheat-Sheet-for-configuring-Queue-Options.xml" typeId="DocBook"/>
+  <uri resource="Clients.xml" typeId="DocBook"/>
+  <uri resource="Configure-ACLs.xml" typeId="DocBook"/>
+  <uri resource="Configure-Java-Qpid-to-use-a-SSL-connection.xml" typeId="DocBook"/>
+  <uri resource="Configure-Log4j-CompositeRolling-Appender.xml" typeId="DocBook"/>
+  <uri resource="Configure-the-Broker-via-config.xml.xml" typeId="DocBook"/>
+  <uri resource="Configure-the-Virtual-Hosts-via-virtualhosts.xml.xml" typeId="DocBook"/>
+  <uri resource="Configuring-Management-Users.xml" typeId="DocBook"/>
+  <uri resource="Configuring-Qpid-JMX-Management-Console.xml" typeId="DocBook"/>
+  <uri resource="Connection-URL-Format.xml" typeId="DocBook"/>
+  <uri resource="Debug-using-log4j.xml" typeId="DocBook"/>
+  <uri resource="Download.xml" typeId="DocBook"/>
+  <uri resource="Excel-AddIn.xml" typeId="DocBook"/>
+  <uri resource="FAQ.xml" typeId="DocBook"/>
+  <uri resource="foo.xml" typeId="DocBook"/>
+  <uri resource="f.xml" typeId="DocBook"/>
+  <uri resource="Getting-Started.xml" typeId="DocBook"/>
+  <uri resource="How-to-Tune-M3-Java-Broker-Performance.xml" typeId="DocBook"/>
+  <uri resource="How-to-Use-JNDI.xml" typeId="DocBook"/>
+  <uri resource="Introduction.xml" typeId="DocBook"/>
+  <uri resource="Java-Broker-Feature-Guide.xml" typeId="DocBook"/>
+  <uri resource="Java-Environment-Variables.xml" typeId="DocBook"/>
+  <uri resource="LVQ.xml" typeId="DocBook"/>
+  <uri resource="Management-Console-Security.xml" typeId="DocBook"/>
+  <uri resource="Management-Design-notes.xml" typeId="DocBook"/>
+  <uri resource="Managing-CPP-Broker.xml" typeId="DocBook"/>
+  <uri resource="MessageStore-Tool.xml" typeId="DocBook"/>
+  <uri resource="NET-User-Guide.xml" typeId="DocBook"/>
+  <uri resource="PythonBrokerTest.xml" typeId="DocBook"/>
+  <uri resource="QMan-Qpid-Management-bridge.xml" typeId="DocBook"/>
+  <uri resource="QMF-Python-Console-Tutorial.xml" typeId="DocBook"/>
+  <uri resource="Qpid-ACLs.xml" typeId="DocBook"/>
+  <uri resource="Qpid-Interoperability-Documentation.xml" typeId="DocBook"/>
+  <uri resource="Qpid-Java-Broker-Management-CLI.xml" typeId="DocBook"/>
+  <uri resource="Qpid-Java-Build-How-To.xml" typeId="DocBook"/>
+  <uri resource="Qpid-Java-FAQ.xml" typeId="DocBook"/>
+  <uri resource="Qpid-JMX-Management-Console-FAQ.xml" typeId="DocBook"/>
+  <uri resource="Qpid-JMX-Management-Console-User-Guide.xml" typeId="DocBook"/>
+  <uri resource="Qpid-JMX-Management-Console.xml" typeId="DocBook"/>
+  <uri resource="Qpid-Management-Features.xml" typeId="DocBook"/>
+  <uri resource="Qpid-Management-Framework.xml" typeId="DocBook"/>
+  <uri resource="Qpid-Troubleshooting-Guide.xml" typeId="DocBook"/>
+  <uri resource="queue-state-replication.xml" typeId="DocBook"/>
+  <uri resource="Running-CPP-Broker.xml" typeId="DocBook"/>
+  <uri resource="SASL-Compatibility.xml" typeId="DocBook"/>
+  <uri resource="SSL.xml" typeId="DocBook"/>
+  <uri resource="Active-Active-Cluster.xml" typeId="DocBook"/>
+  <uri resource="System-Properties.xml" typeId="DocBook"/>
+  <uri resource="Use-Priority-Queues.xml" typeId="DocBook"/>
+  <uri resource="Using-Broker-Federation.xml" typeId="DocBook"/>
+  <uri resource="Using-Qpid-with-other-JNDI-Providers.xml" typeId="DocBook"/>
+  <uri resource="WCF.xml" typeId="DocBook"/>
+</locatingRules>

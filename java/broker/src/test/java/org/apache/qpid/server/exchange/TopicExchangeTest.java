@@ -350,7 +350,7 @@ public class TopicExchangeTest extends InternalBrokerBaseCase
     private int routeMessage(final IncomingMessage message)
             throws AMQException
     {
-        MessageMetaData mmd = message.headersReceived();
+        MessageMetaData mmd = message.headersReceived(System.currentTimeMillis());
         message.setStoredMessage(_store.addMessage(mmd));
 
         message.enqueue(_exchange.route(message));

@@ -54,6 +54,7 @@ public:
 
     QPID_COMMON_EXTERN void getContent(std::string&) const;
     QPID_COMMON_EXTERN std::string getContent() const;
+    QPID_COMMON_EXTERN bool hasContent() const;
 
     bool isContentBearing() const;
 

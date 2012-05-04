@@ -26,8 +26,7 @@ if (!(Test-Path $PYTHON_DIR -pathType Container)) {
     exit 1
 }
 
-$PYTHON_TEST_DIR = "$srcdir\..\..\..\tests\src\py"
-$QMF_LIB = "$srcdir\..\..\..\extras\qmf\src\py"
+. .\test_env.ps1
 
 # Test runs from the tests directory but the broker executable is one level
 # up, and most likely in a subdirectory from there based on what build type.

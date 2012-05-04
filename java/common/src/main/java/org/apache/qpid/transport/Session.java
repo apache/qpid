@@ -161,7 +161,7 @@ public class Session extends SessionInvoker
         this.expiry = expiry;
     }
 
-    void setClose(boolean close)
+    protected void setClose(boolean close)
     {
         this.closing = close;
     }
@@ -513,20 +513,12 @@ public class Session extends SessionInvoker
 
     void knownComplete(RangeSet kc)
     {
-        synchronized (processedLock)
+        if (kc.size() > 0)
         {
-            RangeSet newProcessed = RangeSetFactory.createRangeSet();
-            for (Range pr : processed)
+            synchronized (processedLock)
             {
-                for (Range kr : kc)
-                {
-                    for (Range r : pr.subtract(kr))
-                    {
-                        newProcessed.add(r);
-                    }
-                }
+                processed.subtract(kc) ;
             }
-            this.processed = newProcessed;
         }
     }
 

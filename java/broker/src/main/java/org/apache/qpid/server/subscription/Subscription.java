@@ -54,15 +54,11 @@ public interface Subscription
 
     void setNoLocal(boolean noLocal);
 
-    AMQShortString getConsumerTag();
-
     long getSubscriptionID();
 
     boolean isSuspended();
 
     boolean hasInterest(QueueEntry msg);
-
-    boolean isAutoClose();
 
     boolean isClosed();
 
@@ -105,11 +101,11 @@ public interface Subscription
 
     boolean isActive();
 
-    void confirmAutoClose();
-
     public void set(String key, Object value);
 
     public Object get(String key);
 
     boolean isSessionTransactional();
+
+    void queueEmpty() throws AMQException;
 }

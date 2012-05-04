@@ -60,9 +60,9 @@ enum VariantType {
     VAR_UUID
 };
 
-std::string getTypeName(VariantType type);
+QPID_TYPES_EXTERN std::string getTypeName(VariantType type);
 
-bool isIntegerType(VariantType type);
+QPID_TYPES_EXTERN bool isIntegerType(VariantType type);
 
 class VariantImpl;
 

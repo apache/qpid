@@ -21,6 +21,11 @@
 package org.apache.qpid.server.transport;
 
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CHANNEL_FORMAT;
+import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.message.MessageMetaData_0_10;
+import org.apache.qpid.server.message.MessageTransferMessage;
+import org.apache.qpid.server.txn.RollbackOnlyDtxException;
+import org.apache.qpid.server.txn.TimeoutDtxException;
 import static org.apache.qpid.util.Serial.gt;
 
 import java.security.Principal;
@@ -44,6 +49,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.Subject;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.server.configuration.ConfigStore;
@@ -66,25 +72,21 @@ import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.subscription.Subscription_0_10;
+import org.apache.qpid.server.txn.AlreadyKnownDtxException;
 import org.apache.qpid.server.txn.AsyncAutoCommitTransaction;
+import org.apache.qpid.server.txn.DistributedTransaction;
+import org.apache.qpid.server.txn.DtxNotSelectedException;
+import org.apache.qpid.server.txn.IncorrectDtxStateException;
+import org.apache.qpid.server.txn.JoinAndResumeDtxException;
 import org.apache.qpid.server.txn.LocalTransaction;
+import org.apache.qpid.server.txn.NotAssociatedDtxException;
 import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.txn.SuspendAndFailDtxException;
+import org.apache.qpid.server.txn.UnknownDtxBranchException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.transport.Binary;
-import org.apache.qpid.transport.Connection;
-import org.apache.qpid.transport.MessageCreditUnit;
-import org.apache.qpid.transport.MessageFlow;
-import org.apache.qpid.transport.MessageFlowMode;
-import org.apache.qpid.transport.MessageSetFlowMode;
-import org.apache.qpid.transport.MessageStop;
-import org.apache.qpid.transport.MessageTransfer;
-import org.apache.qpid.transport.Method;
-import org.apache.qpid.transport.Range;
-import org.apache.qpid.transport.RangeSet;
-import org.apache.qpid.transport.RangeSetFactory;
-import org.apache.qpid.transport.Session;
-import org.apache.qpid.transport.SessionDelegate;
+import org.apache.qpid.transport.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,7 +111,6 @@ public class ServerSession extends Session
     private ChannelLogSubject _logSubject;
     private final AtomicInteger _outstandingCredit = new AtomicInteger(UNLIMITED_CREDIT);
 
-
     public static interface MessageDispositionChangeListener
     {
         public void onAccept();
@@ -133,7 +134,7 @@ public class ServerSession extends Session
             new ConcurrentSkipListMap<Integer, MessageDispositionChangeListener>();
 
     private ServerTransaction _transaction;
-    
+
     private final AtomicLong _txnStarts = new AtomicLong(0);
     private final AtomicLong _txnCommits = new AtomicLong(0);
     private final AtomicLong _txnRejects = new AtomicLong(0);
@@ -152,7 +153,7 @@ public class ServerSession extends Session
     public ServerSession(Connection connection, SessionDelegate delegate, Binary name, long expiry, ConnectionConfig connConfig)
     {
         super(connection, delegate, name, expiry);
-        _connectionConfig = connConfig;        
+        _connectionConfig = connConfig;
         _transaction = new AsyncAutoCommitTransaction(this.getMessageStore(),this);
         _logSubject = new ChannelLogSubject(this);
         _id = getConfigStore().createId();
@@ -352,14 +353,22 @@ public class ServerSession extends Session
         }
     }
 
-    public void removeDispositionListener(Method method)                               
+    public void removeDispositionListener(Method method)
     {
         _messageDispositionListenerMap.remove(method.getId());
     }
 
     public void onClose()
     {
-        _transaction.rollback();
+        if(_transaction instanceof LocalTransaction)
+        {
+            _transaction.rollback();
+        }
+        else if(_transaction instanceof DistributedTransaction)
+        {
+            getVirtualHost().getDtxRegistry().endAssociations(this);
+        }
+
         for(MessageDispositionChangeListener listener : _messageDispositionListenerMap.values())
         {
             listener.onRelease(true);
@@ -372,7 +381,7 @@ public class ServerSession extends Session
         {
             task.doTask(this);
         }
-        
+
         CurrentActor.get().message(getLogSubject(), ChannelMessages.CLOSE());
     }
 
@@ -395,6 +404,9 @@ public class ServerSession extends Session
 
                                  public void onRollback()
                                  {
+                                     // The client has acknowledge the message and therefore have seen it.
+                                     // In the event of rollback, the message must be marked as redelivered.
+                                     entry.setRedelivered();
                                      entry.release();
                                  }
                              });
@@ -418,7 +430,7 @@ public class ServerSession extends Session
 
     public void unregister(Subscription_0_10 sub)
     {
-        _subscriptions.remove(sub.getConsumerTag().toString());
+        _subscriptions.remove(sub.getName());
         try
         {
             sub.getSendLock();
@@ -455,10 +467,99 @@ public class ServerSession extends Session
         _txnStarts.incrementAndGet();
     }
 
+    public void selectDtx()
+    {
+        _transaction = new DistributedTransaction(this, getMessageStore(), getVirtualHost());
+
+    }
+
+
+    public void startDtx(Xid xid, boolean join, boolean resume)
+            throws JoinAndResumeDtxException,
+                   UnknownDtxBranchException,
+                   AlreadyKnownDtxException,
+                   DtxNotSelectedException
+    {
+        DistributedTransaction distributedTransaction = assertDtxTransaction();
+        distributedTransaction.start(xid, join, resume);
+    }
+
+
+    public void endDtx(Xid xid, boolean fail, boolean suspend)
+            throws NotAssociatedDtxException,
+            UnknownDtxBranchException,
+            DtxNotSelectedException,
+            SuspendAndFailDtxException, TimeoutDtxException
+    {
+        DistributedTransaction distributedTransaction = assertDtxTransaction();
+        distributedTransaction.end(xid, fail, suspend);
+    }
+
+
+    public long getTimeoutDtx(Xid xid)
+            throws UnknownDtxBranchException
+    {
+        return getVirtualHost().getDtxRegistry().getTimeout(xid);
+    }
+
+
+    public void setTimeoutDtx(Xid xid, long timeout)
+            throws UnknownDtxBranchException
+    {
+        getVirtualHost().getDtxRegistry().setTimeout(xid, timeout);
+    }
+
+
+    public void prepareDtx(Xid xid)
+            throws UnknownDtxBranchException,
+            IncorrectDtxStateException, AMQStoreException, RollbackOnlyDtxException, TimeoutDtxException
+    {
+        getVirtualHost().getDtxRegistry().prepare(xid);
+    }
+
+    public void commitDtx(Xid xid, boolean onePhase)
+            throws UnknownDtxBranchException,
+            IncorrectDtxStateException, AMQStoreException, RollbackOnlyDtxException, TimeoutDtxException
+    {
+        getVirtualHost().getDtxRegistry().commit(xid, onePhase);
+    }
+
+
+    public void rollbackDtx(Xid xid)
+            throws UnknownDtxBranchException,
+            IncorrectDtxStateException, AMQStoreException, TimeoutDtxException
+    {
+        getVirtualHost().getDtxRegistry().rollback(xid);
+    }
+
+
+    public void forgetDtx(Xid xid) throws UnknownDtxBranchException, IncorrectDtxStateException
+    {
+        getVirtualHost().getDtxRegistry().forget(xid);
+    }
+
+    public List<Xid> recoverDtx()
+    {
+        return getVirtualHost().getDtxRegistry().recover();
+    }
+
+    private DistributedTransaction assertDtxTransaction() throws DtxNotSelectedException
+    {
+        if(_transaction instanceof DistributedTransaction)
+        {
+            return (DistributedTransaction) _transaction;
+        }
+        else
+        {
+            throw new DtxNotSelectedException();
+        }
+    }
+
+
     public void commit()
     {
         _transaction.commit();
-        
+
         _txnCommits.incrementAndGet();
         _txnStarts.incrementAndGet();
         decrementOutstandingTxnsIfNecessary();
@@ -467,13 +568,13 @@ public class ServerSession extends Session
     public void rollback()
     {
         _transaction.rollback();
-        
+
         _txnRejects.incrementAndGet();
         _txnStarts.incrementAndGet();
         decrementOutstandingTxnsIfNecessary();
     }
 
-    
+
     private void incrementOutstandingTxnsIfNecessary()
     {
         if(isTransactional())
@@ -483,7 +584,7 @@ public class ServerSession extends Session
             _txnCount.compareAndSet(0,1);
         }
     }
-    
+
     private void decrementOutstandingTxnsIfNecessary()
     {
         if(isTransactional())
@@ -524,7 +625,7 @@ public class ServerSession extends Session
     {
         return _txnCount.get();
     }
-    
+
     public Principal getAuthorizedPrincipal()
     {
         return getConnection().getAuthorizedPrincipal();
@@ -620,11 +721,6 @@ public class ServerSession extends Session
         close();
     }
 
-    public Object getID()
-    {
-       return getName();
-    }
-
     public AMQConnectionModel getConnectionModel()
     {
         return getConnection();
@@ -704,7 +800,7 @@ public class ServerSession extends Session
     {
         if(_blockingQueues.remove(queue) && _blockingQueues.isEmpty())
         {
-            if(_blocking.compareAndSet(true,false))
+            if(_blocking.compareAndSet(true,false) && !isClosing())
             {
 
                 _actor.message(_logSubject, ChannelMessages.FLOW_REMOVED());
@@ -718,6 +814,14 @@ public class ServerSession extends Session
 
             }
         }
+    }
+
+    public boolean onSameConnection(InboundMessage inbound)
+    {
+        return ((inbound instanceof MessageTransferMessage)
+                && ((MessageTransferMessage)inbound).getConnectionReference() == getConnection().getReference())
+                || ((inbound instanceof MessageMetaData_0_10)
+                    && (((MessageMetaData_0_10)inbound).getConnectionReference())== getConnection().getReference());
     }
 
 
@@ -746,7 +850,6 @@ public class ServerSession extends Session
         // unregister subscriptions in order to prevent sending of new messages
         // to subscriptions with closing session
         unregisterSubscriptions();
-
         super.close();
     }
 
@@ -758,6 +861,16 @@ public class ServerSession extends Session
             unregister(subscription_0_10);
         }
     }
+
+    void stopSubscriptions()
+    {
+        final Collection<Subscription_0_10> subscriptions = getSubscriptions();
+        for (Subscription_0_10 subscription_0_10 : subscriptions)
+        {
+            subscription_0_10.stop();
+        }
+    }
+
 
     public void receivedComplete()
     {
@@ -863,17 +976,17 @@ public class ServerSession extends Session
         return _unfinishedCommandsQueue.isEmpty() ? null : _unfinishedCommandsQueue.getLast();
     }
 
-    public void recordFuture(final MessageStore.StoreFuture future, final ServerTransaction.Action action)
+    public void recordFuture(final StoreFuture future, final ServerTransaction.Action action)
     {
         _unfinishedCommandsQueue.add(new AsyncCommand(future, action));
     }
 
     private static class AsyncCommand
     {
-        private final MessageStore.StoreFuture _future;
+        private final StoreFuture _future;
         private ServerTransaction.Action _action;
 
-        public AsyncCommand(final MessageStore.StoreFuture future, final ServerTransaction.Action action)
+        public AsyncCommand(final StoreFuture future, final ServerTransaction.Action action)
         {
             _future = future;
             _action = action;
@@ -900,9 +1013,14 @@ public class ServerSession extends Session
         }
     }
 
-    @Override
+    protected void setClose(boolean close)
+    {
+        super.setClose(close);
+    }
+
     public int compareTo(AMQSessionModel session)
     {
-        return getId().toString().compareTo(session.getID().toString());
+        return getId().compareTo(session.getId());
     }
+
 }

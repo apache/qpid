@@ -226,10 +226,8 @@ class Queue;
         void rollback();
     };
 
-    class DtxHandlerImpl : public DtxHandler, public HandlerHelper, private framing::StructHelper
+    class DtxHandlerImpl : public DtxHandler, public HandlerHelper
     {
-        std::string convert(const framing::Xid& xid);
-
       public:
         DtxHandlerImpl(SemanticState& session) : HandlerHelper(session) {}
 

@@ -80,7 +80,7 @@ bool FailoverExchange::isBound(Queue::shared_ptr queue, const string* const, con
     return queues.find(queue) != queues.end();
 }
 
-void FailoverExchange::route(Deliverable&, const string& , const framing::FieldTable* ) {
+void FailoverExchange::route(Deliverable&) {
     QPID_LOG(warning, "Message received by exchange " << typeName << " ignoring");
 }
 

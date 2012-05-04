@@ -28,12 +28,17 @@ import java.util.List;
 
 public interface IConnectionRegistry
 {
+    public static final String BROKER_SHUTDOWN_REPLY_TEXT = "Broker is shutting down";
+    public static final String VHOST_PASSIVATE_REPLY_TEXT = "Virtual host is being passivated";
+
     public void initialise();
 
     public void close() throws AMQException;
-    
+
+    public void close(String replyText) throws AMQException;
+
     public void closeConnection(AMQConnectionModel connection, AMQConstant cause, String message);
-    
+
     public List<AMQConnectionModel> getConnections();
 
     public void registerConnection(AMQConnectionModel connnection);
