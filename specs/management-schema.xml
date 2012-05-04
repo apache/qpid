@@ -379,10 +379,12 @@
     This class represents an inter-broker connection.
 
     <property name="vhostRef"  type="objId"  references="Vhost" access="RC" index="y" parentRef="y"/>
-    <property name="host"      type="sstr"   access="RC" index="y"/>
-    <property name="port"      type="uint16" access="RC" index="y"/>
-    <property name="transport" type="sstr"   access="RC"/>
+    <property name="name"      type="sstr"   access="RC" index="y"/>
+    <property name="host"      type="sstr"   access="RO"/>
+    <property name="port"      type="uint16" access="RO"/>
+    <property name="transport" type="sstr"   access="RO"/>
     <property name="durable"   type="bool"   access="RC"/>
+    <property name="connectionRef" type="objId" references="Connection" access="RO"/>
 
     <statistic name="state"       type="sstr" desc="Operational state of the link"/>
     <statistic name="lastError"   type="lstr" desc="Reason link is not operational"/>
@@ -411,7 +413,8 @@
   -->
   <class name="Bridge">
     <property name="linkRef"     type="objId"  references="Link" access="RC" index="y" parentRef="y"/>
-    <property name="channelId"   type="uint16" access="RC" index="y"/>
+    <property name="name"        type="sstr"   access="RC"  index="y"/>
+    <property name="channelId"   type="uint16" access="RO"/>
     <property name="durable"     type="bool"   access="RC"/>
     <property name="src"         type="sstr"   access="RC"/>
     <property name="dest"        type="sstr"   access="RC"/>
