@@ -18,8 +18,6 @@
  * under the License.
  *
  */
-var bindingsTuple;
-
 
 require(["dojo/store/JsonRest",
 				"dojo/store/Memory",
@@ -44,20 +42,20 @@ require(["dojo/store/JsonRest",
             this.durable = dom.byId("durable");
             this.lifetimePolicy = dom.byId("lifetimePolicy");
 
-            urlQuery = dojo.queryToObject(dojo.doc.location.search.substr((dojo.doc.location.search[0] === "?" ? 1 : 0)));
+            var urlQuery = dojo.queryToObject(dojo.doc.location.search.substr((dojo.doc.location.search[0] === "?" ? 1 : 0)));
             this.query = "/rest/exchange/"+ urlQuery.vhost + "/" + urlQuery.exchange;
 
 
-            var thisObj = this;
+            var that = this;
 
             xhr.get({url: this.query, sync: useSyncGet, handleAs: "json"}).then(function(data)
                              {
-                                thisObj.exchangeData = data[0];
-                                flattenStatistics( thisObj.exchangeData );
+                                that.exchangeData = data[0];
+                                flattenStatistics( that.exchangeData );
 
-                                thisObj.updateHeader();
-                                thisObj.bindingsGrid = new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
-                                                                          thisObj.exchangeData.bindings, "bindings",
+                                that.updateHeader();
+                                that.bindingsGrid = new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
+                                                                          that.exchangeData.bindings, "bindings",
                                                          [ { name: "Queue",    field: "queue",      width: "90px"},
                                                            { name: "Binding Key", field: "name",          width: "120px"},
                                                            { name: "Arguments",   field: "argumentString",     width: "100%"}
@@ -125,12 +123,12 @@ require(["dojo/store/JsonRest",
                         var bytesDropRate = (1000 * (bytesDrop - thisObj.bytesDrop)) / samplePeriod;
 
                         dom.byId("msgInRate").innerHTML = msgInRate.toFixed(0);
-                        bytesInFormat = new formatBytes( bytesInRate );
+                        var bytesInFormat = new formatBytes( bytesInRate );
                         dom.byId("bytesInRate").innerHTML = "(" + bytesInFormat.value;
                         dom.byId("bytesInRateUnits").innerHTML = bytesInFormat.units + "/s)"
 
                         dom.byId("msgDropRate").innerHTML = msgDropRate.toFixed(0);
-                        bytesDropFormat = new formatBytes( bytesDropRate );
+                        var bytesDropFormat = new formatBytes( bytesDropRate );
                         dom.byId("bytesDropRate").innerHTML = "(" + bytesDropFormat.value;
                         dom.byId("bytesDropRateUnits").innerHTML = bytesDropFormat.units + "/s)"
 
@@ -149,7 +147,7 @@ require(["dojo/store/JsonRest",
                  });
          };
 
-         exchangeUpdater = new ExchangeUpdater();
+         var exchangeUpdater = new ExchangeUpdater();
 
          updateList.push( exchangeUpdater );
 

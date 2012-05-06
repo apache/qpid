@@ -24,6 +24,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Queue;
@@ -45,36 +46,39 @@ public class MessageServlet extends AbstractServlet
     protected void onGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
     {
 
-        List<String> names = new ArrayList<String>();
-        // TODO - validation that there is a vhost and queue and only those in the path
-        if(request.getPathInfo() != null && request.getPathInfo().length()>0)
+        if(request.getPathInfo() != null && request.getPathInfo().length()>0 && request.getPathInfo().substring(1).split("/").length > 2)
         {
-            String path = request.getPathInfo().substring(1);
-            names.addAll(Arrays.asList(path.split("/")));
+            getMessageContent(request, response);
         }
-        String vhostName = names.get(0);
-        String queueName = names.get(1);
-
-        VirtualHost vhost = null;
-        Queue queue = null;
-
-        for(VirtualHost vh : getBroker().getVirtualHosts())
+        else
         {
-            if(vh.getName().equals(vhostName))
-            {
-                vhost = vh;
-                break;
-            }
+            getMessageList(request, response);
         }
 
-        for(Queue q : vhost.getQueues())
-        {
-            if(q.getName().equals(queueName))
-            {
-                queue = q;
-                break;
-            }
-        }
+    }
+
+    private void getMessageContent(HttpServletRequest request, HttpServletResponse response) throws IOException
+    {
+        Queue queue = getQueueFromRequest(request);
+        String path[] = request.getPathInfo().substring(1).split("/");
+        MessageFinder messageFinder = new MessageFinder(Long.parseLong(path[2]));
+        queue.visit(messageFinder);
+
+        response.setStatus(HttpServletResponse.SC_OK);
+
+        response.setHeader("Cache-Control","no-cache");
+        response.setHeader("Pragma","no-cache");
+        response.setDateHeader ("Expires", 0);
+
+        final PrintWriter writer = response.getWriter();
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
+        mapper.writeValue(writer, messageFinder.getMessageObject());
+    }
+
+    private void getMessageList(HttpServletRequest request, HttpServletResponse response) throws IOException
+    {
+        Queue queue = getQueueFromRequest(request);
 
         int first = -1;
         int last = -1;
@@ -92,9 +96,9 @@ public class MessageServlet extends AbstractServlet
         final List<Map<String, Object>> messages = messageCollector.getMessages();
         response.setHeader("Content-Range", messages.isEmpty()
                                                     ? "0-0/0"
-                                                    : messages.get(0).get("id").toString()
+                                                    : messages.get(0).get("position").toString()
                                                       + "-"
-                                                      + messages.get(messages.size()-1).get("id").toString()
+                                                      + messages.get(messages.size()-1).get("position").toString()
                                                       + "/" + queue.getStatistics().getStatistic(Queue.QUEUE_DEPTH_MESSAGES));
         response.setStatus(HttpServletResponse.SC_OK);
 
@@ -106,9 +110,135 @@ public class MessageServlet extends AbstractServlet
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
         mapper.writeValue(writer, messages);
-
-
     }
+
+    private Queue getQueueFromRequest(HttpServletRequest request)
+    {
+        List<String> names = new ArrayList<String>();
+        // TODO - validation that there is a vhost and queue and only those in the path
+        if(request.getPathInfo() != null && request.getPathInfo().length()>0)
+        {
+            String path = request.getPathInfo().substring(1);
+            names.addAll(Arrays.asList(path.split("/")));
+        }
+        String vhostName = names.get(0);
+        String queueName = names.get(1);
+
+        VirtualHost vhost = null;
+
+        for(VirtualHost vh : getBroker().getVirtualHosts())
+        {
+            if(vh.getName().equals(vhostName))
+            {
+                vhost = vh;
+                break;
+            }
+        }
+
+        return getQueueFromVirtualHost(queueName, vhost);
+    }
+
+    private Queue getQueueFromVirtualHost(String queueName, VirtualHost vhost)
+    {
+        Queue queue = null;
+
+        for(Queue q : vhost.getQueues())
+        {
+            if(q.getName().equals(queueName))
+            {
+                queue = q;
+                break;
+            }
+        }
+        return queue;
+    }
+
+    private abstract static class QueueEntryTransaction implements VirtualHost.TransactionalOperation
+    {
+        private final Queue _sourceQueue;
+        private final List _messageIds;
+
+        protected QueueEntryTransaction(Queue sourceQueue, List messageIds)
+        {
+            _sourceQueue = sourceQueue;
+            _messageIds = messageIds;
+        }
+
+
+        public void withinTransaction(final VirtualHost.Transaction txn)
+        {
+
+            _sourceQueue.visit(new QueueEntryVisitor()
+            {
+
+                public boolean visit(final QueueEntry entry)
+                {
+                    final ServerMessage message = entry.getMessage();
+                    if(message != null)
+                    {
+                        final long messageId = message.getMessageNumber();
+                        if (_messageIds.remove(messageId) || (messageId <= (long) Integer.MAX_VALUE
+                                                              && _messageIds.remove(Integer.valueOf((int)messageId))))
+                        {
+                            updateEntry(entry, txn);
+                        }
+
+                    }
+                    return _messageIds.isEmpty();
+                }
+            });
+        }
+
+
+        protected abstract void updateEntry(QueueEntry entry, VirtualHost.Transaction txn);
+    }
+
+    private static class MoveTransaction extends QueueEntryTransaction
+    {
+        private final Queue _destinationQueue;
+
+        public MoveTransaction(Queue sourceQueue, List<Long> messageIds, Queue destinationQueue)
+        {
+            super(sourceQueue, messageIds);
+            _destinationQueue = destinationQueue;
+        }
+
+        protected void updateEntry(QueueEntry entry, VirtualHost.Transaction txn)
+        {
+            txn.move(entry, _destinationQueue);
+        }
+    }
+
+    private static class CopyTransaction extends QueueEntryTransaction
+    {
+        private final Queue _destinationQueue;
+
+        public CopyTransaction(Queue sourceQueue, List<Long> messageIds, Queue destinationQueue)
+        {
+            super(sourceQueue, messageIds);
+            _destinationQueue = destinationQueue;
+        }
+
+        protected void updateEntry(QueueEntry entry, VirtualHost.Transaction txn)
+        {
+            txn.copy(entry, _destinationQueue);
+        }
+    }
+
+    private static class DeleteTransaction extends QueueEntryTransaction
+    {
+        public DeleteTransaction(Queue sourceQueue, List<Long> messageIds)
+        {
+            super(sourceQueue, messageIds);
+        }
+
+        protected void updateEntry(QueueEntry entry, VirtualHost.Transaction txn)
+        {
+            txn.dequeue(entry);
+        }
+    }
+
+
 
     private class MessageCollector implements QueueEntryVisitor
     {
@@ -130,7 +260,9 @@ public class MessageServlet extends AbstractServlet
             _position++;
             if((_first == -1 || _position >= _first) && (_last == -1 || _position <= _last))
             {
-                _messages.add(convertToObject(entry, _position));
+                final Map<String, Object> messageObject = convertToObject(entry, false);
+                messageObject.put("position", _position);
+                _messages.add(messageObject);
             }
             return _last != -1 && _position > _last;
         }
@@ -141,10 +273,43 @@ public class MessageServlet extends AbstractServlet
         }
     }
 
-    private Map<String, Object> convertToObject(QueueEntry entry, int position)
+
+    private class MessageFinder implements QueueEntryVisitor
+    {
+        private final long _messageNumber;
+        private Map<String, Object> _messageObject;
+
+        private MessageFinder(long messageNumber)
+        {
+            _messageNumber = messageNumber;
+        }
+
+
+        public boolean visit(QueueEntry entry)
+        {
+            ServerMessage message = entry.getMessage();
+            if(message != null)
+            {
+                if(_messageNumber == message.getMessageNumber())
+                {
+                    MessageReference reference = message.newReference();
+                    _messageObject = convertToObject(entry, true);
+                    reference.release();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public Map<String, Object> getMessageObject()
+        {
+            return _messageObject;
+        }
+    }
+
+    private Map<String, Object> convertToObject(QueueEntry entry, boolean includeContent)
     {
         Map<String, Object> object = new LinkedHashMap<String, Object>();
-        object.put("id", position);
         object.put("size", entry.getSize());
         object.put("deliveryCount", entry.getDeliveryCount());
         object.put("state",entry.isAvailable()
@@ -154,18 +319,121 @@ public class MessageServlet extends AbstractServlet
                                              : "");
         final Subscription deliveredSubscription = entry.getDeliveredSubscription();
         object.put("deliveredTo", deliveredSubscription == null ? null : deliveredSubscription.getSubscriptionID());
-        final AMQMessageHeader messageHeader = entry.getMessageHeader();
-        if(messageHeader != null)
-        {
-            object.put("messageId", messageHeader.getMessageId());
-            object.put("expirationTime", messageHeader.getExpiration());
-        }
         ServerMessage message = entry.getMessage();
+
         if(message != null)
         {
-            object.put("arrivalTime",message.getArrivalTime());
-            object.put("persistent", message.isPersistent());
+            convertMessageProperties(object, message);
+            if(includeContent)
+            {
+                convertMessageHeaders(object, message);
+            }
         }
+
         return object;
     }
+
+    private void convertMessageProperties(Map<String, Object> object, ServerMessage message)
+    {
+        object.put("id", message.getMessageNumber());
+        object.put("arrivalTime",message.getArrivalTime());
+        object.put("persistent", message.isPersistent());
+
+        final AMQMessageHeader messageHeader = message.getMessageHeader();
+        if(messageHeader != null)
+        {
+            addIfPresent(object, "messageId", messageHeader.getMessageId());
+            addIfPresent(object, "expirationTime", messageHeader.getExpiration());
+            addIfPresent(object, "applicationId", messageHeader.getAppId());
+            addIfPresent(object, "correlationId", messageHeader.getCorrelationId());
+            addIfPresent(object, "encoding", messageHeader.getEncoding());
+            addIfPresent(object, "mimeType", messageHeader.getMimeType());
+            addIfPresent(object, "priority", messageHeader.getPriority());
+            addIfPresent(object, "replyTo", messageHeader.getReplyTo());
+            addIfPresent(object, "timestamp", messageHeader.getTimestamp());
+            addIfPresent(object, "type", messageHeader.getType());
+            addIfPresent(object, "userId", messageHeader.getUserId());
+        }
+
+    }
+
+    private void addIfPresent(Map<String, Object> object, String name, Object property)
+    {
+        if(property != null)
+        {
+            object.put(name, property);
+        }
+    }
+
+    private void convertMessageHeaders(Map<String, Object> object, ServerMessage message)
+    {
+        final AMQMessageHeader messageHeader = message.getMessageHeader();
+        if(messageHeader != null)
+        {
+            Map<String, Object> headers = new HashMap<String,Object>();
+            for(String headerName : messageHeader.getHeaderNames())
+            {
+                headers.put(headerName, messageHeader.getHeader(headerName));
+            }
+            object.put("headers", headers);
+        }
+    }
+
+    /*
+     * POST moves or copies messages to the given queue from a queue specified in the posted JSON data
+     */
+    @Override
+    protected void onPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+    {
+
+        final Queue sourceQueue = getQueueFromRequest(request);
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        @SuppressWarnings("unchecked")
+        Map<String,Object> providedObject = mapper.readValue(request.getInputStream(), LinkedHashMap.class);
+
+
+        String destQueueName = (String) providedObject.get("destinationQueue");
+        Boolean move = (Boolean) providedObject.get("move");
+
+
+        final VirtualHost vhost = sourceQueue.getParent(VirtualHost.class);
+
+        final Queue destinationQueue = getQueueFromVirtualHost(destQueueName, vhost);
+
+        final List messageIds = new ArrayList((List) providedObject.get("messages"));
+
+        QueueEntryTransaction txn =
+                (move != null && Boolean.valueOf(move))
+                        ? new MoveTransaction(sourceQueue, messageIds, destinationQueue)
+                        : new CopyTransaction(sourceQueue, messageIds, destinationQueue);
+        vhost.executeTransaction(txn);
+
+    }
+
+
+    /*
+     * DELETE removes messages from the queue
+     */
+    @Override
+    protected void onDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+    {
+
+        final Queue sourceQueue = getQueueFromRequest(request);
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        @SuppressWarnings("unchecked")
+        Map<String,Object> providedObject = mapper.readValue(request.getInputStream(), LinkedHashMap.class);
+
+        final VirtualHost vhost = sourceQueue.getParent(VirtualHost.class);
+
+        final List messageIds = new ArrayList((List) providedObject.get("messages"));
+
+        vhost.executeTransaction(new DeleteTransaction(sourceQueue, messageIds));
+
+    }
+
+
 }

@@ -49,21 +49,21 @@ require(["dojo/store/JsonRest",
             this.unacknowledgedBytes = dom.byId("unacknowledgedBytes");
             this.unacknowledgedBytesUnits = dom.byId("unacknowledgedBytesUnits");
 
-            urlQuery = dojo.queryToObject(dojo.doc.location.search.substr((dojo.doc.location.search[0] === "?" ? 1 : 0)));
+            var urlQuery = dojo.queryToObject(dojo.doc.location.search.substr((dojo.doc.location.search[0] === "?" ? 1 : 0)));
             this.query = "/rest/connection/"+ urlQuery.vhost + "/" + urlQuery.connection;
 
 
-            var thisObj = this;
+            var that = this;
 
             xhr.get({url: this.query, sync: useSyncGet, handleAs: "json"}).then(function(data)
                              {
-                                thisObj.connectionData = data[0];
+                                that.connectionData = data[0];
 
-                                flattenStatistics( thisObj.connectionData );
+                                flattenStatistics( that.connectionData );
 
-                                thisObj.updateHeader();
-                                thisObj.sessionsGrid = new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
-                                                                          thisObj.connectionData.sessions, "sessions",
+                                that.updateHeader();
+                                that.sessionsGrid = new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
+                                                                          that.connectionData.sessions, "sessions",
                                                          [ { name: "Name",    field: "name",      width: "70px"},
                                                            { name: "Mode", field: "distributionMode", width: "70px"},
                                                            { name: "Msgs Rate", field: "msgRate",
@@ -92,51 +92,51 @@ require(["dojo/store/JsonRest",
          ConnectionUpdater.prototype.update = function()
          {
 
-            var thisObj = this;
+            var that = this;
 
             xhr.get({url: this.query, sync: useSyncGet, handleAs: "json"}).then(function(data)
                  {
-                    thisObj.connectionData = data[0];
+                    that.connectionData = data[0];
 
-                    flattenStatistics( thisObj.connectionData );
+                    flattenStatistics( that.connectionData );
 
-                    var sessions = thisObj.connectionData[ "sessions" ];
+                    var sessions = that.connectionData[ "sessions" ];
 
-                    thisObj.updateHeader();
+                    that.updateHeader();
 
                     var sampleTime = new Date();
-                    var messageIn = thisObj.connectionData["messagesIn"];
-                    var bytesIn = thisObj.connectionData["bytesIn"];
-                    var messageOut = thisObj.connectionData["messagesOut"];
-                    var bytesOut = thisObj.connectionData["bytesOut"];
+                    var messageIn = that.connectionData["messagesIn"];
+                    var bytesIn = that.connectionData["bytesIn"];
+                    var messageOut = that.connectionData["messagesOut"];
+                    var bytesOut = that.connectionData["bytesOut"];
 
-                    if(thisObj.sampleTime)
+                    if(that.sampleTime)
                     {
-                        var samplePeriod = sampleTime.getTime() - thisObj.sampleTime.getTime();
+                        var samplePeriod = sampleTime.getTime() - that.sampleTime.getTime();
 
-                        var msgInRate = (1000 * (messageIn - thisObj.messageIn)) / samplePeriod;
-                        var msgOutRate = (1000 * (messageOut - thisObj.messageOut)) / samplePeriod;
-                        var bytesInRate = (1000 * (bytesIn - thisObj.bytesIn)) / samplePeriod;
-                        var bytesOutRate = (1000 * (bytesOut - thisObj.bytesOut)) / samplePeriod;
+                        var msgInRate = (1000 * (messageIn - that.messageIn)) / samplePeriod;
+                        var msgOutRate = (1000 * (messageOut - that.messageOut)) / samplePeriod;
+                        var bytesInRate = (1000 * (bytesIn - that.bytesIn)) / samplePeriod;
+                        var bytesOutRate = (1000 * (bytesOut - that.bytesOut)) / samplePeriod;
 
                         dom.byId("msgInRate").innerHTML = msgInRate.toFixed(0);
-                        bytesInFormat = new formatBytes( bytesInRate );
+                        var bytesInFormat = new formatBytes( bytesInRate );
                         dom.byId("bytesInRate").innerHTML = "(" + bytesInFormat.value;
                         dom.byId("bytesInRateUnits").innerHTML = bytesInFormat.units + "/s)"
 
                         dom.byId("msgOutRate").innerHTML = msgOutRate.toFixed(0);
-                        bytesOutFormat = new formatBytes( bytesOutRate );
+                        var bytesOutFormat = new formatBytes( bytesOutRate );
                         dom.byId("bytesOutRate").innerHTML = "(" + bytesOutFormat.value;
                         dom.byId("bytesOutRateUnits").innerHTML = bytesOutFormat.units + "/s)"
 
-                        if(sessions && thisObj.sessions)
+                        if(sessions && that.sessions)
                         {
                             for(var i=0; i < sessions.length; i++)
                             {
                                 var session = sessions[i];
-                                for(var j = 0; j < thisObj.sessions.length; j++)
+                                for(var j = 0; j < that.sessions.length; j++)
                                 {
-                                    var oldSession = thisObj.session[j];
+                                    var oldSession = that.session[j];
                                     if(oldSession.id == session.id)
                                     {
                                         var msgRate = (1000 * (session.messagesOut - oldSession.messagesOut)) /
@@ -157,22 +157,22 @@ require(["dojo/store/JsonRest",
 
                     }
 
-                    thisObj.sampleTime = sampleTime;
-                    thisObj.messageIn = messageIn;
-                    thisObj.bytesIn = bytesIn;
-                    thisObj.messageOut = messageOut;
-                    thisObj.bytesOut = bytesOut;
-                    thisObj.sessions = sessions;
+                    that.sampleTime = sampleTime;
+                    that.messageIn = messageIn;
+                    that.bytesIn = bytesIn;
+                    that.messageOut = messageOut;
+                    that.bytesOut = bytesOut;
+                    that.sessions = sessions;
 
 
                     // update sessions
-                    thisObj.sessionsGrid.update(thisObj.connectionData.sessions)
+                    that.sessionsGrid.update(that.connectionData.sessions)
 
 
                  });
          };
 
-         connectionUpdater = new ConnectionUpdater();
+         var connectionUpdater = new ConnectionUpdater();
 
          updateList.push( connectionUpdater );
 

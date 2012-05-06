@@ -23,21 +23,22 @@ require(["dijit/form/DropDownButton", "dijit/TooltipDialog", "dijit/form/TextBox
 var button;
 var usernameSpan;
 
-function encodeUTF8(str)
-{
+var encodeUTF8 = function encodeUTF8(str) {
     var byteArray = [];
-    for (var i = 0; i < str.length; i++)
-        if (str.charCodeAt(i) <= 0x7F)
+    for (var i = 0; i < str.length; i++) {
+        if (str.charCodeAt(i) <= 0x7F) {
             byteArray.push(str.charCodeAt(i));
+        }
         else {
             var h = encodeURIComponent(str.charAt(i)).substr(1).split('%');
             for (var j = 0; j < h.length; j++)
                 byteArray.push(parseInt(h[j], 16));
         }
+    }
     return byteArray;
 };
 
-function decodeUTF8(byteArray)
+var decodeUTF8 = function decodeUTF8(byteArray)
 {
     var str = '';
     for (var i = 0; i < byteArray.length; i++)
@@ -49,7 +50,7 @@ function decodeUTF8(byteArray)
 };
 
 
-function saslPlain(user, password)
+var saslPlain = function saslPlain(user, password)
 {
     var responseArray = [ 0 ].concat(encodeUTF8( user )).concat( [ 0 ] ).concat( encodeUTF8( password ) );
     var plainResponse = dojox.encoding.base64.encode(responseArray);
@@ -82,7 +83,7 @@ function saslPlain(user, password)
             });
 }
 
-function saslCramMD5(user, password)
+var saslCramMD5 = function saslCramMD5(user, password)
 {
 
     // Using dojo.xhrGet, as very little information is being sent
@@ -90,7 +91,7 @@ function saslCramMD5(user, password)
         // The URL of the request
         url: "/rest/sasl",
         content: {
-            mechanism: "CRAM-MD5",
+            mechanism: "CRAM-MD5"
         },
         handleAs: "json",
         failOk: true
@@ -151,14 +152,14 @@ function saslCramMD5(user, password)
             });
 }
 
-function doAuthenticate()
+var doAuthenticate = function doAuthenticate()
 {
     saslCramMD5(dojo.byId("username").value, dojo.byId("pass").value);
     updateAuthentication();
 }
 
 
-function updateAuthentication()
+var updateAuthentication = function updateAuthentication()
 {
     dojo.xhrGet({
         // The URL of the request

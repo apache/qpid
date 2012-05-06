@@ -15,20 +15,6 @@
  * limitations under the License.
  */
 
-if (Array.isArray)
-{
-    isArray = function (object)
-              {
-                  return Array.isArray(object);
-              };
-}
-else
-{
-    isArray = function (object)
-              {
-                  return object instanceof Array;
-              };
-}
 
 function BrokerTreeModel()
 {
@@ -61,13 +47,13 @@ BrokerTreeModel.prototype.buildModel = function(data)
 
 BrokerTreeModel.prototype.updateModel = function(data)
 {
-    var thisObj = this;
+    var that = this;
 
     function checkForChanges(oldData, data)
     {
         if(oldData.name != data.name)
         {
-            thisObj.onChange(data);
+            that.onChange(data);
         }
 
         var childChanges = false;
@@ -107,7 +93,7 @@ BrokerTreeModel.prototype.updateModel = function(data)
                     }
                     if(subChanges == true || oldChildren.length != newChildren.length)
                     {
-                        thisObj.onChildrenChange({ id: data.id+propName, _dummyChild: propName, data: data }, newChildren);
+                        that.onChildrenChange({ id: data.id+propName, _dummyChild: propName, data: data }, newChildren);
                     }
                 }
             }
@@ -128,8 +114,8 @@ BrokerTreeModel.prototype.updateModel = function(data)
         if(childChanges)
         {
             var children;
-            thisObj.getChildren(data, function(theChildren) { children = theChildren });
-            thisObj.onChildrenChange(data, children);
+            that.getChildren(data, function(theChildren) { children = theChildren });
+            that.onChildrenChange(data, children);
         }
     }
 
@@ -321,7 +307,11 @@ require(["dojo/io-query", "dojo/domReady!"],
             var uri;
 
 
-            if(details.type == "virtualhost")
+            if(details.type == "broker")
+            {
+                uri = "/broker";
+            }
+            else if(details.type == "virtualhost")
             {
                 uri = "/vhost?" + ioQuery.objectToQuery({ vhost: details.virtualhost });
             }

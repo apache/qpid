@@ -96,6 +96,7 @@ public class Management
 
         root.addServlet(new ServletHolder(new StructureServlet(_broker)), "/rest/structure");
         root.addServlet(new ServletHolder(new MessageServlet(_broker)), "/rest/message/*");
+        root.addServlet(new ServletHolder(new MessageContentServlet(_broker)), "/rest/message-content/*");
 
         root.addServlet(new ServletHolder(new LogRecordsServlet(_broker)), "/rest/logrecords");
 

@@ -18,9 +18,6 @@
  * under the License.
  *
  */
-var bindingsTuple;
-
-
 require(["dojo/store/JsonRest",
 				"dojo/store/Memory",
 				"dojo/store/Cache",
@@ -41,22 +38,22 @@ require(["dojo/store/JsonRest",
             this.durable = dom.byId("durable");
             this.lifetimePolicy = dom.byId("lifetimePolicy");
 
-            urlQuery = dojo.queryToObject(dojo.doc.location.search.substr((dojo.doc.location.search[0] === "?" ? 1 : 0)));
+            var urlQuery = dojo.queryToObject(dojo.doc.location.search.substr((dojo.doc.location.search[0] === "?" ? 1 : 0)));
             this.query = "/rest/virtualhost/"+ urlQuery.vhost ;
 
 
-            var thisObj = this;
+            var that = this;
 
             xhr.get({url: this.query, sync: useSyncGet, handleAs: "json"}).then(function(data)
                              {
-                                thisObj.vhostData = data[0];
+                                that.vhostData = data[0];
 
                                 // flatten statistics into attributes
-                                flattenStatistics( thisObj.vhostData );
+                                flattenStatistics( that.vhostData );
 
-                                thisObj.updateHeader();
-                                thisObj.queuesGrid = new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
-                                                                        thisObj.vhostData.queues, "queues",
+                                that.updateHeader();
+                                that.queuesGrid = new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
+                                                                        that.vhostData.queues, "queues",
                                                          [ { name: "Name",    field: "name",      width: "90px"},
                                                            { name: "Messages", field: "queueDepthMessages", width: "90px"},
                                                            { name: "Arguments",   field: "arguments",     width: "100%"}
@@ -68,8 +65,8 @@ require(["dojo/store/JsonRest",
                                                                     var idx = evt.rowIndex,
                                                                     theItem = this.getItem(idx);
 
-                                                                    url = "/queue?vhost="
-                                                                     + thisObj.vhostData.name + "&queue=" +
+                                                                    var url = "/queue?vhost="
+                                                                     + that.vhostData.name + "&queue=" +
                                                                     obj.dataStore.getValue(theItem,"name");
 
                                                                     window.location = url;
@@ -77,8 +74,8 @@ require(["dojo/store/JsonRest",
                                                             });
                                                          } );
 
-                                thisObj.exchangesGrid = new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
-                                                                           thisObj.vhostData.exchanges, "exchanges",
+                                that.exchangesGrid = new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
+                                                                           that.vhostData.exchanges, "exchanges",
                                                          [ { name: "Name",    field: "name",      width: "120px"},
                                                            { name: "Type", field: "type", width: "120px"},
                                                            { name: "Binding Count", field: "bindingCount",
@@ -92,7 +89,7 @@ require(["dojo/store/JsonRest",
                                                                       theItem = this.getItem(idx);
 
                                                                       url = "/exchange?vhost="
-                                                                       + encodeURIComponent(thisObj.vhostData.name) + "&exchange=" +
+                                                                       + encodeURIComponent(that.vhostData.name) + "&exchange=" +
                                                                       encodeURIComponent(obj.dataStore.getValue(theItem,"name"));
 
                                                                       window.location = url;
@@ -101,8 +98,8 @@ require(["dojo/store/JsonRest",
                                                            } );
 
 
-                                thisObj.connectionsGrid = new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
-                                                                             thisObj.vhostData.connections,
+                                that.connectionsGrid = new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
+                                                                             that.vhostData.connections,
                                                          "connections",
                                                          [ { name: "Name",    field: "name",      width: "150px"},
                                                            { name: "Sessions", field: "sessionCount", width: "70px"},
@@ -122,8 +119,8 @@ require(["dojo/store/JsonRest",
                                                                     var idx = evt.rowIndex,
                                                                     theItem = this.getItem(idx);
 
-                                                                    url = "/connection?vhost="
-                                                                     + encodeURIComponent(thisObj.vhostData.name) + "&connection=" +
+                                                                    var url = "/connection?vhost="
+                                                                     + encodeURIComponent(that.vhostData.name) + "&connection=" +
                                                                     encodeURIComponent(obj.dataStore.getValue(theItem,"name"));
 
                                                                     window.location = url;
@@ -164,30 +161,30 @@ require(["dojo/store/JsonRest",
 
 
                     // update alerting info
-                    alertRepeatGap = new formatTime( thisObj.vhostData["alertRepeatGap"] );
+                    var alertRepeatGap = new formatTime( thisObj.vhostData["alertRepeatGap"] );
 
                     dom.byId("alertRepeatGap").innerHTML = alertRepeatGap.value;
                     dom.byId("alertRepeatGapUnits").innerHTML = alertRepeatGap.units;
 
 
-                    alertMsgAge = new formatTime( thisObj.vhostData["alertThresholdMessageAge"] );
+                    var alertMsgAge = new formatTime( thisObj.vhostData["alertThresholdMessageAge"] );
 
                     dom.byId("alertThresholdMessageAge").innerHTML = alertMsgAge.value;
                     dom.byId("alertThresholdMessageAgeUnits").innerHTML = alertMsgAge.units;
 
-                    alertMsgSize = new formatBytes( thisObj.vhostData["alertThresholdMessageSize"] );
+                    var alertMsgSize = new formatBytes( thisObj.vhostData["alertThresholdMessageSize"] );
 
                     dom.byId("alertThresholdMessageSize").innerHTML = alertMsgSize.value;
                     dom.byId("alertThresholdMessageSizeUnits").innerHTML = alertMsgSize.units;
 
-                    alertQueueDepth = new formatBytes( thisObj.vhostData["alertThresholdQueueDepthBytes"] );
+                    var alertQueueDepth = new formatBytes( thisObj.vhostData["alertThresholdQueueDepthBytes"] );
 
                     dom.byId("alertThresholdQueueDepthBytes").innerHTML = alertQueueDepth.value;
                     dom.byId("alertThresholdQueueDepthBytesUnits").innerHTML = alertQueueDepth.units;
 
                     dom.byId("alertThresholdQueueDepthMessages").innerHTML = thisObj.vhostData["alertThresholdQueueDepthMessages"];
 
-                    stats = thisObj.vhostData[ "statistics" ];
+                    var stats = thisObj.vhostData[ "statistics" ];
 
                     var sampleTime = new Date();
                     var messageIn = stats["messagesIn"];
@@ -205,12 +202,12 @@ require(["dojo/store/JsonRest",
                         var bytesOutRate = (1000 * (bytesOut - thisObj.bytesOut)) / samplePeriod;
 
                         dom.byId("msgInRate").innerHTML = msgInRate.toFixed(0);
-                        bytesInFormat = new formatBytes( bytesInRate );
+                        var bytesInFormat = new formatBytes( bytesInRate );
                         dom.byId("bytesInRate").innerHTML = "(" + bytesInFormat.value;
                         dom.byId("bytesInRateUnits").innerHTML = bytesInFormat.units + "/s)"
 
                         dom.byId("msgOutRate").innerHTML = msgOutRate.toFixed(0);
-                        bytesOutFormat = new formatBytes( bytesOutRate );
+                        var bytesOutFormat = new formatBytes( bytesOutRate );
                         dom.byId("bytesOutRate").innerHTML = "(" + bytesOutFormat.value;
                         dom.byId("bytesOutRateUnits").innerHTML = bytesOutFormat.units + "/s)"
 
@@ -271,7 +268,7 @@ require(["dojo/store/JsonRest",
                  });
          };
 
-         updater = new Updater();
+         var updater = new Updater();
 
          updateList.push( updater );
 

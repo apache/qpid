@@ -18,6 +18,23 @@
  * under the License.
  *
  */
+
+
+if (Array.isArray)
+{
+    isArray = function (object)
+              {
+                  return Array.isArray(object);
+              };
+}
+else
+{
+    isArray = function (object)
+              {
+                  return object instanceof Array;
+              };
+}
+
 var updateList = new Array();
 
 var useSyncGet = false;

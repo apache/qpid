@@ -41,25 +41,25 @@ require(["dojo/store/JsonRest",
 
             this.query = "/rest/broker";
 
-            var thisObj = this;
+            var that = this;
 
             xhr.get({url: this.query, sync: useSyncGet, handleAs: "json"})
                 .then(function(data)
                       {
-                        thisObj.brokerData = data[0];
+                        that.brokerData = data[0];
 
-                        flattenStatistics( thisObj.brokerData );
+                        flattenStatistics( that.brokerData );
 
-                        thisObj.updateHeader();
-                        thisObj.vhostsGrid =
+                        that.updateHeader();
+                        that.vhostsGrid =
                             new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
-                                               thisObj.brokerData.vhosts, "virtualhosts",
+                                               that.brokerData.vhosts, "virtualhosts",
                                                          [ { name: "Virtual Host",    field: "name",      width: "100%"}
                                                          ]);
 
-                        thisObj.portsGrid =
+                        that.portsGrid =
                             new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
-                                               thisObj.brokerData.ports, "ports",
+                                               that.brokerData.ports, "ports",
                                                          [ { name: "Address",    field: "bindingAddress",      width: "70px"},
                                                            { name: "Port", field: "port", width: "70px"},
                                                            { name: "Transports", field: "transports", width: "150px"},
@@ -75,9 +75,9 @@ require(["dojo/store/JsonRest",
                        {
                             this.logData = data;
 
-                            thisObj.logfileGrid =
+                            that.logfileGrid =
                                          new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
-                                                            thisObj.logData, "logfile",
+                                                            that.logData, "logfile",
                                                                      [   { name: "ID", field: "id", width: "30px"},
                                                                          { name: "Level", field: "level", width: "60px"},
                                                                          { name: "Logger", field: "logger", width: "100px"},
@@ -100,26 +100,26 @@ require(["dojo/store/JsonRest",
          BrokerUpdater.prototype.update = function()
          {
 
-            var thisObj = this;
+            var that = this;
 
             xhr.get({url: this.query, sync: useSyncGet, handleAs: "json"}).then(function(data)
                  {
-                    thisObj.brokerData = data[0];
-                    flattenStatistics( thisObj.brokerData )
+                    that.brokerData = data[0];
+                    flattenStatistics( that.brokerData )
 
-                    var virtualhosts = thisObj.brokerData[ "virtualhosts" ];
-                    var ports = thisObj.brokerData[ "ports" ];
+                    var virtualhosts = that.brokerData[ "virtualhosts" ];
+                    var ports = that.brokerData[ "ports" ];
 
 
-                    thisObj.updateHeader();
+                    that.updateHeader();
 
 
                     // update alerting info
                     var sampleTime = new Date();
 
-                    thisObj.vhostsGrid.update(thisObj.brokerData.virtualhosts);
+                    that.vhostsGrid.update(that.brokerData.virtualhosts);
 
-                    thisObj.portsGrid.update(thisObj.brokerData.ports);
+                    that.portsGrid.update(that.brokerData.ports);
 
 
                  });
@@ -129,11 +129,11 @@ require(["dojo/store/JsonRest",
                  .then(function(data)
                        {
                            this.logData = data;
-                           thisObj.logfileGrid.update(this.logData);
+                           that.logfileGrid.update(this.logData);
                        });
          };
 
-         brokerUpdater = new BrokerUpdater();
+         var brokerUpdater = new BrokerUpdater();
 
          updateList.push( brokerUpdater );
 
