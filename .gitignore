@@ -54,6 +54,7 @@ release
 generated/
 target
 classes
+qpid/java/lib/*.jar
 qpid/java/lib/bdbstore
 qpid/java/lib/cobertura
 qpid/java/lib/findbugs
