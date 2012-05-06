@@ -18,7 +18,7 @@
  - under the License.
  -
  -->
-<project name="common">
+<project xmlns:ivy="antlib:org.apache.ivy.ant" name="common">
 
   <dirname property="project.root" file="${ant.file.common}"/>
 
@@ -82,6 +82,7 @@
     </fileset>
   </path>
 
+  <!-- properties for generating the maven artifacts -->
   <property name="maven.local.repo"      value="${build.scratch}/maven-local-repo"/>
   <property name="maven.settings.xml"    value="${project.root}/maven-settings.xml"/>
   <property name="maven.unique.version"  value="false"/>
@@ -89,6 +90,44 @@
   <condition property="maven.version.suffix" value="" else="-SNAPSHOT">
     <isfalse value="${maven.snapshot}"/>
   </condition>
+
+  <!-- properties for uploading our Maven artifacts to Nexus using Ivy -->
+  <property name="ivy.organisation"      value="org/apache"/>
+  <property name="nexus.organisation"    value="org.apache"/>
+  <property name="nexus.host"            value="repository.apache.org"/>
+  <property name="nexus.upload.url"      value="https://${nexus.host}/service/local/staging/deploy/maven2"/>
+
+  <!-- properties for downloading ivy, and then our dependencies -->
+  <property name="ivy.jar.dir"         value="lib/ivy" />
+  <property name="ivy.install.version" value="2.2.0" />
+  <property name="ivy.jar.file"        value="${ivy.jar.dir}/ivy-${ivy.install.version}.jar" />
+  <property name="ivy.repo.url"        value="http://repo1.maven.org/maven2/org/apache/ivy/ivy"/>
+  <property name="ivy.jar.url"         value="${ivy.repo.url}/${ivy.install.version}/ivy-${ivy.install.version}.jar"/>
+
+  <available property="ivy.jar.file.exists" file="${ivy.jar.file}"/>
+
+  <condition property="dont.download.ivy">
+    <!-- Set prop to stop Ivy download if asked not to retrieve
+    the dependencies, or the ivy jar is already present -->
+    <or>
+      <and>
+        <isset property="retrieve.dependencies"/>
+        <isfalse value="${retrieve.dependencies}"/>
+      </and>
+      <and>
+        <isset property="ivy.jar.file.exists"/>
+        <istrue value="${ivy.jar.file.exists}"/>
+      </and>
+    </or>
+  </condition>
+
+  <condition property="ivy.dont.retrieve">
+    <and>
+      <isset property="retrieve.dependencies"/>
+      <isfalse value="${retrieve.dependencies}"/>
+    </and>
+  </condition>
+
 
   <macrodef name="indirect">
     <attribute name="name"/>
@@ -141,7 +180,7 @@
     <attribute name="path"/>
     <element name="args"/>
     <sequential>
-      <java jar="${project.root}/lib/jython-2.5.0.jar" fork="true" failonerror="true">
+      <java jar="${project.root}/lib/jython-standalone-2.5.2.jar" fork="true" failonerror="true">
         <arg value="-Dpython.path=@{path}"/>
         <args/>
       </java>
@@ -220,6 +259,34 @@
 
     <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${findbugs.dir}/findbugs-ant.jar"/>
   </target>
+
+
+  <!-- targets for downloading ivy and retrieving dependencies -->
+  <target name="retrieve-dependencies" depends="load-ivy" unless="${ivy.dont.retrieve}">
+    <echo message="Resolving and retrieving dependencies..."/>
+    <ivy:configure file="ivysettings.retrieve.xml"/>
+    <ivy:resolve type="jar,bundle" file="ivy.retrieve.xml"/>
+    <ivy:retrieve type="jar,bundle"/>
+  </target>
+
+  <target name="load-ivy" depends="download-ivy" unless="${ivy.dont.retrieve}">
+    <!-- Try to load Ivy from local ivy dir, in case the user has not already dropped it into
+         Ant's lib dir (note that the latter copy will always take precedence). Won't
+         fail so long as Ivy is in at least one of the locations. -->
+    <mkdir dir="${ivy.jar.dir}"/>
+    <path id="ivy.lib.path">
+        <fileset dir="${ivy.jar.dir}" includes="*.jar"/>
+    </path>
+    <taskdef resource="org/apache/ivy/ant/antlib.xml"
+              uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path"/>
+  </target>
+
+  <target name="download-ivy" unless="${dont.download.ivy}">
+    <mkdir dir="${ivy.jar.dir}"/>
+    <echo message="Downloading ivy..."/>
+    <get src="${ivy.jar.url}" dest="${ivy.jar.file}" usetimestamp="true"/>
+  </target>
+
 
   <target name="help" description="display detailed build documentation">
     <echo>

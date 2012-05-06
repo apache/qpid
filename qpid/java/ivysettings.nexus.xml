@@ -18,7 +18,6 @@
   <credentials host="${nexus.host}" realm="Sonatype Nexus Repository Manager" username="${nexus.user}" passwd="${nexus.password}"/>
   <caches defaultCacheDir="${user.home}/.ivy2/cache"/>
   <resolvers>
-    <ibiblio name="public" m2compatible="true"/>
     <url name="nexus">
       <artifact pattern="${nexus.upload.url}/[organisation]/[module]/[artifact]/[revision]/[artifact]-[revision](-[classifier]).[ext]" />
     </url>
@@ -26,5 +25,5 @@
   <modules>
     <module organisation="${nexus.organisation}" name="qpid" resolver="nexus"/>
   </modules>
-  <settings defaultResolver="public"/>
+  <settings defaultResolver="nexus"/>
 </ivysettings>
