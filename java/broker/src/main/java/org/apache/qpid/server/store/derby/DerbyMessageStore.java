@@ -90,9 +90,6 @@ public class DerbyMessageStore implements MessageStore
 
     private static final Logger _logger = Logger.getLogger(DerbyMessageStore.class);
 
-    public static final String OVERFULL_SIZE_PROPERTY = "overfull-size";
-    public static final String UNDERFULL_SIZE_PROPERTY = "underfull-size";
-
     private static final String SQL_DRIVER_NAME = "org.apache.derby.jdbc.EmbeddedDriver";
 
     private static final String DB_VERSION_TABLE_NAME = "QPID_DB_VERSION";
@@ -235,7 +232,7 @@ public class DerbyMessageStore implements MessageStore
     private static final String DERBY_SINGLE_DB_SHUTDOWN_CODE = "08006";
 
     private final StateManager _stateManager;
-    
+
     private final EventManager _eventManager = new EventManager();
 
     private long _totalStoreSize;
@@ -317,8 +314,8 @@ public class DerbyMessageStore implements MessageStore
 
         _storeLocation = databasePath;
 
-        _persistentSizeHighThreshold = storeConfiguration.getLong(OVERFULL_SIZE_PROPERTY, -1l);
-        _persistentSizeLowThreshold = storeConfiguration.getLong(UNDERFULL_SIZE_PROPERTY, _persistentSizeHighThreshold);
+        _persistentSizeHighThreshold = storeConfiguration.getLong(MessageStoreConstants.OVERFULL_SIZE_PROPERTY, -1l);
+        _persistentSizeLowThreshold = storeConfiguration.getLong(MessageStoreConstants.UNDERFULL_SIZE_PROPERTY, _persistentSizeHighThreshold);
         if(_persistentSizeLowThreshold > _persistentSizeHighThreshold || _persistentSizeLowThreshold < 0l)
         {
             _persistentSizeLowThreshold = _persistentSizeHighThreshold;
