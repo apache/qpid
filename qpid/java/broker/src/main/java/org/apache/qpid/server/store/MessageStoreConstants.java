@@ -23,5 +23,7 @@ public class MessageStoreConstants
 {
 
     public static final String ENVIRONMENT_PATH_PROPERTY = "environment-path";
+    public static final String OVERFULL_SIZE_PROPERTY = "overfull-size";
+    public static final String UNDERFULL_SIZE_PROPERTY = "underfull-size";
 
 }

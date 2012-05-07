@@ -54,28 +54,12 @@ import org.apache.qpid.server.federation.Bridge;
 import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
+import org.apache.qpid.server.store.*;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.BindingRecoveryHandler;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.ExchangeRecoveryHandler;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.QueueRecoveryHandler;
-import org.apache.qpid.server.store.ConfiguredObjectHelper;
-import org.apache.qpid.server.store.ConfiguredObjectRecord;
-import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.Event;
-import org.apache.qpid.server.store.EventListener;
-import org.apache.qpid.server.store.EventManager;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
-import org.apache.qpid.server.store.State;
-import org.apache.qpid.server.store.StateManager;
-import org.apache.qpid.server.store.StorableMessageMetaData;
-import org.apache.qpid.server.store.StoreFuture;
-import org.apache.qpid.server.store.StoredMemoryMessage;
-import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
 import org.apache.qpid.server.store.TransactionLogRecoveryHandler.QueueEntryRecoveryHandler;
-import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.store.berkeleydb.entry.PreparedTransaction;
 import org.apache.qpid.server.store.berkeleydb.entry.QueueEntryKey;
 import org.apache.qpid.server.store.berkeleydb.entry.Xid;
@@ -96,10 +80,6 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     private static final int LOCK_RETRY_ATTEMPTS = 5;
 
     public static final int VERSION = 6;
-
-    public static final String ENVIRONMENT_PATH_PROPERTY = "environment-path";
-    public static final String OVERFULL_SIZE_PROPERTY = "overfull-size";
-    public static final String UNDERFULL_SIZE_PROPERTY = "underfull-size";
 
     private Environment _environment;
 
@@ -229,11 +209,11 @@ public abstract class AbstractBDBMessageStore implements MessageStore
      */
     public void configure(String name, Configuration storeConfig) throws Exception
     {
-        final String storeLocation = storeConfig.getString(ENVIRONMENT_PATH_PROPERTY,
+        final String storeLocation = storeConfig.getString(MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY,
                 System.getProperty("QPID_WORK") + File.separator + "bdbstore" + File.separator + name);
 
-        _persistentSizeHighThreshold = storeConfig.getLong(OVERFULL_SIZE_PROPERTY, Long.MAX_VALUE);
-        _persistentSizeLowThreshold = storeConfig.getLong(UNDERFULL_SIZE_PROPERTY, _persistentSizeHighThreshold);
+        _persistentSizeHighThreshold = storeConfig.getLong(MessageStoreConstants.OVERFULL_SIZE_PROPERTY, Long.MAX_VALUE);
+        _persistentSizeLowThreshold = storeConfig.getLong(MessageStoreConstants.UNDERFULL_SIZE_PROPERTY, _persistentSizeHighThreshold);
         if(_persistentSizeLowThreshold > _persistentSizeHighThreshold || _persistentSizeLowThreshold < 0l)
         {
             _persistentSizeLowThreshold = _persistentSizeLowThreshold;
