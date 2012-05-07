@@ -42,21 +42,21 @@ public interface AMQSessionModel extends Comparable<AMQSessionModel>
     public AMQConnectionModel getConnectionModel();
 
     public String getClientID();
-    
+
     public void close() throws AMQException;
 
     public LogSubject getLogSubject();
-    
+
     /**
      * This method is called from the housekeeping thread to check the status of
      * transactions on this session and react appropriately.
-     * 
+     *
      * If a transaction is open for too long or idle for too long then a warning
      * is logged or the connection is closed, depending on the configuration. An open
      * transaction is one that has recent activity. The transaction age is counted
-     * from the time the transaction was started. An idle transaction is one that 
+     * from the time the transaction was started. An idle transaction is one that
      * has had no activity, such as publishing or acknowledgeing messages.
-     * 
+     *
      * @param openWarn time in milliseconds before alerting on open transaction
      * @param openClose time in milliseconds before closing connection with open transaction
      * @param idleWarn time in milliseconds before alerting on idle transaction
@@ -67,6 +67,10 @@ public interface AMQSessionModel extends Comparable<AMQSessionModel>
     void block(AMQQueue queue);
 
     void unblock(AMQQueue queue);
+
+    void block();
+
+    void unblock();
 
 
     boolean onSameConnection(InboundMessage inbound);

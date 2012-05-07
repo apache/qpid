@@ -1408,5 +1408,10 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
 		sync();
     }
 
+    public boolean isBrokerFlowControlled()
+    {
+        return _qpidSession.isFlowControlled();
+    }
+
 }
 

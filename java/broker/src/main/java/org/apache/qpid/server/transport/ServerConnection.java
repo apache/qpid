@@ -74,7 +74,8 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
     private ServerConnectionMBean _mBean;
     private VirtualHost _virtualHost;
     private AtomicLong _lastIoTime = new AtomicLong();
-    
+    private boolean _blocking;
+
     public ServerConnection(final long connectionId)
     {
         _connectionId = connectionId;
@@ -100,12 +101,12 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
     protected void setState(State state)
     {
         super.setState(state);
-        
+
         if (state == State.OPEN)
         {
             if (_onOpenTask != null)
             {
-                _onOpenTask.run();    
+                _onOpenTask.run();
             }
             _actor.message(ConnectionMessages.OPEN(getClientId(), "0-10", getClientVersion(), true, true, true));
 
@@ -193,7 +194,7 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
 
         ((ServerSession)session).close();
     }
-    
+
     public LogSubject getLogSubject()
     {
         return (LogSubject) this;
@@ -286,6 +287,46 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
         close(replyCode, message);
     }
 
+    public synchronized void block()
+    {
+        if(!_blocking)
+        {
+            _blocking = true;
+            for(AMQSessionModel ssn : getSessionModels())
+            {
+                ssn.block();
+            }
+        }
+    }
+
+    public synchronized void unblock()
+    {
+        if(_blocking)
+        {
+            _blocking = false;
+            for(AMQSessionModel ssn : getSessionModels())
+            {
+                ssn.unblock();
+            }
+        }
+    }
+
+    @Override
+    public synchronized void registerSession(final Session ssn)
+    {
+        super.registerSession(ssn);
+        if(_blocking)
+        {
+            ((ServerSession)ssn).block();
+        }
+    }
+
+    @Override
+    public synchronized void removeSession(final Session ssn)
+    {
+        super.removeSession(ssn);
+    }
+
     public List<AMQSessionModel> getSessionModels()
     {
         List<AMQSessionModel> sessions = new ArrayList<AMQSessionModel>();
@@ -315,27 +356,27 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
         }
         _virtualHost.registerMessageReceived(messageSize, timestamp);
     }
-    
+
     public StatisticsCounter getMessageReceiptStatistics()
     {
         return _messagesReceived;
     }
-    
+
     public StatisticsCounter getDataReceiptStatistics()
     {
         return _dataReceived;
     }
-    
+
     public StatisticsCounter getMessageDeliveryStatistics()
     {
         return _messagesDelivered;
     }
-    
+
     public StatisticsCounter getDataDeliveryStatistics()
     {
         return _dataDelivered;
     }
-    
+
     public void resetStatistics()
     {
         _messagesDelivered.reset();
@@ -348,7 +389,7 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
     {
         setStatisticsEnabled(!StatisticsCounter.DISABLE_STATISTICS &&
                 _virtualHost.getApplicationRegistry().getConfiguration().isStatisticsGenerationConnectionsEnabled());
-        
+
         _messagesDelivered = new StatisticsCounter("messages-delivered-" + getConnectionId());
         _dataDelivered = new StatisticsCounter("data-delivered-" + getConnectionId());
         _messagesReceived = new StatisticsCounter("messages-received-" + getConnectionId());

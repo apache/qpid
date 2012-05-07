@@ -21,12 +21,19 @@
 package org.apache.qpid.server.store.berkeleydb;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.store.Event;
+import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreFuture;
 
@@ -49,6 +56,8 @@ public class BDBMessageStore extends AbstractBDBMessageStore
 
     private final CommitThread _commitThread = new CommitThread("Commit-Thread");
 
+    private final Map<Event, List<EventListener>> _eventListeners = new HashMap<Event, List<EventListener>>();
+
     @Override
     protected void setupStore(File storePath, String name) throws DatabaseException, AMQStoreException
     {
@@ -64,6 +73,17 @@ public class BDBMessageStore extends AbstractBDBMessageStore
         // This is what allows the creation of the store if it does not already exist.
         envConfig.setAllowCreate(true);
         envConfig.setTransactional(true);
+
+        Properties props = System.getProperties();
+
+        for(String propName : props.stringPropertyNames())
+        {
+            if(propName.startsWith("qpid.bdb.envconfig.je."))
+            {
+                envConfig.setConfigParam(propName.substring(19), props.getProperty(propName));
+            }
+        }
+
         envConfig.setConfigParam("je.lock.nLockTables", "7");
 
         // Added to help diagnosis of Deadlock issue
