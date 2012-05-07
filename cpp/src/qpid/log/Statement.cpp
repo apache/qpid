@@ -36,7 +36,7 @@ std::string quote(const std::string& str) {
     size_t n = std::count_if(str.begin(), str.end(), nonPrint);
     if (n==0) return str;
     std::string ret;
-    ret.reserve(str.size()+2*n); // Avoid extra allocations.
+    ret.reserve(str.size()+3*n); // Avoid extra allocations.
     for (std::string::const_iterator i = str.begin(); i != str.end(); ++i) {
         if (nonPrint(*i)) {
             ret.push_back('\\');
