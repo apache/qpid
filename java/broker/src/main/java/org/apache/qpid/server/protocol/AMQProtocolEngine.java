@@ -20,14 +20,46 @@
  */
 package org.apache.qpid.server.protocol;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicBoolean;
+import javax.management.JMException;
+import javax.security.auth.Subject;
+import javax.security.sasl.SaslServer;
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.codec.AMQCodecFactory;
-import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.AMQBody;
+import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQProtocolHeaderException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ChannelCloseBody;
+import org.apache.qpid.framing.ChannelCloseOkBody;
+import org.apache.qpid.framing.ConnectionCloseBody;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.HeartbeatBody;
+import org.apache.qpid.framing.MethodDispatcher;
+import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.framing.ProtocolInitiation;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.properties.ConnectionStartProperties;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
@@ -65,24 +97,6 @@ import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.util.BytesDataOutput;
-
-import javax.management.JMException;
-import javax.security.auth.Subject;
-import javax.security.sasl.SaslServer;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.security.Principal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQProtocolSession, ConnectionConfig
 {
@@ -160,6 +174,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
 
     private volatile boolean _deferFlush;
     private long _lastReceivedTime;
+    private boolean _blocking;
 
     public ManagedObject getManagedObject()
     {
@@ -633,12 +648,20 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
         }
         else
         {
-            _channelMap.put(channel.getChannelId(), channel);
+            synchronized (_channelMap)
+            {
+                _channelMap.put(channel.getChannelId(), channel);
+            }
         }
 
         if (((channelId & CHANNEL_CACHE_SIZE) == channelId))
         {
             _cachedChannels[channelId] = channel;
+        }
+
+        if(_blocking)
+        {
+            channel.block();
         }
 
         checkForNotification();
@@ -735,10 +758,14 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
      */
     public void removeChannel(int channelId)
     {
-        _channelMap.remove(channelId);
-        if ((channelId & CHANNEL_CACHE_SIZE) == channelId)
+        synchronized (_channelMap)
         {
-            _cachedChannels[channelId] = null;
+            _channelMap.remove(channelId);
+
+            if ((channelId & CHANNEL_CACHE_SIZE) == channelId)
+            {
+                _cachedChannels[channelId] = null;
+            }
         }
     }
 
@@ -767,8 +794,10 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
         {
             channel.close();
         }
-
-        _channelMap.clear();
+        synchronized (_channelMap)
+        {
+            _channelMap.clear();
+        }
         for (int i = 0; i <= CHANNEL_CACHE_SIZE; i++)
         {
             _cachedChannels[i] = null;
@@ -1335,6 +1364,36 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
 		                getProtocolOutputConverter().getProtocolMajorVersion(),
 		                getProtocolOutputConverter().getProtocolMinorVersion(),
 		                (Throwable) null));
+    }
+
+    public void block()
+    {
+        synchronized (_channelMap)
+        {
+            if(!_blocking)
+            {
+                _blocking = true;
+                for(AMQChannel channel : _channelMap.values())
+                {
+                    channel.block();
+                }
+            }
+        }
+    }
+
+    public void unblock()
+    {
+        synchronized (_channelMap)
+        {
+            if(_blocking)
+            {
+                _blocking = false;
+                for(AMQChannel channel : _channelMap.values())
+                {
+                    channel.unblock();
+                }
+            }
+        }
     }
 
     public boolean isClosed()

@@ -74,7 +74,7 @@ public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHo
 
     int getHouseKeepingPoolSize();
 
-    void setHouseKeepingPoolSize(int newSize);    
+    void setHouseKeepingPoolSize(int newSize);
 
     int getHouseKeepingActiveCount();
 
@@ -102,4 +102,8 @@ public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHo
     ScheduledFuture<?> scheduleTask(long delay, Runnable timeoutTask);
 
     State getState();
+
+    public void block();
+
+    public void unblock();
 }

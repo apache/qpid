@@ -99,9 +99,9 @@ public class ServerSessionDelegate extends SessionDelegate
                 Object newOutstanding = ((ServerSession)session).getAsyncCommandMark();
                 if(newOutstanding == null || newOutstanding == asyncCommandMark)
                 {
-                    session.processed(method);    
+                    session.processed(method);
                 }
-                
+
                 if(newOutstanding != null)
                 {
                     ((ServerSession)session).completeAsyncCommands();
@@ -240,13 +240,13 @@ public class ServerSessionDelegate extends SessionDelegate
                     }
 
                     FlowCreditManager_0_10 creditManager = new WindowCreditManager(0L,0L);
-                    
+
                     FilterManager filterManager = null;
-                    try 
+                    try
                     {
                         filterManager = FilterManagerFactory.createManager(method.getArguments());
-                    } 
-                    catch (AMQException amqe) 
+                    }
+                    catch (AMQException amqe)
                     {
                         exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "Exception Creating FilterManager");
                         return;
@@ -257,7 +257,7 @@ public class ServerSessionDelegate extends SessionDelegate
                                                                   method.getAcceptMode(),
                                                                   method.getAcquireMode(),
                                                                   MessageFlowMode.WINDOW,
-                                                                  creditManager, 
+                                                                  creditManager,
                                                                   filterManager,
                                                                   method.getArguments());
 
@@ -297,13 +297,13 @@ public class ServerSessionDelegate extends SessionDelegate
 
         final MessageMetaData_0_10 messageMetaData = new MessageMetaData_0_10(xfr);
         messageMetaData.setConnectionReference(((ServerSession)ssn).getReference());
-        
+
         if (!getVirtualHost(ssn).getSecurityManager().authorisePublish(messageMetaData.isImmediate(), messageMetaData.getRoutingKey(), exchange.getName()))
         {
             ExecutionErrorCode errorCode = ExecutionErrorCode.UNAUTHORIZED_ACCESS;
             String description = "Permission denied: exchange-name '" + exchange.getName() + "'";
             exception(ssn, xfr, errorCode, description);
-            
+
             return;
         }
 
@@ -807,7 +807,7 @@ public class ServerSessionDelegate extends SessionDelegate
         }
     }
 
-    // TODO decouple AMQException and AMQConstant error codes 
+    // TODO decouple AMQException and AMQConstant error codes
     private void exception(Session session, Method method, AMQException exception, String message)
     {
         ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
@@ -823,7 +823,7 @@ public class ServerSessionDelegate extends SessionDelegate
             }
         }
         String description = message + "': " + exception.getMessage();
-        
+
         exception(session, method, errorCode, description);
     }
 
@@ -1349,9 +1349,9 @@ public class ServerSessionDelegate extends SessionDelegate
                                                                            + " as exclusive queue with same name "
                                                                            + "declared on another session";
                     ExecutionErrorCode errorCode = ExecutionErrorCode.RESOURCE_LOCKED;
-    
+
                     exception(session, method, errorCode, description);
-    
+
                     return;
             }
         }
@@ -1436,7 +1436,7 @@ public class ServerSessionDelegate extends SessionDelegate
                 else
                 {
                     VirtualHost virtualHost = getVirtualHost(session);
-                    
+
                     try
                     {
                         queue.delete();

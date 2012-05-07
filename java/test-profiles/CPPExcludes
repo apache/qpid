@@ -121,6 +121,8 @@ org.apache.qpid.test.client.message.SelectorTest#testRuntimeSelectorError
 
 //QPID-942 : Implemented Channel.Flow based Producer Side flow control to the Java Broker (not in CPP Broker)
 org.apache.qpid.server.queue.ProducerFlowControlTest#*
+//QPID-3986 : Flow control invoked on total store disk usage
+org.apache.qpid.server.store.StoreOverfullTest#*
 
 org.apache.qpid.test.client.RollbackOrderTest#testOrderingAfterRollbackOnMessage#*
 

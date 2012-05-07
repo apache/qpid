@@ -33,7 +33,14 @@ public class OperationalLoggingListener implements EventListener
     private OperationalLoggingListener(final MessageStore store, LogSubject logSubject)
     {
         _logSubject = logSubject;
-        store.addEventListener(this, Event.BEFORE_INIT, Event.AFTER_INIT, Event.BEFORE_ACTIVATE, Event.AFTER_ACTIVATE, Event.AFTER_CLOSE);
+        store.addEventListener(this,
+                               Event.BEFORE_INIT,
+                               Event.AFTER_INIT,
+                               Event.BEFORE_ACTIVATE,
+                               Event.AFTER_ACTIVATE,
+                               Event.AFTER_CLOSE,
+                               Event.PERSISTENT_MESSAGE_SIZE_OVERFULL,
+                               Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
         _store = store;
     }
 
@@ -62,7 +69,13 @@ public class OperationalLoggingListener implements EventListener
             case AFTER_CLOSE:
                 CurrentActor.get().message(_logSubject,MessageStoreMessages.CLOSED());
                 break;
-            
+            case PERSISTENT_MESSAGE_SIZE_OVERFULL:
+                CurrentActor.get().message(_logSubject,MessageStoreMessages.OVERFULL());
+                break;
+            case PERSISTENT_MESSAGE_SIZE_UNDERFULL:
+                CurrentActor.get().message(_logSubject,MessageStoreMessages.UNDERFULL());
+                break;
+
         }
     }
 
