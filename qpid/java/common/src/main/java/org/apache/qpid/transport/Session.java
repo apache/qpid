@@ -210,6 +210,17 @@ public class Session extends SessionInvoker
         }
     }
 
+    protected State getState()
+    {
+        return this.state;
+    }
+
+    public boolean isFlowControlled()
+    {
+        return flowControl;
+    }
+
+
     void setFlowControl(boolean value)
     {
         flowControl = value;
@@ -307,7 +318,7 @@ public class Session extends SessionInvoker
                     		xfr.setHeader(new Header(deliveryProps, header.getMessageProperties(),
                                                      header.getNonStandardProperties()));
                 		}
-                		
+
                 	}
                 	else
                 	{
@@ -616,7 +627,7 @@ public class Session extends SessionInvoker
             {
                 acquireCredit();
             }
-            
+
             synchronized (commandsLock)
             {
                 if (state == DETACHED && m.isUnreliable())
@@ -732,11 +743,11 @@ public class Session extends SessionInvoker
                 {
                     sessionCommandPoint(0, 0);
                 }
-                
+
                 boolean replayTransfer = !closing && !transacted &&
                                          m instanceof MessageTransfer &&
                                          ! m.isUnreliable();
-                
+
                 if ((replayTransfer) || m.hasCompletionListener())
                 {
                     setCommand(next, m);
@@ -833,7 +844,7 @@ public class Session extends SessionInvoker
             Waiter w = new Waiter(commandsLock, timeout);
             while (w.hasTime() && state != CLOSED && lt(maxComplete, point))
             {
-                checkFailoverRequired("Session sync was interrupted by failover.");                               
+                checkFailoverRequired("Session sync was interrupted by failover.");
                 if(log.isDebugEnabled())
                 {
                     log.debug("%s   waiting for[%d]: %d, %s", this, point, maxComplete, commands);
@@ -871,7 +882,7 @@ public class Session extends SessionInvoker
         {
             future = results.remove(command);
         }
-        
+
         if (future != null)
         {
             future.set(result);
@@ -1039,7 +1050,7 @@ public class Session extends SessionInvoker
         }
     }
 
-    protected void awaitClose() 
+    protected void awaitClose()
     {
         Waiter w = new Waiter(commandsLock, timeout);
         while (w.hasTime() && state != CLOSED)
@@ -1096,7 +1107,7 @@ public class Session extends SessionInvoker
 
         if(state == CLOSED)
         {
-            connection.removeSession(this);   
+            connection.removeSession(this);
             listener.closed(this);
         }
     }

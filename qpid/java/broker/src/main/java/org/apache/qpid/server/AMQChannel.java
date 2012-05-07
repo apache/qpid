@@ -23,7 +23,9 @@ package org.apache.qpid.server;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -32,10 +34,8 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
@@ -89,7 +89,6 @@ import org.apache.qpid.server.subscription.ClientDeliveryMethod;
 import org.apache.qpid.server.subscription.RecordDeliveryMethod;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
-import org.apache.qpid.server.subscription.SubscriptionImpl;
 import org.apache.qpid.server.txn.AsyncAutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -157,7 +156,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
     private final AMQProtocolSession _session;
     private AtomicBoolean _closing = new AtomicBoolean(false);
 
-    private final Set<AMQQueue> _blockingQueues = new ConcurrentSkipListSet<AMQQueue>();
+    private final Set<Object> _blockingEntities = Collections.synchronizedSet(new HashSet<Object>());
 
     private final AtomicBoolean _blocking = new AtomicBoolean(false);
 
@@ -1357,9 +1356,34 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
         return _actor;
     }
 
-    public void block(AMQQueue queue)
+    public synchronized void block()
     {
-        if(_blockingQueues.add(queue))
+        if(_blockingEntities.add(this))
+        {
+            if(_blocking.compareAndSet(false,true))
+            {
+                _actor.message(_logSubject, ChannelMessages.FLOW_ENFORCED("** All Queues **"));
+                flow(false);
+            }
+        }
+    }
+
+    public synchronized void unblock()
+    {
+        if(_blockingEntities.remove(this))
+        {
+            if(_blockingEntities.isEmpty() && _blocking.compareAndSet(true,false))
+            {
+                _actor.message(_logSubject, ChannelMessages.FLOW_REMOVED());
+
+                flow(true);
+            }
+        }
+    }
+    
+    public synchronized void block(AMQQueue queue)
+    {
+        if(_blockingEntities.add(queue))
         {
 
             if(_blocking.compareAndSet(false,true))
@@ -1370,11 +1394,11 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
         }
     }
 
-    public void unblock(AMQQueue queue)
+    public synchronized void unblock(AMQQueue queue)
     {
-        if(_blockingQueues.remove(queue))
+        if(_blockingEntities.remove(queue))
         {
-            if(_blocking.compareAndSet(true,false) && !isClosing())
+            if(_blockingEntities.isEmpty() && _blocking.compareAndSet(true,false) && !isClosing())
             {
                 _actor.message(_logSubject, ChannelMessages.FLOW_REMOVED());
 

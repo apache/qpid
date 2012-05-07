@@ -282,9 +282,16 @@ public class MockVirtualHost implements VirtualHost
 
     }
 
-    @Override
     public State getState()
     {
         return State.ACTIVE;
+    }
+
+    public void block()
+    {
+    }
+
+    public void unblock()
+    {
     }
 }

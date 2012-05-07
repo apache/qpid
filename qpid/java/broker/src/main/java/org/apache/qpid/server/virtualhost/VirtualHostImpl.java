@@ -80,7 +80,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 
-public class VirtualHostImpl implements VirtualHost
+public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.RegistryChangeListener, EventListener
 {
     private static final Logger _logger = Logger.getLogger(VirtualHostImpl.class);
 
@@ -129,6 +129,7 @@ public class VirtualHostImpl implements VirtualHost
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
     private final Map<String, LinkRegistry> _linkRegistry = new HashMap<String, LinkRegistry>();
+    private boolean _blocked;
 
     public VirtualHostImpl(IApplicationRegistry appRegistry, VirtualHostConfiguration hostConfig) throws Exception
     {
@@ -157,6 +158,7 @@ public class VirtualHostImpl implements VirtualHost
         _securityManager.configureHostPlugins(_vhostConfig);
 
         _connectionRegistry = new ConnectionRegistry();
+        _connectionRegistry.addRegistryChangeListener(this);
 
         _houseKeepingTasks = new ScheduledThreadPoolExecutor(_vhostConfig.getHouseKeepingThreadCount());
 
@@ -178,6 +180,9 @@ public class VirtualHostImpl implements VirtualHost
         activateNonHAMessageStore();
 
         initialiseStatistics();
+
+        _messageStore.addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
+        _messageStore.addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
     }
 
     public IConnectionRegistry getConnectionRegistry()
@@ -558,7 +563,7 @@ public class VirtualHostImpl implements VirtualHost
     {
         return _bindingFactory;
     }
-    
+
     public void registerMessageDelivered(long messageSize)
     {
         if (isStatisticsEnabled())
@@ -568,7 +573,7 @@ public class VirtualHostImpl implements VirtualHost
         }
         _appRegistry.registerMessageDelivered(messageSize);
     }
-    
+
     public void registerMessageReceived(long messageSize, long timestamp)
     {
         if (isStatisticsEnabled())
@@ -578,34 +583,34 @@ public class VirtualHostImpl implements VirtualHost
         }
         _appRegistry.registerMessageReceived(messageSize, timestamp);
     }
-    
+
     public StatisticsCounter getMessageReceiptStatistics()
     {
         return _messagesReceived;
     }
-    
+
     public StatisticsCounter getDataReceiptStatistics()
     {
         return _dataReceived;
     }
-    
+
     public StatisticsCounter getMessageDeliveryStatistics()
     {
         return _messagesDelivered;
     }
-    
+
     public StatisticsCounter getDataDeliveryStatistics()
     {
         return _dataDelivered;
     }
-    
+
     public void resetStatistics()
     {
         _messagesDelivered.reset();
         _dataDelivered.reset();
         _messagesReceived.reset();
         _dataReceived.reset();
-        
+
         for (AMQConnectionModel connection : _connectionRegistry.getConnections())
         {
             connection.resetStatistics();
@@ -616,7 +621,7 @@ public class VirtualHostImpl implements VirtualHost
     {
         setStatisticsEnabled(!StatisticsCounter.DISABLE_STATISTICS &&
                 _appRegistry.getConfiguration().isStatisticsGenerationVirtualhostsEnabled());
-        
+
         _messagesDelivered = new StatisticsCounter("messages-delivered-" + getName());
         _dataDelivered = new StatisticsCounter("bytes-delivered-" + getName());
         _messagesReceived = new StatisticsCounter("messages-received-" + getName());
@@ -699,16 +704,70 @@ public class VirtualHostImpl implements VirtualHost
         return _dtxRegistry;
     }
 
-    @Override
     public String toString()
     {
         return _name;
     }
 
-    @Override
     public State getState()
     {
         return _state;
+    }
+
+    public void block()
+    {
+        synchronized (_connectionRegistry)
+        {
+            if(!_blocked)
+            {
+                _blocked = true;
+                for(AMQConnectionModel conn : _connectionRegistry.getConnections())
+                {
+                    conn.block();
+                }
+            }
+        }
+    }
+
+
+    public void unblock()
+    {
+        synchronized (_connectionRegistry)
+        {
+            if(_blocked)
+            {
+                _blocked = false;
+                for(AMQConnectionModel conn : _connectionRegistry.getConnections())
+                {
+                    conn.unblock();
+                }
+            }
+        }
+    }
+
+    public void connectionRegistered(final AMQConnectionModel connection)
+    {
+        if(_blocked)
+        {
+            connection.block();
+        }
+    }
+
+    public void connectionUnregistered(final AMQConnectionModel connection)
+    {
+    }
+
+    public void event(final Event event)
+    {
+        switch(event)
+        {
+            case PERSISTENT_MESSAGE_SIZE_OVERFULL:
+                block();
+                break;
+            case PERSISTENT_MESSAGE_SIZE_UNDERFULL:
+                unblock();
+                break;
+        }
     }
 
 
@@ -750,7 +809,8 @@ public class VirtualHostImpl implements VirtualHost
             {
                 _exchangeRegistry.initialise();
                 initialiseModel(_vhostConfig);
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 throw new RuntimeException("Failed to initialise virtual host after state change", e);
             }
@@ -766,7 +826,8 @@ public class VirtualHostImpl implements VirtualHost
             try
             {
                 _brokerMBean.register();
-            } catch (JMException e)
+            }
+            catch (JMException e)
             {
                 throw new RuntimeException("Failed to register virtual host mbean for virtual host " + getName(), e);
             }
@@ -777,8 +838,6 @@ public class VirtualHostImpl implements VirtualHost
 
     public class BeforePassivationListener implements EventListener
     {
-
-        @Override
         public void event(Event event)
         {
             _connectionRegistry.close(IConnectionRegistry.VHOST_PASSIVATE_REPLY_TEXT);
