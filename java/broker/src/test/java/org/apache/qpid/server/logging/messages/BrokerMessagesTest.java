@@ -20,9 +20,8 @@
  */
 package org.apache.qpid.server.logging.messages;
 
+import java.text.NumberFormat;
 import java.util.List;
-
-import org.apache.derby.iapi.services.io.FileUtil;
 
 /**
  * Test BRK log Messages
@@ -139,7 +138,7 @@ public class BrokerMessagesTest extends AbstractTestMessages
         _logMessage = BrokerMessages.MAX_MEMORY(oneGiga);
         List<Object> log = performLog();
 
-        String[] expected = {"Maximum Memory :", "1,073,741,824", "bytes"};
+        String[] expected = {"Maximum Memory :", NumberFormat.getNumberInstance().format(oneGiga), "bytes"};
 
         validateLogMessage(log, "BRK-1011", expected);
     }
