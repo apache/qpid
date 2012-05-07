@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.message;
 
+import java.util.Collection;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
@@ -125,6 +126,13 @@ public class ContentHeaderBodyAdapter implements AMQMessageHeader
             }
         }
         return true;
+    }
+
+    @Override
+    public Collection<String> getHeaderNames()
+    {
+        FieldTable ft = getProperties().getHeaders();
+        return ft.keys();
     }
 
     public boolean containsHeader(String name)

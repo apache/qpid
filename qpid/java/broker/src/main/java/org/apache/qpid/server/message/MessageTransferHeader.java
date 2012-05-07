@@ -20,13 +20,10 @@
  */
 package org.apache.qpid.server.message;
 
+import java.util.*;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
-
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 
 class MessageTransferHeader implements AMQMessageHeader
 {
@@ -75,7 +72,7 @@ class MessageTransferHeader implements AMQMessageHeader
     public String getMessageId()
     {
         UUID id = _messageProps == null ? null : _messageProps.getMessageId();
-        
+
         return id == null ? null : String.valueOf(id);
     }
 
@@ -105,7 +102,7 @@ class MessageTransferHeader implements AMQMessageHeader
     public String getType()
     {
         Object type = getHeader(JMS_TYPE);
-        return type instanceof String ? (String) type : null; 
+        return type instanceof String ? (String) type : null;
     }
 
     public String getReplyTo()
@@ -154,6 +151,14 @@ class MessageTransferHeader implements AMQMessageHeader
     {
         Map<String, Object> appHeaders = _messageProps == null ? null : _messageProps.getApplicationHeaders();
         return appHeaders != null && appHeaders.keySet().containsAll(names);
+
+    }
+
+    @Override
+    public Collection<String> getHeaderNames()
+    {
+        Map<String, Object> appHeaders = _messageProps == null ? null : _messageProps.getApplicationHeaders();
+        return appHeaders != null ? Collections.unmodifiableCollection(appHeaders.keySet()) : Collections.EMPTY_SET ;
 
     }
 

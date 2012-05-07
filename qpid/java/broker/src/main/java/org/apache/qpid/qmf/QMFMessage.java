@@ -21,6 +21,8 @@
 
 package org.apache.qpid.qmf;
 
+import java.util.Collection;
+import java.util.Collections;
 import org.apache.commons.lang.NotImplementedException;
 
 import org.apache.qpid.framing.AMQShortString;
@@ -174,6 +176,12 @@ public class QMFMessage implements ServerMessage, InboundMessage, AMQMessageHead
     public boolean containsHeaders(Set<String> names)
     {
         return false;
+    }
+
+    @Override
+    public Collection<String> getHeaderNames()
+    {
+        return Collections.EMPTY_SET;
     }
 
     public boolean containsHeader(String name)

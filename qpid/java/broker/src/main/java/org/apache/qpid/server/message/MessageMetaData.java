@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.message;
 
+import java.util.Collection;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -326,6 +327,12 @@ public class MessageMetaData implements StorableMessageMetaData
                 }
             }
             return true;
+        }
+
+        @Override
+        public Collection<String> getHeaderNames()
+        {
+            return getProperties().getHeaders().keys();
         }
 
         public boolean containsHeader(String name)

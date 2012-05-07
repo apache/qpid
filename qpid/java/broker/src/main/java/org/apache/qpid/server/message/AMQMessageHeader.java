@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.message;
 
+import java.util.Collection;
 import java.util.Set;
 
 public interface AMQMessageHeader
@@ -56,4 +57,5 @@ public interface AMQMessageHeader
 
     boolean containsHeader(String name);
 
+    Collection<String> getHeaderNames();
 }
