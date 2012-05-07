@@ -20,8 +20,14 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.commons.lang.time.FastDateFormat;
-
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import javax.management.JMException;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.TabularData;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -40,20 +46,6 @@ import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactory;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
-
-import javax.management.JMException;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.TabularData;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Test class to test AMQQueueMBean attributes and operations
@@ -223,7 +215,7 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
         assertEquals("Queue Name does not match", new AMQShortString(getName()), _queueMBean.getName());
         assertFalse("AutoDelete should not be set.",_queueMBean.isAutoDelete());
         assertFalse("Queue should not be durable.",_queueMBean.isDurable());
-        
+
         //set+get exclusivity using the mbean, and also verify it is actually updated in the queue
         _queueMBean.setExclusive(true);
         assertTrue("Exclusive property should be true.",_queueMBean.isExclusive());
@@ -263,10 +255,11 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
         assertNotNull("Expected message header array", row2.get(ManagedQueue.MSG_HEADER));
         final Map<String, String> row2Headers = headerArrayToMap((String[])row2.get(ManagedQueue.MSG_HEADER));
         assertEquals("Unexpected JMSPriority within header", "Persistent", row2Headers.get("JMSDeliveryMode"));
-        assertEquals("Unexpected JMSTimestamp within header",  FastDateFormat.getInstance(AMQQueueMBean.JMSTIMESTAMP_DATETIME_FORMAT).format(msg2Timestamp),
-                                                               row2Headers.get("JMSTimestamp"));
-        assertEquals("Unexpected JMSExpiration within header", FastDateFormat.getInstance(AMQQueueMBean.JMSTIMESTAMP_DATETIME_FORMAT).format(msg2Expiration),
-                                                               row2Headers.get("JMSExpiration"));
+        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(AMQQueueMBean.JMSTIMESTAMP_DATETIME_FORMAT);
+        assertEquals("Unexpected JMSTimestamp within header", msg2Timestamp,
+                     simpleDateFormat.parse(row2Headers.get("JMSTimestamp")));
+        assertEquals("Unexpected JMSExpiration within header", msg2Expiration,
+                     simpleDateFormat.parse(row2Headers.get("JMSExpiration")));
     }
 
     public void testViewMessageWithIllegalStartEndRanges() throws Exception
@@ -338,13 +331,13 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
             // PASS
         }
     }
-    
+
     public void testFlowControlProperties() throws Exception
     {
         assertTrue(_queueMBean.getCapacity() == 0);
         assertTrue(_queueMBean.getFlowResumeCapacity() == 0);
         assertFalse(_queueMBean.isFlowOverfull());
-        
+
         //capacity currently 0, try setting FlowResumeCapacity above this
         try
         {
@@ -356,7 +349,7 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
             //expected exception
             assertTrue(_queueMBean.getFlowResumeCapacity() == 0);
         }
-        
+
         //add a message to the queue
         sendMessages(1, true);
 
@@ -365,7 +358,7 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
         assertTrue(_queueMBean.getCapacity() == 2L);
         _queueMBean.setFlowResumeCapacity(2L);
         assertTrue(_queueMBean.getFlowResumeCapacity() == 2L);
-        
+
         //Try setting Capacity below FlowResumeCapacity
         try
         {
@@ -377,18 +370,18 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
             //expected exception
             assertTrue(_queueMBean.getCapacity() == 2);
         }
-        
+
         //create a channel and use it to exercise the capacity check mechanism
         AMQChannel channel = new AMQChannel(getSession(), 1, getMessageStore());
         getQueue().checkCapacity(channel);
-        
+
         assertTrue(_queueMBean.isFlowOverfull());
         assertTrue(channel.getBlocking());
-        
+
         //set FlowResumeCapacity to MESSAGE_SIZE and check queue is now underfull and channel unblocked
         _queueMBean.setCapacity(MESSAGE_SIZE);//must increase capacity too
         _queueMBean.setFlowResumeCapacity(MESSAGE_SIZE);
-        
+
         assertFalse(_queueMBean.isFlowOverfull());
         assertFalse(channel.getBlocking());
     }

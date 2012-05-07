@@ -38,7 +38,7 @@ import org.apache.qpid.server.security.access.config.RuleSet;
 
 /**
  * These tests check that the ACL file parsing works correctly.
- * 
+ *
  * For each message that can be returned in a {@link ConfigurationException}, an ACL file is created that should trigger this
  * particular message.
  */
@@ -48,7 +48,7 @@ public class PlainConfigurationTest extends TestCase
     {
         File acl = File.createTempFile(getClass().getName() + getName(), "acl");
         acl.deleteOnExit();
-        
+
         // Write ACL file
         PrintWriter aclWriter = new PrintWriter(new FileWriter(acl));
         for (String line : aclData)
@@ -70,14 +70,13 @@ public class PlainConfigurationTest extends TestCase
             // Load ruleset
             ConfigurationFile configFile = new PlainConfiguration(new File("doesnotexist"));
             configFile.load();
-            
+
             fail("fail");
         }
         catch (ConfigurationException ce)
         {
             assertEquals(String.format(PlainConfiguration.CONFIG_NOT_FOUND_MSG, "doesnotexist"), ce.getMessage());
             assertTrue(ce.getCause() instanceof FileNotFoundException);
-            assertEquals("doesnotexist (No such file or directory)", ce.getCause().getMessage());
         }
     }
 
