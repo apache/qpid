@@ -29,6 +29,7 @@
 #include "qpid/framing/FieldTable.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/broker/Exchange.h"
+#include "qpid/broker/SessionHandler.h"
 #include "qmf/org/apache/qpid/broker/ArgsLinkBridge.h"
 #include "qmf/org/apache/qpid/broker/Bridge.h"
 
@@ -43,14 +44,14 @@ class Connection;
 class ConnectionState;
 class Link;
 class LinkRegistry;
-class SessionHandler;
 
 class Bridge : public PersistableConfig,
                public management::Manageable,
                public Exchange::DynamicBridge,
+               public SessionHandler::ErrorListener,
                public boost::enable_shared_from_this<Bridge>
 {
-public:
+  public:
     typedef boost::shared_ptr<Bridge> shared_ptr;
     typedef boost::function<void(Bridge*)> CancellationListener;
     typedef boost::function<void(Bridge&, SessionHandler&)> InitializeCallback;
@@ -104,10 +105,14 @@ public:
                                   const std::string& dest,
                                   const std::string& key);
 
-private:
-    // Callback when the bridge's session is detached.
-    void sessionDetached();
+    // SessionHandler::ErrorListener methods.
+    void connectionException(framing::connection::CloseCode code, const std::string& msg);
+    void channelException(framing::session::DetachCode, const std::string& msg);
+    void executionException(framing::execution::ErrorCode, const std::string& msg);
+    void detach();
 
+    void setErrorListener(boost::shared_ptr<ErrorListener> e) { errorListener = e; }
+  private:
     struct PushHandler : framing::FrameHandler {
         PushHandler(Connection* c) { conn = c; }
         void handle(framing::AMQFrame& frame);
@@ -138,6 +143,7 @@ private:
     void cancel(Connection& c);
     void closed();
     friend class Link; // to call create, cancel, closed()
+    boost::shared_ptr<ErrorListener> errorListener;
 };
 
 

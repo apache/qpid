@@ -25,7 +25,7 @@
 #include "qpid/amqp_0_10/SessionHandler.h"
 #include "qpid/broker/SessionHandler.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
-#include <boost/function.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 class SessionState;
@@ -43,6 +43,21 @@ class SessionState;
  */
 class SessionHandler : public amqp_0_10::SessionHandler {
   public:
+    class ErrorListener {
+      public:
+        virtual ~ErrorListener() {}
+        virtual void connectionException(
+            framing::connection::CloseCode code, const std::string& msg) = 0;
+        virtual void channelException(
+            framing::session::DetachCode, const std::string& msg) = 0;
+        virtual void executionException(
+            framing::execution::ErrorCode, const std::string& msg) = 0;
+        /** Called when it is safe to delete the ErrorListener. */
+        virtual void detach() = 0;
+    };
+
+    /**
+     *@param e must not be deleted until ErrorListener::detach has been called */
     SessionHandler(Connection&, framing::ChannelId);
     ~SessionHandler();
 
@@ -71,7 +86,7 @@ class SessionHandler : public amqp_0_10::SessionHandler {
     void attached(const std::string& name);//used by 'pushing' inter-broker bridges
     void attachAs(const std::string& name);//used by 'pulling' inter-broker bridges
 
-    void setDetachedCallback(boost::function<void()> cb);
+    void setErrorListener(boost::shared_ptr<ErrorListener> e) { errorListener = e; }
 
   protected:
     virtual void setState(const std::string& sessionName, bool force);
@@ -94,7 +109,7 @@ class SessionHandler : public amqp_0_10::SessionHandler {
     framing::AMQP_ClientProxy proxy;
     std::auto_ptr<SessionState> session;
     std::auto_ptr<SetChannelProxy> clusterOrderProxy;
-    boost::function<void ()> detachedCallback;
+    boost::shared_ptr<ErrorListener> errorListener;
 };
 
 }} // namespace qpid::broker
