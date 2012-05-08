@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 <ivysettings>
-  <property name="ivy.default.resolver" value="m2repo" override="false"/>
+  <property name="ivy.default.resolver" value="chain" override="false"/>
   <property name="ivy.localfs.root" value="${project.root}/localfs_repo" override="false"/>
   <property name="ivy.localfs.pattern" value="[artifact]-[revision](-[classifier]).[ext]" override="false"/>
   <property name="ivy.m2repo.url" value="http://repo1.maven.org/maven2" override="false"/>
@@ -25,8 +25,16 @@
     <filesystem name="localfs">
       <artifact pattern="${ivy.localfs.root}/${ivy.localfs.pattern}" />
     </filesystem>
+
     <url name="m2repo" m2compatible="true">
       <artifact pattern="${ivy.m2repo.url}/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
     </url>
+
+    <ibiblio name="public" m2compatible="true"/>
+
+    <chain name="chain" returnFirst="true">
+      <resolver ref="m2repo"/>
+      <resolver ref="public"/>
+    </chain>
   </resolvers>
 </ivysettings>
