@@ -112,6 +112,7 @@ public class DerbyMessageStore implements MessageStore
 
 
     private static Class<Driver> DRIVER_CLASS;
+    public static final String MEMORY_STORE_LOCATION = ":memory:";
 
     private final AtomicLong _messageId = new AtomicLong(0);
     private AtomicBoolean _closed = new AtomicBoolean(false);
@@ -302,13 +303,16 @@ public class DerbyMessageStore implements MessageStore
         final String databasePath = storeConfiguration.getString(MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY, System.getProperty("QPID_WORK")
                 + File.separator + "derbyDB");
 
-        File environmentPath = new File(databasePath);
-        if (!environmentPath.exists())
+        if(!MEMORY_STORE_LOCATION.equals(databasePath))
         {
-            if (!environmentPath.mkdirs())
+            File environmentPath = new File(databasePath);
+            if (!environmentPath.exists())
             {
-                throw new IllegalArgumentException("Environment path " + environmentPath + " could not be read or created. "
-                    + "Ensure the path is correct and that the permissions are correct.");
+                if (!environmentPath.mkdirs())
+                {
+                    throw new IllegalArgumentException("Environment path " + environmentPath + " could not be read or created. "
+                        + "Ensure the path is correct and that the permissions are correct.");
+                }
             }
         }
 
@@ -345,7 +349,7 @@ public class DerbyMessageStore implements MessageStore
     private void createOrOpenDatabase(String name, final String environmentPath) throws SQLException
     {
         //FIXME this the _vhost name should not be added here, but derby wont use an empty directory as was possibly just created.
-        _connectionURL = "jdbc:derby:" + environmentPath + "/" + name + ";create=true";
+        _connectionURL = "jdbc:derby" + (environmentPath.equals(MEMORY_STORE_LOCATION) ? environmentPath : ":" + environmentPath + "/") + name + ";create=true";
 
         Connection conn = newAutoCommitConnection();
 
