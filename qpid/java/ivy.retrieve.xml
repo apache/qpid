@@ -20,6 +20,10 @@
 
   <info organisation="${ivy.organisation}" module="${project.name}" revision="${project.version}"/>
 
+  <configurations defaultconf="required" defaultconfmapping="required->default">
+    <conf name="required"/>
+  </configurations>
+
   <publications xmlns:e="urn:ant.apache.org:ivy-extras"/>
 
   <dependencies>
