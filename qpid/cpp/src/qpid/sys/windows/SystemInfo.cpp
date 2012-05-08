@@ -23,9 +23,11 @@
 #  define _WIN32_WINNT 0x0501
 #endif
 
-#include "qpid/sys/IntegerTypes.h"
 #include "qpid/sys/SystemInfo.h"
+#include "qpid/sys/IntegerTypes.h"
+#include "qpid/Exception.h"
 
+#include <assert.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
