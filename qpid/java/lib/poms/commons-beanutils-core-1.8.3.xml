@@ -16,7 +16,7 @@
    limitations under the License.
 -->
 <dep>
-  <groupId>commons-collections</groupId>
-  <artifactId>commons-collections</artifactId>
-  <version>3.2</version>
+  <groupId>commons-beanutils</groupId>
+  <artifactId>commons-beanutils-core</artifactId>
+  <version>1.8.3</version>
 </dep>
