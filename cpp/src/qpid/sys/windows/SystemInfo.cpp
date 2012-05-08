@@ -93,6 +93,12 @@ void SystemInfo::getLocalIpAddresses (uint16_t port,
     }
 }
 
+bool SystemInfo::isLocalHost(const std::string& candidateHost) {
+    // FIXME aconway 2012-05-03: not implemented.
+    assert(0);
+    throw Exception("Not implemented: isLocalHost");
+}
+
 void SystemInfo::getSystemId (std::string &osName,
                               std::string &nodeName,
                               std::string &release,
