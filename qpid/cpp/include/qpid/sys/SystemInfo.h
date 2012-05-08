@@ -34,51 +34,61 @@ namespace sys {
  * Results may be dependent on OS/hardware.
  */
 namespace SystemInfo {
-    /**
-     * Estimate available concurrency, e.g. number of CPU cores.
-     * -1 means estimate not available on this platform.
-     */
-    QPID_COMMON_EXTERN long concurrency();
+/**
+ * Estimate available concurrency, e.g. number of CPU cores.
+ * -1 means estimate not available on this platform.
+ */
+QPID_COMMON_EXTERN long concurrency();
 
-    /**
-     * Get the local host name and set it in the specified.
-     * Returns false if it can't be obtained and sets errno to any error value.
-     */
-    QPID_COMMON_EXTERN bool getLocalHostname (Address &address);
+/**
+ * Get the local host name and set it in the specified.
+ * Returns false if it can't be obtained and sets errno to any error value.
+ */
+QPID_COMMON_EXTERN bool getLocalHostname (Address &address);
 
-    QPID_COMMON_EXTERN void getLocalIpAddresses (uint16_t port, std::vector<Address> &addrList);
+/**
+ * Get the (possibly multiple) local IP addresses of this host
+ * using the specified port.
+ */
+QPID_COMMON_EXTERN void getLocalIpAddresses (uint16_t port, std::vector<Address> &addrList);
 
-    /**
-     * Retrieve system identifiers and versions. This is information that can
-     * generally be retrieved via POSIX uname().
-     *
-     * @param osName   Receives the OS name; e.g., GNU/Linux or Windows
-     * @param nodeName Receives the nodename. This may or may not match the
-     *                 set hostname from getLocalHostname().
-     * @param release  Receives the OS release identifier.
-     * @param version  Receives the OS release version (kernel, build, sp, etc.)
-     * @param machine  Receives the hardware type.
-     */
-    QPID_COMMON_EXTERN void getSystemId (std::string &osName,
-                      std::string &nodeName,
-                      std::string &release,
-                      std::string &version,
-                      std::string &machine);
+/**
+ * Return true if host names an address of the local host.
+ *@param host host name or IP address.
+ */
+QPID_COMMON_EXTERN bool isLocalHost(const std::string& host);
 
-    /**
-     * Get the process ID of the current process.
-     */
-    QPID_COMMON_EXTERN uint32_t getProcessId();
+/**
+ * Retrieve system identifiers and versions. This is information that can
+ * generally be retrieved via POSIX uname().
+ *
+ * @param osName   Receives the OS name; e.g., GNU/Linux or Windows
+ * @param nodeName Receives the nodename. This may or may not match the
+ *                 set hostname from getLocalHostname().
+ * @param release  Receives the OS release identifier.
+ * @param version  Receives the OS release version (kernel, build, sp, etc.)
+ * @param machine  Receives the hardware type.
+ */
+QPID_COMMON_EXTERN void getSystemId (std::string &osName,
+                                     std::string &nodeName,
+                                     std::string &release,
+                                     std::string &version,
+                                     std::string &machine);
 
-    /**
-     * Get the process ID of the parent of the current process.
-     */
-    QPID_COMMON_EXTERN uint32_t getParentProcessId();
+/**
+ * Get the process ID of the current process.
+ */
+QPID_COMMON_EXTERN uint32_t getProcessId();
 
-    /**
-     * Get the name of the current process (i.e. the name of the executable)
-     */
-    QPID_COMMON_EXTERN std::string getProcessName();
+/**
+ * Get the process ID of the parent of the current process.
+ */
+QPID_COMMON_EXTERN uint32_t getParentProcessId();
+
+/**
+ * Get the name of the current process (i.e. the name of the executable)
+ */
+QPID_COMMON_EXTERN std::string getProcessName();
 
 
 }}} // namespace qpid::sys::SystemInfo
