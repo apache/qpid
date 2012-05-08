@@ -90,8 +90,7 @@ void Bridge::create(Connection& c)
     FieldTable options;
     if (args.i_sync) options.setInt("qpid.sync_frequency", args.i_sync);
     SessionHandler& sessionHandler = c.getChannel(channel);
-    sessionHandler.setDetachedCallback(
-        boost::bind(&Bridge::sessionDetached, shared_from_this()));
+    sessionHandler.setErrorListener(shared_from_this());
     if (args.i_srcIsLocal) {
         if (args.i_dynamic)
             throw Exception("Dynamic routing not supported for push routes");
@@ -377,8 +376,29 @@ const string& Bridge::getLocalTag() const
 {
     return link->getBroker()->getFederationTag();
 }
-void Bridge::sessionDetached() {
+
+// SessionHandler::ErrorListener methods.
+void Bridge::connectionException(
+    framing::connection::CloseCode code, const std::string& msg)
+{
+    if (errorListener) errorListener->connectionException(code, msg);
+}
+
+void Bridge::channelException(
+    framing::session::DetachCode code, const std::string& msg)
+{
+    if (errorListener) errorListener->channelException(code, msg);
+}
+
+void Bridge::executionException(
+    framing::execution::ErrorCode code, const std::string& msg)
+{
+    if (errorListener) errorListener->executionException(code, msg);
+}
+
+void Bridge::detach() {
     detached = true;
+    if (errorListener) errorListener->detach();
 }
 
 std::string Bridge::createName(const std::string& linkName,

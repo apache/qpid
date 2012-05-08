@@ -267,12 +267,19 @@ void Link::setUrl(const Url& u) {
 
 
 namespace {
-    /** invoked when session used to subscribe to remote's amq.failover exchange detaches */
-    void sessionDetached(Link *link) {
-        QPID_LOG(notice, "detached from 'amq.failover' for link: " << link->getName());
+class DetachedCallback : public SessionHandler::ErrorListener {
+  public:
+    DetachedCallback(const Link& link) : name(link.getName()) {}
+    void connectionException(framing::connection::CloseCode, const std::string&) {}
+    void channelException(framing::session::DetachCode, const std::string&) {}
+    void executionException(framing::execution::ErrorCode, const std::string&) {}
+    void detach()  {
+        QPID_LOG(notice, "detached from 'amq.failover' for link: " << name);
     }
+  private:
+    const std::string name;
+};
 }
-
 
 void Link::opened() {
     Mutex::ScopedLock mutex(lock);
@@ -301,7 +308,8 @@ void Link::opened() {
     failoverChannel = nextChannel();
 
     SessionHandler& sessionHandler = connection->getChannel(failoverChannel);
-    sessionHandler.setDetachedCallback( boost::bind(&sessionDetached, this) );
+    sessionHandler.setErrorListener(
+        boost::shared_ptr<SessionHandler::ErrorListener>(new DetachedCallback(*this)));
     failoverSession = queueName;
     sessionHandler.attachAs(failoverSession);
 
