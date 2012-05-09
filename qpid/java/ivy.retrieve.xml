@@ -20,8 +20,9 @@
 
   <info organisation="${ivy.organisation}" module="${project.name}" revision="${project.version}"/>
 
-  <configurations defaultconf="required" defaultconfmapping="required->default">
+  <configurations defaultconf="required" defaultconfmapping="required->default;bdbje->default">
     <conf name="required"/>
+    <conf name="bdbje"/>
   </configurations>
 
   <publications xmlns:e="urn:ant.apache.org:ivy-extras"/>
@@ -56,5 +57,10 @@
     <dependency org="org.slf4j" name="slf4j-api" rev="1.6.4" transitive="false"/>
     <dependency org="org.slf4j" name="slf4j-log4j12" rev="1.6.4" transitive="false"/>
     <dependency org="xalan" name="xalan" rev="2.7.0" transitive="false"/>
+
+    <!-- The following are optional dependencies, for modules providing optional functionlity or
+    for use in optional build/test steps. Their optional status is usually indicative of licences
+    which are not compatible with the Apache Licence -->
+    <dependency org="com.sleepycat" name="je" rev="5.0.34" transitive="false" conf="bdbje"/>
   </dependencies>
 </ivy-module>

@@ -16,7 +16,7 @@
  - specific language governing permissions and limitations
  - under the License.
  -->
-<project name="bdbstore" default="build">
+<project name="bdbstore" xmlns:ivy="antlib:org.apache.ivy.ant" default="build">
     <property name="module.depends" value="common broker" />
     <property name="module.test.depends" value="test client common/test broker/test management/common systests" />
     <property name="module.genpom" value="true"/>
@@ -25,8 +25,14 @@
 
     <property name="bdb.lib.dir" value="${project.root}/lib/bdbstore" />
     <property name="bdb.version" value="5.0.34" />
-    <property name="bdb.download.url" value="http://download.oracle.com/maven/com/sleepycat/je/${bdb.version}/je-${bdb.version}.jar" />
     <property name="bdb.jar.file" value="${bdb.lib.dir}/je-${bdb.version}.jar" />
+
+    <condition property="download.bdb.jar">
+      <or>
+        <istrue value="${download-bdb}"/>
+        <istrue value="${optional.dependencies}"/>
+      </or>
+    </condition>
 
     <!--check whether the BDB jar is present, possibly after download-->
     <target name="check-bdb-jar">
@@ -61,15 +67,16 @@ http://www.oracle.com/technetwork/database/berkeleydb/downloads/jeoslicense-0868
     </target>
 
     <!--check if an inline BDB download was requested with the build-->
-    <target name="check-request-props" if="download-bdb">
+    <target name="check-request-props" if="download.bdb.jar">
         <antcall target="download-bdb"/>
     </target>
 
     <!--download BDB, with licencing note-->
-    <target name="download-bdb" depends="bdb-licence-note">
-        <mkdir dir="${bdb.lib.dir}"/>
-        <echo>Downloading BDB JE</echo>
-        <get src="${bdb.download.url}" dest="${bdb.jar.file}" usetimestamp="true" />
+    <target name="download-bdb" depends="bdb-licence-note, load-ivy, configure-ivy" unless="${ivy.dont.retrieve}">
+      <echo message="Resolving and retrieving dependencies..."/>
+      <ivy:resolve type="jar,bundle" file="${project.root}/ivy.retrieve.xml" conf="bdbje"/>
+      <ivy:retrieve type="jar,bundle" conf="bdbje" sync="true"
+          pattern="${project.root}/lib/bdbstore/[artifact]-[revision].[ext]" />
     </target>
 
     <target name="build" depends="check-request-props, bdb-jar-required, module.build" />

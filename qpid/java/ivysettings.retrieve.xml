@@ -30,10 +30,15 @@
       <artifact pattern="${ivy.m2repo.url}/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
     </url>
 
+    <url name="oracle" m2compatible="true">
+      <artifact pattern="http://download.oracle.com/maven/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
+    </url>
+
     <ibiblio name="public" m2compatible="true"/>
 
     <chain name="chain" returnFirst="true">
       <resolver ref="m2repo"/>
+      <resolver ref="oracle"/>
       <resolver ref="public"/>
     </chain>
   </resolvers>
