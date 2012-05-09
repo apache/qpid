@@ -23,24 +23,30 @@ package org.apache.qpid.jms;
 import javax.jms.JMSException;
 import javax.jms.Queue;
 
+import org.apache.qpid.jms.QpidDestination.DestinationType;
+
 public class QpidQueue extends QpidDestination implements Queue 
 {
-	public QpidQueue()
-	{
-		super(DestinationType.QUEUE);
-	}
+    public QpidQueue()
+    {
+    }
 
-	public QpidQueue(String str) throws JMSException
-	{
-		super(DestinationType.QUEUE);
+    public QpidQueue(String str) throws JMSException
+    {
         setDestinationString(str);
-	}
+    }
 
-	@Override
-	public String getQueueName() throws JMSException 
-	{
-       return address.getName();
-	}
+    @Override
+    public DestinationType getType()
+    {
+        return DestinationType.QUEUE;
+    }
+
+    @Override
+    public String getQueueName() throws JMSException
+    {
+        return _address.getName();
+    }
 
     @Override
     public boolean equals(Object obj)

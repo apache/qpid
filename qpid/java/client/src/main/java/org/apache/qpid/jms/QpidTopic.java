@@ -23,26 +23,28 @@ package org.apache.qpid.jms;
 import javax.jms.JMSException;
 import javax.jms.Topic;
 
-import org.apache.qpid.jms.QpidDestination.DestinationType;
-
 public class QpidTopic extends QpidDestination implements Topic 
 {
-	public QpidTopic()
-	{
-		super(DestinationType.TOPIC);
-	}
+    public QpidTopic()
+    {
+    }
 
-	public QpidTopic(String str) throws JMSException
-	{
-		super(DestinationType.TOPIC);
-		setDestinationString(str);
-	}
+    public QpidTopic(String str) throws JMSException
+    {
+        setDestinationString(str);
+    }
 
-	@Override
-	public String getTopicName() throws JMSException 
-	{
-        return address.getSubject() == null ? "" : address.getSubject();
-	}
+    @Override
+    public DestinationType getType()
+    {
+        return DestinationType.TOPIC;
+    }
+
+    @Override
+    public String getTopicName() throws JMSException
+    {
+        return _address.getSubject() == null ? "" : _address.getSubject();
+    }
 
     @Override
     public boolean equals(Object obj)
@@ -61,13 +63,13 @@ public class QpidTopic extends QpidDestination implements Topic
 
         try
         {
-            if (!address.getName().equals(topic.getAddress().getName()))
+            if (!_address.getName().equals(topic.getAddress().getName()))
             {
                 return false;
             }
 
             // The subject being the topic name
-            if (!address.getSubject().equals(topic.getAddress().getSubject()))
+            if (!_address.getSubject().equals(topic.getAddress().getSubject()))
             {
                 return false;
             }

@@ -36,69 +36,42 @@ import org.slf4j.LoggerFactory;
 
 public abstract class QpidDestination implements Destination, Referenceable
 {
+    private static final Logger _logger = LoggerFactory.getLogger(QpidDestination.class);
+
     public enum DestinationType {QUEUE, TOPIC};
 
-    private static final Logger _logger = LoggerFactory.getLogger(QpidDestination.class);
-    private static final DestSyntax defaultDestSyntax;
-    private DestSyntax _destSyntax = DestSyntax.ADDR;
+    protected String _destinationString;
+    protected Address _address;
 
-    protected final DestinationType type;
-    protected String destinationString;
-    protected Address address;
-
-    protected QpidDestination(DestinationType type)
+    protected QpidDestination()
     {
-        this.type = type;
     }
 
     public String getDestinationString()
     {
-        return destinationString;
+        return _destinationString;
     }
 
     public void setDestinationString(String str) throws JMSException
     {
-    	if (destinationString != null)
-    	{
+        if (_destinationString != null)
+        {
             throw new javax.jms.IllegalStateException("Once a destination string is set, it cannot be changed");
-    	}
-        destinationString = str;
+        }
+        _destinationString = str;
         parseDestinationString(str);
     }
 
+    public abstract DestinationType getType();
+
     protected void parseDestinationString(String str) throws JMSException
     {
-        _destSyntax = getDestType(str);
-        str = stripSyntaxPrefix(str);
-
-        if (_logger.isDebugEnabled())
-        {
-        	_logger.debug("Based on " + str + " the selected destination syntax is " + _destSyntax);
-        }
-
-        try 
-        {
-			if (_destSyntax == DestSyntax.BURL)
-			{    
-				address = DestinationStringParser.parseAddressString(str,type);
-			}
-			else
-			{
-				address = DestinationStringParser.parseBURLString(str,type);
-			}
-		}
-        catch (AddressException e)
-        {
-			JMSException ex = new JMSException("Error parsing destination string, due to : " + e.getMessage());
-			ex.initCause(e);
-			ex.setLinkedException(e);
-			throw ex;
-		}
+        _address = DestinationStringParser.parseDestinationString(str, getType());
     }
 
     protected Address getAddress()
     {
-    	return address;
+        return _address;
     }
 
     @Override
@@ -111,69 +84,9 @@ public abstract class QpidDestination implements Destination, Referenceable
                 null);          // factory location
     }
 
-
-    // ------- utility methods -------
-    
-    static
-    {
-        defaultDestSyntax = DestSyntax.getSyntaxType(
-                     System.getProperty(ClientProperties.DEST_SYNTAX,
-                                        DestSyntax.ADDR.toString()));
-    }
-    
-    public enum DestSyntax 
-    {        
-        BURL,ADDR;
-        
-        public static DestSyntax getSyntaxType(String s)
-        {
-            if (("BURL").equals(s))
-            {
-                return BURL;
-            }
-            else if (("ADDR").equals(s))
-            {
-                return ADDR;
-            }
-            else
-            {
-                throw new IllegalArgumentException("Invalid Destination Syntax Type" +
-                                                   " should be one of {BURL|ADDR}");
-            }
-        }
-    }
-    
-    public  static DestSyntax getDestType(String str)
-    {
-        if (str.startsWith("ADDR:"))                
-        {
-            return DestSyntax.ADDR;
-        }
-        else if (str.startsWith("BURL:"))
-        {
-            return DestSyntax.BURL;
-        }
-        else
-        {
-            return defaultDestSyntax;
-        }
-    }
-    
-    public static String stripSyntaxPrefix(String str)
-    {
-        if (str.startsWith("BURL:") || str.startsWith("ADDR:"))
-        {
-            return str.substring(5,str.length());
-        }
-        else
-        {
-            return str;
-        }
-    }
-
     @Override
     public String toString()
     {
-        return address == null ? "" : address.toString();
+        return _address == null ? "" : _address.toString();
     }
 }
