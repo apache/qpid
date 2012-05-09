@@ -79,10 +79,7 @@ public class ConflationQueueList extends SimpleQueueEntryList
             if(oldEntry.compareTo(entry) < 0)
             {
                 // We replaced some other entry to become the newest value
-                if(oldEntry.acquire())
-                {
-                    discardEntry(oldEntry);
-                }
+                discardEntry(oldEntry);
             }
             else if (oldEntry.compareTo(entry) > 0)
             {
