@@ -1515,7 +1515,7 @@ if (UNIX)
     )
     set_target_properties (asyncStore PROPERTIES
         PREFIX ""
-        OUTPUT_NAME qpidAsyncStore
+        OUTPUT_NAME asyncStore
         SOVERSION ${asyncStore_version}
     )
     target_link_libraries (asyncStore

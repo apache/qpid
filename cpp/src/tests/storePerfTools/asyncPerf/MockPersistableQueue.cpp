@@ -323,7 +323,7 @@ void
 MockPersistableQueue::pop(QueuedMessagePtr& qm)
 {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_enqueuedMsgsMutex);
-    if (m_enqueuedMsgs.empty()) {
+    while (m_enqueuedMsgs.empty()) {
         m_dequeueCondition.wait(m_enqueuedMsgsMutex);
     }
     qm = m_enqueuedMsgs.front();

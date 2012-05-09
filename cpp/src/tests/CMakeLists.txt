@@ -369,7 +369,6 @@ if (UNIX)
     add_executable (jrnl2Perf ${jrnl2Perf_SOURCES})
     set_target_properties (jrnl2Perf PROPERTIES
 	    COMPILE_FLAGS "-DJOURNAL2"
-	    LINK_FLAGS "-L${QPID_BUILD_DIR}/src"
     )
     target_link_libraries (jrnl2Perf
 	    asyncStore
@@ -379,7 +378,7 @@ if (UNIX)
 endif (UNIX)
 
 # Async store perf test (asyncPerf)
-set (asyncPerf_SOURCES
+set (asyncStorePerf_SOURCES
 	storePerfTools/asyncPerf/MockPersistableMessage.cpp
 	storePerfTools/asyncPerf/MockPersistableQueue.cpp
 	storePerfTools/asyncPerf/MockTransactionContext.cpp
@@ -400,12 +399,11 @@ set (asyncPerf_SOURCES
 )
 
 if (UNIX)
-    add_executable (asyncPerf ${asyncPerf_SOURCES})
-    set_target_properties (asyncPerf PROPERTIES
+    add_executable (asyncStorePerf ${asyncStorePerf_SOURCES})
+    set_target_properties (asyncStorePerf PROPERTIES
 	    COMPILE_FLAGS "-DJOURNAL2"
-	    LINK_FLAGS "-L${QPID_BUILD_DIR}/src"
     )
-    target_link_libraries (asyncPerf
+    target_link_libraries (asyncStorePerf
 	    boost_program_options
 	    asyncStore
 	    qpidbroker
