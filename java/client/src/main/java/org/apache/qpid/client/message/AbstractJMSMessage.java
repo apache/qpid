@@ -321,7 +321,40 @@ public abstract class AbstractJMSMessage implements org.apache.qpid.jms.Message
 
     protected abstract String getMimeType();
 
+    public String toHeaderString() throws JMSException
+    {
+        StringBuffer buf = new StringBuffer();
+        buf.append("\nJMS Correlation ID: ").append(getJMSCorrelationID());
+        buf.append("\nJMS timestamp: ").append(getJMSTimestamp());
+        buf.append("\nJMS expiration: ").append(getJMSExpiration());
+        buf.append("\nJMS priority: ").append(getJMSPriority());
+        buf.append("\nJMS delivery mode: ").append(getJMSDeliveryMode());
+        buf.append("\nJMS reply to: ").append(getReplyToString());
+        buf.append("\nJMS Redelivered: ").append(_redelivered);
+        buf.append("\nJMS Destination: ").append(getJMSDestination());
+        buf.append("\nJMS Type: ").append(getJMSType());
+        buf.append("\nJMS MessageID: ").append(getJMSMessageID());
+        buf.append("\nJMS Content-Type: ").append(getContentType());
+        buf.append("\nAMQ message number: ").append(getDeliveryTag());
 
+        buf.append("\nProperties:");
+        final Enumeration propertyNames = getPropertyNames();
+        if (!propertyNames.hasMoreElements())
+        {
+            buf.append("<NONE>");
+        }
+        else
+        {
+            buf.append('\n');
+            while(propertyNames.hasMoreElements())
+            {
+                String propertyName = (String) propertyNames.nextElement();
+                buf.append("\t").append(propertyName).append(" = ").append(getObjectProperty(propertyName)).append("\n");
+            }
+
+        }
+        return buf.toString();
+    }
 
     public String toString()
     {
@@ -330,35 +363,7 @@ public abstract class AbstractJMSMessage implements org.apache.qpid.jms.Message
             StringBuffer buf = new StringBuffer("Body:\n");
             
             buf.append(toBodyString());
-            buf.append("\nJMS Correlation ID: ").append(getJMSCorrelationID());
-            buf.append("\nJMS timestamp: ").append(getJMSTimestamp());
-            buf.append("\nJMS expiration: ").append(getJMSExpiration());
-            buf.append("\nJMS priority: ").append(getJMSPriority());
-            buf.append("\nJMS delivery mode: ").append(getJMSDeliveryMode());
-            buf.append("\nJMS reply to: ").append(getReplyToString());
-            buf.append("\nJMS Redelivered: ").append(_redelivered);
-            buf.append("\nJMS Destination: ").append(getJMSDestination());
-            buf.append("\nJMS Type: ").append(getJMSType());
-            buf.append("\nJMS MessageID: ").append(getJMSMessageID());
-            buf.append("\nJMS Content-Type: ").append(getContentType());
-            buf.append("\nAMQ message number: ").append(getDeliveryTag());
-
-            buf.append("\nProperties:");
-            final Enumeration propertyNames = getPropertyNames();
-            if (!propertyNames.hasMoreElements())
-            {
-                buf.append("<NONE>");
-            }
-            else
-            {
-                buf.append('\n');
-                while(propertyNames.hasMoreElements())
-                {
-                    String propertyName = (String) propertyNames.nextElement();
-                    buf.append("\t").append(propertyName).append(" = ").append(getObjectProperty(propertyName)).append("\n");
-                }
-
-            }
+            buf.append(toHeaderString());
 
             return buf.toString();
         }
