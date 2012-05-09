@@ -82,7 +82,9 @@ namespace broker {
                 bool         durable,
                 const std::string& authMechanism,
                 const std::string& username,
-                const std::string& password);
+                const std::string& password,
+                bool failover=true);
+
         /** determine if Link exists */
         QPID_BROKER_EXTERN boost::shared_ptr<Link>
           getLink(const std::string& name);

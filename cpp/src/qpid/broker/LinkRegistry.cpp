@@ -101,7 +101,8 @@ pair<Link::shared_ptr, bool> LinkRegistry::declare(const string& name,
                                                    bool     durable,
                                                    const string&  authMechanism,
                                                    const string&  username,
-                                                   const string&  password)
+                                                   const string&  password,
+                                                   bool failover)
 
 {
     Mutex::ScopedLock   locker(lock);
@@ -111,10 +112,11 @@ pair<Link::shared_ptr, bool> LinkRegistry::declare(const string& name,
     {
         Link::shared_ptr link;
 
-        link = Link::shared_ptr (new Link (name, this, host, port, transport,
-                                           boost::bind(&LinkRegistry::linkDestroyed, this, _1),
-                                           durable, authMechanism, username, password, broker,
-                                           parent));
+        link = Link::shared_ptr (
+            new Link (name, this, host, port, transport,
+                      boost::bind(&LinkRegistry::linkDestroyed, this, _1),
+                      durable, authMechanism, username, password, broker,
+                      parent, failover));
         if (durable && store) store->create(*link);
         links[name] = link;
         QPID_LOG(debug, "Creating new link; name=" << name );
