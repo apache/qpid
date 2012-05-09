@@ -49,7 +49,7 @@ export LOG_CONFIG="-Dlog4j.configuration=file:///$QPID_CHECKOUT/java/tools/etc/t
 
 #------------- Required for qpid-python-testkit -----------------------------------------
 
-PYTHONPATH=$QPID_CHECKOUT/python/qpid:$QPID_CHECKOUT/cpp/src/test/brokertest.py:$PYTHONPATH
+PYTHONPATH=$QPID_CHECKOUT/python:$QPID_CHECKOUT/cpp/src/test/brokertest.py:$PYTHONPATH
 export PATH=$QPID_CHECKOUT/python:$PATH
 
 if [ -x $QPID_CHECKOUT/cpp/src/qpidd ]; then
