@@ -63,7 +63,8 @@ class Link : public PersistableConfig, public management::Manageable {
     uint16_t            port;
     std::string         transport;
 
-    bool          durable;
+    bool durable;
+
     std::string        authMechanism;
     std::string        username;
     std::string        password;
@@ -87,6 +88,7 @@ class Link : public PersistableConfig, public management::Manageable {
     boost::function<void(Link*)> listener;
     boost::intrusive_ptr<sys::TimerTask> timerTask;
     boost::shared_ptr<broker::LinkExchange> failoverExchange;  // subscribed to remote's amq.failover exchange
+    bool failover; // Do we subscribe to a failover exchange?
     uint failoverChannel;
     std::string failoverSession;
 
@@ -132,7 +134,8 @@ class Link : public PersistableConfig, public management::Manageable {
          const std::string&       username,
          const std::string&       password,
          Broker*       broker,
-         management::Manageable* parent = 0);
+         management::Manageable* parent = 0,
+         bool failover=true);
     virtual ~Link();
 
     /** these return the *configured* transport/host/port, which does not change over the

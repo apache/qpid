@@ -62,8 +62,9 @@ void Backup::initialize(const Url& url) {
     std::pair<Link::shared_ptr, bool> result = broker.getLinks().declare(
         broker::QPID_NAME_PREFIX + string("ha.link.") + uuid.str(),
         url[0].host, url[0].port, protocol,
-        false,              // durable
-        settings.mechanism, settings.username, settings.password);
+        false,                  // durable
+        settings.mechanism, settings.username, settings.password,
+        false);                 // amq.failover
     link = result.first;
     link->setUrl(url);
     replicator.reset(new BrokerReplicator(haBroker, link));
