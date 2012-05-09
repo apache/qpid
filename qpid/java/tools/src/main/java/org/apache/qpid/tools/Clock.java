@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.tools;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * In the future this will be replaced by a Clock abstraction
  * that can utilize a realtime clock when running in RT Java.
@@ -27,6 +30,8 @@ package org.apache.qpid.tools;
 
 public class Clock
 {
+	private static final Logger _logger = LoggerFactory.getLogger(Clock.class);
+
     public final static long SEC = 60000;
 
     private static Precision precision;
@@ -54,7 +59,11 @@ public class Clock
         precision = Precision.getPrecision(System.getProperty("precision","mili"));
         //offset = Long.getLong("offset",-1);
 
-        System.out.println("Using precision : " + precision + " and offset " + offset);
+        if (_logger.isDebugEnabled())
+        {
+            System.out.println("Using precision : " + precision );
+            //+ " and offset " + offset);
+        }
     }
 
     public static Precision getPrecision()
