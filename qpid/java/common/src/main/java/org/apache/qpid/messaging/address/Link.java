@@ -38,7 +38,7 @@ public class Link
         UNRELIABLE, AT_MOST_ONCE, AT_LEAST_ONCE, EXACTLY_ONCE;
 
         public static Reliability getReliability(String reliability)
-                throws AddressException
+        throws AddressException
         {
             if (reliability == null)
             {
@@ -60,52 +60,52 @@ public class Link
         }
     }
 
-    protected String name;
-    protected String filter;
-    protected FilterType filterType = FilterType.SUBJECT;
-    protected boolean noLocal;
-    protected boolean durable;
-    protected int consumerCapacity = 0;
-    protected int producerCapacity = 0;
-    protected Reliability reliability = AT_LEAST_ONCE;
+    private String name;
+    private String _filter;
+    private FilterType _filterType = FilterType.SUBJECT;
+    private boolean _noLocal;
+    private boolean _durable;
+    private int _consumerCapacity = 0;
+    private int _producerCapacity = 0;
+    private Reliability _reliability = AT_LEAST_ONCE;
 
-    protected Map<String, Object> xDeclareProps = Collections.emptyMap();
-    protected List<Object> xBindingProps = Collections.emptyList();
-    protected Map<String, Object> xSubscribeProps = Collections.emptyMap();
+    private Map<String, Object> _xDeclareProps = Collections.emptyMap();
+    private List<Object> _xBindingProps = Collections.emptyList();
+    private Map<String, Object> _xSubscribeProps = Collections.emptyMap();
 
     public Reliability getReliability()
     {
-        return reliability;
+        return _reliability;
     }
 
     public boolean isDurable()
     {
-        return durable;
+        return _durable;
     }
 
     public String getFilter()
     {
-        return filter;
+        return _filter;
     }
 
     public FilterType getFilterType()
     {
-        return filterType;
+        return _filterType;
     }
 
     public boolean isNoLocal()
     {
-        return noLocal;
+        return _noLocal;
     }
 
     public int getConsumerCapacity()
     {
-        return consumerCapacity;
+        return _consumerCapacity;
     }
 
     public int getProducerCapacity()
     {
-        return producerCapacity;
+        return _producerCapacity;
     }
 
     public String getName()
@@ -115,17 +115,17 @@ public class Link
 
     public Map<String, Object> getDeclareProperties()
     {
-        return xDeclareProps;
+        return _xDeclareProps;
     }
 
     public List<Object> getBindingProperties()
     {
-        return xBindingProps;
+        return _xBindingProps;
     }
 
     public Map<String, Object> getSubscribeProperties()
     {
-        return xSubscribeProps;
+        return _xSubscribeProps;
     }
 
     public void setName(String name)
@@ -135,52 +135,52 @@ public class Link
 
     public void setFilter(String filter)
     {
-        this.filter = filter;
+        this._filter = filter;
     }
 
     public void setFilterType(FilterType filterType)
     {
-        this.filterType = filterType;
+        this._filterType = filterType;
     }
 
     public void setNoLocal(boolean noLocal)
     {
-        this.noLocal = noLocal;
+        this._noLocal = noLocal;
     }
 
     public void setDurable(boolean durable)
     {
-        this.durable = durable;
+        this._durable = durable;
     }
 
     public void setConsumerCapacity(int consumerCapacity)
     {
-        this.consumerCapacity = consumerCapacity;
+        this._consumerCapacity = consumerCapacity;
     }
 
     public void setProducerCapacity(int producerCapacity)
     {
-        this.producerCapacity = producerCapacity;
+        this._producerCapacity = producerCapacity;
     }
 
     public void setReliability(Reliability reliability)
     {
-        this.reliability = reliability;
+        this._reliability = reliability;
     }
 
     public void setDeclareProps(Map<String, Object> xDeclareProps)
     {
-        this.xDeclareProps = xDeclareProps;
+        this._xDeclareProps = xDeclareProps;
     }
 
     public void setBindingProps(List<Object> xBindingProps)
     {
-        this.xBindingProps = xBindingProps;
+        this._xBindingProps = xBindingProps;
     }
 
     public void setSubscribeProps(Map<String, Object> xSubscribeProps)
     {
-        this.xSubscribeProps = xSubscribeProps;
+        this._xSubscribeProps = xSubscribeProps;
     }
 
 }

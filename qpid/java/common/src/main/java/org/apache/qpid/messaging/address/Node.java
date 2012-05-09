@@ -33,7 +33,7 @@ public class Node
         NEVER, SENDER, RECEIVER, ALWAYS;
 
         public static AddressPolicy getAddressPolicy(String policy)
-                throws AddressException
+        throws AddressException
         {
             if (policy == null || policy.equalsIgnoreCase("never"))
             {
@@ -83,17 +83,17 @@ public class Node
         }
     };
 
-    protected String name;
+    private String name;
 
-    protected boolean durable = false;
-    protected NodeType type = NodeType.QUEUE;
+    private boolean _durable = false;
+    private NodeType _type = NodeType.QUEUE;
 
-    protected AddressPolicy createPolicy = AddressPolicy.NEVER;
-    protected AddressPolicy assertPolicy = AddressPolicy.NEVER;
-    protected AddressPolicy deletePolicy = AddressPolicy.NEVER;
+    private AddressPolicy _createPolicy = AddressPolicy.NEVER;
+    private AddressPolicy _assertPolicy = AddressPolicy.NEVER;
+    private AddressPolicy _deletePolicy = AddressPolicy.NEVER;
 
-    protected Map<String, Object> xDeclareProps = Collections.emptyMap();
-    protected List<Object> xBindingProps = Collections.emptyList();
+    private Map<String, Object> _xDeclareProps = Collections.emptyMap();
+    private List<Object> _xBindingProps = Collections.emptyList();
 
     public String getName()
     {
@@ -102,37 +102,37 @@ public class Node
 
     public boolean isDurable()
     {
-        return durable;
+        return _durable;
     }
 
     public NodeType getType()
     {
-        return type;
+        return _type;
     }
 
     public AddressPolicy getCreatePolicy()
     {
-        return createPolicy;
+        return _createPolicy;
     }
 
     public AddressPolicy getAssertPolicy()
     {
-        return assertPolicy;
+        return _assertPolicy;
     }
 
     public AddressPolicy getDeletePolicy()
     {
-        return deletePolicy;
+        return _deletePolicy;
     }
 
     public Map<String, Object> getDeclareProperties()
     {
-        return xDeclareProps;
+        return _xDeclareProps;
     }
 
     public List<Object> getBindingProperties()
     {
-        return xBindingProps;
+        return _xBindingProps;
     }
 
     public void setName(String name)
@@ -142,36 +142,36 @@ public class Node
 
     public void setDurable(boolean durable)
     {
-        this.durable = durable;
+        this._durable = durable;
     }
 
     public void setType(NodeType type)
     {
-        this.type = type;
+        this._type = type;
     }
 
     public void setCreatePolicy(AddressPolicy createPolicy)
     {
-        this.createPolicy = createPolicy;
+        this._createPolicy = createPolicy;
     }
 
     public void setAssertPolicy(AddressPolicy assertPolicy)
     {
-        this.assertPolicy = assertPolicy;
+        this._assertPolicy = assertPolicy;
     }
 
     public void setDeletePolicy(AddressPolicy deletePolicy)
     {
-        this.deletePolicy = deletePolicy;
+        this._deletePolicy = deletePolicy;
     }
 
     public void setDeclareProps(Map<String, Object> xDeclareProps)
     {
-        this.xDeclareProps = xDeclareProps;
+        this._xDeclareProps = xDeclareProps;
     }
 
     public void setBindingProps(List<Object> xBindingProps)
     {
-        this.xBindingProps = xBindingProps;
+        this._xBindingProps = xBindingProps;
     }
 }

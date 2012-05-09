@@ -27,6 +27,7 @@ import org.apache.qpid.messaging.util.AddressParser;
 import static org.apache.qpid.messaging.util.PyPrint.pprint;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
@@ -42,8 +43,9 @@ public class Address
     private Map _options;
     private final String _myToString;
 
-    private Node node;
-    private Link link;
+    private Node _node;
+    private Link _link;
+    private AtomicBoolean readOnly = new AtomicBoolean(false);
 
     public static Address parse(String address)
     {
@@ -80,21 +82,34 @@ public class Address
 
     public Node getNode()
     {
-        return node;
+        return _node;
     }
 
     public void setNode(Node n)
     {
-        this.node = n;
+        if (readOnly.get())
+        {
+            throw new IllegalArgumentException("Once initialized the address object is immutable");
+        }
+        this._node = n;
     }
 
     public Link getLink()
     {
-        return link;
+        return _link;
     }
 
     public void setLink(Link l)
     {
-        this.link = l;
+        if (readOnly.get())
+        {
+            throw new IllegalArgumentException("Once initialized the address object is immutable");
+        }
+        this._link = l;
+    }
+
+    public void markReadOnly()
+    {
+        readOnly.set(true);
     }
 }

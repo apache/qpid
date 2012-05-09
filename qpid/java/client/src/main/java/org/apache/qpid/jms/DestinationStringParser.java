@@ -184,6 +184,7 @@ public class DestinationStringParser
         link.setSubscribeProps(helper.getLinkSubscribeArgs());
         addr.setLink(link);
 
+        addr.markReadOnly();
         return addr;
     }
 
