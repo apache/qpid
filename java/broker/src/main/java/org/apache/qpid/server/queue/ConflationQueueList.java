@@ -72,21 +72,28 @@ public class ConflationQueueList extends SimpleQueueEntryList
             do
             {
                 latestValueReference = getOrPutIfAbsent(keyValue, referenceToEntry);
-                oldEntry = latestValueReference.get();
+                oldEntry = latestValueReference == null ? null : latestValueReference.get();
             }
-            while(oldEntry.compareTo(entry) < 0
+            while(oldEntry != null
+                    && oldEntry.compareTo(entry) < 0
                     && oldEntry != getHead()
                     && !latestValueReference.compareAndSet(oldEntry, entry));
 
-            if(oldEntry.compareTo(entry) < 0)
+            if (oldEntry == null)
             {
-                // We replaced some other entry to become the newest value
-                discardEntry(oldEntry);
+                // Unlikely: A newer entry came along and was consumed (and entry removed from map)
+                // during our processing of getOrPutIfAbsent().  In this case we know our entry has been superseded.
+                discardEntry(entry);
             }
             else if (oldEntry.compareTo(entry) > 0)
             {
                 // A newer entry came along
                 discardEntry(entry);
+            }
+            else if (oldEntry.compareTo(entry) < 0)
+            {
+                // We replaced some other entry to become the newest value
+                discardEntry(oldEntry);
             }
 
             entry.setLatestValueReference(latestValueReference);
