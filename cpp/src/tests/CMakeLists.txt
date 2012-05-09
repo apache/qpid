@@ -343,3 +343,74 @@ add_library (dlclose_noop MODULE dlclose_noop.c)
 #EXTRA_DIST+=$(LONG_TESTS) run_perftest
 #check-long:
 #	$(MAKE) check TESTS="start_broker $(LONG_TESTS) stop_broker" VALGRIND=
+
+
+# Async Store perf tests
+# ----------------------
+
+# New journal perf test (jrnl2Perf)
+set (jrnl2Perf_SOURCES
+	storePerfTools/jrnlPerf/Journal.cpp
+	storePerfTools/jrnlPerf/JournalParameters.cpp
+	storePerfTools/jrnlPerf/PerfTest.cpp
+	storePerfTools/jrnlPerf/TestResult.cpp
+	
+	storePerfTools/common/Parameters.cpp
+    storePerfTools/common/PerftoolError.cpp
+	storePerfTools/common/ScopedTimable.cpp
+	storePerfTools/common/ScopedTimer.cpp
+	storePerfTools/common/Streamable.cpp
+	storePerfTools/common/TestParameters.cpp
+	storePerfTools/common/TestResult.cpp
+	storePerfTools/common/Thread.cpp
+)
+
+if (UNIX)
+    add_executable (jrnl2Perf ${jrnl2Perf_SOURCES})
+    set_target_properties (jrnl2Perf PROPERTIES
+	    COMPILE_FLAGS "-DJOURNAL2"
+	    LINK_FLAGS "-L${QPID_BUILD_DIR}/src"
+    )
+    target_link_libraries (jrnl2Perf
+	    asyncStore
+	    qpidbroker
+	    rt
+    )
+endif (UNIX)
+
+# Async store perf test (asyncPerf)
+set (asyncPerf_SOURCES
+	storePerfTools/asyncPerf/MockPersistableMessage.cpp
+	storePerfTools/asyncPerf/MockPersistableQueue.cpp
+	storePerfTools/asyncPerf/MockTransactionContext.cpp
+	storePerfTools/asyncPerf/PerfTest.cpp
+	storePerfTools/asyncPerf/QueuedMessage.cpp
+	storePerfTools/asyncPerf/TestOptions.cpp
+	storePerfTools/asyncPerf/TestResult.cpp
+	
+	storePerfTools/common/Parameters.cpp
+    storePerfTools/common/PerftoolError.cpp
+	storePerfTools/common/ScopedTimable.cpp
+	storePerfTools/common/ScopedTimer.cpp
+	storePerfTools/common/Streamable.cpp
+	storePerfTools/common/TestOptions.cpp
+	storePerfTools/common/TestParameters.cpp
+	storePerfTools/common/TestResult.cpp
+	storePerfTools/common/Thread.cpp
+)
+
+if (UNIX)
+    add_executable (asyncPerf ${asyncPerf_SOURCES})
+    set_target_properties (asyncPerf PROPERTIES
+	    COMPILE_FLAGS "-DJOURNAL2"
+	    LINK_FLAGS "-L${QPID_BUILD_DIR}/src"
+    )
+    target_link_libraries (asyncPerf
+	    boost_program_options
+	    asyncStore
+	    qpidbroker
+	    qpidcommon
+	    qpidtypes
+	    rt
+    )
+endif (UNIX)

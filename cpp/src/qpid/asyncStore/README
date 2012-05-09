@@ -1,0 +1,34 @@
+This folder contains source code for the new async store module. It implements the interface
+described in qpid/broker/AsyncStore.h.
+
+NOTE: This is NOT the current (old) async store module implemented through the sync interface
+in qpid/broker/MessageStoere.h. That store will continue to be kept separately at
+https://svn.jboss.org/repos/rhmessaging/store/trunk/cpp (or if no checkin credentials, then
+read-only at http://anonsvn.jboss.org/repos/rhmessaging/store/trunk/cpp).
+
+Layout
+------
+
+qpid
+  |
+  +---asyncStore (Interface layer with broker)
+        | 
+        +---jrnl2 (Async journal)
+
+
+The jrnl2 directory contains the asynchronous journal code, and contains all the journal
+file management and low-level writing and reading. This code knows only about writing
+opaque data blobs to disk in records which may or may not contain a transaction identifier.
+Records may be enqueued (written) or dequeued (which writes to disk the logical deletion of an
+earlier enqueued record).
+
+The upper asyncStore directory contains the implementation of the broker's AsyncStore
+interface and the necessary logic to interface this to the jrnl2 code. It also provides
+transaction handling and recovery logic.
+
+Building
+--------
+Currently, this module is a Linux-only module, owing to the dependency of the jrnl2 layer
+on the Linux-only libaio library.
+
+Only cmake is supported.

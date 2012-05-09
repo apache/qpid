@@ -1461,3 +1461,66 @@ if (UNIX)
            COMPONENT ${QPID_COMPONENT_COMMON})
 endif (UNIX)
 
+
+# Async Store support
+
+# Journal 2 source files
+set (jrnl2_SOURCES
+	qpid/asyncStore/jrnl2/AsyncJournal.cpp
+	qpid/asyncStore/jrnl2/DataOpState.cpp
+	qpid/asyncStore/jrnl2/DataToken.cpp
+	qpid/asyncStore/jrnl2/DataWrComplState.cpp
+	qpid/asyncStore/jrnl2/DequeueHeader.cpp
+	qpid/asyncStore/jrnl2/EnqueueHeader.cpp
+	qpid/asyncStore/jrnl2/EventHeader.cpp
+	qpid/asyncStore/jrnl2/FileHeader.cpp
+	qpid/asyncStore/jrnl2/JournalDirectory.cpp
+	qpid/asyncStore/jrnl2/JournalError.cpp
+	qpid/asyncStore/jrnl2/JournalParameters.cpp
+	qpid/asyncStore/jrnl2/JournalRunState.cpp
+	qpid/asyncStore/jrnl2/RecordHeader.cpp
+	qpid/asyncStore/jrnl2/RecordTail.cpp
+	qpid/asyncStore/jrnl2/ScopedLock.cpp
+	qpid/asyncStore/jrnl2/Streamable.cpp
+	qpid/asyncStore/jrnl2/TransactionHeader.cpp
+)
+
+# AsyncStore source files
+set (asyncStore_SOURCES
+    qpid/asyncStore/AsyncOperation.cpp
+	qpid/asyncStore/AsyncStoreImpl.cpp
+	qpid/asyncStore/AsyncStoreOptions.cpp
+	qpid/asyncStore/ConfigHandleImpl.cpp
+	qpid/asyncStore/EnqueueHandleImpl.cpp
+	qpid/asyncStore/EventHandleImpl.cpp
+	qpid/asyncStore/MessageHandleImpl.cpp
+	qpid/asyncStore/OperationQueue.cpp
+	qpid/asyncStore/Plugin.cpp
+	qpid/asyncStore/QueueHandleImpl.cpp
+	qpid/asyncStore/RunState.cpp
+	qpid/asyncStore/TxnHandleImpl.cpp
+	qpid/broker/ConfigHandle.cpp
+	qpid/broker/EnqueueHandle.cpp
+	qpid/broker/EventHandle.cpp
+	qpid/broker/IdHandle.cpp
+	qpid/broker/MessageHandle.cpp
+	qpid/broker/QueueHandle.cpp
+	qpid/broker/TxnHandle.cpp
+)
+
+if (UNIX)
+    add_library (asyncStore MODULE
+	    ${jrnl2_SOURCES}
+	    ${asyncStore_SOURCES}
+    )
+    set_target_properties (asyncStore PROPERTIES
+        PREFIX ""
+        OUTPUT_NAME qpidAsyncStore
+        SOVERSION ${asyncStore_version}
+    )
+    target_link_libraries (asyncStore
+	    aio
+	    rt
+	    uuid
+    )
+endif (UNIX)
