@@ -25,115 +25,121 @@ import java.text.DecimalFormat;
 
 import javax.jms.Message;
 
+import org.apache.qpid.tools.TestConfiguration;
+
 public interface Statistics
 {
-    public void message(Message msg);
-    public void report(PrintStream out);
-    public void header(PrintStream out);
-    public void clear();
+	public void message(Message msg);
+	public void report(PrintStream out);
+	public void header(PrintStream out);
+	public void clear();
 
-    static class Throughput implements Statistics 
-    {
-        DecimalFormat df = new DecimalFormat("###.##");
-        int messages = 0;
-        long start = 0;
-        boolean started = false;
+	static class Throughput implements Statistics
+	{
+		DecimalFormat df = new DecimalFormat("###");
+		int messages = 0;
+		long start = 0;
+		boolean started = false;
 
-        @Override
-        public void message(Message msg)
-        {
-            ++messages;
-            if (!started) 
-            {
-                start = System.currentTimeMillis();
-                started = true;
-            }
-        }
+		@Override
+		public void message(Message msg)
+		{
+			++messages;
+			if (!started)
+			{
+				start = System.currentTimeMillis();
+				started = true;
+			}
+		}
 
-        @Override
-        public void report(PrintStream out)
-        {
-            long elapsed = System.currentTimeMillis() - start;
-            out.print(df.format((double)messages/(double)elapsed));            
-        }
+		@Override
+		public void report(PrintStream out)
+		{
+			long elapsed = System.currentTimeMillis() - start;
+			out.println(df.format((double)messages/(double)elapsed));
+		}
 
-        @Override
-        public void header(PrintStream out)
-        {
-            out.print("tp(m/s)");            
-        }        
+		@Override
+		public void header(PrintStream out)
+		{
+			out.println("tp(m/s)");
+		}
 
-        public void clear()
-        {
-            messages = 0;
-            start = 0;
-            started = false;
-        }
-    }
+		public void clear()
+		{
+			messages = 0;
+			start = 0;
+			started = false;
+		}
+	}
 
-    static class ThroughputAndLatency extends Throughput 
-    {
-        long minLatency = Long.MAX_VALUE;
-        long maxLatency = Long.MIN_VALUE;
-        double totalLatency = 0;
-        int sampleCount = 0;
+	static class ThroughputAndLatency extends Throughput
+	{
+		long minLatency = Long.MAX_VALUE;
+		long maxLatency = Long.MIN_VALUE;
+		double totalLatency = 0;
+		int sampleCount = 0;
 
-        @Override
-        public void message(Message msg)
-        {
-            super.message(msg);
-            try
-            {
-                long ts = msg.getLongProperty("ts");
-                long latency = System.currentTimeMillis() - ts;
-                minLatency = Math.min(latency, minLatency);
-                maxLatency = Math.min(latency, maxLatency);
-                totalLatency = totalLatency + latency;
-                sampleCount++;
-            }
-            catch(Exception e)
-            {
-                System.out.println("Error calculating latency");
-            }
-        }
+		@Override
+		public void message(Message msg)
+		{
+			super.message(msg);
+			try
+			{
+				long ts = msg.getLongProperty(TestConfiguration.TIMESTAMP);
+				long latency = System.currentTimeMillis() - ts;
+				minLatency = Math.min(latency, minLatency);
+				maxLatency = Math.max(latency, maxLatency);
+				totalLatency = totalLatency + latency;
+				sampleCount++;
+			}
+			catch(Exception e)
+			{
+				System.out.println("Error calculating latency " + e);
+			}
+		}
 
-        @Override
-        public void report(PrintStream out)
-        {
-            super.report(out);
-            double avgLatency = totalLatency/(double)sampleCount;
-            out.append('\t')
-            .append(String.valueOf(minLatency))
-            .append('\t')
-            .append(String.valueOf(maxLatency))
-            .append('\t')
-            .append(df.format(avgLatency));   
+		@Override
+		public void report(PrintStream out)
+		{
+			long elapsed = System.currentTimeMillis() - start;
+			double rate = (double)messages/(double)elapsed;
+			double avgLatency = totalLatency/(double)sampleCount;
+			out.append("\n")
+			.append(df.format(rate))
+			.append('\t')
+			.append(String.valueOf(minLatency))
+			.append('\t')
+			.append(String.valueOf(maxLatency))
+			.append('\t')
+			.append(df.format(avgLatency))
+			.append("\n");
 
-            out.flush();
-        }
+			out.flush();
+		}
 
-        @Override
-        public void header(PrintStream out)
-        {
-            super.header(out);
-            out.append('\t')
-            .append("l-min")
-            .append('\t')
-            .append("l-max")
-            .append('\t')
-            .append("l-avg");
+		@Override
+		public void header(PrintStream out)
+		{
+			out.append("tp(m/s)")
+			.append('\t')
+			.append("l-min")
+			.append('\t')
+			.append("l-max")
+			.append('\t')
+			.append("l-avg");
 
-            out.flush();
-        }       
+			out.flush();
+		}
 
-        public void clear()
-        {
-            super.clear();
-            minLatency = 0;
-            maxLatency = 0;
-            totalLatency = 0;
-            sampleCount = 0;
-        }
-    }
+		public void clear()
+		{
+			super.clear();
+			minLatency = 0;
+			maxLatency = 0;
+			totalLatency = 0;
+			sampleCount = 0;
+		}
+	}
 
 }
