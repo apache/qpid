@@ -71,4 +71,12 @@ public class QpidQueue extends QpidDestination implements Queue
             return false;
         }
     }
+
+    @Override
+    public int hashCode()
+    {
+        int base = 22;
+        String queue = _address == null ? "" : _address.getName();
+        return base * 25 + queue.hashCode();
+    }
 }

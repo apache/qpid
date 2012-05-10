@@ -81,4 +81,15 @@ public class QpidTopic extends QpidDestination implements Topic
 
         return true;
     }
+
+    @Override
+    public int hashCode()
+    {
+        int hash = 55;
+        String name = _address == null ? "" : _address.getName();
+        String subject = _address == null ? "" : _address.getSubject();
+        hash = hash * 25 + name.hashCode();
+        hash = hash * 35 + subject.hashCode();
+        return hash;
+    }
 }
