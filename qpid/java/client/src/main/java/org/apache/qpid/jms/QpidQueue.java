@@ -56,7 +56,7 @@ public class QpidQueue extends QpidDestination implements Queue
             return true;
         }
 
-        if (!(obj instanceof QpidQueue))
+        if(obj.getClass() != getClass())
         {
             return false;
         }

@@ -54,7 +54,7 @@ public class QpidTopic extends QpidDestination implements Topic
             return true;
         }
 
-        if (!(obj instanceof QpidTopic))
+        if(obj.getClass() != getClass())
         {
             return false;
         }

@@ -23,8 +23,7 @@ package org.apache.qpid.messaging.address;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.qpid.messaging.address.Link.Reliability;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Node
 {
@@ -35,26 +34,15 @@ public class Node
         public static AddressPolicy getAddressPolicy(String policy)
         throws AddressException
         {
-            if (policy == null || policy.equalsIgnoreCase("never"))
+            try
             {
-                return NEVER;
+                return policy == null ? NEVER : Enum.valueOf(AddressPolicy.class, policy.toUpperCase());
             }
-            else if (policy.equalsIgnoreCase("always"))
+            catch (IllegalArgumentException e)
             {
-                return ALWAYS;
-            }
-            else if (policy.equalsIgnoreCase("sender"))
-            {
-                return SENDER;
-            }
-            else if (policy.equalsIgnoreCase("receiver"))
-            {
-                return RECEIVER;
-            }
-            else
-            {
-                throw new AddressException("Invalid address policy type : '"
-                        + policy + "'");
+                throw new AddressException ((new StringBuffer("Invalid address policy")
+                .append(" '").append(policy).append("' ")
+                .append("Valid policy types are { NEVER, ALWAYS, SENDER, RECEIVER}.")).toString());
             }
         }
     };
@@ -65,20 +53,15 @@ public class Node
 
         public static NodeType getNodeType(String type) throws AddressException
         {
-            if (type == null)
+            try
             {
-                return QUEUE; // defaults to queue
+                return type == null ? QUEUE : Enum.valueOf(NodeType.class, type.toUpperCase());
             }
-            else if (type.equalsIgnoreCase("queue"))
+            catch (IllegalArgumentException e)
             {
-                return QUEUE;
-            }
-            else if (type.equalsIgnoreCase("topic"))
-            {
-                return TOPIC;
-            }else    
-            {
-                throw new AddressException("Invalid node type : '" + type + "'");
+                throw new AddressException ((new StringBuffer("Invalid node type")
+                .append(" '").append(type).append("' ")
+                .append("Valid node types are { QUEUE, TOPIC }.")).toString());
             }
         }
     };
@@ -94,6 +77,7 @@ public class Node
 
     private Map<String, Object> _xDeclareProps = Collections.emptyMap();
     private List<Object> _xBindingProps = Collections.emptyList();
+    private AtomicBoolean readOnly = new AtomicBoolean(false);
 
     public String getName()
     {
@@ -127,51 +111,72 @@ public class Node
 
     public Map<String, Object> getDeclareProperties()
     {
-        return _xDeclareProps;
+        return Collections.unmodifiableMap(_xDeclareProps);
     }
 
     public List<Object> getBindingProperties()
     {
-        return _xBindingProps;
+        return Collections.unmodifiableList(_xBindingProps);
     }
 
     public void setName(String name)
     {
+        checkReadOnly();
         this.name = name;
     }
 
     public void setDurable(boolean durable)
     {
+        checkReadOnly();
         this._durable = durable;
     }
 
     public void setType(NodeType type)
     {
+        checkReadOnly();
         this._type = type;
     }
 
     public void setCreatePolicy(AddressPolicy createPolicy)
     {
+        checkReadOnly();
         this._createPolicy = createPolicy;
     }
 
     public void setAssertPolicy(AddressPolicy assertPolicy)
     {
+        checkReadOnly();
         this._assertPolicy = assertPolicy;
     }
 
     public void setDeletePolicy(AddressPolicy deletePolicy)
     {
+        checkReadOnly();
         this._deletePolicy = deletePolicy;
     }
 
     public void setDeclareProps(Map<String, Object> xDeclareProps)
     {
+        checkReadOnly();
         this._xDeclareProps = xDeclareProps;
     }
 
     public void setBindingProps(List<Object> xBindingProps)
     {
+        checkReadOnly();
         this._xBindingProps = xBindingProps;
+    }
+
+    public void checkReadOnly()
+    {
+        if (readOnly.get())
+        {
+            throw new IllegalArgumentException("Once initialized the Link object is immutable");
+        }
+    }
+
+    public void markReadOnly()
+    {
+        readOnly.set(true);
     }
 }

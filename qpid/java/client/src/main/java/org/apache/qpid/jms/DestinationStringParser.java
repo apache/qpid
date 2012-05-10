@@ -57,15 +57,11 @@ public class DestinationStringParser
 
         public static DestSyntax getSyntaxType(String s)
         {
-            if ((BURL_STR).equals(s))
+            try
             {
-                return BURL;
+                return Enum.valueOf(DestSyntax.class, s.toUpperCase());
             }
-            else if ((ADDR_STR).equals(s))
-            {
-                return ADDR;
-            }
-            else
+            catch (IllegalArgumentException e)
             {
                 throw new IllegalArgumentException("Invalid Destination Syntax Type" +
                 " should be one of {BURL|ADDR}");
@@ -172,6 +168,7 @@ public class DestinationStringParser
         node.setDeclareProps(helper.getNodeDeclareArgs());
         node.setBindingProps(helper.getNodeBindings());
         addr.setNode(node);
+        node.markReadOnly();
 
         Link link =  new Link();
         link.setName(helper.getLinkName());
@@ -183,6 +180,7 @@ public class DestinationStringParser
         link.setBindingProps(helper.getLinkBindings());
         link.setSubscribeProps(helper.getLinkSubscribeArgs());
         addr.setLink(link);
+        link.markReadOnly();
 
         addr.markReadOnly();
         return addr;
@@ -241,7 +239,13 @@ public class DestinationStringParser
         node.setAssertPolicy(AddressPolicy.NEVER);
         node.setCreatePolicy(AddressPolicy.RECEIVER);
         node.setDeletePolicy(AddressPolicy.NEVER);
+        node.markReadOnly();
+        addr.setNode(node);
 
+        link.markReadOnly();
+        addr.setLink(link);
+
+        addr.markReadOnly();
         return addr;
     }
 }

@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.messaging;
 
-import org.apache.qpid.messaging.address.Link;
-import org.apache.qpid.messaging.address.Node;
-import org.apache.qpid.messaging.util.AddressParser;
-
 import static org.apache.qpid.messaging.util.PyPrint.pprint;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.apache.qpid.messaging.address.Link;
+import org.apache.qpid.messaging.address.Node;
+import org.apache.qpid.messaging.util.AddressParser;
 
 
 /**

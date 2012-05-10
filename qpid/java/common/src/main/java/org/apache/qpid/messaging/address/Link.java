@@ -25,6 +25,7 @@ import static org.apache.qpid.messaging.address.Link.Reliability.AT_LEAST_ONCE;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Link
 {
@@ -35,27 +36,21 @@ public class Link
 
     public enum Reliability
     {
-        UNRELIABLE, AT_MOST_ONCE, AT_LEAST_ONCE, EXACTLY_ONCE;
+        UNRELIABLE, AT_LEAST_ONCE;
 
-        public static Reliability getReliability(String reliability)
+        public static Reliability getReliability(String str)
         throws AddressException
         {
-            if (reliability == null)
+            try
             {
-                return AT_LEAST_ONCE;
+                return str == null ? AT_LEAST_ONCE : Enum.valueOf(Reliability.class, str.toUpperCase());
             }
-            else if (reliability.equalsIgnoreCase("unreliable"))
+            catch (IllegalArgumentException e)
             {
-                return UNRELIABLE;
-            }
-            else if (reliability.equalsIgnoreCase("at-least-once"))
-            {
-                return AT_LEAST_ONCE;
-            }
-            else
-            {
-                throw new AddressException("The reliability mode '"
-                        + reliability + "' is not yet supported");
+                throw new AddressException((new StringBuffer("The reliability mode")
+                .append(" '").append(str).append("' ")
+                .append("is not yet supported, supported.")
+                .append("Supported types are { UNRELIABLE, AT_LEAST_ONCE }.")).toString());
             }
         }
     }
@@ -72,6 +67,8 @@ public class Link
     private Map<String, Object> _xDeclareProps = Collections.emptyMap();
     private List<Object> _xBindingProps = Collections.emptyList();
     private Map<String, Object> _xSubscribeProps = Collections.emptyMap();
+
+    private AtomicBoolean readOnly = new AtomicBoolean(false);
 
     public Reliability getReliability()
     {
@@ -115,72 +112,95 @@ public class Link
 
     public Map<String, Object> getDeclareProperties()
     {
-        return _xDeclareProps;
+        return Collections.unmodifiableMap(_xDeclareProps);
     }
 
     public List<Object> getBindingProperties()
     {
-        return _xBindingProps;
+        return Collections.unmodifiableList(_xBindingProps);
     }
 
     public Map<String, Object> getSubscribeProperties()
     {
-        return _xSubscribeProps;
+        return Collections.unmodifiableMap(_xSubscribeProps);
     }
 
     public void setName(String name)
     {
+        checkReadOnly();
         this.name = name;
     }
 
     public void setFilter(String filter)
     {
+        checkReadOnly();
         this._filter = filter;
     }
 
     public void setFilterType(FilterType filterType)
     {
+        checkReadOnly();
         this._filterType = filterType;
     }
 
     public void setNoLocal(boolean noLocal)
     {
+        checkReadOnly();
         this._noLocal = noLocal;
     }
 
     public void setDurable(boolean durable)
     {
+        checkReadOnly();
         this._durable = durable;
     }
 
     public void setConsumerCapacity(int consumerCapacity)
     {
+        checkReadOnly();
         this._consumerCapacity = consumerCapacity;
     }
 
     public void setProducerCapacity(int producerCapacity)
     {
+        checkReadOnly();
         this._producerCapacity = producerCapacity;
     }
 
     public void setReliability(Reliability reliability)
     {
+        checkReadOnly();
         this._reliability = reliability;
     }
 
     public void setDeclareProps(Map<String, Object> xDeclareProps)
     {
+        checkReadOnly();
         this._xDeclareProps = xDeclareProps;
     }
 
     public void setBindingProps(List<Object> xBindingProps)
     {
+        checkReadOnly();
         this._xBindingProps = xBindingProps;
     }
 
     public void setSubscribeProps(Map<String, Object> xSubscribeProps)
     {
+        checkReadOnly();
         this._xSubscribeProps = xSubscribeProps;
     }
 
+    public void checkReadOnly()
+    {
+        if (readOnly.get())
+        {
+            throw new IllegalArgumentException("Once initialized the Link object is immutable");
+        }
+    }
+
+    public void markReadOnly()
+    {
+        readOnly.set(true);
+    }
 }
