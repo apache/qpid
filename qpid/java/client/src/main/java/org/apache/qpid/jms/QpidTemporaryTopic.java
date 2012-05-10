@@ -25,12 +25,12 @@ import javax.jms.TemporaryTopic;
 
 public class QpidTemporaryTopic extends QpidTopic implements TemporaryTopic
 {
-    TemporaryDestinationProvider provider;
+    private TemporaryDestinationProvider _provider;
 
     public QpidTemporaryTopic(TemporaryDestinationProvider provider) throws JMSException
     {
         super(provider.generateTempTopicAddress());
-        this.provider = provider;
+        this._provider = provider;
     }
 
     @Override

@@ -25,18 +25,18 @@ import javax.jms.TemporaryQueue;
 
 public class QpidTemporaryQueue extends QpidQueue implements TemporaryQueue
 {
-    TemporaryDestinationProvider provider;
+    private TemporaryDestinationProvider _provider;
 
     public QpidTemporaryQueue(TemporaryDestinationProvider provider) throws JMSException
     {
         super(provider.generateTempQueueAddress());
-        this.provider = provider;
+        this._provider = provider;
     }
 
     @Override
     public void delete() throws JMSException
     {
-        provider.delete(getQueueName());
+        _provider.delete(getQueueName());
     }
 
 }
