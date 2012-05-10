@@ -125,9 +125,9 @@ public class SSLUtil
         return id.toString();
     }
     
-    public static KeyStore getInitializedKeyStore(String storePath, String storePassword) throws GeneralSecurityException, IOException
+    public static KeyStore getInitializedKeyStore(String storePath, String storePassword, String keyStoreType) throws GeneralSecurityException, IOException
     {
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance(keyStoreType);
         InputStream in = null;
         try
         {
@@ -140,7 +140,7 @@ public class SSLUtil
             {
                 in = Thread.currentThread().getContextClassLoader().getResourceAsStream(storePath);
             }
-            if (in == null)
+            if (in == null && !"PKCS11".equalsIgnoreCase(keyStoreType)) // PKCS11 will not require an explicit path
             {
                 throw new IOException("Unable to load keystore resource: " + storePath);
             }
