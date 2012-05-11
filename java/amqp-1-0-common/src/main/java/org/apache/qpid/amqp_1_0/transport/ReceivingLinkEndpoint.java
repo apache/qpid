@@ -32,6 +32,8 @@ public class ReceivingLinkEndpoint extends LinkEndpoint<ReceivingLinkListener>
 {
 
 
+    private UnsignedInteger _lastDeliveryId;
+
     private static class TransientState
     {
 
@@ -435,4 +437,16 @@ public class ReceivingLinkEndpoint extends LinkEndpoint<ReceivingLinkListener>
     {
         return _drainLimit;
     }
+
+    UnsignedInteger getLastDeliveryId()
+    {
+        return _lastDeliveryId;
+    }
+
+    void setLastDeliveryId(UnsignedInteger lastDeliveryId)
+    {
+        _lastDeliveryId = lastDeliveryId;
+    }
+
+
 }
