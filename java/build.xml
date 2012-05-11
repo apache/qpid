@@ -18,7 +18,7 @@
  - under the License.
  -
  -->
-<project name="AMQ Java" default="build">
+<project name="AMQ Java" xmlns:ivy="antlib:org.apache.ivy.ant" default="build">
 
   <import file="common.xml"/>
 
@@ -156,7 +156,7 @@
     <touch file="${qpid.jar}"/>
   </target>
 
-  <target name="build" description="build the project">
+  <target name="build" depends="retrieve-dependencies" description="build the project">
     <iterate target="build"/>
     <antcall target="manifest"/>
   </target>
@@ -296,4 +296,22 @@
   <target name="eclipse" description="build eclipse project and classpath files">
     <iterate target="eclipse"/>
   </target>
+
+  <!-- check the following properties which must be specified by the user-->
+  <target name="check-upload-props-exist" description="check that the required properties have been set">
+    <fail unless="nexus.user" message="You must supply the 'nexus.user' property"/>
+    <fail unless="nexus.password" message="You must supply the 'nexus.password' property"/>
+    <fail unless="maven.artifact.dir" message="You must supply the 'maven.artifact.dir' property"/>
+  </target>
+
+  <target name="perform-nexus-upload">
+    <ivy:configure file="ivysettings.nexus.xml"/>
+    <ivy:resolve file="ivy.nexus.xml"/>
+    <ivy:deliver/>
+    <ivy:publish publishivy="false" resolver="nexus"
+             artifactspattern="${maven.artifact.dir}/[organisation]/[module]/[artifact]/[revision]/[artifact]-[revision](-[classifier]).[ext]"/>
+  </target>
+
+  <target name="upload" depends="load-ivy, check-upload-props-exist, perform-nexus-upload"/>
+
 </project>
