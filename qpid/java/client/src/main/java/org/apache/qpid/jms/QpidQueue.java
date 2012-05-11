@@ -23,9 +23,7 @@ package org.apache.qpid.jms;
 import javax.jms.JMSException;
 import javax.jms.Queue;
 
-import org.apache.qpid.jms.QpidDestination.DestinationType;
-
-public class QpidQueue extends QpidDestination implements Queue 
+public class QpidQueue extends QpidDestination implements Queue
 {
     public QpidQueue()
     {
@@ -43,9 +41,9 @@ public class QpidQueue extends QpidDestination implements Queue
     }
 
     @Override
-    public String getQueueName() throws JMSException
+    public String getQueueName()
     {
-        return _address.getName();
+        return getAddress().getName();
     }
 
     @Override
@@ -62,21 +60,17 @@ public class QpidQueue extends QpidDestination implements Queue
         }
 
         QpidQueue queue = (QpidQueue)obj;
-        try
-        {
-            return getQueueName().equals(queue.getQueueName());
-        }
-        catch (Exception e)
-        {
-            return false;
-        }
+        return getQueueName().equals(queue.getQueueName());
+
     }
 
     @Override
     public int hashCode()
     {
-        int base = 22;
-        String queue = _address == null ? "" : _address.getName();
-        return base * 25 + queue.hashCode();
+        String queue = getAddress() == null ? "" : getAddress().getName();
+        int result = 17;
+        result = 37*result + queue.hashCode();
+        return result;
+
     }
 }

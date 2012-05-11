@@ -20,55 +20,55 @@
  */
 package org.apache.qpid.messaging.address;
 
-import static org.apache.qpid.messaging.address.Link.Reliability.AT_LEAST_ONCE;
-
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Link
 {
-    public enum FilterType
-    {
-        SQL92, XQUERY, SUBJECT
-    }
 
-    public enum Reliability
-    {
-        UNRELIABLE, AT_LEAST_ONCE;
+    private final String _name;
+    private final boolean _durable;
+    private final int _consumerCapacity;
+    private final int _producerCapacity;
+    private final Reliability _reliability;
 
-        public static Reliability getReliability(String str)
-        throws AddressException
-        {
-            try
-            {
-                return str == null ? AT_LEAST_ONCE : Enum.valueOf(Reliability.class, str.toUpperCase());
-            }
-            catch (IllegalArgumentException e)
-            {
-                throw new AddressException((new StringBuffer("The reliability mode")
-                .append(" '").append(str).append("' ")
-                .append("is not yet supported, supported.")
-                .append("Supported types are { UNRELIABLE, AT_LEAST_ONCE }.")).toString());
-            }
-        }
-    }
+    private final Map<String, Object> _xDeclareProps;
+    private final List<Object> _xBindingProps;
+    private final Map<String, Object> _xSubscribeProps;
 
-    private String name;
-    private String _filter;
-    private FilterType _filterType = FilterType.SUBJECT;
+    // TODO - these should all be made final and added to the constructor
+
     private boolean _noLocal;
-    private boolean _durable;
-    private int _consumerCapacity = 0;
-    private int _producerCapacity = 0;
-    private Reliability _reliability = AT_LEAST_ONCE;
+    private String _filter;
+    private FilterType _filterType;
 
-    private Map<String, Object> _xDeclareProps = Collections.emptyMap();
-    private List<Object> _xBindingProps = Collections.emptyList();
-    private Map<String, Object> _xSubscribeProps = Collections.emptyMap();
-
-    private AtomicBoolean readOnly = new AtomicBoolean(false);
+    public Link(String name,
+                boolean durable,
+                Reliability reliability,
+                int producerCapacity,
+                int consumerCapacity,
+                Map<String, Object> xDeclareProps,
+                List<Object> xBindingProps,
+                Map<String, Object> xSubscribeProps)
+    {
+        _name = name;
+        _durable = durable;
+        _reliability = reliability;
+        _producerCapacity = producerCapacity;
+        _consumerCapacity = consumerCapacity;
+        _xDeclareProps = xDeclareProps == null
+                ? Collections.EMPTY_MAP
+                : Collections.unmodifiableMap(new HashMap<String, Object>(xDeclareProps));
+        _xBindingProps = xBindingProps == null
+                ? Collections.EMPTY_LIST
+                : Collections.unmodifiableList(new ArrayList<Object>(xBindingProps));
+        _xSubscribeProps = xSubscribeProps == null
+                ? Collections.EMPTY_MAP
+                : Collections.unmodifiableMap(new HashMap<String, Object>(xSubscribeProps));
+    }
 
     public Reliability getReliability()
     {
@@ -107,7 +107,7 @@ public class Link
 
     public String getName()
     {
-        return name;
+        return _name;
     }
 
     public Map<String, Object> getDeclareProperties()
@@ -125,82 +125,4 @@ public class Link
         return Collections.unmodifiableMap(_xSubscribeProps);
     }
 
-    public void setName(String name)
-    {
-        checkReadOnly();
-        this.name = name;
-    }
-
-    public void setFilter(String filter)
-    {
-        checkReadOnly();
-        this._filter = filter;
-    }
-
-    public void setFilterType(FilterType filterType)
-    {
-        checkReadOnly();
-        this._filterType = filterType;
-    }
-
-    public void setNoLocal(boolean noLocal)
-    {
-        checkReadOnly();
-        this._noLocal = noLocal;
-    }
-
-    public void setDurable(boolean durable)
-    {
-        checkReadOnly();
-        this._durable = durable;
-    }
-
-    public void setConsumerCapacity(int consumerCapacity)
-    {
-        checkReadOnly();
-        this._consumerCapacity = consumerCapacity;
-    }
-
-    public void setProducerCapacity(int producerCapacity)
-    {
-        checkReadOnly();
-        this._producerCapacity = producerCapacity;
-    }
-
-    public void setReliability(Reliability reliability)
-    {
-        checkReadOnly();
-        this._reliability = reliability;
-    }
-
-    public void setDeclareProps(Map<String, Object> xDeclareProps)
-    {
-        checkReadOnly();
-        this._xDeclareProps = xDeclareProps;
-    }
-
-    public void setBindingProps(List<Object> xBindingProps)
-    {
-        checkReadOnly();
-        this._xBindingProps = xBindingProps;
-    }
-
-    public void setSubscribeProps(Map<String, Object> xSubscribeProps)
-    {
-        checkReadOnly();
-        this._xSubscribeProps = xSubscribeProps;
-    }
-
-    public void checkReadOnly()
-    {
-        if (readOnly.get())
-        {
-            throw new IllegalArgumentException("Once initialized the Link object is immutable");
-        }
-    }
-
-    public void markReadOnly()
-    {
-        readOnly.set(true);
-    }
 }

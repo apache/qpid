@@ -24,11 +24,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.qpid.configuration.Accessor;
-import org.apache.qpid.configuration.Accessor.MapAccessor;
 import org.apache.qpid.configuration.Accessor.NestedMapAccessor;
 import org.apache.qpid.messaging.Address;
-import org.apache.qpid.messaging.address.Node.NodeType;
+import org.apache.qpid.messaging.address.NodeType;
 import org.apache.qpid.messaging.address.AddressException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

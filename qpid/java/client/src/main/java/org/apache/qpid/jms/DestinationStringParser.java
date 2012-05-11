@@ -22,23 +22,22 @@ package org.apache.qpid.jms;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.jms.JMSException;
-
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.QpidDestination.DestinationType;
 import org.apache.qpid.messaging.Address;
 import org.apache.qpid.messaging.address.AddressException;
+import org.apache.qpid.messaging.address.AddressPolicy;
 import org.apache.qpid.messaging.address.Link;
-import org.apache.qpid.messaging.address.Link.Reliability;
+import org.apache.qpid.messaging.address.Reliability;
 import org.apache.qpid.messaging.address.Node;
-import org.apache.qpid.messaging.address.Node.AddressPolicy;
-import org.apache.qpid.messaging.address.Node.NodeType;
+import org.apache.qpid.messaging.address.NodeType;
 import org.apache.qpid.messaging.util.AddressHelper;
 import org.apache.qpid.url.AMQBindingURL;
 import org.slf4j.Logger;
@@ -48,83 +47,79 @@ public class DestinationStringParser
 {
     private static final Logger _logger = LoggerFactory.getLogger(DestinationStringParser.class);
 
-    private static final String BURL_STR = "BURL";
-    private static final String ADDR_STR = "ADDR";
-
     public enum DestSyntax
     {
-        BURL,ADDR;
+        BURL
+        {
+            public Address parseAddress(String addressString, DestinationType type) throws AddressException
+            {
+                return DestinationStringParser.parseBURLString(addressString, type);
+            }
+        },
+        ADDR
+        {
+            public Address parseAddress(String addressString, DestinationType type) throws AddressException
+            {
+                return DestinationStringParser.parseAddressString(addressString,type);
+            }
+        };
 
-        public static DestSyntax getSyntaxType(String s)
+        abstract Address parseAddress(String addressString, DestinationType type) throws AddressException;
+
+        public static DestSyntax getDestSyntax(String name)
         {
             try
             {
-                return Enum.valueOf(DestSyntax.class, s.toUpperCase());
+                return DestSyntax.valueOf(name);
             }
             catch (IllegalArgumentException e)
             {
-                throw new IllegalArgumentException("Invalid Destination Syntax Type" +
-                " should be one of {BURL|ADDR}");
+                throw new IllegalArgumentException("Invalid Destination Syntax Type '"
+                        + name
+                        + "' should be one of " + Arrays.asList(DestSyntax.values()));
             }
         }
+        
     }
 
     private static final DestSyntax _defaultDestSyntax;
+
     static
     {
-        _defaultDestSyntax = DestSyntax.getSyntaxType(
-                System.getProperty(ClientProperties.DEST_SYNTAX,
-                        DestSyntax.ADDR.toString()));
+        _defaultDestSyntax =
+                DestSyntax.getDestSyntax(System.getProperty(ClientProperties.DEST_SYNTAX, DestSyntax.ADDR.name()));
+
     }
 
     public static DestSyntax getDestType(String str)
     {
-        if (str.startsWith(ADDR_STR))
+        DestSyntax chosenSyntax = _defaultDestSyntax;
+        for(DestSyntax syntax : DestSyntax.values())
         {
-            return DestSyntax.ADDR;
+            if(str.startsWith(syntax.name() +":"))
+            {                
+                chosenSyntax = syntax;
+                break;
+            }
         }
-        else if (str.startsWith(BURL_STR))
+        
+        if (_logger.isDebugEnabled())
         {
-            return DestSyntax.BURL;
-        }
-        else
-        {
-            return _defaultDestSyntax;
-        }
+            _logger.debug("Based on " + str + " the selected destination syntax is " + chosenSyntax);
+        }        
+        
+        return chosenSyntax;
+        
     }
 
-    public static String stripSyntaxPrefix(String str)
-    {
-        if (str.startsWith(BURL_STR) || str.startsWith(ADDR_STR))
-        {
-            return str.substring(5,str.length());
-        }
-        else
-        {
-            return str;
-        }
-    }
 
     public static Address parseDestinationString(String str, DestinationType type) throws JMSException
     {
-        DestSyntax destSyntax = getDestType(str);
-        str = stripSyntaxPrefix(str);
-
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug("Based on " + str + " the selected destination syntax is " + destSyntax);
-        }
-
         try
         {
-            if (destSyntax == DestSyntax.BURL)
-            {
-                return DestinationStringParser.parseAddressString(str,type);
-            }
-            else
-            {
-                return DestinationStringParser.parseBURLString(str,type);
-            }
+
+            return getDestType(str).parseAddress(str, type);
+
         }
         catch (AddressException e)
         {
@@ -138,23 +133,21 @@ public class DestinationStringParser
 
     public static Address parseAddressString(String str, DestinationType type) throws AddressException
     {
+        if(str.startsWith(DestSyntax.ADDR.name() + ":"))
+        {
+            str = str.substring(DestSyntax.ADDR.name().length() + 1);
+        }
+
         Address addr = Address.parse(str);
         AddressHelper helper = new AddressHelper(addr);
 
-        Node node = new Node();
-        node.setName(addr.getName());
-        node.setAssertPolicy(AddressPolicy.getAddressPolicy(helper.getAssert()));
-        node.setCreatePolicy(AddressPolicy.getAddressPolicy(helper.getCreate()));
-        node.setDeletePolicy(AddressPolicy.getAddressPolicy(helper.getDelete()));
-        node.setDurable(helper.isNodeDurable());
-
+        
         if (DestinationType.TOPIC == type)
         {
             if (helper.getNodeType() == NodeType.QUEUE)
             {
                 throw new AddressException("Destination is marked as a Topic, but address is defined as a Queue");
             }
-            node.setType(NodeType.TOPIC);
         }
         else
         {
@@ -162,25 +155,28 @@ public class DestinationStringParser
             {
                 throw new AddressException("Destination is marked as a Queue, but address is defined as a Topic");
             }
-            node.setType(NodeType.QUEUE);
         }
 
-        node.setDeclareProps(helper.getNodeDeclareArgs());
-        node.setBindingProps(helper.getNodeBindings());
-        addr.setNode(node);
-        node.markReadOnly();
+        
+        Node node = new Node(addr.getName(), helper.getNodeType(), helper.isNodeDurable(), 
+                             AddressPolicy.getAddressPolicy(helper.getCreate()), 
+                             AddressPolicy.getAddressPolicy(helper.getAssert()),
+                             AddressPolicy.getAddressPolicy(helper.getDelete()),
+                             helper.getNodeDeclareArgs(),
+                             helper.getNodeBindings());
 
-        Link link =  new Link();
-        link.setName(helper.getLinkName());
-        link.setDurable(helper.isLinkDurable());
-        link.setReliability(Reliability.getReliability(helper.getLinkReliability()));
-        link.setProducerCapacity(helper.getProducerCapacity());
-        link.setConsumerCapacity(helper.getConsumeCapacity());
-        link.setDeclareProps(helper.getLinkDeclareArgs());
-        link.setBindingProps(helper.getLinkBindings());
-        link.setSubscribeProps(helper.getLinkSubscribeArgs());
+        addr.setNode(node);
+
+
+        Link link = new Link(helper.getLinkName(),
+                             helper.isLinkDurable(),
+                             Reliability.getReliability(helper.getLinkReliability()),
+                             helper.getProducerCapacity(),
+                             helper.getConsumeCapacity(),
+                             helper.getLinkDeclareArgs(),
+                             helper.getLinkBindings(),
+                             helper.getLinkSubscribeArgs());
         addr.setLink(link);
-        link.markReadOnly();
 
         addr.markReadOnly();
         return addr;
@@ -188,6 +184,11 @@ public class DestinationStringParser
 
     public static Address parseBURLString(String str, DestinationType type) throws AddressException
     {
+        if(str.startsWith(DestSyntax.BURL.name() + ":"))
+        {
+            str = str.substring(DestSyntax.BURL.name().length() + 1);
+        }
+
         AMQBindingURL burl;
         try
         {
@@ -201,17 +202,19 @@ public class DestinationStringParser
         }
 
         Address addr;
-        Node node = new Node();
-        Link link = new Link();
-
+        
+        String linkName;
+        
+        List<Object> nodeBindings;
+        
         if (type == DestinationType.TOPIC)
         {
             addr = new Address(burl.getExchangeName().asString(),
                     burl.getRoutingKey().asString(),
                     Collections.emptyMap());
 
-            link.setName(burl.getQueueName().asString());
-            node.setBindingProps(Collections.emptyList());
+            linkName = burl.getQueueName().asString();
+            nodeBindings = Collections.emptyList();
         }
         else
         {
@@ -224,25 +227,39 @@ public class DestinationStringParser
             binding.put(AddressHelper.EXCHANGE, burl.getExchangeName().asString());
             binding.put(AddressHelper.KEY, burl.getRoutingKey());
             bindings.add(binding);
-            node.setBindingProps(bindings);
+            nodeBindings = bindings;
+            linkName = null; // ??? This doesn't seem right
         }
 
-        List<Object> bindings = node.getBindingProperties();
         for (AMQShortString key: burl.getBindingKeys())
         {
             Map<String,Object> binding = new HashMap<String,Object>();
             binding.put(AddressHelper.EXCHANGE, burl.getExchangeName().asString());
             binding.put(AddressHelper.KEY, key.asString());
-            bindings.add(binding);
+            nodeBindings.add(binding);
         }
 
-        node.setAssertPolicy(AddressPolicy.NEVER);
-        node.setCreatePolicy(AddressPolicy.RECEIVER);
-        node.setDeletePolicy(AddressPolicy.NEVER);
-        node.markReadOnly();
+        Node node = 
+                new Node(null, // ?? This seems wrong 
+                         type == DestinationType.TOPIC ? NodeType.TOPIC : NodeType.QUEUE,
+                         false, // ?? should this not be determined
+                         AddressPolicy.NEVER, // ?? should this not be determined
+                         AddressPolicy.NEVER, // ?? should this not be determined
+                         AddressPolicy.NEVER, // ?? should this not be determined
+                         Collections.EMPTY_MAP, // ?? should this not be determined
+                         nodeBindings);
+        
         addr.setNode(node);
 
-        link.markReadOnly();
+        Link link = new Link(linkName, 
+                false, // ?? should this not be determined
+                Reliability.AT_LEAST_ONCE, // ?? should this not be determined 
+                0, // ?? should this not be determined
+                0, // ?? should this not be determined
+                Collections.EMPTY_MAP, // ?? should this not be determined
+                Collections.EMPTY_LIST, // ?? should this not be determined
+                Collections.EMPTY_MAP); // ?? should this not be determined
+        
         addr.setLink(link);
 
         addr.markReadOnly();

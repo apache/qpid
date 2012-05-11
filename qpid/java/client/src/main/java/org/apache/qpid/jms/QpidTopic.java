@@ -41,9 +41,9 @@ public class QpidTopic extends QpidDestination implements Topic
     }
 
     @Override
-    public String getTopicName() throws JMSException
+    public String getTopicName()
     {
-        return _address.getSubject() == null ? "" : _address.getSubject();
+        return getAddress().getSubject() == null ? "" : getAddress().getSubject();
     }
 
     @Override
@@ -61,20 +61,13 @@ public class QpidTopic extends QpidDestination implements Topic
 
         QpidTopic topic = (QpidTopic)obj;
 
-        try
+        if (!getAddress().getName().equals(topic.getAddress().getName()))
         {
-            if (!_address.getName().equals(topic.getAddress().getName()))
-            {
-                return false;
-            }
-
-            // The subject being the topic name
-            if (!_address.getSubject().equals(topic.getAddress().getSubject()))
-            {
-                return false;
-            }
+            return false;
         }
-        catch (Exception e)
+
+        // The subject being the topic name
+        if (!getAddress().getSubject().equals(topic.getAddress().getSubject()))
         {
             return false;
         }
@@ -85,11 +78,11 @@ public class QpidTopic extends QpidDestination implements Topic
     @Override
     public int hashCode()
     {
-        int hash = 55;
-        String name = _address == null ? "" : _address.getName();
-        String subject = _address == null ? "" : _address.getSubject();
-        hash = hash * 25 + name.hashCode();
-        hash = hash * 35 + subject.hashCode();
-        return hash;
+        String name = getAddress() == null ? "" : getAddress().getName();
+        String subject = getAddress() == null ? "" : getAddress().getSubject();
+        int result = 17;
+        result = 37*result + name.hashCode();
+        result = 37*result + subject.hashCode();
+        return result;
     }
 }

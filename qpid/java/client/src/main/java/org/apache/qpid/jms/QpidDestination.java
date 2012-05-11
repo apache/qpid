@@ -26,11 +26,8 @@ import javax.naming.NamingException;
 import javax.naming.Reference;
 import javax.naming.Referenceable;
 import javax.naming.StringRefAddr;
-
 import org.apache.qpid.client.AMQConnectionFactory;
-import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.messaging.Address;
-import org.apache.qpid.messaging.address.AddressException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,8 +37,8 @@ public abstract class QpidDestination implements Destination, Referenceable
 
     public enum DestinationType {QUEUE, TOPIC};
 
-    protected String _destinationString;
-    protected Address _address;
+    private String _destinationString;
+    private Address _address;
 
     protected QpidDestination()
     {
@@ -89,4 +86,5 @@ public abstract class QpidDestination implements Destination, Referenceable
     {
         return _address == null ? "" : _address.toString();
     }
+
 }
