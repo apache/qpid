@@ -58,7 +58,8 @@ AsyncStoreOptions::validate()
 {}
 
 //static
-std::string& AsyncStoreOptions::getDefaultStoreDir()
+std::string&
+AsyncStoreOptions::getDefaultStoreDir()
 {
     static std::string s_defaultStoreDir = "/tmp";
     return s_defaultStoreDir;

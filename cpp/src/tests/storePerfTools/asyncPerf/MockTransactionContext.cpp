@@ -57,7 +57,7 @@ MockTransactionContext::TransactionContext::destroy()
 // --- Class MockTransactionContext ---
 
 
-MockTransactionContext::MockTransactionContext(AsyncStoreImplPtr store,
+MockTransactionContext::MockTransactionContext(qpid::asyncStore::AsyncStoreImpl* store,
                                                const std::string& xid) :
         m_store(store),
         m_txnHandle(store->createTxnHandle(xid)),
@@ -190,30 +190,33 @@ MockTransactionContext::localPrepare()
 
 // protected
 void
-MockTransactionContext::prepareComplete(const TransactionContext* /*tc*/)
+MockTransactionContext::prepareComplete(const TransactionContext* tc)
 {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_enqueuedMsgsMutex);
     while (!m_enqueuedMsgs.empty()) {
         m_enqueuedMsgs.front()->clearTransaction();
         m_enqueuedMsgs.pop_front();
     }
-//std::cout << "~~~~~ Transaction xid=\"" << getXid() << "\": prepareComplete()" << std::endl;
+//std::cout << "~~~~~ Transaction xid=\"" << tc->m_tc->getXid() << "\": prepareComplete()" << std::endl << std::flush;
+    assert(tc->m_tc == this);
 }
 
 
 // protected
 void
-MockTransactionContext::abortComplete(const TransactionContext* /*tc*/)
+MockTransactionContext::abortComplete(const TransactionContext* tc)
 {
-//std::cout << "~~~~~ Transaction xid=\"" << getXid() << "\": abortComplete()" << std::endl;
+//std::cout << "~~~~~ Transaction xid=\"" << tc->m_tc->getXid() << "\": abortComplete()" << std::endl << std::flush;
+    assert(tc->m_tc == this);
 }
 
 
 // protected
 void
-MockTransactionContext::commitComplete(const TransactionContext* /*tc*/)
+MockTransactionContext::commitComplete(const TransactionContext* tc)
 {
-//std::cout << "~~~~~ Transaction xid=\"" << getXid() << "\": commitComplete()" << std::endl;
+//std::cout << "~~~~~ Transaction xid=\"" << tc->m_tc->getXid() << "\": commitComplete()" << std::endl << std::flush;
+    assert(tc->m_tc == this);
 }
 
 }}} // namespace tests::storePerftools::asyncPerf

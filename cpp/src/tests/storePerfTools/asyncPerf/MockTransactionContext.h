@@ -45,8 +45,6 @@ namespace asyncPerf {
 
 class QueuedMessage;
 
-typedef boost::shared_ptr<qpid::asyncStore::AsyncStoreImpl> AsyncStoreImplPtr;
-
 class MockTransactionContext : public qpid::broker::TransactionContext
 {
 public:
@@ -65,7 +63,7 @@ public:
         const qpid::asyncStore::AsyncOperation::opCode m_op;
     };
 
-    MockTransactionContext(AsyncStoreImplPtr store,
+    MockTransactionContext(qpid::asyncStore::AsyncStoreImpl* store,
                            const std::string& xid = std::string());
     virtual ~MockTransactionContext();
     static void handleAsyncResult(const qpid::broker::AsyncResult* res,
@@ -81,7 +79,7 @@ public:
     void commit();
 
 protected:
-    AsyncStoreImplPtr m_store;
+    qpid::asyncStore::AsyncStoreImpl* m_store;
     qpid::broker::TxnHandle m_txnHandle;
     bool m_prepared;
     std::deque<QueuedMessage*> m_enqueuedMsgs;

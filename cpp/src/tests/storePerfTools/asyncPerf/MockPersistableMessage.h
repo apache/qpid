@@ -44,7 +44,6 @@ namespace asyncPerf {
 class MockPersistableMessage;
 class MockPersistableQueue;
 
-typedef boost::shared_ptr<qpid::asyncStore::AsyncStoreImpl> AsyncStoreImplPtr;
 typedef boost::shared_ptr<MockPersistableMessage> MockPersistableMessagePtr;
 
 class MockPersistableMessage: public qpid::broker::PersistableMessage, qpid::broker::DataSource
@@ -66,7 +65,7 @@ public:
 
     MockPersistableMessage(const char* msgData,
                            const uint32_t msgSize,
-                           AsyncStoreImplPtr store,
+                           qpid::asyncStore::AsyncStoreImpl* store,
                            const bool persistent = true);
     virtual ~MockPersistableMessage();
     static void handleAsyncResult(const qpid::broker::AsyncResult* res,

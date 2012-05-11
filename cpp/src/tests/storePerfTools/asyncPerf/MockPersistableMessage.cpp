@@ -22,6 +22,7 @@
  */
 
 #include "MockPersistableMessage.h"
+#include "MockPersistableQueue.h" // debug statements in enqueueComplete() and dequeueComplete()
 
 #include "qpid/asyncStore/AsyncStoreImpl.h"
 
@@ -59,7 +60,7 @@ MockPersistableMessage::MessageContext::destroy()
 
 MockPersistableMessage::MockPersistableMessage(const char* msgData,
                                                const uint32_t msgSize,
-                                               AsyncStoreImplPtr store,
+                                               qpid::asyncStore::AsyncStoreImpl* store,
                                                const bool persistent) :
         m_persistenceId(0ULL),
         m_msg(msgData, static_cast<size_t>(msgSize)),
@@ -163,16 +164,18 @@ MockPersistableMessage::write(char* target)
 
 // protected
 void
-MockPersistableMessage::enqueueComplete(const MessageContext* /*mc*/)
+MockPersistableMessage::enqueueComplete(const MessageContext* mc)
 {
-//std::cout << "~~~~~ Message pid=0x" << std::hex << m_persistenceId << std::dec << ": enqueueComplete() on queue \"" << mc->m_q->getName() << "\"" << std::endl;
+//std::cout << "~~~~~ Message pid=0x" << std::hex << mc->m_msg->getPersistenceId() << std::dec << ": enqueueComplete() on queue \"" << mc->m_q->getName() << "\"" << std::endl << std::flush;
+    assert(mc->m_msg.get() == this);
 }
 
 // protected
 void
-MockPersistableMessage::dequeueComplete(const MessageContext* /*mc*/)
+MockPersistableMessage::dequeueComplete(const MessageContext* mc)
 {
-//std::cout << "~~~~~ Message pid=0x" << std::hex << m_persistenceId << std::dec << ": dequeueComplete() on queue \"" << mc->m_q->getName() << "\"" << std::endl;
+//std::cout << "~~~~~ Message pid=0x" << std::hex << mc->m_msg->getPersistenceId() << std::dec << ": dequeueComplete() on queue \"" << mc->m_q->getName() << "\"" << std::endl << std::flush;
+    assert(mc->m_msg.get() == this);
 }
 
 }}} // namespace tests::storePerftools::asyncPerf

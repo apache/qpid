@@ -47,30 +47,31 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
+class MockPersistableQueue;
 class QueuedMessage;
 class TestOptions;
 
-typedef boost::shared_ptr<qpid::asyncStore::AsyncStoreImpl> AsyncStoreImplPtr;
+typedef boost::shared_ptr<MockPersistableQueue> MockPersistableQueuePtr;
 typedef boost::shared_ptr<QueuedMessage> QueuedMessagePtr;
 
-class MockPersistableQueue : public qpid::broker::PersistableQueue, qpid::broker::DataSource
+class MockPersistableQueue : public qpid::broker::PersistableQueue, public qpid::broker::DataSource
 {
 public:
     class QueueContext : public qpid::broker::BrokerContext
     {
     public:
-        QueueContext(MockPersistableQueue* q,
+        QueueContext(MockPersistableQueuePtr q,
                      const qpid::asyncStore::AsyncOperation::opCode op);
         virtual ~QueueContext();
         const char* getOp() const;
         void destroy();
-        MockPersistableQueue* m_q;
+        MockPersistableQueuePtr m_q;
         const qpid::asyncStore::AsyncOperation::opCode m_op;
     };
 
     MockPersistableQueue(const std::string& name,
                          const qpid::framing::FieldTable& args,
-                         AsyncStoreImplPtr store,
+                         qpid::asyncStore::AsyncStoreImpl* store,
                          const TestOptions& perfTestParams,
                          const char* msgData);
     virtual ~MockPersistableQueue();
@@ -79,6 +80,8 @@ public:
     static void handleAsyncResult(const qpid::broker::AsyncResult* res,
                                   qpid::broker::BrokerContext* bc);
     qpid::broker::QueueHandle& getHandle();
+    static void asyncStoreCreate(MockPersistableQueuePtr& qp);
+    static void asyncStoreDestroy(MockPersistableQueuePtr& qp);
 
     // --- Performance test thread entry points ---
     void* runEnqueues();
@@ -103,7 +106,7 @@ public:
 
 protected:
     const std::string m_name;
-    AsyncStoreImplPtr m_store;
+    qpid::asyncStore::AsyncStoreImpl* m_store;
     mutable uint64_t m_persistenceId;
     std::string m_persistableData;
     qpid::broker::QueueHandle m_queueHandle;

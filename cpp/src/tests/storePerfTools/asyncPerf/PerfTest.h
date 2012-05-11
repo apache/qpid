@@ -48,7 +48,7 @@ namespace asyncPerf {
 class MockPersistableQueue;
 class TestOptions;
 
-typedef boost::shared_ptr<qpid::asyncStore::AsyncStoreImpl> AsyncStoreImplPtr;
+//typedef boost::shared_ptr<qpid::asyncStore::AsyncStoreImpl> AsyncStoreImplPtr;
 typedef boost::shared_ptr<MockPersistableQueue> MockPersistableQueuePtr;
 
 class PerfTest : public tests::storePerftools::common::Streamable
@@ -68,11 +68,12 @@ protected:
     const char* m_msgData;
     boost::shared_ptr<qpid::sys::Poller> m_poller;
     qpid::sys::Thread m_pollingThread;
+    qpid::asyncStore::AsyncStoreImpl* m_store;
+    std::deque<MockPersistableQueuePtr> m_queueList;
 
-    AsyncStoreImplPtr prepareStore();
-    void prepareQueues(std::deque<MockPersistableQueuePtr>& jrnlList,
-                       AsyncStoreImplPtr store);
-    void destroyQueues(std::deque<MockPersistableQueuePtr>& jrnlList);
+    void prepareStore();
+    void prepareQueues();
+    void destroyQueues();
 
 };
 

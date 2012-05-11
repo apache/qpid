@@ -44,7 +44,8 @@ PerfTest::PerfTest(const TestOptions& to,
         m_testResult(to),
         m_msgData(new char[to.m_msgSize]),
         m_poller(new qpid::sys::Poller),
-        m_pollingThread(m_poller.get())
+        m_pollingThread(m_poller.get()),
+        m_store(0)
 {
     std::memset((void*)m_msgData, 0, (size_t)to.m_msgSize);
 }
@@ -53,33 +54,38 @@ PerfTest::~PerfTest()
 {
     m_poller->shutdown();
     m_pollingThread.join();
+
+    m_queueList.clear();
+
+    if (m_store) delete m_store;
     delete[] m_msgData;
 }
 
-AsyncStoreImplPtr
+void
 PerfTest::prepareStore()
 {
-    AsyncStoreImplPtr store(new qpid::asyncStore::AsyncStoreImpl(m_poller, m_storeOpts));
-    store->initialize();
-    return store;
+    m_store = new qpid::asyncStore::AsyncStoreImpl(m_poller, m_storeOpts);
+    m_store->initialize();
 }
 
 void
-PerfTest::prepareQueues(std::deque<MockPersistableQueuePtr>& jrnlList,
-                        AsyncStoreImplPtr store)
+PerfTest::prepareQueues()
 {
     for (uint16_t i = 0; i < m_testOpts.m_numQueues; ++i) {
         std::ostringstream qname;
         qname << "queue_" << std::setw(4) << std::setfill('0') << i;
-        MockPersistableQueuePtr mpq(new MockPersistableQueue(qname.str(), m_queueArgs, store, m_testOpts, m_msgData));
-        jrnlList.push_back(mpq);
+        MockPersistableQueuePtr mpq(new MockPersistableQueue(qname.str(), m_queueArgs, m_store, m_testOpts, m_msgData));
+        mpq->asyncStoreCreate(mpq);
+        m_queueList.push_back(mpq);
     }
 }
 
 void
-PerfTest::destroyQueues(std::deque<MockPersistableQueuePtr>& jrnlList)
+PerfTest::destroyQueues()
 {
-    jrnlList.clear();
+    for (std::deque<MockPersistableQueuePtr>::iterator i=m_queueList.begin(); i!=m_queueList.end(); ++i) {
+        (*i)->asyncStoreDestroy(*i);
+    }
 }
 
 void
@@ -87,10 +93,8 @@ PerfTest::run()
 {
     typedef boost::shared_ptr<tests::storePerftools::common::Thread> ThreadPtr; // TODO - replace with qpid threads
 
-    AsyncStoreImplPtr store = prepareStore();
-
-    std::deque<MockPersistableQueuePtr> queueList;
-    prepareQueues(queueList, store);
+    prepareStore();
+    prepareQueues();
 
     std::deque<ThreadPtr> threads;
     { // --- Start of timed section ---
@@ -98,13 +102,13 @@ PerfTest::run()
 
         for (uint16_t q = 0; q < m_testOpts.m_numQueues; q++) {
             for (uint16_t t = 0; t < m_testOpts.m_numEnqThreadsPerQueue; t++) { // TODO - replace with qpid threads
-                ThreadPtr tp(new tests::storePerftools::common::Thread(queueList[q]->startEnqueues,
-                                                                       reinterpret_cast<void*>(queueList[q].get())));
+                ThreadPtr tp(new tests::storePerftools::common::Thread(m_queueList[q]->startEnqueues,
+                                                                       reinterpret_cast<void*>(m_queueList[q].get())));
                 threads.push_back(tp);
             }
             for (uint16_t dt = 0; dt < m_testOpts.m_numDeqThreadsPerQueue; ++dt) { // TODO - replace with qpid threads
-                ThreadPtr tp(new tests::storePerftools::common::Thread(queueList[q]->startDequeues,
-                                                                       reinterpret_cast<void*>(queueList[q].get())));
+                ThreadPtr tp(new tests::storePerftools::common::Thread(m_queueList[q]->startDequeues,
+                                                                       reinterpret_cast<void*>(m_queueList[q].get())));
                 threads.push_back(tp);
             }
         }
@@ -113,10 +117,8 @@ PerfTest::run()
             threads.pop_front();
         }
     } // --- End of timed section ---
-
-    destroyQueues(queueList);
-// DEBUG MEASURE - REMOVE WHEN FIXED
-//::sleep(2);
+    // TODO: Add test param to allow queues to be destroyed or left when test ends
+    destroyQueues();
 }
 
 void
