@@ -22,7 +22,7 @@
 
   <import file="common.xml"/>
 
-  <path id="maven-ant-tasks.classpath" path="${project.root}/lib/maven-ant-tasks-2.1.1.jar" />
+  <path id="maven-ant-tasks.classpath" path="${project.root}/lib/required/maven-ant-tasks-2.1.1.jar" />
   <typedef resource="org/apache/maven/artifact/ant/antlib.xml"
            uri="antlib:org.apache.maven.artifact.ant"
            classpathref="maven-ant-tasks.classpath" />
@@ -599,7 +599,7 @@
   <target name="bundle" description="Build module osgi artifact. Override and depend on bundle-tasks to use"/>
 
   <target name="bundle-tasks" depends="jar">
-   <taskdef resource="aQute/bnd/ant/taskdef.properties" classpath="${project.root}/lib/bnd-0.0.384.jar"/>
+   <taskdef resource="aQute/bnd/ant/taskdef.properties" classpath="${project.root}/lib/required/bnd-0.0.384.jar"/>
    <echo message="Bundling ${build}/lib/${module.namever}.jar with ${module.src}/${module.name}.bnd"/>
    <bnd 
       classpath="${build}/lib/${module.namever}.jar"
@@ -809,7 +809,7 @@ qpid.name=${project.name}
         <classpath>
           <pathelement path="${module.src}"/>
           <pathelement path="${velocity.compile.dir}" />
-          <fileset dir="${project.root}/lib">
+          <fileset dir="${project.root}/lib/required">
             <include name="**/*.jar"/>
           </fileset>
           <pathelement path="${gentools.home}/lib/velocity-1.4.jar" />

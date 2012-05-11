@@ -17,42 +17,42 @@
 # under the License.
 #
 
-commons-beanutils-core=lib/commons-beanutils-core-1.8.3.jar
-commons-cli=lib/commons-cli-1.2.jar
-commons-codec=lib/commons-codec-1.6.jar
-commons-collections=lib/commons-collections-3.2.1.jar
-commons-configuration=lib/commons-configuration-1.8.jar
-commons-digester=lib/commons-digester-1.8.1.jar
-commons-lang=lib/commons-lang-2.6.jar
-commons-logging=lib/commons-logging-1.1.1.jar
+commons-beanutils-core=lib/required/commons-beanutils-core-1.8.3.jar
+commons-cli=lib/required/commons-cli-1.2.jar
+commons-codec=lib/required/commons-codec-1.6.jar
+commons-collections=lib/required/commons-collections-3.2.1.jar
+commons-configuration=lib/required/commons-configuration-1.8.jar
+commons-digester=lib/required/commons-digester-1.8.1.jar
+commons-lang=lib/required/commons-lang-2.6.jar
+commons-logging=lib/required/commons-logging-1.1.1.jar
 
-derby-db=lib/derby-10.8.2.2.jar
+derby-db=lib/required/derby-10.8.2.2.jar
 
-geronimo-jms=lib/geronimo-jms_1.1_spec-1.0.jar
-geronimo-j2ee=lib/geronimo-j2ee-connector_1.5_spec-2.0.0.jar
-geronimo-jta=lib/geronimo-jta_1.1_spec-1.1.1.jar
-geronimo-kernel=lib/geronimo-kernel-2.2.1.jar
-geronimo-openejb=lib/geronimo-ejb_3.0_spec-1.0.1.jar
-geronimo-servlet=lib/geronimo-servlet_2.5_spec-1.2.jar
+geronimo-jms=lib/required/geronimo-jms_1.1_spec-1.0.jar
+geronimo-j2ee=lib/required/geronimo-j2ee-connector_1.5_spec-2.0.0.jar
+geronimo-jta=lib/required/geronimo-jta_1.1_spec-1.1.1.jar
+geronimo-kernel=lib/required/geronimo-kernel-2.2.1.jar
+geronimo-openejb=lib/required/geronimo-ejb_3.0_spec-1.0.1.jar
+geronimo-servlet=lib/required/geronimo-servlet_2.5_spec-1.2.jar
 
-junit=lib/junit-3.8.1.jar
-mockito-all=lib/mockito-all-1.9.0.jar
+junit=lib/required/junit-3.8.1.jar
+mockito-all=lib/required/mockito-all-1.9.0.jar
 
-gson-all=lib/gson-2.0.jar
+gson-all=lib/required/gson-2.0.jar
 
-log4j=lib/log4j-1.2.16.jar
+log4j=lib/required/log4j-1.2.16.jar
 
-slf4j-api=lib/slf4j-api-1.6.4.jar
-slf4j-log4j=lib/slf4j-log4j12-1.6.4.jar
+slf4j-api=lib/required/slf4j-api-1.6.4.jar
+slf4j-log4j=lib/required/slf4j-log4j12-1.6.4.jar
 
-xalan=lib/xalan-2.7.0.jar
+xalan=lib/required/xalan-2.7.0.jar
 
-felix-main=lib/org.apache.felix.main-2.0.5.jar
+felix-main=lib/required/org.apache.felix.main-2.0.5.jar
 
 felix.libs=${felix-main}
 
-jackson-core=lib/jackson-core-asl-1.9.0.jar
-jackson-mapper=lib/jackson-mapper-asl-1.9.0.jar
+jackson-core=lib/required/jackson-core-asl-1.9.0.jar
+jackson-mapper=lib/required/jackson-mapper-asl-1.9.0.jar
 
 commons-configuration.libs = ${commons-beanutils-core} ${commons-digester} \
   ${commons-codec} ${commons-lang} ${commons-collections} ${commons-configuration}
