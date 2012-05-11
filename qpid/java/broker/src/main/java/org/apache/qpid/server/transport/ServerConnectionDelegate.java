@@ -70,7 +70,7 @@ public class ServerConnectionDelegate extends ServerDelegate
                                     String localFQDN)
     {
         super(properties, parseToList(appRegistry.getAuthenticationManager().getMechanisms()), locales);
-        
+
         _appRegistry = appRegistry;
         _localFQDN = localFQDN;
         _maxNoOfChannels = ApplicationRegistry.getInstance().getConfiguration().getMaxChannelCount();
@@ -118,8 +118,8 @@ public class ServerConnectionDelegate extends ServerDelegate
     {
         final AuthenticationResult authResult = _appRegistry.getAuthenticationManager().authenticate(ss, response);
         final ServerConnection sconn = (ServerConnection) conn;
-        
-        
+
+
         if (AuthenticationStatus.SUCCESS.equals(authResult.getStatus()))
         {
             tuneAuthorizedConnection(sconn);
@@ -168,7 +168,7 @@ public class ServerConnectionDelegate extends ServerDelegate
         vhost = _appRegistry.getVirtualHostRegistry().getVirtualHost(vhostName);
 
         SecurityManager.setThreadSubject(sconn.getAuthorizedSubject());
-        
+
         if(vhost != null)
         {
             sconn.setVirtualHost(vhost);
@@ -194,7 +194,7 @@ public class ServerConnectionDelegate extends ServerDelegate
             sconn.setState(Connection.State.CLOSING);
             sconn.invoke(new ConnectionClose(ConnectionCloseCode.INVALID_PATH, "Unknown virtualhost '"+vhostName+"'"));
         }
-        
+
     }
 
     @Override
@@ -216,7 +216,7 @@ public class ServerConnectionDelegate extends ServerDelegate
 
         setConnectionTuneOkChannelMax(sconn, okChannelMax);
     }
-    
+
     @Override
     protected int getHeartbeatMax()
     {
@@ -265,7 +265,9 @@ public class ServerConnectionDelegate extends ServerDelegate
         if(isSessionNameUnique(atc.getName(), conn))
         {
             super.sessionAttach(conn, atc);
-            ((ServerConnection)conn).checkForNotification();
+            final ServerConnection serverConnection = (ServerConnection) conn;
+
+            serverConnection.checkForNotification();
         }
         else
         {

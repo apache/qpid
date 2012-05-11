@@ -94,6 +94,10 @@ public class ParticipantExecutor
             ParticipantResult result = null;
             try
             {
+                if (LOGGER.isInfoEnabled())
+                {
+                    LOGGER.info("About to run participant " + _participant);
+                }
                 result = _participant.doIt(_client.getClientName());
             }
             catch (Throwable t)

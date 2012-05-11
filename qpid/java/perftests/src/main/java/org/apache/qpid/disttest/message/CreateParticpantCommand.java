@@ -19,6 +19,8 @@
  */
 package org.apache.qpid.disttest.message;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+
 public abstract class CreateParticpantCommand extends Command
 {
     private String _participantName;
@@ -93,4 +95,9 @@ public abstract class CreateParticpantCommand extends Command
         _maximumDuration = maximumDuration;
     }
 
+    @Override
+    public String toString()
+    {
+        return ToStringBuilder.reflectionToString(this);
+    }
 }

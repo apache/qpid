@@ -28,10 +28,10 @@ import javax.resource.spi.ActivationSpec;
 import javax.resource.spi.InvalidPropertyException;
 import javax.resource.spi.ResourceAdapter;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.qpid.ra.ConnectionFactoryProperties;
 import org.apache.qpid.ra.QpidResourceAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The activation spec
@@ -87,6 +87,8 @@ public class QpidActivationSpec extends ConnectionFactoryProperties implements A
 
    // undefined by default, default is specified at the RA level in QpidRAProperties
    private Long _setupInterval;
+
+   private Boolean _useConnectionPerHandler;
 
    /**
     * Constructor
@@ -544,6 +546,16 @@ public class QpidActivationSpec extends ConnectionFactoryProperties implements A
       this._setupInterval = setupInterval;
    }
 
+   public Boolean isUseConnectionPerHandler()
+   {              
+       return (_useConnectionPerHandler == null) ? _ra.isUseConnectionPerHandler() : _useConnectionPerHandler;
+   }
+   
+   public void setUseConnectionPerHandler(Boolean connectionPerHandler)
+   {
+       this._useConnectionPerHandler = connectionPerHandler;                       
+   }
+
    /**
     * Validate
     * @exception InvalidPropertyException Thrown if a validation exception occurs
@@ -561,6 +573,7 @@ public class QpidActivationSpec extends ConnectionFactoryProperties implements A
       }
    }
 
+   
    /**
     * Get a string representation
     * @return The value
@@ -573,23 +586,30 @@ public class QpidActivationSpec extends ConnectionFactoryProperties implements A
       buffer.append("ra=").append(_ra);
       buffer.append(" destination=").append(_destination);
       buffer.append(" destinationType=").append(_destinationType);
+      
       if (_messageSelector != null)
       {
          buffer.append(" selector=").append(_messageSelector);
       }
+      
       buffer.append(" ack=").append(getAcknowledgeMode());
       buffer.append(" durable=").append(_subscriptionDurability);
       buffer.append(" clientID=").append(getClientId());
+      
       if (_subscriptionName != null)
       {
          buffer.append(" subscription=").append(_subscriptionName);
       }
+      
       buffer.append(" user=").append(getUserName());
+      
       if (getPassword() != null)
       {
-         buffer.append(" password=").append("****");
+         buffer.append(" password=").append("********");
       }
+      
       buffer.append(" maxSession=").append(_maxSession);
+      
       if (_prefetchLow != null)
       {
          buffer.append(" prefetchLow=").append(_prefetchLow);
@@ -598,7 +618,10 @@ public class QpidActivationSpec extends ConnectionFactoryProperties implements A
       {
          buffer.append(" prefetchHigh=").append(_prefetchHigh);
       }
+      
+      buffer.append(" connectionPerHandler=").append(isUseConnectionPerHandler());
       buffer.append(')');
+
       return buffer.toString();
    }
 }

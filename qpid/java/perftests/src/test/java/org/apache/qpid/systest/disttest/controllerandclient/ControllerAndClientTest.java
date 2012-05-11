@@ -45,9 +45,14 @@ import org.apache.qpid.disttest.message.ParticipantResult;
 import org.apache.qpid.disttest.message.ProducerParticipantResult;
 import org.apache.qpid.disttest.results.aggregation.ITestResult;
 import org.apache.qpid.systest.disttest.DistributedTestSystemTestBase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ControllerAndClientTest extends DistributedTestSystemTestBase
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ControllerAndClientTest.class);
+    private static final long CLIENT_BACKGROUND_THREAD_WAIT_TIME = 5000;
+
     private Controller _controller;
 
     @Override
@@ -226,8 +231,15 @@ public class ControllerAndClientTest extends DistributedTestSystemTestBase
             @Override
             public void run()
             {
-                client.start();
-                client.waitUntilStopped(1000);
+                try
+                {
+                    client.start();
+                    client.waitUntilStopped(CLIENT_BACKGROUND_THREAD_WAIT_TIME);
+                }
+                finally
+                {
+                    LOGGER.debug("Client thread {} finished", clientThreadName);
+                }
             }
         }, clientThreadName);
         clientThread.start();

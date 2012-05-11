@@ -83,7 +83,17 @@ public class ConnectionRegistry implements IConnectionRegistry, Closeable
 
     public void registerConnection(AMQConnectionModel connnection)
     {
-        _registry.add(connnection);
+        synchronized (this)
+        {
+            _registry.add(connnection);
+            synchronized (_listeners)
+            {
+                for(RegistryChangeListener listener : _listeners)
+                {
+                    listener.connectionRegistered(connnection);
+                }
+            }
+        }
         synchronized (_listeners)
         {
             for(RegistryChangeListener listener : _listeners)
@@ -95,7 +105,18 @@ public class ConnectionRegistry implements IConnectionRegistry, Closeable
 
     public void deregisterConnection(AMQConnectionModel connnection)
     {
-        _registry.remove(connnection);
+        synchronized (this)
+        {
+            _registry.remove(connnection);
+
+            synchronized (_listeners)
+            {
+                for(RegistryChangeListener listener : _listeners)
+                {
+                    listener.connectionUnregistered(connnection);
+                }
+            }
+        }
 
         synchronized (_listeners)
         {
@@ -116,6 +137,9 @@ public class ConnectionRegistry implements IConnectionRegistry, Closeable
 
     public List<AMQConnectionModel> getConnections()
     {
-        return new ArrayList<AMQConnectionModel>(_registry);
+        synchronized (this)
+        {
+            return new ArrayList<AMQConnectionModel>(_registry);
+        }
     }
 }

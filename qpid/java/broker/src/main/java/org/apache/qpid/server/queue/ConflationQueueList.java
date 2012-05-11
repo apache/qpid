@@ -25,6 +25,8 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -52,48 +54,62 @@ public class ConflationQueueList extends SimpleQueueEntryList
         return new ConflationQueueEntry(this, message);
     }
 
-
     @Override
     public ConflationQueueEntry add(final ServerMessage message)
     {
-        ConflationQueueEntry entry = (ConflationQueueEntry) (super.add(message));
-        AtomicReference<QueueEntry> latestValueReference = null;
+        final ConflationQueueEntry entry = (ConflationQueueEntry) (super.add(message));
 
-        Object value = message.getMessageHeader().getHeader(_conflationKey);
-        if(value != null)
+        final Object keyValue = message.getMessageHeader().getHeader(_conflationKey);
+        if (keyValue != null)
         {
-            latestValueReference = _latestValuesMap.get(value);
-            if(latestValueReference == null)
-            {
-                _latestValuesMap.putIfAbsent(value, new AtomicReference<QueueEntry>(entry));
-                latestValueReference = _latestValuesMap.get(value);
-            }
+            final AtomicReference<QueueEntry> referenceToEntry = new AtomicReference<QueueEntry>(entry);
+            AtomicReference<QueueEntry> latestValueReference = null;
             QueueEntry oldEntry;
 
+            // Iterate until we have got a valid atomic reference object and either the referent is newer than the current
+            // entry, or the current entry has replaced it in the reference. Note that the head represents a special value
+            // indicating that the reference object is no longer valid (it is being removed from the map).
             do
             {
-                oldEntry = latestValueReference.get();
+                latestValueReference = getOrPutIfAbsent(keyValue, referenceToEntry);
+                oldEntry = latestValueReference == null ? null : latestValueReference.get();
             }
-            while(oldEntry.compareTo(entry) < 0 && !latestValueReference.compareAndSet(oldEntry, entry));
+            while(oldEntry != null
+                    && oldEntry.compareTo(entry) < 0
+                    && oldEntry != getHead()
+                    && !latestValueReference.compareAndSet(oldEntry, entry));
 
-            if(oldEntry.compareTo(entry) < 0)
+            if (oldEntry == null)
             {
-                // We replaced some other entry to become the newest value
-                if(oldEntry.acquire())
-                {
-                    discardEntry(oldEntry);
-                }
+                // Unlikely: A newer entry came along and was consumed (and entry removed from map)
+                // during our processing of getOrPutIfAbsent().  In this case we know our entry has been superseded.
+                discardEntry(entry);
             }
             else if (oldEntry.compareTo(entry) > 0)
             {
                 // A newer entry came along
                 discardEntry(entry);
-
             }
+            else if (oldEntry.compareTo(entry) < 0)
+            {
+                // We replaced some other entry to become the newest value
+                discardEntry(oldEntry);
+            }
+
+            entry.setLatestValueReference(latestValueReference);
         }
 
-        entry.setLatestValueReference(latestValueReference);
         return entry;
+    }
+
+    private AtomicReference<QueueEntry> getOrPutIfAbsent(final Object key, final AtomicReference<QueueEntry> referenceToValue)
+    {
+        AtomicReference<QueueEntry> latestValueReference = _latestValuesMap.putIfAbsent(key, referenceToValue);
+        if(latestValueReference == null)
+        {
+            latestValueReference = _latestValuesMap.get(key);
+        }
+        return latestValueReference;
     }
 
     private void discardEntry(final QueueEntry entry)
@@ -104,11 +120,13 @@ public class ConflationQueueList extends SimpleQueueEntryList
             txn.dequeue(entry.getQueue(),entry.getMessage(),
                                     new ServerTransaction.Action()
                                 {
+                                    @Override
                                     public void postCommit()
                                     {
                                         entry.discard();
                                     }
 
+                                    @Override
                                     public void onRollback()
                                     {
 
@@ -120,7 +138,6 @@ public class ConflationQueueList extends SimpleQueueEntryList
     private final class ConflationQueueEntry extends SimpleQueueEntryImpl
     {
 
-
         private AtomicReference<QueueEntry> _latestValueReference;
 
         public ConflationQueueEntry(SimpleQueueEntryList queueEntryList, ServerMessage message)
@@ -128,11 +145,39 @@ public class ConflationQueueList extends SimpleQueueEntryList
             super(queueEntryList, message);
         }
 
-
+        @Override
         public void release()
         {
             super.release();
 
+            discardIfReleasedEntryIsNoLongerLatest();
+        }
+
+        @Override
+        public boolean delete()
+        {
+            if(super.delete())
+            {
+                if(_latestValueReference != null && _latestValueReference.compareAndSet(this, getHead()))
+                {
+                    Object key = getMessageHeader().getHeader(_conflationKey);
+                    _latestValuesMap.remove(key,_latestValueReference);
+                }
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public void setLatestValueReference(final AtomicReference<QueueEntry> latestValueReference)
+        {
+            _latestValueReference = latestValueReference;
+        }
+
+        private void discardIfReleasedEntryIsNoLongerLatest()
+        {
             if(_latestValueReference != null)
             {
                 if(_latestValueReference.get() != this)
@@ -140,13 +185,16 @@ public class ConflationQueueList extends SimpleQueueEntryList
                     discardEntry(this);
                 }
             }
-
         }
 
-        public void setLatestValueReference(final AtomicReference<QueueEntry> latestValueReference)
-        {
-            _latestValueReference = latestValueReference;
-        }
+    }
+
+    /**
+     * Exposed purposes of unit test only.
+     */
+    Map<Object, AtomicReference<QueueEntry>> getLatestValuesMap()
+    {
+        return Collections.unmodifiableMap(_latestValuesMap);
     }
 
     static class Factory implements QueueEntryListFactory
@@ -163,5 +211,4 @@ public class ConflationQueueList extends SimpleQueueEntryList
             return new ConflationQueueList(queue, _conflationKey);
         }
     }
-
 }

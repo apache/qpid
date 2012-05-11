@@ -19,7 +19,7 @@
 package org.apache.qpid.systest.disttest.endtoend;
 
 import static org.apache.qpid.disttest.AbstractRunner.JNDI_CONFIG_PROP;
-import static org.apache.qpid.disttest.ControllerRunner.OUTPUT_FILE_PROP;
+import static org.apache.qpid.disttest.ControllerRunner.OUTPUT_DIR_PROP;
 import static org.apache.qpid.disttest.ControllerRunner.TEST_CONFIG_PROP;
 
 import java.io.File;
@@ -39,18 +39,19 @@ public class EndToEndTest extends QpidBrokerTestCase
 
     public void testRunner() throws Exception
     {
-        File csvOutputFile = createTemporaryCsvFile();
-        assertFalse("CSV output file must exist",csvOutputFile.exists());
+        File csvOutputDir = createTemporaryCsvDirectory();
+        assertTrue("CSV output dir must not exist",csvOutputDir.isDirectory());
 
         final String[] args = new String[] {TEST_CONFIG_PROP + "=" + TEST_CONFIG,
                                             JNDI_CONFIG_PROP + "=" + JNDI_CONFIG_FILE,
-                                            OUTPUT_FILE_PROP  + "=" + csvOutputFile.getAbsolutePath()};
+                                            OUTPUT_DIR_PROP  + "=" + csvOutputDir.getAbsolutePath()};
         _runner = new ControllerRunner();
         _runner.parseArgumentsIntoConfig(args);
         _runner.runController();
 
-        assertTrue("CSV output file must exist", csvOutputFile.exists());
-        final String csvContents = FileUtils.readFileAsString(csvOutputFile);
+        File expectedCsvOutputFile = new File(csvOutputDir, "endtoend.csv");
+        assertTrue("CSV output file must exist", expectedCsvOutputFile.exists());
+        final String csvContents = FileUtils.readFileAsString(expectedCsvOutputFile);
         final String[] csvLines = csvContents.split("\n");
 
         int numberOfHeaders = 1;
@@ -82,13 +83,13 @@ public class EndToEndTest extends QpidBrokerTestCase
 
     }
 
-    private File createTemporaryCsvFile() throws IOException
+    private File createTemporaryCsvDirectory() throws IOException
     {
-        File csvFile = File.createTempFile(getName(), ".csv");
-        csvFile.delete();
-        csvFile.deleteOnExit();
-
-        return csvFile;
+        String tmpDir = System.getProperty("java.io.tmpdir");
+        File csvDir = new File(tmpDir, "csv");
+        csvDir.mkdir();
+        csvDir.deleteOnExit();
+        return csvDir;
     }
 
 }

@@ -65,6 +65,7 @@ public class ConsumerParticipant implements Participant
     public ParticipantResult doIt(String registeredClientName) throws Exception
     {
         final Date start = new Date();
+        final int acknowledgeMode = _jmsDelegate.getAcknowledgeMode(_command.getSessionName());
 
         if (_command.getMaximumDuration() == 0 && _command.getNumberOfMessages() == 0)
         {
@@ -100,11 +101,11 @@ public class ConsumerParticipant implements Participant
                 getName(),
                 registeredClientName,
                 _command,
+                acknowledgeMode,
                 numberOfMessagesSent,
                 payloadSize,
                 totalPayloadSize,
-                start,
-                end);
+                start, end);
 
         return result;
     }
@@ -143,6 +144,10 @@ public class ConsumerParticipant implements Participant
 
         if (!batchEnabled || batchComplete)
         {
+            if (LOGGER.isTraceEnabled() && batchEnabled)
+            {
+                LOGGER.trace("Committing: batch size " + _command.getBatchSize() );
+            }
             _jmsDelegate.commitOrAcknowledgeMessage(message, _command.getSessionName());
         }
 
@@ -161,6 +166,11 @@ public class ConsumerParticipant implements Participant
 
             if (batchEnabled && !batchComplete)
             {
+                if (LOGGER.isTraceEnabled())
+                {
+                    LOGGER.trace("Committing: batch size " + _command.getBatchSize() );
+                }
+
                 // commit/acknowledge remaining messages if necessary
                 _jmsDelegate.commitOrAcknowledgeMessage(message, _command.getSessionName());
             }
@@ -231,5 +241,11 @@ public class ConsumerParticipant implements Participant
     public String getName()
     {
         return _command.getParticipantName();
+    }
+
+    @Override
+    public String toString()
+    {
+        return "ConsumerParticipant [_command=" + _command + ", _startTime=" + _startTime + "]";
     }
 }

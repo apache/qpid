@@ -191,7 +191,10 @@ public class ClientJmsDelegate
                                 command);
             }
             final boolean transacted = command.getAcknowledgeMode() == Session.SESSION_TRANSACTED;
+
             final Session newSession = connection.createSession(transacted, command.getAcknowledgeMode());
+            LOGGER.info("Created session " + command.getSessionName() + " with transacted = " + newSession.getTransacted() + " and acknowledgeMode = " + newSession.getAcknowledgeMode());
+
             addSession(command.getSessionName(), newSession);
         }
         catch (final JMSException jmse)
@@ -353,6 +356,20 @@ public class ClientJmsDelegate
         catch (final JMSException jmse)
         {
             throw new DistributedTestException("Unable to commit or acknowledge message on session: " +
+                            sessionName, jmse);
+        }
+    }
+
+    public int getAcknowledgeMode(final String sessionName)
+    {
+        try
+        {
+            final Session session = _testSessions.get(sessionName);
+            return session.getAcknowledgeMode();
+        }
+        catch (final JMSException jmse)
+        {
+            throw new DistributedTestException("Unable to determine acknowledgement mode for session: " +
                             sessionName, jmse);
         }
     }

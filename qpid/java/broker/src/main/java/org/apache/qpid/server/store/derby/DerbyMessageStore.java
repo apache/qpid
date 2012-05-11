@@ -31,6 +31,7 @@ import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.sql.Blob;
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -111,6 +112,7 @@ public class DerbyMessageStore implements MessageStore
 
 
     private static Class<Driver> DRIVER_CLASS;
+    public static final String MEMORY_STORE_LOCATION = ":memory:";
 
     private final AtomicLong _messageId = new AtomicLong(0);
     private AtomicBoolean _closed = new AtomicBoolean(false);
@@ -231,8 +233,13 @@ public class DerbyMessageStore implements MessageStore
     private static final String DERBY_SINGLE_DB_SHUTDOWN_CODE = "08006";
 
     private final StateManager _stateManager;
-    
+
     private final EventManager _eventManager = new EventManager();
+
+    private long _totalStoreSize;
+    private boolean _limitBusted;
+    private long _persistentSizeLowThreshold;
+    private long _persistentSizeHighThreshold;
 
     private MessageStoreRecoveryHandler _messageRecoveryHandler;
 
@@ -296,19 +303,39 @@ public class DerbyMessageStore implements MessageStore
         final String databasePath = storeConfiguration.getString(MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY, System.getProperty("QPID_WORK")
                 + File.separator + "derbyDB");
 
-        File environmentPath = new File(databasePath);
-        if (!environmentPath.exists())
+        if(!MEMORY_STORE_LOCATION.equals(databasePath))
         {
-            if (!environmentPath.mkdirs())
+            File environmentPath = new File(databasePath);
+            if (!environmentPath.exists())
             {
-                throw new IllegalArgumentException("Environment path " + environmentPath + " could not be read or created. "
-                    + "Ensure the path is correct and that the permissions are correct.");
+                if (!environmentPath.mkdirs())
+                {
+                    throw new IllegalArgumentException("Environment path " + environmentPath + " could not be read or created. "
+                        + "Ensure the path is correct and that the permissions are correct.");
+                }
             }
         }
 
         _storeLocation = databasePath;
 
+        _persistentSizeHighThreshold = storeConfiguration.getLong(MessageStoreConstants.OVERFULL_SIZE_PROPERTY, -1l);
+        _persistentSizeLowThreshold = storeConfiguration.getLong(MessageStoreConstants.UNDERFULL_SIZE_PROPERTY, _persistentSizeHighThreshold);
+        if(_persistentSizeLowThreshold > _persistentSizeHighThreshold || _persistentSizeLowThreshold < 0l)
+        {
+            _persistentSizeLowThreshold = _persistentSizeHighThreshold;
+        }
+
         createOrOpenDatabase(name, databasePath);
+
+        Connection conn = newAutoCommitConnection();;
+        try
+        {
+            _totalStoreSize = getSizeOnDisk(conn);
+        }
+        finally
+        {
+            conn.close();
+        }
     }
 
     private static synchronized void initialiseDriver() throws ClassNotFoundException
@@ -322,7 +349,7 @@ public class DerbyMessageStore implements MessageStore
     private void createOrOpenDatabase(String name, final String environmentPath) throws SQLException
     {
         //FIXME this the _vhost name should not be added here, but derby wont use an empty directory as was possibly just created.
-        _connectionURL = "jdbc:derby:" + environmentPath + "/" + name + ";create=true";
+        _connectionURL = "jdbc:derby" + (environmentPath.equals(MEMORY_STORE_LOCATION) ? environmentPath : ":" + environmentPath + "/") + name + ";create=true";
 
         Connection conn = newAutoCommitConnection();
 
@@ -1921,6 +1948,7 @@ public class DerbyMessageStore implements MessageStore
     private class DerbyTransaction implements Transaction
     {
         private final ConnectionWrapper _connWrapper;
+        private int _storeSizeIncrease;
 
 
         private DerbyTransaction()
@@ -1938,18 +1966,19 @@ public class DerbyMessageStore implements MessageStore
         @Override
         public void enqueueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
         {
-            if(message.getStoredMessage() instanceof StoredDerbyMessage)
+            final StoredMessage storedMessage = message.getStoredMessage();
+            if(storedMessage instanceof StoredDerbyMessage)
             {
                 try
                 {
-                    ((StoredDerbyMessage)message.getStoredMessage()).store(_connWrapper.getConnection());
+                    ((StoredDerbyMessage) storedMessage).store(_connWrapper.getConnection());
                 }
                 catch (SQLException e)
                 {
                     throw new AMQStoreException("Exception on enqueuing message " + _messageId, e);
                 }
             }
-
+            _storeSizeIncrease += storedMessage.getMetaData().getContentSize();
             DerbyMessageStore.this.enqueueMessage(_connWrapper, queue, message.getMessageNumber());
         }
 
@@ -1964,12 +1993,15 @@ public class DerbyMessageStore implements MessageStore
         public void commitTran() throws AMQStoreException
         {
             DerbyMessageStore.this.commitTran(_connWrapper);
+            storedSizeChange(_storeSizeIncrease);
         }
 
         @Override
         public StoreFuture commitTranAsync() throws AMQStoreException
         {
-            return DerbyMessageStore.this.commitTranAsync(_connWrapper);
+            final StoreFuture storeFuture = DerbyMessageStore.this.commitTranAsync(_connWrapper);
+            storedSizeChange(_storeSizeIncrease);
+            return storeFuture;
         }
 
         @Override
@@ -2111,6 +2143,7 @@ public class DerbyMessageStore implements MessageStore
 
                     conn.commit();
                     conn.close();
+                    storedSizeChange(getMetaData().getContentSize());
                 }
             }
             catch (SQLException e)
@@ -2150,7 +2183,9 @@ public class DerbyMessageStore implements MessageStore
         @Override
         public void remove()
         {
+            int delta = getMetaData().getContentSize();
             DerbyMessageStore.this.removeMessage(_messageId);
+            storedSizeChange(-delta);
         }
     }
 
@@ -2445,5 +2480,175 @@ public class DerbyMessageStore implements MessageStore
             conn.close();
         }
         return results;
+    }
+
+    private synchronized void storedSizeChange(final int delta)
+    {
+        if(getPersistentSizeHighThreshold() > 0)
+        {
+            synchronized(this)
+            {
+                // the delta supplied is an approximation of a store size change. we don;t want to check the statistic every
+                // time, so we do so only when there's been enough change that it is worth looking again. We do this by
+                // assuming the total size will change by less than twice the amount of the message data change.
+                long newSize = _totalStoreSize += 3*delta;
+
+                Connection conn = null;
+                try
+                {
+
+                    if(!_limitBusted &&  newSize > getPersistentSizeHighThreshold())
+                    {
+                        conn = newAutoCommitConnection();
+                        _totalStoreSize = getSizeOnDisk(conn);
+                        if(_totalStoreSize > getPersistentSizeHighThreshold())
+                        {
+                            _limitBusted = true;
+                            _eventManager.notifyEvent(Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
+                        }
+                    }
+                    else if(_limitBusted && newSize < getPersistentSizeLowThreshold())
+                    {
+                        long oldSize = _totalStoreSize;
+                        conn = newAutoCommitConnection();
+                        _totalStoreSize = getSizeOnDisk(conn);
+                        if(oldSize <= _totalStoreSize)
+                        {
+
+                            reduceSizeOnDisk(conn);
+
+                            _totalStoreSize = getSizeOnDisk(conn);
+                        }
+
+                        if(_totalStoreSize < getPersistentSizeLowThreshold())
+                        {
+                            _limitBusted = false;
+                            _eventManager.notifyEvent(Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
+                        }
+
+
+                    }
+                }
+                catch (SQLException e)
+                {
+                    closeConnection(conn);
+                    throw new RuntimeException("Exception will processing store size change", e);
+                }
+            }
+        }
+    }
+
+    private void reduceSizeOnDisk(Connection conn)
+    {
+        CallableStatement cs = null;
+        PreparedStatement stmt = null;
+        try
+        {
+            String tableQuery =
+                    "SELECT S.SCHEMANAME, T.TABLENAME FROM SYS.SYSSCHEMAS S, SYS.SYSTABLES T WHERE S.SCHEMAID = T.SCHEMAID AND T.TABLETYPE='T'";
+            stmt = conn.prepareStatement(tableQuery);
+            ResultSet rs = null;
+
+            List<String> schemas = new ArrayList<String>();
+            List<String> tables = new ArrayList<String>();
+
+            try
+            {
+                rs = stmt.executeQuery();
+                while(rs.next())
+                {
+                    schemas.add(rs.getString(1));
+                    tables.add(rs.getString(2));
+                }
+            }
+            finally
+            {
+                if(rs != null)
+                {
+                    rs.close();
+                }
+            }
+
+
+            cs = conn.prepareCall
+                    ("CALL SYSCS_UTIL.SYSCS_COMPRESS_TABLE(?, ?, ?)");
+
+            for(int i = 0; i < schemas.size(); i++)
+            {
+                cs.setString(1, schemas.get(i));
+                cs.setString(2, tables.get(i));
+                cs.setShort(3, (short) 0);
+                cs.execute();
+            }
+        }
+        catch (SQLException e)
+        {
+            closeConnection(conn);
+            throw new RuntimeException("Error reducing on disk size", e);
+        }
+        finally
+        {
+            closePreparedStatement(stmt);
+            closePreparedStatement(cs);
+        }
+
+    }
+
+    private long getSizeOnDisk(Connection conn)
+    {
+        PreparedStatement stmt = null;
+        try
+        {
+            String sizeQuery = "SELECT SUM(T2.NUMALLOCATEDPAGES * T2.PAGESIZE) TOTALSIZE" +
+                    "    FROM " +
+                    "        SYS.SYSTABLES systabs," +
+                    "        TABLE (SYSCS_DIAG.SPACE_TABLE(systabs.tablename)) AS T2" +
+                    "    WHERE systabs.tabletype = 'T'";
+
+            stmt = conn.prepareStatement(sizeQuery);
+
+            ResultSet rs = null;
+            long size = 0l;
+
+            try
+            {
+                rs = stmt.executeQuery();
+                while(rs.next())
+                {
+                    size = rs.getLong(1);
+                }
+            }
+            finally
+            {
+                if(rs != null)
+                {
+                    rs.close();
+                }
+            }
+
+            return size;
+
+        }
+        catch (SQLException e)
+        {
+            closeConnection(conn);
+            throw new RuntimeException("Error establishing on disk size", e);
+        }
+        finally
+        {
+            closePreparedStatement(stmt);
+        }
+
+    }
+
+
+    private long getPersistentSizeLowThreshold()
+    {
+        return _persistentSizeLowThreshold;
+    }
+
+    private long getPersistentSizeHighThreshold()
+    {
+        return _persistentSizeHighThreshold;
     }
 }

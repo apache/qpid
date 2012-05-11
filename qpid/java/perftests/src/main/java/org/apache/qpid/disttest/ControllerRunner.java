@@ -19,9 +19,14 @@
  */
 package org.apache.qpid.disttest;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import javax.naming.Context;
 
@@ -41,13 +46,11 @@ public class ControllerRunner extends AbstractRunner
 
     public static final String TEST_CONFIG_PROP = "test-config";
     public static final String DISTRIBUTED_PROP = "distributed";
-    public static final String OUTPUT_FILE_PROP = "outputfile";
+    public static final String OUTPUT_DIR_PROP = "outputdir";
 
     private static final String TEST_CONFIG_DEFAULT = "perftests-config.json";
     private static final String DISTRIBUTED_DEFAULT = "false";
-    private static final String OUTPUT_FILE_DEFAULT = "output.csv";
-
-    private Controller _controller;
+    private static final String OUTPUT_DIR_DEFAULT = ".";
 
     private final Aggregator _aggregator = new Aggregator();
 
@@ -56,7 +59,7 @@ public class ControllerRunner extends AbstractRunner
     {
         getCliOptions().put(TEST_CONFIG_PROP, TEST_CONFIG_DEFAULT);
         getCliOptions().put(DISTRIBUTED_PROP, DISTRIBUTED_DEFAULT);
-        getCliOptions().put(OUTPUT_FILE_PROP, OUTPUT_FILE_DEFAULT);
+        getCliOptions().put(OUTPUT_DIR_PROP, OUTPUT_DIR_DEFAULT);
     }
 
     public static void main(String[] args) throws Exception
@@ -84,40 +87,63 @@ public class ControllerRunner extends AbstractRunner
 
     private void runTests(ControllerJmsDelegate jmsDelegate)
     {
+        Controller controller = new Controller(jmsDelegate, DistributedTestConstants.REGISTRATION_TIMEOUT, DistributedTestConstants.COMMAND_RESPONSE_TIMEOUT);
 
-        _controller = new Controller(jmsDelegate,
-                DistributedTestConstants.REGISTRATION_TIMEOUT, DistributedTestConstants.COMMAND_RESPONSE_TIMEOUT);
+        final List<String> testConfigFiles = getTestConfigFiles();
+        createClientsIfNotDistributed(testConfigFiles);
 
-        Config testConfig = getTestConfig();
-        _controller.setConfig(testConfig);
+        try
+        {
+            for (String testConfigFile : testConfigFiles)
+            {
+                final Config testConfig = buildTestConfigFrom(testConfigFile);
+                controller.setConfig(testConfig);
 
+                controller.awaitClientRegistrations();
+
+                LOGGER.info("Running test : " + testConfigFile);
+                runTest(controller, testConfigFile);
+            }
+        }
+        finally
+        {
+            controller.stopAllRegisteredClients();
+        }
+
+    }
+
+    private void runTest(Controller controller, String testConfigFile)
+    {
+        final Config testConfig = buildTestConfigFrom(testConfigFile);
+        controller.setConfig(testConfig);
+
+        ResultsForAllTests rawResultsForAllTests = controller.runAllTests();
+        ResultsForAllTests resultsForAllTests = _aggregator.aggregateResults(rawResultsForAllTests);
+
+        final String outputFile = generateOutputCsvNameFrom(testConfigFile);
+        writeResultsToFile(resultsForAllTests, outputFile);
+    }
+
+    private void createClientsIfNotDistributed(final List<String> testConfigFiles)
+    {
         if(!isDistributed())
         {
+            int maxNumberOfClients = 0;
+            for (String testConfigFile : testConfigFiles)
+            {
+                final Config testConfig = buildTestConfigFrom(testConfigFile);
+                final int numClients = testConfig.getTotalNumberOfClients();
+                maxNumberOfClients = Math.max(numClients, maxNumberOfClients);
+            }
+
             //we must create the required test clients, running in single-jvm mode
-            int numClients = testConfig.getTotalNumberOfClients();
-            for (int i = 1; i <= numClients; i++)
+            for (int i = 1; i <= maxNumberOfClients; i++)
             {
                 ClientRunner clientRunner = new ClientRunner();
                 clientRunner.setJndiPropertiesFileLocation(getJndiConfig());
                 clientRunner.runClients();
             }
         }
-
-        ResultsForAllTests resultsForAllTests = null;
-        try
-        {
-            _controller.awaitClientRegistrations();
-
-            ResultsForAllTests rawResultsForAllTests = _controller.runAllTests();
-            resultsForAllTests = _aggregator.aggregateResults(rawResultsForAllTests);
-        }
-        finally
-        {
-            _controller.stopAllRegisteredClients();
-        }
-
-        final String outputFile = getOutputFile();
-        writeResultsToFile(resultsForAllTests, outputFile);
     }
 
     private void writeResultsToFile(ResultsForAllTests resultsForAllTests, String outputFile)
@@ -150,22 +176,55 @@ public class ControllerRunner extends AbstractRunner
         }
     }
 
-    private String getOutputFile()
+    private String generateOutputCsvNameFrom(String testConfigFile)
     {
-        return String.valueOf(getCliOptions().get(ControllerRunner.OUTPUT_FILE_PROP));
+        final String filenameOnlyWithExtension = new File(testConfigFile).getName();
+        final String cvsFile = filenameOnlyWithExtension.replaceFirst(".?\\w*$", ".csv");
+        final String outputDir = String.valueOf(getCliOptions().get(ControllerRunner.OUTPUT_DIR_PROP));
+
+        return new File(outputDir, cvsFile).getAbsolutePath();
     }
 
-    private Config getTestConfig()
+    private List<String> getTestConfigFiles()
+    {
+        final List<String> testConfigFile = new ArrayList<String>();
+        final File configFileOrDirectory = new File(getCliOptions().get(ControllerRunner.TEST_CONFIG_PROP));
+
+        if (configFileOrDirectory.isDirectory())
+        {
+            final String[] configFiles = configFileOrDirectory.list(new FilenameFilter()
+            {
+                @Override
+                public boolean accept(File dir, String name)
+                {
+                    return new File(dir, name).isFile() && name.endsWith(".json");
+                }
+            });
+
+            for (String configFile : configFiles)
+            {
+                testConfigFile.add(new File(configFileOrDirectory, configFile).getAbsolutePath());
+            }
+        }
+        else
+        {
+            testConfigFile.add(configFileOrDirectory.getAbsolutePath());
+        }
+
+        return testConfigFile;
+    }
+
+    private Config buildTestConfigFrom(String testConfigFile)
     {
         ConfigReader configReader = new ConfigReader();
         Config testConfig;
         try
         {
-            testConfig = configReader.getConfigFromFile(getCliOptions().get(ControllerRunner.TEST_CONFIG_PROP));
+            testConfig = configReader.getConfigFromFile(testConfigFile);
         }
         catch (FileNotFoundException e)
         {
-            throw new DistributedTestException("Exception while loading test config", e);
+            throw new DistributedTestException("Exception while loading test config from " + testConfigFile, e);
         }
         return testConfig;
     }

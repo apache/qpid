@@ -20,12 +20,12 @@ package org.apache.qpid.disttest.jms;
 
 import java.util.List;
 
-import javax.jms.Connection;
+import javax.jms.Session;
 
 import org.apache.qpid.disttest.controller.config.QueueConfig;
 
 public interface QueueCreator
 {
-    public void createQueues(final Connection connection, final List<QueueConfig> configs);
-    public void deleteQueues(final Connection connection, final List<QueueConfig> configs);
+    public void createQueues(final Session session, final List<QueueConfig> configs);
+    public void deleteQueues(final Session session, final List<QueueConfig> configs);
 }

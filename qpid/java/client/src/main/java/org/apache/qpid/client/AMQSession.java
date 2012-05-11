@@ -3130,6 +3130,14 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         _ticket = ticket;
     }
 
+    public boolean isBrokerFlowControlled()
+    {
+        synchronized (_flowControl)
+        {
+            return _flowControl.getFlowControl();
+        }
+    }
+
     public void setFlowControl(final boolean active)
     {
         _flowControl.setFlowControl(active);

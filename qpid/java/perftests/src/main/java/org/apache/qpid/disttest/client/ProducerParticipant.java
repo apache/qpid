@@ -57,6 +57,8 @@ public class ProducerParticipant implements Participant
             throw new DistributedTestException("number of messages and duration cannot both be zero");
         }
 
+        int acknowledgeMode = _jmsDelegate.getAcknowledgeMode(_command.getSessionName());
+
         long expectedDuration = _command.getMaximumDuration() - _command.getStartDelay();
 
         doSleepForStartDelay();
@@ -88,6 +90,10 @@ public class ProducerParticipant implements Participant
 
             if (batchLimitReached)
             {
+                if (LOGGER.isTraceEnabled() && _command.getBatchSize() > 0)
+                {
+                    LOGGER.trace("Committing: batch size " + _command.getBatchSize() );
+                }
                 _jmsDelegate.commitOrAcknowledgeMessage(lastPublishedMessage, _command.getSessionName());
 
                 if (_command.getInterval() > 0)
@@ -107,6 +113,10 @@ public class ProducerParticipant implements Participant
         // commit the remaining batch messages
         if (_command.getBatchSize() > 0 && numberOfMessagesSent % _command.getBatchSize() != 0)
         {
+            if (LOGGER.isTraceEnabled())
+            {
+                LOGGER.trace("Committing: batch size " + _command.getBatchSize() );
+            }
             _jmsDelegate.commitOrAcknowledgeMessage(lastPublishedMessage, _command.getSessionName());
         }
 
@@ -118,9 +128,9 @@ public class ProducerParticipant implements Participant
                 getName(),
                 registeredClientName,
                 _command,
+                acknowledgeMode,
                 numberOfMessagesSent,
-                payloadSize,
-                totalPayloadSizeOfAllMessagesSent, start, end);
+                payloadSize, totalPayloadSizeOfAllMessagesSent, start, end);
     }
 
     private int getPayloadSizeForResultIfConstantOrZeroOtherwise(NavigableSet<Integer> allPayloadSizes)
@@ -154,5 +164,11 @@ public class ProducerParticipant implements Participant
     public String getName()
     {
         return _command.getParticipantName();
+    }
+
+    @Override
+    public String toString()
+    {
+        return "ProducerParticipant [command=" + _command + "]";
     }
 }

@@ -38,7 +38,7 @@ import org.apache.qpid.server.security.access.config.RuleSet;
 
 /**
  * These tests check that the ACL file parsing works correctly.
- * 
+ *
  * For each message that can be returned in a {@link ConfigurationException}, an ACL file is created that should trigger this
  * particular message.
  */
@@ -48,7 +48,7 @@ public class PlainConfigurationTest extends TestCase
     {
         File acl = File.createTempFile(getClass().getName() + getName(), "acl");
         acl.deleteOnExit();
-        
+
         // Write ACL file
         PrintWriter aclWriter = new PrintWriter(new FileWriter(acl));
         for (String line : aclData)
@@ -70,14 +70,13 @@ public class PlainConfigurationTest extends TestCase
             // Load ruleset
             ConfigurationFile configFile = new PlainConfiguration(new File("doesnotexist"));
             configFile.load();
-            
+
             fail("fail");
         }
         catch (ConfigurationException ce)
         {
             assertEquals(String.format(PlainConfiguration.CONFIG_NOT_FOUND_MSG, "doesnotexist"), ce.getMessage());
             assertTrue(ce.getCause() instanceof FileNotFoundException);
-            assertEquals("doesnotexist (No such file or directory)", ce.getCause().getMessage());
         }
     }
 
@@ -318,17 +317,17 @@ public class PlainConfigurationTest extends TestCase
      */
     public void testMixedCaseRuleInterpretation() throws Exception
     {
-        final PlainConfiguration config = writeACLConfig("AcL deny-LOG user1 BiND Exchange name=AmQ.dIrect");
+        final PlainConfiguration config = writeACLConfig("AcL deny-LOG User1 BiND Exchange Name=AmQ.dIrect");
         final RuleSet rs = config.getConfiguration();
         assertEquals(1, rs.getRuleCount());
 
         final Map<Integer, Rule> rules = rs.getAllRules();
         assertEquals(1, rules.size());
         final Rule rule = rules.get(0);
-        assertEquals("Rule has unexpected identity", "user1", rule.getIdentity());
+        assertEquals("Rule has unexpected identity", "User1", rule.getIdentity());
         assertEquals("Rule has unexpected operation", Operation.BIND, rule.getAction().getOperation());
         assertEquals("Rule has unexpected operation", ObjectType.EXCHANGE, rule.getAction().getObjectType());
-        final ObjectProperties expectedProperties = new ObjectProperties("amq.direct");
+        final ObjectProperties expectedProperties = new ObjectProperties("AmQ.dIrect");
         assertEquals("Rule has unexpected object properties", expectedProperties, rule.getAction().getProperties());
     }
 

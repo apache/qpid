@@ -20,8 +20,6 @@ package org.apache.qpid.disttest.jms;
 
 import java.util.List;
 
-import javax.jms.Connection;
-import javax.jms.JMSException;
 import javax.jms.Session;
 
 import org.apache.qpid.client.AMQDestination;
@@ -39,22 +37,22 @@ public class QpidQueueCreator implements QueueCreator
     private static final FieldTable EMPTY_QUEUE_BIND_ARGUMENTS = new FieldTable();
 
     @Override
-    public void createQueues(Connection connection, List<QueueConfig> configs)
+    public void createQueues(Session session, List<QueueConfig> configs)
     {
-        AMQSession<?, ?> session = createSession(connection);
+        AMQSession<?, ?> amqSession = (AMQSession<?, ?>)session;
         for (QueueConfig queueConfig : configs)
         {
-            createQueue(session, queueConfig);
+            createQueue(amqSession, queueConfig);
         }
     }
 
     @Override
-    public void deleteQueues(Connection connection, List<QueueConfig> configs)
+    public void deleteQueues(Session session, List<QueueConfig> configs)
     {
-        AMQSession<?, ?> session = createSession(connection);
+        AMQSession<?, ?> amqSession = (AMQSession<?, ?>)session;
         for (QueueConfig queueConfig : configs)
         {
-            deleteQueue(session, queueConfig);
+            deleteQueue(amqSession, queueConfig);
         }
     }
 
@@ -96,15 +94,4 @@ public class QpidQueueCreator implements QueueCreator
         }
     }
 
-    private AMQSession<?, ?> createSession(Connection connection)
-    {
-        try
-        {
-            return (AMQSession<?, ?>) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        }
-        catch (JMSException e)
-        {
-            throw new DistributedTestException("Failed to create session!", e);
-        }
-    }
 }

@@ -352,7 +352,6 @@ public class MockSubscription implements Subscription
         @Override
         public void close() throws AMQException
         {
-
         }
 
         @Override
@@ -365,19 +364,26 @@ public class MockSubscription implements Subscription
         public void checkTransactionStatus(long openWarn, long openClose,
                 long idleWarn, long idleClose) throws AMQException
         {
-
         }
 
         @Override
         public void block(AMQQueue queue)
         {
-
         }
 
         @Override
         public void unblock(AMQQueue queue)
         {
+        }
 
+        @Override
+        public void block()
+        {
+        }
+
+        @Override
+        public void unblock()
+        {
         }
 
         @Override
@@ -428,19 +434,16 @@ public class MockSubscription implements Subscription
         @Override
         public void initialiseStatistics()
         {
-
         }
 
         @Override
         public void registerMessageReceived(long messageSize, long timestamp)
         {
-
         }
 
         @Override
         public void registerMessageDelivered(long messageSize)
         {
-
         }
 
         @Override
@@ -483,14 +486,12 @@ public class MockSubscription implements Subscription
         public void close(AMQConstant cause, String message)
                 throws AMQException
         {
-
         }
 
         @Override
         public void closeSession(AMQSessionModel session, AMQConstant cause,
                 String message) throws AMQException
         {
-
         }
 
         @Override
@@ -503,6 +504,16 @@ public class MockSubscription implements Subscription
         public List<AMQSessionModel> getSessionModels()
         {
             return null;
+        }
+
+        @Override
+        public void block()
+        {
+        }
+
+        @Override
+        public void unblock()
+        {
         }
 
         @Override

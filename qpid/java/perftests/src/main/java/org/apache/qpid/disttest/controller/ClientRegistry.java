@@ -33,6 +33,8 @@ public class ClientRegistry
 
     private final Set<String> _registeredClientNames = new ConcurrentSkipListSet<String>();
 
+    private final Object _lock = new Object();
+
     public void registerClient(String clientName)
     {
         final boolean alreadyContainsClient = !_registeredClientNames.add(clientName);
@@ -41,12 +43,54 @@ public class ClientRegistry
             throw new DistributedTestException("Duplicate client name " + clientName);
         }
 
-        LOGGER.info("Client registered: " + clientName);
+        notifyAllWaiters();
+
+        if (LOGGER.isInfoEnabled())
+        {
+            LOGGER.info("Client registered: " + clientName);
+        }
     }
+
 
     public Collection<String> getClients()
     {
         return Collections.unmodifiableSet(_registeredClientNames);
+    }
+
+    public int awaitClients(int numberOfClientsToAwait, long timeout)
+    {
+        final long endTime = System.currentTimeMillis() + timeout;
+
+        int numberOfClientsAbsent = numberOfClientsToAwait - _registeredClientNames.size();
+        long remainingTimeout = endTime - System.currentTimeMillis();
+
+        while(numberOfClientsAbsent > 0 && remainingTimeout > 0)
+        {
+            synchronized (_lock)
+            {
+                try
+                {
+                    _lock.wait(remainingTimeout);
+                }
+                catch (InterruptedException e)
+                {
+                   Thread.currentThread().interrupt();
+                }
+            }
+
+            numberOfClientsAbsent = numberOfClientsToAwait - _registeredClientNames.size();
+            remainingTimeout = endTime - System.currentTimeMillis();
+        }
+
+        return numberOfClientsAbsent < 0 ? 0 : numberOfClientsAbsent;
+    }
+
+    private void notifyAllWaiters()
+    {
+        synchronized (_lock)
+        {
+            _lock.notifyAll();
+        }
     }
 
 }

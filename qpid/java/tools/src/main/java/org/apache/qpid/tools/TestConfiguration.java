@@ -26,20 +26,20 @@ import javax.jms.Connection;
 
 public interface TestConfiguration
 {
-    enum MessageType {
-        BYTES, TEXT, MAP, OBJECT;
+	enum MessageType {
+		BYTES, TEXT, MAP, OBJECT;
 
-        public static MessageType getType(String s) throws Exception
-        {
-            if ("text".equalsIgnoreCase(s))
-            {
-                return TEXT;
-            }
-            else if ("bytes".equalsIgnoreCase(s))
-            {
-                return BYTES;
-            }
-            /*else if ("map".equalsIgnoreCase(s))
+		public static MessageType getType(String s) throws Exception
+		{
+			if ("text".equalsIgnoreCase(s))
+			{
+				return TEXT;
+			}
+			else if ("bytes".equalsIgnoreCase(s))
+			{
+				return BYTES;
+			}
+			/*else if ("map".equalsIgnoreCase(s))
             {
                 return MAP;
             }
@@ -47,80 +47,88 @@ public interface TestConfiguration
             {
                 return OBJECT;
             }*/
-            else
-            {
-                throw new Exception("Unsupported message type");
-            }
-        }
-    };
+			else
+			{
+				throw new Exception("Unsupported message type");
+			}
+		}
+	};
 
-    public final static String TIMESTAMP = "ts";
+	public final static String TIMESTAMP = "ts";
 
-    public final static String EOS = "eos";
+	public final static String EOS = "eos";
 
-    public final static String SEQUENCE_NUMBER = "sn";
+	public final static String SEQUENCE_NUMBER = "sn";
 
-    public String getUrl();
+	public String getUrl();
 
-    public String getHost();
+	public String getHost();
 
-    public int getPort();
+	public int getPort();
 
-    public String getAddress();
+	public String getAddress();
 
-    public int getAckMode();
+	public long getTimeout();
 
-    public int getMsgCount();
+	public int getAckMode();
 
-    public int getMsgSize();
+	public int getMsgCount();
 
-    public int getRandomMsgSizeStartFrom();
+	public int getMsgSize();
 
-    public boolean isDurable();
+	public int getRandomMsgSizeStartFrom();
 
-    public boolean isTransacted();
+	public boolean isDurable();
 
-    public int getTransactionSize();
+	public boolean isTransacted();
 
-    public int getWarmupCount();
+	public int getTransactionSize();
 
-    public boolean isCacheMessage();
+	public int getWarmupCount();
 
-    public boolean isDisableMessageID();
+	public boolean isCacheMessage();
 
-    public boolean isDisableTimestamp();
+	public boolean isDisableMessageID();
 
-    public boolean isRandomMsgSize();
+	public boolean isDisableTimestamp();
 
-    public String getMessageType();
+	public boolean isRandomMsgSize();
 
-    public boolean isPrintStdDev();
+	public String getMessageType();
 
-    public int getSendRate();
+	public boolean isPrintStdDev();
 
-    public boolean isExternalController();
+	public int getSendRate();
 
-    public boolean isUseUniqueDests();
+	public boolean isExternalController();
 
-    public int getAckFrequency();
+	public boolean isUseUniqueDests();
 
-    public Connection createConnection() throws Exception;
+	public int getAckFrequency();
 
-    public DecimalFormat getDecimalFormat();
+	public Connection createConnection() throws Exception;
 
-    public int reportEvery();
+	public DecimalFormat getDecimalFormat();
 
-    public boolean isReportTotal();
+	public int reportEvery();
 
-    public boolean isReportHeader();
+	public boolean isReportTotal();
 
-    public boolean isReportLatency();
+	public boolean isReportHeader();
 
-    public int getSendEOS();
+	public int getSendEOS();
 
-    public int getConnectionCount();
+	public int getConnectionCount();
 
-    public int getRollbackFrequency();
+	public int getRollbackFrequency();
 
-    public boolean isPrintHeaders();
+	public boolean isPrintHeaders();
+
+	public boolean isPrintContent();
+
+	public long getTTL();
+
+	public int getPriority();
+
+	public String getReadyAddress();
 }

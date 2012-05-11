@@ -61,7 +61,6 @@ public class TopicConfig extends ConfigurationPlugin
             throw new ConfigurationException("Topic section must have a 'name' or 'subscriptionName' element.");
         }
 
-        System.err.println("********* Created TC:"+this);
     }
 
 
@@ -75,5 +74,5 @@ public class TopicConfig extends ConfigurationPlugin
         }
 
         return response;
-    }    
+    }
 }

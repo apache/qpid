@@ -20,7 +20,7 @@ package org.apache.qpid.disttest.results.formatting;
 
 import static org.apache.qpid.disttest.message.ParticipantAttribute.BATCH_SIZE;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.CONFIGURED_CLIENT_NAME;
-import static org.apache.qpid.disttest.message.ParticipantAttribute.DELIVERY_MODE;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.*;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.ERROR_MESSAGE;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_BROWSIING_SUBSCRIPTION;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_DURABLE_SUBSCRIPTION;
@@ -30,16 +30,18 @@ import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_SYNCHRONO
 import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_TOPIC;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.ITERATION_NUMBER;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.MAXIMUM_DURATION;
-import static org.apache.qpid.disttest.message.ParticipantAttribute.PAYLOAD_SIZE;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.NUMBER_OF_MESSAGES_PROCESSED;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.PARTICIPANT_NAME;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.PAYLOAD_SIZE;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.PRIORITY;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.PRODUCER_INTERVAL;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.PRODUCER_START_DELAY;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.TEST_NAME;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.THROUGHPUT;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.TIME_TAKEN;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.TIME_TO_LIVE;
-import static org.apache.qpid.disttest.message.ParticipantAttribute.THROUGHPUT;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.TOTAL_NUMBER_OF_CONSUMERS;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.TOTAL_NUMBER_OF_PRODUCERS;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.TOTAL_PAYLOAD_PROCESSED;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -56,7 +58,7 @@ import org.apache.qpid.disttest.controller.ResultsForAllTests;
 import org.apache.qpid.disttest.controller.TestResult;
 import org.apache.qpid.disttest.message.ParticipantAttribute;
 import org.apache.qpid.disttest.message.ParticipantResult;
-import org.apache.qpid.disttest.results.formatting.CSVFormater;
+import org.apache.qpid.qmf.QMFProperty.AccessCode;
 
 public class CSVFormaterTest extends TestCase
 {
@@ -95,10 +97,11 @@ public class CSVFormaterTest extends TestCase
         participantAttributes.put(ITERATION_NUMBER, 0);
         participantAttributes.put(CONFIGURED_CLIENT_NAME, CONFIGURED_CLIENT1);
         participantAttributes.put(PARTICIPANT_NAME, PARTICIPANT);
-        participantAttributes.put(NUMBER_OF_MESSAGES_PROCESSED, 1);
-        participantAttributes.put(PAYLOAD_SIZE, 2);
-        participantAttributes.put(PRIORITY, 3);
-        participantAttributes.put(TIME_TO_LIVE, 4);
+        participantAttributes.put(NUMBER_OF_MESSAGES_PROCESSED, 0);
+        participantAttributes.put(PAYLOAD_SIZE, 1);
+        participantAttributes.put(PRIORITY, 2);
+        participantAttributes.put(TIME_TO_LIVE, 3);
+        participantAttributes.put(ACKNOWLEDGE_MODE, 4);
         participantAttributes.put(DELIVERY_MODE, 5);
         participantAttributes.put(BATCH_SIZE, 6);
         participantAttributes.put(MAXIMUM_DURATION, 7);
@@ -110,6 +113,8 @@ public class CSVFormaterTest extends TestCase
         participantAttributes.put(IS_SELECTOR, false);
         participantAttributes.put(IS_NO_LOCAL, true);
         participantAttributes.put(IS_SYNCHRONOUS_CONSUMER, false);
+        participantAttributes.put(TOTAL_NUMBER_OF_CONSUMERS, 1);
+        participantAttributes.put(TOTAL_NUMBER_OF_PRODUCERS, 2);
         participantAttributes.put(TOTAL_PAYLOAD_PROCESSED, 1024);
         participantAttributes.put(THROUGHPUT, 2048);
         participantAttributes.put(TIME_TAKEN, 1000);

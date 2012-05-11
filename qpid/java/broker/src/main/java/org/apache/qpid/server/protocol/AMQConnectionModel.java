@@ -32,23 +32,27 @@ public interface AMQConnectionModel extends StatisticsGatherer
 {
     /**
      * get a unique id for this connection.
-     * 
+     *
      * @return a {@link UUID} representing the connection
      */
     public UUID getId();
-    
+
     /**
      * Close the underlying Connection
-     * 
+     *
      * @param cause
      * @param message
      * @throws org.apache.qpid.AMQException
      */
     public void close(AMQConstant cause, String message) throws AMQException;
 
+    public void block();
+
+    public void unblock();
+
     /**
      * Close the given requested Session
-     * 
+     *
      * @param session
      * @param cause
      * @param message
@@ -57,10 +61,10 @@ public interface AMQConnectionModel extends StatisticsGatherer
     public void closeSession(AMQSessionModel session, AMQConstant cause, String message) throws AMQException;
 
     public long getConnectionId();
-    
+
     /**
      * Get a list of all sessions using this connection.
-     * 
+     *
      * @return a list of {@link AMQSessionModel}s
      */
     public List<AMQSessionModel> getSessionModels();

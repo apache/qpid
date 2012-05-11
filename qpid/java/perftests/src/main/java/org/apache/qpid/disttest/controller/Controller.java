@@ -44,7 +44,6 @@ public class Controller
 
     private final ControllerJmsDelegate _jmsDelegate;
 
-    private volatile CountDownLatch _clientRegistrationLatch;
     private volatile CountDownLatch _stopClientsResponseLatch = null;
 
     private Config _config;
@@ -60,25 +59,29 @@ public class Controller
         _commandResponseTimeout = commandResponseTimeout;
         _testRunnerFactory = new TestRunnerFactory();
         _clientRegistry = new ClientRegistry();
-    }
-
-    public void setConfig(Config config)
-    {
-        _config = config;
-        validateConfiguration();
-        int numberOfClients = config.getTotalNumberOfClients();
-        _clientRegistrationLatch = new CountDownLatch(numberOfClients);
 
         _jmsDelegate.addCommandListener(new RegisterClientCommandListener());
         _jmsDelegate.addCommandListener(new StopClientResponseListener());
         _jmsDelegate.start();
     }
 
+    public void setConfig(Config config)
+    {
+        _config = config;
+        validateConfiguration();
+    }
 
     public void awaitClientRegistrations()
     {
-        LOGGER.info("Awaiting client registration");
-        awaitLatch(_clientRegistrationLatch, _registrationTimeout, "Timed out waiting for registrations. Expecting %d more registrations");
+        LOGGER.info("Awaiting client registrations");
+
+        final int numberOfAbsentClients = _clientRegistry.awaitClients(_config.getTotalNumberOfClients(), _registrationTimeout);
+        if (numberOfAbsentClients > 0)
+        {
+            String formattedMessage = String.format("Timed out waiting for registrations. Expecting %d more registrations", numberOfAbsentClients);
+            throw new DistributedTestException(formattedMessage);
+        }
+
     }
 
     private void validateConfiguration()
@@ -111,15 +114,13 @@ public class Controller
     {
         final String clientName = registrationCommand.getClientName();
 
-        _clientRegistry.registerClient(clientName);
         _jmsDelegate.registerClient(registrationCommand);
-
-        _clientRegistrationLatch.countDown();
-        LOGGER.info("Counted down latch for client: " + clientName + " latch count=" + _clientRegistrationLatch.getCount());
+        _clientRegistry.registerClient(clientName);
     }
 
     void processStopClientResponse(final Response response)
     {
+        // TODO clientRegistry should expose a deregisterClient
         _stopClientsResponseLatch.countDown();
         if (response.hasError())
         {

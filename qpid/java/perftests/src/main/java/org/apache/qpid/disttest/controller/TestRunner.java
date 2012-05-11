@@ -62,6 +62,22 @@ public class TestRunner
     /** Length of time to await test results or {@value #WAIT_FOREVER} */
     private final long _testResultTimeout;
 
+    private Thread _removeQueuesShutdownHook = new Thread()
+    {
+        @Override
+        public void run()
+        {
+            LOGGER.info("Shutdown intercepted: deleting test queues");
+            try
+            {
+                deleteQueues();
+            }
+            catch (Throwable t)
+            {
+                LOGGER.error("Failed to delete test queues during shutdown", t);
+            }
+        }
+    };
 
     public TestRunner(ParticipatingClients participatingClients, TestInstance testInstance, ControllerJmsDelegate jmsDelegate, long commandResponseTimeout, long testResultTimeout)
     {
@@ -98,10 +114,13 @@ public class TestRunner
     private void runParts()
     {
         boolean queuesCreated = false;
+
         try
         {
             createQueues();
             queuesCreated = true;
+            Runtime.getRuntime().addShutdownHook(_removeQueuesShutdownHook);
+
             sendTestSetupCommands();
             awaitCommandResponses();
             sendCommandToParticipatingClients(new StartTestCommand());
@@ -114,10 +133,14 @@ public class TestRunner
         }
         finally
         {
+
             if (queuesCreated)
             {
                 deleteQueues();
             }
+
+            Runtime.getRuntime().removeShutdownHook(_removeQueuesShutdownHook);
+
         }
     }
 
@@ -133,13 +156,20 @@ public class TestRunner
     void sendTestSetupCommands()
     {
         List<CommandForClient> commandsForAllClients = _testInstance.createCommands();
-        _commandResponseLatch = new CountDownLatch(commandsForAllClients.size());
+        final int numberOfCommandsToSend = commandsForAllClients.size();
+        _commandResponseLatch = new CountDownLatch(numberOfCommandsToSend);
+
+        LOGGER.debug("About to send {} command(s)", numberOfCommandsToSend);
+
         for (CommandForClient commandForClient : commandsForAllClients)
         {
             String configuredClientName = commandForClient.getClientName();
             String registeredClientName = _participatingClients.getRegisteredNameFromConfiguredName(configuredClientName);
 
             Command command = commandForClient.getCommand();
+
+            LOGGER.debug("Sending command : {} ", command);
+
             sendCommandInternal(registeredClientName, command);
         }
     }
@@ -206,9 +236,14 @@ public class TestRunner
     void sendCommandToParticipatingClients(final Command command)
     {
         Collection<String> participatingRegisteredClients = _participatingClients.getRegisteredNames();
-        _commandResponseLatch = new CountDownLatch(participatingRegisteredClients.size());
+        final int numberOfClients = participatingRegisteredClients.size();
+        _commandResponseLatch = new CountDownLatch(numberOfClients);
+
+        LOGGER.debug("About to send command {} to {} clients", command, numberOfClients);
+
         for (final String clientName : participatingRegisteredClients)
         {
+            LOGGER.debug("Sending command : {} ", command);
             sendCommandInternal(clientName, command);
         }
     }

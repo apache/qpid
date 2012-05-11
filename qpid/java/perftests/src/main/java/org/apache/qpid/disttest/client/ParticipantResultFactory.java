@@ -29,11 +29,11 @@ import org.apache.qpid.disttest.message.ProducerParticipantResult;
 
 public class ParticipantResultFactory
 {
-    public ConsumerParticipantResult createForConsumer(String participantName, String clientRegisteredName, CreateConsumerCommand command, int numberOfMessagesReceived, int payloadSize, long totalPayloadReceived, Date start, Date end)
+    public ConsumerParticipantResult createForConsumer(String participantName, String clientRegisteredName, CreateConsumerCommand command, int acknowledgeMode, int numberOfMessagesReceived, int payloadSize, long totalPayloadReceived, Date start, Date end)
     {
         ConsumerParticipantResult consumerParticipantResult = new ConsumerParticipantResult();
 
-        setTestProperties(consumerParticipantResult, command, participantName, clientRegisteredName);
+        setTestProperties(consumerParticipantResult, command, participantName, clientRegisteredName, acknowledgeMode);
         setTestResultProperties(consumerParticipantResult, numberOfMessagesReceived, payloadSize, totalPayloadReceived, start, end);
 
         consumerParticipantResult.setTopic(command.isTopic());
@@ -42,25 +42,30 @@ public class ParticipantResultFactory
         consumerParticipantResult.setSelector(command.getSelector() != null);
         consumerParticipantResult.setNoLocal(command.isNoLocal());
         consumerParticipantResult.setSynchronousConsumer(command.isSynchronous());
+        consumerParticipantResult.setTotalNumberOfConsumers(1);
+        consumerParticipantResult.setTotalNumberOfProducers(0);
 
         return consumerParticipantResult;
     }
 
-    public ProducerParticipantResult createForProducer(String participantName, String clientRegisteredName, CreateProducerCommand command, int numberOfMessagesSent, int payloadSize, long totalPayloadSent, Date start, Date end)
+    public ProducerParticipantResult createForProducer(String participantName, String clientRegisteredName, CreateProducerCommand command, int acknowledgeMode, int numberOfMessagesSent, int payloadSize, long totalPayloadSent, Date start, Date end)
     {
-        final ProducerParticipantResult participantResult = new ProducerParticipantResult();
+        final ProducerParticipantResult producerParticipantResult = new ProducerParticipantResult();
 
-        participantResult.setStartDelay(command.getStartDelay());
-        participantResult.setDeliveryMode(command.getDeliveryMode());
-        participantResult.setPriority(command.getPriority());
-        participantResult.setInterval(command.getInterval());
-        participantResult.setTimeToLive(command.getTimeToLive());
+        producerParticipantResult.setStartDelay(command.getStartDelay());
+        producerParticipantResult.setDeliveryMode(command.getDeliveryMode());
+        producerParticipantResult.setPriority(command.getPriority());
+        producerParticipantResult.setInterval(command.getInterval());
+        producerParticipantResult.setTimeToLive(command.getTimeToLive());
+        producerParticipantResult.setTotalNumberOfConsumers(0);
+        producerParticipantResult.setTotalNumberOfProducers(1);
 
-        setTestProperties(participantResult, command, participantName, clientRegisteredName);
 
-        setTestResultProperties(participantResult, numberOfMessagesSent, payloadSize, totalPayloadSent, start, end);
+        setTestProperties(producerParticipantResult, command, participantName, clientRegisteredName, acknowledgeMode);
 
-        return participantResult;
+        setTestResultProperties(producerParticipantResult, numberOfMessagesSent, payloadSize, totalPayloadSent, start, end);
+
+        return producerParticipantResult;
     }
 
     private void setTestResultProperties(final ParticipantResult participantResult, int numberOfMessagesSent, int payloadSize, long totalPayloadReceived, Date start, Date end)
@@ -72,12 +77,13 @@ public class ParticipantResultFactory
         participantResult.setEndDate(end);
     }
 
-    private void setTestProperties(final ParticipantResult participantResult, CreateParticpantCommand command, String participantName, String clientRegisteredName)
+    private void setTestProperties(final ParticipantResult participantResult, CreateParticpantCommand command, String participantName, String clientRegisteredName, int acknowledgeMode)
     {
         participantResult.setParticipantName(participantName);
         participantResult.setRegisteredClientName(clientRegisteredName);
         participantResult.setBatchSize(command.getBatchSize());
         participantResult.setMaximumDuration(command.getMaximumDuration());
+        participantResult.setAcknowledgeMode(acknowledgeMode);
 
     }
 

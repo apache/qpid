@@ -30,8 +30,6 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import junit.framework.TestCase;
 
@@ -50,9 +48,7 @@ import org.mockito.stubbing.Answer;
 public class ControllerTest extends TestCase
 {
     private static final String CLIENT1_REGISTERED_NAME = "client-uid1";
-    private static final String CLIENT2_REGISTERED_NAME = "client-uid2";
 
-    private static final int DELAY = 100;
     private static final long COMMAND_RESPONSE_TIMEOUT = 1000;
     private static final long REGISTRATION_TIMEOUT = 1000;
 
@@ -104,43 +100,19 @@ public class ControllerTest extends TestCase
         }
     }
 
-    public void testControllerRequiresOneClientRegistration()
-    {
-        Config configWithOneClient = createMockConfig(1);
-
-        _controller.setConfig(configWithOneClient);
-        registerClientAndAwait(CLIENT1_REGISTERED_NAME);
-    }
-
     public void testControllerReceivesTwoExpectedClientRegistrations()
     {
         Config configWithTwoClients = createMockConfig(2);
         _controller.setConfig(configWithTwoClients);
+        when(_clientRegistry.awaitClients(2, REGISTRATION_TIMEOUT)).thenReturn(0);
 
-        registerClientLater(_controller, CLIENT1_REGISTERED_NAME);
-        registerClientLater(_controller, CLIENT2_REGISTERED_NAME);
         _controller.awaitClientRegistrations();
     }
 
     public void testControllerDoesntReceiveAnyRegistrations()
     {
-        try
-        {
-            _controller.awaitClientRegistrations();
-            fail("Exception not thrown");
-        }
-        catch (DistributedTestException e)
-        {
-            // PASS
-        }
-    }
+        when(_clientRegistry.awaitClients(1, REGISTRATION_TIMEOUT)).thenReturn(1);
 
-    public void testControllerDoesntReceiveTwoExpectedClientRegistrations()
-    {
-        Config configWithTwoClients = createMockConfig(2);
-        _controller.setConfig(configWithTwoClients);
-
-        registerClientLater(_controller, CLIENT1_REGISTERED_NAME); // only receives one out of two expected registrations
         try
         {
             _controller.awaitClientRegistrations();
@@ -202,38 +174,11 @@ public class ControllerTest extends TestCase
         return config;
     }
 
-    private void doLater(TimerTask task, long delayInMillis)
-    {
-        Timer timer = new Timer();
-        timer.schedule(task, delayInMillis);
-    }
-
     private Config createMockConfig(int numberOfClients)
     {
         Config config = mock(Config.class);
         when(config.getTotalNumberOfClients()).thenReturn(numberOfClients);
         return config;
-    }
-
-    private void registerClientAndAwait(String... clientNames)
-    {
-        for (String clientName : clientNames)
-        {
-            registerClientLater(_controller, clientName);
-        }
-        _controller.awaitClientRegistrations();
-    }
-
-    private void registerClientLater(final Controller controller, final String clientName)
-    {
-        doLater(new TimerTask()
-        {
-            @Override
-            public void run()
-            {
-                controller.registerClient(new RegisterClientCommand(clientName, "dummy"));
-            }
-        }, DELAY);
     }
 
     private TestRunnerFactory createTestFactoryReturningMock()

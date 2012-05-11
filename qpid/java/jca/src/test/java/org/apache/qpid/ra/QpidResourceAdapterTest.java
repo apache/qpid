@@ -22,6 +22,9 @@ package org.apache.qpid.ra;
 
 import javax.resource.spi.ResourceAdapterInternalException;
 
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectOutputStream;
+
 import junit.framework.TestCase;
 
 
@@ -62,4 +65,14 @@ public class QpidResourceAdapterTest extends TestCase
 
     }
 
+    public void testResourceAdapterBasicSerialization() throws Exception
+    {
+
+        QpidResourceAdapter ra = new QpidResourceAdapter();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(out);
+        oos.writeObject(ra);
+        oos.close();
+        assertTrue(out.toByteArray().length > 0);
+    }
 }

@@ -283,7 +283,7 @@ public class ServerConfiguration extends ConfigurationPlugin
     @SuppressWarnings("unchecked")
     protected void setupVirtualHosts(Configuration conf) throws ConfigurationException
     {
-        List<String> vhostFiles = conf.getList("virtualhosts");
+        List<String> vhostFiles = (List) conf.getList("virtualhosts");
         Configuration vhostConfig = conf.subset("virtualhosts");
 
         // Only one configuration mechanism allowed

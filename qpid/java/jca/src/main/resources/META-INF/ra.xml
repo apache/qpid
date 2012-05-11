@@ -109,6 +109,13 @@
       <config-property-type>java.lang.String</config-property-type>
       <config-property-value>amqp://anonymous:passwd@client/test?brokerlist='tcp://localhost?sasl_mechs='PLAIN''</config-property-value>
     </config-property>
+    
+    <config-property>
+      <description>Use a JMS Connection per MessageHandler</description>
+      <config-property-name>UseConnectionPerHandler</config-property-name>
+      <config-property-type>java.lang.Boolean</config-property-type>
+      <config-property-value>true</config-property-value>
+    </config-property>
 
     <outbound-resourceadapter>
       <connection-definition>
