@@ -25,5 +25,15 @@
 
     <import file="../../module.xml" />
 
+    <target name="precompile">
+      <unwar src="${project.root}/${dojo}" dest="${module.classes}/resources/dojo">
+        <patternset>
+          <exclude name="META-INF/**"/>
+          <exclude name="WEB-INF/**"/>
+          <exclude name="**/*.uncompressed.js"/>
+        </patternset>
+      </unwar>
+    </target>
+
     <target name="bundle" depends="bundle-tasks" />
 </project>

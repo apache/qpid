@@ -51,6 +51,8 @@ jetty=lib/required/jetty-6.1.14.jar
 jetty-util=lib/required/jetty-util-6.1.14.jar
 servlet-api=${geronimo-servlet}
 
+dojo=lib/required/dojo-war-1.7.2.war
+
 felix-main=lib/required/org.apache.felix.main-2.0.5.jar
 
 felix.libs=${felix-main}
