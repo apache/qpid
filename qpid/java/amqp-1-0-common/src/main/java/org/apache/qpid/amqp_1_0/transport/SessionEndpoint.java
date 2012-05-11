@@ -321,21 +321,32 @@ public class SessionEndpoint
 
             }
 
-            Delivery delivery = _incomingUnsettled.get(transfer.getDeliveryId());
+            UnsignedInteger deliveryId = transfer.getDeliveryId();
+            if(deliveryId == null)
+            {
+                deliveryId = ((ReceivingLinkEndpoint)endpoint).getLastDeliveryId();
+            }
+            
+            Delivery delivery = _incomingUnsettled.get(deliveryId);
             if(delivery == null)
             {
                 delivery = new Delivery(transfer, endpoint);
-                _incomingUnsettled.put(transfer.getDeliveryId(),delivery);
+                _incomingUnsettled.put(deliveryId,delivery);
                 if(delivery.isSettled() || Boolean.TRUE.equals(transfer.getAborted()))
                 {
 /*
                     _availableIncomingCredit++;
 */
                 }
+                
+                if(Boolean.TRUE.equals(transfer.getMore()))
+                {
+                    ((ReceivingLinkEndpoint)endpoint).setLastDeliveryId(transfer.getDeliveryId());
+                }
             }
             else
             {
-                if(delivery.getDeliveryId().equals(transfer.getDeliveryId()))
+                if(delivery.getDeliveryId().equals(deliveryId))
                 {
                     delivery.addTransfer(transfer);
                     if(delivery.isSettled())
@@ -349,6 +360,11 @@ public class SessionEndpoint
 /*
                         _availableIncomingCredit += delivery.getTransfers().size();
 */
+                    }
+
+                    if(!Boolean.TRUE.equals(transfer.getMore()))
+                    {
+                        ((ReceivingLinkEndpoint)endpoint).setLastDeliveryId(null);
                     }
                 }
                 else
@@ -365,7 +381,7 @@ public class SessionEndpoint
 
             if((delivery.isComplete() && delivery.isSettled() || Boolean.TRUE.equals(transfer.getAborted())))
             {
-                _incomingUnsettled.remove(transfer.getDeliveryId());
+                _incomingUnsettled.remove(deliveryId);
             }
         }
     }
