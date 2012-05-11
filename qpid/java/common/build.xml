@@ -98,10 +98,15 @@ public class QpidBuildVersion
   </target>
 
   <target name="jms-selector">
+    <copy tofile="${module.build}/javacc.jar" failonerror="true">
+      <fileset dir="${project.root}/lib/required">
+        <include name="javacc-*.jar"/>
+      </fileset>
+    </copy>
     <mkdir dir="${selector.output.dir}"/>
     <javacc target="src/main/grammar/SelectorParser.jj"
             outputdirectory="${selector.output.dir}"
-            javacchome="${project.root}/lib"/>
+            javacchome="${module.build}"/>
   </target>
 
   <target name="precompile" depends="gentools,jython,create-version,build-version,jms-selector"/>
