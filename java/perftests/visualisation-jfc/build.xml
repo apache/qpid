@@ -16,7 +16,7 @@
  - specific language governing permissions and limitations
  - under the License.
  -->
-<project name="visualisation-jfc" default="build">
+<project name="visualisation-jfc" xmlns:ivy="antlib:org.apache.ivy.ant" default="build">
     <property name="module.depends" value="common perftests" />
     <property name="module.test.depends" value="test" />
 
@@ -28,18 +28,29 @@
     <property name="jfree.lib.dir" value="${project.root}/lib/jfree" />
     <property name="jfreechart.version" value="1.0.13" />
     <property name="jfreecommon.version" value="1.0.16" />
-    <property name="jfreechart.download.url" value="http://repo1.maven.org/maven2/jfree/jfreechart/${jfreechart.version}/jfreechart-${jfreechart.version}.jar" />
-    <property name="jfreecommon.download.url" value="http://repo1.maven.org/maven2/jfree/jcommon/${jfreecommon.version}/jcommon-${jfreecommon.version}.jar" />
     <property name="jfreechart.jar.file" value="${jfree.lib.dir}/jfreechart-${jfreechart.version}.jar" />
-    <property name="jfreecommon.jar.file" value="${jfree.lib.dir}/jfreecommon-${jfreecommon.version}.jar" />
+    <property name="jfreecommon.jar.file" value="${jfree.lib.dir}/jcommon-${jfreecommon.version}.jar" />
+
+    <condition property="download.jfree.jars">
+      <or>
+        <istrue value="${download-jfree}"/>
+        <istrue value="${optional.dependencies}"/>
+      </or>
+    </condition>
 
     <!-- CSVJDBC -->
 
     <property name="csvjdbc.lib.dir" value="${project.root}/lib/csvjdbc" />
     <property name="csvjdbc.version" value="1.0.8" />
-    <property name="csvjdbc.download.url" value="http://csvjdbc.sourceforge.net/maven2/net/sourceforge/csvjdbc/csvjdbc/${csvjdbc.version}/csvjdbc-${csvjdbc.version}.jar" />
 
     <property name="csvjdbc.jar.file" value="${csvjdbc.lib.dir}/csvjdbc-${csvjdbc.version}.jar" />
+
+    <condition property="download.csvjdbc.jar">
+      <or>
+        <istrue value="${download-csvjdbc}"/>
+        <istrue value="${optional.dependencies}"/>
+      </or>
+    </condition>
 
     <!--check whether the JFree jar is present, possibly after download-->
     <target name="check-jfree-jars">
@@ -86,7 +97,7 @@ http://www.gnu.org/licenses/lgpl.html
     </target>
 
     <!--check if an inline JFree download was requested with the build-->
-    <target name="checkjfree-request-props" if="download-jfree">
+    <target name="checkjfree-request-props" if="download.jfree.jars">
         <antcall target="download-jfree"/>
     </target>
 
@@ -119,21 +130,22 @@ http://www.gnu.org/licenses/lgpl.html
     </target>
 
     <!--download JFree, with licencing note-->
-    <target name="download-jfree" depends="jfree-licence-note">
-        <mkdir dir="${jfree.lib.dir}"/>
-        <echo>Downloading JFreeChart</echo>
-        <get src="${jfreechart.download.url}" dest="${jfreechart.jar.file}" usetimestamp="true" />
-        <get src="${jfreecommon.download.url}" dest="${jfreecommon.jar.file}" usetimestamp="true" />
+    <target name="download-jfree" depends="jfree-licence-note, load-ivy, configure-ivy" unless="${ivy.dont.retrieve}">
+        <echo message="Resolving and retrieving dependencies..."/>
+        <ivy:resolve type="jar" file="${project.root}/ivy.retrieve.xml" conf="jfree"/>
+        <ivy:retrieve type="jar" conf="jfree" sync="true"
+            pattern="${project.root}/lib/jfree/[artifact]-[revision].[ext]" />
     </target>
 
-    <target name="checkcsvjdbc-request-props" if="download-csvjdbc">
+    <target name="checkcsvjdbc-request-props" if="download.csvjdbc.jar">
         <antcall target="download-csvjdbc"/>
     </target>
 
-    <target name="download-csvjdbc" depends="csvjdbc-licence-note">
-        <mkdir dir="${csvjdbc.lib.dir}"/>
-        <echo>Downloading csvjdbc</echo>
-        <get src="${csvjdbc.download.url}" dest="${csvjdbc.jar.file}" usetimestamp="true" />
+    <target name="download-csvjdbc" depends="csvjdbc-licence-note, load-ivy, configure-ivy" unless="${ivy.dont.retrieve}">
+        <echo message="Resolving and retrieving dependencies..."/>
+        <ivy:resolve type="jar" file="${project.root}/ivy.retrieve.xml" conf="csvjdbc"/>
+        <ivy:retrieve type="jar" conf="csvjdbc" sync="true"
+            pattern="${project.root}/lib/csvjdbc/[artifact]-[revision].[ext]" />
     </target>
 
     <target name="build" depends="checkjfree-request-props, jfree-jar-required, checkcsvjdbc-request-props, csvjdbc-jar-required, module.build" />

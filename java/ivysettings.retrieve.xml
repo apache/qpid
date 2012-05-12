@@ -30,6 +30,10 @@
       <artifact pattern="${ivy.m2repo.url}/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
     </url>
 
+    <url name="csvjdbc" m2compatible="true">
+      <artifact pattern="http://csvjdbc.sourceforge.net/maven2/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
+    </url>
+
     <url name="oracle" m2compatible="true">
       <artifact pattern="http://download.oracle.com/maven/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
     </url>
@@ -38,6 +42,7 @@
 
     <chain name="chain" returnFirst="true">
       <resolver ref="m2repo"/>
+      <resolver ref="csvjdbc"/>
       <resolver ref="oracle"/>
       <resolver ref="public"/>
     </chain>
