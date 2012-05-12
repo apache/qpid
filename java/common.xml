@@ -126,6 +126,12 @@
   <condition property="ivy.configured">
     <isfalse value="${retrieve.dependencies}"/>
   </condition>
+  <condition property="ivy.retrieve.optional">
+    <and>
+      <istrue value="${retrieve.dependencies}"/>
+      <istrue value="${optional.dependencies}"/>
+    </and>
+  </condition>
 
 
   <macrodef name="indirect">
@@ -213,6 +219,21 @@
     </sequential>
   </macrodef>
 
+  <macrodef name="copytofile">
+    <attribute name="tofile"/>
+    <attribute name="dir"/>
+    <attribute name="include"/>
+    <attribute name="failOnError" default="false"/>
+    <sequential>
+      <copy tofile="@{tofile}" failOnError="@{failOnError}">
+        <fileset dir="@{dir}">
+          <include name="@{include}"/>
+        </fileset>
+      </copy>
+    </sequential>
+  </macrodef>
+
+
   <target name="clean-tasks">
     <delete dir="${tasks.classes}"/>
   </target>
@@ -253,20 +274,39 @@
   </target>
 
   <target name="findbugs-init">
+
+    <mkdir dir="${findbugs.dir}"/>
+    <!-- Hack to make the FindBugs jars retrieved using Ivy work with the Ant Task,
+    because it expects certain jar names without versions like in the .zip release -->
+    <copytofile tofile="${findbugs.dir}/findbugs.jar" dir="${findbugs.dir}" include="findbugs-?.*.*.jar"/>
+    <copytofile tofile="${findbugs.dir}/findbugs-ant.jar" dir="${findbugs.dir}" include="findbugs-ant-?.*.*.jar"/>
+    <copytofile tofile="${findbugs.dir}/bcel.jar" dir="${findbugs.dir}" include="bcel-*.jar"/>
+    <copytofile tofile="${findbugs.dir}/annotations.jar" dir="${findbugs.dir}" include="annotations-?.*.*.jar"/>
+    <copytofile tofile="${findbugs.dir}/jsr305.jar" dir="${findbugs.dir}" include="jsr305-*.jar"/>
+    <copytofile tofile="${findbugs.dir}/jFormatString.jar" dir="${findbugs.dir}" include="jFormatString-*.jar"/>
+
     <available file="${findbugs.dir}/findbugs-ant.jar" property="findbugs-ant.jar.present"/>
-    <fail unless="findbugs-ant.jar.present" message="Please follow the instructions at ${findbugs.dir}/README.txt to configure FindBugs"/>
+    <fail unless="findbugs-ant.jar.present" message="FindBugs was not found. Please add -Doptional.dependencies=true to your build command to retrieve FindBugs"/>
 
     <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${findbugs.dir}/findbugs-ant.jar"/>
   </target>
 
 
   <!-- targets for downloading ivy and retrieving dependencies -->
-  <target name="retrieve-dependencies" depends="load-ivy, configure-ivy" unless="${ivy.dont.retrieve}">
+  <target name="retrieve-dependencies" depends="load-ivy, configure-ivy, retrieve-optional-dependencies" unless="${ivy.dont.retrieve}">
     <echo message="Resolving and retrieving dependencies..."/>
     <ivy:resolve type="jar,bundle" file="${project.root}/ivy.retrieve.xml" conf="required"/>
     <ivy:retrieve type="jar,bundle" conf="required" sync="true"
         pattern="${project.root}/lib/required/[artifact]-[revision].[ext]" />
   </target>
+
+  <target name="retrieve-optional-dependencies" if="${ivy.retrieve.optional}">
+    <echo message="Resolving and retrieving optional dependencies..."/>
+    <ivy:resolve type="jar" file="${project.root}/ivy.retrieve.xml" conf="findbugs"/>
+    <ivy:retrieve type="jar" conf="findbugs" sync="true"
+        pattern="${findbugs.dir}/[artifact]-[revision].[ext]" />
+  </target>
+
 
   <target name="configure-ivy" unless="${ivy.configured}">
     <ivy:configure file="${project.root}/ivysettings.retrieve.xml" override="true"/>
