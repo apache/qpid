@@ -123,6 +123,9 @@
   <condition property="ivy.dont.retrieve">
     <isfalse value="${retrieve.dependencies}"/>
   </condition>
+  <condition property="ivy.configured">
+    <isfalse value="${retrieve.dependencies}"/>
+  </condition>
 
 
   <macrodef name="indirect">
