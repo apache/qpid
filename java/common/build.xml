@@ -112,4 +112,5 @@ public class QpidBuildVersion
   <target name="precompile" depends="gentools,jython,create-version,build-version,jms-selector"/>
 
   <target name="bundle" depends="bundle-tasks"/>
+
 </project>

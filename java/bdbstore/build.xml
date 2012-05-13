@@ -95,4 +95,5 @@ http://www.oracle.com/technetwork/database/berkeleydb/downloads/jeoslicense-0868
             <fileset dir="src/test/resources"/>
         </copy>
     </target>
+
 </project>
