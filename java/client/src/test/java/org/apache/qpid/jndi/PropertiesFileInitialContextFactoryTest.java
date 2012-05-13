@@ -51,7 +51,6 @@ public class PropertiesFileInitialContextFactoryTest extends TestCase
         Properties properties = new Properties();
         properties.load(this.getClass().getResourceAsStream("JNDITest.properties"));
 
-        //Create the initial context
         ctx = new InitialContext(properties);
     }
 
