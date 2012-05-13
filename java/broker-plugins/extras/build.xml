@@ -26,6 +26,5 @@ nn - or more contributor license agreements.  See the NOTICE file
 
     <import file="../../module.xml"/>
 
-
     <target name="bundle" depends="bundle-tasks" />
 </project>

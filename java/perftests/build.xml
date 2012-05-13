@@ -37,5 +37,4 @@
     <property name="qpid.logging.level" value="-Damqj.logging.level=warn"/>
     <property name="log4j.config" value="-Dlog4j.configuration=perftests.log4j"/>
     <property name="properties" value="perftests.properties"/>
-
 </project>

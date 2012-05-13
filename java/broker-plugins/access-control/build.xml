@@ -28,4 +28,5 @@
     <target name="bundle" depends="bundle-tasks"/>
 
     <target name="precompile" depends="gen_logging"/>
+
 </project>
