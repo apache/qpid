@@ -21,6 +21,10 @@
 package org.apache.qpid.jndi;
 
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.util.Properties;
 
 import javax.jms.Destination;
@@ -51,7 +55,30 @@ public class PropertiesFileInitialContextFactoryTest extends TestCase
         ctx = new InitialContext(properties);
     }
 
+    public void testContextFromProviderURL() throws Exception
+    {
+        Properties properties = new Properties();
+        properties.load(this.getClass().getResourceAsStream("hello.properties"));
+        File f = new File(System.getProperty("java.io.tmpdir") + FILE_NAME);
+        FileOutputStream fos = new FileOutputStream(f);
+        properties.store(fos, null);
 
+        System.setProperty("java.naming.factory.initial", "org.apache.qpid.jndi.PropertiesFileInitialContextFactory");
+        System.setProperty("java.naming.provider.url", "file://" + f.getCanonicalPath());
+
+        InitialContext context = new InitialContext();
+        assertNotNull("Lookup from URI based context should not be null", context.lookup("topicExchange"));
+
+        context.close();
+
+        System.setProperty("java.naming.provider.url", f.getCanonicalPath());
+        context = new InitialContext();
+        assertNotNull("Lookup from fileName should not be null", context.lookup("qpidConnectionfactory"));
+
+        context.close();
+        f.delete();
+
+    }
     public void testQueueNamesWithTrailingSpaces() throws Exception
     {
         Queue queue = (Queue)ctx.lookup("QueueNameWithSpace");
