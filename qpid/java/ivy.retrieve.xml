@@ -26,6 +26,7 @@
     <conf name="jfree"/>
     <conf name="csvjdbc"/>
     <conf name="findbugs"/>
+    <conf name="cobertura"/>
   </configurations>
 
   <publications xmlns:e="urn:ant.apache.org:ivy-extras"/>
@@ -69,5 +70,8 @@
     <dependency org="jfree" name="jcommon" rev="1.0.16" transitive="false" conf="jfree"/>
     <dependency org="net.sourceforge.csvjdbc" name="csvjdbc" rev="1.0.8" transitive="false" conf="csvjdbc"/>
     <dependency org="com.google.code.findbugs" name="findbugs-ant" rev="2.0.0" conf="findbugs"/>
+    <dependency org="net.sourceforge.cobertura" name="cobertura" rev="1.9.4.1" conf="cobertura">
+      <exclude org="org.apache.ant"/>
+    </dependency>
   </dependencies>
 </ivy-module>
