@@ -124,7 +124,10 @@
   <condition property="ivy.retrieve.optional">
     <and>
       <istrue value="${retrieve.dependencies}"/>
-      <istrue value="${optional.dependencies}"/>
+      <or>
+        <istrue value="${optional.dependencies}"/>
+        <istrue value="${optional}"/>
+      </or>
     </and>
   </condition>
 
