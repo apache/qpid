@@ -44,6 +44,12 @@ public abstract class QpidDestination implements Destination, Referenceable
     {
     }
 
+    protected QpidDestination(Address addr)
+    {
+        _address = addr;
+        _destinationString = addr.toString();
+    }
+
     public String getDestinationString()
     {
         return _destinationString;

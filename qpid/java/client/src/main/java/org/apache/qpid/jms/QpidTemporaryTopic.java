@@ -39,4 +39,8 @@ public class QpidTemporaryTopic extends QpidTopic implements TemporaryTopic
         //provider.delete();
     }
 
+    public javax.jms.Session getSession()
+    {
+        return _provider.getSession();
+    }
 }

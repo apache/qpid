@@ -23,6 +23,8 @@ package org.apache.qpid.jms;
 import javax.jms.JMSException;
 import javax.jms.Queue;
 
+import org.apache.qpid.messaging.Address;
+
 public class QpidQueue extends QpidDestination implements Queue
 {
     public QpidQueue()
@@ -32,6 +34,11 @@ public class QpidQueue extends QpidDestination implements Queue
     public QpidQueue(String str) throws JMSException
     {
         setDestinationString(str);
+    }
+
+    public QpidQueue(Address addr)
+    {
+        super(addr);
     }
 
     @Override

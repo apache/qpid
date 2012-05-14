@@ -20,8 +20,19 @@
  */
 package org.apache.qpid.jms;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
 import javax.jms.JMSException;
 import javax.jms.Topic;
+
+import org.apache.qpid.messaging.Address;
+import org.apache.qpid.messaging.address.AddressPolicy;
+import org.apache.qpid.messaging.address.Link;
+import org.apache.qpid.messaging.address.Node;
+import org.apache.qpid.messaging.address.NodeType;
+import org.apache.qpid.messaging.address.Reliability;
 
 public class QpidTopic extends QpidDestination implements Topic 
 {
@@ -32,6 +43,11 @@ public class QpidTopic extends QpidDestination implements Topic
     public QpidTopic(String str) throws JMSException
     {
         setDestinationString(str);
+    }
+
+    public QpidTopic(Address addr)
+    {
+        super(addr);
     }
 
     @Override
@@ -84,5 +100,31 @@ public class QpidTopic extends QpidDestination implements Topic
         result = 37*result + name.hashCode();
         result = 37*result + subject.hashCode();
         return result;
+    }
+
+    public QpidTopic createDurableTopic(String durableTopicQueueName)
+    {
+        String name = getAddress().getName();
+        String subject = getAddress().getSubject();
+        Link link = new Link(durableTopicQueueName,
+                            true, // durable
+                            Reliability.AT_LEAST_ONCE,
+                            0, // producer capacity
+                            0, // consumer capacity
+                            Collections.EMPTY_MAP,
+                            Collections.EMPTY_LIST,
+                            Collections.EMPTY_MAP);
+
+        Node node = new Node(name,
+                            NodeType.TOPIC,
+                            false,
+                            AddressPolicy.NEVER,
+                            AddressPolicy.NEVER,
+                            AddressPolicy.NEVER,
+                            Collections.EMPTY_MAP,
+                            Collections.EMPTY_LIST);
+
+        Address address = new Address(name, subject, node,link);
+        return new QpidTopic(address);
     }
 }
