@@ -180,7 +180,7 @@
     <attribute name="path"/>
     <element name="args"/>
     <sequential>
-      <java jar="${project.root}/lib/required/jython-standalone-2.5.2.jar" fork="true" failonerror="true">
+      <java jar="${project.root}/${jython}" fork="true" failonerror="true">
         <arg value="-Dpython.path=@{path}"/>
         <args/>
       </java>
