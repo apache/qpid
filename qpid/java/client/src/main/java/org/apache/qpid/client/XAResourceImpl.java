@@ -165,12 +165,13 @@ public class XAResourceImpl implements AMQXAResource
 
         checkStatus(result.getStatus());
 
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("Calling end for " + _siblings.size() + " XAResource siblings");
+        }
+
         for(XAResource sibling: _siblings)
         {
-            if(_logger.isDebugEnabled())
-            {
-                _logger.debug("Calling end for " + _siblings.size() + " XAResource siblings");
-            }
 
             sibling.end(xid, flag);
         }
