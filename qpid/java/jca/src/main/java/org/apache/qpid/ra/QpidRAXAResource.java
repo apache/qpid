@@ -21,10 +21,13 @@
 
 package org.apache.qpid.ra;
 
+import java.util.List;
+
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
+import org.apache.qpid.client.AMQXAResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +35,7 @@ import org.slf4j.LoggerFactory;
  * QpidRAXAResource.
  *
  */
-public class QpidRAXAResource implements XAResource
+public class QpidRAXAResource implements AMQXAResource
 {
    /** The logger */
    private static final Logger _log = LoggerFactory.getLogger(QpidRAXAResource.class);
@@ -192,7 +195,7 @@ public class QpidRAXAResource implements XAResource
       {
          _log.trace("isSameRM(" + xaRes + ")");
       }
-
+      
       return _xaResource.isSameRM(xaRes);
    }
 
@@ -241,5 +244,15 @@ public class QpidRAXAResource implements XAResource
       }
 
       return _xaResource.setTransactionTimeout(seconds);
+   }
+   
+   public String getBrokerUUID()
+   {
+       return ((AMQXAResource)_xaResource).getBrokerUUID();
+   }
+   
+   public List<XAResource> getSiblings()
+   {
+       return ((AMQXAResource)_xaResource).getSiblings();
    }
 }
