@@ -216,7 +216,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         _persistentSizeLowThreshold = storeConfig.getLong(MessageStoreConstants.UNDERFULL_SIZE_PROPERTY, _persistentSizeHighThreshold);
         if(_persistentSizeLowThreshold > _persistentSizeHighThreshold || _persistentSizeLowThreshold < 0l)
         {
-            _persistentSizeLowThreshold = _persistentSizeLowThreshold;
+            _persistentSizeLowThreshold = _persistentSizeHighThreshold;
         }
 
         File environmentPath = new File(storeLocation);
