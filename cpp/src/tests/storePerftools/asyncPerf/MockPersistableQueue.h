@@ -48,6 +48,7 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
+class QueueContext;
 class QueuedMessage;
 class TestOptions;
 
@@ -57,21 +58,6 @@ class MockPersistableQueue : public qpid::broker::PersistableQueue, public qpid:
 {
 public:
     typedef boost::intrusive_ptr<MockPersistableQueue> intrusive_ptr;
-
-    class QueueContext : public qpid::broker::BrokerContext
-    {
-    public:
-        QueueContext(intrusive_ptr q,
-                     const qpid::asyncStore::AsyncOperation::opCode op);
-        virtual ~QueueContext();
-        qpid::asyncStore::AsyncOperation::opCode getOpCode() const;
-        const char* getOpStr() const;
-        intrusive_ptr getQueue() const;
-        void destroy();
-    protected:
-        intrusive_ptr m_q;
-        const qpid::asyncStore::AsyncOperation::opCode m_op;
-    };
 
     MockPersistableQueue(const std::string& name,
                          const qpid::framing::FieldTable& args,

@@ -25,6 +25,7 @@
 
 #include "MockPersistableMessage.h"
 #include "MockTransactionContext.h"
+#include "QueueContext.h"
 #include "QueuedMessage.h"
 #include "TestOptions.h"
 
@@ -34,46 +35,6 @@
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
-
-// --- Inner class MockPersistableQueue::QueueContext ---
-
-MockPersistableQueue::QueueContext::QueueContext(intrusive_ptr q,
-                                                 const qpid::asyncStore::AsyncOperation::opCode op) :
-        qpid::broker::BrokerContext(),
-        m_q(q),
-        m_op(op)
-{
-    assert(m_q.get() != 0);
-}
-
-MockPersistableQueue::QueueContext::~QueueContext()
-{}
-
-qpid::asyncStore::AsyncOperation::opCode
-MockPersistableQueue::QueueContext::getOpCode() const
-{
-    return m_op;
-}
-
-const char*
-MockPersistableQueue::QueueContext::getOpStr() const
-{
-    return qpid::asyncStore::AsyncOperation::getOpStr(m_op);
-}
-
-MockPersistableQueue::intrusive_ptr
-MockPersistableQueue::QueueContext::getQueue() const
-{
-    return m_q;
-}
-
-void
-MockPersistableQueue::QueueContext::destroy()
-{
-    delete this;
-}
-
-// --- Class MockPersistableQueue ---
 
 MockPersistableQueue::MockPersistableQueue(const std::string& name,
                                            const qpid::framing::FieldTable& /*args*/,
