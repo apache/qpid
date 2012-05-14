@@ -54,6 +54,8 @@ felix.libs=${felix-main}
 jackson-core=lib/required/jackson-core-asl-1.9.0.jar
 jackson-mapper=lib/required/jackson-mapper-asl-1.9.0.jar
 
+bnd=lib/required/bnd-0.0.384.jar
+
 commons-configuration.libs = ${commons-beanutils-core} ${commons-digester} \
   ${commons-codec} ${commons-lang} ${commons-collections} ${commons-configuration}
 
