@@ -72,7 +72,7 @@ require(["dojo/store/JsonRest",
             this.durable.innerHTML = this.exchangeData[ "durable" ];
             this.lifetimePolicy.innerHTML = this.exchangeData[ "lifetimePolicy" ];
 
-         }
+         };
 
          ExchangeUpdater.prototype.update = function()
          {
@@ -123,12 +123,12 @@ require(["dojo/store/JsonRest",
                         var bytesDropRate = (1000 * (bytesDrop - thisObj.bytesDrop)) / samplePeriod;
 
                         dom.byId("msgInRate").innerHTML = msgInRate.toFixed(0);
-                        var bytesInFormat = new formatBytes( bytesInRate );
+                        var bytesInFormat = formatBytes( bytesInRate );
                         dom.byId("bytesInRate").innerHTML = "(" + bytesInFormat.value;
-                        dom.byId("bytesInRateUnits").innerHTML = bytesInFormat.units + "/s)"
+                        dom.byId("bytesInRateUnits").innerHTML = bytesInFormat.units + "/s)";
 
                         dom.byId("msgDropRate").innerHTML = msgDropRate.toFixed(0);
-                        var bytesDropFormat = new formatBytes( bytesDropRate );
+                        var bytesDropFormat = formatBytes( bytesDropRate );
                         dom.byId("bytesDropRate").innerHTML = "(" + bytesDropFormat.value;
                         dom.byId("bytesDropRateUnits").innerHTML = bytesDropFormat.units + "/s)"
 

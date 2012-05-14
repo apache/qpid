@@ -32,10 +32,25 @@
 
 		<link rel="stylesheet" href="css/common.css" media="screen">
 
-        <script src="/dojo/dojo/dojo.js" data-dojo-config="async: true, parseOnLoad: true">
+        <script>
+            var dojoConfig = {
+                                    tlmSiblingOfDojo: false,
+                                    parseOnLoad: true,
+                                    async: true,
+                                    packages: [
+                                        { name: "dojo", location: "/dojo/dojo" },
+                                        { name: "dijit", location: "/dojo/dijit" },
+                                        { name: "dojox", location: "/dojo/dojox" },
+                                        { name: "qpid", location: "/js/qpid" }
+                                    ]
+                                };
+
+        </script>
+        <script src="/dojo/dojo/dojo.js">
         </script>
 
             <script>
+
                 require(["dijit/layout/BorderContainer", "dijit/layout/TabContainer", "dijit/layout/ContentPane",
                 "dijit/TitlePane", "dojo/parser"]);
 
@@ -117,7 +132,7 @@
                 <div id="messages"></div>
             </div>
             <br/>
-            <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Alerting Thresholds'">
+            <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Alerting Thresholds', open: false">
                 <span style="">Max. Queue Size:</span>
                 <span id="alertThresholdQueueDepthMessages"
                       style="position:absolute; left:8em; width:8em; text-align:right"></span>

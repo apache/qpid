@@ -262,6 +262,15 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
         attributes.remove(Queue.LIFETIME_POLICY);
         attributes.remove(Queue.TIME_TO_LIVE);
 
+        List<String> attrNames = new ArrayList<String>(attributes.keySet());
+        for(String attr : attrNames)
+        {
+            if(QueueAdapter.ATTRIBUTE_MAPPINGS.containsKey(attr))
+            {
+                attributes.put(QueueAdapter.ATTRIBUTE_MAPPINGS.get(attr),attributes.remove(attr));
+            }
+        }
+
         return createQueue(name, state, durable, exclusive, lifetime, ttl, attributes);
     }
 
@@ -286,6 +295,10 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
         }
         try
         {
+            if(_virtualHost.getQueueRegistry().getQueue(name)!=null)
+            {
+                throw new IllegalArgumentException("Queue with name "+name+" already exists");
+            }
             AMQQueue queue =
                     AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateUUID(name, _virtualHost.getName()), name,
                                                        durable, owner, lifetime == LifetimePolicy.AUTO_DELETE,

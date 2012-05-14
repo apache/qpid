@@ -60,84 +60,78 @@ setInterval(function()
 
 
 
-function formatBytes(amount)
+var formatBytes = function formatBytes(amount)
 {
-    this.units = "B";
-    this.value = 0;
+    var returnVal = { units: "B",
+                      value: "0"};
+
 
     if(amount < 1000)
     {
-        this.units = "B";
-        this.value = amount;
+        returnVal.value = amount;
     }
     else if(amount < 1000 * 1024)
     {
-        this.units = "KB";
-        this.value = amount / 1024
-        this.value = this.value.toPrecision(3);
+        returnVal.units = "KB";
+        returnVal.value = (amount / 1024).toPrecision(3);
     }
     else if(amount < 1000 * 1024 * 1024)
     {
-        this.units = "MB";
-        this.value = amount / (1024 * 1024)
-        this.value = this.value.toPrecision(3);
+        returnVal.units = "MB";
+        returnVal.value = (amount / (1024 * 1024)).toPrecision(3);
     }
     else if(amount < 1000 * 1024 * 1024 * 1024)
     {
-        this.units = "GB";
-        this.value = amount / (1024 * 1024 * 1024)
-        this.value = this.value.toPrecision(3);
+        returnVal.units = "GB";
+        returnVal.value = (amount / (1024 * 1024 * 1024)).toPrecision(3);
     }
 
-}
+    return returnVal;
 
-function formatTime(amount)
+};
+
+var formatTime = function formatTime(amount)
 {
-    this.units = "ms";
-    this.value = 0;
+    var returnVal = { units: "ms",
+                      value: "0"};
 
     if(amount < 1000)
     {
-        this.units = "ms";
-        this.value = amount;
+        returnVal.units = "ms";
+        returnVal.value = amount.toString();
     }
     else if(amount < 1000 * 60)
     {
-        this.units = "s";
-        this.value = amount / 1000
-        this.value = this.value.toPrecision(3);
+        returnVal.units = "s";
+        returnVal.value = (amount / 1000).toPrecision(3);
     }
     else if(amount < 1000 * 60 * 60)
     {
-        this.units = "min";
-        this.value = amount / (1000 * 60)
-        this.value = this.value.toPrecision(3);
+        returnVal.units = "min";
+        returnVal.value = (amount / (1000 * 60)).toPrecision(3);
     }
     else if(amount < 1000 * 60 * 60 * 24)
     {
-        this.units = "hr";
-        this.value = amount / (1000 * 60 * 60)
-        this.value = this.value.toPrecision(3);
+        returnVal.units = "hr";
+        returnVal.value = (amount / (1000 * 60 * 60)).toPrecision(3);
     }
     else if(amount < 1000 * 60 * 60 * 24 * 7)
     {
-        this.units = "d";
-        this.value = amount / (1000 * 60 * 60 * 24)
-        this.value = this.value.toPrecision(3);
+        returnVal.units = "d";
+        returnVal.value = (amount / (1000 * 60 * 60 * 24)).toPrecision(3);
     }
     else if(amount < 1000 * 60 * 60 * 24 * 365)
     {
-        this.units = "wk";
-        this.value = amount / (1000 * 60 * 60 * 24 * 7)
-        this.value = this.value.toPrecision(3);
+        returnVal.units = "wk";
+        returnVal.value = (amount / (1000 * 60 * 60 * 24 * 7)).toPrecision(3);
     }
     else
     {
-        this.units = "yr";
-        this.value = amount / (1000 * 60 * 60 * 24 * 365)
-        this.value = this.value.toPrecision(3);
+        returnVal.units = "yr";
+        returnVal.value = (amount / (1000 * 60 * 60 * 24 * 365)).toPrecision(3);
     }
 
+    return returnVal;
 }
 
 function flattenStatistics(data)

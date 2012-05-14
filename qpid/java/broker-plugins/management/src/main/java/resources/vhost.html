@@ -31,9 +31,22 @@
 
 		<link rel="stylesheet" href="css/common.css" media="screen">
 
-        <script src="/dojo/dojo/dojo.js" data-dojo-config="async: true, parseOnLoad: true">
-        </script>
+        <script>
+            var dojoConfig = {
+                                tlmSiblingOfDojo: false,
+                                parseOnLoad: true,
+                                async: true,
+                                packages: [
+                                    { name: "dojo", location: "/dojo/dojo" },
+                                    { name: "dijit", location: "/dojo/dijit" },
+                                    { name: "dojox", location: "/dojo/dojox" },
+                                    { name: "qpid", location: "/js/qpid" }
+                                ]
+                            };
 
+        </script>
+        <script src="/dojo/dojo/dojo.js">
+        </script>
 
             <script>
                 require(["dijit/layout/BorderContainer", "dijit/layout/TabContainer", "dijit/layout/ContentPane",
@@ -72,6 +85,14 @@
 
                 new Header("Virtual Host: "+urlQuery.vhost);
             });
+
+            var showAddQueue = function showAddQueue() {
+                require(["qpid/management/addQueue", "dojo/_base/window", "dojo/io-query", "dojo/domReady!"],
+                    function(addQueue, win, ioQuery) {
+                        var urlQuery = ioQuery.queryToObject(win.doc.location.search.substr(win.doc.location.search[0] === "?" ? 1 : 0));
+                        addQueue.show(urlQuery.vhost);
+                    });
+            };
         </script>
 	</head>
 	<body class="claro">
@@ -196,13 +217,14 @@
             <br/>
             <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Queues'">
                 <div id="queues"></div>
+                <button id="buttonAddQueue" data-dojo-type="dijit.form.Button" onclick="showAddQueue();">Add Queue</button>
             </div>
             <br/>
             <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Connections'">
                 <div id="connections"></div>
             </div>
             <br/>
-            <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Alerting Thresholds'">
+            <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Alerting Thresholds', open: false">
                 <span style="">Max. Queue Size:</span>
                 <span id="alertThresholdQueueDepthMessages"
                       style="position:absolute; left:8em; width:8em; text-align:right"></span>

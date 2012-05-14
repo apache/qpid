@@ -21,19 +21,17 @@
 
 require(["dojo/store/JsonRest",
          "dojo/json",
-				"dojo/store/Memory",
-				"dojo/store/Cache",
-				"dojox/grid/DataGrid",
-				"dojo/data/ObjectStore",
-				"dojo/query",
-				"dojo/store/Observable",
-                "dojo/_base/xhr",
-                "dojo/dom",
-				"dojo/domReady!"],
-	     function(JsonRest, json, Memory, Cache, DataGrid, ObjectStore, query, Observable, xhr, dom)
-	     {
+         "dojo/query",
+         "dojo/_base/xhr",
+         "dojo/dom",
+         "qpid/common/formatter",
+         "qpid/common/updater",
+         "qpid/common/UpdatableStore",
+         "dojo/domReady!"],
+	    function(JsonRest, json, query, xhr, dom, formatter, updater, UpdatableStore)
+	    {
 
-        function QueueUpdater()
+         function QueueUpdater()
          {
             this.name = dom.byId("name");
             this.state = dom.byId("state");
@@ -59,15 +57,13 @@ require(["dojo/store/JsonRest",
                                 flattenStatistics( that.queueData );
 
                                 that.updateHeader();
-                                that.bindingsGrid = new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
-                                                                          that.queueData.bindings, "bindings",
+                                that.bindingsGrid = new UpdatableStore(that.queueData.bindings, "bindings",
                                                          [ { name: "Exchange",    field: "exchange",      width: "90px"},
                                                            { name: "Binding Key", field: "name",          width: "120px"},
                                                            { name: "Arguments",   field: "argumentString",     width: "100%"}
                                                          ]);
 
-                                that.consumersGrid = new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
-                                                                           that.queueData.consumers, "consumers",
+                                that.consumersGrid = new UpdatableStore(that.queueData.consumers, "consumers",
                                                          [ { name: "Name",    field: "name",      width: "70px"},
                                                            { name: "Mode", field: "distributionMode", width: "70px"},
                                                            { name: "Msgs Rate", field: "msgRate",
@@ -84,22 +80,23 @@ require(["dojo/store/JsonRest",
 
          QueueUpdater.prototype.updateHeader = function()
          {
+             var bytesDepth;
             this.name.innerHTML = this.queueData[ "name" ];
             this.state.innerHTML = this.queueData[ "state" ];
             this.durable.innerHTML = this.queueData[ "durable" ];
             this.lifetimePolicy.innerHTML = this.queueData[ "lifetimePolicy" ];
 
             this.queueDepthMessages.innerHTML = this.queueData["queueDepthMessages"];
-            var bytesDepth = new formatBytes( this.queueData["queueDepthBytes"] );
+            bytesDepth = formatter.formatBytes( this.queueData["queueDepthBytes"] );
             this.queueDepthBytes.innerHTML = "(" + bytesDepth.value;
-            this.queueDepthBytesUnits.innerHTML = bytesDepth.units + ")"
+            this.queueDepthBytesUnits.innerHTML = bytesDepth.units + ")";
 
             this.unacknowledgedMessages.innerHTML = this.queueData["unacknowledgedMessages"];
-            var bytesDepth = new formatBytes( this.queueData["unacknowledgedBytes"] );
+            bytesDepth = formatter.formatBytes( this.queueData["unacknowledgedBytes"] );
             this.unacknowledgedBytes.innerHTML = "(" + bytesDepth.value;
             this.unacknowledgedBytesUnits.innerHTML = bytesDepth.units + ")"
 
-         }
+         };
 
          QueueUpdater.prototype.update = function()
          {
@@ -108,13 +105,14 @@ require(["dojo/store/JsonRest",
 
             xhr.get({url: this.query, sync: useSyncGet, handleAs: "json"}).then(function(data)
                  {
+                     var i,j;
                     thisObj.queueData = data[0];
-                    flattenStatistics( thisObj.queueData )
+                    flattenStatistics( thisObj.queueData );
 
                     var bindings = thisObj.queueData[ "bindings" ];
                     var consumers = thisObj.queueData[ "consumers" ];
 
-                    for(var i=0; i < bindings.length; i++)
+                    for(i=0; i < bindings.length; i++)
                     {
                         bindings[i].argumentString = json.stringify(bindings[i].arguments);
                     }
@@ -123,23 +121,23 @@ require(["dojo/store/JsonRest",
 
 
                     // update alerting info
-                    var alertRepeatGap = new formatTime( thisObj.queueData["alertRepeatGap"] );
+                    var alertRepeatGap = formatter.formatTime( thisObj.queueData["alertRepeatGap"] );
 
                     dom.byId("alertRepeatGap").innerHTML = alertRepeatGap.value;
                     dom.byId("alertRepeatGapUnits").innerHTML = alertRepeatGap.units;
 
 
-                    var alertMsgAge = new formatTime( thisObj.queueData["alertThresholdMessageAge"] );
+                    var alertMsgAge = formatter.formatTime( thisObj.queueData["alertThresholdMessageAge"] );
 
                     dom.byId("alertThresholdMessageAge").innerHTML = alertMsgAge.value;
                     dom.byId("alertThresholdMessageAgeUnits").innerHTML = alertMsgAge.units;
 
-                    var alertMsgSize = new formatBytes( thisObj.queueData["alertThresholdMessageSize"] );
+                    var alertMsgSize = formatter.formatBytes( thisObj.queueData["alertThresholdMessageSize"] );
 
                     dom.byId("alertThresholdMessageSize").innerHTML = alertMsgSize.value;
                     dom.byId("alertThresholdMessageSizeUnits").innerHTML = alertMsgSize.units;
 
-                    var alertQueueDepth = new formatBytes( thisObj.queueData["alertThresholdQueueDepthBytes"] );
+                    var alertQueueDepth = formatter.formatBytes( thisObj.queueData["alertThresholdQueueDepthBytes"] );
 
                     dom.byId("alertThresholdQueueDepthBytes").innerHTML = alertQueueDepth.value;
                     dom.byId("alertThresholdQueueDepthBytesUnits").innerHTML = alertQueueDepth.units;
@@ -162,21 +160,21 @@ require(["dojo/store/JsonRest",
                         var bytesOutRate = (1000 * (bytesOut - thisObj.bytesOut)) / samplePeriod;
 
                         dom.byId("msgInRate").innerHTML = msgInRate.toFixed(0);
-                        var bytesInFormat = new formatBytes( bytesInRate );
+                        var bytesInFormat = formatter.formatBytes( bytesInRate );
                         dom.byId("bytesInRate").innerHTML = "(" + bytesInFormat.value;
-                        dom.byId("bytesInRateUnits").innerHTML = bytesInFormat.units + "/s)"
+                        dom.byId("bytesInRateUnits").innerHTML = bytesInFormat.units + "/s)";
 
                         dom.byId("msgOutRate").innerHTML = msgOutRate.toFixed(0);
-                        var bytesOutFormat = new formatBytes( bytesOutRate );
+                        var bytesOutFormat = formatter.formatBytes( bytesOutRate );
                         dom.byId("bytesOutRate").innerHTML = "(" + bytesOutFormat.value;
-                        dom.byId("bytesOutRateUnits").innerHTML = bytesOutFormat.units + "/s)"
+                        dom.byId("bytesOutRateUnits").innerHTML = bytesOutFormat.units + "/s)";
 
                         if(consumers && thisObj.consumers)
                         {
-                            for(var i=0; i < consumers.length; i++)
+                            for(i=0; i < consumers.length; i++)
                             {
                                 var consumer = consumers[i];
-                                for(var j = 0; j < thisObj.consumers.length; j++)
+                                for(j = 0; j < thisObj.consumers.length; j++)
                                 {
                                     var oldConsumer = thisObj.consumers[j];
                                     if(oldConsumer.id == consumer.id)
@@ -186,8 +184,8 @@ require(["dojo/store/JsonRest",
                                         consumer.msgRate = msgRate.toFixed(0) + "msg/s";
 
                                         var bytesRate = (1000 * (consumer.bytesOut - oldConsumer.bytesOut)) /
-                                                        samplePeriod
-                                        var bytesRateFormat = new formatBytes( bytesRate );
+                                                        samplePeriod;
+                                        var bytesRateFormat = formatter.formatBytes( bytesRate );
                                         consumer.bytesRate = bytesRateFormat.value + bytesRateFormat.units + "/s";
                                     }
 
@@ -207,7 +205,7 @@ require(["dojo/store/JsonRest",
                     thisObj.consumers = consumers;
 
                     // update bindings
-                    thisObj.bindingsGrid.update(thisObj.queueData.bindings)
+                    thisObj.bindingsGrid.update(thisObj.queueData.bindings);
 
                     // update consumers
                     thisObj.consumersGrid.update(thisObj.queueData.consumers)
@@ -218,7 +216,7 @@ require(["dojo/store/JsonRest",
 
          var queueUpdater = new QueueUpdater();
 
-         updateList.push( queueUpdater );
+         updater.add( queueUpdater );
 
          queueUpdater.update();
 
@@ -231,10 +229,10 @@ require([
     "dojo/data/ObjectStore",
     "dojox/grid/enhanced/plugins/Pagination",
     "dojo/domReady!"
-], function(JsonRest, DataGrid, ObjectStore) {
+], function(JsonRest, EnhancedGrid, ObjectStore) {
     var urlQuery = dojo.queryToObject(dojo.doc.location.search.substr((dojo.doc.location.search[0] === "?" ? 1 : 0)));
     var myStore = new JsonRest({target:"/rest/message/"+ urlQuery.vhost + "/" + urlQuery.queue});
-    var grid = new DataGrid({
+    var grid = new EnhancedGrid({
         store: dataStore = ObjectStore({objectStore: myStore}),
         structure: [
             {name:"Id", field:"id", width: "50px"},

@@ -18,21 +18,19 @@
  * under the License.
  *
  */
+define(function () {
+    var updateList = new Array();
 
+    setInterval(function() {
+            for(var i = 0; i < updateList.length; i++) {
+              var obj = updateList[i];
+              obj.update();
+            }
+        }, 5000); // TODO: Should make this configurable
 
-
-
-function Header(title)
-{
-
-    var headerHTML = "<div class=\"logo\"><h2>"+title+"</h2></div>";
-
-    require(["dojo/dom", "dojo/domReady!"],
-                    function(dom)
-              {
-                  var headerDiv = dom.byId("header");
-                  headerDiv.innerHTML = headerHTML;
-
-              });
-}
-
+    return {
+            add: function(obj) {
+                updateList.push(obj);
+            }
+        };
+});

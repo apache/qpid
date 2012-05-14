@@ -325,7 +325,17 @@ public class RestServlet extends AbstractServlet
         Collection<ConfiguredObject>[] objects = new Collection[_hierarchy.length];
         if(_hierarchy.length == 1)
         {
-            getBroker().createChild(_hierarchy[0], providedObject);
+            try
+            {
+                getBroker().createChild(_hierarchy[0], providedObject);
+            }
+            catch (RuntimeException e)
+            {
+                // TODO
+                response.setStatus(HttpServletResponse.SC_CONFLICT);
+                return;
+            }
+
         }
         else
         {
@@ -387,8 +397,19 @@ public class RestServlet extends AbstractServlet
             ConfiguredObject theParent = parents.remove(0);
             ConfiguredObject[] otherParents = parents.toArray(new ConfiguredObject[parents.size()]);
 
-            theParent.createChild(objClass, providedObject, otherParents);
+            try
+            {
+                theParent.createChild(objClass, providedObject, otherParents);
+            }
+            catch (RuntimeException e)
+            {
+                // TODO
+                response.setStatus(HttpServletResponse.SC_CONFLICT);
+                return;
+            }
+
         }
+        response.setStatus(HttpServletResponse.SC_CREATED);
     }
 
 }

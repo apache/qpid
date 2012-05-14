@@ -95,7 +95,7 @@ require(["dojo/store/JsonRest",
             this.durable.innerHTML = this.brokerData[ "durable" ];
             this.lifetimePolicy.innerHTML = this.brokerData[ "lifetimePolicy" ];
 
-         }
+         };
 
          BrokerUpdater.prototype.update = function()
          {
@@ -105,7 +105,7 @@ require(["dojo/store/JsonRest",
             xhr.get({url: this.query, sync: useSyncGet, handleAs: "json"}).then(function(data)
                  {
                     that.brokerData = data[0];
-                    flattenStatistics( that.brokerData )
+                    flattenStatistics( that.brokerData );
 
                     var virtualhosts = that.brokerData[ "virtualhosts" ];
                     var ports = that.brokerData[ "ports" ];
@@ -113,9 +113,6 @@ require(["dojo/store/JsonRest",
 
                     that.updateHeader();
 
-
-                    // update alerting info
-                    var sampleTime = new Date();
 
                     that.vhostsGrid.update(that.brokerData.virtualhosts);
 

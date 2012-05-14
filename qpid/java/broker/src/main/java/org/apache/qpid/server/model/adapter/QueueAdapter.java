@@ -36,12 +36,29 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueEntryVisitor;
+import org.apache.qpid.server.queue.*;
 import org.apache.qpid.server.subscription.Subscription;
 
 final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.SubscriptionRegistrationListener
 {
+
+    static final Map<String, String> ATTRIBUTE_MAPPINGS = new HashMap<String, String>();
+    static
+    {
+        QueueAdapter.ATTRIBUTE_MAPPINGS.put(Queue.ALERT_REPEAT_GAP, "x-qpid-minimum-alert-repeat-gap");
+        QueueAdapter.ATTRIBUTE_MAPPINGS.put(Queue.ALERT_THRESHOLD_MESSAGE_AGE, "x-qpid-maximum-message-size");
+        QueueAdapter.ATTRIBUTE_MAPPINGS.put(Queue.ALERT_THRESHOLD_MESSAGE_SIZE, "x-qpid-maximum-message-age");
+        QueueAdapter.ATTRIBUTE_MAPPINGS.put(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, "x-qpid-maximum-message-count");
+
+        QueueAdapter.ATTRIBUTE_MAPPINGS.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, "x-qpid-maximum-delivery-count");
+
+        QueueAdapter.ATTRIBUTE_MAPPINGS.put(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES, "x-qpid-capacity");
+        QueueAdapter.ATTRIBUTE_MAPPINGS.put(Queue.QUEUE_FLOW_RESUME_SIZE_BYTES, "x-qpid-flow-resume-capacity");
+
+        QueueAdapter.ATTRIBUTE_MAPPINGS.put(Queue.SORT_KEY, "qpid.sort_key");
+        QueueAdapter.ATTRIBUTE_MAPPINGS.put(Queue.LVQ_KEY, "qpid.last_value_queue_key");
+
+    }
 
     private final AMQQueue _queue;
     private final Map<Binding, BindingAdapter> _bindingAdapters =
@@ -314,7 +331,10 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         }
         else if(LVQ_KEY.equals(name))
         {
-            // TODO
+            if(_queue instanceof ConflationQueue)
+            {
+                return ((ConflationQueue)_queue).getConflationKey();
+            }
         }
         else if(MAXIMUM_DELIVERY_ATTEMPTS.equals(name))
         {
@@ -342,11 +362,26 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         }
         else if(SORT_KEY.equals(name))
         {
-            // TODO
+            if(_queue instanceof SortedQueue)
+            {
+                return ((SortedQueue)_queue).getSortedPropertyName();
+            }
         }
         else if(TYPE.equals(name))
         {
-            // TODO
+            if(_queue instanceof SortedQueue)
+            {
+                return "sorted";
+            }
+            if(_queue instanceof ConflationQueue)
+            {
+                return "lvq";
+            }
+            if(_queue instanceof AMQPriorityQueue)
+            {
+                return "priority";
+            }
+            return "standard";
         }
         else if(CREATED.equals(name))
         {

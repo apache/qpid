@@ -18,8 +18,6 @@
  * under the License.
  *
  */
-var bindingsTuple;
-
 
 require(["dojo/store/JsonRest",
          "dojo/json",
@@ -87,7 +85,7 @@ require(["dojo/store/JsonRest",
 
 
 
-         }
+         };
 
          ConnectionUpdater.prototype.update = function()
          {
@@ -120,14 +118,14 @@ require(["dojo/store/JsonRest",
                         var bytesOutRate = (1000 * (bytesOut - that.bytesOut)) / samplePeriod;
 
                         dom.byId("msgInRate").innerHTML = msgInRate.toFixed(0);
-                        var bytesInFormat = new formatBytes( bytesInRate );
+                        var bytesInFormat = formatBytes( bytesInRate );
                         dom.byId("bytesInRate").innerHTML = "(" + bytesInFormat.value;
-                        dom.byId("bytesInRateUnits").innerHTML = bytesInFormat.units + "/s)"
+                        dom.byId("bytesInRateUnits").innerHTML = bytesInFormat.units + "/s)";
 
                         dom.byId("msgOutRate").innerHTML = msgOutRate.toFixed(0);
-                        var bytesOutFormat = new formatBytes( bytesOutRate );
+                        var bytesOutFormat = formatBytes( bytesOutRate );
                         dom.byId("bytesOutRate").innerHTML = "(" + bytesOutFormat.value;
-                        dom.byId("bytesOutRateUnits").innerHTML = bytesOutFormat.units + "/s)"
+                        dom.byId("bytesOutRateUnits").innerHTML = bytesOutFormat.units + "/s)";
 
                         if(sessions && that.sessions)
                         {
@@ -144,8 +142,8 @@ require(["dojo/store/JsonRest",
                                         session.msgRate = msgRate.toFixed(0) + "msg/s";
 
                                         var bytesRate = (1000 * (session.bytesOut - oldSession.bytesOut)) /
-                                                        samplePeriod
-                                        var bytesRateFormat = new formatBytes( bytesRate );
+                                                        samplePeriod;
+                                        var bytesRateFormat = formatBytes( bytesRate );
                                         session.bytesRate = bytesRateFormat.value + bytesRateFormat.units + "/s";
                                     }
 

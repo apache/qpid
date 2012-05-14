@@ -65,11 +65,9 @@ require(["dojo/store/JsonRest",
                                                                     var idx = evt.rowIndex,
                                                                     theItem = this.getItem(idx);
 
-                                                                    var url = "/queue?vhost="
-                                                                     + that.vhostData.name + "&queue=" +
-                                                                    obj.dataStore.getValue(theItem,"name");
-
-                                                                    window.location = url;
+                                                                    window.location = "/queue?vhost=" +
+                                                                                      that.vhostData.name + "&queue=" +
+                                                                                      obj.dataStore.getValue(theItem,"name");
 
                                                             });
                                                          } );
@@ -88,11 +86,11 @@ require(["dojo/store/JsonRest",
                                                                       var idx = evt.rowIndex,
                                                                       theItem = this.getItem(idx);
 
-                                                                      url = "/exchange?vhost="
-                                                                       + encodeURIComponent(that.vhostData.name) + "&exchange=" +
-                                                                      encodeURIComponent(obj.dataStore.getValue(theItem,"name"));
 
-                                                                      window.location = url;
+                                                                      window.location = "/exchange?vhost=" +
+                                                                                        encodeURIComponent(that.vhostData.name) + "&exchange=" +
+                                                                                        encodeURIComponent(obj.dataStore.getValue(theItem,"name"));
+
 
                                                               });
                                                            } );
@@ -119,11 +117,9 @@ require(["dojo/store/JsonRest",
                                                                     var idx = evt.rowIndex,
                                                                     theItem = this.getItem(idx);
 
-                                                                    var url = "/connection?vhost="
-                                                                     + encodeURIComponent(that.vhostData.name) + "&connection=" +
-                                                                    encodeURIComponent(obj.dataStore.getValue(theItem,"name"));
-
-                                                                    window.location = url;
+                                                                    window.location = "/connection?vhost=" +
+                                                                                      encodeURIComponent(that.vhostData.name) + "&connection=" +
+                                                                                      encodeURIComponent(obj.dataStore.getValue(theItem,"name"));
 
                                                             });
                                                          } );
@@ -142,7 +138,7 @@ require(["dojo/store/JsonRest",
             this.lifetimePolicy.innerHTML = this.vhostData[ "lifetimePolicy" ];
 
 
-         }
+         };
 
          Updater.prototype.update = function()
          {
@@ -161,23 +157,23 @@ require(["dojo/store/JsonRest",
 
 
                     // update alerting info
-                    var alertRepeatGap = new formatTime( thisObj.vhostData["alertRepeatGap"] );
+                    var alertRepeatGap = formatTime( thisObj.vhostData["alertRepeatGap"] );
 
                     dom.byId("alertRepeatGap").innerHTML = alertRepeatGap.value;
                     dom.byId("alertRepeatGapUnits").innerHTML = alertRepeatGap.units;
 
 
-                    var alertMsgAge = new formatTime( thisObj.vhostData["alertThresholdMessageAge"] );
+                    var alertMsgAge = formatTime( thisObj.vhostData["alertThresholdMessageAge"] );
 
                     dom.byId("alertThresholdMessageAge").innerHTML = alertMsgAge.value;
                     dom.byId("alertThresholdMessageAgeUnits").innerHTML = alertMsgAge.units;
 
-                    var alertMsgSize = new formatBytes( thisObj.vhostData["alertThresholdMessageSize"] );
+                    var alertMsgSize = formatBytes( thisObj.vhostData["alertThresholdMessageSize"] );
 
                     dom.byId("alertThresholdMessageSize").innerHTML = alertMsgSize.value;
                     dom.byId("alertThresholdMessageSizeUnits").innerHTML = alertMsgSize.units;
 
-                    var alertQueueDepth = new formatBytes( thisObj.vhostData["alertThresholdQueueDepthBytes"] );
+                    var alertQueueDepth = formatBytes( thisObj.vhostData["alertThresholdQueueDepthBytes"] );
 
                     dom.byId("alertThresholdQueueDepthBytes").innerHTML = alertQueueDepth.value;
                     dom.byId("alertThresholdQueueDepthBytesUnits").innerHTML = alertQueueDepth.units;
@@ -202,14 +198,14 @@ require(["dojo/store/JsonRest",
                         var bytesOutRate = (1000 * (bytesOut - thisObj.bytesOut)) / samplePeriod;
 
                         dom.byId("msgInRate").innerHTML = msgInRate.toFixed(0);
-                        var bytesInFormat = new formatBytes( bytesInRate );
+                        var bytesInFormat = formatBytes( bytesInRate );
                         dom.byId("bytesInRate").innerHTML = "(" + bytesInFormat.value;
-                        dom.byId("bytesInRateUnits").innerHTML = bytesInFormat.units + "/s)"
+                        dom.byId("bytesInRateUnits").innerHTML = bytesInFormat.units + "/s)";
 
                         dom.byId("msgOutRate").innerHTML = msgOutRate.toFixed(0);
-                        var bytesOutFormat = new formatBytes( bytesOutRate );
+                        var bytesOutFormat = formatBytes( bytesOutRate );
                         dom.byId("bytesOutRate").innerHTML = "(" + bytesOutFormat.value;
-                        dom.byId("bytesOutRateUnits").innerHTML = bytesOutFormat.units + "/s)"
+                        dom.byId("bytesOutRateUnits").innerHTML = bytesOutFormat.units + "/s)";
 
                         if(connections && thisObj.connections)
                         {
@@ -221,23 +217,23 @@ require(["dojo/store/JsonRest",
                                     var oldConnection = thisObj.connections[j];
                                     if(oldConnection.id == connection.id)
                                     {
-                                        var msgOutRate = (1000 * (connection.messagesOut - oldConnection.messagesOut)) /
+                                        msgOutRate = (1000 * (connection.messagesOut - oldConnection.messagesOut)) /
                                                         samplePeriod;
                                         connection.msgOutRate = msgOutRate.toFixed(0) + "msg/s";
 
-                                        var bytesOutRate = (1000 * (connection.bytesOut - oldConnection.bytesOut)) /
-                                                        samplePeriod
-                                        var bytesOutRateFormat = new formatBytes( bytesOutRate );
+                                        bytesOutRate = (1000 * (connection.bytesOut - oldConnection.bytesOut)) /
+                                                        samplePeriod;
+                                        var bytesOutRateFormat = formatBytes( bytesOutRate );
                                         connection.bytesOutRate = bytesOutRateFormat.value + bytesOutRateFormat.units + "/s";
 
 
-                                        var msgInRate = (1000 * (connection.messagesIn - oldConnection.messagesIn)) /
+                                        msgInRate = (1000 * (connection.messagesIn - oldConnection.messagesIn)) /
                                                                                                 samplePeriod;
                                         connection.msgInRate = msgInRate.toFixed(0) + "msg/s";
 
-                                        var bytesInRate = (1000 * (connection.bytesIn - oldConnection.bytesIn)) /
-                                                        samplePeriod
-                                        var bytesInRateFormat = new formatBytes( bytesInRate );
+                                        bytesInRate = (1000 * (connection.bytesIn - oldConnection.bytesIn)) /
+                                                        samplePeriod;
+                                        var bytesInRateFormat = formatBytes( bytesInRate );
                                         connection.bytesInRate = bytesInRateFormat.value + bytesInRateFormat.units + "/s";
                                     }
 
@@ -256,10 +252,10 @@ require(["dojo/store/JsonRest",
                     thisObj.connections = connections;
 
                     // update queues
-                    thisObj.queuesGrid.update(thisObj.vhostData.queues)
+                    thisObj.queuesGrid.update(thisObj.vhostData.queues);
 
                     // update exchanges
-                    thisObj.exchangesGrid.update(thisObj.vhostData.exchanges)
+                    thisObj.exchangesGrid.update(thisObj.vhostData.exchanges);
 
                     // update connections
                     thisObj.connectionsGrid.update(thisObj.vhostData.connections)
