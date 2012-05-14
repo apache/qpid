@@ -224,17 +224,15 @@ bool RangeSet<T>::contains(const Range<T>& r) const {
 
 template <class T> void RangeSet<T>::addRange(const Range<T>& r) {
     if (r.empty()) return;
-    typename Ranges::iterator i =
-        std::lower_bound(ranges.begin(), ranges.end(), r);
+    typename Ranges::iterator i = std::lower_bound(ranges.begin(), ranges.end(), r);
     if (i == ranges.end() || !i->touching(r))
-        ranges.insert(i, r);
+        ranges.insert(i, r);    // No overlap
     else {
         i->merge(r);
         typename Ranges::iterator j = i;
-        if (++j != ranges.end() && i->touching(*j)) {
+        while (++j != ranges.end() && i->touching(*j))
             i->merge(*j);
-            ranges.erase(j);
-        }
+        ranges.erase(i+1,j);
     }
 }
 
