@@ -18,34 +18,36 @@
  */
 
 /**
- * \file QueueContext.h
+ * \file MessageContext.h
  */
 
-#ifndef tests_storePerftools_asyncPerf_QueueContext_h_
-#define tests_storePerftools_asyncPerf_QueueContext_h_
+#ifndef tests_storePerfTools_asyncPerf_MessageContext_h_
+#define tests_storePerfTools_asyncPerf_MessageContext_h_
 
-#include "MockPersistableQueue.h"
-#include "qpid/broker/BrokerContext.h"
+#include "MockPersistableMessage.h"
 
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class QueueContext: public qpid::broker::BrokerContext
+class MessageContext : public qpid::broker::BrokerContext
 {
 public:
-    QueueContext(MockPersistableQueue::intrusive_ptr q,
-                 const qpid::asyncStore::AsyncOperation::opCode op);
-    virtual ~QueueContext();
+    MessageContext(MockPersistableMessage::shared_ptr msg,
+                   const qpid::asyncStore::AsyncOperation::opCode op,
+                   MockPersistableQueue* q);
+    virtual ~MessageContext();
     qpid::asyncStore::AsyncOperation::opCode getOpCode() const;
     const char* getOpStr() const;
-    MockPersistableQueue::intrusive_ptr getQueue() const;
+    MockPersistableMessage::shared_ptr getMessage() const;
+    MockPersistableQueue* getQueue() const;
     void destroy();
 protected:
-    MockPersistableQueue::intrusive_ptr m_q;
+    MockPersistableMessage::shared_ptr m_msg;
     const qpid::asyncStore::AsyncOperation::opCode m_op;
+    MockPersistableQueue* m_q;
 };
 
 }}} // namespace tests::storePerftools::asyncPerf
 
-#endif // tests_storePerftools_asyncPerf_QueueContext_h_
+#endif // tests_storePerfTools_asyncPerf_MessageContext_h_

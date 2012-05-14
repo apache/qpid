@@ -18,60 +18,57 @@
  */
 
 /**
- * \file QueuedMessage.cpp
+ * \file MessageContext.cpp
  */
 
-#include "QueuedMessage.h"
-
-#include "MockTransactionContext.h"
+#include "MessageContext.h"
 
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-QueuedMessage::QueuedMessage(MockPersistableMessage::shared_ptr msg,
-                             qpid::broker::EnqueueHandle& enqHandle,
-                             MockTransactionContextPtr txn) :
+MessageContext::MessageContext(MockPersistableMessage::shared_ptr msg,
+                                                       const qpid::asyncStore::AsyncOperation::opCode op,
+                                                       MockPersistableQueue* q) :
         m_msg(msg),
-        m_enqHandle(enqHandle),
-        m_txn(txn)
+        m_op(op),
+        m_q(q)
 {
-    if (txn) {
-        txn->addEnqueuedMsg(this);
-    }
+    assert(m_msg.get() != 0);
+    assert(m_q != 0);
 }
 
-QueuedMessage::~QueuedMessage()
+MessageContext::~MessageContext()
 {}
 
+qpid::asyncStore::AsyncOperation::opCode
+MessageContext::getOpCode() const
+{
+    return m_op;
+}
+
+const char*
+MessageContext::getOpStr() const
+{
+    return qpid::asyncStore::AsyncOperation::getOpStr(m_op);
+}
+
 MockPersistableMessage::shared_ptr
-QueuedMessage::getMessage() const
+MessageContext::getMessage() const
 {
     return m_msg;
 }
 
-qpid::broker::EnqueueHandle
-QueuedMessage::getEnqueueHandle() const
+MockPersistableQueue*
+MessageContext::getQueue() const
 {
-    return m_enqHandle;
-}
-
-MockTransactionContextPtr
-QueuedMessage::getTransactionContext() const
-{
-    return m_txn;
-}
-
-bool
-QueuedMessage::isTransactional() const
-{
-    return m_txn.get() != 0;
+    return m_q;
 }
 
 void
-QueuedMessage::clearTransaction()
+MessageContext::destroy()
 {
-    m_txn.reset(static_cast<MockTransactionContext*>(0));
+    delete this;
 }
 
-}}} // namespace tests::storePerfTools
+}}} // namespace tests::storePerftools::asyncPerf

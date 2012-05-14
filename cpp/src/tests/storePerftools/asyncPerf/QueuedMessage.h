@@ -24,6 +24,8 @@
 #ifndef tests_storePerftools_asyncPerf_QueuedMessage_h_
 #define tests_storePerftools_asyncPerf_QueuedMessage_h_
 
+#include "MockPersistableMessage.h"
+
 #include "qpid/broker/EnqueueHandle.h"
 #include <boost/shared_ptr.hpp>
 
@@ -31,27 +33,24 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class MockPersistableMessage;
 class MockTransactionContext;
-
-typedef boost::shared_ptr<MockPersistableMessage> MockPersistableMessagePtr;
 typedef boost::shared_ptr<MockTransactionContext> MockTransactionContextPtr;
 
 class QueuedMessage
 {
 public:
-    QueuedMessage(MockPersistableMessagePtr msg,
+    QueuedMessage(MockPersistableMessage::shared_ptr msg,
                   qpid::broker::EnqueueHandle& enqHandle,
                   MockTransactionContextPtr txn);
     virtual ~QueuedMessage();
-    MockPersistableMessagePtr getMessage() const;
+    MockPersistableMessage::shared_ptr getMessage() const;
     qpid::broker::EnqueueHandle getEnqueueHandle() const;
     MockTransactionContextPtr getTransactionContext() const;
     bool isTransactional() const;
     void clearTransaction();
 
 protected:
-    MockPersistableMessagePtr m_msg;
+    MockPersistableMessage::shared_ptr m_msg;
     qpid::broker::EnqueueHandle m_enqHandle;
     MockTransactionContextPtr m_txn;
 };

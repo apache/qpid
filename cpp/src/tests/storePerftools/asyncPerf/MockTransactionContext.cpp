@@ -24,6 +24,7 @@
 #include "MockTransactionContext.h"
 
 #include "QueuedMessage.h"
+#include "TransactionAsyncContext.h"
 
 #include "qpid/asyncStore/AsyncStoreImpl.h"
 
@@ -33,6 +34,7 @@ namespace asyncPerf {
 
 // --- Inner class MockTransactionContext::QueueContext ---
 
+/*
 MockTransactionContext::TransactionContext::TransactionContext(MockTransactionContext* tc,
                                                                const qpid::asyncStore::AsyncOperation::opCode op) :
         m_tc(tc),
@@ -53,6 +55,7 @@ MockTransactionContext::TransactionContext::destroy()
 {
     delete this;
 }
+*/
 
 // --- Class MockTransactionContext ---
 
@@ -76,30 +79,28 @@ MockTransactionContext::handleAsyncResult(const qpid::broker::AsyncResult* res,
                                           qpid::broker::BrokerContext* bc)
 {
     if (bc && res) {
-        TransactionContext* tc = dynamic_cast<TransactionContext*>(bc);
-        if (tc->m_tc) {
-            if (res->errNo) {
-                // TODO: Handle async failure here
-                std::cerr << "Transaction xid=\"" << tc->m_tc->getXid() << "\": Operation " << tc->getOp() << ": failure "
-                          << res->errNo << " (" << res->errMsg << ")" << std::endl;
-            } else {
-                // Handle async success here
-                switch(tc->m_op) {
-                case qpid::asyncStore::AsyncOperation::TXN_PREPARE:
-                    tc->m_tc->prepareComplete(tc);
-                    break;
-                case qpid::asyncStore::AsyncOperation::TXN_COMMIT:
-                    tc->m_tc->commitComplete(tc);
-                    break;
-                case qpid::asyncStore::AsyncOperation::TXN_ABORT:
-                    tc->m_tc->abortComplete(tc);
-                    break;
-                default:
-                    std::ostringstream oss;
-                    oss << "tests::storePerftools::asyncPerf::MockTransactionContext::handleAsyncResult(): Unknown async operation: " << tc->m_op;
-                    throw qpid::Exception(oss.str());
-                };
-            }
+        TransactionAsyncContext* tac = dynamic_cast<TransactionAsyncContext*>(bc);
+        if (res->errNo) {
+            // TODO: Handle async failure here
+            std::cerr << "Transaction xid=\"" << tac->getTransactionContext()->getXid() << "\": Operation " << tac->getOpStr() << ": failure "
+                      << res->errNo << " (" << res->errMsg << ")" << std::endl;
+        } else {
+            // Handle async success here
+            switch(tac->getOpCode()) {
+            case qpid::asyncStore::AsyncOperation::TXN_PREPARE:
+                tac->getTransactionContext()->prepareComplete(tac);
+                break;
+            case qpid::asyncStore::AsyncOperation::TXN_COMMIT:
+                tac->getTransactionContext()->commitComplete(tac);
+                break;
+            case qpid::asyncStore::AsyncOperation::TXN_ABORT:
+                tac->getTransactionContext()->abortComplete(tac);
+                break;
+            default:
+                std::ostringstream oss;
+                oss << "tests::storePerftools::asyncPerf::MockTransactionContext::handleAsyncResult(): Unknown async operation: " << tac->getOpCode();
+                throw qpid::Exception(oss.str());
+            };
         }
     }
     if (bc) delete bc;
@@ -154,7 +155,7 @@ MockTransactionContext::abort()
     }
     m_store->submitAbort(m_txnHandle,
                          &handleAsyncResult,
-                         dynamic_cast<qpid::broker::BrokerContext*>(new TransactionContext(this, qpid::asyncStore::AsyncOperation::TXN_ABORT)));
+                         dynamic_cast<qpid::broker::BrokerContext*>(new TransactionAsyncContext(this, qpid::asyncStore::AsyncOperation::TXN_ABORT)));
 //std::cout << "*TXN* abort: xid=" << m_txnHandle.getXid() << "; 2PC=" << (m_txnHandle.is2pc()?"T":"F") << std::endl;
 }
 
@@ -173,7 +174,7 @@ MockTransactionContext::commit()
     }
     m_store->submitCommit(m_txnHandle,
                           &handleAsyncResult,
-                          dynamic_cast<qpid::broker::BrokerContext*>(new TransactionContext(this, qpid::asyncStore::AsyncOperation::TXN_COMMIT)));
+                          dynamic_cast<qpid::broker::BrokerContext*>(new TransactionAsyncContext(this, qpid::asyncStore::AsyncOperation::TXN_COMMIT)));
 //std::cout << "*TXN* commit: xid=" << m_txnHandle.getXid() << "; 2PC=" << (m_txnHandle.is2pc()?"T":"F") << std::endl;
 }
 
@@ -184,13 +185,13 @@ MockTransactionContext::localPrepare()
 {
     m_store->submitPrepare(m_txnHandle,
                            &handleAsyncResult,
-                           dynamic_cast<qpid::broker::BrokerContext*>(new TransactionContext(this, qpid::asyncStore::AsyncOperation::TXN_PREPARE)));
+                           dynamic_cast<qpid::broker::BrokerContext*>(new TransactionAsyncContext(this, qpid::asyncStore::AsyncOperation::TXN_PREPARE)));
 //std::cout << "*TXN* localPrepare: xid=" << m_txnHandle.getXid() << "; 2PC=" << (m_txnHandle.is2pc()?"T":"F") << std::endl;
 }
 
 // protected
 void
-MockTransactionContext::prepareComplete(const TransactionContext* tc)
+MockTransactionContext::prepareComplete(const TransactionAsyncContext* tc)
 {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_enqueuedMsgsMutex);
     while (!m_enqueuedMsgs.empty()) {
@@ -198,25 +199,25 @@ MockTransactionContext::prepareComplete(const TransactionContext* tc)
         m_enqueuedMsgs.pop_front();
     }
 //std::cout << "~~~~~ Transaction xid=\"" << tc->m_tc->getXid() << "\": prepareComplete()" << std::endl << std::flush;
-    assert(tc->m_tc == this);
+    assert(tc->getTransactionContext() == this);
 }
 
 
 // protected
 void
-MockTransactionContext::abortComplete(const TransactionContext* tc)
+MockTransactionContext::abortComplete(const TransactionAsyncContext* tc)
 {
 //std::cout << "~~~~~ Transaction xid=\"" << tc->m_tc->getXid() << "\": abortComplete()" << std::endl << std::flush;
-    assert(tc->m_tc == this);
+    assert(tc->getTransactionContext() == this);
 }
 
 
 // protected
 void
-MockTransactionContext::commitComplete(const TransactionContext* tc)
+MockTransactionContext::commitComplete(const TransactionAsyncContext* tc)
 {
 //std::cout << "~~~~~ Transaction xid=\"" << tc->m_tc->getXid() << "\": commitComplete()" << std::endl << std::flush;
-    assert(tc->m_tc == this);
+    assert(tc->getTransactionContext() == this);
 }
 
 }}} // namespace tests::storePerftools::asyncPerf

@@ -44,13 +44,17 @@ namespace storePerftools {
 namespace asyncPerf {
 
 class QueuedMessage;
+class TransactionAsyncContext;
 
 class MockTransactionContext : public qpid::broker::TransactionContext
 {
 public:
+    typedef boost::shared_ptr<MockTransactionContext> shared_ptr;
+
     // NOTE: TransactionContext - Bad naming? This context is the async return handling context for class
     //       MockTransactionContext async ops. Other classes using this pattern simply use XXXContext for this class
     //       (e.g. QueueContext in MockPersistableQueue), but in this case it may be confusing.
+/*
     class TransactionContext : public qpid::broker::BrokerContext
     {
     public:
@@ -62,6 +66,7 @@ public:
         MockTransactionContext* m_tc;
         const qpid::asyncStore::AsyncOperation::opCode m_op;
     };
+*/
 
     MockTransactionContext(qpid::asyncStore::AsyncStoreImpl* store,
                            const std::string& xid = std::string());
@@ -88,9 +93,9 @@ protected:
     void localPrepare();
 
     // --- Ascnc op completions (called through handleAsyncResult) ---
-    void prepareComplete(const TransactionContext* tc);
-    void abortComplete(const TransactionContext* tc);
-    void commitComplete(const TransactionContext* tc);
+    void prepareComplete(const TransactionAsyncContext* tc);
+    void abortComplete(const TransactionAsyncContext* tc);
+    void commitComplete(const TransactionAsyncContext* tc);
 
 };
 

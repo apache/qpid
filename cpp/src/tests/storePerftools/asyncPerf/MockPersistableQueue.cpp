@@ -23,6 +23,7 @@
 
 #include "MockPersistableQueue.h"
 
+#include "MessageContext.h"
 #include "MockPersistableMessage.h"
 #include "MockTransactionContext.h"
 #include "QueueContext.h"
@@ -129,12 +130,12 @@ MockPersistableQueue::runEnqueues()
         if (useTxn && txnCnt == 0) {
             txn.reset(new MockTransactionContext(m_store)); // equivalent to begin()
         }
-        MockPersistableMessagePtr msg(new MockPersistableMessage(m_msgData, m_perfTestOpts.m_msgSize, m_store, true));
+        MockPersistableMessage::shared_ptr msg(new MockPersistableMessage(m_msgData, m_perfTestOpts.m_msgSize, m_store, true));
         msg->setPersistenceId(m_store->getNextRid());
         qpid::broker::EnqueueHandle enqHandle = m_store->createEnqueueHandle(msg->getHandle(), m_queueHandle);
-        MockPersistableMessage::MessageContext* msgCtxt = new MockPersistableMessage::MessageContext(msg,
-                                                                                                     qpid::asyncStore::AsyncOperation::MSG_ENQUEUE,
-                                                                                                     this);
+        MessageContext* msgCtxt = new MessageContext(msg,
+                                                     qpid::asyncStore::AsyncOperation::MSG_ENQUEUE,
+                                                     this);
         if (useTxn) {
             m_store->submitEnqueue(enqHandle,
                                    txn->getHandle(),
@@ -176,9 +177,9 @@ MockPersistableQueue::runDequeues()
         pop(qm);
         if (qm.get()) {
             qpid::broker::EnqueueHandle enqHandle = qm->getEnqueueHandle();
-            qpid::broker::BrokerContext* bc = new MockPersistableMessage::MessageContext(qm->getMessage(),
-                                                                                         qpid::asyncStore::AsyncOperation::MSG_DEQUEUE,
-                                                                                         this);
+            qpid::broker::BrokerContext* bc = new MessageContext(qm->getMessage(),
+                                                                 qpid::asyncStore::AsyncOperation::MSG_DEQUEUE,
+                                                                 this);
             if (useTxn) {
                 m_store->submitDequeue(enqHandle,
                                        txn->getHandle(),
