@@ -54,8 +54,6 @@ felix.libs=${felix-main}
 jackson-core=lib/required/jackson-core-asl-1.9.0.jar
 jackson-mapper=lib/required/jackson-mapper-asl-1.9.0.jar
 
-bnd=lib/required/bnd-0.0.384.jar
-
 commons-configuration.libs = ${commons-beanutils-core} ${commons-digester} \
   ${commons-codec} ${commons-lang} ${commons-collections} ${commons-configuration}
 
@@ -162,3 +160,8 @@ jcommon.jar=lib/jfree/jcommon-1.0.16.jar
 csvjdbc.jar=lib/csvjdbc/csvjdbc-1.0.8.jar
 perftests-visualisation-jfc.libs=${jfreechart.jar} ${jcommon.jar} ${csvjdbc.jar}
 perftests-visualisation-jfc.test.libs=${test.libs}
+
+# Libraries used only within the build
+bnd=lib/required/bnd-0.0.384.jar
+jython=lib/required/jython-standalone-2.5.2.jar
+maven-ant-tasks=lib/required/maven-ant-tasks-2.1.1.jar
