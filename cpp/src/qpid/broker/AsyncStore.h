@@ -32,7 +32,7 @@ namespace qpid {
 namespace broker {
 
 // Defined by broker, implements qpid::messaging::Handle-type template to hide ref counting:
-class BrokerContext;
+class BrokerAsyncContext;
 
 // Subclassed by broker:
 class DataSource {
@@ -60,7 +60,7 @@ struct AsyncResult
                 const std::string& errMsg);
     void destroy();
 };
-typedef void (*ResultCallback)(const AsyncResult*, BrokerContext*);
+typedef void (*ResultCallback)(const AsyncResult*, BrokerAsyncContext*);
 
 // Subclassed by store:
 class AsyncStore {
@@ -80,26 +80,26 @@ public:
 
     // Store async interface
 
-    virtual void submitPrepare(TxnHandle&, ResultCallback, BrokerContext*) = 0; // Distributed txns only
-    virtual void submitCommit(TxnHandle&, ResultCallback, BrokerContext*) = 0;
-    virtual void submitAbort(TxnHandle&, ResultCallback, BrokerContext*) = 0;
+    virtual void submitPrepare(TxnHandle&, ResultCallback, BrokerAsyncContext*) = 0; // Distributed txns only
+    virtual void submitCommit(TxnHandle&, ResultCallback, BrokerAsyncContext*) = 0;
+    virtual void submitAbort(TxnHandle&, ResultCallback, BrokerAsyncContext*) = 0;
 
-    virtual void submitCreate(ConfigHandle&, const DataSource*, ResultCallback, BrokerContext*) = 0;
-    virtual void submitDestroy(ConfigHandle&, ResultCallback, BrokerContext*) = 0;
+    virtual void submitCreate(ConfigHandle&, const DataSource*, ResultCallback, BrokerAsyncContext*) = 0;
+    virtual void submitDestroy(ConfigHandle&, ResultCallback, BrokerAsyncContext*) = 0;
 
-    virtual void submitCreate(QueueHandle&, const DataSource*, ResultCallback, BrokerContext*) = 0;
-    virtual void submitDestroy(QueueHandle&, ResultCallback, BrokerContext*) = 0;
-    virtual void submitFlush(QueueHandle&, ResultCallback, BrokerContext*) = 0;
+    virtual void submitCreate(QueueHandle&, const DataSource*, ResultCallback, BrokerAsyncContext*) = 0;
+    virtual void submitDestroy(QueueHandle&, ResultCallback, BrokerAsyncContext*) = 0;
+    virtual void submitFlush(QueueHandle&, ResultCallback, BrokerAsyncContext*) = 0;
 
-    virtual void submitCreate(EventHandle&, const DataSource*, ResultCallback, BrokerContext*) = 0;
-    virtual void submitCreate(EventHandle&, const DataSource*, TxnHandle&, ResultCallback, BrokerContext*) = 0;
-    virtual void submitDestroy(EventHandle&, ResultCallback, BrokerContext*) = 0;
-    virtual void submitDestroy(EventHandle&, TxnHandle&, ResultCallback, BrokerContext*) = 0;
+    virtual void submitCreate(EventHandle&, const DataSource*, ResultCallback, BrokerAsyncContext*) = 0;
+    virtual void submitCreate(EventHandle&, const DataSource*, TxnHandle&, ResultCallback, BrokerAsyncContext*) = 0;
+    virtual void submitDestroy(EventHandle&, ResultCallback, BrokerAsyncContext*) = 0;
+    virtual void submitDestroy(EventHandle&, TxnHandle&, ResultCallback, BrokerAsyncContext*) = 0;
 
-    virtual void submitEnqueue(EnqueueHandle&, ResultCallback, BrokerContext*) = 0;
-    virtual void submitEnqueue(EnqueueHandle&, TxnHandle&, ResultCallback, BrokerContext*) = 0;
-    virtual void submitDequeue(EnqueueHandle&, ResultCallback, BrokerContext*) = 0;
-    virtual void submitDequeue(EnqueueHandle&, TxnHandle&, ResultCallback, BrokerContext*) = 0;
+    virtual void submitEnqueue(EnqueueHandle&, ResultCallback, BrokerAsyncContext*) = 0;
+    virtual void submitEnqueue(EnqueueHandle&, TxnHandle&, ResultCallback, BrokerAsyncContext*) = 0;
+    virtual void submitDequeue(EnqueueHandle&, ResultCallback, BrokerAsyncContext*) = 0;
+    virtual void submitDequeue(EnqueueHandle&, TxnHandle&, ResultCallback, BrokerAsyncContext*) = 0;
 
     // Legacy - Restore FTD message, is NOT async!
     virtual int loadContent(MessageHandle&, QueueHandle&, char* data, uint64_t offset, const uint64_t length) = 0;

@@ -4,10 +4,10 @@
 namespace qpid {
 namespace broker {
 
-class BrokerContext
+class BrokerAsyncContext
 {
 public:
-    virtual ~BrokerContext() {}
+    virtual ~BrokerAsyncContext() {}
 };
 
 }} // namespace qpid::broker

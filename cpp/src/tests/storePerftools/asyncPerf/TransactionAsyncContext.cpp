@@ -6,7 +6,7 @@ namespace asyncPerf {
 
 TransactionAsyncContext::TransactionAsyncContext(MockTransactionContext* tc,
                                                  const qpid::asyncStore::AsyncOperation::opCode op):
-        qpid::broker::BrokerContext(),
+        qpid::broker::BrokerAsyncContext(),
         m_tc(tc),
         m_op(op)
 {

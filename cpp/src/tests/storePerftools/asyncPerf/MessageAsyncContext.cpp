@@ -21,7 +21,7 @@
  * \file MessageContext.cpp
  */
 
-#include "MessageContext.h"
+#include "MessageAsyncContext.h"
 
 namespace tests {
 namespace storePerftools {

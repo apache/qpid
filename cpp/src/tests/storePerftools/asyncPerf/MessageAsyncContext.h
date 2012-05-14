@@ -26,11 +26,14 @@
 
 #include "MockPersistableMessage.h"
 
+#include "qpid/asyncStore/AsyncOperation.h"
+#include "qpid/broker/BrokerAsyncContext.h"
+
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class MessageContext : public qpid::broker::BrokerContext
+class MessageContext : public qpid::broker::BrokerAsyncContext
 {
 public:
     MessageContext(MockPersistableMessage::shared_ptr msg,

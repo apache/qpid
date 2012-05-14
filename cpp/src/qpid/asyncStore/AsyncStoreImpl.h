@@ -66,64 +66,64 @@ public:
 
     void submitPrepare(qpid::broker::TxnHandle& txnHandle,
                        qpid::broker::ResultCallback resultCb,
-                       qpid::broker::BrokerContext* brokerCtxt);
+                       qpid::broker::BrokerAsyncContext* brokerCtxt);
     void submitCommit(qpid::broker::TxnHandle& txnHandle,
                       qpid::broker::ResultCallback resultCb,
-                      qpid::broker::BrokerContext* brokerCtxt);
+                      qpid::broker::BrokerAsyncContext* brokerCtxt);
     void submitAbort(qpid::broker::TxnHandle& txnHandle,
                      qpid::broker::ResultCallback resultCb,
-                     qpid::broker::BrokerContext* brokerCtxt);
+                     qpid::broker::BrokerAsyncContext* brokerCtxt);
 
     void submitCreate(qpid::broker::ConfigHandle& cfgHandle,
                       const qpid::broker::DataSource* dataSrc,
                       qpid::broker::ResultCallback resultCb,
-                      qpid::broker::BrokerContext* brokerCtxt);
+                      qpid::broker::BrokerAsyncContext* brokerCtxt);
     void submitDestroy(qpid::broker::ConfigHandle& cfgHandle,
                        qpid::broker::ResultCallback resultCb,
-                       qpid::broker::BrokerContext* brokerCtxt);
+                       qpid::broker::BrokerAsyncContext* brokerCtxt);
 
     void submitCreate(qpid::broker::QueueHandle& queueHandle,
                       const qpid::broker::DataSource* dataSrc,
                       qpid::broker::ResultCallback resultCb,
-                      qpid::broker::BrokerContext* brokerCtxt);
+                      qpid::broker::BrokerAsyncContext* brokerCtxt);
     void submitDestroy(qpid::broker::QueueHandle& queueHandle,
                        qpid::broker::ResultCallback resultCb,
-                       qpid::broker::BrokerContext* brokerCtxt);
+                       qpid::broker::BrokerAsyncContext* brokerCtxt);
     void submitFlush(qpid::broker::QueueHandle& queueHandle,
                      qpid::broker::ResultCallback resultCb,
-                     qpid::broker::BrokerContext* brokerCtxt);
+                     qpid::broker::BrokerAsyncContext* brokerCtxt);
 
     void submitCreate(qpid::broker::EventHandle& eventHandle,
                       const qpid::broker::DataSource* dataSrc,
                       qpid::broker::ResultCallback resultCb,
-                      qpid::broker::BrokerContext* brokerCtxt);
+                      qpid::broker::BrokerAsyncContext* brokerCtxt);
     void submitCreate(qpid::broker::EventHandle& eventHandle,
                       const qpid::broker::DataSource* dataSrc,
                       qpid::broker::TxnHandle& txnHandle,
                       qpid::broker::ResultCallback resultCb,
-                      qpid::broker::BrokerContext* brokerCtxt);
+                      qpid::broker::BrokerAsyncContext* brokerCtxt);
     void submitDestroy(qpid::broker::EventHandle& eventHandle,
                       qpid::broker::ResultCallback resultCb,
-                      qpid::broker::BrokerContext* brokerCtxt);
+                      qpid::broker::BrokerAsyncContext* brokerCtxt);
     void submitDestroy(qpid::broker::EventHandle& eventHandle,
                       qpid::broker::TxnHandle& txnHandle,
                       qpid::broker::ResultCallback resultCb,
-                      qpid::broker::BrokerContext* brokerCtxt);
+                      qpid::broker::BrokerAsyncContext* brokerCtxt);
 
     void submitEnqueue(qpid::broker::EnqueueHandle& enqHandle,
                        qpid::broker::ResultCallback resultCb,
-                       qpid::broker::BrokerContext* brokerCtxt);
+                       qpid::broker::BrokerAsyncContext* brokerCtxt);
     void submitEnqueue(qpid::broker::EnqueueHandle& enqHandle,
                        qpid::broker::TxnHandle& txnHandle,
                        qpid::broker::ResultCallback resultCb,
-                       qpid::broker::BrokerContext* brokerCtxt);
+                       qpid::broker::BrokerAsyncContext* brokerCtxt);
     void submitDequeue(qpid::broker::EnqueueHandle& enqHandle,
                        qpid::broker::ResultCallback resultCb,
-                       qpid::broker::BrokerContext* brokerCtxt);
+                       qpid::broker::BrokerAsyncContext* brokerCtxt);
     void submitDequeue(qpid::broker::EnqueueHandle& enqHandle,
                        qpid::broker::TxnHandle& txnHandle,
                        qpid::broker::ResultCallback resultCb,
-                       qpid::broker::BrokerContext* brokerCtxt);
+                       qpid::broker::BrokerAsyncContext* brokerCtxt);
 
     // Legacy - Restore FTD message, is NOT async!
     virtual int loadContent(qpid::broker::MessageHandle& msgHandle,

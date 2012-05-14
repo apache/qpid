@@ -51,23 +51,23 @@ public:
     AsyncOperation(const opCode op,
                    const qpid::broker::IdHandle* th,
                    const qpid::broker::ResultCallback resCb,
-                   qpid::broker::BrokerContext* brokerCtxt);
+                   qpid::broker::BrokerAsyncContext* brokerCtxt);
     AsyncOperation(const opCode op,
                    const qpid::broker::IdHandle* th,
                    const qpid::broker::DataSource* dataSrc,
                    const qpid::broker::ResultCallback resCb,
-                   qpid::broker::BrokerContext* brokerCtxt);
+                   qpid::broker::BrokerAsyncContext* brokerCtxt);
     AsyncOperation(const opCode op,
                    const qpid::broker::IdHandle* th,
                    const qpid::broker::TxnHandle* txnHandle,
                    const qpid::broker::ResultCallback resCb,
-                   qpid::broker::BrokerContext* brokerCtxt);
+                   qpid::broker::BrokerAsyncContext* brokerCtxt);
     AsyncOperation(const opCode op,
                    const qpid::broker::IdHandle* th,
                    const qpid::broker::DataSource* dataSrc,
                    const qpid::broker::TxnHandle* txnHandle,
                    const qpid::broker::ResultCallback resCb,
-                   qpid::broker::BrokerContext* brokerCtxt);
+                   qpid::broker::BrokerAsyncContext* brokerCtxt);
     virtual ~AsyncOperation();
     const char* getOpStr() const;
     static const char* getOpStr(const opCode op);
@@ -77,7 +77,7 @@ public:
     const qpid::broker::DataSource* m_dataSrc;
     const qpid::broker::TxnHandle* m_txnHandle;
     const qpid::broker::ResultCallback m_resCb;
-    qpid::broker::BrokerContext* m_brokerCtxt;
+    qpid::broker::BrokerAsyncContext* m_brokerCtxt;
 };
 
 }} // namespace qpid::asyncStore

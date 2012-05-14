@@ -27,38 +27,11 @@
 #include "TransactionAsyncContext.h"
 
 #include "qpid/asyncStore/AsyncStoreImpl.h"
+#include "qpid/broker/BrokerAsyncContext.h"
 
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
-
-// --- Inner class MockTransactionContext::QueueContext ---
-
-/*
-MockTransactionContext::TransactionContext::TransactionContext(MockTransactionContext* tc,
-                                                               const qpid::asyncStore::AsyncOperation::opCode op) :
-        m_tc(tc),
-        m_op(op)
-{}
-
-MockTransactionContext::TransactionContext::~TransactionContext()
-{}
-
-const char*
-MockTransactionContext::TransactionContext::getOp() const
-{
-    return qpid::asyncStore::AsyncOperation::getOpStr(m_op);
-}
-
-void
-MockTransactionContext::TransactionContext::destroy()
-{
-    delete this;
-}
-*/
-
-// --- Class MockTransactionContext ---
-
 
 MockTransactionContext::MockTransactionContext(qpid::asyncStore::AsyncStoreImpl* store,
                                                const std::string& xid) :
@@ -76,7 +49,7 @@ MockTransactionContext::~MockTransactionContext()
 // static
 void
 MockTransactionContext::handleAsyncResult(const qpid::broker::AsyncResult* res,
-                                          qpid::broker::BrokerContext* bc)
+                                          qpid::broker::BrokerAsyncContext* bc)
 {
     if (bc && res) {
         TransactionAsyncContext* tac = dynamic_cast<TransactionAsyncContext*>(bc);
@@ -155,7 +128,7 @@ MockTransactionContext::abort()
     }
     m_store->submitAbort(m_txnHandle,
                          &handleAsyncResult,
-                         dynamic_cast<qpid::broker::BrokerContext*>(new TransactionAsyncContext(this, qpid::asyncStore::AsyncOperation::TXN_ABORT)));
+                         dynamic_cast<qpid::broker::BrokerAsyncContext*>(new TransactionAsyncContext(this, qpid::asyncStore::AsyncOperation::TXN_ABORT)));
 //std::cout << "*TXN* abort: xid=" << m_txnHandle.getXid() << "; 2PC=" << (m_txnHandle.is2pc()?"T":"F") << std::endl;
 }
 
@@ -174,7 +147,7 @@ MockTransactionContext::commit()
     }
     m_store->submitCommit(m_txnHandle,
                           &handleAsyncResult,
-                          dynamic_cast<qpid::broker::BrokerContext*>(new TransactionAsyncContext(this, qpid::asyncStore::AsyncOperation::TXN_COMMIT)));
+                          dynamic_cast<qpid::broker::BrokerAsyncContext*>(new TransactionAsyncContext(this, qpid::asyncStore::AsyncOperation::TXN_COMMIT)));
 //std::cout << "*TXN* commit: xid=" << m_txnHandle.getXid() << "; 2PC=" << (m_txnHandle.is2pc()?"T":"F") << std::endl;
 }
 
@@ -185,7 +158,7 @@ MockTransactionContext::localPrepare()
 {
     m_store->submitPrepare(m_txnHandle,
                            &handleAsyncResult,
-                           dynamic_cast<qpid::broker::BrokerContext*>(new TransactionAsyncContext(this, qpid::asyncStore::AsyncOperation::TXN_PREPARE)));
+                           dynamic_cast<qpid::broker::BrokerAsyncContext*>(new TransactionAsyncContext(this, qpid::asyncStore::AsyncOperation::TXN_PREPARE)));
 //std::cout << "*TXN* localPrepare: xid=" << m_txnHandle.getXid() << "; 2PC=" << (m_txnHandle.is2pc()?"T":"F") << std::endl;
 }
 

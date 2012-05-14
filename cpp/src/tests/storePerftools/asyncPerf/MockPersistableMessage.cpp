@@ -23,7 +23,7 @@
 
 #include "MockPersistableMessage.h"
 
-#include "MessageContext.h"
+#include "MessageAsyncContext.h"
 #include "MockPersistableQueue.h" // debug statements in enqueueComplete() and dequeueComplete()
 
 #include "qpid/asyncStore/AsyncStoreImpl.h"
@@ -48,7 +48,7 @@ MockPersistableMessage::~MockPersistableMessage()
 // static
 void
 MockPersistableMessage::handleAsyncResult(const qpid::broker::AsyncResult* res,
-                                          qpid::broker::BrokerContext* bc)
+                                          qpid::broker::BrokerAsyncContext* bc)
 {
     if (bc) {
         MessageContext* mc = dynamic_cast<MessageContext*>(bc);

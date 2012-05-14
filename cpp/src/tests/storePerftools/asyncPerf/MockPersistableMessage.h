@@ -24,13 +24,9 @@
 #ifndef tests_storePerftools_asyncPerf_MockPersistableMessage_h_
 #define tests_storePerftools_asyncPerf_MockPersistableMessage_h_
 
-#include "qpid/asyncStore/AsyncOperation.h"
 #include "qpid/broker/AsyncStore.h" // qpid::broker::DataSource
-#include "qpid/broker/BrokerContext.h"
 #include "qpid/broker/MessageHandle.h"
 #include "qpid/broker/PersistableMessage.h"
-
-#include <stdint.h> // uint32_t
 
 namespace qpid {
 namespace asyncStore {
@@ -44,7 +40,7 @@ namespace asyncPerf {
 class MessageContext;
 class MockPersistableQueue;
 
-class MockPersistableMessage: public qpid::broker::PersistableMessage, qpid::broker::DataSource
+class MockPersistableMessage: public qpid::broker::PersistableMessage, public qpid::broker::DataSource
 {
 public:
     typedef boost::shared_ptr<MockPersistableMessage> shared_ptr;
@@ -55,7 +51,7 @@ public:
                            const bool persistent = true);
     virtual ~MockPersistableMessage();
     static void handleAsyncResult(const qpid::broker::AsyncResult* res,
-                                  qpid::broker::BrokerContext* bc);
+                                  qpid::broker::BrokerAsyncContext* bc);
     qpid::broker::MessageHandle& getHandle();
 
     // Interface Persistable

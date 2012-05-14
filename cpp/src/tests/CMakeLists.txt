@@ -379,12 +379,12 @@ endif (UNIX)
 
 # Async store perf test (asyncPerf)
 set (asyncStorePerf_SOURCES
-    storePerftools/asyncPerf/MessageContext.cpp
+    storePerftools/asyncPerf/MessageAsyncContext.cpp
 	storePerftools/asyncPerf/MockPersistableMessage.cpp
 	storePerftools/asyncPerf/MockPersistableQueue.cpp
 	storePerftools/asyncPerf/MockTransactionContext.cpp
 	storePerftools/asyncPerf/PerfTest.cpp
-	storePerftools/asyncPerf/QueueContext.cpp
+	storePerftools/asyncPerf/QueueAsyncContext.cpp
 	storePerftools/asyncPerf/QueuedMessage.cpp
 	storePerftools/asyncPerf/TestOptions.cpp
 	storePerftools/asyncPerf/TestResult.cpp

@@ -24,16 +24,13 @@
 #ifndef tests_storePerftools_asyncPerf_MockPersistableQueue_h_
 #define tests_storePerftools_asyncPerf_MockPersistableQueue_h_
 
-#include "qpid/asyncStore/AsyncOperation.h"
 #include "qpid/broker/AsyncStore.h" // qpid::broker::DataSource
-#include "qpid/broker/BrokerContext.h"
 #include "qpid/broker/PersistableQueue.h"
 #include "qpid/broker/QueueHandle.h"
 #include "qpid/sys/Condition.h"
 #include "qpid/sys/Mutex.h"
 
 #include <boost/intrusive_ptr.hpp>
-#include <boost/shared_ptr.hpp>
 #include <deque>
 
 namespace qpid {
@@ -48,7 +45,7 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class QueueContext;
+class QueueAsyncContext;
 class QueuedMessage;
 class TestOptions;
 
@@ -68,7 +65,7 @@ public:
 
     // --- Async functionality ---
     static void handleAsyncResult(const qpid::broker::AsyncResult* res,
-                                  qpid::broker::BrokerContext* bc);
+                                  qpid::broker::BrokerAsyncContext* bc);
     qpid::broker::QueueHandle& getHandle();
     void asyncStoreCreate();
     void asyncStoreDestroy();
@@ -112,9 +109,9 @@ protected:
     qpid::sys::Condition m_dequeueCondition;
 
     // --- Ascnc op completions (called through handleAsyncResult) ---
-    void createComplete(const QueueContext* qc);
-    void flushComplete(const QueueContext* qc);
-    void destroyComplete(const QueueContext* qc);
+    void createComplete(const QueueAsyncContext* qc);
+    void flushComplete(const QueueAsyncContext* qc);
+    void destroyComplete(const QueueAsyncContext* qc);
 
     // --- Queue functionality ---
     void push(QueuedMessagePtr& msg);

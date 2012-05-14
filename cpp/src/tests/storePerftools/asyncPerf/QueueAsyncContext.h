@@ -18,49 +18,35 @@
  */
 
 /**
- * \file QueueContext.cpp
+ * \file QueueContext.h
  */
 
-#include "QueueContext.h"
+#ifndef tests_storePerftools_asyncPerf_QueueContext_h_
+#define tests_storePerftools_asyncPerf_QueueContext_h_
+
+#include "MockPersistableQueue.h"
+#include "qpid/asyncStore/AsyncOperation.h"
+#include "qpid/broker/BrokerAsyncContext.h"
 
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-QueueContext::QueueContext(MockPersistableQueue::intrusive_ptr q,
-                           const qpid::asyncStore::AsyncOperation::opCode op) :
-        qpid::broker::BrokerContext(),
-        m_q(q),
-        m_op(op)
+class QueueAsyncContext: public qpid::broker::BrokerAsyncContext
 {
-    assert(m_q.get() != 0);
-}
-
-QueueContext::~QueueContext()
-{}
-
-qpid::asyncStore::AsyncOperation::opCode
-QueueContext::getOpCode() const
-{
-    return m_op;
-}
-
-const char*
-QueueContext::getOpStr() const
-{
-    return qpid::asyncStore::AsyncOperation::getOpStr(m_op);
-}
-
-MockPersistableQueue::intrusive_ptr
-QueueContext::getQueue() const
-{
-    return m_q;
-}
-
-void
-QueueContext::destroy()
-{
-    delete this;
-}
+public:
+    QueueAsyncContext(MockPersistableQueue::intrusive_ptr q,
+                 const qpid::asyncStore::AsyncOperation::opCode op);
+    virtual ~QueueAsyncContext();
+    qpid::asyncStore::AsyncOperation::opCode getOpCode() const;
+    const char* getOpStr() const;
+    MockPersistableQueue::intrusive_ptr getQueue() const;
+    void destroy();
+protected:
+    MockPersistableQueue::intrusive_ptr m_q;
+    const qpid::asyncStore::AsyncOperation::opCode m_op;
+};
 
 }}} // namespace tests::storePerftools::asyncPerf
+
+#endif // tests_storePerftools_asyncPerf_QueueContext_h_

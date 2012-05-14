@@ -24,7 +24,6 @@
 #include "AsyncOperation.h"
 
 #include "qpid/Exception.h"
-#include "qpid/broker/BrokerContext.h" // for delete in d'tor
 
 #include <sstream>
 
@@ -43,7 +42,7 @@ AsyncOperation::AsyncOperation() :
 AsyncOperation::AsyncOperation(const opCode op,
                                const qpid::broker::IdHandle* th,
                                const qpid::broker::ResultCallback resCb,
-                               qpid::broker::BrokerContext* brokerCtxt) :
+                               qpid::broker::BrokerAsyncContext* brokerCtxt) :
         m_op(op),
         m_targetHandle(th),
         m_dataSrc(0),
@@ -56,7 +55,7 @@ AsyncOperation::AsyncOperation(const opCode op,
                                const qpid::broker::IdHandle* th,
                                const qpid::broker::DataSource* dataSrc,
                                const qpid::broker::ResultCallback resCb,
-                               qpid::broker::BrokerContext* brokerCtxt) :
+                               qpid::broker::BrokerAsyncContext* brokerCtxt) :
         m_op(op),
         m_targetHandle(th),
         m_dataSrc(dataSrc),
@@ -69,7 +68,7 @@ AsyncOperation::AsyncOperation(const opCode op,
                                const qpid::broker::IdHandle* th,
                                const qpid::broker::TxnHandle* txnHandle,
                                const qpid::broker::ResultCallback resCb,
-                               qpid::broker::BrokerContext* brokerCtxt) :
+                               qpid::broker::BrokerAsyncContext* brokerCtxt) :
         m_op(op),
         m_targetHandle(th),
         m_dataSrc(0),
@@ -83,7 +82,7 @@ AsyncOperation::AsyncOperation(const opCode op,
                                const qpid::broker::DataSource* dataSrc,
                                const qpid::broker::TxnHandle* txnHandle,
                                const qpid::broker::ResultCallback resCb,
-                               qpid::broker::BrokerContext* brokerCtxt) :
+                               qpid::broker::BrokerAsyncContext* brokerCtxt) :
         m_op(op),
         m_targetHandle(th),
         m_dataSrc(dataSrc),

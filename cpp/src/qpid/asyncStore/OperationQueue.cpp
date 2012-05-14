@@ -23,7 +23,7 @@
 
 #include "OperationQueue.h"
 
-#include "qpid/broker/BrokerContext.h"
+#include "qpid/broker/BrokerAsyncContext.h"
 
 namespace qpid {
 namespace asyncStore {

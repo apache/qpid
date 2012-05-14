@@ -105,7 +105,7 @@ AsyncStoreImpl::createEnqueueHandle(qpid::broker::MessageHandle& msgHandle,
 void
 AsyncStoreImpl::submitPrepare(qpid::broker::TxnHandle& txnHandle,
                               qpid::broker::ResultCallback resultCb,
-                              qpid::broker::BrokerContext* brokerCtxt)
+                              qpid::broker::BrokerAsyncContext* brokerCtxt)
 {
     AsyncOperation* op = new AsyncOperation(AsyncOperation::TXN_PREPARE,
                                             dynamic_cast<qpid::broker::IdHandle*>(&txnHandle),
@@ -117,7 +117,7 @@ AsyncStoreImpl::submitPrepare(qpid::broker::TxnHandle& txnHandle,
 void
 AsyncStoreImpl::submitCommit(qpid::broker::TxnHandle& txnHandle,
                              qpid::broker::ResultCallback resultCb,
-                             qpid::broker::BrokerContext* brokerCtxt)
+                             qpid::broker::BrokerAsyncContext* brokerCtxt)
 {
     AsyncOperation* op = new AsyncOperation(AsyncOperation::TXN_COMMIT,
                                             dynamic_cast<qpid::broker::IdHandle*>(&txnHandle),
@@ -129,7 +129,7 @@ AsyncStoreImpl::submitCommit(qpid::broker::TxnHandle& txnHandle,
 void
 AsyncStoreImpl::submitAbort(qpid::broker::TxnHandle& txnHandle,
                             qpid::broker::ResultCallback resultCb,
-                            qpid::broker::BrokerContext* brokerCtxt)
+                            qpid::broker::BrokerAsyncContext* brokerCtxt)
 {
     AsyncOperation* op = new AsyncOperation(AsyncOperation::TXN_ABORT,
                                             dynamic_cast<qpid::broker::IdHandle*>(&txnHandle),
@@ -142,7 +142,7 @@ void
 AsyncStoreImpl::submitCreate(qpid::broker::ConfigHandle& cfgHandle,
                              const qpid::broker::DataSource* dataSrc,
                              qpid::broker::ResultCallback resultCb,
-                             qpid::broker::BrokerContext* brokerCtxt)
+                             qpid::broker::BrokerAsyncContext* brokerCtxt)
 {
     AsyncOperation* op = new AsyncOperation(AsyncOperation::CONFIG_CREATE,
                                             dynamic_cast<qpid::broker::IdHandle*>(&cfgHandle),
@@ -155,7 +155,7 @@ AsyncStoreImpl::submitCreate(qpid::broker::ConfigHandle& cfgHandle,
 void
 AsyncStoreImpl::submitDestroy(qpid::broker::ConfigHandle& cfgHandle,
                               qpid::broker::ResultCallback resultCb,
-                              qpid::broker::BrokerContext* brokerCtxt)
+                              qpid::broker::BrokerAsyncContext* brokerCtxt)
 {
     AsyncOperation* op = new AsyncOperation(AsyncOperation::CONFIG_DESTROY,
                                             dynamic_cast<qpid::broker::IdHandle*>(&cfgHandle),
@@ -168,7 +168,7 @@ void
 AsyncStoreImpl::submitCreate(qpid::broker::QueueHandle& queueHandle,
                              const qpid::broker::DataSource* dataSrc,
                              qpid::broker::ResultCallback resultCb,
-                             qpid::broker::BrokerContext* brokerCtxt)
+                             qpid::broker::BrokerAsyncContext* brokerCtxt)
 {
     AsyncOperation* op = new AsyncOperation(AsyncOperation::QUEUE_CREATE,
                                             dynamic_cast<qpid::broker::IdHandle*>(&queueHandle),
@@ -181,7 +181,7 @@ AsyncStoreImpl::submitCreate(qpid::broker::QueueHandle& queueHandle,
 void
 AsyncStoreImpl::submitDestroy(qpid::broker::QueueHandle& queueHandle,
                               qpid::broker::ResultCallback resultCb,
-                              qpid::broker::BrokerContext* brokerCtxt)
+                              qpid::broker::BrokerAsyncContext* brokerCtxt)
 {
     AsyncOperation* op = new AsyncOperation(AsyncOperation::QUEUE_DESTROY,
                                             dynamic_cast<qpid::broker::IdHandle*>(&queueHandle),
@@ -193,7 +193,7 @@ AsyncStoreImpl::submitDestroy(qpid::broker::QueueHandle& queueHandle,
 void
 AsyncStoreImpl::submitFlush(qpid::broker::QueueHandle& queueHandle,
                             qpid::broker::ResultCallback resultCb,
-                            qpid::broker::BrokerContext* brokerCtxt)
+                            qpid::broker::BrokerAsyncContext* brokerCtxt)
 {
     AsyncOperation* op = new AsyncOperation(AsyncOperation::QUEUE_FLUSH,
                                             dynamic_cast<qpid::broker::IdHandle*>(&queueHandle),
@@ -206,7 +206,7 @@ void
 AsyncStoreImpl::submitCreate(qpid::broker::EventHandle& eventHandle,
                              const qpid::broker::DataSource* dataSrc,
                              qpid::broker::ResultCallback resultCb,
-                             qpid::broker::BrokerContext* brokerCtxt)
+                             qpid::broker::BrokerAsyncContext* brokerCtxt)
 {
     AsyncOperation* op = new AsyncOperation(AsyncOperation::EVENT_CREATE,
                                             dynamic_cast<qpid::broker::IdHandle*>(&eventHandle),
@@ -221,7 +221,7 @@ AsyncStoreImpl::submitCreate(qpid::broker::EventHandle& eventHandle,
                              const qpid::broker::DataSource* dataSrc,
                              qpid::broker::TxnHandle& txnHandle,
                              qpid::broker::ResultCallback resultCb,
-                             qpid::broker::BrokerContext* brokerCtxt)
+                             qpid::broker::BrokerAsyncContext* brokerCtxt)
 {
     AsyncOperation* op = new AsyncOperation(AsyncOperation::EVENT_CREATE,
                                             dynamic_cast<qpid::broker::IdHandle*>(&eventHandle),
@@ -235,7 +235,7 @@ AsyncStoreImpl::submitCreate(qpid::broker::EventHandle& eventHandle,
 void
 AsyncStoreImpl::submitDestroy(qpid::broker::EventHandle& eventHandle,
                               qpid::broker::ResultCallback resultCb,
-                              qpid::broker::BrokerContext* brokerCtxt)
+                              qpid::broker::BrokerAsyncContext* brokerCtxt)
 {
     AsyncOperation* op = new AsyncOperation(AsyncOperation::EVENT_DESTROY,
                                             dynamic_cast<qpid::broker::IdHandle*>(&eventHandle),
@@ -248,7 +248,7 @@ void
 AsyncStoreImpl::submitDestroy(qpid::broker::EventHandle& eventHandle,
                              qpid::broker::TxnHandle& txnHandle,
                              qpid::broker::ResultCallback resultCb,
-                             qpid::broker::BrokerContext* brokerCtxt)
+                             qpid::broker::BrokerAsyncContext* brokerCtxt)
 {
     AsyncOperation* op = new AsyncOperation(AsyncOperation::EVENT_DESTROY,
                                             dynamic_cast<qpid::broker::IdHandle*>(&eventHandle),
@@ -261,7 +261,7 @@ AsyncStoreImpl::submitDestroy(qpid::broker::EventHandle& eventHandle,
 void
 AsyncStoreImpl::submitEnqueue(qpid::broker::EnqueueHandle& enqHandle,
                               qpid::broker::ResultCallback resultCb,
-                              qpid::broker::BrokerContext* brokerCtxt)
+                              qpid::broker::BrokerAsyncContext* brokerCtxt)
 {
     AsyncOperation* op = new AsyncOperation(AsyncOperation::MSG_ENQUEUE,
                                             dynamic_cast<qpid::broker::IdHandle*>(&enqHandle),
@@ -274,7 +274,7 @@ void
 AsyncStoreImpl::submitEnqueue(qpid::broker::EnqueueHandle& enqHandle,
                               qpid::broker::TxnHandle& txnHandle,
                               qpid::broker::ResultCallback resultCb,
-                              qpid::broker::BrokerContext* brokerCtxt)
+                              qpid::broker::BrokerAsyncContext* brokerCtxt)
 {
     AsyncOperation* op = new AsyncOperation(AsyncOperation::MSG_ENQUEUE,
                                             dynamic_cast<qpid::broker::IdHandle*>(&enqHandle),
@@ -287,7 +287,7 @@ AsyncStoreImpl::submitEnqueue(qpid::broker::EnqueueHandle& enqHandle,
 void
 AsyncStoreImpl::submitDequeue(qpid::broker::EnqueueHandle& enqHandle,
                               qpid::broker::ResultCallback resultCb,
-                              qpid::broker::BrokerContext* brokerCtxt)
+                              qpid::broker::BrokerAsyncContext* brokerCtxt)
 {
     AsyncOperation* op = new AsyncOperation(AsyncOperation::MSG_DEQUEUE,
                                             dynamic_cast<qpid::broker::IdHandle*>(&enqHandle),
@@ -300,7 +300,7 @@ void
 AsyncStoreImpl::submitDequeue(qpid::broker::EnqueueHandle& enqHandle,
                               qpid::broker::TxnHandle& txnHandle,
                               qpid::broker::ResultCallback resultCb,
-                              qpid::broker::BrokerContext* brokerCtxt)
+                              qpid::broker::BrokerAsyncContext* brokerCtxt)
 {
     AsyncOperation* op = new AsyncOperation(AsyncOperation::MSG_DEQUEUE,
                                             dynamic_cast<qpid::broker::IdHandle*>(&enqHandle),

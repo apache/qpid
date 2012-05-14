@@ -24,9 +24,7 @@
 #ifndef tests_storePerftools_asyncPerf_MockTransactionContext_h_
 #define tests_storePerftools_asyncPerf_MockTransactionContext_h_
 
-#include "qpid/asyncStore/AsyncOperation.h"
-
-#include "qpid/broker/BrokerContext.h"
+#include "qpid/broker/AsyncStore.h" // qpid::broker::AsyncResult
 #include "qpid/broker/TransactionalStore.h" // qpid::broker::TransactionContext
 #include "qpid/broker/TxnHandle.h"
 #include "qpid/sys/Mutex.h"
@@ -51,28 +49,11 @@ class MockTransactionContext : public qpid::broker::TransactionContext
 public:
     typedef boost::shared_ptr<MockTransactionContext> shared_ptr;
 
-    // NOTE: TransactionContext - Bad naming? This context is the async return handling context for class
-    //       MockTransactionContext async ops. Other classes using this pattern simply use XXXContext for this class
-    //       (e.g. QueueContext in MockPersistableQueue), but in this case it may be confusing.
-/*
-    class TransactionContext : public qpid::broker::BrokerContext
-    {
-    public:
-        TransactionContext(MockTransactionContext* tc,
-                           const qpid::asyncStore::AsyncOperation::opCode op);
-        virtual ~TransactionContext();
-        const char* getOp() const;
-        void destroy();
-        MockTransactionContext* m_tc;
-        const qpid::asyncStore::AsyncOperation::opCode m_op;
-    };
-*/
-
     MockTransactionContext(qpid::asyncStore::AsyncStoreImpl* store,
                            const std::string& xid = std::string());
     virtual ~MockTransactionContext();
     static void handleAsyncResult(const qpid::broker::AsyncResult* res,
-                                  qpid::broker::BrokerContext* bc);
+                                  qpid::broker::BrokerAsyncContext* bc);
 
     qpid::broker::TxnHandle& getHandle();
     bool is2pc() const;

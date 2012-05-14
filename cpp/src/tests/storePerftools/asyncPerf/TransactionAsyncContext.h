@@ -2,13 +2,14 @@
 #define tests_storePerftools_asyncPerf_TransactionAsyncContext_h_
 
 #include "MockTransactionContext.h"
-#include "qpid/broker/BrokerContext.h"
+#include "qpid/asyncStore/AsyncOperation.h"
+#include "qpid/broker/BrokerAsyncContext.h"
 
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class TransactionAsyncContext: public qpid::broker::BrokerContext {
+class TransactionAsyncContext: public qpid::broker::BrokerAsyncContext {
 public:
     TransactionAsyncContext(MockTransactionContext* tc,
                             const qpid::asyncStore::AsyncOperation::opCode op);
