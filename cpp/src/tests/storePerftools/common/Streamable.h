@@ -21,8 +21,8 @@
  * \file Streamable.h
  */
 
-#ifndef tests_storePerfTools_common_Streamable_h_
-#define tests_storePerfTools_common_Streamable_h_
+#ifndef tests_storePerftools_common_Streamable_h_
+#define tests_storePerftools_common_Streamable_h_
 
 #include <iostream>
 
@@ -76,4 +76,4 @@ public:
 
 }}} // namespace tests::storePerftools::common
 
-#endif // tests_storePerfTools_common_Streamable_h_
+#endif // tests_storePerftools_common_Streamable_h_

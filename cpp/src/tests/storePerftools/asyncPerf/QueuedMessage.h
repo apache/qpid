@@ -21,8 +21,8 @@
  * \file QueuedMessage.h
  */
 
-#ifndef tests_storePerfTools_asyncPerf_QueuedMessage_h_
-#define tests_storePerfTools_asyncPerf_QueuedMessage_h_
+#ifndef tests_storePerftools_asyncPerf_QueuedMessage_h_
+#define tests_storePerftools_asyncPerf_QueuedMessage_h_
 
 #include "qpid/broker/EnqueueHandle.h"
 #include <boost/shared_ptr.hpp>
@@ -58,4 +58,4 @@ protected:
 
 }}} // namespace tests::storePerfTools
 
-#endif // tests_storePerfTools_asyncPerf_QueuedMessage_h_
+#endif // tests_storePerftools_asyncPerf_QueuedMessage_h_

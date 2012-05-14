@@ -21,8 +21,8 @@
  * \file Thread.h
  */
 
-#ifndef tests_storePerfTools_common_Thread_h_
-#define tests_storePerfTools_common_Thread_h_
+#ifndef tests_storePerftools_common_Thread_h_
+#define tests_storePerftools_common_Thread_h_
 
 #include <pthread.h>
 #include <string>
@@ -81,4 +81,4 @@ private:
 
 }}} // namespace tests::storePerftools::common
 
-#endif // tests_storePerfTools_common_Thread_h_
+#endif // tests_storePerftools_common_Thread_h_

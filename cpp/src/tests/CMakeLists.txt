@@ -350,19 +350,19 @@ add_library (dlclose_noop MODULE dlclose_noop.c)
 
 # New journal perf test (jrnl2Perf)
 set (jrnl2Perf_SOURCES
-	storePerfTools/jrnlPerf/Journal.cpp
-	storePerfTools/jrnlPerf/JournalParameters.cpp
-	storePerfTools/jrnlPerf/PerfTest.cpp
-	storePerfTools/jrnlPerf/TestResult.cpp
+	storePerftools/jrnlPerf/Journal.cpp
+	storePerftools/jrnlPerf/JournalParameters.cpp
+	storePerftools/jrnlPerf/PerfTest.cpp
+	storePerftools/jrnlPerf/TestResult.cpp
 	
-	storePerfTools/common/Parameters.cpp
-    storePerfTools/common/PerftoolError.cpp
-	storePerfTools/common/ScopedTimable.cpp
-	storePerfTools/common/ScopedTimer.cpp
-	storePerfTools/common/Streamable.cpp
-	storePerfTools/common/TestParameters.cpp
-	storePerfTools/common/TestResult.cpp
-	storePerfTools/common/Thread.cpp
+	storePerftools/common/Parameters.cpp
+    storePerftools/common/PerftoolError.cpp
+	storePerftools/common/ScopedTimable.cpp
+	storePerftools/common/ScopedTimer.cpp
+	storePerftools/common/Streamable.cpp
+	storePerftools/common/TestParameters.cpp
+	storePerftools/common/TestResult.cpp
+	storePerftools/common/Thread.cpp
 )
 
 if (UNIX)
@@ -379,23 +379,23 @@ endif (UNIX)
 
 # Async store perf test (asyncPerf)
 set (asyncStorePerf_SOURCES
-	storePerfTools/asyncPerf/MockPersistableMessage.cpp
-	storePerfTools/asyncPerf/MockPersistableQueue.cpp
-	storePerfTools/asyncPerf/MockTransactionContext.cpp
-	storePerfTools/asyncPerf/PerfTest.cpp
-	storePerfTools/asyncPerf/QueuedMessage.cpp
-	storePerfTools/asyncPerf/TestOptions.cpp
-	storePerfTools/asyncPerf/TestResult.cpp
+	storePerftools/asyncPerf/MockPersistableMessage.cpp
+	storePerftools/asyncPerf/MockPersistableQueue.cpp
+	storePerftools/asyncPerf/MockTransactionContext.cpp
+	storePerftools/asyncPerf/PerfTest.cpp
+	storePerftools/asyncPerf/QueuedMessage.cpp
+	storePerftools/asyncPerf/TestOptions.cpp
+	storePerftools/asyncPerf/TestResult.cpp
 	
-	storePerfTools/common/Parameters.cpp
-    storePerfTools/common/PerftoolError.cpp
-	storePerfTools/common/ScopedTimable.cpp
-	storePerfTools/common/ScopedTimer.cpp
-	storePerfTools/common/Streamable.cpp
-	storePerfTools/common/TestOptions.cpp
-	storePerfTools/common/TestParameters.cpp
-	storePerfTools/common/TestResult.cpp
-	storePerfTools/common/Thread.cpp
+	storePerftools/common/Parameters.cpp
+    storePerftools/common/PerftoolError.cpp
+	storePerftools/common/ScopedTimable.cpp
+	storePerftools/common/ScopedTimer.cpp
+	storePerftools/common/Streamable.cpp
+	storePerftools/common/TestOptions.cpp
+	storePerftools/common/TestParameters.cpp
+	storePerftools/common/TestResult.cpp
+	storePerftools/common/Thread.cpp
 )
 
 if (UNIX)

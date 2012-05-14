@@ -25,9 +25,9 @@
 
 #include "MockPersistableQueue.h"
 
-#include "tests/storePerfTools/version.h"
-#include "tests/storePerfTools/common/ScopedTimer.h"
-#include "tests/storePerfTools/common/Thread.h"
+#include "tests/storePerftools/version.h"
+#include "tests/storePerftools/common/ScopedTimer.h"
+#include "tests/storePerftools/common/Thread.h"
 
 #include "qpid/asyncStore/AsyncStoreImpl.h"
 
@@ -74,8 +74,8 @@ PerfTest::prepareQueues()
     for (uint16_t i = 0; i < m_testOpts.m_numQueues; ++i) {
         std::ostringstream qname;
         qname << "queue_" << std::setw(4) << std::setfill('0') << i;
-        MockPersistableQueuePtr mpq(new MockPersistableQueue(qname.str(), m_queueArgs, m_store, m_testOpts, m_msgData));
-        mpq->asyncStoreCreate(mpq);
+        MockPersistableQueue::intrusive_ptr mpq(new MockPersistableQueue(qname.str(), m_queueArgs, m_store, m_testOpts, m_msgData));
+        mpq->asyncStoreCreate();
         m_queueList.push_back(mpq);
     }
 }
@@ -83,8 +83,8 @@ PerfTest::prepareQueues()
 void
 PerfTest::destroyQueues()
 {
-    for (std::deque<MockPersistableQueuePtr>::iterator i=m_queueList.begin(); i!=m_queueList.end(); ++i) {
-        (*i)->asyncStoreDestroy(*i);
+    for (std::deque<MockPersistableQueue::intrusive_ptr>::iterator i=m_queueList.begin(); i!=m_queueList.end(); ++i) {
+        (*i)->asyncStoreDestroy();
     }
 }
 

@@ -21,8 +21,8 @@
  * \file TestResult.h
  */
 
-#ifndef tests_storePerfTools_common_TestResult_h_
-#define tests_storePerfTools_common_TestResult_h_
+#ifndef tests_storePerftools_common_TestResult_h_
+#define tests_storePerftools_common_TestResult_h_
 
 #include "ScopedTimable.h"
 #include "Streamable.h"
@@ -41,4 +41,4 @@ public:
 
 }}} // namespace tests:storePerftools::common
 
-#endif // tests_storePerfTools_common_TestResult_h_
+#endif // tests_storePerftools_common_TestResult_h_

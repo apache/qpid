@@ -37,19 +37,34 @@ namespace asyncPerf {
 
 // --- Inner class MockPersistableQueue::QueueContext ---
 
-MockPersistableQueue::QueueContext::QueueContext(MockPersistableQueuePtr q,
+MockPersistableQueue::QueueContext::QueueContext(intrusive_ptr q,
                                                  const qpid::asyncStore::AsyncOperation::opCode op) :
+        qpid::broker::BrokerContext(),
         m_q(q),
         m_op(op)
-{}
+{
+    assert(m_q.get() != 0);
+}
 
 MockPersistableQueue::QueueContext::~QueueContext()
 {}
 
+qpid::asyncStore::AsyncOperation::opCode
+MockPersistableQueue::QueueContext::getOpCode() const
+{
+    return m_op;
+}
+
 const char*
-MockPersistableQueue::QueueContext::getOp() const
+MockPersistableQueue::QueueContext::getOpStr() const
 {
     return qpid::asyncStore::AsyncOperation::getOpStr(m_op);
+}
+
+MockPersistableQueue::intrusive_ptr
+MockPersistableQueue::QueueContext::getQueue() const
+{
+    return m_q;
 }
 
 void
@@ -92,29 +107,27 @@ MockPersistableQueue::handleAsyncResult(const qpid::broker::AsyncResult* res,
 {
     if (bc && res) {
         QueueContext* qc = dynamic_cast<QueueContext*>(bc);
-        if (qc->m_q) {
-            if (res->errNo) {
-                // TODO: Handle async failure here
-                std::cerr << "Queue name=\"" << qc->m_q->m_name << "\": Operation " << qc->getOp() << ": failure "
-                          << res->errNo << " (" << res->errMsg << ")" << std::endl;
-            } else {
-                // Handle async success here
-                switch(qc->m_op) {
-                case qpid::asyncStore::AsyncOperation::QUEUE_CREATE:
-                    qc->m_q->createComplete(qc);
-                    break;
-                case qpid::asyncStore::AsyncOperation::QUEUE_FLUSH:
-                    qc->m_q->flushComplete(qc);
-                    break;
-                case qpid::asyncStore::AsyncOperation::QUEUE_DESTROY:
-                    qc->m_q->destroyComplete(qc);
-                    break;
-                default:
-                    std::ostringstream oss;
-                    oss << "tests::storePerftools::asyncPerf::MockPersistableQueue::handleAsyncResult(): Unknown async queue operation: " << qc->m_op;
-                    throw qpid::Exception(oss.str());
-                };
-            }
+        if (res->errNo) {
+            // TODO: Handle async failure here
+            std::cerr << "Queue name=\"" << qc->getQueue()->m_name << "\": Operation " << qc->getOpStr() << ": failure "
+                      << res->errNo << " (" << res->errMsg << ")" << std::endl;
+        } else {
+            // Handle async success here
+            switch(qc->getOpCode()) {
+            case qpid::asyncStore::AsyncOperation::QUEUE_CREATE:
+                qc->getQueue()->createComplete(qc);
+                break;
+            case qpid::asyncStore::AsyncOperation::QUEUE_FLUSH:
+                qc->getQueue()->flushComplete(qc);
+                break;
+            case qpid::asyncStore::AsyncOperation::QUEUE_DESTROY:
+                qc->getQueue()->destroyComplete(qc);
+                break;
+            default:
+                std::ostringstream oss;
+                oss << "tests::storePerftools::asyncPerf::MockPersistableQueue::handleAsyncResult(): Unknown async queue operation: " << qc->getOpCode();
+                throw qpid::Exception(oss.str());
+            };
         }
     }
     if (bc) delete bc;
@@ -127,23 +140,21 @@ MockPersistableQueue::getHandle()
     return m_queueHandle;
 }
 
-// static
 void
-MockPersistableQueue::asyncStoreCreate(MockPersistableQueuePtr& qp)
+MockPersistableQueue::asyncStoreCreate()
 {
-    qp->m_store->submitCreate(qp->m_queueHandle,
-                              dynamic_cast<const qpid::broker::DataSource*>(qp.get()),
-                              &handleAsyncResult,
-                              new QueueContext(qp, qpid::asyncStore::AsyncOperation::QUEUE_CREATE));
+    m_store->submitCreate(m_queueHandle,
+                          this,
+                          &handleAsyncResult,
+                          new QueueContext(this, qpid::asyncStore::AsyncOperation::QUEUE_CREATE));
 }
 
-// static
 void
-MockPersistableQueue::asyncStoreDestroy(MockPersistableQueuePtr& qp)
+MockPersistableQueue::asyncStoreDestroy()
 {
-    qp->m_store->submitDestroy(qp->m_queueHandle,
-                               &handleAsyncResult,
-                               new QueueContext(qp, qpid::asyncStore::AsyncOperation::QUEUE_DESTROY));
+    m_store->submitDestroy(m_queueHandle,
+                           &handleAsyncResult,
+                           new QueueContext(this, qpid::asyncStore::AsyncOperation::QUEUE_DESTROY));
 }
 
 void*
@@ -307,7 +318,7 @@ void
 MockPersistableQueue::createComplete(const QueueContext* qc)
 {
 //std::cout << "~~~~~ Queue name=\"" << qc->m_q->getName() << "\": createComplete()" << std::endl << std::flush;
-    assert(qc->m_q.get() == this);
+    assert(qc->getQueue().get() == this);
 }
 
 // protected
@@ -315,7 +326,7 @@ void
 MockPersistableQueue::flushComplete(const QueueContext* qc)
 {
 //std::cout << "~~~~~ Queue name=\"" << qc->m_q->getName() << "\": flushComplete()" << std::endl << std::flush;
-    assert(qc->m_q.get() == this);
+    assert(qc->getQueue().get() == this);
 }
 
 // protected
@@ -323,7 +334,7 @@ void
 MockPersistableQueue::destroyComplete(const QueueContext* qc)
 {
 //std::cout << "~~~~~ Queue name=\"" << qc->m_q->getName() << "\": destroyComplete()" << std::endl << std::flush;
-    assert(qc->m_q.get() == this);
+    assert(qc->getQueue().get() == this);
 }
 
 // protected

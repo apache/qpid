@@ -21,10 +21,10 @@
  * \file JournalParameters.h
  */
 
-#ifndef tests_storePerfTools_jrnlPerf_JournalParameters_h_
-#define tests_storePerfTools_jrnlPerf_JournalParameters_h_
+#ifndef tests_storePerftools_jrnlPerf_JournalParameters_h_
+#define tests_storePerftools_jrnlPerf_JournalParameters_h_
 
-#include "tests/storePerfTools/common/Parameters.h"
+#include "tests/storePerftools/common/Parameters.h"
 
 #ifdef JOURNAL2
 #   include "qpid/asyncStore/jrnl2/JournalParameters.h"
@@ -128,4 +128,4 @@ public:
 
 }}} // namespace tests::storePerftools::jrnlPerf
 
-#endif // tests_storePerfTools_jrnlPerf_JournalParameters_h_
+#endif // tests_storePerftools_jrnlPerf_JournalParameters_h_

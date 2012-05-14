@@ -26,10 +26,10 @@
 #include "Journal.h"
 #include "JournalParameters.h"
 
-#include "tests/storePerfTools/version.h"
-#include "tests/storePerfTools/common/ScopedTimer.h"
-#include "tests/storePerfTools/common/TestParameters.h"
-#include "tests/storePerfTools/common/Thread.h"
+#include "tests/storePerftools/version.h"
+#include "tests/storePerftools/common/ScopedTimer.h"
+#include "tests/storePerftools/common/TestParameters.h"
+#include "tests/storePerftools/common/Thread.h"
 
 #ifdef JOURNAL2
 #   include "qpid/asyncStore/jrnl2/AsyncJournal.h"

@@ -20,8 +20,8 @@
 /**
  * \file Parameters.h
  */
-#ifndef tests_storePerfTools_common_Parameters_h_
-#define tests_storePerfTools_common_Parameters_h_
+#ifndef tests_storePerftools_common_Parameters_h_
+#define tests_storePerftools_common_Parameters_h_
 
 #include "Streamable.h"
 
@@ -40,4 +40,4 @@ public:
 
 }}} // namespace tests::storePerfTools::common
 
-#endif // tests_storePerfTools_common_Parameters_h_
+#endif // tests_storePerftools_common_Parameters_h_

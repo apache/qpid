@@ -21,11 +21,11 @@
  * \file TestResult.h
  */
 
-#ifndef tests_storePerfTools_jrnlPerf_TestResult_h_
-#define tests_storePerfTools_jrnlPerf_TestResult_h_
+#ifndef tests_storePerftools_jrnlPerf_TestResult_h_
+#define tests_storePerftools_jrnlPerf_TestResult_h_
 
-#include "tests/storePerfTools/common/TestParameters.h"
-#include "tests/storePerfTools/common/TestResult.h"
+#include "tests/storePerftools/common/TestParameters.h"
+#include "tests/storePerftools/common/TestResult.h"
 
 namespace tests {
 namespace storePerftools {
@@ -89,4 +89,4 @@ protected:
 
 }}} // namespace tests::storePerftools::jrnlPerf
 
-#endif // tests_storePerfTools_jrnlPerf_TestResult_h_
+#endif // tests_storePerftools_jrnlPerf_TestResult_h_

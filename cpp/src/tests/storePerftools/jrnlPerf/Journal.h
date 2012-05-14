@@ -21,8 +21,8 @@
  * \file Journal.h
  */
 
-#ifndef tests_storePerfTools_jrnlPerf_Journal_h_
-#define tests_storePerfTools_jrnlPerf_Journal_h_
+#ifndef tests_storePerftools_jrnlPerf_Journal_h_
+#define tests_storePerftools_jrnlPerf_Journal_h_
 
 #ifdef JOURNAL2
 #   include "qpid/asyncStore/jrnl2/AioCallback.h"
@@ -166,4 +166,4 @@ protected:
 
 }}} // namespace tests::storePerftools::jrnlPerf
 
-#endif // tests_storePerfTools_jrnlPerf_Journal_h_
+#endif // tests_storePerftools_jrnlPerf_Journal_h_

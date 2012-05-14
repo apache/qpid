@@ -21,10 +21,10 @@
  * \file TestOptions.h
  */
 
-#ifndef tests_storePerfTools_asyncPerf_TestOptions_h_
-#define tests_storePerfTools_asyncPerf_TestOptions_h_
+#ifndef tests_storePerftools_asyncPerf_TestOptions_h_
+#define tests_storePerftools_asyncPerf_TestOptions_h_
 
-#include "tests/storePerfTools/common/TestOptions.h"
+#include "tests/storePerftools/common/TestOptions.h"
 
 namespace tests {
 namespace storePerftools {
@@ -57,4 +57,4 @@ protected:
 
 }}} // namespace tests::storePerftools::asyncPerf
 
-#endif // tests_storePerfTools_asyncPerf_TestOptions_h_
+#endif // tests_storePerftools_asyncPerf_TestOptions_h_

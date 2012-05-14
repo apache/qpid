@@ -21,8 +21,8 @@
  * \file ScopedTimer.h
  */
 
-#ifndef tests_storePerfTools_common_ScopedTimer_h_
-#define tests_storePerfTools_common_ScopedTimer_h_
+#ifndef tests_storePerftools_common_ScopedTimer_h_
+#define tests_storePerftools_common_ScopedTimer_h_
 
 #include <ctime>
 
@@ -88,4 +88,4 @@ protected:
 
 }}} // namespace tests::storePerftools::common
 
-#endif // tests_storePerfTools_common_ScopedTimer_h_
+#endif // tests_storePerftools_common_ScopedTimer_h_

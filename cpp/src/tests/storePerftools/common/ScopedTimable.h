@@ -21,8 +21,8 @@
  * \file ScopedTimable.h
  */
 
-#ifndef tests_storePerfTools_common_ScopedTimable_h_
-#define tests_storePerfTools_common_ScopedTimable_h_
+#ifndef tests_storePerftools_common_ScopedTimable_h_
+#define tests_storePerftools_common_ScopedTimable_h_
 
 namespace tests {
 namespace storePerftools {
@@ -53,4 +53,4 @@ protected:
 
 }}} // namespace tests::storePerftools::common
 
-#endif // tests_storePerfTools_common_ScopedTimable_h_
+#endif // tests_storePerftools_common_ScopedTimable_h_

@@ -21,8 +21,8 @@
  * \file TestParameters.h
  */
 
-#ifndef tests_storePerfTools_common_TestParameters_h_
-#define tests_storePerfTools_common_TestParameters_h_
+#ifndef tests_storePerftools_common_TestParameters_h_
+#define tests_storePerftools_common_TestParameters_h_
 
 #include "Parameters.h"
 
@@ -112,4 +112,4 @@ public:
 
 }}} // namespace tests::storePerftools::common
 
-#endif // tests_storePerfTools_common_TestParameters_h_
+#endif // tests_storePerftools_common_TestParameters_h_

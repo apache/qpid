@@ -21,8 +21,8 @@
  * \file MockPersistableMessage.h
  */
 
-#ifndef tests_storePerfTools_asyncPerf_MockPersistableMessage_h_
-#define tests_storePerfTools_asyncPerf_MockPersistableMessage_h_
+#ifndef tests_storePerftools_asyncPerf_MockPersistableMessage_h_
+#define tests_storePerftools_asyncPerf_MockPersistableMessage_h_
 
 #include "qpid/asyncStore/AsyncOperation.h"
 #include "qpid/broker/AsyncStore.h" // qpid::broker::DataSource
@@ -101,4 +101,4 @@ protected:
 
 }}} // namespace tests::storePerftools::asyncPerf
 
-#endif // tests_storePerfTools_asyncPerf_MockPersistableMessage_h_
+#endif // tests_storePerfools_asyncPerf_MockPersistableMessage_h_

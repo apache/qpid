@@ -21,8 +21,8 @@
  * \file MockTransactionContext.h
  */
 
-#ifndef tests_storePerfTools_asyncPerf_MockTransactionContext_h_
-#define tests_storePerfTools_asyncPerf_MockTransactionContext_h_
+#ifndef tests_storePerftools_asyncPerf_MockTransactionContext_h_
+#define tests_storePerftools_asyncPerf_MockTransactionContext_h_
 
 #include "qpid/asyncStore/AsyncOperation.h"
 
@@ -96,4 +96,4 @@ protected:
 
 }}} // namespace tests:storePerftools::asyncPerf
 
-#endif // tests_storePerfTools_asyncPerf_MockTransactionContext_h_
+#endif // tests_storePerftools_asyncPerf_MockTransactionContext_h_

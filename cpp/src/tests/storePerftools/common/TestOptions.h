@@ -21,8 +21,8 @@
  * \file TestOptions.h
  */
 
-#ifndef tests_storePerfTools_common_TestOptions_h_
-#define tests_storePerfTools_common_TestOptions_h_
+#ifndef tests_storePerftools_common_TestOptions_h_
+#define tests_storePerftools_common_TestOptions_h_
 
 #include "qpid/Options.h"
 
@@ -63,4 +63,4 @@ protected:
 
 }}} // namespace tests::storePerftools::common
 
-#endif // tests_storePerfTools_common_TestOptions_h_
+#endif // tests_storePerftools_common_TestOptions_h_

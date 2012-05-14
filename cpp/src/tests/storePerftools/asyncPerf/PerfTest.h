@@ -21,12 +21,13 @@
  * \file PerfTest.h
  */
 
-#ifndef tests_storePerfTools_asyncPerf_PerfTest_h_
-#define tests_storePerfTools_asyncPerf_PerfTest_h_
+#ifndef tests_storePerftools_asyncPerf_PerfTest_h_
+#define tests_storePerftools_asyncPerf_PerfTest_h_
 
+#include "MockPersistableQueue.h"
 #include "TestResult.h"
 
-#include "tests/storePerfTools/common/Streamable.h"
+#include "tests/storePerftools/common/Streamable.h"
 
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Poller.h"
@@ -45,11 +46,7 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class MockPersistableQueue;
 class TestOptions;
-
-//typedef boost::shared_ptr<qpid::asyncStore::AsyncStoreImpl> AsyncStoreImplPtr;
-typedef boost::shared_ptr<MockPersistableQueue> MockPersistableQueuePtr;
 
 class PerfTest : public tests::storePerftools::common::Streamable
 {
@@ -69,7 +66,7 @@ protected:
     boost::shared_ptr<qpid::sys::Poller> m_poller;
     qpid::sys::Thread m_pollingThread;
     qpid::asyncStore::AsyncStoreImpl* m_store;
-    std::deque<MockPersistableQueuePtr> m_queueList;
+    std::deque<MockPersistableQueue::intrusive_ptr> m_queueList;
 
     void prepareStore();
     void prepareQueues();
@@ -79,4 +76,4 @@ protected:
 
 }}} // namespace tests::storePerftools::asyncPerf
 
-#endif // tests_storePerfTools_asyncPerf_PerfTest_h_
+#endif // tests_storePerftools_asyncPerf_PerfTest_h_

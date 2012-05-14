@@ -21,11 +21,11 @@
  * \file PerfTest.h
  */
 
-#ifndef tests_storePerfTools_jrnlPerf_PerfTest_h_
-#define tests_storePerfTools_jrnlPerf_PerfTest_h_
+#ifndef tests_storePerftools_jrnlPerf_PerfTest_h_
+#define tests_storePerftools_jrnlPerf_PerfTest_h_
 
 #include "TestResult.h"
-#include "tests/storePerfTools/common/Streamable.h"
+#include "tests/storePerftools/common/Streamable.h"
 
 #include <vector>
 
@@ -132,4 +132,4 @@ bool readArgs(int argc,
 
 }}} // namespace tests::storePerftools::jrnlPerf
 
-#endif // tests_storePerfTools_jrnlPerf_PerfTest_h_
+#endif // tests_storePerftools_jrnlPerf_PerfTest_h_

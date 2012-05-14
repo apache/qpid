@@ -21,8 +21,8 @@
  * \file MockPersistableQueue.h
  */
 
-#ifndef tests_storePerfTools_asyncPerf_MockPersistableQueue_h_
-#define tests_storePerfTools_asyncPerf_MockPersistableQueue_h_
+#ifndef tests_storePerftools_asyncPerf_MockPersistableQueue_h_
+#define tests_storePerftools_asyncPerf_MockPersistableQueue_h_
 
 #include "qpid/asyncStore/AsyncOperation.h"
 #include "qpid/broker/AsyncStore.h" // qpid::broker::DataSource
@@ -32,6 +32,7 @@
 #include "qpid/sys/Condition.h"
 #include "qpid/sys/Mutex.h"
 
+#include <boost/intrusive_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <deque>
 
@@ -47,25 +48,28 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class MockPersistableQueue;
 class QueuedMessage;
 class TestOptions;
 
-typedef boost::shared_ptr<MockPersistableQueue> MockPersistableQueuePtr;
 typedef boost::shared_ptr<QueuedMessage> QueuedMessagePtr;
 
 class MockPersistableQueue : public qpid::broker::PersistableQueue, public qpid::broker::DataSource
 {
 public:
+    typedef boost::intrusive_ptr<MockPersistableQueue> intrusive_ptr;
+
     class QueueContext : public qpid::broker::BrokerContext
     {
     public:
-        QueueContext(MockPersistableQueuePtr q,
+        QueueContext(intrusive_ptr q,
                      const qpid::asyncStore::AsyncOperation::opCode op);
         virtual ~QueueContext();
-        const char* getOp() const;
+        qpid::asyncStore::AsyncOperation::opCode getOpCode() const;
+        const char* getOpStr() const;
+        intrusive_ptr getQueue() const;
         void destroy();
-        MockPersistableQueuePtr m_q;
+    protected:
+        intrusive_ptr m_q;
         const qpid::asyncStore::AsyncOperation::opCode m_op;
     };
 
@@ -80,8 +84,8 @@ public:
     static void handleAsyncResult(const qpid::broker::AsyncResult* res,
                                   qpid::broker::BrokerContext* bc);
     qpid::broker::QueueHandle& getHandle();
-    static void asyncStoreCreate(MockPersistableQueuePtr& qp);
-    static void asyncStoreDestroy(MockPersistableQueuePtr& qp);
+    void asyncStoreCreate();
+    void asyncStoreDestroy();
 
     // --- Performance test thread entry points ---
     void* runEnqueues();
@@ -133,4 +137,4 @@ protected:
 
 }}} // namespace tests::storePerftools::asyncPerf
 
-#endif // tests_storePerfTools_asyncPerf_MockPersistableQueue_h_
+#endif // tests_storePerftools_asyncPerf_MockPersistableQueue_h_
