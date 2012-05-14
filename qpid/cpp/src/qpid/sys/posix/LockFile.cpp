@@ -46,7 +46,7 @@ LockFile::LockFile(const std::string& path_, bool create)
     errno = 0;
     int flags=create ? O_WRONLY|O_CREAT|O_NOFOLLOW : O_RDWR;
     int fd = ::open(path.c_str(), flags, 0644);
-    if (fd < 0) throw ErrnoException("Cannot open " + path, errno);
+    if (fd < 0) throw ErrnoException("Cannot open lock file " + path, errno);
     if (::lockf(fd, F_TLOCK, 0) < 0) {
         ::close(fd);
         throw ErrnoException("Cannot lock " + path, errno);
