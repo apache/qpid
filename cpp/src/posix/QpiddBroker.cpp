@@ -154,8 +154,14 @@ int QpiddBroker::execute (QpiddOptions *options) {
         throw Exception("Internal error obtaining platform options");
 
     if (myOptions->daemon.check || myOptions->daemon.quit) {
-        pid_t pid = Daemon::getPid(myOptions->daemon.piddir,
-                                   options->broker.port);
+        pid_t pid;
+        try {
+            pid = Daemon::getPid(myOptions->daemon.piddir, options->broker.port);
+        } catch (const ErrnoException& e) {
+            // This is not a critical error, usually means broker is not running
+            QPID_LOG(notice, "Cannot stop broker: " << e.what());
+            return 1;
+        }
         if (pid < 0) 
             return 1;
         if (myOptions->daemon.check)
