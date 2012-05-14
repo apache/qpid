@@ -112,17 +112,17 @@ public class Link
 
     public Map<String, Object> getDeclareProperties()
     {
-        return Collections.unmodifiableMap(_xDeclareProps);
+        return _xDeclareProps;
     }
 
     public List<Object> getBindingProperties()
     {
-        return Collections.unmodifiableList(_xBindingProps);
+        return _xBindingProps;
     }
 
     public Map<String, Object> getSubscribeProperties()
     {
-        return Collections.unmodifiableMap(_xSubscribeProps);
+        return _xSubscribeProps;
     }
 
 }

@@ -32,6 +32,7 @@ import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.QpidDestination.DestinationType;
 import org.apache.qpid.messaging.Address;
+import org.apache.qpid.messaging.AddressRaw;
 import org.apache.qpid.messaging.address.AddressException;
 import org.apache.qpid.messaging.address.AddressPolicy;
 import org.apache.qpid.messaging.address.Link;
@@ -40,6 +41,7 @@ import org.apache.qpid.messaging.address.Node;
 import org.apache.qpid.messaging.address.NodeType;
 import org.apache.qpid.messaging.util.AddressHelper;
 import org.apache.qpid.url.AMQBindingURL;
+import org.apache.qpid.url.BindingURL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -138,8 +140,8 @@ public class DestinationStringParser
             str = str.substring(DestSyntax.ADDR.name().length() + 1);
         }
 
-        Address addr = Address.parse(str);
-        AddressHelper helper = new AddressHelper(addr);
+        AddressRaw rawAddr = Address.parse(str);
+        AddressHelper helper = new AddressHelper(rawAddr);
 
         
         if (DestinationType.TOPIC == type)
@@ -158,15 +160,12 @@ public class DestinationStringParser
         }
 
         
-        Node node = new Node(addr.getName(), helper.getNodeType(), helper.isNodeDurable(), 
+        Node node = new Node(rawAddr.getName(), helper.getNodeType(), helper.isNodeDurable(),
                              AddressPolicy.getAddressPolicy(helper.getCreate()), 
                              AddressPolicy.getAddressPolicy(helper.getAssert()),
                              AddressPolicy.getAddressPolicy(helper.getDelete()),
                              helper.getNodeDeclareArgs(),
                              helper.getNodeBindings());
-
-        addr.setNode(node);
-
 
         Link link = new Link(helper.getLinkName(),
                              helper.isLinkDurable(),
@@ -176,10 +175,8 @@ public class DestinationStringParser
                              helper.getLinkDeclareArgs(),
                              helper.getLinkBindings(),
                              helper.getLinkSubscribeArgs());
-        addr.setLink(link);
 
-        addr.markReadOnly();
-        return addr;
+        return new Address(rawAddr.getName(),rawAddr.getSubject(),node,link);
     }
 
     public static Address parseBURLString(String str, DestinationType type) throws AddressException
@@ -201,68 +198,73 @@ public class DestinationStringParser
             throw ex;
         }
 
-        Address addr;
-        
+        String name;
+        String subject;
         String linkName;
-        
-        List<Object> nodeBindings;
-        
+
+        String exchangeName = burl.getExchangeName().asString();
+        String queueName = burl.getQueueName().asString();
+        String routingKey = burl.getRoutingKey().asString();
+        boolean durable = Boolean.getBoolean(burl.getOption(BindingURL.OPTION_DURABLE));
+        boolean autoDelete = Boolean.getBoolean(burl.getOption(BindingURL.OPTION_AUTODELETE));
+        boolean exclusive = Boolean.getBoolean(burl.getOption(BindingURL.OPTION_EXCLUSIVE));
+        boolean browse = Boolean.getBoolean(burl.getOption(BindingURL.OPTION_BROWSE)); // TODO
+
+        List<Object> nodeBindings  = Collections.EMPTY_LIST;
+        Map<String,Object> declareArgs = Collections.EMPTY_MAP;
+
         if (type == DestinationType.TOPIC)
         {
-            addr = new Address(burl.getExchangeName().asString(),
-                    burl.getRoutingKey().asString(),
-                    Collections.emptyMap());
-
-            linkName = burl.getQueueName().asString();
+            name = exchangeName;
+            subject = routingKey;
+            linkName = queueName;
             nodeBindings = Collections.emptyList();
         }
         else
         {
-            addr = new Address(burl.getQueueName().asString(),
-                    burl.getRoutingKey().asString(),
-                    Collections.emptyMap());
+            name = queueName;
+            subject = routingKey;
 
             List<Object> bindings = new ArrayList<Object>();
             Map<String,Object> binding = new HashMap<String,Object>();
-            binding.put(AddressHelper.EXCHANGE, burl.getExchangeName().asString());
-            binding.put(AddressHelper.KEY, burl.getRoutingKey());
+            binding.put(AddressHelper.EXCHANGE, exchangeName);
+            binding.put(AddressHelper.KEY, routingKey);
             bindings.add(binding);
             nodeBindings = bindings;
             linkName = null; // ??? This doesn't seem right
+
+            declareArgs = new HashMap<String,Object>();
+            declareArgs.put(AddressHelper.AUTO_DELETE, autoDelete);
+            declareArgs.put(AddressHelper.EXCLUSIVE, exclusive);
         }
 
         for (AMQShortString key: burl.getBindingKeys())
         {
             Map<String,Object> binding = new HashMap<String,Object>();
-            binding.put(AddressHelper.EXCHANGE, burl.getExchangeName().asString());
+            binding.put(AddressHelper.EXCHANGE, exchangeName);
             binding.put(AddressHelper.KEY, key.asString());
             nodeBindings.add(binding);
         }
 
         Node node = 
-                new Node(null, // ?? This seems wrong 
+                new Node(name,
                          type == DestinationType.TOPIC ? NodeType.TOPIC : NodeType.QUEUE,
-                         false, // ?? should this not be determined
+                         durable,
                          AddressPolicy.NEVER, // ?? should this not be determined
                          AddressPolicy.NEVER, // ?? should this not be determined
                          AddressPolicy.NEVER, // ?? should this not be determined
-                         Collections.EMPTY_MAP, // ?? should this not be determined
+                         declareArgs,
                          nodeBindings);
-        
-        addr.setNode(node);
 
         Link link = new Link(linkName, 
-                false, // ?? should this not be determined
-                Reliability.AT_LEAST_ONCE, // ?? should this not be determined 
-                0, // ?? should this not be determined
-                0, // ?? should this not be determined
-                Collections.EMPTY_MAP, // ?? should this not be determined
-                Collections.EMPTY_LIST, // ?? should this not be determined
-                Collections.EMPTY_MAP); // ?? should this not be determined
+                             durable,
+                             Reliability.AT_LEAST_ONCE, // ?? should this not be determined
+                             0, // ?? should this not be determined
+                             0, // ?? should this not be determined
+                             Collections.EMPTY_MAP, // ?? should this not be determined
+                             Collections.EMPTY_LIST, // ?? should this not be determined
+                             Collections.EMPTY_MAP); // ?? should this not be determined
         
-        addr.setLink(link);
-
-        addr.markReadOnly();
-        return addr;
+         return new Address(name,subject,node,link);
     }
 }
