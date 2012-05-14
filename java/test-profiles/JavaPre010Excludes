@@ -66,4 +66,5 @@ org.apache.qpid.test.unit.ct.DurableSubscriberTest#testResubscribeWithChangedSel
 
 // JCA system tests require XA support (should look to see if we can reduce scope of excludes here)
 org.apache.qpid.ra.QpidRAConnectionTest#*
+org.apache.qpid.ra.QpidRAXAResourceTest#*
 
