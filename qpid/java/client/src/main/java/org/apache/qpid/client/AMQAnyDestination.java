@@ -22,6 +22,7 @@ package org.apache.qpid.client;
 
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.messaging.Address;
+import org.apache.qpid.messaging.AddressRaw;
 import org.apache.qpid.url.BindingURL;
 
 import javax.jms.JMSException;
@@ -55,7 +56,7 @@ public class AMQAnyDestination extends AMQDestination implements Queue, Topic
         super(str);
     }
     
-    public AMQAnyDestination(Address addr) throws Exception
+    public AMQAnyDestination(AddressRaw addr) throws Exception
     {
         super(addr);
     }

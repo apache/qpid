@@ -29,6 +29,7 @@ import org.apache.qpid.client.messaging.address.Node.QueueNode;
 import org.apache.qpid.configuration.Accessor;
 import org.apache.qpid.configuration.Accessor.MapAccessor;
 import org.apache.qpid.messaging.Address;
+import org.apache.qpid.messaging.AddressRaw;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -68,12 +69,12 @@ public class AddressHelper
     public static final String ARGUMENTS = "arguments";
     public static final String RELIABILITY = "reliability";
 
-    private Address address;
+    private AddressRaw address;
     private Accessor addressProps;
     private Accessor nodeProps;
     private Accessor linkProps;
 
-    public AddressHelper(Address address)
+    public AddressHelper(AddressRaw address)
     {
         this.address = address;
         addressProps = new MapAccessor(address.getOptions());

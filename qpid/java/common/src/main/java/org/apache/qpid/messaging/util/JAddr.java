@@ -21,6 +21,7 @@
 package org.apache.qpid.messaging.util;
 
 import org.apache.qpid.messaging.Address;
+import org.apache.qpid.messaging.AddressRaw;
 
 import static org.apache.qpid.messaging.util.PyPrint.pprint;
 
@@ -59,7 +60,7 @@ public class JAddr
         {
             try
             {
-                Address address = Address.parse(addr.toString());
+                AddressRaw address = Address.parse(addr.toString());
                 System.out.println(pprint_address(address));
             }
             catch (ParseError e)
@@ -86,7 +87,7 @@ public class JAddr
         }
     }
 
-    private static String pprint_address(Address addr)
+    private static String pprint_address(AddressRaw addr)
     {
         return String.format("NAME: %s\nSUBJECT: %s\nOPTIONS: %s",
                              pprint(addr.getName()),

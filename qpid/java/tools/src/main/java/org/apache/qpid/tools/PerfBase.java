@@ -37,6 +37,7 @@ import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession_0_10;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.messaging.Address;
+import org.apache.qpid.messaging.AddressRaw;
 
 public class PerfBase
 {
@@ -156,18 +157,18 @@ public class PerfBase
         if (params.isUseUniqueDests())
         {
             System.out.println("Prefix : " + prefix);
-            Address addr = Address.parse(params.getAddress());
+            AddressRaw addr = Address.parse(params.getAddress());
             AMQAnyDestination temp = new AMQAnyDestination(params.getAddress());
             int type = ((AMQSession_0_10)session).resolveAddressType(temp);
 
             if ( type == AMQDestination.TOPIC_TYPE)
             {
-                addr = new Address(addr.getName(),addr.getSubject() + "." + prefix,addr.getOptions());
+                addr = new AddressRaw(addr.getName(),addr.getSubject() + "." + prefix,addr.getOptions());
                 System.out.println("Setting subject : " + addr);
             }
             else
             {
-                addr = new Address(addr.getName() + "_" + prefix,addr.getSubject(),addr.getOptions());
+                addr = new AddressRaw(addr.getName() + "_" + prefix,addr.getSubject(),addr.getOptions());
                 System.out.println("Setting name : " + addr);
             }
 

@@ -20,8 +20,31 @@
  */
 package org.apache.qpid.test.client.destination;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+import javax.jms.Connection;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.QueueBrowser;
+import javax.jms.QueueReceiver;
+import javax.jms.QueueSession;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import javax.jms.Topic;
+import javax.jms.TopicSession;
+import javax.jms.TopicSubscriber;
+import javax.naming.Context;
+import javax.naming.InitialContext;
 
 import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQConnection;
@@ -33,19 +56,11 @@ import org.apache.qpid.client.messaging.address.Node.ExchangeNode;
 import org.apache.qpid.client.messaging.address.Node.QueueNode;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
 import org.apache.qpid.messaging.Address;
+import org.apache.qpid.messaging.AddressRaw;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.transport.ExecutionErrorCode;
-
-import javax.jms.*;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AddressBasedDestinationTest extends QpidBrokerTestCase
 {
@@ -381,7 +396,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                 (AMQSession_0_10)jmsSession).isQueueBound("amq.topic", 
                     dest.getAddressName(),"a.#", null));
         
-        Address a = Address.parse(headersBinding);
+        AddressRaw a = Address.parse(headersBinding);
         assertTrue("Queue not bound as expected",(
                 (AMQSession_0_10)jmsSession).isQueueBound("amq.match", 
                     dest.getAddressName(),null, a.getOptions()));

@@ -30,6 +30,7 @@ import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.messaging.Address;
+import org.apache.qpid.messaging.AddressRaw;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.url.URLHelper;
@@ -172,7 +173,7 @@ public abstract class AMQDestination implements Destination, Referenceable
     private DestSyntax _destSyntax = DestSyntax.ADDR;
 
     private AddressHelper _addrHelper;
-    private Address _address;
+    private AddressRaw _address;
     private int _addressType = AMQDestination.UNKNOWN_TYPE;
     private String _name;
     private String _subject;
@@ -205,7 +206,7 @@ public abstract class AMQDestination implements Destination, Referenceable
     {  
     }
 
-    protected AMQDestination(Address address) throws Exception
+    protected AMQDestination(AddressRaw address) throws Exception
     {
         this._address = address;
         getInfoFromAddress();
@@ -671,7 +672,7 @@ public abstract class AMQDestination implements Destination, Referenceable
          }
          else
          {
-             Address address = createAddressFromString(str);
+             AddressRaw address = createAddressFromString(str);
              return new AMQAnyDestination(address);
          }
     }
@@ -717,11 +718,11 @@ public abstract class AMQDestination implements Destination, Referenceable
         }
     }
     
-    public Address getAddress() {
+    public AddressRaw getAddress() {
         return _address;
     }
     
-    protected void setAddress(Address addr) {
+    protected void setAddress(AddressRaw addr) {
         _address = addr;
     }
     
@@ -828,7 +829,7 @@ public abstract class AMQDestination implements Destination, Referenceable
         _addressResolved.set(addressResolved);
     }
     
-    private static Address createAddressFromString(String str)
+    private static AddressRaw createAddressFromString(String str)
     {
         return Address.parse(str);
     }

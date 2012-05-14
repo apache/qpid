@@ -23,6 +23,7 @@ package org.apache.qpid.client;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.messaging.Address;
+import org.apache.qpid.messaging.AddressRaw;
 import org.apache.qpid.url.BindingURL;
 
 import javax.jms.InvalidDestinationException;
@@ -37,7 +38,7 @@ public class AMQTopic extends AMQDestination implements Topic
         super(address);
     }
 
-    public AMQTopic(Address address) throws Exception
+    public AMQTopic(AddressRaw address) throws Exception
     {
         super(address);
     }
