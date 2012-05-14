@@ -20,7 +20,7 @@
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
 #include "qpid/broker/Broker.h"
-
+#include <boost/bind.hpp>
 
 namespace qpid {
 namespace ha {
@@ -66,7 +66,14 @@ struct HaPlugin : public Plugin {
 
     void initialize(Plugin::Target& target) {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
-        if (broker) haBroker.reset(new ha::HaBroker(*broker, settings));
+        if (broker) {
+            haBroker.reset(new ha::HaBroker(*broker, settings));
+            broker->addFinalizer(boost::bind(&HaPlugin::finalize, this));
+        }
+    }
+
+    void finalize() {
+        haBroker.reset();
     }
 };
 
