@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.messaging.util;
 
-import org.apache.qpid.messaging.Address;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.qpid.messaging.AddressRaw;
 
 
 /**
@@ -236,14 +236,14 @@ public class AddressParser extends Parser
         super(wlex(input));
     }
 
-    public Address parse()
+    public AddressRaw parse()
     {
-        Address result = address();
+        AddressRaw result = address();
         eat(EOF);
         return result;
     }
 
-    public Address address()
+    public AddressRaw address()
     {
         String name = toks2str(eat_until(SLASH, SEMI, EOF));
 
@@ -278,7 +278,7 @@ public class AddressParser extends Parser
             options = null;
         }
 
-        return new Address(name, subject, options);
+        return new AddressRaw(name, subject, options);
     }
 
     public Map<Object,Object> map()

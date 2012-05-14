@@ -20,34 +20,23 @@
  */
 package org.apache.qpid.messaging;
 
-import org.apache.qpid.messaging.address.Link;
-import org.apache.qpid.messaging.address.Node;
-import org.apache.qpid.messaging.util.AddressParser;
+import static org.apache.qpid.messaging.util.PyPrint.pprint;
 
-/**
- * Address
- *
- */
-public class Address
+import java.util.Map;
+
+public class AddressRaw
 {
-    private final String _name;
-    private final String _subject;
-    private final Node _node;
-    private final Link _link;
-    private final String _toString;
+    private String _name;
+    private String _subject;
+    private Map _options;
+    private final String _myToString;
 
-    public static AddressRaw parse(String address)
-    {
-        return new AddressParser(address).parse();
-    }
-
-    public Address (String name, String subject, Node node, Link link)
+    public AddressRaw(String name, String subject, Map options)
     {
         this._name = name;
         this._subject = subject;
-        this._node = node;
-        this._link = link;
-        this._toString = null; // TODO
+        this._options = options;
+        this._myToString = String.format("%s/%s; %s", pprint(_name), pprint(_subject), pprint(_options));
     }
 
     public String getName()
@@ -60,18 +49,13 @@ public class Address
         return _subject;
     }
 
+    public Map getOptions()
+    {
+        return _options;
+    }
+
     public String toString()
     {
-        return _toString;
-    }
-
-    public Node getNode()
-    {
-        return _node;
-    }
-
-    public Link getLink()
-    {
-        return _link;
+        return _myToString;
     }
 }

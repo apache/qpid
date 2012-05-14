@@ -26,6 +26,7 @@ import java.util.Map;
 
 import org.apache.qpid.configuration.Accessor.NestedMapAccessor;
 import org.apache.qpid.messaging.Address;
+import org.apache.qpid.messaging.AddressRaw;
 import org.apache.qpid.messaging.address.NodeType;
 import org.apache.qpid.messaging.address.AddressException;
 import org.slf4j.Logger;
@@ -64,14 +65,14 @@ public class AddressHelper
    public static final String ARGUMENTS = "arguments";
    public static final String RELIABILITY = "reliability";
 
-   private Address address;
+   private AddressRaw address;
    private NestedMapAccessor addressProps;
    private NestedMapAccessor nodeProps;
    private NestedMapAccessor linkProps;
 
    private static final Logger _logger = LoggerFactory.getLogger(AddressHelper.class);
 
-   public AddressHelper(Address address)
+   public AddressHelper(AddressRaw address)
    {
        this.address = address;
        addressProps = new NestedMapAccessor(address.getOptions());
