@@ -35,6 +35,7 @@
       <or>
         <istrue value="${download-jfree}"/>
         <istrue value="${optional.dependencies}"/>
+        <istrue value="${optional}"/>
       </or>
     </condition>
 

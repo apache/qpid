@@ -31,6 +31,7 @@
       <or>
         <istrue value="${download-bdb}"/>
         <istrue value="${optional.dependencies}"/>
+        <istrue value="${optional}"/>
       </or>
     </condition>
 
