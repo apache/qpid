@@ -48,7 +48,6 @@ using namespace framing;
 const std::string QPID_HA_EVENT_PREFIX("qpid.ha-event:");
 const std::string QueueReplicator::DEQUEUE_EVENT_KEY(QPID_HA_EVENT_PREFIX+"dequeue");
 const std::string QueueReplicator::POSITION_EVENT_KEY(QPID_HA_EVENT_PREFIX+"position");
-const std::string QueueReplicator::READY_EVENT_KEY(QPID_HA_EVENT_PREFIX+"ready");
 
 std::string QueueReplicator::replicatorName(const std::string& queueName) {
     return QPID_REPLICATOR_ + queueName;
@@ -62,11 +61,9 @@ bool QueueReplicator::isEventKey(const std::string key) {
 
 QueueReplicator::QueueReplicator(const LogPrefix& lp,
                                  boost::shared_ptr<Queue> q,
-                                 boost::shared_ptr<Link> l,
-                                 Counter* counter)
+                                 boost::shared_ptr<Link> l)
     : Exchange(replicatorName(q->getName()), 0, q->getBroker()),
-      logPrefix(lp), queue(q), link(l),
-      unreadyCount(counter)
+      logPrefix(lp), queue(q), link(l)
 {
     framing::Uuid uuid(true);
     bridgeName = replicatorName(q->getName()) + std::string(".") + uuid.str();
@@ -115,8 +112,6 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     framing::AMQP_ServerProxy peer(sessionHandler.out);
     const qmf::org::apache::qpid::broker::ArgsLinkBridge& args(bridge.getArgs());
     framing::FieldTable settings;
-
-    if (unreadyCount) ++(*unreadyCount); // We are unready.
 
     // FIXME aconway 2011-12-09: Failover optimization removed.
     // There was code here to re-use messages already on the backup
@@ -185,10 +180,6 @@ void QueueReplicator::route(Deliverable& msg)
                              << queue->getPosition() << " to " << position));
             }
             queue->setPosition(position);
-        }
-        else if (key == READY_EVENT_KEY) {
-            QPID_LOG(info, logPrefix << "caught up at " << queue->getPosition());
-            if (unreadyCount) --(*unreadyCount); // We are now ready.
         }
         // Ignore unknown event keys, may be introduced in later versions.
     }

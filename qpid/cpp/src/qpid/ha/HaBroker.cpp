@@ -133,7 +133,7 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
               // FIXME aconway 2012-04-27: don't allow promotion in catch-up
               // QPID_LOG(error, logPrefix << "Still catching up, cannot be promoted.");
               // throw Exception("Still catching up, cannot be promoted.");
-              promoting(l);     // FIXME aconway 2012-04-27: disallow
+              promoting(l);
               break;
             case READY: promoting(l); break;
             case PROMOTING: break;

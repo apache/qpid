@@ -111,14 +111,13 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
     framing::SequenceSet dequeues;
     framing::SequenceNumber backupPosition;
     framing::SequenceNumber readyPosition;
-    bool sentReady;
+    bool ready;
 
     void complete(const broker::QueuedMessage&, const sys::Mutex::ScopedLock&);
     void cancelComplete(const Delayed::value_type& v, const sys::Mutex::ScopedLock&);
     void sendDequeueEvent(const sys::Mutex::ScopedLock&);
     void sendPositionEvent(framing::SequenceNumber);
-    void sendReady(const sys::Mutex::ScopedLock&);
-    void sendReadyEvent(const sys::Mutex::ScopedLock&);
+    void setReady(const sys::Mutex::ScopedLock&);
     void sendEvent(const std::string& key, framing::Buffer&);
 
     /** Dummy consumer used to get the front position on the queue */

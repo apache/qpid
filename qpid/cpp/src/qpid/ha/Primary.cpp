@@ -63,7 +63,7 @@ Primary::Primary(HaBroker& b) :
     }
 }
 
-void Primary::addReplica(const std::string& q) {
+void Primary::readyReplica(const std::string& q) {
     sys::Mutex::ScopedLock l(lock);
     if (!activated) {
         QueueCounts::iterator i = queues.find(q);
