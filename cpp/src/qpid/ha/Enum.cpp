@@ -53,7 +53,7 @@ template <> const char* Enum<ReplicateLevel>::NAMES[] = {
 template <> const size_t Enum<ReplicateLevel>::N = 3;
 
 template <> const char* Enum<BrokerStatus>::NAMES[] = {
-    "joining", "catchup", "ready", "promoting", "active",
+    "joining", "catchup", "ready", "recovering", "active",
     "standalone", "broker status"
 };
 template <> const size_t Enum<BrokerStatus>::N = 7;

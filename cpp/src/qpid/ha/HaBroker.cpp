@@ -85,8 +85,8 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
 
 HaBroker::~HaBroker() {}
 
-void HaBroker::promoting(sys::Mutex::ScopedLock&) {
-    setStatus(PROMOTING);
+void HaBroker::recover(sys::Mutex::ScopedLock&) {
+    setStatus(RECOVERING);
     backup.reset();                    // No longer replicating, close link.
     primary.reset(new Primary(*this)); // Starts primary-ready check.
 }
@@ -133,10 +133,10 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
               // FIXME aconway 2012-04-27: don't allow promotion in catch-up
               // QPID_LOG(error, logPrefix << "Still catching up, cannot be promoted.");
               // throw Exception("Still catching up, cannot be promoted.");
-              promoting(l);
+              recover(l);
               break;
-            case READY: promoting(l); break;
-            case PROMOTING: break;
+            case READY: recover(l); break;
+            case RECOVERING: break;
             case ACTIVE: break;
             case STANDALONE: break;
           }
@@ -237,12 +237,12 @@ namespace {
 bool checkTransition(BrokerStatus from, BrokerStatus to) {
     // Legal state transitions. Initial state is JOINING, ACTIVE is terminal.
     static const BrokerStatus TRANSITIONS[][2] = {
-        { CATCHUP, PROMOTING }, // FIXME aconway 2012-04-27: illegal transition, allow while fixing behavior
+        { CATCHUP, RECOVERING }, // FIXME aconway 2012-04-27: illegal transition, allow while fixing behavior
         { JOINING, CATCHUP },   // Connected to primary
         { JOINING, ACTIVE },    // Chosen as initial primary.
         { CATCHUP, READY },     // Caught up all queues, ready to take over.
-        { READY, PROMOTING },   // Chosen as new primary
-        { PROMOTING, ACTIVE }
+        { READY, RECOVERING },   // Chosen as new primary
+        { RECOVERING, ACTIVE }
     };
     static const size_t N = sizeof(TRANSITIONS)/sizeof(TRANSITIONS[0]);
     for (size_t i = 0; i < N; ++i) {

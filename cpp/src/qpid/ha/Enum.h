@@ -81,13 +81,13 @@ enum BrokerStatus {
     JOINING,                    ///< New broker, looking for primary
     CATCHUP,                    ///< Backup: Connected to primary, catching up on state.
     READY,                      ///< Backup: Caught up, ready to take over.
-    PROMOTING,                  ///< Primary: waiting for backups to connect & sync
+    RECOVERING,                 ///< Primary: waiting for backups to connect & sync
     ACTIVE,                     ///< Primary: actively serving clients.
     STANDALONE                  ///< Not part of a cluster.
 };
 
 inline bool isPrimary(BrokerStatus s) {
-    return s  == PROMOTING || s == ACTIVE || s == STANDALONE;
+    return s  == RECOVERING || s == ACTIVE || s == STANDALONE;
 }
 
 inline bool isBackup(BrokerStatus s) { return !isPrimary(s); }
