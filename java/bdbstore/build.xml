@@ -23,10 +23,6 @@
 
     <import file="../module.xml" />
 
-    <property name="bdb.lib.dir" value="${project.root}/lib/bdbstore" />
-    <property name="bdb.version" value="5.0.34" />
-    <property name="bdb.jar.file" value="${bdb.lib.dir}/je-${bdb.version}.jar" />
-
     <condition property="download.bdb.jar">
       <or>
         <istrue value="${download-bdb}"/>
@@ -37,7 +33,7 @@
 
     <!--check whether the BDB jar is present, possibly after download-->
     <target name="check-bdb-jar">
-        <available file="${bdb.jar.file}" type="file" property="bdb.jar.available"/>
+        <available file="${project.root}/${bdb-je}" type="file" property="bdb.jar.available"/>
     </target>
 
     <!--echo that BDB is required if it isnt present, with associated licencing note-->
