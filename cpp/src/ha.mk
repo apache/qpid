@@ -26,16 +26,21 @@ ha_la_SOURCES =					\
   qpid/ha/Backup.cpp				\
   qpid/ha/Backup.h				\
   qpid/ha/BrokerReplicator.cpp			\
-  qpid/ha/BrokerReplicator.h                    \
+  qpid/ha/BrokerReplicator.h			\
   qpid/ha/ConnectionExcluder.cpp		\
   qpid/ha/ConnectionExcluder.h			\
+  qpid/ha/Counter.h				\
+  qpid/ha/Enum.cpp				\
+  qpid/ha/Enum.h				\
   qpid/ha/HaBroker.cpp				\
   qpid/ha/HaBroker.h				\
   qpid/ha/HaPlugin.cpp				\
+  qpid/ha/LogPrefix.cpp				\
+  qpid/ha/LogPrefix.h				\
+  qpid/ha/Primary.cpp				\
+  qpid/ha/Primary.h				\
   qpid/ha/QueueReplicator.cpp			\
   qpid/ha/QueueReplicator.h			\
-  qpid/ha/ReplicateLevel.cpp			\
-  qpid/ha/ReplicateLevel.h			\
   qpid/ha/ReplicatingSubscription.cpp		\
   qpid/ha/ReplicatingSubscription.h		\
   qpid/ha/Settings.h

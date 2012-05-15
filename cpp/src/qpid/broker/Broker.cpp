@@ -1257,5 +1257,19 @@ void Broker::unbind(const std::string& queueName,
     }
 }
 
+// FIXME aconway 2012-04-27: access to linkClientProperties is
+// not properly thread safe, you could lose fields if 2 threads
+// attempt to add a field concurrently.
+
+framing::FieldTable Broker::getLinkClientProperties() const {
+    sys::Mutex::ScopedLock l(linkClientPropertiesLock);
+    return linkClientProperties;
+}
+
+void Broker::setLinkClientProperties(const framing::FieldTable& ft) {
+    sys::Mutex::ScopedLock l(linkClientPropertiesLock);
+    linkClientProperties = ft;
+}
+
 }} // namespace qpid::broker
 

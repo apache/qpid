@@ -40,6 +40,7 @@ struct Options : public qpid::Options {
             ("ha-replicate",
              optValue(settings.replicateDefault, "LEVEL"),
             "Replication level for creating queues and exchanges if there is no qpid.replicate argument supplied. LEVEL is 'none', 'configuration' or 'all'")
+            // FIXME aconway 2012-04-30: required-backups? Also need timeout.
             ("ha-expected-backups", optValue(settings.expectedBackups, "N"),
              "Number of backups expected to be active in the HA cluster.")
             ("ha-username", optValue(settings.username, "USER"),
@@ -77,6 +78,6 @@ struct HaPlugin : public Plugin {
     }
 };
 
-static HaPlugin instance; // Static initialization.
+HaPlugin instance;              // Static initialization.
 
 }} // namespace qpid::ha

@@ -22,7 +22,9 @@
  *
  */
 
-#include "ReplicateLevel.h"
+#include "Counter.h"
+#include "Enum.h"
+#include "LogPrefix.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/types/Variant.h"
 #include <boost/shared_ptr.hpp>
@@ -42,6 +44,7 @@ class FieldTable;
 
 namespace ha {
 class HaBroker;
+class QueueReplicator;
 
 /**
  * Replicate configuration on a backup broker.
@@ -68,11 +71,9 @@ class BrokerReplicator : public broker::Exchange
     bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const);
 
   private:
-    void initializeBridge(broker::Bridge&, broker::SessionHandler&);
+    typedef boost::shared_ptr<QueueReplicator> QueueReplicatorPtr;
 
-    ReplicateLevel replicateLevel(const std::string&);
-    ReplicateLevel replicateLevel(const framing::FieldTable& args);
-    ReplicateLevel replicateLevel(const types::Variant::Map& args);
+    void initializeBridge(broker::Bridge&, broker::SessionHandler&);
 
     void doEventQueueDeclare(types::Variant::Map& values);
     void doEventQueueDelete(types::Variant::Map& values);
@@ -86,11 +87,16 @@ class BrokerReplicator : public broker::Exchange
     void doResponseBind(types::Variant::Map& values);
     void doResponseHaBroker(types::Variant::Map& values);
 
-    void startQueueReplicator(const boost::shared_ptr<broker::Queue>&);
+    QueueReplicatorPtr findQueueReplicator(const std::string& qname);
+    QueueReplicatorPtr startQueueReplicator(
+        const boost::shared_ptr<broker::Queue>&, Counter*);
+    void ready();
 
+    LogPrefix logPrefix;
     HaBroker& haBroker;
     broker::Broker& broker;
     boost::shared_ptr<broker::Link> link;
+    Counter unreadyCount;
 };
 }} // namespace qpid::broker
 

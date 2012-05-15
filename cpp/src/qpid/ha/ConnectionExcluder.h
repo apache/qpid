@@ -22,6 +22,7 @@
  *
  */
 
+#include "LogPrefix.h"
 #include "qpid/broker/ConnectionObserver.h"
 #include <boost/function.hpp>
 
@@ -41,12 +42,19 @@ namespace ha {
 class ConnectionExcluder : public broker::ConnectionObserver
 {
   public:
-    ConnectionExcluder();
+    static const std::string ADMIN_TAG;
+    static const std::string BACKUP_TAG;
+
+    ConnectionExcluder(const LogPrefix&);
 
     void opened(broker::Connection& connection);
 
+    void setBackupAllowed(bool set) { backupAllowed = set; }
+    bool isBackupAllowed() const { return backupAllowed; }
+
   private:
-    static const std::string ADMIN_TAG;
+    LogPrefix logPrefix;
+    bool backupAllowed;
 };
 
 }} // namespace qpid::ha
