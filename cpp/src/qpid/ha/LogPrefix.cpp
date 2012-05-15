@@ -29,6 +29,12 @@ LogPrefix::LogPrefix(HaBroker& hb, const std::string& queue) : haBroker(&hb), st
     if (queue.size()) tail = " queue " + queue;
 }
 
+LogPrefix::LogPrefix(LogPrefix& lp, const std::string& queue)
+  : haBroker(lp.haBroker), status(0)
+{
+    if (queue.size()) tail = " queue " + queue;
+}
+
 LogPrefix::LogPrefix(BrokerStatus& s) : haBroker(0), status(&s) {}
 
 std::ostream& operator<<(std::ostream& o, const LogPrefix& l) {

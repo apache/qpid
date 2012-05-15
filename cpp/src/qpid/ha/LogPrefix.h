@@ -39,6 +39,7 @@ class LogPrefix
   public:
     /** For use by all classes other than HaBroker */
     LogPrefix(HaBroker& hb, const std::string& queue=std::string());
+    LogPrefix(LogPrefix& lp, const std::string& queue);
 
     /** For use by the HaBroker itself. */
     LogPrefix(BrokerStatus&);
