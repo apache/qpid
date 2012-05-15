@@ -50,6 +50,7 @@
       <or>
         <istrue value="${download-csvjdbc}"/>
         <istrue value="${optional.dependencies}"/>
+        <istrue value="${optional}"/>
       </or>
     </condition>
 
