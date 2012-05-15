@@ -18,6 +18,7 @@
  *
  */
 
+#include "qpid/log/Statement.h"
 #include "qpid/sys/SystemInfo.h"
 #include "qpid/sys/posix/check.h"
 #include <set>

@@ -33,6 +33,7 @@
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/MessageTransferBody.h"
+#include "qpid/sys/SystemInfo.h"
 #include "qpid/types/Variant.h"
 
 namespace qpid {
@@ -46,13 +47,30 @@ using std::string;
 Backup::Backup(HaBroker& hb, const Settings& s) :
     logPrefix(hb), haBroker(hb), broker(hb.getBroker()), settings(s)
 {
-    // Empty brokerUrl means delay initialization until setUrl() is called.
+    // Empty brokerUrl means delay initialization until seBrokertUrl() is called.
     if (!s.brokerUrl.empty()) initialize(Url(s.brokerUrl));
 }
 
-void Backup::initialize(const Url& url) {
-    if (url.empty()) throw Url::Invalid("HA broker URL is empty");
-    QPID_LOG(info, logPrefix << "initialized for: " << url);
+bool Backup::isSelf(const Address& a) const {
+    return sys::SystemInfo::isLocalHost(a.host) &&
+        a.port == haBroker.getBroker().getPort(a.protocol);
+}
+
+Url Backup::linkUrl(const Url& brokers) const {
+    // linkUrl contains only the addresses of *other* brokers, not this one.
+    Url url;
+    for (Url::const_iterator i = brokers.begin(); i != brokers.end(); ++i)
+        if (!isSelf(*i)) url.push_back(*i);
+    if (url.empty()) throw Url::Invalid("HA broker Link URL is empty");
+    QPID_LOG(debug, logPrefix << "Link URL set to: " << url);
+    return url;
+}
+
+void Backup::initialize(const Url& brokers) {
+    if (brokers.empty()) throw Url::Invalid("HA broker URL is empty");
+    QPID_LOG(info, logPrefix << "Backup initialized with broker URL: " << brokers);
+    sys::Mutex::ScopedLock l(lock);
+    Url url = linkUrl(brokers);
     string protocol = url[0].protocol.empty() ? "tcp" : url[0].protocol;
     framing::Uuid uuid(true);
     // Declare the link
@@ -79,13 +97,11 @@ void Backup::setBrokerUrl(const Url& url) {
     // Ignore empty URLs seen during start-up for some tests.
     if (url.empty()) return;
     sys::Mutex::ScopedLock l(lock);
-    if (link) {                 // URL changed after we initialized.
-        QPID_LOG(info, logPrefix << "broker URL set to " << url);
-        link->setUrl(url);
+    if (link) {
+        QPID_LOG(info, logPrefix << "Broker URL set to: " << url);
+        link->setUrl(linkUrl(url));
     }
-    else {
-        initialize(url);        // Deferred initialization
-    }
+    else initialize(url);        // Deferred initialization
 }
 
 }} // namespace qpid::ha
