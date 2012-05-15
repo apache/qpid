@@ -202,7 +202,6 @@ void HaBroker::updateClientUrl(const sys::Mutex::ScopedLock&) {
 
 void HaBroker::setBrokerUrl(const Url& url, const sys::Mutex::ScopedLock& l) {
     if (url.empty()) throw Url::Invalid("HA broker URL is empty");
-    QPID_LOG(debug, logPrefix << "Setting broker URL to: " << url);
     brokerUrl = url;
     mgmtObject->set_brokers(brokerUrl.str());
     if (backup.get()) backup->setBrokerUrl(brokerUrl);

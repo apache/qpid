@@ -162,9 +162,6 @@ Variant::Map asMapVoid(const Variant& value) {
 
 } // namespace
 
-
-BrokerReplicator::~BrokerReplicator() {}
-
 BrokerReplicator::BrokerReplicator(HaBroker& hb, const boost::shared_ptr<Link>& l)
     : Exchange(QPID_CONFIGURATION_REPLICATOR),
       logPrefix(hb),
@@ -189,6 +186,9 @@ BrokerReplicator::BrokerReplicator(HaBroker& hb, const boost::shared_ptr<Link>& 
         boost::bind(&BrokerReplicator::initializeBridge, this, _1, _2)
     );
 }
+
+// FIXME aconway 2012-05-07: reference cycled between Link and BrokerReplicator.
+BrokerReplicator::~BrokerReplicator() { link->close(); }
 
 // This is called in the connection IO thread when the bridge is started.
 void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler) {

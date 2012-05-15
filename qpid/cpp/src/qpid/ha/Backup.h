@@ -53,6 +53,8 @@ class Backup
     void setBrokerUrl(const Url&);
 
   private:
+    bool isSelf(const Address& a) const;
+    Url linkUrl(const Url&) const;
     void initialize(const Url&);
 
     LogPrefix logPrefix;
