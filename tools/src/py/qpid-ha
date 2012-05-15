@@ -35,18 +35,18 @@ HA_BROKER = "org.apache.qpid.ha:habroker:ha-broker"
 class Command:
     commands = {}
 
-    def __init__(self, name, help, args=[]):
+    def __init__(self, name, help, arg_names=[]):
         Command.commands[name] = self
         self.name = name
-        self.args = args
-        usage="%s [options] %s\n\n%s"%(name, " ".join(args), help)
+        self.arg_names = arg_names
+        usage="%s [options] %s\n\n%s"%(name, " ".join(arg_names), help)
         self.help = help
         self.op=optparse.OptionParser(usage)
         self.op.add_option("-b", "--broker", metavar="<url>", help="Connect to broker at <url>")
 
-    def execute(self):
-        opts, args = self.op.parse_args()
-        if len(args) != len(self.args)+1:
+    def execute(self, args):
+        opts, args = self.op.parse_args(args)
+        if len(args) != len(self.arg_names)+1:
             self.op.print_help()
             raise Exception("Wrong number of arguments")
         broker = opts.broker or "localhost:5672"
@@ -144,7 +144,7 @@ def main(argv):
         if not command:
             print_usage(os.path.basename(argv[0]));
             return 1;
-        if command.execute(): return 1
+        if command.execute(args): return 1
     except Exception, e:
         print e
         return 1

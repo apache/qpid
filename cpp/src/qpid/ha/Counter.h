@@ -1,5 +1,5 @@
-#ifndef QPID_HA_REPLICATELEVEL_H
-#define QPID_HA_REPLICATELEVEL_H
+#ifndef QPID_HA_COUNTER_H
+#define QPID_HA_COUNTER_H
 
 /*
  *
@@ -22,31 +22,36 @@
  *
  */
 
-#include <string>
-#include <iosfwd>
+#include "qpid/sys/AtomicValue.h"
+#include <boost/function.hpp>
 
 namespace qpid {
 namespace ha {
 
-enum ReplicateLevel { RL_NONE, RL_CONFIGURATION, RL_ALL };
-
 /**
- * If str is a valid replicate level, set out and return true.
+ * Keep a count, call a callback when it reaches 0.
  */
-bool replicateLevel(const std::string& str, ReplicateLevel& out);
+class Counter
+{
+  public:
+    Counter(boost::function<void()> f) : callback(f) {}
 
-/**
- *@return enum corresponding to string level.
- *@throw qpid::Exception if level is not a valid replication level.
- */
-ReplicateLevel replicateLevel(const std::string& level);
+    void operator++() { ++count; }
 
-/**@return string form of replicate level */
-std::string str(ReplicateLevel l);
+    void operator--() {
+        size_t n = --count;
+        assert(n != size_t(-1)); // No underflow
+        if (n == 0) callback();
+    }
 
-std::ostream& operator<<(std::ostream&, ReplicateLevel);
-std::istream& operator>>(std::istream&, ReplicateLevel&);
+    size_t get() { return count.get(); }
 
-}} // namespaces qpid::ha
+    Counter& operator=(size_t n) { count = n; return *this; }
 
-#endif  /*!QPID_HA_REPLICATELEVEL_H*/
+  private:
+    boost::function<void()> callback;
+    sys::AtomicValue<size_t> count;
+};
+}} // namespace qpid::ha
+
+#endif  /*!QPID_HA_COUNTER_H*/

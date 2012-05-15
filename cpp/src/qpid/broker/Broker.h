@@ -63,8 +63,8 @@
 namespace qpid {
 
 namespace sys {
-    class ProtocolFactory;
-    class Poller;
+class ProtocolFactory;
+class Poller;
 }
 
 struct Url;
@@ -90,7 +90,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
                public management::Manageable,
                public RefCounted
 {
-public:
+  public:
 
     struct Options : public qpid::Options {
         static const std::string DEFAULT_DATA_DIR_LOCATION;
@@ -132,23 +132,23 @@ public:
     };
 
     class ConnectionCounter {
-            int maxConnections;
-            int connectionCount;
-            sys::Mutex connectionCountLock;
-        public:
-            ConnectionCounter(int mc): maxConnections(mc),connectionCount(0) {};
-            void inc_connectionCount() {
-                sys::ScopedLock<sys::Mutex> l(connectionCountLock);
-                connectionCount++;
-            }
-            void dec_connectionCount() {
-                sys::ScopedLock<sys::Mutex> l(connectionCountLock);
-                connectionCount--;
-            }
-            bool allowConnection() {
-                sys::ScopedLock<sys::Mutex> l(connectionCountLock);
-                return (maxConnections <= connectionCount);
-            }
+        int maxConnections;
+        int connectionCount;
+        sys::Mutex connectionCountLock;
+      public:
+        ConnectionCounter(int mc): maxConnections(mc),connectionCount(0) {};
+        void inc_connectionCount() {
+            sys::ScopedLock<sys::Mutex> l(connectionCountLock);
+            connectionCount++;
+        }
+        void dec_connectionCount() {
+            sys::ScopedLock<sys::Mutex> l(connectionCountLock);
+            connectionCount--;
+        }
+        bool allowConnection() {
+            sys::ScopedLock<sys::Mutex> l(connectionCountLock);
+            return (maxConnections <= connectionCount);
+        }
     };
 
   private:
@@ -204,6 +204,10 @@ public:
     boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
     ConnectionCounter connectionCounter;
     ConsumerFactories consumerFactories;
+
+    mutable sys::Mutex linkClientPropertiesLock;
+    framing::FieldTable linkClientProperties;
+
 
   public:
     QPID_BROKER_EXTERN virtual ~Broker();
@@ -375,6 +379,10 @@ public:
 
     ConsumerFactories&  getConsumerFactories() { return consumerFactories; }
     ConnectionObservers& getConnectionObservers() { return connectionObservers; }
+
+    /** Properties to be set on outgoing link connections */
+    framing::FieldTable getLinkClientProperties() const;
+    void setLinkClientProperties(const framing::FieldTable&);
 };
 
 }}

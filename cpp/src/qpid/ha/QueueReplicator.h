@@ -21,6 +21,8 @@
  * under the License.
  *
  */
+
+#include "LogPrefix.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/framing/SequenceSet.h"
 #include <boost/enable_shared_from_this.hpp>
@@ -39,6 +41,8 @@ class Deliverable;
 
 namespace ha {
 
+class Counter;
+
 /**
  * Exchange created on a backup broker to replicate a queue on the primary.
  *
@@ -54,9 +58,19 @@ class QueueReplicator : public broker::Exchange,
   public:
     static const std::string DEQUEUE_EVENT_KEY;
     static const std::string POSITION_EVENT_KEY;
+    static const std::string READY_EVENT_KEY;
     static std::string replicatorName(const std::string& queueName);
+    /** Test if a string is an event key */
+    static bool isEventKey(const std::string key);
 
-    QueueReplicator(boost::shared_ptr<broker::Queue> q, boost::shared_ptr<broker::Link> l);
+    /**
+     * @para unreadyCount can be 0 if we don't need a ready count from this queue.
+     */
+    QueueReplicator(const LogPrefix&,
+                    boost::shared_ptr<broker::Queue> q,
+                    boost::shared_ptr<broker::Link> l,
+                    Counter* unreadyCount=0);
+
     ~QueueReplicator();
 
     void activate();            // Call after ctor
@@ -73,12 +87,13 @@ class QueueReplicator : public broker::Exchange,
     void initializeBridge(broker::Bridge& bridge, broker::SessionHandler& sessionHandler);
     void dequeue(framing::SequenceNumber, const sys::Mutex::ScopedLock&);
 
-    std::string logPrefix;
+    LogPrefix logPrefix;
     std::string bridgeName;
     sys::Mutex lock;
     boost::shared_ptr<broker::Queue> queue;
     boost::shared_ptr<broker::Link> link;
     boost::shared_ptr<broker::Bridge> bridge;
+    Counter* unreadyCount;
 };
 
 }} // namespace qpid::ha

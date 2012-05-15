@@ -27,14 +27,31 @@
 namespace qpid {
 namespace ha {
 
-ConnectionExcluder::ConnectionExcluder() {}
+ConnectionExcluder::ConnectionExcluder(const LogPrefix& lp)
+    : logPrefix(lp), backupAllowed(false) {}
 
 void ConnectionExcluder::opened(broker::Connection& connection) {
-    if (!connection.isLink() && !connection.getClientProperties().isSet(ADMIN_TAG))
-        throw Exception(
-            QPID_MSG("HA: Backup broker rejected connection " << connection.getMgmtId()));
+    if (connection.isLink()) return; // Allow all outgoing links
+    if (connection.getClientProperties().isSet(ADMIN_TAG)) {
+        QPID_LOG(debug, logPrefix << "Allowing admin connection: "
+                 << connection.getMgmtId());
+        return;
+    }
+    if (connection.getClientProperties().isSet(BACKUP_TAG)) {
+        if (backupAllowed) {
+            QPID_LOG(debug, logPrefix << "Allowing backup connection: "
+                     << connection.getMgmtId());
+            return;
+        }
+        else QPID_LOG(debug, logPrefix << "Rejected backup connection: "
+                      << connection.getMgmtId());
+    }
+
+    throw Exception(
+        QPID_MSG(logPrefix << "Rejected client connection " << connection.getMgmtId()));
 }
 
 const std::string ConnectionExcluder::ADMIN_TAG="qpid.ha-admin";
+const std::string ConnectionExcluder::BACKUP_TAG="qpid.ha-backup";
 
 }} // namespace qpid::ha

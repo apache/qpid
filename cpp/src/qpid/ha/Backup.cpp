@@ -20,7 +20,6 @@
  */
 #include "Backup.h"
 #include "BrokerReplicator.h"
-#include "ConnectionExcluder.h"
 #include "HaBroker.h"
 #include "ReplicatingSubscription.h"
 #include "Settings.h"
@@ -45,17 +44,15 @@ using types::Variant;
 using std::string;
 
 Backup::Backup(HaBroker& hb, const Settings& s) :
-    haBroker(hb), broker(hb.getBroker()), settings(s), excluder(new ConnectionExcluder())
+    logPrefix(hb), haBroker(hb), broker(hb.getBroker()), settings(s)
 {
-    // Exclude client connections before starting the link to avoid self-connection.
-    broker.getConnectionObservers().add(excluder);
     // Empty brokerUrl means delay initialization until setUrl() is called.
     if (!s.brokerUrl.empty()) initialize(Url(s.brokerUrl));
 }
 
 void Backup::initialize(const Url& url) {
     if (url.empty()) throw Url::Invalid("HA broker URL is empty");
-    QPID_LOG(notice, "HA: Backup initialized: " << url);
+    QPID_LOG(info, logPrefix << "initialized for: " << url);
     string protocol = url[0].protocol.empty() ? "tcp" : url[0].protocol;
     framing::Uuid uuid(true);
     // Declare the link
@@ -75,7 +72,6 @@ Backup::~Backup() {
     if (link) link->close();
     if (replicator.get()) broker.getExchanges().destroy(replicator->getName());
     replicator.reset();
-    broker.getConnectionObservers().remove(excluder); // This allows client connections.
 }
 
 
@@ -84,7 +80,7 @@ void Backup::setBrokerUrl(const Url& url) {
     if (url.empty()) return;
     sys::Mutex::ScopedLock l(lock);
     if (link) {                 // URL changed after we initialized.
-        QPID_LOG(info, "HA: Backup broker URL set to " << url);
+        QPID_LOG(info, logPrefix << "broker URL set to " << url);
         link->setUrl(url);
     }
     else {

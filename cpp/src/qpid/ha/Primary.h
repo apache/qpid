@@ -1,5 +1,5 @@
-#ifndef QPID_HA_SETTINGS_H
-#define QPID_HA_SETTINGS_H
+#ifndef QPID_HA_PRIMARY_H
+#define QPID_HA_PRIMARY_H
 
 /*
  *
@@ -22,29 +22,50 @@
  *
  */
 
-#include "Enum.h"
+#include "LogPrefix.h"
+#include "qpid/sys/Mutex.h"
+#include <boost/shared_ptr.hpp>
+#include <map>
 #include <string>
 
 namespace qpid {
+
+namespace broker {
+class Queue;
+}
+
 namespace ha {
+class HaBroker;
 
 /**
- * Configurable settings for HA.
+ * State associated with a primary broker.  Tracks replicating
+ * subscriptions to determine when primary is ready.
+ *
+ * THREAD SAFE: addReplica is called in arbitray threads.
  */
-class Settings
+class Primary
 {
   public:
-    Settings() : cluster(false), expectedBackups(0), replicateDefault(NONE)
-    {}
+    static Primary* get() { return instance; }
+    Primary(HaBroker& b);
 
-    bool cluster;               // True if we are a cluster member.
-    std::string clientUrl;
-    std::string brokerUrl;
-    size_t expectedBackups;
-    Enum<ReplicateLevel> replicateDefault;
-    std::string username, password, mechanism;
+    void addReplica(const std::string& q);
+    void removeReplica(const std::string& q);
+
   private:
+    typedef std::map<std::string, size_t> QueueCounts;
+
+    void activate(sys::Mutex::ScopedLock&);
+
+    sys::Mutex lock;
+    HaBroker& haBroker;
+    LogPrefix logPrefix;
+    QueueCounts queues;
+    size_t expected, unready;
+    bool activated;
+
+    static Primary* instance;
 };
 }} // namespace qpid::ha
 
-#endif  /*!QPID_HA_SETTINGS_H*/
+#endif  /*!QPID_HA_PRIMARY_H*/
