@@ -201,7 +201,7 @@ void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionH
       case READY:
         // FIXME aconway 2012-04-27: distinguish ready case, reconnect to other backup.
         break;
-      case PROMOTING:
+      case RECOVERING:
       case ACTIVE:
         // FIXME aconway 2012-04-27: link is connected to self!
         // Promotion should close the link before allowing connections.
