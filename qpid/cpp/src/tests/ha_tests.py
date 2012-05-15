@@ -603,7 +603,7 @@ class ReplicationTests(BrokerTest):
         test("excl_sub;{create:always, link:{x-subscribe:{exclusive:True}}}");
         test("excl_queue;{create:always, node:{x-declare:{exclusive:True}}}")
 
-    def test_promoting(self):
+    def test_recovering(self):
         """Verify that the primary broker does not go active until expected
         backups have connected or timeout expires."""
         cluster = HaCluster(self, 3, args=["--ha-expected-backups=2"])
@@ -620,7 +620,7 @@ class ReplicationTests(BrokerTest):
 
         # Verify in logs that all queue catch-up happened before the transition to active.
         log = open(cluster[1].log).read()
-        i = log.find("Status change: promoting -> active")
+        i = log.find("Status change: recovering -> active")
         self.failIf(i < 0)
         self.assertEqual(log.find("caught up", i), -1)
 

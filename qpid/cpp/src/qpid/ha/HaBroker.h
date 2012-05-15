@@ -98,7 +98,7 @@ class HaBroker : public management::Manageable
     bool isPrimary(const sys::Mutex::ScopedLock&) { return !backup.get(); }
 
     void setStatus(BrokerStatus, sys::Mutex::ScopedLock&);
-    void promoting(sys::Mutex::ScopedLock&);
+    void recover(sys::Mutex::ScopedLock&);
     void activate(sys::Mutex::ScopedLock&);
     void statusChanged(sys::Mutex::ScopedLock&);
 
