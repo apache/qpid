@@ -161,7 +161,7 @@ void Bridge::cancel(Connection&)
 {
     if (resetProxy()) {
         peer->getMessage().cancel(args.i_dest);
-        peer->getSession().detach(name);
+        peer->getSession().detach(queueName);
     }
     QPID_LOG(debug, "Cancelled bridge " << name);
 }
