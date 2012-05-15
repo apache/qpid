@@ -81,7 +81,6 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     if (!settings.clientUrl.empty()) setClientUrl(Url(settings.clientUrl), l);
     if (!settings.brokerUrl.empty()) setBrokerUrl(Url(settings.brokerUrl), l);
     statusChanged(l);
-    QPID_LOG(notice, logPrefix << "broker initialized");
 }
 
 HaBroker::~HaBroker() {}

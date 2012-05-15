@@ -43,7 +43,6 @@ class HaBroker(Broker):
         assert BrokerTest.ha_lib, "Cannot locate HA plug-in"
         args = copy(args)
         args += ["--load-module", BrokerTest.ha_lib,
-                 "--log-enable=info+",
                  "--log-enable=debug+:ha::",
                  # FIXME aconway 2012-02-13: workaround slow link failover.
                  "--link-maintenace-interval=0.1",

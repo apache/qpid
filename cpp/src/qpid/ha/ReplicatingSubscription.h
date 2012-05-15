@@ -26,6 +26,7 @@
 #include "qpid/broker/SemanticState.h"
 #include "qpid/broker/QueueObserver.h"
 #include "qpid/broker/ConsumerFactory.h"
+#include "qpid/types/Uuid.h"
 #include <iosfwd>
 
 namespace qpid {
@@ -42,6 +43,7 @@ class Buffer;
 }
 
 namespace ha {
+class LogPrefix;
 
 /**
  * A susbcription that represents a backup replicating a queue.
@@ -73,7 +75,7 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
     // Argument names for consume command.
     static const std::string QPID_REPLICATING_SUBSCRIPTION;
 
-    ReplicatingSubscription(HaBroker&,
+    ReplicatingSubscription(LogPrefix,
                             broker::SemanticState* parent,
                             const std::string& name, boost::shared_ptr<broker::Queue> ,
                             bool ack, bool acquire, bool exclusive, const std::string& tag,
@@ -82,7 +84,7 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
 
     ~ReplicatingSubscription();
 
-    // QueueObserver overrides.
+    // QueueObserver overrides. NB called with queue lock held.
     void enqueued(const broker::QueuedMessage&);
     void dequeued(const broker::QueuedMessage&);
     void acquired(const broker::QueuedMessage&) {}
@@ -95,6 +97,7 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
     bool browseAcquired() const { return true; }
 
     bool hideDeletedError();
+    void setReadyPosition();
 
   protected:
     bool doDispatch();
@@ -103,8 +106,7 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
 
     LogPrefix logPrefix;
     std::string logSuffix;
-    boost::shared_ptr<broker::Queue> events;
-    boost::shared_ptr<broker::Consumer> consumer;
+    boost::shared_ptr<broker::Queue> dummy; // Used to send event messages
     Delayed delayed;
     framing::SequenceSet dequeues;
     framing::SequenceNumber backupPosition;
@@ -114,28 +116,25 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
     void complete(const broker::QueuedMessage&, const sys::Mutex::ScopedLock&);
     void cancelComplete(const Delayed::value_type& v, const sys::Mutex::ScopedLock&);
     void sendDequeueEvent(const sys::Mutex::ScopedLock&);
-    void sendPositionEvent(framing::SequenceNumber, const sys::Mutex::ScopedLock&);
+    void sendPositionEvent(framing::SequenceNumber);
+    void sendReady(const sys::Mutex::ScopedLock&);
     void sendReadyEvent(const sys::Mutex::ScopedLock&);
-    void sendEvent(const std::string& key, framing::Buffer&,
-                   const sys::Mutex::ScopedLock&);
+    void sendEvent(const std::string& key, framing::Buffer&);
 
-    class DelegatingConsumer : public Consumer
+    /** Dummy consumer used to get the front position on the queue */
+    class GetPositionConsumer : public Consumer
     {
       public:
-        DelegatingConsumer(ReplicatingSubscription&);
-        ~DelegatingConsumer();
-        bool deliver(broker::QueuedMessage& msg);
-        void notify();
-        bool filter(boost::intrusive_ptr<broker::Message>);
-        bool accept(boost::intrusive_ptr<broker::Message>);
+        GetPositionConsumer() :
+            Consumer("ha.GetPositionConsumer."+types::Uuid(true).str(), false) {}
+        bool deliver(broker::QueuedMessage& ) { return true; }
+        void notify() {}
+        bool filter(boost::intrusive_ptr<broker::Message>) { return true; }
+        bool accept(boost::intrusive_ptr<broker::Message>) { return true; }
         void cancel() {}
         void acknowledged(const broker::QueuedMessage&) {}
-        bool browseAcquired() const;
-
-        broker::OwnershipToken* getSession();
-
-      private:
-        ReplicatingSubscription& delegate;
+        bool browseAcquired() const { return true; }
+        broker::OwnershipToken* getSession() { return 0; }
     };
 
   friend class Factory;
