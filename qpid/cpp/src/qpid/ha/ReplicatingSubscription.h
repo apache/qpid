@@ -51,12 +51,17 @@ namespace ha {
  *
  * THREAD SAFE: Used as a consumer in subscription's connection
  * thread, and as a QueueObserver in arbitrary connection threads.
+ *
+ * Lifecycle: broker::Queue holds shared_ptrs to this as a consumer.
+ *
  */
 class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
                                 public broker::QueueObserver
 {
   public:
     struct Factory : public broker::ConsumerFactory {
+        HaBroker& haBroker;
+        Factory(HaBroker& hb) : haBroker(hb) {}
         boost::shared_ptr<broker::SemanticState::ConsumerImpl> create(
             broker::SemanticState* parent,
             const std::string& name, boost::shared_ptr<broker::Queue> ,
@@ -68,7 +73,8 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
     // Argument names for consume command.
     static const std::string QPID_REPLICATING_SUBSCRIPTION;
 
-    ReplicatingSubscription(broker::SemanticState* parent,
+    ReplicatingSubscription(HaBroker&,
+                            broker::SemanticState* parent,
                             const std::string& name, boost::shared_ptr<broker::Queue> ,
                             bool ack, bool acquire, bool exclusive, const std::string& tag,
                             const std::string& resumeId, uint64_t resumeTtl,
@@ -77,13 +83,13 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
     ~ReplicatingSubscription();
 
     // QueueObserver overrides.
-    bool deliver(broker::QueuedMessage& msg);
     void enqueued(const broker::QueuedMessage&);
     void dequeued(const broker::QueuedMessage&);
     void acquired(const broker::QueuedMessage&) {}
     void requeued(const broker::QueuedMessage&) {}
 
     // Consumer overrides.
+    bool deliver(broker::QueuedMessage& msg);
     void cancel();
     void acknowledged(const broker::QueuedMessage&);
     bool browseAcquired() const { return true; }
@@ -94,17 +100,22 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
     bool doDispatch();
   private:
     typedef std::map<framing::SequenceNumber, broker::QueuedMessage> Delayed;
-    std::string logPrefix, logSuffix;
+
+    LogPrefix logPrefix;
+    std::string logSuffix;
     boost::shared_ptr<broker::Queue> events;
     boost::shared_ptr<broker::Consumer> consumer;
     Delayed delayed;
     framing::SequenceSet dequeues;
     framing::SequenceNumber backupPosition;
+    framing::SequenceNumber readyPosition;
+    bool sentReady;
 
     void complete(const broker::QueuedMessage&, const sys::Mutex::ScopedLock&);
     void cancelComplete(const Delayed::value_type& v, const sys::Mutex::ScopedLock&);
     void sendDequeueEvent(const sys::Mutex::ScopedLock&);
     void sendPositionEvent(framing::SequenceNumber, const sys::Mutex::ScopedLock&);
+    void sendReadyEvent(const sys::Mutex::ScopedLock&);
     void sendEvent(const std::string& key, framing::Buffer&,
                    const sys::Mutex::ScopedLock&);
 
@@ -126,6 +137,8 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
       private:
         ReplicatingSubscription& delegate;
     };
+
+  friend class Factory;
 };
 
 

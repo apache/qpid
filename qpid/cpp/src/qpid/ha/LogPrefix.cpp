@@ -1,6 +1,3 @@
-#ifndef QPID_HA_SETTINGS_H
-#define QPID_HA_SETTINGS_H
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,30 +18,23 @@
  * under the License.
  *
  */
-
-#include "Enum.h"
-#include <string>
+#include "LogPrefix.h"
+#include "HaBroker.h"
+#include <iostream>
 
 namespace qpid {
 namespace ha {
 
-/**
- * Configurable settings for HA.
- */
-class Settings
-{
-  public:
-    Settings() : cluster(false), expectedBackups(0), replicateDefault(NONE)
-    {}
+LogPrefix::LogPrefix(HaBroker& hb, const std::string& queue) : haBroker(&hb), status(0) {
+    if (queue.size()) tail = " queue " + queue;
+}
 
-    bool cluster;               // True if we are a cluster member.
-    std::string clientUrl;
-    std::string brokerUrl;
-    size_t expectedBackups;
-    Enum<ReplicateLevel> replicateDefault;
-    std::string username, password, mechanism;
-  private:
-};
+LogPrefix::LogPrefix(BrokerStatus& s) : haBroker(0), status(&s) {}
+
+std::ostream& operator<<(std::ostream& o, const LogPrefix& l) {
+    return o << "HA("
+             << printable(l.status ? *l.status : l.haBroker->getStatus())
+             << ")" << l.tail << ": ";
+}
+
 }} // namespace qpid::ha
-
-#endif  /*!QPID_HA_SETTINGS_H*/

@@ -1,5 +1,5 @@
-#ifndef QPID_HA_SETTINGS_H
-#define QPID_HA_SETTINGS_H
+#ifndef QPID_HA_LOGPREFIX_H
+#define QPID_HA_LOGPREFIX_H
 
 /*
  *
@@ -23,28 +23,35 @@
  */
 
 #include "Enum.h"
+#include <iosfwd>
 #include <string>
 
 namespace qpid {
 namespace ha {
 
+class HaBroker;
+
 /**
- * Configurable settings for HA.
+ * Standard information to prefix log messages.
  */
-class Settings
+class LogPrefix
 {
   public:
-    Settings() : cluster(false), expectedBackups(0), replicateDefault(NONE)
-    {}
+    /** For use by all classes other than HaBroker */
+    LogPrefix(HaBroker& hb, const std::string& queue=std::string());
 
-    bool cluster;               // True if we are a cluster member.
-    std::string clientUrl;
-    std::string brokerUrl;
-    size_t expectedBackups;
-    Enum<ReplicateLevel> replicateDefault;
-    std::string username, password, mechanism;
+    /** For use by the HaBroker itself. */
+    LogPrefix(BrokerStatus&);
+
   private:
+    HaBroker* haBroker;
+    BrokerStatus* status;
+    std::string tail;
+  friend std::ostream& operator<<(std::ostream& o, const LogPrefix& l);
 };
+
+std::ostream& operator<<(std::ostream& o, const LogPrefix& l);
+
 }} // namespace qpid::ha
 
-#endif  /*!QPID_HA_SETTINGS_H*/
+#endif  /*!QPID_HA_LOGPREFIX_H*/

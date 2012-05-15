@@ -318,7 +318,7 @@ void ConnectionHandler::Handler::start(const FieldTable& serverProperties,
         connection.setFederationPeerTag(serverProperties.getAsString(QPID_FED_TAG));
     }
 
-    FieldTable ft;
+    FieldTable ft = connection.getBroker().getLinkClientProperties();
     ft.setInt(QPID_FED_LINK,1);
     ft.setString(QPID_FED_TAG, connection.getBroker().getFederationTag());
 

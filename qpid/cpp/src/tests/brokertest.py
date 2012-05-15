@@ -77,17 +77,19 @@ def error_line(filename, n=1):
     return ":\n" + "".join(result)
 
 def retry(function, timeout=10, delay=.01):
-    """Call function until it returns True or timeout expires.
-    Double the delay for each retry. Return True if function
-    returns true, False if timeout expires."""
+    """Call function until it returns a true value or timeout expires.
+    Double the delay for each retry. Returns what function returns if
+    true, None if timeout expires."""
     deadline = time.time() + timeout
-    while not function():
+    ret = None
+    while not ret:
+        ret = function()
         remaining = deadline - time.time()
         if remaining <= 0: return False
         delay = min(delay, remaining)
         time.sleep(delay)
         delay *= 2
-    return True
+    return ret
 
 class AtomicCounter:
     def __init__(self):
@@ -298,9 +300,9 @@ class Broker(Popen):
         # Read port from broker process stdout if not already read.
         if (self._port == 0):
             try: self._port = int(self.stdout.readline())
-            except ValueError:
-                raise Exception("Can't get port for broker %s (%s)%s" %
-                                (self.name, self.pname, error_line(self.log,5)))
+            except ValueError, e:
+                raise Exception("Can't get port for broker %s (%s)%s: %s" %
+                                (self.name, self.pname, error_line(self.log,5), e))
         return self._port
 
     def unexpected(self,msg):
