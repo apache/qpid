@@ -126,7 +126,7 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     // r1213258 | QPID-3603: Fix QueueReplicator subscription parameters.
 
     // Clear out any old messages, reset the queue to start replicating fresh.
-    queue->purge();
+    queue->purge();             // FIXME aconway 2012-05-02: race
     queue->setPosition(0);
 
     settings.setInt(ReplicatingSubscription::QPID_REPLICATING_SUBSCRIPTION, 1);
