@@ -150,7 +150,7 @@ jca.libs=${geronimo-j2ee} ${geronimo-jta} ${geronimo-jms} ${test.libs} ${geronim
 jca.test.libs=${test.libs}
 
 # optional bdbstore module deps
-bdb-je=lib/bdbstore/je-5.0.34.jar
+bdb-je=lib/bdbstore/je-5.0.48.jar
 bdbstore.libs=${bdb-je}
 bdbstore.test.libs=${test.libs}
 
