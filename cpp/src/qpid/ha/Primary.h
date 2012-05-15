@@ -41,7 +41,7 @@ class HaBroker;
  * State associated with a primary broker.  Tracks replicating
  * subscriptions to determine when primary is ready.
  *
- * THREAD SAFE: addReplica is called in arbitray threads.
+ * THREAD SAFE: readyReplica is called in arbitray threads.
  */
 class Primary
 {
@@ -49,7 +49,7 @@ class Primary
     static Primary* get() { return instance; }
     Primary(HaBroker& b);
 
-    void addReplica(const std::string& q);
+    void readyReplica(const std::string& q);
     void removeReplica(const std::string& q);
 
   private:

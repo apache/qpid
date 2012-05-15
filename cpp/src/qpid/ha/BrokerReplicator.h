@@ -88,15 +88,13 @@ class BrokerReplicator : public broker::Exchange
     void doResponseHaBroker(types::Variant::Map& values);
 
     QueueReplicatorPtr findQueueReplicator(const std::string& qname);
-    QueueReplicatorPtr startQueueReplicator(
-        const boost::shared_ptr<broker::Queue>&, Counter*);
+    void  startQueueReplicator(const boost::shared_ptr<broker::Queue>&);
     void ready();
 
     LogPrefix logPrefix;
     HaBroker& haBroker;
     broker::Broker& broker;
     boost::shared_ptr<broker::Link> link;
-    Counter unreadyCount;
 };
 }} // namespace qpid::broker
 

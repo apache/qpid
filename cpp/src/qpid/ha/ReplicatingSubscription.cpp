@@ -94,7 +94,7 @@ ReplicatingSubscription::ReplicatingSubscription(
                  resumeId, resumeTtl, arguments),
     logPrefix(lp, queue->getName()),
     dummy(new Queue(mask(name))),
-    sentReady(false)
+    ready(false)
 {
     // Separate the remote part from a "local-remote" address for logging.
     string address = parent->getSession().getConnection().getUrl();
@@ -137,7 +137,7 @@ void ReplicatingSubscription::setReadyPosition() {
         QPID_LOG(debug, logPrefix << "backup subscribed, no catch up, at "
                  << readyPosition << logSuffix);
         // Fake lock, only called during creation:
-        sendReady(*(sys::Mutex::ScopedLock*)0);
+        setReady(*(sys::Mutex::ScopedLock*)0);
     }
     else {
         QPID_LOG(debug, logPrefix << "backup subscribed, catching up "
@@ -173,7 +173,7 @@ bool ReplicatingSubscription::deliver(QueuedMessage& qm) {
             {
                 sys::Mutex::ScopedLock l(lock);
                 // If we have advanced to the initial position, the backup is ready.
-                if (qm.position >= readyPosition) sendReady(l);
+                if (qm.position >= readyPosition) setReady(l);
             }
             return delivered;
         }
@@ -187,15 +187,12 @@ bool ReplicatingSubscription::deliver(QueuedMessage& qm) {
 }
 
 // Send a ready event to the backup.
-void ReplicatingSubscription::sendReady(const sys::Mutex::ScopedLock&) {
-    if (sentReady) return;
-    sentReady = true;
-    framing::Buffer buffer;
-    sendEvent(QueueReplicator::READY_EVENT_KEY, buffer);
+void ReplicatingSubscription::setReady(const sys::Mutex::ScopedLock&) {
+    if (ready) return;
+    ready = true;
     QPID_LOG(info, logPrefix << "Caught up at " << getPosition() << logSuffix);
     // Notify Primary that a subscription is ready.
-    // FIXME aconway 2012-04-30: rename addReplica->readyReplica
-    if (Primary::get()) Primary::get()->addReplica(getQueue()->getName());
+    if (Primary::get()) Primary::get()->readyReplica(getQueue()->getName());
 }
 
 // INVARIANT: delayed contains msg <=> we have outstanding startCompletion on msg

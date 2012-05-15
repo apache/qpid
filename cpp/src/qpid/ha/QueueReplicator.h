@@ -58,18 +58,13 @@ class QueueReplicator : public broker::Exchange,
   public:
     static const std::string DEQUEUE_EVENT_KEY;
     static const std::string POSITION_EVENT_KEY;
-    static const std::string READY_EVENT_KEY;
     static std::string replicatorName(const std::string& queueName);
     /** Test if a string is an event key */
     static bool isEventKey(const std::string key);
 
-    /**
-     * @para unreadyCount can be 0 if we don't need a ready count from this queue.
-     */
     QueueReplicator(const LogPrefix&,
                     boost::shared_ptr<broker::Queue> q,
-                    boost::shared_ptr<broker::Link> l,
-                    Counter* unreadyCount=0);
+                    boost::shared_ptr<broker::Link> l);
 
     ~QueueReplicator();
 
@@ -93,7 +88,6 @@ class QueueReplicator : public broker::Exchange,
     boost::shared_ptr<broker::Queue> queue;
     boost::shared_ptr<broker::Link> link;
     boost::shared_ptr<broker::Bridge> bridge;
-    Counter* unreadyCount;
 };
 
 }} // namespace qpid::ha

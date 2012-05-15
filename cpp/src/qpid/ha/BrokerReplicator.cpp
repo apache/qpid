@@ -165,8 +165,7 @@ Variant::Map asMapVoid(const Variant& value) {
 BrokerReplicator::BrokerReplicator(HaBroker& hb, const boost::shared_ptr<Link>& l)
     : Exchange(QPID_CONFIGURATION_REPLICATOR),
       logPrefix(hb),
-      haBroker(hb), broker(hb.getBroker()), link(l),
-      unreadyCount(boost::bind(&BrokerReplicator::ready, this))
+      haBroker(hb), broker(hb.getBroker()), link(l)
 {
     framing::Uuid uuid(true);
     const std::string name(QPID_CONFIGURATION_REPLICATOR + ".bridge." + uuid.str());
@@ -232,8 +231,6 @@ void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionH
     sendQuery(ORG_APACHE_QPID_BROKER, QUEUE, queueName, sessionHandler);
     sendQuery(ORG_APACHE_QPID_BROKER, EXCHANGE, queueName, sessionHandler);
     sendQuery(ORG_APACHE_QPID_BROKER, BINDING, queueName, sessionHandler);
-    // Queue ready count - count one for the query in progress.
-    ++unreadyCount;
     QPID_LOG(debug, logPrefix << "opened configuration bridge: " << queueName);
 }
 
@@ -246,8 +243,6 @@ void BrokerReplicator::route(Deliverable& msg) {
         // decode as list
         string content = msg.getMessage().getFrames().getContent();
         amqp_0_10::ListCodec::decode(content, list);
-
-        string type; // FIXME aconway 2012-04-26: quick hack for end-of query, need to  handle multi-message responses
         if (headers->getAsString(QMF_CONTENT) == EVENT) {
             for (Variant::List::iterator i = list.begin(); i != list.end(); ++i) {
                 Variant::Map& map = i->asMap();
@@ -263,7 +258,7 @@ void BrokerReplicator::route(Deliverable& msg) {
         } else if (headers->getAsString(QMF_OPCODE) == QUERY_RESPONSE) {
             for (Variant::List::iterator i = list.begin(); i != list.end(); ++i) {
                 Variant::Map& map = i->asMap();
-                type = map[SCHEMA_ID].asMap()[CLASS_NAME].asString();
+                string type = map[SCHEMA_ID].asMap()[CLASS_NAME].asString();
                 Variant::Map& values = map[VALUES].asMap();
                 framing::FieldTable args;
                 amqp_0_10::translate(asMapVoid(values[ARGUMENTS]), args);
@@ -272,11 +267,6 @@ void BrokerReplicator::route(Deliverable& msg) {
                 else if (type == BINDING) doResponseBind(values);
                 else if (type == HA_BROKER) doResponseHaBroker(values);
             }
-        }
-        // FIXME aconway 2012-04-26: when the queue query is complete
-        if (type == QUEUE) {
-            // Count 1 for the query, which is now complete.
-            --unreadyCount;
         }
     } catch (const std::exception& e) {
         QPID_LOG(critical, logPrefix << "configuration failed: " << e.what()
@@ -310,8 +300,7 @@ void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
                 values[RHOST].asString());
         assert(result.second);
         QPID_LOG(debug, logPrefix << "queue declare event: " << name);
-        startQueueReplicator(result.first, 0); // No unreadyCount for declare events.
-        // FIXME aconway 2012-04-26: but we will need to count them after a failover.
+        startQueueReplicator(result.first);
     }
 }
 
@@ -445,13 +434,8 @@ void BrokerReplicator::doResponseQueue(Variant::Map& values) {
             args,
             ""/*TODO: who is the user?*/,
             ""/*TODO: what should we use as connection id?*/);
-    QueueReplicatorPtr qr;
     // It is normal for the queue to already exist if we are failing over.
-    // FIXME aconway 2012-04-26: not correct, unreadyCount
-    if (result.second) qr = startQueueReplicator(result.first, &unreadyCount);
-    else qr = findQueueReplicator(name);
-    if (qr) ++unreadyCount;
-    // existing QR may refcount down before I've gone thru the responses.
+    if (result.second) startQueueReplicator(result.first);
     QPID_LOG(debug, logPrefix << "queue response: " << name);
 }
 
@@ -538,19 +522,16 @@ void BrokerReplicator::doResponseHaBroker(Variant::Map& values) {
     }
 }
 
-BrokerReplicator::QueueReplicatorPtr BrokerReplicator::startQueueReplicator(
-    const boost::shared_ptr<Queue>& queue, Counter* unready)
+void BrokerReplicator::startQueueReplicator(const boost::shared_ptr<Queue>& queue)
 {
-    boost::shared_ptr<QueueReplicator> qr;
     if (haBroker.replicateLevel(queue->getSettings()) == ALL) {
-        qr.reset(new QueueReplicator(
-                     LogPrefix(haBroker, queue->getName()), queue, link, unready));
+        boost::shared_ptr<QueueReplicator> qr(
+            new QueueReplicator(LogPrefix(haBroker, queue->getName()), queue, link));
         if (!broker.getExchanges().registerExchange(qr))
             throw Exception(QPID_MSG("Duplicate queue replicator " << qr->getName()));
         qr->activate();
         haBroker.activatedBackup(queue->getName());
     }
-    return qr;
 }
 
 bool BrokerReplicator::bind(boost::shared_ptr<Queue>, const string&, const framing::FieldTable*) { return false; }
