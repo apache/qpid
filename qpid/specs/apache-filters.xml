@@ -17,7 +17,6 @@
    specific language governing permissions and limitations
    under the License.
 -->
-<!DOCTYPE amqp SYSTEM "amqp.dtd">
 <?xml-stylesheet type="text/xsl" href="amqp.xsl"?>
 
 <amqp name="apache-filters" label="Apache Proposed AMQP 1-0 Filters">
