@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.protocol;
 
+import java.net.SocketAddress;
 import java.util.List;
 
 import javax.security.auth.Subject;
@@ -59,6 +60,13 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
     ClientDeliveryMethod createDeliveryMethod(int channelId);
 
     long getLastReceivedTime();
+
+    /**
+     * Return the local socket address for the connection
+     *
+     * @return the socket address
+     */
+    SocketAddress getLocalAddress();
 
     public static interface Task
     {

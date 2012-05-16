@@ -32,6 +32,7 @@ import org.apache.qpid.transport.Session;
 import javax.management.JMException;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularData;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -80,7 +81,7 @@ public class ServerConnectionMBeanTest extends InternalBrokerBaseCase
                                                                     "authid", "remoteProcessName", new Integer(1967), new Integer(1970), vhost.getConfigStore(), Boolean.FALSE);
         _serverConnection.setConnectionConfig(config);
         _serverConnection.setVirtualHost(vhost);
-        _serverConnection.setConnectionDelegate(new ServerConnectionDelegate(getRegistry(), ""));
+        _serverConnection.setConnectionDelegate(new ServerConnectionDelegate(getRegistry(), "", getRegistry().getAuthenticationManager(new InetSocketAddress(5672))));
         _serverSession = new ServerSessionMock(_serverConnection, 1);
         _mbean = (ServerConnectionMBean) _serverConnection.getManagedObject();
     }

@@ -60,6 +60,7 @@ import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -129,11 +130,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     protected void setManagedObjectRegistry(ManagedObjectRegistry managedObjectRegistry)
     {
         _managedObjectRegistry = managedObjectRegistry;
-    }
-
-    protected void setAuthenticationManager(AuthenticationManager authenticationManager)
-    {
-        _authenticationManager = authenticationManager;
     }
 
     protected void setVirtualHostRegistry(VirtualHostRegistry virtualHostRegistry)
@@ -621,6 +617,14 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     {
         return _authenticationManager;
     }
+
+
+    @Override
+    public AuthenticationManager getAuthenticationManager(SocketAddress address)
+    {
+        return _authenticationManager;
+    }
+
 
     public PluginManager getPluginManager()
     {
