@@ -29,12 +29,11 @@ namespace management {
 
 Buffer::Buffer(char* data, uint32_t size) : impl(new framing::Buffer(data, size)) {}
 Buffer::~Buffer() { delete impl; }
-void Buffer::record() { impl->record(); }
-void Buffer::restore(bool reRecord) { impl->restore(reRecord); }
 void Buffer::reset() { impl->reset(); }
 uint32_t Buffer::available() { return impl->available(); }
 uint32_t Buffer::getSize() { return impl->getSize(); }
 uint32_t Buffer::getPosition() { return impl->getPosition(); }
+void Buffer::setPosition(uint32_t p) { impl->setPosition(p); }
 char* Buffer::getPointer() { return impl->getPointer(); }
 void Buffer::putOctet(uint8_t i) { impl->putOctet(i); }
 void Buffer::putShort(uint16_t i) { impl->putShort(i); }

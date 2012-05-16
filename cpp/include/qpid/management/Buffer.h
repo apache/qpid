@@ -46,13 +46,12 @@ public:
     QPID_COMMON_EXTERN Buffer(char* data=0, uint32_t size=0);
     QPID_COMMON_EXTERN ~Buffer();
 
-    QPID_COMMON_EXTERN void record();
-    QPID_COMMON_EXTERN void restore(bool reRecord = false);
     QPID_COMMON_EXTERN void reset();
 
     QPID_COMMON_EXTERN uint32_t available();
     QPID_COMMON_EXTERN uint32_t getSize();
     QPID_COMMON_EXTERN uint32_t getPosition();
+    QPID_COMMON_EXTERN void setPosition(uint32_t);
     QPID_COMMON_EXTERN char* getPointer();
 
     QPID_COMMON_EXTERN void putOctet(uint8_t i);
