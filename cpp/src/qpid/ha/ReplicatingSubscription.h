@@ -136,7 +136,7 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
         broker::OwnershipToken* getSession() { return 0; }
     };
 
-  friend class Factory;
+  friend struct Factory;
 };
 
 
