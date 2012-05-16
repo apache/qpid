@@ -171,12 +171,12 @@ def wait_address(session, address):
         except NotFound: return False
     assert retry(check), "Timed out waiting for address %s"%(address)
 
-def assert_missing(session, address):
-    """Assert that the address is _not_ valid"""
+def valid_address(session, address):
+    """Test if an address is valid"""
     try:
         session.receiver(address)
-        self.fail("Expected NotFound: %s"%(address))
-    except NotFound: pass
+        return True
+    except NotFound: return False
 
 class ReplicationTests(BrokerTest):
     """Correctness tests for  HA replication."""
@@ -223,7 +223,7 @@ class ReplicationTests(BrokerTest):
             self.assert_browse_retry(b, prefix+"q1", ["1", "4"])
 
             self.assert_browse_retry(b, prefix+"q2", []) # configuration only
-            assert_missing(b, prefix+"q3")
+            assert not valid_address(b, prefix+"q3")
             b.sender(prefix+"e1").send(Message(prefix+"e1")) # Verify binds with replicate=all
             self.assert_browse_retry(b, prefix+"q1", ["1", "4", prefix+"e1"])
             b.sender(prefix+"e2").send(Message(prefix+"e2")) # Verify binds with replicate=configuration
@@ -603,9 +603,26 @@ class ReplicationTests(BrokerTest):
         test("excl_sub;{create:always, link:{x-subscribe:{exclusive:True}}}");
         test("excl_queue;{create:always, node:{x-declare:{exclusive:True}}}")
 
+    def test_auto_delete_exclusive(self):
+        """Verify that we ignore auto-delete, exclusive, non-auto-delete-timeout queues"""
+        cluster = HaCluster(self,2)
+        s = cluster[0].connect().session()
+        s.receiver("exad;{create:always,node:{x-declare:{exclusive:True,auto-delete:True}}}")
+        s.receiver("ex;{create:always,node:{x-declare:{exclusive:True}}}")
+        s.receiver("ad;{create:always,node:{x-declare:{auto-delete:True}}}")
+        s.receiver("time;{create:always,node:{x-declare:{exclusive:True,auto-delete:True,arguments:{'qpid.auto_delete_timeout':1}}}}")
+        s.receiver("q;{create:always}")
+
+        s = cluster[1].connect_admin().session()
+        cluster[1].wait_backup("q")
+        assert not valid_address(s, "exad")
+        assert valid_address(s, "ex")
+        assert valid_address(s, "ad")
+        assert valid_address(s, "time")
+
     def test_recovering(self):
         """Verify that the primary broker does not go active until expected
-        backups have connected or timeout expires."""
+        backups have connected"""
         cluster = HaCluster(self, 3, args=["--ha-expected-backups=2"])
         c = cluster[0].connect()
         for i in xrange(10):
@@ -691,13 +708,14 @@ class LongTests(BrokerTest):
                 receiver.receiver.assert_running()
                 n = receiver.received
                 # FIXME aconway 2012-05-01: don't kill primary till it's active
-                # otherwise we can lose messages. This is in lieu of not
-                # promoting catchup brokers.
+                # otherwise we can lose messages. When we implement non-promotion
+                # of catchup brokers we can make this stronger: wait only for
+                # there to be at least one ready backup.
                 assert retry(brokers[i%3].try_connect, 1)
                 brokers.bounce(i%3)
                 i += 1
                 def enough():        # Verify we're still running
-                    receiver.check()        # Verify no exceptions
+                    receiver.check() # Verify no exceptions
                     return receiver.received > n + 100
                 assert retry(enough, 1)
         except:

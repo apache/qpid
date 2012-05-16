@@ -73,6 +73,8 @@ const string ARGS("args");
 const string ARGUMENTS("arguments");
 const string AUTODEL("autoDel");
 const string AUTODELETE("autoDelete");
+const string EXCL("excl");
+const string EXCLUSIVE("exclusive");
 const string BIND("bind");
 const string UNBIND("unbind");
 const string BINDING("binding");
@@ -278,7 +280,9 @@ void BrokerReplicator::route(Deliverable& msg) {
 void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
     string name = values[QNAME].asString();
     Variant::Map argsMap = asMapVoid(values[ARGS]);
-    if (!haBroker.replicateLevel(argsMap)) return; // Not a replicated queue.
+    if (!isReplicated(
+            values[ARGS].asMap(), values[AUTODEL].asBool(), values[EXCL].asBool()))
+        return;
     if (values[DISP] == CREATED && haBroker.replicateLevel(argsMap)) {
         framing::FieldTable args;
         amqp_0_10::translate(argsMap, args);
@@ -286,19 +290,20 @@ void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
         // The queue was definitely created on the primary.
         if (broker.getQueues().find(name)) {
             broker.getQueues().destroy(name);
-            QPID_LOG(warning, logPrefix << "queue declare event, replaced exsiting: " << name);
+            QPID_LOG(warning, logPrefix << "queue declare event, replaced exsiting: "
+                     << name);
         }
         std::pair<boost::shared_ptr<Queue>, bool> result =
             broker.createQueue(
                 name,
                 values[DURABLE].asBool(),
                 values[AUTODEL].asBool(),
-                0 /*i.e. no owner regardless of exclusivity on master*/,
+                0, // no owner regardless of exclusivity on primary
                 values[ALTEX].asString(),
                 args,
                 values[USER].asString(),
                 values[RHOST].asString());
-        assert(result.second);
+        assert(result.second);  // Should be true since we destroyed existing queue above
         QPID_LOG(debug, logPrefix << "queue declare event: " << name);
         startQueueReplicator(result.first);
     }
@@ -420,7 +425,10 @@ void BrokerReplicator::doEventUnbind(Variant::Map& values) {
 
 void BrokerReplicator::doResponseQueue(Variant::Map& values) {
     Variant::Map argsMap(asMapVoid(values[ARGUMENTS]));
-    if (!haBroker.replicateLevel(argsMap)) return;
+    if (!isReplicated(values[ARGUMENTS].asMap(),
+                      values[AUTODELETE].asBool(),
+                      values[EXCLUSIVE].asBool()))
+        return;
     framing::FieldTable args;
     amqp_0_10::translate(argsMap, args);
     string name(values[NAME].asString());
@@ -520,6 +528,17 @@ void BrokerReplicator::doResponseHaBroker(Variant::Map& values) {
                  << e.what());
         haBroker.shutdown();
     }
+}
+
+namespace {
+const std::string AUTO_DELETE_TIMEOUT("qpid.auto_delete_timeout");
+}
+
+bool BrokerReplicator::isReplicated(
+    const Variant::Map& args, bool autodelete, bool exclusive)
+{
+    bool ignore = autodelete && exclusive && args.find(AUTO_DELETE_TIMEOUT) == args.end();
+    return haBroker.replicateLevel(args) && !ignore;
 }
 
 void BrokerReplicator::startQueueReplicator(const boost::shared_ptr<Queue>& queue)
