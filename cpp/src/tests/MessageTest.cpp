@@ -33,6 +33,8 @@
 using namespace qpid::broker;
 using namespace qpid::framing;
 
+using std::string;
+
 namespace qpid {
 namespace tests {
 

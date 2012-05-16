@@ -28,7 +28,7 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::sys;
 
-ManagementDirectExchange::ManagementDirectExchange(const string& _name, Manageable* _parent, Broker* b) :
+ManagementDirectExchange::ManagementDirectExchange(const std::string& _name, Manageable* _parent, Broker* b) :
     Exchange (_name, _parent, b),
     DirectExchange(_name, _parent, b),
     managementAgent(0) {}
@@ -43,7 +43,7 @@ ManagementDirectExchange::ManagementDirectExchange(const std::string& _name,
 void ManagementDirectExchange::route(Deliverable&      msg)
 {
     bool routeIt = true;
-    const string& routingKey = msg.getMessage().getRoutingKey();
+    const std::string& routingKey = msg.getMessage().getRoutingKey();
     const FieldTable* args = msg.getMessage().getApplicationHeaders();
 
     if (managementAgent)

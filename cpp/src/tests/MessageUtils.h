@@ -33,7 +33,7 @@ namespace tests {
 
 struct MessageUtils
 {
-    static boost::intrusive_ptr<Message> createMessage(const string& exchange="", const string& routingKey="",
+    static boost::intrusive_ptr<Message> createMessage(const std::string& exchange="", const std::string& routingKey="",
                                                        const bool durable = false, const Uuid& messageId=Uuid(true),
                                                        uint64_t contentSize = 0)
     {
@@ -53,7 +53,7 @@ struct MessageUtils
         return msg;
     }
 
-    static void addContent(boost::intrusive_ptr<Message> msg, const string& data)
+    static void addContent(boost::intrusive_ptr<Message> msg, const std::string& data)
     {
         AMQFrame content((AMQContentBody(data)));
         msg->getFrames().append(content);

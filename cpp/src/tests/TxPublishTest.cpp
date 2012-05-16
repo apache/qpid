@@ -69,9 +69,9 @@ QPID_AUTO_TEST_CASE(testPrepare)
     //ensure messages are enqueued in store
     t.op.prepare(0);
     BOOST_CHECK_EQUAL((size_t) 2, t.store.enqueued.size());
-    BOOST_CHECK_EQUAL(string("queue1"), t.store.enqueued[0].first);
+    BOOST_CHECK_EQUAL(std::string("queue1"), t.store.enqueued[0].first);
     BOOST_CHECK_EQUAL(pmsg, t.store.enqueued[0].second);
-    BOOST_CHECK_EQUAL(string("queue2"), t.store.enqueued[1].first);
+    BOOST_CHECK_EQUAL(std::string("queue2"), t.store.enqueued[1].first);
     BOOST_CHECK_EQUAL(pmsg, t.store.enqueued[1].second);
     BOOST_CHECK_EQUAL( true, ( boost::static_pointer_cast<PersistableMessage>(t.msg))->isIngressComplete());
 }

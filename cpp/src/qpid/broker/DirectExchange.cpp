@@ -26,6 +26,9 @@
 #include <iostream>
 
 using namespace qpid::broker;
+
+using std::string;
+
 using namespace qpid::framing;
 using namespace qpid::sys;
 using qpid::management::Manageable;

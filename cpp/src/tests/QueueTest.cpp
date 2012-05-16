@@ -42,6 +42,8 @@
 #include <iostream>
 #include "boost/format.hpp"
 
+using std::string;
+
 using boost::intrusive_ptr;
 using namespace qpid;
 using namespace qpid::broker;

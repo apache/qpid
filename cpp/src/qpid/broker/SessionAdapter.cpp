@@ -41,6 +41,8 @@
 namespace qpid {
 namespace broker {
 
+using std::string;
+
 using namespace qpid;
 using namespace qpid::framing;
 using namespace qpid::framing::dtx;
