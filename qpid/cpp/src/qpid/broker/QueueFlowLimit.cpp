@@ -75,8 +75,8 @@ namespace {
             result = v->get<int64_t>();
             QPID_LOG(debug, "Got integer value for " << key << ": " << result);
             if (result >= 0) return result;
-        } else if (v->convertsTo<string>()) {
-            string s(v->get<string>());
+        } else if (v->convertsTo<std::string>()) {
+            std::string s(v->get<std::string>());
             QPID_LOG(debug, "Got string value for " << key << ": " << s);
             std::istringstream convert(s);
             if (convert >> result && result >= 0) return result;

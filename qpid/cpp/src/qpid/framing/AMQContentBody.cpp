@@ -24,7 +24,7 @@
 qpid::framing::AMQContentBody::AMQContentBody(){
 }
 
-qpid::framing::AMQContentBody::AMQContentBody(const string& _data) : data(_data){
+qpid::framing::AMQContentBody::AMQContentBody(const std::string& _data) : data(_data){
 }
 
 uint32_t qpid::framing::AMQContentBody::encodedSize() const{

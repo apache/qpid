@@ -258,7 +258,7 @@ void ConnectionHandler::start(const FieldTable& /*serverProps*/, const Array& me
     }
 
     if (sasl.get()) {
-        string response;
+        std::string response;
         if (sasl->start(join(mechlist), response, getSecuritySettings ? getSecuritySettings() : 0)) {
             proxy.startOk(properties, sasl->getMechanism(), response, locale);
         } else {
@@ -272,7 +272,7 @@ void ConnectionHandler::start(const FieldTable& /*serverProps*/, const Array& me
         }
     } else {
         //TODO: verify that desired mechanism and locale are supported
-        string response = ((char)0) + username + ((char)0) + password;
+        std::string response = ((char)0) + username + ((char)0) + password;
         proxy.startOk(properties, mechanism, response, locale);
     }
 }
@@ -280,7 +280,7 @@ void ConnectionHandler::start(const FieldTable& /*serverProps*/, const Array& me
 void ConnectionHandler::secure(const std::string& challenge)
 {
     if (sasl.get()) {
-        string response = sasl->step(challenge);
+        std::string response = sasl->step(challenge);
         proxy.secureOk(response);
     } else {
         throw NotImplementedException("Challenge-response cycle not yet implemented in client");

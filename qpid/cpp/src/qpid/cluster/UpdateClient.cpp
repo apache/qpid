@@ -74,6 +74,8 @@
 namespace qpid {
 namespace cluster {
 
+using std::string;
+
 using amqp_0_10::ListCodec;
 using broker::Broker;
 using broker::Exchange;

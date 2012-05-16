@@ -24,6 +24,8 @@
 #include "qpid/framing/amqp_types.h"
 #include "qpid/CommonImportExport.h"
 
+#include <string>
+
 namespace qpid
 {
 namespace framing

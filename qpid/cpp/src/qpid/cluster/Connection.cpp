@@ -58,6 +58,8 @@
 namespace qpid {
 namespace cluster {
 
+using std::string;
+
 using namespace framing;
 using namespace framing::cluster;
 using amqp_0_10::ListCodec;

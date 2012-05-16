@@ -43,7 +43,7 @@
 #include <iostream>
 #include <assert.h>
 
-
+using std::string;
 
 using namespace qpid::sys;
 using namespace qpid::framing;

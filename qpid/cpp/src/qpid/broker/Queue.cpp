@@ -67,6 +67,7 @@ using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
+using std::string;
 using std::for_each;
 using std::mem_fun;
 namespace _qmf = qmf::org::apache::qpid::broker;
