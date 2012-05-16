@@ -381,8 +381,8 @@ class Broker : public sys::Runnable, public Plugin::Target,
     ConnectionObservers& getConnectionObservers() { return connectionObservers; }
 
     /** Properties to be set on outgoing link connections */
-    framing::FieldTable getLinkClientProperties() const;
-    void setLinkClientProperties(const framing::FieldTable&);
+    QPID_BROKER_EXTERN framing::FieldTable getLinkClientProperties() const;
+    QPID_BROKER_EXTERN void setLinkClientProperties(const framing::FieldTable&);
 };
 
 }}
