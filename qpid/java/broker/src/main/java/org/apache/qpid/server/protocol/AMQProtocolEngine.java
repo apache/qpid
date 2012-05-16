@@ -389,7 +389,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
             // This sets the protocol version (and hence framing classes) for this session.
             setProtocolVersion(pv);
 
-            String mechanisms = ApplicationRegistry.getInstance().getAuthenticationManager().getMechanisms();
+            String mechanisms = ApplicationRegistry.getInstance().getAuthenticationManager(getLocalAddress()).getMechanisms();
 
             String locales = "en_US";
 

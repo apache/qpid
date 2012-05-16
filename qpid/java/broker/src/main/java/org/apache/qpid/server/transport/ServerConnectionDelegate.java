@@ -32,6 +32,7 @@ import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.subscription.Subscription_0_10;
 import org.apache.qpid.server.virtualhost.State;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -58,22 +59,25 @@ public class ServerConnectionDelegate extends ServerDelegate
     private final IApplicationRegistry _appRegistry;
     private int _maxNoOfChannels;
     private Map<String,Object> _clientProperties;
+    private final AuthenticationManager _authManager;
 
-    public ServerConnectionDelegate(IApplicationRegistry appRegistry, String localFQDN)
+    public ServerConnectionDelegate(IApplicationRegistry appRegistry, String localFQDN, AuthenticationManager authManager)
     {
-        this(createConnectionProperties(appRegistry.getBroker()), Collections.singletonList((Object)"en_US"), appRegistry, localFQDN);
+        this(createConnectionProperties(appRegistry.getBroker()), Collections.singletonList((Object)"en_US"), appRegistry, localFQDN, authManager);
     }
 
-    public ServerConnectionDelegate(Map<String, Object> properties,
+    private ServerConnectionDelegate(Map<String, Object> properties,
                                     List<Object> locales,
                                     IApplicationRegistry appRegistry,
-                                    String localFQDN)
+                                    String localFQDN,
+                                    AuthenticationManager authManager)
     {
-        super(properties, parseToList(appRegistry.getAuthenticationManager().getMechanisms()), locales);
+        super(properties, parseToList(authManager.getMechanisms()), locales);
 
         _appRegistry = appRegistry;
         _localFQDN = localFQDN;
-        _maxNoOfChannels = ApplicationRegistry.getInstance().getConfiguration().getMaxChannelCount();
+        _maxNoOfChannels = appRegistry.getConfiguration().getMaxChannelCount();
+        _authManager = authManager;
     }
 
     private static Map<String, Object> createConnectionProperties(final BrokerConfig brokerConfig)
@@ -110,13 +114,13 @@ public class ServerConnectionDelegate extends ServerDelegate
 
     protected SaslServer createSaslServer(String mechanism) throws SaslException
     {
-        return _appRegistry.getAuthenticationManager().createSaslServer(mechanism, _localFQDN);
+        return _authManager.createSaslServer(mechanism, _localFQDN);
 
     }
 
     protected void secure(final SaslServer ss, final Connection conn, final byte[] response)
     {
-        final AuthenticationResult authResult = _appRegistry.getAuthenticationManager().authenticate(ss, response);
+        final AuthenticationResult authResult = _authManager.authenticate(ss, response);
         final ServerConnection sconn = (ServerConnection) conn;
 
 
