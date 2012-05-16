@@ -380,7 +380,6 @@ libqpidcommon_la_SOURCES +=			\
   qpid/assert.h					\
   qpid/framing/AMQBody.cpp			\
   qpid/framing/AMQBody.h			\
-  qpid/framing/AMQCommandControlBody.h		\
   qpid/framing/AMQContentBody.cpp		\
   qpid/framing/AMQContentBody.h			\
   qpid/framing/AMQDataBlock.h			\
