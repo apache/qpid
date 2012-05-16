@@ -147,3 +147,5 @@ bdb-je=lib/bdbstore/je-5.0.34.jar
 bdbstore.libs=${bdb-je}
 bdbstore.test.libs=${test.libs}
 
+client-api.libs=${slf4j-api}
+client-jms.libs=${geronimo-jms}
