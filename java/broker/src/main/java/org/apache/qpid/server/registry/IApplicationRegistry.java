@@ -37,6 +37,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.UUID;
 
 public interface IApplicationRegistry extends StatisticsGatherer
@@ -62,7 +63,25 @@ public interface IApplicationRegistry extends StatisticsGatherer
 
     ManagedObjectRegistry getManagedObjectRegistry();
 
+    /**
+     * Get the default AuthenticationManager
+     *
+     * @deprecated
+     *
+     * @return the AuthenticationManager
+     */
     AuthenticationManager getAuthenticationManager();
+
+    /**
+     * Get the AuthenticationManager for the given socket address
+     *
+     * If no AuthenticationManager has been specifically set for the given address, then use the default
+     * AuthenticationManager
+     *
+     * @param address The (listening) socket address for which the AuthenticationManager is required
+     * @return the AuthenticationManager
+     */
+    AuthenticationManager getAuthenticationManager(SocketAddress address);
 
     VirtualHostRegistry getVirtualHostRegistry();
 

@@ -65,7 +65,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
         _logger.info("SASL Mechanism selected: " + body.getMechanism());
         _logger.info("Locale selected: " + body.getLocale());
 
-        AuthenticationManager authMgr = ApplicationRegistry.getInstance().getAuthenticationManager();
+        AuthenticationManager authMgr = stateManager.getAuthenticationManager();
         SaslServer ss = null;
         try
         {                       

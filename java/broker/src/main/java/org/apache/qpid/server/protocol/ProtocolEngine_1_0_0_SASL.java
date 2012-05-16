@@ -164,7 +164,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         Container container = new Container(_appRegistry.getBrokerId().toString());
 
         _conn = new ConnectionEndpoint(container, asCallbackHandlerSource(ApplicationRegistry.getInstance()
-                                                                                             .getAuthenticationManager()));
+                                                                                             .getAuthenticationManager(getLocalAddress())));
         _conn.setConnectionEventListener(new Connection_1_0(_appRegistry));
         _conn.setRemoteAddress(getRemoteAddress());
 

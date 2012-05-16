@@ -302,7 +302,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         public ServerProtocolEngine getProtocolEngine()
         {
             final ConnectionDelegate connDelegate =
-                    new org.apache.qpid.server.transport.ServerConnectionDelegate(_appRegistry, _fqdn);
+                    new org.apache.qpid.server.transport.ServerConnectionDelegate(_appRegistry, _fqdn, _appRegistry.getAuthenticationManager(getLocalAddress()));
 
             ServerConnection conn = new ServerConnection(_id);
             conn.setConnectionDelegate(connDelegate);
