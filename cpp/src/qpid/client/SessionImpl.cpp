@@ -426,7 +426,7 @@ void SessionImpl::sendContent(const MethodContent& content)
             uint32_t remaining = data_length - offset;
             while (remaining > 0) {
                 uint32_t length = remaining > frag_size ? frag_size : remaining;
-                string frag(content.getData().substr(offset, length));
+                std::string frag(content.getData().substr(offset, length));
                 AMQFrame frame((AMQContentBody(frag)));
                 frame.setFirstSegment(false);
                 frame.setLastSegment(true);

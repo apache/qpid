@@ -27,7 +27,7 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::sys;
 
-ManagementTopicExchange::ManagementTopicExchange(const string& _name, Manageable* _parent, Broker* b) :
+ManagementTopicExchange::ManagementTopicExchange(const std::string& _name, Manageable* _parent, Broker* b) :
     Exchange (_name, _parent, b),
     TopicExchange(_name, _parent, b),
     managementAgent(0) {}
@@ -42,7 +42,7 @@ ManagementTopicExchange::ManagementTopicExchange(const std::string& _name,
 void ManagementTopicExchange::route(Deliverable&      msg)
 {
     bool routeIt = true;
-    const string& routingKey = msg.getMessage().getRoutingKey();
+    const std::string& routingKey = msg.getMessage().getRoutingKey();
     const FieldTable* args = msg.getMessage().getApplicationHeaders();
 
     // Intercept management agent commands
@@ -54,7 +54,7 @@ void ManagementTopicExchange::route(Deliverable&      msg)
 }
 
 bool ManagementTopicExchange::bind(Queue::shared_ptr queue,
-                                   const string& routingKey,
+                                   const std::string& routingKey,
                                    const qpid::framing::FieldTable* args)
 {
     if (qmfVersion == 1)

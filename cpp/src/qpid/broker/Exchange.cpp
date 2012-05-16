@@ -35,6 +35,8 @@
 namespace qpid {
 namespace broker {
 
+using std::string;
+
 using namespace qpid::framing;
 using qpid::framing::Buffer;
 using qpid::framing::FieldTable;

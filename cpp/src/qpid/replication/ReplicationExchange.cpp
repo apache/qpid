@@ -184,7 +184,7 @@ bool ReplicationExchange::unbind(Queue::shared_ptr /*queue*/, const std::string&
     throw NotImplementedException("Replication exchange does not support unbind operation");
 }
 
-bool ReplicationExchange::isBound(Queue::shared_ptr /*queue*/, const string* const /*routingKey*/, const FieldTable* const /*args*/)
+bool ReplicationExchange::isBound(Queue::shared_ptr /*queue*/, const std::string* const /*routingKey*/, const FieldTable* const /*args*/)
 {
     return false;
 }

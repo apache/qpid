@@ -37,6 +37,7 @@
 using qpid::sys::cyrus::CyrusSecurityLayer;
 #endif
 
+using std::string;
 using namespace qpid::framing;
 using qpid::sys::SecurityLayer;
 using qpid::sys::SecuritySettings;

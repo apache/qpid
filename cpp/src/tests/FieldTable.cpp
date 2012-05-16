@@ -29,6 +29,8 @@
 
 using namespace qpid::framing;
 
+using std::string;
+
 namespace qpid {
 namespace tests {
 

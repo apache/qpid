@@ -36,6 +36,9 @@
 
 using namespace qpid;
 using namespace qpid::broker;
+
+using std::string;
+
 using namespace qpid::framing;
 using qpid::sys::SecurityLayer;
 namespace _qmf = qmf::org::apache::qpid::broker;
