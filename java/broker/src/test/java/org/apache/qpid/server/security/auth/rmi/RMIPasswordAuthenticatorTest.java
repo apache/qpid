@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.security.auth.rmi;
 
+import java.util.Map;
 import junit.framework.TestCase;
 
 import org.apache.commons.configuration.ConfigurationException;
@@ -126,9 +127,9 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         TestApplicationRegistry reg = new TestApplicationRegistry(serverConfig)
         {
             @Override
-            protected AuthenticationManager createAuthenticationManager() throws ConfigurationException
+            protected Map<Integer, AuthenticationManager> createAuthenticationManagers() throws ConfigurationException
             {
-                return null;
+                return Collections.emptyMap();
             }
         };
         ApplicationRegistry.initialise(reg);

@@ -20,8 +20,7 @@
  */
 package org.apache.qpid.server.util;
 
-import java.util.UUID;
-
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 
 import org.apache.qpid.AMQException;
@@ -85,7 +84,7 @@ public class InternalBrokerBaseCase extends QpidTestCase
 
         configure();
 
-        _registry = new TestApplicationRegistry(_configuration);
+        _registry = createApplicationRegistry();
         ApplicationRegistry.initialise(_registry);
         _registry.getVirtualHostRegistry().setDefaultVirtualHostName(getName());
         _virtualHost = _registry.getVirtualHostRegistry().getVirtualHost(getName());
@@ -117,6 +116,11 @@ public class InternalBrokerBaseCase extends QpidTestCase
         _channel = new AMQChannel(_session, 1, _messageStore);
 
         _session.addChannel(_channel);
+    }
+
+    protected IApplicationRegistry createApplicationRegistry() throws ConfigurationException
+    {
+        return new TestApplicationRegistry(_configuration);
     }
 
     protected void configure()

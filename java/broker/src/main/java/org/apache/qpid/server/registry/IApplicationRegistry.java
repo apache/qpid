@@ -70,7 +70,7 @@ public interface IApplicationRegistry extends StatisticsGatherer
      *
      * @return the AuthenticationManager
      */
-    AuthenticationManager getAuthenticationManager();
+    AuthenticationManager getDefaultAuthenticationManager();
 
     /**
      * Get the AuthenticationManager for the given socket address

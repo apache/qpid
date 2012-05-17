@@ -140,6 +140,7 @@ org.apache.qpid.info.systest.InfoPluginTest#*
 org.apache.qpid.info.test.*
 org.apache.qpid.server.security.access.*
 org.apache.qpid.server.security.access.plugins.*
+org.apache.qpid.server.security.auth.manager.*
 org.apache.qpid.server.security.acl.*
 org.apache.qpid.server.configuration.*
 org.apache.qpid.server.configuration.plugins.*
@@ -156,6 +157,7 @@ org.apache.qpid.test.unit.transacted.TransactionTimeoutTest#*
 org.apache.qpid.server.logging.management.LoggingManagementMBeanTest#*
 org.apache.qpid.server.management.AMQUserManagementMBeanTest#*
 org.apache.qpid.server.SupportedProtocolVersionsTest#*
+
 
 // QPID-3133: On 0-10, the exception listener is currently not invoked when reconnection fails to occurs.
 org.apache.qpid.server.failover.FailoverMethodTest#*
