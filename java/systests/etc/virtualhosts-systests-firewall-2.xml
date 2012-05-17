@@ -26,7 +26,7 @@
         <name>test</name>
         <test>
             <store>
-                <factoryclass>org.apache.qpid.server.store.MemoryMessageStoreFactory</factoryclass>
+                <class>org.apache.qpid.server.store.MemoryMessageStore</class>
             </store>
         </test>
     </virtualhost>
@@ -35,7 +35,7 @@
         <name>test2</name>
         <test2>
             <store>
-                <factoryclass>org.apache.qpid.server.store.MemoryMessageStoreFactory</factoryclass>
+                <class>org.apache.qpid.server.store.MemoryMessageStore</class>
             </store>
             <security>
 		        <firewall default-action="deny">

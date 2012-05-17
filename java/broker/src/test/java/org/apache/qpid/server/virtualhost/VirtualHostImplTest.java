@@ -27,7 +27,7 @@ import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.store.MemoryMessageStoreFactory;
+import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.util.TestApplicationRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -192,7 +192,7 @@ public class VirtualHostImplTest extends QpidTestCase
             writer.write("      <name>" + vhostName + "</name>");
             writer.write("      <" + vhostName + ">");
             writer.write("              <store>");
-            writer.write("                <factoryclass>" + MemoryMessageStoreFactory.class.getName() + "</factoryclass>");
+            writer.write("                <class>" + MemoryMessageStore.class.getName() + "</class>");
             writer.write("              </store>");
             if(exchangeName != null && !dontDeclare)
             {

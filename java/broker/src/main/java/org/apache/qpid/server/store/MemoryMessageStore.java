@@ -83,19 +83,19 @@ public class MemoryMessageStore extends NullMessageStore
     @Override
     public void configureConfigStore(String name, ConfigurationRecoveryHandler recoveryHandler, Configuration config) throws Exception
     {
-        _stateManager.attainState(State.CONFIGURING);
+        _stateManager.attainState(State.INITIALISING);
     }
 
     @Override
     public void configureMessageStore(String name, MessageStoreRecoveryHandler recoveryHandler, TransactionLogRecoveryHandler tlogRecoveryHandler, Configuration config) throws Exception
     {
-        _stateManager.attainState(State.CONFIGURED);
+        _stateManager.attainState(State.INITIALISED);
     }
 
     @Override
     public void activate() throws Exception
     {
-        _stateManager.attainState(State.RECOVERING);
+        _stateManager.attainState(State.ACTIVATING);
         
         _stateManager.attainState(State.ACTIVE);
     }

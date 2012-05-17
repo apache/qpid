@@ -59,7 +59,6 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * This tests the MessageStores by using the available interfaces.
@@ -103,7 +102,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
         String storePath = System.getProperty("QPID_WORK") + "/" + getName();
         
         _config = new PropertiesConfiguration();
-        _config.addProperty("store.factoryclass", getTestProfileMessageStoreFactoryClassName());
+        _config.addProperty("store.class", getTestProfileMessageStoreClassName());
         _config.addProperty("store.environment-path", storePath);
 
         cleanup(new File(storePath));

@@ -260,7 +260,7 @@ public class DerbyMessageStore implements MessageStore
                           ConfigurationRecoveryHandler configRecoveryHandler,
                           Configuration storeConfiguration) throws Exception
     {
-        _stateManager.attainState(State.CONFIGURING);
+        _stateManager.attainState(State.INITIALISING);
         _configRecoveryHandler = configRecoveryHandler;
 
         commonConfiguration(name, storeConfiguration);
@@ -276,13 +276,13 @@ public class DerbyMessageStore implements MessageStore
         _tlogRecoveryHandler = tlogRecoveryHandler;
         _messageRecoveryHandler = recoveryHandler;
 
-        _stateManager.attainState(State.CONFIGURED);
+        _stateManager.attainState(State.INITIALISED);
     }
 
     @Override
     public void activate() throws Exception
     {
-        _stateManager.attainState(State.RECOVERING);
+        _stateManager.attainState(State.ACTIVATING);
 
         // this recovers durable exchanges, queues, and bindings
         recoverConfiguration(_configRecoveryHandler);
@@ -716,7 +716,7 @@ public class DerbyMessageStore implements MessageStore
     public void close() throws Exception
     {
         _closed.getAndSet(true);
-        _stateManager.stateTransition(State.ACTIVE, State.CLOSING);
+        _stateManager.attainState(State.CLOSING);
 
         try
         {
@@ -737,7 +737,7 @@ public class DerbyMessageStore implements MessageStore
             }
         }
 
-        _stateManager.stateTransition(State.CLOSING, State.CLOSED);
+        _stateManager.attainState(State.CLOSED);
     }
 
     @Override
