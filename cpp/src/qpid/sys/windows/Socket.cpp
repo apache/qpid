@@ -266,14 +266,17 @@ int Socket::getError() const
 
 void Socket::setTcpNoDelay() const
 {
-    int flag = 1;
-    int result = setsockopt(impl->fd,
-                            IPPROTO_TCP,
-                            TCP_NODELAY,
-                            (char *)&flag,
-                            sizeof(flag));
-    QPID_WINSOCK_CHECK(result);
+    SOCKET& socket = impl->fd;
     nodelay = true;
+    if (socket != INVALID_SOCKET) {
+        int flag = 1;
+        int result = setsockopt(impl->fd,
+                                IPPROTO_TCP,
+                                TCP_NODELAY,
+                                (char *)&flag,
+                                sizeof(flag));
+        QPID_WINSOCK_CHECK(result);
+    }
 }
 
 inline IOHandlePrivate* IOHandlePrivate::getImpl(const qpid::sys::IOHandle &h)
