@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.util;
 
+import java.util.Collections;
+import java.util.Map;
 import org.apache.commons.configuration.ConfigurationException;
 
 import org.apache.qpid.server.configuration.ServerConfiguration;
@@ -52,10 +54,10 @@ public class TestApplicationRegistry extends ApplicationRegistry
     }
 
     /**
-     * @see org.apache.qpid.server.registry.ApplicationRegistry#createAuthenticationManager()
+     * @see org.apache.qpid.server.registry.ApplicationRegistry#createAuthenticationManagers()
      */
     @Override
-    protected AuthenticationManager createAuthenticationManager() throws ConfigurationException
+    protected Map<Integer, AuthenticationManager> createAuthenticationManagers() throws ConfigurationException
     {
         final Properties users = new Properties();
         users.put("guest","guest");
@@ -86,7 +88,7 @@ public class TestApplicationRegistry extends ApplicationRegistry
 
         pdam.initialise();
 
-        return pdam;
+        return Collections.singletonMap(null,pdam);
     }
 
 }
