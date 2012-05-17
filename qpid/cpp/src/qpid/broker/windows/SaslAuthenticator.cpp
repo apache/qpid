@@ -32,6 +32,8 @@
 using namespace qpid::framing;
 using qpid::sys::SecurityLayer;
 
+using std::string;
+
 namespace qpid {
 namespace broker {
 
