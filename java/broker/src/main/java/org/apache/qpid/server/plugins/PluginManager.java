@@ -23,6 +23,7 @@ import org.apache.felix.framework.Felix;
 import org.apache.felix.framework.util.StringMap;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.KerberosAuthenticationManager;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
@@ -158,7 +159,8 @@ public class PluginManager implements Closeable
                 new SlowConsumerDetectionPolicyConfigurationFactory(),
                 new SlowConsumerDetectionQueueConfigurationFactory(),
                 PrincipalDatabaseAuthenticationManager.PrincipalDatabaseAuthenticationManagerConfiguration.FACTORY,
-                AnonymousAuthenticationManager.AnonymousAuthenticationManagerConfiguration.FACTORY))
+                AnonymousAuthenticationManager.AnonymousAuthenticationManagerConfiguration.FACTORY,
+                KerberosAuthenticationManager.KerberosAuthenticationManagerConfiguration.FACTORY))
         {
             _configPlugins.put(configFactory.getParentPaths(), configFactory);
         }
@@ -174,7 +176,8 @@ public class PluginManager implements Closeable
         }
 
         for (AuthenticationManagerPluginFactory<? extends Plugin> pluginFactory : Arrays.asList(
-                PrincipalDatabaseAuthenticationManager.FACTORY, AnonymousAuthenticationManager.FACTORY))
+                PrincipalDatabaseAuthenticationManager.FACTORY, AnonymousAuthenticationManager.FACTORY,
+                KerberosAuthenticationManager.FACTORY))
         {
             _authenticationManagerPlugins.put(pluginFactory.getPluginName(), pluginFactory);
         }
