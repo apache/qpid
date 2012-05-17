@@ -581,6 +581,27 @@ public class ServerConfiguration extends ConfigurationPlugin
         return getBooleanValue("security.msg-auth");
     }
 
+    public String getDefaultAuthenticationManager()
+    {
+        return getStringValue("security.default-auth-manager");
+    }
+
+
+    public Map<Integer, String> getPortAuthenticationMappings()
+    {
+        String[] ports = getConfig().getStringArray("security.port-mappings.port-mapping.port");
+        String[] authManagers = getConfig().getStringArray("security.port-mappings.port-mapping.auth-manager");
+
+        Map<Integer,String> portMappings = new HashMap<Integer, String>();
+        for(int i = 0; i < ports.length; i++)
+        {
+            portMappings.put(Integer.valueOf(ports[i]), authManagers[i]);
+        }
+
+        return portMappings;
+    }
+
+
     public String getManagementKeyStorePath()
     {
         final String fallback = getStringValue("management.ssl.keystorePath");

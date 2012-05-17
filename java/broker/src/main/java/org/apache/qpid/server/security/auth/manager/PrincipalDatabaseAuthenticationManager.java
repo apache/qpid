@@ -103,7 +103,10 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
     {
         public PrincipalDatabaseAuthenticationManager newInstance(final ConfigurationPlugin config) throws ConfigurationException
         {
-            final PrincipalDatabaseAuthenticationManagerConfiguration configuration = config.getConfiguration(PrincipalDatabaseAuthenticationManagerConfiguration.class.getName());
+            final PrincipalDatabaseAuthenticationManagerConfiguration configuration =
+                    config == null
+                            ? null
+                            : (PrincipalDatabaseAuthenticationManagerConfiguration) config.getConfiguration(PrincipalDatabaseAuthenticationManagerConfiguration.class.getName());
 
             // If there is no configuration for this plugin then don't load it.
             if (configuration == null)
