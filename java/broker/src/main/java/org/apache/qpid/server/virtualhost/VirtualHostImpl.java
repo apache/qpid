@@ -59,8 +59,8 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
+import org.apache.qpid.server.store.HAMessageStore;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreFactory;
 import org.apache.qpid.server.store.OperationalLoggingListener;
 import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPlugin;
@@ -173,7 +173,7 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
         _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
 
-        _messageStore = initialiseMessageStore(hostConfig.getMessageStoreFactoryClass());
+        _messageStore = initialiseMessageStore(hostConfig.getMessageStoreClass());
 
         configureMessageStore(hostConfig);
 
@@ -329,20 +329,19 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
     }
 
 
-    private MessageStore initialiseMessageStore(final String messageStoreFactoryClass) throws Exception
+    private MessageStore initialiseMessageStore(final String messageStoreClass) throws Exception
     {
-        final Class<?> clazz = Class.forName(messageStoreFactoryClass);
+        final Class<?> clazz = Class.forName(messageStoreClass);
         final Object o = clazz.newInstance();
 
-        if (!(o instanceof MessageStoreFactory))
+        if (!(o instanceof MessageStore))
         {
-            throw new ClassCastException("Message store factory class must implement " + MessageStoreFactory.class +
+            throw new ClassCastException("Message store factory class must implement " + MessageStore.class +
                                         ". Class " + clazz + " does not.");
         }
 
-        final MessageStoreFactory messageStoreFactory = (MessageStoreFactory) o;
-        final MessageStore messageStore = messageStoreFactory.createMessageStore();
-        final MessageStoreLogSubject storeLogSubject = new MessageStoreLogSubject(this, messageStoreFactory.getStoreClassName());
+        final MessageStore messageStore = (MessageStore) o;
+        final MessageStoreLogSubject storeLogSubject = new MessageStoreLogSubject(this, clazz.getSimpleName());
         OperationalLoggingListener.listen(messageStore, storeLogSubject);
 
         messageStore.addEventListener(new BeforeActivationListener(), Event.BEFORE_ACTIVATE);
@@ -366,7 +365,10 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
     private void activateNonHAMessageStore() throws Exception
     {
-        _messageStore.activate();
+        if (!(_messageStore instanceof HAMessageStore))
+        {
+            _messageStore.activate();
+        }
     }
 
     private void initialiseModel(VirtualHostConfiguration config) throws ConfigurationException, AMQException
@@ -801,42 +803,42 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
     }
 
     private final class BeforeActivationListener implements EventListener
-    {
-        @Override
-        public void event(Event event)
-        {
-            try
-            {
-                _exchangeRegistry.initialise();
-                initialiseModel(_vhostConfig);
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException("Failed to initialise virtual host after state change", e);
-            }
-        }
-    }
+   {
+       @Override
+       public void event(Event event)
+       {
+           try
+           {
+               _exchangeRegistry.initialise();
+               initialiseModel(_vhostConfig);
+           }
+           catch (Exception e)
+           {
+               throw new RuntimeException("Failed to initialise virtual host after state change", e);
+           }
+       }
+   }
 
-    private final class AfterActivationListener implements EventListener
-    {
-        @Override
-        public void event(Event event)
-        {
-            initialiseHouseKeeping(_vhostConfig.getHousekeepingCheckPeriod());
-            try
-            {
-                _brokerMBean.register();
-            }
-            catch (JMException e)
-            {
-                throw new RuntimeException("Failed to register virtual host mbean for virtual host " + getName(), e);
-            }
+   private final class AfterActivationListener implements EventListener
+   {
+       @Override
+       public void event(Event event)
+       {
+           initialiseHouseKeeping(_vhostConfig.getHousekeepingCheckPeriod());
+           try
+           {
+               _brokerMBean.register();
+           }
+           catch (JMException e)
+           {
+               throw new RuntimeException("Failed to register virtual host mbean for virtual host " + getName(), e);
+           }
 
-            _state = State.ACTIVE;
-        }
-    }
+           _state = State.ACTIVE;
+       }
+   }
 
-    public class BeforePassivationListener implements EventListener
+    private final class BeforePassivationListener implements EventListener
     {
         public void event(Event event)
         {

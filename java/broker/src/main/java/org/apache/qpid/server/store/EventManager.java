@@ -24,9 +24,12 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 public class EventManager
 {
     private Map<Event, List<EventListener>> _listeners = new EnumMap<Event, List<EventListener>> (Event.class);
+    private static final Logger _LOGGER = Logger.getLogger(EventManager.class);
 
     public synchronized void addEventListener(EventListener listener, Event... events)
     {
@@ -46,6 +49,11 @@ public class EventManager
     {
         if (_listeners.containsKey(event))
         {
+            if(_LOGGER.isDebugEnabled())
+            {
+                _LOGGER.debug("Received event " + event);
+            }
+
             for (EventListener listener : _listeners.get(event))
             {
                 listener.event(event);

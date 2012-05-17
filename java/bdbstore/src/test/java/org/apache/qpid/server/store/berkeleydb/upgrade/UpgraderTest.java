@@ -24,7 +24,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
+import org.apache.qpid.server.store.berkeleydb.AbstractBDBMessageStore;
 import org.apache.qpid.server.store.berkeleydb.tuple.ContentBinding;
 
 import com.sleepycat.bind.tuple.IntegerBinding;
@@ -94,7 +94,7 @@ public class UpgraderTest extends AbstractUpgradeTestCase
     {
         assertEquals("Unexpected store version", -1, getStoreVersion());
         _upgrader.upgradeIfNecessary();
-        assertEquals("Unexpected store version", BDBMessageStore.VERSION, getStoreVersion());
+        assertEquals("Unexpected store version", AbstractBDBMessageStore.VERSION, getStoreVersion());
         assertContent();
     }
 
@@ -112,7 +112,7 @@ public class UpgraderTest extends AbstractUpgradeTestCase
         List<String> expectedDatabases = new ArrayList<String>();
         expectedDatabases.add(Upgrader.VERSION_DB_NAME);
         assertEquals("Expectedonly VERSION table in initially empty store after upgrade: ", expectedDatabases, databaseNames);
-        assertEquals("Unexpected store version", BDBMessageStore.VERSION, getStoreVersion());
+        assertEquals("Unexpected store version", AbstractBDBMessageStore.VERSION, getStoreVersion());
 
         nonExistentStoreLocation.delete();
     }
