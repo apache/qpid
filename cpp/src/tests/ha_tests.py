@@ -683,9 +683,7 @@ class LongTests(BrokerTest):
         if d: return float(d)*60
         else: return 3                  # Default is to be quick
 
-
-    # FIXME aconway 2012-05-15: disabled till functionality fixed.
-    def disable_test_failover_send_receive(self):
+    def test_failover_send_receive(self):
         """Test failover with continuous send-receive"""
         # Start a cluster, all members will be killed during the test.
         # FIXME aconway 2012-05-01: try expected-backups=1, requires catchup-ready fixed.
@@ -717,7 +715,8 @@ class LongTests(BrokerTest):
                 def enough():        # Verify we're still running
                     receiver.check() # Verify no exceptions
                     return receiver.received > n + 100
-                assert retry(enough, 1)
+                # FIXME aconway 2012-05-17: client reconnect sometimes takes > 1 sec.
+                assert retry(enough, 10)
         except:
             traceback.print_exc()
             raise
