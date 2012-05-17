@@ -258,7 +258,7 @@ QPID_AUTO_TEST_CASE(testOverhead) {
 Statement statement(
     Level level, const char* file="", int line=0, const char* fn=0)
 {
-    Statement s={0, file, line, fn, level};
+    Statement s={0, file, line, fn, level, ::qpid::log::unspecified};
     return s;
 }
 

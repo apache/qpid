@@ -35,17 +35,24 @@ struct Options;
 class Selector {
   public:
     /** Empty selector selects nothing */
-    Selector() {}
+    Selector() {
+        reset();
+    }
 
     /** Set selector from Options */
     QPID_COMMON_EXTERN Selector(const Options&);
 
     /** Equavlient to: Selector s; s.enable(l, s) */
     Selector(Level l, const std::string& s=std::string()) {
+        reset();
         enable(l,s);
     }
 
-    Selector(const std::string& enableStr) { enable(enableStr); }
+    Selector(const std::string& enableStr) {
+        reset();
+        enable(enableStr);
+    }
+
     /**
      * Enable messages with level in levels where the file
      * name contains substring. Empty string matches all.
@@ -54,14 +61,30 @@ class Selector {
         substrings[level].push_back(substring);
     }
 
+    /**
+     * Enable messages at this level for this category
+     */
+    void enable(Level level, Category category) {
+        catFlags[level][category] = true;
+    }
+
     /** Enable based on a 'level[+]:file' string */
     QPID_COMMON_EXTERN void enable(const std::string& enableStr);
 
     /** True if level is enabled for file. */
     QPID_COMMON_EXTERN bool isEnabled(Level level, const char* function);
+    QPID_COMMON_EXTERN bool isEnabled(Level level, const char* function, Category category);
+
+    /** Reset the category enable flags */
+    QPID_COMMON_EXTERN void reset() {
+        for (int lt = 0; lt < LevelTraits::COUNT; ++lt)
+            for (int ct = 0; ct < CategoryTraits::COUNT; ++ct)
+                catFlags[lt][ct] = false;
+    }
 
   private:
     std::vector<std::string> substrings[LevelTraits::COUNT];
+    bool catFlags[LevelTraits::COUNT][CategoryTraits::COUNT];
 };
 
 

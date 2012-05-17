@@ -54,6 +54,72 @@ void Statement::log(const std::string& message) {
     Logger::instance().log(*this, quote(message));
 }
 
+#define test(STR, CAT)           \
+if (strstr(fName, (STR)) != 0) {\
+    return (::qpid::log::CAT); \
+}
+//    std::cout << "File: " << fName << " categorized as " << CategoryTraits::name(::qpid::log::CAT) << std::endl;
+
+Category Statement::categoryOf(const char*const fName) {
+    test("AsynchIO",    io);
+    test("TCP",         io);
+    test("epoll",       io);
+    test("Pollable",    io);
+    test("Socket",      io);
+
+    test("Sasl",        security);
+    test("Ssl",         security);
+    test("Acl",         security);
+    test("acl",         security);
+    test("cyrus",       security);
+
+    test("amqp_",       amqp);
+    test("framing",     amqp);
+
+    test("management",  management);
+    test("qmf",         management);
+    test("console",     management);
+
+    test("cluster",     ha);
+    test("qpid/ha",     ha);
+    test("qpid\\ha",    ha);
+    test("replication", ha);
+    test("ClusterSafe", ha);
+
+    test("broker",      broker);
+    test("SessionState",broker);
+    test("DataDir",     broker);
+    test("qpidd",       broker);
+
+    test("store",       store);
+
+    test("assert",      system);
+    test("Exception",   system);
+    test("sys",         system);
+    test("SCM",         system);
+
+    test("tests",       test);
+
+    test("messaging",   messaging);
+    test("types",       messaging);
+
+    std::cout << "Unspecified file:" << fName << std::endl;
+    return unspecified;
+}
+
+
+void Statement::categorize(Statement& s) {
+    // given a statement and it's category
+    // if the category is Unspecified then try to find a
+    // better category based on the path/file function name.
+    if (s.category == log::unspecified) {
+        s.category = categoryOf(s.file);
+    } else {
+        // already has a category so leave it alone
+    }
+}
+
+
 Statement::Initializer::Initializer(Statement& s) : statement(s) {
     // QPID-3891
     // From the given BOOST_CURRENT_FUNCTION name extract only the
@@ -99,16 +165,22 @@ Statement::Initializer::Initializer(Statement& s) : statement(s) {
         // no function-name pointer to process
     }
 
+    Statement::categorize(s);
     Logger::instance().add(s);
 }
+
 
 namespace {
 const char* names[LevelTraits::COUNT] = {
     "trace", "debug", "info", "notice", "warning", "error", "critical"
 };
 
-} // namespace
+const char* catNames[CategoryTraits::COUNT] = {
+    "Security", "Broker", "Management", "Amqp", "System", "HA", "Messaging",
+    "Store", "IO", "Test", "Unspecified"
+};
 
+} // namespace
 Level LevelTraits::level(const char* name) {
     for (int i =0; i < LevelTraits::COUNT; ++i) {
         if (strcmp(names[i], name)==0)
@@ -121,4 +193,23 @@ const char* LevelTraits::name(Level l) {
     return names[l];
 }
 
+bool CategoryTraits::isCategory(const std::string& name) {
+    for (int i =0; i < CategoryTraits::COUNT; ++i) {
+        if (strcmp(catNames[i], name.c_str())==0)
+            return true;
+    }
+    return false;
+}
+
+Category CategoryTraits::category(const char* name) {
+    for (int i =0; i < CategoryTraits::COUNT; ++i) {
+        if (strcmp(catNames[i], name)==0)
+            return Category(i);
+    }
+    throw std::runtime_error(std::string("Invalid log category name: ")+name);
+}
+
+const char* CategoryTraits::name(Category c) {
+    return catNames[c];
+}
 }} // namespace qpid::log
