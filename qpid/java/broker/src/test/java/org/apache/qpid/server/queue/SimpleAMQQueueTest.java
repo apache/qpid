@@ -43,7 +43,6 @@ import org.apache.qpid.server.queue.SimpleAMQQueue.QueueEntryFilter;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
-import org.apache.qpid.server.store.TestableMemoryMessageStoreFactory;
 import org.apache.qpid.server.subscription.MockSubscription;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
@@ -108,7 +107,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
 
         PropertiesConfiguration env = new PropertiesConfiguration();
         final VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(getClass().getName(), env);
-        vhostConfig.setMessageStoreFactoryClass(TestableMemoryMessageStoreFactory.class.getName());
+        vhostConfig.setMessageStoreClass(TestableMemoryMessageStore.class.getName());
         _virtualHost = new VirtualHostImpl(ApplicationRegistry.getInstance(), vhostConfig);
         applicationRegistry.getVirtualHostRegistry().registerVirtualHost(_virtualHost);
 

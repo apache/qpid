@@ -58,7 +58,13 @@ public class StoreOverfullTest extends QpidBrokerTestCase
                 String.valueOf(OVERFULL_SIZE));
         setConfigurationProperty("virtualhosts.virtualhost.test.store.underfull-size",
                 String.valueOf(UNDERFULL_SIZE));
-        setSystemProperty("qpid.bdb.envconfig.je.log.fileMax", "1000000");
+
+        if(getTestProfileMessageStoreClassName().contains("BDB"))
+        {
+            setConfigurationProperty("virtualhosts.virtualhost.test.store.envConfig(1).name", "je.log.fileMax");
+            setConfigurationProperty("virtualhosts.virtualhost.test.store.envConfig(1).value", "1000000");
+        }
+
         super.setUp();
 
         _producerConnection = getConnection();

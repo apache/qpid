@@ -73,11 +73,11 @@ public class OperationalLoggingListenerTest extends TestCase
         }
 
 
-        messageStore.attainState(State.CONFIGURING);
+        messageStore.attainState(State.INITIALISING);
         assertEquals("Unexpected number of operational log messages on configuring", 1, messages.size());
         assertEquals(messages.remove(0).toString(), ConfigStoreMessages.CREATED().toString());
 
-        messageStore.attainState(State.CONFIGURED);
+        messageStore.attainState(State.INITIALISED);
         assertEquals("Unexpected number of operational log messages on CONFIGURED", setStoreLocation ? 3 : 2, messages.size());
         assertEquals(messages.remove(0).toString(), MessageStoreMessages.CREATED().toString());
         assertEquals(messages.remove(0).toString(), TransactionLogMessages.CREATED().toString());
@@ -86,7 +86,7 @@ public class OperationalLoggingListenerTest extends TestCase
             assertEquals(messages.remove(0).toString(), MessageStoreMessages.STORE_LOCATION(STORE_LOCATION).toString());
         }
 
-        messageStore.attainState(State.RECOVERING);
+        messageStore.attainState(State.ACTIVATING);
         assertEquals("Unexpected number of operational log messages on RECOVERING", 1, messages.size());
         assertEquals(messages.remove(0).toString(), MessageStoreMessages.RECOVERY_START().toString());
 

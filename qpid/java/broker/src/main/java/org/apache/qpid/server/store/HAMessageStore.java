@@ -17,24 +17,13 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.derby;
+package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreFactory;
-
-public class DerbyMessageStoreFactory implements MessageStoreFactory
+public interface HAMessageStore extends MessageStore
 {
-
-    @Override
-    public MessageStore createMessageStore()
-    {
-        return new DerbyMessageStore();
-    }
-
-    @Override
-    public String getStoreClassName()
-    {
-        return DerbyMessageStore.class.getSimpleName();
-    }
-
+    /**
+     * Used to indicate that a store requires to make itself unavailable for read and read/write
+     * operations.
+     */
+    void passivate();
 }

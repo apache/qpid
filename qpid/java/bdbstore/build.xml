@@ -17,7 +17,7 @@
  - under the License.
  -->
 <project name="bdbstore" xmlns:ivy="antlib:org.apache.ivy.ant" default="build">
-    <property name="module.depends" value="common broker" />
+    <property name="module.depends" value="management/common common broker" />
     <property name="module.test.depends" value="test client common/test broker/test management/common systests" />
     <property name="module.genpom" value="true"/>
 

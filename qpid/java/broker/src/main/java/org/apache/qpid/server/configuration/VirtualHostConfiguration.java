@@ -32,7 +32,6 @@ import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MemoryMessageStore;
-import org.apache.qpid.server.store.MemoryMessageStoreFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -103,14 +102,14 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
         return getConfig().subset("store");
     }
 
-    public String getMessageStoreFactoryClass()
+    public String getMessageStoreClass()
     {
-        return getStringValue("store.factoryclass", MemoryMessageStoreFactory.class.getName());
+        return getStringValue("store.class", MemoryMessageStore.class.getName());
     }
 
-    public void setMessageStoreFactoryClass(String storeFactoryClass)
+    public void setMessageStoreClass(String storeFactoryClass)
     {
-        getConfig().setProperty("store.factoryclass", storeFactoryClass);
+        getConfig().setProperty("store.class", storeFactoryClass);
     }
 
     public List getExchanges()

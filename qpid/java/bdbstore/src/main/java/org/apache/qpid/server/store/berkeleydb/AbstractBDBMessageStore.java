@@ -33,11 +33,12 @@ import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.LockConflictException;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
-import com.sleepycat.je.TransactionConfig;
 import java.io.File;
 import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +46,7 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.FieldTable;
@@ -128,8 +130,6 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
     protected final StateManager _stateManager;
 
-    protected TransactionConfig _transactionConfig = new TransactionConfig();
-
     private MessageStoreRecoveryHandler _messageRecoveryHandler;
 
     private TransactionLogRecoveryHandler _tlogRecoveryHandler;
@@ -146,6 +146,8 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
     private ConfiguredObjectHelper _configuredObjectHelper = new ConfiguredObjectHelper();
 
+    private Map<String, String> _envConfigMap;
+
     public AbstractBDBMessageStore()
     {
         _stateManager = new StateManager(_eventManager);
@@ -161,7 +163,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
                                      ConfigurationRecoveryHandler recoveryHandler,
                                      Configuration storeConfiguration) throws Exception
     {
-        _stateManager.attainState(State.CONFIGURING);
+        _stateManager.attainState(State.INITIALISING);
 
         _configRecoveryHandler = recoveryHandler;
 
@@ -179,12 +181,12 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         _messageRecoveryHandler = messageRecoveryHandler;
         _tlogRecoveryHandler = tlogRecoveryHandler;
 
-        _stateManager.attainState(State.CONFIGURED);
+        _stateManager.attainState(State.INITIALISED);
     }
 
-    public void activate() throws Exception
+    public synchronized void activate() throws Exception
     {
-        _stateManager.attainState(State.RECOVERING);
+        _stateManager.attainState(State.ACTIVATING);
 
         recoverConfig(_configRecoveryHandler);
         recoverMessages(_messageRecoveryHandler);
@@ -231,9 +233,28 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
         _storeLocation = storeLocation;
 
+        _envConfigMap = getConfigMap(storeConfig, "envConfig");
+
         LOGGER.info("Configuring BDB message store");
 
         setupStore(environmentPath, name);
+    }
+
+    protected Map<String,String> getConfigMap(Configuration config, String prefix) throws ConfigurationException
+    {
+        final List<Object> argumentNames = config.getList(prefix + ".name");
+        final List<Object> argumentValues = config.getList(prefix + ".value");
+        final Map<String,String> attributes = new HashMap<String,String>(argumentNames.size());
+
+        for (int i = 0; i < argumentNames.size(); i++)
+        {
+            final String argName = argumentNames.get(i).toString();
+            final String argValue = argumentValues.get(i).toString();
+
+            attributes.put(argName, argValue);
+        }
+
+        return Collections.unmodifiableMap(attributes);
     }
 
     @Override
@@ -251,9 +272,9 @@ public abstract class AbstractBDBMessageStore implements MessageStore
      */
     void startWithNoRecover() throws AMQStoreException
     {
-        _stateManager.attainState(State.CONFIGURING);
-        _stateManager.attainState(State.CONFIGURED);
-        _stateManager.attainState(State.RECOVERING);
+        _stateManager.attainState(State.INITIALISING);
+        _stateManager.attainState(State.INITIALISED);
+        _stateManager.attainState(State.ACTIVATING);
         _stateManager.attainState(State.ACTIVE);
     }
 
@@ -268,51 +289,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         _totalStoreSize = getSizeOnDisk();
     }
 
-    protected Environment createEnvironment(File environmentPath) throws DatabaseException
-    {
-        LOGGER.info("BDB message store using environment path " + environmentPath.getAbsolutePath());
-        EnvironmentConfig envConfig = new EnvironmentConfig();
-        // This is what allows the creation of the store if it does not already exist.
-        envConfig.setAllowCreate(true);
-        envConfig.setTransactional(true);
-        envConfig.setConfigParam("je.lock.nLockTables", "7");
-
-        // Added to help diagnosis of Deadlock issue
-        // http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#23
-        if (Boolean.getBoolean("qpid.bdb.lock.debug"))
-        {
-            envConfig.setConfigParam("je.txn.deadlockStackTrace", "true");
-            envConfig.setConfigParam("je.txn.dumpLocks", "true");
-        }
-
-        // Set transaction mode
-        _transactionConfig.setReadCommitted(true);
-
-        //This prevents background threads running which will potentially update the store.
-        envConfig.setReadOnly(false);
-        try
-        {
-            return new Environment(environmentPath, envConfig);
-        }
-        catch (DatabaseException de)
-        {
-            if (de.getMessage().contains("Environment.setAllowCreate is false"))
-            {
-                //Allow the creation this time
-                envConfig.setAllowCreate(true);
-                if (_environment != null )
-                {
-                    _environment.cleanLog();
-                    _environment.close();
-                }
-                return new Environment(environmentPath, envConfig);
-            }
-            else
-            {
-                throw de;
-            }
-        }
-    }
+    protected abstract Environment createEnvironment(File environmentPath) throws DatabaseException;
 
     public Environment getEnvironment()
     {
@@ -352,14 +329,9 @@ public abstract class AbstractBDBMessageStore implements MessageStore
      */
     public void close() throws Exception
     {
-        if (_stateManager.isInState(State.ACTIVE) || _stateManager.isInState(State.QUIESCED))
-        {
-            _stateManager.stateTransition(State.ACTIVE, State.CLOSING);
-
-            closeInternal();
-
-            _stateManager.stateTransition(State.CLOSING, State.CLOSED);
-        }
+        _stateManager.attainState(State.CLOSING);
+        closeInternal();
+        _stateManager.attainState(State.CLOSED);
     }
 
     protected void closeInternal() throws Exception
@@ -1504,6 +1476,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         return true;
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(T metaData)
     {
         if(metaData.isPersistent())
@@ -1913,5 +1886,26 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     private long getPersistentSizeHighThreshold()
     {
         return _persistentSizeHighThreshold;
+    }
+
+    private void setEnvironmentConfigProperties(EnvironmentConfig envConfig)
+    {
+        for (Map.Entry<String, String> configItem : _envConfigMap.entrySet())
+        {
+            LOGGER.debug("Setting EnvironmentConfig key " + configItem.getKey() + " to '" + configItem.getValue() + "'");
+            envConfig.setConfigParam(configItem.getKey(), configItem.getValue());
+        }
+    }
+
+    protected EnvironmentConfig createEnvironmentConfig()
+    {
+        EnvironmentConfig envConfig = new EnvironmentConfig();
+        envConfig.setAllowCreate(true);
+        envConfig.setTransactional(true);
+        envConfig.setConfigParam(EnvironmentConfig.LOCK_N_LOCK_TABLES, "7");
+    
+        setEnvironmentConfigProperties(envConfig);
+    
+        return envConfig;
     }
 }

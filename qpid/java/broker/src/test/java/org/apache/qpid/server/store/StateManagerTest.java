@@ -45,8 +45,8 @@ public class StateManagerTest extends TestCase implements EventListener
     {
         assertEquals(State.INITIAL, _manager.getState());
 
-        _manager.stateTransition(State.INITIAL, State.CONFIGURING);
-        assertEquals(State.CONFIGURING, _manager.getState());
+        _manager.attainState(State.INITIALISING);
+        assertEquals(State.INITIALISING, _manager.getState());
     }
 
     public void testStateTransitionDisallowed()
@@ -55,7 +55,7 @@ public class StateManagerTest extends TestCase implements EventListener
 
         try
         {
-            _manager.stateTransition(State.ACTIVE, State.CLOSING);
+            _manager.attainState(State.CLOSING);
             fail("Exception not thrown");
         }
         catch (IllegalStateException e)
@@ -98,22 +98,29 @@ public class StateManagerTest extends TestCase implements EventListener
     public void testValidStateTransitions()
     {
         assertEquals(State.INITIAL, _manager.getState());
-        performValidTransition(StateManager.CONFIGURE);
-        performValidTransition(StateManager.CONFIGURE_COMPLETE);
-        performValidTransition(StateManager.RECOVER);
+        performValidTransition(StateManager.INITIALISE);
+        performValidTransition(StateManager.INITALISE_COMPLETE);
         performValidTransition(StateManager.ACTIVATE);
+        performValidTransition(StateManager.ACTIVATE_COMPLETE);
         performValidTransition(StateManager.QUIESCE);
         performValidTransition(StateManager.QUIESCE_COMPLETE);
         performValidTransition(StateManager.RESTART);
-        performValidTransition(StateManager.ACTIVATE);
+        performValidTransition(StateManager.ACTIVATE_COMPLETE);
         performValidTransition(StateManager.CLOSE_ACTIVE);
+        performValidTransition(StateManager.CLOSE_COMPLETE);
+
+        _manager = new StateManager(this);
+        assertEquals(State.INITIAL, _manager.getState());
+        performValidTransition(StateManager.INITIALISE);
+        performValidTransition(StateManager.INITALISE_COMPLETE);
+        performValidTransition(StateManager.CLOSE_INITIALISED);
         performValidTransition(StateManager.CLOSE_COMPLETE);
         
         _manager  = new StateManager(this);
-        performValidTransition(StateManager.CONFIGURE);
-        performValidTransition(StateManager.CONFIGURE_COMPLETE);
-        performValidTransition(StateManager.RECOVER);
+        performValidTransition(StateManager.INITIALISE);
+        performValidTransition(StateManager.INITALISE_COMPLETE);
         performValidTransition(StateManager.ACTIVATE);
+        performValidTransition(StateManager.ACTIVATE_COMPLETE);
         performValidTransition(StateManager.QUIESCE);
         performValidTransition(StateManager.QUIESCE_COMPLETE);
         performValidTransition(StateManager.CLOSE_QUIESCED);
@@ -132,54 +139,50 @@ public class StateManagerTest extends TestCase implements EventListener
     {
         assertEquals(State.INITIAL, _manager.getState());
 
-
-        performInvalidTransitions(StateManager.CONFIGURE, State.CONFIGURED);
-        performInvalidTransitions(StateManager.CONFIGURE_COMPLETE, State.RECOVERING);
-        performInvalidTransitions(StateManager.RECOVER, State.ACTIVE);
-        performInvalidTransitions(StateManager.ACTIVATE, State.QUIESCING, State.CLOSING);
+        performInvalidTransitions(StateManager.INITIALISE, State.INITIALISED);
+        performInvalidTransitions(StateManager.INITALISE_COMPLETE, State.ACTIVATING, State.CLOSING);
+        performInvalidTransitions(StateManager.ACTIVATE, State.ACTIVE);
+        performInvalidTransitions(StateManager.ACTIVATE_COMPLETE, State.QUIESCING, State.CLOSING, State.INITIALISED);
         performInvalidTransitions(StateManager.QUIESCE, State.QUIESCED);
-        performInvalidTransitions(StateManager.QUIESCE_COMPLETE, State.RECOVERING, State.CLOSING);
+        performInvalidTransitions(StateManager.QUIESCE_COMPLETE, State.ACTIVATING, State.CLOSING);
         performInvalidTransitions(StateManager.CLOSE_QUIESCED, State.CLOSED);
         performInvalidTransitions(StateManager.CLOSE_COMPLETE);
         
-
-
-
     }
 
-    private void performInvalidTransitions(StateManager.Transition preTransition, State... validTransitions)
+    private void performInvalidTransitions(StateManager.Transition preTransition, State... validEndStates)
     {
         if(preTransition != null)
         {
             performValidTransition(preTransition);
         }
         
-        EnumSet<State> nextStates = EnumSet.allOf(State.class);
+        EnumSet<State> endStates = EnumSet.allOf(State.class);
 
-        if(validTransitions != null)
+        if(validEndStates != null)
         {
-            for(State state: validTransitions)
+            for(State state: validEndStates)
             {
-                nextStates.remove(state);
+                endStates.remove(state);
             }
         }
         
-        for(State nextState : nextStates)
+        for(State invalidEndState : endStates)
         {
-            performInvalidStateTransition(nextState);
+            performInvalidStateTransition(invalidEndState);
         }
 
         
     }
 
-    private void performInvalidStateTransition(State state)
+    private void performInvalidStateTransition(State invalidEndState)
     {
         try
         {
             _event = null;
             State startState = _manager.getState();
-            _manager.attainState(state);
-            fail("Invalid state transition performed: " + startState + " to " + state);
+            _manager.attainState(invalidEndState);
+            fail("Invalid state transition performed: " + startState + " to " + invalidEndState);
         }
         catch(IllegalStateException e)
         {
@@ -188,6 +191,7 @@ public class StateManagerTest extends TestCase implements EventListener
         assertNull("No event should have be fired", _event);
     }
 
+    @Override
     public void event(Event event)
     {
         _event = event;
