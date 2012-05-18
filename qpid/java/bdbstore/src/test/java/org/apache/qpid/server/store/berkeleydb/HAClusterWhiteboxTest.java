@@ -37,8 +37,6 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.url.URLSyntaxException;
 
-import com.sleepycat.je.rep.InsufficientLogException;
-
 /**
  * The HA white box tests test the BDB cluster where the test retains the knowledge of the
  * individual test nodes.  It uses this knowledge to examine the nodes  to ensure that they
@@ -55,7 +53,6 @@ public class HAClusterWhiteboxTest extends QpidBrokerTestCase
     private final int NUMBER_OF_NODES = 3;
     private final HATestClusterCreator _clusterCreator = new HATestClusterCreator(this, VIRTUAL_HOST, NUMBER_OF_NODES);
 
-    // TODO Test for node falling behind
     // TODO Factory refactoring?? // MessageStore construction??
 
     @Override
@@ -66,8 +63,7 @@ public class HAClusterWhiteboxTest extends QpidBrokerTestCase
         assertTrue(isJavaBroker());
         assertTrue(isBrokerStorePersistent());
 
-        setBrokerEnvironment("QPID_OPTS", "-Djava.util.logging.config.file=" + System.getProperty(QPID_HOME)
-                + File.separator + "etc" + File.separator + "log.properties");
+        setSystemProperty("java.util.logging.config.file", "etc" + File.separator + "log.properties");
 
         _clusterCreator.configureClusterNodes();
         _clusterCreator.startCluster();

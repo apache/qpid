@@ -58,8 +58,7 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
         assertTrue(isJavaBroker());
         assertTrue(isBrokerStorePersistent());
 
-        setBrokerEnvironment("QPID_OPTS", "-Djava.util.logging.config.file=" + System.getProperty(QPID_HOME)
-                + File.separator + "etc" + File.separator + "log.properties");
+        setSystemProperty("java.util.logging.config.file", "etc" + File.separator + "log.properties");
 
         _clusterCreator.configureClusterNodes();
 
