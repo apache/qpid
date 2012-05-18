@@ -128,7 +128,7 @@ public class KerberosAuthenticationManager implements AuthenticationManager
     @Override
     public SaslServer createSaslServer(String mechanism, String localFQDN) throws SaslException
     {
-        if(mechanism.equals(mechanism))
+        if(GSSAPI_MECHANISM.equals(mechanism))
         {
             try
             {
