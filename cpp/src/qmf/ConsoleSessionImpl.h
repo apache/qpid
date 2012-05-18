@@ -47,8 +47,6 @@
 #include <map>
 #include <queue>
 
-using namespace std;
-
 namespace qmf {
     class ConsoleSessionImpl : public virtual qpid::RefCounted, public qpid::sys::Runnable {
     public:

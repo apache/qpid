@@ -57,17 +57,10 @@
 
 #include <queue>
 #include <map>
-#include <iostream>
-#include <memory>
-
-using namespace std;
-using namespace qpid::messaging;
-using namespace qmf;
-using qpid::types::Variant;
-
-typedef qmf::PrivateImplRef<AgentSession> PI;
 
 namespace qmf {
+    typedef qmf::PrivateImplRef<AgentSession> PI;
+
     class AgentSessionImpl : public virtual qpid::RefCounted, public qpid::sys::Runnable {
     public:
         ~AgentSessionImpl();
@@ -75,29 +68,29 @@ namespace qmf {
         //
         // Methods from API handle
         //
-        AgentSessionImpl(Connection& c, const string& o);
-        void setDomain(const string& d) { checkOpen(); domain = d; }
-        void setVendor(const string& v) { checkOpen(); attributes["_vendor"] = v; }
-        void setProduct(const string& p) { checkOpen(); attributes["_product"] = p; }
-        void setInstance(const string& i) { checkOpen(); attributes["_instance"] = i; }
-        void setAttribute(const string& k, const qpid::types::Variant& v) { checkOpen(); attributes[k] = v; }
-        const string& getName() const { return agentName; }
+        AgentSessionImpl(qpid::messaging::Connection& c, const std::string& o);
+        void setDomain(const std::string& d) { checkOpen(); domain = d; }
+        void setVendor(const std::string& v) { checkOpen(); attributes["_vendor"] = v; }
+        void setProduct(const std::string& p) { checkOpen(); attributes["_product"] = p; }
+        void setInstance(const std::string& i) { checkOpen(); attributes["_instance"] = i; }
+        void setAttribute(const std::string& k, const qpid::types::Variant& v) { checkOpen(); attributes[k] = v; }
+        const std::string& getName() const { return agentName; }
         void open();
         void closeAsync();
         void close();
-        bool nextEvent(AgentEvent& e, Duration t);
+        bool nextEvent(AgentEvent& e, qpid::messaging::Duration t);
         int pendingEvents() const;
 
         void setEventNotifier(EventNotifierImpl* eventNotifier);
         EventNotifierImpl* getEventNotifier() const;
 
         void registerSchema(Schema& s);
-        DataAddr addData(Data& d, const string& n, bool persist);
+        DataAddr addData(Data& d, const std::string& n, bool persist);
         void delData(const DataAddr&);
 
         void authAccept(AgentEvent& e);
-        void authReject(AgentEvent& e, const string& m);
-        void raiseException(AgentEvent& e, const string& s);
+        void authReject(AgentEvent& e, const std::string& m);
+        void raiseException(AgentEvent& e, const std::string& s);
         void raiseException(AgentEvent& e, const Data& d);
         void response(AgentEvent& e, const Data& d);
         void complete(AgentEvent& e);
@@ -106,21 +99,21 @@ namespace qmf {
         void raiseEvent(const Data& d, int s);
 
     private:
-        typedef map<DataAddr, Data, DataAddrCompare> DataIndex;
-        typedef map<SchemaId, Schema, SchemaIdCompare> SchemaMap;
+        typedef std::map<DataAddr, Data, DataAddrCompare> DataIndex;
+        typedef std::map<SchemaId, Schema, SchemaIdCompare> SchemaMap;
 
         mutable qpid::sys::Mutex lock;
         qpid::sys::Condition cond;
-        Connection connection;
-        Session session;
-        Sender directSender;
-        Sender topicSender;
-        string domain;
-        Variant::Map attributes;
-        Variant::Map options;
-        string agentName;
+        qpid::messaging::Connection connection;
+        qpid::messaging::Session session;
+        qpid::messaging::Sender directSender;
+        qpid::messaging::Sender topicSender;
+        std::string domain;
+        qpid::types::Variant::Map attributes;
+        qpid::types::Variant::Map options;
+        std::string agentName;
         bool opened;
-        queue<AgentEvent> eventQueue;
+        std::queue<AgentEvent> eventQueue;
         EventNotifierImpl* eventNotifier;
         qpid::sys::Thread* thread;
         bool threadCanceled;
@@ -140,25 +133,25 @@ namespace qmf {
         bool strictSecurity;
         uint32_t maxThreadWaitTime;
         uint64_t schemaUpdateTime;
-        string directBase;
-        string topicBase;
+        std::string directBase;
+        std::string topicBase;
 
         SchemaMap schemata;
         DataIndex globalIndex;
-        map<SchemaId, DataIndex, SchemaIdCompareNoHash> schemaIndex;
+        std::map<SchemaId, DataIndex, SchemaIdCompareNoHash> schemaIndex;
 
         void checkOpen();
         void setAgentName();
         void enqueueEvent(const AgentEvent&);
         void alertEventNotifierLH(bool readable);
-        void handleLocateRequest(const Variant::List& content, const Message& msg);
-        void handleMethodRequest(const Variant::Map& content, const Message& msg);
-        void handleQueryRequest(const Variant::Map& content, const Message& msg);
+        void handleLocateRequest(const qpid::types::Variant::List& content, const qpid::messaging::Message& msg);
+        void handleMethodRequest(const qpid::types::Variant::Map& content, const qpid::messaging::Message& msg);
+        void handleQueryRequest(const qpid::types::Variant::Map& content, const qpid::messaging::Message& msg);
         void handleSchemaRequest(AgentEvent&);
-        void handleV1SchemaRequest(qpid::management::Buffer&, uint32_t, const Message&);
-        void dispatch(Message);
+        void handleV1SchemaRequest(qpid::management::Buffer&, uint32_t, const qpid::messaging::Message&);
+        void dispatch(qpid::messaging::Message);
         void sendHeartbeat();
-        void send(Message, const Address&);
+        void send(qpid::messaging::Message, const qpid::messaging::Address&);
         void flushResponses(AgentEvent&, bool);
         void periodicProcessing(uint64_t);
         void run();

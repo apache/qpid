@@ -21,6 +21,22 @@
 
 #include "qmf/AgentSessionImpl.h"
 
+#include <iostream>
+#include <memory>
+
+namespace qmf {
+
+using std::string;
+using std::map;
+
+using qpid::messaging::Address;
+using qpid::messaging::Connection;
+using qpid::messaging::Duration;
+using qpid::messaging::Message;
+using qpid::messaging::Receiver;
+using qpid::messaging::Sender;
+using qpid::types::Variant;
+
 AgentSession::AgentSession(AgentSessionImpl* impl) { PI::ctor(*this, impl); }
 AgentSession::AgentSession(const AgentSession& s) : qmf::Handle<AgentSessionImpl>() { PI::copy(*this, s); }
 AgentSession::~AgentSession() { PI::dtor(*this); }
@@ -332,7 +348,7 @@ void AgentSessionImpl::delData(const DataAddr& addr)
 
 void AgentSessionImpl::authAccept(AgentEvent& authEvent)
 {
-    auto_ptr<AgentEventImpl> eventImpl(new AgentEventImpl(AGENT_QUERY));
+    std::auto_ptr<AgentEventImpl> eventImpl(new AgentEventImpl(AGENT_QUERY));
     eventImpl->setQuery(authEvent.getQuery());
     eventImpl->setUserId(authEvent.getUserId());
     eventImpl->setReplyTo(AgentEventImplAccess::get(authEvent).getReplyTo());
@@ -593,7 +609,7 @@ void AgentSessionImpl::handleMethodRequest(const Variant::Map& content, const Me
     //
     // Construct an AgentEvent to be sent to the application.
     //
-    auto_ptr<AgentEventImpl> eventImpl(new AgentEventImpl(AGENT_METHOD));
+    std::auto_ptr<AgentEventImpl> eventImpl(new AgentEventImpl(AGENT_METHOD));
     eventImpl->setUserId(msg.getUserId());
     eventImpl->setReplyTo(msg.getReplyTo());
     eventImpl->setCorrelationId(msg.getCorrelationId());
@@ -655,8 +671,8 @@ void AgentSessionImpl::handleQueryRequest(const Variant::Map& content, const Mes
     //
     // Construct an AgentEvent to be sent to the application or directly handled by the agent.
     //
-    auto_ptr<QueryImpl> queryImpl(new QueryImpl(content));
-    auto_ptr<AgentEventImpl> eventImpl(new AgentEventImpl(AGENT_AUTH_QUERY));
+    std::auto_ptr<QueryImpl> queryImpl(new QueryImpl(content));
+    std::auto_ptr<AgentEventImpl> eventImpl(new AgentEventImpl(AGENT_AUTH_QUERY));
     eventImpl->setUserId(msg.getUserId());
     eventImpl->setReplyTo(msg.getReplyTo());
     eventImpl->setCorrelationId(msg.getCorrelationId());
@@ -1012,3 +1028,4 @@ const AgentSessionImpl& AgentSessionImplAccess::get(const AgentSession& session)
     return *session.impl;
 }
 
+}

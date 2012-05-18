@@ -21,6 +21,8 @@
 #include "qmf/AgentSessionImpl.h"
 #include "qmf/ConsoleSessionImpl.h"
 
+namespace qmf {
+
 EventNotifierImpl::EventNotifierImpl(AgentSession& agentSession)
     : readable(false), agent(agentSession)
 {
@@ -53,4 +55,6 @@ void EventNotifierImpl::setReadable(bool readable)
 bool EventNotifierImpl::isReadable() const
 {
     return this->readable;
+}
+
 }
