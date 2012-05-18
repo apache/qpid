@@ -31,6 +31,3 @@ org.apache.qpid.server.logging.DerbyMessageStoreLoggingTest#*
 
 org.apache.qpid.client.ssl.SSLTest#testVerifyLocalHostLocalDomain
 
-// QPID-4006 : temporarily exclude until the tests are updated to account for
-// the odd paths found in the ASF Jenkins test matrix workspaces
-org.apache.qpid.server.store.berkeleydb.*
