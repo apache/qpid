@@ -36,14 +36,13 @@ namespace client {
 class Connection;
 class SessionImpl;
 
-using std::string;
-using framing::Content;
-using framing::FieldTable;
-using framing::SequenceNumber;
-using framing::SequenceSet;
-using framing::SequenceNumberSet;
+using qpid::framing::Content;
+using qpid::framing::FieldTable;
+using qpid::framing::SequenceNumber;
+using qpid::framing::SequenceSet;
+using qpid::framing::SequenceNumberSet;
 using qpid::SessionId;
-using framing::Xid;
+using qpid::framing::Xid;
 
 /** Unit of message credit: messages or bytes */
 enum CreditUnit { MESSAGE_CREDIT=0, BYTE_CREDIT=1, UNLIMITED_CREDIT=0xFFFFFFFF };
