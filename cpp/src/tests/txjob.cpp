@@ -38,9 +38,9 @@ namespace tests {
 
 struct Args : public qpid::TestOptions
 {
-    string workQueue;
-    string source;
-    string dest;
+    std::string workQueue;
+    std::string source;
+    std::string dest;
     uint messages;
     uint jobs;
     bool quit;
