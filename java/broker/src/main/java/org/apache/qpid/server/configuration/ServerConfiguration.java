@@ -743,7 +743,7 @@ public class ServerConfiguration extends ConfigurationPlugin
     {
         return getBooleanValue("connector.ssl.sslOnly");
     }
-
+    
     public List getSSLPorts()
     {
         return getListValue("connector.ssl.port", Collections.<Integer>singletonList(DEFAULT_SSL_PORT));
@@ -759,6 +759,11 @@ public class ServerConfiguration extends ConfigurationPlugin
     {
         final String fallback = getStringValue("connector.ssl.keystorePassword"); // pre-0.13 brokers supported this name.
         return getStringValue("connector.ssl.keyStorePassword", fallback);
+    }
+
+    public String getConnectorKeyStoreType()
+    {
+        return getStringValue("connector.ssl.keyStoreType", "JKS");
     }
 
     public String getConnectorKeyManagerFactoryAlgorithm()
