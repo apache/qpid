@@ -81,8 +81,7 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
 
     private void startCluster(boolean autoDesignedPrimary) throws Exception
     {
-        setSystemProperty("java.util.logging.config.file",
-                System.getProperty(QPID_HOME) + File.separator + "etc" + File.separator + "log.properties");
+        setSystemProperty("java.util.logging.config.file", "etc" + File.separator + "log.properties");
 
         String vhostPrefix = "virtualhosts.virtualhost." + VIRTUAL_HOST;
 
