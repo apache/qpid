@@ -20,10 +20,16 @@
  -->
 <project name="Performance Tests" default="build">
     <condition property="perftests.optional.test.depends" value="bdbstore" else="">
+      <or>
         <and>
             <contains string="${modules.opt}" substring="bdbstore"/>
             <contains string="${profile}" substring="bdb"/>
         </and>
+        <and>
+            <istrue value="${optional}"/>
+            <contains string="${profile}" substring="bdb"/>
+        </and>
+      </or>
     </condition>
 
     <property name="module.depends" value="client common"/>
