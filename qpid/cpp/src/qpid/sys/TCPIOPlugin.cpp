@@ -36,14 +36,21 @@
 namespace qpid {
 namespace sys {
 
+class Timer;
+
 class AsynchIOProtocolFactory : public ProtocolFactory {
-    const bool tcpNoDelay;
     boost::ptr_vector<Socket> listeners;
     boost::ptr_vector<AsynchAcceptor> acceptors;
+    Timer& brokerTimer;
+    uint32_t maxNegotiateTime;
     uint16_t listeningPort;
+    const bool tcpNoDelay;
 
   public:
-    AsynchIOProtocolFactory(const std::string& host, const std::string& port, int backlog, bool nodelay, bool shouldListen);
+    AsynchIOProtocolFactory(const std::string& host, const std::string& port,
+                            int backlog, bool nodelay,
+                            Timer& timer, uint32_t maxTime,
+                            bool shouldListen);
     void accept(Poller::shared_ptr, ConnectionCodec::Factory*);
     void connect(Poller::shared_ptr, const std::string& host, const std::string& port,
                  ConnectionCodec::Factory*,
@@ -90,6 +97,7 @@ static class TCPIOPlugin : public Plugin {
                     "", boost::lexical_cast<std::string>(opts.port),
                     opts.connectionBacklog,
                     opts.tcpNoDelay,
+                    broker->getTimer(), opts.maxNegotiateTime,
                     shouldListen));
 
             if (shouldListen) {
@@ -101,7 +109,12 @@ static class TCPIOPlugin : public Plugin {
     }
 } tcpPlugin;
 
-AsynchIOProtocolFactory::AsynchIOProtocolFactory(const std::string& host, const std::string& port, int backlog, bool nodelay, bool shouldListen) :
+AsynchIOProtocolFactory::AsynchIOProtocolFactory(const std::string& host, const std::string& port,
+                                                 int backlog, bool nodelay,
+                                                 Timer& timer, uint32_t maxTime,
+                                                 bool shouldListen) :
+    brokerTimer(timer),
+    maxNegotiateTime(maxTime),
     tcpNoDelay(nodelay)
 {
     if (!shouldListen) {
@@ -153,7 +166,7 @@ void AsynchIOProtocolFactory::established(Poller::shared_ptr poller, const Socke
        boost::bind(&AsynchIOHandler::nobuffs, async, _1),
        boost::bind(&AsynchIOHandler::idle, async, _1));
 
-    async->init(aio, 4);
+    async->init(aio, brokerTimer, maxNegotiateTime, 4);
     aio->start(poller);
 }
 

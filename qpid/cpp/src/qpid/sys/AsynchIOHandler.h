@@ -27,6 +27,8 @@
 #include "qpid/sys/Mutex.h"
 #include "qpid/CommonImportExport.h"
 
+#include <boost/intrusive_ptr.hpp>
+
 namespace qpid {
 
 namespace framing {
@@ -38,6 +40,8 @@ namespace sys {
 class AsynchIO;
 struct AsynchIOBufferBase;
 class Socket;
+class Timer;
+class TimerTask;
 
 class AsynchIOHandler : public OutputControl {
     std::string identifier;
@@ -49,13 +53,14 @@ class AsynchIOHandler : public OutputControl {
     AtomicValue<int32_t> readCredit;
     static const int32_t InfiniteCredit = -1;
     Mutex creditLock;
+    boost::intrusive_ptr<sys::TimerTask> timeoutTimerTask;
 
     void write(const framing::ProtocolInitiation&);
 
   public:
-    QPID_COMMON_EXTERN AsynchIOHandler(std::string id, ConnectionCodec::Factory* f);
+    QPID_COMMON_EXTERN AsynchIOHandler(const std::string& id, qpid::sys::ConnectionCodec::Factory* f );
     QPID_COMMON_EXTERN ~AsynchIOHandler();
-    QPID_COMMON_EXTERN void init(AsynchIO* a, int numBuffs);
+    QPID_COMMON_EXTERN void init(AsynchIO* a, Timer& timer, uint32_t maxTime, int numBuffs);
 
     QPID_COMMON_INLINE_EXTERN void setClient() { isClient = true; }
 
