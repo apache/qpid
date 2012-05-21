@@ -126,6 +126,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
         std::string defaultMsgGroup;
         bool timestampRcvMsgs;
         double linkMaintenanceInterval; // FIXME aconway 2012-02-13: consistent parsing of SECONDS values.
+        uint32_t maxNegotiateTime;  // Max time in ms for connection with no negotiation
 
       private:
         std::string getHome();
