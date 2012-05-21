@@ -65,7 +65,7 @@ static const string TCP("tcp");
 
 // Test IPv4 address for loopback
 inline bool IN_IS_ADDR_LOOPBACK(const ::in_addr* a) {
-    return ((::ntohl(a->s_addr) & 0xff000000) == 0x7f000000);
+    return ((ntohl(a->s_addr) & 0xff000000) == 0x7f000000);
 }
 
 inline bool isLoopback(const ::sockaddr* addr) {
