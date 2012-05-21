@@ -49,21 +49,26 @@ namespace windows {
 struct SslServerOptions : qpid::Options
 {
     std::string certStore;
+    std::string certStoreLocation;
     std::string certName;
     uint16_t port;
     bool clientAuth;
 
     SslServerOptions() : qpid::Options("SSL Options"),
-                         certStore("My"), port(5671), clientAuth(false)
+                         certStore("My"),
+                         certStoreLocation("CurrentUser"),
+                         certName("localhost"),
+                         port(5671),
+                         clientAuth(false)
     {
         qpid::Address me;
         if (qpid::sys::SystemInfo::getLocalHostname(me))
             certName = me.host;
-        else
-            certName = "localhost";
 
         addOptions()
             ("ssl-cert-store", optValue(certStore, "NAME"), "Local store name from which to obtain certificate")
+            ("ssl-cert-store-location", optValue(certStoreLocation, "NAME"),
+             "Local store name location for certificates ( CurrentUser | LocalMachine | CurrentService )")
             ("ssl-cert-name", optValue(certName, "NAME"), "Name of the certificate to use")
             ("ssl-port", optValue(port, "PORT"), "Port on which to listen for SSL connections")
             ("ssl-require-client-authentication", optValue(clientAuth), 
@@ -142,11 +147,25 @@ SslProtocolFactory::SslProtocolFactory(const SslServerOptions& options,
     SecInvalidateHandle(&credHandle);
 
     // Get the certificate for this server.
+    DWORD flags = 0;
+    std::string certStoreLocation = options.certStoreLocation;
+    std::transform(certStoreLocation.begin(), certStoreLocation.end(), certStoreLocation.begin(), ::tolower);
+    if (certStoreLocation == "currentuser") {
+        flags = CERT_SYSTEM_STORE_CURRENT_USER;
+    } else if (certStoreLocation == "localmachine") {
+        flags = CERT_SYSTEM_STORE_LOCAL_MACHINE;
+    } else if (certStoreLocation == "currentservice") {
+        flags = CERT_SYSTEM_STORE_CURRENT_SERVICE;
+    } else {
+        QPID_LOG(error, "Unrecognised SSL certificate store location: " << options.certStoreLocation
+            << " - Using default location");
+    }
     HCERTSTORE certStoreHandle;
     certStoreHandle = ::CertOpenStore(CERT_STORE_PROV_SYSTEM_A,
                                       X509_ASN_ENCODING,
                                       0,
-                                      CERT_SYSTEM_STORE_LOCAL_MACHINE,
+                                      flags |
+                                      CERT_STORE_READONLY_FLAG,
                                       options.certStore.c_str());
     if (!certStoreHandle)
         throw qpid::Exception(QPID_MSG("Opening store " << options.certStore << " " << qpid::sys::strError(GetLastError())));
