@@ -125,6 +125,7 @@ public:
     typedef boost::function2<void, SslIO&, const SslSocket&> ClosedCallback;
     typedef boost::function1<void, SslIO&> BuffersEmptyCallback;
     typedef boost::function1<void, SslIO&> IdleCallback;
+    typedef boost::function1<void, SslIO&> RequestCallback;
 
 
 private:
@@ -159,6 +160,7 @@ public:
     void notifyPendingWrite();
     void queueWriteClose();
     bool writeQueueEmpty() { return writeQueue.empty(); }
+    void requestCallback(RequestCallback);
     BufferBase* getQueuedBuffer();
 
     qpid::sys::SecuritySettings getSecuritySettings();
@@ -168,6 +170,7 @@ private:
     void readable(qpid::sys::DispatchHandle& handle);
     void writeable(qpid::sys::DispatchHandle& handle);
     void disconnected(qpid::sys::DispatchHandle& handle);
+    void requestedCall(RequestCallback);
     void close(qpid::sys::DispatchHandle& handle);
 };
 

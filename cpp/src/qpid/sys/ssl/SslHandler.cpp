@@ -80,8 +80,10 @@ void SslHandler::write(const framing::ProtocolInitiation& data)
 }
 
 void SslHandler::abort() {
-    // TODO: can't implement currently as underlying functionality not implemented
-    // aio->requestCallback(boost::bind(&SslHandler::eof, this, _1));
+    // Don't disconnect if we're already disconnecting
+    if (!readError) {
+        aio->requestCallback(boost::bind(&SslHandler::eof, this, _1));
+    }
 }
 void SslHandler::activateOutput() {
     aio->notifyPendingWrite();
