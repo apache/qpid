@@ -49,15 +49,11 @@ protected:
 };
 
 
-} // namespace qpid
-
 // intrusive_ptr support.
-namespace boost {
-template <typename T>
-inline void intrusive_ptr_add_ref(const T* p) { p->qpid::RefCounted::addRef(); }
-template <typename T>
-inline void intrusive_ptr_release(const T* p) { p->qpid::RefCounted::release(); }
-}
+inline void intrusive_ptr_add_ref(const RefCounted* p) { p->addRef(); }
+inline void intrusive_ptr_release(const RefCounted* p) { p->release(); }
+
+} // namespace qpid
 
 
 #endif  /*!QPID_REFCOUNTED_H*/
