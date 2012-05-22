@@ -22,6 +22,7 @@
  *
  */
 
+#include "BrokerInfo.h"
 #include "Enum.h"
 #include "LogPrefix.h"
 #include "Settings.h"
@@ -89,6 +90,8 @@ class HaBroker : public management::Manageable
 
     boost::shared_ptr<ConnectionExcluder> getExcluder() { return excluder; }
 
+    const BrokerInfo& getBrokerInfo() const { return brokerInfo; }
+
   private:
     void setClientUrl(const Url&, const sys::Mutex::ScopedLock&);
     void setBrokerUrl(const Url&, const sys::Mutex::ScopedLock&);
@@ -101,6 +104,7 @@ class HaBroker : public management::Manageable
     void recover(sys::Mutex::ScopedLock&);
     void activate(sys::Mutex::ScopedLock&);
     void statusChanged(sys::Mutex::ScopedLock&);
+    void setLinkProperties(sys::Mutex::ScopedLock&);
 
     std::vector<Url> getKnownBrokers() const;
 
@@ -118,6 +122,7 @@ class HaBroker : public management::Manageable
     BrokerStatus status;
     QueueNames activeBackups;
     boost::shared_ptr<ConnectionExcluder> excluder;
+    BrokerInfo brokerInfo;
 };
 }} // namespace qpid::ha
 

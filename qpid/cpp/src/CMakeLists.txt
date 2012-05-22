@@ -628,6 +628,8 @@ if (BUILD_HA)
     set (ha_SOURCES
         qpid/ha/Backup.cpp
         qpid/ha/Backup.h
+	qpid/ha/BrokerInfo.h
+	qpid/ha/BrokerInfo.cpp
         qpid/ha/BrokerReplicator.cpp
         qpid/ha/BrokerReplicator.h
         qpid/ha/ConnectionExcluder.cpp

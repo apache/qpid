@@ -48,6 +48,9 @@ struct Uuid : public boost::array<uint8_t, 16> {
     /** Copy from 16 bytes of data. */
     QPID_COMMON_EXTERN Uuid(const uint8_t* data);
 
+    /** Parse format 1b4e28ba-2fa1-11d2-883f-b9a761bde3fb. */
+    QPID_COMMON_EXTERN Uuid(const std::string&);
+
     // Default op= and copy ctor are fine.
     // boost::array gives us ==, < etc.
 

@@ -384,6 +384,9 @@ class Broker : public sys::Runnable, public Plugin::Target,
     /** Properties to be set on outgoing link connections */
     QPID_BROKER_EXTERN framing::FieldTable getLinkClientProperties() const;
     QPID_BROKER_EXTERN void setLinkClientProperties(const framing::FieldTable&);
+
+    /** Information identifying this system */
+    boost::shared_ptr<const System> getSystem() const { return systemObject; }
 };
 
 }}
