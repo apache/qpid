@@ -20,6 +20,8 @@
  */
 
 #include "ConnectionExcluder.h"
+#include "BrokerInfo.h"
+#include "qpid/framing/FieldTable.h"
 #include "qpid/broker/Connection.h"
 #include <boost/function.hpp>
 #include <sstream>
@@ -37,18 +39,16 @@ void ConnectionExcluder::opened(broker::Connection& connection) {
                  << connection.getMgmtId());
         return;
     }
-    if (connection.getClientProperties().isSet(BACKUP_TAG)) {
-        if (backupAllowed) {
-            QPID_LOG(debug, logPrefix << "Allowing backup connection: "
-                     << connection.getMgmtId());
-            return;
-        }
-        else QPID_LOG(debug, logPrefix << "Rejected backup connection: "
-                      << connection.getMgmtId());
+    framing::FieldTable ft;
+    if (connection.getClientProperties().getTable(BACKUP_TAG, ft)) {
+        BrokerInfo info(ft);
+        QPID_LOG(debug, logPrefix << "Backup connection " << info <<
+                 (backupAllowed ? " allowed" : " rejected"));
+        if (backupAllowed) return;
     }
-
+    // Abort the connection.
     throw Exception(
-        QPID_MSG(logPrefix << "Rejected client connection " << connection.getMgmtId()));
+        QPID_MSG(logPrefix << "Rejected connection " << connection.getMgmtId()));
 }
 
 const std::string ConnectionExcluder::ADMIN_TAG="qpid.ha-admin";

@@ -24,6 +24,7 @@
 #include "Primary.h"
 #include "Settings.h"
 #include "ReplicatingSubscription.h"
+#include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/Exception.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Link.h"
@@ -31,6 +32,7 @@
 #include "qpid/broker/SignalHandler.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/management/ManagementAgent.h"
+#include "qpid/sys/SystemInfo.h"
 #include "qmf/org/apache/qpid/ha/Package.h"
 #include "qmf/org/apache/qpid/ha/ArgsHaBrokerReplicate.h"
 #include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetBrokers.h"
@@ -51,7 +53,10 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
       settings(s),
       mgmtObject(0),
       status(STANDALONE),
-      excluder(new ConnectionExcluder(logPrefix))
+      excluder(new ConnectionExcluder(logPrefix)),
+      brokerInfo(broker.getSystem()->getNodeName(),
+                 broker.getSystem()->getSystemId())
+
 {
     // Set up the management object.
     ManagementAgent* ma = broker.getManagementAgent();
@@ -81,6 +86,8 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     if (!settings.clientUrl.empty()) setClientUrl(Url(settings.clientUrl), l);
     if (!settings.brokerUrl.empty()) setBrokerUrl(Url(settings.brokerUrl), l);
     statusChanged(l);
+
+    QPID_LOG(notice, logPrefix << "Broker starting on " << brokerInfo);
 }
 
 HaBroker::~HaBroker() {}
@@ -267,15 +274,27 @@ void HaBroker::setStatus(BrokerStatus newStatus, sys::Mutex::ScopedLock& l) {
     statusChanged(l);
 }
 
-void HaBroker::statusChanged(sys::Mutex::ScopedLock&) {
+void HaBroker::statusChanged(sys::Mutex::ScopedLock& l) {
     mgmtObject->set_status(printable(status).str());
-    // Set the backup-related properties for newly created links.
-    framing::FieldTable ft = broker.getLinkClientProperties();
-    if (isBackup(status))
-        ft.setInt(ConnectionExcluder::BACKUP_TAG, 1);
-    else
-        ft.erase(ConnectionExcluder::BACKUP_TAG);
-    broker.setLinkClientProperties(ft);
+    brokerInfo.setStatus(status);
+    setLinkProperties(l);
+}
+
+void HaBroker::setLinkProperties(sys::Mutex::ScopedLock&) {
+    framing::FieldTable linkProperties = broker.getLinkClientProperties();
+    if (isBackup(status)) {
+        // If this is a backup then any links we make are backup links
+        // and need to be tagged.
+        QPID_LOG(debug, logPrefix << "Backup setting info for outgoing links: " << brokerInfo);
+        linkProperties.setTable(ConnectionExcluder::BACKUP_TAG, brokerInfo.asFieldTable());
+    }
+    else {
+        // If this is a primary then any links are federation links
+        // and should not be tagged.
+        QPID_LOG(debug, logPrefix << "Primary removing backup info for outgoing links");
+        linkProperties.erase(ConnectionExcluder::BACKUP_TAG);
+    }
+    broker.setLinkClientProperties(linkProperties);
 }
 
 void HaBroker::activatedBackup(const std::string& queue) {
