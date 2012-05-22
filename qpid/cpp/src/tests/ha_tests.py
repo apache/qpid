@@ -39,7 +39,7 @@ class QmfHaBroker(object):
             raise Exception("HA module is not loaded on broker at %s"%address)
 
 class HaBroker(Broker):
-    def __init__(self, test, args=[], broker_url=None, ha_cluster=True,
+    def __init__(self, test, args=[], brokers_url=None, ha_cluster=True,
                  ha_replicate="all", **kwargs):
         assert BrokerTest.ha_lib, "Cannot locate HA plug-in"
         args = copy(args)
@@ -50,7 +50,7 @@ class HaBroker(Broker):
                  "--ha-cluster=%s"%ha_cluster]
         if ha_replicate is not None:
             args += [ "--ha-replicate=%s"%ha_replicate ]
-        if broker_url: args.extend([ "--ha-brokers", broker_url ])
+        if brokers_url: args += [ "--ha-brokers-url", brokers_url ]
         Broker.__init__(self, test, args, **kwargs)
         self.qpid_ha_path=os.path.join(os.getenv("PYTHON_COMMANDS"), "qpid-ha")
         assert os.path.exists(self.qpid_ha_path)
@@ -62,8 +62,8 @@ class HaBroker(Broker):
     def qpid_ha(self, args): self.qpid_ha_script.main(["", "-b", self.host_port()]+args)
 
     def promote(self): self.qpid_ha(["promote"])
-    def set_client_url(self, url): self.qpid_ha(["set", "--public-brokers", url])
-    def set_broker_url(self, url): self.qpid_ha(["set", "--brokers", url])
+    def set_client_url(self, url): self.qpid_ha(["set", "--public-url", url])
+    def set_brokers_url(self, url): self.qpid_ha(["set", "--brokers-url", url])
     def replicate(self, from_broker, queue): self.qpid_ha(["replicate", from_broker, queue])
     def ha_status(self): QmfHaBroker(self.host_port()).ha_broker.status
 
@@ -134,7 +134,7 @@ class HaCluster(object):
 
     def update_urls(self):
         self.url = ",".join([b.host_port() for b in self])
-        for b in self: b.set_broker_url(self.url)
+        for b in self: b.set_brokers_url(self.url)
 
     def connect(self, i):
         """Connect with reconnect_urls"""
@@ -149,7 +149,7 @@ class HaCluster(object):
     def restart(self, i):
         b = self._brokers[i]
         self._brokers[i] = HaBroker(
-            self.test, name=self.next_name(), port=b.port(), broker_url=self.url,
+            self.test, name=self.next_name(), port=b.port(), brokers_url=self.url,
             **self.kwargs)
 
     def bounce(self, i, promote_next=True):
@@ -238,7 +238,7 @@ class ReplicationTests(BrokerTest):
 
         # Create config, send messages before starting the backup, to test catch-up replication.
         setup(p, "1", primary)
-        backup  = HaBroker(self, name="backup", broker_url=primary.host_port())
+        backup  = HaBroker(self, name="backup", brokers_url=primary.host_port())
         # Create config, send messages after starting the backup, to test steady-state replication.
         setup(p, "2", primary)
 
@@ -276,10 +276,10 @@ class ReplicationTests(BrokerTest):
         s = p.sender("q;{create:always}")
         for m in [str(i) for i in range(0,10)]: s.send(m)
         s.sync()
-        backup1 = HaBroker(self, name="backup1", broker_url=primary.host_port())
+        backup1 = HaBroker(self, name="backup1", brokers_url=primary.host_port())
         for m in [str(i) for i in range(10,20)]: s.send(m)
         s.sync()
-        backup2 = HaBroker(self, name="backup2", broker_url=primary.host_port())
+        backup2 = HaBroker(self, name="backup2", brokers_url=primary.host_port())
         for m in [str(i) for i in range(20,30)]: s.send(m)
         s.sync()
 
@@ -319,7 +319,7 @@ class ReplicationTests(BrokerTest):
         """Verify that backups rejects connections and that fail-over works in python client"""
         primary = HaBroker(self, name="primary", expect=EXPECT_EXIT_FAIL)
         primary.promote()
-        backup = HaBroker(self, name="backup", broker_url=primary.host_port())
+        backup = HaBroker(self, name="backup", brokers_url=primary.host_port())
         # Check that backup rejects normal connections
         try:
             backup.connect().session()
@@ -344,7 +344,7 @@ class ReplicationTests(BrokerTest):
         """Verify that failover works in the C++ client."""
         primary = HaBroker(self, name="primary", expect=EXPECT_EXIT_FAIL)
         primary.promote()
-        backup = HaBroker(self, name="backup", broker_url=primary.host_port())
+        backup = HaBroker(self, name="backup", brokers_url=primary.host_port())
         url="%s,%s"%(primary.host_port(), backup.host_port())
         primary.connect().session().sender("q;{create:always}")
         backup.wait_backup("q")
@@ -437,7 +437,7 @@ class ReplicationTests(BrokerTest):
         """Verify that we replicate to an LVQ correctly"""
         primary  = HaBroker(self, name="primary")
         primary.promote()
-        backup = HaBroker(self, name="backup", broker_url=primary.host_port())
+        backup = HaBroker(self, name="backup", brokers_url=primary.host_port())
         s = primary.connect().session().sender("lvq; {create:always, node:{x-declare:{arguments:{'qpid.last_value_queue_key':lvq-key}}}}")
         def send(key,value): s.send(Message(content=value,properties={"lvq-key":key}))
         for kv in [("a","a-1"),("b","b-1"),("a","a-2"),("a","a-3"),("c","c-1"),("c","c-2")]:
@@ -454,7 +454,7 @@ class ReplicationTests(BrokerTest):
         """Test replication with the ring queue policy"""
         primary  = HaBroker(self, name="primary")
         primary.promote()
-        backup = HaBroker(self, name="backup", broker_url=primary.host_port())
+        backup = HaBroker(self, name="backup", brokers_url=primary.host_port())
         s = primary.connect().session().sender("q; {create:always, node:{x-declare:{arguments:{'qpid.policy_type':ring, 'qpid.max_count':5}}}}")
         for i in range(10): s.send(Message(str(i)))
         backup.assert_browse_backup("q", [str(i) for i in range(5,10)])
@@ -463,7 +463,7 @@ class ReplicationTests(BrokerTest):
         """Test replication with the reject queue policy"""
         primary  = HaBroker(self, name="primary")
         primary.promote()
-        backup = HaBroker(self, name="backup", broker_url=primary.host_port())
+        backup = HaBroker(self, name="backup", brokers_url=primary.host_port())
         s = primary.connect().session().sender("q; {create:always, node:{x-declare:{arguments:{'qpid.policy_type':reject, 'qpid.max_count':5}}}}")
         try:
             for i in range(10): s.send(Message(str(i)), sync=False)
@@ -474,7 +474,7 @@ class ReplicationTests(BrokerTest):
         """Verify priority queues replicate correctly"""
         primary  = HaBroker(self, name="primary")
         primary.promote()
-        backup = HaBroker(self, name="backup", broker_url=primary.host_port())
+        backup = HaBroker(self, name="backup", brokers_url=primary.host_port())
         session = primary.connect().session()
         s = session.sender("priority-queue; {create:always, node:{x-declare:{arguments:{'qpid.priorities':10}}}}")
         priorities = [8,9,5,1,2,2,3,4,9,7,8,9,9,2]
@@ -489,7 +489,7 @@ class ReplicationTests(BrokerTest):
         """Verify priority queues replicate correctly"""
         primary  = HaBroker(self, name="primary")
         primary.promote()
-        backup = HaBroker(self, name="backup", broker_url=primary.host_port())
+        backup = HaBroker(self, name="backup", brokers_url=primary.host_port())
         session = primary.connect().session()
         levels = 8
         priorities = [4,5,3,7,8,8,2,8,2,8,8,16,6,6,6,6,6,6,8,3,5,8,3,5,5,3,3,8,8,3,7,3,7,7,7,8,8,8,2,3]
@@ -508,7 +508,7 @@ class ReplicationTests(BrokerTest):
     def test_priority_ring(self):
         primary  = HaBroker(self, name="primary")
         primary.promote()
-        backup = HaBroker(self, name="backup", broker_url=primary.host_port())
+        backup = HaBroker(self, name="backup", brokers_url=primary.host_port())
         s = primary.connect().session().sender("q; {create:always, node:{x-declare:{arguments:{'qpid.policy_type':ring, 'qpid.max_count':5, 'qpid.priorities':10}}}}")
         priorities = [8,9,5,1,2,2,3,4,9,7,8,9,9,2]
         for p in priorities: s.send(Message(priority=p))
@@ -553,11 +553,11 @@ class ReplicationTests(BrokerTest):
 
         primary  = HaBroker(self, name="primary")
         primary.promote()
-        backup1 = HaBroker(self, name="backup1", broker_url=primary.host_port())
+        backup1 = HaBroker(self, name="backup1", brokers_url=primary.host_port())
         c = primary.connect()
         for t in tests: t.send(c) # Send messages, leave one unacknowledged.
 
-        backup2 = HaBroker(self, name="backup2", broker_url=primary.host_port())
+        backup2 = HaBroker(self, name="backup2", brokers_url=primary.host_port())
         # Wait for backups to catch up.
         for t in tests:
             t.wait(self, backup1)
