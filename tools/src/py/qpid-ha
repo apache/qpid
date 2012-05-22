@@ -93,30 +93,31 @@ class SetCmd(Command):
         Command.__init__(self, "set", "Set HA configuration settings")
         def add(optname, metavar, type, help):
             self.op.add_option(optname, metavar=metavar, type=type, help=help, action="store")
-        add("--brokers", "<url>", "string", "HA brokers use <url> to connect to each other")
-        add("--public-brokers", "<url>", "string", "Clients use <url> to connect to HA brokers")
+        add("--brokers-url", "<url>", "string", "URL with address of each broker in the cluster. Used by brokers to connect to each other.")
+        add("--public-url", "<url>", "string", "URL advertised to clients to connect to the cluster. May be a list or a VIP.")
         add("--backups", "<n>", "int", "Expect <n> backups to be running"),
 
     def do_execute(self, qmf_broker, ha_broker, opts, args):
-        if (opts.brokers): qmf_broker._method("setBrokers", {"url":opts.brokers}, HA_BROKER)
-        if (opts.public_brokers): qmf_broker._method("setPublicBrokers", {"url":opts.public_brokers}, HA_BROKER)
+        if (opts.brokers_url): qmf_broker._method("setBrokersUrl", {"url":opts.brokers_url}, HA_BROKER)
+        if (opts.public_url): qmf_broker._method("setPublicUrl", {"url":opts.public_url}, HA_BROKER)
         if (opts.backups): qmf_broker._method("setExpectedBackups", {"expectedBackups":opts.backups}, HA_BROKER)
 
 SetCmd()
 
 class QueryCmd(Command):
     def __init__(self):
-        Command.__init__(self, "query", "Print HA configuration settings")
+        Command.__init__(self, "query", "Print HA configuration and status")
 
     def do_execute(self, qmf_broker, ha_broker, opts, args):
         hb = ha_broker
         for x in [("Status:", hb.status),
-                  ("Brokers URL:", hb.brokers),
-                  ("Public URL:", hb.publicBrokers),
+                  ("Brokers URL:", hb.brokersUrl),
+                  ("Public URL:", hb.publicUrl),
                   ("Expected Backups:", hb.expectedBackups),
                   ("Replicate: ", hb.replicateDefault)
                   ]:
             print "%-20s %s"%(x[0], x[1])
+
 QueryCmd()
 
 def print_usage(prog):

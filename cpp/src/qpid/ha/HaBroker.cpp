@@ -35,8 +35,8 @@
 #include "qpid/sys/SystemInfo.h"
 #include "qmf/org/apache/qpid/ha/Package.h"
 #include "qmf/org/apache/qpid/ha/ArgsHaBrokerReplicate.h"
-#include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetBrokers.h"
-#include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetPublicBrokers.h"
+#include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetBrokersUrl.h"
+#include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetPublicUrl.h"
 #include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetExpectedBackups.h"
 #include "qpid/log/Statement.h"
 
@@ -149,12 +149,12 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
           }
           break;
       }
-      case _qmf::HaBroker::METHOD_SETBROKERS: {
-          setBrokerUrl(Url(dynamic_cast<_qmf::ArgsHaBrokerSetBrokers&>(args).i_url), l);
+      case _qmf::HaBroker::METHOD_SETBROKERSURL: {
+          setBrokerUrl(Url(dynamic_cast<_qmf::ArgsHaBrokerSetBrokersUrl&>(args).i_url), l);
           break;
       }
-      case _qmf::HaBroker::METHOD_SETPUBLICBROKERS: {
-          setClientUrl(Url(dynamic_cast<_qmf::ArgsHaBrokerSetPublicBrokers&>(args).i_url), l);
+      case _qmf::HaBroker::METHOD_SETPUBLICURL: {
+          setClientUrl(Url(dynamic_cast<_qmf::ArgsHaBrokerSetPublicUrl&>(args).i_url), l);
           break;
       }
       case _qmf::HaBroker::METHOD_SETEXPECTEDBACKUPS: {
@@ -201,7 +201,7 @@ void HaBroker::setClientUrl(const Url& url, const sys::Mutex::ScopedLock& l) {
 void HaBroker::updateClientUrl(const sys::Mutex::ScopedLock&) {
     Url url = clientUrl.empty() ? brokerUrl : clientUrl;
     if (url.empty()) throw Url::Invalid("HA client URL is empty");
-    mgmtObject->set_publicBrokers(url.str());
+    mgmtObject->set_publicUrl(url.str());
     knownBrokers.clear();
     knownBrokers.push_back(url);
     QPID_LOG(debug, logPrefix << "Setting client URL to: " << url);
@@ -210,7 +210,7 @@ void HaBroker::updateClientUrl(const sys::Mutex::ScopedLock&) {
 void HaBroker::setBrokerUrl(const Url& url, const sys::Mutex::ScopedLock& l) {
     if (url.empty()) throw Url::Invalid("HA broker URL is empty");
     brokerUrl = url;
-    mgmtObject->set_brokers(brokerUrl.str());
+    mgmtObject->set_brokersUrl(brokerUrl.str());
     if (backup.get()) backup->setBrokerUrl(brokerUrl);
     // Updating broker URL also updates defaulted client URL:
     if (clientUrl.empty()) updateClientUrl(l);

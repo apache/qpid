@@ -33,10 +33,10 @@ struct Options : public qpid::Options {
         addOptions()
             ("ha-cluster", optValue(settings.cluster, "yes|no"),
              "Join a HA active/passive cluster.")
-            ("ha-brokers", optValue(settings.brokerUrl,"URL"),
-             "URL that backup brokers use to connect and fail over.")
-            ("ha-public-brokers", optValue(settings.clientUrl,"URL"),
-             "URL that clients use to connect and fail over, defaults to ha-brokers.")
+            ("ha-brokers-url", optValue(settings.brokerUrl,"URL"),
+             "URL with address of each broker in the cluster.")
+            ("ha-public-url", optValue(settings.clientUrl,"URL"),
+             "URL advertized to clients to connect to the cluster.")
             ("ha-replicate",
              optValue(settings.replicateDefault, "LEVEL"),
             "Replication level for creating queues and exchanges if there is no qpid.replicate argument supplied. LEVEL is 'none', 'configuration' or 'all'")
