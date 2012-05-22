@@ -76,7 +76,7 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
         // Don't start default broker provided by QBTC.
     }
 
-    public void testLossOfActiveNodeCausesClientToFailover() throws Exception
+    public void testLossOfMasterNodeCausesClientToFailover() throws Exception
     {
         final Connection connection = getConnection(_brokerFailoverUrl);
 
@@ -93,10 +93,11 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
         connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
     }
 
-    public void testLossOfInactiveNodeDoesNotCauseClientToFailover() throws Exception
+    public void testLossOfReplicaNodeDoesNotCauseClientToFailover() throws Exception
     {
         LOGGER.info("Connecting to " + _brokerFailoverUrl);
         final Connection connection = getConnection(_brokerFailoverUrl);
+        LOGGER.info("Got connection to cluster");
 
         ((AMQConnection)connection).setConnectionListener(_failoverAwaitingListener);
         final int activeBrokerPort = _clusterCreator.getBrokerPortNumberFromConnection(connection);

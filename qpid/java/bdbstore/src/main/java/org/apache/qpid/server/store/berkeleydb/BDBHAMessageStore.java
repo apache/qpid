@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -67,7 +68,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
 {
     private static final String MUTLI_SYNC = "MUTLI_SYNC";
     private static final String DEFAULT_REPLICATION_POLICY =
-        MUTLI_SYNC + "," + SyncPolicy.NO_SYNC.name() + "," + ReplicaAckPolicy.SIMPLE_MAJORITY.name();
+        MUTLI_SYNC + "," + SyncPolicy.WRITE_NO_SYNC.name() + "," + ReplicaAckPolicy.SIMPLE_MAJORITY.name();
 
     private static final Logger LOGGER = Logger.getLogger(BDBHAMessageStore.class);
 
@@ -107,7 +108,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
 
         if(_replicationPolicy.startsWith(MUTLI_SYNC))
         {
-            _replicationDurability = Durability.parse(_replicationPolicy.replaceFirst(MUTLI_SYNC, SyncPolicy.SYNC.name()));
+            _replicationDurability = Durability.parse(_replicationPolicy.replaceFirst(MUTLI_SYNC, SyncPolicy.WRITE_NO_SYNC.name()));
             _localMultiSyncCommits = true;
         }
         else
@@ -388,11 +389,11 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
                 activateStoreAsync();
                 break;
             case REPLICA:
-                passivateStore();
+                passivateStoreAsync();
                 break;
             case DETACHED:
                 LOGGER.error("BDB replicated node in detached state, therefore passivating.");
-                passivateStore();
+                passivateStoreAsync();
                 break;
             case UNKNOWN:
                 LOGGER.warn("BDB replicated node in unknown state (hopefully temporarily)");
@@ -400,20 +401,6 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
             default:
                 LOGGER.error("Unexpected state change: " + state);
                 throw new IllegalStateException("Unexpected state change: " + state);
-            }
-        }
-
-        /** synchronously calls passivate. This is acceptable because {@link HAMessageStore#passivate()} is expected to be fast */
-        private void passivateStore()
-        {
-            try
-            {
-                passivate();
-            }
-            catch(Exception e)
-            {
-                LOGGER.error("Unable to passivate", e);
-                throw new RuntimeException("Unable to passivate", e);
             }
         }
 
@@ -429,25 +416,12 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
          */
         private void activateStoreAsync()
         {
-            final RootMessageLogger _rootLogger = CurrentActor.get().getRootMessageLogger();
-
-            _executor.execute(new Runnable()
+            String threadName = "BDBHANodeActivationThread-" + _name;
+            executeStateChangeAsync(new Callable<Void>()
             {
-                private static final String _THREAD_NAME = "BDBHANodeActivationThread";
-
                 @Override
-                public void run()
+                public Void call() throws Exception
                 {
-                    Thread.currentThread().setName(_THREAD_NAME);
-                    CurrentActor.set(new AbstractActor(_rootLogger)
-                    {
-                        @Override
-                        public String getLogMessage()
-                        {
-                            return _THREAD_NAME;
-                        }
-                    });
-
                     try
                     {
                         activate();
@@ -455,8 +429,80 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
                     catch (Exception e)
                     {
                         LOGGER.error("Failed to activate on hearing MASTER change event",e);
+                        throw e;
                     }
+                    return null;
+                }
+            }, threadName);
+        }
 
+        /**
+         * Calls {@link #passivate()}.
+         *
+         * <p/>
+         * This is done a background thread, in line with
+         * {@link StateChangeListener#stateChange(StateChangeEvent)}'s JavaDoc, because
+         * passivation due to the effect of state change listeners.
+         */
+        private void passivateStoreAsync()
+        {
+            String threadName = "BDBHANodePassivationThread-" + _name;
+            executeStateChangeAsync(new Callable<Void>()
+            {
+
+                @Override
+                public Void call() throws Exception
+                {
+                    try
+                    {
+                        passivate();
+                    }
+                    catch (Exception e)
+                    {
+                        LOGGER.error("Failed to passivate on hearing REPLICA or DETACHED change event",e);
+                        throw e;
+                    }
+                    return null;
+                }
+            }, threadName);
+        }
+
+        private void executeStateChangeAsync(final Callable<Void> callable, final String threadName)
+        {
+            final RootMessageLogger _rootLogger = CurrentActor.get().getRootMessageLogger();
+
+            _executor.execute(new Runnable()
+            {
+
+                @Override
+                public void run()
+                {
+                    final String originalThreadName = Thread.currentThread().getName();
+                    Thread.currentThread().setName(threadName);
+                    try
+                    {
+                        CurrentActor.set(new AbstractActor(_rootLogger)
+                        {
+                            @Override
+                            public String getLogMessage()
+                            {
+                                return threadName;
+                            }
+                        });
+
+                        try
+                        {
+                            callable.call();
+                        }
+                        catch (Exception e)
+                        {
+                            LOGGER.error("Exception during state change", e);
+                        }
+                    }
+                    finally
+                    {
+                        Thread.currentThread().setName(originalThreadName);
+                    }
                 }
             });
         }
