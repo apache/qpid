@@ -61,14 +61,14 @@ Url Backup::linkUrl(const Url& brokers) const {
     Url url;
     for (Url::const_iterator i = brokers.begin(); i != brokers.end(); ++i)
         if (!isSelf(*i)) url.push_back(*i);
-    if (url.empty()) throw Url::Invalid("HA broker Link URL is empty");
-    QPID_LOG(debug, logPrefix << "Link URL set to: " << url);
+    if (url.empty()) throw Url::Invalid("HA Backup failover URL is empty");
+    QPID_LOG(debug, logPrefix << "Backup failover URL (excluding self): " << url);
     return url;
 }
 
 void Backup::initialize(const Url& brokers) {
     if (brokers.empty()) throw Url::Invalid("HA broker URL is empty");
-    QPID_LOG(info, logPrefix << "Backup initialized with broker URL: " << brokers);
+    QPID_LOG(info, logPrefix << "Backup broker URL: " << brokers);
     sys::Mutex::ScopedLock l(lock);
     Url url = linkUrl(brokers);
     string protocol = url[0].protocol.empty() ? "tcp" : url[0].protocol;

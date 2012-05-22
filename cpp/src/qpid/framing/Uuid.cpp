@@ -43,6 +43,13 @@ Uuid::Uuid(const uint8_t* data) {
     assign(data);
 }
 
+Uuid::Uuid(const std::string& s) {
+    if (s.size() != UNPARSED_SIZE)
+        throw IllegalArgumentException(QPID_MSG("Invalid UUID: " << s));
+    if (uuid_parse(&s[0], c_array()) != 0)
+        throw IllegalArgumentException(QPID_MSG("Invalid UUID: " << s));
+}
+
 void Uuid::assign(const uint8_t* data) {
     // This const cast is for Solaris which has a 
     // uuid_copy that takes a non const 2nd argument

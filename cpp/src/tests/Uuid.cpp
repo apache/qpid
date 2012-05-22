@@ -52,6 +52,11 @@ boost::array<uint8_t, 16>  sample =  {{0x1b, 0x4e, 0x28, 0xba, 0x2f, 0xa1, 0x11,
 const string sampleStr("1b4e28ba-2fa1-11d2-883f-b9a761bde3fb");
 const string zeroStr("00000000-0000-0000-0000-000000000000");
 
+QPID_AUTO_TEST_CASE(testUuidStr) {
+    Uuid uuid(sampleStr);
+    BOOST_CHECK(uuid == sample);
+}
+
 QPID_AUTO_TEST_CASE(testUuidIstream) {
     Uuid uuid;
     istringstream in(sampleStr);

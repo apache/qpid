@@ -37,7 +37,6 @@ System::System (string _dataDir, Broker* broker) : mgmtObject(0)
 
     if (agent != 0)
     {
-        framing::Uuid systemId;
 
         if (_dataDir.empty ())
         {
@@ -66,14 +65,13 @@ System::System (string _dataDir, Broker* broker) : mgmtObject(0)
         }
 
         mgmtObject = new _qmf::System(agent, this, types::Uuid(systemId.c_array()));
-        std::string sysname, nodename, release, version, machine;
-        qpid::sys::SystemInfo::getSystemId (sysname,
-                                            nodename,
+        qpid::sys::SystemInfo::getSystemId (osName,
+                                            nodeName,
                                             release,
                                             version,
                                             machine);
-        mgmtObject->set_osName   (sysname);
-        mgmtObject->set_nodeName (nodename);
+        mgmtObject->set_osName   (osName);
+        mgmtObject->set_nodeName (nodeName);
         mgmtObject->set_release  (release);
         mgmtObject->set_version  (version);
         mgmtObject->set_machine  (machine);
