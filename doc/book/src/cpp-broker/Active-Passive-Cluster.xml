@@ -192,11 +192,11 @@ under the License.
 	  </row>
 	  <row>
 	    <entry>
-	      <literal>--ha-brokers <replaceable>URL</replaceable></literal>
+	      <literal>--ha-brokers-url <replaceable>URL</replaceable></literal>
 	    </entry>
 	    <entry>
 	      <para>
-		The URL
+		A URL listing each broker in the cluster.
 		<footnote>
 		  <para>
 		  The full format of the URL is given by this grammar:
@@ -209,24 +209,28 @@ under the License.
 		  </programlisting>
 		  </para>
 		</footnote>
-		used by brokers to connect to each other. If you use a virtual IP address
-		then this is a single address, for example
-		<literal>amqp:20.0.20.200</literal>. If you do not use a virtual IP
-		address then the URL must list all the addresses of brokers in the
-		cluster, for example <literal>amqp:node1,node2,node3</literal>
+		It is used by brokers to connect to each other. This URL must explicitly
+		list each broker, it cannot be a virtual IP address.
+		For example <literal>amqp:node1.exaple.com,node2.exaple.com,node3.exaple.com</literal>
 	      </para>
 	    </entry>
 	  </row>
 	  <row>
-	    <entry><literal>--ha-public-brokers <replaceable>URL</replaceable></literal> </entry>
+	    <entry><literal>--ha-public-url <replaceable>URL</replaceable></literal> </entry>
 	    <entry>
 	      <para>
-		The URL used by clients to connect to the brokers. This has the same
-		format as the <literal>--ha-brokers</literal> URL above.
+		The URL that is advertized to clients. This has the same
+		format as the <literal>--ha-brokers-url</literal> URL above.
 	      </para>
 	      <para>
-		If this option is not set, clients will use the same URL as brokers.
-		This option allows you to put client traffic on a different network from
+		This URL can contain a list of all the brokers'
+		addresses or a single virtual IP address.  A virtual
+		IP address is recommended as it simplifies deployment
+		and hides changes to the cluster membership from
+		clients.
+	      </para>
+	      <para>
+		You can use this option to put client traffic on a different network from
 		broker traffic, which is recommended.
 	      </para>
 	    </entry>
@@ -237,7 +241,7 @@ under the License.
 	    <entry>
 	      <para> 
 		Specifies whether queues and exchanges are replicated by default.
-		For details see <xref linkend="creating-replicated"/>
+		For details see <xref linkend="ha-creating-replicated"/>
 	      </para>
 	    </entry>
 	  </row>
@@ -256,7 +260,7 @@ under the License.
     </table>
     <para>
       To configure a HA cluster you must set at least <literal>ha-cluster</literal> and
-      <literal>ha-brokers</literal>.
+      <literal>ha-brokers-url</literal>.
     </para>
   </section>
 
@@ -272,7 +276,7 @@ under the License.
       The resource manager is responsible for starting the <command>qpidd</command> broker
       on each node in the cluster. The resource manager <firstterm>promotes</firstterm>
       one of the brokers to be the primary. The other brokers connect to the primary as
-      backups, using the URL provided in the <literal>ha-brokers</literal> configuration
+      backups, using the URL provided in the <literal>ha-brokers-url</literal> configuration
       option.
     </para>
     <para>
@@ -406,8 +410,8 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     </para>
     <programlisting>
       ha-cluster=yes
-      ha-brokers=20.0.20.200
-      ha-public-brokers=20.0.10.200
+      ha-brokers-url=20.0.20.200
+      ha-public-url=20.0.10.200
     </programlisting>
     <para>
       This configuration specifies that backup brokers will use 20.0.20.200

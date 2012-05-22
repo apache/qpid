@@ -25,11 +25,11 @@
 
     <property name="status" type="sstr" desc="HA status: primary or backup"/>
 
-    <property name="brokers" type="sstr"
-	      desc="Multiple-address URL used by HA brokers to connect to each other."/>
+    <property name="brokersUrl" type="sstr"
+	      desc="URL with address of each broker in the cluster."/>
 
-    <property name="publicBrokers" type="sstr"
-	      desc="Multiple-address URL used by clients to connect to the HA brokers."/>
+    <property name="publicUrl" type="sstr"
+	      desc="URL advertized to clients to connect to the cluster."/>
 
     <property name="expectedBackups" type="uint16"
 	      desc="Number of HA backup brokers expected."/>
@@ -40,11 +40,11 @@
 
     <method name="promote" desc="Promote a backup broker to primary."/>
 
-    <method name="setBrokers" desc="Set URL for HA brokers to connect to each other.">
+    <method name="setBrokersUrl" desc="URL listing each broker in the cluster.">
       <arg name="url" type="sstr" dir="I"/>
     </method>
 
-    <method name="setPublicBrokers" desc="Set URL for clients to connect to  HA brokers">
+    <method name="setPublicUrl" desc="URL advertized to clients.">
       <arg name="url" type="sstr" dir="I"/>
     </method>
 
