@@ -25,5 +25,7 @@ public enum State
     INITIALISING,
     ACTIVE,
     PASSIVE,
-    STOPPED
+    STOPPED,
+    /** Terminal state that signifies the virtual host has experienced an unexpected condition. */
+    ERRORED
 }
