@@ -19,7 +19,6 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
@@ -32,7 +31,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -48,26 +46,22 @@ import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.url.URLSyntaxException;
 
-import com.sleepycat.je.rep.ReplicationNode;
-import com.sleepycat.je.rep.monitor.GroupChangeEvent;
-import com.sleepycat.je.rep.monitor.JoinGroupEvent;
-import com.sleepycat.je.rep.monitor.LeaveGroupEvent;
-import com.sleepycat.je.rep.monitor.Monitor;
-import com.sleepycat.je.rep.monitor.MonitorChangeListener;
-import com.sleepycat.je.rep.monitor.MonitorConfig;
-import com.sleepycat.je.rep.monitor.NewMasterEvent;
-
 public class HATestClusterCreator
 {
     protected static final Logger LOGGER = Logger.getLogger(HATestClusterCreator.class);
 
     private static final String MANY_BROKER_URL_FORMAT = "amqp://guest:guest@/%s?brokerlist='%s'&failover='roundrobin?cyclecount='%d''";
     private static final String BROKER_PORTION_FORMAT = "tcp://localhost:%d?connectdelay='%d',retries='%d'";
-    private static final String SINGLE_BROKER_URL_FORMAT = "amqp://guest:guest@/%s?brokerlist='tcp://localhost:%d?connectdelay='%d',retries='%d''";
 
-    private static final int CYCLECOUNT = 2;
-    private static final int RETRIES = 2;
-    private static final int CONNECTDELAY = 1000;
+    private static final int FAILOVER_CYCLECOUNT = 2;
+    private static final int FAILOVER_RETRIES = 2;
+    private static final int FAILOVER_CONNECTDELAY = 1000;
+
+    private static final String SINGLE_BROKER_URL_WITH_RETRY_FORMAT = "amqp://guest:guest@/%s?brokerlist='tcp://localhost:%d?connectdelay='%d',retries='%d''";
+    private static final String SINGLE_BROKER_URL_WITHOUT_RETRY_FORMAT = "amqp://guest:guest@/%s?brokerlist='tcp://localhost:%d'";
+
+    private static final int RETRIES = 30;
+    private static final int CONNECTDELAY = 75;
 
     private final QpidBrokerTestCase _testcase;
     private final Map<Integer, Integer> _brokerPortToBdbPortMap = new HashMap<Integer, Integer>();
@@ -80,7 +74,6 @@ public class HATestClusterCreator
     private final int _numberOfNodes;
     private int _bdbHelperPort;
     private int _primaryBrokerPort;
-    private Monitor _monitor;
 
     public HATestClusterCreator(QpidBrokerTestCase testcase, String virtualHostName, int numberOfNodes)
     {
@@ -216,7 +209,6 @@ public class HATestClusterCreator
 
     public void stopCluster() throws Exception
     {
-        shutdownMonitor();
         for (final Integer brokerPortNumber : _brokerConfigurations.keySet())
         {
             try
@@ -265,19 +257,38 @@ public class HATestClusterCreator
         {
             int brokerPortNumber = itr.next();
 
-            brokerList.append(String.format(BROKER_PORTION_FORMAT, brokerPortNumber, CONNECTDELAY, RETRIES));
+            brokerList.append(String.format(BROKER_PORTION_FORMAT, brokerPortNumber, FAILOVER_CONNECTDELAY, FAILOVER_RETRIES));
             if (itr.hasNext())
             {
                 brokerList.append(";");
             }
         }
 
-        return new AMQConnectionURL(String.format(MANY_BROKER_URL_FORMAT, _virtualHostName, brokerList, CYCLECOUNT));
+        return new AMQConnectionURL(String.format(MANY_BROKER_URL_FORMAT, _virtualHostName, brokerList, FAILOVER_CYCLECOUNT));
     }
 
-    public AMQConnectionURL getConnectionUrlForSingleNode(final int brokerPortNumber) throws URLSyntaxException
+    public AMQConnectionURL getConnectionUrlForSingleNodeWithoutRetry(final int brokerPortNumber) throws URLSyntaxException
     {
-        String url = String.format(SINGLE_BROKER_URL_FORMAT, _virtualHostName, brokerPortNumber, CONNECTDELAY, RETRIES);
+        return getConnectionUrlForSingleNode(brokerPortNumber, false);
+    }
+
+    public AMQConnectionURL getConnectionUrlForSingleNodeWithRetry(final int brokerPortNumber) throws URLSyntaxException
+    {
+        return getConnectionUrlForSingleNode(brokerPortNumber, true);
+    }
+
+    private AMQConnectionURL getConnectionUrlForSingleNode(final int brokerPortNumber, boolean retryAllowed) throws URLSyntaxException
+    {
+        final String url;
+        if (retryAllowed)
+        {
+            url = String.format(SINGLE_BROKER_URL_WITH_RETRY_FORMAT, _virtualHostName, brokerPortNumber, CONNECTDELAY, RETRIES);
+        }
+        else
+        {
+            url = String.format(SINGLE_BROKER_URL_WITHOUT_RETRY_FORMAT, _virtualHostName, brokerPortNumber);
+        }
+
         return new AMQConnectionURL(url);
     }
 
@@ -343,7 +354,6 @@ public class HATestClusterCreator
         _testcase.setConfigurationProperty(_configKeyPrefix + "highAvailability.nodeName", nodeName);
         _testcase.setConfigurationProperty(_configKeyPrefix + "highAvailability.nodeHostPort", getNodeHostPortForNodeAt(bdbPort));
         _testcase.setConfigurationProperty(_configKeyPrefix + "highAvailability.helperHostPort", getHelperHostPort());
-        // TODO replication policy
     }
 
     public String getIpAddressOfBrokerHost()
@@ -402,78 +412,5 @@ public class HATestClusterCreator
 
         virtualHostConfig.setProperty(configKey, newBdbHostPort);
         collectConfig(brokerPortNumberToBeMoved, brokerConfigHolder.getTestConfiguration(), virtualHostConfig);
-    }
-
-    public void startMonitorNode()
-    {
-        shutdownMonitor();
-
-        MonitorConfig config = new MonitorConfig();
-        config.setGroupName(_groupName);
-        int monitorPort = _testcase.findFreePort();
-        config.setNodeName(getNodeNameForNodeAt(monitorPort));
-        config.setNodeHostPort("" + monitorPort);
-        config.setHelperHosts(getHelperHostPort());
-
-        _monitor = new Monitor(config);
-
-        ReplicationNode currentMaster = _monitor.register();
-        LOGGER.info("Current master " + currentMaster.getName());
-    }
-
-    public void startListening(MonitorChangeListener listener) throws IOException
-    {
-        _monitor.startListener(listener);
-    }
-
-    public void statListeningForNewMasterEvent(final CountDownLatch latch) throws IOException
-    {
-        startListening(new MonitorChangeListenerSupport(){
-            @Override
-            public void notify(NewMasterEvent newMasterEvent)
-            {
-                LOGGER.debug("New master is elected " + newMasterEvent.getMasterName());
-                latch.countDown();
-            }
-        });
-    }
-
-    public void shutdownMonitor()
-    {
-        if (_monitor != null)
-        {
-            try
-            {
-                _monitor.shutdown();
-            }
-            catch (Exception e)
-            {
-                LOGGER.warn("Monitor shutdown error:", e);
-            }
-        }
-    }
-
-    public static class MonitorChangeListenerSupport implements MonitorChangeListener
-    {
-
-        @Override
-        public void notify(NewMasterEvent newMasterEvent)
-        {
-        }
-
-        @Override
-        public void notify(GroupChangeEvent groupChangeEvent)
-        {
-        }
-
-        @Override
-        public void notify(JoinGroupEvent joinGroupEvent)
-        {
-        }
-
-        @Override
-        public void notify(LeaveGroupEvent leaveGroupEvent)
-        {
-        }
     }
 }
