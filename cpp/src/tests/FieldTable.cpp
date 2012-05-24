@@ -75,11 +75,11 @@ QPID_AUTO_TEST_CASE(testAssignment)
         FieldTable c;
         c = a;
 
-        char* buff = static_cast<char*>(::alloca(c.encodedSize()));
-        Buffer wbuffer(buff, c.encodedSize());
+        std::vector<char> buff(c.encodedSize());
+        Buffer wbuffer(&buff[0], c.encodedSize());
         wbuffer.put(c);
 
-        Buffer rbuffer(buff, c.encodedSize());
+        Buffer rbuffer(&buff[0], c.encodedSize());
         rbuffer.get(d);
         BOOST_CHECK_EQUAL(c, d);
         BOOST_CHECK(string("CCCC") == c.getAsString("A"));
