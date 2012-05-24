@@ -19,7 +19,6 @@
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/types/Uuid.h"
-#include "qpid/sys/alloca.h"
 
 #include "unit_test.h"
 
@@ -97,12 +96,12 @@ QPID_AUTO_TEST_CASE(testUuidIOstream) {
 }
 
 QPID_AUTO_TEST_CASE(testUuidEncodeDecode) {
-    char* buff = static_cast<char*>(::alloca(Uuid::size()));
-    Buffer wbuf(buff, Uuid::size());
+    std::vector<char> buff(Uuid::size());
+    Buffer wbuf(&buff[0], Uuid::size());
     Uuid uuid(sample.c_array());
     uuid.encode(wbuf);
 
-    Buffer rbuf(buff, Uuid::size());
+    Buffer rbuf(&buff[0], Uuid::size());
     Uuid decoded;
     decoded.decode(rbuf);
     BOOST_CHECK_EQUAL(string(sample.begin(), sample.end()),
