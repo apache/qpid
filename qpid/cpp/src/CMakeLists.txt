@@ -784,10 +784,12 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     )
   endif (POLLER STREQUAL poll)
 
+  # Set default System Info module
+  set (qpid_system_module
+    qpid/sys/posix/SystemInfo.cpp
+  )
+
   if (CMAKE_SYSTEM_NAME STREQUAL Linux)
-    set (qpid_system_module
-      qpid/sys/posix/SystemInfo.cpp
-    )
     add_definitions(-pthread)
     set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread")
     if (CMAKE_COMPILER_IS_GNUCXX)
@@ -795,13 +797,8 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     endif (CMAKE_COMPILER_IS_GNUCXX)
   endif (CMAKE_SYSTEM_NAME STREQUAL Linux)
 
-  set (qpidtypes_platform_SOURCES)
-  set (qpidtypes_platform_LIBS
-       uuid
-       ${Boost_SYSTEM_LIBRARY}
-  )
-
   if (CMAKE_SYSTEM_NAME STREQUAL SunOS)
+    # On Solaris override the system info module
     set (qpid_system_module
       qpid/sys/solaris/SystemInfo.cpp
     )
@@ -811,6 +808,12 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
       thread
     )
   endif (CMAKE_SYSTEM_NAME STREQUAL SunOS)
+
+  set (qpidtypes_platform_SOURCES)
+  set (qpidtypes_platform_LIBS
+       uuid
+       ${Boost_SYSTEM_LIBRARY}
+  )
 
   set (qpidcommon_platform_SOURCES
     qpid/sys/posix/AsynchIO.cpp
