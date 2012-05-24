@@ -21,9 +21,11 @@
 
 #include "qpid/sys/MemStat.h"
 
+// Null memory stats provider:
+// This is for platforms that do not have a way to get allocated
+// memory status
 void qpid::sys::MemStat::loadMemInfo(qmf::org::apache::qpid::broker::Memory*)
 {
-    // TODO: Add Windows-specific memory stats to the object and load them here.
 }
 
 
