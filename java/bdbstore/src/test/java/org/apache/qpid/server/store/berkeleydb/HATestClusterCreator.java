@@ -53,8 +53,8 @@ public class HATestClusterCreator
     private static final String MANY_BROKER_URL_FORMAT = "amqp://guest:guest@/%s?brokerlist='%s'&failover='roundrobin?cyclecount='%d''";
     private static final String BROKER_PORTION_FORMAT = "tcp://localhost:%d?connectdelay='%d',retries='%d'";
 
-    private static final int FAILOVER_CYCLECOUNT = 2;
-    private static final int FAILOVER_RETRIES = 2;
+    private static final int FAILOVER_CYCLECOUNT = 5;
+    private static final int FAILOVER_RETRIES = 1;
     private static final int FAILOVER_CONNECTDELAY = 1000;
 
     private static final String SINGLE_BROKER_URL_WITH_RETRY_FORMAT = "amqp://guest:guest@/%s?brokerlist='tcp://localhost:%d?connectdelay='%d',retries='%d''";
@@ -67,7 +67,7 @@ public class HATestClusterCreator
     private final Map<Integer, Integer> _brokerPortToBdbPortMap = new HashMap<Integer, Integer>();
     private final Map<Integer, BrokerConfigHolder> _brokerConfigurations = new TreeMap<Integer, BrokerConfigHolder>();
     private final String _virtualHostName;
-    private final String _configKeyPrefix;
+    private final String _storeConfigKeyPrefix;
 
     private final String _ipAddressOfBroker;
     private final String _groupName ;
@@ -82,7 +82,7 @@ public class HATestClusterCreator
         _groupName = "group" + _testcase.getName();
         _ipAddressOfBroker = getIpAddressOfBrokerHost();
         _numberOfNodes = numberOfNodes;
-        _configKeyPrefix = "virtualhosts.virtualhost." + _virtualHostName + ".store.";
+        _storeConfigKeyPrefix = "virtualhosts.virtualhost." + _virtualHostName + ".store.";
         _bdbHelperPort = 0;
     }
 
@@ -127,7 +127,7 @@ public class HATestClusterCreator
      */
     private String getConfigKey(String configKeySuffix)
     {
-        final String configKey = StringUtils.substringAfter(_configKeyPrefix + configKeySuffix, "virtualhosts.");
+        final String configKey = StringUtils.substringAfter(_storeConfigKeyPrefix + configKeySuffix, "virtualhosts.");
         return configKey;
     }
 
@@ -348,12 +348,12 @@ public class HATestClusterCreator
     {
         final String nodeName = getNodeNameForNodeAt(bdbPort);
 
-        _testcase.setConfigurationProperty(_configKeyPrefix + "class", "org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore");
+        _testcase.setConfigurationProperty(_storeConfigKeyPrefix + "class", "org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore");
 
-        _testcase.setConfigurationProperty(_configKeyPrefix + "highAvailability.groupName", _groupName);
-        _testcase.setConfigurationProperty(_configKeyPrefix + "highAvailability.nodeName", nodeName);
-        _testcase.setConfigurationProperty(_configKeyPrefix + "highAvailability.nodeHostPort", getNodeHostPortForNodeAt(bdbPort));
-        _testcase.setConfigurationProperty(_configKeyPrefix + "highAvailability.helperHostPort", getHelperHostPort());
+        _testcase.setConfigurationProperty(_storeConfigKeyPrefix + "highAvailability.groupName", _groupName);
+        _testcase.setConfigurationProperty(_storeConfigKeyPrefix + "highAvailability.nodeName", nodeName);
+        _testcase.setConfigurationProperty(_storeConfigKeyPrefix + "highAvailability.nodeHostPort", getNodeHostPortForNodeAt(bdbPort));
+        _testcase.setConfigurationProperty(_storeConfigKeyPrefix + "highAvailability.helperHostPort", getHelperHostPort());
     }
 
     public String getIpAddressOfBrokerHost()
@@ -413,4 +413,11 @@ public class HATestClusterCreator
         virtualHostConfig.setProperty(configKey, newBdbHostPort);
         collectConfig(brokerPortNumberToBeMoved, brokerConfigHolder.getTestConfiguration(), virtualHostConfig);
     }
+
+    public String getStoreConfigKeyPrefix()
+    {
+        return _storeConfigKeyPrefix;
+    }
+
+
 }

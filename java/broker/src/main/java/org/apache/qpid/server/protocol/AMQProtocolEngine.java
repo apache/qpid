@@ -875,12 +875,18 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
 
             markChannelAwaitingCloseOk(channelId);
             closeSession();
-            _stateManager.changeState(AMQState.CONNECTION_CLOSING);
-            writeFrame(e.getCloseFrame(channelId));
         }
         finally
         {
-            closeProtocolSession();
+            try
+            {
+                _stateManager.changeState(AMQState.CONNECTION_CLOSING);
+                writeFrame(e.getCloseFrame(channelId));
+            }
+            finally
+            {
+                closeProtocolSession();
+            }
         }
 
 

@@ -22,6 +22,7 @@ package org.apache.qpid.server.store.berkeleydb;
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -75,6 +76,31 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
     public static final String GRP_MEM_COL_NODE_HOST_PORT = "NodeHostPort";
     public static final String GRP_MEM_COL_NODE_NAME = "NodeName";
 
+    private static final Map<String, String> REPCONFIG_DEFAULTS = Collections.unmodifiableMap(new HashMap<String, String>()
+    {{
+        /**
+         * Parameter decreased as the 24h default may lead very large log files for most users.
+         */
+        put(ReplicationConfig.REP_STREAM_TIMEOUT, "1 h");
+        /**
+         * Parameter increased as the 5 s default may lead to spurious timeouts.
+         */
+        put(ReplicationConfig.REPLICA_ACK_TIMEOUT, "15 s");
+        /**
+         * Parameter increased as the 10 s default may lead to spurious timeouts.
+         */
+        put(ReplicationConfig.INSUFFICIENT_REPLICAS_TIMEOUT, "20 s");
+        /**
+         * Parameter increased as the 10 h default may cause user confusion.
+         */
+        put(ReplicationConfig.ENV_SETUP_TIMEOUT, "15 min");
+        /**
+         * Parameter changed from default true so we adopt immediately adopt the new behaviour early. False
+         * is scheduled to become default after JE 5.0.48.
+         */
+        put(ReplicationConfig.PROTOCOL_OLD_STRING_ENCODING, Boolean.FALSE.toString());
+    }});
+
     private String _groupName;
     private String _nodeName;
     private String _nodeHostPort;
@@ -89,7 +115,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
     private CommitThreadWrapper _commitThreadWrapper;
     private boolean _localMultiSyncCommits;
     private boolean _autoDesignatedPrimary;
-    private Map<String, String> _repConfigMap;
+    private Map<String, String> _repConfig;
 
     @Override
     public void configure(String name, Configuration storeConfig) throws Exception
@@ -116,7 +142,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
             _localMultiSyncCommits = false;
         }
 
-        _repConfigMap = getConfigMap(storeConfig, "repConfig");
+        _repConfig = getConfigMap(REPCONFIG_DEFAULTS, storeConfig, "repConfig");
 
         _managedObject = new BDBHAMessageStoreManagerMBean(this);
         _managedObject.register();
@@ -337,7 +363,18 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
     {
         // Using commit() instead of commitNoSync() for the HA store to allow
         // the HA durability configuration to influence resulting behaviour.
-        tx.commit();
+        try
+        {
+            tx.commit();
+        }
+        catch (DatabaseException de)
+        {
+            LOGGER.error("Got DatabaseException on commit, closing environment", de);
+
+            closeEnvironmentSafely();
+
+            throw de;
+        }
 
         if(_localMultiSyncCommits)
         {
@@ -401,7 +438,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
 
     private void setReplicationConfigProperties(ReplicationConfig replicationConfig)
     {
-        for (Map.Entry<String, String> configItem : _repConfigMap.entrySet())
+        for (Map.Entry<String, String> configItem : _repConfig.entrySet())
         {
             if (LOGGER.isDebugEnabled())
             {

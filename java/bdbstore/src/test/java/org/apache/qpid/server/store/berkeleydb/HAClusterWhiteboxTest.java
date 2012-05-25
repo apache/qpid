@@ -35,6 +35,8 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.url.URLSyntaxException;
 
+import com.sleepycat.je.rep.ReplicationConfig;
+
 /**
  * The HA white box tests test the BDB cluster where the test retains the knowledge of the
  * individual test nodes.  It uses this knowledge to examine the nodes  to ensure that they
