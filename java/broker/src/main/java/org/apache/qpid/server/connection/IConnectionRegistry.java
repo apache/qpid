@@ -37,8 +37,6 @@ public interface IConnectionRegistry
 
     public void close(String replyText) throws AMQException;
 
-    public void closeConnection(AMQConnectionModel connection, AMQConstant cause, String message);
-
     public List<AMQConnectionModel> getConnections();
 
     public void registerConnection(AMQConnectionModel connnection);

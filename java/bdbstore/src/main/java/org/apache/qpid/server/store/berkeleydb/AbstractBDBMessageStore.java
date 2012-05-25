@@ -30,6 +30,8 @@ import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
+import com.sleepycat.je.ExceptionEvent;
+import com.sleepycat.je.ExceptionListener;
 import com.sleepycat.je.LockConflictException;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
@@ -82,6 +84,11 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     private static final int LOCK_RETRY_ATTEMPTS = 5;
 
     public static final int VERSION = 6;
+
+    private static final Map<String, String> ENVCONFIG_DEFAULTS = Collections.unmodifiableMap(new HashMap<String, String>()
+    {{
+        put(EnvironmentConfig.LOCK_N_LOCK_TABLES, "7");
+    }});
 
     private Environment _environment;
 
@@ -168,9 +175,6 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         _configRecoveryHandler = recoveryHandler;
 
         configure(name, storeConfiguration);
-
-
-
     }
 
     public void configureMessageStore(String name,
@@ -199,7 +203,6 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     {
         return new BDBTransaction();
     }
-
 
     /**
      * Called after instantiation in order to configure the message store.
@@ -233,18 +236,21 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
         _storeLocation = storeLocation;
 
-        _envConfigMap = getConfigMap(storeConfig, "envConfig");
+        _envConfigMap = getConfigMap(ENVCONFIG_DEFAULTS, storeConfig, "envConfig");
 
         LOGGER.info("Configuring BDB message store");
 
         setupStore(environmentPath, name);
     }
 
-    protected Map<String,String> getConfigMap(Configuration config, String prefix) throws ConfigurationException
+    protected Map<String,String> getConfigMap(Map<String, String> defaultConfig, Configuration config, String prefix) throws ConfigurationException
     {
         final List<Object> argumentNames = config.getList(prefix + ".name");
         final List<Object> argumentValues = config.getList(prefix + ".value");
-        final Map<String,String> attributes = new HashMap<String,String>(argumentNames.size());
+        final int initialSize = argumentNames.size() + defaultConfig.size();
+
+        final Map<String,String> attributes = new HashMap<String,String>(initialSize);
+        attributes.putAll(defaultConfig);
 
         for (int i = 0; i < argumentNames.size(); i++)
         {
@@ -390,8 +396,14 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             // Clean the log before closing. This makes sure it doesn't contain
             // redundant data. Closing without doing this means the cleaner may not
             // get a chance to finish.
-            _environment.cleanLog();
-            _environment.close();
+            try
+            {
+                _environment.cleanLog();
+            }
+            finally
+            {
+                _environment.close();
+            }
         }
     }
 
@@ -1757,7 +1769,10 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             }
             catch (DatabaseException e)
             {
-                throw new RuntimeException(e);
+                LOGGER.error("Exception during transaction begin, closing store environment.", e);
+                closeEnvironmentSafely();
+
+                throw new RuntimeException("Exception during transaction begin, store environment closed.", e);
             }
         }
 
@@ -1902,10 +1917,38 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         EnvironmentConfig envConfig = new EnvironmentConfig();
         envConfig.setAllowCreate(true);
         envConfig.setTransactional(true);
-        envConfig.setConfigParam(EnvironmentConfig.LOCK_N_LOCK_TABLES, "7");
-    
+
         setEnvironmentConfigProperties(envConfig);
-    
+
+        envConfig.setExceptionListener(new LoggingAsyncExceptionListener());
+
         return envConfig;
+    }
+
+    protected void closeEnvironmentSafely()
+    {
+        try
+        {
+            _environment.close();
+        }
+        catch (DatabaseException ex)
+        {
+            LOGGER.error("Exception closing store environment", ex);
+        }
+        catch (IllegalStateException ex)
+        {
+            LOGGER.error("Exception closing store environment", ex);
+        }
+    }
+
+
+    private class LoggingAsyncExceptionListener implements ExceptionListener
+    {
+        @Override
+        public void exceptionThrown(ExceptionEvent event)
+        {
+            LOGGER.error("Asynchronous exception thrown by BDB thread '"
+                         + event.getThreadName() + "'", event.getException());
+        }
     }
 }
