@@ -59,3 +59,11 @@ Then /^the receiver should have (\d+) message available$/ do |available|
   sleep 1
   @receiver.available.should == available.to_i
 end
+
+Given /^given a sender for "([^"]*)"$/ do |address|
+  @sender = @session.create_sender "#{address}"
+end
+
+Given /^given a receiver for "([^"]*)"$/ do |address|
+  @receiver = @session.create_receiver "#{address}"
+end

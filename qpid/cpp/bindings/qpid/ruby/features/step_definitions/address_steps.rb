@@ -22,3 +22,10 @@ Given /^an Address with the name "([^"]*)" and subject "([^"]*)" and option "([^
   options["#{key}"] = "#{value}"
   @address = Qpid::Messaging::Address.new "#{name}", "#{subject}", options
 end
+
+Given /^an Address with the name "([^"]*)" and subject "([^"]*)" and option "([^"]*)" set to "([^"]*)" and "([^"]*)" set to "([^"]*)"$/ do |name, subject, key1, value1, key2, value2|
+  options = Hash.new
+  options["#{key1}"] = "#{value1}"
+  options["#{key2}"] = "#{value2}"
+  @address = Qpid::Messaging::Address.new "#{name}", "#{subject}", options
+end
