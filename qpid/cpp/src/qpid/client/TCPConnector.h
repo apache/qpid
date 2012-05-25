@@ -66,8 +66,6 @@ class TCPConnector : public Connector, public sys::Codec
 
     sys::ShutdownHandler* shutdownHandler;
     framing::InputHandler* input;
-    framing::InitiationHandler* initialiser;
-    framing::OutputHandler* output;
 
     sys::Socket socket;
 

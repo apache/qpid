@@ -889,9 +889,10 @@ void Queue::push(boost::intrusive_ptr<Message>& msg, bool isRecovery){
         if (mgmtObject) {
             mgmtObject->inc_acquires();
             mgmtObject->inc_discardsLvq();
-            if (brokerMgmtObject)
+            if (brokerMgmtObject) {
                 brokerMgmtObject->inc_acquires();
                 brokerMgmtObject->inc_discardsLvq();
+            }
         }
         if (isRecovery) {
             //can't issue new requests for the store until

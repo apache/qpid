@@ -63,8 +63,8 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
     }
     std::string errorString;
     if (!readAclFile(errorString)){
-        throw Exception("Could not read ACL file " + errorString);
         if (mgmtObject!=0) mgmtObject->set_enforcingAcl(0);
+        throw Exception("Could not read ACL file " + errorString);
     }
     broker->getConnectionObservers().add(connectionCounter);
     QPID_LOG(info, "ACL Plugin loaded");

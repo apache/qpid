@@ -78,7 +78,6 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
     std::auto_ptr<MessageSource> source;
     uint32_t capacity;
     qpid::client::AsyncSession session;
-    qpid::messaging::MessageListener* listener;
     uint32_t window;
 
     void startFlow(const sys::Mutex::ScopedLock&); // Dummy param, call with lock held
