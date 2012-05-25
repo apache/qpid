@@ -21,9 +21,9 @@ Feature: Creating a receiver
 
   Scenario: The address string is fine
     Given an open session
-    Then creating a receiver with "my-queue;{create:always}" succeeds
+    Then creating a receiver with "my-queue;{create:always,delete:always}" succeeds
 
   Scenario: Using an Address object
     Given an open session
-    And an Address with the name "create-receiver-test" and subject "foo" and option "create" set to "always"
+    And an Address with the name "create-receiver-test" and subject "foo" and option "create" set to "always" and "delete" set to "always"
     Then creating a receiver with an Address succeeds
