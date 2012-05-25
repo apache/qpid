@@ -62,7 +62,7 @@ Bridge::Bridge(const std::string& _name, Link* _link, framing::ChannelId _id,
                InitializeCallback init) :
     link(_link), channel(_id), args(_args), mgmtObject(0),
     listener(l), name(_name), queueName("qpid.bridge_queue_"), persistenceId(0),
-    initialize(init), detached(false)
+    connState(0), conn(0), initialize(init), detached(false)
 {
     queueName += Uuid(true).str();
     ManagementAgent* agent = link->getBroker()->getManagementAgent();

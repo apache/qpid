@@ -35,14 +35,16 @@ namespace sys {
 SocketAddress::SocketAddress(const std::string& host0, const std::string& port0) :
     host(host0),
     port(port0),
-    addrInfo(0)
+    addrInfo(0),
+    currentAddrInfo(0)
 {
 }
 
 SocketAddress::SocketAddress(const SocketAddress& sa) :
     host(sa.host),
     port(sa.port),
-    addrInfo(0)
+    addrInfo(0),
+    currentAddrInfo(0)
 {
 }
 

@@ -94,8 +94,6 @@ class SslConnector : public Connector
 
     sys::ShutdownHandler* shutdownHandler;
     framing::InputHandler* input;
-    framing::InitiationHandler* initialiser;
-    framing::OutputHandler* output;
 
     Writer writer;
 
@@ -176,6 +174,7 @@ SslConnector::SslConnector(Poller::shared_ptr p,
       initiated(false),
       closed(true),
       shutdownHandler(0),
+      input(0),
       writer(maxFrameSize, cimpl),
       aio(0),
       poller(p)

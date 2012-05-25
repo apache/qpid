@@ -76,6 +76,7 @@ TCPConnector::TCPConnector(Poller::shared_ptr p,
       initiated(false),
       closed(true),
       shutdownHandler(0),
+      input(0),
       connector(0),
       aio(0),
       poller(p)
