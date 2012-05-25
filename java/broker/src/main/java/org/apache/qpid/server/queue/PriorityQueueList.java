@@ -37,7 +37,7 @@ public class PriorityQueueList implements QueueEntryList<SimpleQueueEntryImpl>
         _priorityOffset = 5-((priorities + 1)/2);
         for(int i = 0; i < priorities; i++)
         {
-            _priorityLists[i] = new PriorityQueueEntrySubList(queue);
+            _priorityLists[i] = new PriorityQueueEntrySubList(queue, i);
         }
     }
 
@@ -164,15 +164,23 @@ public class PriorityQueueList implements QueueEntryList<SimpleQueueEntryImpl>
 
     private static class PriorityQueueEntrySubList extends SimpleQueueEntryList
     {
-        public PriorityQueueEntrySubList(AMQQueue queue)
+        private int _listPriority;
+
+        public PriorityQueueEntrySubList(AMQQueue queue, int listPriority)
         {
             super(queue);
+            _listPriority = listPriority;
         }
 
         @Override
         protected PriorityQueueEntryImpl createQueueEntry(ServerMessage<?> message)
         {
             return new PriorityQueueEntryImpl(this, message);
+        }
+
+        public int getListPriority()
+        {
+            return _listPriority;
         }
     }
 
@@ -186,8 +194,9 @@ public class PriorityQueueList implements QueueEntryList<SimpleQueueEntryImpl>
         @Override
         public int compareTo(final QueueEntry o)
         {
-            byte thisPriority = getMessageHeader().getPriority();
-            byte otherPriority = o.getMessageHeader().getPriority();
+            PriorityQueueEntrySubList pqel = (PriorityQueueEntrySubList)((PriorityQueueEntryImpl)o).getQueueEntryList();
+            int otherPriority = pqel.getListPriority();
+            int thisPriority = ((PriorityQueueEntrySubList) getQueueEntryList()).getListPriority();
 
             if(thisPriority != otherPriority)
             {
