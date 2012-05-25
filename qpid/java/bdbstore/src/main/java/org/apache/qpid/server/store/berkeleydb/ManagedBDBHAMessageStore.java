@@ -25,6 +25,7 @@ import javax.management.JMException;
 import javax.management.openmbean.TabularData;
 
 import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
 
 public interface ManagedBDBHAMessageStore
@@ -40,36 +41,38 @@ public interface ManagedBDBHAMessageStore
     public static final String ATTR_DESIGNATED_PRIMARY = "DesignatedPrimary";
 
     @MBeanAttribute(name=ATTR_GROUP_NAME, description="Name identifying the group")
-    String getGroupName() throws IOException;
+    String getGroupName() throws IOException, JMException;
 
     @MBeanAttribute(name=ATTR_NODE_NAME, description="Unique name identifying the node within the group")
-    String getNodeName() throws IOException;
+    String getNodeName() throws IOException, JMException;
 
     @MBeanAttribute(name=ATTR_NODE_HOST_PORT, description="Host/port used to replicate data between this node and others in the group")
-    String getNodeHostPort() throws IOException;
+    String getNodeHostPort() throws IOException, JMException;
 
     @MBeanAttribute(name=ATTR_NODE_STATE, description="Current state of this node")
-    String getNodeState() throws IOException;
+    String getNodeState() throws IOException, JMException;
 
     @MBeanAttribute(name=ATTR_HELPER_HOST_PORT, description="Host/port used to allow a new node to discover other group members")
-    String getHelperHostPort() throws IOException;
+    String getHelperHostPort() throws IOException, JMException;
 
     @MBeanAttribute(name=ATTR_REPLICATION_POLICY, description="Replication policy")
-    String getReplicationPolicy() throws IOException;
+    String getReplicationPolicy() throws IOException, JMException;
 
     @MBeanAttribute(name=ATTR_DESIGNATED_PRIMARY, description="Designated primary flag. Applicable to the two node case.")
-    boolean getDesignatedPrimary() throws IOException;
+    boolean getDesignatedPrimary() throws IOException, JMException;
 
     @MBeanOperation(name="getAllNodesInGroup", description="Get all nodes within the group, regardless of whether currently attached or not")
     TabularData getAllNodesInGroup() throws IOException, JMException;
 
     @MBeanOperation(name="removeNodeFromGroup", description="Remove an existing node from the group")
-    void removeNodeFromGroup(String nodeName) throws JMException;
+    void removeNodeFromGroup(@MBeanOperationParameter(name="nodeName", description="name of node")String nodeName) throws JMException;
 
     @MBeanOperation(name="setDesignatedPrimary", description="Set/unset this node as the designated primary for the group. Applicable to the two node case.")
-    void setDesignatedPrimary(boolean primary) throws JMException;
+    void setDesignatedPrimary(@MBeanOperationParameter(name="primary", description="designated primary")boolean primary) throws JMException;
 
     @MBeanOperation(name="updateAddress", description="Update the address of another node. The node must be in a STOPPED state.")
-    void updateAddress(String nodeName, String newHostName, int newPort) throws JMException;
+    void updateAddress(@MBeanOperationParameter(name="nodeName", description="name of node")String nodeName,
+                       @MBeanOperationParameter(name="newHostName", description="new hostname")String newHostName,
+                       @MBeanOperationParameter(name="newPort", description="new port number")int newPort) throws JMException;
 }
 

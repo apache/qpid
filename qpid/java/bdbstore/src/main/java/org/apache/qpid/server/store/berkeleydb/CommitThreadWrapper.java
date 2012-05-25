@@ -1,3 +1,23 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
 package org.apache.qpid.server.store.berkeleydb;
 
 import java.util.Queue;
@@ -110,7 +130,6 @@ public class CommitThreadWrapper
                 }
                 catch (InterruptedException e)
                 {
-                    //TODO Should we ignore, or throw a 'StoreException'?
                     throw new RuntimeException(e);
                 }
             }
@@ -127,6 +146,8 @@ public class CommitThreadWrapper
      */
     private static class CommitThread extends Thread
     {
+        private static final Logger LOGGER = Logger.getLogger(CommitThread.class);
+
         private final AtomicBoolean _stopped = new AtomicBoolean(false);
         private final Queue<BDBCommitFuture> _jobQueue = new ConcurrentLinkedQueue<BDBCommitFuture>();
         private final CheckpointConfig _config = new CheckpointConfig();
@@ -188,13 +209,30 @@ public class CommitThreadWrapper
             }
             catch (DatabaseException e)
             {
-                for(int i = 0; i < size; i++)
+                try
                 {
-                    BDBCommitFuture commit = _jobQueue.poll();
-                    commit.abort(e);
+                    LOGGER.error("Exception during environment log flush", e);
+
+                    for(int i = 0; i < size; i++)
+                    {
+                        BDBCommitFuture commit = _jobQueue.poll();
+                        commit.abort(e);
+                    }
+                }
+                finally
+                {
+                    LOGGER.error("Closing store environment", e);
+
+                    try
+                    {
+                        _environment.close();
+                    }
+                    catch (DatabaseException ex)
+                    {
+                        LOGGER.error("Exception closing store environment", ex);
+                    }
                 }
             }
-
         }
 
         private boolean hasJobs()
