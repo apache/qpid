@@ -16036,7 +16036,7 @@
                       "_destinationName": "direct://amq.direct//sorted-queue?durable='true'",
                       "_deliveryMode": 2,
                       "_messageSize": 1024,
-                      "_numberOfMessages": 20000,
+                      "_maximumDuration": 30000,
                       "_messageProviderName": "messageProvider"
                     }
                   ]
@@ -16059,7 +16059,7 @@
                     {
                       "_name": "Consumer1",
                       "_destinationName": "direct://amq.direct//sorted-queue?durable='true'",
-                      "_numberOfMessages": 20000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -16094,7 +16094,7 @@
                       "_destinationName": "direct://amq.direct//simple-queue?durable='true'",
                       "_deliveryMode": 2,
                       "_messageSize": 1024,
-                      "_numberOfMessages": 20000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -16116,7 +16116,7 @@
                     {
                       "_name": "Consumer1",
                       "_destinationName": "direct://amq.direct//simple-queue?durable='true'",
-                      "_numberOfMessages": 20000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -16161,7 +16161,7 @@
                       "_destinationName": "direct://amq.direct//priority-queue?durable='true'",
                       "_deliveryMode": 2,
                       "_messageSize": 1024,
-                      "_numberOfMessages": 20000,
+                      "_maximumDuration": 30000,
                       "_messageProviderName": "messageProvider"
                     }
                   ]
@@ -16184,7 +16184,7 @@
                     {
                       "_name": "Consumer1",
                       "_destinationName": "direct://amq.direct//priority-queue?durable='true'",
-                      "_numberOfMessages": 20000
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
