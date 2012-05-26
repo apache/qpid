@@ -89,7 +89,7 @@ public class KerberosAuthenticationManager implements AuthenticationManager
             // If there is no configuration for this plugin then don't load it.
             if (configuration == null)
             {
-                _logger.info("No authentication-manager configuration found for AnonymousAuthenticationManager");
+                _logger.info("No authentication-manager configuration found for KerberosAuthenticationManager");
                 return null;
             }
             KerberosAuthenticationManager kerberosAuthenticationManager = new KerberosAuthenticationManager();
