@@ -5,47 +5,47 @@
       "_iterations":[
         {
           "_messageSize": 256,
-          "_numberOfMessages": 1000000
+          "_maximumDuration": 30000
         },
         {
           "_messageSize": 512,
-          "_numberOfMessages": 500000
+          "_maximumDuration": 30000
         },
         {
           "_messageSize": 1024,
-          "_numberOfMessages": "250000"
+          "_maximumDuration": 30000
         },
         {
           "_messageSize": 2048,
-          "_numberOfMessages": "125000"
+          "_maximumDuration": 30000
         },
         {
           "_messageSize": 4096,
-          "_numberOfMessages": "62500"
+          "_maximumDuration": 30000
         },
         {
           "_messageSize": 8192,
-          "_numberOfMessages": 31250
+          "_maximumDuration": 30000
         },
         {
           "_messageSize": 16384,
-          "_numberOfMessages": 15625
+          "_maximumDuration": 30000
         },
         {
           "_messageSize": 32768,
-          "_numberOfMessages": 7812
+          "_maximumDuration": 30000
         },
         {
           "_messageSize": 65536,
-          "_numberOfMessages": 3906
+          "_maximumDuration": 30000
         },
         {
           "_messageSize": 131072,
-          "_numberOfMessages": 195
+          "_maximumDuration": 30000
         },
         {
           "_messageSize": 262144,
-          "_numberOfMessages": 97
+          "_maximumDuration": 30000
         }
       ],
       "_queues":[
@@ -109,47 +109,47 @@
       "_iterations":[
         {
           "_messageSize": 256,
-          "_numberOfMessages": 20000
+          "_maximumDuration": 30000
         },
         {
           "_messageSize": 512,
-          "_numberOfMessages": 20000
+          "_maximumDuration": 30000
         },
         {
           "_messageSize": 1024,
-          "_numberOfMessages": 20000
+          "_maximumDuration": 30000
         },
         {
           "_messageSize": 2048,
-          "_numberOfMessages": 20000
+          "_maximumDuration": 30000
         },
         {
           "_messageSize": 4096,
-          "_numberOfMessages": 4000
+          "_maximumDuration": 30000
         },
         {
           "_messageSize": 8192,
-          "_numberOfMessages": 4000
+          "_maximumDuration": 30000
         },
         {
           "_messageSize": 16384,
-          "_numberOfMessages": 4000
+          "_maximumDuration": 30000
         },
         {
           "_messageSize": 32768,
-          "_numberOfMessages": 2000
+          "_maximumDuration": 30000
         },
         {
           "_messageSize": 65536,
-          "_numberOfMessages": 2000
+          "_maximumDuration": 30000
         },
         {
           "_messageSize": 131072,
-          "_numberOfMessages": 2000
+          "_maximumDuration": 30000
         },
         {
           "_messageSize": 262144,
-          "_numberOfMessages": 2000
+          "_maximumDuration": 30000
         }
       ],
       "_queues":[
