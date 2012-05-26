@@ -5,13 +5,13 @@
       "_iterations":[
         {
           "_messageSize": 1024,
-          "_numberOfMessages": 1000000,
+          "_maximumDuration": 30000,
           "_acknowledgeMode": 1,
           "_deliveryMode": 1
         },
         {
           "_messageSize": 1024,
-          "_numberOfMessages": 250000,
+          "_maximumDuration": 30000,
           "_acknowledgeMode": 0,
           "_deliveryMode": 1
         }
@@ -74,13 +74,13 @@
       "_iterations":[
         {
           "_messageSize": 1024,
-          "_numberOfMessages": 100000,
+          "_maximumDuration": 30000,
           "_acknowledgeMode": 1,
           "_deliveryMode": 2
         },
         {
           "_messageSize": 1024,
-          "_numberOfMessages": 25000,
+          "_maximumDuration": 30000,
           "_acknowledgeMode": 0,
           "_deliveryMode": 2
         }
