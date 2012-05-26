@@ -34,15 +34,25 @@ public class ExecutorWithTimeLimitTest extends TestCase
     private static final int TIMEOUT = 500;
     private static final Object RESULT = new Object();
 
-    private ExecutorWithLimits _limiter = new ExecutorWithTimeLimit(System.currentTimeMillis(), TIMEOUT);
+    private ExecutorWithLimits _limiter;
     @SuppressWarnings("unchecked")
     private Callable<Object> _callback = mock(Callable.class);
+
+    @Override
+    protected void setUp() throws Exception
+    {
+        super.setUp();
+        _limiter = new ExecutorWithTimeLimit(System.currentTimeMillis(), TIMEOUT);
+    }
 
     @Override
     protected void tearDown() throws Exception
     {
         super.tearDown();
-        _limiter.shutdown();
+        if (_limiter != null)
+        {
+            _limiter.shutdown();
+        }
     }
 
     public void testCallableCompletesNormally() throws Exception
@@ -78,16 +88,19 @@ public class ExecutorWithTimeLimitTest extends TestCase
     public void testCallableNotRunDueToInsufficentTimeRemaining() throws Exception
     {
         long now = System.currentTimeMillis();
-        _limiter = new ExecutorWithTimeLimit(now - 100, 100);
-
+        ExecutorWithLimits shortTimeLimiter = new ExecutorWithTimeLimit(now - 100, 100);
         try
         {
-            _limiter.execute(_callback);
+            shortTimeLimiter.execute(_callback);
             fail("Exception not thrown");
         }
         catch (CancellationException ca)
         {
             // PASS
+        }
+        finally
+        {
+            shortTimeLimiter.shutdown();
         }
 
         verify(_callback, never()).call();
