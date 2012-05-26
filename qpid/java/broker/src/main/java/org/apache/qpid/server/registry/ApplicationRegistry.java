@@ -115,19 +115,9 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     private BundleContext _bundleContext;
 
-    protected static Logger get_logger()
-    {
-        return _logger;
-    }
-
     protected Map<InetSocketAddress, QpidAcceptor> getAcceptors()
     {
         return _acceptors;
-    }
-
-    private QpidAcceptor getAcceptor(SocketAddress address)
-    {
-        return _acceptors.get(address);
     }
 
     protected void setManagedObjectRegistry(ManagedObjectRegistry managedObjectRegistry)
@@ -409,12 +399,15 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
         else
         {
+            for (AuthenticationManager authenticationManger : authManagersByClass.values())
+            {
+                authenticationManger.close();
+            }
             throw new ConfigurationException("If more than one authentication manager is configured a default MUST be specified.");
         }
 
         Map<Integer,AuthenticationManager> authManagers = new HashMap<Integer, AuthenticationManager>();
         authManagers .put(null, defaultAuthMgr);
-        String host = _configuration.getBind();
 
         for(Map.Entry<Integer,String> portMapping : _configuration.getPortAuthenticationMappings().entrySet())
         {
