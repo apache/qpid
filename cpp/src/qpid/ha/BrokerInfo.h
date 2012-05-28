@@ -23,6 +23,7 @@
  */
 
 #include "Enum.h"
+#include "qpid/Url.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/FieldTable.h"
 #include <string>
@@ -37,8 +38,8 @@ namespace ha {
 class BrokerInfo
 {
   public:
-    BrokerInfo(const std::string& host, const framing::Uuid& id) :
-        hostName(host), systemId(id) {}
+    BrokerInfo(const std::string& host, uint16_t port_, const framing::Uuid& id) :
+        hostName(host), port(port_), systemId(id) {}
 
     BrokerInfo(const framing::FieldTable& ft) { assign(ft); }
     framing::FieldTable asFieldTable() const;
@@ -47,10 +48,13 @@ class BrokerInfo
     framing::Uuid getSystemId() const { return systemId; }
     std::string getHostName() const { return hostName; }
     BrokerStatus getStatus() const { return status; }
+     uint16_t getPort() const { return port; }
+
     void setStatus(BrokerStatus s)  { status = s; }
 
   private:
     std::string hostName;
+    uint16_t port;
     framing::Uuid systemId;
     BrokerStatus status;
 };

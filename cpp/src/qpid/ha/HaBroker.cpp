@@ -55,6 +55,8 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
       status(STANDALONE),
       excluder(new ConnectionExcluder(logPrefix, broker.getSystem()->getSystemId())),
       brokerInfo(broker.getSystem()->getNodeName(),
+                 // TODO aconway 2012-05-24: other transports?
+                 broker.getPort(broker::Broker::TCP_TRANSPORT),
                  broker.getSystem()->getSystemId())
 
 {
@@ -180,8 +182,7 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
           boost::shared_ptr<broker::Link> link = result.first;
           link->setUrl(url);
           // Create a queue replicator
-          boost::shared_ptr<QueueReplicator> qr(
-              new QueueReplicator(LogPrefix(*this, queue->getName()), queue, link));
+          boost::shared_ptr<QueueReplicator> qr(new QueueReplicator(*this, queue, link));
           qr->activate();
           broker.getExchanges().registerExchange(qr);
           break;
