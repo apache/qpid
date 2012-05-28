@@ -24,6 +24,7 @@
 
 #include "LogPrefix.h"
 #include "qpid/broker/ConnectionObserver.h"
+#include "qpid/framing/Uuid.h"
 #include <boost/function.hpp>
 
 namespace qpid {
@@ -45,7 +46,7 @@ class ConnectionExcluder : public broker::ConnectionObserver
     static const std::string ADMIN_TAG;
     static const std::string BACKUP_TAG;
 
-    ConnectionExcluder(const LogPrefix&);
+    ConnectionExcluder(const LogPrefix&, const framing::Uuid& self);
 
     void opened(broker::Connection& connection);
 
@@ -55,6 +56,7 @@ class ConnectionExcluder : public broker::ConnectionObserver
   private:
     LogPrefix logPrefix;
     bool backupAllowed;
+    framing::Uuid self;
 };
 
 }} // namespace qpid::ha
