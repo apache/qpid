@@ -175,6 +175,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     void configureImpl(const qpid::framing::FieldTable& settings);
     void checkNotDeleted(const Consumer::shared_ptr& c);
     void notifyDeleted();
+    void dequeueIf(Messages::Predicate predicate, std::deque<QueuedMessage>& dequeued);
 
   public:
 
@@ -375,12 +376,21 @@ class Queue : public boost::enable_shared_from_this<Queue>,
         std::for_each<Observers::iterator, F>(observers.begin(), observers.end(), f);
     }
 
-    /** Set the position sequence number  for the next message on the queue.
-     * Must be >= the current sequence number.
-     * Used by cluster to replicate queues.
+    /**
+     * Set the sequence number for the back of the queue, the
+     * next message enqueued will be pos+1.
+     * If pos > getPosition() this creates a gap in the sequence numbers.
+     * if pos < getPosition() the back of the queue is reset to pos,
+     *
+     * The _caller_ must ensure that any messages after pos have been dequeued.
+     *
+     * Used by HA/cluster code for queue replication.
      */
     QPID_BROKER_EXTERN void setPosition(framing::SequenceNumber pos);
-    /** return current position sequence number for the next message on the queue.
+
+    /**
+     *@return sequence number for the back of the queue. The next message pushed
+     * will be at getPosition+1
      */
     QPID_BROKER_EXTERN framing::SequenceNumber getPosition();
     QPID_BROKER_EXTERN void addObserver(boost::shared_ptr<QueueObserver>);
