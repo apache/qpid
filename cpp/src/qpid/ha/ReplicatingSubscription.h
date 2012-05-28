@@ -74,6 +74,19 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
 
     // Argument names for consume command.
     static const std::string QPID_REPLICATING_SUBSCRIPTION;
+    static const std::string QPID_HIGH_SEQUENCE_NUMBER;
+    static const std::string QPID_LOW_SEQUENCE_NUMBER;
+
+    // FIXME aconway 2012-05-23: these don't belong on ReplicatingSubscription
+    /** Get position of front message on queue.
+     *@return false if queue is empty.
+     */
+    static bool getFront(broker::Queue&, framing::SequenceNumber& result);
+    /** Get next message after from in queue.
+     *@return false if none found.
+     */
+    static bool getNext(broker::Queue&, framing::SequenceNumber from,
+                        framing::SequenceNumber& result);
 
     ReplicatingSubscription(LogPrefix,
                             broker::SemanticState* parent,
@@ -97,7 +110,10 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
     bool browseAcquired() const { return true; }
 
     bool hideDeletedError();
-    void setReadyPosition();
+    /** Initialization that must be done after construction because it
+     * requires a shared_ptr to this to exist.
+     */
+    void initialize();
 
   protected:
     bool doDispatch();
@@ -116,26 +132,9 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
     void complete(const broker::QueuedMessage&, const sys::Mutex::ScopedLock&);
     void cancelComplete(const Delayed::value_type& v, const sys::Mutex::ScopedLock&);
     void sendDequeueEvent(const sys::Mutex::ScopedLock&);
-    void sendPositionEvent(framing::SequenceNumber);
+    void sendPositionEvent(framing::SequenceNumber, const sys::Mutex::ScopedLock&);
     void setReady(const sys::Mutex::ScopedLock&);
     void sendEvent(const std::string& key, framing::Buffer&);
-
-    /** Dummy consumer used to get the front position on the queue */
-    class GetPositionConsumer : public Consumer
-    {
-      public:
-        GetPositionConsumer() :
-            Consumer("ha.GetPositionConsumer."+types::Uuid(true).str(), false) {}
-        bool deliver(broker::QueuedMessage& ) { return true; }
-        void notify() {}
-        bool filter(boost::intrusive_ptr<broker::Message>) { return true; }
-        bool accept(boost::intrusive_ptr<broker::Message>) { return true; }
-        void cancel() {}
-        void acknowledged(const broker::QueuedMessage&) {}
-        bool browseAcquired() const { return true; }
-        broker::OwnershipToken* getSession() { return 0; }
-    };
-
   friend struct Factory;
 };
 

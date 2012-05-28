@@ -112,25 +112,19 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     framing::AMQP_ServerProxy peer(sessionHandler.out);
     const qmf::org::apache::qpid::broker::ArgsLinkBridge& args(bridge.getArgs());
     framing::FieldTable settings;
-
-    // FIXME aconway 2011-12-09: Failover optimization removed.
-    // There was code here to re-use messages already on the backup
-    // during fail-over. This optimization was removed to simplify
-    // the logic till we get the basic replication stable, it
-    // can be re-introduced later. Last revision with the optimization:
-    // r1213258 | QPID-3603: Fix QueueReplicator subscription parameters.
-
-    // Clear out any old messages, reset the queue to start replicating fresh.
-    queue->purge();             // FIXME aconway 2012-05-02: race
-    queue->setPosition(0);
-
     settings.setInt(ReplicatingSubscription::QPID_REPLICATING_SUBSCRIPTION, 1);
-    // TODO aconway 2011-12-19: optimize.
-    settings.setInt(QPID_SYNC_FREQUENCY, 1);
-    peer.getMessage().subscribe(args.i_src, args.i_dest, 0/*accept-explicit*/, 1/*not-acquired*/, false/*exclusive*/, "", 0, settings);
+    settings.setInt(QPID_SYNC_FREQUENCY, 1); // FIXME aconway 2012-05-22: optimize?
+    settings.setInt(ReplicatingSubscription::QPID_HIGH_SEQUENCE_NUMBER, queue->getPosition());
+    SequenceNumber front;
+    if (ReplicatingSubscription::getFront(*queue, front))
+        settings.setInt(ReplicatingSubscription::QPID_LOW_SEQUENCE_NUMBER, front);
+    peer.getMessage().subscribe(
+        args.i_src, args.i_dest, 0/*accept-explicit*/, 1/*not-acquired*/,
+        false/*exclusive*/, "", 0, settings);
+    // FIXME aconway 2012-05-22: use a finite credit window
     peer.getMessage().flow(getName(), 0, 0xFFFFFFFF);
     peer.getMessage().flow(getName(), 1, 0xFFFFFFFF);
-    QPID_LOG(debug, logPrefix << "Activated bridge " << bridgeName);
+    QPID_LOG(debug, logPrefix << "Subscribed bridge: " << bridgeName << " " << settings);
 }
 
 namespace {
@@ -174,11 +168,10 @@ void QueueReplicator::route(Deliverable& msg)
             SequenceNumber position = decodeContent<SequenceNumber>(msg.getMessage());
             QPID_LOG(trace, logPrefix << "Position moved from " << queue->getPosition()
                      << " to " << position);
-            if (queue->getPosition() > position) {
-                throw Exception(
-                    QPID_MSG(logPrefix << "Invalid position update from "
-                             << queue->getPosition() << " to " << position));
-            }
+            // Verify that there are no messages after the new position in the queue.
+            SequenceNumber next;
+            if (ReplicatingSubscription::getNext(*queue, position, next))
+                throw Exception("Invalid position move, preceeds messages");
             queue->setPosition(position);
         }
         // Ignore unknown event keys, may be introduced in later versions.
