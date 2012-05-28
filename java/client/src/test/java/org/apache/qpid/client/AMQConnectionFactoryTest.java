@@ -18,7 +18,9 @@
  * under the License.
  *
  */
-package org.apache.qpid.test.unit.jndi;
+package org.apache.qpid.client;
+
+import javax.jms.JMSException;
 
 import junit.framework.TestCase;
 
@@ -26,7 +28,7 @@ import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
 
-public class ConnectionFactoryTest extends TestCase
+public class AMQConnectionFactoryTest extends TestCase
 {
 
     //URL will be returned with the password field swapped for '********'
@@ -58,6 +60,20 @@ public class ConnectionFactoryTest extends TestCase
         assertEquals("tcp", service.getTransport());
         assertEquals("localhost", service.getHost());
         assertEquals(5672, service.getPort());
+    }
 
+    public void testInstanceCreatedWithDefaultConstructorThrowsExceptionOnCallingConnectWithoutSettingURL() throws Exception
+    {
+        AMQConnectionFactory factory = new AMQConnectionFactory();
+
+        try
+        {
+            factory.createConnection();
+            fail("Expected exception not thrown");
+        }
+        catch(JMSException e)
+        {
+            assertEquals("Unexpected exception", AMQConnectionFactory.NO_URL_CONFIGURED, e.getMessage());
+        }
     }
 }
