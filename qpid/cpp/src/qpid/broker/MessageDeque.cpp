@@ -173,6 +173,26 @@ void MessageDeque::updateAcquired(const QueuedMessage& acquired)
     }
 }
 
+namespace {
+bool isNotDeleted(const QueuedMessage& qm) { return qm.status != QueuedMessage::DELETED; }
+} // namespace
+
+void MessageDeque::setPosition(const framing::SequenceNumber& n) {
+    size_t i = index(n+1);
+    if (i >= messages.size()) return; // Nothing to do.
+
+    // Assertion to verify the precondition: no messaages after n.
+    assert(std::find_if(messages.begin()+i, messages.end(), &isNotDeleted) ==
+           messages.end());
+    messages.erase(messages.begin()+i, messages.end());
+    if (head >= messages.size()) head = messages.size() - 1;
+    // Re-count the available messages
+    available = 0;
+    for (Deque::iterator i = messages.begin(); i != messages.end(); ++i) {
+        if (i->status == QueuedMessage::AVAILABLE) ++available;
+    }
+}
+
 void MessageDeque::clean()
 {
     while (messages.size() && messages.front().status == QueuedMessage::DELETED) {

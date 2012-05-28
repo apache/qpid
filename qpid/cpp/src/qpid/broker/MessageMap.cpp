@@ -21,6 +21,7 @@
 #include "qpid/broker/MessageMap.h"
 #include "qpid/broker/QueuedMessage.h"
 #include "qpid/log/Statement.h"
+#include <algorithm>
 
 namespace qpid {
 namespace broker {
@@ -130,16 +131,22 @@ bool MessageMap::push(const QueuedMessage& added, QueuedMessage& removed)
         QueuedMessage& a = messages[added.position];
         a = added;
         a.status = QueuedMessage::AVAILABLE;
-        QPID_LOG(debug, "Added message at " << a.position);
+        QPID_LOG(debug, "Added message " << a);
         return false;
     } else {
         //there is already a message with that key which needs to be replaced
         removed = result.first->second;
         result.first->second = replace(result.first->second, added);
         result.first->second.status = QueuedMessage::AVAILABLE;
-        QPID_LOG(debug, "Displaced message at " << removed.position << " with " << result.first->second.position << ": " << result.first->first);
+        QPID_LOG(debug, "Displaced message " << removed << " with " << result.first->second << ": " << result.first->first);
         return true;
     }
+}
+
+void MessageMap::setPosition(const framing::SequenceNumber& seq) {
+    // Nothing to do, just assert that the precondition is respected and there
+    // are no undeleted messages after seq.
+    assert(messages.empty() || (--messages.end())->first <= seq);
 }
 
 void MessageMap::foreach(Functor f)

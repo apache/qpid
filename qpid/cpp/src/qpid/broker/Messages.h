@@ -21,6 +21,7 @@
  * under the License.
  *
  */
+#include "qpid/framing/SequenceNumber.h"
 #include <boost/function.hpp>
 
 namespace qpid {
@@ -101,14 +102,22 @@ class Messages
     virtual void updateAcquired(const QueuedMessage&) { }
 
     /**
+     * Set the position of the back of the queue. Next message enqueued will be n+1.
+     *@pre Any messages with seq > n must already be dequeued.
+     */
+    virtual void setPosition(const framing::SequenceNumber& /*n*/) = 0;
+
+    /**
      * Apply, the functor to each message held
      */
+
     virtual void foreach(Functor) = 0;
     /**
      * Remove every message held that for which the specified
      * predicate returns true
      */
     virtual void removeIf(Predicate) = 0;
+
   private:
 };
 }} // namespace qpid::broker
