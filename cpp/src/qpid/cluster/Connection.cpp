@@ -524,6 +524,7 @@ broker::QueuedMessage Connection::getUpdateMessage() {
     boost::shared_ptr<broker::Queue> updateq = findQueue(UpdateClient::UPDATE);
     assert(!updateq->isDurable());
     broker::QueuedMessage m = updateq->get();
+    updateq->dequeue(0, m);
     if (!m.payload) throw Exception(QPID_MSG(cluster << " empty update queue"));
     return m;
 }
