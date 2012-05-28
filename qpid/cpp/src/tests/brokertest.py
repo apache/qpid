@@ -659,7 +659,7 @@ class NumberedReceiver(Thread):
             m = self.read_message()
             while m != -1:
                 self.receiver.assert_running()
-                assert(m <= self.received) # Check for missing messages
+                assert m <= self.received, "Missing message %s>%s"%(m, self.received)
                 if (m == self.received): # Ignore duplicates
                     self.received += 1
                     if self.sender:

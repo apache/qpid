@@ -106,6 +106,7 @@ void HaBroker::activate() {
 
 void HaBroker::activate(sys::Mutex::ScopedLock&) {
     setStatus(ACTIVE);
+    backup.reset();                    // No longer replicating, close link.
     broker.getConnectionObservers().remove(excluder); // This allows client connections.
 }
 
