@@ -53,7 +53,7 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
       settings(s),
       mgmtObject(0),
       status(STANDALONE),
-      excluder(new ConnectionExcluder(logPrefix)),
+      excluder(new ConnectionExcluder(logPrefix, broker.getSystem()->getSystemId())),
       brokerInfo(broker.getSystem()->getNodeName(),
                  broker.getSystem()->getSystemId())
 

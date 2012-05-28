@@ -29,8 +29,8 @@
 namespace qpid {
 namespace ha {
 
-ConnectionExcluder::ConnectionExcluder(const LogPrefix& lp)
-    : logPrefix(lp), backupAllowed(false) {}
+ConnectionExcluder::ConnectionExcluder(const LogPrefix& lp, const framing::Uuid& uuid)
+    : logPrefix(lp), backupAllowed(false), self(uuid) {}
 
 void ConnectionExcluder::opened(broker::Connection& connection) {
     if (connection.isLink()) return; // Allow all outgoing links
@@ -42,9 +42,14 @@ void ConnectionExcluder::opened(broker::Connection& connection) {
     framing::FieldTable ft;
     if (connection.getClientProperties().getTable(BACKUP_TAG, ft)) {
         BrokerInfo info(ft);
-        QPID_LOG(debug, logPrefix << "Backup connection " << info <<
-                 (backupAllowed ? " allowed" : " rejected"));
-        if (backupAllowed) return;
+        if (info.getSystemId() == self) {
+            QPID_LOG(debug, logPrefix << "Self connection rejected");
+        }
+        else {
+            QPID_LOG(debug, logPrefix << "Backup connection " << info <<
+                     (backupAllowed ? " allowed" : " rejected"));
+            if (backupAllowed) return;
+        }
     }
     // Abort the connection.
     throw Exception(
