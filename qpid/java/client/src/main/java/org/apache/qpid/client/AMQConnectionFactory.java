@@ -55,12 +55,13 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
                                              ObjectFactory, Referenceable, XATopicConnectionFactory,
                                              XAQueueConnectionFactory, XAConnectionFactory
 {
-    private final ConnectionURL _connectionDetails;
+    protected static final String NO_URL_CONFIGURED = "The connection factory wasn't created with a proper URL, the connection details are empty";
+
+    private ConnectionURL _connectionDetails;
 
     // The default constructor is necessary to allow AMQConnectionFactory to be deserialised from JNDI
     public AMQConnectionFactory()
     {
-        _connectionDetails = null;
     }
 
     public AMQConnectionFactory(final String url) throws URLSyntaxException
@@ -106,6 +107,11 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
 
     public Connection createConnection() throws JMSException
     {
+        if(_connectionDetails == null)
+        {
+            throw new JMSException(NO_URL_CONFIGURED);
+        }
+
         try
         {
             if (_connectionDetails.getClientName() == null || _connectionDetails.getClientName().equals(""))
@@ -158,7 +164,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
         }
         else
         {
-            throw new JMSException("The connection factory wasn't created with a proper URL, the connection details are empty");
+            throw new JMSException(NO_URL_CONFIGURED);
         }
     }
 
@@ -191,6 +197,12 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
     public String getConnectionURLString()
     {
         return _connectionDetails.toString();
+    }
+
+    //setter necessary to use instances created with the default constructor (which we can't remove)
+    public final void setConnectionURLString(String url) throws URLSyntaxException
+    {
+        _connectionDetails = new AMQConnectionURL(url);
     }
 
     /**
@@ -332,7 +344,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
         }
         else
         {
-            throw new JMSException("The connection factory wasn't created with a proper URL, the connection details are empty");
+            throw new JMSException(NO_URL_CONFIGURED);
         }        
     }
 
