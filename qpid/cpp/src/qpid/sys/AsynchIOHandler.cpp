@@ -73,6 +73,8 @@ AsynchIOHandler::AsynchIOHandler(const std::string& id, ConnectionCodec::Factory
 AsynchIOHandler::~AsynchIOHandler() {
     if (codec)
         codec->closed();
+    if (timeoutTimerTask)
+        timeoutTimerTask->cancel();
     delete codec;
 }
 
