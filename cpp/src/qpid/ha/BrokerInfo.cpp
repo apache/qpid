@@ -31,6 +31,7 @@ namespace ha {
 namespace {
 std::string SYSTEM_ID="system-id";
 std::string HOST_NAME="host-name";
+std::string PORT="port";
 std::string STATUS="status";
 }
 
@@ -41,6 +42,7 @@ FieldTable BrokerInfo::asFieldTable() const {
     FieldTable ft;
     ft.setString(SYSTEM_ID, systemId.str());
     ft.setString(HOST_NAME, hostName);
+    ft.setInt(PORT, port);
     ft.setInt(STATUS, status);
     return ft;
 }
@@ -48,11 +50,12 @@ FieldTable BrokerInfo::asFieldTable() const {
 void BrokerInfo::assign(const FieldTable& ft) {
     systemId = Uuid(ft.getAsString(SYSTEM_ID));
     hostName = ft.getAsString(HOST_NAME);
+    port = ft.getAsInt(PORT);
     status = BrokerStatus(ft.getAsInt(STATUS));
 }
 
 std::ostream& operator<<(std::ostream& o, const BrokerInfo& b) {
-    return o << b.getHostName() << "(" << b.getSystemId()
+    return o << b.getHostName() << ":" << b.getPort() << "(" << b.getSystemId()
              << "," << printable(b.getStatus()) << ")";
 }
 
