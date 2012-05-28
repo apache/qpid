@@ -76,8 +76,9 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
     static const std::string QPID_REPLICATING_SUBSCRIPTION;
     static const std::string QPID_HIGH_SEQUENCE_NUMBER;
     static const std::string QPID_LOW_SEQUENCE_NUMBER;
+    static const std::string QPID_BROKER_INFO;
 
-    // FIXME aconway 2012-05-23: these don't belong on ReplicatingSubscription
+    // TODO aconway 2012-05-23: these don't belong on ReplicatingSubscription
     /** Get position of front message on queue.
      *@return false if queue is empty.
      */
@@ -88,7 +89,7 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
     static bool getNext(broker::Queue&, framing::SequenceNumber from,
                         framing::SequenceNumber& result);
 
-    ReplicatingSubscription(LogPrefix,
+    ReplicatingSubscription(HaBroker&,
                             broker::SemanticState* parent,
                             const std::string& name, boost::shared_ptr<broker::Queue> ,
                             bool ack, bool acquire, bool exclusive, const std::string& tag,
@@ -120,8 +121,8 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
   private:
     typedef std::map<framing::SequenceNumber, broker::QueuedMessage> Delayed;
 
+    HaBroker&  haBroker;
     LogPrefix logPrefix;
-    std::string logSuffix;
     boost::shared_ptr<broker::Queue> dummy; // Used to send event messages
     Delayed delayed;
     framing::SequenceSet dequeues;

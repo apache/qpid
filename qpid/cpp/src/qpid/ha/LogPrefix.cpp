@@ -25,22 +25,26 @@
 namespace qpid {
 namespace ha {
 
-LogPrefix::LogPrefix(HaBroker& hb, const std::string& queue) : haBroker(&hb), status(0) {
-    if (queue.size()) tail = " queue " + queue;
+LogPrefix::LogPrefix(HaBroker& hb, const std::string& msg) : haBroker(&hb), status(0) {
+    if (msg.size()) setMessage(msg);
 }
 
-LogPrefix::LogPrefix(LogPrefix& lp, const std::string& queue)
+LogPrefix::LogPrefix(LogPrefix& lp, const std::string& msg)
   : haBroker(lp.haBroker), status(0)
 {
-    if (queue.size()) tail = " queue " + queue;
+    if (msg.size()) setMessage(msg);
 }
 
 LogPrefix::LogPrefix(BrokerStatus& s) : haBroker(0), status(&s) {}
 
+void LogPrefix::setMessage(const std::string& msg) {
+    tail = " "+msg+":";
+}
+
 std::ostream& operator<<(std::ostream& o, const LogPrefix& l) {
     return o << "HA("
              << printable(l.status ? *l.status : l.haBroker->getStatus())
-             << ")" << l.tail << ": ";
+             << ")" << l.tail << " ";
 }
 
 }} // namespace qpid::ha

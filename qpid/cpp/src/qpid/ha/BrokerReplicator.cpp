@@ -233,7 +233,7 @@ void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionH
     sendQuery(ORG_APACHE_QPID_BROKER, QUEUE, queueName, sessionHandler);
     sendQuery(ORG_APACHE_QPID_BROKER, EXCHANGE, queueName, sessionHandler);
     sendQuery(ORG_APACHE_QPID_BROKER, BINDING, queueName, sessionHandler);
-    QPID_LOG(debug, logPrefix << "opened configuration bridge: " << queueName);
+    QPID_LOG(debug, logPrefix << "Opened configuration bridge: " << queueName);
 }
 
 void BrokerReplicator::route(Deliverable& msg) {
@@ -271,7 +271,7 @@ void BrokerReplicator::route(Deliverable& msg) {
             }
         }
     } catch (const std::exception& e) {
-        QPID_LOG(critical, logPrefix << "configuration failed: " << e.what()
+        QPID_LOG(critical, logPrefix << "Configuration failed: " << e.what()
                  << ": while handling: " << list);
         throw;
     }
@@ -290,7 +290,7 @@ void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
         // The queue was definitely created on the primary.
         if (broker.getQueues().find(name)) {
             broker.getQueues().destroy(name);
-            QPID_LOG(warning, logPrefix << "queue declare event, replaced exsiting: "
+            QPID_LOG(warning, logPrefix << "Queue declare event, replaced exsiting: "
                      << name);
         }
         std::pair<boost::shared_ptr<Queue>, bool> result =
@@ -304,7 +304,7 @@ void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
                 values[USER].asString(),
                 values[RHOST].asString());
         assert(result.second);  // Should be true since we destroyed existing queue above
-        QPID_LOG(debug, logPrefix << "queue declare event: " << name);
+        QPID_LOG(debug, logPrefix << "Queue declare event: " << name);
         startQueueReplicator(result.first);
     }
 }
@@ -323,9 +323,9 @@ void BrokerReplicator::doEventQueueDelete(Variant::Map& values) {
     string name = values[QNAME].asString();
     boost::shared_ptr<Queue> queue = broker.getQueues().find(name);
     if (!queue) {
-        QPID_LOG(warning, logPrefix << "queue delete event, does not exist: " << name);
+        QPID_LOG(warning, logPrefix << "Queue delete event, does not exist: " << name);
     } else if (!haBroker.replicateLevel(queue->getSettings())) {
-        QPID_LOG(warning, logPrefix << "queue delete event, not replicated: " << name);
+        QPID_LOG(warning, logPrefix << "Queue delete event, not replicated: " << name);
     } else {
         boost::shared_ptr<QueueReplicator> qr = findQueueReplicator(name);
         if (qr) {
@@ -336,7 +336,7 @@ void BrokerReplicator::doEventQueueDelete(Variant::Map& values) {
             broker.getExchanges().destroy(qr->getName());
         }
         broker.deleteQueue(name, values[USER].asString(), values[RHOST].asString());
-        QPID_LOG(debug, logPrefix << "queue delete event: " << name);
+        QPID_LOG(debug, logPrefix << "Queue delete event: " << name);
     }
 }
 
@@ -351,7 +351,7 @@ void BrokerReplicator::doEventExchangeDeclare(Variant::Map& values) {
         // The exchange was definitely created on the primary.
         if (broker.getExchanges().find(name)) {
             broker.getExchanges().destroy(name);
-            QPID_LOG(warning, logPrefix << "exchange declare event, replaced exsiting: " << name)
+            QPID_LOG(warning, logPrefix << "Exchange declare event, replaced exsiting: " << name)
                 }
         std::pair<boost::shared_ptr<Exchange>, bool> result =
             broker.createExchange(
@@ -363,7 +363,7 @@ void BrokerReplicator::doEventExchangeDeclare(Variant::Map& values) {
                 values[USER].asString(),
                 values[RHOST].asString());
         assert(result.second);
-        QPID_LOG(debug, logPrefix << "exchange declare event: " << name);
+        QPID_LOG(debug, logPrefix << "Exchange declare event: " << name);
     }
 }
 
@@ -371,11 +371,11 @@ void BrokerReplicator::doEventExchangeDelete(Variant::Map& values) {
     string name = values[EXNAME].asString();
     boost::shared_ptr<Exchange> exchange = broker.getExchanges().find(name);
     if (!exchange) {
-        QPID_LOG(warning, logPrefix << "exchange delete event, does not exist: " << name);
+        QPID_LOG(warning, logPrefix << "Exchange delete event, does not exist: " << name);
     } else if (!haBroker.replicateLevel(exchange->getArgs())) {
-        QPID_LOG(warning, logPrefix << "exchange delete event, not replicated: " << name);
+        QPID_LOG(warning, logPrefix << "Exchange delete event, not replicated: " << name);
     } else {
-        QPID_LOG(debug, logPrefix << "exchange delete event:" << name);
+        QPID_LOG(debug, logPrefix << "Exchange delete event:" << name);
         broker.deleteExchange(
             name,
             values[USER].asString(),
@@ -397,7 +397,7 @@ void BrokerReplicator::doEventBind(Variant::Map& values) {
         amqp_0_10::translate(asMapVoid(values[ARGS]), args);
         string key = values[KEY].asString();
         exchange->bind(queue, key, &args);
-        QPID_LOG(debug, logPrefix << "bind event: exchange=" << exchange->getName()
+        QPID_LOG(debug, logPrefix << "Bind event: exchange=" << exchange->getName()
                  << " queue=" << queue->getName()
                  << " key=" << key);
     }
@@ -417,7 +417,7 @@ void BrokerReplicator::doEventUnbind(Variant::Map& values) {
         amqp_0_10::translate(asMapVoid(values[ARGS]), args);
         string key = values[KEY].asString();
         exchange->unbind(queue, key, &args);
-        QPID_LOG(debug, logPrefix << "unbind event: exchange=" << exchange->getName()
+        QPID_LOG(debug, logPrefix << "Unbind event: exchange=" << exchange->getName()
                  << " queue=" << queue->getName()
                  << " key=" << key);
     }
@@ -444,7 +444,7 @@ void BrokerReplicator::doResponseQueue(Variant::Map& values) {
             ""/*TODO: what should we use as connection id?*/);
     // It is normal for the queue to already exist if we are failing over.
     if (result.second) startQueueReplicator(result.first);
-    QPID_LOG(debug, logPrefix << "queue response: " << name);
+    QPID_LOG(debug, logPrefix << "Queue response: " << name);
 }
 
 void BrokerReplicator::doResponseExchange(Variant::Map& values) {
@@ -461,9 +461,9 @@ void BrokerReplicator::doResponseExchange(Variant::Map& values) {
             ""/*TODO: who is the user?*/,
             ""/*TODO: what should we use as connection id?*/).second)
     {
-        QPID_LOG(debug, logPrefix << "exchange response: " << values[NAME].asString());
+        QPID_LOG(debug, logPrefix << "Exchange response: " << values[NAME].asString());
     } else {
-        QPID_LOG(warning, logPrefix << "exchange response, already exists: " <<
+        QPID_LOG(warning, logPrefix << "Exchange response, already exists: " <<
                  values[NAME].asString());
     }
 }
@@ -503,7 +503,7 @@ void BrokerReplicator::doResponseBind(Variant::Map& values) {
         amqp_0_10::translate(asMapVoid(values[ARGUMENTS]), args);
         string key = values[KEY].asString();
         exchange->bind(queue, key, &args);
-        QPID_LOG(debug, logPrefix << "bind response: exchange=" << exchange->getName()
+        QPID_LOG(debug, logPrefix << "Bind response: exchange=" << exchange->getName()
                  << " queue=" << queue->getName()
                  << " key=" << key);
     }
@@ -545,7 +545,7 @@ void BrokerReplicator::startQueueReplicator(const boost::shared_ptr<Queue>& queu
 {
     if (haBroker.replicateLevel(queue->getSettings()) == ALL) {
         boost::shared_ptr<QueueReplicator> qr(
-            new QueueReplicator(LogPrefix(haBroker, queue->getName()), queue, link));
+            new QueueReplicator(haBroker, queue, link));
         if (!broker.getExchanges().registerExchange(qr))
             throw Exception(QPID_MSG("Duplicate queue replicator " << qr->getName()));
         qr->activate();
