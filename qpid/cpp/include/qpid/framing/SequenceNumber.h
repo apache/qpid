@@ -57,12 +57,18 @@ boost::equality_comparable<
     QPID_COMMON_EXTERN uint32_t encodedSize() const;
 
     template <class S> void serialize(S& s) { s(value); }
-
-  friend inline int32_t operator-(const SequenceNumber& a, const SequenceNumber& b);
 };
 
 inline int32_t operator-(const SequenceNumber& a, const SequenceNumber& b) {
-    return int32_t(a.value - b.value);
+    return int32_t(a.getValue() - b.getValue());
+}
+
+inline SequenceNumber operator+(const SequenceNumber& a, int32_t n) {
+    return SequenceNumber(a.getValue() + n);
+}
+
+inline SequenceNumber operator-(const SequenceNumber& a, int32_t n) {
+    return SequenceNumber(a.getValue() - n);
 }
 
 struct Window

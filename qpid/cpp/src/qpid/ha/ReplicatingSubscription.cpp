@@ -38,15 +38,76 @@ using namespace broker;
 using namespace std;
 
 const string ReplicatingSubscription::QPID_REPLICATING_SUBSCRIPTION("qpid.replicating-subscription");
+const string ReplicatingSubscription::QPID_HIGH_SEQUENCE_NUMBER("qpid.high-sequence-number");
+const string ReplicatingSubscription::QPID_LOW_SEQUENCE_NUMBER("qpid.low-sequence-number");
 
 namespace {
 const string DOLLAR("$");
 const string INTERNAL("-internal");
 } // namespace
 
+class DequeueRemover
+{
+  public:
+    DequeueRemover(
+        SequenceSet& r,
+        const SequenceNumber& s,
+        const SequenceNumber& e
+    ) : dequeues(r), start(s), end(e)
+    {
+        dequeues.add(start, end);
+    }
+
+    void operator()(const QueuedMessage& message) {
+        if (message.position >= start && message.position <= end) {
+            //i.e. message is within the intial range and has not been dequeued,
+            //so remove it from the dequeues
+            dequeues.remove(message.position);
+        }
+    }
+
+  private:
+    SequenceSet& dequeues;
+    const SequenceNumber start;
+    const SequenceNumber end;
+};
+
 string mask(const string& in)
 {
     return DOLLAR + in + INTERNAL;
+}
+
+
+/** Dummy consumer used to get the front position on the queue */
+class GetPositionConsumer : public Consumer
+{
+  public:
+    GetPositionConsumer() :
+        Consumer("ha.GetPositionConsumer."+types::Uuid(true).str(), false) {}
+    bool deliver(broker::QueuedMessage& ) { return true; }
+    void notify() {}
+    bool filter(boost::intrusive_ptr<broker::Message>) { return true; }
+    bool accept(boost::intrusive_ptr<broker::Message>) { return true; }
+    void cancel() {}
+    void acknowledged(const broker::QueuedMessage&) {}
+    bool browseAcquired() const { return true; }
+    broker::OwnershipToken* getSession() { return 0; }
+};
+
+
+bool ReplicatingSubscription::getNext(
+    broker::Queue& q, SequenceNumber from, SequenceNumber& result)
+{
+    boost::shared_ptr<Consumer> c(new GetPositionConsumer);
+    c->setPosition(from);
+    if (!q.dispatch(c)) return false;
+    result = c->getPosition();
+    return true;
+}
+
+bool ReplicatingSubscription::getFront(broker::Queue& q, SequenceNumber& front) {
+    // FIXME aconway 2012-05-23: won't wrap, assumes 0 is < all messages in queue.
+    return getNext(q, 0, front);
 }
 
 /* Called by SemanticState::consume to create a consumer */
@@ -70,12 +131,45 @@ ReplicatingSubscription::Factory::create(
                      parent, name, queue, ack, acquire, exclusive, tag,
                      resumeId, resumeTtl, arguments));
         queue->addObserver(rs);
-        // NOTE: readyPosition must be set _after_ addObserver, so
+        // NOTE: initialize must be called _after_ addObserver, so
         // messages can't be enqueued after setting readyPosition
         // but before registering the observer.
-        rs->setReadyPosition();
+        rs->initialize();
     }
     return rs;
+}
+
+struct QueueRange {
+    bool empty;
+    SequenceNumber front;
+    SequenceNumber back;
+
+    // FIXME aconway 2012-05-26: fix front calculation
+    QueueRange(broker::Queue& q) {
+        back = q.getPosition();
+        front = back+1;
+        empty = !ReplicatingSubscription::getFront(q, front);
+    }
+
+    QueueRange(const framing::FieldTable args) {
+        back = args.getAsInt(ReplicatingSubscription::QPID_HIGH_SEQUENCE_NUMBER);
+        front = back+1;
+        empty = !args.isSet(ReplicatingSubscription::QPID_LOW_SEQUENCE_NUMBER);
+        if (!empty) {
+            front = args.getAsInt(ReplicatingSubscription::QPID_LOW_SEQUENCE_NUMBER);
+            if (back < front)
+                throw InvalidArgumentException("Invalid bounds for backup queue");
+        }
+    }
+
+    /** Consumer position to start consuming from the front */
+    SequenceNumber browserStart() { return front-1; }
+};
+
+ostream& operator<<(ostream& o, const QueueRange& qr) {
+
+    if (qr.front > qr.back) return o << "empty(" << qr.back << ")";
+    else return o << "[" << qr.front << "," << qr.back << "]";
 }
 
 ReplicatingSubscription::ReplicatingSubscription(
@@ -96,25 +190,50 @@ ReplicatingSubscription::ReplicatingSubscription(
     dummy(new Queue(mask(name))),
     ready(false)
 {
-    // Separate the remote part from a "local-remote" address for logging.
-    string address = parent->getSession().getConnection().getUrl();
-    size_t i = address.find('-');
-    if (i != string::npos) address = address.substr(i+1);
-    logSuffix = " (" + address + ")";
+    try {
+        // FIXME aconway 2012-05-22: use hostname from brokerinfo
+        // Separate the remote part from a "local-remote" address for logging.
+        string address = parent->getSession().getConnection().getUrl();
+        size_t i = address.find('-');
+        if (i != string::npos) address = address.substr(i+1);
+        logSuffix = " (" + address + ")";
 
-    // FIXME aconway 2011-12-09: Failover optimization removed.
-    // There was code here to re-use messages already on the backup
-    // during fail-over. This optimization was removed to simplify
-    // the logic till we get the basic replication stable, it
-    // can be re-introduced later. Last revision with the optimization:
-    // r1213258 | QPID-3603: Fix QueueReplicator subscription parameters.
+        QueueRange primary(*queue);
+        QueueRange backup(arguments);
+        backupPosition = backup.back;
 
-    // FIXME aconway 2011-12-15: ConsumerImpl::position is left at 0
-    // so we will start consuming from the lowest numbered message.
-    // This is incorrect if the sequence number wraps around, but
-    // this is what all consumers currently do.
+        // We can re-use some backup messages if backup and primary queues
+        // overlap and the backup is not missing messages at the front of the queue.
+        if (!primary.empty &&   // Primary not empty
+            !backup.empty &&    // Backup not empty
+            primary.front >= backup.front && // Not missing messages at the front
+            primary.front <= backup.back     // Overlap
+        )
+        {
+            // Remove messages that are still on the primary queue from dequeues
+            // FIXME aconway 2012-05-22: optimize to iterate only the relevant
+            // section of the queue
+            DequeueRemover remover(dequeues, backup.front, backup.back);
+            queue->eachMessage(remover);
+            position = std::min(primary.back, backup.back);
+        }
+        else {
+            // Clear the backup queue and reset to start browsing at the
+            // front of the primary queue.
+            if (!backup.empty) dequeues.add(backup.front, backup.back);
+            position = primary.browserStart();
 
-    QPID_LOG(debug, logPrefix << "Created replicating subscription" << logSuffix);
+        }
+        QPID_LOG(debug, logPrefix << "New backup subscription " << getName()
+                 << " backup range " << backup
+                 << " primary range " << primary
+                 << " position " << position
+                 << " dequeues " << dequeues << logSuffix);
+    }
+    catch (const std::exception& e) {
+        throw Exception(QPID_MSG(logPrefix << "Error setting up replication: "
+                                 << e.what() << logSuffix));
+    }
 }
 
 ReplicatingSubscription::~ReplicatingSubscription() {
@@ -122,39 +241,37 @@ ReplicatingSubscription::~ReplicatingSubscription() {
 }
 
 // Called in subscription's connection thread when the subscription is created.
-void ReplicatingSubscription::setReadyPosition() {
-    // Don't need to lock, this is called only on creation.
+void ReplicatingSubscription::initialize() {
+    sys::Mutex::ScopedLock l(lock); // QueueObserver methods can be called concurrently
+    // Send initial dequeues and position to the backup.
+    // There most be a shared_ptr(this) when sending.
+    sendDequeueEvent(l);
+    sendPositionEvent(position, l);
+    backupPosition = position;
 
+    // Set the ready position, all messages after this has been set as an observer.
     // All messages after this position have been seen by us as QueueObserver.
-    readyPosition = getQueue()->getPosition();
-    // Create a separate subscription to browse the front message on
-    // the queue so that we can test for queue empty.
-    boost::shared_ptr<Consumer> c(new GetPositionConsumer);
-    bool found = getQueue()->dispatch(c);
-    SequenceNumber front = c->getPosition();
-    if (!found || front >= readyPosition) {
-        // The queue is empty, or has already advanced past the ready position.
-        QPID_LOG(debug, logPrefix << "backup subscribed, no catch up, at "
-                 << readyPosition << logSuffix);
-        // Fake lock, only called during creation:
-        setReady(*(sys::Mutex::ScopedLock*)0);
+    QueueRange range(*getQueue());
+    readyPosition = range.back;
+    if (range.empty || position >= readyPosition) {
+        setReady(l);
     }
     else {
-        QPID_LOG(debug, logPrefix << "backup subscribed, catching up "
-                 << front << "-" << readyPosition << logSuffix);
+        QPID_LOG(debug, logPrefix << "Backup subscription catching up from "
+                 << position << " to " << readyPosition << logSuffix);
     }
 }
 
 // Message is delivered in the subscription's connection thread.
 bool ReplicatingSubscription::deliver(QueuedMessage& qm) {
     try {
-        // Add position events for the subscribed queue, not for the internal event queue.
+        // Add position events for the subscribed queue, not the internal event queue.
         if (qm.queue == getQueue().get()) {
             QPID_LOG(trace, logPrefix << "replicating " << qm << logSuffix);
             {
                 sys::Mutex::ScopedLock l(lock);
                 assert(position == qm.position);
-                // qm.position is the position of the newly enqueued qm on the local queue.
+                // qm.position is the position of the newly enqueued qm on local queue.
                 // backupPosition is latest position on backup queue before enqueueing
                 if (qm.position <= backupPosition)
                     throw Exception(
@@ -162,9 +279,8 @@ bool ReplicatingSubscription::deliver(QueuedMessage& qm) {
                                  << " but got " << qm.position));
                 if (qm.position - backupPosition > 1) {
                     // Position has advanced because of messages dequeued ahead of us.
-                    SequenceNumber send(qm.position);
-                    --send;   // Send the position before qm was enqueued.
-                    sendPositionEvent(send);
+                    // Send the position before qm was enqueued.
+                    sendPositionEvent(qm.position-1, l);
                 }
                 backupPosition = qm.position;
             }
@@ -186,7 +302,6 @@ bool ReplicatingSubscription::deliver(QueuedMessage& qm) {
     }
 }
 
-// Send a ready event to the backup.
 void ReplicatingSubscription::setReady(const sys::Mutex::ScopedLock&) {
     if (ready) return;
     ready = true;
@@ -269,11 +384,13 @@ bool ReplicatingSubscription::hideDeletedError() { return true; }
 // Called with lock held. Called in subscription's connection thread.
 void ReplicatingSubscription::sendDequeueEvent(const sys::Mutex::ScopedLock&)
 {
+    if (dequeues.empty()) return;
     QPID_LOG(trace, logPrefix << "sending dequeues " << dequeues
              << " from " << getQueue()->getName() << logSuffix);
     string buf(dequeues.encodedSize(),'\0');
     framing::Buffer buffer(&buf[0], buf.size());
     dequeues.encode(buffer);
+    dequeues.clear();
     buffer.reset();
     sendEvent(QueueReplicator::DEQUEUE_EVENT_KEY, buffer);
 }
@@ -295,13 +412,14 @@ void ReplicatingSubscription::dequeued(const QueuedMessage& qm)
 }
 
 // Called with lock held. Called in subscription's connection thread.
-void ReplicatingSubscription::sendPositionEvent(SequenceNumber position)
+void ReplicatingSubscription::sendPositionEvent(SequenceNumber pos, const sys::Mutex::ScopedLock&)
 {
-    QPID_LOG(trace, logPrefix << "sending position " << position
+    if (pos == backupPosition) return; // No need to send.
+    QPID_LOG(trace, logPrefix << "sending position " << pos
              << ", was " << backupPosition << logSuffix);
-    string buf(backupPosition.encodedSize(),'\0');
+    string buf(pos.encodedSize(),'\0');
     framing::Buffer buffer(&buf[0], buf.size());
-    position.encode(buffer);
+    pos.encode(buffer);
     buffer.reset();
     sendEvent(QueueReplicator::POSITION_EVENT_KEY, buffer);
 }
@@ -342,10 +460,7 @@ bool ReplicatingSubscription::doDispatch()
 {
     {
         sys::Mutex::ScopedLock l(lock);
-        if (!dequeues.empty()) {
-            sendDequeueEvent(l);
-            dequeues.clear();
-        }
+        if (!dequeues.empty()) sendDequeueEvent(l);
     }
     return ConsumerImpl::doDispatch();
 }
