@@ -1195,4 +1195,12 @@ public class Session extends SessionInvoker
             }
         }
     }
+
+    /**
+     * An auxiliary method for test purposes only
+     */
+    public boolean isFlowBlocked()
+    {
+        return isFlowControlled() && credit.availablePermits() == 0;
+    }
 }
