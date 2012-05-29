@@ -23,6 +23,6 @@
 <section id="Java-Broker-Configuration-Guide">
     <title>Broker Configuration Guide </title>
 
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
-            href="Topic-Configuration.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Producer-Flow-Control.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Topic-Configuration.xml"/>
 </section>
