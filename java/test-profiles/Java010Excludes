@@ -54,6 +54,12 @@ org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testSessionC
 org.apache.qpid.test.client.timeouts.SyncWaitTimeoutDelayTest#*
 org.apache.qpid.test.client.timeouts.SyncWaitDelayTest#*
 
+// These tests test the behaviour of 0-8..-0-9-1 specific system property qpid.failover_method_timeout
+org.apache.qpid.client.failover.FailoverBehaviourTest#testFailoverHandlerTimeoutExpires
+org.apache.qpid.client.failover.FailoverBehaviourTest#testFailoverHandlerTimeoutReconnected
+org.apache.qpid.client.failover.AddressBasedFailoverBehaviourTest#testFailoverHandlerTimeoutExpires
+org.apache.qpid.client.failover.AddressBasedFailoverBehaviourTest#testFailoverHandlerTimeoutReconnected
+
 // QPID-3604: Immediate Prefetch no longer supported by 0-10
 org.apache.qpid.client.AsynchMessageListenerTest#testImmediatePrefetchWithMessageListener
 
