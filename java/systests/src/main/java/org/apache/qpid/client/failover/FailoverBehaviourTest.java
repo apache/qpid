@@ -20,6 +20,9 @@ package org.apache.qpid.client.failover;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionFactory;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.jms.ConnectionURL;
@@ -44,7 +47,9 @@ import javax.naming.NamingException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -830,6 +835,88 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
                 connection.close();
             }
         }
+    }
+    public void testFlowControlFlagResetOnFailover() throws Exception
+    {
+        // we do not need the connection failing to second broker
+        _connection.close();
+
+        // make sure that failover timeout is bigger than flow control timeout
+        setTestSystemProperty("qpid.failover_method_timeout", "60000");
+        setTestSystemProperty("qpid.flow_control_wait_failure", "10000");
+
+        AMQConnection connection = null;
+        try
+        {
+            connection = createConnectionWithFailover();
+
+            final Session producerSession = connection.createSession(true, Session.SESSION_TRANSACTED);
+            final Queue queue = createAndBindQueueWithFlowControlEnabled(producerSession, getTestQueueName(), DEFAULT_MESSAGE_SIZE * 3, DEFAULT_MESSAGE_SIZE * 2);
+            final AtomicInteger counter = new AtomicInteger();
+            // try to send 5 messages (should block after 4)
+            new Thread(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    try
+                    {
+                        MessageProducer producer = producerSession.createProducer(queue);
+                        for (int i=0; i < 5; i++)
+                        {
+                            Message next = createNextMessage(producerSession, i);
+                            producer.send(next);
+                            producerSession.commit();
+                            counter.incrementAndGet();
+                        }
+                    }
+                    catch(Exception e)
+                    {
+                        // ignore
+                    }
+                }
+            }).start();
+
+            long limit= 30000l;
+            long start = System.currentTimeMillis();
+
+            // wait  until session is blocked
+            while(!((AMQSession<?,?>)producerSession).isFlowBlocked() && System.currentTimeMillis() - start < limit)
+            {
+                Thread.sleep(100l);
+            }
+
+            assertTrue("Flow is not blocked", ((AMQSession<?, ?>) producerSession).isFlowBlocked());
+            assertEquals("Unexpected number of sent messages", 4, counter.get());
+
+            killBroker();
+            startBroker();
+
+            // allows the failover thread to proceed
+            Thread.yield();
+            awaitForFailoverCompletion(60000l);
+
+            assertFalse("Flow is blocked", ((AMQSession<?, ?>) producerSession).isFlowBlocked());
+        }
+        finally
+        {
+            if (connection != null)
+            {
+                connection.close();
+            }
+        }
+    }
+
+    private Queue createAndBindQueueWithFlowControlEnabled(Session session, String queueName, int capacity, int resumeCapacity) throws Exception
+    {
+        final Map<String, Object> arguments = new HashMap<String, Object>();
+        arguments.put("x-qpid-capacity", capacity);
+        arguments.put("x-qpid-flow-resume-capacity", resumeCapacity);
+        ((AMQSession<?, ?>) session).createQueue(new AMQShortString(queueName), true, true, false, arguments);
+        Queue queue = session.createQueue("direct://amq.direct/" + queueName + "/" + queueName + "?durable='" + true
+                + "'&autodelete='" + true + "'");
+        ((AMQSession<?, ?>) session).declareAndBind((AMQDestination) queue);
+        return queue;
     }
 
     private AMQConnection createConnectionWithFailover() throws NamingException, JMSException
