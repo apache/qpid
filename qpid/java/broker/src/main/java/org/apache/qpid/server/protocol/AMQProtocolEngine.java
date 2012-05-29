@@ -591,7 +591,10 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
 
     public List<AMQChannel> getChannels()
     {
-        return new ArrayList<AMQChannel>(_channelMap.values());
+        synchronized (_channelMap)
+        {
+            return new ArrayList<AMQChannel>(_channelMap.values());
+        }
     }
 
     public AMQChannel getAndAssertChannel(int channelId) throws AMQException
@@ -651,17 +654,17 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
             synchronized (_channelMap)
             {
                 _channelMap.put(channel.getChannelId(), channel);
+
+                if(_blocking)
+                {
+                    channel.block();
+                }
             }
         }
 
         if (((channelId & CHANNEL_CACHE_SIZE) == channelId))
         {
             _cachedChannels[channelId] = channel;
-        }
-
-        if(_blocking)
-        {
-            channel.block();
         }
 
         checkForNotification();
@@ -790,7 +793,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
      */
     private void closeAllChannels() throws AMQException
     {
-        for (AMQChannel channel : _channelMap.values())
+        for (AMQChannel channel : getChannels())
         {
             channel.close();
         }
