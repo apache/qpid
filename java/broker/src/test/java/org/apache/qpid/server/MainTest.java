@@ -47,6 +47,11 @@ public class MainTest extends QpidTestCase
         {
             assertEquals(0, options.getExcludedPorts(pe).size());
         }
+
+        for(ProtocolInclusion pe : EnumSet.allOf(ProtocolInclusion.class))
+        {
+            assertEquals(0, options.getIncludedPorts(pe).size());
+        }
     }
 
     public void testPortOverriddenSingle()
@@ -160,6 +165,20 @@ public class MainTest extends QpidTestCase
 
         assertNotNull("Command line not parsed correctly", main.getCommandLine());
         assertTrue("Parsed command line didnt pick up help option", main.getCommandLine().hasOption("h"));
+    }
+
+    public void testInclude010()
+    {
+        BrokerOptions options = startDummyMain("-p 5678 --include-0-10 5678");
+
+        assertTrue(options.getPorts().contains(5678));
+        assertEquals(1, options.getPorts().size());
+        assertTrue(options.getIncludedPorts(ProtocolInclusion.v0_10).contains(5678));
+        assertEquals(1, options.getIncludedPorts(ProtocolInclusion.v0_10).size());
+        assertEquals(0, options.getIncludedPorts(ProtocolInclusion.v0_9_1).size());
+        assertEquals(0, options.getIncludedPorts(ProtocolInclusion.v0_9).size());
+        assertEquals(0, options.getIncludedPorts(ProtocolInclusion.v0_8).size());
+        assertEquals(0, options.getIncludedPorts(ProtocolInclusion.v1_0).size());
     }
 
     private BrokerOptions startDummyMain(String commandLine)

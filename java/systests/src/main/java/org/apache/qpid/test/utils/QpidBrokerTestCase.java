@@ -61,6 +61,7 @@ import org.apache.qpid.management.common.mbeans.ConfigurationManagement;
 import org.apache.qpid.server.Broker;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.ProtocolExclusion;
+import org.apache.qpid.server.ProtocolInclusion;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.store.MessageStoreConstants;
@@ -123,7 +124,8 @@ public class QpidBrokerTestCase extends QpidTestCase
     private static final String BROKER_LOG_INTERLEAVE = "broker.log.interleave";
     private static final String BROKER_LOG_PREFIX = "broker.log.prefix";
     private static final String BROKER_PERSITENT = "broker.persistent";
-    private static final String BROKER_PROTOCOL_EXCLUDES = "broker.protocol.excludes";
+    public static final String BROKER_PROTOCOL_EXCLUDES = "broker.protocol.excludes";
+    public static final String BROKER_PROTOCOL_INCLUDES = "broker.protocol.includes";
 
     // values
     protected static final String JAVA = "java";
@@ -144,7 +146,6 @@ public class QpidBrokerTestCase extends QpidTestCase
     private final AmqpProtocolVersion _brokerVersion = AmqpProtocolVersion.valueOf(System.getProperty(BROKER_VERSION, ""));
     protected String _output = System.getProperty(TEST_OUTPUT, System.getProperty("java.io.tmpdir"));
     protected Boolean _brokerPersistent = Boolean.getBoolean(BROKER_PERSITENT);
-    private String _brokerProtocolExcludes = System.getProperty(BROKER_PROTOCOL_EXCLUDES);
 
     protected static String _brokerLogPrefix = System.getProperty(BROKER_LOG_PREFIX,"BROKER: ");
     protected static boolean _interleaveBrokerLog = Boolean.getBoolean(BROKER_LOG_INTERLEAVE);
@@ -332,12 +333,15 @@ public class QpidBrokerTestCase extends QpidTestCase
     {
         final int sslPort = port-1;
         final String protocolExcludesList = getProtocolExcludesList(port, sslPort);
+        final String protocolIncludesList = getProtocolIncludesList(port, sslPort);
+
         return _brokerCommand
                 .replace("@PORT", "" + port)
                 .replace("@SSL_PORT", "" + sslPort)
                 .replace("@MPORT", "" + getManagementPort(port))
                 .replace("@CONFIG_FILE", _configFile.toString())
-                .replace("@EXCLUDES", protocolExcludesList);
+                .replace("@EXCLUDES", protocolExcludesList)
+                .replace("@INCLUDES", protocolIncludesList);
     }
 
     public void startBroker() throws Exception
@@ -377,6 +381,7 @@ public class QpidBrokerTestCase extends QpidTestCase
             options.addPort(port);
 
             addExcludedPorts(port, DEFAULT_SSL_PORT, options);
+            addIncludedPorts(port, DEFAULT_SSL_PORT, options);
 
             options.setJmxPortRegistryServer(getManagementPort(port));
 
@@ -525,9 +530,36 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected String getProtocolExcludesList(int port, int sslPort)
     {
-        final String protocolExcludesList =
-            _brokerProtocolExcludes.replace("@PORT", "" + port).replace("@SSL_PORT", "" + sslPort);
-        return protocolExcludesList;
+        return System.getProperty(BROKER_PROTOCOL_EXCLUDES,"").replace("@PORT", "" + port).replace("@SSL_PORT", "" + sslPort);
+    }
+
+    private String getProtocolIncludesList(int port, int sslPort)
+    {
+        return System.getProperty(BROKER_PROTOCOL_INCLUDES, "").replace("@PORT", "" + port).replace("@SSL_PORT", "" + sslPort);
+    }
+
+    private void addIncludedPorts(int port, int sslPort, BrokerOptions options)
+    {
+        final String protocolIncludesList = getProtocolIncludesList(port, sslPort);
+
+        if (protocolIncludesList.equals(""))
+        {
+            return;
+        }
+        final String[] toks = protocolIncludesList.split("\\s");
+
+        if(toks.length % 2 != 0)
+        {
+            throw new IllegalArgumentException("Must be an even number of tokens in '" + protocolIncludesList + "'");
+        }
+        for (int i = 0; i < toks.length; i=i+2)
+        {
+            String includeArg = toks[i];
+            final int includedPort = Integer.parseInt(toks[i+1]);
+            options.addIncludedPort(ProtocolInclusion.lookup(includeArg), includedPort);
+
+            _logger.info("Adding protocol inclusion " + includeArg + " " + includedPort);
+        }
     }
 
     private boolean existingInternalBroker()

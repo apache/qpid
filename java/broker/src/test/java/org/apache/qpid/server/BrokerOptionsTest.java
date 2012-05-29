@@ -199,4 +199,31 @@ public class BrokerOptionsTest extends QpidTestCase
         _options.setLogWatchFrequency(myFreq);
         assertEquals(myFreq, _options.getLogWatchFrequency());
     }
+
+    public void testDefaultIncludesPortFor0_10()
+    {
+        assertEquals(Collections.EMPTY_SET, _options.getIncludedPorts(ProtocolInclusion.v0_10));
+    }
+
+    public void testOverriddenIncludesPortFor0_10()
+    {
+        _options.addIncludedPort(ProtocolInclusion.v0_10, TEST_PORT1);
+        assertEquals(Collections.singleton(TEST_PORT1), _options.getIncludedPorts(ProtocolInclusion.v0_10));
+    }
+
+    public void testManyOverriddenIncludedPortFor0_10()
+    {
+        _options.addIncludedPort(ProtocolInclusion.v0_10, TEST_PORT1);
+        _options.addIncludedPort(ProtocolInclusion.v0_10, TEST_PORT2);
+        final Set<Integer> expectedPorts = new HashSet<Integer>(Arrays.asList(new Integer[] {TEST_PORT1, TEST_PORT2}));
+        assertEquals(expectedPorts, _options.getIncludedPorts(ProtocolInclusion.v0_10));
+    }
+
+    public void testDuplicatedOverriddenIncludedPortFor0_10AreSilentlyIgnored()
+    {
+        _options.addIncludedPort(ProtocolInclusion.v0_10, TEST_PORT1);
+        _options.addIncludedPort(ProtocolInclusion.v0_10, TEST_PORT2);
+        final Set<Integer> expectedPorts = new HashSet<Integer>(Arrays.asList(new Integer[] {TEST_PORT1, TEST_PORT2}));
+        assertEquals(expectedPorts, _options.getIncludedPorts(ProtocolInclusion.v0_10));
+    }
 }
