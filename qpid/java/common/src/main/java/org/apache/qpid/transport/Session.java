@@ -94,8 +94,10 @@ public class Session extends SessionInvoker
     private final long timeout = Long.getLong(ClientProperties.QPID_SYNC_OP_TIMEOUT,
                                         Long.getLong(ClientProperties.AMQJ_DEFAULT_SYNCWRITE_TIMEOUT,
                                                      ClientProperties.DEFAULT_SYNC_OPERATION_TIMEOUT));
-    private final long blockedSendTimeout = Long.getLong("qpid.flow_control_wait_failure", timeout);
-    private long blockedSendReportingPeriod = Long.getLong("qpid.flow_control_wait_notify_period",5000L);
+    private final long blockedSendTimeout = Long.getLong(ClientProperties.QPID_FLOW_CONTROL_WAIT_FAILURE,
+                                                         ClientProperties.DEFAULT_FLOW_CONTROL_WAIT_FAILURE);
+    private long blockedSendReportingPeriod = Long.getLong(ClientProperties.QPID_FLOW_CONTROL_WAIT_NOTIFY_PERIOD,
+                                                           ClientProperties.DEFAULT_FLOW_CONTROL_WAIT_NOTIFY_PERIOD);
 
     private boolean autoSync = false;
 
@@ -214,12 +216,6 @@ public class Session extends SessionInvoker
     {
         return this.state;
     }
-
-    public boolean isFlowControlled()
-    {
-        return flowControl;
-    }
-
 
     void setFlowControl(boolean value)
     {
@@ -1201,6 +1197,6 @@ public class Session extends SessionInvoker
      */
     public boolean isFlowBlocked()
     {
-        return isFlowControlled() && credit.availablePermits() == 0;
+        return flowControl && credit.availablePermits() == 0;
     }
 }

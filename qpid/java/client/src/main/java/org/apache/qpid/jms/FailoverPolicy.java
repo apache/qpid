@@ -33,9 +33,7 @@ public class FailoverPolicy
 {
     private static final Logger _logger = LoggerFactory.getLogger(FailoverPolicy.class);
 
-    private static final long MINUTE = 60000L;
-
-    private final long DEFAULT_METHOD_TIMEOUT = Long.getLong("qpid.failover_method_timeout", 1 * MINUTE);
+    private final long DEFAULT_METHOD_TIMEOUT = Long.getLong("qpid.failover_method_timeout", 120000);
 
     private FailoverMethod[] _methods = new FailoverMethod[1];
 
