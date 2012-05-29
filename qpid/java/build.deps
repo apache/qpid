@@ -50,6 +50,9 @@ servlet-api=lib/servlet-api.jar
 
 felix-main=lib/org.apache.felix.main-2.0.5.jar
 
+jython=lib/jython-2.5.0.jar
+qpid-cpp-jni=lib/qpid_cpp_jni.jar
+
 felix.libs=${felix-main}
 
 commons-configuration.libs = ${commons-beanutils-core} ${commons-digester} \
@@ -147,5 +150,5 @@ bdb-je=lib/bdbstore/je-5.0.34.jar
 bdbstore.libs=${bdb-je}
 bdbstore.test.libs=${test.libs}
 
-client-api.libs=${slf4j-api}
+client-api.libs=${slf4j-api} ${jython} ${qpid-cpp-jni}
 client-jms.libs=${geronimo-jms}

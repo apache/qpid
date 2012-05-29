@@ -17,31 +17,5 @@
 # under the License.
 #
 
-
-include(FindSWIG)
-include(UseSWIG)
-include(FindRuby)
-include(FindPythonLibs)
-include(FindPerlLibs)
-include(FindJava)
-include(FindJNI)
-
-if (SWIG_FOUND)
-    set(CMAKE_SWIG_FLAGS "-w361,362,401,467,503")
-
-    if (PYTHONLIBS_FOUND)
-        add_subdirectory(python)
-    endif (PYTHONLIBS_FOUND)
-
-    if (RUBY_FOUND)
-        add_subdirectory(ruby)
-    endif (RUBY_FOUND)
-
-    if (PERLLIBS_FOUND)
-        add_subdirectory(perl)
-    endif (PERLLIBS_FOUND)
-
-    if (JAVA_FOUND AND JNI_FOUND)
-        add_subdirectory(java)
-    endif (JAVA_FOUND AND JNI_FOUND)
-endif (SWIG_FOUND)
+pkg
+html
