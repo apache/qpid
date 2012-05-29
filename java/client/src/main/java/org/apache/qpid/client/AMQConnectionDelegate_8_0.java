@@ -285,7 +285,14 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         for (Iterator it = sessions.iterator(); it.hasNext();)
         {
             AMQSession s = (AMQSession) it.next();
+
+            // reset the flow control flag
+            // on opening channel, broker sends flow blocked if virtual host is blocked
+            // if virtual host is not blocked, then broker does not send flow command
+            // that's why we need to reset the flow control flag
+            s.setFlowControl(true);
             reopenChannel(s.getChannelId(), s.getDefaultPrefetchHigh(), s.getDefaultPrefetchLow(), s.isTransacted());
+
             s.resubscribe();
         }
     }
