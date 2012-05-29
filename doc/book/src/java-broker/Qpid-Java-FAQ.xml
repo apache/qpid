@@ -773,13 +773,14 @@ amqj.logging.level
           </title>
 
 	  <para>
-            The Java broker does not currently implement producer flow
-            control. Publishes are currently asynchronous, so there is no
-            ability to rate limit this automatically. While this is something
-            which will be addressed in the future, it is currently up to
-            applications to ensure that they do not publish faster than the
-            messages are being consumed for signifcant periods of time.
-          </para>
+            Switch on producer flow control to prevent temporary spikes in
+            message production over-filling the broker.
+
+            Of course, if the long-term rate of message production exceeds
+            the rate of message
+            consumption then that is an architectural problem that can only
+            be temporarily mitigated by producer flow control.
+	  </para>
 <!--h3--></section>
 
 	  <section role="h3" id="QpidJavaFAQ-ThebrokerkeepsthrowinganOutOfMemoryexception-3F"><title>
