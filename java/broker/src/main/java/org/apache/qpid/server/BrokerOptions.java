@@ -37,6 +37,7 @@ public class BrokerOptions
     private final Set<Integer> _ports = new HashSet<Integer>();
     private final Set<Integer> _sslPorts = new HashSet<Integer>();
     private final Map<ProtocolExclusion,Set<Integer>> _exclusionMap = new HashMap<ProtocolExclusion, Set<Integer>>();
+    private final Map<ProtocolInclusion,Set<Integer>> _inclusionMap = new HashMap<ProtocolInclusion, Set<Integer>>();
 
     private String _configFile;
     private String _logConfigFile;
@@ -160,5 +161,22 @@ public class BrokerOptions
     public void setBundleContext(final BundleContext bundleContext)
     {
         _bundleContext = bundleContext;
+    }
+
+    public Set<Integer> getIncludedPorts(final ProtocolInclusion includeProtocol)
+    {
+        final Set<Integer> includedPorts = _inclusionMap.get(includeProtocol);
+        return includedPorts == null ? Collections.<Integer>emptySet() : includedPorts;
+    }
+
+    public void addIncludedPort(final ProtocolInclusion includeProtocol, final int port)
+    {
+        if (!_inclusionMap.containsKey(includeProtocol))
+        {
+            _inclusionMap.put(includeProtocol, new HashSet<Integer>());
+        }
+
+        Set<Integer> ports = _inclusionMap.get(includeProtocol);
+        ports.add(port);
     }
 }
