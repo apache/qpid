@@ -19,7 +19,10 @@
 package org.apache.qpid.client.failover;
 
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQConnectionFactory;
+import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionListener;
+import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.jms.FailoverPolicy;
 import org.apache.qpid.test.utils.FailoverBaseCase;
 
@@ -36,6 +39,8 @@ import javax.jms.QueueBrowser;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.TransactionRolledBackException;
+import javax.naming.NamingException;
+
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -760,6 +765,89 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
         //got started, before allowing the test to tear down
         awaitForFailoverCompletion(DEFAULT_FAILOVER_TIME);
      }
+
+    /**
+     * This test only tests 0-8/0-9/0-9-1 failover timeout
+     */
+    public void testFailoverHandlerTimeoutExpires() throws Exception
+    {
+        _connection.close();
+        setTestSystemProperty("qpid.failover_method_timeout", "10000");
+        AMQConnection connection = null;
+        try
+        {
+            connection = createConnectionWithFailover();
+
+            // holding failover mutex should prevent the failover from proceeding
+            synchronized(connection.getFailoverMutex())
+            {
+                killBroker();
+                startBroker();
+
+                // sleep interval exceeds failover timeout interval
+                Thread.sleep(11000l);
+            }
+
+            // allows the failover thread to proceed
+            Thread.yield();
+            assertFalse("Unexpected failover", _failoverComplete.await(2000l, TimeUnit.MILLISECONDS));
+            assertTrue("Failover should not succeed due to timeout", connection.isClosed());
+        }
+        finally
+        {
+            if (connection != null)
+            {
+                connection.close();
+            }
+        }
+    }
+
+    public void testFailoverHandlerTimeoutReconnected() throws Exception
+    {
+        _connection.close();
+        setTestSystemProperty("qpid.failover_method_timeout", "10000");
+        AMQConnection connection = null;
+        try
+        {
+            connection = createConnectionWithFailover();
+
+            // holding failover mutex should prevent the failover from proceeding
+            synchronized(connection.getFailoverMutex())
+            {
+                killBroker();
+                startBroker();
+            }
+
+            // allows the failover thread to proceed
+            Thread.yield();
+            awaitForFailoverCompletion(DEFAULT_FAILOVER_TIME);
+            assertFalse("Failover should restore connectivity", connection.isClosed());
+        }
+        finally
+        {
+            if (connection != null)
+            {
+                connection.close();
+            }
+        }
+    }
+
+    private AMQConnection createConnectionWithFailover() throws NamingException, JMSException
+    {
+        AMQConnection connection;
+        AMQConnectionFactory connectionFactory = (AMQConnectionFactory)getConnectionFactory("default");
+        ConnectionURL connectionURL = connectionFactory.getConnectionURL();
+        connectionURL.setOption(ConnectionURL.OPTIONS_FAILOVER, "singlebroker");
+        connectionURL.setOption(ConnectionURL.OPTIONS_FAILOVER_CYCLE, "2");
+        BrokerDetails details = connectionURL.getBrokerDetails(0);
+        details.setProperty(BrokerDetails.OPTIONS_RETRY, "200");
+        details.setProperty(BrokerDetails.OPTIONS_CONNECT_DELAY, "1000");
+
+        connection = (AMQConnection)connectionFactory.createConnection("admin", "admin");
+        connection.setConnectionListener(this);
+        return connection;
+    }
+
     /**
      * Tests {@link Session#close()} for session with given acknowledge mode
      * to ensure that close works after failover.
