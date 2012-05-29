@@ -94,6 +94,11 @@ public class ServerConfiguration extends ConfigurationPlugin
     public static final String CONNECTOR_AMQP09ENABLED = "connector.amqp09enabled";
     public static final String CONNECTOR_AMQP08ENABLED = "connector.amqp08enabled";
     public static final String CONNECTOR_AMQP_SUPPORTED_REPLY = "connector.amqpDefaultSupportedProtocolReply";
+    public static final String CONNECTOR_INCLUDE_10 = "connector.include10";
+    public static final String CONNECTOR_INCLUDE_010 = "connector.include010";
+    public static final String CONNECTOR_INCLUDE_091 = "connector.include091";
+    public static final String CONNECTOR_INCLUDE_09 = "connector.include09";
+    public static final String CONNECTOR_INCLUDE_08 = "connector.include08";
 
     {
         envVarMap.put("QPID_PORT", "connector.port");
@@ -712,6 +717,31 @@ public class ServerConfiguration extends ConfigurationPlugin
     public List getPortExclude08()
     {
         return getListValue("connector.non08port");
+    }
+
+    public List getPortInclude08()
+    {
+        return getListValue(CONNECTOR_INCLUDE_08);
+    }
+
+    public List getPortInclude09()
+    {
+        return getListValue(CONNECTOR_INCLUDE_09);
+    }
+
+    public List getPortInclude091()
+    {
+        return getListValue(CONNECTOR_INCLUDE_091);
+    }
+
+    public List getPortInclude010()
+    {
+        return getListValue(CONNECTOR_INCLUDE_010);
+    }
+
+    public List getPortInclude10()
+    {
+        return getListValue(CONNECTOR_INCLUDE_10);
     }
 
     public String getBind()
