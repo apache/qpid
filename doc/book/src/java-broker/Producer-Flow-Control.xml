@@ -26,9 +26,10 @@
     <section role="h2" id="QpidProducerFlowControlGeneralInformation">
         <title>General Information</title>
         <para>
-            The Qpid 0.6 release introduces a simplistic producer-side flow control mechanism
+            The Qpid 0.6 release introduced a simplistic producer-side flow control mechanism
             into the Java Messaging Broker, causing producers to be flow-controlled when they
-            attempt to send messages to an overfull queue or overfull message store on a virtual host.
+            attempt to send messages to an overfull queue. Qpid 0.18 introduced a similar
+            mechanism triggered by an overfull persistent message store on a virtual host.
         </para>
     </section>
     <section role="h2" id="QpidProducerFlowControlServerConfiguration">
@@ -118,10 +119,10 @@ MESSAGE [con:2(guest@anonymous(713889609)/test)/ch:1] [con:2(guest@anonymous(713
                 Two limits can be configured:
             </para>
             <para>
-                overflow limit - the maximum space on disk (in bytes) which can be used by store.
+                overfull limit - the maximum space on disk (in bytes) which can be used by store.
             </para>
             <para>
-                underflow limit - when the space on disk drops below this limit, producers are allowed to resume publishing.
+                underfull limit - when the space on disk drops below this limit, producers are allowed to resume publishing.
             </para>
             <para>
                 An example of quota configuration for the BDB message store is provided below.
@@ -173,16 +174,12 @@ MESSAGE [con:2(guest@anonymous(713889609)/test)/ch:1] [con:2(guest@anonymous(713
             While blocking the client will periodically log the fact that it is blocked waiting on flow control.
         </para>
         <programlisting>
-WARN   AMQSession - Broker enforced flow control has been enforced
-WARN   AMQSession - Message send delayed by 5s due to broker enforced flow control
-WARN   AMQSession - Message send delayed by 10s due to broker enforced flow control
+WARN   Message send delayed by 5s due to broker enforced flow control
+WARN   Message send delayed by 10s due to broker enforced flow control
         </programlisting>
         <para>
             After a set period the send will timeout and throw a JMSException to the calling code.
         </para>
-        <programlisting>
-ERROR AMQSession - Message send failed due to timeout waiting on broker enforced flow control
-        </programlisting>
         <para>
             If such a JMSException is thrown, the message will not be sent to the broker,
             however the underlying Session may still be active - in particular if the
@@ -196,13 +193,11 @@ ERROR AMQSession - Message send failed due to timeout waiting on broker enforced
         </para>
         <para>
             The amount of time (in milliseconds) to wait before timing out
-            is controlled by the property qpid.flow_control_wait_failure
-            (the default is 120000 - which is two minutes).
+            is controlled by the property qpid.flow_control_wait_failure.
         </para>
         <para>
             The frequency at which the log message informing that the producer is flow
             controlled is sent is controlled by the system property qpid.flow_control_wait_notify_period.
-            The default value is 5000 milliseconds (i.e. 5 seconds).
         </para>
         <para>
             Adding the following to the command line to start the client would result in a timeout of one minute,
@@ -213,32 +208,9 @@ ERROR AMQSession - Message send failed due to timeout waiting on broker enforced
 -Dqpid.flow_control_wait_notify_period=10000
         </programlisting>
         <section role="h3">
-            <title>Using failover with flow control</title>
-            <para>
-                If the flow control feature is used with failover functionality, and connection is lost when producer
-                is blocked by the flow control, failover is not started immediately. Failover only proceeds after
-                the flow control wait interval is expired.
-            </para>
-            <para>
-                However, by default, failover has a shorter timeout for re-establishing the connection than the flow control timeout
-                (one minute and two minutes respectively), therefore a long-running flow control situation could cause failover to fail.
-            </para>
-            <para>
-                In order to avoid this from happening the failover timeout can be set to the value bigger
-                than flow control wait interval. To set the failover timeout the JVM setting
-                qpid.failover_method_timeout can be used as follows
-            </para>
-            <programlisting>
--Dqpid.failover_method_timeout=180000
-            </programlisting>
-            <para>
-                Setting the flow wait interval to a value lower than the failover timeout would allow failover to restore connectivity.
-            </para>
-        </section> <!-- Using failover -->
-        <section role="h3">
             <title>Older Clients</title>
             <para>
-                This feature was added for the 0.6 releaase of the Java Broker. If an older client connects to the broker then the flow control commands will be ignored and they will not be blocked. So to fully benefit from this new feature both Client and Broker need to be at least version 0.6.
+                The flow control feature was first added to the Java broker/client in the 0.6 release. If an older client connects to the broker then the flow control commands will be ignored by it and it will not be blocked. So to fully benefit from this feature both Client and Broker need to be at least version 0.6.
             </para>
         </section>
     </section> <!-- Client impact and configuration -->
