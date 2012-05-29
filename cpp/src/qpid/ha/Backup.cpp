@@ -57,6 +57,8 @@ bool Backup::isSelf(const Address& a) const {
 }
 
 Url Backup::linkUrl(const Url& brokers) const {
+    return brokers;
+    /** FIXME aconway 2012-05-29: Problems with self-test, false positives.
     // linkUrl contains only the addresses of *other* brokers, not this one.
     Url url;
     for (Url::const_iterator i = brokers.begin(); i != brokers.end(); ++i)
@@ -64,6 +66,7 @@ Url Backup::linkUrl(const Url& brokers) const {
     if (url.empty()) throw Url::Invalid("HA Backup failover URL is empty");
     QPID_LOG(debug, logPrefix << "Backup failover URL (excluding self): " << url);
     return url;
+    */
 }
 
 void Backup::initialize(const Url& brokers) {
