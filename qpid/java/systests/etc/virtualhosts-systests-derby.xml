@@ -24,6 +24,6 @@
     <override>
         <xml fileName="${QPID_HOME}/${test.virtualhosts}" optional="true"/>
         <xml fileName="${QPID_HOME}/etc/virtualhosts-systests-derby-settings.xml"/>
-        <xml fileName="${QPID_HOME}/etc/virtualhosts.xml"/>
+        <xml fileName="${QPID_HOME}/etc/virtualhosts-systests-settings.xml"/>
     </override>
 </configuration>
