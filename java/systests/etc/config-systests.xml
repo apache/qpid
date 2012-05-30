@@ -24,6 +24,5 @@
     <override>
         <xml fileName="${QPID_HOME}/${test.config}" optional="true"/>
         <xml fileName="${QPID_HOME}/etc/config-systests-settings.xml"/>
-        <xml fileName="${QPID_HOME}/etc/config.xml"/>                
     </override>
 </configuration>
