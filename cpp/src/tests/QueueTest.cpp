@@ -1425,40 +1425,40 @@ QPID_AUTO_TEST_CASE(testSetPositionFifo) {
     // Verify the front of the queue
     TestConsumer::shared_ptr c(new TestConsumer("test", false)); // Don't acquire
     BOOST_CHECK(q->dispatch(c));
-    BOOST_CHECK_EQUAL(1, c->last.position); // Numbered from 1
+    BOOST_CHECK_EQUAL(1u, c->last.position); // Numbered from 1
     BOOST_CHECK_EQUAL("1", getContent(c->last.payload));
     // Verify the back of the queue
     QueuedMessage qm;
-    BOOST_CHECK_EQUAL(10, q->getPosition());
+    BOOST_CHECK_EQUAL(10u, q->getPosition());
     BOOST_CHECK(q->find(q->getPosition(), qm)); // Back of the queue
     BOOST_CHECK_EQUAL("10", getContent(qm.payload));
-    BOOST_CHECK_EQUAL(10, q->getMessageCount());
+    BOOST_CHECK_EQUAL(10u, q->getMessageCount());
 
     // Using setPosition to introduce a gap in sequence numbers.
     q->setPosition(15);
-    BOOST_CHECK_EQUAL(10, q->getMessageCount());
-    BOOST_CHECK_EQUAL(15, q->getPosition());
+    BOOST_CHECK_EQUAL(10u, q->getMessageCount());
+    BOOST_CHECK_EQUAL(15u, q->getPosition());
     BOOST_CHECK(q->find(10, qm)); // Back of the queue
     BOOST_CHECK_EQUAL("10", getContent(qm.payload));
     q->deliver(contentMessage("16"));
     c->setPosition(9);
     BOOST_CHECK(q->dispatch(c));
-    BOOST_CHECK_EQUAL(10, c->last.position);
+    BOOST_CHECK_EQUAL(10u, c->last.position);
     BOOST_CHECK_EQUAL("10", getContent(c->last.payload));
     BOOST_CHECK(q->dispatch(c));
-    BOOST_CHECK_EQUAL(16, c->last.position);
+    BOOST_CHECK_EQUAL(16u, c->last.position);
     BOOST_CHECK_EQUAL("16", getContent(c->last.payload));
 
     // Using setPosition to trunkcate the queue
     q->setPosition(5);
-    BOOST_CHECK_EQUAL(5, q->getMessageCount());
+    BOOST_CHECK_EQUAL(5u, q->getMessageCount());
     q->deliver(contentMessage("6a"));
     c->setPosition(4);
     BOOST_CHECK(q->dispatch(c));
-    BOOST_CHECK_EQUAL(5, c->last.position);
+    BOOST_CHECK_EQUAL(5u, c->last.position);
     BOOST_CHECK_EQUAL("5", getContent(c->last.payload));
     BOOST_CHECK(q->dispatch(c));
-    BOOST_CHECK_EQUAL(6, c->last.position);
+    BOOST_CHECK_EQUAL(6u, c->last.position);
     BOOST_CHECK_EQUAL("6a", getContent(c->last.payload));
     BOOST_CHECK(!q->dispatch(c)); // No more messages.
 }
@@ -1476,22 +1476,22 @@ QPID_AUTO_TEST_CASE(testSetPositionLvq) {
         m->insertCustomProperty(key, values[i]);
         q->deliver(m);
     }
-    BOOST_CHECK_EQUAL(3, q->getMessageCount());
+    BOOST_CHECK_EQUAL(3u, q->getMessageCount());
     // Verify the front of the queue
     TestConsumer::shared_ptr c(new TestConsumer("test", false)); // Don't acquire
     BOOST_CHECK(q->dispatch(c));
-    BOOST_CHECK_EQUAL(4, c->last.position); // Numbered from 1
+    BOOST_CHECK_EQUAL(4u, c->last.position); // Numbered from 1
     BOOST_CHECK_EQUAL("4", getContent(c->last.payload));
     // Verify the back of the queue
     QueuedMessage qm;
-    BOOST_CHECK_EQUAL(6, q->getPosition());
+    BOOST_CHECK_EQUAL(6u, q->getPosition());
     BOOST_CHECK(q->find(q->getPosition(), qm)); // Back of the queue
     BOOST_CHECK_EQUAL("6", getContent(qm.payload));
 
     q->setPosition(5);
     c->setPosition(4);
     BOOST_CHECK(q->dispatch(c));
-    BOOST_CHECK_EQUAL(5, c->last.position); // Numbered from 1
+    BOOST_CHECK_EQUAL(5u, c->last.position); // Numbered from 1
     BOOST_CHECK(!q->dispatch(c));
 }
 
@@ -1513,11 +1513,11 @@ QPID_AUTO_TEST_CASE(testSetPositionPriority) {
     q->setPosition(3);
     TestConsumer::shared_ptr c(new TestConsumer("test", false)); // Browse in FIFO order
     BOOST_CHECK(q->dispatch(c));
-    BOOST_CHECK_EQUAL(1, c->last.position);
+    BOOST_CHECK_EQUAL(1u, c->last.position);
     BOOST_CHECK(q->dispatch(c));
-    BOOST_CHECK_EQUAL(2, c->last.position);
+    BOOST_CHECK_EQUAL(2u, c->last.position);
     BOOST_CHECK(q->dispatch(c));
-    BOOST_CHECK_EQUAL(3, c->last.position);
+    BOOST_CHECK_EQUAL(3u, c->last.position);
     BOOST_CHECK(!q->dispatch(c));
 
     intrusive_ptr<Message> m = contentMessage("4a");
@@ -1525,22 +1525,22 @@ QPID_AUTO_TEST_CASE(testSetPositionPriority) {
         ->setPriority(4);
     q->deliver(m);
     BOOST_CHECK(q->dispatch(c));
-    BOOST_CHECK_EQUAL(4, c->last.position);
+    BOOST_CHECK_EQUAL(4u, c->last.position);
     BOOST_CHECK_EQUAL("4a", getContent(c->last.payload));
 
     // But consumers see priority order
     c.reset(new TestConsumer("test", true));
     BOOST_CHECK(q->dispatch(c));
-    BOOST_CHECK_EQUAL(4, c->last.position);
+    BOOST_CHECK_EQUAL(4u, c->last.position);
     BOOST_CHECK_EQUAL("4a", getContent(c->last.payload));
     BOOST_CHECK(q->dispatch(c));
-    BOOST_CHECK_EQUAL(3, c->last.position);
+    BOOST_CHECK_EQUAL(3u, c->last.position);
     BOOST_CHECK_EQUAL("3", getContent(c->last.payload));
     BOOST_CHECK(q->dispatch(c));
-    BOOST_CHECK_EQUAL(2, c->last.position);
+    BOOST_CHECK_EQUAL(2u, c->last.position);
     BOOST_CHECK_EQUAL("2", getContent(c->last.payload));
     BOOST_CHECK(q->dispatch(c));
-    BOOST_CHECK_EQUAL(1, c->last.position);
+    BOOST_CHECK_EQUAL(1u, c->last.position);
     BOOST_CHECK_EQUAL("1", getContent(c->last.payload));
 }
 
