@@ -32,7 +32,9 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -59,6 +61,18 @@ public class AMQStateManager implements AMQMethodListener
         _protocolSession = protocolSession;
         _currentState = AMQState.CONNECTION_NOT_STARTED;
 
+    }
+
+    /**
+     * Get the ApplicationRegistry associated with this AMQStateManager
+     *
+     * returns the application registry associated with the VirtualHostRegistry of the AMQStateManager
+     *
+     * @return the ApplicationRegistry
+     */
+    public IApplicationRegistry getApplicationRegistry()
+    {
+        return _virtualHostRegistry.getApplicationRegistry();
     }
 
     public AMQState getCurrentState()
@@ -141,5 +155,15 @@ public class AMQStateManager implements AMQMethodListener
     {
         SecurityManager.setThreadSubject(_protocolSession.getAuthorizedSubject());
         return _protocolSession;
+    }
+
+    /**
+     * Get the AuthenticationManager associated with the ProtocolSession of the AMQStateManager
+     *
+     * @return the AuthenticationManager
+     */
+    public AuthenticationManager getAuthenticationManager()
+    {
+        return getApplicationRegistry().getAuthenticationManager(getProtocolSession().getLocalAddress());
     }
 }

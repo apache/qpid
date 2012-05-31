@@ -24,13 +24,6 @@
 
 
     <!-- JFreeChart and JFreeCommon -->
-
-    <property name="jfree.lib.dir" value="${project.root}/lib/jfree" />
-    <property name="jfreechart.version" value="1.0.13" />
-    <property name="jfreecommon.version" value="1.0.16" />
-    <property name="jfreechart.jar.file" value="${jfree.lib.dir}/jfreechart-${jfreechart.version}.jar" />
-    <property name="jfreecommon.jar.file" value="${jfree.lib.dir}/jcommon-${jfreecommon.version}.jar" />
-
     <condition property="download.jfree.jars">
       <or>
         <istrue value="${download-jfree}"/>
@@ -40,12 +33,6 @@
     </condition>
 
     <!-- CSVJDBC -->
-
-    <property name="csvjdbc.lib.dir" value="${project.root}/lib/csvjdbc" />
-    <property name="csvjdbc.version" value="1.0.8" />
-
-    <property name="csvjdbc.jar.file" value="${csvjdbc.lib.dir}/csvjdbc-${csvjdbc.version}.jar" />
-
     <condition property="download.csvjdbc.jar">
       <or>
         <istrue value="${download-csvjdbc}"/>
@@ -58,8 +45,8 @@
     <target name="check-jfree-jars">
         <condition property="jfree.available">
             <and>
-                <available file="${jfreechart.jar.file}"/>
-                <available file="${jfreecommon.jar.file}"/>
+                <available file="${project.root}/${jfreechart.jar}"/>
+                <available file="${project.root}/${jcommon.jar}"/>
             </and>
         </condition>
     </target>
@@ -94,7 +81,7 @@ http://www.gnu.org/licenses/lgpl.html
 
     <target name="check-csvjdbc-jars">
         <condition property="csvjdbc.available">
-            <available file="${csvjdbc.jar.file}"/>
+            <available file="${project.root}/${csvjdbc.jar}"/>
         </condition>
     </target>
 

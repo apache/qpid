@@ -61,7 +61,7 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
 
-        AuthenticationManager authMgr = ApplicationRegistry.getInstance().getAuthenticationManager();
+        AuthenticationManager authMgr = stateManager.getAuthenticationManager();
 
         SaslServer ss = session.getSaslServer();
         if (ss == null)

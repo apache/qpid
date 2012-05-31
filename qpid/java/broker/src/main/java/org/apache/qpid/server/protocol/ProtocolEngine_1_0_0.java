@@ -143,7 +143,7 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
 
         Container container = new Container(_appRegistry.getBrokerId().toString());
 
-        _conn = new ConnectionEndpoint(container,asCallbackHandlerSource(_appRegistry.getAuthenticationManager()));
+        _conn = new ConnectionEndpoint(container,asCallbackHandlerSource(_appRegistry.getAuthenticationManager(getLocalAddress())));
         _conn.setConnectionEventListener(new Connection_1_0(_appRegistry));
         _conn.setFrameOutputHandler(this);
         _conn.setRemoteAddress(_network.getRemoteAddress());
