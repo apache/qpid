@@ -33,7 +33,6 @@
     <property name="qmf.output.dir" value="${module.precompiled}/org/apache/qpid/qmf/schema"/>
     <property name="qmf.output.file" value="BrokerSchema.java"/>
 
-
     <target name="precompile" depends="gen_logging,gen_qmf"/>
 
   <target name="check_qmf_deps">

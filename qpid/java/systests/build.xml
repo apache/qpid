@@ -19,7 +19,6 @@ nn - or more contributor license agreements.  See the NOTICE file
  -
  -->
 <project name="System Tests" default="build">
-
     <condition property="systests.optional.depends" value="bdbstore" else="">
         <and>
             <contains string="${modules.opt}" substring="bdbstore"/>

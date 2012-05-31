@@ -26,8 +26,10 @@
       <artifact pattern="${ivy.localfs.root}/${ivy.localfs.pattern}" />
     </filesystem>
 
-    <url name="m2repo" m2compatible="true">
-      <artifact pattern="${ivy.m2repo.url}/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
+    <ibiblio name="m2repo" m2compatible="true" root="${ivy.m2repo.url}"/>
+
+    <url name="csvjdbc" m2compatible="true">
+      <artifact pattern="http://csvjdbc.sourceforge.net/maven2/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
     </url>
 
     <url name="oracle" m2compatible="true">
@@ -38,6 +40,7 @@
 
     <chain name="chain" returnFirst="true">
       <resolver ref="m2repo"/>
+      <resolver ref="csvjdbc"/>
       <resolver ref="oracle"/>
       <resolver ref="public"/>
     </chain>

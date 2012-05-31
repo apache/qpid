@@ -69,46 +69,24 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
     public Context getInitialContext(Hashtable environment) throws NamingException
     {
         Map data = new ConcurrentHashMap();
-
+        File file = null;
+        BufferedInputStream inputStream = null;
         try
         {
 
-            String file = null;
-            
-            if (environment.containsKey(Context.PROVIDER_URL))
-            {
-                file = (String) environment.get(Context.PROVIDER_URL);
-            }
-            else
-            {
-                file = System.getProperty(Context.PROVIDER_URL);
-            }
+            String fileName = (environment.containsKey(Context.PROVIDER_URL))
+                    ? (String)environment.get(Context.PROVIDER_URL) : System.getProperty(Context.PROVIDER_URL);
 
-            // Load the properties specified                
-            if (file != null)
-            {
-                _logger.info("Loading Properties from:" + file);
-                BufferedInputStream inputStream = null;
+            _logger.info("Attempting to load " + fileName);
 
-                if(file.contains("file:"))
-                {
-                    inputStream = new BufferedInputStream(new FileInputStream(new File(new URI(file))));
-                }
-                else
-                {
-                    inputStream = new BufferedInputStream(new FileInputStream(file));                    
-                }
-                
+
+            if (fileName != null)
+            {
+
+                inputStream = new BufferedInputStream(new FileInputStream((fileName.contains("file:"))
+                                                     ? new File(new URI(fileName)) : new File(fileName)));
                 Properties p = new Properties();
-                
-                try
-                {
-                    p.load(inputStream);
-                }
-                finally
-                {
-                    inputStream.close();
-                }
+                p.load(inputStream);
 
                 Strings.Resolver resolver = new Strings.ChainedResolver
                     (Strings.SYSTEM_RESOLVER, new Strings.PropertiesResolver(p));
@@ -134,12 +112,23 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
         catch (IOException ioe)
         {
             _logger.warn("Unable to load property file specified in Provider_URL:" + environment.get(Context.PROVIDER_URL) +"\n" +
-                         "Due to:"+ioe.getMessage());
+                         "Due to:" + ioe.getMessage());
         }
         catch(URISyntaxException uoe)
         {
             _logger.warn("Unable to load property file specified in Provider_URL:" + environment.get(Context.PROVIDER_URL) +"\n" +
-                            "Due to:"+uoe.getMessage());            
+                            "Due to:" + uoe.getMessage());
+        }
+        finally
+        {
+            try
+            {
+                if(inputStream != null)
+                {
+                    inputStream.close();
+                }
+            }
+            catch(Exception ignore){}
         }
 
         createConnectionFactories(data, environment);

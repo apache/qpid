@@ -26,12 +26,17 @@
   <findSubProjects name="client-plugins" dir="client-plugins"/>
   <findSubProjects name="management" dir="management" excludes="common,example"/>
 
+  <property name="optional" value="false"/>
+  <property name="modules.opt.default" value="bdbstore perftests/visualisation-jfc"/>
+  <condition property="modules.opt" value="" else="${modules.opt.default}">
+    <isfalse value="${optional}"/>
+  </condition>
+
   <property name="modules.core"       value="common management/common amqp-1-0-common broker client amqp-1-0-client amqp-1-0-client-jms tools"/>
   <property name="modules.examples"   value="client/example management/example"/>
   <property name="modules.tests"      value="systests perftests"/>
   <property name="modules.management" value="${management}"/>
   <property name="modules.plugin"     value="${broker-plugins} ${client-plugins}"/>
-  <property name="modules.opt"        value=""/>
   <property name="modules.jca"        value="jca"/>
   <property name="modules"            value="${modules.core} ${modules.examples}
    ${modules.management} ${modules.jca} ${modules.tests} ${modules.plugin} ${modules.opt}"/>
@@ -270,7 +275,7 @@
     </jython>
   </target>
 
-  <target name="findbugs" depends="findbugs-init,build">
+  <target name="findbugs" depends="build,findbugs-init">
 
     <mkdir dir="${build.findbugs}"/>
 
@@ -280,13 +285,15 @@
               stylesheet="fancy-hist.xsl"
               jvmargs="-Xmx512m"
               projectName="Qpid">
-      <auxAnalyzePath>
-        <fileset dir="${build.lib}" includes="qpid*.jar" excludes="*test*.jar *junit*.jar *example*.jar qpid-all.jar"/>
-      </auxAnalyzePath>
+      <!-- The classes for analysis -->
+      <fileset dir="${build.lib}" includes="qpid*.jar" excludes="*test*.jar *-sources*.jar *example*.jar qpid-all.jar"/>
+
+      <!--Additional classes, not for analysis -->
       <auxClassPath>
-        <fileset dir="${build.lib}" includes="**/*.jar" />
-        <fileset dir="${basedir}/lib" includes="org.eclipse*.jar com.ibm.*.jar"/>
+        <fileset dir="${basedir}/lib" includes="**/*.jar"/>
       </auxClassPath>
+
+      <!-- Source, used for improved reporting -->
       <sourcePath>
         <fileset dir="${basedir}" includes="**/src/**/org/.." />
       </sourcePath>
