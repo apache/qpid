@@ -18,15 +18,14 @@
  */
 
 %{
-#include "jmap.h"
-#include <qpid/sys/IntegerTypes.h>
+#include "VaraintMapWrapper.h"
 %}
 
 %module cqpid
 %include "std_string.i"
 %include "../../swig_java_typemaps.i"
 
-%include "jmap.h"
+%include "VaraintMapWrapper.h"
 
 %include "../qpid.i"
 

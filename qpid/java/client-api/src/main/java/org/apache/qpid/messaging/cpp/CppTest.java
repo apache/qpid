@@ -9,7 +9,6 @@ import org.apache.qpid.messaging.Sender;
 
 public class CppTest
 {
-
     public static void main(String[] args)
     {
         System.out.println(System.getProperty("sys.path"));

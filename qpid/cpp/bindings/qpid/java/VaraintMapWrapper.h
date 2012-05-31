@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -24,12 +24,21 @@
 
 #include <string>
 
-class jmap {
+/**
+ * Only primitives types are supported as values.
+ */
+class VaraintMapWrapper {
 
   public:
-    jmap(JNIEnv*& jniEnv, qpid::types::Variant::Map*& map); 
+    VaraintMapWrapper();
+    VaraintMapWrapper(JNIEnv*& jniEnv, qpid::types::Variant::Map*& map);
     jobject get(const std::string key) const;
-    void put (const jstring key, jobject object); 
+    jboolean containsKey (const jstring key) const;
+    jboolean containsValue (const jobject value) const;
+    jboolean isEmpty() const;
+    jobjectArray keys() const;
+    jobjectArray values() const;
+    jint size() const;
 
   private:
     qpid::types::Variant::Map varMap;
