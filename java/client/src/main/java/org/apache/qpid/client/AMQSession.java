@@ -2371,7 +2371,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 throw new Error("Error creating Dispatcher thread",e);
             }
 
-            String dispatcherThreadName = "Dispatcher-Channel-" + _channelId + "-Conn-" + _connection.getConnectionNumber();
+            String dispatcherThreadName = "Dispatcher-" + _channelId + "-Conn-" + _connection.getConnectionNumber();
 
             _dispatcherThread.setName(dispatcherThreadName);
             _dispatcherThread.setDaemon(DEAMON_DISPATCHER_THREAD);
