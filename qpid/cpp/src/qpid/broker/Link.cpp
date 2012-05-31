@@ -377,6 +377,8 @@ void Link::closed(int, std::string text)
 void Link::destroy ()
 {
     Bridges toDelete;
+
+    timerTask->cancel();    // call prior to locking so maintenance visit can finish
     {
         Mutex::ScopedLock mutex(lock);
 
@@ -395,9 +397,8 @@ void Link::destroy ()
         for (Bridges::iterator i = created.begin(); i != created.end(); i++)
             toDelete.push_back(*i);
         created.clear();
-
-        timerTask->cancel();
     }
+
     // Now delete all bridges on this link (don't hold the lock for this).
     for (Bridges::iterator i = toDelete.begin(); i != toDelete.end(); i++)
         (*i)->close();
