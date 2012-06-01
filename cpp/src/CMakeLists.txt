@@ -1486,9 +1486,7 @@ set (jrnl2_SOURCES
 
 # AsyncStore source files
 set (asyncStore_SOURCES
-    qpid/asyncStore/AsyncOpCounter.cpp
     qpid/asyncStore/AsyncOperation.cpp
-    qpid/asyncStore/AsyncStoreHandleImpl.cpp
 	qpid/asyncStore/AsyncStoreImpl.cpp
 	qpid/asyncStore/AsyncStoreOptions.cpp
 	qpid/asyncStore/ConfigHandleImpl.cpp
