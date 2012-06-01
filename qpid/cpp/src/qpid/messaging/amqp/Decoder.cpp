@@ -20,142 +20,27 @@
  */
 #include "Decoder.h"
 #include "qpid/log/Statement.h"
+#include "qpid/messaging/exceptions.h"
 #include "qpid/messaging/MessageImpl.h"
 #include <string.h>
 
 namespace qpid {
 namespace messaging {
 namespace amqp {
-namespace {
-void on_null(void *ctx)
-{
-    reinterpret_cast<Decoder*>(ctx)->onNull();
-}
-void on_bool(void *ctx, bool v)
-{
-    reinterpret_cast<Decoder*>(ctx)->onBool(v);
-}
-void on_ubyte(void *ctx, uint8_t v)
-{
-    reinterpret_cast<Decoder*>(ctx)->onUbyte(v);
-}
-void on_byte(void *ctx, int8_t v)
-{
-    reinterpret_cast<Decoder*>(ctx)->onByte(v);
-}
-void on_ushort(void *ctx, uint16_t v)
-{
-    reinterpret_cast<Decoder*>(ctx)->onUshort(v);
-}
-void on_short(void *ctx, int16_t v)
-{
-    reinterpret_cast<Decoder*>(ctx)->onShort(v);
-}
-void on_uint(void *ctx, uint32_t v)
-{
-    reinterpret_cast<Decoder*>(ctx)->onUint(v);
-}
-void on_int(void *ctx, int32_t v)
-{
-    reinterpret_cast<Decoder*>(ctx)->onInt(v);
-}
-void on_float(void *ctx, float v)
-{
-    reinterpret_cast<Decoder*>(ctx)->onFloat(v);
-}
-void on_ulong(void *ctx, uint64_t v)
-{
-    reinterpret_cast<Decoder*>(ctx)->onUlong(v);
-}
-void on_long(void *ctx, int64_t v)
-{
-    reinterpret_cast<Decoder*>(ctx)->onLong(v);
-}
-void on_double(void *ctx, double v)
-{
-    reinterpret_cast<Decoder*>(ctx)->onDouble(v);
-}
-void on_binary(void *ctx, size_t size, char *bytes)
-{
-    reinterpret_cast<Decoder*>(ctx)->onBinary(size, bytes);
-}
-void on_utf8(void *ctx, size_t size, char *utf8)
-{
-    reinterpret_cast<Decoder*>(ctx)->onUtf8(size, utf8);
-}
-void on_symbol(void *ctx, size_t size, char *str)
-{
-    reinterpret_cast<Decoder*>(ctx)->onSymbol(size, str);
-}
-void start_descriptor(void *ctx)
-{
-    reinterpret_cast<Decoder*>(ctx)->startDescriptor();
-}
-void stop_descriptor(void *ctx)
-{
-    reinterpret_cast<Decoder*>(ctx)->stopDescriptor();
-}
-void start_array(void *ctx, size_t count, uint8_t code)
-{
-    reinterpret_cast<Decoder*>(ctx)->startArray(count, code);
-}
-void stop_array(void *ctx, size_t count, uint8_t code)
-{
-    reinterpret_cast<Decoder*>(ctx)->stopArray(count, code);
-}
-void start_list(void *ctx, size_t count)
-{
-    reinterpret_cast<Decoder*>(ctx)->startList(count);
-}
-void stop_list(void *ctx, size_t count)
-{
-    reinterpret_cast<Decoder*>(ctx)->stopList(count);
-}
-void start_map(void *ctx, size_t count)
-{
-    reinterpret_cast<Decoder*>(ctx)->startMap(count);
-}
-void stop_map(void *ctx, size_t count)
-{
-    reinterpret_cast<Decoder*>(ctx)->stopMap(count);
-}
-}
 
 Decoder::~Decoder() {}
 
 ssize_t Decoder::decode(const char* data, size_t size)
 {
-    pn_data_callbacks_t callbacks;
-    callbacks.on_null = &on_null;
-    callbacks.on_bool = &on_bool;
-    callbacks.on_ubyte = &on_ubyte;
-    callbacks.on_byte = &on_byte;
-    callbacks.on_ushort = &on_ushort;
-    callbacks.on_short = &on_short;
-    callbacks.on_uint = &on_uint;
-    callbacks.on_int = &on_int;
-    callbacks.on_float = &on_float;
-    callbacks.on_ulong = &on_ulong;
-    callbacks.on_long = &on_long;
-    callbacks.on_double = &on_double;
-    callbacks.on_binary = &on_binary;
-    callbacks.on_utf8 = &on_utf8;
-    callbacks.on_symbol = &on_symbol;
-    callbacks.start_descriptor = &start_descriptor;
-    callbacks.stop_descriptor = &stop_descriptor;
-    callbacks.start_array = &start_array;
-    callbacks.stop_array = &stop_array;
-    callbacks.start_list = &start_list;
-    callbacks.stop_list = &stop_list;
-    callbacks.start_map = &start_map;
-    callbacks.stop_map = &stop_map;
-    size_t total = 0;
-    while (total < size) {
-        ssize_t result = pn_read_datum(data + total, size - total, &callbacks, this);
-        if (result < 0) return result;
-        else total += result;
+    pn_bytes_t input = {size, const_cast<char*>(data)};
+    const size_t maxDatums(50);/*what is a reasonable number here*/
+    pn_atom_t datums[maxDatums];
+    pn_atoms_t output = {maxDatums, datums};
+    while (input.size > 0) {
+        if (pn_decode_one(&input, &output)) throw qpid::messaging::MessagingException("Decode failure!");
+        input.start = const_cast<char*>(data + (size - input.size));
     }
-    return total;
+    return size - input.size;
 }
 
 void DecoderBase::onNull() { QPID_LOG(debug, this << " onNull()"); }

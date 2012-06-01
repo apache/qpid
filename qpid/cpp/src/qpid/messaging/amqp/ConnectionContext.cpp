@@ -141,12 +141,13 @@ void ConnectionContext::open()
 void ConnectionContext::run()
 {
     while (active.get()) {
-        pn_driver_wait(driver);
+        pn_driver_wait(driver, 0);
         for (pn_connector_t* c = pn_driver_connector(driver); c; c = pn_driver_connector(driver)) {
             ConnectionContext* context = reinterpret_cast<ConnectionContext*>(pn_connector_context(c));
             qpid::sys::ScopedLock<qpid::sys::Monitor> l(context->lock);
             pn_connector_process(c);
             context->lock.notifyAll();
+            pn_connector_process(c);
         }
     }
 }

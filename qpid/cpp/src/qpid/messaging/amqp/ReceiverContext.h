@@ -49,12 +49,12 @@ class ReceiverContext
     uint32_t getUnsettled();
     void close();
     const std::string& getName() const;
-    const std::wstring& getSource() const;
+    const std::string& getSource() const;
     bool isClosed() const;
   private:
     friend class ConnectionContext;
     const std::string name;
-    const std::wstring source;
+    const std::string source;
     pn_link_t* receiver;
     uint32_t capacity;
 };

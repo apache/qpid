@@ -33,7 +33,7 @@ namespace amqp {
 //TODO: proper conversion to wide string for address
 SenderContext::SenderContext(pn_session_t* session, const std::string& n, const std::string& t)
   : name(n),
-    target(t.begin(), t.end()),
+    target(t),
     sender(pn_sender(session, target.c_str())), capacity(1000) {}
 
 SenderContext::~SenderContext()
@@ -67,7 +67,7 @@ const std::string& SenderContext::getName() const
     return name;
 }
 
-const std::wstring& SenderContext::getTarget() const
+const std::string& SenderContext::getTarget() const
 {
     return target;
 }

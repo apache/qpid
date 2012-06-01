@@ -62,14 +62,14 @@ class SenderContext
     uint32_t getCapacity();
     uint32_t getUnsettled();
     const std::string& getName() const;
-    const std::wstring& getTarget() const;
+    const std::string& getTarget() const;
     Delivery* send(const qpid::messaging::Message& message);
   private:
     friend class ConnectionContext;
     typedef std::deque<Delivery> Deliveries;
 
     const std::string name;
-    const std::wstring target;
+    const std::string target;
     pn_link_t* sender;
     int32_t nextId;
     Deliveries deliveries;
