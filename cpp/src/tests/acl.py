@@ -285,10 +285,38 @@ class ACLTests(TestBase010):
         if (result):
             self.fail(result)
 
+    def test_nested_groups(self):
+        """
+        Test nested groups
+        """
+
+        aclf = self.get_acl_file()
+        aclf.write('group user-consume martin@QPID ted@QPID\n')
+        aclf.write('group group2 kim@QPID user-consume rob@QPID \n')
+        aclf.write('acl allow anonymous all all \n')
+        aclf.write('acl allow group2 create queue \n')
+        aclf.write('acl deny all all')
+        aclf.close()
+
+        result = self.reload_acl()
+        if (result):
+            self.fail(result)
+
+        session = self.get_session('rob','rob')
+        try:
+            session.queue_declare(queue="rob_queue")
+        except qpid.session.SessionException, e:
+            if (403 == e.args[0].error_code):
+                self.fail("ACL should allow queue create request");
+            self.fail("Error during queue create request");
+
+        
+
     def test_user_realm(self):
         """
         Test a user defined without a realm
         Ex. group admin rajith
+        Note: a user name without a realm is interpreted as a group name
         """
         aclf = self.get_acl_file()
         aclf.write('group admin bob\n') # shouldn't be allowed
@@ -297,7 +325,7 @@ class ACLTests(TestBase010):
         aclf.close()
 
         result = self.reload_acl()
-        if (result.find("Username 'bob' must contain a realm",0,len(result)) == -1):
+        if (result.find("not defined yet.",0,len(result)) == -1):
             self.fail(result)
 
     def test_allowed_chars_for_username(self):
