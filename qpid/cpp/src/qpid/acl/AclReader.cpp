@@ -314,7 +314,17 @@ namespace acl {
         if (contFlag) {
             gmCitr citr = groups.find(groupName);
             for (unsigned i = 0; i < toksSize; i++) {
-                if (!isValidUserName(toks[i])) return false;
+                if (isValidGroupName(toks[i])) {
+                    if (toks[i] == groupName) {
+                        QPID_LOG(debug, "ACL: Line: " << lineNumber
+                            << ", Ignoring recursive sub-group \"" << toks[i] << "\".");
+                        continue;
+                    } else if (groups.find(toks[i]) == groups.end()) {
+                        errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
+                            << ", Sub-group \"" << toks[i] << "\" not defined yet.";
+                        return false;
+                    }
+                } else if (!isValidUserName(toks[i])) return false;
                 addName(toks[i], citr->second);
             }
         } else {
@@ -332,7 +342,17 @@ namespace acl {
             gmCitr citr = addGroup(toks[1]);
             if (citr == groups.end()) return false;
             for (unsigned i = 2; i < toksSize; i++) {
-                if (!isValidUserName(toks[i])) return false;
+                if (isValidGroupName(toks[i])) {
+                    if (toks[i] == groupName) {
+                        QPID_LOG(debug, "ACL: Line: " << lineNumber
+                            << ", Ignoring recursive sub-group \"" << toks[i] << "\".");
+                        continue;
+                    } else if (groups.find(toks[i]) == groups.end()) {
+                        errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
+                            << ", Sub-group \"" << toks[i] << "\" not defined yet.";
+                        return false;
+                    }
+                } else if (!isValidUserName(toks[i])) return false;
                 addName(toks[i], citr->second);
             }
         }
@@ -356,7 +376,7 @@ namespace acl {
 
     void AclReader::addName(const std::string& name, nameSetPtr groupNameSet) {
         gmCitr citr = groups.find(name);
-        if (citr != groups.end() && citr->first != name){
+        if (citr != groups.end()) {
             // This is a previously defined group: add all the names in that group to this group
             groupNameSet->insert(citr->second->begin(), citr->second->end());
         } else {
