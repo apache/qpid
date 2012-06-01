@@ -17,15 +17,9 @@
  * under the License.
  */
 
-%{
-#include "VaraintMapWrapper.h"
-%}
-
 %module cqpid
 %include "std_string.i"
 %include "../../swig_java_typemaps.i"
-
-%include "VaraintMapWrapper.h"
 
 %include "../qpid.i"
 

@@ -17,157 +17,57 @@
  * under the License.
  */
 
-/* Module code used by some of the wrapper classes */
-
-%pragma(java) moduleimports=%{
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+/* ======================== C/C+ Header files ======================== */
+%begin %{
+#include "qpid/types/Variant.h"
+#include "jni.h"
 %}
-
-%pragma(java) modulecode=%{
-  /** Checks if the buffer passed is a direct buffer
-   *  This method could also convert a non direct buffer into a direct buffer.
-   *  However the extra copying deafeats the purpose of the binding.
-   */
-  static protected java.nio.ByteBuffer isBufferDirect(java.nio.ByteBuffer buff)
-  {
-        if (buff.isDirect())
-        {
-            return buff;
-        }
-        else
-        {
-          throw new RuntimeException("The ByteBuffer passed is not allocated direct");
-        }
-  }
-
-  /** We don't support setting maps into C++ atm, but adding here to get around swig **/
-  static VaraintMapWrapper getVariantMap(final Map<String,Object> map)
-  {
-      return new VaraintMapWrapper();
-  }
-
-  static Map<String, Object> getJavaMap(final VaraintMapWrapper map)
-  {
-        return new Map<String, Object>()
-        {
-            @Override
-            public int size()
-            {
-                return map.size();
-            }
-
-            @Override
-            public boolean isEmpty()
-            {
-                return map.isEmpty();
-            }
-
-            @Override
-            public boolean containsKey(Object key)
-            {
-                return map.containsKey((String)key);
-            }
-
-            @Override
-            public boolean containsValue(Object value)
-            {
-                return map.containsValue(value);
-            }
-
-            @Override
-            public Object get(Object key)
-            {
-                return map.get((String)key);
-            }
-
-            @Override
-            public Object put(String key, Object value)
-            {
-                throw new UnsupportedOperationException("This map is read-only");
-            }
-
-            @Override
-            public Object remove(Object key)
-            {
-                throw new UnsupportedOperationException("This map is read-only");
-            }
-
-            @Override
-            public void putAll(Map<? extends String, ? extends Object> m)
-            {
-                throw new UnsupportedOperationException("This map is read-only");
-            }
-
-            @Override
-            public void clear()
-            {
-                throw new UnsupportedOperationException("This map is read-only");
-            }
-
-            @Override
-            public Set<String> keySet()
-            {
-                Set<String> keys = new HashSet<String>();
-                for (String key:(String[])map.keys())
-                {
-                    keys.add(key);
-                }
-
-                return keys;
-            }
-
-            @Override
-            public Collection<Object> values()
-            {
-                return Arrays.asList(map.values());
-            }
-
-            @Override
-            public Set<Entry<String, Object>> entrySet()
-            {
-                Set<Entry<String, Object>> entries = new HashSet<Entry<String, Object>>();
-                for (final String key: keySet())
-                {
-                    final Object value = map.get(key);
-                    entries.add(new Entry<String, Object>()
-                    {
-                        @Override
-                        public String getKey()
-                        {
-                            return key;
-                        }
-
-                        @Override
-                        public Object getValue()
-                        {
-                            return value;
-                        }
-
-                        @Override
-                        public Object setValue(Object value)
-                        {
-                            throw new UnsupportedOperationException("This set is read-only");
-                        }
-
-                    });
-                }
-                return entries;
-            }
-
-        };
-  }
-%}
+/* =================================================================== */
 
 
-/* These 3 typemaps tell SWIG what JNI and Java types to use */
+/* ======================== swig file includes ======================= */
+%include "swig_java_cpp_helper.i"
+%include "swig_java_helper.i"
+/* =================================================================== */
+
+
+/*
+ * ========================== Type Maps =============================
+ * Defines the mapping between the various C++ and Java types
+ * ===================================================================
+ */
+
+
+/*
+ * -------------------------------------------------------------------
+ * The "jni" specfies the jni C types to be used in jni code (c++)
+ * The "jtpye" specifies the type mapping between,
+ *     the jni native methods and proxy classes (java code).
+ * The "jstype" specifies the types exposed in the proxy classes.
+ * -------------------------------------------------------------------
+*/
 %typemap(jni) qpid::messaging::Message::BYTE_BUFFER "jobject"
 %typemap(jtype) qpid::messaging::Message::BYTE_BUFFER "java.nio.ByteBuffer"
 %typemap(jstype) qpid::messaging::Message::BYTE_BUFFER "java.nio.ByteBuffer"
 
+%typemap(jni) qpid::types::Variant::Map& "jobject"
+%typemap(jtype) qpid::types::Variant::Map& "VaraintMapWrapper"
+%typemap(jstype) qpid::types::Variant::Map& "java.util.Map"
+
+%typemap(jni) uint8_t "jbyte"
+%typemap(jtype) uint8_t "byte"
+%typemap(jstype) uint8_t "byte"
+
+%typemap(jni) uint32_t "jint"
+%typemap(jtype) uint32_t "int"
+%typemap(jstype) uint32_t "int"
+
+%typemap(jni) uint64_t "jlong"
+%typemap(jtype) uint64_t "long"
+%typemap(jstype) uint64_t "long"
+
+
+/* -- qpid::messaging::Message::BYTE_BUFFER -- */
 %typemap(in) (qpid::messaging::Message::BYTE_BUFFER) {
   void* start = jenv->GetDirectBufferAddress($input);
   long size = (long)(jenv->GetDirectBufferCapacity($input));
@@ -184,9 +84,12 @@ import java.util.Set;
     return $jnicall;
 }
 
-%typemap(jni) qpid::types::Variant::Map& "jobject"
-%typemap(jtype) qpid::types::Variant::Map& "VaraintMapWrapper"
-%typemap(jstype) qpid::types::Variant::Map& "java.util.Map"
+/* -- qpid::types::Variant::Map& -- */
+%typemap(in) (qpid::types::Variant::Map&){
+  $1 = new qpid::types::Variant::Map();
+}
+
+%typemap(javain) (qpid::types::Variant::Map&) "$module.getVariantMap($javainput)"
 
 %typemap(out) qpid::types::Variant::Map& {
   *(VaraintMapWrapper **)&jresult = new VaraintMapWrapper(jenv,$1);
@@ -196,15 +99,12 @@ import java.util.Set;
     return $module.getJavaMap($jnicall);
 }
 
-%typemap(in) (qpid::types::Variant::Map&){
-  $1 = new qpid::types::Variant::Map();
-}
-
-%typemap(javain) (qpid::types::Variant::Map&) "$module.getVariantMap($javainput)"
-
+/* -- qpid::types::uint8_t -- */
 %typemap(in) uint8_t {
     $1 = (uint8_t)$input;
 }
+
+%typemap(javain) uint8_t "$javainput"
 
 %typemap(out) uint8_t {
     $result = (jbyte)$1;
@@ -214,12 +114,12 @@ import java.util.Set;
     return $jnicall;
 }
 
-%typemap(javain) uint8_t "$javainput"
-
-
+/* -- qpid::types::uint32_t -- */
 %typemap(in) uint32_t {
     $1 = (uint32_t)$input;
 }
+
+%typemap(javain) uint32_t "$javainput"
 
 %typemap(out) uint32_t {
     $result = (jint)$1;
@@ -229,11 +129,12 @@ import java.util.Set;
     return $jnicall;
 }
 
-%typemap(javain) uint32_t "$javainput"
-
+/* -- qpid::types::uint64_t -- */
 %typemap(in) uint64_t {
     $1 = (uint64_t)$input;
 }
+
+%typemap(javain) uint64_t "$javainput"
 
 %typemap(out) uint64_t {
     $result = (jlong)$1;
@@ -242,18 +143,3 @@ import java.util.Set;
 %typemap(javaout) uint64_t {
     return $jnicall;
 }
-
-%typemap(javain) uint64_t "$javainput"
-
-%typemap(jni) uint8_t "jbyte"
-%typemap(jtype) uint8_t "byte"
-%typemap(jstype) uint8_t "byte"
-
-%typemap(jni) uint32_t "jint"
-%typemap(jtype) uint32_t "int"
-%typemap(jstype) uint32_t "int"
-
-%typemap(jni) uint64_t "jlong"
-%typemap(jtype) uint64_t "long"
-%typemap(jstype) uint64_t "long"
-
