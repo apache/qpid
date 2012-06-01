@@ -1078,7 +1078,6 @@ set (qpidbroker_SOURCES
      qpid/amqp_0_10/Connection.cpp
      qpid/broker/AsyncStore.cpp
      qpid/broker/Broker.cpp
-     qpid/broker/BrokerAsyncContext.h
      qpid/broker/Credit.cpp
      qpid/broker/Exchange.cpp
      qpid/broker/ExpiryPolicy.cpp
@@ -1487,7 +1486,9 @@ set (jrnl2_SOURCES
 
 # AsyncStore source files
 set (asyncStore_SOURCES
+    qpid/asyncStore/AsyncOpCounter.cpp
     qpid/asyncStore/AsyncOperation.cpp
+    qpid/asyncStore/AsyncStoreHandleImpl.cpp
 	qpid/asyncStore/AsyncStoreImpl.cpp
 	qpid/asyncStore/AsyncStoreOptions.cpp
 	qpid/asyncStore/ConfigHandleImpl.cpp

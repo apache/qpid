@@ -18,50 +18,42 @@
  */
 
 /**
- * \file TransactionAsyncContext.cpp
+ * \file MessageDeque.h
  */
 
-#include "TransactionAsyncContext.h"
+/*
+ * This is a copy of qpid::broker::MessageDeque.h, but using the local
+ * tests::storePerftools::asyncPerf::QueuedMessage class instead of
+ * qpid::broker::QueuedMessage.
+ */
 
-#include <cassert>
+#ifndef tests_storePerftools_asyncPerf_MessageDeque_h_
+#define tests_storePerftools_asyncPerf_MessageDeque_h_
+
+#include "Messages.h"
+
+#include "qpid/sys/Mutex.h"
+
+#include <deque>
 
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-TransactionAsyncContext::TransactionAsyncContext(boost::shared_ptr<MockTransactionContext> tc,
-                                                 const qpid::asyncStore::AsyncOperation::opCode op):
-        m_tc(tc),
-        m_op(op)
+class MessageDeque : public Messages
 {
-    assert(m_tc.get() != 0);
-}
+public:
+    MessageDeque();
+    virtual ~MessageDeque();
+    uint32_t size();
+    bool push(const QueuedMessage& added, QueuedMessage& removed);
+    bool consume(QueuedMessage& msg);
+protected:
+    std::deque<QueuedMessage> m_messages;
+    qpid::sys::Mutex m_msgMutex;
 
-TransactionAsyncContext::~TransactionAsyncContext()
-{}
-
-qpid::asyncStore::AsyncOperation::opCode
-TransactionAsyncContext::getOpCode() const
-{
-    return m_op;
-}
-
-const char*
-TransactionAsyncContext::getOpStr() const
-{
-    return qpid::asyncStore::AsyncOperation::getOpStr(m_op);
-}
-
-boost::shared_ptr<MockTransactionContext>
-TransactionAsyncContext::getTransactionContext() const
-{
-    return m_tc;
-}
-
-void
-TransactionAsyncContext::destroy()
-{
-    delete this;
-}
+};
 
 }}} // namespace tests::storePerftools::asyncPerf
+
+#endif // tests_storePerftools_asyncPerf_MessageDeque_h_

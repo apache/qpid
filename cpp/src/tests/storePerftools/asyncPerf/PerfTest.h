@@ -24,13 +24,11 @@
 #ifndef tests_storePerftools_asyncPerf_PerfTest_h_
 #define tests_storePerftools_asyncPerf_PerfTest_h_
 
-#include "MockPersistableQueue.h"
 #include "TestResult.h"
 
 #include "tests/storePerftools/common/Streamable.h"
 
 #include "qpid/framing/FieldTable.h"
-#include "qpid/sys/Poller.h"
 #include "qpid/sys/Thread.h"
 
 #include <boost/shared_ptr.hpp>
@@ -40,12 +38,18 @@ namespace qpid {
 namespace asyncStore {
 class AsyncStoreImpl;
 class AsyncStoreOptions;
+}
+namespace sys {
+class Poller;
 }}
 
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
+class MockPersistableQueue;
+class MessageConsumer;
+class MessageProducer;
 class TestOptions;
 
 class PerfTest : public tests::storePerftools::common::Streamable
@@ -66,9 +70,12 @@ protected:
     boost::shared_ptr<qpid::sys::Poller> m_poller;
     qpid::sys::Thread m_pollingThread;
     qpid::asyncStore::AsyncStoreImpl* m_store;
-    std::deque<MockPersistableQueue::intrusive_ptr> m_queueList;
+    std::deque<boost::shared_ptr<MockPersistableQueue> > m_queueList;
+    std::deque<boost::shared_ptr<MessageProducer> > m_producers;
+    std::deque<boost::shared_ptr<MessageConsumer> > m_consumers;
 
     void prepareStore();
+    void destroyStore();
     void prepareQueues();
     void destroyQueues();
 

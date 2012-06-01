@@ -40,7 +40,7 @@ public:
     /**
      * \brief Constructor with an option to set an inital value for the counter.
      */
-    AtomicCounter(T initialValue = T(0)) :
+    AtomicCounter(const T initialValue = T(0)) :
             m_cnt(initialValue)
     {}
 
@@ -58,13 +58,90 @@ public:
      * first call to next() will return 1. Upon overflow, the counter will be incremented twice so as to avoid
      * returning the value 0.
      */
-    virtual T next()
+    T
+    next()
     {
-        // --- START OF CRITICAL SECTION ---
         ScopedLock l(m_mutex);
         while (!++m_cnt) ; // Cannot return 0x0 if m_cnt should overflow
         return m_cnt;
-    }   // --- END OF CRITICAL SECTION ---
+    }
+
+    void
+    operator++()
+    {
+        ScopedLock l(m_mutex);
+        ++m_cnt;
+    }
+
+    void
+    operator--()
+    {
+        ScopedLock l(m_mutex);
+        --m_cnt;
+    }
+
+    T
+    get() const
+    {
+        ScopedLock l(m_mutex);
+        return m_cnt;
+    }
+
+    bool
+    operator==(const AtomicCounter<T>& rhs)
+    {
+        ScopedLock l(m_mutex);
+        return m_cnt == rhs.get();
+    }
+
+    bool
+    operator==(const T rhs)
+    {
+        ScopedLock l(m_mutex);
+        return m_cnt == rhs;
+    }
+
+    bool
+    operator!=(const AtomicCounter<T>& rhs)
+    {
+        ScopedLock l(m_mutex);
+        return m_cnt != rhs.get();
+    }
+
+    bool
+    operator!=(const T rhs)
+    {
+        ScopedLock l(m_mutex);
+        return m_cnt != rhs;
+    }
+
+    bool
+    operator>(const AtomicCounter<T>& rhs)
+    {
+        ScopedLock l(m_mutex);
+        return m_cnt > rhs.get();
+    }
+
+    bool
+    operator>(const T rhs)
+    {
+        ScopedLock l(m_mutex);
+        return m_cnt > rhs;
+    }
+
+    bool
+    operator<(const AtomicCounter<T>& rhs)
+    {
+        ScopedLock l(m_mutex);
+        return m_cnt < rhs.get();
+    }
+
+    bool
+    operator<(const T rhs)
+    {
+        ScopedLock l(m_mutex);
+        return m_cnt < rhs;
+    }
 
 protected:
     T m_cnt;                ///< Internal count value

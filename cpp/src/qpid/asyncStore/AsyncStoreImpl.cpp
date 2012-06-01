@@ -246,25 +246,13 @@ AsyncStoreImpl::submitDestroy(qpid::broker::EventHandle& eventHandle,
 
 void
 AsyncStoreImpl::submitDestroy(qpid::broker::EventHandle& eventHandle,
-                             qpid::broker::TxnHandle& txnHandle,
-                             qpid::broker::ResultCallback resultCb,
-                             qpid::broker::BrokerAsyncContext* brokerCtxt)
+                              qpid::broker::TxnHandle& txnHandle,
+                              qpid::broker::ResultCallback resultCb,
+                              qpid::broker::BrokerAsyncContext* brokerCtxt)
 {
     AsyncOperation* op = new AsyncOperation(AsyncOperation::EVENT_DESTROY,
                                             dynamic_cast<qpid::broker::IdHandle*>(&eventHandle),
                                             &txnHandle,
-                                            resultCb,
-                                            brokerCtxt);
-    m_operations.submit(op);
-}
-
-void
-AsyncStoreImpl::submitEnqueue(qpid::broker::EnqueueHandle& enqHandle,
-                              qpid::broker::ResultCallback resultCb,
-                              qpid::broker::BrokerAsyncContext* brokerCtxt)
-{
-    AsyncOperation* op = new AsyncOperation(AsyncOperation::MSG_ENQUEUE,
-                                            dynamic_cast<qpid::broker::IdHandle*>(&enqHandle),
                                             resultCb,
                                             brokerCtxt);
     m_operations.submit(op);
@@ -282,18 +270,8 @@ AsyncStoreImpl::submitEnqueue(qpid::broker::EnqueueHandle& enqHandle,
                                             resultCb,
                                             brokerCtxt);
     m_operations.submit(op);
-}
-
-void
-AsyncStoreImpl::submitDequeue(qpid::broker::EnqueueHandle& enqHandle,
-                              qpid::broker::ResultCallback resultCb,
-                              qpid::broker::BrokerAsyncContext* brokerCtxt)
-{
-    AsyncOperation* op = new AsyncOperation(AsyncOperation::MSG_DEQUEUE,
-                                            dynamic_cast<qpid::broker::IdHandle*>(&enqHandle),
-                                            resultCb,
-                                            brokerCtxt);
-    m_operations.submit(op);
+//delete op;
+//delete brokerCtxt;
 }
 
 void

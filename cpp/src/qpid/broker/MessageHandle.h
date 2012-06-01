@@ -32,7 +32,8 @@
 namespace qpid {
 namespace broker {
 
-class MessageHandle : public qpid::messaging::Handle<qpid::asyncStore::MessageHandleImpl>, public IdHandle
+class MessageHandle : public qpid::messaging::Handle<qpid::asyncStore::MessageHandleImpl>,
+                      public IdHandle
 {
 public:
     MessageHandle(qpid::asyncStore::MessageHandleImpl* p = 0);
@@ -44,8 +45,8 @@ public:
     // <none>
 
 private:
-    typedef qpid::asyncStore::MessageHandleImpl Impl;
-    Impl* impl;
+    //typedef qpid::asyncStore::MessageHandleImpl Impl;
+    //Impl* impl;
     friend class qpid::messaging::PrivateImplRef<MessageHandle>;
 };
 

@@ -18,50 +18,35 @@
  */
 
 /**
- * \file TransactionAsyncContext.cpp
+ * \file Messages.h
  */
 
-#include "TransactionAsyncContext.h"
+/*
+ * This is a copy of qpid::broker::Messages.h, but using the local
+ * tests::storePerftools::asyncPerf::QueuedMessage class instead of
+ * qpid::broker::QueuedMessage.
+ */
 
-#include <cassert>
+#ifndef tests_storePerftools_asyncPerf_Messages_h_
+#define tests_storePerftools_asyncPerf_Messages_h_
+
+#include <stdint.h>
 
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-TransactionAsyncContext::TransactionAsyncContext(boost::shared_ptr<MockTransactionContext> tc,
-                                                 const qpid::asyncStore::AsyncOperation::opCode op):
-        m_tc(tc),
-        m_op(op)
-{
-    assert(m_tc.get() != 0);
-}
+class QueuedMessage;
 
-TransactionAsyncContext::~TransactionAsyncContext()
-{}
-
-qpid::asyncStore::AsyncOperation::opCode
-TransactionAsyncContext::getOpCode() const
+class Messages
 {
-    return m_op;
-}
-
-const char*
-TransactionAsyncContext::getOpStr() const
-{
-    return qpid::asyncStore::AsyncOperation::getOpStr(m_op);
-}
-
-boost::shared_ptr<MockTransactionContext>
-TransactionAsyncContext::getTransactionContext() const
-{
-    return m_tc;
-}
-
-void
-TransactionAsyncContext::destroy()
-{
-    delete this;
-}
+public:
+    virtual ~Messages() {}
+    virtual uint32_t size() = 0;
+    virtual bool push(const QueuedMessage& added, QueuedMessage& removed) = 0;
+    virtual bool consume(QueuedMessage& msg) = 0;
+};
 
 }}} // namespace tests::storePerftools::asyncPerf
+
+#endif // tests_storePerftools_asyncPerf_Messages_h_

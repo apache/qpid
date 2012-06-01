@@ -41,16 +41,22 @@ public:
                 const uint16_t numDeqThreadsPerQueue,
                 const uint16_t enqTxnBlockSize,
                 const uint16_t deqTxnBlockSize,
+                const bool durable,
+                const bool destroyQueuesOnCompletion,
                 const std::string& name="Test Options");
     virtual ~TestOptions();
     void printVals(std::ostream& os) const;
 
     uint16_t m_enqTxnBlockSize;                     ///< Transaction block size for enqueues
     uint16_t m_deqTxnBlockSize;                     ///< Transaction block size for dequeues
+    bool m_durable;                                 ///< Use durable queues and messages for test
+    bool m_destroyQueuesOnCompletion;               ///< Destroy durable queues on completion of test
 
 protected:
     static uint16_t s_defaultEnqTxnBlkSize;         ///< Default transaction block size for enqueues
     static uint16_t s_defaultDeqTxnBlkSize;         ///< Default transaction block size for dequeues
+    static bool s_defaultDurable;                   ///< Default flag for using durable queues and messages for test
+    static bool s_defaultDestroyQueuesOnCompletion; ///< Default flag for destroying queues on completion of test
 
     void doAddOptions();
 };

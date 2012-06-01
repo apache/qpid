@@ -18,50 +18,35 @@
  */
 
 /**
- * \file TransactionAsyncContext.cpp
+ * \file MessageConsumer.h
  */
 
-#include "TransactionAsyncContext.h"
+#ifndef tests_storePerftools_asyncPerf_MessageConsumer_h_
+#define tests_storePerftools_asyncPerf_MessageConsumer_h_
 
-#include <cassert>
+#include "boost/shared_ptr.hpp"
 
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-TransactionAsyncContext::TransactionAsyncContext(boost::shared_ptr<MockTransactionContext> tc,
-                                                 const qpid::asyncStore::AsyncOperation::opCode op):
-        m_tc(tc),
-        m_op(op)
-{
-    assert(m_tc.get() != 0);
-}
+class MockPersistableQueue;
+class TestOptions;
 
-TransactionAsyncContext::~TransactionAsyncContext()
-{}
-
-qpid::asyncStore::AsyncOperation::opCode
-TransactionAsyncContext::getOpCode() const
+class MessageConsumer
 {
-    return m_op;
-}
+public:
+    MessageConsumer(const TestOptions& perfTestParams,
+                    boost::shared_ptr<MockPersistableQueue> queue);
+    virtual ~MessageConsumer();
 
-const char*
-TransactionAsyncContext::getOpStr() const
-{
-    return qpid::asyncStore::AsyncOperation::getOpStr(m_op);
-}
-
-boost::shared_ptr<MockTransactionContext>
-TransactionAsyncContext::getTransactionContext() const
-{
-    return m_tc;
-}
-
-void
-TransactionAsyncContext::destroy()
-{
-    delete this;
-}
+    void* runConsumers();
+    static void* startConsumers(void* ptr);
+protected:
+    const TestOptions& m_perfTestParams;
+    boost::shared_ptr<MockPersistableQueue> m_queue;
+};
 
 }}} // namespace tests::storePerftools::asyncPerf
+
+#endif // tests_storePerftools_asyncPerf_MessageConsumer_h_

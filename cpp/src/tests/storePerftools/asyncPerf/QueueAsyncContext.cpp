@@ -23,17 +23,29 @@
 
 #include "QueueAsyncContext.h"
 
+#include <cassert>
+
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-QueueAsyncContext::QueueAsyncContext(MockPersistableQueue::intrusive_ptr q,
-                           const qpid::asyncStore::AsyncOperation::opCode op) :
-        qpid::broker::BrokerAsyncContext(),
+QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<MockPersistableQueue> q,
+                                     const qpid::asyncStore::AsyncOperation::opCode op) :
         m_q(q),
         m_op(op)
 {
     assert(m_q.get() != 0);
+}
+
+QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<MockPersistableQueue> q,
+                                     boost::shared_ptr<MockPersistableMessage> msg,
+                                     const qpid::asyncStore::AsyncOperation::opCode op) :
+        m_q(q),
+        m_msg(msg),
+        m_op(op)
+{
+    assert(m_q.get() != 0);
+    assert(m_msg.get() != 0);
 }
 
 QueueAsyncContext::~QueueAsyncContext()
@@ -51,10 +63,16 @@ QueueAsyncContext::getOpStr() const
     return qpid::asyncStore::AsyncOperation::getOpStr(m_op);
 }
 
-MockPersistableQueue::intrusive_ptr
+boost::shared_ptr<MockPersistableQueue>
 QueueAsyncContext::getQueue() const
 {
     return m_q;
+}
+
+boost::shared_ptr<MockPersistableMessage>
+QueueAsyncContext::getMessage() const
+{
+    return m_msg;
 }
 
 void

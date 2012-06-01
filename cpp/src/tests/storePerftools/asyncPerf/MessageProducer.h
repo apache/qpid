@@ -18,50 +18,45 @@
  */
 
 /**
- * \file TransactionAsyncContext.cpp
+ * \file MessageProducer.h
  */
 
-#include "TransactionAsyncContext.h"
+#ifndef tests_storePerftools_asyncPerf_MessageProducer_h_
+#define tests_storePerftools_asyncPerf_MessageProducer_h_
 
-#include <cassert>
+#include "boost/shared_ptr.hpp"
+
+namespace qpid {
+namespace asyncStore {
+
+class AsyncStoreImpl;
+
+}}
 
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-TransactionAsyncContext::TransactionAsyncContext(boost::shared_ptr<MockTransactionContext> tc,
-                                                 const qpid::asyncStore::AsyncOperation::opCode op):
-        m_tc(tc),
-        m_op(op)
-{
-    assert(m_tc.get() != 0);
-}
+class MockPersistableQueue;
+class TestOptions;
 
-TransactionAsyncContext::~TransactionAsyncContext()
-{}
-
-qpid::asyncStore::AsyncOperation::opCode
-TransactionAsyncContext::getOpCode() const
+class MessageProducer
 {
-    return m_op;
-}
-
-const char*
-TransactionAsyncContext::getOpStr() const
-{
-    return qpid::asyncStore::AsyncOperation::getOpStr(m_op);
-}
-
-boost::shared_ptr<MockTransactionContext>
-TransactionAsyncContext::getTransactionContext() const
-{
-    return m_tc;
-}
-
-void
-TransactionAsyncContext::destroy()
-{
-    delete this;
-}
+public:
+    MessageProducer(const TestOptions& perfTestParams,
+                    const char* msgData,
+                    qpid::asyncStore::AsyncStoreImpl* store,
+                    boost::shared_ptr<MockPersistableQueue> queue);
+    virtual ~MessageProducer();
+    void* runProducers();
+    static void* startProducers(void* ptr);
+protected:
+    const TestOptions& m_perfTestParams;
+    const char* m_msgData;
+    qpid::asyncStore::AsyncStoreImpl* m_store;
+    boost::shared_ptr<MockPersistableQueue> m_queue;
+};
 
 }}} // namespace tests::storePerftools::asyncPerf
+
+#endif // tests_storePerftools_asyncPerf_MessageProducer_h_

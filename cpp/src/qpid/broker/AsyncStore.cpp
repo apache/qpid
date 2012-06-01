@@ -22,6 +22,9 @@
 namespace qpid {
 namespace broker {
 
+BrokerAsyncContext::~BrokerAsyncContext()
+{}
+
 DataSource::~DataSource()
 {}
 

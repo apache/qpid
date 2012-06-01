@@ -27,6 +27,8 @@
 #include <pthread.h>
 #include <string>
 
+#include <boost/shared_ptr.hpp>
+
 namespace tests {
 namespace storePerftools {
 namespace common {

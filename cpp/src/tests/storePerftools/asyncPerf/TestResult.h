@@ -32,15 +32,13 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class TestOptions;
-
 /**
- * \brief Results class that accepts an elapsed time to calculate the rate of message throughput in the journal.
+ * \brief Results class that accepts an elapsed time to calculate the rate of message throughput in a test.
  *
  * This class (being subclassed from ScopedTimable) is passed to a ScopedTimer object on construction, and the
  * inherited _elapsed member will be written with the calculated elapsed time (in seconds) on destruction of the
  * ScopedTimer object. This time (initially set to 0.0) is used to calculate message and message byte throughput.
- * The message number and size information comes from the JrnlPerfTestParameters object passed to the constructor.
+ * The message number and size information comes from the TestOptions object passed to the constructor.
  *
  * Results are available through the use of toStream(), toString() or the << operators.
  *

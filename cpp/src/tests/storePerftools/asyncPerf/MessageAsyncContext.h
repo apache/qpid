@@ -24,31 +24,35 @@
 #ifndef tests_storePerfTools_asyncPerf_MessageContext_h_
 #define tests_storePerfTools_asyncPerf_MessageContext_h_
 
-#include "MockPersistableMessage.h"
-
 #include "qpid/asyncStore/AsyncOperation.h"
-#include "qpid/broker/BrokerAsyncContext.h"
+#include "qpid/broker/AsyncStore.h" // qpid::broker::BrokerAsyncContext
+
+#include <boost/shared_ptr.hpp>
 
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class MessageContext : public qpid::broker::BrokerAsyncContext
+class MockPersistableMessage;
+class MockPersistableQueue;
+
+class MessageAsyncContext : public qpid::broker::BrokerAsyncContext
 {
 public:
-    MessageContext(MockPersistableMessage::shared_ptr msg,
-                   const qpid::asyncStore::AsyncOperation::opCode op,
-                   MockPersistableQueue* q);
-    virtual ~MessageContext();
+    MessageAsyncContext(boost::shared_ptr<MockPersistableMessage> msg,
+                        const qpid::asyncStore::AsyncOperation::opCode op,
+                        boost::shared_ptr<MockPersistableQueue> q);
+    virtual ~MessageAsyncContext();
     qpid::asyncStore::AsyncOperation::opCode getOpCode() const;
     const char* getOpStr() const;
-    MockPersistableMessage::shared_ptr getMessage() const;
-    MockPersistableQueue* getQueue() const;
+    boost::shared_ptr<MockPersistableMessage> getMessage() const;
+    boost::shared_ptr<MockPersistableQueue> getQueue() const;
     void destroy();
+
 protected:
-    MockPersistableMessage::shared_ptr m_msg;
+    boost::shared_ptr<MockPersistableMessage> m_msg;
     const qpid::asyncStore::AsyncOperation::opCode m_op;
-    MockPersistableQueue* m_q;
+    boost::shared_ptr<MockPersistableQueue> m_q;
 };
 
 }}} // namespace tests::storePerftools::asyncPerf

@@ -37,6 +37,7 @@ namespace qpid {
 namespace broker {
 
 class MessageStore;
+class AsyncStore;
 
 /**
  * Base class for persistable messages.
@@ -86,7 +87,8 @@ class PersistableMessage : public Persistable
 
     void setContentReleased();
 
-    MessageStore* store;
+    MessageStore* store;    // deprecated, use AsyncStore
+    AsyncStore* asyncStore; // new AsyncStore interface
 
 
   public:
@@ -105,7 +107,8 @@ class PersistableMessage : public Persistable
     
     QPID_BROKER_EXTERN bool isContentReleased() const;
 
-    QPID_BROKER_EXTERN void setStore(MessageStore*);
+    QPID_BROKER_EXTERN void setStore(MessageStore*); // deprecated
+    QPID_BROKER_EXTERN void setStore(AsyncStore*);
     void requestContentRelease();
     void blockContentRelease();
     bool checkContentReleasable();
@@ -121,20 +124,25 @@ class PersistableMessage : public Persistable
     QPID_BROKER_INLINE_EXTERN void enqueueStart() { ingressCompletion.startCompleter(); }
     QPID_BROKER_INLINE_EXTERN void enqueueComplete() { ingressCompletion.finishCompleter(); }
 
-    QPID_BROKER_EXTERN void enqueueAsync(PersistableQueue::shared_ptr queue,
+    QPID_BROKER_EXTERN void enqueueAsync(PersistableQueue::shared_ptr queue, // deprecated
                                          MessageStore* _store);
+    QPID_BROKER_EXTERN void enqueueAsync(PersistableQueue::shared_ptr queue,
+                                         AsyncStore* _store);
 
 
     QPID_BROKER_EXTERN bool isDequeueComplete();
     
     QPID_BROKER_EXTERN void dequeueComplete();
 
-    QPID_BROKER_EXTERN void dequeueAsync(PersistableQueue::shared_ptr queue,
+    QPID_BROKER_EXTERN void dequeueAsync(PersistableQueue::shared_ptr queue, // deprecated
                                          MessageStore* _store);
+    QPID_BROKER_EXTERN void dequeueAsync(PersistableQueue::shared_ptr queue,
+                                         AsyncStore* _store);
 
     bool isStoredOnQueue(PersistableQueue::shared_ptr queue);
     
-    void addToSyncList(PersistableQueue::shared_ptr queue, MessageStore* _store);
+    void addToSyncList(PersistableQueue::shared_ptr queue, MessageStore* _store); // deprecated
+    void addToSyncList(PersistableQueue::shared_ptr queue, AsyncStore* _store);
 };
 
 }}

@@ -28,11 +28,14 @@
 #include <string>
 
 namespace qpid {
-
 namespace broker {
 
-// Defined by broker, implements qpid::messaging::Handle-type template to hide ref counting:
-class BrokerAsyncContext;
+// Defined by broker, implements qpid::messaging::Handle-type template to hide ref counting
+// Subclass this for specific contexts
+class BrokerAsyncContext {
+public:
+    virtual ~BrokerAsyncContext();
+};
 
 // Subclassed by broker:
 class DataSource {
@@ -96,9 +99,7 @@ public:
     virtual void submitDestroy(EventHandle&, ResultCallback, BrokerAsyncContext*) = 0;
     virtual void submitDestroy(EventHandle&, TxnHandle&, ResultCallback, BrokerAsyncContext*) = 0;
 
-    virtual void submitEnqueue(EnqueueHandle&, ResultCallback, BrokerAsyncContext*) = 0;
     virtual void submitEnqueue(EnqueueHandle&, TxnHandle&, ResultCallback, BrokerAsyncContext*) = 0;
-    virtual void submitDequeue(EnqueueHandle&, ResultCallback, BrokerAsyncContext*) = 0;
     virtual void submitDequeue(EnqueueHandle&, TxnHandle&, ResultCallback, BrokerAsyncContext*) = 0;
 
     // Legacy - Restore FTD message, is NOT async!

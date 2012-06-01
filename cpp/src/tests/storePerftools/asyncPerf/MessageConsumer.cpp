@@ -18,50 +18,50 @@
  */
 
 /**
- * \file TransactionAsyncContext.cpp
+ * \file MessageConsumer.cpp
  */
 
-#include "TransactionAsyncContext.h"
+#include "MessageConsumer.h"
 
-#include <cassert>
+#include "MockPersistableQueue.h"
+#include "TestOptions.h"
+
+#include <stdint.h> // uint32_t
 
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-TransactionAsyncContext::TransactionAsyncContext(boost::shared_ptr<MockTransactionContext> tc,
-                                                 const qpid::asyncStore::AsyncOperation::opCode op):
-        m_tc(tc),
-        m_op(op)
-{
-    assert(m_tc.get() != 0);
-}
+class MockTransactionContext;
 
-TransactionAsyncContext::~TransactionAsyncContext()
+MessageConsumer::MessageConsumer(const TestOptions& perfTestParams,
+                                 boost::shared_ptr<MockPersistableQueue> queue) :
+        m_perfTestParams(perfTestParams),
+        m_queue(queue)
 {}
 
-qpid::asyncStore::AsyncOperation::opCode
-TransactionAsyncContext::getOpCode() const
+MessageConsumer::~MessageConsumer()
+{}
+
+void*
+MessageConsumer::runConsumers()
 {
-    return m_op;
+    uint32_t numMsgs = 0;
+    while (numMsgs < m_perfTestParams.m_numMsgs) {
+        if (m_queue->dispatch()) {
+            ++numMsgs;
+        } else {
+            ::usleep(1000); // TODO - replace this poller with condition variable
+        }
+    }
+    return 0;
 }
 
-const char*
-TransactionAsyncContext::getOpStr() const
+//static
+void*
+MessageConsumer::startConsumers(void* ptr)
 {
-    return qpid::asyncStore::AsyncOperation::getOpStr(m_op);
-}
-
-boost::shared_ptr<MockTransactionContext>
-TransactionAsyncContext::getTransactionContext() const
-{
-    return m_tc;
-}
-
-void
-TransactionAsyncContext::destroy()
-{
-    delete this;
+    return reinterpret_cast<MessageConsumer*>(ptr)->runConsumers();
 }
 
 }}} // namespace tests::storePerftools::asyncPerf

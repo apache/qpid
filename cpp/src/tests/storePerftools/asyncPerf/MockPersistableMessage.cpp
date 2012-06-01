@@ -23,9 +23,6 @@
 
 #include "MockPersistableMessage.h"
 
-#include "MessageAsyncContext.h"
-#include "MockPersistableQueue.h" // debug statements in enqueueComplete() and dequeueComplete()
-
 #include "qpid/asyncStore/AsyncStoreImpl.h"
 
 namespace tests {
@@ -34,46 +31,19 @@ namespace asyncPerf {
 
 MockPersistableMessage::MockPersistableMessage(const char* msgData,
                                                const uint32_t msgSize,
-                                               qpid::asyncStore::AsyncStoreImpl* store,
-                                               const bool persistent) :
+                                               qpid::asyncStore::AsyncStoreImpl* store) :
         m_persistenceId(0ULL),
         m_msg(msgData, static_cast<size_t>(msgSize)),
-        m_persistent(persistent),
-        m_msgHandle(store->createMessageHandle(this))
+        m_msgHandle(store ? store->createMessageHandle(this) : store->createMessageHandle(0))
 {}
 
 MockPersistableMessage::~MockPersistableMessage()
 {}
 
-// static
-void
-MockPersistableMessage::handleAsyncResult(const qpid::broker::AsyncResult* res,
-                                          qpid::broker::BrokerAsyncContext* bc)
+const qpid::broker::MessageHandle&
+MockPersistableMessage::getHandle() const
 {
-    if (bc) {
-        MessageContext* mc = dynamic_cast<MessageContext*>(bc);
-        if (res->errNo) {
-            // TODO: Handle async failure here
-            std::cerr << "Message pid=0x" << std::hex << mc->getMessage()->m_persistenceId << std::dec << ": Operation "
-                      << mc->getOpStr() << ": failure " << res->errNo << " (" << res->errMsg << ")" << std::endl;
-        } else {
-            // Handle async success here
-            switch(mc->getOpCode()) {
-            case qpid::asyncStore::AsyncOperation::MSG_DEQUEUE:
-                mc->getMessage()->dequeueComplete(mc);
-                break;
-            case qpid::asyncStore::AsyncOperation::MSG_ENQUEUE:
-                mc->getMessage()->enqueueComplete(mc);
-                break;
-            default:
-                std::ostringstream oss;
-                oss << "tests::storePerftools::asyncPerf::MockPersistableMessage::handleAsyncResult(): Unknown async queue operation: " << mc->getOpCode();
-                throw qpid::Exception(oss.str());
-            };
-        }
-    }
-    if (bc) delete bc;
-    if (res) delete res;
+    return m_msgHandle;
 }
 
 qpid::broker::MessageHandle&
@@ -119,7 +89,7 @@ MockPersistableMessage::encodedHeaderSize() const
 bool
 MockPersistableMessage::isPersistent() const
 {
-    return m_persistent;
+    return m_msgHandle.isValid();
 }
 
 uint64_t
@@ -132,22 +102,6 @@ void
 MockPersistableMessage::write(char* target)
 {
     ::memcpy(target, m_msg.data(), m_msg.size());
-}
-
-// protected
-void
-MockPersistableMessage::enqueueComplete(const MessageContext* mc)
-{
-//std::cout << "~~~~~ Message pid=0x" << std::hex << mc->m_msg->getPersistenceId() << std::dec << ": enqueueComplete() on queue \"" << mc->m_q->getName() << "\"" << std::endl << std::flush;
-    assert(mc->getMessage().get() == this);
-}
-
-// protected
-void
-MockPersistableMessage::dequeueComplete(const MessageContext* mc)
-{
-//std::cout << "~~~~~ Message pid=0x" << std::hex << mc->m_msg->getPersistenceId() << std::dec << ": dequeueComplete() on queue \"" << mc->m_q->getName() << "\"" << std::endl << std::flush;
-    assert(mc->getMessage().get() == this);
 }
 
 }}} // namespace tests::storePerftools::asyncPerf

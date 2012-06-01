@@ -111,13 +111,7 @@ public:
                       qpid::broker::BrokerAsyncContext* brokerCtxt);
 
     void submitEnqueue(qpid::broker::EnqueueHandle& enqHandle,
-                       qpid::broker::ResultCallback resultCb,
-                       qpid::broker::BrokerAsyncContext* brokerCtxt);
-    void submitEnqueue(qpid::broker::EnqueueHandle& enqHandle,
                        qpid::broker::TxnHandle& txnHandle,
-                       qpid::broker::ResultCallback resultCb,
-                       qpid::broker::BrokerAsyncContext* brokerCtxt);
-    void submitDequeue(qpid::broker::EnqueueHandle& enqHandle,
                        qpid::broker::ResultCallback resultCb,
                        qpid::broker::BrokerAsyncContext* brokerCtxt);
     void submitDequeue(qpid::broker::EnqueueHandle& enqHandle,

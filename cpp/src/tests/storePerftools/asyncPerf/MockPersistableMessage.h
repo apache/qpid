@@ -28,6 +28,8 @@
 #include "qpid/broker/MessageHandle.h"
 #include "qpid/broker/PersistableMessage.h"
 
+#include <set>
+
 namespace qpid {
 namespace asyncStore {
 class AsyncStoreImpl;
@@ -37,21 +39,17 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class MessageContext;
 class MockPersistableQueue;
 
-class MockPersistableMessage: public qpid::broker::PersistableMessage, public qpid::broker::DataSource
+class MockPersistableMessage: public qpid::broker::PersistableMessage,
+                              public qpid::broker::DataSource
 {
 public:
-    typedef boost::shared_ptr<MockPersistableMessage> shared_ptr;
-
     MockPersistableMessage(const char* msgData,
                            const uint32_t msgSize,
-                           qpid::asyncStore::AsyncStoreImpl* store,
-                           const bool persistent = true);
+                           qpid::asyncStore::AsyncStoreImpl* store);
     virtual ~MockPersistableMessage();
-    static void handleAsyncResult(const qpid::broker::AsyncResult* res,
-                                  qpid::broker::BrokerAsyncContext* bc);
+    const qpid::broker::MessageHandle& getHandle() const;
     qpid::broker::MessageHandle& getHandle();
 
     // Interface Persistable
@@ -72,13 +70,7 @@ public:
 protected:
     mutable uint64_t m_persistenceId;
     const std::string m_msg;
-    const bool m_persistent;
     qpid::broker::MessageHandle m_msgHandle;
-
-    // --- Ascnc op completions (called through handleAsyncResult) ---
-    void enqueueComplete(const MessageContext* mc);
-    void dequeueComplete(const MessageContext* mc);
-
 };
 
 }}} // namespace tests::storePerftools::asyncPerf

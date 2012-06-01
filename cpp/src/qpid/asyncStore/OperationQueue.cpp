@@ -23,8 +23,6 @@
 
 #include "OperationQueue.h"
 
-#include "qpid/broker/BrokerAsyncContext.h"
-
 namespace qpid {
 namespace asyncStore {
 
@@ -42,7 +40,7 @@ OperationQueue::~OperationQueue()
 void
 OperationQueue::submit(const AsyncOperation* op)
 {
-//std::cout << "***** OperationQueue::submit() op=" << op->getOpStr() << std::endl << std::flush;
+//std::cout << "--> OperationQueue::submit() op=" << op->getOpStr() << std::endl << std::flush;
     m_opQueue.push(op);
 }
 
@@ -51,7 +49,7 @@ OperationQueue::OpQueue::Batch::const_iterator
 OperationQueue::handle(const OperationQueue::OpQueue::Batch& e)
 {
     for (OpQueue::Batch::const_iterator i = e.begin(); i != e.end(); ++i) {
-//std::cout << "##### OperationQueue::handle() Op=" << (*i)->getOpStr() << std::endl << std::flush;
+//std::cout << "<-- OperationQueue::handle() Op=" << (*i)->getOpStr() << std::endl << std::flush;
         if ((*i)->m_resCb) {
             ((*i)->m_resCb)(new qpid::broker::AsyncResult, (*i)->m_brokerCtxt);
         } else {

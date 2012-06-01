@@ -24,17 +24,19 @@
 #ifndef tests_storePerftools_asyncPerf_MockTransactionContext_h_
 #define tests_storePerftools_asyncPerf_MockTransactionContext_h_
 
-#include "qpid/broker/AsyncStore.h" // qpid::broker::AsyncResult
 #include "qpid/broker/TransactionalStore.h" // qpid::broker::TransactionContext
 #include "qpid/broker/TxnHandle.h"
 #include "qpid/sys/Mutex.h"
 
-#include <boost/shared_ptr.hpp>
 #include <deque>
 
 namespace qpid {
 namespace asyncStore {
 class AsyncStoreImpl;
+}
+namespace broker {
+class AsyncResult;
+class BrokerAsyncContext;
 }}
 
 namespace tests {
@@ -47,14 +49,14 @@ class TransactionAsyncContext;
 class MockTransactionContext : public qpid::broker::TransactionContext
 {
 public:
-    typedef boost::shared_ptr<MockTransactionContext> shared_ptr;
-
+    MockTransactionContext(const std::string& xid = std::string());
     MockTransactionContext(qpid::asyncStore::AsyncStoreImpl* store,
                            const std::string& xid = std::string());
     virtual ~MockTransactionContext();
     static void handleAsyncResult(const qpid::broker::AsyncResult* res,
                                   qpid::broker::BrokerAsyncContext* bc);
 
+    const qpid::broker::TxnHandle& getHandle() const;
     qpid::broker::TxnHandle& getHandle();
     bool is2pc() const;
     const std::string& getXid() const;
@@ -65,6 +67,8 @@ public:
     void commit();
 
 protected:
+    std::string m_xid;
+    bool m_tpcFlag;
     qpid::asyncStore::AsyncStoreImpl* m_store;
     qpid::broker::TxnHandle m_txnHandle;
     bool m_prepared;
@@ -72,6 +76,7 @@ protected:
     qpid::sys::Mutex m_enqueuedMsgsMutex;
 
     void localPrepare();
+    void setLocalXid();
 
     // --- Ascnc op completions (called through handleAsyncResult) ---
     void prepareComplete(const TransactionAsyncContext* tc);

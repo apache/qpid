@@ -30,11 +30,15 @@ namespace asyncPerf {
 // static declarations
 uint16_t TestOptions::s_defaultEnqTxnBlkSize = 0;
 uint16_t TestOptions::s_defaultDeqTxnBlkSize = 0;
+bool TestOptions::s_defaultDurable = false;
+bool TestOptions::s_defaultDestroyQueuesOnCompletion = false;
 
 TestOptions::TestOptions(const std::string& name) :
         tests::storePerftools::common::TestOptions(name),
         m_enqTxnBlockSize(s_defaultEnqTxnBlkSize),
-        m_deqTxnBlockSize(s_defaultDeqTxnBlkSize)
+        m_deqTxnBlockSize(s_defaultDeqTxnBlkSize),
+        m_durable(s_defaultDurable),
+        m_destroyQueuesOnCompletion(s_defaultDestroyQueuesOnCompletion)
 {
     doAddOptions();
 }
@@ -46,10 +50,14 @@ TestOptions::TestOptions(const uint32_t numMsgs,
                          const uint16_t numDeqThreadsPerQueue,
                          const uint16_t enqTxnBlockSize,
                          const uint16_t deqTxnBlockSize,
+                         const bool durable,
+                         const bool destroyQueuesOnCompletion,
                          const std::string& name) :
         tests::storePerftools::common::TestOptions(numMsgs, msgSize, numQueues, numEnqThreadsPerQueue, numDeqThreadsPerQueue, name),
         m_enqTxnBlockSize(enqTxnBlockSize),
-        m_deqTxnBlockSize(deqTxnBlockSize)
+        m_deqTxnBlockSize(deqTxnBlockSize),
+        m_durable(durable),
+        m_destroyQueuesOnCompletion(destroyQueuesOnCompletion)
 {
     doAddOptions();
 }
@@ -63,6 +71,8 @@ TestOptions::printVals(std::ostream& os) const
     tests::storePerftools::common::TestOptions::printVals(os);
     os << "          Num enqueus per transaction [-t, --enq-txn-size]: " << m_enqTxnBlockSize << std::endl;
     os << "         Num dequeues per transaction [-d, --deq-txn-size]: " << m_deqTxnBlockSize << std::endl;
+    os << "                                       Durable [--durable]: " << (m_durable ? "true" : "false") << std::endl;
+    os << "      Destroy queues on test completion [--destroy-queues]: " << (m_destroyQueuesOnCompletion ? "true" : "false") << std::endl;
 }
 
 void
@@ -73,6 +83,10 @@ TestOptions::doAddOptions()
                     "Num enqueus per transaction (0 = no transactions)")
             ("deq-txn-size,d", qpid::optValue(m_deqTxnBlockSize, "N"),
                     "Num dequeues per transaction (0 = no transactions)")
+            ("durable", qpid::optValue(m_durable),
+                    "Queues and messages are durable")
+            ("destroy-queues", qpid::optValue(m_destroyQueuesOnCompletion),
+                    "Destroy queue recoreds persistent store on test completion")
     ;
 }
 

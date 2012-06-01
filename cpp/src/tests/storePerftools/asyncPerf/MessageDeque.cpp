@@ -18,50 +18,47 @@
  */
 
 /**
- * \file TransactionAsyncContext.cpp
+ * \file MessageDeque.cpp
  */
 
-#include "TransactionAsyncContext.h"
-
-#include <cassert>
+#include "MessageDeque.h"
+#include "QueuedMessage.h"
 
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-TransactionAsyncContext::TransactionAsyncContext(boost::shared_ptr<MockTransactionContext> tc,
-                                                 const qpid::asyncStore::AsyncOperation::opCode op):
-        m_tc(tc),
-        m_op(op)
-{
-    assert(m_tc.get() != 0);
-}
-
-TransactionAsyncContext::~TransactionAsyncContext()
+MessageDeque::MessageDeque()
 {}
 
-qpid::asyncStore::AsyncOperation::opCode
-TransactionAsyncContext::getOpCode() const
+MessageDeque::~MessageDeque()
+{}
+
+uint32_t
+MessageDeque::size()
 {
-    return m_op;
+    qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_msgMutex);
+    return m_messages.size();
 }
 
-const char*
-TransactionAsyncContext::getOpStr() const
+bool
+MessageDeque::push(const QueuedMessage& added, QueuedMessage& /*removed*/)
 {
-    return qpid::asyncStore::AsyncOperation::getOpStr(m_op);
+    qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_msgMutex);
+    m_messages.push_back(added);
+    return false;
 }
 
-boost::shared_ptr<MockTransactionContext>
-TransactionAsyncContext::getTransactionContext() const
+bool
+MessageDeque::consume(QueuedMessage& msg)
 {
-    return m_tc;
-}
-
-void
-TransactionAsyncContext::destroy()
-{
-    delete this;
+    qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_msgMutex);
+    if (!m_messages.empty()) {
+        msg = m_messages.front();
+        m_messages.pop_front();
+        return true;
+    }
+    return false;
 }
 
 }}} // namespace tests::storePerftools::asyncPerf

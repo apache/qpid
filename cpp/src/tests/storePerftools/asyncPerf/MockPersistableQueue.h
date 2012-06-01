@@ -24,19 +24,21 @@
 #ifndef tests_storePerftools_asyncPerf_MockPersistableQueue_h_
 #define tests_storePerftools_asyncPerf_MockPersistableQueue_h_
 
+#include "AtomicCounter.h" // AsyncOpCounter
+
 #include "qpid/broker/AsyncStore.h" // qpid::broker::DataSource
 #include "qpid/broker/PersistableQueue.h"
 #include "qpid/broker/QueueHandle.h"
-#include "qpid/sys/Condition.h"
-#include "qpid/sys/Mutex.h"
+#include "qpid/sys/Monitor.h"
 
-#include <boost/intrusive_ptr.hpp>
-#include <deque>
+#include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 
 namespace qpid {
 namespace asyncStore {
 class AsyncStoreImpl;
 }
+
 namespace framing {
 class FieldTable;
 }}
@@ -45,36 +47,39 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
+class Messages;
+class MockPersistableMessage;
+class MockPersistableQueue;
+class MockTransactionContext;
 class QueueAsyncContext;
 class QueuedMessage;
-class TestOptions;
 
-typedef boost::shared_ptr<QueuedMessage> QueuedMessagePtr;
-
-class MockPersistableQueue : public qpid::broker::PersistableQueue, public qpid::broker::DataSource
+class MockPersistableQueue : public boost::enable_shared_from_this<MockPersistableQueue>,
+                             public qpid::broker::PersistableQueue,
+                             public qpid::broker::DataSource
 {
 public:
-    typedef boost::intrusive_ptr<MockPersistableQueue> intrusive_ptr;
-
     MockPersistableQueue(const std::string& name,
                          const qpid::framing::FieldTable& args,
-                         qpid::asyncStore::AsyncStoreImpl* store,
-                         const TestOptions& perfTestParams,
-                         const char* msgData);
+                         qpid::asyncStore::AsyncStoreImpl* store);
     virtual ~MockPersistableQueue();
 
-    // --- Async functionality ---
     static void handleAsyncResult(const qpid::broker::AsyncResult* res,
                                   qpid::broker::BrokerAsyncContext* bc);
+    const qpid::broker::QueueHandle& getHandle() const;
     qpid::broker::QueueHandle& getHandle();
-    void asyncStoreCreate();
-    void asyncStoreDestroy();
+    qpid::asyncStore::AsyncStoreImpl* getStore();
 
-    // --- Performance test thread entry points ---
-    void* runEnqueues();
-    void* runDequeues();
-    static void* startEnqueues(void* ptr);
-    static void* startDequeues(void* ptr);
+    void asyncCreate();
+    void asyncDestroy(const bool deleteQueue);
+
+    // --- Methods in msg handling path from qpid::Queue ---
+    void deliver(boost::shared_ptr<MockPersistableMessage> msg);
+    bool dispatch(); // similar to qpid::broker::Queue::distpatch(Consumer&) but without Consumer param
+    bool enqueue(MockTransactionContext* ctxt,
+                 QueuedMessage& qm);
+    bool dequeue(MockTransactionContext* ctxt,
+                 QueuedMessage& qm);
 
     // --- Interface qpid::broker::Persistable ---
     virtual void encode(qpid::framing::Buffer& buffer) const;
@@ -94,28 +99,51 @@ public:
 protected:
     const std::string m_name;
     qpid::asyncStore::AsyncStoreImpl* m_store;
+    AsyncOpCounter m_asyncOpCounter;
     mutable uint64_t m_persistenceId;
     std::string m_persistableData;
     qpid::broker::QueueHandle m_queueHandle;
+    bool m_destroyPending;
+    bool m_destroyed;
 
-    // Test params
-    const TestOptions& m_perfTestOpts;
-    const char* m_msgData;
+    // --- Members & methods in msg handling path copied from qpid::Queue ---
+    struct UsageBarrier
+    {
+        MockPersistableQueue& m_parent;
+        uint32_t m_count;
+        qpid::sys::Monitor m_monitor;
+        UsageBarrier(MockPersistableQueue& q);
+        bool acquire();
+        void release();
+        void destroy();
+    };
+    struct ScopedUse
+    {
+        UsageBarrier& m_barrier;
+        const bool m_acquired;
+        ScopedUse(UsageBarrier& b);
+        ~ScopedUse();
+    };
+    UsageBarrier m_barrier;
+    std::auto_ptr<Messages> m_messages;
+    void push(QueuedMessage& qm,
+              bool isRecovery = false);
 
-    typedef std::deque<QueuedMessagePtr> MsgEnqList;
-    typedef MsgEnqList::iterator MsgEnqListItr;
-    MsgEnqList m_enqueuedMsgs;
-    qpid::sys::Mutex m_enqueuedMsgsMutex;
-    qpid::sys::Condition m_dequeueCondition;
+    // -- Async ops ---
+    bool asyncEnqueue(MockTransactionContext* txn,
+                      QueuedMessage& qm);
+    bool asyncDequeue(MockTransactionContext* txn,
+                      QueuedMessage& qm);
 
-    // --- Ascnc op completions (called through handleAsyncResult) ---
+    // --- Async op counter ---
+    void destroyCheck(const std::string& opDescr) const;
+
+    // --- Async op completions (called through handleAsyncResult) ---
     void createComplete(const QueueAsyncContext* qc);
     void flushComplete(const QueueAsyncContext* qc);
     void destroyComplete(const QueueAsyncContext* qc);
-
-    // --- Queue functionality ---
-    void push(QueuedMessagePtr& msg);
-    void pop(QueuedMessagePtr& msg);
+    void enqueueComplete(const QueueAsyncContext* qc);
+    void dequeueComplete(const QueueAsyncContext* qc);
 };
 
 }}} // namespace tests::storePerftools::asyncPerf
