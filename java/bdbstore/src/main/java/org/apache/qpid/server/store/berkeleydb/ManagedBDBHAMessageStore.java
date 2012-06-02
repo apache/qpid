@@ -36,9 +36,10 @@ public interface ManagedBDBHAMessageStore
     public static final String ATTR_NODE_NAME = "NodeName";
     public static final String ATTR_NODE_HOST_PORT = "NodeHostPort";
     public static final String ATTR_HELPER_HOST_PORT = "HelperHostPort";
-    public static final String ATTR_REPLICATION_POLICY = "ReplicationPolicy";
+    public static final String ATTR_DURABILITY = "Durability";
     public static final String ATTR_NODE_STATE = "NodeState";
     public static final String ATTR_DESIGNATED_PRIMARY = "DesignatedPrimary";
+    public static final String ATTR_COALESCING_SYNC = "CoalescingSync";
 
     @MBeanAttribute(name=ATTR_GROUP_NAME, description="Name identifying the group")
     String getGroupName() throws IOException, JMException;
@@ -55,13 +56,16 @@ public interface ManagedBDBHAMessageStore
     @MBeanAttribute(name=ATTR_HELPER_HOST_PORT, description="Host/port used to allow a new node to discover other group members")
     String getHelperHostPort() throws IOException, JMException;
 
-    @MBeanAttribute(name=ATTR_REPLICATION_POLICY, description="Replication policy")
-    String getReplicationPolicy() throws IOException, JMException;
+    @MBeanAttribute(name=ATTR_DURABILITY, description="Durability")
+    String getDurability() throws IOException, JMException;
 
     @MBeanAttribute(name=ATTR_DESIGNATED_PRIMARY, description="Designated primary flag. Applicable to the two node case.")
     boolean getDesignatedPrimary() throws IOException, JMException;
 
-    @MBeanOperation(name="getAllNodesInGroup", description="Get all nodes within the group, regardless of whether currently attached or not")
+    @MBeanAttribute(name=ATTR_COALESCING_SYNC, description="Coalescing sync flag. Applicable to the master sync policies NO_SYNC and WRITE_NO_SYNC only.")
+    boolean getCoalescingSync() throws IOException, JMException;
+
+    @MBeanAttribute(name="getAllNodesInGroup", description="Get all nodes within the group, regardless of whether currently attached or not")
     TabularData getAllNodesInGroup() throws IOException, JMException;
 
     @MBeanOperation(name="removeNodeFromGroup", description="Remove an existing node from the group")
