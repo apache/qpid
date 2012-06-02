@@ -31,7 +31,7 @@
       <listitem><para>Implemented in Java - Fully JMS compliant, runs on any Java platform.</para></listitem>
     </itemizedlist>
 
-    <para>Both AMQP messaging brokers support clients in multiple languages, as long as the messaging client and the messaging broker use the same version of AMQP. See <link linkend="AMQP-Compatibility"/> to see which messaging clients work with each broker.</para>
+    <para>Both AMQP messaging brokers support clients in multiple languages, as long as the messaging client and the messaging broker use the same version of AMQP.</para>
 
     <para>This manual contains information specific to the broker that is implemented in Java.</para>
   </preface>
@@ -44,6 +44,7 @@
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Environment-Variables.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid-Troubleshooting-Guide.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Broker-Configuration-Guide.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="HA-Guide.xml"/>
 </chapter>
 
 <chapter  id="Qpid-Java-Broker-HowTos">
