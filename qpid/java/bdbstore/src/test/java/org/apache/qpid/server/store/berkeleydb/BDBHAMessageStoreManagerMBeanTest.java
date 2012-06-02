@@ -47,7 +47,7 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
     private static final String TEST_NODE_NAME = "testNodeName";
     private static final String TEST_NODE_HOST_PORT = "host:1234";
     private static final String TEST_HELPER_HOST_PORT = "host:5678";
-    private static final String TEST_REPLICATION_POLICY = "sync,sync,all";
+    private static final String TEST_DURABILITY = "sync,sync,all";
     private static final String TEST_NODE_STATE = "MASTER";
     private static final String TEST_STORE_NAME = "testStoreName";
     private static final boolean TEST_DESIGNATED_PRIMARY_FLAG = false;
@@ -108,11 +108,18 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
         assertEquals(TEST_HELPER_HOST_PORT, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_HELPER_HOST_PORT));
     }
 
-    public void testReplicationPolicy() throws Exception
+    public void testDurability() throws Exception
     {
-        when(_store.getReplicationPolicy()).thenReturn(TEST_REPLICATION_POLICY);
+        when(_store.getDurability()).thenReturn(TEST_DURABILITY);
 
-        assertEquals(TEST_REPLICATION_POLICY, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_REPLICATION_POLICY));
+        assertEquals(TEST_DURABILITY, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_DURABILITY));
+    }
+
+    public void testCoalescingSync() throws Exception
+    {
+        when(_store.isCoalescingSync()).thenReturn(true);
+
+        assertEquals(true, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_COALESCING_SYNC));
     }
 
     public void testNodeState() throws Exception
