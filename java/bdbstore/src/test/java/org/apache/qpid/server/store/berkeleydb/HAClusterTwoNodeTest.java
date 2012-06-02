@@ -79,7 +79,7 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
         // Don't start default broker provided by QBTC.
     }
 
-    private void startCluster(boolean autoDesignedPrimary) throws Exception
+    private void startCluster(boolean designedPrimary) throws Exception
     {
         setSystemProperty("java.util.logging.config.file", "etc" + File.separator + "log.properties");
 
@@ -92,38 +92,28 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
         setConfigurationProperty(storeConfigKeyPrefix + ".repConfig(1).value", "0");
 
         _clusterCreator.configureClusterNodes();
-        _clusterCreator.setAutoDesignatedPrimary(autoDesignedPrimary);
+        _clusterCreator.setDesignatedPrimaryOnFirstBroker(designedPrimary);
         _brokerFailoverUrl = _clusterCreator.getConnectionUrlForAllClusterNodes();
         _clusterCreator.startCluster();
     }
 
-    /**
-     * Tests that a two node cluster, in which the master CAN automatically designate itself primary
-     * (after becoming master) continues to operate after being shut down and restarted.
-     *
-     * The test does not concern itself with which broker becomes master at any given point
-     * (which is likely to swap during the test).
-     */
-    public void testClusterRestartWithAutoDesignatedPrimary() throws Exception
+    public void testMasterDesignatedPrimaryCanBeRestartedWithoutReplica() throws Exception
     {
-        testClusterRestartImpl(true);
+        startCluster(true);
+        final Connection initialConnection = getConnection(_brokerFailoverUrl);
+        int masterPort = _clusterCreator.getBrokerPortNumberFromConnection(initialConnection);
+        assertProducingConsuming(initialConnection);
+        initialConnection.close();
+        _clusterCreator.stopCluster();
+        _clusterCreator.startNode(masterPort);
+        final Connection secondConnection = getConnection(_brokerFailoverUrl);
+        assertProducingConsuming(secondConnection);
+        secondConnection.close();
     }
 
-    /**
-     * Tests that a two node cluster, in which the master can NOT automatically designate itself
-     * primary (after becoming master) continues to operate after being shut down and restarted.
-     *
-     * The test does not concern itself with which broker becomes master at any given point
-     * (which is likely to swap during the test).
-     */
-    public void testClusterRestartWithoutAutoDesignatedPrimary() throws Exception
+    public void testClusterRestartWithoutDesignatedPrimary() throws Exception
     {
-        testClusterRestartImpl(false);
-    }
-
-    private void testClusterRestartImpl(boolean autoDesignatedPrimary) throws Exception
-    {
-        startCluster(autoDesignatedPrimary);
+        startCluster(false);
         final Connection initialConnection = getConnection(_brokerFailoverUrl);
         assertProducingConsuming(initialConnection);
         initialConnection.close();
@@ -134,13 +124,7 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
         secondConnection.close();
     }
 
-    /**
-     * This test make sure than JMS operations are still working after stopping replica
-     * when master is designated primary (which is by default).
-     * <p>
-     * When master is not designated primary this test should fail.
-     */
-    public void testAutoDesignatedPrimaryContinuesAfterSecondaryStopped() throws Exception
+    public void testDesignatedPrimaryContinuesAfterSecondaryStopped() throws Exception
     {
         startCluster(true);
         _clusterCreator.stopNode(_clusterCreator.getBrokerPortNumberOfSecondaryNode());
@@ -149,9 +133,8 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
         assertProducingConsuming(connection);
     }
 
-    public void testPersistentOperationsFailOnNonAutoDesignatedPrimarysAfterSecondaryStopped() throws Exception
+    public void testPersistentOperationsFailOnNonDesignatedPrimarysAfterSecondaryStopped() throws Exception
     {
-        
         startCluster(false);
         _clusterCreator.stopNode(_clusterCreator.getBrokerPortNumberOfSecondaryNode());
         final Connection connection = getConnection(_brokerFailoverUrl);
@@ -167,7 +150,7 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
         }
     }
 
-    public void testSecondaryDoesNotBecomePrimaryWhenAutoDesignatedPrimaryStopped() throws Exception
+    public void testSecondaryDoesNotBecomePrimaryWhenDesignatedPrimaryStopped() throws Exception
     {
         startCluster(true);
         _clusterCreator.stopNode(_clusterCreator.getBrokerPortNumberOfPrimary());

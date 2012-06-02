@@ -108,7 +108,7 @@ public class HATestClusterCreator
         }
     }
 
-    public void setAutoDesignatedPrimary(boolean autoDesignatedPrimary) throws Exception
+    public void setDesignatedPrimaryOnFirstBroker(boolean designatedPrimary) throws Exception
     {
         if (_numberOfNodes != 2)
         {
@@ -116,8 +116,8 @@ public class HATestClusterCreator
         }
 
         final Entry<Integer, BrokerConfigHolder> brokerConfigEntry = _brokerConfigurations.entrySet().iterator().next();
-        final String configKey = getConfigKey("highAvailability.autoDesignatedPrimary");
-        brokerConfigEntry.getValue().getTestVirtualhosts().setProperty(configKey, Boolean.toString(autoDesignatedPrimary));
+        final String configKey = getConfigKey("highAvailability.designatedPrimary");
+        brokerConfigEntry.getValue().getTestVirtualhosts().setProperty(configKey, Boolean.toString(designatedPrimary));
         _primaryBrokerPort = brokerConfigEntry.getKey();
     }
 

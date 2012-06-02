@@ -69,13 +69,12 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
 {
     private static final Logger LOGGER = Logger.getLogger(BDBHAMessageStore.class);
 
-    private static final String MUTLI_SYNC = "MUTLI_SYNC";
-    private static final String DEFAULT_REPLICATION_POLICY =
-        MUTLI_SYNC + "," + SyncPolicy.WRITE_NO_SYNC.name() + "," + ReplicaAckPolicy.SIMPLE_MAJORITY.name();
+    private static final Durability DEFAULT_DURABILITY = new Durability(SyncPolicy.NO_SYNC, SyncPolicy.NO_SYNC, ReplicaAckPolicy.SIMPLE_MAJORITY);
 
     public static final String GRP_MEM_COL_NODE_HOST_PORT = "NodeHostPort";
     public static final String GRP_MEM_COL_NODE_NAME = "NodeName";
 
+    @SuppressWarnings("serial")
     private static final Map<String, String> REPCONFIG_DEFAULTS = Collections.unmodifiableMap(new HashMap<String, String>()
     {{
         /**
@@ -105,16 +104,15 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
     private String _nodeName;
     private String _nodeHostPort;
     private String _helperHostPort;
-    private String _replicationPolicy;
-    private Durability _replicationDurability;
+    private Durability _durability;
 
     private String _name;
 
     private BDBHAMessageStoreManagerMBean _managedObject;
 
     private CommitThreadWrapper _commitThreadWrapper;
-    private boolean _localMultiSyncCommits;
-    private boolean _autoDesignatedPrimary;
+    private boolean _coalescingSync;
+    private boolean _designatedPrimary;
     private Map<String, String> _repConfig;
 
     @Override
@@ -128,22 +126,24 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
         _name = name;
 
         //Optional configuration
-        _replicationPolicy = storeConfig.getString("highAvailability.replicationPolicy", DEFAULT_REPLICATION_POLICY).trim();
-        _autoDesignatedPrimary = storeConfig.getBoolean("highAvailability.autoDesignatedPrimary", Boolean.TRUE);
-
-        if(_replicationPolicy.startsWith(MUTLI_SYNC))
+        String durabilitySetting = storeConfig.getString("highAvailability.durability");
+        if (durabilitySetting == null)
         {
-            _replicationDurability = Durability.parse(_replicationPolicy.replaceFirst(MUTLI_SYNC, SyncPolicy.WRITE_NO_SYNC.name()));
-            _localMultiSyncCommits = true;
+            _durability = DEFAULT_DURABILITY;
         }
         else
         {
-            _replicationDurability = Durability.parse(_replicationPolicy);
-            _localMultiSyncCommits = false;
+            _durability = Durability.parse(durabilitySetting);
         }
-
+        _designatedPrimary = storeConfig.getBoolean("highAvailability.designatedPrimary", Boolean.FALSE);
+        _coalescingSync = storeConfig.getBoolean("highAvailability.coalescingSync", Boolean.TRUE);
         _repConfig = getConfigMap(REPCONFIG_DEFAULTS, storeConfig, "repConfig");
 
+        if (_coalescingSync && _durability.getLocalSync() == SyncPolicy.SYNC)
+        {
+            throw new ConfigurationException("Coalescing sync cannot be used with master sync policy " + SyncPolicy.SYNC
+                    + "! Please set highAvailability.coalescingSync to false in store configuration.");
+        }
         _managedObject = new BDBHAMessageStoreManagerMBean(this);
         _managedObject.register();
 
@@ -155,7 +155,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
     {
         super.setupStore(storePath, name);
 
-        if(_localMultiSyncCommits)
+        if(_coalescingSync)
         {
             _commitThreadWrapper = new CommitThreadWrapper("Commit-Thread-" + name, getEnvironment());
             _commitThreadWrapper.startCommitThread();
@@ -172,16 +172,19 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
             LOGGER.info("Node name " + _nodeName);
             LOGGER.info("Node host port " + _nodeHostPort);
             LOGGER.info("Helper host port " + _helperHostPort);
-            LOGGER.info("Replication policy " + _replicationPolicy);
+            LOGGER.info("Durability " + _durability);
+            LOGGER.info("Coalescing sync " + _coalescingSync);
+            LOGGER.info("Designated primary (applicable to 2 node case only) " + _designatedPrimary);
         }
 
         final ReplicationConfig replicationConfig = new ReplicationConfig(_groupName, _nodeName, _nodeHostPort);
 
         replicationConfig.setHelperHosts(_helperHostPort);
+        replicationConfig.setDesignatedPrimary(_designatedPrimary);
         setReplicationConfigProperties(replicationConfig);
 
         final EnvironmentConfig envConfig = createEnvironmentConfig();
-        envConfig.setDurability(_replicationDurability);
+        envConfig.setDurability(_durability);
 
         ReplicatedEnvironment replicatedEnvironment = null;
         try
@@ -220,14 +223,6 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
         getEnvironment().flushLog(true);
 
         super.activate();
-
-        //For replica groups with 2 electable nodes, set the new master to be the
-        //designated primary, such that it can continue working if the replica goes
-        //down and leaves it without a 'majority of 2'.
-        if(getReplicatedEnvironment().getGroup().getElectableNodes().size() <= 2 && _autoDesignatedPrimary)
-        {
-            setDesignatedPrimary(true);
-        }
     }
 
     @Override
@@ -265,9 +260,14 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
         return _helperHostPort;
     }
 
-    public String getReplicationPolicy()
+    public String getDurability()
     {
-        return _replicationPolicy;
+        return _durability.toString();
+    }
+
+    public boolean isCoalescingSync()
+    {
+        return _coalescingSync;
     }
 
     public String getNodeState()
@@ -376,7 +376,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
             throw de;
         }
 
-        if(_localMultiSyncCommits)
+        if(_coalescingSync)
         {
             return _commitThreadWrapper.commit(tx, syncCommit);
         }
@@ -395,7 +395,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
 
             try
             {
-                if(_localMultiSyncCommits)
+                if(_coalescingSync)
                 {
                     _commitThreadWrapper.stopCommitThread();
                 }

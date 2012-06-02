@@ -107,17 +107,24 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     }
 
     @Override
-    public String getReplicationPolicy() throws IOException, JMException
+    public String getDurability() throws IOException, JMException
     {
         try
         {
-            return _store.getReplicationPolicy();
+            return _store.getDurability();
         }
         catch (RuntimeException e)
         {
             LOGGER.debug("Failed query replication policy", e);
             throw new JMException(e.getMessage());
         }
+    }
+
+
+    @Override
+    public boolean getCoalescingSync() throws IOException, JMException
+    {
+        return _store.isCoalescingSync();
     }
 
     @Override
@@ -203,6 +210,5 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
             throw new JMException(e.getMessage());
         }
     }
-
 
 }
