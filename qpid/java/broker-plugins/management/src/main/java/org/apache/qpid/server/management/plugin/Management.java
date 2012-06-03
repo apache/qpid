@@ -108,6 +108,8 @@ public class Management
         root.addServlet(new ServletHolder(new DefinedFileServlet("vhost.html")),"/vhost");
         root.addServlet(new ServletHolder(new DefinedFileServlet("broker.html")),"/broker");
         root.addServlet(new ServletHolder(new DefinedFileServlet("connection.html")),"/connection");
+        root.addServlet(new ServletHolder(new DefinedFileServlet("management.html")),"/management");
+
 
 
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.js");
