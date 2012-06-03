@@ -49,7 +49,7 @@ public class ApplicationRegistryShutdownTest extends InternalBrokerBaseCase
 
 
     /**
-     * QPID-1399 : Ensure that the Authentiction manager unregisters any SASL providers created during
+     * QPID-1399 : Ensure that the Authentication manager unregisters any SASL providers created during
      * ApplicationRegistry initialisation.
      *
      */
