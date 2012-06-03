@@ -64,15 +64,6 @@ public interface IApplicationRegistry extends StatisticsGatherer
     ManagedObjectRegistry getManagedObjectRegistry();
 
     /**
-     * Get the default AuthenticationManager
-     *
-     * @deprecated
-     *
-     * @return the AuthenticationManager
-     */
-    AuthenticationManager getDefaultAuthenticationManager();
-
-    /**
      * Get the AuthenticationManager for the given socket address
      *
      * If no AuthenticationManager has been specifically set for the given address, then use the default

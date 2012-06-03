@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.registry;
 
-import java.net.UnknownHostException;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.osgi.framework.BundleContext;
@@ -48,12 +47,11 @@ import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
-import org.apache.qpid.server.plugins.Plugin;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.SecurityManager.SecurityConfiguration;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManagerPluginFactory;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManagerRegistry;
+import org.apache.qpid.server.security.auth.manager.IAuthenticationManagerRegistry;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -85,9 +83,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     private ManagedObjectRegistry _managedObjectRegistry;
 
-    private AuthenticationManager _defaultAuthenticationManager;
-
-    private Map<Integer,AuthenticationManager> _authenticationManagers;
+    private IAuthenticationManagerRegistry _authenticationManagerRegistry;
 
     private VirtualHostRegistry _virtualHostRegistry;
 
@@ -114,6 +110,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
     private BundleContext _bundleContext;
+
 
     protected Map<InetSocketAddress, QpidAcceptor> getAcceptors()
     {
@@ -309,10 +306,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
             _securityManager = new SecurityManager(_configuration, _pluginManager);
 
-            _authenticationManagers  = createAuthenticationManagers();
-
-            // The default authentication manager is provided in the map associated with the null key
-            _defaultAuthenticationManager = _authenticationManagers.get(null);
+            _authenticationManagerRegistry = createAuthenticationManagerRegistry(_configuration, _pluginManager);
 
             _managedObjectRegistry.start();
         }
@@ -335,93 +329,10 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
     }
 
-
-    /**
-     * Iterates across all discovered authentication manager factories, offering the security configuration to each.
-     *
-     * If more than one authentication manager is configured, one MUST be specified as the default
-     *
-     * It not to configure any authentication managers.
-     *
-     * @return map from port to authentication manager, with the null key being used to indicate the default.
-     * @throws ConfigurationException
-     */
-    protected Map<Integer, AuthenticationManager> createAuthenticationManagers()
-            throws ConfigurationException, UnknownHostException
+    protected IAuthenticationManagerRegistry createAuthenticationManagerRegistry(ServerConfiguration _configuration, PluginManager _pluginManager)
+            throws ConfigurationException
     {
-        final SecurityConfiguration securityConfiguration = _configuration.getConfiguration(SecurityConfiguration.class.getName());
-        final Collection<AuthenticationManagerPluginFactory<? extends Plugin>> factories = _pluginManager.getAuthenticationManagerPlugins().values();
-        
-        if (factories.size() == 0)
-        {
-            throw new ConfigurationException("No authentication manager factory plugins found.  Check the desired authentication" +
-                    "manager plugin has been placed in the plugins directory.");
-        }
-        
-        AuthenticationManager defaultAuthMgr;
-
-        Map<String,AuthenticationManager> authManagersByClass = new HashMap<String,AuthenticationManager>();
-        for (final Iterator<AuthenticationManagerPluginFactory<? extends Plugin>> iterator = factories.iterator(); iterator.hasNext();)
-        {
-            final AuthenticationManagerPluginFactory<? extends Plugin> factory = (AuthenticationManagerPluginFactory<? extends Plugin>) iterator.next();
-            final AuthenticationManager tmp = factory.newInstance(securityConfiguration);
-            if (tmp != null)
-            {
-                if(authManagersByClass.containsKey(tmp.getClass().getSimpleName()))
-                {
-                    throw new ConfigurationException("Cannot configure more than one authentication manager of type"
-                                                     + tmp.getClass().getSimpleName() + "."
-                                                     + " Remove configuration for one of the authentication managers.");
-                }
-                authManagersByClass.put(tmp.getClass().getSimpleName(),tmp);
-            }
-
-        }
-
-        if(authManagersByClass.isEmpty())
-        {
-            throw new ConfigurationException("No authentication managers configured within the configure file.");
-        }
-        if(authManagersByClass.size() == 1)
-        {
-            defaultAuthMgr = authManagersByClass.values().iterator().next();
-        }
-        else if(!authManagersByClass.isEmpty() && _configuration.getDefaultAuthenticationManager() != null)
-        {
-            defaultAuthMgr = authManagersByClass.get(_configuration.getDefaultAuthenticationManager());
-            if(defaultAuthMgr == null)
-            {
-                throw new ConfigurationException("No authentication managers configured of type "
-                                                 + _configuration.getDefaultAuthenticationManager()
-                                                 + " which is specified as the default.  Available managers are: "
-                                                 + authManagersByClass.keySet());
-            }
-        }
-        else
-        {
-            for (AuthenticationManager authenticationManger : authManagersByClass.values())
-            {
-                authenticationManger.close();
-            }
-            throw new ConfigurationException("If more than one authentication manager is configured a default MUST be specified.");
-        }
-
-        Map<Integer,AuthenticationManager> authManagers = new HashMap<Integer, AuthenticationManager>();
-        authManagers .put(null, defaultAuthMgr);
-
-        for(Map.Entry<Integer,String> portMapping : _configuration.getPortAuthenticationMappings().entrySet())
-        {
-
-            AuthenticationManager authenticationManager = authManagersByClass.get(portMapping.getValue());
-            if(authenticationManager == null)
-            {
-                throw new ConfigurationException("Unknown authentication manager class " + portMapping.getValue() +
-                                                " configured for port " + portMapping.getKey());
-            }
-            authManagers.put(portMapping.getKey(), authenticationManager);
-        }
-        
-        return authManagers;
+        return new AuthenticationManagerRegistry(_configuration, _pluginManager);
     }
 
     protected void initialiseVirtualHosts() throws Exception
@@ -578,7 +489,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             //Shutdown virtualhosts
             close(_virtualHostRegistry);
 
-            close(_defaultAuthenticationManager);
+            close(_authenticationManagerRegistry);
 
             close(_qmfService);
 
@@ -650,24 +561,11 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return _managedObjectRegistry;
     }
 
-    public AuthenticationManager getDefaultAuthenticationManager()
-    {
-        return _defaultAuthenticationManager;
-    }
-
-
     @Override
     public AuthenticationManager getAuthenticationManager(SocketAddress address)
     {
-        AuthenticationManager authManager =
-                address instanceof InetSocketAddress
-                        ? _authenticationManagers.get(((InetSocketAddress)address).getPort())
-                        : null;
-
-        return authManager == null ? _defaultAuthenticationManager : authManager;
+        return _authenticationManagerRegistry.getAuthenticationManagerFor(address);
     }
-
-
 
     public PluginManager getPluginManager()
     {
