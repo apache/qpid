@@ -23,9 +23,10 @@ define(["dojo/_base/xhr",
         "dojo/io-query",
         "dijit/Tree",
         "qpid/common/util",
+        "qpid/common/updater",
         "qpid/management/controller",
         "dojo/domReady!"],
-       function (xhr, query, ioQuery, Tree, util, controller) {
+       function (xhr, query, ioQuery, Tree, util, updater, controller) {
 
            function TreeViewModel(queryString) {
                this.query = queryString;
@@ -302,6 +303,7 @@ define(["dojo/_base/xhr",
 
                        }, true);
                tree.startup();
+               updater.add( treeModel );
            });
 
            return TreeViewModel;

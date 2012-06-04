@@ -24,8 +24,8 @@
 
 html, body {
     height: 100%;
-    width: 800px;
     margin: 0;
+    margin-right: 40px;
     padding: 0;
     overflow: hidden;
     font-family: Lucida Sans,Lucida Grande,Arial !important;

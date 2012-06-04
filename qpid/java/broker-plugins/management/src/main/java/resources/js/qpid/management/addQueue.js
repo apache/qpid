@@ -28,6 +28,18 @@ define(["dojo/_base/xhr",
         "dojo/_base/event",
         'dojo/_base/json',
         "dijit/form/NumberSpinner", // required by the form
+        /* dojox/ validate resources */
+        "dojox/validate/us", "dojox/validate/web",
+        /* basic dijit classes */
+        "dijit/Dialog",
+        "dijit/form/CheckBox", "dijit/form/Textarea",
+        "dijit/form/FilteringSelect", "dijit/form/TextBox",
+        "dijit/form/ValidationTextBox", "dijit/form/DateTextBox",
+        "dijit/form/TimeTextBox", "dijit/form/Button",
+        "dijit/form/RadioButton", "dijit/form/Form",
+        "dijit/form/DateTextBox",
+        /* basic dojox classes */
+        "dojox/form/BusyButton", "dojox/form/CheckedMultiSelect",
         "dojo/domReady!"],
     function (xhr, dom, construct, win, registry, parser, array, event, json) {
 
@@ -138,7 +150,6 @@ define(["dojo/_base/xhr",
         addQueue.show = function(vhost) {
                             addQueue.vhost = vhost;
                             registry.byId("formAddQueue").reset();
-                            // hide all non-standard queue rows
                             registry.byId("addQueue").show();
                         };
 
