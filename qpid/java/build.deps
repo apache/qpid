@@ -34,6 +34,7 @@ geronimo-jta=lib/required/geronimo-jta_1.1_spec-1.1.1.jar
 geronimo-kernel=lib/required/geronimo-kernel-2.2.1.jar
 geronimo-openejb=lib/required/geronimo-ejb_3.0_spec-1.0.1.jar
 geronimo-servlet=lib/required/geronimo-servlet_2.5_spec-1.2.jar
+#servlet-api=lib/required/geronimo-servlet_3.0_spec-1.0.jar
 
 junit=lib/required/junit-3.8.1.jar
 mockito-all=lib/required/mockito-all-1.9.0.jar
@@ -47,8 +48,14 @@ slf4j-log4j=lib/required/slf4j-log4j12-1.6.4.jar
 
 xalan=lib/required/xalan-2.7.0.jar
 
-jetty=lib/required/jetty-6.1.14.jar
-jetty-util=lib/required/jetty-util-6.1.14.jar
+jetty=lib/required/jetty-server-7.6.3.v20120416.jar
+jetty-continuation=lib/required/jetty-continuation-7.6.3.v20120416.jar
+jetty-security=lib/required/jetty-security-7.6.3.v20120416.jar
+jetty-util=lib/required/jetty-util-7.6.3.v20120416.jar
+jetty-io=lib/required/jetty-io-7.6.3.v20120416.jar
+jetty-http=lib/required/jetty-http-7.6.3.v20120416.jar
+jetty-servlet=lib/required/jetty-servlet-7.6.3.v20120416.jar
+jetty-websocket=lib/required/jetty-websocket-7.6.3.v20120416.jar
 servlet-api=${geronimo-servlet}
 
 dojo=lib/required/dojo-war-1.7.2.war
@@ -71,9 +78,9 @@ amqp-1-0-client-jms.libs=${geronimo-jms}
 tools.libs=${commons-configuration.libs} ${log4j}
 broker.libs=${commons-cli} ${commons-logging} ${log4j} ${slf4j-log4j} \
     ${xalan} ${felix.libs} ${derby-db} ${commons-configuration.libs} \
-    ${jackson-core} ${jackson-mapper}
+    ${jackson-core} ${jackson-mapper} ${jetty} ${jetty-continuation} ${jetty-security} ${jetty-http} ${jetty-io} ${jetty-servlet} ${jetty-util} ${servlet-api} ${jetty-websocket}
 
-broker-plugins-management.libs=${jetty} ${jetty-util} ${servlet-api} ${jackson-core} ${jackson-mapper}
+broker-plugins-management.libs=${jetty} ${jetty-continuation} ${jetty-security} ${jetty-http} ${jetty-io} ${jetty-servlet} ${jetty-util} ${servlet-api}  ${jackson-core} ${jackson-mapper}
 broker-plugins.libs=${felix.libs} ${log4j} ${commons-configuration.libs}
 
 test.libs=${slf4j-log4j} ${log4j} ${junit} ${slf4j-api} ${mockito-all}

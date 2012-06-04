@@ -28,22 +28,12 @@ import org.apache.qpid.server.management.plugin.servlet.FileServlet;
 import org.apache.qpid.server.management.plugin.servlet.api.ExchangesServlet;
 import org.apache.qpid.server.management.plugin.servlet.api.VhostsServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.*;
-import org.apache.qpid.server.model.Binding;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Connection;
-import org.apache.qpid.server.model.Exchange;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Protocol;
-import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.Session;
-import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.SessionManager;
-import org.mortbay.jetty.servlet.Context;
-import org.mortbay.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.SessionManager;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 
 public class Management
 {
@@ -80,8 +70,11 @@ public class Management
     private Server createServer(int port)
     {
         Server server = new Server(port);
-        Context root;
-        root = new Context(server,"/", Context.SESSIONS);
+
+        ServletContextHandler root = new ServletContextHandler(ServletContextHandler.SESSIONS);
+                root.setContextPath("/");
+                server.setHandler(root);
+
         root.addServlet(new ServletHolder(new VhostsServlet(_broker)), "/api/vhosts/*");
         root.addServlet(new ServletHolder(new ExchangesServlet(_broker)), "/api/exchanges/*");
 
@@ -125,13 +118,12 @@ public class Management
 
         final SessionManager sessionManager = root.getSessionHandler().getSessionManager();
 
-        sessionManager.setMaxCookieAge(60 * 30);
         sessionManager.setMaxInactiveInterval(60 * 15);
 
         return server;
     }
 
-    private void addRestServlet(Context root, String name, Class<? extends ConfiguredObject>... hierarchy)
+    private void addRestServlet(ServletContextHandler root, String name, Class<? extends ConfiguredObject>... hierarchy)
     {
         root.addServlet(new ServletHolder(new RestServlet(_broker, hierarchy)), "/rest/"+name+"/*");
     }
