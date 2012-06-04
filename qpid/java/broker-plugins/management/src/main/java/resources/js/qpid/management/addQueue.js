@@ -142,9 +142,5 @@ define(["dojo/_base/xhr",
                             registry.byId("addQueue").show();
                         };
 
-        addQueue.hide = function() {
-                            addQueue.dialogNode.hide();
-                        };
-
         return addQueue;
     });

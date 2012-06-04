@@ -31,6 +31,15 @@ define(function () {
     return {
             add: function(obj) {
                 updateList.push(obj);
+            },
+
+            remove: function(obj) {
+                for(var i = 0; i < updateList.length; i++) {
+                    if(updateList[i] === obj) {
+                        updateList.splice(i,1);
+                        return;
+                    }
+                }
             }
         };
 });

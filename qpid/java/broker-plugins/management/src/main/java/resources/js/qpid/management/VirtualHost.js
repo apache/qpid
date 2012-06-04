@@ -49,16 +49,16 @@ define(["dojo/_base/xhr",
                             parent.containerNode.innerHTML = data;
                             parser.parse(parent.containerNode);
 
-                            var vhostUpdater = new Updater(parent.containerNode, that.name);
+                            that.vhostUpdater = new Updater(parent.containerNode, that.name);
 
-                            updater.add( vhostUpdater );
+                            updater.add( that.vhostUpdater );
 
-                            vhostUpdater.update();
+                            that.vhostUpdater.update();
                         }});
            };
 
            VirtualHost.prototype.close = function() {
-
+               updater.remove( this.vhostUpdater );
            };
 
 

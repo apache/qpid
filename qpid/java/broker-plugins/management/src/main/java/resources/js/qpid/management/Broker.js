@@ -48,23 +48,18 @@ define(["dojo/_base/xhr",
                             parent.containerNode.innerHTML = data;
                             parser.parse(parent.containerNode);
 
-                            var brokerUpdater = new BrokerUpdater(parent.containerNode, that.controller);
+                            that.brokerUpdater = new BrokerUpdater(parent.containerNode, that.controller);
 
-                            updater.add( brokerUpdater );
+                            updater.add( that.brokerUpdater );
 
-                            brokerUpdater.update();
+                            that.brokerUpdater.update();
 
                         }});
            };
 
            Broker.prototype.close = function() {
-
+               updater.remove( this.brokerUpdater );
            };
-
-           Broker.prototype.bringToFront = function() {
-
-           };
-
 
            function BrokerUpdater(node, controller)
            {

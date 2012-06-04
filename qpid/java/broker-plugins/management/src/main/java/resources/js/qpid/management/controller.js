@@ -40,6 +40,7 @@ define(["dojo/dom",
            controller.viewedObjects = {};
 
            controller.show = function(objType, name) {
+               var that = this;
                var objId = objType+":"+name;
                if( this.viewedObjects[ objId ] ) {
                    this.tabContainer.selectChild(this.viewedObjects[ objId ].contentPane);
@@ -49,9 +50,16 @@ define(["dojo/dom",
                    var obj = new Constructor(name, this);
                    this.viewedObjects[ objId ] = obj;
 
-                   var contentPane = new ContentPane({ region: "center" , title: obj.getTitle()});
+                   var contentPane = new ContentPane({ region: "center" ,
+                                                       title: obj.getTitle(),
+                                                       closable: true,
+                                                       onClose: function() {
+                                                           obj.close();
+                                                           delete that.viewedObjects[ objId ];
+                                                           return true;
+                                                       }
+                   });
                    this.tabContainer.addChild( contentPane );
-
                    obj.open(contentPane);
                    contentPane.startup();
                    this.tabContainer.selectChild( contentPane );
