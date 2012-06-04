@@ -69,7 +69,6 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
     public Context getInitialContext(Hashtable environment) throws NamingException
     {
         Map data = new ConcurrentHashMap();
-        File file = null;
         BufferedInputStream inputStream = null;
         try
         {
@@ -77,11 +76,9 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
             String fileName = (environment.containsKey(Context.PROVIDER_URL))
                     ? (String)environment.get(Context.PROVIDER_URL) : System.getProperty(Context.PROVIDER_URL);
 
-            _logger.info("Attempting to load " + fileName);
-
-
             if (fileName != null)
             {
+                _logger.info("Attempting to load " + fileName);
 
                 inputStream = new BufferedInputStream(new FileInputStream((fileName.contains("file:"))
                                                      ? new File(new URI(fileName)) : new File(fileName)));
