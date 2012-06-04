@@ -117,15 +117,14 @@ define(["dojo/_base/xhr",
 
                          });
 
-  /*             xhr.get({url: "/rest/logrecords", sync: useSyncGet, handleAs: "json"})
+               xhr.get({url: "/rest/logrecords", sync: properties.useSyncGet, handleAs: "json"})
                    .then(function(data)
                          {
-                             this.logData = data;
+                             that.logData = data;
 
                              that.logfileGrid =
-                             new UpdatableStore(Observable, Memory, ObjectStore, DataGrid,
-                                                that.logData, "logfile",
-                                                [   { name: "ID", field: "id", width: "30px"},
+                                new UpdatableStore(that.logData, query(".broker-logfile")[0],
+                                                [   { name: "Timestamp", field: "timestamp", width: "30px"},
                                                     { name: "Level", field: "level", width: "60px"},
                                                     { name: "Logger", field: "logger", width: "100px"},
                                                     { name: "Thread", field: "thread", width: "60px"},
@@ -133,7 +132,7 @@ define(["dojo/_base/xhr",
 
                                                 ]);
                          });
-  */         }
+           }
 
            BrokerUpdater.prototype.updateHeader = function()
            {
@@ -154,12 +153,7 @@ define(["dojo/_base/xhr",
                                                                                        that.brokerData = data[0];
                                                                                        util.flattenStatistics( that.brokerData );
 
-                                                                                       var virtualhosts = that.brokerData[ "virtualhosts" ];
-                                                                                       var ports = that.brokerData[ "ports" ];
-
-
                                                                                        that.updateHeader();
-
 
                                                                                        that.vhostsGrid.update(that.brokerData.virtualhosts);
 
@@ -169,13 +163,13 @@ define(["dojo/_base/xhr",
                                                                                    });
 
 
-      /*         xhr.get({url: "/rest/logrecords", sync: useSyncGet, handleAs: "json"})
+               xhr.get({url: "/rest/logrecords", sync: properties.useSyncGet, handleAs: "json"})
                    .then(function(data)
                          {
-                             this.logData = data;
-                             that.logfileGrid.update(this.logData);
+                             that.logData = data;
+                             that.logfileGrid.update(that.logData);
                          });
-      */
+
            };
 
 

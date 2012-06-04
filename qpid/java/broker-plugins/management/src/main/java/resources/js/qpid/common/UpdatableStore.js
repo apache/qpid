@@ -53,14 +53,10 @@ define(["dojo/store/Memory",
 
         // handle deletes
         // iterate over existing store... if not in new data then remove
-        store.query({ }).forEach(function(object)
-                                 {
-                                     if(data)
-                                     {
-                                         for(var i=0; i < data.length; i++)
-                                         {
-                                             if(data[i].id == object.id)
-                                             {
+        store.query({ }).forEach(function(object) {
+                                     if(data) {
+                                         for(var i=0; i < data.length; i++) {
+                                             if(data[i].id == object.id) {
                                                  return;
                                              }
                                          }
@@ -70,31 +66,23 @@ define(["dojo/store/Memory",
                                  });
 
         // iterate over data...
-        if(data)
-        {
-            for(var i=0; i < data.length; i++)
-            {
-                if(theItem = store.get(data[i].id))
-                {
+        if(data) {
+            for(var i=0; i < data.length; i++) {
+                if(theItem = store.get(data[i].id)) {
                     var modified;
-                    for(var propName in data[i])
-                    {
+                    for(var propName in data[i]) {
                         if(data[i].hasOwnProperty(propName)) {
-                            if(theItem[ propName ] != data[i][ propName ])
-                            {
+                            if(theItem[ propName ] != data[i][ propName ]) {
                                 theItem[ propName ] = data[i][ propName ];
                                 modified = true;
                             }
                         }
                     }
-                    if(modified)
-                    {
+                    if(modified) {
                         // ... check attributes for updates
                         store.notify(theItem, data[i].id);
                     }
-                }
-                else
-                {
+                } else {
                     // ,,, if not in the store then add
                     store.put(data[i]);
                 }
