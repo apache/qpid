@@ -23,12 +23,13 @@ define(["dojo/dom",
         "dijit/layout/ContentPane",
         "qpid/management/Broker",
         "qpid/management/VirtualHost",
+        "qpid/management/Exchange",
         "dojo/ready",
         "dojo/domReady!"],
-       function (dom, registry, ContentPane, Broker, VirtualHost, ready) {
+       function (dom, registry, ContentPane, Broker, VirtualHost, Exchange, ready) {
            var controller = {};
 
-           var constructors = { broker: Broker, virtualhost: VirtualHost };
+           var constructors = { broker: Broker, virtualhost: VirtualHost, exchange: Exchange };
 
            var tabDiv = dom.byId("managedViews");
 
@@ -39,31 +40,49 @@ define(["dojo/dom",
 
            controller.viewedObjects = {};
 
-           controller.show = function(objType, name) {
+           controller.show = function(objType, name, parent) {
+
+               function generateName(obj)
+               {
+                    if(obj) {
+                        var name = "";
+                        if(obj.parent)
+                        {
+                            for(var prop in obj.parent) {
+                                if(obj.parent.hasOwnProperty(prop)) {
+                                    name = name + generateName( obj.parent[ prop ]);
+                                }
+                            }
+
+                        }
+                        return name + parent.type +":" + parent.name + "/"
+                    }
+               }
+
                var that = this;
-               var objId = objType+":"+name;
+               var objId = generateName(parent) + objType+":"+name;
                if( this.viewedObjects[ objId ] ) {
                    this.tabContainer.selectChild(this.viewedObjects[ objId ].contentPane);
                } else {
                    var Constructor = constructors[ objType ];
+                   if(Constructor) {
+                       var obj = new Constructor(name, parent, this);
+                       this.viewedObjects[ objId ] = obj;
 
-                   var obj = new Constructor(name, this);
-                   this.viewedObjects[ objId ] = obj;
-
-                   var contentPane = new ContentPane({ region: "center" ,
-                                                       title: obj.getTitle(),
-                                                       closable: true,
-                                                       onClose: function() {
-                                                           obj.close();
-                                                           delete that.viewedObjects[ objId ];
-                                                           return true;
-                                                       }
-                   });
-                   this.tabContainer.addChild( contentPane );
-                   obj.open(contentPane);
-                   contentPane.startup();
-                   this.tabContainer.selectChild( contentPane );
-
+                       var contentPane = new ContentPane({ region: "center" ,
+                                                           title: obj.getTitle(),
+                                                           closable: true,
+                                                           onClose: function() {
+                                                               obj.close();
+                                                               delete that.viewedObjects[ objId ];
+                                                               return true;
+                                                           }
+                       });
+                       this.tabContainer.addChild( contentPane );
+                       obj.open(contentPane);
+                       contentPane.startup();
+                       this.tabContainer.selectChild( contentPane );
+                   }
 
                }
 
@@ -71,7 +90,6 @@ define(["dojo/dom",
 
            ready(function() {
                controller.show("broker","");
-               //controller.show("virtualhost","test");
            });
 
 

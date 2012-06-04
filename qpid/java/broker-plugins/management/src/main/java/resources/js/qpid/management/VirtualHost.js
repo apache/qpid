@@ -30,9 +30,14 @@ define(["dojo/_base/xhr",
         "dojo/domReady!"],
        function (xhr, parser, query, connect, properties, updater, util, formatter, UpdatableStore) {
 
-           function VirtualHost(name, controller) {
+           function VirtualHost(name, parent, controller) {
                this.name = name;
                this.controller = controller;
+               this.modelObj = { type: "virtualhost", name: name};
+               if(parent) {
+                   this.modelObj.parent = {};
+                   this.modelObj.parent[ parent.type] = parent;
+               }
            }
 
            VirtualHost.prototype.getTitle = function()
@@ -40,16 +45,16 @@ define(["dojo/_base/xhr",
                return "VirtualHost: " + this.name;
            };
 
-           VirtualHost.prototype.open = function(parent) {
+           VirtualHost.prototype.open = function(contentPane) {
                var that = this;
-               this.contentPane = parent;
+               this.contentPane = contentPane;
                xhr.get({url: "showVirtualHost.html",
                         sync: true,
                         load:  function(data) {
-                            parent.containerNode.innerHTML = data;
-                            parser.parse(parent.containerNode);
+                            contentPane.containerNode.innerHTML = data;
+                            parser.parse(contentPane.containerNode);
 
-                            that.vhostUpdater = new Updater(parent.containerNode, that.name);
+                            that.vhostUpdater = new Updater(contentPane.containerNode, that.modelObj, that.controller);
 
                             updater.add( that.vhostUpdater );
 
@@ -62,7 +67,7 @@ define(["dojo/_base/xhr",
            };
 
 
-           function Updater(node, vhostName)
+           function Updater(node, vhost, controller)
            {
 
                var that = this;
@@ -98,7 +103,7 @@ define(["dojo/_base/xhr",
                            "bytesOutRate",
                            "bytesOutRateUnits"]);
 
-               this.query = "/rest/virtualhost/"+ vhostName ;
+               this.query = "/rest/virtualhost/"+ vhost.name ;
 
 
                var that = this;
@@ -122,7 +127,7 @@ define(["dojo/_base/xhr",
                                                                              var idx = evt.rowIndex,
                                                                                  theItem = this.getItem(idx);
                                                                              var queueName = obj.dataStore.getValue(theItem,"name");
-
+                                                                             controller.show("queue", queueName, vhost);
                                                                          });
                                                         } );
 
@@ -139,7 +144,7 @@ define(["dojo/_base/xhr",
                                                                                 var idx = evt.rowIndex,
                                                                                     theItem = this.getItem(idx);
                                                                                 var exchangeName = obj.dataStore.getValue(theItem,"name");
-
+                                                                                controller.show("exchange", exchangeName, vhost);
                                                                             });
                                                            } );
 
@@ -164,7 +169,7 @@ define(["dojo/_base/xhr",
                                                                                   var idx = evt.rowIndex,
                                                                                       theItem = this.getItem(idx);
                                                                                   var connectionName = obj.dataStore.getValue(theItem,"name");
-
+                                                                                  controller.show("connection", connectionName, vhost);
                                                                               });
                                                              } );
 

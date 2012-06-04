@@ -29,9 +29,14 @@ define(["dojo/_base/xhr",
         "dojo/domReady!"],
        function (xhr, parser, query, connect, properties, updater, util, UpdatableStore) {
 
-           function Broker(name, controller) {
+           function Broker(name, parent, controller) {
                this.name = name;
                this.controller = controller;
+               this.modelObj = { type: "broker", name: name };
+               if(parent) {
+                    this.modelObj.parent = {};
+                    this.modelObj.parent[ parent.type] = parent;
+                }
            }
 
            Broker.prototype.getTitle = function()
@@ -39,16 +44,16 @@ define(["dojo/_base/xhr",
                return "Broker";
            };
 
-           Broker.prototype.open = function(parent) {
+           Broker.prototype.open = function(contentPane) {
                var that = this;
-               this.contentPane = parent;
+               this.contentPane = contentPane;
                xhr.get({url: "showBroker.html",
                         sync: true,
                         load:  function(data) {
-                            parent.containerNode.innerHTML = data;
-                            parser.parse(parent.containerNode);
+                            contentPane.containerNode.innerHTML = data;
+                            parser.parse(contentPane.containerNode);
 
-                            that.brokerUpdater = new BrokerUpdater(parent.containerNode, that.controller);
+                            that.brokerUpdater = new BrokerUpdater(contentPane.containerNode, that.modelObj, that.controller);
 
                             updater.add( that.brokerUpdater );
 
@@ -61,7 +66,7 @@ define(["dojo/_base/xhr",
                updater.remove( this.brokerUpdater );
            };
 
-           function BrokerUpdater(node, controller)
+           function BrokerUpdater(node, brokerObj, controller)
            {
                this.controller = controller;
                this.name = query(".broker-name", node)[0];
@@ -89,8 +94,8 @@ define(["dojo/_base/xhr",
                                                         function(evt){
                                                             var idx = evt.rowIndex,
                                                                 theItem = this.getItem(idx);
-                                                            var vhostName = obj.dataStore.getValue(theItem,"name");
-                                                            controller.show("virtualhost", vhostName);
+                                                            var name = obj.dataStore.getValue(theItem,"name");
+                                                            that.controller.show("virtualhost", name, brokerObj);
                                                         });
                                                 });
 
@@ -100,7 +105,15 @@ define(["dojo/_base/xhr",
                                                     { name: "Port", field: "port", width: "70px"},
                                                     { name: "Transports", field: "transports", width: "150px"},
                                                     { name: "Protocols", field: "protocols", width: "100%"}
-                                                ]);
+                                                ], function(obj) {
+                                                        connect.connect(obj.grid, "onRowDblClick", obj.grid,
+                                                        function(evt){
+                                                            var idx = evt.rowIndex,
+                                                                theItem = this.getItem(idx);
+                                                            var name = obj.dataStore.getValue(theItem,"name");
+                                                            that.controller.show("port", name, brokerObj);
+                                                        });
+                                                });
 
                          });
 
