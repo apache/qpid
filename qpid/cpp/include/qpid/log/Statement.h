@@ -22,6 +22,7 @@
 #include "qpid/Msg.h"
 #include "qpid/CommonImportExport.h"
 #include <boost/current_function.hpp>
+#include <list>
 
 namespace qpid {
 namespace log {
@@ -55,7 +56,7 @@ struct LevelTraits {
     static const char* name(Level);
 };
 
-/** Add formal message categories
+/** Formal message categories
  * https://issues.apache.org/jira/browse/QPID-3902
  *
  * Category    Source code directory
@@ -98,6 +99,58 @@ struct CategoryTraits {
 };
 
 
+class CategoryFileNameHints {
+public:
+    CategoryFileNameHints(){
+        hintList.push_back(std::make_pair("AsynchIo",    io));
+        hintList.push_back(std::make_pair("TCP",         io));
+        hintList.push_back(std::make_pair("epoll",       io));
+        hintList.push_back(std::make_pair("Pollable",    io));
+        hintList.push_back(std::make_pair("Socket",      io));
+
+        hintList.push_back(std::make_pair("Sasl",        security));
+        hintList.push_back(std::make_pair("Ssl",         security));
+        hintList.push_back(std::make_pair("Acl",         security));
+        hintList.push_back(std::make_pair("acl",         security));
+        hintList.push_back(std::make_pair("cyrus",       security));
+
+        hintList.push_back(std::make_pair("amqp_",       amqp));
+        hintList.push_back(std::make_pair("framing",     amqp));
+
+        hintList.push_back(std::make_pair("management",  management));
+        hintList.push_back(std::make_pair("qmf",         management));
+        hintList.push_back(std::make_pair("console",     management));
+
+        hintList.push_back(std::make_pair("cluster",     ha));
+        hintList.push_back(std::make_pair("qpid/ha",     ha));
+        hintList.push_back(std::make_pair("qpid\\ha",    ha));
+        hintList.push_back(std::make_pair("replication", ha));
+        hintList.push_back(std::make_pair("ClusterSafe", ha));
+
+        hintList.push_back(std::make_pair("broker",      broker));
+        hintList.push_back(std::make_pair("SessionState",broker));
+        hintList.push_back(std::make_pair("DataDir",     broker));
+        hintList.push_back(std::make_pair("qpidd",       broker));
+
+        hintList.push_back(std::make_pair("store",       store));
+
+        hintList.push_back(std::make_pair("assert",      system));
+        hintList.push_back(std::make_pair("Exception",   system));
+        hintList.push_back(std::make_pair("sys",         system));
+        hintList.push_back(std::make_pair("SCM",         system));
+
+        hintList.push_back(std::make_pair("tests",       test));
+
+        hintList.push_back(std::make_pair("messaging",   messaging));
+        hintList.push_back(std::make_pair("types",       messaging));
+    }
+
+    static Category categoryOf(const char*const fName);
+
+private:
+    std::list<std::pair<const char* const, Category> > hintList;
+};
+
  /** POD struct representing a logging statement in source code. */
 struct Statement {
     bool enabled;
@@ -109,7 +162,6 @@ struct Statement {
 
     QPID_COMMON_EXTERN void log(const std::string& message);
     QPID_COMMON_EXTERN static void categorize(Statement& s);
-    QPID_COMMON_EXTERN static Category categoryOf(const char* const function);
 
     struct Initializer {
         QPID_COMMON_EXTERN Initializer(Statement& s);

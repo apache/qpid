@@ -50,60 +50,21 @@ std::string quote(const std::string& str) {
 }
 }
 
-void Statement::log(const std::string& message) {
-    Logger::instance().log(*this, quote(message));
-}
+//
+// Instance of name hints
+//
+static CategoryFileNameHints filenameHints;
 
-#define test(STR, CAT)           \
-if (strstr(fName, (STR)) != 0) {\
-    return (::qpid::log::CAT); \
-}
-//    std::cout << "File: " << fName << " categorized as " << CategoryTraits::name(::qpid::log::CAT) << std::endl;
 
-Category Statement::categoryOf(const char*const fName) {
-    test("AsynchIO",    io);
-    test("TCP",         io);
-    test("epoll",       io);
-    test("Pollable",    io);
-    test("Socket",      io);
-
-    test("Sasl",        security);
-    test("Ssl",         security);
-    test("Acl",         security);
-    test("acl",         security);
-    test("cyrus",       security);
-
-    test("amqp_",       amqp);
-    test("framing",     amqp);
-
-    test("management",  management);
-    test("qmf",         management);
-    test("console",     management);
-
-    test("cluster",     ha);
-    test("qpid/ha",     ha);
-    test("qpid\\ha",    ha);
-    test("replication", ha);
-    test("ClusterSafe", ha);
-
-    test("broker",      broker);
-    test("SessionState",broker);
-    test("DataDir",     broker);
-    test("qpidd",       broker);
-
-    test("store",       store);
-
-    test("assert",      system);
-    test("Exception",   system);
-    test("sys",         system);
-    test("SCM",         system);
-
-    test("tests",       test);
-
-    test("messaging",   messaging);
-    test("types",       messaging);
-
-    std::cout << "Unspecified file:" << fName << std::endl;
+Category CategoryFileNameHints::categoryOf(const char* const fName) {
+    for (std::list<std::pair<const char* const, Category> >::iterator
+           it  = filenameHints.hintList.begin();
+           it != filenameHints.hintList.end();
+         ++it) {
+        if (strstr(fName, (const char* const)it->first) != 0) {
+            return it->second;
+        }
+    }
     return unspecified;
 }
 
@@ -111,12 +72,17 @@ Category Statement::categoryOf(const char*const fName) {
 void Statement::categorize(Statement& s) {
     // given a statement and it's category
     // if the category is Unspecified then try to find a
-    // better category based on the path/file function name.
+    // better category based on the path and file name.
     if (s.category == log::unspecified) {
-        s.category = categoryOf(s.file);
+        s.category = CategoryFileNameHints::categoryOf(s.file);
     } else {
         // already has a category so leave it alone
     }
+}
+
+
+void Statement::log(const std::string& message) {
+    Logger::instance().log(*this, quote(message));
 }
 
 
