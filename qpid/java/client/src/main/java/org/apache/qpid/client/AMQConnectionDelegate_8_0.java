@@ -24,13 +24,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQTimeoutException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.failover.FailoverRetrySupport;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQState;
-import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateWaiter;
 import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.framing.BasicQosBody;
@@ -67,7 +65,6 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 {
     private static final Logger _logger = LoggerFactory.getLogger(AMQConnectionDelegate_8_0.class);
     private final AMQConnection _conn;
-
 
     public void closeConnection(long timeout) throws JMSException, AMQException
     {
@@ -139,6 +136,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         {
             _conn.getFailoverPolicy().attainedConnection();
             _conn.setConnected(true);
+            _conn.logConnected(network.getLocalAddress(), network.getRemoteAddress());
             return null;
         }
         else
