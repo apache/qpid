@@ -69,6 +69,7 @@ import javax.naming.StringRefAddr;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.ConnectException;
+import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.nio.channels.UnresolvedAddressException;
 import java.util.ArrayList;
@@ -1528,5 +1529,14 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public Long getConnectionNumber()
     {
         return _connectionNumber;
+    }
+
+    protected void logConnected(SocketAddress localAddress, SocketAddress remoteAddress)
+    {
+        if(_logger.isInfoEnabled())
+        {
+            _logger.info("Connection " + _connectionNumber + " now connected from "
+                         + localAddress + " to " + remoteAddress);
+        }
     }
 }
