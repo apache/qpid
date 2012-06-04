@@ -61,7 +61,10 @@ public class StateWaiter extends BlockingWaiter<AMQState>
      */
     public StateWaiter(AMQStateManager stateManager, AMQState currentState, Set<AMQState> awaitStates)
     {
-        _logger.info("New StateWaiter :" + currentState + ":" + awaitStates);
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("New StateWaiter :" + currentState + ":" + awaitStates);
+        }
         _stateManager = stateManager;
         _awaitStates = awaitStates;
         _startState = currentState;
