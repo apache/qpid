@@ -54,17 +54,17 @@ define(["dojo/_base/xhr",
                             contentPane.containerNode.innerHTML = data;
                             parser.parse(contentPane.containerNode);
 
-                            that.brokerUpdater = new ExchangeUpdater(contentPane.containerNode, that.modelObj, that.controller);
+                            that.exchangeUpdater = new ExchangeUpdater(contentPane.containerNode, that.modelObj, that.controller);
 
-                            updater.add( that.brokerUpdater );
+                            updater.add( that.exchangeUpdater );
 
-                            that.brokerUpdater.update();
+                            that.exchangeUpdater.update();
 
                         }});
            };
 
            Exchange.prototype.close = function() {
-               updater.remove( this.brokerUpdater );
+               updater.remove( this.exchangeUpdater );
            };
 
            function ExchangeUpdater(containerNode, exchangeObj, controller)

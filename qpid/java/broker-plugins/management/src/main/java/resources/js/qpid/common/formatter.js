@@ -30,7 +30,7 @@ define(function () {
 
             if(amount < 1000)
             {
-                returnVal.value = amount;
+                returnVal.value = amount.toPrecision(3);;
             }
             else if(amount < 1000 * 1024)
             {

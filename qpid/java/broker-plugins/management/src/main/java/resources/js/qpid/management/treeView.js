@@ -23,8 +23,9 @@ define(["dojo/_base/xhr",
         "dojo/io-query",
         "dijit/Tree",
         "qpid/common/util",
+        "qpid/management/controller",
         "dojo/domReady!"],
-       function (xhr, query, ioQuery, Tree, util) {
+       function (xhr, query, ioQuery, Tree, util, controller) {
 
            function TreeViewModel(queryString) {
                this.query = queryString;
@@ -257,27 +258,21 @@ define(["dojo/_base/xhr",
 
                findItemDetails(theItem, details, "broker", this.model);
 
-               var uri;
-
-
                if (details.type == "broker") {
-                   uri = "/broker";
+                   controller.show("broker", "");
                } else if (details.type == "virtualhost") {
-                   uri = "/vhost?" + ioQuery.objectToQuery({ vhost:details.virtualhost });
+                   controller.show("virtualhost", details.virtualhost, {type:"broker", name:""});
                } else if (details.type == "exchange") {
-                   uri = "/exchange?" + ioQuery.objectToQuery({ vhost:details.virtualhost, exchange:details.exchange });
+                   controller.show("exchange", details.exchange, { type: "virtualhost", name: details.virtualhost, parent: {broker: {type:"broker", name:""}}});
                } else if (details.type == "queue") {
-                   uri = "/queue?" + ioQuery.objectToQuery({ vhost:details.virtualhost, queue:details.queue});
+                   controller.show("queue", details.queue, { type: "virtualhost", name: details.virtualhost, parent: {broker: {type:"broker", name:""}}});
                } else if (details.type == "connection") {
-                   uri = "/connection?"
-                       + ioQuery.objectToQuery({ vhost:details.virtualhost, connection:details.connection});
+                   controller.show("connection", details.connection, { type: "virtualhost", name: details.virtualhost, parent: {broker: {type:"broker", name:""}}});
                } else if (details.type == 'port') {
-                   uri = "/port?" + ioQuery.objectToQuery({ port:details.port});
+                   controller.show("port", details.port, { type: "virtualhost", name: details.virtualhost, parent: {broker: {type:"broker", name:""}}});
                }
 
-               if (uri) {
-                   window.location = uri;
-               }
+
            };
 
            TreeViewModel.prototype.update = function () {
