@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.test.unit.client.connection;
 
+import javax.jms.Connection;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
@@ -57,5 +59,20 @@ public class ConnectionFactoryTest extends QpidBrokerTestCase
         assertEquals("Usernames used is different from the one in URL","guest",con3.getConnectionURL().getUsername());
         assertEquals("Password used is different from the one in URL","guest",con3.getConnectionURL().getPassword());
     }
-    
+
+    /**
+     * Verifies that a connection can be made using an instance of AMQConnectionFactory created with the
+     * default constructor and provided with the connection url via setter.
+     */
+    public void testCreatingConnectionWithInstanceMadeUsingDefaultConstructor() throws Exception
+    {
+        String broker = getBroker().toString();
+        String url = "amqp://guest:guest@clientID/test?brokerlist='" + broker + "'";
+
+        AMQConnectionFactory factory = new AMQConnectionFactory();
+        factory.setConnectionURLString(url);
+
+        Connection con = factory.createConnection();
+        con.close();
+    }
 }

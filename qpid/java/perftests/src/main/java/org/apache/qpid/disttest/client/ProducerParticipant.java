@@ -22,10 +22,14 @@ package org.apache.qpid.disttest.client;
 import java.util.Date;
 import java.util.NavigableSet;
 import java.util.TreeSet;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 
 import javax.jms.Message;
 
 import org.apache.qpid.disttest.DistributedTestException;
+import org.apache.qpid.disttest.client.utils.ExecutorWithLimits;
+import org.apache.qpid.disttest.client.utils.ExecutorWithLimitsFactory;
 import org.apache.qpid.disttest.jms.ClientJmsDelegate;
 import org.apache.qpid.disttest.message.CreateProducerCommand;
 import org.apache.qpid.disttest.message.ParticipantResult;
@@ -40,7 +44,9 @@ public class ProducerParticipant implements Participant
 
     private final CreateProducerCommand _command;
 
-    private ParticipantResultFactory _resultFactory;
+    private final ParticipantResultFactory _resultFactory;
+
+    private ExecutorWithLimits _limiter;
 
     public ProducerParticipant(final ClientJmsDelegate jmsDelegate, final CreateProducerCommand command)
     {
@@ -59,9 +65,9 @@ public class ProducerParticipant implements Participant
 
         int acknowledgeMode = _jmsDelegate.getAcknowledgeMode(_command.getSessionName());
 
-        long expectedDuration = _command.getMaximumDuration() - _command.getStartDelay();
-
         doSleepForStartDelay();
+
+        final long requiredDuration = _command.getMaximumDuration() - _command.getStartDelay();
 
         final long startTime = System.currentTimeMillis();
 
@@ -70,11 +76,28 @@ public class ProducerParticipant implements Participant
         long totalPayloadSizeOfAllMessagesSent = 0;
         NavigableSet<Integer> allProducedPayloadSizes = new TreeSet<Integer>();
 
+        _limiter = ExecutorWithLimitsFactory.createExecutorWithLimit(startTime, requiredDuration);
+
         while (true)
         {
-            numberOfMessagesSent++;
+            try
+            {
+                lastPublishedMessage = _limiter.execute(new Callable<Message>()
+                {
+                    @Override
+                    public Message call() throws Exception
+                    {
+                        return _jmsDelegate.sendNextMessage(_command);
+                    }
+                });
+            }
+            catch (CancellationException ce)
+            {
+                LOGGER.trace("Producer send was cancelled due to maximum duration {} ms", requiredDuration);
+                break;
+            }
 
-            lastPublishedMessage = _jmsDelegate.sendNextMessage(_command);
+            numberOfMessagesSent++;
 
             int lastPayloadSize = _jmsDelegate.calculatePayloadSizeFrom(lastPublishedMessage);
             totalPayloadSizeOfAllMessagesSent += lastPayloadSize;
@@ -96,15 +119,11 @@ public class ProducerParticipant implements Participant
                 }
                 _jmsDelegate.commitOrAcknowledgeMessage(lastPublishedMessage, _command.getSessionName());
 
-                if (_command.getInterval() > 0)
-                {
-                    // sleep for given time
-                    Thread.sleep(_command.getInterval());
-                }
+                doSleepForInterval();
             }
 
             if (_command.getNumberOfMessages() > 0 && numberOfMessagesSent >= _command.getNumberOfMessages()
-                            || expectedDuration > 0 && System.currentTimeMillis() - startTime >= expectedDuration)
+                            || requiredDuration > 0 && System.currentTimeMillis() - startTime >= requiredDuration)
             {
                 break;
             }
@@ -140,23 +159,42 @@ public class ProducerParticipant implements Participant
 
     private void doSleepForStartDelay()
     {
-        if (_command.getStartDelay() > 0)
+        long sleepTime = _command.getStartDelay();
+        if (sleepTime > 0)
         {
             // start delay is specified. Sleeping...
-            try
-            {
-                Thread.sleep(_command.getStartDelay());
-            }
-            catch (final InterruptedException e)
-            {
-                Thread.currentThread().interrupt();
-            }
+            doSleep(sleepTime);
+        }
+    }
+
+    private void doSleepForInterval() throws InterruptedException
+    {
+        long sleepTime = _command.getInterval();
+        if (sleepTime > 0)
+        {
+            doSleep(sleepTime);
+        }
+    }
+
+    private void doSleep(long sleepTime)
+    {
+        try
+        {
+            Thread.sleep(sleepTime);
+        }
+        catch (final InterruptedException e)
+        {
+            Thread.currentThread().interrupt();
         }
     }
 
     @Override
     public void releaseResources()
     {
+        if (_limiter != null)
+        {
+            _limiter.shutdown();
+        }
         _jmsDelegate.closeTestProducer(_command.getParticipantName());
     }
 
@@ -171,4 +209,5 @@ public class ProducerParticipant implements Participant
     {
         return "ProducerParticipant [command=" + _command + "]";
     }
+
 }
