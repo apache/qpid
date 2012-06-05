@@ -41,6 +41,8 @@ import static org.apache.qpid.transport.Connection.State.OPENING;
 
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslServer;
+
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -126,6 +128,9 @@ public class Connection extends ConnectionInvoker
     private SecurityLayer securityLayer;
 
     private final AtomicBoolean connectionLost = new AtomicBoolean(false);
+
+    private SocketAddress _remoteAddress;
+    private SocketAddress _localAddress;
 
     public Connection() {}
 
@@ -228,6 +233,9 @@ public class Connection extends ConnectionInvoker
             }
 
             NetworkConnection network = transport.connect(settings, secureReceiver, null);
+            _remoteAddress = network.getRemoteAddress();
+            _localAddress = network.getLocalAddress();
+
             final Sender<ByteBuffer> secureSender = securityLayer.sender(network.getSender());
             if(secureSender instanceof ConnectionListener)
             {
@@ -700,5 +708,15 @@ public class Connection extends ConnectionInvoker
         {
             ssn.notifyFailoverRequired();
         }
+    }
+
+    public SocketAddress getRemoteAddress()
+    {
+        return _remoteAddress;
+    }
+
+    public SocketAddress getLocalAddress()
+    {
+        return _localAddress;
     }
 }
