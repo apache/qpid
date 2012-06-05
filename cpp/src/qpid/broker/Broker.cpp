@@ -747,11 +747,6 @@ void Broker::createObject(const std::string& type, const std::string& name,
         bool durable = false;
         std::string authMech, username, password;
 
-        if (!getProtocolFactory(transport)) {
-            QPID_LOG(error, "Transport '" << transport << "' not supported.");
-            throw UnsupportedTransport(transport);
-        }
-
         for (Variant::Map::const_iterator i = properties.begin(); i != properties.end(); ++i) {
             if (i->first == HOST) host = i->second.asString();
             else if (i->first == PORT) port = i->second.asUint16();
@@ -763,6 +758,11 @@ void Broker::createObject(const std::string& type, const std::string& name,
             else {
                 // TODO: strict checking here
             }
+        }
+
+        if (!getProtocolFactory(transport)) {
+            QPID_LOG(error, "Transport '" << transport << "' not supported.");
+            throw UnsupportedTransport(transport);
         }
 
         std::pair<boost::shared_ptr<Link>, bool> rc;
