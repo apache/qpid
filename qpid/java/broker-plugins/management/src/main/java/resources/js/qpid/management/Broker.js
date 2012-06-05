@@ -124,7 +124,13 @@ define(["dojo/_base/xhr",
 
                              that.logfileGrid =
                                 new UpdatableStore(that.logData, query(".broker-logfile")[0],
-                                                [   { name: "Timestamp", field: "timestamp", width: "30px"},
+                                                [   { name: "Timestamp", field: "timestamp", width: "70px",
+                                                        formatter: function(val) {
+                                                        var d = new Date(0);
+                                                        d.setUTCSeconds(val/1000);
+
+                                                        return d.toLocaleString();
+                                                    }},
                                                     { name: "Level", field: "level", width: "60px"},
                                                     { name: "Logger", field: "logger", width: "100px"},
                                                     { name: "Thread", field: "thread", width: "60px"},

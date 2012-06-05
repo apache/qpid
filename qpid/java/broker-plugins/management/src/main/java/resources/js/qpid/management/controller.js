@@ -83,6 +83,9 @@ define(["dojo/dom",
                        this.tabContainer.addChild( contentPane );
                        obj.open(contentPane);
                        contentPane.startup();
+                       if(obj.startup) {
+                           obj.startup();
+                       }
                        this.tabContainer.selectChild( contentPane );
                    }
 

@@ -28,13 +28,19 @@ define(["dojo/_base/xhr",
         "qpid/common/util",
         "qpid/common/formatter",
         "qpid/common/UpdatableStore",
+        "dojo/store/JsonRest",
+        "dojox/grid/EnhancedGrid",
+        "dojo/data/ObjectStore",
+        "dojox/grid/enhanced/plugins/Pagination",
+        "dojox/grid/enhanced/plugins/IndirectSelection",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, json, properties, updater, util, formatter, UpdatableStore) {
+       function (xhr, parser, query, connect, json, properties, updater, util, formatter,
+                 UpdatableStore, JsonRest, EnhancedGrid, ObjectStore, Pagination) {
 
            function Queue(name, parent, controller) {
                this.name = name;
                this.controller = controller;
-               this.modelObj = { type: "exchange", name: name };
+               this.modelObj = { type: "queue", name: name };
                if(parent) {
                    this.modelObj.parent = {};
                    this.modelObj.parent[ parent.type] = parent;
@@ -61,7 +67,47 @@ define(["dojo/_base/xhr",
 
                             that.queueUpdater.update();
 
+                            var myStore = new JsonRest({target:"/rest/message/"+ encodeURIComponent(that.modelObj.parent.virtualhost.name) +
+                                                                               "/" + encodeURIComponent(that.name)});
+                            var messageGridDiv = query(".messages",contentPane.containerNode)[0];
+                            that.grid = new EnhancedGrid({
+                                store: new ObjectStore({objectStore: myStore}),
+                                autoHeight: 10,
+                                structure: [
+                                    {name:"Size", field:"size", width: "60px"},
+                                    {name:"State", field:"state", width: "120px"},
+
+                                    {name:"Arrival", field:"arrivalTime", width: "100%",
+                                        formatter: function(val) {
+                                            var d = new Date(0);
+                                            d.setUTCSeconds(val/1000);
+
+                                            return d.toLocaleString();
+                                        } }
+                                ],
+                                plugins: {
+                                          pagination: {
+                                              pageSizes: ["10", "25", "50", "100"],
+                                              description: true,
+                                               sizeSwitch: true,
+                                              pageStepper: true,
+                                              gotoButton: true,
+                                              maxPageStep: 4,
+                                              position: "bottom"
+                                          },
+                                          indirectSelection: true
+                                }
+                            }, messageGridDiv);
+
+
                         }});
+
+
+
+           };
+
+           Queue.prototype.startup = function() {
+               this.grid.startup();
            };
 
            Queue.prototype.close = function() {
