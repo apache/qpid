@@ -123,6 +123,11 @@ org.apache.qpid.test.client.message.SelectorTest#testRuntimeSelectorError
 org.apache.qpid.server.queue.ProducerFlowControlTest#*
 //QPID-3986 : Flow control invoked on total store disk usage
 org.apache.qpid.server.store.StoreOverfullTest#*
+// 0-8/0-9/0-9-1 and/or Java broker specific failover tests related to the above Producer Flow Control mechanisms
+org.apache.qpid.client.failover.FailoverBehaviourTest#testFailoverHandlerTimeoutExpires
+org.apache.qpid.client.failover.FailoverBehaviourTest#testFlowControlFlagResetOnFailover
+org.apache.qpid.client.failover.AddressBasedFailoverBehaviourTest#testFailoverHandlerTimeoutExpires
+org.apache.qpid.client.failover.AddressBasedFailoverBehaviourTest#testFlowControlFlagResetOnFailover
 
 org.apache.qpid.test.client.RollbackOrderTest#testOrderingAfterRollbackOnMessage#*
 

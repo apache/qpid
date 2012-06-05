@@ -836,6 +836,13 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
             }
         }
     }
+
+    /**
+     * Tests that the producer flow control flag is reset when failover occurs while
+     * the producers are being blocked by the broker.
+     *
+     * Uses Java broker specific queue configuration to enabled PSFC.
+     */
     public void testFlowControlFlagResetOnFailover() throws Exception
     {
         // we do not need the connection failing to second broker
