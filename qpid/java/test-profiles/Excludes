@@ -45,7 +45,5 @@ org.apache.qpid.management.jmx.ManagedConnectionMBeanTest#testCommit
 org.apache.qpid.management.jmx.ManagedConnectionMBeanTest#testRollback
 # Expects management log messages in SystemOut that arent present anymore due to move to plugin
 org.apache.qpid.server.logging.ManagementLoggingTest#*
-
-// QPID-4006 : temporarily exclude until the tests are updated to account for
-// the odd paths found in the ASF Jenkins test matrix workspaces
+#Need to implement a new way to instantiate the BDBHA MBean
 org.apache.qpid.server.store.berkeleydb.*
