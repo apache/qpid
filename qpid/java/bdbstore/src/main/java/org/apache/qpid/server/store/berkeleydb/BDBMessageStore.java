@@ -88,7 +88,18 @@ public class BDBMessageStore extends AbstractBDBMessageStore
     @Override
     protected StoreFuture commit(com.sleepycat.je.Transaction tx, boolean syncCommit) throws DatabaseException
     {
-        tx.commitNoSync();
+        try
+        {
+            tx.commitNoSync();
+        }
+        catch(DatabaseException de)
+        {
+            LOGGER.error("Got DatabaseException on commit, closing environment", de);
+
+            closeEnvironmentSafely();
+
+            throw de;
+        }
 
         return _commitThreadWrapper.commit(tx, syncCommit);
     }

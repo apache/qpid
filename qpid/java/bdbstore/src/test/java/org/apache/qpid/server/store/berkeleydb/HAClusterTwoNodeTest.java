@@ -83,13 +83,13 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
     {
         setSystemProperty("java.util.logging.config.file", "etc" + File.separator + "log.properties");
 
-        String vhostPrefix = "virtualhosts.virtualhost." + VIRTUAL_HOST;
+        String storeConfigKeyPrefix = _clusterCreator.getStoreConfigKeyPrefix();
 
-        setConfigurationProperty(vhostPrefix + ".store.repConfig(0).name", ReplicationConfig.INSUFFICIENT_REPLICAS_TIMEOUT);
-        setConfigurationProperty(vhostPrefix + ".store.repConfig(0).value", "2 s");
+        setConfigurationProperty(storeConfigKeyPrefix + ".repConfig(0).name", ReplicationConfig.INSUFFICIENT_REPLICAS_TIMEOUT);
+        setConfigurationProperty(storeConfigKeyPrefix + ".repConfig(0).value", "2 s");
 
-        setConfigurationProperty(vhostPrefix + ".store.repConfig(1).name", ReplicationConfig.ELECTIONS_PRIMARY_RETRIES);
-        setConfigurationProperty(vhostPrefix + ".store.repConfig(1).value", "0");
+        setConfigurationProperty(storeConfigKeyPrefix + ".repConfig(1).name", ReplicationConfig.ELECTIONS_PRIMARY_RETRIES);
+        setConfigurationProperty(storeConfigKeyPrefix + ".repConfig(1).value", "0");
 
         _clusterCreator.configureClusterNodes();
         _clusterCreator.setAutoDesignatedPrimary(autoDesignedPrimary);

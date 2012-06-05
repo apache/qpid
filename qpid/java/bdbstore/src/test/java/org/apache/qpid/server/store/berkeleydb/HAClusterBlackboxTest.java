@@ -32,6 +32,8 @@ import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
+import com.sleepycat.je.rep.ReplicationConfig;
+
 /**
  * The HA black box tests test the BDB cluster as a opaque unit.  Client connects to
  * the cluster via a failover url
@@ -76,7 +78,7 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
         // Don't start default broker provided by QBTC.
     }
 
-    public void testLossOfActiveNodeCausesClientToFailover() throws Exception
+    public void testLossOfMasterNodeCausesClientToFailover() throws Exception
     {
         final Connection connection = getConnection(_brokerFailoverUrl);
 
@@ -93,10 +95,11 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
         connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
     }
 
-    public void testLossOfInactiveNodeDoesNotCauseClientToFailover() throws Exception
+    public void testLossOfReplicaNodeDoesNotCauseClientToFailover() throws Exception
     {
         LOGGER.info("Connecting to " + _brokerFailoverUrl);
         final Connection connection = getConnection(_brokerFailoverUrl);
+        LOGGER.info("Got connection to cluster");
 
         ((AMQConnection)connection).setConnectionListener(_failoverAwaitingListener);
         final int activeBrokerPort = _clusterCreator.getBrokerPortNumberFromConnection(connection);

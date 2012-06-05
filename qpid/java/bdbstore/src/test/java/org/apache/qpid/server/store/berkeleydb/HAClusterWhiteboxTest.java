@@ -22,8 +22,6 @@ package org.apache.qpid.server.store.berkeleydb;
 import java.io.File;
 import java.io.IOException;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -36,6 +34,8 @@ import javax.jms.Session;
 import org.apache.log4j.Logger;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.url.URLSyntaxException;
+
+import com.sleepycat.je.rep.ReplicationConfig;
 
 /**
  * The HA white box tests test the BDB cluster where the test retains the knowledge of the
@@ -52,8 +52,6 @@ public class HAClusterWhiteboxTest extends QpidBrokerTestCase
 
     private final int NUMBER_OF_NODES = 3;
     private final HATestClusterCreator _clusterCreator = new HATestClusterCreator(this, VIRTUAL_HOST, NUMBER_OF_NODES);
-
-    // TODO Factory refactoring?? // MessageStore construction??
 
     @Override
     protected void setUp() throws Exception
@@ -86,7 +84,7 @@ public class HAClusterWhiteboxTest extends QpidBrokerTestCase
         {
             try
             {
-                getConnection(_clusterCreator.getConnectionUrlForSingleNode(brokerPortNumber));
+                getConnection(_clusterCreator.getConnectionUrlForSingleNodeWithoutRetry(brokerPortNumber));
                 connectionSuccesses++;
             }
             catch(JMSException e)
@@ -105,7 +103,7 @@ public class HAClusterWhiteboxTest extends QpidBrokerTestCase
         final Connection initialConnection = getConnectionToNodeInCluster();
         assertNotNull(initialConnection);
 
-        killConnectionBrokerAndWaitForNewMasterElection(initialConnection);
+        killConnectionBroker(initialConnection);
 
         final Connection subsequentConnection = getConnectionToNodeInCluster();
         assertNotNull(subsequentConnection);
@@ -121,7 +119,7 @@ public class HAClusterWhiteboxTest extends QpidBrokerTestCase
         final Connection initialConnection = getConnectionToNodeInCluster();
         assertNotNull(initialConnection);
 
-        killConnectionBrokerAndWaitForNewMasterElection(initialConnection);
+        killConnectionBroker(initialConnection);
 
         final Connection subsequentConnection = getConnectionToNodeInCluster();
         assertNotNull(subsequentConnection);
@@ -159,7 +157,7 @@ public class HAClusterWhiteboxTest extends QpidBrokerTestCase
 
         populateBrokerWithData(initialConnection, inbuiltExchangeQueueUrl, customExchangeQueueUrl);
 
-        killConnectionBrokerAndWaitForNewMasterElection(initialConnection);
+        killConnectionBroker(initialConnection);
 
         final Connection subsequentConnection = getConnectionToNodeInCluster();
 
@@ -168,7 +166,7 @@ public class HAClusterWhiteboxTest extends QpidBrokerTestCase
         checkBrokerData(subsequentConnection, inbuiltExchangeQueueUrl, customExchangeQueueUrl);
     }
 
-    public void testRecoveryOfOutOfDateNode() throws Exception
+    public void xtestRecoveryOfOutOfDateNode() throws Exception
     {
         /*
          * TODO: Implement
@@ -220,7 +218,7 @@ public class HAClusterWhiteboxTest extends QpidBrokerTestCase
         {
             try
             {
-                connection = getConnection(_clusterCreator.getConnectionUrlForSingleNode(brokerPortNumber));
+                connection = getConnection(_clusterCreator.getConnectionUrlForSingleNodeWithRetry(brokerPortNumber));
                 break;
             }
             catch(JMSException je)
@@ -231,26 +229,11 @@ public class HAClusterWhiteboxTest extends QpidBrokerTestCase
         return connection;
     }
 
-    private void killConnectionBrokerAndWaitForNewMasterElection(final Connection initialConnection) throws IOException,
+    private void killConnectionBroker(final Connection initialConnection) throws IOException,
             InterruptedException
     {
-        try
-        {
-            // NewMasterEvent is received twice: first for the existing master,
-            // second for a new master
-            CountDownLatch newMasterLatch = new CountDownLatch(2);
-            _clusterCreator.startMonitorNode();
-            _clusterCreator.statListeningForNewMasterEvent(newMasterLatch);
-
-            final int initialPortNumber = _clusterCreator.getBrokerPortNumberFromConnection(initialConnection);
-            killBroker(initialPortNumber);
-
-            assertTrue("New master was not elected", newMasterLatch.await(30, TimeUnit.SECONDS));
-        }
-        finally
-        {
-            _clusterCreator.shutdownMonitor();
-        }
+        final int initialPortNumber = _clusterCreator.getBrokerPortNumberFromConnection(initialConnection);
+        killBroker(initialPortNumber); // kill awaits the death of the child
     }
 
     private void assertProducingConsuming(final Connection connection) throws JMSException, Exception

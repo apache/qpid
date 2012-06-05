@@ -114,7 +114,7 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
     private final MessageStore _messageStore;
 
-    private State _state = State.INITIALISING;
+    private volatile State _state = State.INITIALISING;
 
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
@@ -759,17 +759,27 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
        @Override
        public void event(Event event)
        {
-           initialiseHouseKeeping(_vhostConfig.getHousekeepingCheckPeriod());
-           _state = State.ACTIVE;
+           State finalState = State.ERRORED;
+
+           try
+           {
+               initialiseHouseKeeping(_vhostConfig.getHousekeepingCheckPeriod());
 //TODO: implement state changing for the VirtualHost MBean instead of registering and unregistering
-//           try
-//           {
-//               _brokerMBean.register();
-//           }
-//           catch (JMException e)
-//           {
-//               throw new RuntimeException("Failed to register virtual host mbean for virtual host " + getName(), e);
-//           }
+//               try
+//               {
+//                   _brokerMBean.register();
+//               }
+//               catch (JMException e)
+//               {
+//                   throw new RuntimeException("Failed to register virtual host mbean for virtual host " + getName(), e);
+//               }
+               finalState = State.ACTIVE;
+           }
+           finally
+           {
+               _state = finalState;
+               reportIfError(_state);
+           }
        }
    }
 
@@ -777,15 +787,34 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
     {
         public void event(Event event)
         {
-            _connectionRegistry.close(IConnectionRegistry.VHOST_PASSIVATE_REPLY_TEXT);
-            removeHouseKeepingTasks();
+            State finalState = State.ERRORED;
 
-            _queueRegistry.stopAllAndUnregisterMBeans();
-            _exchangeRegistry.clearAndUnregisterMbeans();
-            _dtxRegistry.close();
+            try
+            {
+                /* the approach here is not ideal as there is a race condition where a
+                 * queue etc could be created while the virtual host is on the way to
+                 * the passivated state.  However the store state change from MASTER to UNKNOWN
+                 * is documented as exceptionally rare..
+                 */
 
-            _state = State.PASSIVE;
+                _connectionRegistry.close(IConnectionRegistry.VHOST_PASSIVATE_REPLY_TEXT);
+//TODO: implement state changing for the VirtualHost MBean instead of registering and unregistering
+//              _brokerMBean.unregister();
+                removeHouseKeepingTasks();
+
+                _queueRegistry.stopAllAndUnregisterMBeans();
+                _exchangeRegistry.clearAndUnregisterMbeans();
+                _dtxRegistry.close();
+
+                finalState = State.PASSIVE;
+            }
+            finally
+            {
+                _state = finalState;
+                reportIfError(_state);
+            }
         }
+
     }
 
     private final class BeforeCloseListener implements EventListener
@@ -794,6 +823,14 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         public void event(Event event)
         {
             shutdownHouseKeeping();
+        }
+    }
+
+    private void reportIfError(State state)
+    {
+        if (state == State.ERRORED)
+        {
+            CurrentActor.get().message(VirtualHostMessages.ERRORED());
         }
     }
 

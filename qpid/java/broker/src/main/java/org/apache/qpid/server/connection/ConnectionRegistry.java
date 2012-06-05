@@ -22,11 +22,9 @@ package org.apache.qpid.server.connection;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
-import org.apache.qpid.transport.TransportException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -65,19 +63,15 @@ public class ConnectionRegistry implements IConnectionRegistry, Closeable
         }
     }
 
-    public void closeConnection(AMQConnectionModel connection, AMQConstant cause, String message)
+    private void closeConnection(AMQConnectionModel connection, AMQConstant cause, String message)
     {
         try
         {
             connection.close(cause, message);
         }
-        catch (TransportException e)
+        catch (Exception e)
         {
-            _logger.warn("Error closing connection:" + e.getMessage());
-        }
-        catch (AMQException e)
-        {
-            _logger.warn("Error closing connection:" + e.getMessage());
+            _logger.warn("Exception closing connection", e);
         }
     }
 

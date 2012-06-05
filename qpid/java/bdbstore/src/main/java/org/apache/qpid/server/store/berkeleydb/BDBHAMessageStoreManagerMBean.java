@@ -83,45 +83,69 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     }
 
     @Override
-    public String getGroupName() throws IOException
+    public String getGroupName()
     {
         return _store.getGroupName();
     }
 
     @Override
-    public String getNodeName() throws IOException
+    public String getNodeName()
     {
         return _store.getNodeName();
     }
 
     @Override
-    public String getNodeHostPort() throws IOException
+    public String getNodeHostPort()
     {
         return _store.getNodeHostPort();
     }
 
     @Override
-    public String getHelperHostPort() throws IOException
+    public String getHelperHostPort()
     {
         return _store.getHelperHostPort();
     }
 
     @Override
-    public String getReplicationPolicy() throws IOException
+    public String getReplicationPolicy() throws IOException, JMException
     {
-        return _store.getReplicationPolicy();
+        try
+        {
+            return _store.getReplicationPolicy();
+        }
+        catch (RuntimeException e)
+        {
+            LOGGER.debug("Failed query replication policy", e);
+            throw new JMException(e.getMessage());
+        }
     }
 
     @Override
-    public String getNodeState() throws IOException
+    public String getNodeState() throws IOException, JMException
     {
-        return _store.getNodeState();
+        try
+        {
+            return _store.getNodeState();
+        }
+        catch (RuntimeException e)
+        {
+            LOGGER.debug("Failed query node state", e);
+            throw new JMException(e.getMessage());
+        }
     }
 
     @Override
-    public boolean getDesignatedPrimary() throws IOException
+    public boolean getDesignatedPrimary() throws IOException, JMException
     {
-        return _store.isDesignatedPrimary();
+        try
+        {
+            return _store.isDesignatedPrimary();
+        }
+        catch (RuntimeException e)
+        {
+            LOGGER.debug("Failed query designated primary", e);
+            throw new JMException(e.getMessage());
+        }
     }
 
     @Override
