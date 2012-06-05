@@ -38,6 +38,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.SocketAddress;
 import java.security.Principal;
 import java.security.SecureRandom;
 import java.util.LinkedHashMap;
@@ -55,9 +56,9 @@ public class SaslServlet extends AbstractServlet
     private static final long SASL_EXCHANGE_EXPIRY = 1000L;
 
 
-    public SaslServlet(Broker broker)
+    public SaslServlet(Broker broker, SocketAddress socketaddress)
     {
-        super(broker);
+        super(broker, socketaddress);
     }
 
     protected void onGet(HttpServletRequest request, HttpServletResponse response) throws
@@ -74,7 +75,7 @@ public class SaslServlet extends AbstractServlet
         HttpSession session = request.getSession();
         Random rand = getRandom(session);
 
-        AuthenticationManager authManager = ApplicationRegistry.getInstance().getAuthenticationManager();
+        AuthenticationManager authManager = ApplicationRegistry.getInstance().getAuthenticationManager(getSocketAddress());
         String[] mechanisms = authManager.getMechanisms().split(" ");
         Map<String, Object> outputObject = new LinkedHashMap<String, Object>();
         final Subject subject = (Subject) session.getAttribute("subject");
@@ -126,7 +127,7 @@ public class SaslServlet extends AbstractServlet
         String id = request.getParameter("id");
         String saslResponse = request.getParameter("response");
 
-        AuthenticationManager authManager = ApplicationRegistry.getInstance().getAuthenticationManager();
+        AuthenticationManager authManager = ApplicationRegistry.getInstance().getAuthenticationManager(getSocketAddress());
 
         if(mechanism != null)
         {

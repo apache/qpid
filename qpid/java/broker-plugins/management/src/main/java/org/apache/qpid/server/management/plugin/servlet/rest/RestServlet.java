@@ -2,6 +2,7 @@ package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -42,9 +43,9 @@ public class RestServlet extends AbstractServlet
     public static final String DEPTH_PARAM = "depth";
     private Class<? extends ConfiguredObject>[] _hierarchy;
 
-    public RestServlet(Broker broker, Class<? extends ConfiguredObject>... hierarchy)
+    public RestServlet(Broker broker, SocketAddress socketaddress, Class<? extends ConfiguredObject>... hierarchy)
     {
-        super(broker);
+        super(broker, socketaddress);
         _hierarchy = hierarchy;
     }
 

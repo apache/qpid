@@ -18,6 +18,7 @@ package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.SocketAddress;
 import java.util.*;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -30,9 +31,9 @@ import org.codehaus.jackson.map.SerializationConfig;
 
 public class StructureServlet extends AbstractServlet
 {
-    public StructureServlet(Broker broker)
+    public StructureServlet(Broker broker, SocketAddress socketaddress)
     {
-        super(broker);
+        super(broker, socketaddress);
     }
 
     @Override

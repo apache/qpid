@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.security.auth.rmi;
 
+import java.net.InetSocketAddress;
+import java.util.Map;
 import junit.framework.TestCase;
 
 import org.apache.commons.configuration.ConfigurationException;
@@ -52,7 +54,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
 
     protected void setUp() throws Exception
     {
-        _rmipa = new RMIPasswordAuthenticator();
+        _rmipa = new RMIPasswordAuthenticator(new InetSocketAddress(5672));
 
         _credentials = new String[] {USERNAME, PASSWORD};
     }
@@ -126,9 +128,9 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         TestApplicationRegistry reg = new TestApplicationRegistry(serverConfig)
         {
             @Override
-            protected AuthenticationManager createAuthenticationManager() throws ConfigurationException
+            protected Map<Integer, AuthenticationManager> createAuthenticationManagers() throws ConfigurationException
             {
-                return null;
+                return Collections.emptyMap();
             }
         };
         ApplicationRegistry.initialise(reg);

@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.security.auth.rmi;
 
+import java.net.SocketAddress;
+
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
@@ -40,9 +42,11 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
     		            "Please ensure you are using an up to date management console to connect.";
 
     private AuthenticationManager _authenticationManager = null;
+    private SocketAddress _socketAddress;
 
-    public RMIPasswordAuthenticator()
+    public RMIPasswordAuthenticator(SocketAddress socketAddress)
     {
+        _socketAddress = socketAddress;
     }
 
     public void setAuthenticationManager(final AuthenticationManager authenticationManager)
@@ -86,9 +90,9 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
         {
             try
             {
-                if(ApplicationRegistry.getInstance().getAuthenticationManager() != null)
+                if(ApplicationRegistry.getInstance().getAuthenticationManager(_socketAddress) != null)
                 {
-                    _authenticationManager = ApplicationRegistry.getInstance().getAuthenticationManager();
+                    _authenticationManager = ApplicationRegistry.getInstance().getAuthenticationManager(_socketAddress);
                 }
                 else
                 {

@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.management.plugin;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import org.apache.log4j.Logger;
@@ -70,6 +72,7 @@ public class Management
     private Server createServer(int port)
     {
         Server server = new Server(port);
+        SocketAddress socketAddress = new InetSocketAddress(port);
 
         ServletContextHandler root = new ServletContextHandler(ServletContextHandler.SESSIONS);
                 root.setContextPath("/");
@@ -78,23 +81,23 @@ public class Management
         root.addServlet(new ServletHolder(new VhostsServlet(_broker)), "/api/vhosts/*");
         root.addServlet(new ServletHolder(new ExchangesServlet(_broker)), "/api/exchanges/*");
 
-        addRestServlet(root, "broker");
-        addRestServlet(root, "virtualhost", VirtualHost.class);
-        addRestServlet(root, "exchange", VirtualHost.class, Exchange.class);
-        addRestServlet(root, "queue", VirtualHost.class, Queue.class);
-        addRestServlet(root, "connection", VirtualHost.class, Connection.class);
-        addRestServlet(root, "binding", VirtualHost.class, Exchange.class, Queue.class, Binding.class);
-        addRestServlet(root, "port", Port.class);
-        addRestServlet(root, "session", VirtualHost.class, Connection.class, Session.class);
+        addRestServlet(root, "broker", socketAddress);
+        addRestServlet(root, "virtualhost", socketAddress, VirtualHost.class);
+        addRestServlet(root, "exchange", socketAddress, VirtualHost.class, Exchange.class);
+        addRestServlet(root, "queue", socketAddress, VirtualHost.class, Queue.class);
+        addRestServlet(root, "connection", socketAddress, VirtualHost.class, Connection.class);
+        addRestServlet(root, "binding", socketAddress, VirtualHost.class, Exchange.class, Queue.class, Binding.class);
+        addRestServlet(root, "port", socketAddress, Port.class);
+        addRestServlet(root, "session", socketAddress, VirtualHost.class, Connection.class, Session.class);
 
-        root.addServlet(new ServletHolder(new StructureServlet(_broker)), "/rest/structure");
-        root.addServlet(new ServletHolder(new MessageServlet(_broker)), "/rest/message/*");
-        root.addServlet(new ServletHolder(new MessageContentServlet(_broker)), "/rest/message-content/*");
+        root.addServlet(new ServletHolder(new StructureServlet(_broker, socketAddress)), "/rest/structure");
+        root.addServlet(new ServletHolder(new MessageServlet(_broker, socketAddress)), "/rest/message/*");
+        root.addServlet(new ServletHolder(new MessageContentServlet(_broker, socketAddress)), "/rest/message-content/*");
 
-        root.addServlet(new ServletHolder(new LogRecordsServlet(_broker)), "/rest/logrecords");
+        root.addServlet(new ServletHolder(new LogRecordsServlet(_broker, socketAddress)), "/rest/logrecords");
 
 
-        root.addServlet(new ServletHolder(new SaslServlet(_broker)), "/rest/sasl");
+        root.addServlet(new ServletHolder(new SaslServlet(_broker, socketAddress)), "/rest/sasl");
 
         root.addServlet(new ServletHolder(new DefinedFileServlet("queue.html")),"/queue");
         root.addServlet(new ServletHolder(new DefinedFileServlet("exchange.html")),"/exchange");
@@ -123,9 +126,9 @@ public class Management
         return server;
     }
 
-    private void addRestServlet(ServletContextHandler root, String name, Class<? extends ConfiguredObject>... hierarchy)
+    private void addRestServlet(ServletContextHandler root, String name, SocketAddress socketAddress, Class<? extends ConfiguredObject>... hierarchy)
     {
-        root.addServlet(new ServletHolder(new RestServlet(_broker, hierarchy)), "/rest/"+name+"/*");
+        root.addServlet(new ServletHolder(new RestServlet(_broker, socketAddress, hierarchy)), "/rest/"+name+"/*");
     }
 
     public void start() throws Exception

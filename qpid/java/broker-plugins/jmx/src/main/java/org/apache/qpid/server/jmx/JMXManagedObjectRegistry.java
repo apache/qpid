@@ -57,6 +57,7 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -198,8 +199,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         }
 
         //add a JMXAuthenticator implementation the env map to authenticate the RMI based JMX connector server
-        RMIPasswordAuthenticator rmipa = new RMIPasswordAuthenticator();
-        rmipa.setAuthenticationManager(appRegistry.getAuthenticationManager());
+        RMIPasswordAuthenticator rmipa = new RMIPasswordAuthenticator(new InetSocketAddress(_jmxPortRegistryServer));
         HashMap<String,Object> env = new HashMap<String,Object>();
         env.put(JMXConnectorServer.AUTHENTICATOR, rmipa);
 

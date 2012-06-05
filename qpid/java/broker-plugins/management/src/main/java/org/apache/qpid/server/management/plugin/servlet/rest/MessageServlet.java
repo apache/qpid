@@ -19,6 +19,7 @@ package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.SocketAddress;
 import java.util.*;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -37,9 +38,9 @@ import org.codehaus.jackson.map.SerializationConfig;
 
 public class MessageServlet extends AbstractServlet
 {
-    public MessageServlet(Broker broker)
+    public MessageServlet(Broker broker, SocketAddress socketaddress)
     {
-        super(broker);
+        super(broker, socketaddress);
     }
 
     @Override

@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.registry;
 
+import java.net.UnknownHostException;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.logging.*;
@@ -59,15 +60,7 @@ import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 
@@ -86,11 +79,14 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     private final ServerConfiguration _configuration;
 
-    private final Map<InetSocketAddress, QpidAcceptor> _acceptors = new HashMap<InetSocketAddress, QpidAcceptor>();
+    private final Map<InetSocketAddress, QpidAcceptor> _acceptors =
+            Collections.synchronizedMap(new HashMap<InetSocketAddress, QpidAcceptor>());
 
     private ManagedObjectRegistry _managedObjectRegistry;
 
-    private AuthenticationManager _authenticationManager;
+    private AuthenticationManager _defaultAuthenticationManager;
+
+    private Map<Integer,AuthenticationManager> _authenticationManagers;
 
     private final VirtualHostRegistry _virtualHostRegistry = new VirtualHostRegistry(this);
 
@@ -136,6 +132,11 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         {
             return new HashMap<InetSocketAddress, QpidAcceptor>(_acceptors);
         }
+    }
+
+    private QpidAcceptor getAcceptor(SocketAddress address)
+    {
+        return _acceptors.get(address);
     }
 
     protected void setManagedObjectRegistry(ManagedObjectRegistry managedObjectRegistry)
@@ -330,7 +331,10 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
             _securityManager = new SecurityManager(_configuration, _pluginManager);
 
-            _authenticationManager = createAuthenticationManager();
+            _authenticationManagers  = createAuthenticationManagers();
+
+            // The default authentication manager is provided in the map associated with the null key
+            _defaultAuthenticationManager = _authenticationManagers.get(null);
 
             _managedObjectRegistry.start();
         }
@@ -355,14 +359,16 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     /**
      * Iterates across all discovered authentication manager factories, offering the security configuration to each.
-     * Expects <b>exactly</b> one authentication manager to configure and initialise itself.
      *
-     * It is an error to configure more than one authentication manager, or to configure none.
+     * If more than one authentication manager is configured, one MUST be specified as the default
      *
-     * @return authentication manager
+     * It not to configure any authentication managers.
+     *
+     * @return map from port to authentication manager, with the null key being used to indicate the default.
      * @throws ConfigurationException
      */
-    protected AuthenticationManager createAuthenticationManager() throws ConfigurationException
+    protected Map<Integer, AuthenticationManager> createAuthenticationManagers()
+            throws ConfigurationException, UnknownHostException
     {
         final SecurityConfiguration securityConfiguration = _configuration.getConfiguration(SecurityConfiguration.class.getName());
         final Collection<AuthenticationManagerPluginFactory<? extends Plugin>> factories = _pluginManager.getAuthenticationManagerPlugins().values();
@@ -373,31 +379,67 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
                     "manager plugin has been placed in the plugins directory.");
         }
 
-        AuthenticationManager authMgr = null;
+        AuthenticationManager defaultAuthMgr;
 
+        Map<String,AuthenticationManager> authManagersByClass = new HashMap<String,AuthenticationManager>();
         for (final Iterator<AuthenticationManagerPluginFactory<? extends Plugin>> iterator = factories.iterator(); iterator.hasNext();)
         {
             final AuthenticationManagerPluginFactory<? extends Plugin> factory = (AuthenticationManagerPluginFactory<? extends Plugin>) iterator.next();
             final AuthenticationManager tmp = factory.newInstance(securityConfiguration);
             if (tmp != null)
             {
-                if (authMgr != null)
+                if(authManagersByClass.containsKey(tmp.getClass().getSimpleName()))
                 {
-                    throw new ConfigurationException("Cannot configure more than one authentication manager."
-                            + " Both " + tmp.getClass() + " and " + authMgr.getClass() + " are configured."
-                            + " Remove configuration for one of the authentication manager, or remove the plugin JAR"
-                            + " from the classpath.");
+                    throw new ConfigurationException("Cannot configure more than one authentication manager of type"
+                                                     + tmp.getClass().getSimpleName() + "."
+                                                     + " Remove configuration for one of the authentication managers.");
                 }
-                authMgr = tmp;
+                authManagersByClass.put(tmp.getClass().getSimpleName(),tmp);
             }
+
         }
 
-        if (authMgr == null)
+        if(authManagersByClass.isEmpty())
         {
             throw new ConfigurationException("No authentication managers configured within the configure file.");
         }
+        if(authManagersByClass.size() == 1)
+        {
+            defaultAuthMgr = authManagersByClass.values().iterator().next();
+        }
+        else if(!authManagersByClass.isEmpty() && _configuration.getDefaultAuthenticationManager() != null)
+        {
+            defaultAuthMgr = authManagersByClass.get(_configuration.getDefaultAuthenticationManager());
+            if(defaultAuthMgr == null)
+            {
+                throw new ConfigurationException("No authentication managers configured of type "
+                                                 + _configuration.getDefaultAuthenticationManager()
+                                                 + " which is specified as the default.  Available managers are: "
+                                                 + authManagersByClass.keySet());
+            }
+        }
+        else
+        {
+            throw new ConfigurationException("If more than one authentication manager is configured a default MUST be specified.");
+        }
 
-        return authMgr;
+        Map<Integer,AuthenticationManager> authManagers = new HashMap<Integer, AuthenticationManager>();
+        authManagers .put(null, defaultAuthMgr);
+        String host = _configuration.getBind();
+
+        for(Map.Entry<Integer,String> portMapping : _configuration.getPortAuthenticationMappings().entrySet())
+        {
+
+            AuthenticationManager authenticationManager = authManagersByClass.get(portMapping.getValue());
+            if(authenticationManager == null)
+            {
+                throw new ConfigurationException("Unknown authentication manager class " + portMapping.getValue() +
+                                                " configured for port " + portMapping.getKey());
+            }
+            authManagers.put(portMapping.getKey(), authenticationManager);
+        }
+
+        return authManagers;
     }
 
     protected void initialiseVirtualHosts() throws Exception
@@ -554,7 +596,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             //Shutdown virtualhosts
             close(_virtualHostRegistry);
 
-            close(_authenticationManager);
+            close(_defaultAuthenticationManager);
 
             close(_qmfService);
 
@@ -645,17 +687,23 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return _managedObjectRegistry;
     }
 
-    public AuthenticationManager getAuthenticationManager()
+    public AuthenticationManager getDefaultAuthenticationManager()
     {
-        return _authenticationManager;
+        return _defaultAuthenticationManager;
     }
 
 
     @Override
     public AuthenticationManager getAuthenticationManager(SocketAddress address)
     {
-        return _authenticationManager;
+        AuthenticationManager authManager =
+                address instanceof InetSocketAddress
+                        ? _authenticationManagers.get(((InetSocketAddress)address).getPort())
+                        : null;
+
+        return authManager == null ? _defaultAuthenticationManager : authManager;
     }
+
 
 
     public PluginManager getPluginManager()
