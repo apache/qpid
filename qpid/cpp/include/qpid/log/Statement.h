@@ -120,6 +120,7 @@ public:
         hintList.push_back(std::make_pair("management",  management));
         hintList.push_back(std::make_pair("qmf",         management));
         hintList.push_back(std::make_pair("console",     management));
+        hintList.push_back(std::make_pair("Management",  management));
 
         hintList.push_back(std::make_pair("cluster",     ha));
         hintList.push_back(std::make_pair("qpid/ha",     ha));
@@ -131,6 +132,8 @@ public:
         hintList.push_back(std::make_pair("SessionState",broker));
         hintList.push_back(std::make_pair("DataDir",     broker));
         hintList.push_back(std::make_pair("qpidd",       broker));
+        hintList.push_back(std::make_pair("xml",         broker));
+        hintList.push_back(std::make_pair("QpidBroker",  broker));
 
         hintList.push_back(std::make_pair("store",       store));
 
