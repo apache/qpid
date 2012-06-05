@@ -39,7 +39,6 @@ import java.security.KeyStore;
  */
 public class SSLContextFactory
 {
-    public static final String JAVA_KEY_STORE_CODE = "JKS";
     public static final String TRANSPORT_LAYER_SECURITY_CODE = "TLS";
 
     private SSLContextFactory()
@@ -48,28 +47,32 @@ public class SSLContextFactory
     }
 
     public static SSLContext buildServerContext(final String keyStorePath,
-            final String keyStorePassword, final String keyManagerFactoryAlgorithm)
+            final String keyStorePassword, final String keyStoreType,
+            final String keyManagerFactoryAlgorithm)
             throws GeneralSecurityException, IOException
     {
-        return buildContext(null, null, null, keyStorePath, keyStorePassword,
+        return buildContext(null, null, null, null, keyStorePath, keyStorePassword, keyStoreType,
                 keyManagerFactoryAlgorithm, null);
     }
 
     public static SSLContext buildClientContext(final String trustStorePath,
-            final String trustStorePassword, final String trustManagerFactoryAlgorithm,
-            final String keyStorePath, final String keyStorePassword,
+            final String trustStorePassword, final String trustStoreType,
+            final String trustManagerFactoryAlgorithm, final String keyStorePath, 
+            final String keyStorePassword, final String keyStoreType, 
             final String keyManagerFactoryAlgorithm, final String certAlias)
             throws GeneralSecurityException, IOException
     {
-        return buildContext(trustStorePath, trustStorePassword,
-                trustManagerFactoryAlgorithm, keyStorePath, keyStorePassword,
+        return buildContext(trustStorePath, trustStorePassword, trustStoreType,
+                trustManagerFactoryAlgorithm, keyStorePath, keyStorePassword, keyStoreType,
                 keyManagerFactoryAlgorithm, certAlias);
     }
     
     private static SSLContext buildContext(final String trustStorePath,
-            final String trustStorePassword, final String trustManagerFactoryAlgorithm,
-            final String keyStorePath, final String keyStorePassword,
-            final String keyManagerFactoryAlgorithm, final String certAlias)
+            final String trustStorePassword, final String trustStoreType,
+            final String trustManagerFactoryAlgorithm,
+            final String keyStorePath, final String keyStorePassword, 
+            final String keyStoreType, final String keyManagerFactoryAlgorithm,
+            final String certAlias)
             throws GeneralSecurityException, IOException
     {
         // Initialize the SSLContext to work with our key managers.
@@ -82,7 +85,7 @@ public class SSLContextFactory
         if (trustStorePath != null)
         {
             final KeyStore ts = SSLUtil.getInitializedKeyStore(trustStorePath,
-                    trustStorePassword);
+                    trustStorePassword, trustStoreType);
             final TrustManagerFactory tmf = TrustManagerFactory
                     .getInstance(trustManagerFactoryAlgorithm);
             tmf.init(ts);
@@ -99,13 +102,13 @@ public class SSLContextFactory
             if (certAlias != null)
             {
                 keyManagers = new KeyManager[] { new QpidClientX509KeyManager(
-                        certAlias, keyStorePath, keyStorePassword,
+                        certAlias, keyStorePath, keyStoreType, keyStorePassword,
                         keyManagerFactoryAlgorithm) };
             }
             else
             {
                 final KeyStore ks = SSLUtil.getInitializedKeyStore(
-                        keyStorePath, keyStorePassword);
+                        keyStorePath, keyStorePassword, keyStoreType);
 
                 char[] keyStoreCharPassword = keyStorePassword == null ? null : keyStorePassword.toCharArray();
                 // Set up key manager factory to use our key store

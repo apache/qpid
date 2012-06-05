@@ -132,7 +132,7 @@ public class KerberosAuthenticationManager implements AuthenticationManager
         {
             try
             {
-            return Sasl.createSaslServer(GSSAPI_MECHANISM, "AMQP", "scrumpy",
+            return Sasl.createSaslServer(GSSAPI_MECHANISM, "AMQP", localFQDN,
                                          new HashMap<String, Object>(), _callbackHandler);
             }
             catch (SaslException e)
