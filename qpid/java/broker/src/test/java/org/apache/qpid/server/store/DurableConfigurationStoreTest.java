@@ -27,7 +27,6 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
-import org.apache.qpid.server.logging.subjects.TestBlankSubject;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -41,7 +40,7 @@ import org.apache.qpid.server.store.ConfigurationRecoveryHandler.ExchangeRecover
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.QueueRecoveryHandler;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
 import org.apache.qpid.server.store.Transaction.Record;
-import org.apache.qpid.server.store.derby.DerbyMessageStoreFactory;
+import org.apache.qpid.server.store.derby.DerbyMessageStore;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 
@@ -262,14 +261,14 @@ public class DurableConfigurationStoreTest extends QpidTestCase
 
     protected MessageStore createStore() throws Exception
     {
-        String storeFactoryClass = System.getProperty(MS_FACTORY_CLASS_NAME_KEY);
-        if (storeFactoryClass == null)
+        String storeClass = System.getProperty(MESSAGE_STORE_CLASS_NAME_KEY);
+        if (storeClass == null)
         {
-            storeFactoryClass = DerbyMessageStoreFactory.class.getName();
+            storeClass = DerbyMessageStore.class.getName();
         }
         CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
-        MessageStoreFactory factory = (MessageStoreFactory) Class.forName(storeFactoryClass).newInstance();
-        return factory.createMessageStore();
+        MessageStore messageStore = (MessageStore) Class.forName(storeClass).newInstance();
+        return messageStore;
     }
 
     public void testRecordXid() throws Exception

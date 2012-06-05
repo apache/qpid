@@ -24,7 +24,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
+import org.apache.qpid.server.store.berkeleydb.AbstractBDBMessageStore;
 
 import com.sleepycat.bind.tuple.IntegerBinding;
 import com.sleepycat.bind.tuple.LongBinding;
@@ -63,7 +63,7 @@ public class Upgrader
 
             if(versionDb.count() == 0L)
             {
-                int sourceVersion = isEmpty ? BDBMessageStore.VERSION: identifyOldStoreVersion();
+                int sourceVersion = isEmpty ? AbstractBDBMessageStore.VERSION: identifyOldStoreVersion();
                 DatabaseEntry key = new DatabaseEntry();
                 IntegerBinding.intToEntry(sourceVersion, key);
                 DatabaseEntry value = new DatabaseEntry();
@@ -87,7 +87,7 @@ public class Upgrader
 
     int getSourceVersion(Database versionDb)
     {
-        int version = BDBMessageStore.VERSION + 1;
+        int version = AbstractBDBMessageStore.VERSION + 1;
         OperationStatus result;
 
         do
@@ -106,7 +106,7 @@ public class Upgrader
     void performUpgradeFromVersion(int sourceVersion, Database versionDb)
             throws AMQStoreException
     {
-        while(sourceVersion != BDBMessageStore.VERSION)
+        while(sourceVersion != AbstractBDBMessageStore.VERSION)
         {
             upgrade(sourceVersion, ++sourceVersion);
             DatabaseEntry key = new DatabaseEntry();

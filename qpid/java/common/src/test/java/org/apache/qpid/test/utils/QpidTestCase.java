@@ -110,8 +110,8 @@ public class QpidTestCase extends TestCase
         }
     }
 
-    protected static final String MS_FACTORY_CLASS_NAME_KEY = "messagestorefactory.class.name";
-    protected static final String MEMORY_STORE_FACTORY_CLASS_NAME = "org.apache.qpid.server.store.MemoryMessageStoreFactory";
+    protected static final String MESSAGE_STORE_CLASS_NAME_KEY = "messagestore.class.name";
+    protected static final String MEMORY_STORE_CLASS_NAME = "org.apache.qpid.server.store.MemoryMessageStore";
 
     private static List<String> _exclusionList;
     
@@ -140,12 +140,12 @@ public class QpidTestCase extends TestCase
         }
     }
 
-    public String getTestProfileMessageStoreFactoryClassName()
+    public String getTestProfileMessageStoreClassName()
     {
-        final String storeFactoryClass = System.getProperty(MS_FACTORY_CLASS_NAME_KEY);
-        _logger.debug("MS_FACTORY_CLASS_NAME_KEY " + storeFactoryClass);
+        final String storeClass = System.getProperty(MESSAGE_STORE_CLASS_NAME_KEY);
+        _logger.debug("MESSAGE_STORE_CLASS_NAME_KEY " + storeClass);
         
-        return storeFactoryClass != null ? storeFactoryClass : MEMORY_STORE_FACTORY_CLASS_NAME ;
+        return storeClass != null ? storeClass : MEMORY_STORE_CLASS_NAME ;
     }
 
 

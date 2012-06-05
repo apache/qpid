@@ -64,7 +64,7 @@ import org.apache.qpid.server.ProtocolExclusion;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.store.MessageStoreConstants;
-import org.apache.qpid.server.store.derby.DerbyMessageStoreFactory;
+import org.apache.qpid.server.store.derby.DerbyMessageStore;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.util.FileUtils;
 import org.apache.qpid.util.LogMonitor;
@@ -74,7 +74,6 @@ import org.apache.qpid.util.LogMonitor;
  */
 public class QpidBrokerTestCase extends QpidTestCase
 {
-    
     public enum BrokerType
     {
         EXTERNAL /** Test case relies on a Broker started independently of the test-suite */,
@@ -110,8 +109,10 @@ public class QpidBrokerTestCase extends QpidTestCase
     }
 
     // system properties
+    private static final String TEST_VIRTUALHOSTS = "test.virtualhosts";
+    private static final String TEST_CONFIG = "test.config";
     private static final String BROKER_LANGUAGE = "broker.language";
-    private static final String BROKER_TYPE = "broker.type";
+    protected static final String BROKER_TYPE = "broker.type";
     private static final String BROKER_COMMAND = "broker.command";
     private static final String BROKER_CLEAN_BETWEEN_TESTS = "broker.clean.between.tests";
     private static final String BROKER_EXISTING_QPID_WORK = "broker.existing.qpid.work";
@@ -190,7 +191,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     {
         super();
     }
-    
+
     public Logger getLogger()
     {
         return QpidBrokerTestCase._logger;
@@ -346,11 +347,16 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     public void startBroker(int port) throws Exception
     {
+        startBroker(port, _testConfiguration, _testVirtualhosts);
+    }
+
+    public void startBroker(int port, XMLConfiguration testConfiguration, XMLConfiguration virtualHosts) throws Exception
+    {
         port = getPort(port);
 
         // Save any configuration changes that have been made
-        saveTestConfiguration();
-        saveTestVirtualhosts();
+        String testConfig = saveTestConfiguration(port, testConfiguration);
+        String virtualHostsConfig = saveTestVirtualhosts(port, virtualHosts);
 
         if(_brokers.get(port) != null)
         {
@@ -360,7 +366,11 @@ public class QpidBrokerTestCase extends QpidTestCase
         if (_brokerType.equals(BrokerType.INTERNAL) && !existingInternalBroker())
         {
             setConfigurationProperty(ServerConfiguration.MGMT_CUSTOM_REGISTRY_SOCKET, String.valueOf(false));
-            saveTestConfiguration();
+            testConfig = saveTestConfiguration(port, testConfiguration);
+            _logger.info("Set test.config property to: " + testConfig);
+            _logger.info("Set test.virtualhosts property to: " + virtualHostsConfig);
+            setSystemProperty(TEST_CONFIG, testConfig);
+            setSystemProperty(TEST_VIRTUALHOSTS, virtualHostsConfig);
 
             BrokerOptions options = new BrokerOptions();
             options.setConfigFile(_configFile.getAbsolutePath());
@@ -388,16 +398,16 @@ public class QpidBrokerTestCase extends QpidTestCase
             _logger.info("starting external broker: " + cmd);
             ProcessBuilder pb = new ProcessBuilder(cmd.split("\\s+"));
             pb.redirectErrorStream(true);
-            Map<String, String> env = pb.environment();
+            Map<String, String> processEnv = pb.environment();
             String qpidHome = System.getProperty(QPID_HOME);
-            env.put(QPID_HOME, qpidHome);
+            processEnv.put(QPID_HOME, qpidHome);
             //Augment Path with bin directory in QPID_HOME.
-            env.put("PATH", env.get("PATH").concat(File.pathSeparator + qpidHome + "/bin"));
+            processEnv.put("PATH", processEnv.get("PATH").concat(File.pathSeparator + qpidHome + "/bin"));
 
             //Add the test name to the broker run.
             // DON'T change PNAME, qpid.stop needs this value.
-            env.put("QPID_PNAME", "-DPNAME=QPBRKR -DTNAME=\"" + getTestName() + "\"");
-            env.put("QPID_WORK", qpidWork);
+            processEnv.put("QPID_PNAME", "-DPNAME=QPBRKR -DTNAME=\"" + getTestName() + "\"");
+            processEnv.put("QPID_WORK", qpidWork);
 
             // Use the environment variable to set amqj.logging.level for the broker
             // The value used is a 'server' value in the test configuration to
@@ -412,7 +422,7 @@ public class QpidBrokerTestCase extends QpidTestCase
             {
                 for (Map.Entry<String, String> entry : _env.entrySet())
                 {
-                    env.put(entry.getKey(), entry.getValue());
+                    processEnv.put(entry.getKey(), entry.getValue());
                 }
             }
 
@@ -429,25 +439,25 @@ public class QpidBrokerTestCase extends QpidTestCase
                 setSystemProperty("root.logging.level");
             }
 
+            // set test.config and test.virtualhosts
+            String qpidOpts = " -D" + TEST_CONFIG + "=" + testConfig + " -D" + TEST_VIRTUALHOSTS + "=" + virtualHostsConfig;
 
-            String QPID_OPTS = " ";
             // Add all the specified system properties to QPID_OPTS
             if (!_propertiesSetForBroker.isEmpty())
             {
                 for (String key : _propertiesSetForBroker.keySet())
                 {
-                    QPID_OPTS += "-D" + key + "=" + _propertiesSetForBroker.get(key) + " ";
-                }
-
-                if (env.containsKey("QPID_OPTS"))
-                {
-                    env.put("QPID_OPTS", env.get("QPID_OPTS") + QPID_OPTS);
-                }
-                else
-                {
-                    env.put("QPID_OPTS", QPID_OPTS);
+                    qpidOpts += " -D" + key + "=" + _propertiesSetForBroker.get(key);
                 }
             }
+            if (processEnv.containsKey("QPID_OPTS"))
+            {
+                qpidOpts = processEnv.get("QPID_OPTS") + qpidOpts;
+            }
+            processEnv.put("QPID_OPTS", qpidOpts);
+
+            _logger.info("Set test.config property to: " + testConfig);
+            _logger.info("Set test.virtualhosts property to: " + virtualHostsConfig);
 
             // cpp broker requires that the work directory is created
             createBrokerWork(qpidWork);
@@ -545,12 +555,17 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     public String getTestConfigFile()
     {
-        return _output + "/" + getTestQueueName() + "-config.xml";
+        return getTestConfigFile(getPort());
     }
 
-    public String getTestVirtualhostsFile()
+    public String getTestConfigFile(int port)
     {
-        return _output + "/" + getTestQueueName() + "-virtualhosts.xml";
+        return _output + "/" + getTestQueueName() + "-" + port + "-config.xml";
+    }
+
+    public String getTestVirtualhostsFile(int port)
+    {
+        return _output + "/" + getTestQueueName() + "-" + port + "-virtualhosts.xml";
     }
 
     private String relativeToQpidHome(String file)
@@ -560,38 +575,50 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected void saveTestConfiguration() throws ConfigurationException
     {
+        String relative = saveTestConfiguration(getPort(), _testConfiguration);
+        _logger.info("Set test.config property to: " + relative);
+        setSystemProperty(TEST_CONFIG, relative);
+    }
+
+    protected String saveTestConfiguration(int port, XMLConfiguration testConfiguration) throws ConfigurationException
+    {
         // Specify the test config file
-        String testConfig = getTestConfigFile();
+        String testConfig = getTestConfigFile(port);
         String relative = relativeToQpidHome(testConfig);
 
-        setSystemProperty("test.config", relative);
-        _logger.info("Set test.config property to: " + relative);
         _logger.info("Saving test virtualhosts file at: " + testConfig);
 
         // Create the file if configuration does not exist
-        if (_testConfiguration.isEmpty())
+        if (testConfiguration.isEmpty())
         {
-            _testConfiguration.addProperty("__ignore", "true");
+            testConfiguration.addProperty("__ignore", "true");
         }
-        _testConfiguration.save(testConfig);
+        testConfiguration.save(testConfig);
+        return relative;
     }
 
     protected void saveTestVirtualhosts() throws ConfigurationException
     {
+        String relative = saveTestVirtualhosts(getPort(), _testVirtualhosts);
+        _logger.info("Set test.virtualhosts property to: " + relative);
+        setSystemProperty(TEST_VIRTUALHOSTS, relative);
+    }
+
+    protected String saveTestVirtualhosts(int port, XMLConfiguration virtualHostConfiguration) throws ConfigurationException
+    {
         // Specify the test virtualhosts file
-        String testVirtualhosts = getTestVirtualhostsFile();
+        String testVirtualhosts = getTestVirtualhostsFile(port);
         String relative = relativeToQpidHome(testVirtualhosts);
 
-        setSystemProperty("test.virtualhosts", relative);
-        _logger.info("Set test.virtualhosts property to: " + relative);
-        _logger.info("Saving test virtualhosts file at: " + testVirtualhosts);
+        _logger.info("Set test.virtualhosts property to: " + testVirtualhosts);
 
         // Create the file if configuration does not exist
-        if (_testVirtualhosts.isEmpty())
+        if (virtualHostConfiguration.isEmpty())
         {
-            _testVirtualhosts.addProperty("__ignore", "true");
+            virtualHostConfiguration.addProperty("__ignore", "true");
         }
-        _testVirtualhosts.save(testVirtualhosts);
+        virtualHostConfiguration.save(testVirtualhosts);
+        return relative;
     }
 
     protected void cleanBrokerWork(final String qpidWork)
@@ -698,21 +725,21 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected void makeVirtualHostPersistent(String virtualhost)
             throws ConfigurationException, IOException
     {
-        Class<?> storeFactoryClass = null;
+        Class<?> storeClass = null;
         try
         {
             // Try and lookup the BDB class
-            storeFactoryClass = Class.forName("org.apache.qpid.server.store.berkeleydb.BDBMessageStoreFactory");
+            storeClass = Class.forName("org.apache.qpid.server.store.berkeleydb.BDBMessageStore");
         }
         catch (ClassNotFoundException e)
         {
             // No BDB store, we'll use Derby instead.
-            storeFactoryClass = DerbyMessageStoreFactory.class;
+            storeClass = DerbyMessageStore.class;
         }
 
 
-        setConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".store.factoryclass",
-                                    storeFactoryClass.getName());
+        setConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".store.class",
+                                    storeClass.getName());
         setConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".store." + MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY,
                                    "${QPID_WORK}/" + virtualhost);
     }
@@ -1287,5 +1314,25 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected int getFailingPort()
     {
         return FAILING_PORT;
+    }
+
+    public XMLConfiguration getTestVirtualhosts()
+    {
+        return _testVirtualhosts;
+    }
+
+    public void setTestVirtualhosts(XMLConfiguration testVirtualhosts)
+    {
+        _testVirtualhosts = testVirtualhosts;
+    }
+
+    public XMLConfiguration getTestConfiguration()
+    {
+        return _testConfiguration;
+    }
+
+    public void setTestConfiguration(XMLConfiguration testConfiguration)
+    {
+        _testConfiguration = testConfiguration;
     }
 }

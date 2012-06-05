@@ -79,8 +79,16 @@ public class JMXTestUtils
 
     public void open() throws Exception
     {
+        open(0);  // Zero signifies default broker to QBTC.
+    }
+
+    public void open(final int brokerPort) throws Exception
+    {
+        int actualBrokerPort = _test.getPort(brokerPort);
+        int managementPort = _test.getManagementPort(actualBrokerPort);
+
         _jmxc = JMXConnnectionFactory.getJMXConnection(5000, "127.0.0.1",
-                    _test.getManagementPort(_test.getPort()), _user, _password);
+                    managementPort, _user, _password);
 
         _mbsc = _jmxc.getMBeanServerConnection();
     }
@@ -319,7 +327,7 @@ public class JMXTestUtils
         Set<ObjectName> objectNames = queryObjects(query);
 
         _test.assertNotNull("Null ObjectName Set returned", objectNames);
-        _test.assertEquals("More than one " + managedClass + " returned", 1, objectNames.size());
+        _test.assertEquals("Unexpected number of objects matching " + managedClass + " returned", 1, objectNames.size());
 
         ObjectName objectName = objectNames.iterator().next();
 		_test.getLogger().info("Loading: " + objectName);
