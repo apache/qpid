@@ -20,6 +20,11 @@
  */
 package org.apache.qpid.client;
 
+import static org.apache.qpid.configuration.ClientProperties.DEFAULT_FLOW_CONTROL_WAIT_FAILURE;
+import static org.apache.qpid.configuration.ClientProperties.DEFAULT_FLOW_CONTROL_WAIT_NOTIFY_PERIOD;
+import static org.apache.qpid.configuration.ClientProperties.QPID_FLOW_CONTROL_WAIT_FAILURE;
+import static org.apache.qpid.configuration.ClientProperties.QPID_FLOW_CONTROL_WAIT_NOTIFY_PERIOD;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -117,18 +122,17 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     /** Immediate message prefetch default. */
     public static final String IMMEDIATE_PREFETCH_DEFAULT = "false";
 
-    public static final long DEFAULT_FLOW_CONTROL_WAIT_FAILURE = 120000L;
-
     /**
      * The period to wait while flow controlled before sending a log message confirming that the session is still
      * waiting on flow control being revoked
      */
-    private final long _flowControlWaitPeriod = Long.getLong("qpid.flow_control_wait_notify_period",5000L);
+    private final long _flowControlWaitPeriod = Long.getLong(QPID_FLOW_CONTROL_WAIT_NOTIFY_PERIOD,
+                                                                 DEFAULT_FLOW_CONTROL_WAIT_NOTIFY_PERIOD);
 
     /**
      * The period to wait while flow controlled before declaring a failure
      */
-    private final long _flowControlWaitFailure = Long.getLong("qpid.flow_control_wait_failure",
+    private final long _flowControlWaitFailure = Long.getLong(QPID_FLOW_CONTROL_WAIT_FAILURE,
                                                                   DEFAULT_FLOW_CONTROL_WAIT_FAILURE);
 
     private final boolean _delareQueues =
@@ -3130,11 +3134,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         _ticket = ticket;
     }
 
-    public boolean isBrokerFlowControlled()
+    public boolean isFlowBlocked()
     {
         synchronized (_flowControl)
         {
-            return _flowControl.getFlowControl();
+            return !_flowControl.getFlowControl();
         }
     }
 
