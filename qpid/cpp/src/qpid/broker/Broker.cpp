@@ -130,6 +130,7 @@ Broker::Options::Options(const std::string& name) :
     defaultMsgGroup("qpid.no-group"),
     timestampRcvMsgs(false),    // set the 0.10 timestamp delivery property
     linkMaintenanceInterval(2),
+    linkHeartbeatInterval(120),
     maxNegotiateTime(2000)      // 2s
 {
     int c = sys::SystemInfo::concurrency();
@@ -172,6 +173,7 @@ Broker::Options::Options(const std::string& name) :
         ("default-message-group", optValue(defaultMsgGroup, "GROUP-IDENTIFER"), "Group identifier to assign to messages delivered to a message group queue that do not contain an identifier.")
         ("enable-timestamp", optValue(timestampRcvMsgs, "yes|no"), "Add current time to each received message.")
         ("link-maintenace-interval", optValue(linkMaintenanceInterval, "SECONDS"))
+        ("link-heartbeat-interval", optValue(linkHeartbeatInterval, "SECONDS"))
         ("max-negotiate-time", optValue(maxNegotiateTime, "MilliSeconds"), "Maximum time a connection can take to send the initial protocol negotiation")
         ;
 }

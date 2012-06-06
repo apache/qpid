@@ -370,8 +370,14 @@ void ConnectionHandler::Handler::tune(uint16_t channelMax,
     maxFrameSize = std::min(maxFrameSize, maxFrameSizeProposed);
     connection.setFrameMax(maxFrameSize);
 
-    connection.setHeartbeat(heartbeatMax);
-    proxy.tuneOk(channelMax, maxFrameSize, heartbeatMax);
+    // this method is only ever called when this Connection
+    // is a federation link where this Broker is acting as
+    // a client to another Broker
+    uint16_t hb = std::min(connection.getBroker().getOptions().linkHeartbeatInterval, heartbeatMax);
+    connection.setHeartbeat(hb);
+    connection.startLinkHeartbeatTimeoutTask();
+
+    proxy.tuneOk(channelMax, maxFrameSize, hb);
     proxy.open("/", Array(), true);
 }
 
