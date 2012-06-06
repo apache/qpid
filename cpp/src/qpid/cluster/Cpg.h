@@ -131,7 +131,7 @@ class Cpg : public sys::IOHandle {
         CpgOp ( std::string opName ) 
           : opName(opName) { }
 
-        virtual cpg_error_t op ( cpg_handle_t handle, struct cpg_name * ) = 0; 
+        virtual cs_error_t op ( cpg_handle_t handle, struct cpg_name * ) = 0; 
         virtual std::string msg(const Name&) = 0;
         virtual ~CpgOp ( ) { }
     };
@@ -141,7 +141,7 @@ class Cpg : public sys::IOHandle {
         CpgJoinOp ( )
           : CpgOp ( std::string("cpg_join") ) { }
 
-        cpg_error_t op(cpg_handle_t handle, struct cpg_name * group) { 
+        cs_error_t op(cpg_handle_t handle, struct cpg_name * group) { 
             return cpg_join ( handle, group ); 
         }
 
@@ -152,7 +152,7 @@ class Cpg : public sys::IOHandle {
         CpgLeaveOp ( )
           : CpgOp ( std::string("cpg_leave") ) { }
 
-        cpg_error_t op(cpg_handle_t handle, struct cpg_name * group) { 
+        cs_error_t op(cpg_handle_t handle, struct cpg_name * group) { 
             return cpg_leave ( handle, group ); 
         }
 
@@ -163,7 +163,7 @@ class Cpg : public sys::IOHandle {
         CpgFinalizeOp ( )
           : CpgOp ( std::string("cpg_finalize") ) { }
 
-        cpg_error_t op(cpg_handle_t handle, struct cpg_name *) { 
+        cs_error_t op(cpg_handle_t handle, struct cpg_name *) { 
             return cpg_finalize ( handle ); 
         }
 
@@ -177,7 +177,7 @@ class Cpg : public sys::IOHandle {
     CpgLeaveOp    cpgLeaveOp;
     CpgFinalizeOp cpgFinalizeOp;
 
-    static std::string errorStr(cpg_error_t err, const std::string& msg);
+    static std::string errorStr(cs_error_t err, const std::string& msg);
     static std::string cantJoinMsg(const Name&);
     static std::string cantLeaveMsg(const Name&);
     static std::string cantMcastMsg(const Name&);
