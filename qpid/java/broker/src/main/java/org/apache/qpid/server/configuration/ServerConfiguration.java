@@ -20,6 +20,16 @@
 
 package org.apache.qpid.server.configuration;
 
+import java.io.File;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManagerFactory;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
@@ -28,7 +38,6 @@ import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
@@ -39,17 +48,6 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
-
-import java.io.File;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import javax.net.ssl.KeyManagerFactory;
 
 public class ServerConfiguration extends ConfigurationPlugin
 {
@@ -182,7 +180,7 @@ public class ServerConfiguration extends ConfigurationPlugin
      * This has been made a two step process to allow the Plugin Manager and
      * Configuration Manager to be initialised in the Application Registry.
      * <p>
-     * If using this ServerConfiguration via an ApplicationRegistry there is no 
+     * If using this ServerConfiguration via an ApplicationRegistry there is no
      * need to explicitly call {@link #initialise()} as this is done via the
      * {@link ApplicationRegistry#initialise()} method.
      *
@@ -204,12 +202,12 @@ public class ServerConfiguration extends ConfigurationPlugin
      * Called by {@link ApplicationRegistry#initialise()}.
      * <p>
      * NOTE: A DEFAULT ApplicationRegistry must exist when using this method
-     * or a new ApplicationRegistry will be created. 
+     * or a new ApplicationRegistry will be created.
      *
      * @throws ConfigurationException
      */
     public void initialise() throws ConfigurationException
-    {	
+    {
         setConfiguration("", getConfig());
         setupVirtualHosts(getConfig());
     }
@@ -224,10 +222,10 @@ public class ServerConfiguration extends ConfigurationPlugin
     {
         // Support for security.jmx.access was removed when JMX access rights were incorporated into the main ACL.
         // This ensure that users remove the element from their configuration file.
-        
+
         if (getListValue("security.jmx.access").size() > 0)
         {
-            String message = "Validation error : security/jmx/access is no longer a supported element within the configuration xml." 
+            String message = "Validation error : security/jmx/access is no longer a supported element within the configuration xml."
                     + (_configFile == null ? "" : " Configuration file : " + _configFile);
             throw new ConfigurationException(message);
         }
@@ -241,7 +239,7 @@ public class ServerConfiguration extends ConfigurationPlugin
 
         if (getListValue("security.principal-databases.principal-database(0).class").size() > 0)
         {
-            String message = "Validation error : security/principal-databases is no longer supported within the configuration xml." 
+            String message = "Validation error : security/principal-databases is no longer supported within the configuration xml."
                     + (_configFile == null ? "" : " Configuration file : " + _configFile);
             throw new ConfigurationException(message);
         }
@@ -475,7 +473,7 @@ public class ServerConfiguration extends ConfigurationPlugin
             Configuration newConfig = parseConfig(_configFile);
             setConfiguration("", newConfig);
             ApplicationRegistry.getInstance().getSecurityManager().configureHostPlugins(this);
-			
+
             // Reload virtualhosts from correct location
             Configuration newVhosts;
             if (_vhostsFile == null)
@@ -500,12 +498,12 @@ public class ServerConfiguration extends ConfigurationPlugin
             _logger.warn(SECURITY_CONFIG_RELOADED);
         }
     }
-    
+
     public String getQpidWork()
     {
         return System.getProperty(QPID_WORK, System.getProperty("java.io.tmpdir"));
     }
-    
+
     public String getQpidHome()
     {
         return System.getProperty(QPID_HOME);
@@ -550,12 +548,12 @@ public class ServerConfiguration extends ConfigurationPlugin
     {
         return _virtualHosts.keySet().toArray(new String[_virtualHosts.size()]);
     }
-    
+
     public String getPluginDirectory()
     {
         return getStringValue("plugin-directory");
     }
-    
+
     public String getCacheDirectory()
     {
         return getStringValue("cache-directory");
@@ -773,7 +771,7 @@ public class ServerConfiguration extends ConfigurationPlugin
     {
         return getBooleanValue("connector.ssl.sslOnly");
     }
-    
+
     public List getSSLPorts()
     {
         return getListValue("connector.ssl.port", Collections.<Integer>singletonList(DEFAULT_SSL_PORT));
@@ -804,6 +802,41 @@ public class ServerConfiguration extends ConfigurationPlugin
         return getStringValue("connector.ssl.keyManagerFactoryAlgorithm", fallback);
     }
 
+    public String getConnectorTrustStorePath()
+    {
+        return getStringValue("connector.ssl.trustStorePath", null);
+    }
+
+    public String getConnectorTrustStorePassword()
+    {
+        return getStringValue("connector.ssl.trustStorePassword", null);
+    }
+
+    public String getConnectorTrustStoreType()
+    {
+        return getStringValue("connector.ssl.trustStoreType", "JKS");
+    }
+
+    public String getConnectorTrustManagerFactoryAlgorithm()
+    {
+        return getStringValue("connector.ssl.trustManagerFactoryAlgorithm", TrustManagerFactory.getDefaultAlgorithm());
+    }
+
+    public String getCertAlias()
+    {
+        return getStringValue("connector.ssl.certAlias", null);
+    }
+
+    public boolean needClientAuth()
+    {
+        return getConfig().getBoolean("connector.ssl.needClientAuth", false);
+    }
+
+    public boolean wantClientAuth()
+    {
+        return getConfig().getBoolean("connector.ssl.wantClientAuth", false);
+    }
+
     public String getDefaultVirtualHost()
     {
         return getStringValue("virtualhosts.default");
@@ -812,7 +845,7 @@ public class ServerConfiguration extends ConfigurationPlugin
     public void setDefaultVirtualHost(String vhost)
     {
          getConfig().setProperty("virtualhosts.default", vhost);
-    }    
+    }
 
     public void setHousekeepingCheckPeriod(long value)
     {

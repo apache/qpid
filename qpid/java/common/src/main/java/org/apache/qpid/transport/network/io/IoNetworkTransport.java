@@ -27,10 +27,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
-
+import java.security.Principal;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
-
+import javax.net.ssl.SSLSocket;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.transport.ConnectionSettings;
@@ -167,6 +169,9 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
             {
                 SSLServerSocketFactory socketFactory = _sslContext.getServerSocketFactory();
                 _serverSocket = socketFactory.createServerSocket();
+                ((SSLServerSocket)_serverSocket).setNeedClientAuth(config.needClientAuth());
+                ((SSLServerSocket)_serverSocket).setWantClientAuth(config.wantClientAuth());
+
             }
 
             _serverSocket.setReuseAddress(true);
@@ -216,9 +221,23 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
                         socket.setSendBufferSize(sendBufferSize);
                         socket.setReceiveBufferSize(receiveBufferSize);
 
+
                         ProtocolEngine engine = _factory.newProtocolEngine();
 
                         NetworkConnection connection = new IoNetworkConnection(socket, engine, sendBufferSize, receiveBufferSize, _timeout);
+
+                        if(_sslContext != null)
+                        {
+                            try
+                            {
+                                Principal peerPrincipal = ((SSLSocket) socket).getSession().getPeerPrincipal();
+                                connection.setPeerPrincipal(peerPrincipal);
+                            }
+                            catch(SSLPeerUnverifiedException e)
+                            {
+                                // ignore
+                            }
+                        }
 
                         engine.setNetworkConnection(connection, connection.getSender());
 

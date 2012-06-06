@@ -20,16 +20,15 @@
  */
 package org.apache.qpid.transport.network.io;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.qpid.transport.Receiver;
-import org.apache.qpid.transport.Sender;
-import org.apache.qpid.transport.network.NetworkConnection;
-
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.security.Principal;
+import org.apache.qpid.transport.Receiver;
+import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.network.NetworkConnection;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class IoNetworkConnection implements NetworkConnection
 {
@@ -38,6 +37,7 @@ public class IoNetworkConnection implements NetworkConnection
     private final long _timeout;
     private final IoSender _ioSender;
     private final IoReceiver _ioReceiver;
+    private Principal _principal;
 
     public IoNetworkConnection(Socket socket, Receiver<ByteBuffer> delegate,
             int sendBufferSize, int receiveBufferSize, long timeout)
@@ -96,5 +96,17 @@ public class IoNetworkConnection implements NetworkConnection
     {
         // TODO implement support for setting heartbeating config in this way
         // Currently a socket timeout is used in IoSender
+    }
+
+    @Override
+    public void setPeerPrincipal(Principal principal)
+    {
+        _principal = principal;
+    }
+
+    @Override
+    public Principal getPeerPrincipal()
+    {
+        return _principal;
     }
 }

@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.transport.network;
 
-import org.apache.qpid.transport.Sender;
-
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.security.Principal;
+import org.apache.qpid.transport.Sender;
 
 public interface NetworkConnection
 {
@@ -46,4 +46,8 @@ public interface NetworkConnection
     void setMaxWriteIdle(int sec);
 
     void setMaxReadIdle(int sec);
+
+    void setPeerPrincipal(Principal principal);
+
+    Principal getPeerPrincipal();
 }
