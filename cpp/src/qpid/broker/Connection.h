@@ -166,6 +166,7 @@ class Connection : public sys::ConnectionInputHandler,
     bool isOpen();
 
     bool isLink() { return link; }
+    void startLinkHeartbeatTimeoutTask();
 
     // Used by cluster during catch-up, see cluster::OutputInterceptor
     void doIoCallbacks();
@@ -189,7 +190,7 @@ class Connection : public sys::ConnectionInputHandler,
     LinkRegistry& links;
     management::ManagementAgent* agent;
     sys::Timer& timer;
-    boost::intrusive_ptr<sys::TimerTask> heartbeatTimer;
+    boost::intrusive_ptr<sys::TimerTask> heartbeatTimer, linkHeartbeatTimer;
     boost::intrusive_ptr<ConnectionTimeoutTask> timeoutTimer;
     ErrorListener* errorListener;
     uint64_t objectId;
