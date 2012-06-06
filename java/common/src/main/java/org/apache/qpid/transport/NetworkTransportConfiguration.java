@@ -25,17 +25,17 @@ import java.net.InetSocketAddress;
 /**
  * This interface provides a means for NetworkDrivers to configure TCP options such as incoming and outgoing
  * buffer sizes and set particular options on the socket. NetworkDrivers should honour the values returned
- * from here if the underlying implementation supports them.  
- */ 
-public interface NetworkTransportConfiguration  
-{  
-    // Taken from Socket  
-    Boolean getTcpNoDelay(); 
+ * from here if the underlying implementation supports them.
+ */
+public interface NetworkTransportConfiguration
+{
+    // Taken from Socket
+    Boolean getTcpNoDelay();
 
-    // The amount of memory in bytes to allocate to the incoming buffer 
-    Integer getReceiveBufferSize();  
+    // The amount of memory in bytes to allocate to the incoming buffer
+    Integer getReceiveBufferSize();
 
-    // The amount of memory in bytes to allocate to the outgoing buffer 
+    // The amount of memory in bytes to allocate to the outgoing buffer
     Integer getSendBufferSize();
 
     Integer getPort();
@@ -47,4 +47,8 @@ public interface NetworkTransportConfiguration
     Integer getConnectorProcessors();
 
     InetSocketAddress getAddress();
+
+    boolean needClientAuth();
+
+    boolean wantClientAuth();
 }

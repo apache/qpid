@@ -18,20 +18,20 @@
  */
 package org.apache.qpid.server.plugins;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.felix.framework.Felix;
 import org.apache.felix.framework.util.StringMap;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
-import org.apache.qpid.server.security.auth.manager.KerberosAuthenticationManager;
-import org.apache.qpid.server.security.auth.manager.SimpleLDAPAuthenticationManager;
-import org.osgi.framework.BundleActivator;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.BundleException;
-import org.osgi.framework.Version;
-import org.osgi.framework.launch.Framework;
-import org.osgi.util.tracker.ServiceTracker;
-
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.configuration.TopicConfiguration;
@@ -43,24 +43,23 @@ import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SecurityPluginFactory;
 import org.apache.qpid.server.security.access.plugins.LegacyAccess;
+import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManagerPluginFactory;
+import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.KerberosAuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.SimpleLDAPAuthenticationManager;
 import org.apache.qpid.server.virtualhost.plugins.SlowConsumerDetection;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 import org.apache.qpid.server.virtualhost.plugins.policies.TopicDeletePolicy;
 import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPluginFactory;
 import org.apache.qpid.util.FileUtils;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import org.osgi.framework.BundleActivator;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleException;
+import org.osgi.framework.Version;
+import org.osgi.framework.launch.Framework;
+import org.osgi.util.tracker.ServiceTracker;
 
 import static org.apache.felix.framework.util.FelixConstants.SYSTEMBUNDLE_ACTIVATORS_PROP;
 import static org.apache.felix.main.AutoProcessor.AUTO_DEPLOY_ACTION_PROPERY;
@@ -103,18 +102,18 @@ public class PluginManager implements Closeable
 
     /** The default name of the OSGI system package list. */
     private static final String DEFAULT_RESOURCE_NAME = "org/apache/qpid/server/plugins/OsgiSystemPackages.properties";
-    
+
     /** The name of the override system property that holds the name of the OSGI system package list. */
     private static final String FILE_PROPERTY = "qpid.osgisystempackages.properties";
-    
+
     private static final String OSGI_SYSTEM_PACKAGES;
-    
-    static 
+
+    static
     {
         final String filename = System.getProperty(FILE_PROPERTY);
         final InputStream is = FileUtils.openFileOrDefaultResource(filename, DEFAULT_RESOURCE_NAME,
                     PluginManager.class.getClassLoader());
-        
+
         try
         {
             Version qpidReleaseVersion;
@@ -126,14 +125,14 @@ public class PluginManager implements Closeable
             {
                 qpidReleaseVersion = null;
             }
-            
+
             final Properties p  = new Properties();
             p.load(is);
-            
+
             final OsgiSystemPackageUtil osgiSystemPackageUtil = new OsgiSystemPackageUtil(qpidReleaseVersion, (Map)p);
-            
+
             OSGI_SYSTEM_PACKAGES = osgiSystemPackageUtil.getFormattedSystemPackageString();
-            
+
             _logger.debug("List of OSGi system packages to be added: " + OSGI_SYSTEM_PACKAGES);
         }
         catch (IOException e)
@@ -142,8 +141,8 @@ public class PluginManager implements Closeable
             throw new ExceptionInInitializerError(e);
         }
     }
-    
-    
+
+
     public PluginManager(String pluginPath, String cachePath, BundleContext bundleContext) throws Exception
     {
         // Store all non-OSGi plugins
@@ -162,7 +161,9 @@ public class PluginManager implements Closeable
                 PrincipalDatabaseAuthenticationManager.PrincipalDatabaseAuthenticationManagerConfiguration.FACTORY,
                 AnonymousAuthenticationManager.AnonymousAuthenticationManagerConfiguration.FACTORY,
                 KerberosAuthenticationManager.KerberosAuthenticationManagerConfiguration.FACTORY,
-                SimpleLDAPAuthenticationManager.SimpleLDAPAuthenticationManagerConfiguration.FACTORY))
+                SimpleLDAPAuthenticationManager.SimpleLDAPAuthenticationManagerConfiguration.FACTORY,
+                ExternalAuthenticationManager.ExternalAuthenticationManagerConfiguration.FACTORY
+                ))
         {
             _configPlugins.put(configFactory.getParentPaths(), configFactory);
         }
@@ -179,7 +180,8 @@ public class PluginManager implements Closeable
 
         for (AuthenticationManagerPluginFactory<? extends Plugin> pluginFactory : Arrays.asList(
                 PrincipalDatabaseAuthenticationManager.FACTORY, AnonymousAuthenticationManager.FACTORY,
-                KerberosAuthenticationManager.FACTORY, SimpleLDAPAuthenticationManager.FACTORY))
+                KerberosAuthenticationManager.FACTORY, SimpleLDAPAuthenticationManager.FACTORY,
+                ExternalAuthenticationManager.FACTORY))
         {
             _authenticationManagerPlugins.put(pluginFactory.getPluginName(), pluginFactory);
         }
@@ -272,7 +274,7 @@ public class PluginManager implements Closeable
         _virtualHostTracker = new ServiceTracker(bundleContext, VirtualHostPluginFactory.class.getName(), null);
         _virtualHostTracker.open();
         _trackers.add(_virtualHostTracker);
- 
+
         _policyTracker = new ServiceTracker(bundleContext, SlowConsumerPolicyPluginFactory.class.getName(), null);
         _policyTracker.open();
         _trackers.add(_policyTracker);
@@ -285,9 +287,9 @@ public class PluginManager implements Closeable
     }
 
     private static <T> Map<String, T> getServices(ServiceTracker tracker)
-    {   
+    {
         Map<String, T> services = new HashMap<String, T>();
-        
+
         if ((tracker != null) && (tracker.getServices() != null))
         {
             for (Object service : tracker.getServices())
@@ -307,16 +309,16 @@ public class PluginManager implements Closeable
     }
 
     public static <T> Map<String, T> getServices(ServiceTracker tracker, Map<String, T> plugins)
-    {   
+    {
         Map<String, T> services = getServices(tracker);
         services.putAll(plugins);
         return services;
     }
 
     public Map<List<String>, ConfigurationPluginFactory> getConfigurationPlugins()
-    {   
+    {
         Map<List<String>, ConfigurationPluginFactory> services = new IdentityHashMap<List<String>, ConfigurationPluginFactory>();
-        
+
         if (_configTracker != null && _configTracker.getServices() != null)
         {
             for (Object service : _configTracker.getServices())
@@ -325,19 +327,19 @@ public class PluginManager implements Closeable
                 services.put(factory.getParentPaths(), factory);
             }
         }
-        
+
         services.putAll(_configPlugins);
 
         return services;
     }
 
     public Map<String, VirtualHostPluginFactory> getVirtualHostPlugins()
-    {   
+    {
         return getServices(_virtualHostTracker, _vhostPlugins);
     }
 
     public Map<String, SlowConsumerPolicyPluginFactory> getSlowConsumerPlugins()
-    {   
+    {
         return getServices(_policyTracker, _policyPlugins);
     }
 
@@ -345,7 +347,7 @@ public class PluginManager implements Closeable
     {
         return getServices(_exchangeTracker);
     }
-    
+
     public Map<String, SecurityPluginFactory> getSecurityPlugins()
     {
         return getServices(_securityTracker, _securityPlugins);

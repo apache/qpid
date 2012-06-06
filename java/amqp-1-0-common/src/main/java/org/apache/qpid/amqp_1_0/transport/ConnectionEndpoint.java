@@ -106,15 +106,15 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
     private UnsignedInteger _desiredMaxFrameSize = UnsignedInteger.valueOf(DEFAULT_MAX_FRAME);
     private Runnable _onSaslCompleteTask;
 
-    private CallbackHandlerSource _callbackHandlersource;
+    private SaslServerProvider _saslServerProvider;
     private SaslServer _saslServer;
     private boolean _authenticated;
     private String _remoteHostname;
 
-    public ConnectionEndpoint(Container container, CallbackHandlerSource cbs)
+    public ConnectionEndpoint(Container container, SaslServerProvider cbs)
     {
         _container = container;
-        _callbackHandlersource = cbs;
+        _saslServerProvider = cbs;
         _requiresSASLClient = false;
         _requiresSASLServer = cbs != null;
     }
@@ -700,11 +700,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
 
         try
         {
-            _saslServer = Sasl.createSaslServer(mechanism.toString(),
-                                                "AMQP",
-                                                "localhost",
-                                                null,
-                                                _callbackHandlersource.getHandler(mechanism.toString()));
+            _saslServer = _saslServerProvider.getSaslServer(mechanism.toString(), "localhost");
 
             // Process response from the client
             byte[] challenge = _saslServer.evaluateResponse(response != null ? response : new byte[0]);

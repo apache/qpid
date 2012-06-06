@@ -28,7 +28,7 @@ public class ServerNetworkTransportConfiguration implements NetworkTransportConf
     private final String _transport;
     private InetSocketAddress _address;
 
-    public ServerNetworkTransportConfiguration(final ServerConfiguration serverConfig, 
+    public ServerNetworkTransportConfiguration(final ServerConfiguration serverConfig,
                                                final InetSocketAddress address,
                                                final String transport)
     {
@@ -75,5 +75,16 @@ public class ServerNetworkTransportConfiguration implements NetworkTransportConf
     public InetSocketAddress getAddress()
     {
         return _address;
+    }
+
+    public boolean needClientAuth()
+    {
+        return _serverConfig.needClientAuth();
+    }
+
+    @Override
+    public boolean wantClientAuth()
+    {
+        return _serverConfig.wantClientAuth();
     }
 }

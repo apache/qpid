@@ -26,12 +26,13 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.security.auth.callback.CallbackHandler;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
 import org.apache.qpid.amqp_1_0.codec.FrameWriter;
 import org.apache.qpid.amqp_1_0.framing.AMQFrame;
 import org.apache.qpid.amqp_1_0.framing.FrameHandler;
 import org.apache.qpid.amqp_1_0.framing.OversizeFrameException;
-import org.apache.qpid.amqp_1_0.transport.CallbackHandlerSource;
+import org.apache.qpid.amqp_1_0.transport.SaslServerProvider;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
 import org.apache.qpid.amqp_1_0.transport.Container;
 import org.apache.qpid.amqp_1_0.transport.FrameOutputHandler;
@@ -95,7 +96,7 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
     }
 
     private State _state = State.A;
-    
+
 
 
     public ProtocolEngine_1_0_0(final IApplicationRegistry appRegistry, long id)
@@ -143,7 +144,8 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
 
         Container container = new Container(_appRegistry.getBrokerId().toString());
 
-        _conn = new ConnectionEndpoint(container,asCallbackHandlerSource(_appRegistry.getAuthenticationManager(getLocalAddress())));
+        _conn = new ConnectionEndpoint(container, asSaslServerProvider(_appRegistry.getAuthenticationManager(
+                getLocalAddress())));
         _conn.setConnectionEventListener(new Connection_1_0(_appRegistry));
         _conn.setFrameOutputHandler(this);
         _conn.setRemoteAddress(_network.getRemoteAddress());
@@ -155,14 +157,14 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
         _sender.flush();
     }
 
-    private CallbackHandlerSource asCallbackHandlerSource(final AuthenticationManager authenticationManager)
+    private SaslServerProvider asSaslServerProvider(final AuthenticationManager authenticationManager)
     {
-        return new CallbackHandlerSource()
+        return new SaslServerProvider()
         {
             @Override
-            public CallbackHandler getHandler(String mechanism)
+            public SaslServer getSaslServer(String mechanism, String fqdn) throws SaslException
             {
-                return authenticationManager.getHandler(mechanism);
+                return authenticationManager.createSaslServer(mechanism, fqdn, null);
             }
         };
     }

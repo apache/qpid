@@ -139,7 +139,7 @@ public class AnonymousAuthenticationManager implements AuthenticationManager
     }
 
     @Override
-    public SaslServer createSaslServer(String mechanism, String localFQDN) throws SaslException
+    public SaslServer createSaslServer(String mechanism, String localFQDN, Principal externalPrincipal) throws SaslException
     {
         if(ANONYMOUS.equals(mechanism))
         {
@@ -178,19 +178,6 @@ public class AnonymousAuthenticationManager implements AuthenticationManager
     public AuthenticationResult authenticate(String username, String password)
     {
         return ANONYMOUS_AUTHENTICATION;
-    }
-
-    @Override
-    public CallbackHandler getHandler(String mechanism)
-    {
-        if(ANONYMOUS.equals(mechanism))
-        {
-            return _callbackHandler;
-        }
-        else
-        {
-            return null;
-        }
     }
 
     @Override

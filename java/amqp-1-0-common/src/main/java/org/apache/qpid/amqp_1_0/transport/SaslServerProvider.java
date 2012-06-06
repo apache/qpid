@@ -20,9 +20,10 @@
 package org.apache.qpid.amqp_1_0.transport;
 
 
-import javax.security.auth.callback.CallbackHandler;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
 
-public interface CallbackHandlerSource
+public interface SaslServerProvider
 {
-    CallbackHandler getHandler(String mechanism);
+    SaslServer getSaslServer(String mechanism, String fqdn) throws SaslException;
 }

@@ -167,7 +167,7 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
      */
     public void testSaslMechanismCreation() throws Exception
     {
-        SaslServer server = _manager.createSaslServer("CRAM-MD5", "localhost");
+        SaslServer server = _manager.createSaslServer("CRAM-MD5", "localhost", null);
         assertNotNull(server);
         // Merely tests the creation of the mechanism. Mechanisms themselves are tested
         // by their own tests.
