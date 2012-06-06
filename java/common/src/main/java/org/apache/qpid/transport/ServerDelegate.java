@@ -78,7 +78,7 @@ public class ServerDelegate extends ConnectionDelegate
         try
         {
             
-            SaslServer ss = createSaslServer(mechanism);
+            SaslServer ss = createSaslServer(conn, mechanism);
             if (ss == null)
             {
                 conn.connectionClose(ConnectionCloseCode.CONNECTION_FORCED,
@@ -94,7 +94,7 @@ public class ServerDelegate extends ConnectionDelegate
         }
     }
 
-    protected SaslServer createSaslServer(String mechanism)
+    protected SaslServer createSaslServer(Connection conn, String mechanism)
             throws SaslException
     {
         SaslServer ss = Sasl.createSaslServer(mechanism, "AMQP", "localhost", null, null);

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,25 +20,24 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import java.security.Principal;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.plugins.Plugin;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.sasl.SaslException;
-import javax.security.sasl.SaslServer;
-
 /**
  * Implementations of the AuthenticationManager are responsible for determining
  * the authenticity of a user's credentials.
- * 
+ *
  * If the authentication is successful, the manager is responsible for producing a populated
  * {@link javax.security.auth.Subject} containing the user's identity and zero or more principals representing
  * groups to which the user belongs.
  * <p>
  * The {@link #initialise()} method is responsible for registering SASL mechanisms required by
  * the manager.  The {@link #close()} method must reverse this registration.
- * 
+ *
  */
 public interface AuthenticationManager extends Closeable, Plugin
 {
@@ -64,11 +63,11 @@ public interface AuthenticationManager extends Closeable, Plugin
      *
      * @param mechanism mechanism name
      * @param localFQDN domain name
-     *
+     * @param externalPrincipal externally authenticated Principal
      * @return SASL server
      * @throws SaslException
      */
-    SaslServer createSaslServer(String mechanism, String localFQDN) throws SaslException;
+    SaslServer createSaslServer(String mechanism, String localFQDN, Principal externalPrincipal) throws SaslException;
 
     /**
      * Authenticates a user using SASL negotiation.
@@ -90,5 +89,4 @@ public interface AuthenticationManager extends Closeable, Plugin
      */
     AuthenticationResult authenticate(String username, String password);
 
-    CallbackHandler getHandler(String mechanism);
 }

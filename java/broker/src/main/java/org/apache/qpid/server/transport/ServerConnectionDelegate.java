@@ -20,14 +20,21 @@
  */
 package org.apache.qpid.server.transport;
 
-import static org.apache.qpid.transport.Connection.State.CLOSE_RCVD;
-
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
 import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.properties.ConnectionStartProperties;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.server.configuration.BrokerConfig;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
@@ -40,16 +47,7 @@ import org.apache.qpid.transport.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.security.sasl.SaslException;
-import javax.security.sasl.SaslServer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
+import static org.apache.qpid.transport.Connection.State.CLOSE_RCVD;
 
 public class ServerConnectionDelegate extends ServerDelegate
 {
@@ -112,17 +110,16 @@ public class ServerConnectionDelegate extends ServerDelegate
         return ssn;
     }
 
-    protected SaslServer createSaslServer(String mechanism) throws SaslException
+    protected SaslServer createSaslServer(Connection conn, String mechanism) throws SaslException
     {
-        return _authManager.createSaslServer(mechanism, _localFQDN);
+        return _authManager.createSaslServer(mechanism, _localFQDN, ((ServerConnection) conn).getPeerPrincipal());
 
     }
 
     protected void secure(final SaslServer ss, final Connection conn, final byte[] response)
     {
-        final AuthenticationResult authResult = _authManager.authenticate(ss, response);
         final ServerConnection sconn = (ServerConnection) conn;
-
+        final AuthenticationResult authResult = _authManager.authenticate(ss, response);
 
         if (AuthenticationStatus.SUCCESS.equals(authResult.getStatus()))
         {
