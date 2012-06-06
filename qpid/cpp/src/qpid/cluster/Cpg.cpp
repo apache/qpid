@@ -32,7 +32,7 @@
 // This is a macro instead of a function because we don't want to
 // evaluate the MSG argument unless there is an error.
 #define CPG_CHECK(RESULT, MSG) \
-    if ((RESULT) != CPG_OK) throw Exception(errorStr((RESULT), (MSG)))
+    if ((RESULT) != CS_OK) throw Exception(errorStr((RESULT), (MSG)))
 
 namespace qpid {
 namespace cluster {
@@ -50,13 +50,13 @@ Cpg* Cpg::cpgFromHandle(cpg_handle_t handle) {
 
 // Applies the same retry-logic to all cpg calls that need it.
 void Cpg::callCpg ( CpgOp & c ) {
-    cpg_error_t result;
+    cs_error_t result;
     unsigned int snooze = 10;
     for ( unsigned int nth_try = 0; nth_try < cpgRetries; ++ nth_try ) {
-        if ( CPG_OK == (result = c.op(handle, & group))) {
+        if ( CS_OK == (result = c.op(handle, & group))) {
             break;
         }
-        else if ( result == CPG_ERR_TRY_AGAIN ) {
+        else if ( result == CS_ERR_TRY_AGAIN ) {
             QPID_LOG(info, "Retrying " << c.opName );
             sys::usleep ( snooze );
             snooze *= 10;
@@ -65,7 +65,7 @@ void Cpg::callCpg ( CpgOp & c ) {
         else break;  // Don't retry unless CPG tells us to.
     }
 
-    if ( result != CPG_OK )
+    if ( result != CS_OK )
         CPG_CHECK(result, c.msg(group));
 }
 
@@ -127,9 +127,9 @@ Cpg::Cpg(Handler& h) : IOHandle(new sys::IOHandlePrivate), handler(h), isShutdow
     callbacks.cpg_confchg_fn = &globalConfigChange;
 
     QPID_LOG(notice, "Initializing CPG");
-    cpg_error_t err = cpg_initialize(&handle, &callbacks);
+    cs_error_t err = cpg_initialize(&handle, &callbacks);
     int retries = 6; // FIXME aconway 2009-08-06: make this configurable.
-    while (err == CPG_ERR_TRY_AGAIN && --retries) {
+    while (err == CS_ERR_TRY_AGAIN && --retries) {
         QPID_LOG(notice, "Re-trying CPG initialization.");
         sys::sleep(5);
         err = cpg_initialize(&handle, &callbacks);
@@ -169,11 +169,11 @@ bool Cpg::mcast(const iovec* iov, int iovLen) {
     if (flowState == CPG_FLOW_CONTROL_ENABLED)
         return false;
 
-    cpg_error_t result;
+    cs_error_t result;
     do {
         result = cpg_mcast_joined(handle, CPG_TYPE_AGREED, const_cast<iovec*>(iov), iovLen);
-        if (result != CPG_ERR_TRY_AGAIN) CPG_CHECK(result, cantMcastMsg(group));
-    } while(result == CPG_ERR_TRY_AGAIN);
+        if (result != CS_ERR_TRY_AGAIN) CPG_CHECK(result, cantMcastMsg(group));
+    } while(result == CS_ERR_TRY_AGAIN);
     return true;
 }
 
@@ -187,34 +187,34 @@ void Cpg::shutdown() {
 }
 
 void Cpg::dispatchOne() {
-    CPG_CHECK(cpg_dispatch(handle,CPG_DISPATCH_ONE), "Error in CPG dispatch");
+    CPG_CHECK(cpg_dispatch(handle,CS_DISPATCH_ONE), "Error in CPG dispatch");
 }
 
 void Cpg::dispatchAll() {
-    CPG_CHECK(cpg_dispatch(handle,CPG_DISPATCH_ALL), "Error in CPG dispatch");
+    CPG_CHECK(cpg_dispatch(handle,CS_DISPATCH_ALL), "Error in CPG dispatch");
 }
 
 void Cpg::dispatchBlocking() {
-    CPG_CHECK(cpg_dispatch(handle,CPG_DISPATCH_BLOCKING), "Error in CPG dispatch");
+    CPG_CHECK(cpg_dispatch(handle,CS_DISPATCH_BLOCKING), "Error in CPG dispatch");
 }
 
-string Cpg::errorStr(cpg_error_t err, const std::string& msg) {
+string Cpg::errorStr(cs_error_t err, const std::string& msg) {
     std::ostringstream  os;
     os << msg << ": ";
     switch (err) {
-      case CPG_OK: os << "ok"; break;
-      case CPG_ERR_LIBRARY: os << "library"; break;
-      case CPG_ERR_TIMEOUT: os << "timeout"; break;
-      case CPG_ERR_TRY_AGAIN: os << "try again"; break;
-      case CPG_ERR_INVALID_PARAM: os << "invalid param"; break;
-      case CPG_ERR_NO_MEMORY: os << "no memory"; break;
-      case CPG_ERR_BAD_HANDLE: os << "bad handle"; break;
-      case CPG_ERR_ACCESS: os << "access denied. You may need to set your group ID to 'ais'"; break;
-      case CPG_ERR_NOT_EXIST: os << "not exist"; break;
-      case CPG_ERR_EXIST: os << "exist"; break;
-      case CPG_ERR_NOT_SUPPORTED: os << "not supported"; break;
-      case CPG_ERR_SECURITY: os << "security"; break;
-      case CPG_ERR_TOO_MANY_GROUPS: os << "too many groups"; break;
+      case CS_OK: os << "ok"; break;
+      case CS_ERR_LIBRARY: os << "library"; break;
+      case CS_ERR_TIMEOUT: os << "timeout"; break;
+      case CS_ERR_TRY_AGAIN: os << "try again"; break;
+      case CS_ERR_INVALID_PARAM: os << "invalid param"; break;
+      case CS_ERR_NO_MEMORY: os << "no memory"; break;
+      case CS_ERR_BAD_HANDLE: os << "bad handle"; break;
+      case CS_ERR_ACCESS: os << "access denied. You may need to set your group ID to 'ais'"; break;
+      case CS_ERR_NOT_EXIST: os << "not exist"; break;
+      case CS_ERR_EXIST: os << "exist"; break;
+      case CS_ERR_NOT_SUPPORTED: os << "not supported"; break;
+      case CS_ERR_SECURITY: os << "security"; break;
+      case CS_ERR_TOO_MANY_GROUPS: os << "too many groups"; break;
       default: os << ": unknown cpg error " << err;
     };
     os << " (" << err << ")";

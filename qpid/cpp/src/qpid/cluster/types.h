@@ -34,6 +34,29 @@
 extern "C" {
 #if defined (HAVE_OPENAIS_CPG_H)
 #  include <openais/cpg.h>
+
+// Provide translations back to the deprecated definitions in openais
+typedef cpg_error_t cs_error_t;
+#define CS_DISPATCH_ONE          CPG_DISPATCH_ONE
+#define CS_DISPATCH_ALL          CPG_DISPATCH_ALL
+#define CS_DISPATCH_BLOCKING     CPG_DISPATCH_BLOCKING
+#define CS_FLOW_CONTROL_DISABLED CPG_FLOW_CONTROL_DISABLED
+#define CS_FLOW_CONTROL_ENABLED  CPG_FLOW_CONTROL_ENABLED
+#define CS_OK                    CPG_OK
+#define CS_ERR_LIBRARY           CPG_ERR_LIBRARY
+#define CS_ERR_TIMEOUT           CPG_ERR_TIMEOUT
+#define CS_ERR_TRY_AGAIN         CPG_ERR_TRY_AGAIN
+#define CS_ERR_INVALID_PARAM     CPG_ERR_INVALID_PARAM
+#define CS_ERR_NO_MEMORY         CPG_ERR_NO_MEMORY
+#define CS_ERR_BAD_HANDLE        CPG_ERR_BAD_HANDLE
+#define CS_ERR_BUSY              CPG_ERR_BUSY
+#define CS_ERR_ACCESS            CPG_ERR_ACCESS
+#define CS_ERR_NOT_EXIST         CPG_ERR_NOT_EXIST
+#define CS_ERR_EXIST             CPG_ERR_EXIST
+#define CS_ERR_NOT_SUPPORTED     CPG_ERR_NOT_SUPPORTED
+#define CS_ERR_SECURITY          CPG_ERR_SECURITY
+#define CS_ERR_TOO_MANY_GROUPS   CPG_ERR_TOO_MANY_GROUPS
+
 #elif defined (HAVE_COROSYNC_CPG_H)
 #  include <corosync/cpg.h>
 #else
