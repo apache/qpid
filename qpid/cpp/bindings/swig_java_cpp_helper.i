@@ -172,6 +172,18 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
    return JNI_VERSION_1_4;
 }
 
+static bool checkAndThrowException(JNIEnv* env, const char* msg)
+{
+    jthrowable cause = env->ExceptionOccurred();
+    if (cause)
+    {
+        jthrowable ex = static_cast<jthrowable>(env->NewObject(JAVA_JNI_LAYER_EXP, JAVA_JNI_LAYER_EXP_CTOR, msg, cause));
+        env->Throw(ex);
+        return true;
+    }
+    return false;
+}
+
 static jobject newJavaBoolean(JNIEnv* env, jboolean arg)
 {
     return env->NewObject(JAVA_BOOLEAN_CLASS, JAVA_BOOLEAN_CTOR,arg);
@@ -285,8 +297,13 @@ static qpid::types::Variant convertJavaObjectToVariant(JNIEnv* env, jobject obj)
    else
    {
        env->ThrowNew(JAVA_ILLEGAL_ARGUMENT_EXP,"Only primitive types and strings are allowed");
+       return 0;
    }
 
+   if (checkAndThrowException(env,"Exception occured when converting Java object to Variant"))
+   {
+      return 0;
+   }
    return result;
 }
 %}

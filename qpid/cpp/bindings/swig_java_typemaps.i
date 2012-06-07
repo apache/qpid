@@ -105,7 +105,17 @@
 
 /* -- qpid::types::Variant& -- */
 %typemap(in) (const qpid::types::Variant&) {
-  $1 = new qpid::types::Variant(convertJavaObjectToVariant(jenv,$input));
+  qpid::types::Variant v = convertJavaObjectToVariant(jenv,$input);
+  if (v)
+  {
+      $1 = new qpid::types::Variant(v);
+  }
+  else
+  {
+      // There will be an exception on the java side,
+      // thrown by convertJavaObjectToVariant method.
+      return;
+  }
 }
 
 %typemap(javain) (const qpid::types::Variant&) "$javainput"
