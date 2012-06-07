@@ -78,7 +78,8 @@ static jmethodID JAVA_DOUBLE_VALUE_METHOD;
 
 static jclass JAVA_ILLEGAL_ARGUMENT_EXP;
 static jclass JAVA_JNI_LAYER_EXP;
-static jmethodID JAVA_JNI_LAYER_EXP_CTOR; // takes a msg and a throwable.
+static jmethodID JAVA_JNI_LAYER_EXP_CTOR1; // takes a msg.
+static jmethodID JAVA_JNI_LAYER_EXP_CTOR2; // takes a msg and a throwable.
 
 static jobject createGlobalRef(JNIEnv* env,jobject obj)
 {
@@ -158,7 +159,8 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 
    JAVA_ILLEGAL_ARGUMENT_EXP = static_cast<jclass>(createGlobalRef(env,findClass(env,"java/lang/IllegalArgumentException")));
    JAVA_JNI_LAYER_EXP = static_cast<jclass>(createGlobalRef(env,findClass(env,"org/apache/qpid/messaging/cpp/JNILayerException")));
-   JAVA_JNI_LAYER_EXP_CTOR = getMethodID(env,JAVA_JNI_LAYER_EXP, "<init>", "(Ljava/lang/String;Ljava/lang/Throwable;)V");
+   JAVA_JNI_LAYER_EXP_CTOR1 = getMethodID(env,JAVA_JNI_LAYER_EXP, "<init>", "(Ljava/lang/String;)V");
+   JAVA_JNI_LAYER_EXP_CTOR2 = getMethodID(env,JAVA_JNI_LAYER_EXP, "<init>", "(Ljava/lang/String;Ljava/lang/Throwable;)V");
 
    if (env->ExceptionCheck())
    {
@@ -172,16 +174,25 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
    return JNI_VERSION_1_4;
 }
 
-static bool checkAndThrowException(JNIEnv* env, const char* msg)
+static bool checkAndThrowJNILaylerException(JNIEnv* env, const char* msg)
 {
     jthrowable cause = env->ExceptionOccurred();
     if (cause)
     {
-        jthrowable ex = static_cast<jthrowable>(env->NewObject(JAVA_JNI_LAYER_EXP, JAVA_JNI_LAYER_EXP_CTOR, msg, cause));
+        jthrowable ex = static_cast<jthrowable>(env->NewObject(JAVA_JNI_LAYER_EXP, JAVA_JNI_LAYER_EXP_CTOR2, msg, cause));
         env->Throw(ex);
+        env->DeleteLocalRef(cause);
+        env->DeleteLocalRef(ex);
         return true;
     }
     return false;
+}
+
+static void throwJNILayerException(JNIEnv* env, const char* msg)
+{
+    jthrowable ex = static_cast<jthrowable>(env->NewObject(JAVA_JNI_LAYER_EXP, JAVA_JNI_LAYER_EXP_CTOR1, msg));
+    env->Throw(ex);
+    env->DeleteLocalRef(ex);
 }
 
 static jobject newJavaBoolean(JNIEnv* env, jboolean arg)
@@ -300,7 +311,7 @@ static qpid::types::Variant convertJavaObjectToVariant(JNIEnv* env, jobject obj)
        return 0;
    }
 
-   if (checkAndThrowException(env,"Exception occured when converting Java object to Variant"))
+   if (checkAndThrowJNILaylerException(env,"Exception occured when converting Java object to Variant"))
    {
       return 0;
    }
@@ -377,8 +388,6 @@ ReadOnlyVariantMapWrapper::~ReadOnlyVariantMapWrapper()
     }
 }
 
-// **** handle unsupported types
-// Add a generic error checking mechanism to see if the java methods have a thrown an error.
 jobject ReadOnlyVariantMapWrapper::get(const std::string key) const
 {
     using namespace qpid::types;
@@ -441,6 +450,16 @@ jobject ReadOnlyVariantMapWrapper::get(const std::string key) const
 
         case VAR_STRING : {
             result = newJavaString(env_,v.asString());
+            break;
+        }
+
+        case VAR_MAP : {
+            throwJNILayerException(env_,"The key maps to a Varient::Map. Unsupported type for message properties");
+            break;
+        }
+
+        case VAR_LIST : {
+            throwJNILayerException(env_,"The key maps to a Varient::List. Unsupported type for message properties");
             break;
         }
     }
