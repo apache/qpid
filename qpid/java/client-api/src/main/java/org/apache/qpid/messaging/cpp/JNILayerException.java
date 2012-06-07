@@ -17,32 +17,12 @@
  */
 package org.apache.qpid.messaging.cpp;
 
-import org.apache.qpid.messaging.Connection;
-import org.apache.qpid.messaging.ConnectionFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-public class CppConnectionFactory extends ConnectionFactory
+public class JNILayerException extends RuntimeException
 {
-    private static final Logger _logger = LoggerFactory.getLogger(CppConnectionFactory.class);
-    
-    static 
+
+    public JNILayerException(String message)
     {
-        System.loadLibrary("cqpid_java");
-        _logger.info("native qpid library was loaded sucessfully");
-    }
-    
-    public CppConnectionFactory()
-    {        
+        super(message);
     }
 
-    public Connection create(String url)
-    {
-        return new CppConnection(url);
-    }
-
-    public Connection createConnection(String url)
-    {
-        return create(url);
-    }
 }
