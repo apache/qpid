@@ -332,6 +332,11 @@
       or the replica is restored. It is suggested that the node that normally fulfils the role of master is set true in
       config file and the node that is normally replica is set false.  Be aware that setting both nodes to true will lead
       to a <link linkend="HATwoNodeSplitBrain">split-brain</link> in the case of network partition.</para>
+    <note><para>Usage of domain names in  <varname>helperHostPort</varname> and <varname>nodeHostPort</varname> is more preferebale
+     over IP addresses due to the tendency of more frequent changes of the last over the former.
+     If server IP address changes but domain name remains the same the HA cluster can continue working as normal
+     in case when domain names are used in cluster configuration. In case when IP addresses are used and they are changed with the time
+     than Qpid <link linkend="HAJMXAPI">JMX API for HA</link> can be used to change the addresses or remove the nodes from the cluster.</para></note>
     <section role="h4" id="HAConfiguration_BDBEnvVars">
       <title>Passing BDB environment and replication configuration options</title>
       <para>It is possible to pass BDB <ulink url="&oracleBdbJavaDocUrl;com/sleepycat/je/EnvironmentConfig.html">
@@ -541,6 +546,12 @@ amqp://guest:guest@clientid/test?brokerlist='tcp://localhost:5672?connectdelay='
           <td>Designated primary flag. Applicable to the two node case.</td>
         </tr>
         <tr>
+          <td>CoalescingSync</td>
+          <td>boolean</td>
+          <td>Read only</td>
+          <td>Coalescing sync flag. Applicable to the master sync policies NO_SYNC and WRITE_NO_SYNC only.</td>
+        </tr>
+       <tr>
           <td>getAllNodesInGroup</td>
           <td>TabularData</td>
           <td>Read only</td>
@@ -758,6 +769,36 @@ java -jar je-5.0.48.jar DbEnableReplication -h /path/to/store -groupName MyRepli
       <para>Due to existing caveats in Berkeley JE with copying of data from Master into Replica it is recommended to restart the Master node after store schema upgrade is finished before starting the Replica nodes.</para>
     </note>
   </section>
+  <section id="HADisasterRecovery">
+    <title>Disaster Recovery</title>
+    <para>This section describes the steps required to restore HA broker cluster from backup.</para>
+    <para>The detailed instructions how to perform backup on replicated environment can be found <link linkend="BDB-HA-Backup">here</link>.</para>
+    <para>At this point we assume that backups are collected on regular basis from Master node.</para>
+    <para>Replication configuration of a cluster is stored internally in HA message store.
+    This information includes IP addresses of the nodes.
+    In case when HA message store needs to be restored on a different host with a different IP address
+    the cluster replication configuration should be reseted in this case</para>
+    <para>Oracle provides a command line utility <classname>DbResetRepGroup</classname>
+    to reset the members of a replication group and replace the group with a new group consisting of a single new member
+    as described by the arguments supplied to the utility</para>
+    <para>Cluster can be restored with the following steps:</para>
+    <itemizedlist>
+         <listitem><para>Copy log files into the store folder from backup</para></listitem>
+         <listitem>
+            <para>Use <classname>DbResetRepGroup</classname> to reset an existing environment. See an example below</para>
+            <example>
+                <title>Reseting of replication group with <classname>DbResetRepGroup</classname></title>
+java -cp je-5.0.48.jar com.sleepycat.je.rep.util.DbResetRepGroup -h ha-work/Node-5001/bdbstore -groupName TestClusterGroup -nodeName Node-5001 -nodeHostPort localhost:5001
+            </example>
+            <para>In the example above <classname>DbResetRepGroup</classname> utility from Berkeley JE of version 5.0.48 is used to reset the store
+            at location <emphasis>ha-work/Node-5001/bdbstore</emphasis> and set a replication group to <emphasis>TestClusterGroup</emphasis>
+            having a node <emphasis>Node-5001</emphasis> which runs at <emphasis>localhost:5001</emphasis>.</para>
+         </listitem>
+         <listitem><para>Start a broker with HA store configured as specified on running of <classname>DbResetRepGroup</classname> utility.</para></listitem>
+         <listitem><para>Start replica nodes having the same replication group and a helper host port pointing to a new master. The store content will be copied into Replicas from Master on their start up.</para></listitem>
+    </itemizedlist>
+  </section>
+
   <section id="HAPerformance">
     <title>Performance</title>
     <para>The aim of this section is not providing Qpid broker performance metrics for HA as it depends from the test environment but rather showing an impact of HA on Qpid Broker performance in comparison with Non HA case.</para>
@@ -838,7 +879,7 @@ java -jar je-5.0.48.jar DbEnableReplication -h /path/to/store -groupName MyRepli
     <para>Test Environment we tested performance on was not really representative as we got only 2 test servers
         having 4core processors Intel(r) Xeon(R) CPU 5150@2.66GHz, 4G of RAM
         and running under OS Red Hat Enterprise Linux AS release 4 (Nahant Update 4).
-        Network bandwidth was 1Mbit.
+        Network bandwidth was 1Gbit.
     </para>
     <para>We ran Master node on a first server and Replica and clients(both consumers and producers) on a second server.</para>
     <para>In non-HA case Qpid Broker was run on a first server and clients were run on a second server.</para>
