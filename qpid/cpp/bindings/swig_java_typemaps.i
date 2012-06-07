@@ -109,7 +109,7 @@
 }
 
 %typemap(out) qpid::types::Variant::Map& {
-  if ($1->size() == 0)
+  if ($1->empty())
   {
       jresult = 0;
   }
@@ -126,7 +126,7 @@
 /* -- qpid::types::Variant& -- */
 %typemap(in) (const qpid::types::Variant&) {
   qpid::types::Variant v = convertJavaObjectToVariant(jenv,$input);
-  if (v)
+  if (!v.isVoid())
   {
       $1 = new qpid::types::Variant(v);
   }

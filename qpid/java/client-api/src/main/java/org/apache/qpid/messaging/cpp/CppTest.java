@@ -17,6 +17,8 @@
  */
 package org.apache.qpid.messaging.cpp;
 
+import java.util.Map;
+
 import org.apache.qpid.messaging.Connection;
 import org.apache.qpid.messaging.ConnectionFactory;
 import org.apache.qpid.messaging.Message;
@@ -32,7 +34,7 @@ public class CppTest
         con.open();
         Session ssn = con.createSession("hello");
         System.out.println("Got a session object "  + ssn);
-        
+
         Sender sender = ssn.createSender("amq.topic/test");
         System.out.println("Got a Sender object "  + sender);
 
@@ -40,10 +42,21 @@ public class CppTest
         System.out.println("Got a Receiver object "  + receiver);
 
         Message msg = new TextMessage("Hello World");
+        msg.setProperty("color", "blue");
+        msg.setProperty("price", 5);
+        msg.setProperty("boolean", true);
         sender.send(msg, false);
         TextMessage m = (TextMessage) receiver.fetch(0);
+
         System.out.println("Received message "  + m + " with content type : " + m.getContentType() + " and content : " + m.getContent());
-        
+
+        Map<String,Object> props = m.getProperties();
+        if (props != null)
+        {
+            //System.out.println("Color : " + m.getProperties().get("color"));
+            System.out.println("Price : " + props.get("price"));
+        }
+
         ssn.close();
         con.close();
     }

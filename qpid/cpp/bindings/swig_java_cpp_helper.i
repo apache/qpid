@@ -282,39 +282,36 @@ static qpid::types::Variant convertJavaObjectToVariant(JNIEnv* env, jobject obj)
    }
    else if (env->IsInstanceOf(obj,JAVA_SHORT_CLASS))
    {
-       uint64_t v = env->CallShortMethod(obj,JAVA_SHORT_VALUE_METHOD);
+       uint16_t v = env->CallShortMethod(obj,JAVA_SHORT_VALUE_METHOD);
        result = qpid::types::Variant(v);
    }
    else if (env->IsInstanceOf(obj,JAVA_BYTE_CLASS))
    {
-       uint64_t v = env->CallByteMethod(obj,JAVA_BYTE_VALUE_METHOD);
+       uint8_t v = env->CallByteMethod(obj,JAVA_BYTE_VALUE_METHOD);
        result = qpid::types::Variant(v);
    }
    else if (env->IsInstanceOf(obj,JAVA_BOOLEAN_CLASS))
    {
-       uint64_t v = env->CallBooleanMethod(obj,JAVA_BOOLEAN_VALUE_METHOD);
+       bool v = env->CallBooleanMethod(obj,JAVA_BOOLEAN_VALUE_METHOD);
        result = qpid::types::Variant(v);
    }
    else if (env->IsInstanceOf(obj,JAVA_DOUBLE_CLASS))
    {
-       uint64_t v = env->CallDoubleMethod(obj,JAVA_DOUBLE_VALUE_METHOD);
+       double v = env->CallDoubleMethod(obj,JAVA_DOUBLE_VALUE_METHOD);
        result = qpid::types::Variant(v);
    }
    else if (env->IsInstanceOf(obj,JAVA_FLOAT_CLASS))
    {
-       uint64_t v = env->CallFloatMethod(obj,JAVA_FLOAT_VALUE_METHOD);
+       float v = env->CallFloatMethod(obj,JAVA_FLOAT_VALUE_METHOD);
        result = qpid::types::Variant(v);
    }
    else
    {
        env->ThrowNew(JAVA_ILLEGAL_ARGUMENT_EXP,"Only primitive types and strings are allowed");
-       return 0;
    }
 
-   if (checkAndThrowJNILaylerException(env,"Exception occured when converting Java object to Variant"))
-   {
-      return 0;
-   }
+   checkAndThrowJNILaylerException(env,"Exception occured when converting Java object to Variant");
+
    return result;
 }
 %}

@@ -192,14 +192,13 @@ public class TextMessage implements org.apache.qpid.messaging.Message
     @Override
     public Map<String, Object> getProperties()
     {
-        // TODO Auto-generated method stub
-        return null;
+        return _cppMessage.getProperties();
     }
 
     @Override
-    public void setProperties(Map<String, Object> properties)
+    public void setProperty(String key, Object value)
     {
-        // TODO Auto-generated method stub
+        _cppMessage.setProperty(key, value);
     }
     
     protected org.apache.qpid.messaging.cpp.jni.Message getCppMessage()

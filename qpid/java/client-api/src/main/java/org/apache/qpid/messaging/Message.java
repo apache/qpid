@@ -72,5 +72,5 @@ public interface Message
 
     public Map<String, Object> getProperties();
 
-    public void setProperties(Map<String, Object> properties);
+    public void setProperty(String key, Object value);
 }
