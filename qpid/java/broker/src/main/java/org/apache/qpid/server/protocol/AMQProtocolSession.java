@@ -21,6 +21,7 @@
 package org.apache.qpid.server.protocol;
 
 import java.net.SocketAddress;
+import java.security.Principal;
 import java.util.List;
 
 import javax.security.auth.Subject;
@@ -217,5 +218,7 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
     List<AMQChannel> getChannels();
 
     void mgmtCloseChannel(int channelId);
+
+    public Principal getPeerPrincipal();
 
 }

@@ -14,12 +14,13 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import java.security.Principal;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
@@ -61,9 +62,9 @@ import java.util.TreeMap;
  * Concrete implementation of the AuthenticationManager that determines if supplied
  * user credentials match those appearing in a PrincipalDatabase.   The implementation
  * of the PrincipalDatabase is determined from the configuration.
- * 
+ *
  * This implementation also registers the JMX UserManagemement MBean.
- * 
+ *
  * This plugin expects configuration such as:
  *
  * <pre>
@@ -134,7 +135,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
     };
 
     public static class PrincipalDatabaseAuthenticationManagerConfiguration extends ConfigurationPlugin {
- 
+
         public static final ConfigurationPluginFactory FACTORY = new ConfigurationPluginFactory()
         {
             public List<String> getParentPaths()
@@ -145,7 +146,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
             public ConfigurationPlugin newInstance(final String path, final Configuration config) throws ConfigurationException
             {
                 final ConfigurationPlugin instance = new PrincipalDatabaseAuthenticationManagerConfiguration();
-                
+
                 instance.setConfiguration(path, config);
                 return instance;
             }
@@ -161,12 +162,12 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         public void validateConfiguration() throws ConfigurationException
         {
         }
-  
+
         public String getPrincipalDatabaseClass()
         {
             return getConfig().getString("principal-database.class");
         }
-  
+
         public Map<String,String> getPdClassAttributeMap() throws ConfigurationException
         {
             final List<String> argumentNames = (List) getConfig().getList("principal-database.attributes.attribute.name");
@@ -185,7 +186,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         }
     }
 
-    protected PrincipalDatabaseAuthenticationManager()  
+    protected PrincipalDatabaseAuthenticationManager()
     {
     }
 
@@ -215,7 +216,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         registerManagement();
     }
 
-    private void initialiseAuthenticationMechanisms(Map<String, Class<? extends SaslServerFactory>> providerMap, PrincipalDatabase database) 
+    private void initialiseAuthenticationMechanisms(Map<String, Class<? extends SaslServerFactory>> providerMap, PrincipalDatabase database)
     {
         if (database == null || database.getMechanisms().size() == 0)
         {
@@ -263,7 +264,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
 
         _principalDatabase = createPrincipalDatabaseImpl(pdClazz);
 
-        configPrincipalDatabase(_principalDatabase, pdamConfig);        
+        configPrincipalDatabase(_principalDatabase, pdamConfig);
     }
 
     public String getMechanisms()
@@ -271,7 +272,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         return _mechanisms;
     }
 
-    public SaslServer createSaslServer(String mechanism, String localFQDN) throws SaslException
+    public SaslServer createSaslServer(String mechanism, String localFQDN, Principal externalPrincipal) throws SaslException
     {
         return Sasl.createSaslServer(mechanism, "AMQP", localFQDN, _serverCreationProperties.get(mechanism),
                                      _callbackHandlerMap.get(mechanism));
@@ -302,11 +303,6 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         {
             return new AuthenticationResult(AuthenticationResult.AuthenticationStatus.ERROR, e);
         }
-    }
-
-    public CallbackHandler getHandler(String mechanism)
-    {
-        return _callbackHandlerMap.get(mechanism);
     }
 
     /**

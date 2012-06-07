@@ -98,6 +98,11 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
          * is scheduled to become default after JE 5.0.48.
          */
         put(ReplicationConfig.PROTOCOL_OLD_STRING_ENCODING, Boolean.FALSE.toString());
+        /**
+         * Parameter decreased as a default 5min interval may lead to bigger data losses on Node
+         * with NO_SYN durability in case if such Node crushes.
+         */
+        put(ReplicationConfig.LOG_FLUSH_TASK_INTERVAL, "1 min");
     }});
 
     private String _groupName;

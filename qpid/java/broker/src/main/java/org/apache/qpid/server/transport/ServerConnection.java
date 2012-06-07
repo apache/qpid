@@ -20,6 +20,15 @@
  */
 package org.apache.qpid.server.transport;
 
+import java.security.Principal;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import javax.management.JMException;
+import javax.security.auth.Subject;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.configuration.ConnectionConfig;
@@ -31,7 +40,6 @@ import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Connection;
@@ -45,15 +53,6 @@ import org.apache.qpid.transport.Session;
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTION_FORMAT;
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SOCKET_FORMAT;
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.USER_FORMAT;
-
-import javax.security.auth.Subject;
-import java.security.Principal;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class ServerConnection extends Connection implements AMQConnectionModel, LogSubject, AuthorizationHolder
 {
@@ -70,6 +69,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     private VirtualHost _virtualHost;
     private AtomicLong _lastIoTime = new AtomicLong();
     private boolean _blocking;
+    private Principal _peerPrincipal;
 
     public ServerConnection(final long connectionId)
     {
@@ -402,7 +402,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         else
         {
             _authorizedSubject = authorizedSubject;
-            _authorizedPrincipal = UsernamePrincipal.getUsernamePrincipalFromSubject(_authorizedSubject);
+            _authorizedPrincipal = authorizedSubject.getPrincipals().iterator().next();
         }
     }
 
@@ -484,5 +484,15 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     public long getSessionCountLimit()
     {
         return getChannelMax();
+    }
+
+    public Principal getPeerPrincipal()
+    {
+        return _peerPrincipal;
+    }
+
+    public void setPeerPrincipal(Principal peerPrincipal)
+    {
+        _peerPrincipal = peerPrincipal;
     }
 }

@@ -26,13 +26,14 @@ import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.security.auth.callback.CallbackHandler;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
 import org.apache.qpid.amqp_1_0.codec.FrameWriter;
 import org.apache.qpid.amqp_1_0.codec.ProtocolHandler;
 import org.apache.qpid.amqp_1_0.framing.AMQFrame;
 import org.apache.qpid.amqp_1_0.framing.OversizeFrameException;
 import org.apache.qpid.amqp_1_0.framing.SASLFrameHandler;
-import org.apache.qpid.amqp_1_0.transport.CallbackHandlerSource;
+import org.apache.qpid.amqp_1_0.transport.SaslServerProvider;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
 import org.apache.qpid.amqp_1_0.transport.Container;
 import org.apache.qpid.amqp_1_0.transport.FrameOutputHandler;
@@ -57,7 +58,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
        private long _createTime = System.currentTimeMillis();
        private ConnectionEndpoint _conn;
        private long _connectionId;
-    
+
        private static final ByteBuffer HEADER =
                ByteBuffer.wrap(new byte[]
                        {
@@ -163,8 +164,8 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
         Container container = new Container(_appRegistry.getBrokerId().toString());
 
-        _conn = new ConnectionEndpoint(container, asCallbackHandlerSource(ApplicationRegistry.getInstance()
-                                                                                             .getAuthenticationManager(getLocalAddress())));
+        _conn = new ConnectionEndpoint(container, asSaslServerProvider(ApplicationRegistry.getInstance()
+                .getAuthenticationManager(getLocalAddress())));
         _conn.setConnectionEventListener(new Connection_1_0(_appRegistry));
         _conn.setRemoteAddress(getRemoteAddress());
 
@@ -200,14 +201,14 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
     }
 
-    private CallbackHandlerSource asCallbackHandlerSource(final AuthenticationManager authenticationManager)
+    private SaslServerProvider asSaslServerProvider(final AuthenticationManager authenticationManager)
     {
-        return new CallbackHandlerSource()
+        return new SaslServerProvider()
         {
             @Override
-            public CallbackHandler getHandler(String mechanism)
+            public SaslServer getSaslServer(String mechanism, String fqdn) throws SaslException
             {
-                return authenticationManager.getHandler(mechanism);
+                return authenticationManager.createSaslServer(mechanism, fqdn, null);
             }
         };
     }

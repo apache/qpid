@@ -18,17 +18,10 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import java.io.IOException;
 import java.security.Principal;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import javax.security.auth.Subject;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.UnsupportedCallbackException;
-import javax.security.sasl.AuthorizeCallback;
-import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import org.apache.commons.configuration.Configuration;
@@ -37,16 +30,17 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.security.auth.sasl.external.ExternalSaslServer;
 
-public class KerberosAuthenticationManager implements AuthenticationManager
+public class ExternalAuthenticationManager implements AuthenticationManager
 {
-    private static final Logger _logger = Logger.getLogger(KerberosAuthenticationManager.class);
+    private static final Logger _logger = Logger.getLogger(ExternalAuthenticationManager.class);
 
-    private static final String GSSAPI_MECHANISM = "GSSAPI";
-    private final CallbackHandler _callbackHandler = new GssApiCallbackHandler();
+    private static final String EXTERNAL = "EXTERNAL";
 
-    public static class KerberosAuthenticationManagerConfiguration extends ConfigurationPlugin
+    static final ExternalAuthenticationManager INSTANCE = new ExternalAuthenticationManager();
+
+    public static class ExternalAuthenticationManagerConfiguration extends ConfigurationPlugin
     {
 
         public static final ConfigurationPluginFactory FACTORY =
@@ -54,12 +48,12 @@ public class KerberosAuthenticationManager implements AuthenticationManager
                 {
                     public List<String> getParentPaths()
                     {
-                        return Arrays.asList("security.kerberos-auth-manager");
+                        return Arrays.asList("security.external-auth-manager");
                     }
 
                     public ConfigurationPlugin newInstance(final String path, final Configuration config) throws ConfigurationException
                     {
-                        final ConfigurationPlugin instance = new KerberosAuthenticationManagerConfiguration();
+                        final ConfigurationPlugin instance = new ExternalAuthenticationManagerConfiguration();
 
                         instance.setConfiguration(path, config);
                         return instance;
@@ -75,42 +69,40 @@ public class KerberosAuthenticationManager implements AuthenticationManager
         {
         }
 
-    }
+        }
 
 
-    public static final AuthenticationManagerPluginFactory<KerberosAuthenticationManager> FACTORY = new AuthenticationManagerPluginFactory<KerberosAuthenticationManager>()
+    public static final AuthenticationManagerPluginFactory<ExternalAuthenticationManager> FACTORY = new AuthenticationManagerPluginFactory<ExternalAuthenticationManager>()
     {
-        public KerberosAuthenticationManager newInstance(final ConfigurationPlugin config) throws ConfigurationException
+        public ExternalAuthenticationManager newInstance(final ConfigurationPlugin config) throws ConfigurationException
         {
-            KerberosAuthenticationManagerConfiguration configuration =
+            ExternalAuthenticationManagerConfiguration configuration =
                     config == null
                             ? null
-                            : (KerberosAuthenticationManagerConfiguration) config.getConfiguration(KerberosAuthenticationManagerConfiguration.class.getName());
+                            : (ExternalAuthenticationManagerConfiguration) config.getConfiguration(ExternalAuthenticationManagerConfiguration.class.getName());
 
             // If there is no configuration for this plugin then don't load it.
             if (configuration == null)
             {
-                _logger.info("No authentication-manager configuration found for KerberosAuthenticationManager");
+                _logger.info("No authentication-manager configuration found for ExternalAuthenticationManager");
                 return null;
             }
-            KerberosAuthenticationManager kerberosAuthenticationManager = new KerberosAuthenticationManager();
-            kerberosAuthenticationManager.configure(configuration);
-            return kerberosAuthenticationManager;
+            return INSTANCE;
         }
 
-        public Class<KerberosAuthenticationManager> getPluginClass()
+        public Class<ExternalAuthenticationManager> getPluginClass()
         {
-            return KerberosAuthenticationManager.class;
+            return ExternalAuthenticationManager.class;
         }
 
         public String getPluginName()
         {
-            return KerberosAuthenticationManager.class.getName();
+            return ExternalAuthenticationManager.class.getName();
         }
     };
 
 
-    private KerberosAuthenticationManager()
+    private ExternalAuthenticationManager()
     {
     }
 
@@ -123,24 +115,15 @@ public class KerberosAuthenticationManager implements AuthenticationManager
     @Override
     public String getMechanisms()
     {
-        return GSSAPI_MECHANISM;
+        return EXTERNAL;
     }
 
     @Override
     public SaslServer createSaslServer(String mechanism, String localFQDN, Principal externalPrincipal) throws SaslException
     {
-        if(GSSAPI_MECHANISM.equals(mechanism))
+        if(EXTERNAL.equals(mechanism))
         {
-            try
-            {
-            return Sasl.createSaslServer(GSSAPI_MECHANISM, "AMQP", localFQDN,
-                                         new HashMap<String, Object>(), _callbackHandler);
-            }
-            catch (SaslException e)
-            {
-                e.printStackTrace(System.err);
-                throw e;
-            }
+            return new ExternalSaslServer(externalPrincipal);
         }
         else
         {
@@ -151,28 +134,29 @@ public class KerberosAuthenticationManager implements AuthenticationManager
     @Override
     public AuthenticationResult authenticate(SaslServer server, byte[] response)
     {
+        // Process response from the client
         try
         {
-            // Process response from the client
             byte[] challenge = server.evaluateResponse(response != null ? response : new byte[0]);
 
-            if (server.isComplete())
+            Principal principal = ((ExternalSaslServer)server).getAuthenticatedPrincipal();
+
+            if(principal != null)
             {
                 final Subject subject = new Subject();
-                _logger.debug("Authenticated as " + server.getAuthorizationID());
-                subject.getPrincipals().add(new UsernamePrincipal(server.getAuthorizationID()));
+                subject.getPrincipals().add(principal);
                 return new AuthenticationResult(subject);
             }
             else
             {
-                return new AuthenticationResult(challenge, AuthenticationResult.AuthenticationStatus.CONTINUE);
+                return new AuthenticationResult(AuthenticationResult.AuthenticationStatus.ERROR);
             }
         }
         catch (SaslException e)
         {
-            e.printStackTrace(System.err);
-            return new AuthenticationResult(AuthenticationResult.AuthenticationStatus.ERROR, e);
+            return new AuthenticationResult(AuthenticationResult.AuthenticationStatus.ERROR,e);
         }
+
     }
 
     @Override
@@ -189,25 +173,5 @@ public class KerberosAuthenticationManager implements AuthenticationManager
     @Override
     public void configure(ConfigurationPlugin config) throws ConfigurationException
     {
-    }
-
-    private static class GssApiCallbackHandler implements CallbackHandler
-    {
-
-        @Override
-        public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException
-        {
-            for(Callback callback : callbacks)
-            {
-                if (callback instanceof AuthorizeCallback)
-                {
-                    ((AuthorizeCallback) callback).setAuthorized(true);
-                }
-                else
-                {
-                    throw new UnsupportedCallbackException(callback);
-                }
-            }
-        }
     }
 }

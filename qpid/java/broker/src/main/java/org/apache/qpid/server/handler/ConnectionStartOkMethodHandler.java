@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -61,15 +61,15 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
     public void methodReceived(AMQStateManager stateManager, ConnectionStartOkBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
-        
+
         _logger.info("SASL Mechanism selected: " + body.getMechanism());
         _logger.info("Locale selected: " + body.getLocale());
 
         AuthenticationManager authMgr = stateManager.getAuthenticationManager();
         SaslServer ss = null;
         try
-        {                       
-            ss = authMgr.createSaslServer(String.valueOf(body.getMechanism()), session.getLocalFQDN());
+        {
+            ss = authMgr.createSaslServer(String.valueOf(body.getMechanism()), session.getLocalFQDN(), session.getPeerPrincipal());
 
             if (ss == null)
             {
@@ -106,7 +106,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                 case SUCCESS:
                     if (_logger.isInfoEnabled())
                     {
-                        _logger.info("Connected as: " + UsernamePrincipal.getUsernamePrincipalFromSubject(authResult.getSubject()));
+                        _logger.info("Connected as: " + authResult.getSubject());
                     }
                     session.setAuthorizedSubject(authResult.getSubject());
 

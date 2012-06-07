@@ -133,7 +133,7 @@ public class SaslServlet extends AbstractServlet
         {
             if(id == null)
             {
-                SaslServer saslServer = authManager.createSaslServer(mechanism, request.getServerName());
+                SaslServer saslServer = authManager.createSaslServer(mechanism, request.getServerName(), null/*TODO*/);
                 evaluateSaslResponse(response, session, saslResponse, saslServer);
             }
             else

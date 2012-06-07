@@ -20,6 +20,7 @@
 package org.apache.qpid.server.security.auth.manager;
 
 import java.io.IOException;
+import java.security.Principal;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -180,7 +181,7 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
     }
 
     @Override
-    public SaslServer createSaslServer(String mechanism, String localFQDN) throws SaslException
+    public SaslServer createSaslServer(String mechanism, String localFQDN, Principal externalPrincipal) throws SaslException
     {
         if(PLAIN_MECHANISM.equals(mechanism))
         {
@@ -251,19 +252,6 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
         final Subject subject = new Subject();
         subject.getPrincipals().add(new UsernamePrincipal(username));
         return new AuthenticationResult(subject);
-    }
-
-    @Override
-    public CallbackHandler getHandler(String mechanism)
-    {
-        if(PLAIN_MECHANISM.equals(mechanism))
-        {
-            return new PlainCallbackHandler();
-        }
-        else
-        {
-            return null;
-        }
     }
 
     @Override
