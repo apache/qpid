@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE urls [
 <!ENTITY oracleBdbProductOverviewUrl "http://www.oracle.com/technetwork/products/berkeleydb/overview/index-093405.html">
+<!ENTITY oracleBdbProductVersion "5.0.48">
 <!ENTITY oracleBdbRepGuideUrl "http://oracle.com/cd/E17277_02/html/ReplicationGuide/">
 <!ENTITY oracleBdbJavaDocUrl "http://docs.oracle.com/cd/E17277_02/html/java/">
 <!ENTITY oracleJdkDocUrl "http://oracle.com/javase/6/docs/api/">
@@ -32,10 +33,10 @@
     <para>The term High Availability (HA) usually refers to having a number of instances of a service such as a Message Broker
       available so that should a service unexpectedly fail, or requires to be shutdown for maintenance, users may quickly connect
       to another instance and continue their work with minimal interuption. HA is one way to make a overall system more resilient
-      by eliminating a single point failure from a system.</para>
+      by eliminating a single point of failure from a system.</para>
     <para>HA offerings are usually categorised as <emphasis role="bold">Active/Active</emphasis> or <emphasis role="bold">Active/Passive</emphasis>.
       An Active/Active system is one where all nodes within the cluster are usuaully available for use by clients all of the time.  In an
-      Active/Passive system, one only node within the clsuter is available for use by clients at any one time, whilst the others are in
+      Active/Passive system, one only node within the cluster is available for use by clients at any one time, whilst the others are in
       some kind of standby state, awaiting to quickly step-in in the event the active node becomes unavailable.
     </para>
   </section>
@@ -43,7 +44,10 @@
     <title>HA offerings of the Java Broker</title>
     <para>The Java Broker's HA offering became available at release <emphasis role="bold">0.18</emphasis>.  HA is provided by way of the HA
       features built into the <ulink url="&oracleBdbProductOverviewUrl;">Java Edition of the Berkley Database (BDB JE)</ulink> and as such
-      is currently available to to Java Broker users who use the BDB Store.</para>
+      is currently only available to Java Broker users who use the optional BDB JE based persistence store. This
+      <emphasis role="bold">optional</emphasis> store requires the use of BDB JE which is licensed under the Sleepycat Licence, which is
+      not compatible with the Apache Licence and thus BDB JE is not distributed with Qpid. Users who elect to use this optional store for
+      the broker have to provide this dependency.</para>
     <para>HA in the Java Broker provides an <emphasis role="bold">Active/Passive</emphasis> mode of operation with Virtual hosts being
       the unit of replication.  The Active node (referred to as the <emphasis role="bold">Master</emphasis>) accepts all work from all the clients.
        The Passive nodes (referred to as <emphasis role="bold">Replicas</emphasis>) are unavailable for work: the only task they must perform is
@@ -101,7 +105,7 @@
       <section role="h5" id="HATwoNodeNormalOperation">
         <title>Normal Operation</title>
         <para>The figure below illustrates normal operation.  Clients connecting to the cluster by way
-	  of the failover over URL achieve a connection to the master.   A clients perform work (message
+	  of the failover URL achieve a connection to the master. As clients perform work (message
 	  production, consumption, queue creation etc), the master additionally sends this data to the
 	  replica over the network.</para>
         <figure>
@@ -128,13 +132,14 @@
           </listitem>
           <listitem>
             <para>Master suffers a failure and disconnects all clients. Replica realises that it is no
-	      longer in contact with master.  Clients begin to try to reconnect to the cluster although these
+	      longer in contact with master. Clients begin to try to reconnect to the cluster, although these
 	      connection attempts will fail at this point.</para>
           </listitem>
           <listitem>
             <para>A third-party (an operator, a script or a combination of the two) verifies that the master has truely
-	       failed. If it has truely failed, the decision is made to  designate the replica as primary.
-               This primary designation is performed using <link linkend="HAJMXAPI">JMX</link>.</para>
+           failed <emphasis role="bold">and is no longer running</emphasis>. If it has truely failed, the decision is made
+           to designate the replica as primary, allowing it to assume the role of master despite the other node being down.
+           This primary designation is performed using <link linkend="HAJMXAPI">JMX</link>.</para>
           </listitem>
           <listitem>
             <para>Client connections to the new master succeed and the <emphasis role="bold">service is restored
@@ -163,19 +168,20 @@
 	   leaving the master to continue processing alone.  Later the replica is repaired and is restarted.
 	   It rejoins the cluster so that it is once again ready to take over in the event of master failure.</para>
         <para>The behavior of the replica failure case is governed by the <varname>designatedPrimary</varname>
-	   configuration item.   If true on the master, the master will continue to operate solo without outside
-           intervention. If false, a third-party must designate as primary in order for the master to continue solo.</para>
+        configuration item. If set true on the master, the master will continue to operate solo without outside
+        intervention when the replica fails. If false, a third-party must designate the master as primary in order
+        for it to continue solo.</para>
         <para>The item numbers in this list apply to the numbered boxes in the figure below. This example assumes
-	   that <varname>designatedPrimary</varname> is true.</para>
+	   that <varname>designatedPrimary</varname> is true on the original master node.</para>
         <orderedlist>
           <listitem>
             <para>System operating normally</para>
           </listitem>
           <listitem>
             <para>Replica suffers a failure. Master realises that replica longer in contact but as
-	      <varname>designatedPrimary</varname> is true, master continues processing solo thus client
-	      connections are uninterrupted by the loss of the replica. System operating normally albeit with
-	      single node.</para>
+	      <varname>designatedPrimary</varname> is true, master continues processing solo and thus client
+	      connections are uninterrupted by the loss of the replica. System continues operating normally, albeit
+          with a single node.</para>
           </listitem>
           <listitem>
             <para>Replica is repaired.</para>
@@ -202,17 +208,17 @@
 	  master and replica were to suffer a partition, and the nodes were out of contact with one and other.</para>
         <para>As with <link linkend="HATwoNodeReplicaFailure">Replica Failure and Recovery</link>, the
 	  behaviour is governed by the <varname>designatedPrimary</varname>.
-	  Only if <varname>designatedPrimary</varname> is true on the master, wil the master continue solo.</para>
+	  Only if <varname>designatedPrimary</varname> is true on the master, will the master continue solo.</para>
         <para>The item numbers in this list apply to the numbered boxes in the figure below. This example assumes
-	   that <varname>designatedPrimary</varname> is true.</para>
+	   that <varname>designatedPrimary</varname> is true on the original master node.</para>
         <orderedlist>
           <listitem>
             <para>System operating normally</para>
           </listitem>
           <listitem>
             <para>Network suffers a failure. Master realises that replica longer in contact but as
-	      <varname>designatedPrimary</varname> is true, master continues processing solo thus client
-	      connections are uninterrupted by the network partition.</para>
+	      <varname>designatedPrimary</varname> is true, master continues processing solo and thus client
+	      connections are uninterrupted by the network partition between master and replica.</para>
           </listitem>
           <listitem>
             <para>Network is repaired.</para>
@@ -237,7 +243,7 @@
       <section role="h5" id="HATwoNodeSplitBrain">
         <title>Split Brain</title>
         <para>A <ulink url="http://en.wikipedia.org/wiki/Split-brain_(computing)">split-brain</ulink>
-	  is a situation where the two node cluster has two masters.  BDB normal strives to prevent
+          is a situation where the two node cluster has two masters. BDB normally strives to prevent
 	  this situation arising by preventing two nodes in a cluster being master at the same time.
 	  However, if the network suffers a partition, and the third-party intervenes incorrectly
 	  and makes the replica a second master a split-brain will be formed and both masters will
@@ -255,10 +261,11 @@
             <para>Network suffers a failure. Master realises that replica longer in contact but as
 	      <varname>designatedPrimary</varname> is true, master continues processing solo.  Client
 	      connections are uninterrupted by the network partition.</para>
-            <para>A third-party <emphasis role="bold">erroneously</emphasis> designates the replica as primary.</para>
+            <para>A third-party <emphasis role="bold">erroneously</emphasis> designates the replica as primary while the
+            original master continues running (now solo).</para>
           </listitem>
           <listitem>
-            <para>As the nodes cannot see one and other, both behave as masters.  Clients perform work against
+            <para>As the nodes cannot see one and other, both behave as masters. Clients may perform work against
 	      both master nodes.</para>
           </listitem>
         </orderedlist>
@@ -285,7 +292,7 @@
     <title>Configuring a Virtual Host to be a node</title>
     <para>To configure a virtualhost as a cluster node, configure the virtualhost.xml in the following manner:</para>
     <para>
-      <programlisting><![CDATA[
+      <programlisting language="xml"><![CDATA[
 <virtualhost>
   <name>myhost</name>
   <myvhost>
@@ -307,7 +314,7 @@
 </virtualhost>]]></programlisting>
     </para>
     <para>The <varname>groupName</varname> is the name of logical name of the cluster.  All nodes within the
-      cluster must use the same <varname>groupName</varname> in order to be consider part of the cluster.</para>
+      cluster must use the same <varname>groupName</varname> in order to be considered part of the cluster.</para>
     <para>The <varname>nodeName</varname> is the logical name of the node.  All nodes within the cluster must have a
       unique name.  It is recommended that the node name should be chosen from a different nomenclature from that of
       the servers on which they are hosted, in case the need arises to move node to a new server in the future.</para>
@@ -318,25 +325,28 @@
     <para>The <varname>helperHostPort</varname> is the hostname and port number that new nodes use to discover other
       nodes within the cluster when they are newly introduced to the cluster.  When configuring the first node, set the
       <varname>helperHostPort</varname> to its own <varname>nodeHostPort</varname>.  For the second and subsequent nodes,
-      set their <varname>helperHostPort</varname> to that of of the first node.</para>
+      set their <varname>helperHostPort</varname> to that of the first node.</para>
     <para><varname>durability</varname> controls the <link linkend="HADurabilityGuarantee">durability</link>
-      guarantees made by the cluster. It is important that all nodes use the same value. The default value is
-      NO_SYNC\,NO_SYNC\,SIMPLE_MAJORITY.  Owning to the internal use of Apache Commons Config, it is necessary
+      guarantees made by the cluster. It is important that all nodes use the same value for this property. The default value is
+      NO_SYNC\,NO_SYNC\,SIMPLE_MAJORITY. Owing to the internal use of Apache Commons Config, it is currently necessary
       to escape the commas within the durability string.</para>
     <para><varname>coalescingSync</varname> controls the <link linkend="HADurabilityGuarantee_CoalescingSync">coalescing-sync</link>
       mode of Qpid. It is important that all nodes use the same value. If omitted, it defaults to true.</para>
     <para>The <varname>designatedPrimary</varname> is applicable only to the <link linkend="HATwoNodeCluster">two-node
-      case.</link>  It governs the behaviour of the master node when the replica fails or becomes uncontactable.  If true,
-      the master will automatically designate itself as primary and service will continue from the single node.  If false,
-      the master will transition to an unavailable state until a third-party manually designates the node as primary
-      or the replica is restored. It is suggested that the node that normally fulfils the role of master is set true in
-      config file and the node that is normally replica is set false.  Be aware that setting both nodes to true will lead
-      to a <link linkend="HATwoNodeSplitBrain">split-brain</link> in the case of network partition.</para>
-    <note><para>Usage of domain names in  <varname>helperHostPort</varname> and <varname>nodeHostPort</varname> is more preferebale
+     case.</link>  It governs the behaviour of a node when the other node fails or becomes uncontactable.  If true,
+     the node will be designated as primary at startup and will be able to continue operating as a single node master.
+     If false, the node will transition to an unavailable state until a third-party manually designates the node as
+     primary or the other node is restored. It is suggested that the node that normally fulfils the role of master is
+     set true in config file and the node that is normally replica is set false.  Be aware that setting both nodes to
+     true will lead to a failure to start up, as both cannot be designated at the point of contact. Designating both
+     nodes as primary at runtime (using the JMX interface) will lead to a <link linkend="HATwoNodeSplitBrain">split-brain</link>
+     in the case of network partition and must be avoided.</para>
+     <note><para>Usage of domain names in  <varname>helperHostPort</varname> and <varname>nodeHostPort</varname> is more preferebale
      over IP addresses due to the tendency of more frequent changes of the last over the former.
      If server IP address changes but domain name remains the same the HA cluster can continue working as normal
      in case when domain names are used in cluster configuration. In case when IP addresses are used and they are changed with the time
      than Qpid <link linkend="HAJMXAPI">JMX API for HA</link> can be used to change the addresses or remove the nodes from the cluster.</para></note>
+
     <section role="h4" id="HAConfiguration_BDBEnvVars">
       <title>Passing BDB environment and replication configuration options</title>
       <para>It is possible to pass BDB <ulink url="&oracleBdbJavaDocUrl;com/sleepycat/je/EnvironmentConfig.html">
@@ -345,7 +355,7 @@
          the <varname>envConfig</varname> element, and replication config using <varname>repConfig</varname>.</para>
       <para>For example, to override the BDB environment configuration options <varname>je.cleaner.threads</varname> and
         <varname>je.txn.timeout</varname></para>
-      <programlisting><![CDATA[
+      <programlisting language="xml"><![CDATA[
          ...
       </highAvailability>
       <envConfig>
@@ -359,7 +369,7 @@
       ...
     </store>]]></programlisting>
       <para>And to override the BDB replication configuration options <varname>je.rep.insufficientReplicasTimeout</varname>.</para>
-      <programlisting><![CDATA[
+      <programlisting language="xml"><![CDATA[
          ...
       </highAvailability>
       ...
@@ -453,7 +463,7 @@
                 <entry>true</entry>
                 <entry>Before the commit returns to the client, the transaction will be written/sync'd to the Master's disk (effect of
                   coalescing-sync and a majority of the replica(s) will have acknowledged the <emphasis role="bold">write</emphasis> of
-                  the transaction to their disk.  The replicas will sync the transaction to disk at a point in the future governed by
+                  the transaction to their disk.  The replicas will sync the transaction to disk at a point in the future with an upper bound governed by
                   ReplicationMutableConfig#LOG_FLUSH_INTERVAL.</entry>
               </row>
               <row>
@@ -462,7 +472,7 @@
                 <entry>false</entry>
                 <entry>After the commit returns to the client, the transaction is neither guaranteed to be written to the disk of the master
                    nor received by any of the replicas. The master and replicas will write and sync the transaction to their disk at a point
-                   in the future governed by ReplicationMutableConfig#LOG_FLUSH_INTERVAL. This offers the weakest durability guarantee.</entry>
+                   in the future with an upper bound governed by ReplicationMutableConfig#LOG_FLUSH_INTERVAL. This offers the weakest durability guarantee.</entry>
               </row>
             </tbody>
           </tgroup>
@@ -475,7 +485,7 @@
     <para>The details about format of Qpid connection URLs can be found at section
         <ulink url="../../Programming-In-Apache-Qpid/html/QpidJNDI.html">Connection URLs</ulink>
         of book <ulink url="../../Programming-In-Apache-Qpid/html/">Programming In Apache Qpid</ulink>.</para>
-    <para>The failover policy option in connection URL for HA Cluster should be set to <emphasis>roundrobin</emphasis>.
+    <para>The failover policy option in the connection URL for the HA Cluster should be set to <emphasis>roundrobin</emphasis>.
       The Master broker should be put into a first place in <emphasis>brokerlist</emphasis> URL option.
       The recommended value for <emphasis>connectdelay</emphasis> option in broker URL should be set to
       the value greater than 1000 milliseconds. If it is desired that clients re-connect automatically after a
@@ -487,11 +497,11 @@ amqp://guest:guest@clientid/test?brokerlist='tcp://localhost:5672?connectdelay='
   </section>
   <section role="h3" id="HAJMXAPI">
     <title>Qpid JMX API for HA</title>
-    <para>Qpid exposes HA store information via JMX interface and provides JMX API to remove Node from the group, update Node IP address
-    and assign Node as a designated primary.</para>
-    <para>MBean <classname>BDBHAMessageStore</classname> is instantiated by the Qpid broker for the each instance of HA store.</para>
-    <para>The reference to this MBean can be obtained via JMX API using object name like <emphasis>org.apache.qpid:type=BDBHAMessageStore,name=&lt;host name&gt;</emphasis>
-                where &lt;host name&gt; is the name of the virtual host of the broker.</para>
+    <para>Qpid exposes the BDB HA store information via its JMX interface and provides APIs to remove a Node from
+     the group, update a Node IP address, and assign a Node as the designated primary.</para>
+    <para>An instance of the <classname>BDBHAMessageStore</classname> MBean is instantiated by the broker for the each virtualhost using the HA store.</para>
+    <para>The reference to this MBean can be obtained via JMX API using an ObjectName like <emphasis>org.apache.qpid:type=BDBHAMessageStore,name=&lt;virtualhost name&gt;</emphasis>
+                 where &lt;virtualhost name&gt; is the name of a specific virtualhost on the broker.</para>
     <table border="1">
       <title>Mbean <classname>BDBHAMessageStore</classname> attributes</title>
       <thead>
@@ -624,17 +634,17 @@ System.out.println("Node state:" + state);
   </section>
   <section id="BDB-HA-Monitoring-cluster">
     <title>Monitoring cluster</title>
-    <para>In order to discover the potential issues with HA Cluster early, all nodes in the Cluster should be monitored on regular basis
+    <para>In order to discover potential issues with HA Cluster early, all nodes in the Cluster should be monitored on regular basis
     using the following techniques:</para>
     <itemizedlist>
       <listitem>
         <para>Broker log files scrapping for WARN or ERROR entries and operational log entries like:</para>
         <itemizedlist>
           <listitem>
-            <para><emphasis>MST-1007 :</emphasis> Store Passivated. It can indicate that Master virtual host is down.</para>
+            <para><emphasis>MST-1007 :</emphasis> Store Passivated. It can indicate that Master virtual host has gone down.</para>
           </listitem>
           <listitem>
-            <para><emphasis>MST-1006 :</emphasis> Recovery Complete. It can indicate that former Replica virtual host is up and became Master.</para>
+            <para><emphasis>MST-1006 :</emphasis> Recovery Complete. It can indicate that a former Replica virtual host is up and became the Master.</para>
           </listitem>
         </itemizedlist>
       </listitem>
@@ -642,14 +652,14 @@ System.out.println("Node state:" + state);
         <para>Disk space usage and system load using system tools.</para>
       </listitem>
       <listitem>
-        <para>Berkeley HA node status using <classname>DbPing</classname> utility.</para>
-        <example><title>Using <classname>DbPing</classname> utility for monitoring HA nodes.</title><![CDATA[
-java -jar je-5.0.48.jar DbPing -groupName TestClusterGroup -nodeName Node-5001 -nodeHost localhost:5001 -socketTimeout 10000
-]]><screen>
+        <para>Berkeley HA node status using <ulink url="&oracleBdbJavaDocUrl;com/sleepycat/je/rep/util/DbPing.html"><classname>DbPing</classname></ulink> utility.</para>
+        <example><title>Using <classname>DbPing</classname> utility for monitoring HA nodes.</title><command>
+java -jar je-&oracleBdbProductVersion;.jar DbPing -groupName TestClusterGroup -nodeName Node-5001 -nodeHost localhost:5001 -socketTimeout 10000
+</command><screen>
 Current state of node: Node-5001 from group: TestClusterGroup
   Current state: MASTER
   Current master: Node-5001
-  Current JE version: 5.0.48
+  Current JE version: &oracleBdbProductVersion;
   Current log version: 8
   Current transaction end (abort or commit) VLSN: 165
   Current master transaction end (abort or commit) VLSN: 0
@@ -697,10 +707,10 @@ Current state of node: Node-5001 from group: TestClusterGroup
   <section id="HADiskSpace">
     <title>Disk space requirements</title>
     <para>Disk space is a critical resource for the HA Qpid broker.</para>
-    <para>In case when Replica goes down (or falls behind the Master in 2 node cluster where Master is designated primary)
-    and Master continues running, the non-replicated logs are stored on a Master disk for the period of time
+    <para>In case when a Replica goes down (or falls behind the Master in 2 node cluster where the Master is designated primary)
+    and the Master continues running, the non-replicated store files are kept on the Masters disk for the period of time
     as specified in <emphasis>je.rep.repStreamTimeout</emphasis> JE setting in order to replicate this data later
-    when Replica is back. This setting is set to 1 hour by default on QPid broker.  The setting can be overridden as described
+    when the Replica is back. This setting is set to 1 hour by default by the broker. The setting can be overridden as described in
     <xref linkend="HAConfiguration_BDBEnvVars"/>.</para>
     <para>Depending from the application publishing/consuming rates and message sizes,
     the disk space might become overfull during this period of time due to preserved logs.
@@ -709,8 +719,8 @@ Current state of node: Node-5001 from group: TestClusterGroup
   </section>
   <section id="BDB-HA-Network-Requirements">
     <title>Network Requirements</title>
-    <para>The HA Cluster performance depends from the network bandwidth, its load by existing traffic and quality of service.</para>
-    <para>In order to achieve a better performance it is recommended to use a separate network infrastructure for the Qpid HA Nodes
+    <para>The HA Cluster performance depends on the network bandwidth, its use by existing traffic, and quality of service.</para>
+    <para>In order to achieve the best performance it is recommended to use a separate network infrastructure for the Qpid HA Nodes
      which might include installation of dedicated network hardware on Broker hosts, assigning a higher priority to replication ports,
      installing a cluster in a separate network not impacted by any other traffic.</para>
   </section>
@@ -724,32 +734,34 @@ Current state of node: Node-5001 from group: TestClusterGroup
   <section id="BDB-HA-Backup">
     <title>Backups</title>
     <para>In order to protect the entire cluster from some cataclysms which might destroy all cluster nodes,
-    the backups of a Master store should be taken on a regular basis.</para>
+    backups of the Master store should be taken on a regular basis.</para>
     <para>Qpid Broker distribution includes the "hot" backup utility <emphasis>backup.sh</emphasis> which can be found at broker bin folder.
          This utility can perform the backup when broker is running.</para>
     <para><emphasis>backup.sh</emphasis> script invokes <classname>org.apache.qpid.server.store.berkeleydb.BDBBackup</classname> to do the job.</para>
     <para>You can also run this class from command line like in an example below:</para>
-    <example><title>Performing store backup by using <classname>BDBBackup</classname> class directly</title>
-        java -cp qpid-bdbstore-0.18.jar org.apache.qpid.server.store.berkeleydb.BDBBackup -fromdir path/to/store/folder -todir path/to/backup/folder
+    <example><title>Performing store backup by using <classname>BDBBackup</classname> class directly</title><command>
+        java -cp qpid-bdbstore-0.18.jar org.apache.qpid.server.store.berkeleydb.BDBBackup -fromdir path/to/store/folder -todir path/to/backup/foldeAr</command>
     </example>
     <para>In the example above BDBBackup utility is called from qpid-bdbstore-0.18.jar to backup the store at <emphasis>path/to/store/folder</emphasis> and copy store logs into <emphasis>path/to/backup/folder</emphasis>.</para>
     <para>Linux and Unix users can take advantage of <emphasis>backup.sh</emphasis> bash script by running this script in a similar way.</para>
     <example><title>Performing store backup by using <classname>backup.sh</classname> bash script</title>
-        backup.sh -fromdir path/to/store/folder -todir path/to/backup/folder
+        <command>backup.sh -fromdir path/to/store/folder -todir path/to/backup/folder</command>
     </example>
     <note>
-      <para>Please, do not forget to switch to do backups of a new Master store when cluster Master is changed.</para>
+      <para>Do not forget to ensure that the Master store is being backed up, in the event the Node elected Master changes during
+      the lifecycle of the cluster.</para>
     </note>
   </section>
   <section id="HAMigrationFromNonHA">
     <title>Migration of a non-HA store to HA</title>
-    <para>Non HA stores starting from schema version 4 (0.14 Qpid release) can be automatically converted into HA store on broker startup if replication is previously enabled with DbEnableReplication utility from Berkeley JE jar.</para>
-    <para>DbEnableReplication converts non HA store into HA store and can be used as follows:</para>
-    <example><title>Enabling replication</title><![CDATA[
-java -jar je-5.0.48.jar DbEnableReplication -h /path/to/store -groupName MyReplicationGroup -nodeName MyNode1 -nodeHostPort  localhost:5001
-        ]]></example>
-    <para>In the examples above, je jar of version 5.0.48 is used to convert store at <emphasis>/path/to/store</emphasis> into HA store having replication group name <emphasis>MyReplicationGroup</emphasis>, node name <emphasis>MyNode1</emphasis> and running on host <emphasis>localhost</emphasis> and port <emphasis>5001</emphasis>.</para>
-    <para>After running DbEnableReplication and changing virtual host store to HA message store, like in example below, on broker start up the store schema will be upgraded to the recent version and broker can be used as normal.</para>
+    <para>Non HA stores starting from schema version 4 (0.14 Qpid release) can be automatically converted into HA store on broker startup if replication is first enabled with the <ulink url="&oracleBdbJavaDocUrl;com/sleepycat/je/rep/util/DbEnableReplication.html"><classname>DbEnableReplication</classname></ulink> utility from the BDB JE jar.</para>
+    <para>DbEnableReplication converts a non HA store into an HA store and can be used as follows:</para>
+    <example><title>Enabling replication</title><command>
+java -jar je-&oracleBdbProductVersion;.jar DbEnableReplication -h /path/to/store -groupName MyReplicationGroup -nodeName MyNode1 -nodeHostPort  localhost:5001
+        </command></example>
+    <para>In the examples above, je jar of version &oracleBdbProductVersion; is used to convert store at <emphasis>/path/to/store</emphasis> into HA store having replication group name <emphasis>MyReplicationGroup</emphasis>, node name <emphasis>MyNode1</emphasis> and running on host <emphasis>localhost</emphasis> and port <emphasis>5001</emphasis>.</para>
+    <para>After running DbEnableReplication and updating the virtual host store to configuration to be an HA message store, like in example below,
+    on broker start up the store schema will be upgraded to the most recent version and the broker can be used as normal.</para>
     <example>
       <title>Example of XML configuration for HA message store</title>
       <programlisting language="xml"><![CDATA[
@@ -764,7 +776,8 @@ java -jar je-5.0.48.jar DbEnableReplication -h /path/to/store -groupName MyRepli
     </highAvailability>
 </store>]]></programlisting>
     </example>
-    <para>The Replica nodes can be started with empty stores. The data will be automatically copied from Master to Replica on Replica start-up.</para>
+    <para>The Replica nodes can be started with empty stores. The data will be automatically copied from Master to Replica on Replica start-up.
+      This will take a period of time determined by the size of the Masters store and the network bandwidth between the nodes.</para>
     <note>
       <para>Due to existing caveats in Berkeley JE with copying of data from Master into Replica it is recommended to restart the Master node after store schema upgrade is finished before starting the Replica nodes.</para>
     </note>
@@ -778,7 +791,7 @@ java -jar je-5.0.48.jar DbEnableReplication -h /path/to/store -groupName MyRepli
     This information includes IP addresses of the nodes.
     In case when HA message store needs to be restored on a different host with a different IP address
     the cluster replication configuration should be reseted in this case</para>
-    <para>Oracle provides a command line utility <classname>DbResetRepGroup</classname>
+    <para>Oracle provides a command line utility <ulink url="&oracleBdbJavaDocUrl;com/sleepycat/je/rep/util/DbResetRepGroup.html"><classname>DbResetRepGroup</classname></ulink>
     to reset the members of a replication group and replace the group with a new group consisting of a single new member
     as described by the arguments supplied to the utility</para>
     <para>Cluster can be restored with the following steps:</para>
@@ -787,10 +800,10 @@ java -jar je-5.0.48.jar DbEnableReplication -h /path/to/store -groupName MyRepli
          <listitem>
             <para>Use <classname>DbResetRepGroup</classname> to reset an existing environment. See an example below</para>
             <example>
-                <title>Reseting of replication group with <classname>DbResetRepGroup</classname></title>
-java -cp je-5.0.48.jar com.sleepycat.je.rep.util.DbResetRepGroup -h ha-work/Node-5001/bdbstore -groupName TestClusterGroup -nodeName Node-5001 -nodeHostPort localhost:5001
+                <title>Reseting of replication group with <classname>DbResetRepGroup</classname></title><command>
+java -cp je-&oracleBdbProductVersion;.jar com.sleepycat.je.rep.util.DbResetRepGroup -h ha-work/Node-5001/bdbstore -groupName TestClusterGroup -nodeName Node-5001 -nodeHostPort localhost:5001</command>
             </example>
-            <para>In the example above <classname>DbResetRepGroup</classname> utility from Berkeley JE of version 5.0.48 is used to reset the store
+            <para>In the example above <classname>DbResetRepGroup</classname> utility from Berkeley JE of version &oracleBdbProductVersion; is used to reset the store
             at location <emphasis>ha-work/Node-5001/bdbstore</emphasis> and set a replication group to <emphasis>TestClusterGroup</emphasis>
             having a node <emphasis>Node-5001</emphasis> which runs at <emphasis>localhost:5001</emphasis>.</para>
          </listitem>
@@ -801,12 +814,13 @@ java -cp je-5.0.48.jar com.sleepycat.je.rep.util.DbResetRepGroup -h ha-work/Node
 
   <section id="HAPerformance">
     <title>Performance</title>
-    <para>The aim of this section is not providing Qpid broker performance metrics for HA as it depends from the test environment but rather showing an impact of HA on Qpid Broker performance in comparison with Non HA case.</para>
+    <para>The aim of this section is not to provide exact performance metrics relating to HA, as this depends heavily on the test
+    environment, but rather showing an impact of HA on Qpid broker performance in comparison with the Non HA case.</para>
     <para>For testing of impact of HA on a broker performance a special test script was written using Qpid performance test framework.
     The script opened a number of connections to the Qpid broker, created producers and consumers on separate connections,
     and published test messages with concurrent producers into a test queue and consumed them with concurrent consumers.
     The table below shows the number of producers/consumers used in the tests.
-    The overall throughput was collected for each of the number.
+    The overall throughput was collected for each configuration.
     </para>
     <table border="1">
       <title>Number of producers/consumers in performance tests</title>
@@ -855,7 +869,7 @@ java -cp je-5.0.48.jar com.sleepycat.je.rep.util.DbResetRepGroup -h ha-work/Node
         </tr>
       </tbody>
     </table>
-    <para>The test was run against the following Qpid Brokers</para>
+    <para>The test was run against the following Qpid Broker configurations</para>
     <itemizedlist>
       <listitem>
         <para>Non HA Broker</para>
@@ -876,12 +890,10 @@ java -cp je-5.0.48.jar com.sleepycat.je.rep.util.DbResetRepGroup -h ha-work/Node
         <para>HA 2 Nodes Cluster with durability <emphasis>NO_SYNC,NO_SYNC,ALL</emphasis> and <emphasis>coalescing-sync</emphasis> Qpid option</para>
       </listitem>
     </itemizedlist>
-    <para>Test Environment we tested performance on was not really representative as we got only 2 test servers
-        having 4core processors Intel(r) Xeon(R) CPU 5150@2.66GHz, 4G of RAM
-        and running under OS Red Hat Enterprise Linux AS release 4 (Nahant Update 4).
-        Network bandwidth was 1Gbit.
+    <para>The evironment used in testing consisted of 2 servers with 4 CPU cores (2x Intel(r) Xeon(R) CPU 5150@2.66GHz), 4GB of RAM
+        and running under OS Red Hat Enterprise Linux AS release 4 (Nahant Update 4). Network bandwidth was 1Gbit.
     </para>
-    <para>We ran Master node on a first server and Replica and clients(both consumers and producers) on a second server.</para>
+    <para>We ran Master node on the first server and Replica and clients(both consumers and producers) on the second server.</para>
     <para>In non-HA case Qpid Broker was run on a first server and clients were run on a second server.</para>
     <para>The table below contains the test results we measured on this environment for different Broker configurations.</para>
     <para>Each result is represented by throughput value in KB/second and difference in % between HA configuration and non HA case for the same number of clients.</para>
