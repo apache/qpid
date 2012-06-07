@@ -342,8 +342,8 @@ class ReadOnlyVariantMapWrapper {
     ReadOnlyVariantMapWrapper();
     ReadOnlyVariantMapWrapper(JNIEnv* jniEnv, qpid::types::Variant::Map& map);
     ~ReadOnlyVariantMapWrapper();
-    jobject get(const std::string key) const;
-    jboolean containsKey (const std::string key) const;
+    jobject get(const std::string& key) const;
+    jboolean containsKey (const std::string& key) const;
     jboolean isEmpty() const;
     // keys_ is populated on demand (i.e if the keys() method is called).
     // since this method modifies keys_ it cannot be marked const.
@@ -361,11 +361,19 @@ class ReadOnlyVariantMapWrapper {
  * Provides a write-only Variant::Map
  * This is only intended to be used with code that is not in the critical path.
  * Ex: not be used with setting message properties.
- * This is intneded to be used when setting connection properties
+ * This is intended to be used when setting connection properties
  * or address properties.
  */
 class WriteOnlyVariantMapWrapper {
 
+  public:
+    WriteOnlyVariantMapWrapper();
+    ~WriteOnlyVariantMapWrapper(){}
+    void put(const std::string& key, jobject obj);
+    qpid::types::Variant::Map getVariantMap() const { return varMap_; }
+
+  private:
+    qpid::types::Variant::Map varMap_;
 };
 
 
@@ -388,7 +396,7 @@ ReadOnlyVariantMapWrapper::~ReadOnlyVariantMapWrapper()
     }
 }
 
-jobject ReadOnlyVariantMapWrapper::get(const std::string key) const
+jobject ReadOnlyVariantMapWrapper::get(const std::string& key) const
 {
     using namespace qpid::types;
     jobject result;
@@ -464,10 +472,11 @@ jobject ReadOnlyVariantMapWrapper::get(const std::string key) const
         }
     }
 
+    env_->DeleteLocalRef(result);
     return result;
 }
 
-jboolean ReadOnlyVariantMapWrapper::containsKey (const std::string key) const
+jboolean ReadOnlyVariantMapWrapper::containsKey (const std::string& key) const
 {
     return (jboolean)(varMap_.find(key) != varMap_.end());
 }
@@ -499,6 +508,35 @@ jobjectArray ReadOnlyVariantMapWrapper::keys()
     return keys_;
 }
 
+WriteOnlyVariantMapWrapper::WriteOnlyVariantMapWrapper()
+{
+    varMap_ = qpid::types::Variant::Map();
+}
+
+void WriteOnlyVariantMapWrapper::put(const std::string& key, jobject obj)
+{
+  JNIEnv* env;
+  cachedJVM->GetEnv((void **)&env, JNI_VERSION_1_4);
+
+  if (key.empty())
+  {
+      env->ThrowNew(JAVA_ILLEGAL_ARGUMENT_EXP,"Key cannot be empty.");
+  }
+
+  qpid::types::Variant v = convertJavaObjectToVariant(env,obj);
+
+  if (v)
+  {
+      varMap_[key] = v;
+  }
+  else
+  {
+      // There will be an exception on the java side,
+      // thrown by convertJavaObjectToVariant method.
+      return;
+  }
+}
+
 %}
 
 /** =================== SWIG Interface definitions ============================
@@ -508,8 +546,13 @@ jobjectArray ReadOnlyVariantMapWrapper::keys()
 ReadOnlyVariantMapWrapper::ReadOnlyVariantMapWrapper();
 ReadOnlyVariantMapWrapper::ReadOnlyVariantMapWrapper(JNIEnv* jniEnv, qpid::types::Variant::Map& map);
 ReadOnlyVariantMapWrapper::~ReadOnlyVariantMapWrapper();
-jobject ReadOnlyVariantMapWrapper::get(const std::string key) const;
-jboolean ReadOnlyVariantMapWrapper::containsKey (const std::string key) const;
+jobject ReadOnlyVariantMapWrapper::get(const std::string& key) const;
+jboolean ReadOnlyVariantMapWrapper::containsKey (const std::string& key) const;
 jboolean ReadOnlyVariantMapWrapper::isEmpty() const;
 jobjectArray ReadOnlyVariantMapWrapper::keys();
 jint ReadOnlyVariantMapWrapper::size() const;
+
+WriteOnlyVariantMapWrapper::WriteOnlyVariantMapWrapper();
+WriteOnlyVariantMapWrapper::~WriteOnlyVariantMapWrapper();
+void WriteOnlyVariantMapWrapper::put(const std::string& key, jobject obj);
+qpid::types::Variant::Map WriteOnlyVariantMapWrapper::getVariantMap() const;

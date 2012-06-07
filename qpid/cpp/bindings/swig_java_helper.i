@@ -61,10 +61,14 @@ import java.util.Set;
         }
   }
 
-  /** We don't support setting maps into C++ atm, but adding here to get around swig **/
-  static ReadOnlyVariantMapWrapper getVariantMap(final Map<String,Object> map)
+  static long getVariantMap(final Map<String,Object> m)
   {
-      return new ReadOnlyVariantMapWrapper();
+      WriteOnlyVariantMapWrapper map = new WriteOnlyVariantMapWrapper();
+      for (String key: m.keySet())
+      {
+          map.put(key,m.get(key));
+      }
+      return WriteOnlyVariantMapWrapper.getCPtr(map);
   }
 
   static Map<String, Object> getJavaMap(final ReadOnlyVariantMapWrapper map)

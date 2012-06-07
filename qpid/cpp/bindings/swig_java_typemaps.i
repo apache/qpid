@@ -51,8 +51,8 @@
 %typemap(jtype) qpid::messaging::Message::BYTE_BUFFER "java.nio.ByteBuffer"
 %typemap(jstype) qpid::messaging::Message::BYTE_BUFFER "java.nio.ByteBuffer"
 
-%typemap(jni) qpid::types::Variant::Map& "jobject"
-%typemap(jtype) qpid::types::Variant::Map& "ReadOnlyVariantMapWrapper"
+%typemap(jni) qpid::types::Variant::Map& "jlong"
+%typemap(jtype) qpid::types::Variant::Map& "long"
 %typemap(jstype) qpid::types::Variant::Map& "java.util.Map"
 
 %typemap(jni) const qpid::types::Variant& "jobject"
@@ -90,17 +90,22 @@
 
 /* -- qpid::types::Variant::Map& -- */
 %typemap(in) (qpid::types::Variant::Map&){
-  $1 = new qpid::types::Variant::Map();
+  WriteOnlyVariantMapWrapper* mapper = *(WriteOnlyVariantMapWrapper **)&$input;
+  $1 = new qpid::types::Variant::Map((mapper->getVariantMap()));
 }
 
 %typemap(javain) (qpid::types::Variant::Map&) "$module.getVariantMap($javainput)"
+
+%typemap(freearg) qpid::types::Variant::Map& {
+    delete $1;
+}
 
 %typemap(out) qpid::types::Variant::Map& {
   *(ReadOnlyVariantMapWrapper **)&jresult = new ReadOnlyVariantMapWrapper(jenv,*$1);
 }
 
 %typemap(javaout) qpid::types::Variant::Map& {
-    return $module.getJavaMap($jnicall);
+    return $module.getJavaMap(new ReadOnlyVariantMapWrapper($jnicall, $owner));
 }
 
 /* -- qpid::types::Variant& -- */
@@ -120,6 +125,9 @@
 
 %typemap(javain) (const qpid::types::Variant&) "$javainput"
 
+%typemap(freearg) qpid::types::Variant& {
+    delete $1;
+}
 
 /* -- qpid::types::uint8_t -- */
 %typemap(in) uint8_t {
