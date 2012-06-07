@@ -189,16 +189,14 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         {
             final Exchange exchange = getExchange(exchangeName);
 
-            if (exchange instanceof AbstractExchange)
+            //TODO: this is a bit of a hack, what if the listeners aren't aware
+            //that we are just unregistering the MBean because of HA, and aren't
+            //actually removing the exchange as such.
+            synchronized (_listeners)
             {
-                AbstractExchange abstractExchange = (AbstractExchange) exchange;
-                try
+                for(RegistryChangeListener listener : _listeners)
                 {
-                    abstractExchange.getManagedObject().unregister();
-                }
-                catch (AMQException e)
-                {
-                    LOGGER.warn("Failed to unregister mbean", e);
+                    listener.exchangeUnregistered(exchange);
                 }
             }
         }

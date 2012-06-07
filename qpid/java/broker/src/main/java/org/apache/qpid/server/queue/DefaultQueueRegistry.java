@@ -115,6 +115,9 @@ public class DefaultQueueRegistry implements QueueRegistry
             queue.stop();
             try
             {
+                //TODO: this needs updated to use the
+                //listener model, the managed object being
+                //accessed here is no longer used
                 queue.getManagedObject().unregister();
             }
             catch (AMQException e)

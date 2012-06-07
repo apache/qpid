@@ -30,16 +30,13 @@ import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.logging.subjects.ExchangeLogSubject;
-import org.apache.qpid.server.management.AbstractExchangeMBean;
 import org.apache.qpid.server.management.Managable;
-import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import javax.management.JMException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -51,10 +48,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-public abstract class AbstractExchange implements Exchange, Managable
+public abstract class AbstractExchange implements Exchange
 {
-
-
     private AMQShortString _name;
     private final AtomicBoolean _closed = new AtomicBoolean();
 
@@ -66,9 +61,6 @@ public abstract class AbstractExchange implements Exchange, Managable
     private VirtualHost _virtualHost;
 
     private final List<Exchange.Task> _closeTaskList = new CopyOnWriteArrayList<Exchange.Task>();
-
-
-    private AbstractExchangeMBean _exchangeMbean;
 
     /**
      * Whether the exchange is automatically deleted once all queues have detached from it
@@ -110,13 +102,6 @@ public abstract class AbstractExchange implements Exchange, Managable
         return _type.getName();
     }
 
-    /**
-     * Concrete exchanges must implement this method in order to create the managed representation. This is
-     * called during initialisation (template method pattern).
-     * @return the MBean
-     */
-    protected abstract AbstractExchangeMBean createMBean() throws JMException;
-
     public void initialise(UUID id, VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete)
             throws AMQException
     {
@@ -129,24 +114,10 @@ public abstract class AbstractExchange implements Exchange, Managable
         _id = id;
 
         getConfigStore().addConfiguredObject(this);
-        createAndRegisterMBean();
         _logSubject = new ExchangeLogSubject(this, this.getVirtualHost());
 
         // Log Exchange creation
         CurrentActor.get().message(ExchangeMessages.CREATED(String.valueOf(getTypeShortString()), String.valueOf(name), durable));
-    }
-
-    private void createAndRegisterMBean()
-    {
-        try
-        {
-            _exchangeMbean = createMBean();
-            _exchangeMbean.register();
-        }
-        catch (JMException e)
-        {
-            throw new RuntimeException("Failed to register mbean",e);
-        }
     }
 
     public ConfigStore getConfigStore()
@@ -174,10 +145,6 @@ public abstract class AbstractExchange implements Exchange, Managable
 
         if(_closed.compareAndSet(false,true))
         {
-            if (_exchangeMbean != null)
-            {
-                _exchangeMbean.unregister();
-            }
             getConfigStore().removeConfiguredObject(this);
             if(_alternateExchange != null)
             {
@@ -197,11 +164,6 @@ public abstract class AbstractExchange implements Exchange, Managable
     public String toString()
     {
         return getClass().getSimpleName() + "[" + getNameShortString() +"]";
-    }
-
-    public ManagedObject getManagedObject()
-    {
-        return _exchangeMbean;
     }
 
     public VirtualHost getVirtualHost()

@@ -27,8 +27,6 @@ import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.management.AbstractExchangeMBean;
-import org.apache.qpid.server.management.DirectExchangeMBean;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
@@ -127,11 +125,6 @@ public class DirectExchange extends AbstractExchange
     public DirectExchange()
     {
         super(TYPE);
-    }
-
-    protected AbstractExchangeMBean createMBean() throws JMException
-    {
-        return new DirectExchangeMBean(this);
     }
 
     public List<? extends BaseQueue> doRoute(InboundMessage payload)

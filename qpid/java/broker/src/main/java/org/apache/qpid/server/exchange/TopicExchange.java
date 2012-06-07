@@ -48,8 +48,6 @@ import org.apache.qpid.server.exchange.topic.TopicNormalizer;
 import org.apache.qpid.server.exchange.topic.TopicParser;
 import org.apache.qpid.server.filter.JMSSelectorFilter;
 import org.apache.qpid.server.filter.MessageFilter;
-import org.apache.qpid.server.management.AbstractExchangeMBean;
-import org.apache.qpid.server.management.TopicExchangeMBean;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -403,11 +401,6 @@ public class TopicExchange extends AbstractExchange
         {
             return false;
         }
-    }
-
-    protected AbstractExchangeMBean createMBean() throws JMException
-    {
-        return new TopicExchangeMBean(this);
     }
 
     private Collection<AMQQueue> getMatchedQueues(InboundMessage message, AMQShortString routingKey)

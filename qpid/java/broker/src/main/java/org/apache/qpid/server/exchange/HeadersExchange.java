@@ -27,8 +27,6 @@ import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.management.AbstractExchangeMBean;
-import org.apache.qpid.server.management.HeadersExchangeMBean;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -227,11 +225,6 @@ public class HeadersExchange extends AbstractExchange
     public boolean hasBindings()
     {
         return !getBindings().isEmpty();
-    }
-
-    protected AbstractExchangeMBean createMBean() throws JMException
-    {
-        return new HeadersExchangeMBean(this);
     }
 
     protected void onBind(final Binding binding)
