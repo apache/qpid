@@ -43,7 +43,8 @@ namespace asyncStore {
 class AsyncStoreImpl: public qpid::broker::AsyncStore {
 public:
     AsyncStoreImpl(boost::shared_ptr<qpid::sys::Poller> poller,
-                   const AsyncStoreOptions& opts);
+                   const AsyncStoreOptions& opts,
+                   qpid::broker::AsyncResultQueue* resultQueue);
     virtual ~AsyncStoreImpl();
     void initialize();
     uint64_t getNextRid();

@@ -17,40 +17,46 @@
  * under the License.
  */
 
-#include "AsyncStore.h"
+/**
+ * \file AsyncResultQueue.cpp
+ */
+
+#include "AsyncResultQueue.h"
 
 namespace qpid {
 namespace broker {
 
-BrokerAsyncContext::~BrokerAsyncContext()
-{}
+AsyncResultQueue::AsyncResultQueue(const boost::shared_ptr<qpid::sys::Poller>& poller) :
+        m_resQueue(boost::bind(&AsyncResultQueue::handle, this, _1), poller)
+{
+    m_resQueue.start();
+}
 
-DataSource::~DataSource()
-{}
-
-AsyncStore::AsyncStore()
-{}
-
-AsyncStore::~AsyncStore()
-{}
-
-/*
-AsyncResult::AsyncResult() :
-        errNo(0),
-        errMsg()
-{}
-
-AsyncResult::AsyncResult(const int errNo,
-                         const std::string& errMsg) :
-        errNo(errNo),
-        errMsg(errMsg)
-{}
+AsyncResultQueue::~AsyncResultQueue()
+{
+    m_resQueue.stop();
+}
 
 void
-AsyncResult::destroy()
+AsyncResultQueue::submit(AsyncResultHandle* res)
 {
-    delete this;
+    m_resQueue.push(res);
+}
+
+//static
+/*
+void
+AsyncResultQueue::submit(AsyncResultQueue* arq, AsyncResultHandle* rh)
+{
+    arq->submit(rh);
 }
 */
+
+// protected
+AsyncResultQueue::ResultQueue::Batch::const_iterator
+AsyncResultQueue::handle(const ResultQueue::Batch& e)
+{
+    return e.end();
+}
 
 }} // namespace qpid::broker

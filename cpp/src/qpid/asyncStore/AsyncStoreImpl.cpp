@@ -38,11 +38,12 @@ namespace qpid {
 namespace asyncStore {
 
 AsyncStoreImpl::AsyncStoreImpl(boost::shared_ptr<qpid::sys::Poller> poller,
-                               const AsyncStoreOptions& opts) :
+                               const AsyncStoreOptions& opts,
+                               qpid::broker::AsyncResultQueue* resultQueue) :
         m_poller(poller),
         m_opts(opts),
         m_runState(),
-        m_operations(m_poller)
+        m_operations(m_poller, resultQueue)
 {}
 
 AsyncStoreImpl::~AsyncStoreImpl()

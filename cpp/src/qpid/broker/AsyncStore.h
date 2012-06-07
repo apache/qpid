@@ -37,7 +37,36 @@ public:
     virtual ~BrokerAsyncContext();
 };
 
-// Subclassed by broker:
+// Callback definition:
+//struct AsyncResult {
+//    int errNo; // 0 implies no error
+//    std::string errMsg;
+//    AsyncResult();
+//    AsyncResult(const int errNo,
+//                const std::string& errMsg);
+//    void destroy();
+//};
+//typedef void (*ResultCallback)(const AsyncResult*, BrokerAsyncContext*);
+
+class AsyncResultHandle;
+class AsyncResultQueue; // Implements the result callback function
+
+// Singleton class in broker which contains return pollable queue. Use submitAsyncResult() to add reulsts to queue.
+class AsyncResultHandler {
+public:
+    virtual ~AsyncResultHandler();
+
+    // Factory method to create result handle
+
+    virtual AsyncResultHandle createAsyncResultHandle(const int errNo, const std::string& errMsg, BrokerAsyncContext*) = 0;
+
+    // Async return interface
+
+    virtual void submitAsyncResult(AsyncResultHandle&) = 0;
+};
+typedef void (qpid::broker::AsyncResultQueue::*ResultCallback)(AsyncResultHandle*);
+//typedef void (qpid::broker::AsyncResultQueue::*ResultCallback)(AsyncResultQueue*, AsyncResultHandle*);
+
 class DataSource {
 public:
     virtual ~DataSource();
@@ -45,25 +74,13 @@ public:
     virtual void write(char* target) = 0;
 };
 
-// Defined by store, all implement qpid::messaging::Handle-type template to hide ref counting:
 class ConfigHandle;
-class QueueHandle;
-class TxnHandle;
+class EnqueueHandle;
 class EventHandle;
 class MessageHandle;
-class EnqueueHandle;
+class QueueHandle;
+class TxnHandle;
 
-// Callback definition:
-struct AsyncResult
-{
-    int errNo; // 0 implies no error
-    std::string errMsg;
-    AsyncResult();
-    AsyncResult(const int errNo,
-                const std::string& errMsg);
-    void destroy();
-};
-typedef void (*ResultCallback)(const AsyncResult*, BrokerAsyncContext*);
 
 // Subclassed by store:
 class AsyncStore {
@@ -73,12 +90,12 @@ public:
 
     // Factory methods for creating handles
 
-    virtual TxnHandle createTxnHandle(const std::string& xid=std::string()) = 0;
     virtual ConfigHandle createConfigHandle() = 0;
-    virtual QueueHandle createQueueHandle(const std::string& name, const qpid::types::Variant::Map& opts) = 0;
+    virtual EnqueueHandle createEnqueueHandle(MessageHandle&, QueueHandle&) = 0;
     virtual EventHandle createEventHandle(QueueHandle&, const std::string& key=std::string()) = 0;
     virtual MessageHandle createMessageHandle(const DataSource*) = 0;
-    virtual EnqueueHandle createEnqueueHandle(MessageHandle&, QueueHandle&) = 0;
+    virtual QueueHandle createQueueHandle(const std::string& name, const qpid::types::Variant::Map& opts) = 0;
+    virtual TxnHandle createTxnHandle(const std::string& xid=std::string()) = 0;
 
 
     // Store async interface

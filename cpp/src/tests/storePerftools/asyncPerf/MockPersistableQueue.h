@@ -38,7 +38,9 @@ namespace qpid {
 namespace asyncStore {
 class AsyncStoreImpl;
 }
-
+namespace broker {
+class AsyncResultQueue;
+}
 namespace framing {
 class FieldTable;
 }}
@@ -61,11 +63,12 @@ class MockPersistableQueue : public boost::enable_shared_from_this<MockPersistab
 public:
     MockPersistableQueue(const std::string& name,
                          const qpid::framing::FieldTable& args,
-                         qpid::asyncStore::AsyncStoreImpl* store);
+                         qpid::asyncStore::AsyncStoreImpl* store,
+                         qpid::broker::AsyncResultQueue& rq);
     virtual ~MockPersistableQueue();
 
-    static void handleAsyncResult(const qpid::broker::AsyncResult* res,
-                                  qpid::broker::BrokerAsyncContext* bc);
+//    static void handleAsyncResult(const qpid::broker::AsyncResult* res,
+//                                  qpid::broker::BrokerAsyncContext* bc);
     const qpid::broker::QueueHandle& getHandle() const;
     qpid::broker::QueueHandle& getHandle();
     qpid::asyncStore::AsyncStoreImpl* getStore();
@@ -99,6 +102,7 @@ public:
 protected:
     const std::string m_name;
     qpid::asyncStore::AsyncStoreImpl* m_store;
+    qpid::broker::AsyncResultQueue& m_resultQueue;
     AsyncOpCounter m_asyncOpCounter;
     mutable uint64_t m_persistenceId;
     std::string m_persistableData;

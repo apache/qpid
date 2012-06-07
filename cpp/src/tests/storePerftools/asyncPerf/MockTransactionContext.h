@@ -53,8 +53,8 @@ public:
     MockTransactionContext(qpid::asyncStore::AsyncStoreImpl* store,
                            const std::string& xid = std::string());
     virtual ~MockTransactionContext();
-    static void handleAsyncResult(const qpid::broker::AsyncResult* res,
-                                  qpid::broker::BrokerAsyncContext* bc);
+//    static void handleAsyncResult(const qpid::broker::AsyncResult* res,
+//                                  qpid::broker::BrokerAsyncContext* bc);
 
     const qpid::broker::TxnHandle& getHandle() const;
     qpid::broker::TxnHandle& getHandle();

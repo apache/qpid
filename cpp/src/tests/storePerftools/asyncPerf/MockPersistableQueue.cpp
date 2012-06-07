@@ -30,6 +30,7 @@
 #include "QueuedMessage.h"
 
 #include "qpid/asyncStore/AsyncStoreImpl.h"
+#include "qpid/broker/AsyncResultQueue.h"
 
 namespace tests {
 namespace storePerftools {
@@ -37,10 +38,12 @@ namespace asyncPerf {
 
 MockPersistableQueue::MockPersistableQueue(const std::string& name,
                                            const qpid::framing::FieldTable& /*args*/,
-                                           qpid::asyncStore::AsyncStoreImpl* store) :
+                                           qpid::asyncStore::AsyncStoreImpl* store,
+                                           qpid::broker::AsyncResultQueue& resultQueue) :
         qpid::broker::PersistableQueue(),
         m_name(name),
         m_store(store),
+        m_resultQueue(resultQueue),
         m_asyncOpCounter(0UL),
         m_persistenceId(0ULL),
         m_persistableData(m_name), // TODO: Currently queue durable data consists only of the queue name. Update this.
@@ -64,6 +67,7 @@ MockPersistableQueue::~MockPersistableQueue()
 }
 
 // static
+/*
 void
 MockPersistableQueue::handleAsyncResult(const qpid::broker::AsyncResult* res,
                                         qpid::broker::BrokerAsyncContext* bc)
@@ -102,6 +106,7 @@ MockPersistableQueue::handleAsyncResult(const qpid::broker::AsyncResult* res,
     if (bc) delete bc;
     if (res) delete res;
 }
+*/
 
 const qpid::broker::QueueHandle&
 MockPersistableQueue::getHandle() const
@@ -124,10 +129,12 @@ MockPersistableQueue::getStore()
 void
 MockPersistableQueue::asyncCreate()
 {
+    qpid::broker::ResultCallback rcb = &qpid::broker::AsyncResultQueue::submit;
     if (m_store) {
         m_store->submitCreate(m_queueHandle,
                               this,
-                              &handleAsyncResult,
+                              rcb,
+//                              &qpid::broker::AsyncResultQueue::submit/*&m_resultQueue.submit*/,
                               new QueueAsyncContext(shared_from_this(),
                                                     qpid::asyncStore::AsyncOperation::QUEUE_CREATE));
         ++m_asyncOpCounter;
@@ -141,7 +148,7 @@ MockPersistableQueue::asyncDestroy(const bool deleteQueue)
     if (m_store) {
         if (deleteQueue) {
             m_store->submitDestroy(m_queueHandle,
-                                   &handleAsyncResult,
+                                   &qpid::broker::AsyncResultQueue::submit/*&m_resultQueue.submit*/,
                                    new QueueAsyncContext(shared_from_this(),
                                                          qpid::asyncStore::AsyncOperation::QUEUE_DESTROY));
             ++m_asyncOpCounter;
@@ -329,7 +336,7 @@ MockPersistableQueue::asyncEnqueue(MockTransactionContext* txn,
 //std::cout << "QQQ Queue=\"" << m_name << "\": asyncEnqueue() rid=0x" << std::hex << qm.payload()->getPersistenceId() << std::dec << std::endl << std::flush;
     m_store->submitEnqueue(/*enqHandle*/qm.enqHandle(),
                            txn->getHandle(),
-                           &handleAsyncResult,
+                           &qpid::broker::AsyncResultQueue::submit/*&m_resultQueue.submit*/,
                            new QueueAsyncContext(shared_from_this(),
                                                  qm.payload(),
                                                  qpid::asyncStore::AsyncOperation::MSG_ENQUEUE));
@@ -346,7 +353,7 @@ MockPersistableQueue::asyncDequeue(MockTransactionContext* txn,
     qpid::broker::EnqueueHandle enqHandle = qm.enqHandle();
     m_store->submitDequeue(enqHandle,
                            txn->getHandle(),
-                           &handleAsyncResult,
+                           &qpid::broker::AsyncResultQueue::submit/*&m_resultQueue.submit*/,
                            new QueueAsyncContext(shared_from_this(),
                                                  qm.payload(),
                                                  qpid::asyncStore::AsyncOperation::MSG_DEQUEUE));

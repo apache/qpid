@@ -17,40 +17,52 @@
  * under the License.
  */
 
-#include "AsyncStore.h"
+/**
+ * \file AsyncResultHandleImpl.cpp
+ */
+
+#include "AsyncResultHandleImpl.h"
 
 namespace qpid {
 namespace broker {
 
-BrokerAsyncContext::~BrokerAsyncContext()
+AsyncResultHandleImpl::AsyncResultHandleImpl() :
+        m_errNo(0),
+        m_errMsg(),
+        m_bc(0)
 {}
 
-DataSource::~DataSource()
+AsyncResultHandleImpl::AsyncResultHandleImpl(const BrokerAsyncContext* bc) :
+        m_errNo(0),
+        m_errMsg(),
+        m_bc(bc)
 {}
 
-AsyncStore::AsyncStore()
+AsyncResultHandleImpl::AsyncResultHandleImpl(const int errNo, const std::string& errMsg, const BrokerAsyncContext* bc) :
+        m_errNo(errNo),
+        m_errMsg(errMsg),
+        m_bc(bc)
 {}
 
-AsyncStore::~AsyncStore()
+AsyncResultHandleImpl::~AsyncResultHandleImpl()
 {}
 
-/*
-AsyncResult::AsyncResult() :
-        errNo(0),
-        errMsg()
-{}
-
-AsyncResult::AsyncResult(const int errNo,
-                         const std::string& errMsg) :
-        errNo(errNo),
-        errMsg(errMsg)
-{}
-
-void
-AsyncResult::destroy()
+int
+AsyncResultHandleImpl::getErrNo() const
 {
-    delete this;
+    return m_errNo;
 }
-*/
+
+std::string
+AsyncResultHandleImpl::getErrMsg() const
+{
+    return m_errMsg;
+}
+
+const BrokerAsyncContext*
+AsyncResultHandleImpl::getBrokerAsyncContext() const
+{
+    return m_bc;
+}
 
 }} // namespace qpid::broker

@@ -27,6 +27,7 @@
 #include "MockPersistableQueue.h"
 
 #include "qpid/asyncStore/AsyncStoreImpl.h"
+//#include "qpid/broker/EnqueueHandle.h"
 
 namespace tests {
 namespace storePerftools {
@@ -40,7 +41,7 @@ QueuedMessage::QueuedMessage(MockPersistableQueue* q,
                              boost::shared_ptr<MockPersistableMessage> msg) :
         m_queue(q),
         m_msg(msg),
-        m_enqHandle(q->getStore()->createEnqueueHandle(msg->getHandle(), q->getHandle()))
+        m_enqHandle(q->getStore() ? q->getStore()->createEnqueueHandle(msg->getHandle(), q->getHandle()) : qpid::broker::EnqueueHandle(0))
 {}
 
 QueuedMessage::QueuedMessage(const QueuedMessage& qm) :

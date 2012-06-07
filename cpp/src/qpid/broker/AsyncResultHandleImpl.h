@@ -17,40 +17,38 @@
  * under the License.
  */
 
+/**
+ * \file AsyncResultHandleImpl.h
+ */
+
+#ifndef qpid_broker_AsyncResultHandleImpl_h_
+#define qpid_broker_AsyncResultHandleImpl_h_
+
 #include "AsyncStore.h"
+
+#include "qpid/RefCounted.h"
 
 namespace qpid {
 namespace broker {
 
-BrokerAsyncContext::~BrokerAsyncContext()
-{}
-
-DataSource::~DataSource()
-{}
-
-AsyncStore::AsyncStore()
-{}
-
-AsyncStore::~AsyncStore()
-{}
-
-/*
-AsyncResult::AsyncResult() :
-        errNo(0),
-        errMsg()
-{}
-
-AsyncResult::AsyncResult(const int errNo,
-                         const std::string& errMsg) :
-        errNo(errNo),
-        errMsg(errMsg)
-{}
-
-void
-AsyncResult::destroy()
+class AsyncResultHandleImpl : public virtual qpid::RefCounted
 {
-    delete this;
-}
-*/
+public:
+    AsyncResultHandleImpl();
+    AsyncResultHandleImpl(const BrokerAsyncContext* bc);
+    AsyncResultHandleImpl(const int errNo, const std::string& errMsg, const BrokerAsyncContext* bc);
+    virtual ~AsyncResultHandleImpl();
+
+    int getErrNo() const;
+    std::string getErrMsg() const;
+    const BrokerAsyncContext* getBrokerAsyncContext() const;
+
+private:
+    const int m_errNo;
+    const std::string m_errMsg;
+    const BrokerAsyncContext* m_bc;
+};
 
 }} // namespace qpid::broker
+
+#endif // qpid_broker_AsyncResultHandleImpl_h_

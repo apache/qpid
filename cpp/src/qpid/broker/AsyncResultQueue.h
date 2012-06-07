@@ -17,40 +17,35 @@
  * under the License.
  */
 
-#include "AsyncStore.h"
+/**
+ * \file AsyncResultQueue.h
+ */
+
+#ifndef qpid_broker_AsyncResultQueue_h_
+#define qpid_broker_AsyncResultQueue_h_
+
+#include "qpid/sys/PollableQueue.h"
 
 namespace qpid {
 namespace broker {
 
-BrokerAsyncContext::~BrokerAsyncContext()
-{}
+class AsyncResultHandle;
 
-DataSource::~DataSource()
-{}
-
-AsyncStore::AsyncStore()
-{}
-
-AsyncStore::~AsyncStore()
-{}
-
-/*
-AsyncResult::AsyncResult() :
-        errNo(0),
-        errMsg()
-{}
-
-AsyncResult::AsyncResult(const int errNo,
-                         const std::string& errMsg) :
-        errNo(errNo),
-        errMsg(errMsg)
-{}
-
-void
-AsyncResult::destroy()
+class AsyncResultQueue
 {
-    delete this;
-}
-*/
+public:
+    AsyncResultQueue(const boost::shared_ptr<qpid::sys::Poller>& poller);
+    virtual ~AsyncResultQueue();
+    void submit(AsyncResultHandle* rh);
+//    static void submit(AsyncResultQueue* arq, AsyncResultHandle* rh);
+
+protected:
+    typedef qpid::sys::PollableQueue<const AsyncResultHandle*> ResultQueue;
+    ResultQueue m_resQueue;
+
+    ResultQueue::Batch::const_iterator handle(const ResultQueue::Batch& e);
+};
 
 }} // namespace qpid::broker
+
+#endif // qpid_broker_AsyncResultQueue_h_

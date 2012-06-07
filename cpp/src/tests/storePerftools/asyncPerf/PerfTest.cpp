@@ -32,6 +32,7 @@
 #include "tests/storePerftools/common/Thread.h"
 
 #include "qpid/asyncStore/AsyncStoreImpl.h"
+#include "qpid/broker/AsyncResultQueue.h"
 #include "qpid/sys/Poller.h"
 
 #include <iomanip>
@@ -48,6 +49,7 @@ PerfTest::PerfTest(const TestOptions& to,
         m_msgData(new char[to.m_msgSize]),
         m_poller(new qpid::sys::Poller),
         m_pollingThread(m_poller.get()),
+        m_resultQueue(m_poller),
         m_store(0)
 {
     std::memset((void*)m_msgData, 0, (size_t)to.m_msgSize);
@@ -68,7 +70,7 @@ PerfTest::~PerfTest()
 void
 PerfTest::prepareStore()
 {
-    m_store = new qpid::asyncStore::AsyncStoreImpl(m_poller, m_storeOpts);
+    m_store = new qpid::asyncStore::AsyncStoreImpl(m_poller, m_storeOpts, &m_resultQueue);
     m_store->initialize();
 }
 
@@ -86,7 +88,7 @@ PerfTest::prepareQueues()
     for (uint16_t i = 0; i < m_testOpts.m_numQueues; ++i) {
         std::ostringstream qname;
         qname << "queue_" << std::setw(4) << std::setfill('0') << i;
-        boost::shared_ptr<MockPersistableQueue> mpq(new MockPersistableQueue(qname.str(), m_queueArgs, m_store));
+        boost::shared_ptr<MockPersistableQueue> mpq(new MockPersistableQueue(qname.str(), m_queueArgs, m_store, m_resultQueue));
         mpq->asyncCreate();
         m_queueList.push_back(mpq);
     }

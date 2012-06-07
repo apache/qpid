@@ -34,7 +34,7 @@ MockPersistableMessage::MockPersistableMessage(const char* msgData,
                                                qpid::asyncStore::AsyncStoreImpl* store) :
         m_persistenceId(0ULL),
         m_msg(msgData, static_cast<size_t>(msgSize)),
-        m_msgHandle(store ? store->createMessageHandle(this) : store->createMessageHandle(0))
+        m_msgHandle(store ? store->createMessageHandle(this) : qpid::broker::MessageHandle(0))
 {}
 
 MockPersistableMessage::~MockPersistableMessage()

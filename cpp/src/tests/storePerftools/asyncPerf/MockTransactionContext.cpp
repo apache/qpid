@@ -64,6 +64,7 @@ MockTransactionContext::~MockTransactionContext()
 {}
 
 // static
+/*
 void
 MockTransactionContext::handleAsyncResult(const qpid::broker::AsyncResult* res,
                                           qpid::broker::BrokerAsyncContext* bc)
@@ -96,6 +97,7 @@ MockTransactionContext::handleAsyncResult(const qpid::broker::AsyncResult* res,
     if (bc) delete bc;
     if (res) delete res;
 }
+*/
 
 const qpid::broker::TxnHandle&
 MockTransactionContext::getHandle() const

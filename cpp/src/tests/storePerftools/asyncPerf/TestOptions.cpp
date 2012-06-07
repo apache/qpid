@@ -86,7 +86,7 @@ TestOptions::doAddOptions()
             ("durable", qpid::optValue(m_durable),
                     "Queues and messages are durable")
             ("destroy-queues", qpid::optValue(m_destroyQueuesOnCompletion),
-                    "Destroy queue recoreds persistent store on test completion")
+                    "Destroy queues in persistent store on test completion")
     ;
 }
 
