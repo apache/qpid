@@ -27,6 +27,7 @@
 %pragma(java) moduleimports=%{
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -63,6 +64,9 @@ import java.util.Set;
 
   static long getVariantMap(final Map<String,Object> m)
   {
+      //optimizing for the null & empty map case.
+      if (m == null || m.size() == 0) { return 0; }
+
       WriteOnlyVariantMapWrapper map = new WriteOnlyVariantMapWrapper();
       for (String key: m.keySet())
       {
@@ -73,6 +77,11 @@ import java.util.Set;
 
   static Map<String, Object> getJavaMap(final ReadOnlyVariantMapWrapper map)
   {
+        if (map == null)
+        {
+            return Collections.emptyMap();
+        }
+
         return new Map<String, Object>()
         {
             @Override

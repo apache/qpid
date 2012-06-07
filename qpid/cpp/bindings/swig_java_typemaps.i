@@ -90,8 +90,16 @@
 
 /* -- qpid::types::Variant::Map& -- */
 %typemap(in) (qpid::types::Variant::Map&){
-  WriteOnlyVariantMapWrapper* mapper = *(WriteOnlyVariantMapWrapper **)&$input;
-  $1 = new qpid::types::Variant::Map((mapper->getVariantMap()));
+
+  if ($input == 0) // empty or null map case.
+  {
+     $1 = new qpid::types::Variant::Map();
+  }
+  else
+  {
+      WriteOnlyVariantMapWrapper* mapper = *(WriteOnlyVariantMapWrapper **)&$input;
+      $1 = new qpid::types::Variant::Map((mapper->getVariantMap()));
+  }
 }
 
 %typemap(javain) (qpid::types::Variant::Map&) "$module.getVariantMap($javainput)"
@@ -101,7 +109,14 @@
 }
 
 %typemap(out) qpid::types::Variant::Map& {
-  *(ReadOnlyVariantMapWrapper **)&jresult = new ReadOnlyVariantMapWrapper(jenv,*$1);
+  if ($1->size() == 0)
+  {
+      jresult = 0;
+  }
+  else
+  {
+      *(ReadOnlyVariantMapWrapper **)&jresult = new ReadOnlyVariantMapWrapper(jenv,*$1);
+  }
 }
 
 %typemap(javaout) qpid::types::Variant::Map& {
