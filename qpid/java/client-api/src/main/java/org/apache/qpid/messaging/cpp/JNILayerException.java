@@ -25,4 +25,9 @@ public class JNILayerException extends RuntimeException
         super(message);
     }
 
+    public JNILayerException(String message, Throwable t)
+    {
+        super(message,t);
+    }
+
 }

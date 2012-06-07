@@ -78,6 +78,7 @@ static jmethodID JAVA_DOUBLE_VALUE_METHOD;
 
 static jclass JAVA_ILLEGAL_ARGUMENT_EXP;
 static jclass JAVA_JNI_LAYER_EXP;
+static jmethodID JAVA_JNI_LAYER_EXP_CTOR; // takes a msg and a throwable.
 
 static jobject createGlobalRef(JNIEnv* env,jobject obj)
 {
@@ -92,6 +93,12 @@ static jclass findClass(JNIEnv* env,const char* name)
 static jmethodID getMethodID(JNIEnv* env, jclass clazz, const char* name, const char* sig)
 {
     return env->GetMethodID(clazz,name,sig);
+}
+
+// TODO link up with log4j
+static void printLog(const char* msg)
+{
+    std::cout << msg << std::endl;
 }
 
 /*
@@ -110,54 +117,58 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
          return JNI_ERR; /* JNI version not supported */
    }
 
-   std::cout << "Initializing module" << std::endl;
+   printLog("--- ** Initializing cqpid_java ** ---");
    if (!env)
    {
-      std::cout << "JNI env ref is null!, aborting" << std::endl;
+      printLog("JNI env ref is null!, aborting");
+      printLog("--- ** cqpid_java library loading failed! ** ---");
       return JNI_ERR;
    }
 
-   JAVA_STRING_CLASS = (jclass)createGlobalRef(env,findClass(env,"java/lang/String"));
-   std::cout << "Loaded java string" << std::endl;
+   // The standard class loading should not fail :)
+   JAVA_STRING_CLASS = static_cast<jclass>(createGlobalRef(env,findClass(env,"java/lang/String")));
 
-   JAVA_BOOLEAN_CLASS = (jclass)createGlobalRef(env,findClass(env,"java/lang/Boolean"));
+   JAVA_BOOLEAN_CLASS = static_cast<jclass>(createGlobalRef(env,findClass(env,"java/lang/Boolean")));
    JAVA_BOOLEAN_CTOR = getMethodID(env,JAVA_BOOLEAN_CLASS, "<init>", "(Z)V");
    JAVA_BOOLEAN_VALUE_METHOD = getMethodID(env,JAVA_BOOLEAN_CLASS,"booleanValue", "()Z");
-   std::cout << "Loaded java boolean"<< std::endl;
 
-   JAVA_BYTE_CLASS = (jclass)createGlobalRef(env,findClass(env,"java/lang/Byte"));
+   JAVA_BYTE_CLASS = static_cast<jclass>(createGlobalRef(env,findClass(env,"java/lang/Byte")));
    JAVA_BYTE_CTOR = getMethodID(env,JAVA_BYTE_CLASS, "<init>", "(B)V");
    JAVA_BYTE_VALUE_METHOD = getMethodID(env,JAVA_BYTE_CLASS,"byteValue", "()B");
-   std::cout << "Loaded java byte"<< std::endl;
 
-   JAVA_SHORT_CLASS = (jclass)createGlobalRef(env,findClass(env,"java/lang/Short"));
+   JAVA_SHORT_CLASS = static_cast<jclass>(createGlobalRef(env,findClass(env,"java/lang/Short")));
    JAVA_SHORT_CTOR = getMethodID(env,JAVA_SHORT_CLASS, "<init>", "(S)V");
    JAVA_SHORT_VALUE_METHOD = getMethodID(env,JAVA_SHORT_CLASS,"shortValue", "()S");
-   std::cout << "Loaded java short"<< std::endl;
 
-   JAVA_INT_CLASS = (jclass)createGlobalRef(env,findClass(env,"java/lang/Integer"));
+   JAVA_INT_CLASS = static_cast<jclass>(createGlobalRef(env,findClass(env,"java/lang/Integer")));
    JAVA_INT_CTOR = getMethodID(env,JAVA_INT_CLASS, "<init>", "(I)V");
    JAVA_INT_VALUE_METHOD = getMethodID(env,JAVA_INT_CLASS,"intValue", "()I");
-   std::cout << "Loaded java int"<< std::endl;
 
-   JAVA_LONG_CLASS = (jclass)createGlobalRef(env,findClass(env,"java/lang/Long"));
+   JAVA_LONG_CLASS = static_cast<jclass>(createGlobalRef(env,findClass(env,"java/lang/Long")));
    JAVA_LONG_CTOR = getMethodID(env,JAVA_LONG_CLASS, "<init>", "(J)V");
    JAVA_LONG_VALUE_METHOD = getMethodID(env,JAVA_LONG_CLASS,"longValue", "()J");
-   std::cout << "Loaded java long"<< std::endl;
 
-   JAVA_DOUBLE_CLASS = (jclass)createGlobalRef(env,findClass(env,"java/lang/Double"));
+   JAVA_DOUBLE_CLASS = static_cast<jclass>(createGlobalRef(env,findClass(env,"java/lang/Double")));
    JAVA_DOUBLE_CTOR = getMethodID(env,JAVA_DOUBLE_CLASS, "<init>", "(D)V");
    JAVA_DOUBLE_VALUE_METHOD = getMethodID(env,JAVA_DOUBLE_CLASS,"doubleValue", "()D");
-   std::cout << "Loaded java double"<< std::endl;
 
-   JAVA_FLOAT_CLASS = (jclass)createGlobalRef(env,findClass(env,"java/lang/Float"));
+   JAVA_FLOAT_CLASS = static_cast<jclass>(createGlobalRef(env,findClass(env,"java/lang/Float")));
    JAVA_FLOAT_CTOR = getMethodID(env,JAVA_FLOAT_CLASS, "<init>", "(F)V");
    JAVA_FLOAT_VALUE_METHOD = getMethodID(env,JAVA_FLOAT_CLASS,"floatValue", "()F");
-   std::cout << "Loaded java float"<< std::endl;
 
-   JAVA_ILLEGAL_ARGUMENT_EXP = (jclass)createGlobalRef(env,findClass(env,"java/lang/IllegalArgumentException"));
-   JAVA_JNI_LAYER_EXP = (jclass)createGlobalRef(env,findClass(env,"org/apache/qpid/messaging/cpp/JNILayerException"));
-   std::cout << "Loaded java exceptions"<< std::endl;
+   JAVA_ILLEGAL_ARGUMENT_EXP = static_cast<jclass>(createGlobalRef(env,findClass(env,"java/lang/IllegalArgumentException")));
+   JAVA_JNI_LAYER_EXP = static_cast<jclass>(createGlobalRef(env,findClass(env,"org/apache/qpid/messaging/cpp/JNILayerException")));
+   JAVA_JNI_LAYER_EXP_CTOR = getMethodID(env,JAVA_JNI_LAYER_EXP, "<init>", "(Ljava/lang/String;Ljava/lang/Throwable;)V");
+
+   if (env->ExceptionCheck())
+   {
+      // The JVM will throw an exception on the Java side.
+      printLog("Loading of one or more class or constructor definitions failed. See exception for details");
+      printLog("--- ** cqpid_java library loading failed! ** ---");
+      return JNI_ERR;
+   }
+
+   printLog("--- ** cqpid_java library was loaded successfully ** ---");
    return JNI_VERSION_1_4;
 }
 
@@ -349,6 +360,8 @@ ReadOnlyVariantMapWrapper::~ReadOnlyVariantMapWrapper()
     }
 }
 
+// **** handle unsupported types
+// Add a generic error checking mechanism to see if the java methods have a thrown an error.
 jobject ReadOnlyVariantMapWrapper::get(const std::string key) const
 {
     using namespace qpid::types;
