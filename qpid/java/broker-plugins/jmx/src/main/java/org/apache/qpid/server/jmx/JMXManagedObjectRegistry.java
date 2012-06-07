@@ -312,6 +312,8 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 }
                 catch (NotBoundException nbe)
                 {
+                    // TODO consider if we want to keep new logging
+                    _log.error("Failed to unbind jmxrmi", nbe);
                     //ignore
                 }
 
@@ -435,6 +437,8 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
     //Stops the JMXConnectorServer and RMIRegistry, then unregisters any remaining MBeans from the MBeanServer
     public void close()
     {
+        _log.debug("close() called");
+
         if (_cs != null)
         {
             // Stopping the JMX ConnectorServer
@@ -445,7 +449,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             }
             catch (IOException e)
             {
-                _log.error("Exception while closing the JMX ConnectorServer: " + e.getMessage());
+                _log.error("Exception while closing the JMX ConnectorServer: ",  e);
             }
         }
         
@@ -455,11 +459,15 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             CurrentActor.get().message(ManagementConsoleMessages.SHUTTING_DOWN("RMI Registry", _jmxPortRegistryServer));
             try
             {
-                UnicastRemoteObject.unexportObject(_rmiRegistry, false);
+                boolean success = UnicastRemoteObject.unexportObject(_rmiRegistry, false);
+                if (!success)
+                {
+                    _log.warn("Failed to unexport object " + _rmiRegistry);
+                }
             }
             catch (NoSuchObjectException e)
             {
-                _log.error("Exception while closing the RMI Registry: " + e.getMessage());
+                _log.error("Exception while closing the RMI Registry: ", e);
             }
         }
         

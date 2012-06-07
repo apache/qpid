@@ -151,19 +151,18 @@ public class ConnectionMBean extends AbstractStatisticsGatheringMBean<Connection
 
     public void commitTransactions(int channelId) throws JMException
     {
-        // TODO - Commiting transaction on a channel makes *no* sense
+        throw buildUnsupportedException();
     }
 
     public void rollbackTransactions(int channelId) throws JMException
     {
-        // TODO - rolling back a transaction on a channel makes *no* sense
+        throw buildUnsupportedException();
     }
 
     public void closeConnection() throws Exception
     {
         getConfiguredObject().delete();
     }
-
 
     public synchronized boolean isStatisticsEnabled()
     {
@@ -174,5 +173,13 @@ public class ConnectionMBean extends AbstractStatisticsGatheringMBean<Connection
     {
         // TODO - Implement setStatisticsEnabled
         updateStats();
+    }
+
+    private JMException buildUnsupportedException() throws JMException
+    {
+        String msg = "Operation not supported";
+        JMException jmException = new JMException(msg);
+        jmException.initCause(new UnsupportedOperationException(msg));
+        return jmException;
     }
 }

@@ -21,12 +21,10 @@
 package org.apache.qpid.server.registry;
 
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.model.Broker;
 import org.osgi.framework.BundleContext;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.management.JMXManagedObjectRegistry;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
 
 import java.io.File;
@@ -46,6 +44,10 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
     @Override
     protected void initialiseManagedObjectRegistry() throws AMQException
     {
+          // TODO the following block was commented out to stop loading both
+          // management implementations, this method should be removed as the
+          // old management layer is extracted.
+
 //        if (getConfiguration().getManagementEnabled())
 //        {
 //            setManagedObjectRegistry(new JMXManagedObjectRegistry());

@@ -81,6 +81,10 @@ public class QpidBrokerTestCase extends QpidTestCase
         INTERNAL /** Test case starts an embedded broker within this JVM */, 
         SPAWNED /** Test case spawns a new broker as a separate process */
     }
+
+    public static final String GUEST_USERNAME = "guest";
+    public static final String GUEST_PASSWORD = "guest";
+
     protected final static String QpidHome = System.getProperty("QPID_HOME");
     protected File _configFile = new File(System.getProperty("broker.config"));
 
@@ -1029,7 +1033,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     
     public Connection getConnection() throws JMSException, NamingException
     {
-        return getConnection("guest", "guest");
+        return getConnection(GUEST_USERNAME, GUEST_PASSWORD);
     }
 
     public Connection getConnection(ConnectionURL url) throws JMSException

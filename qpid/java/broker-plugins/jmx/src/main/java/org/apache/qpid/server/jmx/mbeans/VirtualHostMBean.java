@@ -145,7 +145,7 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
                 }
                 else
                 {
-
+                    // TODO
                 }
 
             }
