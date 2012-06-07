@@ -201,17 +201,40 @@ static jstring newJavaString(JNIEnv* env, const std::string val)
     return env->NewStringUTF(val.data());
 }
 
+class NativeStringCreator
+{
+    public:
+       NativeStringCreator(JNIEnv* env, jstring javaString)
+          : env_(env), javaString_(javaString), data_(0),str_()
+       {
+           data_ = (const char *)env_->GetStringUTFChars(javaString_, 0);
+           size_t count = (size_t)env_->GetStringUTFLength(javaString_);
+           str_.assign(data_,count);
+       }
+
+       std::string getStr() { return str_; }
+
+       ~NativeStringCreator()
+       {
+           env_->ReleaseStringUTFChars(javaString_,data_);
+       }
+
+    private:
+       JNIEnv* env_;
+       jstring javaString_;
+       const char* data_;
+       std::string str_;
+};
+
 //Only primitive types, Strings and UUIDs are supported. No maps or lists.
 static qpid::types::Variant convertJavaObjectToVariant(JNIEnv* env, jobject obj)
 {
    qpid::types::Variant result;
+
    if (env->IsInstanceOf(obj,JAVA_STRING_CLASS))
    {
-       std::string str;
-       const char *data = (const char *)env->GetStringUTFChars((jstring)obj, 0);
-       size_t count = (size_t)env->GetStringUTFLength((jstring)obj);
-       str.assign(data,count);
-       result = qpid::types::Variant(str);
+       NativeStringCreator strCreator(env,(jstring)obj);
+       result = qpid::types::Variant(strCreator.getStr());
    }
    else if (env->IsInstanceOf(obj,JAVA_LONG_CLASS))
    {
@@ -252,7 +275,7 @@ static qpid::types::Variant convertJavaObjectToVariant(JNIEnv* env, jobject obj)
    {
        env->ThrowNew(JAVA_ILLEGAL_ARGUMENT_EXP,"Only primitive types and strings are allowed");
    }
-   env->DeleteLocalRef(obj);
+
    return result;
 }
 %}
@@ -321,8 +344,8 @@ ReadOnlyVariantMapWrapper::~ReadOnlyVariantMapWrapper()
             // All though this object is deleted, the string may still be referenced on the java side.
             // Therefore the object is only deleting it's reference to these strings.
             // The JVM will cleanup once the Strings goes out of scope on the Java side.
-	    env_->DeleteLocalRef(env_->GetObjectArrayElement(keys_,size));
-	}
+	        env_->DeleteLocalRef(env_->GetObjectArrayElement(keys_,size));
+	    }
     }
 }
 
@@ -340,66 +363,58 @@ jobject ReadOnlyVariantMapWrapper::get(const std::string key) const
 
     v = iter->second;
 
-    try {
-        switch (v.getType()) {
-            case VAR_VOID: {
-                result = NULL;
-                break;
-            }
-
-            case VAR_BOOL : {
-                result = newJavaBoolean(env_,v.asBool() ? JNI_TRUE : JNI_FALSE);
-                break;
-            }
-
-            case VAR_INT8 :
-            case VAR_UINT8 : {
-                result = newJavaByte(env_,(jbyte)v.asUint8());
-                break;
-            }
-
-            case VAR_INT16 :
-            case VAR_UINT16 : {
-                result = newJavaShort(env_,(jshort) v.asUint16());
-                break;
-            }
-
-
-            case VAR_INT32 :
-            case VAR_UINT32 : {
-                result = newJavaInt(env_,(jint)v.asUint32());
-                break;
-            }
-
-            case VAR_INT64 :
-            case VAR_UINT64 : {
-                result = newJavaLong(env_,(jlong)v.asUint64());
-                break;
-            }
-
-            case VAR_FLOAT : {
-                result = newJavaFloat(env_,(jfloat)v.asFloat());
-                break;
-            }
-
-            case VAR_DOUBLE : {
-                result = newJavaDouble(env_,(jdouble)v.asDouble());
-                break;
-            }
-
-            case VAR_STRING : {
-                result = newJavaString(env_,v.asString());
-                break;
-            }
+    switch (v.getType()) {
+        case VAR_VOID: {
+            result = NULL;
+            break;
         }
-    } catch (Exception& ex) {
-        result = NULL;  // need to throw exception
+
+        case VAR_BOOL : {
+            result = newJavaBoolean(env_,v.asBool() ? JNI_TRUE : JNI_FALSE);
+            break;
+        }
+
+        case VAR_INT8 :
+        case VAR_UINT8 : {
+            result = newJavaByte(env_,(jbyte)v.asUint8());
+            break;
+        }
+
+        case VAR_INT16 :
+        case VAR_UINT16 : {
+            result = newJavaShort(env_,(jshort) v.asUint16());
+            break;
+        }
+
+
+        case VAR_INT32 :
+        case VAR_UINT32 : {
+            result = newJavaInt(env_,(jint)v.asUint32());
+            break;
+        }
+
+        case VAR_INT64 :
+        case VAR_UINT64 : {
+            result = newJavaLong(env_,(jlong)v.asUint64());
+            break;
+        }
+
+        case VAR_FLOAT : {
+            result = newJavaFloat(env_,(jfloat)v.asFloat());
+            break;
+        }
+
+        case VAR_DOUBLE : {
+            result = newJavaDouble(env_,(jdouble)v.asDouble());
+            break;
+        }
+
+        case VAR_STRING : {
+            result = newJavaString(env_,v.asString());
+            break;
+        }
     }
 
-    // The Wrapper object does not need to hold a ref to these java objects.
-    // Therefore telling the jvm to delete it's ref to the object.
-    // The JVM will cleanup the jobject when it goes out of scope on the Java side.
-    env_->DeleteLocalRef(result);
     return result;
 }
 
