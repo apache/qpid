@@ -1,4 +1,23 @@
 /*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+/*
  * ===================== Java Helper Methods ==========================
  * Defines helper methods in support of typemaps.
  * These methods are placed in the respective module.
@@ -30,13 +49,25 @@ import java.util.Set;
         }
   }
 
-  /** We don't support setting maps into C++ atm, but adding here to get around swig **/
-  static VaraintMapWrapper getVariantMap(final Map<String,Object> map)
+  static protected void checkVariantMapKey(Object key)
   {
-      return new VaraintMapWrapper();
+        if (key == null)
+        {
+            throw new NullPointerException("Key cannot be null");
+        }
+        if (! (key instanceof String))
+        {
+            throw new ClassCastException("Key should be of type java.lang.String");
+        }
   }
 
-  static Map<String, Object> getJavaMap(final VaraintMapWrapper map)
+  /** We don't support setting maps into C++ atm, but adding here to get around swig **/
+  static ReadOnlyVariantMapWrapper getVariantMap(final Map<String,Object> map)
+  {
+      return new ReadOnlyVariantMapWrapper();
+  }
+
+  static Map<String, Object> getJavaMap(final ReadOnlyVariantMapWrapper map)
   {
         return new Map<String, Object>()
         {
@@ -55,18 +86,20 @@ import java.util.Set;
             @Override
             public boolean containsKey(Object key)
             {
+                checkVariantMapKey(key);
                 return map.containsKey((String)key);
             }
 
             @Override
             public boolean containsValue(Object value)
             {
-                return map.containsValue(value);
+                throw new UnsupportedOperationException("Unsupported at the native layer for efficiency");
             }
 
             @Override
             public Object get(Object key)
             {
+                checkVariantMapKey(key);
                 return map.get((String)key);
             }
 
@@ -109,7 +142,7 @@ import java.util.Set;
             @Override
             public Collection<Object> values()
             {
-                return Arrays.asList(map.values());
+                throw new UnsupportedOperationException("Unsupported at the native layer for efficiency");
             }
 
             @Override

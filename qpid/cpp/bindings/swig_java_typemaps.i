@@ -21,6 +21,7 @@
 %begin %{
 #include "qpid/types/Variant.h"
 #include "jni.h"
+#include <iostream>
 %}
 /* =================================================================== */
 
@@ -44,15 +45,19 @@
  * The "jtpye" specifies the type mapping between,
  *     the jni native methods and proxy classes (java code).
  * The "jstype" specifies the types exposed in the proxy classes.
- * -------------------------------------------------------------------
+ * -------------------------------------------------------------------VaraintMapWrapper.h~
 */
 %typemap(jni) qpid::messaging::Message::BYTE_BUFFER "jobject"
 %typemap(jtype) qpid::messaging::Message::BYTE_BUFFER "java.nio.ByteBuffer"
 %typemap(jstype) qpid::messaging::Message::BYTE_BUFFER "java.nio.ByteBuffer"
 
 %typemap(jni) qpid::types::Variant::Map& "jobject"
-%typemap(jtype) qpid::types::Variant::Map& "VaraintMapWrapper"
+%typemap(jtype) qpid::types::Variant::Map& "ReadOnlyVariantMapWrapper"
 %typemap(jstype) qpid::types::Variant::Map& "java.util.Map"
+
+%typemap(jni) const qpid::types::Variant& "jobject"
+%typemap(jtype) const qpid::types::Variant& "Object"
+%typemap(jstype) const qpid::types::Variant& "Object"
 
 %typemap(jni) uint8_t "jbyte"
 %typemap(jtype) uint8_t "byte"
@@ -65,7 +70,6 @@
 %typemap(jni) uint64_t "jlong"
 %typemap(jtype) uint64_t "long"
 %typemap(jstype) uint64_t "long"
-
 
 /* -- qpid::messaging::Message::BYTE_BUFFER -- */
 %typemap(in) (qpid::messaging::Message::BYTE_BUFFER) {
@@ -92,12 +96,20 @@
 %typemap(javain) (qpid::types::Variant::Map&) "$module.getVariantMap($javainput)"
 
 %typemap(out) qpid::types::Variant::Map& {
-  *(VaraintMapWrapper **)&jresult = new VaraintMapWrapper(jenv,$1);
+  *(ReadOnlyVariantMapWrapper **)&jresult = new ReadOnlyVariantMapWrapper(jenv,*$1);
 }
 
 %typemap(javaout) qpid::types::Variant::Map& {
     return $module.getJavaMap($jnicall);
 }
+
+/* -- qpid::types::Variant& -- */
+%typemap(in) (const qpid::types::Variant&) {
+  $1 = new qpid::types::Variant(convertJavaObjectToVariant(jenv,$input));
+}
+
+%typemap(javain) (const qpid::types::Variant&) "$javainput"
+
 
 /* -- qpid::types::uint8_t -- */
 %typemap(in) uint8_t {
