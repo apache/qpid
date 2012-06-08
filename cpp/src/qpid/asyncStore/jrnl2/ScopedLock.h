@@ -36,7 +36,7 @@ public:
     ScopedMutex();
     virtual ~ScopedMutex();
     ::pthread_mutex_t* get() const;
-protected:
+private:
     mutable ::pthread_mutex_t m_mutex;
 };
 
@@ -68,7 +68,7 @@ public:
     ScopedTryLock(const ScopedMutex& sm);
     virtual ~ScopedTryLock();
     bool isLocked() const;
-protected:
+private:
     bool m_lockedFlag;
 };
 

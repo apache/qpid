@@ -112,7 +112,7 @@ public:
      */
     static const char* s_toStr(const wrComplState_t s);
 
-protected:
+private:
     /**
      * \brief Set (or change) the value of m_state. This function implements the state machine checks for
      * legal state change transitions, and throw an exception if an illegal state transition is requested.

@@ -143,7 +143,7 @@ public:
         return m_cnt < rhs;
     }
 
-protected:
+private:
     T m_cnt;                ///< Internal count value
     ScopedMutex m_mutex;    ///< Internal lock used to increment the counter
 

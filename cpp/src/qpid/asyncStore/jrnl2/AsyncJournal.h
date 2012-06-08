@@ -224,7 +224,7 @@ public:
      */
     void processCompletedAioWriteEvents(const double timeout = 0.0);
 
-protected:
+private:
     std::string m_jrnlId;                       ///< Identifier for this journal instance (JID), typically queue name.
     JournalDirectory m_jrnlDir;                 ///< Directory in which this journal is deployed.
     std::string m_baseFileName;                 ///< Base file name used for all journal files belonging to this instance.

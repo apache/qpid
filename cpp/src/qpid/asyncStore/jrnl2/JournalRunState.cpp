@@ -114,7 +114,7 @@ JournalRunState::s_toStr(const journalState_t s)
     }
 }
 
-// protected
+// private
 void
 JournalRunState::set(const journalState_t s)
 {

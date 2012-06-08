@@ -136,6 +136,7 @@ public:
 protected:
     E m_state;  ///< Local state of this state machine instance.
 
+private:
     /**
      * \brief Set (or change) the value of m_state. This function must implement the state machine checks for
      * legal state change transitions, and throw an exception if an illegal state transition is requested.

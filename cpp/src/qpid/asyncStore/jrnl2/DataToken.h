@@ -156,7 +156,7 @@ public:
      */
     virtual void toStream(std::ostream& os) const;
 
-protected:
+private:
     DataOpState m_dataOpState;                  ///< Data operational state (none, enqueued, dequeued)
     DataWrComplState m_dataWrComplState;        ///< Data write completion state (none, part, complete)
     bool m_transientFlag;                       ///< True if the data record is transient (eg for Flow-To-Disk)
@@ -166,7 +166,6 @@ protected:
     bool m_externalRecordIdFlag;                ///< True if the record id was set through this token
     recordId_t m_dequeueRecordId;               ///< Record Id of the dequeue record for this data record
 
-private:
     static RecordIdCounter_t s_recordIdCounter; ///< Static instance keeps record Ids unique across system
 
 };

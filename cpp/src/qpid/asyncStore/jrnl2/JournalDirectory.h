@@ -257,7 +257,7 @@ public:
      */
     bool isVerified() const;
 
-protected:
+private:
     std::string m_fqName;   ///< Name of directory (fully qualified name)
     bool m_verified;        ///< True when verified that it exists or is created
 

@@ -82,7 +82,7 @@ DataOpState::s_toStr(const opState_t s)
     }
 }
 
-// protected
+// private
 void
 DataOpState::set(const opState_t s)
 {
