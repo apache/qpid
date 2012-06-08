@@ -350,7 +350,7 @@ Broker::Broker(const Broker::Options& conf) :
         knownBrokers.push_back(Url(conf.knownHosts));
     }
 
-    } catch (const std::exception& /*e*/) {
+    } catch (const std::exception&) {
         finalize();
         throw;
     }
