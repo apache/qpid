@@ -23,17 +23,40 @@ define(["dojo/store/Memory",
 				"dojo/data/ObjectStore",
 				"dojo/store/Observable"], function (Memory, DataGrid, ObjectStore, Observable) {
 
-    function UpdatableStore( data, divName, structure, func ) {
+    function UpdatableStore( data, divName, structure, func, props, Grid ) {
 
         var that = this;
+        var GridType = DataGrid;
 
         that.store = Observable(Memory({data: data, idProperty: "id"}));
         that.dataStore = ObjectStore({objectStore: that.store});
+
+        var gridProperties = {  store: that.dataStore,
+                     structure: structure,
+                      autoHeight: true
+                 };
+        if(props) {
+            for(var prop in props) {
+                if(props.hasOwnProperty(prop))
+                {
+                    gridProperties[ prop ] = props[ prop ];
+                }
+            }
+        }
+
+        if(Grid)
+        {
+            GridType = Grid;
+        }
+
+        that.grid = new GridType(gridProperties, divName);
+
+/*
         that.grid =
-            new DataGrid({  store: that.dataStore,
+            new GridType({  store: that.dataStore,
                             structure: structure,
                             autoHeight: true
-                         }, divName);
+                         }, divName);*/
 
         // since we created this grid programmatically, call startup to render it
         that.grid.startup();

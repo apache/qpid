@@ -118,6 +118,9 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     private LogRecorder _logRecorder;
 
+    private List<IAuthenticationManagerRegistry.RegistryChangeListener> _authManagerChangeListeners =
+            new ArrayList<IAuthenticationManagerRegistry.RegistryChangeListener>();
+
     public Map<InetSocketAddress, QpidAcceptor> getAcceptors()
     {
         synchronized (_acceptors)
@@ -319,6 +322,20 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             _securityManager = new SecurityManager(_configuration, _pluginManager);
 
             _authenticationManagerRegistry = createAuthenticationManagerRegistry(_configuration, _pluginManager);
+
+            if(!_authManagerChangeListeners.isEmpty())
+            {
+                for(IAuthenticationManagerRegistry.RegistryChangeListener listener : _authManagerChangeListeners)
+                {
+
+                    _authenticationManagerRegistry.addRegistryChangeListener(listener);
+                    for(AuthenticationManager authMgr : _authenticationManagerRegistry.getAvailableAuthenticationManagers().values())
+                    {
+                        listener.authenticationManagerRegistered(authMgr);
+                    }
+                }
+                _authManagerChangeListeners.clear();
+            }
 
             _managedObjectRegistry.start();
         }
@@ -597,6 +614,12 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return _authenticationManagerRegistry.getAuthenticationManagerFor(address);
     }
 
+    @Override
+    public IAuthenticationManagerRegistry getAuthenticationManagerRegistry()
+    {
+        return _authenticationManagerRegistry;
+    }
+
     public PluginManager getPluginManager()
     {
         return _pluginManager;
@@ -741,5 +764,18 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     public LogRecorder getLogRecorder()
     {
         return _logRecorder;
+    }
+
+    @Override
+    public void addRegistryChangeListener(IAuthenticationManagerRegistry.RegistryChangeListener registryChangeListener)
+    {
+        if(_authenticationManagerRegistry == null)
+        {
+            _authManagerChangeListeners.add(registryChangeListener);
+        }
+        else
+        {
+            _authenticationManagerRegistry.addRegistryChangeListener(registryChangeListener);
+        }
     }
 }

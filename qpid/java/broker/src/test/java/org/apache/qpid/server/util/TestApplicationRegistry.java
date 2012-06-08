@@ -21,6 +21,8 @@
 package org.apache.qpid.server.util;
 
 import java.net.SocketAddress;
+import java.util.Collections;
+import java.util.Map;
 import org.apache.commons.configuration.ConfigurationException;
 
 import org.apache.qpid.server.configuration.ServerConfiguration;
@@ -100,6 +102,17 @@ public class TestApplicationRegistry extends ApplicationRegistry
                     SocketAddress address)
             {
                 return pdam;
+            }
+
+            @Override
+            public Map<String, AuthenticationManager> getAvailableAuthenticationManagers()
+            {
+                return Collections.singletonMap(pdam.getClass().getName(), pdam);
+            }
+
+            @Override
+            public void addRegistryChangeListener(RegistryChangeListener listener)
+            {
             }
         };
     }

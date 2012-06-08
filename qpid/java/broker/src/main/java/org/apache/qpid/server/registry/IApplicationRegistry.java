@@ -29,9 +29,11 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.IAuthenticationManagerRegistry;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -76,6 +78,8 @@ public interface IApplicationRegistry extends StatisticsGatherer
      */
     AuthenticationManager getAuthenticationManager(SocketAddress address);
 
+    IAuthenticationManagerRegistry getAuthenticationManagerRegistry();
+
     VirtualHostRegistry getVirtualHostRegistry();
 
     SecurityManager getSecurityManager();
@@ -118,6 +122,8 @@ public interface IApplicationRegistry extends StatisticsGatherer
     boolean useHTTPManagement();
 
     int getHTTPManagementPort();
+
+    void addRegistryChangeListener(IAuthenticationManagerRegistry.RegistryChangeListener registryChangeListener);
 
     public interface PortBindingListener
     {

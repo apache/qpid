@@ -59,6 +59,7 @@ public class Model
     {
         addRelationship(Broker.class, VirtualHost.class);
         addRelationship(Broker.class, Port.class);
+        addRelationship(Broker.class, AuthenticationProvider.class);
 
         addRelationship(VirtualHost.class, Exchange.class);
         addRelationship(VirtualHost.class, Queue.class);

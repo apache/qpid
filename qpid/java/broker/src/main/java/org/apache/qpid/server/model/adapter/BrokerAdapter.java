@@ -37,11 +37,14 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.IAuthenticationManagerRegistry;
 import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHostRegistry.RegistryChangeListener,
-                                                              IApplicationRegistry.PortBindingListener
+                                                              IApplicationRegistry.PortBindingListener,
+                                                              IAuthenticationManagerRegistry.RegistryChangeListener
 {
 
 
@@ -52,6 +55,8 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
     private final StatisticsAdapter _statistics;
     private final Map<QpidAcceptor, PortAdapter> _portAdapters = new HashMap<QpidAcceptor, PortAdapter>();
     private HTTPPortAdapter _httpManagementPort;
+    private final Map<AuthenticationManager, AuthenticationProviderAdapter> _authManagerAdapters =
+            new HashMap<AuthenticationManager, AuthenticationProviderAdapter>();
 
 
     public BrokerAdapter(final IApplicationRegistry instance)
@@ -64,6 +69,8 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
         populateVhosts();
         instance.addPortBindingListener(this);
         populatePorts();
+        instance.addRegistryChangeListener(this);
+        populateAuthenticationManagers();
     }
 
     private void populateVhosts()
@@ -126,9 +133,39 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
         }
     }
 
+    private void populateAuthenticationManagers()
+    {
+        synchronized (_authManagerAdapters)
+        {
+            IAuthenticationManagerRegistry authenticationManagerRegistry =
+                    _applicationRegistry.getAuthenticationManagerRegistry();
+            if(authenticationManagerRegistry != null)
+            {
+                Map<String, AuthenticationManager> authenticationManagers =
+                        authenticationManagerRegistry.getAvailableAuthenticationManagers();
+
+                for(Map.Entry<String, AuthenticationManager> entry : authenticationManagers.entrySet())
+                {
+                    if(!_authManagerAdapters.containsKey(entry.getValue()))
+                    {
+                        _authManagerAdapters.put(entry.getValue(),
+                                                 AuthenticationProviderAdapter.createAuthenticationProviderAdapter(this,
+                                                                                                                   entry.getValue()));
+                    }
+                }
+            }
+        }
+    }
+
     public Collection<AuthenticationProvider> getAuthenticationProviders()
     {
-        return null;  //TODO
+        synchronized (_authManagerAdapters)
+        {
+            final ArrayList<AuthenticationProvider> authManagers =
+                    new ArrayList<AuthenticationProvider>(_authManagerAdapters.values());
+            return authManagers;
+        }
+
     }
 
     public VirtualHost createVirtualHost(final String name,
@@ -294,6 +331,40 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
             childRemoved(adapter);
         }
     }
+
+    @Override
+    public void authenticationManagerRegistered(AuthenticationManager authenticationManager)
+    {
+        AuthenticationProviderAdapter adapter = null;
+        synchronized (_authManagerAdapters)
+        {
+            if(!_authManagerAdapters.containsKey(authenticationManager))
+            {
+                adapter =
+                        AuthenticationProviderAdapter.createAuthenticationProviderAdapter(this, authenticationManager);
+                _authManagerAdapters.put(authenticationManager, adapter);
+            }
+        }
+        if(adapter != null)
+        {
+            childAdded(adapter);
+        }
+    }
+
+    @Override
+    public void authenticationManagerUnregistered(AuthenticationManager authenticationManager)
+    {
+        AuthenticationProviderAdapter adapter;
+        synchronized (_authManagerAdapters)
+        {
+            adapter = _authManagerAdapters.remove(authenticationManager);
+        }
+        if(adapter != null)
+        {
+            childRemoved(adapter);
+        }
+    }
+
 
     @Override
     public void bound(QpidAcceptor acceptor, InetSocketAddress bindAddress)

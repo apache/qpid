@@ -26,8 +26,11 @@ define(["dojo/_base/xhr",
         "qpid/common/updater",
         "qpid/common/util",
         "qpid/common/UpdatableStore",
+        "dojox/grid/EnhancedGrid",
+        "dojox/grid/enhanced/plugins/Pagination",
+        "dojox/grid/enhanced/plugins/IndirectSelection",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore) {
+       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid) {
 
            function Broker(name, parent, controller) {
                this.name = name;
@@ -122,9 +125,24 @@ define(["dojo/_base/xhr",
                          {
                              that.logData = data;
 
+                             var gridProperties = {
+                                 height: 400,
+                                 plugins: {
+                                          pagination: {
+                                              pageSizes: ["10", "25", "50", "100"],
+                                              description: true,
+                                              sizeSwitch: true,
+                                              pageStepper: true,
+                                              gotoButton: true,
+                                              maxPageStep: 4,
+                                              position: "bottom"
+                                          }
+                                 }};
+
+
                              that.logfileGrid =
                                 new UpdatableStore(that.logData, query(".broker-logfile")[0],
-                                                [   { name: "Timestamp", field: "timestamp", width: "70px",
+                                                [   { name: "Timestamp", field: "timestamp", width: "200px",
                                                         formatter: function(val) {
                                                         var d = new Date(0);
                                                         d.setUTCSeconds(val/1000);
@@ -132,11 +150,11 @@ define(["dojo/_base/xhr",
                                                         return d.toLocaleString();
                                                     }},
                                                     { name: "Level", field: "level", width: "60px"},
-                                                    { name: "Logger", field: "logger", width: "100px"},
-                                                    { name: "Thread", field: "thread", width: "60px"},
+                                                    { name: "Logger", field: "logger", width: "280px"},
+                                                    { name: "Thread", field: "thread", width: "120px"},
                                                     { name: "Log Message", field: "message", width: "100%"}
 
-                                                ]);
+                                                ], null, gridProperties, EnhancedGrid);
                          });
            }
 

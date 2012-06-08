@@ -49,7 +49,8 @@
                     "dijit/TitlePane",
                     "dojo/parser",
                     "qpid/management/treeView",
-                    "qpid/management/controller"]);
+                    "qpid/management/controller",
+                    "qpid/common/footer"]);
     </script>
 
 </head>
@@ -68,7 +69,7 @@
     <div id="managedViews" data-dojo-type="dijit.layout.TabContainer" data-dojo-props="region:'center', tabPosition: 'top'">
     </div>
     <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'bottom'">
-        <div id="footer"></div>
+        <div qpid-type="footer"></div>
     </div>
 </div>
 

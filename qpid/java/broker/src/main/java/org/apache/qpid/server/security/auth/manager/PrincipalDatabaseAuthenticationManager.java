@@ -408,6 +408,11 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         }
     }
 
+    public PrincipalDatabase getPrincipalDatabase()
+    {
+        return _principalDatabase;
+    }
+
     private String generateSetterName(String argName) throws ConfigurationException
     {
         if ((argName == null) || (argName.length() == 0))
