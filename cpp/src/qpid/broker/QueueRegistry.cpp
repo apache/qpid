@@ -18,6 +18,7 @@
  * under the License.
  *
  */
+#include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/QueueEvents.h"
@@ -64,17 +65,22 @@ QueueRegistry::declare(const string& declareName, bool durable,
             //i.e. recovering a queue for which we already have a persistent record
             queue->configure(arguments);
         }
+        if (broker) broker->getConfigurationObservers().queueCreate(queue);
         queues[name] = queue;
         if (lastNode) queue->setLastNodeFailure();
-
         return std::pair<Queue::shared_ptr, bool>(queue, true);
     } else {
         return std::pair<Queue::shared_ptr, bool>(i->second, false);
     }
 }
 
-void QueueRegistry::destroyLH (const string& name){
-    queues.erase(name);
+void QueueRegistry::destroyLH (const string& name) {
+    QueueMap::iterator i = queues.find(name);
+    if (i != queues.end()) {
+        Queue::shared_ptr q = i->second;
+        queues.erase(i);
+        if (broker) broker->getConfigurationObservers().queueDestroy(q);
+    }
 }
 
 void QueueRegistry::destroy (const string& name){
