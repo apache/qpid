@@ -86,11 +86,14 @@ void Backup::initialize(const Url& brokers) {
     link = result.first;
     link->setUrl(url);
     replicator.reset(new BrokerReplicator(haBroker, link));
+    replicator->initialize();
     broker.getExchanges().registerExchange(replicator);
 }
 
 Backup::~Backup() {
     if (link) link->close();
+    // FIXME aconway 2012-05-30: race: may have outstanding initializeBridge calls
+    // pointing to this.
     if (replicator.get()) broker.getExchanges().destroy(replicator->getName());
     replicator.reset();
 }
