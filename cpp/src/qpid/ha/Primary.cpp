@@ -57,8 +57,6 @@ Primary::Primary(HaBroker& b) :
         else {
             QPID_LOG(debug, logPrefix << "Waiting for  " << expected
                      << " backups on " << queues.size() << " queues");
-            // Allow backups to connect.
-            haBroker.getExcluder()->setBackupAllowed(true);
         }
     }
 }

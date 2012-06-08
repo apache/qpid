@@ -13,7 +13,7 @@
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
+* KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
  *
@@ -37,6 +37,7 @@
 #include "qmf/org/apache/qpid/broker/EventQueueDeclare.h"
 #include "qmf/org/apache/qpid/broker/EventQueueDelete.h"
 #include "qmf/org/apache/qpid/broker/EventSubscribe.h"
+#include "qmf/org/apache/qpid/ha/EventMembersUpdate.h"
 #include <algorithm>
 #include <sstream>
 #include <assert.h>
@@ -51,6 +52,7 @@ using qmf::org::apache::qpid::broker::EventExchangeDelete;
 using qmf::org::apache::qpid::broker::EventQueueDeclare;
 using qmf::org::apache::qpid::broker::EventQueueDelete;
 using qmf::org::apache::qpid::broker::EventSubscribe;
+using qmf::org::apache::qpid::ha::EventMembersUpdate;
 using namespace framing;
 using std::string;
 using types::Variant;
@@ -93,7 +95,8 @@ const string TYPE("type");
 const string USER("user");
 const string HA_BROKER("habroker");
 
-const string AGENT_IND_EVENT_ORG_APACHE_QPID_BROKER("agent.ind.event.org_apache_qpid_broker.#");
+const string AGENT_EVENT_BROKER("agent.ind.event.org_apache_qpid_broker.#");
+const string AGENT_EVENT_HA("agent.ind.event.org_apache_qpid_ha.#");
 const string QMF2("qmf2");
 const string QMF_CONTENT("qmf.content");
 const string QMF_DEFAULT_TOPIC("qmf.default.topic");
@@ -109,6 +112,7 @@ const string ORG_APACHE_QPID_HA("org.apache.qpid.ha");
 const string QMF_DEFAULT_DIRECT("qmf.default.direct");
 const string _QUERY_REQUEST("_query_request");
 const string BROKER("broker");
+const string MEMBERS("members");
 
 bool isQMFv2(const Message& message) {
     const framing::MessageProperties* props = message.getProperties<framing::MessageProperties>();
@@ -169,7 +173,7 @@ BrokerReplicator::BrokerReplicator(HaBroker& hb, const boost::shared_ptr<Link>& 
       logPrefix(hb),
       haBroker(hb), broker(hb.getBroker()), link(l)
 {
-    framing::Uuid uuid(true);
+    types::Uuid uuid(true);
     const std::string name(QPID_CONFIGURATION_REPLICATOR + ".bridge." + uuid.str());
     broker.getLinks().declare(
         name,               // name for bridge
@@ -221,7 +225,8 @@ void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionH
     FieldTable declareArgs;
     declareArgs.setString(QPID_REPLICATE, printable(NONE).str());
     peer.getQueue().declare(queueName, "", false, false, true, true, declareArgs);
-    peer.getExchange().bind(queueName, QMF_DEFAULT_TOPIC, AGENT_IND_EVENT_ORG_APACHE_QPID_BROKER, FieldTable());
+    peer.getExchange().bind(queueName, QMF_DEFAULT_TOPIC, AGENT_EVENT_BROKER, FieldTable());
+    peer.getExchange().bind(queueName, QMF_DEFAULT_TOPIC, AGENT_EVENT_HA, FieldTable());
     //subscribe to the queue
     peer.getMessage().subscribe(queueName, args.i_dest, 1, 0, false, "", 0, FieldTable());
     peer.getMessage().flow(args.i_dest, 0, 0xFFFFFFFF);
@@ -256,6 +261,7 @@ void BrokerReplicator::route(Deliverable& msg) {
                 else if (match<EventExchangeDelete>(schema)) doEventExchangeDelete(values);
                 else if (match<EventBind>(schema)) doEventBind(values);
                 else if (match<EventUnbind>(schema)) doEventUnbind(values);
+                else if (match<EventMembersUpdate>(schema)) doEventMembersUpdate(values);
             }
         } else if (headers->getAsString(QMF_OPCODE) == QUERY_RESPONSE) {
             for (Variant::List::iterator i = list.begin(); i != list.end(); ++i) {
@@ -423,6 +429,11 @@ void BrokerReplicator::doEventUnbind(Variant::Map& values) {
     }
 }
 
+void BrokerReplicator::doEventMembersUpdate(Variant::Map& values) {
+    Variant::List members = values[MEMBERS].asList();
+    haBroker.getMembership().assign(members);
+}
+
 void BrokerReplicator::doResponseQueue(Variant::Map& values) {
     Variant::Map argsMap(asMapVoid(values[ARGUMENTS]));
     if (!isReplicated(values[ARGUMENTS].asMap(),
@@ -517,15 +528,14 @@ const string REPLICATE_DEFAULT="replicateDefault";
 void BrokerReplicator::doResponseHaBroker(Variant::Map& values) {
     try {
         ReplicateLevel mine = haBroker.getSettings().replicateDefault.get();
-        ReplicateLevel primary = haBroker.replicateLevel(values[REPLICATE_DEFAULT].asString());
-        if (mine != primary) {
-            QPID_LOG(critical, logPrefix << "Replicate default on backup (" << mine
-                     << ") does not match primary (" <<  primary << ")");
-            haBroker.shutdown();
-        }
+        ReplicateLevel primary = haBroker.replicateLevel(
+            values[REPLICATE_DEFAULT].asString());
+        if (mine != primary)
+            throw Exception(QPID_MSG("Replicate default on backup (" << mine
+                                     << ") does not match primary (" <<  primary << ")"));
+        haBroker.getMembership().assign(values[MEMBERS].asList());
     } catch (const std::exception& e) {
-        QPID_LOG(critical, logPrefix << "Invalid replicate default from primary: "
-                 << e.what());
+        QPID_LOG(critical, logPrefix << "Invalid HA Broker response: " << e.what());
         haBroker.shutdown();
     }
 }
