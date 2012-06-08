@@ -23,8 +23,8 @@
 
 #include "MessageProducer.h"
 
-#include "MockPersistableMessage.h"
-#include "MockPersistableQueue.h"
+#include "SimplePersistableMessage.h"
+#include "SimplePersistableQueue.h"
 #include "TestOptions.h"
 
 #include <stdint.h> // uint32_t
@@ -33,12 +33,12 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class MockTransactionContext;
+class SimpleTransactionContext;
 
 MessageProducer::MessageProducer(const TestOptions& perfTestParams,
                                  const char* msgData,
                                  qpid::asyncStore::AsyncStoreImpl* store,
-                                 boost::shared_ptr<MockPersistableQueue> queue) :
+                                 boost::shared_ptr<SimplePersistableQueue> queue) :
         m_perfTestParams(perfTestParams),
         m_msgData(msgData),
         m_store(store),
@@ -51,9 +51,9 @@ MessageProducer::~MessageProducer()
 void*
 MessageProducer::runProducers()
 {
-    boost::shared_ptr<MockTransactionContext> txn;
+    boost::shared_ptr<SimpleTransactionContext> txn;
     for (uint32_t numMsgs=0; numMsgs<m_perfTestParams.m_numMsgs; ++numMsgs) {
-        boost::shared_ptr<MockPersistableMessage> msg(new MockPersistableMessage(m_msgData, m_perfTestParams.m_msgSize, m_store));
+        boost::shared_ptr<SimplePersistableMessage> msg(new SimplePersistableMessage(m_msgData, m_perfTestParams.m_msgSize, m_store));
         m_queue->deliver(msg);
     }
     return 0;

@@ -383,12 +383,12 @@ set (asyncStorePerf_SOURCES
     storePerftools/asyncPerf/MessageConsumer.cpp
     storePerftools/asyncPerf/MessageDeque.cpp
     storePerftools/asyncPerf/MessageProducer.cpp
-	storePerftools/asyncPerf/MockPersistableMessage.cpp
-	storePerftools/asyncPerf/MockPersistableQueue.cpp
-	storePerftools/asyncPerf/MockTransactionContext.cpp
 	storePerftools/asyncPerf/PerfTest.cpp
 	storePerftools/asyncPerf/QueueAsyncContext.cpp
 	storePerftools/asyncPerf/QueuedMessage.cpp
+	storePerftools/asyncPerf/SimplePersistableMessage.cpp
+	storePerftools/asyncPerf/SimplePersistableQueue.cpp
+	storePerftools/asyncPerf/SimpleTransactionContext.cpp
 	storePerftools/asyncPerf/TestOptions.cpp
 	storePerftools/asyncPerf/TestResult.cpp
 	storePerftools/asyncPerf/TransactionAsyncContext.cpp

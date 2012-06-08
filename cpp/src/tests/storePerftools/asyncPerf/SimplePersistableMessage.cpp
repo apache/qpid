@@ -18,10 +18,10 @@
  */
 
 /**
- * \file MockPersistableMessage.cpp
+ * \file SimplePersistableMessage.cpp
  */
 
-#include "MockPersistableMessage.h"
+#include "SimplePersistableMessage.h"
 
 #include "qpid/asyncStore/AsyncStoreImpl.h"
 
@@ -29,77 +29,77 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-MockPersistableMessage::MockPersistableMessage(const char* msgData,
-                                               const uint32_t msgSize,
-                                               qpid::asyncStore::AsyncStoreImpl* store) :
+SimplePersistableMessage::SimplePersistableMessage(const char* msgData,
+                                                   const uint32_t msgSize,
+                                                   qpid::asyncStore::AsyncStoreImpl* store) :
         m_persistenceId(0ULL),
         m_msg(msgData, static_cast<size_t>(msgSize)),
         m_msgHandle(store ? store->createMessageHandle(this) : qpid::broker::MessageHandle(0))
 {}
 
-MockPersistableMessage::~MockPersistableMessage()
+SimplePersistableMessage::~SimplePersistableMessage()
 {}
 
 const qpid::broker::MessageHandle&
-MockPersistableMessage::getHandle() const
+SimplePersistableMessage::getHandle() const
 {
     return m_msgHandle;
 }
 
 qpid::broker::MessageHandle&
-MockPersistableMessage::getHandle()
+SimplePersistableMessage::getHandle()
 {
     return m_msgHandle;
 }
 
 void
-MockPersistableMessage::setPersistenceId(uint64_t id) const
+SimplePersistableMessage::setPersistenceId(uint64_t id) const
 {
     m_persistenceId = id;
 }
 
 uint64_t
-MockPersistableMessage::getPersistenceId() const
+SimplePersistableMessage::getPersistenceId() const
 {
     return m_persistenceId;
 }
 
 void
-MockPersistableMessage::encode(qpid::framing::Buffer& buffer) const
+SimplePersistableMessage::encode(qpid::framing::Buffer& buffer) const
 {
     buffer.putRawData(m_msg);
 }
 
 uint32_t
-MockPersistableMessage::encodedSize() const
+SimplePersistableMessage::encodedSize() const
 {
     return static_cast<uint32_t>(m_msg.size());
 }
 
 void
-MockPersistableMessage::allDequeuesComplete()
+SimplePersistableMessage::allDequeuesComplete()
 {}
 
 uint32_t
-MockPersistableMessage::encodedHeaderSize() const
+SimplePersistableMessage::encodedHeaderSize() const
 {
     return 0;
 }
 
 bool
-MockPersistableMessage::isPersistent() const
+SimplePersistableMessage::isPersistent() const
 {
     return m_msgHandle.isValid();
 }
 
 uint64_t
-MockPersistableMessage::getSize()
+SimplePersistableMessage::getSize()
 {
     return m_msg.size();
 }
 
 void
-MockPersistableMessage::write(char* target)
+SimplePersistableMessage::write(char* target)
 {
     ::memcpy(target, m_msg.data(), m_msg.size());
 }

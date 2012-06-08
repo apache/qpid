@@ -37,7 +37,7 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class MockPersistableQueue;
+class SimplePersistableQueue;
 class TestOptions;
 
 class MessageProducer
@@ -46,7 +46,7 @@ public:
     MessageProducer(const TestOptions& perfTestParams,
                     const char* msgData,
                     qpid::asyncStore::AsyncStoreImpl* store,
-                    boost::shared_ptr<MockPersistableQueue> queue);
+                    boost::shared_ptr<SimplePersistableQueue> queue);
     virtual ~MessageProducer();
     void* runProducers();
     static void* startProducers(void* ptr);
@@ -54,7 +54,7 @@ private:
     const TestOptions& m_perfTestParams;
     const char* m_msgData;
     qpid::asyncStore::AsyncStoreImpl* m_store;
-    boost::shared_ptr<MockPersistableQueue> m_queue;
+    boost::shared_ptr<SimplePersistableQueue> m_queue;
 };
 
 }}} // namespace tests::storePerftools::asyncPerf

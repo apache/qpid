@@ -33,26 +33,26 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class MockPersistableMessage;
-class MockPersistableQueue;
+class SimplePersistableMessage;
+class SimplePersistableQueue;
 
 class MessageAsyncContext : public qpid::broker::BrokerAsyncContext
 {
 public:
-    MessageAsyncContext(boost::shared_ptr<MockPersistableMessage> msg,
+    MessageAsyncContext(boost::shared_ptr<SimplePersistableMessage> msg,
                         const qpid::asyncStore::AsyncOperation::opCode op,
-                        boost::shared_ptr<MockPersistableQueue> q);
+                        boost::shared_ptr<SimplePersistableQueue> q);
     virtual ~MessageAsyncContext();
     qpid::asyncStore::AsyncOperation::opCode getOpCode() const;
     const char* getOpStr() const;
-    boost::shared_ptr<MockPersistableMessage> getMessage() const;
-    boost::shared_ptr<MockPersistableQueue> getQueue() const;
+    boost::shared_ptr<SimplePersistableMessage> getMessage() const;
+    boost::shared_ptr<SimplePersistableQueue> getQueue() const;
     void destroy();
 
 private:
-    boost::shared_ptr<MockPersistableMessage> m_msg;
+    boost::shared_ptr<SimplePersistableMessage> m_msg;
     const qpid::asyncStore::AsyncOperation::opCode m_op;
-    boost::shared_ptr<MockPersistableQueue> m_q;
+    boost::shared_ptr<SimplePersistableQueue> m_q;
 };
 
 }}} // namespace tests::storePerftools::asyncPerf

@@ -29,7 +29,7 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-TransactionAsyncContext::TransactionAsyncContext(boost::shared_ptr<MockTransactionContext> tc,
+TransactionAsyncContext::TransactionAsyncContext(boost::shared_ptr<SimpleTransactionContext> tc,
                                                  const qpid::asyncStore::AsyncOperation::opCode op):
         m_tc(tc),
         m_op(op)
@@ -52,7 +52,7 @@ TransactionAsyncContext::getOpStr() const
     return qpid::asyncStore::AsyncOperation::getOpStr(m_op);
 }
 
-boost::shared_ptr<MockTransactionContext>
+boost::shared_ptr<SimpleTransactionContext>
 TransactionAsyncContext::getTransactionContext() const
 {
     return m_tc;

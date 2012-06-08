@@ -18,11 +18,11 @@
  */
 
 /**
- * \file MockPersistableMessage.h
+ * \file SimplePersistableMessage.h
  */
 
-#ifndef tests_storePerftools_asyncPerf_MockPersistableMessage_h_
-#define tests_storePerftools_asyncPerf_MockPersistableMessage_h_
+#ifndef tests_storePerftools_asyncPerf_SimplePersistableMessage_h_
+#define tests_storePerftools_asyncPerf_SimplePersistableMessage_h_
 
 #include "qpid/broker/AsyncStore.h" // qpid::broker::DataSource
 #include "qpid/broker/MessageHandle.h"
@@ -39,16 +39,16 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class MockPersistableQueue;
+class SimplePersistableQueue;
 
-class MockPersistableMessage: public qpid::broker::PersistableMessage,
-                              public qpid::broker::DataSource
+class SimplePersistableMessage: public qpid::broker::PersistableMessage,
+                                public qpid::broker::DataSource
 {
 public:
-    MockPersistableMessage(const char* msgData,
-                           const uint32_t msgSize,
-                           qpid::asyncStore::AsyncStoreImpl* store);
-    virtual ~MockPersistableMessage();
+    SimplePersistableMessage(const char* msgData,
+                             const uint32_t msgSize,
+                             qpid::asyncStore::AsyncStoreImpl* store);
+    virtual ~SimplePersistableMessage();
     const qpid::broker::MessageHandle& getHandle() const;
     qpid::broker::MessageHandle& getHandle();
 
@@ -75,4 +75,4 @@ private:
 
 }}} // namespace tests::storePerftools::asyncPerf
 
-#endif // tests_storePerfools_asyncPerf_MockPersistableMessage_h_
+#endif // tests_storePerftools_asyncPerf_SimplePersistableMessage_h_

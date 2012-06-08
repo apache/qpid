@@ -33,21 +33,21 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class MockTransactionContext;
+class SimpleTransactionContext;
 
 class TransactionAsyncContext: public qpid::broker::BrokerAsyncContext
 {
 public:
-    TransactionAsyncContext(boost::shared_ptr<MockTransactionContext> tc,
+    TransactionAsyncContext(boost::shared_ptr<SimpleTransactionContext> tc,
                             const qpid::asyncStore::AsyncOperation::opCode op);
     virtual ~TransactionAsyncContext();
     qpid::asyncStore::AsyncOperation::opCode getOpCode() const;
     const char* getOpStr() const;
-    boost::shared_ptr<MockTransactionContext> getTransactionContext() const;
+    boost::shared_ptr<SimpleTransactionContext> getTransactionContext() const;
     void destroy();
 
 private:
-    boost::shared_ptr<MockTransactionContext> m_tc;
+    boost::shared_ptr<SimpleTransactionContext> m_tc;
     const qpid::asyncStore::AsyncOperation::opCode m_op;
 };
 

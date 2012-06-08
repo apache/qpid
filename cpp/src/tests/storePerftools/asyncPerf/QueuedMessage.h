@@ -32,25 +32,25 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class MockPersistableMessage;
-class MockPersistableQueue;
+class SimplePersistableMessage;
+class SimplePersistableQueue;
 
 class QueuedMessage
 {
 public:
     QueuedMessage();
-    QueuedMessage(MockPersistableQueue* q,
-                  boost::shared_ptr<MockPersistableMessage> msg);
+    QueuedMessage(SimplePersistableQueue* q,
+                  boost::shared_ptr<SimplePersistableMessage> msg);
     QueuedMessage(const QueuedMessage& qm);
     ~QueuedMessage();
     QueuedMessage& operator=(const QueuedMessage& rhs);
-    boost::shared_ptr<MockPersistableMessage> payload() const;
+    boost::shared_ptr<SimplePersistableMessage> payload() const;
     const qpid::broker::EnqueueHandle& enqHandle() const;
     qpid::broker::EnqueueHandle& enqHandle();
 
 private:
-    MockPersistableQueue* m_queue;
-    boost::shared_ptr<MockPersistableMessage> m_msg;
+    SimplePersistableQueue* m_queue;
+    boost::shared_ptr<SimplePersistableMessage> m_msg;
     qpid::broker::EnqueueHandle m_enqHandle;
 };
 

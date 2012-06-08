@@ -18,11 +18,11 @@
  */
 
 /**
- * \file MockPersistableQueue.h
+ * \file SimplePersistableQueue.h
  */
 
-#ifndef tests_storePerftools_asyncPerf_MockPersistableQueue_h_
-#define tests_storePerftools_asyncPerf_MockPersistableQueue_h_
+#ifndef tests_storePerftools_asyncPerf_SimplePersistableQueue_h_
+#define tests_storePerftools_asyncPerf_SimplePersistableQueue_h_
 
 #include "AtomicCounter.h" // AsyncOpCounter
 
@@ -50,22 +50,21 @@ namespace storePerftools {
 namespace asyncPerf {
 
 class Messages;
-class MockPersistableMessage;
-class MockPersistableQueue;
-class MockTransactionContext;
+class SimplePersistableMessage;
+class SimpleTransactionContext;
 class QueueAsyncContext;
 class QueuedMessage;
 
-class MockPersistableQueue : public boost::enable_shared_from_this<MockPersistableQueue>,
-                             public qpid::broker::PersistableQueue,
-                             public qpid::broker::DataSource
+class SimplePersistableQueue : public boost::enable_shared_from_this<SimplePersistableQueue>,
+                               public qpid::broker::PersistableQueue,
+                               public qpid::broker::DataSource
 {
 public:
-    MockPersistableQueue(const std::string& name,
+    SimplePersistableQueue(const std::string& name,
                          const qpid::framing::FieldTable& args,
                          qpid::asyncStore::AsyncStoreImpl* store,
                          qpid::broker::AsyncResultQueue& arq);
-    virtual ~MockPersistableQueue();
+    virtual ~SimplePersistableQueue();
 
     static void handleAsyncResult(const qpid::broker::AsyncResultHandle* const res);
     const qpid::broker::QueueHandle& getHandle() const;
@@ -76,11 +75,11 @@ public:
     void asyncDestroy(const bool deleteQueue);
 
     // --- Methods in msg handling path from qpid::Queue ---
-    void deliver(boost::shared_ptr<MockPersistableMessage> msg);
+    void deliver(boost::shared_ptr<SimplePersistableMessage> msg);
     bool dispatch(); // similar to qpid::broker::Queue::distpatch(Consumer&) but without Consumer param
-    bool enqueue(MockTransactionContext* ctxt,
+    bool enqueue(SimpleTransactionContext* ctxt,
                  QueuedMessage& qm);
-    bool dequeue(MockTransactionContext* ctxt,
+    bool dequeue(SimpleTransactionContext* ctxt,
                  QueuedMessage& qm);
 
     // --- Interface qpid::broker::Persistable ---
@@ -112,10 +111,10 @@ private:
     // --- Members & methods in msg handling path copied from qpid::Queue ---
     struct UsageBarrier
     {
-        MockPersistableQueue& m_parent;
+        SimplePersistableQueue& m_parent;
         uint32_t m_count;
         qpid::sys::Monitor m_monitor;
-        UsageBarrier(MockPersistableQueue& q);
+        UsageBarrier(SimplePersistableQueue& q);
         bool acquire();
         void release();
         void destroy();
@@ -133,9 +132,9 @@ private:
               bool isRecovery = false);
 
     // -- Async ops ---
-    bool asyncEnqueue(MockTransactionContext* txn,
+    bool asyncEnqueue(SimpleTransactionContext* txn,
                       QueuedMessage& qm);
-    bool asyncDequeue(MockTransactionContext* txn,
+    bool asyncDequeue(SimpleTransactionContext* txn,
                       QueuedMessage& qm);
 
     // --- Async op counter ---
@@ -151,4 +150,4 @@ private:
 
 }}} // namespace tests::storePerftools::asyncPerf
 
-#endif // tests_storePerftools_asyncPerf_MockPersistableQueue_h_
+#endif // tests_storePerftools_asyncPerf_SimplePersistableQueue_h_

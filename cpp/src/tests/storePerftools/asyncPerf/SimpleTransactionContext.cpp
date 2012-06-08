@@ -18,10 +18,10 @@
  */
 
 /**
- * \file MockTransactionContext.cpp
+ * \file SimpleTransactionContext.cpp
  */
 
-#include "MockTransactionContext.h"
+#include "SimpleTransactionContext.h"
 
 #include "TransactionAsyncContext.h"
 
@@ -33,7 +33,7 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-MockTransactionContext::MockTransactionContext(const std::string& xid) :
+SimpleTransactionContext::SimpleTransactionContext(const std::string& xid) :
         qpid::broker::TransactionContext(),
         m_xid(xid),
         m_tpcFlag(!xid.empty()),
@@ -48,8 +48,8 @@ MockTransactionContext::MockTransactionContext(const std::string& xid) :
 //std::cout << "*TXN* begin: xid=" << getXid() << "; 2PC=" << (is2pc()?"T":"F") << std::endl;
 }
 
-MockTransactionContext::MockTransactionContext(qpid::asyncStore::AsyncStoreImpl* store,
-                                               const std::string& xid) :
+SimpleTransactionContext::SimpleTransactionContext(qpid::asyncStore::AsyncStoreImpl* store,
+                                                   const std::string& xid) :
         m_store(store),
         m_prepared(false),
         m_enqueuedMsgs()
@@ -60,14 +60,14 @@ MockTransactionContext::MockTransactionContext(qpid::asyncStore::AsyncStoreImpl*
     }
 }
 
-MockTransactionContext::~MockTransactionContext()
+SimpleTransactionContext::~SimpleTransactionContext()
 {}
 
 // static
 /*
 void
-MockTransactionContext::handleAsyncResult(const qpid::broker::AsyncResult* res,
-                                          qpid::broker::BrokerAsyncContext* bc)
+SimpleTransactionContext::handleAsyncResult(const qpid::broker::AsyncResult* res,
+                                            qpid::broker::BrokerAsyncContext* bc)
 {
     if (bc && res) {
         TransactionAsyncContext* tac = dynamic_cast<TransactionAsyncContext*>(bc);
@@ -89,7 +89,7 @@ MockTransactionContext::handleAsyncResult(const qpid::broker::AsyncResult* res,
                 break;
             default:
                 std::ostringstream oss;
-                oss << "tests::storePerftools::asyncPerf::MockTransactionContext::handleAsyncResult(): Unknown async operation: " << tac->getOpCode();
+                oss << "tests::storePerftools::asyncPerf::SimpleTransactionContext::handleAsyncResult(): Unknown async operation: " << tac->getOpCode();
                 throw qpid::Exception(oss.str());
             };
         }
@@ -100,51 +100,51 @@ MockTransactionContext::handleAsyncResult(const qpid::broker::AsyncResult* res,
 */
 
 const qpid::broker::TxnHandle&
-MockTransactionContext::getHandle() const
+SimpleTransactionContext::getHandle() const
 {
     return m_txnHandle;
 }
 
 qpid::broker::TxnHandle&
-MockTransactionContext::getHandle()
+SimpleTransactionContext::getHandle()
 {
     return m_txnHandle;
 }
 
 bool
-MockTransactionContext::is2pc() const
+SimpleTransactionContext::is2pc() const
 {
     return m_tpcFlag;
 }
 
 const std::string&
-MockTransactionContext::getXid() const
+SimpleTransactionContext::getXid() const
 {
     return m_xid;
 }
 
 void
-MockTransactionContext::addEnqueuedMsg(QueuedMessage* qm)
+SimpleTransactionContext::addEnqueuedMsg(QueuedMessage* qm)
 {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_enqueuedMsgsMutex);
     m_enqueuedMsgs.push_back(qm);
 }
 
 void
-MockTransactionContext::prepare()
+SimpleTransactionContext::prepare()
 {
     if (m_tpcFlag) {
         localPrepare();
         m_prepared = true;
     }
     std::ostringstream oss;
-    oss << "MockTransactionContext::prepare(): xid=\"" << getXid()
+    oss << "SimpleTransactionContext::prepare(): xid=\"" << getXid()
         << "\": Transaction Error: called prepare() on local transaction";
     throw qpid::Exception(oss.str());
 }
 
 void
-MockTransactionContext::abort()
+SimpleTransactionContext::abort()
 {
     // TODO: Check the following XA transaction semantics:
     // Assuming 2PC aborts can occur without a prepare. Do local prepare if not already prepared.
@@ -160,12 +160,12 @@ MockTransactionContext::abort()
 }
 
 void
-MockTransactionContext::commit()
+SimpleTransactionContext::commit()
 {
     if (is2pc()) {
         if (!m_prepared) {
             std::ostringstream oss;
-            oss << "MockTransactionContext::abort(): xid=\"" << getXid()
+            oss << "SimpleTransactionContext::abort(): xid=\"" << getXid()
                     << "\": Transaction Error: called commit() without prepare() on 2PC transaction";
             throw qpid::Exception(oss.str());
         }
@@ -183,7 +183,7 @@ MockTransactionContext::commit()
 
 // private
 void
-MockTransactionContext::localPrepare()
+SimpleTransactionContext::localPrepare()
 {
     if (m_store != 0) {
 //        m_store->submitPrepare(m_txnHandle,
@@ -195,7 +195,7 @@ MockTransactionContext::localPrepare()
 
 // private
 void
-MockTransactionContext::setLocalXid()
+SimpleTransactionContext::setLocalXid()
 {
     uuid_t uuid;
     // TODO: Valgrind warning: Possible race condition in uuid_generate_random() - is it thread-safe, and if not, does it matter?
@@ -208,7 +208,7 @@ MockTransactionContext::setLocalXid()
 
 // private
 void
-MockTransactionContext::prepareComplete(const TransactionAsyncContext* /*tc*/)
+SimpleTransactionContext::prepareComplete(const TransactionAsyncContext* /*tc*/)
 {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_enqueuedMsgsMutex);
 //    while (!m_enqueuedMsgs.empty()) {
@@ -222,7 +222,7 @@ MockTransactionContext::prepareComplete(const TransactionAsyncContext* /*tc*/)
 
 // private
 void
-MockTransactionContext::abortComplete(const TransactionAsyncContext* tc)
+SimpleTransactionContext::abortComplete(const TransactionAsyncContext* tc)
 {
 //std::cout << "~~~~~ Transaction xid=\"" << tc->m_tc->getXid() << "\": abortComplete()" << std::endl << std::flush;
     assert(tc->getTransactionContext().get() == this);
@@ -231,7 +231,7 @@ MockTransactionContext::abortComplete(const TransactionAsyncContext* tc)
 
 // private
 void
-MockTransactionContext::commitComplete(const TransactionAsyncContext* tc)
+SimpleTransactionContext::commitComplete(const TransactionAsyncContext* tc)
 {
 //std::cout << "~~~~~ Transaction xid=\"" << tc->m_tc->getXid() << "\": commitComplete()" << std::endl << std::flush;
     assert(tc->getTransactionContext().get() == this);

@@ -23,7 +23,7 @@
 
 #include "MessageConsumer.h"
 
-#include "MockPersistableQueue.h"
+#include "SimplePersistableQueue.h"
 #include "TestOptions.h"
 
 #include <stdint.h> // uint32_t
@@ -32,10 +32,10 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class MockTransactionContext;
+class SimpleTransactionContext;
 
 MessageConsumer::MessageConsumer(const TestOptions& perfTestParams,
-                                 boost::shared_ptr<MockPersistableQueue> queue) :
+                                 boost::shared_ptr<SimplePersistableQueue> queue) :
         m_perfTestParams(perfTestParams),
         m_queue(queue)
 {}

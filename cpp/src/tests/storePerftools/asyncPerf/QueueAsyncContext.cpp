@@ -29,7 +29,7 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<MockPersistableQueue> q,
+QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<SimplePersistableQueue> q,
                                      const qpid::asyncStore::AsyncOperation::opCode op,
                                      qpid::broker::AsyncResultCallback rcb,
                                      qpid::broker::AsyncResultQueue* const arq) :
@@ -41,8 +41,8 @@ QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<MockPersistableQueue> q,
     assert(m_q.get() != 0);
 }
 
-QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<MockPersistableQueue> q,
-                                     boost::shared_ptr<MockPersistableMessage> msg,
+QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<SimplePersistableQueue> q,
+                                     boost::shared_ptr<SimplePersistableMessage> msg,
                                      const qpid::asyncStore::AsyncOperation::opCode op,
                                      qpid::broker::AsyncResultCallback rcb,
                                      qpid::broker::AsyncResultQueue* const arq) :
@@ -71,13 +71,13 @@ QueueAsyncContext::getOpStr() const
     return qpid::asyncStore::AsyncOperation::getOpStr(m_op);
 }
 
-boost::shared_ptr<MockPersistableQueue>
+boost::shared_ptr<SimplePersistableQueue>
 QueueAsyncContext::getQueue() const
 {
     return m_q;
 }
 
-boost::shared_ptr<MockPersistableMessage>
+boost::shared_ptr<SimplePersistableMessage>
 QueueAsyncContext::getMessage() const
 {
     return m_msg;

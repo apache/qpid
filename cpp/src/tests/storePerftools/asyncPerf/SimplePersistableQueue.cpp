@@ -18,14 +18,14 @@
  */
 
 /**
- * \file MockPersistableQueue.cpp
+ * \file SimplePersistableQueue.cpp
  */
 
-#include "MockPersistableQueue.h"
+#include "SimplePersistableQueue.h"
 
 #include "MessageDeque.h"
-#include "MockPersistableMessage.h"
-#include "MockTransactionContext.h"
+#include "SimplePersistableMessage.h"
+#include "SimpleTransactionContext.h"
 #include "QueueAsyncContext.h"
 #include "QueuedMessage.h"
 
@@ -36,10 +36,10 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-MockPersistableQueue::MockPersistableQueue(const std::string& name,
-                                           const qpid::framing::FieldTable& /*args*/,
-                                           qpid::asyncStore::AsyncStoreImpl* store,
-                                           qpid::broker::AsyncResultQueue& arq) :
+SimplePersistableQueue::SimplePersistableQueue(const std::string& name,
+                                               const qpid::framing::FieldTable& /*args*/,
+                                               qpid::asyncStore::AsyncStoreImpl* store,
+                                               qpid::broker::AsyncResultQueue& arq) :
         qpid::broker::PersistableQueue(),
         m_name(name),
         m_store(store),
@@ -58,7 +58,7 @@ MockPersistableQueue::MockPersistableQueue(const std::string& name,
     }
 }
 
-MockPersistableQueue::~MockPersistableQueue()
+SimplePersistableQueue::~SimplePersistableQueue()
 {
 //    m_store->flush(*this);
     // TODO: Make destroying the store a test parameter
@@ -68,7 +68,7 @@ MockPersistableQueue::~MockPersistableQueue()
 
 // static
 void
-MockPersistableQueue::handleAsyncResult(const qpid::broker::AsyncResultHandle* const arh)
+SimplePersistableQueue::handleAsyncResult(const qpid::broker::AsyncResultHandle* const arh)
 {
     if (arh) {
         boost::shared_ptr<QueueAsyncContext> qc = boost::dynamic_pointer_cast<QueueAsyncContext>(arh->getBrokerAsyncContext());
@@ -77,7 +77,7 @@ MockPersistableQueue::handleAsyncResult(const qpid::broker::AsyncResultHandle* c
             std::cerr << "Queue name=\"" << qc->getQueue()->m_name << "\": Operation " << qc->getOpStr() << ": failure "
                       << arh->getErrNo() << " (" << arh->getErrMsg() << ")" << std::endl;
         } else {
-//std::cout << "QQQ MockPersistableQueue::handleAsyncResult() op=" << qc->getOpStr() << std::endl << std::flush;
+//std::cout << "QQQ SimplePersistableQueue::handleAsyncResult() op=" << qc->getOpStr() << std::endl << std::flush;
             // Handle async success here
             switch(qc->getOpCode()) {
             case qpid::asyncStore::AsyncOperation::QUEUE_CREATE:
@@ -97,7 +97,7 @@ MockPersistableQueue::handleAsyncResult(const qpid::broker::AsyncResultHandle* c
                 break;
             default:
                 std::ostringstream oss;
-                oss << "tests::storePerftools::asyncPerf::MockPersistableQueue::handleAsyncResult(): Unknown async queue operation: " << qc->getOpCode();
+                oss << "tests::storePerftools::asyncPerf::SimplePersistableQueue::handleAsyncResult(): Unknown async queue operation: " << qc->getOpCode();
                 throw qpid::Exception(oss.str());
             };
         }
@@ -105,25 +105,25 @@ MockPersistableQueue::handleAsyncResult(const qpid::broker::AsyncResultHandle* c
 }
 
 const qpid::broker::QueueHandle&
-MockPersistableQueue::getHandle() const
+SimplePersistableQueue::getHandle() const
 {
     return m_queueHandle;
 }
 
 qpid::broker::QueueHandle&
-MockPersistableQueue::getHandle()
+SimplePersistableQueue::getHandle()
 {
     return m_queueHandle;
 }
 
 qpid::asyncStore::AsyncStoreImpl*
-MockPersistableQueue::getStore()
+SimplePersistableQueue::getStore()
 {
     return m_store;
 }
 
 void
-MockPersistableQueue::asyncCreate()
+SimplePersistableQueue::asyncCreate()
 {
     if (m_store) {
         boost::shared_ptr<QueueAsyncContext> qac(new QueueAsyncContext(shared_from_this(),
@@ -138,7 +138,7 @@ MockPersistableQueue::asyncCreate()
 }
 
 void
-MockPersistableQueue::asyncDestroy(const bool deleteQueue)
+SimplePersistableQueue::asyncDestroy(const bool deleteQueue)
 {
     m_destroyPending = true;
     if (m_store) {
@@ -156,26 +156,26 @@ MockPersistableQueue::asyncDestroy(const bool deleteQueue)
 }
 
 void
-MockPersistableQueue::deliver(boost::shared_ptr<MockPersistableMessage> msg)
+SimplePersistableQueue::deliver(boost::shared_ptr<SimplePersistableMessage> msg)
 {
     QueuedMessage qm(this, msg);
-    if(enqueue((MockTransactionContext*)0, qm)) {
+    if(enqueue((SimpleTransactionContext*)0, qm)) {
         push(qm);
     }
 }
 
 bool
-MockPersistableQueue::dispatch()
+SimplePersistableQueue::dispatch()
 {
     QueuedMessage qm;
     if (m_messages->consume(qm)) {
-        return dequeue((MockTransactionContext*)0, qm);
+        return dequeue((SimpleTransactionContext*)0, qm);
     }
     return false;
 }
 
 bool
-MockPersistableQueue::enqueue(MockTransactionContext* ctxt,
+SimplePersistableQueue::enqueue(SimpleTransactionContext* ctxt,
                               QueuedMessage& qm)
 {
     ScopedUse u(m_barrier);
@@ -190,7 +190,7 @@ MockPersistableQueue::enqueue(MockTransactionContext* ctxt,
 }
 
 bool
-MockPersistableQueue::dequeue(MockTransactionContext* ctxt,
+SimplePersistableQueue::dequeue(SimpleTransactionContext* ctxt,
                               QueuedMessage& qm)
 {
     ScopedUse u(m_barrier);
@@ -205,43 +205,43 @@ MockPersistableQueue::dequeue(MockTransactionContext* ctxt,
 }
 
 void
-MockPersistableQueue::encode(qpid::framing::Buffer& buffer) const
+SimplePersistableQueue::encode(qpid::framing::Buffer& buffer) const
 {
     buffer.putShortString(m_name);
 }
 
 uint32_t
-MockPersistableQueue::encodedSize() const
+SimplePersistableQueue::encodedSize() const
 {
     return m_name.size() + 1;
 }
 
 uint64_t
-MockPersistableQueue::getPersistenceId() const
+SimplePersistableQueue::getPersistenceId() const
 {
     return m_persistenceId;
 }
 
 void
-MockPersistableQueue::setPersistenceId(uint64_t persistenceId) const
+SimplePersistableQueue::setPersistenceId(uint64_t persistenceId) const
 {
     m_persistenceId = persistenceId;
 }
 
 void
-MockPersistableQueue::flush()
+SimplePersistableQueue::flush()
 {
     //if(m_store) m_store->flush(*this);
 }
 
 const std::string&
-MockPersistableQueue::getName() const
+SimplePersistableQueue::getName() const
 {
     return m_name;
 }
 
 void
-MockPersistableQueue::setExternalQueueStore(qpid::broker::ExternalQueueStore* inst)
+SimplePersistableQueue::setExternalQueueStore(qpid::broker::ExternalQueueStore* inst)
 {
     if (externalQueueStore != inst && externalQueueStore)
         delete externalQueueStore;
@@ -249,13 +249,13 @@ MockPersistableQueue::setExternalQueueStore(qpid::broker::ExternalQueueStore* in
 }
 
 uint64_t
-MockPersistableQueue::getSize()
+SimplePersistableQueue::getSize()
 {
     return m_persistableData.size();
 }
 
 void
-MockPersistableQueue::write(char* target)
+SimplePersistableQueue::write(char* target)
 {
     ::memcpy(target, m_persistableData.data(), m_persistableData.size());
 }
@@ -263,14 +263,14 @@ MockPersistableQueue::write(char* target)
 // --- Members & methods in msg handling path from qpid::Queue ---
 
 // protected
-MockPersistableQueue::UsageBarrier::UsageBarrier(MockPersistableQueue& q) :
+SimplePersistableQueue::UsageBarrier::UsageBarrier(SimplePersistableQueue& q) :
         m_parent(q),
         m_count(0)
 {}
 
 // protected
 bool
-MockPersistableQueue::UsageBarrier::acquire()
+SimplePersistableQueue::UsageBarrier::acquire()
 {
     qpid::sys::Monitor::ScopedLock l(m_monitor);
     if (m_parent.m_destroyed) {
@@ -282,7 +282,7 @@ MockPersistableQueue::UsageBarrier::acquire()
 }
 
 // protected
-void MockPersistableQueue::UsageBarrier::release()
+void SimplePersistableQueue::UsageBarrier::release()
 {
     qpid::sys::Monitor::Monitor::ScopedLock l(m_monitor);
     if (--m_count == 0) {
@@ -291,7 +291,7 @@ void MockPersistableQueue::UsageBarrier::release()
 }
 
 // protected
-void MockPersistableQueue::UsageBarrier::destroy()
+void SimplePersistableQueue::UsageBarrier::destroy()
 {
     qpid::sys::Monitor::Monitor::ScopedLock l(m_monitor);
     m_parent.m_destroyed = true;
@@ -301,13 +301,13 @@ void MockPersistableQueue::UsageBarrier::destroy()
 }
 
 // protected
-MockPersistableQueue::ScopedUse::ScopedUse(UsageBarrier& b) :
+SimplePersistableQueue::ScopedUse::ScopedUse(UsageBarrier& b) :
         m_barrier(b),
         m_acquired(m_barrier.acquire())
 {}
 
 // protected
-MockPersistableQueue::ScopedUse::~ScopedUse()
+SimplePersistableQueue::ScopedUse::~ScopedUse()
 {
     if (m_acquired) {
         m_barrier.release();
@@ -316,7 +316,7 @@ MockPersistableQueue::ScopedUse::~ScopedUse()
 
 // private
 void
-MockPersistableQueue::push(QueuedMessage& qm,
+SimplePersistableQueue::push(QueuedMessage& qm,
                            bool /*isRecovery*/)
 {
     QueuedMessage removed;
@@ -327,7 +327,7 @@ MockPersistableQueue::push(QueuedMessage& qm,
 
 // private
 bool
-MockPersistableQueue::asyncEnqueue(MockTransactionContext* txn,
+SimplePersistableQueue::asyncEnqueue(SimpleTransactionContext* txn,
                                    QueuedMessage& qm)
 {
     qm.payload()->setPersistenceId(m_store->getNextRid());
@@ -346,7 +346,7 @@ MockPersistableQueue::asyncEnqueue(MockTransactionContext* txn,
 
 // private
 bool
-MockPersistableQueue::asyncDequeue(MockTransactionContext* txn,
+SimplePersistableQueue::asyncDequeue(SimpleTransactionContext* txn,
                                    QueuedMessage& qm)
 {
 //std::cout << "QQQ Queue=\"" << m_name << "\": asyncDequeue() rid=0x" << std::hex << qm.payload()->getPersistenceId() << std::dec << std::endl << std::flush;
@@ -364,7 +364,7 @@ MockPersistableQueue::asyncDequeue(MockTransactionContext* txn,
 
 // private
 void
-MockPersistableQueue::destroyCheck(const std::string& opDescr) const
+SimplePersistableQueue::destroyCheck(const std::string& opDescr) const
 {
     if (m_destroyPending || m_destroyed) {
         std::ostringstream oss;
@@ -375,7 +375,7 @@ MockPersistableQueue::destroyCheck(const std::string& opDescr) const
 
 // private
 void
-MockPersistableQueue::createComplete(const boost::shared_ptr<QueueAsyncContext> qc)
+SimplePersistableQueue::createComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 {
 //std::cout << "QQQ Queue name=\"" << qc->getQueue()->getName() << "\": createComplete()" << std::endl << std::flush;
     assert(qc->getQueue().get() == this);
@@ -384,7 +384,7 @@ MockPersistableQueue::createComplete(const boost::shared_ptr<QueueAsyncContext> 
 
 // private
 void
-MockPersistableQueue::flushComplete(const boost::shared_ptr<QueueAsyncContext> qc)
+SimplePersistableQueue::flushComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 {
 //std::cout << "QQQ Queue name=\"" << qc->getQueue()->getName() << "\": flushComplete()" << std::endl << std::flush;
     assert(qc->getQueue().get() == this);
@@ -393,7 +393,7 @@ MockPersistableQueue::flushComplete(const boost::shared_ptr<QueueAsyncContext> q
 
 // private
 void
-MockPersistableQueue::destroyComplete(const boost::shared_ptr<QueueAsyncContext> qc)
+SimplePersistableQueue::destroyComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 {
 //std::cout << "QQQ Queue name=\"" << qc->getQueue()->getName() << "\": destroyComplete()" << std::endl << std::flush;
     assert(qc->getQueue().get() == this);
@@ -403,7 +403,7 @@ MockPersistableQueue::destroyComplete(const boost::shared_ptr<QueueAsyncContext>
 
 // private
 void
-MockPersistableQueue::enqueueComplete(const boost::shared_ptr<QueueAsyncContext> qc)
+SimplePersistableQueue::enqueueComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 {
 //std::cout << "QQQ Queue name=\"" << qc->getQueue()->getName() << "\": enqueueComplete() rid=0x" << std::hex << qc->getMessage()->getPersistenceId() << std::dec << std::endl << std::flush;
     assert(qc->getQueue().get() == this);
@@ -412,7 +412,7 @@ MockPersistableQueue::enqueueComplete(const boost::shared_ptr<QueueAsyncContext>
 
 // private
 void
-MockPersistableQueue::dequeueComplete(const boost::shared_ptr<QueueAsyncContext> qc)
+SimplePersistableQueue::dequeueComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 {
 //std::cout << "QQQ Queue name=\"" << qc->getQueue()->getName() << "\": dequeueComplete() rid=0x" << std::hex << qc->getMessage()->getPersistenceId() << std::dec << std::endl << std::flush;
     assert(qc->getQueue().get() == this);

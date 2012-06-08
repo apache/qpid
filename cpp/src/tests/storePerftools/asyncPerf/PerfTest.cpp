@@ -25,7 +25,7 @@
 
 #include "MessageConsumer.h"
 #include "MessageProducer.h"
-#include "MockPersistableQueue.h"
+#include "SimplePersistableQueue.h"
 
 #include "tests/storePerftools/version.h"
 #include "tests/storePerftools/common/ScopedTimer.h"
@@ -138,7 +138,7 @@ PerfTest::prepareQueues()
     for (uint16_t i = 0; i < m_testOpts.m_numQueues; ++i) {
         std::ostringstream qname;
         qname << "queue_" << std::setw(4) << std::setfill('0') << i;
-        boost::shared_ptr<MockPersistableQueue> mpq(new MockPersistableQueue(qname.str(), m_queueArgs, m_store, m_resultQueue));
+        boost::shared_ptr<SimplePersistableQueue> mpq(new SimplePersistableQueue(qname.str(), m_queueArgs, m_store, m_resultQueue));
         mpq->asyncCreate();
         m_queueList.push_back(mpq);
     }

@@ -23,11 +23,10 @@
 
 #include "QueuedMessage.h"
 
-#include "MockPersistableMessage.h"
-#include "MockPersistableQueue.h"
+#include "SimplePersistableMessage.h"
+#include "SimplePersistableQueue.h"
 
 #include "qpid/asyncStore/AsyncStoreImpl.h"
-//#include "qpid/broker/EnqueueHandle.h"
 
 namespace tests {
 namespace storePerftools {
@@ -37,8 +36,8 @@ QueuedMessage::QueuedMessage() :
         m_queue(0)
 {}
 
-QueuedMessage::QueuedMessage(MockPersistableQueue* q,
-                             boost::shared_ptr<MockPersistableMessage> msg) :
+QueuedMessage::QueuedMessage(SimplePersistableQueue* q,
+                             boost::shared_ptr<SimplePersistableMessage> msg) :
         m_queue(q),
         m_msg(msg),
         m_enqHandle(q->getStore() ? q->getStore()->createEnqueueHandle(msg->getHandle(), q->getHandle()) : qpid::broker::EnqueueHandle(0))
@@ -62,7 +61,7 @@ QueuedMessage::operator=(const QueuedMessage& rhs)
     return *this;
 }
 
-boost::shared_ptr<MockPersistableMessage>
+boost::shared_ptr<SimplePersistableMessage>
 QueuedMessage::payload() const
 {
     return m_msg;
@@ -79,52 +78,5 @@ QueuedMessage::enqHandle()
 {
     return m_enqHandle;
 }
-
-/*
-QueuedMessage::QueuedMessage(boost::shared_ptr<MockPersistableMessage> msg,
-                             qpid::broker::EnqueueHandle& enqHandle,
-                             boost::shared_ptr<MockTransactionContext> txn) :
-        m_msg(msg),
-        m_enqHandle(enqHandle),
-        m_txn(txn)
-{
-    if (txn.get()) {
-        txn->addEnqueuedMsg(this);
-    }
-}
-
-QueuedMessage::~QueuedMessage()
-{}
-
-boost::shared_ptr<MockPersistableMessage>
-QueuedMessage::getMessage() const
-{
-    return m_msg;
-}
-
-qpid::broker::EnqueueHandle
-QueuedMessage::getEnqueueHandle() const
-{
-    return m_enqHandle;
-}
-
-boost::shared_ptr<MockTransactionContext>
-QueuedMessage::getTransactionContext() const
-{
-    return m_txn;
-}
-
-bool
-QueuedMessage::isTransactional() const
-{
-    return m_txn.get() != 0;
-}
-
-void
-QueuedMessage::clearTransaction()
-{
-    m_txn.reset(static_cast<MockTransactionContext*>(0));
-}
-*/
 
 }}} // namespace tests::storePerfTools

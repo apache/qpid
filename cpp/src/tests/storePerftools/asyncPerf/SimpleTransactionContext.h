@@ -18,11 +18,11 @@
  */
 
 /**
- * \file MockTransactionContext.h
+ * \file SimpleTransactionContext.h
  */
 
-#ifndef tests_storePerftools_asyncPerf_MockTransactionContext_h_
-#define tests_storePerftools_asyncPerf_MockTransactionContext_h_
+#ifndef tests_storePerftools_asyncPerf_SimpleTransactionContext_h_
+#define tests_storePerftools_asyncPerf_SimpleTransactionContext_h_
 
 #include "qpid/broker/TransactionalStore.h" // qpid::broker::TransactionContext
 #include "qpid/broker/TxnHandle.h"
@@ -46,13 +46,13 @@ namespace asyncPerf {
 class QueuedMessage;
 class TransactionAsyncContext;
 
-class MockTransactionContext : public qpid::broker::TransactionContext
+class SimpleTransactionContext : public qpid::broker::TransactionContext
 {
 public:
-    MockTransactionContext(const std::string& xid = std::string());
-    MockTransactionContext(qpid::asyncStore::AsyncStoreImpl* store,
-                           const std::string& xid = std::string());
-    virtual ~MockTransactionContext();
+    SimpleTransactionContext(const std::string& xid = std::string());
+    SimpleTransactionContext(qpid::asyncStore::AsyncStoreImpl* store,
+                             const std::string& xid = std::string());
+    virtual ~SimpleTransactionContext();
 //    static void handleAsyncResult(const qpid::broker::AsyncResult* res,
 //                                  qpid::broker::BrokerAsyncContext* bc);
 
@@ -87,4 +87,4 @@ private:
 
 }}} // namespace tests:storePerftools::asyncPerf
 
-#endif // tests_storePerftools_asyncPerf_MockTransactionContext_h_
+#endif // tests_storePerftools_asyncPerf_SimpleTransactionContext_h_
