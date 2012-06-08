@@ -47,10 +47,10 @@ import org.slf4j.LoggerFactory;
 public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNetworkTransport
 {
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(IoNetworkTransport.class);
+    private static final int TIMEOUT = 60000;
 
     private Socket _socket;
     private IoNetworkConnection _connection;
-    private long _timeout = 60000;
     private AcceptingThread _acceptor;
 
     public NetworkConnection connect(ConnectionSettings settings, Receiver<ByteBuffer> delegate, SSLContext sslContext)
@@ -75,7 +75,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
 
             InetAddress address = InetAddress.getByName(settings.getHost());
 
-            _socket.connect(new InetSocketAddress(address, settings.getPort()));
+            _socket.connect(new InetSocketAddress(address, settings.getPort()), TIMEOUT);
         }
         catch (SocketException e)
         {
@@ -88,7 +88,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
 
         try
         {
-            _connection = new IoNetworkConnection(_socket, delegate, sendBufferSize, receiveBufferSize, _timeout);
+            _connection = new IoNetworkConnection(_socket, delegate, sendBufferSize, receiveBufferSize, TIMEOUT);
             _connection.start();
         }
         catch(Exception e)
@@ -224,7 +224,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
 
                         ProtocolEngine engine = _factory.newProtocolEngine();
 
-                        NetworkConnection connection = new IoNetworkConnection(socket, engine, sendBufferSize, receiveBufferSize, _timeout);
+                        NetworkConnection connection = new IoNetworkConnection(socket, engine, sendBufferSize, receiveBufferSize, TIMEOUT);
 
                         if(_sslContext != null)
                         {
