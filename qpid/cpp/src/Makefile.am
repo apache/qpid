@@ -683,6 +683,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/ThresholdAlerts.h \
   qpid/broker/TopicExchange.cpp \
   qpid/broker/TopicExchange.h \
+  qpid/broker/TopicKeyNode.h \
   qpid/broker/TransactionalStore.h \
   qpid/broker/TxAccept.cpp \
   qpid/broker/TxAccept.h \

@@ -32,20 +32,8 @@ using namespace qpid::sys;
 using namespace std;
 namespace _qmf = qmf::org::apache::qpid::broker;
 
-
-// TODO aconway 2006-09-20: More efficient matching algorithm.
-// Areas for improvement:
-// - excessive string copying: should be 0 copy, match from original buffer.
-// - match/lookup: use descision tree or other more efficient structure.
-
-namespace 
-{
-const std::string STAR("*");
-const std::string HASH("#");
-}
-
 // iterator for federation ReOrigin bind operation
-class TopicExchange::ReOriginIter : public TopicExchange::BindingNode::TreeIterator {
+class TopicExchange::ReOriginIter : public BindingNode::TreeIterator {
 public:
     ReOriginIter() {};
     ~ReOriginIter() {};
@@ -61,7 +49,7 @@ public:
 
 // match iterator used by route(): builds BindingList of all unique queues
 // that match the routing key.
-class TopicExchange::BindingsFinderIter : public TopicExchange::BindingNode::TreeIterator {
+class TopicExchange::BindingsFinderIter : public BindingNode::TreeIterator {
 public:
     BindingsFinderIter(BindingList &bl) : b(bl) {};
     ~BindingsFinderIter() {};
@@ -85,7 +73,7 @@ public:
 
 
 // Iterator to visit all bindings until a given queue is found
-class TopicExchange::QueueFinderIter : public TopicExchange::BindingNode::TreeIterator {
+class TopicExchange::QueueFinderIter : public BindingNode::TreeIterator {
 public:
     QueueFinderIter(Queue::shared_ptr queue) : queue(queue), found(false) {};
     ~QueueFinderIter() {};
@@ -107,58 +95,7 @@ public:
 };
 
 
-// Iterate over a string of '.'-separated tokens.
-struct TopicExchange::TokenIterator {
-    typedef pair<const char*,const char*> Token;
-    
-    TokenIterator(const char* b, const char* e) : end(e), token(make_pair(b, find(b,e,'.'))) {}
-
-    TokenIterator(const string& key) : end(&key[0]+key.size()), token(make_pair(&key[0], find(&key[0],end,'.'))) {}
-
-    bool finished() const { return !token.first; }
-
-    void next() {
-        if (token.second == end)
-            token.first = token.second = 0;
-        else {
-            token.first=token.second+1;
-            token.second=(find(token.first, end, '.'));
-        }
-    }
-
-    void pop(string &top) {
-        ptrdiff_t l = len();
-        if (l) {
-            top.assign(token.first, l);
-        } else top.clear();
-        next();
-    }
-
-    bool match1(char c) const {
-        return token.second==token.first+1 && *token.first == c;
-    }
-
-    bool match(const Token& token2) const {
-        ptrdiff_t l=len();
-        return l == token2.second-token2.first &&
-            strncmp(token.first, token2.first, l) == 0;
-    }
-
-    bool match(const string& str) const {
-        ptrdiff_t l=len();
-        return l == ptrdiff_t(str.size()) &&
-          str.compare(0, l, token.first, l) == 0;
-    }
-
-    ptrdiff_t len() const { return token.second - token.first; }
-
-
-    const char* end;
-    Token token;
-};
-
-
-class TopicExchange::Normalizer : public TopicExchange::TokenIterator {
+class TopicExchange::Normalizer : public TokenIterator {
   public:
     Normalizer(string& p)
         : TokenIterator(&p[0], &p[0]+p.size()), pattern(p)
@@ -230,7 +167,7 @@ bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, cons
 
     if (args == 0 || fedOp.empty() || fedOp == fedOpBind) {
         RWlock::ScopedWlock l(lock);
-        BindingKey *bk = bindingTree.addBindingKey(routingPattern);
+        BindingKey *bk = bindingTree.add(routingPattern);
         if (bk) {
             Binding::vector& qv(bk->bindingVector);
             Binding::vector::iterator q;
@@ -324,7 +261,7 @@ bool TopicExchange::deleteBinding(Queue::shared_ptr queue,
     nBindings--;
 
     if(qv.empty()) {
-        bindingTree.removeBindingKey(routingKey);
+        bindingTree.remove(routingKey);
     }
     if (mgmtExchange != 0) {
         mgmtExchange->dec_bindingCount();
@@ -340,7 +277,7 @@ bool TopicExchange::deleteBinding(Queue::shared_ptr queue,
 TopicExchange::BindingKey *TopicExchange::getQueueBinding(Queue::shared_ptr queue, const string& pattern)
 {
     // Note well: lock held by caller....
-    BindingKey *bk = bindingTree.getBindingKey(pattern);  // Exact match against binding pattern
+    BindingKey *bk = bindingTree.get(pattern);  // Exact match against binding pattern
     if (!bk) return 0;
     Binding::vector& qv(bk->bindingVector);
     Binding::vector::iterator q;
@@ -385,7 +322,7 @@ bool TopicExchange::isBound(Queue::shared_ptr queue, const string* const routing
     } else if (!routingKey && !queue) {
         return nBindings > 0;
     } else if (routingKey) {
-        if (bindingTree.getBindingKey(*routingKey)) {
+        if (bindingTree.get(*routingKey)) {
             return true;
         }
     } else {
@@ -399,295 +336,5 @@ bool TopicExchange::isBound(Queue::shared_ptr queue, const string* const routing
 TopicExchange::~TopicExchange() {}
 
 const std::string TopicExchange::typeName("topic");
-
-//
-// class BindingNode
-//
-
-TopicExchange::BindingNode::~BindingNode()
-{
-    childTokens.clear();
-}
-
-
-// Add a binding pattern to the tree.  Return a pointer to the binding key
-// of the node that matches the binding pattern.
-TopicExchange::BindingKey*
-TopicExchange::BindingNode::addBindingKey(const std::string& normalizedRoute)
-{
-    TokenIterator bKey(normalizedRoute);
-    return addBindingKey(bKey, normalizedRoute);
-}
-
-
-// Return a pointer to the binding key of the leaf node that matches the binding pattern.
-TopicExchange::BindingKey*
-TopicExchange::BindingNode::getBindingKey(const std::string& normalizedRoute)
-{
-    TokenIterator bKey(normalizedRoute);
-    return getBindingKey(bKey);
-}
-
-
-// Delete the binding associated with the given route.
-void TopicExchange::BindingNode::removeBindingKey(const std::string& normalizedRoute)
-{
-    TokenIterator bKey2(normalizedRoute);
-    removeBindingKey(bKey2, normalizedRoute);
-}
-
-// visit each node in the tree.  Note: all nodes are visited,
-// even non-leaf nodes (i.e. nodes without any bindings)
-bool TopicExchange::BindingNode::iterateAll(TopicExchange::BindingNode::TreeIterator& iter)
-{
-    if (!iter.visit(*this)) return false;
-
-    if (starChild && !starChild->iterateAll(iter)) return false;
-
-    if (hashChild && !hashChild->iterateAll(iter)) return false;
-
-    for (ChildMap::iterator ptr = childTokens.begin();
-         ptr != childTokens.end(); ptr++) {
-
-        if (!ptr->second->iterateAll(iter)) return false;
-    }
-
-    return true;
-}
-
-// applies iter against only matching nodes until iter returns false
-// Note Well: the iter may match against the same node more than once
-// if # wildcards are present!
-bool TopicExchange::BindingNode::iterateMatch(const std::string& routingKey, TreeIterator& iter)
-{
-    TopicExchange::TokenIterator rKey(routingKey);
-    return iterateMatch( rKey, iter );
-}
-
-
-// recurse over binding using token iterator.
-// Note well: bkey is modified!
-TopicExchange::BindingKey*
-TopicExchange::BindingNode::addBindingKey(TokenIterator &bKey,
-                                          const string& fullPattern)
-{
-    if (bKey.finished()) {
-        // this node's binding
-        if (routePattern.empty()) {
-            routePattern = fullPattern;
-        } else assert(routePattern == fullPattern);
-
-        return &bindings;
-
-    } else {
-        // pop the topmost token & recurse...
-
-        if (bKey.match(STAR)) {
-            if (!starChild) {
-                starChild.reset(new StarNode());
-            }
-            bKey.next();
-            return starChild->addBindingKey(bKey, fullPattern);
-
-        } else if (bKey.match(HASH)) {
-            if (!hashChild) {
-                hashChild.reset(new HashNode());
-            }
-            bKey.next();
-            return hashChild->addBindingKey(bKey, fullPattern);
-
-        } else {
-            ChildMap::iterator ptr;
-            std::string next_token;
-            bKey.pop(next_token);
-            ptr = childTokens.find(next_token);
-            if (ptr != childTokens.end()) {
-                return ptr->second->addBindingKey(bKey, fullPattern);
-            } else {
-                BindingNode::shared_ptr child(new BindingNode(next_token));
-                childTokens[next_token] = child;
-                return child->addBindingKey(bKey, fullPattern);
-            }
-        }
-    }
-}
-
-
-// Remove a binding pattern from the tree.  Return true if the current
-// node becomes a leaf without any bindings (therefore can be deleted).
-// Note Well: modifies parameter bKey's value!
-bool
-TopicExchange::BindingNode::removeBindingKey(TokenIterator &bKey,
-                                             const string& fullPattern)
-{
-    bool remove;
-
-    if (!bKey.finished()) {
-
-        if (bKey.match(STAR)) {
-            bKey.next();
-            if (starChild) {
-                remove = starChild->removeBindingKey(bKey, fullPattern);
-                if (remove) {
-                    starChild.reset();
-                }
-            }
-        } else if (bKey.match(HASH)) {
-            bKey.next();
-            if (hashChild) {
-                remove = hashChild->removeBindingKey(bKey, fullPattern);
-                if (remove) {
-                    hashChild.reset();
-                }
-            }
-        } else {
-            ChildMap::iterator ptr;
-            std::string next_token;
-            bKey.pop(next_token);
-            ptr = childTokens.find(next_token);
-            if (ptr != childTokens.end()) {
-                remove = ptr->second->removeBindingKey(bKey, fullPattern);
-                if (remove) {
-                    childTokens.erase(ptr);
-                }
-            }
-        }
-    }
-
-    // no bindings and no children == parent can delete this node.
-    return getChildCount() == 0 && bindings.bindingVector.empty();
-}
-
-
-// find the binding key that matches the given binding pattern.
-// Note Well: modifies key parameter!
-TopicExchange::BindingKey*
-TopicExchange::BindingNode::getBindingKey(TokenIterator &key)
-{
-    if (key.finished()) {
-        return &bindings;
-    }
-
-    string next_token;
-
-    key.pop(next_token);
-
-    if (next_token == STAR) {
-        if (starChild)
-            return starChild->getBindingKey(key);
-    } else if (next_token == HASH) {
-        if (hashChild)
-            return hashChild->getBindingKey(key);
-    } else {
-        ChildMap::iterator ptr;
-        ptr = childTokens.find(next_token);
-        if (ptr != childTokens.end()) {
-            return ptr->second->getBindingKey(key);
-        }
-    }
-
-    return 0;
-}
-
-
-
-// iterate over all nodes that match the given key.  Note well: the set of nodes
-// that are visited includes matching non-leaf nodes.
-// Note well: parameter key is modified!
-bool TopicExchange::BindingNode::iterateMatch(TokenIterator& key, TreeIterator& iter)
-{
-    // invariant: key has matched all previous tokens up to this node.
-    if (key.finished()) {
-        // exact match this node:  visit if bound
-        if (!bindings.bindingVector.empty())
-            if (!iter.visit(*this)) return false;
-    }
-
-    // check remaining key against children, even if empty.
-    return iterateMatchChildren(key, iter);
-}
-
-
-TopicExchange::StarNode::StarNode()
-    : BindingNode(STAR) {}
-
-
-// See iterateMatch() above.
-// Special case: this node must verify a token is available (match exactly one).
-bool TopicExchange::StarNode::iterateMatch(TokenIterator& key, TreeIterator& iter)
-{
-    // must match one token:
-    if (key.finished())
-        return true;    // match failed, but continue iteration on siblings
-
-    // pop the topmost token
-    key.next();
-
-    if (key.finished()) {
-        // exact match this node:  visit if bound
-        if (!bindings.bindingVector.empty())
-            if (!iter.visit(*this)) return false;
-    }
-
-    return iterateMatchChildren(key, iter);
-}
-
-
-TopicExchange::HashNode::HashNode()
-    : BindingNode(HASH) {}
-
-
-// See iterateMatch() above.
-// Special case: can match zero or more tokens at the head of the key.
-bool TopicExchange::HashNode::iterateMatch(TokenIterator& key, TreeIterator& iter)
-{
-    // consume each token and look for a match on the
-    // remaining key.
-    while (!key.finished()) {
-        if (!iterateMatchChildren(key, iter)) return false;
-        key.next();
-    }
-
-    if (!bindings.bindingVector.empty())
-        return iter.visit(*this);
-
-    return true;
-}
-
-
-// helper: iterate over current node's matching children
-bool
-TopicExchange::BindingNode::iterateMatchChildren(const TopicExchange::TokenIterator& key,
-                                                 TopicExchange::BindingNode::TreeIterator& iter)
-{
-    // always try glob - it can match empty keys
-    if (hashChild) {
-        TokenIterator tmp(key);
-        if (!hashChild->iterateMatch(tmp, iter))
-            return false;
-    }
-
-    if (!key.finished()) {
-
-        if (starChild) {
-            TokenIterator tmp(key);
-            if (!starChild->iterateMatch(tmp, iter))
-                return false;
-        }
-
-        if (!childTokens.empty()) {
-            TokenIterator newKey(key);
-            std::string next_token;
-            newKey.pop(next_token);
-
-            ChildMap::iterator ptr = childTokens.find(next_token);
-            if (ptr != childTokens.end()) {
-                return ptr->second->iterateMatch(newKey, iter);
-            }
-        }
-    }
-
-    return true;
-}
 
 }} // namespace qpid::broker
