@@ -28,6 +28,7 @@ define(["dojo/_base/xhr",
         "qpid/common/util",
         "qpid/common/formatter",
         "qpid/common/UpdatableStore",
+        "qpid/management/addBinding",
         "dojo/store/JsonRest",
         "dojox/grid/EnhancedGrid",
         "dojo/data/ObjectStore",
@@ -35,7 +36,7 @@ define(["dojo/_base/xhr",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dojo/domReady!"],
        function (xhr, parser, query, connect, json, properties, updater, util, formatter,
-                 UpdatableStore, JsonRest, EnhancedGrid, ObjectStore, Pagination) {
+                 UpdatableStore, addBinding, JsonRest, EnhancedGrid, ObjectStore) {
 
            function Queue(name, parent, controller) {
                this.name = name;
@@ -46,6 +47,17 @@ define(["dojo/_base/xhr",
                    this.modelObj.parent[ parent.type] = parent;
                }
            }
+
+           Queue.prototype.getQueueName = function()
+           {
+               return this.name;
+           };
+
+
+           Queue.prototype.getVirtualHostName = function()
+           {
+               return this.modelObj.parent.virtualhost.name;
+           };
 
            Queue.prototype.getTitle = function()
            {
@@ -61,14 +73,14 @@ define(["dojo/_base/xhr",
                             contentPane.containerNode.innerHTML = data;
                             parser.parse(contentPane.containerNode);
 
-                            that.queueUpdater = new QueueUpdater(contentPane.containerNode, that.modelObj, that.controller);
+                            that.queueUpdater = new QueueUpdater(contentPane.containerNode, that, that.controller);
 
                             updater.add( that.queueUpdater );
 
                             that.queueUpdater.update();
 
-                            var myStore = new JsonRest({target:"/rest/message/"+ encodeURIComponent(that.modelObj.parent.virtualhost.name) +
-                                                                               "/" + encodeURIComponent(that.name)});
+                            var myStore = new JsonRest({target:"/rest/message/"+ encodeURIComponent(that.getVirtualHostName()) +
+                                                                               "/" + encodeURIComponent(that.getQueueName())});
                             var messageGridDiv = query(".messages",contentPane.containerNode)[0];
                             that.grid = new EnhancedGrid({
                                 store: new ObjectStore({objectStore: myStore}),
@@ -99,6 +111,12 @@ define(["dojo/_base/xhr",
                                 }
                             }, messageGridDiv);
 
+                            var addBindingButton = query(".addBindingButton", contentPane.containerNode)[0];
+                            connect.connect(addBindingButton, "onclick",
+                                            function(evt){
+                                                addBinding.show({ virtualhost: that.getVirtualHostName(),
+                                                                  queue: that.getQueueName()});
+                                            });
 
                         }});
 
@@ -157,7 +175,7 @@ define(["dojo/_base/xhr",
 
 
 
-               this.query = "/rest/queue/"+ encodeURIComponent(queueObj.parent.virtualhost.name) + "/" + encodeURIComponent(queueObj.name);
+               this.query = "/rest/queue/"+ encodeURIComponent(queueObj.getVirtualHostName()) + "/" + encodeURIComponent(queueObj.getQueueName());
 
                xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"}).then(function(data)
                                {

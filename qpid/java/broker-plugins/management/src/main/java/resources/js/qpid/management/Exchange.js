@@ -27,8 +27,9 @@ define(["dojo/_base/xhr",
         "qpid/common/util",
         "qpid/common/formatter",
         "qpid/common/UpdatableStore",
+        "qpid/management/addBinding",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, properties, updater, util, formatter, UpdatableStore) {
+       function (xhr, parser, query, connect, properties, updater, util, formatter, UpdatableStore, addBinding) {
 
            function Exchange(name, parent, controller) {
                this.name = name;
@@ -39,6 +40,18 @@ define(["dojo/_base/xhr",
                    this.modelObj.parent[ parent.type] = parent;
                }
            }
+
+
+           Exchange.prototype.getExchangeName = function()
+           {
+               return this.name;
+           };
+
+
+           Exchange.prototype.getVirtualHostName = function()
+           {
+               return this.modelObj.parent.virtualhost.name;
+           };
 
            Exchange.prototype.getTitle = function()
            {
@@ -59,6 +72,14 @@ define(["dojo/_base/xhr",
                             updater.add( that.exchangeUpdater );
 
                             that.exchangeUpdater.update();
+
+
+                            var addBindingButton = query(".addBindingButton", contentPane.containerNode)[0];
+                            connect.connect(addBindingButton, "onclick",
+                                            function(evt){
+                                                addBinding.show({ virtualhost: that.getVirtualHostName(),
+                                                                  exchange: that.getExchangeName()});
+                                            });
 
                         }});
            };

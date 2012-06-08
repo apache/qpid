@@ -99,11 +99,6 @@ public class Management
 
         root.addServlet(new ServletHolder(new SaslServlet(_broker, socketAddress)), "/rest/sasl");
 
-        root.addServlet(new ServletHolder(new DefinedFileServlet("queue.html")),"/queue");
-        root.addServlet(new ServletHolder(new DefinedFileServlet("exchange.html")),"/exchange");
-        root.addServlet(new ServletHolder(new DefinedFileServlet("vhost.html")),"/vhost");
-        root.addServlet(new ServletHolder(new DefinedFileServlet("broker.html")),"/broker");
-        root.addServlet(new ServletHolder(new DefinedFileServlet("connection.html")),"/connection");
         root.addServlet(new ServletHolder(new DefinedFileServlet("management.html")),"/management");
 
 
