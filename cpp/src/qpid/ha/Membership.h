@@ -1,5 +1,5 @@
-#ifndef QPID_HA_CONNECTIONEXCLUDER_H
-#define QPID_HA_CONNECTIONEXCLUDER_H
+#ifndef QPID_HA_MEMBERSHIP_H
+#define QPID_HA_MEMBERSHIP_H
 
 /*
  *
@@ -22,46 +22,44 @@
  *
  */
 
+#include "BrokerInfo.h"
 #include "LogPrefix.h"
-#include "qpid/broker/ConnectionObserver.h"
 #include "qpid/framing/Uuid.h"
-#include "qpid/sys/Mutex.h"
+#include "qpid/log/Statement.h"
+#include "qpid/types/Variant.h"
 #include <boost/function.hpp>
-
+#include <set>
+#include <vector>
 namespace qpid {
-
-namespace broker {
-class Connection;
-}
-
 namespace ha {
 
 /**
- * Exclude normal connections to a backup broker.
- * Admin connections are identified by a special flag in client-properties
- * during connection negotiation.
+ * Keep track of the brokers in the membership.
+ * THREAD SAFE: updated in arbitrary connection threads.
  */
-class ConnectionExcluder : public broker::ConnectionObserver
+class Membership
 {
   public:
-    static const std::string ADMIN_TAG;
-    static const std::string BACKUP_TAG;
+    Membership(LogPrefix lp, boost::function<void(const types::Variant::List&)> updateFn)
+        : logPrefix(lp), updateCallback(updateFn) {}
 
-    ConnectionExcluder(HaBroker&, const types::Uuid& self);
+    void reset(const BrokerInfo& b); ///< Reset to contain just one member.
+    void add(const BrokerInfo& b);
+    void remove(const types::Uuid& id);
+    bool contains(const types::Uuid& id);
 
-    void opened(broker::Connection& connection);
-    void closed(broker::Connection& connection);
-
-    void setStatus(BrokerStatus);
+    void assign(const types::Variant::List&);
+    types::Variant::List asList() const;
 
   private:
-    void reject(broker::Connection&);
+    typedef std::map<types::Uuid, BrokerInfo> BrokerMap;
+    void update();
 
-    HaBroker& haBroker;
+    mutable sys::Mutex lock;
     LogPrefix logPrefix;
-    types::Uuid self;
+    BrokerMap brokers;
+    boost::function<void(const types::Variant::List&)> updateCallback;
 };
-
 }} // namespace qpid::ha
 
-#endif  /*!QPID_HA_CONNECTIONEXCLUDER_H*/
+#endif  /*!QPID_HA_MEMBERSHIP_H*/

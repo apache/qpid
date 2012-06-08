@@ -21,6 +21,7 @@
 
 #include "ConnectionExcluder.h"
 #include "BrokerInfo.h"
+#include "HaBroker.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/broker/Connection.h"
 #include <boost/function.hpp>
@@ -29,8 +30,19 @@
 namespace qpid {
 namespace ha {
 
-ConnectionExcluder::ConnectionExcluder(const LogPrefix& lp, const framing::Uuid& uuid)
-    : logPrefix(lp), backupAllowed(false), self(uuid) {}
+ConnectionExcluder::ConnectionExcluder(HaBroker& hb, const types::Uuid& uuid)
+    : haBroker(hb), logPrefix(hb), self(uuid) {}
+
+namespace {
+bool getBrokerInfo(broker::Connection& connection, BrokerInfo& info) {
+    framing::FieldTable ft;
+    if (connection.getClientProperties().getTable(ConnectionExcluder::BACKUP_TAG, ft)) {
+        info = BrokerInfo(ft);
+        return true;
+    }
+    return false;
+}
+}
 
 void ConnectionExcluder::opened(broker::Connection& connection) {
     if (connection.isLink()) return; // Allow all outgoing links
@@ -39,21 +51,35 @@ void ConnectionExcluder::opened(broker::Connection& connection) {
                  << connection.getMgmtId());
         return;
     }
-    framing::FieldTable ft;
-    if (connection.getClientProperties().getTable(BACKUP_TAG, ft)) {
-        BrokerInfo info(ft);
+    BrokerStatus status = haBroker.getStatus();
+    if (isBackup(status)) reject(connection);
+    BrokerInfo info;            // Get info about a connecting backup.
+    if (getBrokerInfo(connection, info)) {
         if (info.getSystemId() == self) {
-            QPID_LOG(debug, logPrefix << "Self connection rejected");
+            QPID_LOG(debug, logPrefix << "Rejected self connection");
+            reject(connection);
         }
         else {
-            QPID_LOG(debug, logPrefix << "Backup connection " << info <<
-                     (backupAllowed ? " allowed" : " rejected"));
-            if (backupAllowed) return;
+            QPID_LOG(debug, logPrefix << "Allowed backup connection " << info);
+            haBroker.getMembership().add(info);
+            return;
         }
     }
-    // Abort the connection.
+    else // This is a client connection.
+        if (status == RECOVERING) reject(connection); // FIXME aconway 2012-05-29: allow clients in recovery
+}
+
+void ConnectionExcluder::reject(broker::Connection& connection) {
     throw Exception(
         QPID_MSG(logPrefix << "Rejected connection " << connection.getMgmtId()));
+}
+
+void ConnectionExcluder::closed(broker::Connection& connection) {
+    BrokerInfo info;
+    BrokerStatus status = haBroker.getStatus();
+    if (isBackup(status)) return; // Don't mess with the map received from primary.
+    if (getBrokerInfo(connection, info))
+        haBroker.getMembership().remove(info.getSystemId());
 }
 
 const std::string ConnectionExcluder::ADMIN_TAG="qpid.ha-admin";
