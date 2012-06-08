@@ -28,6 +28,7 @@
 #include "qpid/broker/Exchange.h"
 #include "qpid/types/Variant.h"
 #include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 
 namespace qpid {
 
@@ -57,14 +58,17 @@ class QueueReplicator;
  * THREAD SAFE: Has no mutable state.
  *
  */
-class BrokerReplicator : public broker::Exchange
+class BrokerReplicator : public broker::Exchange,
+                         public boost::enable_shared_from_this<BrokerReplicator>
 {
   public:
     BrokerReplicator(HaBroker&, const boost::shared_ptr<broker::Link>&);
     ~BrokerReplicator();
-    std::string getType() const;
+
+    void initialize();
 
     // Exchange methods
+    std::string getType() const;
     bool bind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
     bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
     void route(broker::Deliverable&);

@@ -172,7 +172,10 @@ BrokerReplicator::BrokerReplicator(HaBroker& hb, const boost::shared_ptr<Link>& 
     : Exchange(QPID_CONFIGURATION_REPLICATOR),
       logPrefix(hb),
       haBroker(hb), broker(hb.getBroker()), link(l)
-{
+{}
+
+void BrokerReplicator::initialize() {
+    // Can't do this in the constructor because we need a shared_ptr to this.
     types::Uuid uuid(true);
     const std::string name(QPID_CONFIGURATION_REPLICATOR + ".bridge." + uuid.str());
     broker.getLinks().declare(
@@ -188,7 +191,9 @@ BrokerReplicator::BrokerReplicator(HaBroker& hb, const boost::shared_ptr<Link>& 
         "",                 // excludes
         false,              // dynamic
         0,                  // sync?
-        boost::bind(&BrokerReplicator::initializeBridge, this, _1, _2)
+        // shared_ptr keeps this in memory until outstanding initializeBridge
+        // calls are run.
+        boost::bind(&BrokerReplicator::initializeBridge, shared_from_this(), _1, _2)
     );
 }
 
