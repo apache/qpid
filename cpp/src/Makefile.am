@@ -549,6 +549,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/ConsumerFactory.h \
   qpid/broker/ConnectionObserver.h \
   qpid/broker/ConnectionObservers.h \
+  qpid/broker/ConfigurationObserver.h \
+  qpid/broker/ConfigurationObservers.h \
   qpid/broker/Daemon.cpp \
   qpid/broker/Daemon.h \
   qpid/broker/Deliverable.h \
@@ -611,6 +613,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/NameGenerator.h \
   qpid/broker/NullMessageStore.cpp \
   qpid/broker/NullMessageStore.h \
+  qpid/broker/Observers.h \
   qpid/broker/OwnershipToken.h \
   qpid/broker/Persistable.h \
   qpid/broker/PersistableConfig.h \

@@ -1219,6 +1219,7 @@ void Broker::bind(const std::string& queueName,
         throw framing::NotFoundException(QPID_MSG("Bind failed. No such exchange: " << exchangeName));
     } else {
         if (queue->bind(exchange, key, arguments)) {
+            getConfigurationObservers().bind(exchange, queue, key, arguments);
             if (managementAgent.get()) {
                 managementAgent->raiseEvent(_qmf::EventBind(connectionId, userId, exchangeName,
                                                   queueName, key, ManagementAgent::toMap(arguments)));
@@ -1254,6 +1255,8 @@ void Broker::unbind(const std::string& queueName,
             if (exchange->isDurable() && queue->isDurable()) {
                 store->unbind(*exchange, *queue, key, qpid::framing::FieldTable());
             }
+            getConfigurationObservers().unbind(
+                exchange, queue, key, framing::FieldTable());
             if (managementAgent.get()) {
                 managementAgent->raiseEvent(_qmf::EventUnbind(connectionId, userId, exchangeName, queueName, key));
             }

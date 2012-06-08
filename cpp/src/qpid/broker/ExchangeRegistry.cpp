@@ -19,6 +19,7 @@
  *
  */
 
+#include "qpid/broker/Broker.h"
 #include "qpid/broker/ExchangeRegistry.h"
 #include "qpid/broker/DirectExchange.h"
 #include "qpid/broker/FanOutExchange.h"
@@ -69,6 +70,7 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, c
                 exchange = i->second(name, durable, args, parent, broker);
             }
         }
+        if (broker) broker->getConfigurationObservers().exchangeCreate(exchange);
         exchanges[name] = exchange;
         return std::pair<Exchange::shared_ptr, bool>(exchange, true);
     } else {
@@ -85,8 +87,10 @@ void ExchangeRegistry::destroy(const string& name){
     RWlock::ScopedWlock locker(lock);
     ExchangeMap::iterator i =  exchanges.find(name);
     if (i != exchanges.end()) {
+        Exchange::shared_ptr ex = i->second;
         i->second->destroy();
         exchanges.erase(i);
+        if (broker) broker->getConfigurationObservers().exchangeDestroy(ex);
     }
 }
 

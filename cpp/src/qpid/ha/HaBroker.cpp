@@ -94,10 +94,11 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     if (!settings.brokerUrl.empty()) setBrokerUrl(Url(settings.brokerUrl), l);
     statusChanged(l);
 
-    QPID_LOG(notice, logPrefix << "Broker starting on " << brokerInfo);
+    QPID_LOG(notice, logPrefix << "Broker starting: " << brokerInfo);
 }
 
 HaBroker::~HaBroker() {
+    QPID_LOG(debug, logPrefix << "Broker shut down: " << brokerInfo);
     broker.getConnectionObservers().remove(excluder);
 }
 

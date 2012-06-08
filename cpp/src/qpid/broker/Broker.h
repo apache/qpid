@@ -39,6 +39,7 @@
 #include "qpid/broker/ExpiryPolicy.h"
 #include "qpid/broker/ConsumerFactory.h"
 #include "qpid/broker/ConnectionObservers.h"
+#include "qpid/broker/ConfigurationObservers.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qmf/org/apache/qpid/broker/Broker.h"
@@ -184,6 +185,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     AclModule* acl;
     DataDir dataDir;
     ConnectionObservers connectionObservers;
+    ConfigurationObservers configurationObservers;
 
     QueueRegistry queues;
     ExchangeRegistry exchanges;
@@ -209,7 +211,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
     mutable sys::Mutex linkClientPropertiesLock;
     framing::FieldTable linkClientProperties;
-
 
   public:
     QPID_BROKER_EXTERN virtual ~Broker();
@@ -381,6 +382,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
     ConsumerFactories&  getConsumerFactories() { return consumerFactories; }
     ConnectionObservers& getConnectionObservers() { return connectionObservers; }
+    ConfigurationObservers& getConfigurationObservers() { return configurationObservers; }
 
     /** Properties to be set on outgoing link connections */
     QPID_BROKER_EXTERN framing::FieldTable getLinkClientProperties() const;
