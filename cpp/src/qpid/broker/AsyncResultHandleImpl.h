@@ -35,18 +35,20 @@ class AsyncResultHandleImpl : public virtual qpid::RefCounted
 {
 public:
     AsyncResultHandleImpl();
-    AsyncResultHandleImpl(const BrokerAsyncContext* bc);
-    AsyncResultHandleImpl(const int errNo, const std::string& errMsg, const BrokerAsyncContext* bc);
+    AsyncResultHandleImpl(boost::shared_ptr<BrokerAsyncContext> bc);
+    AsyncResultHandleImpl(const int errNo,
+                          const std::string& errMsg,
+                          boost::shared_ptr<BrokerAsyncContext> bc);
     virtual ~AsyncResultHandleImpl();
 
     int getErrNo() const;
     std::string getErrMsg() const;
-    const BrokerAsyncContext* getBrokerAsyncContext() const;
+    boost::shared_ptr<BrokerAsyncContext> getBrokerAsyncContext() const;
 
 private:
     const int m_errNo;
     const std::string m_errMsg;
-    const BrokerAsyncContext* m_bc;
+    boost::shared_ptr<BrokerAsyncContext> m_bc;
 };
 
 }} // namespace qpid::broker

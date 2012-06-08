@@ -41,7 +41,7 @@ Plugin::earlyInitialize(Target& target)
 
         m_options.m_storeDir = dataDir.getPath ();
     }
-    m_store.reset(new qpid::asyncStore::AsyncStoreImpl(broker->getPoller(), m_options, 0)); // TODO: last arg: point to broker instance of AsyncResultQueue
+    m_store.reset(new qpid::asyncStore::AsyncStoreImpl(broker->getPoller(), m_options));
     boost::shared_ptr<qpid::broker::AsyncStore> brokerAsyncStore(m_store);
     broker->setAsyncStore(brokerAsyncStore);
     boost::function<void()> fn = boost::bind(&Plugin::finalize, this);

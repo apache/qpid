@@ -28,17 +28,18 @@ namespace broker {
 
 AsyncResultHandleImpl::AsyncResultHandleImpl() :
         m_errNo(0),
-        m_errMsg(),
-        m_bc(0)
+        m_errMsg()
 {}
 
-AsyncResultHandleImpl::AsyncResultHandleImpl(const BrokerAsyncContext* bc) :
+AsyncResultHandleImpl::AsyncResultHandleImpl(boost::shared_ptr<BrokerAsyncContext> bc) :
         m_errNo(0),
         m_errMsg(),
         m_bc(bc)
 {}
 
-AsyncResultHandleImpl::AsyncResultHandleImpl(const int errNo, const std::string& errMsg, const BrokerAsyncContext* bc) :
+AsyncResultHandleImpl::AsyncResultHandleImpl(const int errNo,
+                                             const std::string& errMsg,
+                                             boost::shared_ptr<BrokerAsyncContext> bc) :
         m_errNo(errNo),
         m_errMsg(errMsg),
         m_bc(bc)
@@ -59,7 +60,7 @@ AsyncResultHandleImpl::getErrMsg() const
     return m_errMsg;
 }
 
-const BrokerAsyncContext*
+boost::shared_ptr<BrokerAsyncContext>
 AsyncResultHandleImpl::getBrokerAsyncContext() const
 {
     return m_bc;

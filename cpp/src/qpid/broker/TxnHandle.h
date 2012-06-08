@@ -45,8 +45,6 @@ public:
     bool is2pc() const;
 
 private:
-    typedef qpid::asyncStore::TxnHandleImpl Impl;
-    Impl* impl;
     friend class qpid::messaging::PrivateImplRef<TxnHandle>;
 };
 

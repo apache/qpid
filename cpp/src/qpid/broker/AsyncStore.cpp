@@ -22,35 +22,16 @@
 namespace qpid {
 namespace broker {
 
+AsyncResultQueue::~AsyncResultQueue()
+{}
+
 BrokerAsyncContext::~BrokerAsyncContext()
 {}
 
 DataSource::~DataSource()
 {}
 
-AsyncStore::AsyncStore()
-{}
-
 AsyncStore::~AsyncStore()
 {}
-
-/*
-AsyncResult::AsyncResult() :
-        errNo(0),
-        errMsg()
-{}
-
-AsyncResult::AsyncResult(const int errNo,
-                         const std::string& errMsg) :
-        errNo(errNo),
-        errMsg(errMsg)
-{}
-
-void
-AsyncResult::destroy()
-{
-    delete this;
-}
-*/
 
 }} // namespace qpid::broker

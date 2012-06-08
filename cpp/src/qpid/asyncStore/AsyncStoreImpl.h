@@ -43,82 +43,71 @@ namespace asyncStore {
 class AsyncStoreImpl: public qpid::broker::AsyncStore {
 public:
     AsyncStoreImpl(boost::shared_ptr<qpid::sys::Poller> poller,
-                   const AsyncStoreOptions& opts,
-                   qpid::broker::AsyncResultQueue* resultQueue);
+                   const AsyncStoreOptions& opts);
     virtual ~AsyncStoreImpl();
     void initialize();
-    uint64_t getNextRid();
+    uint64_t getNextRid(); // Global counter for journal RIDs
 
-    // Management
+    // --- Management ---
 
     void initManagement(qpid::broker::Broker* broker);
 
-    // AsyncStore interface
+    // --- Factory methods for creating handles ---
 
-    qpid::broker::TxnHandle createTxnHandle(const std::string& xid=std::string());
+
     qpid::broker::ConfigHandle createConfigHandle();
-    qpid::broker::QueueHandle createQueueHandle(const std::string& name,
-                                                const qpid::types::Variant::Map& opts);
-    qpid::broker::EventHandle createEventHandle(qpid::broker::QueueHandle& queueHandle,
-                                                const std::string& key=std::string());
-    qpid::broker::MessageHandle createMessageHandle(const qpid::broker::DataSource* dataSrc);
     qpid::broker::EnqueueHandle createEnqueueHandle(qpid::broker::MessageHandle& msgHandle,
                                                     qpid::broker::QueueHandle& queueHandle);
+    qpid::broker::EventHandle createEventHandle(qpid::broker::QueueHandle& queueHandle,
+                                                const std::string& key=std::string());
+    qpid::broker::MessageHandle createMessageHandle(const qpid::broker::DataSource* const dataSrc);
+    qpid::broker::QueueHandle createQueueHandle(const std::string& name,
+                                                const qpid::types::Variant::Map& opts);
+    qpid::broker::TxnHandle createTxnHandle(const std::string& xid=std::string());
+
+
+    // --- Store async interface ---
 
     void submitPrepare(qpid::broker::TxnHandle& txnHandle,
-                       qpid::broker::ResultCallback resultCb,
-                       qpid::broker::BrokerAsyncContext* brokerCtxt);
+                       boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
     void submitCommit(qpid::broker::TxnHandle& txnHandle,
-                      qpid::broker::ResultCallback resultCb,
-                      qpid::broker::BrokerAsyncContext* brokerCtxt);
+                      boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
     void submitAbort(qpid::broker::TxnHandle& txnHandle,
-                     qpid::broker::ResultCallback resultCb,
-                     qpid::broker::BrokerAsyncContext* brokerCtxt);
+                     boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
 
     void submitCreate(qpid::broker::ConfigHandle& cfgHandle,
-                      const qpid::broker::DataSource* dataSrc,
-                      qpid::broker::ResultCallback resultCb,
-                      qpid::broker::BrokerAsyncContext* brokerCtxt);
+                      const qpid::broker::DataSource* const dataSrc,
+                      boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
     void submitDestroy(qpid::broker::ConfigHandle& cfgHandle,
-                       qpid::broker::ResultCallback resultCb,
-                       qpid::broker::BrokerAsyncContext* brokerCtxt);
+                       boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
 
     void submitCreate(qpid::broker::QueueHandle& queueHandle,
-                      const qpid::broker::DataSource* dataSrc,
-                      qpid::broker::ResultCallback resultCb,
-                      qpid::broker::BrokerAsyncContext* brokerCtxt);
+                      const qpid::broker::DataSource* const dataSrc,
+                      boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
     void submitDestroy(qpid::broker::QueueHandle& queueHandle,
-                       qpid::broker::ResultCallback resultCb,
-                       qpid::broker::BrokerAsyncContext* brokerCtxt);
+                       boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
     void submitFlush(qpid::broker::QueueHandle& queueHandle,
-                     qpid::broker::ResultCallback resultCb,
-                     qpid::broker::BrokerAsyncContext* brokerCtxt);
+                     boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
 
     void submitCreate(qpid::broker::EventHandle& eventHandle,
-                      const qpid::broker::DataSource* dataSrc,
-                      qpid::broker::ResultCallback resultCb,
-                      qpid::broker::BrokerAsyncContext* brokerCtxt);
+                      const qpid::broker::DataSource* const dataSrc,
+                      boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
     void submitCreate(qpid::broker::EventHandle& eventHandle,
-                      const qpid::broker::DataSource* dataSrc,
+                      const qpid::broker::DataSource* const dataSrc,
                       qpid::broker::TxnHandle& txnHandle,
-                      qpid::broker::ResultCallback resultCb,
-                      qpid::broker::BrokerAsyncContext* brokerCtxt);
+                      boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
     void submitDestroy(qpid::broker::EventHandle& eventHandle,
-                      qpid::broker::ResultCallback resultCb,
-                      qpid::broker::BrokerAsyncContext* brokerCtxt);
+                      boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
     void submitDestroy(qpid::broker::EventHandle& eventHandle,
                       qpid::broker::TxnHandle& txnHandle,
-                      qpid::broker::ResultCallback resultCb,
-                      qpid::broker::BrokerAsyncContext* brokerCtxt);
+                      boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
 
     void submitEnqueue(qpid::broker::EnqueueHandle& enqHandle,
                        qpid::broker::TxnHandle& txnHandle,
-                       qpid::broker::ResultCallback resultCb,
-                       qpid::broker::BrokerAsyncContext* brokerCtxt);
+                       boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
     void submitDequeue(qpid::broker::EnqueueHandle& enqHandle,
                        qpid::broker::TxnHandle& txnHandle,
-                       qpid::broker::ResultCallback resultCb,
-                       qpid::broker::BrokerAsyncContext* brokerCtxt);
+                       boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
 
     // Legacy - Restore FTD message, is NOT async!
     virtual int loadContent(qpid::broker::MessageHandle& msgHandle,

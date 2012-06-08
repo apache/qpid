@@ -44,8 +44,6 @@ public:
     // <none>
 
 private:
-    typedef qpid::asyncStore::EnqueueHandleImpl Impl;
-    Impl* impl;
     friend class qpid::messaging::PrivateImplRef<EnqueueHandle>;
 };
 

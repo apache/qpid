@@ -29,6 +29,8 @@
 
 #include <boost/shared_ptr.hpp>
 
+
+
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
@@ -40,21 +42,30 @@ class QueueAsyncContext: public qpid::broker::BrokerAsyncContext
 {
 public:
     QueueAsyncContext(boost::shared_ptr<MockPersistableQueue> q,
-                      const qpid::asyncStore::AsyncOperation::opCode op);
+                      const qpid::asyncStore::AsyncOperation::opCode op,
+                      qpid::broker::AsyncResultCallback rcb,
+                      qpid::broker::AsyncResultQueue* const arq);
     QueueAsyncContext(boost::shared_ptr<MockPersistableQueue> q,
                       boost::shared_ptr<MockPersistableMessage> msg,
-                      const qpid::asyncStore::AsyncOperation::opCode op);
+                      const qpid::asyncStore::AsyncOperation::opCode op,
+                      qpid::broker::AsyncResultCallback rcb,
+                      qpid::broker::AsyncResultQueue* const arq);
     virtual ~QueueAsyncContext();
     qpid::asyncStore::AsyncOperation::opCode getOpCode() const;
     const char* getOpStr() const;
     boost::shared_ptr<MockPersistableQueue> getQueue() const;
     boost::shared_ptr<MockPersistableMessage> getMessage() const;
+    qpid::broker::AsyncResultQueue* getAsyncResultQueue() const;
+    qpid::broker::AsyncResultCallback getAsyncResultCallback() const;
+    void invokeCallback(const qpid::broker::AsyncResultHandle* const arh) const;
     void destroy();
 
 protected:
     boost::shared_ptr<MockPersistableQueue> m_q;
     boost::shared_ptr<MockPersistableMessage> m_msg;
     const qpid::asyncStore::AsyncOperation::opCode m_op;
+    qpid::broker::AsyncResultCallback m_rcb;
+    qpid::broker::AsyncResultQueue* const m_arq;
 };
 
 }}} // namespace tests::storePerftools::asyncPerf

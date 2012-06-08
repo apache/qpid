@@ -65,10 +65,16 @@ AsyncResultHandle::getErrMsg() const
     return impl->getErrMsg();
 }
 
-const BrokerAsyncContext*
+boost::shared_ptr<BrokerAsyncContext>
 AsyncResultHandle::getBrokerAsyncContext() const
 {
     return impl->getBrokerAsyncContext();
+}
+
+void
+AsyncResultHandle::invokeAsyncResultCallback() const
+{
+    impl->getBrokerAsyncContext()->invokeCallback(this);
 }
 
 }} // namespace qpid::broker

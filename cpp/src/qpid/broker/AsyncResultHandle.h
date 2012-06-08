@@ -43,11 +43,10 @@ public:
 
     int getErrNo() const;
     std::string getErrMsg() const;
-    const BrokerAsyncContext* getBrokerAsyncContext() const;
+    boost::shared_ptr<BrokerAsyncContext> getBrokerAsyncContext() const;
+    void invokeAsyncResultCallback() const;
 
 private:
-    typedef qpid::broker::AsyncResultHandleImpl Impl;
-    Impl* impl;
     friend class qpid::messaging::PrivateImplRef<AsyncResultHandle>;
 };
 

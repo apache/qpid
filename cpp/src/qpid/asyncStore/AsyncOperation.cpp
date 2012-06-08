@@ -34,60 +34,50 @@ AsyncOperation::AsyncOperation() :
         m_op(NONE),
         m_targetHandle(),
         m_dataSrc(0),
-        m_txnHandle(0),
-        m_resCb(0),
-        m_brokerCtxt(0)
+        m_txnHandle(0)
 {}
 
 AsyncOperation::AsyncOperation(const opCode op,
                                const qpid::broker::IdHandle* th,
-                               const qpid::broker::ResultCallback resCb,
-                               qpid::broker::BrokerAsyncContext* brokerCtxt) :
+                               boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt) :
         m_op(op),
         m_targetHandle(th),
         m_dataSrc(0),
         m_txnHandle(0),
-        m_resCb(resCb),
         m_brokerCtxt(brokerCtxt)
 {}
 
 AsyncOperation::AsyncOperation(const opCode op,
                                const qpid::broker::IdHandle* th,
-                               const qpid::broker::DataSource* dataSrc,
-                               const qpid::broker::ResultCallback resCb,
-                               qpid::broker::BrokerAsyncContext* brokerCtxt) :
+                               const qpid::broker::DataSource* const dataSrc,
+                               boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt) :
         m_op(op),
         m_targetHandle(th),
         m_dataSrc(dataSrc),
         m_txnHandle(0),
-        m_resCb(resCb),
         m_brokerCtxt(brokerCtxt)
 {}
 
 AsyncOperation::AsyncOperation(const opCode op,
                                const qpid::broker::IdHandle* th,
                                const qpid::broker::TxnHandle* txnHandle,
-                               const qpid::broker::ResultCallback resCb,
-                               qpid::broker::BrokerAsyncContext* brokerCtxt) :
+                               boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt) :
         m_op(op),
         m_targetHandle(th),
         m_dataSrc(0),
         m_txnHandle(txnHandle),
-        m_resCb(resCb),
         m_brokerCtxt(brokerCtxt)
 {}
 
 AsyncOperation::AsyncOperation(const opCode op,
                                const qpid::broker::IdHandle* th,
-                               const qpid::broker::DataSource* dataSrc,
+                               const qpid::broker::DataSource* const dataSrc,
                                const qpid::broker::TxnHandle* txnHandle,
-                               const qpid::broker::ResultCallback resCb,
-                               qpid::broker::BrokerAsyncContext* brokerCtxt) :
+                               boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt) :
         m_op(op),
         m_targetHandle(th),
         m_dataSrc(dataSrc),
         m_txnHandle(txnHandle),
-        m_resCb(resCb),
         m_brokerCtxt(brokerCtxt)
 {}
 

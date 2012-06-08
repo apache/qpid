@@ -32,7 +32,6 @@
 #include "tests/storePerftools/common/Thread.h"
 
 #include "qpid/asyncStore/AsyncStoreImpl.h"
-#include "qpid/broker/AsyncResultQueue.h"
 #include "qpid/sys/Poller.h"
 
 #include <iomanip>
@@ -70,7 +69,7 @@ PerfTest::~PerfTest()
 void
 PerfTest::prepareStore()
 {
-    m_store = new qpid::asyncStore::AsyncStoreImpl(m_poller, m_storeOpts, &m_resultQueue);
+    m_store = new qpid::asyncStore::AsyncStoreImpl(m_poller, m_storeOpts);
     m_store->initialize();
 }
 

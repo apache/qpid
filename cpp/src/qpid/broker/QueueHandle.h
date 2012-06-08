@@ -44,8 +44,6 @@ public:
     const std::string& getName() const;
 
 private:
-    typedef qpid::asyncStore::QueueHandleImpl Impl;
-    Impl* impl;
     friend class qpid::messaging::PrivateImplRef<QueueHandle>;
 };
 

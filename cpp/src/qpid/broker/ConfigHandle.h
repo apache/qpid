@@ -44,8 +44,6 @@ public:
     // <none>
 
 private:
-    typedef qpid::asyncStore::ConfigHandleImpl Impl;
-    Impl* impl;
     friend class qpid::messaging::PrivateImplRef<ConfigHandle>;
 };
 

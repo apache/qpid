@@ -1078,7 +1078,7 @@ set (qpidbroker_SOURCES
      qpid/amqp_0_10/Connection.cpp
      qpid/broker/AsyncResultHandle.cpp
      qpid/broker/AsyncResultHandleImpl.cpp
-     qpid/broker/AsyncResultQueue.cpp
+     qpid/broker/AsyncResultQueueImpl.cpp
      qpid/broker/AsyncStore.cpp
      qpid/broker/Broker.cpp
      qpid/broker/Credit.cpp

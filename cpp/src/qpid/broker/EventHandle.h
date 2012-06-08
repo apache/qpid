@@ -44,8 +44,6 @@ public:
     const std::string& getKey() const;
 
 private:
-    typedef qpid::asyncStore::EventHandleImpl Impl;
-    Impl* impl;
     friend class qpid::messaging::PrivateImplRef<EventHandle>;
 };
 

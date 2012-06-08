@@ -35,15 +35,13 @@ namespace asyncStore {
 class OperationQueue
 {
 public:
-    OperationQueue(const boost::shared_ptr<qpid::sys::Poller>& poller,
-                   qpid::broker::AsyncResultQueue* resultQueue = 0);
+    OperationQueue(const boost::shared_ptr<qpid::sys::Poller>& poller);
     virtual ~OperationQueue();
-    void submit(const AsyncOperation* op);
+    void submit(boost::shared_ptr<const AsyncOperation> op);
 
 protected:
-    typedef qpid::sys::PollableQueue<const AsyncOperation*> OpQueue;
+    typedef qpid::sys::PollableQueue<boost::shared_ptr<const AsyncOperation> > OpQueue;
     OpQueue m_opQueue;
-    qpid::broker::AsyncResultQueue* m_resultQueue;
 
     OpQueue::Batch::const_iterator handle(const OpQueue::Batch& e);
 };

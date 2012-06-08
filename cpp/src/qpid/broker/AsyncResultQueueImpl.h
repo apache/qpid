@@ -18,45 +18,35 @@
  */
 
 /**
- * \file AsyncResultQueue.cpp
+ * \file AsyncResultQueueImpl.h
  */
 
-#include "AsyncResultQueue.h"
+#ifndef qpid_broker_AsyncResultQueueImpl_h_
+#define qpid_broker_AsyncResultQueueImpl_h_
+
+#include "AsyncStore.h"
+
+#include "qpid/sys/PollableQueue.h"
 
 namespace qpid {
 namespace broker {
 
-AsyncResultQueue::AsyncResultQueue(const boost::shared_ptr<qpid::sys::Poller>& poller) :
-        m_resQueue(boost::bind(&AsyncResultQueue::handle, this, _1), poller)
-{
-    m_resQueue.start();
-}
+class AsyncResultHandle;
 
-AsyncResultQueue::~AsyncResultQueue()
+class AsyncResultQueueImpl : public AsyncResultQueue
 {
-    m_resQueue.stop();
-}
+public:
+    AsyncResultQueueImpl(const boost::shared_ptr<qpid::sys::Poller>& poller);
+    virtual ~AsyncResultQueueImpl();
+    virtual void submit(boost::shared_ptr<AsyncResultHandle> arh);
 
-void
-AsyncResultQueue::submit(AsyncResultHandle* res)
-{
-    m_resQueue.push(res);
-}
+protected:
+    typedef qpid::sys::PollableQueue<boost::shared_ptr<const AsyncResultHandle> > ResultQueue;
+    ResultQueue m_resQueue;
 
-//static
-/*
-void
-AsyncResultQueue::submit(AsyncResultQueue* arq, AsyncResultHandle* rh)
-{
-    arq->submit(rh);
-}
-*/
-
-// protected
-AsyncResultQueue::ResultQueue::Batch::const_iterator
-AsyncResultQueue::handle(const ResultQueue::Batch& e)
-{
-    return e.end();
-}
+    ResultQueue::Batch::const_iterator handle(const ResultQueue::Batch& e);
+};
 
 }} // namespace qpid::broker
+
+#endif // qpid_broker_AsyncResultQueueImpl_h_

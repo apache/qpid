@@ -64,11 +64,10 @@ public:
     MockPersistableQueue(const std::string& name,
                          const qpid::framing::FieldTable& args,
                          qpid::asyncStore::AsyncStoreImpl* store,
-                         qpid::broker::AsyncResultQueue& rq);
+                         qpid::broker::AsyncResultQueue& arq);
     virtual ~MockPersistableQueue();
 
-//    static void handleAsyncResult(const qpid::broker::AsyncResult* res,
-//                                  qpid::broker::BrokerAsyncContext* bc);
+    static void handleAsyncResult(const qpid::broker::AsyncResultHandle* const res);
     const qpid::broker::QueueHandle& getHandle() const;
     qpid::broker::QueueHandle& getHandle();
     qpid::asyncStore::AsyncStoreImpl* getStore();
@@ -143,11 +142,11 @@ protected:
     void destroyCheck(const std::string& opDescr) const;
 
     // --- Async op completions (called through handleAsyncResult) ---
-    void createComplete(const QueueAsyncContext* qc);
-    void flushComplete(const QueueAsyncContext* qc);
-    void destroyComplete(const QueueAsyncContext* qc);
-    void enqueueComplete(const QueueAsyncContext* qc);
-    void dequeueComplete(const QueueAsyncContext* qc);
+    void createComplete(const boost::shared_ptr<QueueAsyncContext> qc);
+    void flushComplete(const boost::shared_ptr<QueueAsyncContext> qc);
+    void destroyComplete(const boost::shared_ptr<QueueAsyncContext> qc);
+    void enqueueComplete(const boost::shared_ptr<QueueAsyncContext> qc);
+    void dequeueComplete(const boost::shared_ptr<QueueAsyncContext> qc);
 };
 
 }}} // namespace tests::storePerftools::asyncPerf

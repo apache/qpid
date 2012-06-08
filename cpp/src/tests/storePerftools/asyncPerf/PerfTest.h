@@ -28,7 +28,7 @@
 
 #include "tests/storePerftools/common/Streamable.h"
 
-#include "qpid/broker/AsyncResultQueue.h"
+#include "qpid/broker/AsyncResultQueueImpl.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Thread.h"
 
@@ -70,7 +70,7 @@ protected:
     const char* m_msgData;
     boost::shared_ptr<qpid::sys::Poller> m_poller;
     qpid::sys::Thread m_pollingThread;
-    qpid::broker::AsyncResultQueue m_resultQueue;
+    qpid::broker::AsyncResultQueueImpl m_resultQueue;
     qpid::asyncStore::AsyncStoreImpl* m_store;
     std::deque<boost::shared_ptr<MockPersistableQueue> > m_queueList;
     std::deque<boost::shared_ptr<MessageProducer> > m_producers;

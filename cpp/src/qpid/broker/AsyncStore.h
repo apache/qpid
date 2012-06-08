@@ -24,48 +24,31 @@
 // does not allow it. Using a local map<std::string, Variant> definition also precludes forward declaration.
 #include "qpid/types/Variant.h" // qpid::types::Variant::Map
 
+#include <boost/shared_ptr.hpp>
 #include <stdint.h>
 #include <string>
 
 namespace qpid {
 namespace broker {
 
-// Defined by broker, implements qpid::messaging::Handle-type template to hide ref counting
+// This handle carries async op results
+class AsyncResultHandle;
+
+// Broker to subclass as a pollable queue
+class AsyncResultQueue {
+public:
+    virtual ~AsyncResultQueue();
+    // TODO: Remove boost::shared_ptr<> from this interface
+    virtual void submit(boost::shared_ptr<AsyncResultHandle>) = 0;
+};
+
 // Subclass this for specific contexts
 class BrokerAsyncContext {
 public:
     virtual ~BrokerAsyncContext();
+    virtual AsyncResultQueue* getAsyncResultQueue() const = 0;
+    virtual void invokeCallback(const AsyncResultHandle* const) const = 0;
 };
-
-// Callback definition:
-//struct AsyncResult {
-//    int errNo; // 0 implies no error
-//    std::string errMsg;
-//    AsyncResult();
-//    AsyncResult(const int errNo,
-//                const std::string& errMsg);
-//    void destroy();
-//};
-//typedef void (*ResultCallback)(const AsyncResult*, BrokerAsyncContext*);
-
-class AsyncResultHandle;
-class AsyncResultQueue; // Implements the result callback function
-
-// Singleton class in broker which contains return pollable queue. Use submitAsyncResult() to add reulsts to queue.
-class AsyncResultHandler {
-public:
-    virtual ~AsyncResultHandler();
-
-    // Factory method to create result handle
-
-    virtual AsyncResultHandle createAsyncResultHandle(const int errNo, const std::string& errMsg, BrokerAsyncContext*) = 0;
-
-    // Async return interface
-
-    virtual void submitAsyncResult(AsyncResultHandle&) = 0;
-};
-typedef void (qpid::broker::AsyncResultQueue::*ResultCallback)(AsyncResultHandle*);
-//typedef void (qpid::broker::AsyncResultQueue::*ResultCallback)(AsyncResultQueue*, AsyncResultHandle*);
 
 class DataSource {
 public:
@@ -73,6 +56,9 @@ public:
     virtual uint64_t getSize() = 0;
     virtual void write(char* target) = 0;
 };
+
+// Callback invoked by AsyncResultQueue to pass back async results
+typedef void (*AsyncResultCallback)(const AsyncResultHandle* const);
 
 class ConfigHandle;
 class EnqueueHandle;
@@ -85,39 +71,39 @@ class TxnHandle;
 // Subclassed by store:
 class AsyncStore {
 public:
-    AsyncStore();
     virtual ~AsyncStore();
 
-    // Factory methods for creating handles
+    // --- Factory methods for creating handles ---
 
     virtual ConfigHandle createConfigHandle() = 0;
     virtual EnqueueHandle createEnqueueHandle(MessageHandle&, QueueHandle&) = 0;
     virtual EventHandle createEventHandle(QueueHandle&, const std::string& key=std::string()) = 0;
-    virtual MessageHandle createMessageHandle(const DataSource*) = 0;
+    virtual MessageHandle createMessageHandle(const DataSource* const) = 0;
     virtual QueueHandle createQueueHandle(const std::string& name, const qpid::types::Variant::Map& opts) = 0;
-    virtual TxnHandle createTxnHandle(const std::string& xid=std::string()) = 0;
+    virtual TxnHandle createTxnHandle(const std::string& xid=std::string()) = 0; // Distr. txns must supply xid
 
 
-    // Store async interface
+    // --- Store async interface ---
 
-    virtual void submitPrepare(TxnHandle&, ResultCallback, BrokerAsyncContext*) = 0; // Distributed txns only
-    virtual void submitCommit(TxnHandle&, ResultCallback, BrokerAsyncContext*) = 0;
-    virtual void submitAbort(TxnHandle&, ResultCallback, BrokerAsyncContext*) = 0;
+    // TODO: Remove boost::shared_ptr<> from this interface
+    virtual void submitPrepare(TxnHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0; // Distributed txns only
+    virtual void submitCommit(TxnHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
+    virtual void submitAbort(TxnHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
 
-    virtual void submitCreate(ConfigHandle&, const DataSource*, ResultCallback, BrokerAsyncContext*) = 0;
-    virtual void submitDestroy(ConfigHandle&, ResultCallback, BrokerAsyncContext*) = 0;
+    virtual void submitCreate(ConfigHandle&, const DataSource* const, boost::shared_ptr<BrokerAsyncContext>) = 0;
+    virtual void submitDestroy(ConfigHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
 
-    virtual void submitCreate(QueueHandle&, const DataSource*, ResultCallback, BrokerAsyncContext*) = 0;
-    virtual void submitDestroy(QueueHandle&, ResultCallback, BrokerAsyncContext*) = 0;
-    virtual void submitFlush(QueueHandle&, ResultCallback, BrokerAsyncContext*) = 0;
+    virtual void submitCreate(QueueHandle&, const DataSource* const, boost::shared_ptr<BrokerAsyncContext>) = 0;
+    virtual void submitDestroy(QueueHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
+    virtual void submitFlush(QueueHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
 
-    virtual void submitCreate(EventHandle&, const DataSource*, ResultCallback, BrokerAsyncContext*) = 0;
-    virtual void submitCreate(EventHandle&, const DataSource*, TxnHandle&, ResultCallback, BrokerAsyncContext*) = 0;
-    virtual void submitDestroy(EventHandle&, ResultCallback, BrokerAsyncContext*) = 0;
-    virtual void submitDestroy(EventHandle&, TxnHandle&, ResultCallback, BrokerAsyncContext*) = 0;
+    virtual void submitCreate(EventHandle&, const DataSource* const, boost::shared_ptr<BrokerAsyncContext>) = 0;
+    virtual void submitCreate(EventHandle&, const DataSource* const, TxnHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
+    virtual void submitDestroy(EventHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
+    virtual void submitDestroy(EventHandle&, TxnHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
 
-    virtual void submitEnqueue(EnqueueHandle&, TxnHandle&, ResultCallback, BrokerAsyncContext*) = 0;
-    virtual void submitDequeue(EnqueueHandle&, TxnHandle&, ResultCallback, BrokerAsyncContext*) = 0;
+    virtual void submitEnqueue(EnqueueHandle&, TxnHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
+    virtual void submitDequeue(EnqueueHandle&, TxnHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
 
     // Legacy - Restore FTD message, is NOT async!
     virtual int loadContent(MessageHandle&, QueueHandle&, char* data, uint64_t offset, const uint64_t length) = 0;

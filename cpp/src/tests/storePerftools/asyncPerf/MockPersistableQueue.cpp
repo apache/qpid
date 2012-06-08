@@ -30,7 +30,7 @@
 #include "QueuedMessage.h"
 
 #include "qpid/asyncStore/AsyncStoreImpl.h"
-#include "qpid/broker/AsyncResultQueue.h"
+#include "qpid/broker/AsyncResultHandle.h"
 
 namespace tests {
 namespace storePerftools {
@@ -39,11 +39,11 @@ namespace asyncPerf {
 MockPersistableQueue::MockPersistableQueue(const std::string& name,
                                            const qpid::framing::FieldTable& /*args*/,
                                            qpid::asyncStore::AsyncStoreImpl* store,
-                                           qpid::broker::AsyncResultQueue& resultQueue) :
+                                           qpid::broker::AsyncResultQueue& arq) :
         qpid::broker::PersistableQueue(),
         m_name(name),
         m_store(store),
-        m_resultQueue(resultQueue),
+        m_resultQueue(arq),
         m_asyncOpCounter(0UL),
         m_persistenceId(0ULL),
         m_persistableData(m_name), // TODO: Currently queue durable data consists only of the queue name. Update this.
@@ -67,18 +67,17 @@ MockPersistableQueue::~MockPersistableQueue()
 }
 
 // static
-/*
 void
-MockPersistableQueue::handleAsyncResult(const qpid::broker::AsyncResult* res,
-                                        qpid::broker::BrokerAsyncContext* bc)
+MockPersistableQueue::handleAsyncResult(const qpid::broker::AsyncResultHandle* const arh)
 {
-    if (bc && res) {
-        QueueAsyncContext* qc = dynamic_cast<QueueAsyncContext*>(bc);
-        if (res->errNo) {
+    if (arh) {
+        boost::shared_ptr<QueueAsyncContext> qc = boost::dynamic_pointer_cast<QueueAsyncContext>(arh->getBrokerAsyncContext());
+        if (arh->getErrNo()) {
             // TODO: Handle async failure here (other than by simply printing a message)
             std::cerr << "Queue name=\"" << qc->getQueue()->m_name << "\": Operation " << qc->getOpStr() << ": failure "
-                      << res->errNo << " (" << res->errMsg << ")" << std::endl;
+                      << arh->getErrNo() << " (" << arh->getErrMsg() << ")" << std::endl;
         } else {
+//std::cout << "QQQ MockPersistableQueue::handleAsyncResult() op=" << qc->getOpStr() << std::endl << std::flush;
             // Handle async success here
             switch(qc->getOpCode()) {
             case qpid::asyncStore::AsyncOperation::QUEUE_CREATE:
@@ -103,10 +102,7 @@ MockPersistableQueue::handleAsyncResult(const qpid::broker::AsyncResult* res,
             };
         }
     }
-    if (bc) delete bc;
-    if (res) delete res;
 }
-*/
 
 const qpid::broker::QueueHandle&
 MockPersistableQueue::getHandle() const
@@ -129,14 +125,14 @@ MockPersistableQueue::getStore()
 void
 MockPersistableQueue::asyncCreate()
 {
-    qpid::broker::ResultCallback rcb = &qpid::broker::AsyncResultQueue::submit;
     if (m_store) {
+        boost::shared_ptr<QueueAsyncContext> qac(new QueueAsyncContext(shared_from_this(),
+                                                                       qpid::asyncStore::AsyncOperation::QUEUE_CREATE,
+                                                                       &handleAsyncResult,
+                                                                       &m_resultQueue));
         m_store->submitCreate(m_queueHandle,
                               this,
-                              rcb,
-//                              &qpid::broker::AsyncResultQueue::submit/*&m_resultQueue.submit*/,
-                              new QueueAsyncContext(shared_from_this(),
-                                                    qpid::asyncStore::AsyncOperation::QUEUE_CREATE));
+                              qac);
         ++m_asyncOpCounter;
     }
 }
@@ -147,10 +143,12 @@ MockPersistableQueue::asyncDestroy(const bool deleteQueue)
     m_destroyPending = true;
     if (m_store) {
         if (deleteQueue) {
+            boost::shared_ptr<QueueAsyncContext> qac(new QueueAsyncContext(shared_from_this(),
+                                                                           qpid::asyncStore::AsyncOperation::QUEUE_DESTROY,
+                                                                           &handleAsyncResult,
+                                                                           &m_resultQueue));
             m_store->submitDestroy(m_queueHandle,
-                                   &qpid::broker::AsyncResultQueue::submit/*&m_resultQueue.submit*/,
-                                   new QueueAsyncContext(shared_from_this(),
-                                                         qpid::asyncStore::AsyncOperation::QUEUE_DESTROY));
+                                   qac);
             ++m_asyncOpCounter;
         }
         m_asyncOpCounter.waitForZero(qpid::sys::Duration(10UL*1000*1000*1000));
@@ -162,6 +160,7 @@ MockPersistableQueue::deliver(boost::shared_ptr<MockPersistableMessage> msg)
 {
     QueuedMessage qm(this, msg);
     if(enqueue((MockTransactionContext*)0, qm)) {
+        // TODO: Do we need to wait for the enqueue to complete before push()ing the msg?
         push(qm);
     }
 }
@@ -334,12 +333,14 @@ MockPersistableQueue::asyncEnqueue(MockTransactionContext* txn,
 {
     qm.payload()->setPersistenceId(m_store->getNextRid());
 //std::cout << "QQQ Queue=\"" << m_name << "\": asyncEnqueue() rid=0x" << std::hex << qm.payload()->getPersistenceId() << std::dec << std::endl << std::flush;
-    m_store->submitEnqueue(/*enqHandle*/qm.enqHandle(),
+    boost::shared_ptr<QueueAsyncContext> qac(new QueueAsyncContext(shared_from_this(),
+                                                                   qm.payload(),
+                                                                   qpid::asyncStore::AsyncOperation::MSG_ENQUEUE,
+                                                                   &handleAsyncResult,
+                                                                   &m_resultQueue));
+    m_store->submitEnqueue(qm.enqHandle(),
                            txn->getHandle(),
-                           &qpid::broker::AsyncResultQueue::submit/*&m_resultQueue.submit*/,
-                           new QueueAsyncContext(shared_from_this(),
-                                                 qm.payload(),
-                                                 qpid::asyncStore::AsyncOperation::MSG_ENQUEUE));
+                           qac);
     ++m_asyncOpCounter;
     return true;
 }
@@ -350,13 +351,14 @@ MockPersistableQueue::asyncDequeue(MockTransactionContext* txn,
                                    QueuedMessage& qm)
 {
 //std::cout << "QQQ Queue=\"" << m_name << "\": asyncDequeue() rid=0x" << std::hex << qm.payload()->getPersistenceId() << std::dec << std::endl << std::flush;
-    qpid::broker::EnqueueHandle enqHandle = qm.enqHandle();
-    m_store->submitDequeue(enqHandle,
+    boost::shared_ptr<QueueAsyncContext> qac(new QueueAsyncContext(shared_from_this(),
+                                                                   qm.payload(),
+                                                                   qpid::asyncStore::AsyncOperation::MSG_DEQUEUE,
+                                                                   &handleAsyncResult,
+                                                                   &m_resultQueue));
+    m_store->submitDequeue(qm.enqHandle(),
                            txn->getHandle(),
-                           &qpid::broker::AsyncResultQueue::submit/*&m_resultQueue.submit*/,
-                           new QueueAsyncContext(shared_from_this(),
-                                                 qm.payload(),
-                                                 qpid::asyncStore::AsyncOperation::MSG_DEQUEUE));
+                           qac);
     ++m_asyncOpCounter;
     return true;
 }
@@ -374,7 +376,7 @@ MockPersistableQueue::destroyCheck(const std::string& opDescr) const
 
 // protected
 void
-MockPersistableQueue::createComplete(const QueueAsyncContext* qc)
+MockPersistableQueue::createComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 {
 //std::cout << "QQQ Queue name=\"" << qc->getQueue()->getName() << "\": createComplete()" << std::endl << std::flush;
     assert(qc->getQueue().get() == this);
@@ -383,7 +385,7 @@ MockPersistableQueue::createComplete(const QueueAsyncContext* qc)
 
 // protected
 void
-MockPersistableQueue::flushComplete(const QueueAsyncContext* qc)
+MockPersistableQueue::flushComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 {
 //std::cout << "QQQ Queue name=\"" << qc->getQueue()->getName() << "\": flushComplete()" << std::endl << std::flush;
     assert(qc->getQueue().get() == this);
@@ -392,7 +394,7 @@ MockPersistableQueue::flushComplete(const QueueAsyncContext* qc)
 
 // protected
 void
-MockPersistableQueue::destroyComplete(const QueueAsyncContext* qc)
+MockPersistableQueue::destroyComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 {
 //std::cout << "QQQ Queue name=\"" << qc->getQueue()->getName() << "\": destroyComplete()" << std::endl << std::flush;
     assert(qc->getQueue().get() == this);
@@ -401,7 +403,7 @@ MockPersistableQueue::destroyComplete(const QueueAsyncContext* qc)
 }
 
 void
-MockPersistableQueue::enqueueComplete(const QueueAsyncContext* qc)
+MockPersistableQueue::enqueueComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 {
 //std::cout << "QQQ Queue name=\"" << qc->getQueue()->getName() << "\": enqueueComplete() rid=0x" << std::hex << qc->getMessage()->getPersistenceId() << std::dec << std::endl << std::flush;
     assert(qc->getQueue().get() == this);
@@ -409,7 +411,7 @@ MockPersistableQueue::enqueueComplete(const QueueAsyncContext* qc)
 }
 
 void
-MockPersistableQueue::dequeueComplete(const QueueAsyncContext* qc)
+MockPersistableQueue::dequeueComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 {
 //std::cout << "QQQ Queue name=\"" << qc->getQueue()->getName() << "\": dequeueComplete() rid=0x" << std::hex << qc->getMessage()->getPersistenceId() << std::dec << std::endl << std::flush;
     assert(qc->getQueue().get() == this);
