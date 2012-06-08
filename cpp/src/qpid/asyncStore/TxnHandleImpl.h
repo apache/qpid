@@ -38,7 +38,7 @@ public:
     virtual ~TxnHandleImpl();
     const std::string& getXid() const;
     bool is2pc() const;
-protected:
+private:
     std::string m_xid;
     bool m_tpcFlag;
 };

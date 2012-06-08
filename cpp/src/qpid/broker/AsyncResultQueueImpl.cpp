@@ -45,7 +45,7 @@ AsyncResultQueueImpl::submit(boost::shared_ptr<AsyncResultHandle> arh)
     m_resQueue.push(arh);
 }
 
-// protected
+// private
 AsyncResultQueueImpl::ResultQueue::Batch::const_iterator
 AsyncResultQueueImpl::handle(const ResultQueue::Batch& e)
 {

@@ -105,6 +105,7 @@ RunState::s_toStr(const RunState_t s)
     }
 }
 
+// private
 void
 RunState::set(const RunState_t s)
 {

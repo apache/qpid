@@ -32,7 +32,8 @@
 namespace qpid {
 namespace broker {
 
-class TxnHandle : public qpid::messaging::Handle<qpid::asyncStore::TxnHandleImpl>, public IdHandle
+class TxnHandle : public qpid::messaging::Handle<qpid::asyncStore::TxnHandleImpl>,
+                  public IdHandle
 {
 public:
     TxnHandle(qpid::asyncStore::TxnHandleImpl* p = 0);

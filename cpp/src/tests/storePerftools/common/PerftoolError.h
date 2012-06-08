@@ -97,7 +97,7 @@ public:
     static const char* s_errorMessage(const uint32_t err_no) throw ();
 
 
-protected:
+private:
     uint32_t m_errCode;                                 ///< Error or failure code, taken from JournalErrors.
     std::string m_errMsg;                               ///< Additional information pertaining to the error or failure.
     std::string m_throwingClass;                        ///< Name of the class throwing the error.
@@ -113,7 +113,6 @@ protected:
     static errorMap_t s_errorMap;                       ///< Map of error messages
     static errorMapCitr_t s_errorMapIterator;           ///< Const iterator
 
-private:
     static const char* s_className;                     ///< Name of this class, used in formatting error messages.
     static bool s_initializedFlag;                      ///< Dummy flag, used to initialize map.
 

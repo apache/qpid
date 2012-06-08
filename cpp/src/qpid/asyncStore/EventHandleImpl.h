@@ -41,7 +41,7 @@ public:
                     const std::string& key = std::string());
     virtual ~EventHandleImpl();
     const std::string& getKey() const;
-protected:
+private:
     qpid::broker::QueueHandle& m_queueHandle;
     std::string m_key;
 };

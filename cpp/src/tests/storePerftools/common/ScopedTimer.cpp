@@ -48,7 +48,7 @@ ScopedTimer::~ScopedTimer()
     m_elapsed = _s_getDoubleTime(stopTime) - _s_getDoubleTime(m_startTime);
 }
 
-// static
+// private static
 double ScopedTimer::_s_getDoubleTime(const ::timespec& ts)
 {
     return ts.tv_sec + (double(ts.tv_nsec) / 1e9);

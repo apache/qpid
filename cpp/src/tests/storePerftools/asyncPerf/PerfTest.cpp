@@ -67,42 +67,6 @@ PerfTest::~PerfTest()
 }
 
 void
-PerfTest::prepareStore()
-{
-    m_store = new qpid::asyncStore::AsyncStoreImpl(m_poller, m_storeOpts);
-    m_store->initialize();
-}
-
-void
-PerfTest::destroyStore()
-{
-    if (m_store) {
-        delete m_store;
-    }
-}
-
-void
-PerfTest::prepareQueues()
-{
-    for (uint16_t i = 0; i < m_testOpts.m_numQueues; ++i) {
-        std::ostringstream qname;
-        qname << "queue_" << std::setw(4) << std::setfill('0') << i;
-        boost::shared_ptr<MockPersistableQueue> mpq(new MockPersistableQueue(qname.str(), m_queueArgs, m_store, m_resultQueue));
-        mpq->asyncCreate();
-        m_queueList.push_back(mpq);
-    }
-}
-
-void
-PerfTest::destroyQueues()
-{
-    while (m_queueList.size() > 0) {
-        m_queueList.front()->asyncDestroy(m_testOpts.m_destroyQueuesOnCompletion);
-        m_queueList.pop_front();
-    }
-}
-
-void
 PerfTest::run()
 {
     if (m_testOpts.m_durable) {
@@ -148,6 +112,46 @@ PerfTest::toStream(std::ostream& os) const
     m_storeOpts.printVals(os);
     os << std::endl;
     os << m_testResult << std::endl;
+}
+
+// private
+void
+PerfTest::prepareStore()
+{
+    m_store = new qpid::asyncStore::AsyncStoreImpl(m_poller, m_storeOpts);
+    m_store->initialize();
+}
+
+// private
+void
+PerfTest::destroyStore()
+{
+    if (m_store) {
+        delete m_store;
+    }
+}
+
+// private
+void
+PerfTest::prepareQueues()
+{
+    for (uint16_t i = 0; i < m_testOpts.m_numQueues; ++i) {
+        std::ostringstream qname;
+        qname << "queue_" << std::setw(4) << std::setfill('0') << i;
+        boost::shared_ptr<MockPersistableQueue> mpq(new MockPersistableQueue(qname.str(), m_queueArgs, m_store, m_resultQueue));
+        mpq->asyncCreate();
+        m_queueList.push_back(mpq);
+    }
+}
+
+// private
+void
+PerfTest::destroyQueues()
+{
+    while (m_queueList.size() > 0) {
+        m_queueList.front()->asyncDestroy(m_testOpts.m_destroyQueuesOnCompletion);
+        m_queueList.pop_front();
+    }
 }
 
 }}} // namespace tests::storePerftools::asyncPerf

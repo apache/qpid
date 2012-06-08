@@ -67,7 +67,7 @@ public:
     virtual uint64_t getSize();
     virtual void write(char* target);
 
-protected:
+private:
     mutable uint64_t m_persistenceId;
     const std::string m_msg;
     qpid::broker::MessageHandle m_msgHandle;

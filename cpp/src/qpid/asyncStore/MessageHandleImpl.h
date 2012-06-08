@@ -39,7 +39,7 @@ class MessageHandleImpl : public virtual qpid::RefCounted
 public:
     MessageHandleImpl(const qpid::broker::DataSource* dataSrc);
     virtual ~MessageHandleImpl();
-protected:
+private:
     const qpid::broker::DataSource* m_dataSrc;
 };
 

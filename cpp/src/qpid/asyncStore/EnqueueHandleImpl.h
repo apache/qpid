@@ -41,7 +41,7 @@ public:
     EnqueueHandleImpl(qpid::broker::MessageHandle& msgHandle,
                       qpid::broker::QueueHandle& queueHandle);
     virtual ~EnqueueHandleImpl();
-protected:
+private:
     qpid::broker::MessageHandle& m_msgHandle;
     qpid::broker::QueueHandle& m_queueHandle;
 };

@@ -131,7 +131,7 @@ PerftoolError::toStream(std::ostream& os) const
     os << what();
 }
 
-// protected
+// private
 void
 PerftoolError::formatWhatStr() throw ()
 {
@@ -162,14 +162,14 @@ PerftoolError::formatWhatStr() throw ()
     } catch (...) {}
 }
 
-// protected
+// private
 const char*
 PerftoolError::className()
 {
     return s_className;
 }
 
-//static
+// private static
 const char* PerftoolError::s_className = "PerftoolError";
 
 // --- Static definitions ---
@@ -190,7 +190,7 @@ PerftoolError::s_errorMessage(const uint32_t err_no) throw ()
     return s_errorMapIterator->second;
 }
 
-// protected static
+// private static
 bool
 PerftoolError::s_initialize()
 {

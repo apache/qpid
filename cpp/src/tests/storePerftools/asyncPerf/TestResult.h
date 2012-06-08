@@ -81,7 +81,7 @@ public:
      */
     void toStream(std::ostream& os = std::cout) const;
 
-protected:
+private:
     TestOptions m_testOpts;     ///< Test parameters used for performance calculations
 
 };

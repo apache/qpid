@@ -31,6 +31,7 @@ namespace broker {
 typedef qpid::messaging::PrivateImplRef<EventHandle> PrivateImpl;
 
 EventHandle::EventHandle(qpid::asyncStore::EventHandleImpl* p) :
+        qpid::messaging::Handle<qpid::asyncStore::EventHandleImpl>(),
         IdHandle()
 {
     PrivateImpl::ctor(*this, p);

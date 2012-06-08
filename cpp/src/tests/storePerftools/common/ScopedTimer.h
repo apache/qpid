@@ -70,7 +70,7 @@ public:
      */
     virtual ~ScopedTimer();
 
-protected:
+private:
     double& m_elapsed;      ///< Ref to elapsed time, will be written on destruction of ScopedTimer instances
     ::timespec m_startTime; ///< Start time, set on construction
 

@@ -42,7 +42,7 @@ public:
 
     void* runConsumers();
     static void* startConsumers(void* ptr);
-protected:
+private:
     const TestOptions& m_perfTestParams;
     boost::shared_ptr<MockPersistableQueue> m_queue;
 };

@@ -75,6 +75,7 @@ TestOptions::printVals(std::ostream& os) const
     os << "      Destroy queues on test completion [--destroy-queues]: " << (m_destroyQueuesOnCompletion ? "true" : "false") << std::endl;
 }
 
+// private
 void
 TestOptions::doAddOptions()
 {

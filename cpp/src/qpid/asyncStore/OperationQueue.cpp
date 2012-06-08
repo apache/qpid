@@ -46,13 +46,13 @@ OperationQueue::submit(boost::shared_ptr<const AsyncOperation> op)
     m_opQueue.push(op);
 }
 
-// protected
+// private
 OperationQueue::OpQueue::Batch::const_iterator
 OperationQueue::handle(const OperationQueue::OpQueue::Batch& e)
 {
     for (OpQueue::Batch::const_iterator i = e.begin(); i != e.end(); ++i) {
 //std::cout << "<-- OperationQueue::handle() Op=" << (*i)->getOpStr() << std::endl << std::flush;
-        boost::shared_ptr<qpid::broker::BrokerAsyncContext> bc = (*i)->m_brokerCtxt;
+        boost::shared_ptr<qpid::broker::BrokerAsyncContext> bc = (*i)->getBrokerContext();
         if (bc) {
             qpid::broker::AsyncResultQueue* const arq = bc->getAsyncResultQueue();
             if (arq) {

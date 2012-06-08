@@ -90,6 +90,12 @@ AsyncOperation::getOpStr() const
     return getOpStr(m_op);
 }
 
+boost::shared_ptr<qpid::broker::BrokerAsyncContext>
+AsyncOperation::getBrokerContext() const
+{
+    return m_brokerCtxt;
+}
+
 //static
 const char*
 AsyncOperation::getOpStr(const opCode op)

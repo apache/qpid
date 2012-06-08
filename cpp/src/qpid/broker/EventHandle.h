@@ -32,7 +32,8 @@
 namespace qpid {
 namespace broker {
 
-class EventHandle : public qpid::messaging::Handle<qpid::asyncStore::EventHandleImpl>, public IdHandle
+class EventHandle : public qpid::messaging::Handle<qpid::asyncStore::EventHandleImpl>,
+                    public IdHandle
 {
 public:
     EventHandle(qpid::asyncStore::EventHandleImpl* p = 0);

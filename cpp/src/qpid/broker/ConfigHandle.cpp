@@ -31,6 +31,7 @@ namespace broker {
 typedef qpid::messaging::PrivateImplRef<ConfigHandle> PrivateImpl;
 
 ConfigHandle::ConfigHandle(qpid::asyncStore::ConfigHandleImpl* p) :
+        qpid::messaging::Handle<qpid::asyncStore::ConfigHandleImpl>(),
         IdHandle()
 {
     PrivateImpl::ctor(*this, p);

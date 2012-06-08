@@ -50,7 +50,7 @@ public:
     uint16_t m_numEnqThreadsPerQueue;               ///< Number of enqueue threads per queue
     uint16_t m_numDeqThreadsPerQueue;               ///< Number of dequeue threads per queue
 
-protected:
+private:
     static uint32_t s_defaultNumMsgs;               ///< Default number of messages to be sent
     static uint32_t s_defaultMsgSize;               ///< Default message size in bytes
     static uint16_t s_defaultNumQueues;             ///< Default number of queues to test simultaneously

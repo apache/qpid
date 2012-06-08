@@ -48,7 +48,7 @@ public:
 
     std::string m_storeDir;
 
-protected:
+private:
     // Static initialization race condition avoidance with static instance of Plugin class (using construct-on-first-use idiom).
     static std::string& getDefaultStoreDir();
 };

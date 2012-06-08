@@ -160,7 +160,6 @@ MockPersistableQueue::deliver(boost::shared_ptr<MockPersistableMessage> msg)
 {
     QueuedMessage qm(this, msg);
     if(enqueue((MockTransactionContext*)0, qm)) {
-        // TODO: Do we need to wait for the enqueue to complete before push()ing the msg?
         push(qm);
     }
 }
@@ -315,7 +314,7 @@ MockPersistableQueue::ScopedUse::~ScopedUse()
     }
 }
 
-// protected
+// private
 void
 MockPersistableQueue::push(QueuedMessage& qm,
                            bool /*isRecovery*/)
@@ -326,7 +325,7 @@ MockPersistableQueue::push(QueuedMessage& qm,
 
 // --- End Members & methods in msg handling path from qpid::Queue ---
 
-// protected
+// private
 bool
 MockPersistableQueue::asyncEnqueue(MockTransactionContext* txn,
                                    QueuedMessage& qm)
@@ -345,7 +344,7 @@ MockPersistableQueue::asyncEnqueue(MockTransactionContext* txn,
     return true;
 }
 
-// protected
+// private
 bool
 MockPersistableQueue::asyncDequeue(MockTransactionContext* txn,
                                    QueuedMessage& qm)
@@ -363,7 +362,7 @@ MockPersistableQueue::asyncDequeue(MockTransactionContext* txn,
     return true;
 }
 
-// protected
+// private
 void
 MockPersistableQueue::destroyCheck(const std::string& opDescr) const
 {
@@ -374,7 +373,7 @@ MockPersistableQueue::destroyCheck(const std::string& opDescr) const
     }
 }
 
-// protected
+// private
 void
 MockPersistableQueue::createComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 {
@@ -383,7 +382,7 @@ MockPersistableQueue::createComplete(const boost::shared_ptr<QueueAsyncContext> 
     --m_asyncOpCounter;
 }
 
-// protected
+// private
 void
 MockPersistableQueue::flushComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 {
@@ -392,7 +391,7 @@ MockPersistableQueue::flushComplete(const boost::shared_ptr<QueueAsyncContext> q
     --m_asyncOpCounter;
 }
 
-// protected
+// private
 void
 MockPersistableQueue::destroyComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 {
@@ -402,6 +401,7 @@ MockPersistableQueue::destroyComplete(const boost::shared_ptr<QueueAsyncContext>
     m_destroyed = true;
 }
 
+// private
 void
 MockPersistableQueue::enqueueComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 {
@@ -410,6 +410,7 @@ MockPersistableQueue::enqueueComplete(const boost::shared_ptr<QueueAsyncContext>
     --m_asyncOpCounter;
 }
 
+// private
 void
 MockPersistableQueue::dequeueComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 {

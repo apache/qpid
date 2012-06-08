@@ -48,7 +48,7 @@ public:
     uint32_t size();
     bool push(const QueuedMessage& added, QueuedMessage& removed);
     bool consume(QueuedMessage& msg);
-protected:
+private:
     std::deque<QueuedMessage> m_messages;
     qpid::sys::Mutex m_msgMutex;
 

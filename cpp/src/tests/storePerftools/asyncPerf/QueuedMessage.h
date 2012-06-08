@@ -47,7 +47,8 @@ public:
     boost::shared_ptr<MockPersistableMessage> payload() const;
     const qpid::broker::EnqueueHandle& enqHandle() const;
     qpid::broker::EnqueueHandle& enqHandle();
-protected:
+
+private:
     MockPersistableQueue* m_queue;
     boost::shared_ptr<MockPersistableMessage> m_msg;
     qpid::broker::EnqueueHandle m_enqHandle;

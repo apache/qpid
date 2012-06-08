@@ -83,6 +83,7 @@ TestOptions::validate()
     }
 }
 
+// private
 void
 TestOptions::doAddOptions()
 {

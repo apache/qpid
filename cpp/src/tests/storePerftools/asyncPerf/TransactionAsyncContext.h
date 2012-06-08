@@ -46,7 +46,7 @@ public:
     boost::shared_ptr<MockTransactionContext> getTransactionContext() const;
     void destroy();
 
-protected:
+private:
     boost::shared_ptr<MockTransactionContext> m_tc;
     const qpid::asyncStore::AsyncOperation::opCode m_op;
 };

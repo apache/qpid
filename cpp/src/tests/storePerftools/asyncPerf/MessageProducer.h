@@ -50,7 +50,7 @@ public:
     virtual ~MessageProducer();
     void* runProducers();
     static void* startProducers(void* ptr);
-protected:
+private:
     const TestOptions& m_perfTestParams;
     const char* m_msgData;
     qpid::asyncStore::AsyncStoreImpl* m_store;

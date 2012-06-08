@@ -116,7 +116,7 @@ public:
                             uint64_t offset,
                             const uint64_t length);
 
-protected:
+private:
     boost::shared_ptr<qpid::sys::Poller> m_poller;
     AsyncStoreOptions m_opts;
     RunState m_runState;

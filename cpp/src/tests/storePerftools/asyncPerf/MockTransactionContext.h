@@ -66,7 +66,7 @@ public:
     void abort();
     void commit();
 
-protected:
+private:
     std::string m_xid;
     bool m_tpcFlag;
     qpid::asyncStore::AsyncStoreImpl* m_store;

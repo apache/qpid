@@ -153,7 +153,7 @@ public:
      */
     void X_AIO_RD_CALLBACK(std::vector<uint16_t>& buffPageCtrlBlkIndexList);
 
-protected:
+private:
     const uint32_t m_numMsgs;                       ///< Number of messages to be processed by this journal instance
     const uint32_t m_msgSize;                       ///< Size of each message (in bytes)
     const char* m_msgData;                          ///< Pointer to message content to be used for each message.

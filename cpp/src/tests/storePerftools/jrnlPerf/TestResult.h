@@ -82,7 +82,7 @@ public:
      */
     void toStream(std::ostream& os = std::cout) const;
 
-protected:
+private:
     tests::storePerftools::common::TestParameters m_testParams; ///< Test parameters used for performance calculations
 
 };

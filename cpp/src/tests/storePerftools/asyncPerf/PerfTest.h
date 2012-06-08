@@ -62,7 +62,7 @@ public:
     void run();
     void toStream(std::ostream& os = std::cout) const;
 
-protected:
+private:
     const TestOptions& m_testOpts;
     const qpid::asyncStore::AsyncStoreOptions& m_storeOpts;
     TestResult m_testResult;

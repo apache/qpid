@@ -71,6 +71,7 @@ PerfTest::~PerfTest()
     delete[] m_msgData;
 }
 
+// private
 void
 PerfTest::prepareJournals(std::vector<Journal*>& jrnlList)
 {
@@ -111,6 +112,7 @@ PerfTest::prepareJournals(std::vector<Journal*>& jrnlList)
     }
 }
 
+// private
 void
 PerfTest::destroyJournals(std::vector<Journal*>& jrnlList)
 {

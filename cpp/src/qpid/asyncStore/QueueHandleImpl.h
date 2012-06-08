@@ -41,7 +41,7 @@ public:
 
     const std::string& getName() const;
 
-protected:
+private:
     const std::string m_name;
     const qpid::types::Variant::Map& m_opts;
 

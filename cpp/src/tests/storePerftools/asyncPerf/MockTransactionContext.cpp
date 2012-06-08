@@ -181,7 +181,7 @@ MockTransactionContext::commit()
 }
 
 
-// protected
+// private
 void
 MockTransactionContext::localPrepare()
 {
@@ -193,7 +193,7 @@ MockTransactionContext::localPrepare()
 //std::cout << "*TXN* localPrepare: xid=" << m_txnHandle.getXid() << "; 2PC=" << (m_txnHandle.is2pc()?"T":"F") << std::endl;
 }
 
-// protected
+// private
 void
 MockTransactionContext::setLocalXid()
 {
@@ -206,7 +206,7 @@ MockTransactionContext::setLocalXid()
     m_xid.assign(uuidStr);
 }
 
-// protected
+// private
 void
 MockTransactionContext::prepareComplete(const TransactionAsyncContext* /*tc*/)
 {
@@ -220,7 +220,7 @@ MockTransactionContext::prepareComplete(const TransactionAsyncContext* /*tc*/)
 }
 
 
-// protected
+// private
 void
 MockTransactionContext::abortComplete(const TransactionAsyncContext* tc)
 {
@@ -229,7 +229,7 @@ MockTransactionContext::abortComplete(const TransactionAsyncContext* tc)
 }
 
 
-// protected
+// private
 void
 MockTransactionContext::commitComplete(const TransactionAsyncContext* tc)
 {

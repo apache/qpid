@@ -29,7 +29,6 @@ namespace broker {
 
 class IdHandle {
 public:
-    IdHandle();
     virtual ~IdHandle();
 };
 

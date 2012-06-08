@@ -32,7 +32,8 @@
 namespace qpid {
 namespace broker {
 
-class EnqueueHandle : public qpid::messaging::Handle<qpid::asyncStore::EnqueueHandleImpl>, public IdHandle
+class EnqueueHandle : public qpid::messaging::Handle<qpid::asyncStore::EnqueueHandleImpl>,
+                      public IdHandle
 {
 public:
     EnqueueHandle(qpid::asyncStore::EnqueueHandleImpl* p = 0);

@@ -40,7 +40,7 @@ public:
     virtual ~AsyncResultQueueImpl();
     virtual void submit(boost::shared_ptr<AsyncResultHandle> arh);
 
-protected:
+private:
     typedef qpid::sys::PollableQueue<boost::shared_ptr<const AsyncResultHandle> > ResultQueue;
     ResultQueue m_resQueue;
 

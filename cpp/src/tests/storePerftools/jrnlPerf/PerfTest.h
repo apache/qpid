@@ -77,7 +77,7 @@ public:
      */
     void toStream(std::ostream& os = std::cout) const;
 
-protected:
+private:
     const tests::storePerftools::common::TestParameters& m_testParams; ///< Ref to a struct containing test params
     const JournalParameters& m_jrnlParams;      ///< Ref to a struct containing the journal parameters
     TestResult m_testResult;                    ///< Journal performance object

@@ -67,7 +67,9 @@ public:
     virtual ~AsyncOperation();
     const char* getOpStr() const;
     static const char* getOpStr(const opCode op);
+    boost::shared_ptr<qpid::broker::BrokerAsyncContext> getBrokerContext() const;
 
+private:
     opCode m_op;
     const qpid::broker::IdHandle* m_targetHandle;
     const qpid::broker::DataSource* const m_dataSrc;

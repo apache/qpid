@@ -26,9 +26,6 @@
 namespace qpid {
 namespace broker {
 
-IdHandle::IdHandle()
-{}
-
 IdHandle::~IdHandle()
 {}
 

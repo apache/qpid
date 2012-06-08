@@ -52,7 +52,7 @@ public:
     bool m_durable;                                 ///< Use durable queues and messages for test
     bool m_destroyQueuesOnCompletion;               ///< Destroy durable queues on completion of test
 
-protected:
+private:
     static uint16_t s_defaultEnqTxnBlkSize;         ///< Default transaction block size for enqueues
     static uint16_t s_defaultDeqTxnBlkSize;         ///< Default transaction block size for dequeues
     static bool s_defaultDurable;                   ///< Default flag for using durable queues and messages for test

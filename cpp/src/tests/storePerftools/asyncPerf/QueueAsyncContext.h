@@ -60,7 +60,7 @@ public:
     void invokeCallback(const qpid::broker::AsyncResultHandle* const arh) const;
     void destroy();
 
-protected:
+private:
     boost::shared_ptr<MockPersistableQueue> m_q;
     boost::shared_ptr<MockPersistableMessage> m_msg;
     const qpid::asyncStore::AsyncOperation::opCode m_op;

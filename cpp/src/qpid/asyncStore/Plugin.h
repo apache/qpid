@@ -40,7 +40,7 @@ public:
     virtual void initialize(Target& target);
     void finalize();
     virtual qpid::Options* getOptions();
-protected:
+private:
     boost::shared_ptr<qpid::asyncStore::AsyncStoreImpl> m_store;
     qpid::asyncStore::AsyncStoreOptions m_options;
 };

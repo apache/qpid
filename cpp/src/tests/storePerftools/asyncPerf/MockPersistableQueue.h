@@ -98,7 +98,7 @@ public:
     virtual uint64_t getSize();
     virtual void write(char* target);
 
-protected:
+private:
     const std::string m_name;
     qpid::asyncStore::AsyncStoreImpl* m_store;
     qpid::broker::AsyncResultQueue& m_resultQueue;

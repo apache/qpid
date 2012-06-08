@@ -49,7 +49,7 @@ public:
     boost::shared_ptr<MockPersistableQueue> getQueue() const;
     void destroy();
 
-protected:
+private:
     boost::shared_ptr<MockPersistableMessage> m_msg;
     const qpid::asyncStore::AsyncOperation::opCode m_op;
     boost::shared_ptr<MockPersistableQueue> m_q;

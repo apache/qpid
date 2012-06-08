@@ -77,7 +77,7 @@ public:
         }
     }
 
-protected:
+private:
     T m_cnt;
     mutable qpid::sys::Mutex m_cntMutex;
     qpid::sys::Condition m_cntCondition;

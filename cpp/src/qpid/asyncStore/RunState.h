@@ -73,7 +73,7 @@ public:
     void setStopped();
     virtual const char* getAsStr() const;
     static const char* s_toStr(const RunState_t s);
-protected:
+private:
     virtual void set(const RunState_t s);
 
 };

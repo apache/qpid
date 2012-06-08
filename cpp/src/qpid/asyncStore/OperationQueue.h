@@ -39,7 +39,7 @@ public:
     virtual ~OperationQueue();
     void submit(boost::shared_ptr<const AsyncOperation> op);
 
-protected:
+private:
     typedef qpid::sys::PollableQueue<boost::shared_ptr<const AsyncOperation> > OpQueue;
     OpQueue m_opQueue;
 

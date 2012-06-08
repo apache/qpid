@@ -57,7 +57,7 @@ void
 AsyncStoreOptions::validate()
 {}
 
-//static
+// private static
 std::string&
 AsyncStoreOptions::getDefaultStoreDir()
 {
