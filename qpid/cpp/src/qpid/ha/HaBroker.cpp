@@ -33,11 +33,14 @@
 #include "qpid/framing/FieldTable.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/sys/SystemInfo.h"
+#include "qpid/types/Uuid.h"
+#include "qpid/framing/Uuid.h"
 #include "qmf/org/apache/qpid/ha/Package.h"
 #include "qmf/org/apache/qpid/ha/ArgsHaBrokerReplicate.h"
 #include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetBrokersUrl.h"
 #include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetPublicUrl.h"
 #include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetExpectedBackups.h"
+#include "qmf/org/apache/qpid/ha/EventMembersUpdate.h"
 #include "qpid/log/Statement.h"
 
 namespace qpid {
@@ -50,14 +53,15 @@ using namespace std;
 HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     : logPrefix(status),
       broker(b),
+      systemId(broker.getSystem()->getSystemId().data()),
       settings(s),
       mgmtObject(0),
       status(STANDALONE),
-      excluder(new ConnectionExcluder(logPrefix, broker.getSystem()->getSystemId())),
+      excluder(new ConnectionExcluder(*this, systemId)),
       brokerInfo(broker.getSystem()->getNodeName(),
                  // TODO aconway 2012-05-24: other transports?
-                 broker.getPort(broker::Broker::TCP_TRANSPORT),
-                 broker.getSystem()->getSystemId())
+                 broker.getPort(broker::Broker::TCP_TRANSPORT), systemId),
+      membership(logPrefix, boost::bind(&HaBroker::membershipUpdate, this, _1))
 
 {
     // Set up the management object.
@@ -67,6 +71,7 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     _qmf::Package  packageInit(ma);
     mgmtObject = new _qmf::HaBroker(ma, this, "ha-broker");
     mgmtObject->set_replicateDefault(settings.replicateDefault.str());
+    mgmtObject->set_systemId(systemId);
     ma->addObject(mgmtObject);
 
     // Register a factory for replicating subscriptions.
@@ -92,11 +97,14 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     QPID_LOG(notice, logPrefix << "Broker starting on " << brokerInfo);
 }
 
-HaBroker::~HaBroker() {}
+HaBroker::~HaBroker() {
+    broker.getConnectionObservers().remove(excluder);
+}
 
 void HaBroker::recover(sys::Mutex::ScopedLock&) {
     setStatus(RECOVERING);
     backup.reset();                    // No longer replicating, close link.
+    membership.reset(brokerInfo);
     primary.reset(new Primary(*this)); // Starts primary-ready check.
 }
 
@@ -107,9 +115,11 @@ void HaBroker::activate() {
 }
 
 void HaBroker::activate(sys::Mutex::ScopedLock&) {
+    BrokerStatus oldStatus = status;
     setStatus(ACTIVE);
+    if (oldStatus != RECOVERING)   // Already set membership
+        membership.reset(brokerInfo);
     backup.reset();                    // No longer replicating, close link.
-    broker.getConnectionObservers().remove(excluder); // This allows client connections.
 }
 
 ReplicateLevel HaBroker::replicateLevel(const std::string& str) {
@@ -173,7 +183,7 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
           boost::shared_ptr<broker::Queue> queue = broker.getQueues().get(bq_args.i_queue);
           Url url(bq_args.i_broker);
           string protocol = url[0].protocol.empty() ? "tcp" : url[0].protocol;
-          framing::Uuid uuid(true);
+          types::Uuid uuid(true);
           std::pair<broker::Link::shared_ptr, bool> result = broker.getLinks().declare(
               broker::QPID_NAME_PREFIX + string("ha.link.") + uuid.str(),
               url[0].host, url[0].port, protocol,
@@ -280,6 +290,12 @@ void HaBroker::statusChanged(sys::Mutex::ScopedLock& l) {
     mgmtObject->set_status(printable(status).str());
     brokerInfo.setStatus(status);
     setLinkProperties(l);
+}
+
+void HaBroker::membershipUpdate(const types::Variant::List& brokers) {
+    QPID_LOG(debug, logPrefix << "Membership update: " << brokers);
+    mgmtObject->set_members(brokers);
+    broker.getManagementAgent()->raiseEvent(_qmf::EventMembersUpdate(brokers));
 }
 
 void HaBroker::setLinkProperties(sys::Mutex::ScopedLock&) {

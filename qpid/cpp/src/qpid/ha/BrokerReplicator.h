@@ -81,6 +81,7 @@ class BrokerReplicator : public broker::Exchange
     void doEventExchangeDelete(types::Variant::Map& values);
     void doEventBind(types::Variant::Map&);
     void doEventUnbind(types::Variant::Map&);
+    void doEventMembersUpdate(types::Variant::Map&);
 
     void doResponseQueue(types::Variant::Map& values);
     void doResponseExchange(types::Variant::Map& values);

@@ -24,8 +24,9 @@
 
 #include "Enum.h"
 #include "qpid/Url.h"
-#include "qpid/framing/Uuid.h"
 #include "qpid/framing/FieldTable.h"
+#include "qpid/types/Uuid.h"
+#include "qpid/types/Variant.h"
 #include <string>
 #include <iosfwd>
 
@@ -38,24 +39,29 @@ namespace ha {
 class BrokerInfo
 {
   public:
-    BrokerInfo(const std::string& host, uint16_t port_, const framing::Uuid& id) :
+    BrokerInfo() {}
+    BrokerInfo(const std::string& host, uint16_t port_, const types::Uuid& id) :
         hostName(host), port(port_), systemId(id) {}
-
     BrokerInfo(const framing::FieldTable& ft) { assign(ft); }
-    framing::FieldTable asFieldTable() const;
-    void assign(const framing::FieldTable&);
+    BrokerInfo(const types::Variant::Map& m) { assign(m); }
 
-    framing::Uuid getSystemId() const { return systemId; }
+    types::Uuid getSystemId() const { return systemId; }
     std::string getHostName() const { return hostName; }
     BrokerStatus getStatus() const { return status; }
      uint16_t getPort() const { return port; }
 
     void setStatus(BrokerStatus s)  { status = s; }
 
+    framing::FieldTable asFieldTable() const;
+    types::Variant::Map asMap() const;
+
+    void assign(const framing::FieldTable&);
+    void assign(const types::Variant::Map&);
+
   private:
     std::string hostName;
     uint16_t port;
-    framing::Uuid systemId;
+    types::Uuid systemId;
     BrokerStatus status;
 };
 

@@ -75,7 +75,7 @@ void Backup::initialize(const Url& brokers) {
     sys::Mutex::ScopedLock l(lock);
     Url url = linkUrl(brokers);
     string protocol = url[0].protocol.empty() ? "tcp" : url[0].protocol;
-    framing::Uuid uuid(true);
+    types::Uuid uuid(true);
     // Declare the link
     std::pair<Link::shared_ptr, bool> result = broker.getLinks().declare(
         broker::QPID_NAME_PREFIX + string("ha.link.") + uuid.str(),

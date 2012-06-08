@@ -20,8 +20,11 @@
  */
 
 #include "BrokerInfo.h"
+#include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
+#include "qpid/framing/FieldTable.h"
+#include "qpid/framing/FieldValue.h"
 #include <iostream>
 
 
@@ -35,23 +38,46 @@ std::string PORT="port";
 std::string STATUS="status";
 }
 
-using framing::Uuid;
+using types::Uuid;
+using types::Variant;
 using framing::FieldTable;
 
 FieldTable BrokerInfo::asFieldTable() const {
+    Variant::Map m = asMap();
     FieldTable ft;
-    ft.setString(SYSTEM_ID, systemId.str());
-    ft.setString(HOST_NAME, hostName);
-    ft.setInt(PORT, port);
-    ft.setInt(STATUS, status);
+    amqp_0_10::translate(m, ft);
     return ft;
 }
 
+Variant::Map BrokerInfo::asMap() const {
+    Variant::Map m;
+    m[SYSTEM_ID] = systemId;
+    m[HOST_NAME] = hostName;
+    m[PORT] = port;
+    m[STATUS] = status;
+    return m;
+}
+
 void BrokerInfo::assign(const FieldTable& ft) {
-    systemId = Uuid(ft.getAsString(SYSTEM_ID));
-    hostName = ft.getAsString(HOST_NAME);
-    port = ft.getAsInt(PORT);
-    status = BrokerStatus(ft.getAsInt(STATUS));
+    Variant::Map m;
+    amqp_0_10::translate(ft, m);
+    assign(m);
+}
+
+namespace {
+const Variant& get(const Variant::Map& m, const std::string& k) {
+    Variant::Map::const_iterator i = m.find(k);
+    if (i == m.end()) throw Exception(
+        QPID_MSG("Missing field '" << k << "' in broker information"));
+    return i->second;
+}
+}
+
+void BrokerInfo::assign(const Variant::Map& m) {
+    systemId = get(m, SYSTEM_ID).asUuid();
+    hostName = get(m, HOST_NAME).asString();
+    port = get(m, PORT).asUint16();
+    status = BrokerStatus(get(m, STATUS).asUint8());
 }
 
 std::ostream& operator<<(std::ostream& o, const BrokerInfo& b) {
