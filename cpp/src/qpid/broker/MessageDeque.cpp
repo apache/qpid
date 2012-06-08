@@ -40,13 +40,16 @@ size_t MessageDeque::index(const framing::SequenceNumber& position)
 bool MessageDeque::deleted(const QueuedMessage& m)
 {
     size_t i = index(m.position);
-    if (i < messages.size() && messages[i].status != QueuedMessage::DELETED) {
-        messages[i].status = QueuedMessage::DELETED;
-        clean();
-        return true;
-    } else {
-        return false;
+    if (i < messages.size()) {
+        QueuedMessage *qm = &messages[i];
+        if (qm->status != QueuedMessage::DELETED) {
+            qm->status = QueuedMessage::DELETED;
+            qm->payload.reset(); // message no longer needed
+            clean();
+            return true;
+        }
     }
+    return false;
 }
 
 size_t MessageDeque::size()
@@ -144,6 +147,7 @@ QueuedMessage* MessageDeque::pushPtr(const QueuedMessage& added) {
     messages.back().status = QueuedMessage::AVAILABLE;
     if (head >= messages.size()) head = messages.size() - 1;
     ++available;
+    clean();  // QPID-4046: let producer help clean the backlog of deleted messages
     return &messages.back();
 }
 
@@ -195,10 +199,15 @@ void MessageDeque::setPosition(const framing::SequenceNumber& n) {
 
 void MessageDeque::clean()
 {
-    while (messages.size() && messages.front().status == QueuedMessage::DELETED) {
+    // QPID-4046: If a queue has multiple consumers, then it is possible for a large
+    // collection of deleted messages to build up.  Limit the number of messages cleaned
+    // up on each call to clean().
+    size_t count = 0;
+    while (messages.size() && messages.front().status == QueuedMessage::DELETED && count < 10) {
         messages.pop_front();
-        if (head) --head;
+        count += 1;
     }
+    head = (head > count) ? head - count : 0;
 }
 
 void MessageDeque::foreach(Functor f)
