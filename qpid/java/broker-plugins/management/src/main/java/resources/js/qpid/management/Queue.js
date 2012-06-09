@@ -30,6 +30,7 @@ define(["dojo/_base/xhr",
         "qpid/common/formatter",
         "qpid/common/UpdatableStore",
         "qpid/management/addBinding",
+        "qpid/management/moveCopyMessages",
         "dojo/store/JsonRest",
         "dojox/grid/EnhancedGrid",
         "dojo/data/ObjectStore",
@@ -37,7 +38,7 @@ define(["dojo/_base/xhr",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dojo/domReady!"],
        function (xhr, parser, query, connect, event, json, properties, updater, util, formatter,
-                 UpdatableStore, addBinding, JsonRest, EnhancedGrid, ObjectStore) {
+                 UpdatableStore, addBinding, moveMessages, JsonRest, EnhancedGrid, ObjectStore) {
 
            function Queue(name, parent, controller) {
                this.name = name;
@@ -115,13 +116,24 @@ define(["dojo/_base/xhr",
 
                             var deleteMessagesButton = query(".deleteMessagesButton", contentPane.containerNode)[0];
                             connect.connect(deleteMessagesButton, "onclick",
-                                                                        function(evt){
-                                                                            event.stop(evt);
-                                                                            that.deleteMessages();
-                                                                        });
+                                            function(evt){
+                                                event.stop(evt);
+                                                that.deleteMessages();
+                                            });
                             var moveMessagesButton = query(".moveMessagesButton", contentPane.containerNode)[0];
-                            var copyMessagesButton = query(".copyMessagesButton", contentPane.containerNode)[0];
+                            connect.connect(moveMessagesButton, "onclick",
+                                            function(evt){
+                                                event.stop(evt);
+                                                that.moveOrCopyMessages({move: true});
+                                            });
 
+
+                            var copyMessagesButton = query(".copyMessagesButton", contentPane.containerNode)[0];
+                            connect.connect(copyMessagesButton, "onclick",
+                                            function(evt){
+                                                event.stop(evt);
+                                                that.moveOrCopyMessages({move: false});
+                                            });
 
                             var addBindingButton = query(".addBindingButton", contentPane.containerNode)[0];
                             connect.connect(addBindingButton, "onclick",
@@ -162,6 +174,35 @@ define(["dojo/_base/xhr",
                            });
                    }
                }
+           };
+
+           Queue.prototype.moveOrCopyMessages = function(obj) {
+               var that = this;
+               var move = obj.move;
+               var data = this.grid.selection.getSelected();
+               if(data.length) {
+                   var that = this;
+                   var i, putData = { messages:[] };
+                   if(move) {
+                       putData.move = true;
+                   }
+                   for(i = 0; i<data.length; i++) {
+                       putData.messages.push(data[i].id);
+                   }
+                   moveMessages.show({ virtualhost: this.getVirtualHostName(),
+                                       queue: this.getQueueName(),
+                                       data: putData}, function() {
+                                         if(move)
+                                         {
+                                            that.grid.setQuery({id: "*"});
+                                            that.grid.selection.deselectAll();
+                                         }
+                                     });
+
+               }
+
+
+
            };
 
            Queue.prototype.startup = function() {

@@ -143,6 +143,7 @@ public class MessageServlet extends AbstractServlet
 
         for(Queue q : vhost.getQueues())
         {
+
             if(q.getName().equals(queueName))
             {
                 queue = q;
@@ -384,6 +385,8 @@ public class MessageServlet extends AbstractServlet
     protected void onPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
 
+        try
+        {
         final Queue sourceQueue = getQueueFromRequest(request);
 
         ObjectMapper mapper = new ObjectMapper();
@@ -407,7 +410,16 @@ public class MessageServlet extends AbstractServlet
                         ? new MoveTransaction(sourceQueue, messageIds, destinationQueue)
                         : new CopyTransaction(sourceQueue, messageIds, destinationQueue);
         vhost.executeTransaction(txn);
-
+        }
+        catch(RuntimeException e)
+        {
+            e.printStackTrace();
+        }
+        catch(IOException e)
+        {
+            e.printStackTrace();
+            throw e;
+        }
     }
 
 
