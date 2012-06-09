@@ -194,21 +194,21 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
             throws AccessControlException, IllegalArgumentException
     {
         attributes = new HashMap<String, Object>(attributes);
-        
+
         String         name     = getStringAttribute(Exchange.NAME, attributes, null);
         State          state    = getEnumAttribute(State.class, Exchange.STATE, attributes, State.ACTIVE);
-        boolean        durable  = getBooleanAttribute(Exchange.DURABLE, attributes, false);        
+        boolean        durable  = getBooleanAttribute(Exchange.DURABLE, attributes, false);
         LifetimePolicy lifetime = getEnumAttribute(LifetimePolicy.class, Exchange.LIFETIME_POLICY, attributes, LifetimePolicy.PERMANENT);
         String         type     = getStringAttribute(Exchange.TYPE, attributes, null);
         long           ttl      = getLongAttribute(Exchange.TIME_TO_LIVE, attributes, 0l);
-        
+
         attributes.remove(Exchange.NAME);
         attributes.remove(Exchange.STATE);
         attributes.remove(Exchange.DURABLE);
         attributes.remove(Exchange.LIFETIME_POLICY);
         attributes.remove(Exchange.TYPE);
         attributes.remove(Exchange.TIME_TO_LIVE);
-        
+
         return createExchange(name, state, durable, lifetime, ttl, type, attributes);
     }
 
@@ -568,17 +568,20 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
         {
             public void dequeue(final QueueEntry entry)
             {
-                txn.dequeue(entry.getQueue(), entry.getMessage(), new ServerTransaction.Action()
+                if(entry.acquire())
                 {
-                    public void postCommit()
+                    txn.dequeue(entry.getQueue(), entry.getMessage(), new ServerTransaction.Action()
                     {
-                        entry.discard();
-                    }
+                        public void postCommit()
+                        {
+                            entry.discard();
+                        }
 
-                    public void onRollback()
-                    {
-                    }
-                });
+                        public void onRollback()
+                        {
+                        }
+                    });
+                }
             }
 
             public void copy(QueueEntry entry, Queue queue)
@@ -665,7 +668,7 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
     {
         if(ID.equals(name))
         {
-            return getId();    
+            return getId();
         }
         else if(NAME.equals(name))
         {

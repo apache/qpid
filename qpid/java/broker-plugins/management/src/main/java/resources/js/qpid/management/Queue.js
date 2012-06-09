@@ -22,6 +22,7 @@ define(["dojo/_base/xhr",
         "dojo/parser",
         "dojo/query",
         "dojo/_base/connect",
+        "dojo/_base/event",
         "dojo/json",
         "qpid/common/properties",
         "qpid/common/updater",
@@ -35,7 +36,7 @@ define(["dojo/_base/xhr",
         "dojox/grid/enhanced/plugins/Pagination",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, json, properties, updater, util, formatter,
+       function (xhr, parser, query, connect, event, json, properties, updater, util, formatter,
                  UpdatableStore, addBinding, JsonRest, EnhancedGrid, ObjectStore) {
 
            function Queue(name, parent, controller) {
@@ -85,6 +86,7 @@ define(["dojo/_base/xhr",
                             that.grid = new EnhancedGrid({
                                 store: new ObjectStore({objectStore: myStore}),
                                 autoHeight: 10,
+                                keepSelection: true,
                                 structure: [
                                     {name:"Size", field:"size", width: "60px"},
                                     {name:"State", field:"state", width: "120px"},
@@ -111,9 +113,20 @@ define(["dojo/_base/xhr",
                                 }
                             }, messageGridDiv);
 
+                            var deleteMessagesButton = query(".deleteMessagesButton", contentPane.containerNode)[0];
+                            connect.connect(deleteMessagesButton, "onclick",
+                                                                        function(evt){
+                                                                            event.stop(evt);
+                                                                            that.deleteMessages();
+                                                                        });
+                            var moveMessagesButton = query(".moveMessagesButton", contentPane.containerNode)[0];
+                            var copyMessagesButton = query(".copyMessagesButton", contentPane.containerNode)[0];
+
+
                             var addBindingButton = query(".addBindingButton", contentPane.containerNode)[0];
                             connect.connect(addBindingButton, "onclick",
                                             function(evt){
+                                                event.stop(evt);
                                                 addBinding.show({ virtualhost: that.getVirtualHostName(),
                                                                   queue: that.getQueueName()});
                                             });
@@ -122,6 +135,33 @@ define(["dojo/_base/xhr",
 
 
 
+           };
+
+           Queue.prototype.deleteMessages = function() {
+               var data = this.grid.selection.getSelected();
+               if(data.length) {
+                   var that = this;
+                   if(confirm("Delete " + data.length + " messages?")) {
+                       var i, queryParam;
+                       for(i = 0; i<data.length; i++) {
+                           if(queryParam) {
+                               queryParam += "&";
+                           } else {
+                               queryParam = "?";
+                           }
+
+                           queryParam += "id=" + data[i].id;
+                       }
+                       var query = "/rest/message/"+ encodeURIComponent(that.getVirtualHostName())
+                           + "/" + encodeURIComponent(that.getQueueName()) + queryParam;
+                       xhr.del({url: query, sync: true, handleAs: "json"}).then(
+                           function(data) {
+                               that.grid.setQuery({id: "*"});
+                               that.grid.selection.deselectAll();
+                               that.queueUpdater.update();
+                           });
+                   }
+               }
            };
 
            Queue.prototype.startup = function() {

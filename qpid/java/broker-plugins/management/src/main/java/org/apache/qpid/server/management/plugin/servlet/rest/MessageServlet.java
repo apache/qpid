@@ -95,12 +95,10 @@ public class MessageServlet extends AbstractServlet
 
         response.setContentType("application/json");
         final List<Map<String, Object>> messages = messageCollector.getMessages();
-        response.setHeader("Content-Range", messages.isEmpty()
-                                                    ? "0-0/0"
-                                                    : messages.get(0).get("position").toString()
-                                                      + "-"
-                                                      + messages.get(messages.size()-1).get("position").toString()
-                                                      + "/" + queue.getStatistics().getStatistic(Queue.QUEUE_DEPTH_MESSAGES));
+        int queueSize = ((Number) queue.getStatistics().getStatistic(Queue.QUEUE_DEPTH_MESSAGES)).intValue();
+        String min = messages.isEmpty() ? "0" : messages.get(0).get("position").toString();
+        String max = messages.isEmpty() ? "0" : messages.get(messages.size()-1).get("position").toString();
+        response.setHeader("Content-Range", (min + "-" + max + "/" + queueSize));
         response.setStatus(HttpServletResponse.SC_OK);
 
         response.setHeader("Cache-Control","no-cache");
@@ -183,7 +181,6 @@ public class MessageServlet extends AbstractServlet
                         {
                             updateEntry(entry, txn);
                         }
-
                     }
                     return _messageIds.isEmpty();
                 }
@@ -425,12 +422,17 @@ public class MessageServlet extends AbstractServlet
 
         ObjectMapper mapper = new ObjectMapper();
 
-        @SuppressWarnings("unchecked")
+        /*@SuppressWarnings("unchecked")
         Map<String,Object> providedObject = mapper.readValue(request.getInputStream(), LinkedHashMap.class);
-
+*/
         final VirtualHost vhost = sourceQueue.getParent(VirtualHost.class);
 
-        final List messageIds = new ArrayList((List) providedObject.get("messages"));
+
+        final List<Long> messageIds = new ArrayList<Long>();
+        for(String idStr : request.getParameterValues("id"))
+        {
+            messageIds.add(Long.valueOf(idStr));
+        }
 
         vhost.executeTransaction(new DeleteTransaction(sourceQueue, messageIds));
 
