@@ -51,7 +51,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         _authManager = authManager;
     }
 
-    static AuthenticationProviderAdapter createAuthenticationProviderAdapter(BrokerAdapter brokerAdapter,
+    public static AuthenticationProviderAdapter createAuthenticationProviderAdapter(BrokerAdapter brokerAdapter,
                                                                              final AuthenticationManager authManager)
     {
         return authManager instanceof PrincipalDatabaseAuthenticationManager
@@ -167,22 +167,15 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         }
 
         @Override
-        public void createUser(String username, String password, Map<String, String> attributes)
+        public boolean createUser(String username, String password, Map<String, String> attributes)
         {
-            getPrincipalDatabase().createPrincipal(new UsernamePrincipal(username), password.toCharArray());
+            return getPrincipalDatabase().createPrincipal(new UsernamePrincipal(username), password.toCharArray());
         }
 
         @Override
-        public void deleteUser(String username)
+        public void deleteUser(String username) throws AccountNotFoundException
         {
-            try
-            {
-                getPrincipalDatabase().deletePrincipal(new UsernamePrincipal(username));
-            }
-            catch (AccountNotFoundException e)
-            {
-                // TODO
-            }
+            getPrincipalDatabase().deletePrincipal(new UsernamePrincipal(username));
         }
 
         private PrincipalDatabase getPrincipalDatabase()
@@ -191,16 +184,9 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         }
 
         @Override
-        public void setPassword(String username, String password)
+        public void setPassword(String username, String password) throws AccountNotFoundException
         {
-            try
-            {
-                getPrincipalDatabase().updatePassword(new UsernamePrincipal(username), password.toCharArray());
-            }
-            catch (AccountNotFoundException e)
-            {
-                // TODO
-            }
+            getPrincipalDatabase().updatePassword(new UsernamePrincipal(username), password.toCharArray());
         }
 
         @Override

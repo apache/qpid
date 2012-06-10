@@ -29,6 +29,7 @@ import javax.management.JMException;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.jmx.mbeans.UserManagementMBean;
 import org.apache.qpid.server.jmx.mbeans.ConfigurationManagementMBean;
 import org.apache.qpid.server.jmx.mbeans.ServerInformationMBean;
 import org.apache.qpid.server.jmx.mbeans.Shutdown;
@@ -36,9 +37,11 @@ import org.apache.qpid.server.jmx.mbeans.VirtualHostMBean;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.AbstractActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -107,22 +110,46 @@ public class JMXService implements ConfigurationChangeListener
     {
         synchronized (_children)
         {
-            if(child instanceof VirtualHost)
+            try
             {
-                try
+                if(child instanceof VirtualHost)
                 {
                     _children.put(child, new VirtualHostMBean((VirtualHost)child,_objectRegistry));
                 }
-                catch(JMException e)
+                else if(child instanceof PasswordCredentialManagingAuthenticationProvider)
                 {
-                    e.printStackTrace();  // TODO - Implement error logging on vhost mbean creation
+                    _children.put(child, new UserManagementMBean((PasswordCredentialManagingAuthenticationProvider) child, _objectRegistry));
                 }
+            }
+            catch(JMException e)
+            {
+                e.printStackTrace();  // TODO - Implement error reporting on mbean creation
             }
         }
     }
 
     public void childRemoved(ConfiguredObject object, ConfiguredObject child)
     {
-        // TODO - implement vhost removal
+        // TODO - implement vhost removal (possibly just removing the instanceof check below)
+
+        synchronized (_children)
+        {
+            if(child instanceof PasswordCredentialManagingAuthenticationProvider)
+            {
+                AMQManagedObject mbean = _children.remove(child);
+                if(mbean != null)
+                {
+                    try
+                    {
+                        mbean.unregister();
+                    }
+                    catch(JMException e)
+                    {
+                        e.printStackTrace();  //TODO - report error on removing child MBean
+                    }
+                }
+            }
+
+        }
     }
 }

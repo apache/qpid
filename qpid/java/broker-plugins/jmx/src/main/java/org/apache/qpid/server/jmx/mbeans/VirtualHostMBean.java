@@ -137,7 +137,7 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
                     _children.put(child, exchangeMBean);
 
                 }
-                if(child instanceof Connection)
+                else if(child instanceof Connection)
                 {
                     ConnectionMBean connectionMBean = new ConnectionMBean((Connection)child, this);
                     _children.put(child, connectionMBean);

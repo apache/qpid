@@ -18,16 +18,18 @@
  *
  * 
  */
-package org.apache.qpid.server.management;
+package org.apache.qpid.server.jmx.mbeans;
 
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.management.common.mbeans.UserManagement;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
-import org.apache.qpid.server.management.AMQManagedObject;
+import org.apache.qpid.server.jmx.AMQManagedObject;
+import org.apache.qpid.server.jmx.ManagedObject;
+import org.apache.qpid.server.jmx.ManagedObjectRegistry;
+import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 
 import javax.management.JMException;
 import javax.management.openmbean.CompositeData;
@@ -40,17 +42,15 @@ import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 import javax.security.auth.login.AccountNotFoundException;
-import java.io.IOException;
-import java.security.Principal;
-import java.util.List;
 
-/** MBean class for AMQUserManagementMBean. It implements all the management features exposed for managing users. */
+import java.util.Map;
+
 @MBeanDescription("User Management Interface")
-public class AMQUserManagementMBean extends AMQManagedObject implements UserManagement
+public class UserManagementMBean extends AMQManagedObject implements UserManagement
 {
-    private static final Logger _logger = Logger.getLogger(AMQUserManagementMBean.class);
+    private static final Logger _logger = Logger.getLogger(UserManagementMBean.class);
 
-    private PrincipalDatabase _principalDatabase;
+    private PasswordCredentialManagingAuthenticationProvider _authProvider;
 
     // Setup for the TabularType
     private static final TabularType _userlistDataType; // Datatype for representing User Lists
@@ -79,45 +79,46 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
         }
     }
 
-    public AMQUserManagementMBean() throws JMException
+    public UserManagementMBean(PasswordCredentialManagingAuthenticationProvider provider, ManagedObjectRegistry registry) throws JMException
     {
-        super(UserManagement.class, UserManagement.TYPE);
+        super(UserManagement.class, UserManagement.TYPE, registry);
+        register();
+        _authProvider = provider;
     }
 
+    @Override
     public String getObjectInstanceName()
     {
         return UserManagement.TYPE;
     }
 
+    @Override
     public boolean setPassword(String username, String password)
     {
         try
         {
-            //delegate password changes to the Principal Database
-            return _principalDatabase.updatePassword(new UsernamePrincipal(username), password.toCharArray());
+            _authProvider.setPassword(username, password);
         }
         catch (AccountNotFoundException e)
         {
-            _logger.warn("Attempt to set password of non-existent user'" + username + "'");
+            _logger.warn("Attempt to set password of non-existent user '" + username + "'");
             return false;
         }
+        return true;
     }
 
+    @Override
     public boolean createUser(String username, String password)
     {
-        if (_principalDatabase.createPrincipal(new UsernamePrincipal(username), password.toCharArray()))
-        {
-            return true;
-        }
-
-        return false;
+        return _authProvider.createUser(username, password, null);
     }
 
+    @Override
     public boolean deleteUser(String username)
     {
         try
         {
-            _principalDatabase.deletePrincipal(new UsernamePrincipal(username));
+            _authProvider.deleteUser(username);
         }
         catch (AccountNotFoundException e)
         {
@@ -128,37 +129,29 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
         return true;
     }
 
+    @Override
     public boolean reloadData()
     {
-        try
-        {
-            _principalDatabase.reload();
-        }
-        catch (IOException e)
-        {
-            _logger.warn("Reload failed due to:", e);
-            return false;
-        }
-        // Reload successful
-        return true;
+        //TODO - implement? deprecate?
+        throw new UnsupportedOperationException("The reload functionality is not currently supported");
     }
 
-
+    @Override
     @MBeanOperation(name = "viewUsers", description = "All users that are currently available to the system.")
     public TabularData viewUsers()
     {
-        List<Principal> users = _principalDatabase.getUsers();
+        Map<String, Map<String, String>> users = _authProvider.getUsers();
 
         TabularDataSupport userList = new TabularDataSupport(_userlistDataType);
 
         try
         {
             // Create the tabular list of message header contents
-            for (Principal user : users)
+            for (String user : users.keySet())
             {
                 // Create header attributes list
-                // Read,Write,Admin items are depcreated and we return always false.
-                Object[] itemData = {user.getName(), false, false, false};
+                // Read,Write,Admin items are deprecated and we return always false.
+                Object[] itemData = {user, false, false, false};
                 CompositeData messageData = new CompositeDataSupport(_userDataType, COMPOSITE_ITEM_NAMES.toArray(new String[COMPOSITE_ITEM_NAMES.size()]), itemData);
                 userList.put(messageData);
             }
@@ -172,15 +165,9 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
         return userList;
     }
 
-    /*** Broker Methods **/
-
-    /**
-     * setPrincipalDatabase
-     *
-     * @param database set The Database to use for user lookup
-     */
-    public void setPrincipalDatabase(PrincipalDatabase database)
+    @Override
+    public ManagedObject getParentObject()
     {
-        _principalDatabase = database;
+        return null;
     }
 }

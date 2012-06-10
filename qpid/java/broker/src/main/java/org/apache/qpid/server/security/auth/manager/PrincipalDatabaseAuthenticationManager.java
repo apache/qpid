@@ -29,11 +29,9 @@ import org.apache.qpid.configuration.PropertyException;
 import org.apache.qpid.configuration.PropertyUtils;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
-import org.apache.qpid.server.management.AMQUserManagementMBean;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
-import org.apache.qpid.server.management.AMQUserManagementMBean;
 import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
 import org.apache.qpid.server.security.auth.sasl.JCAProvider;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
@@ -98,8 +96,6 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
     private final Map<String, Map<String, ?>> _serverCreationProperties = new HashMap<String, Map<String, ?>>();
 
     private PrincipalDatabase _principalDatabase = null;
-
-    private AMQUserManagementMBean _mbean = null;
 
     public static final AuthenticationManagerPluginFactory<PrincipalDatabaseAuthenticationManager> FACTORY = new AuthenticationManagerPluginFactory<PrincipalDatabaseAuthenticationManager>()
     {
@@ -212,8 +208,6 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         {
             _logger.warn("No additional SASL providers registered.");
         }
-
-        registerManagement();
     }
 
     private void initialiseAuthenticationMechanisms(Map<String, Class<? extends SaslServerFactory>> providerMap, PrincipalDatabase database)
@@ -333,8 +327,6 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
     {
         _mechanisms = null;
         Security.removeProvider(PROVIDER_NAME);
-
-        unregisterManagement();
     }
 
     private PrincipalDatabase createPrincipalDatabaseImpl(final String pdClazz) throws ConfigurationException
@@ -432,42 +424,5 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
     protected void setPrincipalDatabase(final PrincipalDatabase principalDatabase)
     {
         _principalDatabase = principalDatabase;
-    }
-
-    protected void registerManagement()
-    {
-        try
-        {
-            _logger.info("Registering UserManagementMBean");
-
-            _mbean = new AMQUserManagementMBean();
-            _mbean.setPrincipalDatabase(_principalDatabase);
-            _mbean.register();
-        }
-        catch (Exception e)
-        {
-            _logger.warn("User management disabled as unable to create MBean:", e);
-            _mbean = null;
-        }
-    }
-
-    protected void unregisterManagement()
-    {
-        try
-        {
-            if (_mbean != null)
-            {
-                _logger.info("Unregistering UserManagementMBean");
-                _mbean.unregister();
-            }
-        }
-        catch (Exception e)
-        {
-            _logger.warn("Failed to unregister User management MBean:", e);
-        }
-        finally
-        {
-            _mbean = null;
-        }
     }
 }
