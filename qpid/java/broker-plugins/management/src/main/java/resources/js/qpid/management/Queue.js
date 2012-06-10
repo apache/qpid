@@ -31,6 +31,7 @@ define(["dojo/_base/xhr",
         "qpid/common/UpdatableStore",
         "qpid/management/addBinding",
         "qpid/management/moveCopyMessages",
+        "qpid/management/showMessage",
         "dojo/store/JsonRest",
         "dojox/grid/EnhancedGrid",
         "dojo/data/ObjectStore",
@@ -38,7 +39,7 @@ define(["dojo/_base/xhr",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dojo/domReady!"],
        function (xhr, parser, query, connect, event, json, properties, updater, util, formatter,
-                 UpdatableStore, addBinding, moveMessages, JsonRest, EnhancedGrid, ObjectStore) {
+                 UpdatableStore, addBinding, moveMessages, showMessage, JsonRest, EnhancedGrid, ObjectStore) {
 
            function Queue(name, parent, controller) {
                this.name = name;
@@ -84,8 +85,9 @@ define(["dojo/_base/xhr",
                             var myStore = new JsonRest({target:"/rest/message/"+ encodeURIComponent(that.getVirtualHostName()) +
                                                                                "/" + encodeURIComponent(that.getQueueName())});
                             var messageGridDiv = query(".messages",contentPane.containerNode)[0];
+                            that.dataStore = new ObjectStore({objectStore: myStore});
                             that.grid = new EnhancedGrid({
-                                store: new ObjectStore({objectStore: myStore}),
+                                store: that.dataStore,
                                 autoHeight: 10,
                                 keepSelection: true,
                                 structure: [
@@ -113,6 +115,16 @@ define(["dojo/_base/xhr",
                                           indirectSelection: true
                                 }
                             }, messageGridDiv);
+
+                            connect.connect(that.grid, "onRowDblClick", that.grid,
+                                             function(evt){
+                                                 var idx = evt.rowIndex,
+                                                     theItem = this.getItem(idx);
+                                                 var id = that.dataStore.getValue(theItem,"id");
+                                                 showMessage.show({ messageNumber: id,
+                                                                    queue: that.getQueueName(),
+                                                                    virtualhost: that.getVirtualHostName() });
+                                             });
 
                             var deleteMessagesButton = query(".deleteMessagesButton", contentPane.containerNode)[0];
                             connect.connect(deleteMessagesButton, "onclick",

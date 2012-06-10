@@ -51,13 +51,6 @@ define(["dojo/store/Memory",
 
         that.grid = new GridType(gridProperties, divName);
 
-/*
-        that.grid =
-            new GridType({  store: that.dataStore,
-                            structure: structure,
-                            autoHeight: true
-                         }, divName);*/
-
         // since we created this grid programmatically, call startup to render it
         that.grid.startup();
 

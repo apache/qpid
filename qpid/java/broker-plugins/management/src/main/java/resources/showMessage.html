@@ -1,0 +1,73 @@
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one or more
+  ~ contributor license agreements.  See the NOTICE file distributed with
+  ~ this work for additional information regarding copyright ownership.
+  ~ The ASF licenses this file to You under the Apache License, Version 2.0
+  ~ (the "License"); you may not use this file except in compliance with
+  ~ the License.  You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<div class="dijitHidden">
+    <div data-dojo-type="dijit.Dialog" style="width:600px;" data-dojo-props="title:'View Message'" id="showMessage">
+
+    <table style="border: 0;">
+        <tr style="margin-bottom: 4pt">
+            <td style="width: 10em; vertical-align: top"><span style="font-weight: bold;">Message Number:</span></td>
+            <td><span class="message-id"></span></td>
+        </tr>
+        <tr style="margin-bottom: 4pt">
+            <td style="width: 10em; vertical-align: top"><span style="font-weight: bold;">Message Id:</span></td>
+            <td><span class="message-messageId"></span></td>
+        </tr>
+        <tr style="margin-bottom: 4pt">
+            <td style="width: 10em; vertical-align: top"><span style="font-weight: bold;">State:</span></td>
+            <td><span class="message-state"></span></td>
+        </tr>
+        <tr style="margin-bottom: 4pt">
+            <td style="width: 10em; vertical-align: top"><span style="font-weight: bold;">Persistent:</span></td>
+            <td><span class="message-persistent boolean"></span></td>
+        </tr>
+        <tr style="margin-bottom: 4pt">
+            <td style="width: 10em; vertical-align: top"><span style="font-weight: bold;">Priority:</span></td>
+            <td><span class="message-priority"></span></td>
+        </tr>
+        <tr style="margin-bottom: 4pt">
+            <td style="width: 10em; vertical-align: top"><span style="font-weight: bold;">Arrival Time:</span>
+            </td><td><span class="message-arrivalTime datetime"></span></td>
+        </tr>
+        <tr style="margin-bottom: 4pt">
+            <td style="width: 10em; vertical-align: top"><span style="font-weight: bold;">Expiration:</span></td>
+            <td><span class="message-expiration datetime"></span></td>
+        </tr>
+        <tr style="margin-bottom: 4pt">
+            <td style="width: 10em; vertical-align: top"><span style="font-weight: bold;">MIME Type:</span></td>
+            <td><span class="message-mimeType"></span></td>
+        </tr>
+        <tr style="margin-bottom: 4pt">
+            <td style="width: 10em; vertical-align: top"><span style="font-weight: bold;">User:</span></td>
+            <td><span class="message-userId"></span></td>
+        </tr>
+        <tr style="margin-bottom: 4pt">
+            <td style="width: 10em; vertical-align: top"><span style="font-weight: bold;">Headers:</span></td>
+            <td><div class="message-headers map"></div></td>
+        </tr>
+
+        <tr style="margin-bottom: 4pt">
+            <td style="width: 10em; vertical-align: top"><span style="font-weight: bold;">Content:</span></td>
+            <td><div class="message-content"></div></td>
+        </tr>
+    </table>
+        <br/>
+    <input type="button" value="Close" label="Close" dojoType="dijit.form.Button" class="closeViewMessage"/>
+
+    </div>
+</div>
+
