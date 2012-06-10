@@ -84,6 +84,9 @@ public class ServerConfiguration extends ConfigurationPlugin
     public static final String MGMT_CUSTOM_REGISTRY_SOCKET = "management.custom-registry-socket";
     public static final String MGMT_JMXPORT_REGISTRYSERVER = "management.jmxport.registryServer";
     public static final String MGMT_JMXPORT_CONNECTORSERVER = "management.jmxport.connectorServer";
+    public static final String SECURITY_DEFAULT_AUTH_MANAGER = "security.default-auth-manager";
+    public static final String SECURITY_PORT_MAPPINGS_PORT_MAPPING_AUTH_MANAGER = "security.port-mappings.port-mapping.auth-manager";
+    public static final String SECURITY_PORT_MAPPINGS_PORT_MAPPING_PORT = "security.port-mappings.port-mapping.port";
     public static final String STATUS_UPDATES = "status-updates";
     public static final String ADVANCED_LOCALE = "advanced.locale";
     public static final String CONNECTOR_AMQP10ENABLED = "connector.amqp10enabled";
@@ -250,6 +253,13 @@ public class ServerConfiguration extends ConfigurationPlugin
             String message = "Validation error : housekeeping/expiredMessageCheckPeriod must be replaced by housekeeping/checkPeriod."
                     + (_configFile == null ? "" : " Configuration file : " + _configFile);
             throw new ConfigurationException(message);
+        }
+
+        String[] ports = getConfig().getStringArray(SECURITY_PORT_MAPPINGS_PORT_MAPPING_PORT);
+        String[] authManagers = getConfig().getStringArray(SECURITY_PORT_MAPPINGS_PORT_MAPPING_AUTH_MANAGER);
+        if (ports.length != authManagers.length)
+        {
+            throw new ConfigurationException("Validation error: Each port-mapping must have exactly one port and exactly one auth-manager.");
         }
 
         // QPID-3517: Inconsistency in capitalisation in the SSL configuration keys used within the connector and management configuration
@@ -586,14 +596,13 @@ public class ServerConfiguration extends ConfigurationPlugin
 
     public String getDefaultAuthenticationManager()
     {
-        return getStringValue("security.default-auth-manager");
+        return getStringValue(SECURITY_DEFAULT_AUTH_MANAGER);
     }
-
 
     public Map<Integer, String> getPortAuthenticationMappings()
     {
-        String[] ports = getConfig().getStringArray("security.port-mappings.port-mapping.port");
-        String[] authManagers = getConfig().getStringArray("security.port-mappings.port-mapping.auth-manager");
+        String[] ports = getConfig().getStringArray(SECURITY_PORT_MAPPINGS_PORT_MAPPING_PORT);
+        String[] authManagers = getConfig().getStringArray(SECURITY_PORT_MAPPINGS_PORT_MAPPING_AUTH_MANAGER);
 
         Map<Integer,String> portMappings = new HashMap<Integer, String>();
         for(int i = 0; i < ports.length; i++)

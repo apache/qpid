@@ -564,7 +564,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     @Override
     public AuthenticationManager getAuthenticationManager(SocketAddress address)
     {
-        return _authenticationManagerRegistry.getAuthenticationManagerFor(address);
+        return _authenticationManagerRegistry.getAuthenticationManager(address);
     }
 
     public PluginManager getPluginManager()
