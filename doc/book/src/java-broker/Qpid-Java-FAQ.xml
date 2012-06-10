@@ -742,15 +742,9 @@ amqj.logging.level
           </title>
 
 	  <para>
-            There are two possibilities here:
-          </para><para>
-            1) The management console can be used to interogate an active
+            The management console can be used to interogate an active
             broker and browse the contents of a queue.See the <xref linkend="qpid_Qpid-JMX-Management-Console"/>
             page for further details.
-          </para><para>
-            2) The <xref linkend="qpid_MessageStore-Tool"/> can be used to inspect
-            the contents of a persistent message store. Note: this can
-            currently only be used when the broker is offline.
           </para>
 <!--h3--></section>
 

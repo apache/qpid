@@ -68,7 +68,6 @@
 
 <chapter id="QpidJavaBroker-ManagementTools">
 <title>Management Tools</title>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="MessageStore-Tool.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid-Java-Broker-Management-CLI.xml"/>
 </chapter>
 </book>
