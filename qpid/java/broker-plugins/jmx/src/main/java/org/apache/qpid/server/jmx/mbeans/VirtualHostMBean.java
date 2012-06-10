@@ -52,13 +52,13 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
     {
         super(ManagedVirtualHost.class, ManagedVirtualHost.TYPE, registry);
         _virtualHost = virtualHost;
-        //register();
         virtualHost.addChangeListener(this);
 
         initQueues();
         initExchanges();
         initConnections();
 
+        //This is the actual JMX bean for this 'VirtualHostMBean', leave it alone.
         _managerMBean = new VirtualHostManagerMBean(this);
     }
 

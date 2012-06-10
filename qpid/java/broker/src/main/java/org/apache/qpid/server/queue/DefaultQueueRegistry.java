@@ -20,10 +20,7 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.exchange.DefaultExchangeRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.ArrayList;
@@ -34,8 +31,6 @@ import java.util.concurrent.ConcurrentMap;
 
 public class DefaultQueueRegistry implements QueueRegistry
 {
-    private static final Logger LOGGER = Logger.getLogger(DefaultExchangeRegistry.class);
-
     private ConcurrentMap<AMQShortString, AMQQueue> _queueMap = new ConcurrentHashMap<AMQShortString, AMQQueue>();
 
     private final VirtualHost _virtualHost;
@@ -113,16 +108,16 @@ public class DefaultQueueRegistry implements QueueRegistry
         for (final AMQQueue queue : getQueues())
         {
             queue.stop();
-            try
+
+            //TODO: this is a bit of a hack, what if the listeners aren't aware
+            //that we are just unregistering the MBean because of HA, and aren't
+            //actually removing the queue as such.
+            synchronized (_listeners)
             {
-                //TODO: this needs updated to use the
-                //listener model, the managed object being
-                //accessed here is no longer used
-                queue.getManagedObject().unregister();
-            }
-            catch (AMQException e)
-            {
-                LOGGER.warn("Failed to unregister mbean", e);
+                for(RegistryChangeListener listener : _listeners)
+                {
+                    listener.queueUnregistered(queue);
+                }
             }
         }
         _queueMap.clear();

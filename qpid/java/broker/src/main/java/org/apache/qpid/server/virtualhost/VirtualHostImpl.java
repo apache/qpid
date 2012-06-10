@@ -53,8 +53,6 @@ import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
-import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.server.management.VirtualHostMBean;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
@@ -97,8 +95,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
     private final BrokerConfig _brokerConfig;
 
     private final VirtualHostConfiguration _vhostConfig;
-    
-    private final VirtualHostMBean _virtualHostMBean;
 
     private final QueueRegistry _queueRegistry;
 
@@ -142,8 +138,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         _id = _appRegistry.getConfigStore().createId();
 
         CurrentActor.get().message(VirtualHostMessages.CREATED(_name));
-
-        _virtualHostMBean = new VirtualHostMBean(this);
 
         _securityManager = new SecurityManager(_appRegistry.getSecurityManager());
         _securityManager.configureHostPlugins(_vhostConfig);
@@ -528,11 +522,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         _state = State.STOPPED;
 
         CurrentActor.get().message(VirtualHostMessages.CLOSED());
-    }
-
-    public ManagedObject getManagedObject()
-    {
-        return _virtualHostMBean;
     }
 
     public UUID getBrokerId()

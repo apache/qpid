@@ -28,6 +28,7 @@ import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.QueueNotificationListener;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.Consumer;
@@ -96,5 +97,11 @@ class QueueImpl extends AbstractConfiguredObject implements Queue
     public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
     {
         throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    public void setNotificationListener(QueueNotificationListener listener)
+    {
+        // TODO - implement
     }
 }

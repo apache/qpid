@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.management.JMException;
+import javax.management.Notification;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
@@ -53,8 +53,6 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.QueueActor;
 import org.apache.qpid.server.logging.messages.QueueMessages;
 import org.apache.qpid.server.logging.subjects.QueueLogSubject;
-import org.apache.qpid.server.management.AMQQueueMBean;
-import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -177,7 +175,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     private LogSubject _logSubject;
     private LogActor _logActor;
 
-    private AMQQueueMBean _managedObject;
     private static final String SUB_FLUSH_RUNNER = "SUB_FLUSH_RUNNER";
     private boolean _nolocal;
 
@@ -198,6 +195,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     private final Collection<SubscriptionRegistrationListener> _subscriptionListeners =
             new ArrayList<SubscriptionRegistrationListener>();
 
+    private AMQQueue.NotificationListener _notificationListener;
+    private final long[] _lastNotificationTimes = new long[NotificationCheck.values().length];
 
     protected SimpleAMQQueue(UUID id, AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, boolean exclusive, VirtualHost virtualHost, Map<String,Object> arguments)
     {
@@ -262,16 +261,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                                                          _entries.getPriorities() > 0));
 
         getConfigStore().addConfiguredObject(this);
-
-        try
-        {
-            _managedObject = new AMQQueueMBean(this);
-            _managedObject.register();
-        }
-        catch (JMException e)
-        {
-            _logger.error("AMQQueue MBean creation has failed ", e);
-        }
 
         if(arguments != null && arguments.containsKey(QPID_GROUP_HEADER_KEY))
         {
@@ -771,10 +760,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
            }
         }
 
-        if(_managedObject != null)
-        {
-            _managedObject.checkForNotification(entry.getMessage());
-        }
+        checkForNotification(entry.getMessage());
 
         if(action != null)
         {
@@ -1683,12 +1669,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
             txn.commit();
 
-
-            if(_managedObject!=null)
-            {
-                _managedObject.unregister();
-            }
-
             for (Task task : _deleteTaskList)
             {
                 task.doTask(this);
@@ -2167,16 +2147,13 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                 }
                 else
                 {
-                    if (_managedObject != null)
+                    // There is a chance that the node could be deleted by
+                    // the time the check actually occurs. So verify we
+                    // can actually get the message to perform the check.
+                    ServerMessage msg = node.getMessage();
+                    if (msg != null)
                     {
-                        // There is a chance that the node could be deleted by
-                        // the time the check actually occurs. So verify we
-                        // can actually get the message to perform the check.
-                        ServerMessage msg = node.getMessage();
-                        if (msg != null)
-                        {
-                            _managedObject.checkForNotification(msg);
-                        }
+                        checkForNotification(msg);
                     }
                 }
             }
@@ -2299,11 +2276,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     public Set<NotificationCheck> getNotificationChecks()
     {
         return _notificationChecks;
-    }
-
-    public ManagedObject getManagedObject()
-    {
-        return _managedObject;
     }
 
     private final class QueueEntryListener implements QueueEntry.StateChangeListener
@@ -2520,4 +2492,34 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         _maximumDeliveryCount = maximumDeliveryCount;
     }
 
+    /**
+     * Checks if there is any notification to send to the listeners
+     */
+    private void checkForNotification(ServerMessage<?> msg) throws AMQException
+    {
+        final Set<NotificationCheck> notificationChecks = getNotificationChecks();
+        final AMQQueue.NotificationListener listener = _notificationListener;
+
+        if(listener != null && !notificationChecks.isEmpty())
+        {
+            final long currentTime = System.currentTimeMillis();
+            final long thresholdTime = currentTime - getMinimumAlertRepeatGap();
+
+            for (NotificationCheck check : notificationChecks)
+            {
+                if (check.isMessageSpecific() || (_lastNotificationTimes[check.ordinal()] < thresholdTime))
+                {
+                    if (check.notifyIfNecessary(msg, this, listener))
+                    {
+                        _lastNotificationTimes[check.ordinal()] = currentTime;
+                    }
+                }
+            }
+        }
+    }
+
+    public void setNotificationListener(AMQQueue.NotificationListener listener)
+    {
+        _notificationListener = listener;
+    }
 }

@@ -57,6 +57,7 @@ Import-Package:  org.apache.qpid,
  javax.servlet,
  javax.servlet.http,
  javax.management;version=1.0.0,
+ javax.management.monitor;version=1.0.0,
  javax.management.openmbean;version=1.0.0,
  org.osgi.util.tracker;version=1.0.0,
  org.osgi.framework;version=1.3

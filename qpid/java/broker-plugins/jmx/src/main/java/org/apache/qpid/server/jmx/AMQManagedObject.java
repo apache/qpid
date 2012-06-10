@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.jmx;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import javax.management.ListenerNotFoundException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.NotificationBroadcaster;
@@ -38,7 +40,7 @@ public abstract class AMQManagedObject extends DefaultManagedObject
 {
     private NotificationBroadcasterSupport _broadcaster = new NotificationBroadcasterSupport();
 
-    private long _notificationSequenceNumber = 0;
+    private AtomicLong _notificationSequenceNumber = new AtomicLong();
 
     protected AMQManagedObject(Class<?> managementInterface, String typeName, ManagedObjectRegistry registry)
         throws NotCompliantMBeanException
@@ -73,22 +75,9 @@ public abstract class AMQManagedObject extends DefaultManagedObject
         return _broadcaster;
     }
 
-    /**
-     * sequence number for notifications
-     */
-    protected long getNotificationSequenceNumber()
-    {
-        return _notificationSequenceNumber;
-    }
-
-    protected void setNotificationSequenceNumber(long notificationSequenceNumber)
-    {
-        _notificationSequenceNumber = notificationSequenceNumber;
-    }
-
     protected long incrementAndGetSequenceNumber()
     {
-        return ++_notificationSequenceNumber;
+        return _notificationSequenceNumber.incrementAndGet();
     }
 
 

@@ -34,12 +34,13 @@ import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.QueueNotificationListener;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.queue.*;
 import org.apache.qpid.server.subscription.Subscription;
 
-final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.SubscriptionRegistrationListener
+final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.SubscriptionRegistrationListener, AMQQueue.NotificationListener
 {
 
     static final Map<String, String> ATTRIBUTE_MAPPINGS = new HashMap<String, String>();
@@ -69,6 +70,7 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
 
     private final VirtualHostAdapter _vhost;
     private QueueStatisticsAdapter _statistics;
+    private QueueNotificationListener _queueNotificationListener;
 
     public QueueAdapter(final VirtualHostAdapter virtualHostAdapter, final AMQQueue queue)
     {
@@ -80,6 +82,7 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         _queue.addSubscriptionRegistrationListener(this);
         populateConsumers();
         _statistics = new QueueStatisticsAdapter(queue);
+        _queue.setNotificationListener(this);
     }
 
     private void populateConsumers()
@@ -645,4 +648,19 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         }
     }
 
+    @Override
+    public void setNotificationListener(QueueNotificationListener listener)
+    {
+        _queueNotificationListener = listener;
+    }
+
+    @Override
+    public void notifyClients(NotificationCheck notification, AMQQueue queue, String notificationMsg)
+    {
+        QueueNotificationListener listener = _queueNotificationListener;
+        if(listener !=  null)
+        {
+            listener.notifyClients(notification, this, notificationMsg);
+        }
+    }
 }

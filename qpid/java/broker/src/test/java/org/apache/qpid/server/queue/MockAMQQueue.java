@@ -650,4 +650,9 @@ public class MockAMQQueue implements AMQQueue
     public void visit(final QueueEntryVisitor visitor)
     {
     }
+
+    @Override
+    public void setNotificationListener(NotificationListener listener)
+    {
+    }
 }

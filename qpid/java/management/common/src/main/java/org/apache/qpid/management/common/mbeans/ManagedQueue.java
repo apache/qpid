@@ -63,7 +63,10 @@ public interface ManagedQueue
     String ENCODING = "Encoding";
     String CONTENT = "Content";
     List<String> VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES_DESC = Collections.unmodifiableList(Arrays.asList(MSG_AMQ_ID, MIME, ENCODING, CONTENT));
-    
+
+    /** Date/time format used for message expiration and message timestamp formatting */
+    String JMSTIMESTAMP_DATETIME_FORMAT = "MM-dd-yy HH:mm:ss.SSS z";
+
     //Individual attribute name constants
     static final String ATTR_NAME = "Name";
     static final String ATTR_OWNER = "Owner";

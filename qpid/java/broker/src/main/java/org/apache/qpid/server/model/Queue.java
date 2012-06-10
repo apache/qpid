@@ -25,7 +25,6 @@ import java.util.Collection;
 import java.util.Collections;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
 
-
 public interface Queue extends ConfiguredObject
 {
     public static final String BINDING_COUNT = "bindingCount";
@@ -143,4 +142,6 @@ public interface Queue extends ConfiguredObject
     void visit(QueueEntryVisitor visitor);
 
     void delete();
+    
+    void setNotificationListener(QueueNotificationListener listener);
 }

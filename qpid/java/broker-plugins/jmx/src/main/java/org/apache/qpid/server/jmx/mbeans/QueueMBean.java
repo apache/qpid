@@ -27,8 +27,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.management.JMException;
+import javax.management.MBeanNotificationInfo;
+import javax.management.Notification;
 import javax.management.ObjectName;
 import javax.management.OperationsException;
+import javax.management.monitor.MonitorNotification;
 import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
@@ -47,11 +50,13 @@ import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.QueueNotificationListener;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.queue.NotificationCheck;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
 
-public class QueueMBean extends AMQManagedObject implements ManagedQueue
+public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueNotificationListener
 {
     private static final String[] VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC_ARRAY =
             VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC.toArray(new String[VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC.size()]);
@@ -118,6 +123,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue
         _queue = queue;
         _vhostMBean = virtualHostMBean;
         register();
+        _queue.setNotificationListener(this);
     }
 
     public ManagedObject getParentObject()
@@ -629,6 +635,31 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue
         {
             return _entry;
         }
+    }
+
+    @Override
+    public void notifyClients(NotificationCheck notification, Queue queue, String notificationMsg)
+    {
+        notificationMsg = notification.name() + " " + notificationMsg;
+
+        Notification note = new Notification(MonitorNotification.THRESHOLD_VALUE_EXCEEDED, this, 
+                                             incrementAndGetSequenceNumber(), System.currentTimeMillis(), notificationMsg);
+
+        getBroadcaster().sendNotification(note);
+    }
+
+    /**
+     * returns Notifications sent by this MBean.
+     */
+    @Override
+    public MBeanNotificationInfo[] getNotificationInfo()
+    {
+        String[] notificationTypes = new String[] { MonitorNotification.THRESHOLD_VALUE_EXCEEDED };
+        String name = MonitorNotification.class.getName();
+        String description = "Either Message count or Queue depth or Message size has reached threshold high value";
+        MBeanNotificationInfo info1 = new MBeanNotificationInfo(notificationTypes, name, description);
+
+        return new MBeanNotificationInfo[] { info1 };
     }
 }
 

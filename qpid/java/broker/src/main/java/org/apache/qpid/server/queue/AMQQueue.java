@@ -28,8 +28,6 @@ import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeReferrer;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.management.Managable;
-import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.store.TransactionLogResource;
@@ -41,9 +39,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeReferrer, TransactionLogResource, BaseQueue,
+public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, TransactionLogResource, BaseQueue,
                                   QueueConfig
 {
+    public interface NotificationListener
+    {
+        void notifyClients(NotificationCheck notification, AMQQueue queue, String notificationMsg);
+    }
+
     boolean getDeleteOnNoConsumers();
 
     void setDeleteOnNoConsumers(boolean b);
@@ -287,8 +290,6 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
 
     ConfigurationPlugin getConfiguration();
 
-    ManagedObject getManagedObject();
-
     void setExclusive(boolean exclusive) throws AMQException;
 
     /**
@@ -308,4 +309,5 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
      */
     public void setMaximumDeliveryCount(final int maximumDeliveryCount);
 
+    void setNotificationListener(NotificationListener listener);
 }

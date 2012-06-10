@@ -18,10 +18,11 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.queue;
+package org.apache.qpid.server.model;
 
+import org.apache.qpid.server.queue.NotificationCheck;
 
 public interface QueueNotificationListener
 {
-    void notifyClients(NotificationCheck notification, AMQQueue queue, String notificationMsg);
+    void notifyClients(NotificationCheck notification, Queue queue, String notificationMsg);
 }
