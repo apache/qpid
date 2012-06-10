@@ -189,7 +189,7 @@ public class AuthenticationManagerRegistryTest extends TestCase
 
         AuthenticationManagerRegistry registry = new AuthenticationManagerRegistry(_serverConfiguration, _pluginManager);
 
-        AuthenticationManager authenticationManager = registry.getAuthenticationManagerFor(new InetSocketAddress(1234));
+        AuthenticationManager authenticationManager = registry.getAuthenticationManager(new InetSocketAddress(1234));
         assertEquals("TestAuthenticationManager1", authenticationManager.getMechanisms());
 
         registry.close();
@@ -204,7 +204,7 @@ public class AuthenticationManagerRegistryTest extends TestCase
 
         AuthenticationManagerRegistry registry = new AuthenticationManagerRegistry(_serverConfiguration, _pluginManager);
 
-        AuthenticationManager authenticationManager = registry.getAuthenticationManagerFor(mock(SocketAddress.class));
+        AuthenticationManager authenticationManager = registry.getAuthenticationManager(mock(SocketAddress.class));
         assertEquals("TestAuthenticationManager1", authenticationManager.getMechanisms());
 
         registry.close();
@@ -227,10 +227,10 @@ public class AuthenticationManagerRegistryTest extends TestCase
 
         AuthenticationManagerRegistry registry = new AuthenticationManagerRegistry(_serverConfiguration, _pluginManager);
 
-        AuthenticationManager authenticationManager1 = registry.getAuthenticationManagerFor(new InetSocketAddress(unmappedPortNumber));
+        AuthenticationManager authenticationManager1 = registry.getAuthenticationManager(new InetSocketAddress(unmappedPortNumber));
         assertEquals("TestAuthenticationManager1", authenticationManager1.getMechanisms());
 
-        AuthenticationManager authenticationManager2 = registry.getAuthenticationManagerFor(new InetSocketAddress(mappedPortNumber));
+        AuthenticationManager authenticationManager2 = registry.getAuthenticationManager(new InetSocketAddress(mappedPortNumber));
         assertEquals("TestAuthenticationManager2", authenticationManager2.getMechanisms());
 
         registry.close();
