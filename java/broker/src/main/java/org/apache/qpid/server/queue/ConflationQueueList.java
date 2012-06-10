@@ -24,6 +24,8 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.Map;
@@ -32,6 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class ConflationQueueList extends SimpleQueueEntryList
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConflationQueueList.class);
 
     private final String _conflationKey;
     private final ConcurrentHashMap<Object, AtomicReference<QueueEntry>> _latestValuesMap =
@@ -68,6 +71,11 @@ public class ConflationQueueList extends SimpleQueueEntryList
         final Object keyValue = message.getMessageHeader().getHeader(_conflationKey);
         if (keyValue != null)
         {
+            if(LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Adding entry " + addedEntry + " for message " + message.getMessageNumber() + " with conflation key " + keyValue);
+            }
+
             final AtomicReference<QueueEntry> referenceToEntry = new AtomicReference<QueueEntry>(addedEntry);
             AtomicReference<QueueEntry> entryReferenceFromMap = null;
             QueueEntry entryFromMap;
@@ -100,12 +108,18 @@ public class ConflationQueueList extends SimpleQueueEntryList
             }
             else if (entryFromMap.compareTo(addedEntry) > 0)
             {
-                // A newer entry came along
+                if(LOGGER.isDebugEnabled())
+                {
+                    LOGGER.debug("New entry " + addedEntry.getEntryId() + " for message " + addedEntry.getMessage().getMessageNumber() + " being immediately discarded because a newer entry arrived. The newer entry is: " + entryFromMap + " for message " + entryFromMap.getMessage().getMessageNumber());
+                }
                 discardEntry(addedEntry);
             }
             else if (entryFromMap.compareTo(addedEntry) < 0)
             {
-                // We replaced some other entry to become the newest value
+                if(LOGGER.isDebugEnabled())
+                {
+                    LOGGER.debug("Entry " + addedEntry + " for message " + addedEntry.getMessage().getMessageNumber() + " replacing older entry " + entryFromMap + " for message " + entryFromMap.getMessage().getMessageNumber());
+                }
                 discardEntry(entryFromMap);
             }
 
