@@ -1682,6 +1682,75 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals(AmqpProtocolVersion.v0_10, _serverConfig.getDefaultSupportedProtocolReply());
     }
 
+    public void testDefaultAuthenticationManager() throws Exception
+    {
+        // Check default
+        _serverConfig.initialise();
+        assertNull("unexpected default value", _serverConfig.getDefaultAuthenticationManager());
+
+        // Check values we set
+        String testAuthManager = "myauthmanager";
+        _config.addProperty("security.default-auth-manager", testAuthManager);
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals(testAuthManager, _serverConfig.getDefaultAuthenticationManager());
+    }
+
+    public void testPortAuthenticationMappingsDefault() throws Exception
+    {
+        _serverConfig.initialise();
+        assertEquals("unexpected default number of port/authmanager mappings", 0, _serverConfig.getPortAuthenticationMappings().size());
+    }
+
+    public void testPortAuthenticationMappingsWithSingleMapping() throws Exception
+    {
+        String testAuthManager = "myauthmanager";
+        _config.addProperty("security.port-mappings.port-mapping.port", 1234);
+        _config.addProperty("security.port-mappings.port-mapping.auth-manager", testAuthManager);
+
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals("unexpected number of port/authmanager mappings", 1, _serverConfig.getPortAuthenticationMappings().size());
+        assertEquals("unexpected mapping for port", testAuthManager, _serverConfig.getPortAuthenticationMappings().get(1234));
+    }
+
+    public void testPortAuthenticationMappingsWithManyMapping() throws Exception
+    {
+        String testAuthManager1 = "myauthmanager1";
+        String testAuthManager2 = "myauthmanager2";
+        _config.addProperty("security.port-mappings.port-mapping(-1).port", 1234);
+        _config.addProperty("security.port-mappings.port-mapping.auth-manager", testAuthManager1);
+
+        _config.addProperty("security.port-mappings.port-mapping(-1).port", 2345);
+        _config.addProperty("security.port-mappings.port-mapping.auth-manager", testAuthManager2);
+
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+
+        assertEquals("unexpected number of port/authmanager mappings", 2, _serverConfig.getPortAuthenticationMappings().size());
+        assertEquals("unexpected mapping for port", testAuthManager1, _serverConfig.getPortAuthenticationMappings().get(1234));
+        assertEquals("unexpected mapping for port", testAuthManager2, _serverConfig.getPortAuthenticationMappings().get(2345));
+    }
+
+    public void testPortAuthenticationMappingWithMissingAuthManager() throws Exception
+    {
+        _config.addProperty("security.port-mappings.port-mapping(-1).port", 1234);
+        // no auth manager defined for port
+        _serverConfig = new ServerConfiguration(_config);
+        try
+        {
+            _serverConfig.initialise();
+            fail("Exception not thrown");
+        }
+        catch(ConfigurationException ce)
+        {
+            // PASS
+            assertEquals("Incorrect error message",
+                    "Validation error: Each port-mapping must have exactly one port and exactly one auth-manager.",
+                    ce.getMessage());
+        }
+    }
+
     /**
      * Convenience method to output required security preamble for broker config
      */
@@ -1699,7 +1768,6 @@ public class ServerConfigurationTest extends QpidTestCase
         out.write("\t\t\t\t\t</attribute>\n");
         out.write("\t\t\t\t</attributes>\n");
         out.write("\t\t\t</principal-database>\n");
-        out.write("\t\t\t<jmx-access>/dev/null</jmx-access>\n");
         out.write("\t\t</pd-auth-manager>\n");
         out.write("\t</security>\n");
     }

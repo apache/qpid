@@ -90,7 +90,7 @@ public class AuthenticationManagerRegistry implements Closeable, IAuthentication
     }
 
     @Override
-    public AuthenticationManager getAuthenticationManagerFor(SocketAddress address)
+    public AuthenticationManager getAuthenticationManager(SocketAddress address)
     {
         AuthenticationManager authManager =
                 address instanceof InetSocketAddress
