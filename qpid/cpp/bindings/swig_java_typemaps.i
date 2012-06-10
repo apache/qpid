@@ -22,6 +22,7 @@
 #include "qpid/types/Variant.h"
 #include "jni.h"
 #include <iostream>
+#include <sstream>
 %}
 /* =================================================================== */
 
@@ -47,9 +48,9 @@
  * The "jstype" specifies the types exposed in the proxy classes.
  * -------------------------------------------------------------------VaraintMapWrapper.h~
 */
-%typemap(jni) qpid::messaging::Message::BYTE_BUFFER "jobject"
-%typemap(jtype) qpid::messaging::Message::BYTE_BUFFER "java.nio.ByteBuffer"
-%typemap(jstype) qpid::messaging::Message::BYTE_BUFFER "java.nio.ByteBuffer"
+%typemap(jni) BYTE_BUFFER "jobject"
+%typemap(jtype) BYTE_BUFFER "java.nio.ByteBuffer"
+%typemap(jstype) BYTE_BUFFER "java.nio.ByteBuffer"
 
 %typemap(jni) qpid::types::Variant::Map& "jlong"
 %typemap(jtype) qpid::types::Variant::Map& "long"
@@ -72,19 +73,19 @@
 %typemap(jstype) uint64_t "long"
 
 /* -- qpid::messaging::Message::BYTE_BUFFER -- */
-%typemap(in) (qpid::messaging::Message::BYTE_BUFFER) {
+%typemap(in) (BYTE_BUFFER) {
   void* start = jenv->GetDirectBufferAddress($input);
   long size = (long)(jenv->GetDirectBufferCapacity($input));
-  $1 = qpid::messaging::Message::BYTE_BUFFER(start,size);
+  $1 = BYTE_BUFFER(start,size);
 }
 
-%typemap(javain) (qpid::messaging::Message::BYTE_BUFFER) "$module.isBufferDirect($javainput)"
+%typemap(javain) (BYTE_BUFFER) "$module.isBufferDirect($javainput)"
 
-%typemap(out) qpid::messaging::Message::BYTE_BUFFER {
+%typemap(out) BYTE_BUFFER {
   jresult = jenv->NewDirectByteBuffer($1.getStart(), $1.getSize());
 }
 
-%typemap(javaout) qpid::messaging::Message::BYTE_BUFFER {
+%typemap(javaout) BYTE_BUFFER {
     return $jnicall;
 }
 

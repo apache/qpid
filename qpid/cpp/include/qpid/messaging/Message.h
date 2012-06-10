@@ -42,17 +42,6 @@ struct MessageImpl;
 class QPID_MESSAGING_CLASS_EXTERN Message
 {
   public:
-    struct QPID_MESSAGING_CLASS_EXTERN BYTE_BUFFER
-    {
-        public :
-           QPID_MESSAGING_EXTERN BYTE_BUFFER(): start(0), size(0) {} 
-           QPID_MESSAGING_EXTERN BYTE_BUFFER(void* p, long s) : start(p), size(s) {}
-           QPID_MESSAGING_EXTERN void* getStart() const { return start; }
-           QPID_MESSAGING_EXTERN long getSize() const { return size; }
-        private:
-           void* start;
-           long  size;
-    };
     QPID_MESSAGING_EXTERN Message(const std::string& bytes = std::string());
     QPID_MESSAGING_EXTERN Message(const char*, size_t);
     QPID_MESSAGING_EXTERN Message(const Message&);
@@ -189,34 +178,18 @@ class QPID_MESSAGING_CLASS_EXTERN Message
 
     /**
      * Aimed at devlopers creating bindings over the c++ client.
-     * Copy count bytes from the region pointed 
-     * to by BYTE_BUFFER.start and BYTE_BUFFER.size
-     */
-    QPID_MESSAGING_EXTERN void setContentAsByteBuffer(const BYTE_BUFFER buf);
-
-    /**
-     * Aimed at devlopers creating bindings over the c++ client.
-     * BYTE_BUFFER.start points to the start of the content data.
-     * BYTE_BUFFER.size indicates how much data there is.
-     */
-    QPID_MESSAGING_EXTERN const BYTE_BUFFER getContentAsByteBuffer() const;
-
-    /**
-     * Aimed at devlopers creating bindings over the c++ client.
      * The data contains the encoded message properties.
      * The method copy count bytes from the region pointed 
-     * to by BYTE_BUFFER.start and BYTE_BUFFER.size     
+     * to by chars.
      */
-    QPID_MESSAGING_EXTERN void setPropertiesAsByteBuffer(const BYTE_BUFFER buf);
+    QPID_MESSAGING_EXTERN void setPropertiesAsRawBytes(const char* chars, size_t count);
 
     /**
      * Aimed at devlopers creating bindings over the c++ client.
      * The data contains raw message properties. 
      * The calling application needs to decode the headers.
-     * BYTE_BUFFER.start points to the start of the content data.
-     * BYTE_BUFFER.size indicates how much data there is.
      */   
-    QPID_MESSAGING_EXTERN const BYTE_BUFFER getPropertiesAsByteBuffer() const;
+    QPID_MESSAGING_EXTERN void getPropertiesAsRawBytes(char*& chars, size_t count) const;
 
   private:
     MessageImpl* impl;

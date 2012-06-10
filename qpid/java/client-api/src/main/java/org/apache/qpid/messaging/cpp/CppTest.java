@@ -61,6 +61,8 @@ public class CppTest
 
         System.out.println("Unspecified property : " + props.get("Unspecified-Prop"));
 
+        System.out.println("Msg toString() : " + m);
+
         ssn.close();
         con.close();
     }

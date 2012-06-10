@@ -28,6 +28,7 @@ public class TextMessage implements org.apache.qpid.messaging.Message
     {
         _cppMessage = new org.apache.qpid.messaging.cpp.jni.Message(text);
         _cppMessage.setContentType("text/plain");
+        _cppMessage.setPriority((byte)5);
     }
 
     public TextMessage(org.apache.qpid.messaging.cpp.jni.Message msg)
@@ -207,6 +208,12 @@ public class TextMessage implements org.apache.qpid.messaging.Message
     protected org.apache.qpid.messaging.cpp.jni.Message getCppMessage()
     {
         return _cppMessage;
+    }
+
+    @Override
+    public String toString()
+    {
+        return _cppMessage.toString();
     }
 
 }
