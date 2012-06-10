@@ -42,7 +42,7 @@ public class CppReceiver implements Receiver
     public Message fetch(long timeout)
     {
         org.apache.qpid.messaging.cpp.jni.Message m = _cppReceiver.fetch();
-        return new TextMessage(m.getContent());
+        return new TextMessage(m);
     }
 
     @Override

@@ -51,11 +51,15 @@ public class CppTest
         System.out.println("Received message "  + m + " with content type : " + m.getContentType() + " and content : " + m.getContent());
 
         Map<String,Object> props = m.getProperties();
-        if (props != null)
+        System.out.println("Props size : " + props.size());
+        System.out.println("Props empty : " + props.isEmpty());
+        System.out.println("Contains key 'color' : " + props.containsKey("color"));
+        for (String key : props.keySet())
         {
-            //System.out.println("Color : " + m.getProperties().get("color"));
-            System.out.println("Price : " + props.get("price"));
+            System.out.println("Key=" + key + ", value=" + props.get(key));
         }
+
+        System.out.println("Unspecified property : " + props.get("Unspecified-Prop"));
 
         ssn.close();
         con.close();

@@ -46,6 +46,8 @@
  */
 static JavaVM* cachedJVM=0;
 
+static std::string STRING_ENCODING("utf8");
+
 static jclass JAVA_STRING_CLASS;
 
 static jclass JAVA_BOOLEAN_CLASS;
@@ -174,6 +176,13 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
    return JNI_VERSION_1_4;
 }
 
+static JNIEnv* getJNIEnvPointer()
+{
+    JNIEnv* env;
+    cachedJVM->GetEnv((void **)&env, JNI_VERSION_1_4);
+    return env;
+}
+
 static bool checkAndThrowJNILaylerException(JNIEnv* env, const char* msg)
 {
     jthrowable cause = env->ExceptionOccurred();
@@ -269,6 +278,7 @@ static qpid::types::Variant convertJavaObjectToVariant(JNIEnv* env, jobject obj)
    {
        NativeStringCreator strCreator(env,(jstring)obj);
        result = qpid::types::Variant(strCreator.getStr());
+       result.setEncoding(STRING_ENCODING);
    }
    else if (env->IsInstanceOf(obj,JAVA_LONG_CLASS))
    {
@@ -336,8 +346,7 @@ static qpid::types::Variant convertJavaObjectToVariant(JNIEnv* env, jobject obj)
 class ReadOnlyVariantMapWrapper {
 
   public:
-    ReadOnlyVariantMapWrapper();
-    ReadOnlyVariantMapWrapper(JNIEnv* jniEnv, qpid::types::Variant::Map& map);
+    ReadOnlyVariantMapWrapper(qpid::types::Variant::Map& map);
     ~ReadOnlyVariantMapWrapper();
     jobject get(const std::string& key) const;
     jboolean containsKey (const std::string& key) const;
@@ -349,7 +358,6 @@ class ReadOnlyVariantMapWrapper {
 
   private:
     qpid::types::Variant::Map varMap_;
-    JNIEnv* env_;
     jobjectArray keys_;
 };
 
@@ -374,103 +382,90 @@ class WriteOnlyVariantMapWrapper {
 };
 
 
-ReadOnlyVariantMapWrapper::ReadOnlyVariantMapWrapper(): env_(0), varMap_(),keys_(0){}
-
-ReadOnlyVariantMapWrapper::ReadOnlyVariantMapWrapper(JNIEnv* jniEnv, qpid::types::Variant::Map& map): env_(jniEnv), varMap_(map), keys_(0){}
+ReadOnlyVariantMapWrapper::ReadOnlyVariantMapWrapper(qpid::types::Variant::Map& map): varMap_(map), keys_(0){}
 
 ReadOnlyVariantMapWrapper::~ReadOnlyVariantMapWrapper()
 {
     if(keys_ != 0)
     {
+        JNIEnv* env = getJNIEnvPointer();
         int size = varMap_.size(); // the map is immutable, so this is a safe assumption.
         for (int i=0; i < size; i++)
         {
             // All though this object is deleted, the string may still be referenced on the java side.
             // Therefore the object is only deleting it's reference to these strings.
             // The JVM will cleanup once the Strings goes out of scope on the Java side.
-	        env_->DeleteLocalRef(env_->GetObjectArrayElement(keys_,size));
+	        env->DeleteLocalRef(env->GetObjectArrayElement(keys_,size));
 	    }
     }
 }
 
 jobject ReadOnlyVariantMapWrapper::get(const std::string& key) const
 {
+    JNIEnv* env = getJNIEnvPointer();
     using namespace qpid::types;
-    jobject result;
     Variant::Map::const_iterator iter;
     Variant v;
 
     iter = varMap_.find(key);
     if (iter == varMap_.end()){
-        return NULL;
+        return 0;
     }
 
     v = iter->second;
 
     switch (v.getType()) {
         case VAR_VOID: {
-            result = NULL;
-            break;
+            return 0;
         }
 
         case VAR_BOOL : {
-            result = newJavaBoolean(env_,v.asBool() ? JNI_TRUE : JNI_FALSE);
-            break;
+            return newJavaBoolean(env,v.asBool() ? JNI_TRUE : JNI_FALSE);
         }
 
         case VAR_INT8 :
         case VAR_UINT8 : {
-            result = newJavaByte(env_,(jbyte)v.asUint8());
-            break;
+            return newJavaByte(env,(jbyte)v.asUint8());
         }
 
         case VAR_INT16 :
         case VAR_UINT16 : {
-            result = newJavaShort(env_,(jshort) v.asUint16());
-            break;
+            return newJavaShort(env,(jshort) v.asUint16());
         }
 
 
         case VAR_INT32 :
         case VAR_UINT32 : {
-            result = newJavaInt(env_,(jint)v.asUint32());
-            break;
+            return newJavaInt(env,(jint)v.asUint32());
         }
 
         case VAR_INT64 :
         case VAR_UINT64 : {
-            result = newJavaLong(env_,(jlong)v.asUint64());
-            break;
+            return newJavaLong(env,(jlong)v.asUint64());
         }
 
         case VAR_FLOAT : {
-            result = newJavaFloat(env_,(jfloat)v.asFloat());
-            break;
+            return newJavaFloat(env,(jfloat)v.asFloat());
         }
 
         case VAR_DOUBLE : {
-            result = newJavaDouble(env_,(jdouble)v.asDouble());
-            break;
+            return newJavaDouble(env,(jdouble)v.asDouble());
         }
 
         case VAR_STRING : {
-            result = newJavaString(env_,v.asString());
-            break;
+            return newJavaString(env,v.asString());
         }
 
         case VAR_MAP : {
-            throwJNILayerException(env_,"The key maps to a Varient::Map. Unsupported type for message properties");
+            throwJNILayerException(env,"The key maps to a Varient::Map. Unsupported type for message properties");
             break;
         }
 
         case VAR_LIST : {
-            throwJNILayerException(env_,"The key maps to a Varient::List. Unsupported type for message properties");
+            throwJNILayerException(env,"The key maps to a Varient::List. Unsupported type for message properties");
             break;
         }
     }
-
-    env_->DeleteLocalRef(result);
-    return result;
 }
 
 jboolean ReadOnlyVariantMapWrapper::containsKey (const std::string& key) const
@@ -492,14 +487,16 @@ jobjectArray ReadOnlyVariantMapWrapper::keys()
 {
     if (keys_ == 0)
     {
+        JNIEnv* env = getJNIEnvPointer();
         qpid::types::Variant::Map::const_iterator iter;
         int size = varMap_.size();
-        keys_ = (jobjectArray)env_->NewObjectArray(size,env_->FindClass("java/lang/String"),env_->NewStringUTF(""));
+        int index = 0;
+        keys_ = (jobjectArray)env->NewObjectArray(size,env->FindClass("java/lang/String"),env->NewStringUTF(""));
         for(iter = varMap_.begin(); iter != varMap_.end(); iter++)
         {
             const std::string val((iter->first));
-            env_->SetObjectArrayElement(keys_,size,newJavaString(env_,val));
-            size++;
+            env->SetObjectArrayElement(keys_,index,newJavaString(env,val));
+            index++;
         }
     }
     return keys_;
@@ -512,9 +509,7 @@ WriteOnlyVariantMapWrapper::WriteOnlyVariantMapWrapper()
 
 void WriteOnlyVariantMapWrapper::put(const std::string& key, jobject obj)
 {
-  JNIEnv* env;
-  cachedJVM->GetEnv((void **)&env, JNI_VERSION_1_4);
-
+  JNIEnv* env = getJNIEnvPointer();
   if (key.empty())
   {
       env->ThrowNew(JAVA_ILLEGAL_ARGUMENT_EXP,"Key cannot be empty.");
@@ -540,8 +535,7 @@ void WriteOnlyVariantMapWrapper::put(const std::string& key, jobject obj)
   * This is for swig to generate the jni/java code
   * ===========================================================================
   */
-ReadOnlyVariantMapWrapper::ReadOnlyVariantMapWrapper();
-ReadOnlyVariantMapWrapper::ReadOnlyVariantMapWrapper(JNIEnv* jniEnv, qpid::types::Variant::Map& map);
+ReadOnlyVariantMapWrapper::ReadOnlyVariantMapWrapper(qpid::types::Variant::Map& map);
 ReadOnlyVariantMapWrapper::~ReadOnlyVariantMapWrapper();
 jobject ReadOnlyVariantMapWrapper::get(const std::string& key) const;
 jboolean ReadOnlyVariantMapWrapper::containsKey (const std::string& key) const;

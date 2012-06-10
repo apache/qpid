@@ -115,7 +115,7 @@
   }
   else
   {
-      *(ReadOnlyVariantMapWrapper **)&jresult = new ReadOnlyVariantMapWrapper(jenv,*$1);
+      *(ReadOnlyVariantMapWrapper **)&jresult = new ReadOnlyVariantMapWrapper(*$1);
   }
 }
 

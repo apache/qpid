@@ -23,18 +23,22 @@ public class TextMessage implements org.apache.qpid.messaging.Message
 {
 
     org.apache.qpid.messaging.cpp.jni.Message _cppMessage;
-    
+
     public TextMessage(String text)
     {
         _cppMessage = new org.apache.qpid.messaging.cpp.jni.Message(text);
         _cppMessage.setContentType("text/plain");
     }
-    
+
+    public TextMessage(org.apache.qpid.messaging.cpp.jni.Message msg)
+    {
+        _cppMessage = msg;
+    }
+
     @Override
     public Object getContent()
     {
-        // TODO Auto-generated method stub
-        return null;
+        return _cppMessage.getContent();
     }
 
     @Override
@@ -67,8 +71,7 @@ public class TextMessage implements org.apache.qpid.messaging.Message
     @Override
     public String getContentType()
     {
-        // TODO Auto-generated method stub
-        return null;
+        return _cppMessage.getContentType();
     }
 
     @Override
@@ -200,7 +203,7 @@ public class TextMessage implements org.apache.qpid.messaging.Message
     {
         _cppMessage.setProperty(key, value);
     }
-    
+
     protected org.apache.qpid.messaging.cpp.jni.Message getCppMessage()
     {
         return _cppMessage;
