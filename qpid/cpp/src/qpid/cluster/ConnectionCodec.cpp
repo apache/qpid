@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,6 +22,7 @@
 #include "qpid/cluster/Connection.h"
 #include "qpid/cluster/Cluster.h"
 #include "qpid/cluster/ProxyInputHandler.h"
+#include "qpid/broker/AclModule.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/framing/ConnectionCloseBody.h"
 #include "qpid/framing/ConnectionCloseOkBody.h"
@@ -40,17 +41,10 @@ ConnectionCodec::Factory::create(ProtocolVersion v, sys::OutputControl& out,
                                  const std::string& id,
                                  const qpid::sys::SecuritySettings& external)
 {
-    broker::Broker& broker = cluster.getBroker();
-    if (broker.getConnectionCounter().allowConnection())
-    {
-        QPID_LOG(error, "Client max connection count limit exceeded: "
-                 << broker.getOptions().maxConnections << " connection refused");
-        return 0;
-    }
     if (v == ProtocolVersion(0, 10))
         return new ConnectionCodec(v, out, id, cluster, false, false, external);
     else if (v == ProtocolVersion(0x80 + 0, 0x80 + 10)) // Catch-up connection
-        return new ConnectionCodec(v, out, id, cluster, true, false, external); 
+        return new ConnectionCodec(v, out, id, cluster, true, false, external);
     return 0;
 }
 
