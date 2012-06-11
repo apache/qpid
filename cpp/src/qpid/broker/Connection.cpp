@@ -107,7 +107,6 @@ Connection::Connection(ConnectionOutputHandler* out_,
     broker.getConnectionObservers().connection(*this);
     // In a cluster, allow adding the management object to be delayed.
     if (!delayManagement) addManagementObject();
-    if (!isShadow()) broker.getConnectionCounter().inc_connectionCount();
 }
 
 void Connection::addManagementObject() {
@@ -151,8 +150,6 @@ Connection::~Connection()
     if (linkHeartbeatTimer) {
         linkHeartbeatTimer->cancel();
     }
-
-    if (!isShadow()) broker.getConnectionCounter().dec_connectionCount();
 }
 
 void Connection::received(framing::AMQFrame& frame) {

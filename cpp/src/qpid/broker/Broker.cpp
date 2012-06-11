@@ -108,7 +108,6 @@ Broker::Options::Options(const std::string& name) :
     noDataDir(0),
     port(DEFAULT_PORT),
     workerThreads(5),
-    maxConnections(500),
     connectionBacklog(10),
     enableMgmt(1),
     mgmtPublish(1),
@@ -148,7 +147,6 @@ Broker::Options::Options(const std::string& name) :
         ("no-data-dir", optValue(noDataDir), "Don't use a data directory.  No persistent configuration will be loaded or stored")
         ("port,p", optValue(port,"PORT"), "Tells the broker to listen on PORT")
         ("worker-threads", optValue(workerThreads, "N"), "Sets the broker thread pool size")
-        ("max-connections", optValue(maxConnections, "N"), "Sets the maximum allowed connections")
         ("connection-backlog", optValue(connectionBacklog, "N"), "Sets the connection backlog limit for the server socket")
         ("mgmt-enable,m", optValue(enableMgmt,"yes|no"), "Enable Management")
         ("mgmt-publish", optValue(mgmtPublish,"yes|no"), "Enable Publish of Management Data ('no' implies query-only)")
@@ -212,7 +210,6 @@ Broker::Broker(const Broker::Options& conf) :
     inCluster(false),
     clusterUpdatee(false),
     expiryPolicy(new ExpiryPolicy),
-    connectionCounter(conf.maxConnections),
     getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this)),
     deferDelivery(boost::bind(&Broker::deferDeliveryImpl, this, _1, _2))
 {
@@ -231,7 +228,6 @@ Broker::Broker(const Broker::Options& conf) :
         mgmtObject->set_systemRef(system->GetManagementObject()->getObjectId());
         mgmtObject->set_port(conf.port);
         mgmtObject->set_workerThreads(conf.workerThreads);
-        mgmtObject->set_maxConns(conf.maxConnections);
         mgmtObject->set_connBacklog(conf.connectionBacklog);
         mgmtObject->set_mgmtPubInterval(conf.mgmtPubInterval);
         mgmtObject->set_mgmtPublish(conf.mgmtPublish);

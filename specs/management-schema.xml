@@ -8,9 +8,9 @@
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
-  
+
     http://www.apache.org/licenses/LICENSE-2.0
-  
+
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -81,7 +81,6 @@
     <property name="systemRef"        type="objId"  references="System" access="RO" desc="System ID" parentRef="y"/>
     <property name="port"             type="uint16" access="RO" desc="TCP Port for AMQP Service"/>
     <property name="workerThreads"    type="uint16" access="RO" desc="Thread pool size"/>
-    <property name="maxConns"         type="uint16" access="RO" desc="Maximum allowed connections"/>
     <property name="connBacklog"      type="uint16" access="RO" desc="Connection backlog limit for listening socket"/>
     <property name="stagingThreshold" type="uint32" access="RO" desc="Broker stages messages over this size to disk"/>
     <property name="mgmtPublish"      type="bool"   access="RO" desc="Broker's management agent sends unsolicited data on the publish interval"/>
@@ -164,20 +163,20 @@
 
     <method name="create" desc="Create an object of the specified type">
       <arg name="type" dir="I" type="sstr" desc="The type of object to create"/>
-      <arg name="name" dir="I" type="sstr" desc="The name of the object to create"/> 
-      <arg name="properties" dir="I" type="map" desc="Type specific object properties"/> 
-      <arg name="strict" dir="I" type="bool" desc="If specified, treat unrecognised object properties as an error"/> 
+      <arg name="name" dir="I" type="sstr" desc="The name of the object to create"/>
+      <arg name="properties" dir="I" type="map" desc="Type specific object properties"/>
+      <arg name="strict" dir="I" type="bool" desc="If specified, treat unrecognised object properties as an error"/>
     </method>
 
     <method name="delete" desc="Delete an object of the specified type">
       <arg name="type" dir="I" type="sstr" desc="The type of object to delete"/>
-      <arg name="name" dir="I" type="sstr" desc="The name of the object to delete"/> 
-      <arg name="options" dir="I" type="map" desc="Type specific object options for deletion"/> 
+      <arg name="name" dir="I" type="sstr" desc="The name of the object to delete"/>
+      <arg name="options" dir="I" type="map" desc="Type specific object options for deletion"/>
     </method>
 
     <method name="query" desc="Query the current state of an object.">
       <arg name="type" dir="I" type="sstr" desc="The type of object to query."/>
-      <arg name="name" dir="I" type="sstr" desc="The name of the object to query"/> 
+      <arg name="name" dir="I" type="sstr" desc="The name of the object to query"/>
       <arg name="results" dir="O" type="map"  desc="A snapshot of the object's state."/>
     </method>
 
@@ -321,7 +320,7 @@
 
     <statistic name="msgMatched" type="count64"/>
   </class>
-  
+
   <!--
   ===============================================================
   Subscription
@@ -338,7 +337,7 @@
     <property name="arguments"      type="map"      access="RC"/>
     <statistic name="delivered"     type="count64"  unit="message" desc="Messages delivered"/>
   </class>
-  
+
   <!--
   ===============================================================
   Connection
@@ -366,7 +365,7 @@
     <statistic name="msgsFromClient"  type="count64"/>
     <statistic name="msgsToClient"    type="count64"/>
 
-    <method name="close"/> 
+    <method name="close"/>
   </class>
 
   <!--
@@ -389,7 +388,7 @@
     <statistic name="state"       type="sstr" desc="Operational state of the link"/>
     <statistic name="lastError"   type="lstr" desc="Reason link is not operational"/>
 
-    <method name="close"/> 
+    <method name="close"/>
 
     <method name="bridge" desc="Bridge messages over the link">
       <arg name="durable"     dir="I" type="bool"/>
@@ -425,7 +424,7 @@
     <property name="excludes"    type="sstr"   access="RC"/>
     <property name="dynamic"     type="bool"   access="RC"/>
     <property name="sync"        type="uint16" access="RC"/>
-    <method name="close"/> 
+    <method name="close"/>
   </class>
 
 

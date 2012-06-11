@@ -103,7 +103,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
         std::string dataDir;
         uint16_t port;
         int workerThreads;
-        int maxConnections;
         int connectionBacklog;
         bool enableMgmt;
         bool mgmtPublish;
@@ -132,26 +131,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
       private:
         std::string getHome();
-    };
-
-    class ConnectionCounter {
-        int maxConnections;
-        int connectionCount;
-        sys::Mutex connectionCountLock;
-      public:
-        ConnectionCounter(int mc): maxConnections(mc),connectionCount(0) {};
-        void inc_connectionCount() {
-            sys::ScopedLock<sys::Mutex> l(connectionCountLock);
-            connectionCount++;
-        }
-        void dec_connectionCount() {
-            sys::ScopedLock<sys::Mutex> l(connectionCountLock);
-            connectionCount--;
-        }
-        bool allowConnection() {
-            sys::ScopedLock<sys::Mutex> l(connectionCountLock);
-            return (maxConnections <= connectionCount);
-        }
     };
 
   private:
@@ -206,7 +185,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
     bool recovery;
     bool inCluster, clusterUpdatee;
     boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
-    ConnectionCounter connectionCounter;
     ConsumerFactories consumerFactories;
 
     mutable sys::Mutex linkClientPropertiesLock;
@@ -321,8 +299,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
     void setClusterUpdatee(bool set) { clusterUpdatee = set; }
 
     management::ManagementAgent* getManagementAgent() { return managementAgent.get(); }
-
-    ConnectionCounter& getConnectionCounter() {return connectionCounter;}
 
     /**
      * Never true in a stand-alone broker. In a cluster, return true
