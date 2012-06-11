@@ -116,7 +116,7 @@ public class DtxRegistry
         return (_branches.remove(new ComparableXid(branch.getXid())) != null);
     }
 
-    public void commit(Xid id, boolean onePhase)
+    public synchronized void commit(Xid id, boolean onePhase)
             throws IncorrectDtxStateException, UnknownDtxBranchException, AMQStoreException, RollbackOnlyDtxException, TimeoutDtxException
     {
         DtxBranch branch = getBranch(id);
@@ -204,7 +204,7 @@ public class DtxRegistry
         }
     }
 
-    public void rollback(Xid id)
+    public synchronized void rollback(Xid id)
             throws IncorrectDtxStateException,
             UnknownDtxBranchException,
             AMQStoreException, TimeoutDtxException
