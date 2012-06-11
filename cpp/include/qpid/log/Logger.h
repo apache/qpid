@@ -36,7 +36,7 @@ namespace log {
 class QPID_COMMON_CLASS_EXTERN Logger : private boost::noncopyable {
   public:
     /** Flags indicating what to include in the log output */
-    enum FormatFlag { FILE=1, LINE=2, FUNCTION=4, LEVEL=8, TIME=16, THREAD=32, HIRES=64};
+    enum FormatFlag { FILE=1, LINE=2, FUNCTION=4, LEVEL=8, TIME=16, THREAD=32, HIRES=64, CATEGORY=128};
 
     /**
      * Logging output sink.

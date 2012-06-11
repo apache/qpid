@@ -47,7 +47,7 @@ using namespace std;
 typedef sys::Mutex::ScopedLock ScopedLock;
 
 inline void Logger::enable_unlocked(Statement* s) {
-    s->enabled=selector.isEnabled(s->level, s->function);
+    s->enabled=selector.isEnabled(s->level, s->function, s->category);
 }
 
 Logger& Logger::instance() {
@@ -95,6 +95,8 @@ void Logger::log(const Statement& s, const std::string& msg) {
         else
             qpid::sys::outputFormattedNow(os);
     }
+    if (flags&CATEGORY)
+        os << "[" << CategoryTraits::name(s.category) << "] ";
     if (flags&LEVEL)
         os << LevelTraits::name(s.level) << " ";
     if (flags&THREAD)
@@ -144,7 +146,8 @@ int Logger::format(const Options& opts) {
         bitIf(opts.source, (FILE|LINE)) |
         bitIf(opts.function, FUNCTION) |
         bitIf(opts.thread, THREAD) |
-        bitIf(opts.hiresTs, HIRES);
+        bitIf(opts.hiresTs, HIRES) |
+        bitIf(opts.category, CATEGORY);
     format(flags);
     return flags;
 }
