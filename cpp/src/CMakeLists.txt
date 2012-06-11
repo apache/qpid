@@ -642,6 +642,8 @@ if (BUILD_HA)
         qpid/ha/HaPlugin.cpp
         qpid/ha/LogPrefix.cpp
         qpid/ha/LogPrefix.h
+        qpid/ha/Membership.cpp
+        qpid/ha/Membership.h
         qpid/ha/Primary.cpp
         qpid/ha/Primary.h
         qpid/ha/QueueReplicator.cpp
