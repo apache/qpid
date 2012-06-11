@@ -39,6 +39,7 @@ Options::Options(const std::string& argv0_, const std::string& name_) :
     source(false),
     function(false),
     hiresTs(false),
+    category(true),
     trace(false),
     sinkOptions (SinkOptions::create(argv0_))
 {
@@ -49,15 +50,23 @@ Options::Options(const std::string& argv0_, const std::string& name_) :
     for (int i = 1; i < LevelTraits::COUNT; ++i)
         levels << " " << LevelTraits::name(Level(i));
 
+    ostringstream categories;
+    categories << CategoryTraits::name(Category(0));
+    for (int i = 1; i < CategoryTraits::COUNT; ++i)
+        categories << " " << CategoryTraits::name(Category(i));
+
     addOptions()
         ("trace,t", optValue(trace), "Enables all logging" )
         ("log-enable", optValue(selectors, "RULE"),
-         ("Enables logging for selected levels and components. " 
+         ("Enables logging for selected levels and components. "
           "RULE is in the form 'LEVEL[+][:PATTERN]' "
-          "Levels are one of: \n\t "+levels.str()+"\n"
+          "LEVEL is one of: \n\t "+levels.str()+"\n"
+          "PATTERN is a function name or a catogory: \n\t "+categories.str()+"\n"
           "For example:\n"
           "\t'--log-enable warning+' "
           "logs all warning, error and critical messages.\n"
+          "\t'--log-enable trace+:Broker' "
+          "logs all category 'Broker' messages.\n"
           "\t'--log-enable debug:framing' "
           "logs debug messages from the framing namespace. "
           "This option can be used multiple times").c_str())
@@ -67,6 +76,7 @@ Options::Options(const std::string& argv0_, const std::string& name_) :
         ("log-thread", optValue(thread,"yes|no"), "Include thread ID in log messages")
         ("log-function", optValue(function,"yes|no"), "Include function signature in log messages")
         ("log-hires-timestamp", optValue(hiresTs,"yes|no"), "Use hi-resolution timestamps in log messages")
+        ("log-category", optValue(category,"yes|no"), "Include category in log messages")
         ("log-prefix", optValue(prefix,"STRING"), "Prefix to append to all log messages")
         ;
     add(*sinkOptions);
@@ -83,6 +93,7 @@ Options::Options(const Options &o) :
     source(o.source),
     function(o.function),
     hiresTs(o.hiresTs),
+    category(o.category),
     trace(o.trace),
     prefix(o.prefix),
     sinkOptions (SinkOptions::create(o.argv0))
@@ -101,11 +112,12 @@ Options& Options::operator=(const Options& x) {
         source = x.source;
         function = x.function;
         hiresTs = x.hiresTs;
+        category = x.category;
         trace = x.trace;
         prefix = x.prefix;
         *sinkOptions = *x.sinkOptions;
     }
     return *this;
 }
-        
+
 }} // namespace qpid::log

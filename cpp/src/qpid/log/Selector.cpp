@@ -37,18 +37,29 @@ void Selector::enable(const string& enableStr) {
         level=enableStr.substr(0,c);
         pattern=enableStr.substr(c+1);
     }
+    bool isCat = CategoryTraits::isCategory(pattern);
     if (!level.empty() && level[level.size()-1]=='+') {
         for (int i =  LevelTraits::level(level.substr(0,level.size()-1));
              i < LevelTraits::COUNT;
-             ++i)
-            enable(Level(i), pattern);
+             ++i) {
+            if (isCat) {
+                enable(Level(i), CategoryTraits::category(pattern));
+            } else {
+                enable(Level(i), pattern);
+            }
+        }
     }
     else {
-        enable(LevelTraits::level(level), pattern);
+        if (isCat) {
+            enable(LevelTraits::level(level), CategoryTraits::category(pattern));
+        } else {
+            enable(LevelTraits::level(level), pattern);
+        }
     }
 }
 
 Selector::Selector(const Options& opt){
+    reset();
     for_each(opt.selectors.begin(), opt.selectors.end(),
              boost::bind(&Selector::enable, this, _1));
 }
@@ -58,11 +69,17 @@ bool Selector::isEnabled(Level level, const char* function) {
     for (std::vector<std::string>::iterator i=substrings[level].begin();
          i != substrings[level].end();
          ++i)
-    {
-        if (std::search(function, functionEnd, i->begin(), i->end()) != functionEnd)
-            return true;
-    }
+        {
+            if (std::search(function, functionEnd, i->begin(), i->end()) != functionEnd)
+                return true;
+        }
     return false;
+}
+
+bool Selector::isEnabled(Level level, const char* function, Category category) {
+    if (catFlags[level][category])
+        return true;
+    return isEnabled(level, function);
 }
 
 }} // namespace qpid::log

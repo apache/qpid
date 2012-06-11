@@ -50,9 +50,41 @@ std::string quote(const std::string& str) {
 }
 }
 
+//
+// Instance of name hints
+//
+static CategoryFileNameHints filenameHints;
+
+
+Category CategoryFileNameHints::categoryOf(const char* const fName) {
+    for (std::list<std::pair<const char* const, Category> >::iterator
+           it  = filenameHints.hintList.begin();
+           it != filenameHints.hintList.end();
+         ++it) {
+        if (strstr(fName, (const char* const)it->first) != 0) {
+            return it->second;
+        }
+    }
+    return unspecified;
+}
+
+
+void Statement::categorize(Statement& s) {
+    // given a statement and it's category
+    // if the category is Unspecified then try to find a
+    // better category based on the path and file name.
+    if (s.category == log::unspecified) {
+        s.category = CategoryFileNameHints::categoryOf(s.file);
+    } else {
+        // already has a category so leave it alone
+    }
+}
+
+
 void Statement::log(const std::string& message) {
     Logger::instance().log(*this, quote(message));
 }
+
 
 Statement::Initializer::Initializer(Statement& s) : statement(s) {
     // QPID-3891
@@ -99,16 +131,22 @@ Statement::Initializer::Initializer(Statement& s) : statement(s) {
         // no function-name pointer to process
     }
 
+    Statement::categorize(s);
     Logger::instance().add(s);
 }
+
 
 namespace {
 const char* names[LevelTraits::COUNT] = {
     "trace", "debug", "info", "notice", "warning", "error", "critical"
 };
 
-} // namespace
+const char* catNames[CategoryTraits::COUNT] = {
+    "Security", "Broker", "Management", "Amqp", "System", "HA", "Messaging",
+    "Store", "IO", "Test", "Unspecified"
+};
 
+} // namespace
 Level LevelTraits::level(const char* name) {
     for (int i =0; i < LevelTraits::COUNT; ++i) {
         if (strcmp(names[i], name)==0)
@@ -121,4 +159,23 @@ const char* LevelTraits::name(Level l) {
     return names[l];
 }
 
+bool CategoryTraits::isCategory(const std::string& name) {
+    for (int i =0; i < CategoryTraits::COUNT; ++i) {
+        if (strcmp(catNames[i], name.c_str())==0)
+            return true;
+    }
+    return false;
+}
+
+Category CategoryTraits::category(const char* name) {
+    for (int i =0; i < CategoryTraits::COUNT; ++i) {
+        if (strcmp(catNames[i], name)==0)
+            return Category(i);
+    }
+    throw std::runtime_error(std::string("Invalid log category name: ")+name);
+}
+
+const char* CategoryTraits::name(Category c) {
+    return catNames[c];
+}
 }} // namespace qpid::log
