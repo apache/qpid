@@ -27,6 +27,7 @@
 #include "qpid/asyncStore/AsyncOperation.h"
 #include "qpid/broker/AsyncStore.h" // qpid::broker::BrokerAsyncContext
 
+#include <boost/intrusive_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 namespace tests {
@@ -39,18 +40,18 @@ class SimplePersistableQueue;
 class MessageAsyncContext : public qpid::broker::BrokerAsyncContext
 {
 public:
-    MessageAsyncContext(boost::shared_ptr<SimplePersistableMessage> msg,
+    MessageAsyncContext(boost::intrusive_ptr<SimplePersistableMessage> msg,
                         const qpid::asyncStore::AsyncOperation::opCode op,
                         boost::shared_ptr<SimplePersistableQueue> q);
     virtual ~MessageAsyncContext();
     qpid::asyncStore::AsyncOperation::opCode getOpCode() const;
     const char* getOpStr() const;
-    boost::shared_ptr<SimplePersistableMessage> getMessage() const;
+    boost::intrusive_ptr<SimplePersistableMessage> getMessage() const;
     boost::shared_ptr<SimplePersistableQueue> getQueue() const;
     void destroy();
 
 private:
-    boost::shared_ptr<SimplePersistableMessage> m_msg;
+    boost::intrusive_ptr<SimplePersistableMessage> m_msg;
     const qpid::asyncStore::AsyncOperation::opCode m_op;
     boost::shared_ptr<SimplePersistableQueue> m_q;
 };

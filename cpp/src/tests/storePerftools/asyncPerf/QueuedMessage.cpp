@@ -37,7 +37,7 @@ QueuedMessage::QueuedMessage() :
 {}
 
 QueuedMessage::QueuedMessage(SimplePersistableQueue* q,
-                             boost::shared_ptr<SimplePersistableMessage> msg) :
+                             boost::intrusive_ptr<SimplePersistableMessage> msg) :
         m_queue(q),
         m_msg(msg),
         m_enqHandle(q->getStore() ? q->getStore()->createEnqueueHandle(msg->getHandle(), q->getHandle()) : qpid::broker::EnqueueHandle(0))
@@ -61,7 +61,7 @@ QueuedMessage::operator=(const QueuedMessage& rhs)
     return *this;
 }
 
-boost::shared_ptr<SimplePersistableMessage>
+boost::intrusive_ptr<SimplePersistableMessage>
 QueuedMessage::payload() const
 {
     return m_msg;

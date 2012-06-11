@@ -31,6 +31,7 @@
 #include "qpid/broker/QueueHandle.h"
 #include "qpid/sys/Monitor.h"
 
+#include <boost/intrusive_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
@@ -75,7 +76,7 @@ public:
     void asyncDestroy(const bool deleteQueue);
 
     // --- Methods in msg handling path from qpid::Queue ---
-    void deliver(boost::shared_ptr<SimplePersistableMessage> msg);
+    void deliver(boost::intrusive_ptr<SimplePersistableMessage> msg);
     bool dispatch(); // similar to qpid::broker::Queue::distpatch(Consumer&) but without Consumer param
     bool enqueue(SimpleTransactionContext* ctxt,
                  QueuedMessage& qm);

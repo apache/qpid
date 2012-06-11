@@ -26,7 +26,7 @@
 
 #include "qpid/broker/EnqueueHandle.h"
 
-#include <boost/shared_ptr.hpp>
+#include <boost/intrusive_ptr.hpp>
 
 namespace tests {
 namespace storePerftools {
@@ -40,17 +40,17 @@ class QueuedMessage
 public:
     QueuedMessage();
     QueuedMessage(SimplePersistableQueue* q,
-                  boost::shared_ptr<SimplePersistableMessage> msg);
+                  boost::intrusive_ptr<SimplePersistableMessage> msg);
     QueuedMessage(const QueuedMessage& qm);
     ~QueuedMessage();
     QueuedMessage& operator=(const QueuedMessage& rhs);
-    boost::shared_ptr<SimplePersistableMessage> payload() const;
+    boost::intrusive_ptr<SimplePersistableMessage> payload() const;
     const qpid::broker::EnqueueHandle& enqHandle() const;
     qpid::broker::EnqueueHandle& enqHandle();
 
 private:
     SimplePersistableQueue* m_queue;
-    boost::shared_ptr<SimplePersistableMessage> m_msg;
+    boost::intrusive_ptr<SimplePersistableMessage> m_msg;
     qpid::broker::EnqueueHandle m_enqHandle;
 };
 

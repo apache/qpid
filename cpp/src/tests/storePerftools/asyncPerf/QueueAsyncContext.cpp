@@ -22,6 +22,7 @@
  */
 
 #include "QueueAsyncContext.h"
+#include "SimplePersistableMessage.h"
 
 #include <cassert>
 
@@ -42,7 +43,7 @@ QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<SimplePersistableQueue> q
 }
 
 QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<SimplePersistableQueue> q,
-                                     boost::shared_ptr<SimplePersistableMessage> msg,
+                                     boost::intrusive_ptr<SimplePersistableMessage> msg,
                                      const qpid::asyncStore::AsyncOperation::opCode op,
                                      qpid::broker::AsyncResultCallback rcb,
                                      qpid::broker::AsyncResultQueue* const arq) :
@@ -77,7 +78,7 @@ QueueAsyncContext::getQueue() const
     return m_q;
 }
 
-boost::shared_ptr<SimplePersistableMessage>
+boost::intrusive_ptr<SimplePersistableMessage>
 QueueAsyncContext::getMessage() const
 {
     return m_msg;

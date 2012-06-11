@@ -22,6 +22,7 @@
  */
 
 #include "MessageAsyncContext.h"
+#include "SimplePersistableMessage.h"
 
 #include <cassert>
 
@@ -29,7 +30,7 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-MessageAsyncContext::MessageAsyncContext(boost::shared_ptr<SimplePersistableMessage> msg,
+MessageAsyncContext::MessageAsyncContext(boost::intrusive_ptr<SimplePersistableMessage> msg,
                                          const qpid::asyncStore::AsyncOperation::opCode op,
                                          boost::shared_ptr<SimplePersistableQueue> q) :
         m_msg(msg),
@@ -55,7 +56,7 @@ MessageAsyncContext::getOpStr() const
     return qpid::asyncStore::AsyncOperation::getOpStr(m_op);
 }
 
-boost::shared_ptr<SimplePersistableMessage>
+boost::intrusive_ptr<SimplePersistableMessage>
 MessageAsyncContext::getMessage() const
 {
     return m_msg;

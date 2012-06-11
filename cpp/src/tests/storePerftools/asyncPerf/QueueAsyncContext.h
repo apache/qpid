@@ -27,8 +27,8 @@
 #include "qpid/asyncStore/AsyncOperation.h"
 #include "qpid/broker/AsyncStore.h"
 
+#include <boost/intrusive_ptr.hpp>
 #include <boost/shared_ptr.hpp>
-
 
 
 namespace tests {
@@ -46,7 +46,7 @@ public:
                       qpid::broker::AsyncResultCallback rcb,
                       qpid::broker::AsyncResultQueue* const arq);
     QueueAsyncContext(boost::shared_ptr<SimplePersistableQueue> q,
-                      boost::shared_ptr<SimplePersistableMessage> msg,
+                      boost::intrusive_ptr<SimplePersistableMessage> msg,
                       const qpid::asyncStore::AsyncOperation::opCode op,
                       qpid::broker::AsyncResultCallback rcb,
                       qpid::broker::AsyncResultQueue* const arq);
@@ -54,7 +54,7 @@ public:
     qpid::asyncStore::AsyncOperation::opCode getOpCode() const;
     const char* getOpStr() const;
     boost::shared_ptr<SimplePersistableQueue> getQueue() const;
-    boost::shared_ptr<SimplePersistableMessage> getMessage() const;
+    boost::intrusive_ptr<SimplePersistableMessage> getMessage() const;
     qpid::broker::AsyncResultQueue* getAsyncResultQueue() const;
     qpid::broker::AsyncResultCallback getAsyncResultCallback() const;
     void invokeCallback(const qpid::broker::AsyncResultHandle* const arh) const;
@@ -62,7 +62,7 @@ public:
 
 private:
     boost::shared_ptr<SimplePersistableQueue> m_q;
-    boost::shared_ptr<SimplePersistableMessage> m_msg;
+    boost::intrusive_ptr<SimplePersistableMessage> m_msg;
     const qpid::asyncStore::AsyncOperation::opCode m_op;
     qpid::broker::AsyncResultCallback m_rcb;
     qpid::broker::AsyncResultQueue* const m_arq;

@@ -156,7 +156,7 @@ SimplePersistableQueue::asyncDestroy(const bool deleteQueue)
 }
 
 void
-SimplePersistableQueue::deliver(boost::shared_ptr<SimplePersistableMessage> msg)
+SimplePersistableQueue::deliver(boost::intrusive_ptr<SimplePersistableMessage> msg)
 {
     QueuedMessage qm(this, msg);
     enqueue((SimpleTransactionContext*)0, qm);
