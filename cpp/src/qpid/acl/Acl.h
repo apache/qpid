@@ -38,6 +38,7 @@
 namespace qpid {
 namespace broker {
 class Broker;
+class Connection;
 }
 
 namespace acl {
@@ -45,8 +46,9 @@ class ConnectionCounter;
 
 struct AclValues {
     std::string aclFile;
-    uint32_t    aclMaxConnectPerUser;
-    uint32_t    aclMaxConnectPerIp;
+    uint16_t    aclMaxConnectPerUser;
+    uint16_t    aclMaxConnectPerIp;
+    uint16_t    aclMaxConnectTotal;
 };
 
 
@@ -66,6 +68,9 @@ private:
 public:
     Acl (AclValues& av, broker::Broker& b);
 
+    /** reportConnectLimit
+     * issue management counts and alerts for denied connections
+     */
     void reportConnectLimit(const std::string user, const std::string addr);
 
     inline virtual bool doTransferAcl() {
@@ -86,6 +91,8 @@ public:
         const ObjectType&                objType,
         const std::string&               ExchangeName,
         const std::string&               RoutingKey);
+
+    virtual bool approveConnection(const broker::Connection& connection);
 
     virtual ~Acl();
 private:
