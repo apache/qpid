@@ -159,9 +159,8 @@ void
 SimplePersistableQueue::deliver(boost::shared_ptr<SimplePersistableMessage> msg)
 {
     QueuedMessage qm(this, msg);
-    if(enqueue((SimpleTransactionContext*)0, qm)) {
-        push(qm);
-    }
+    enqueue((SimpleTransactionContext*)0, qm);
+    push(qm);
 }
 
 bool
@@ -176,7 +175,7 @@ SimplePersistableQueue::dispatch()
 
 bool
 SimplePersistableQueue::enqueue(SimpleTransactionContext* ctxt,
-                              QueuedMessage& qm)
+                                QueuedMessage& qm)
 {
     ScopedUse u(m_barrier);
     if (!u.m_acquired) {
@@ -191,7 +190,7 @@ SimplePersistableQueue::enqueue(SimpleTransactionContext* ctxt,
 
 bool
 SimplePersistableQueue::dequeue(SimpleTransactionContext* ctxt,
-                              QueuedMessage& qm)
+                                QueuedMessage& qm)
 {
     ScopedUse u(m_barrier);
     if (!u.m_acquired) {
@@ -201,7 +200,7 @@ SimplePersistableQueue::dequeue(SimpleTransactionContext* ctxt,
         qm.payload()->dequeueAsync(shared_from_this(), m_store);
         return asyncDequeue(ctxt, qm);
     }
-    return false;
+    return true;
 }
 
 void
@@ -317,7 +316,7 @@ SimplePersistableQueue::ScopedUse::~ScopedUse()
 // private
 void
 SimplePersistableQueue::push(QueuedMessage& qm,
-                           bool /*isRecovery*/)
+                             bool /*isRecovery*/)
 {
     QueuedMessage removed;
     m_messages->push(qm, removed);
@@ -328,7 +327,7 @@ SimplePersistableQueue::push(QueuedMessage& qm,
 // private
 bool
 SimplePersistableQueue::asyncEnqueue(SimpleTransactionContext* txn,
-                                   QueuedMessage& qm)
+                                     QueuedMessage& qm)
 {
     qm.payload()->setPersistenceId(m_store->getNextRid());
 //std::cout << "QQQ Queue=\"" << m_name << "\": asyncEnqueue() rid=0x" << std::hex << qm.payload()->getPersistenceId() << std::dec << std::endl << std::flush;
@@ -347,7 +346,7 @@ SimplePersistableQueue::asyncEnqueue(SimpleTransactionContext* txn,
 // private
 bool
 SimplePersistableQueue::asyncDequeue(SimpleTransactionContext* txn,
-                                   QueuedMessage& qm)
+                                     QueuedMessage& qm)
 {
 //std::cout << "QQQ Queue=\"" << m_name << "\": asyncDequeue() rid=0x" << std::hex << qm.payload()->getPersistenceId() << std::dec << std::endl << std::flush;
     boost::shared_ptr<QueueAsyncContext> qac(new QueueAsyncContext(shared_from_this(),

@@ -46,7 +46,6 @@ MessageConsumer::~MessageConsumer()
 void*
 MessageConsumer::runConsumers()
 {
-/*
     uint32_t numMsgs = 0;
     while (numMsgs < m_perfTestParams.m_numMsgs) {
         if (m_queue->dispatch()) {
@@ -55,7 +54,6 @@ MessageConsumer::runConsumers()
             ::usleep(1000); // TODO - replace this poller with condition variable
         }
     }
-*/
     return 0;
 }
 

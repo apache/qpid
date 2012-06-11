@@ -51,7 +51,6 @@ MessageProducer::~MessageProducer()
 void*
 MessageProducer::runProducers()
 {
-    boost::shared_ptr<SimpleTransactionContext> txn;
     for (uint32_t numMsgs=0; numMsgs<m_perfTestParams.m_numMsgs; ++numMsgs) {
         boost::shared_ptr<SimplePersistableMessage> msg(new SimplePersistableMessage(m_msgData, m_perfTestParams.m_msgSize, m_store));
         m_queue->deliver(msg);
