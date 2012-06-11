@@ -17,6 +17,7 @@
  */
 package org.apache.qpid.client;
 
+import org.apache.qpid.AMQException;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.transport.RangeSet;
 
@@ -31,7 +32,7 @@ import javax.jms.XATopicSession;
 import javax.transaction.xa.XAResource;
 
 /**
- * This is an implementation of the javax.njms.XASEssion interface.
+ * This is an implementation of the javax.jms.XASession interface.
  */
 public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopicSession, XAQueueSession
 {
@@ -67,7 +68,7 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
      {
         this(qpidConnection, con, channelId, false, ackMode, MessageFactoryRegistry.newDefaultRegistry(),
                         defaultPrefetchHigh, defaultPrefetchLow, null);
- 
+
      }
 
      public XASessionImpl(org.apache.qpid.transport.Connection qpidConnection, AMQConnection con, int channelId,
@@ -91,9 +92,6 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
         _qpidDtxSession.setSessionListener(this);
         _qpidDtxSession.dtxSelect();
     }
-
-
-    //    javax.njms.XASEssion API
 
     /**
      * Gets the session associated with this XASession.
@@ -191,5 +189,12 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
         {
             super.acknowledgeImpl() ;
         }
+    }
+
+    @Override
+    void resubscribe() throws AMQException
+    {
+        super.resubscribe();
+        createSession();
     }
 }
