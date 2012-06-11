@@ -124,7 +124,7 @@ bool Acl::authorise(
 }
 
 
-bool Acl::approveConnection(const broker::Connection& conn)
+bool Acl::approveConnection(const qpid::broker::Connection& conn)
 {
     return connectionCounter->approveConnection(conn);
 }
