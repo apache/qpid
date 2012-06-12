@@ -64,17 +64,18 @@ struct LevelTraits {
  * Security    acl ssl gssapi sasl cyrus
  * Broker      broker
  * Management  agent console qmf
- * Amqp        amqp_0_10 framing
+ * Protocol    amqp_0_10 framing
  * System      log sys types xml thread mutex fork pipe time ...
  * HA          cluster ha replication
- * Messaging   messaging client
+ * Messaging   messaging
+ * Client      client
  * Store       store
- * IO          tcp rdma AsynchIO socket epoll
+ * Network     tcp rdma AsynchIO socket epoll
  * Test
  * Unspecified
  */
-enum Category { security, broker, management, amqp, system, ha, messaging,
-    store, io, test, unspecified };
+enum Category { security, broker, management, protocol, system, ha, messaging,
+    store, network, test, client, unspecified };
 struct CategoryTraits {
     static const int COUNT=unspecified+1;
 
@@ -102,11 +103,11 @@ struct CategoryTraits {
 class CategoryFileNameHints {
 public:
     CategoryFileNameHints(){
-        hintList.push_back(std::make_pair("AsynchIo",    io));
-        hintList.push_back(std::make_pair("TCP",         io));
-        hintList.push_back(std::make_pair("epoll",       io));
-        hintList.push_back(std::make_pair("Pollable",    io));
-        hintList.push_back(std::make_pair("Socket",      io));
+        hintList.push_back(std::make_pair("AsynchIo",    network));
+        hintList.push_back(std::make_pair("TCP",         network));
+        hintList.push_back(std::make_pair("epoll",       network));
+        hintList.push_back(std::make_pair("Pollable",    network));
+        hintList.push_back(std::make_pair("Socket",      network));
 
         hintList.push_back(std::make_pair("Sasl",        security));
         hintList.push_back(std::make_pair("Ssl",         security));
@@ -114,8 +115,8 @@ public:
         hintList.push_back(std::make_pair("acl",         security));
         hintList.push_back(std::make_pair("cyrus",       security));
 
-        hintList.push_back(std::make_pair("amqp_",       amqp));
-        hintList.push_back(std::make_pair("framing",     amqp));
+        hintList.push_back(std::make_pair("amqp_",       protocol));
+        hintList.push_back(std::make_pair("framing",     protocol));
 
         hintList.push_back(std::make_pair("management",  management));
         hintList.push_back(std::make_pair("qmf",         management));
@@ -146,6 +147,8 @@ public:
 
         hintList.push_back(std::make_pair("messaging",   messaging));
         hintList.push_back(std::make_pair("types",       messaging));
+
+        hintList.push_back(std::make_pair("client",      client));
     }
 
     static Category categoryOf(const char*const fName);
