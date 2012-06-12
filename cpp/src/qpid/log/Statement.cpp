@@ -142,8 +142,8 @@ const char* names[LevelTraits::COUNT] = {
 };
 
 const char* catNames[CategoryTraits::COUNT] = {
-    "Security", "Broker", "Management", "Amqp", "System", "HA", "Messaging",
-    "Store", "IO", "Test", "Unspecified"
+    "Security", "Broker", "Management", "Protocol", "System", "HA", "Messaging",
+    "Store", "Network", "Test", "Client", "Unspecified"
 };
 
 } // namespace
