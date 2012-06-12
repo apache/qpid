@@ -51,7 +51,7 @@ QueueGuard::QueueGuard(broker::Queue& q, const BrokerInfo& info)
 {
     // Set a log prefix message that identifies the remote broker.
     std::ostringstream os;
-    os << "HA guard " << queue.getName() << "@" << info.getLogId() << ": ";
+    os << "HA primary guard " << queue.getName() << "@" << info.getLogId() << ": ";
     logPrefix = os.str();
     observer.reset(new QueueObserver(*this));
     queue.addObserver(observer);
@@ -63,7 +63,7 @@ QueueGuard::~QueueGuard() { cancel(); }
 void QueueGuard::enqueued(const QueuedMessage& qm) {
     assert(qm.queue == &queue);
     // Delay completion
-    QPID_LOG(trace, logPrefix << "Delaying completion of " << qm);
+    QPID_LOG(trace, logPrefix << "Delayed completion of " << qm);
     qm.payload->getIngressCompletion().startCompleter();
     {
         sys::Mutex::ScopedLock l(lock);

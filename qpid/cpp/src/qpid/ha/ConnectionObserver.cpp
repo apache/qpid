@@ -62,7 +62,7 @@ void ConnectionObserver::opened(broker::Connection& connection) {
     BrokerInfo info;            // Avoid self connections.
     if (getBrokerInfo(connection, info)) {
         if (info.getSystemId() == self)
-            throw Exception("HA rejected self connection");
+            throw Exception(QPID_MSG(logPrefix << "Rejected connection from self"));
     }
     ObserverPtr o(getObserver());
     if (o) o->opened(connection);
