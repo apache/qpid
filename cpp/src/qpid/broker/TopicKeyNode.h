@@ -208,7 +208,7 @@ class QPID_BROKER_CLASS_EXTERN TopicKeyNode {
                 if (ptr != childTokens.end()) {
                     return ptr->second->add(bKey, fullPattern);
                 } else {
-                    TopicKeyNode::shared_ptr child(new TopicKeyNode<T>(next_token));
+                    typename TopicKeyNode::shared_ptr child(new TopicKeyNode<T>(next_token));
                     childTokens[next_token] = child;
                     return child->add(bKey, fullPattern);
                 }
