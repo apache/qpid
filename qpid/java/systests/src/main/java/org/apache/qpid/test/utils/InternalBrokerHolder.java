@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.test.utils;
 
+import java.util.Set;
+
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.Broker;
@@ -31,7 +33,9 @@ public class InternalBrokerHolder implements BrokerHolder
     private final Broker _broker;
     private final String _workingDirectory;
 
-    public InternalBrokerHolder(final Broker broker, String workingDirectory)
+    private Set<Integer> _portsUsedByBroker;
+
+    public InternalBrokerHolder(final Broker broker, String workingDirectory, Set<Integer> portsUsedByBroker)
     {
         if(broker == null)
         {
@@ -40,6 +44,7 @@ public class InternalBrokerHolder implements BrokerHolder
 
         _broker = broker;
         _workingDirectory = workingDirectory;
+        _portsUsedByBroker = portsUsedByBroker;
     }
 
     @Override
@@ -53,7 +58,9 @@ public class InternalBrokerHolder implements BrokerHolder
         LOGGER.info("Shutting down Broker instance");
 
         _broker.shutdown();
-        
+
+        waitUntilPortsAreFree();
+
         LOGGER.info("Broker instance shutdown");
     }
 
@@ -62,7 +69,12 @@ public class InternalBrokerHolder implements BrokerHolder
     {
         // Can't kill a internal broker as we would also kill ourselves as we share the same JVM.
         shutdown();
+
+        waitUntilPortsAreFree();
     }
 
-
+    private void waitUntilPortsAreFree()
+    {
+        new PortHelper().waitUntilPortsAreFree(_portsUsedByBroker);
+    }
 }
