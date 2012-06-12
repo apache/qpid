@@ -44,7 +44,7 @@ bool MessageDeque::deleted(const QueuedMessage& m)
         QueuedMessage *qm = &messages[i];
         if (qm->status != QueuedMessage::DELETED) {
             qm->status = QueuedMessage::DELETED;
-            qm->payload.reset(); // message no longer needed
+            qm->payload = 0; // message no longer needed
             clean();
             return true;
         }
