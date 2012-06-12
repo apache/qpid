@@ -45,7 +45,7 @@ using types::Variant;
 using std::string;
 
 Backup::Backup(HaBroker& hb, const Settings& s) :
-    logPrefix(hb), haBroker(hb), broker(hb.getBroker()), settings(s)
+    logPrefix("HA backup: "), haBroker(hb), broker(hb.getBroker()), settings(s)
 {
     // Empty brokerUrl means delay initialization until seBrokertUrl() is called.
     if (!s.brokerUrl.empty()) initialize(Url(s.brokerUrl));
@@ -64,14 +64,14 @@ Url Backup::linkUrl(const Url& brokers) const {
     for (Url::const_iterator i = brokers.begin(); i != brokers.end(); ++i)
         if (!isSelf(*i)) url.push_back(*i);
     if (url.empty()) throw Url::Invalid("HA Backup failover URL is empty");
-    QPID_LOG(debug, logPrefix << "Backup failover URL (excluding self): " << url);
+    QPID_LOG(debug, logPrefix << " failover URL (excluding self): " << url);
     return url;
     */
 }
 
 void Backup::initialize(const Url& brokers) {
     if (brokers.empty()) throw Url::Invalid("HA broker URL is empty");
-    QPID_LOG(info, logPrefix << "Backup broker URL: " << brokers);
+    QPID_LOG(info, logPrefix << "Initialized, broker URL: " << brokers);
     sys::Mutex::ScopedLock l(lock);
     Url url = linkUrl(brokers);
     string protocol = url[0].protocol.empty() ? "tcp" : url[0].protocol;

@@ -1,5 +1,5 @@
-#ifndef QPID_HA_SETTINGS_H
-#define QPID_HA_SETTINGS_H
+#ifndef QPID_HA_REPLICATIONTEST_H
+#define QPID_HA_REPLICATIONTEST_H
 
 /*
  *
@@ -23,27 +23,40 @@
  */
 
 #include "types.h"
+#include "qpid/types/Variant.h"
 #include <string>
 
 namespace qpid {
-namespace ha {
 
+namespace broker {
+class Queue;
+}
+
+namespace framing {
+class FieldTable;
+}
+
+namespace ha {
 /**
- * Configurable settings for HA.
+ * Test whether something is replicated, taking into account the
+ * default replication level.
  */
-class Settings
+class ReplicationTest
 {
   public:
-    Settings() : cluster(false), replicateDefault(NONE)
-    {}
+    ReplicationTest(ReplicateLevel replicateDefault_) :
+        replicateDefault(replicateDefault_) {}
 
-    bool cluster;               // True if we are a cluster member.
-    std::string clientUrl;
-    std::string brokerUrl;
-    Enum<ReplicateLevel> replicateDefault;
-    std::string username, password, mechanism;
+    ReplicateLevel replicateLevel(const std::string& str);
+    ReplicateLevel replicateLevel(const framing::FieldTable& f);
+    ReplicateLevel replicateLevel(const types::Variant::Map& m);
+
+    bool isReplicated(const types::Variant::Map& args, bool autodelete, bool exclusive);
+    bool isReplicated(const framing::FieldTable& args, bool autodelete, bool exclusive);
+    bool isReplicated(const broker::Queue&);
   private:
+    ReplicateLevel replicateDefault;
 };
 }} // namespace qpid::ha
 
-#endif  /*!QPID_HA_SETTINGS_H*/
+#endif  /*!QPID_HA_REPLICATIONTEST_H*/

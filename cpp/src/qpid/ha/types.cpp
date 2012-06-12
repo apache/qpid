@@ -19,30 +19,33 @@
  *
  */
 
-#include "Enum.h"
+#include "types.h"
 #include "qpid/Msg.h"
 #include "qpid/Exception.h"
 #include <algorithm>
 #include <iostream>
+#include <iterator>
 #include <assert.h>
 
 namespace qpid {
 namespace ha {
 
-const std::string QPID_REPLICATE("qpid.replicate");
+using namespace std;
 
-std::string EnumBase::str() const {
+const string QPID_REPLICATE("qpid.replicate");
+
+string EnumBase::str() const {
     assert(value < count);
     return names[value];
 }
 
-void EnumBase::parse(const std::string& s) {
+void EnumBase::parse(const string& s) {
     if (!parseNoThrow(s))
         throw Exception(QPID_MSG("Invalid " << names[count] << " value: " << s));
 }
 
-bool EnumBase::parseNoThrow(const std::string& s) {
-    const char** i = std::find(names, names+count, s);
+bool EnumBase::parseNoThrow(const string& s) {
+    const char** i = find(names, names+count, s);
     value = i - names;
     return value < count;
 }
@@ -58,15 +61,21 @@ template <> const char* Enum<BrokerStatus>::NAMES[] = {
 };
 template <> const size_t Enum<BrokerStatus>::N = 7;
 
-std::ostream& operator<<(std::ostream& o, EnumBase e) {
+ostream& operator<<(ostream& o, EnumBase e) {
     return o << e.str();
 }
 
-std::istream& operator>>(std::istream& i, EnumBase& e) {
-    std::string s;
+istream& operator>>(istream& i, EnumBase& e) {
+    string s;
     i >> s;
     e.parse(s);
     return i;
+}
+
+ostream& operator<<(ostream& o, const IdSet& ids) {
+    ostream_iterator<qpid::types::Uuid> out(o, " ");
+    copy(ids.begin(), ids.end(), out);
+    return o;
 }
 
 }} // namespace qpid::ha

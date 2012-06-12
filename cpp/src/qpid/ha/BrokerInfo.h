@@ -22,7 +22,7 @@
  *
  */
 
-#include "Enum.h"
+#include "types.h"
 #include "qpid/Url.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/types/Uuid.h"
@@ -40,15 +40,15 @@ class BrokerInfo
 {
   public:
     BrokerInfo() {}
-    BrokerInfo(const std::string& host, uint16_t port_, const types::Uuid& id) :
-        hostName(host), port(port_), systemId(id) {}
+    BrokerInfo(const std::string& host, uint16_t port_, const types::Uuid& id);
     BrokerInfo(const framing::FieldTable& ft) { assign(ft); }
     BrokerInfo(const types::Variant::Map& m) { assign(m); }
 
     types::Uuid getSystemId() const { return systemId; }
     std::string getHostName() const { return hostName; }
     BrokerStatus getStatus() const { return status; }
-     uint16_t getPort() const { return port; }
+    uint16_t getPort() const { return port; }
+    std::string getLogId() const { return logId; }
 
     void setStatus(BrokerStatus s)  { status = s; }
 
@@ -59,6 +59,7 @@ class BrokerInfo
     void assign(const types::Variant::Map&);
 
   private:
+    std::string logId;
     std::string hostName;
     uint16_t port;
     types::Uuid systemId;

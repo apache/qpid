@@ -22,7 +22,6 @@
  *
  */
 
-#include "LogPrefix.h"
 #include "Settings.h"
 #include "qpid/Url.h"
 #include "qpid/sys/Mutex.h"
@@ -57,7 +56,8 @@ class Backup
     Url linkUrl(const Url&) const;
     void initialize(const Url&);
 
-    LogPrefix logPrefix;
+    std::string logPrefix;
+
     sys::Mutex lock;
     HaBroker& haBroker;
     broker::Broker& broker;

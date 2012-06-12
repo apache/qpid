@@ -23,8 +23,8 @@
  */
 
 #include "Counter.h"
-#include "Enum.h"
-#include "LogPrefix.h"
+#include "types.h"
+#include "ReplicationTest.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/types/Variant.h"
 #include <boost/shared_ptr.hpp>
@@ -97,7 +97,8 @@ class BrokerReplicator : public broker::Exchange,
     bool isReplicated(const types::Variant::Map& args, bool autodelete, bool exclusive);
     void ready();
 
-    LogPrefix logPrefix;
+    std::string logPrefix;
+    ReplicationTest replicationTest;
     HaBroker& haBroker;
     broker::Broker& broker;
     boost::shared_ptr<broker::Link> link;

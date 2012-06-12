@@ -626,31 +626,38 @@ set (ha_default ON)
 option(BUILD_HA "Build Active-Passive HA plugin" ${ha_default})
 if (BUILD_HA)
     set (ha_SOURCES
+	qpid/ha/BackupConnectionExcluder.h
+	qpid/ha/BrokerInfo.cpp
+	qpid/ha/BrokerInfo.h
+	qpid/ha/HeldQueue.h
+	qpid/ha/QueueGuard.cpp
+	qpid/ha/QueueGuard.h
+	qpid/ha/ReplicationTest.cpp
+	qpid/ha/ReplicationTest.h
         qpid/ha/Backup.cpp
         qpid/ha/Backup.h
-	qpid/ha/BrokerInfo.h
-	qpid/ha/BrokerInfo.cpp
         qpid/ha/BrokerReplicator.cpp
         qpid/ha/BrokerReplicator.h
-        qpid/ha/ConnectionExcluder.cpp
-        qpid/ha/ConnectionExcluder.h
+        qpid/ha/ConnectionObserver.cpp
+        qpid/ha/ConnectionObserver.h
         qpid/ha/Counter.h
-        qpid/ha/Enum.cpp
-        qpid/ha/Enum.h
         qpid/ha/HaBroker.cpp
         qpid/ha/HaBroker.h
         qpid/ha/HaPlugin.cpp
-        qpid/ha/LogPrefix.cpp
-        qpid/ha/LogPrefix.h
         qpid/ha/Membership.cpp
         qpid/ha/Membership.h
         qpid/ha/Primary.cpp
         qpid/ha/Primary.h
+        qpid/ha/PrimaryConnectionMonitor.h
         qpid/ha/QueueReplicator.cpp
         qpid/ha/QueueReplicator.h
         qpid/ha/ReplicatingSubscription.cpp
         qpid/ha/ReplicatingSubscription.h
         qpid/ha/Settings.h
+        qpid/ha/Types.cpp
+        qpid/ha/Types.h
+        qpid/ha/UnreadyQueueSet.cpp
+        qpid/ha/UnreadyQueueSet.h
     )
 
     add_library (ha MODULE ${ha_SOURCES})

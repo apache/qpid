@@ -24,8 +24,8 @@
 
 #include "BrokerInfo.h"
 #include "Membership.h"
-#include "Enum.h"
-#include "LogPrefix.h"
+#include "types.h"
+#include "ReplicationTest.h"
 #include "Settings.h"
 #include "qpid/Url.h"
 #include "qpid/sys/Mutex.h"
@@ -37,8 +37,14 @@
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {
+
+namespace types {
+class Variant;
+}
+
 namespace broker {
 class Broker;
+class Queue;
 }
 namespace framing {
 class FieldTable;
@@ -46,7 +52,7 @@ class FieldTable;
 
 namespace ha {
 class Backup;
-class ConnectionExcluder;
+class ConnectionObserver;
 class Primary;
 
 /**
@@ -76,11 +82,7 @@ class HaBroker : public management::Manageable
     void activate();
 
     Backup* getBackup() { return backup.get(); }
-
-    // Translate replicate levels.
-    ReplicateLevel replicateLevel(const std::string& str);
-    ReplicateLevel replicateLevel(const framing::FieldTable& f);
-    ReplicateLevel replicateLevel(const types::Variant::Map& m);
+    ReplicationTest getReplicationTest() const { return replicationTest; }
 
     // Keep track of the set of actively replicated queues on a backup
     // so that it can be transferred to the Primary on promotion.
@@ -89,19 +91,18 @@ class HaBroker : public management::Manageable
     void deactivatedBackup(const std::string& queue);
     QueueNames getActiveBackups() const;
 
-    boost::shared_ptr<ConnectionExcluder> getExcluder() { return excluder; }
+    boost::shared_ptr<ConnectionObserver> getObserver() { return observer; }
 
     const BrokerInfo& getBrokerInfo() const { return brokerInfo; }
     Membership& getMembership() { return membership; }
-    void membershipUpdate(const types::Variant::List&);
+    void membershipUpdate(const types::Variant::List&, const IdSet&);
 
   private:
-    void setClientUrl(const Url&, const sys::Mutex::ScopedLock&);
-    void setBrokerUrl(const Url&, const sys::Mutex::ScopedLock&);
-    void setExpectedBackups(size_t, const sys::Mutex::ScopedLock&);
-    void updateClientUrl(const sys::Mutex::ScopedLock&);
+    void setClientUrl(const Url&, sys::Mutex::ScopedLock&);
+    void setBrokerUrl(const Url&, sys::Mutex::ScopedLock&);
+    void updateClientUrl(sys::Mutex::ScopedLock&);
 
-    bool isPrimary(const sys::Mutex::ScopedLock&) { return !backup.get(); }
+    bool isPrimary(sys::Mutex::ScopedLock&) { return !backup.get(); }
 
     void setStatus(BrokerStatus, sys::Mutex::ScopedLock&);
     void recover(sys::Mutex::ScopedLock&);
@@ -111,7 +112,7 @@ class HaBroker : public management::Manageable
 
     std::vector<Url> getKnownBrokers() const;
 
-    LogPrefix logPrefix;
+    std::string logPrefix;
     broker::Broker& broker;
     types::Uuid systemId;
     const Settings settings;
@@ -122,12 +123,12 @@ class HaBroker : public management::Manageable
     qmf::org::apache::qpid::ha::HaBroker* mgmtObject;
     Url clientUrl, brokerUrl;
     std::vector<Url> knownBrokers;
-    size_t expectedBackups;
     BrokerStatus status;
     QueueNames activeBackups;
-    boost::shared_ptr<ConnectionExcluder> excluder;
+    boost::shared_ptr<ConnectionObserver> observer;
     BrokerInfo brokerInfo;
     Membership membership;
+    ReplicationTest replicationTest;
 };
 }} // namespace qpid::ha
 

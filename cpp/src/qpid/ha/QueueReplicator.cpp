@@ -21,7 +21,6 @@
 
 #include "Counter.h"
 #include "QueueReplicator.h"
-#include "HaBroker.h"
 #include "ReplicatingSubscription.h"
 #include "qpid/broker/Bridge.h"
 #include "qpid/broker/Broker.h"
@@ -60,15 +59,15 @@ bool QueueReplicator::isEventKey(const std::string key) {
     return ret;
 }
 
-QueueReplicator::QueueReplicator(HaBroker& hb,
+QueueReplicator::QueueReplicator(const BrokerInfo& info,
                                  boost::shared_ptr<Queue> q,
                                  boost::shared_ptr<Link> l)
     : Exchange(replicatorName(q->getName()), 0, q->getBroker()),
-      haBroker(hb), logPrefix(hb), queue(q), link(l)
+      logPrefix("HA backup of "+q->getName()+": "),
+      queue(q), link(l), brokerInfo(info)
 {
     Uuid uuid(true);
     bridgeName = replicatorName(q->getName()) + std::string(".") + uuid.str();
-    logPrefix.setMessage(q->getName());
     QPID_LOG(info, logPrefix << "Created");
 }
 
@@ -119,7 +118,7 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     settings.setInt(ReplicatingSubscription::QPID_HIGH_SEQUENCE_NUMBER,
                     queue->getPosition());
     settings.setTable(ReplicatingSubscription::QPID_BROKER_INFO,
-                      haBroker.getBrokerInfo().asFieldTable());
+                      brokerInfo.asFieldTable());
     SequenceNumber front;
     if (ReplicatingSubscription::getFront(*queue, front))
         settings.setInt(ReplicatingSubscription::QPID_LOW_SEQUENCE_NUMBER, front);
@@ -143,7 +142,7 @@ template <class T> T decodeContent(Message& m) {
 }
 }
 
-void QueueReplicator::dequeue(SequenceNumber n,  const sys::Mutex::ScopedLock&) {
+void QueueReplicator::dequeue(SequenceNumber n, sys::Mutex::ScopedLock&) {
     // Thread safe: only calls thread safe Queue functions.
     if (queue->getPosition() >= n) { // Ignore messages we  haven't reached yet
         QueuedMessage message;

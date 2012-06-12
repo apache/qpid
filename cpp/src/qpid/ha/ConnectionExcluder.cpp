@@ -31,7 +31,7 @@ namespace qpid {
 namespace ha {
 
 ConnectionExcluder::ConnectionExcluder(HaBroker& hb, const types::Uuid& uuid)
-    : haBroker(hb), logPrefix(hb), self(uuid) {}
+    : haBroker(hb), logPrefix("HA: "), self(uuid) {}
 
 namespace {
 bool getBrokerInfo(broker::Connection& connection, BrokerInfo& info) {
@@ -53,7 +53,7 @@ void ConnectionExcluder::opened(broker::Connection& connection) {
     }
     BrokerStatus status = haBroker.getStatus();
     if (isBackup(status)) reject(connection);
-    BrokerInfo info;            // Get info about a connecting backup.
+    BrokerInfo info;            // Avoid self connections.
     if (getBrokerInfo(connection, info)) {
         if (info.getSystemId() == self) {
             QPID_LOG(debug, logPrefix << "Rejected self connection");
@@ -65,8 +65,7 @@ void ConnectionExcluder::opened(broker::Connection& connection) {
             return;
         }
     }
-    else // This is a client connection.
-        if (status == RECOVERING) reject(connection); // FIXME aconway 2012-05-29: allow clients in recovery
+    // else: Primary node accepts connections.
 }
 
 void ConnectionExcluder::reject(broker::Connection& connection) {
