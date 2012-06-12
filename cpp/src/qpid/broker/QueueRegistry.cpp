@@ -47,31 +47,36 @@ QueueRegistry::declare(const string& declareName, bool durable,
                                         definition from persistente
                                         record*/)
 {
-    RWlock::ScopedWlock locker(lock);
-    string name = declareName.empty() ? generateName() : declareName;
-    assert(!name.empty());
-    QueueMap::iterator i =  queues.find(name);
+    Queue::shared_ptr queue;
+    std::pair<Queue::shared_ptr, bool> result;
+    {
+        RWlock::ScopedWlock locker(lock);
+        string name = declareName.empty() ? generateName() : declareName;
+        assert(!name.empty());
+        QueueMap::iterator i =  queues.find(name);
 
-    if (i == queues.end()) {
-        Queue::shared_ptr queue(new Queue(name, autoDelete, durable ? store : 0, owner, parent, broker));
-        if (alternate) {
-            queue->setAlternateExchange(alternate);//need to do this *before* create
-            alternate->incAlternateUsers();
-        }
-        if (!recovering) {
-            //apply settings & create persistent record if required
-            queue->create(arguments);
+        if (i == queues.end()) {
+            queue.reset(new Queue(name, autoDelete, durable ? store : 0, owner, parent, broker));
+            if (alternate) {
+                queue->setAlternateExchange(alternate);//need to do this *before* create
+                alternate->incAlternateUsers();
+            }
+            if (!recovering) {
+                //apply settings & create persistent record if required
+                queue->create(arguments);
+            } else {
+                //i.e. recovering a queue for which we already have a persistent record
+                queue->configure(arguments);
+            }
+            queues[name] = queue;
+            if (lastNode) queue->setLastNodeFailure();
+            result = std::pair<Queue::shared_ptr, bool>(queue, true);
         } else {
-            //i.e. recovering a queue for which we already have a persistent record
-            queue->configure(arguments);
+            result = std::pair<Queue::shared_ptr, bool>(i->second, false);
         }
-        if (broker) broker->getConfigurationObservers().queueCreate(queue);
-        queues[name] = queue;
-        if (lastNode) queue->setLastNodeFailure();
-        return std::pair<Queue::shared_ptr, bool>(queue, true);
-    } else {
-        return std::pair<Queue::shared_ptr, bool>(i->second, false);
     }
+    if (broker && queue) broker->getConfigurationObservers().queueCreate(queue);
+    return result;
 }
 
 void QueueRegistry::destroyLH (const string& name) {

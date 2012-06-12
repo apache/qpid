@@ -43,39 +43,42 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, c
 
 pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, const string& type,
                                                            bool durable, const FieldTable& args){
-    RWlock::ScopedWlock locker(lock);
-    ExchangeMap::iterator i =  exchanges.find(name);
-    if (i == exchanges.end()) {
-        Exchange::shared_ptr exchange;
-
-        if (type == TopicExchange::typeName){
-            exchange = Exchange::shared_ptr(new TopicExchange(name, durable, args, parent, broker));
-        }else if(type == DirectExchange::typeName){
-            exchange = Exchange::shared_ptr(new DirectExchange(name, durable, args, parent, broker));
-        }else if(type == FanOutExchange::typeName){
-            exchange = Exchange::shared_ptr(new FanOutExchange(name, durable, args, parent, broker));
-        }else if (type == HeadersExchange::typeName) {
-            exchange = Exchange::shared_ptr(new HeadersExchange(name, durable, args, parent, broker));
-        }else if (type == ManagementDirectExchange::typeName) {
-            exchange = Exchange::shared_ptr(new ManagementDirectExchange(name, durable, args, parent, broker));
-        }else if (type == ManagementTopicExchange::typeName) {
-            exchange = Exchange::shared_ptr(new ManagementTopicExchange(name, durable, args, parent, broker));
-        }else if (type == Link::exchangeTypeName) {
-            exchange = Link::linkExchangeFactory(name);
-        }else{
-            FunctionMap::iterator i =  factory.find(type);
-            if (i == factory.end()) {
-                throw UnknownExchangeTypeException();
-            } else {
-                exchange = i->second(name, durable, args, parent, broker);
+    Exchange::shared_ptr exchange;
+    std::pair<Exchange::shared_ptr, bool> result;
+    {
+        RWlock::ScopedWlock locker(lock);
+        ExchangeMap::iterator i =  exchanges.find(name);
+        if (i == exchanges.end()) {
+            if (type == TopicExchange::typeName){
+                exchange = Exchange::shared_ptr(new TopicExchange(name, durable, args, parent, broker));
+            }else if(type == DirectExchange::typeName){
+                exchange = Exchange::shared_ptr(new DirectExchange(name, durable, args, parent, broker));
+            }else if(type == FanOutExchange::typeName){
+                exchange = Exchange::shared_ptr(new FanOutExchange(name, durable, args, parent, broker));
+            }else if (type == HeadersExchange::typeName) {
+                exchange = Exchange::shared_ptr(new HeadersExchange(name, durable, args, parent, broker));
+            }else if (type == ManagementDirectExchange::typeName) {
+                exchange = Exchange::shared_ptr(new ManagementDirectExchange(name, durable, args, parent, broker));
+            }else if (type == ManagementTopicExchange::typeName) {
+                exchange = Exchange::shared_ptr(new ManagementTopicExchange(name, durable, args, parent, broker));
+            }else if (type == Link::exchangeTypeName) {
+                exchange = Link::linkExchangeFactory(name);
+            }else{
+                FunctionMap::iterator i =  factory.find(type);
+                if (i == factory.end()) {
+                    throw UnknownExchangeTypeException();
+                } else {
+                    exchange = i->second(name, durable, args, parent, broker);
+                }
             }
+            exchanges[name] = exchange;
+            result = std::pair<Exchange::shared_ptr, bool>(exchange, true);
+        } else {
+            result = std::pair<Exchange::shared_ptr, bool>(i->second, false);
         }
-        if (broker) broker->getConfigurationObservers().exchangeCreate(exchange);
-        exchanges[name] = exchange;
-        return std::pair<Exchange::shared_ptr, bool>(exchange, true);
-    } else {
-        return std::pair<Exchange::shared_ptr, bool>(i->second, false);
     }
+    if (broker && exchange) broker->getConfigurationObservers().exchangeCreate(exchange);
+    return result;
 }
 
 void ExchangeRegistry::destroy(const string& name){
@@ -84,14 +87,17 @@ void ExchangeRegistry::destroy(const string& name){
          (name == "amq.direct" || name == "amq.fanout" || name == "amq.topic" || name == "amq.match")) ||
         name == "qpid.management")
         throw framing::NotAllowedException(QPID_MSG("Cannot delete default exchange: '" << name << "'"));
-    RWlock::ScopedWlock locker(lock);
-    ExchangeMap::iterator i =  exchanges.find(name);
-    if (i != exchanges.end()) {
-        Exchange::shared_ptr ex = i->second;
-        i->second->destroy();
-        exchanges.erase(i);
-        if (broker) broker->getConfigurationObservers().exchangeDestroy(ex);
+    Exchange::shared_ptr exchange;
+    {
+        RWlock::ScopedWlock locker(lock);
+        ExchangeMap::iterator i =  exchanges.find(name);
+        if (i != exchanges.end()) {
+            exchange = i->second;
+            i->second->destroy();
+            exchanges.erase(i);
+        }
     }
+    if (broker && exchange) broker->getConfigurationObservers().exchangeDestroy(exchange);
 }
 
 Exchange::shared_ptr ExchangeRegistry::find(const string& name){
