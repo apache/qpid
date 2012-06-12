@@ -1693,6 +1693,7 @@ void Queue::setPosition(SequenceNumber n) {
 }
 
 SequenceNumber Queue::getPosition() {
+    Mutex::ScopedLock locker(messageLock);
     return sequence;
 }
 
