@@ -32,7 +32,7 @@ using sys::Mutex;
 
 RemoteBackup::RemoteBackup(
     const BrokerInfo& info, broker::Broker& broker, ReplicationTest rt) :
-    logPrefix("HA backup "+info.getLogId()+": "), brokerInfo(info), replicationTest(rt)
+    logPrefix("HA primary, backup to "+info.getLogId()+": "), brokerInfo(info), replicationTest(rt)
 {
     QPID_LOG(debug, logPrefix << "Guarding queues for backup broker. ");
     broker.getQueues().eachQueue(boost::bind(&RemoteBackup::initialQueue, this, _1));

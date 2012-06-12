@@ -197,7 +197,7 @@ ReplicatingSubscription::ReplicatingSubscription(
 
         // Set a log prefix message that identifies the remote broker.
         ostringstream os;
-        os << "HA subscription " << queue->getName() << "@" << info.getLogId() << ": ";
+        os << "HA primary replicate " << queue->getName() << "@" << info.getLogId() << ": ";
         logPrefix = os.str();
 
         QueueRange primary(*queue);
