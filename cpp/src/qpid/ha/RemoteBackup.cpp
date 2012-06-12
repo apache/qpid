@@ -31,10 +31,12 @@ namespace ha {
 using sys::Mutex;
 
 RemoteBackup::RemoteBackup(
-    const BrokerInfo& info, broker::Broker& broker, ReplicationTest rt) :
-    logPrefix("HA primary, backup to "+info.getLogId()+": "), brokerInfo(info), replicationTest(rt)
+    const BrokerInfo& info, broker::Broker& broker, ReplicationTest rt, bool cg) :
+    logPrefix("HA primary, backup to "+info.getLogId()+": "), brokerInfo(info), replicationTest(rt),
+    createGuards(cg)
 {
     QPID_LOG(debug, logPrefix << "Guarding queues for backup broker.");
+    // FIXME aconway 2012-06-12: potential deadlocks, this is called inside ConnectionObserver::opened.
     broker.getQueues().eachQueue(boost::bind(&RemoteBackup::initialQueue, this, _1));
 }
 
@@ -48,29 +50,43 @@ bool RemoteBackup::isReady() {
 }
 
 void RemoteBackup::initialQueue(const QueuePtr& q) {
-    initialQueues.insert(q);
+    if (replicationTest.isReplicated(ALL, *q)) initialQueues.insert(q);
     queueCreate(q);
 }
 
 RemoteBackup::GuardPtr RemoteBackup::guard(const QueuePtr& q) {
+    if (!createGuards) return RemoteBackup::GuardPtr();
     GuardMap::iterator i = guards.find(q);
     if (i == guards.end()) {
         assert(0);
-        throw Exception(logPrefix+": Guard cannot find queue guard: "+q->getName());
+        throw Exception(logPrefix+": Cannot find queue guard: "+q->getName());
     }
     GuardPtr guard = i->second;
     guards.erase(i);
     return guard;
 }
 
+namespace {
+typedef std::set<boost::shared_ptr<broker::Queue> > QS;
+struct QueueSetPrinter {
+    const QS& qs;
+    QueueSetPrinter(const QS& q) : qs(q) {}
+};
+std::ostream& operator<<(std::ostream& o, const QueueSetPrinter& qp) {
+    for (QS::const_iterator i = qp.qs.begin(); i != qp.qs.end(); ++i)
+        o << (*i)->getName() << " ";
+    return o;
+}
+}
+
 void RemoteBackup::ready(const QueuePtr& q) {
-    QPID_LOG(debug, logPrefix << "Queue ready: " << q->getName());
     initialQueues.erase(q);
+    QPID_LOG(debug, logPrefix << "Queue ready: " << q->getName() << " remaining unready: " << QueueSetPrinter(initialQueues));
     if (isReady()) QPID_LOG(debug, logPrefix << "All queues ready");
 }
 
 void RemoteBackup::queueCreate(const QueuePtr& q) {
-    if (replicationTest.isReplicated(ALL, *q))
+    if (createGuards && replicationTest.isReplicated(ALL, *q))
         guards[q].reset(new QueueGuard(*q, brokerInfo));
 }
 

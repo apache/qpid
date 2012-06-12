@@ -243,7 +243,7 @@ class Broker(Popen):
     _broker_count = 0
     _log_count = 0
 
-    def __str__(self): return "Broker<%s %s>"%(self.name, self.pname)
+    def __str__(self): return "Broker<%s %s :%d>"%(self.name, self.pname, self.port())
 
     def find_log(self):
         self.log = "%03d:%s.log" % (Broker._log_count, self.name)

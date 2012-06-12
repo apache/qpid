@@ -51,7 +51,7 @@ class RemoteBackup
     typedef boost::shared_ptr<QueueGuard> GuardPtr;
     typedef boost::shared_ptr<broker::Queue> QueuePtr;
 
-    RemoteBackup(const BrokerInfo& info, broker::Broker&, ReplicationTest rt);
+    RemoteBackup(const BrokerInfo& info, broker::Broker&, ReplicationTest rt, bool createGuards);
     ~RemoteBackup();
 
     /** Return guard associated with a queue. Used to create ReplicatingSubscription. */
@@ -67,6 +67,7 @@ class RemoteBackup
     /**@return true when all initial queues for this backup are ready */
     bool isReady();
 
+    BrokerInfo getBrokerInfo() const { return brokerInfo; }
   private:
     typedef std::map<QueuePtr, GuardPtr> GuardMap;
     typedef std::set<QueuePtr> QueueSet;
@@ -76,6 +77,7 @@ class RemoteBackup
     ReplicationTest replicationTest;
     GuardMap guards;
     QueueSet initialQueues;
+    bool createGuards;
 
     void initialQueue(const QueuePtr&);
 };
