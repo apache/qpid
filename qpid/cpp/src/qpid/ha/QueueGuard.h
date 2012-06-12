@@ -92,8 +92,6 @@ class QueueGuard {
     framing::SequenceSet delayed;
     ReplicatingSubscription* subscription;
     boost::shared_ptr<QueueObserver> observer;
-
-    bool isFirstSet;
     framing::SequenceNumber firstSafe; // Immutable
 };
 }} // namespace qpid::ha

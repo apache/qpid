@@ -268,6 +268,11 @@ void HaBroker::statusChanged(Mutex::ScopedLock& l) {
 }
 
 void HaBroker::membershipUpdate(const Variant::List& brokers) {
+    // FIXME aconway 2012-06-12: nasty callback in callback, clean up.
+    BrokerInfo info;
+    if (getStatus() == CATCHUP && getMembership().get(systemId, info) && info.getStatus() == READY)
+        setStatus(READY);
+
     // No lock, only calls thread-safe objects.
     mgmtObject->set_members(brokers);
     broker.getManagementAgent()->raiseEvent(_qmf::EventMembersUpdate(brokers));

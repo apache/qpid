@@ -43,7 +43,7 @@ void Membership::add(const BrokerInfo& b) {
 
 void Membership::remove(const types::Uuid& id) {
     sys::Mutex::ScopedLock l(lock);
-    BrokerMap::iterator i = brokers.find(id);
+    BrokerInfo::Map::iterator i = brokers.find(id);
     if (i != brokers.end()) {
         brokers.erase(i);
         update(l);
@@ -72,7 +72,7 @@ types::Variant::List Membership::asList() const {
 
 types::Variant::List Membership::asList(sys::Mutex::ScopedLock&) const {
     types::Variant::List list;
-    for (BrokerMap::const_iterator i = brokers.begin(); i != brokers.end(); ++i)
+    for (BrokerInfo::Map::const_iterator i = brokers.begin(); i != brokers.end(); ++i)
         list.push_back(i->second.asMap());
     return list;
 }
@@ -81,8 +81,6 @@ void Membership::update(sys::Mutex::ScopedLock& l) {
     if (updateCallback) {
         types::Variant::List list = asList(l);
         sys::Mutex::ScopedUnlock u(lock);
-        // FIXME aconway 2012-06-06: messy: Make this a data object,
-        // move locking into HaBroker?
         updateCallback(list);
     }
     QPID_LOG(debug, " HA: Membership update: " << brokers);
@@ -95,11 +93,18 @@ BrokerInfo::Set Membership::otherBackups() const {
 
 BrokerInfo::Set Membership::otherBackups(sys::Mutex::ScopedLock&) const {
     BrokerInfo::Set result;
-    for (BrokerMap::const_iterator i = brokers.begin(); i != brokers.end(); ++i)
+    for (BrokerInfo::Map::const_iterator i = brokers.begin(); i != brokers.end(); ++i)
         if (isBackup(i->second.getStatus()) && i->second.getSystemId() != self)
             result.insert(i->second);
     return result;
 }
 
+bool Membership::get(const types::Uuid& id, BrokerInfo& result) {
+    sys::Mutex::ScopedLock l(lock);
+    BrokerInfo::Map::iterator i = brokers.find(id);
+    if (i == brokers.end()) return false;
+    result = i->second;
+    return true;
+}
 
 }} // namespace qpid::ha
