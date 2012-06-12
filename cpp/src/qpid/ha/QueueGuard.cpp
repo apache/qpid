@@ -61,6 +61,7 @@ QueueGuard::QueueGuard(broker::Queue& q, const BrokerInfo& info)
 QueueGuard::~QueueGuard() { cancel(); }
 
 void QueueGuard::enqueued(const QueuedMessage& qm) {
+    assert(qm.queue == &queue);
     // Delay completion
     QPID_LOG(trace, logPrefix << "Delaying completion of " << qm);
     qm.payload->getIngressCompletion().startCompleter();
@@ -74,6 +75,7 @@ void QueueGuard::enqueued(const QueuedMessage& qm) {
 // FIXME aconway 2012-06-05: ERROR, must call on ReplicatingSubscription
 
 void QueueGuard::dequeued(const QueuedMessage& qm) {
+    assert(qm.queue == &queue);
     QPID_LOG(trace, logPrefix << "Dequeued " << qm);
     ReplicatingSubscription* rs = 0;
     {
@@ -98,17 +100,19 @@ void QueueGuard::attach(ReplicatingSubscription& rs) {
 }
 
 void QueueGuard::complete(const QueuedMessage& qm, sys::Mutex::ScopedLock&) {
-    QPID_LOG(trace, logPrefix << "Completed " << qm);
+    assert(qm.queue == &queue);
     // The same message can be completed twice, by acknowledged and
     // dequeued, remove it from the set so we only call
     // finishCompleter() once
     if (delayed.contains(qm.position)) {
+        QPID_LOG(trace, logPrefix << "Completed " << qm);
         qm.payload->getIngressCompletion().finishCompleter();
         delayed -= qm.position;
     }
 }
 
 void QueueGuard::complete(const QueuedMessage& qm) {
+    assert(qm.queue == &queue);
     Mutex::ScopedLock l(lock);
     complete(qm, l);
 }
