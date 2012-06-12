@@ -21,6 +21,7 @@
 package org.apache.qpid.test.utils;
 
 import java.io.IOException;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
@@ -32,8 +33,9 @@ public class SpawnedBrokerHolder implements BrokerHolder
     private final Process _process;
     private final Integer _pid;
     private final String _workingDirectory;
+    private Set<Integer> _portsUsedByBroker;
 
-    public SpawnedBrokerHolder(final Process process, final String workingDirectory)
+    public SpawnedBrokerHolder(final Process process, final String workingDirectory, Set<Integer> portsUsedByBroker)
     {
         if(process == null)
         {
@@ -43,6 +45,7 @@ public class SpawnedBrokerHolder implements BrokerHolder
         _process = process;
         _pid = retrieveUnixPidIfPossible();
         _workingDirectory = workingDirectory;
+        _portsUsedByBroker = portsUsedByBroker;
     }
 
     @Override
@@ -57,6 +60,8 @@ public class SpawnedBrokerHolder implements BrokerHolder
         _process.destroy();
 
         reapChildProcess();
+
+        waitUntilPortsAreFree();
     }
 
     @Override
@@ -74,6 +79,8 @@ public class SpawnedBrokerHolder implements BrokerHolder
         }
 
         reapChildProcess();
+
+        waitUntilPortsAreFree();
     }
 
     private void sendSigkillForImmediateShutdown(Integer pid)
@@ -144,6 +151,11 @@ public class SpawnedBrokerHolder implements BrokerHolder
             {
             }
         }
+    }
+
+    private void waitUntilPortsAreFree()
+    {
+        new PortHelper().waitUntilPortsAreFree(_portsUsedByBroker);
     }
 
 }
