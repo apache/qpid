@@ -351,7 +351,7 @@ QPID_AUTO_TEST_CASE(testLoggerStateure) {
     ifstream log("logging.tmp");
     string line;
     getline(log, line);
-    string expect=(format("critical %s:%d: foo")%__FILE__%srcline).str();
+    string expect=(format("[Test] critical %s:%d: foo")%__FILE__%srcline).str();
     BOOST_CHECK_EQUAL(expect, line);
     log.close();
     unlink("logging.tmp");
@@ -379,7 +379,7 @@ QPID_AUTO_TEST_CASE(testQuoteNonPrintable) {
     ifstream log("logging.tmp");
     string line;
     getline(log, line, '\0');
-    string expect="critical null\\x00tab\tspace newline\nret\r\\x80\\x99\\xFF\\x00\n";
+    string expect="[Test] critical null\\x00tab\tspace newline\nret\r\\x80\\x99\\xFF\\x00\n";
     BOOST_CHECK_EQUAL(expect, line);
     log.close();
     unlink("logging.tmp");
