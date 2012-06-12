@@ -144,11 +144,9 @@ template <class T> T decodeContent(Message& m) {
 
 void QueueReplicator::dequeue(SequenceNumber n, sys::Mutex::ScopedLock&) {
     // Thread safe: only calls thread safe Queue functions.
-    if (queue->getPosition() >= n) { // Ignore messages we  haven't reached yet
-        QueuedMessage message;
-        if (queue->acquireMessageAt(n, message))
-            queue->dequeue(0, message);
-    }
+    QueuedMessage message;
+    if (queue->acquireMessageAt(n, message))
+        queue->dequeue(0, message);
 }
 
 // Called in connection thread of the queues bridge to primary.

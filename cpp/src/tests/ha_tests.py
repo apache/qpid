@@ -718,16 +718,17 @@ class LongTests(BrokerTest):
         brokers = HaCluster(self, 3)
 
         # Start sender and receiver threads
+        n = 1;           # FIXME aconway 2012-06-10: n = 10
         senders = [NumberedSender(brokers[0], max_depth=1024, failover_updates=False,
-                                 queue="test%s"%(i)) for i in xrange(10)]
+                                 queue="test%s"%(i)) for i in xrange(n)]
         receivers = [NumberedReceiver(brokers[0], sender=senders[i],
                                       failover_updates=False,
-                                      queue="test%s"%(i)) for i in xrange(10)]
+                                      queue="test%s"%(i)) for i in xrange(n)]
         for r in receivers: r.start()
         for s in senders: s.start()
 
         # Wait for sender & receiver to get up and running
-        assert retry(lambda: receivers[0].received > 100)
+        assert retry(lambda: receivers[0].received > 100), "%s<=100"%receivers[0].received
         # Kill and restart brokers in a cycle:
         endtime = time.time() + self.duration()
         i = 0
@@ -748,12 +749,12 @@ class LongTests(BrokerTest):
                     return receivers[0].received > n + 100
                 # FIXME aconway 2012-05-17: client reconnect sometimes takes > 1 sec.
                 assert retry(enough, 10), "Stalled: %s < %s+100"%(receivers[0].received, n)
+            for s in senders: s.stop()
+            for r in receivers: r.stop()
         except:
             traceback.print_exc()
             raise
         finally:
-            for s in senders: s.stop()
-            for r in receivers: r.stop()
             dead = []
             for i in xrange(3):
                 if not brokers[i].is_running(): dead.append(i)

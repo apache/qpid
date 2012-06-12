@@ -52,6 +52,7 @@ class RemoteBackup
     typedef boost::shared_ptr<broker::Queue> QueuePtr;
 
     RemoteBackup(const BrokerInfo& info, broker::Broker&, ReplicationTest rt);
+    ~RemoteBackup();
 
     /** Return guard associated with a queue. Used to create ReplicatingSubscription. */
     GuardPtr guard(const QueuePtr&);

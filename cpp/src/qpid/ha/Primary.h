@@ -46,12 +46,11 @@ class QueueGuard;
 
 /**
  * State associated with a primary broker:
- * - tracks readiness of initial backups to determine when primary is active.
- * - sets updates queue guards on new queues with for each backup.
+ * - sets queue guards and tracks readiness of initial backups till active.
+ * - sets queue guards on new queues for each backup.
  *
- * THREAD SAFE: readyReplica and ConfigurationObserver functions called concurrently.
+ * THREAD SAFE: called concurrently in arbitrary connection threads.
  */
-
 class Primary
 {
   public:

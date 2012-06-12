@@ -276,15 +276,13 @@ void HaBroker::membershipUpdate(const Variant::List& brokers) {
 void HaBroker::setLinkProperties(Mutex::ScopedLock&) {
     framing::FieldTable linkProperties = broker.getLinkClientProperties();
     if (isBackup(status)) {
-        // If this is a backup then any links we make are backup links
-        // and need to be tagged.
-        QPID_LOG(debug, logPrefix << "Backup setting info for outgoing links: " << brokerInfo);
+        // If this is a backup then any outgoing links are backup
+        // links and need to be tagged.
         linkProperties.setTable(ConnectionObserver::BACKUP_TAG, brokerInfo.asFieldTable());
     }
     else {
-        // If this is a primary then any links are federation links
+        // If this is a primary then any outgoing links are federation links
         // and should not be tagged.
-        QPID_LOG(debug, logPrefix << "Primary removing backup info for outgoing links");
         linkProperties.erase(ConnectionObserver::BACKUP_TAG);
     }
     broker.setLinkClientProperties(linkProperties);
