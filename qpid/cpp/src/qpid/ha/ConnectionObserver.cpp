@@ -30,7 +30,7 @@ namespace qpid {
 namespace ha {
 
 ConnectionObserver::ConnectionObserver(HaBroker& hb, const types::Uuid& uuid)
-    : haBroker(hb), logPrefix("HA: "), self(uuid) {}
+    : haBroker(hb), logPrefix("HA connections: "), self(uuid) {}
 
 // FIXME aconway 2012-06-06: move to BrokerInfo
 bool ConnectionObserver::getBrokerInfo(broker::Connection& connection, BrokerInfo& info) {

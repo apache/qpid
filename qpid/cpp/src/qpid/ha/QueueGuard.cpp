@@ -31,6 +31,8 @@ namespace ha {
 
 using namespace broker;
 using sys::Mutex;
+using framing::SequenceNumber;
+using framing::SequenceSet;
 
 class QueueGuard::QueueObserver : public broker::QueueObserver
 {
@@ -47,79 +49,91 @@ class QueueGuard::QueueObserver : public broker::QueueObserver
 
 
 QueueGuard::QueueGuard(broker::Queue& q, const BrokerInfo& info)
-  : queue(q), subscription(0)
+    : queue(q), subscription(0), isFirstSet(false)
 {
-    // Set a log prefix message that identifies the remote broker.
     std::ostringstream os;
     os << "HA primary guard " << queue.getName() << "@" << info.getLogId() << ": ";
     logPrefix = os.str();
     observer.reset(new QueueObserver(*this));
-    queue.addObserver(observer);
-    readyPosition = queue.getPosition(); // Must set after addObserver()
+    queue.addObserver(observer);         // We can now receive concurrent calls to dequeued
+    sys::Mutex::ScopedLock l(lock);
+    // Race between this thread and enqueued thread to set first safe position.
+    if (!isFirstSet) {
+        // Must set after addObserver so we don't miss any dequeues.
+        firstSafe = queue.getPosition()+1; // Next message will be safe.
+        isFirstSet = true;
+        QPID_LOG(debug, logPrefix << "First position (initial): " << firstSafe);
+    }
 }
 
 QueueGuard::~QueueGuard() { cancel(); }
 
+// NOTE: Called with message lock held.
 void QueueGuard::enqueued(const QueuedMessage& qm) {
     assert(qm.queue == &queue);
     // Delay completion
     QPID_LOG(trace, logPrefix << "Delayed completion of " << qm);
     qm.payload->getIngressCompletion().startCompleter();
     {
-        sys::Mutex::ScopedLock l(lock);
+        Mutex::ScopedLock l(lock);
         assert(!delayed.contains(qm.position));
         delayed += qm.position;
+        if (!isFirstSet) {
+            firstSafe = qm.position;
+            isFirstSet = true;
+            QPID_LOG(debug, logPrefix << "First position (enqueued): " << firstSafe);
+        }
+        assert(qm.position >= firstSafe);
     }
 }
 
-// FIXME aconway 2012-06-05: ERROR, must call on ReplicatingSubscription
-
+// NOTE: Called with message lock held.
 void QueueGuard::dequeued(const QueuedMessage& qm) {
     assert(qm.queue == &queue);
     QPID_LOG(trace, logPrefix << "Dequeued " << qm);
-    ReplicatingSubscription* rs = 0;
+    ReplicatingSubscription* rs=0;
     {
-        sys::Mutex::ScopedLock l(lock);
+        Mutex::ScopedLock l(lock);
         rs = subscription;
     }
     if (rs) rs->dequeued(qm);
+    complete(qm);
 }
 
 void QueueGuard::cancel() {
     queue.removeObserver(observer);
     {
-        sys::Mutex::ScopedLock l(lock);
+        Mutex::ScopedLock l(lock);
         if (delayed.empty()) return; // No need if no delayed messages.
     }
     queue.eachMessage(boost::bind(&QueueGuard::complete, this, _1));
 }
 
 void QueueGuard::attach(ReplicatingSubscription& rs) {
-    sys::Mutex::ScopedLock l(lock);
+    Mutex::ScopedLock l(lock);
+    assert(firstSafe >= rs.getPosition());
     subscription = &rs;
-}
-
-void QueueGuard::complete(const QueuedMessage& qm, sys::Mutex::ScopedLock&) {
-    assert(qm.queue == &queue);
-    // The same message can be completed twice, by acknowledged and
-    // dequeued, remove it from the set so we only call
-    // finishCompleter() once
-    if (delayed.contains(qm.position)) {
-        QPID_LOG(trace, logPrefix << "Completed " << qm);
-        qm.payload->getIngressCompletion().finishCompleter();
-        delayed -= qm.position;
-    }
 }
 
 void QueueGuard::complete(const QueuedMessage& qm) {
     assert(qm.queue == &queue);
-    Mutex::ScopedLock l(lock);
-    complete(qm, l);
+    {
+        Mutex::ScopedLock l(lock);
+        // The same message can be completed twice, by
+        // ReplicatingSubscription::acknowledged and dequeued. Remove it
+        // from the set so we only call finishCompleter() once
+        if (delayed.contains(qm.position))
+            delayed -= qm.position;
+        else
+            return;
+    }
+    QPID_LOG(trace, logPrefix << "Completed " << qm);
+    qm.payload->getIngressCompletion().finishCompleter();
 }
 
-framing::SequenceNumber QueueGuard::getReadyPosition() {
-    // No lock, readyPosition is immutable.
-    return readyPosition;
+framing::SequenceNumber QueueGuard::getFirstSafe() {
+    // No lock, first is immutable.
+    return firstSafe;
 }
 
 // FIXME aconway 2012-06-04: TODO support for timeout.
