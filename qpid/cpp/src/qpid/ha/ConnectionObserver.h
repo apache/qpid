@@ -1,5 +1,5 @@
-#ifndef QPID_HA_CONNECTIONEXCLUDER_H
-#define QPID_HA_CONNECTIONEXCLUDER_H
+#ifndef QPID_HA_CONNECTIONOBSERVER_H
+#define QPID_HA_CONNECTIONOBSERVER_H
 
 /*
  *
@@ -26,43 +26,47 @@
 #include "qpid/broker/ConnectionObserver.h"
 #include "qpid/types/Uuid.h"
 #include "qpid/sys/Mutex.h"
-#include <boost/function.hpp>
+#include "boost/shared_ptr.hpp"
 
 namespace qpid {
-
-namespace broker {
-class Connection;
-}
-
 namespace ha {
-class HaBroker;
+class BrokerInfo;
 
 /**
- * Exclude normal connections to a backup broker.
- * Admin connections are identified by a special flag in client-properties
- * during connection negotiation.
+ * Observes connections, delegates to another ConnectionObserver for
+ * actions specific to primary or backup.
+ *
+ * THREAD SAFE: called in arbitrary connection threads.
+ *
+ * Main role of this class is to provide a continuous observer object
+ * on the connection so we can't lose observations between removing
+ * one observer and adding another.
  */
-class ConnectionExcluder : public broker::ConnectionObserver
+class ConnectionObserver : public broker::ConnectionObserver
 {
   public:
+    typedef boost::shared_ptr<broker::ConnectionObserver> ObserverPtr;
+
     static const std::string ADMIN_TAG;
     static const std::string BACKUP_TAG;
 
-    ConnectionExcluder(HaBroker&, const types::Uuid& self);
+    static bool getBrokerInfo(broker::Connection& connection, BrokerInfo& info);
+
+    ConnectionObserver(const types::Uuid& self);
+
+    void setObserver(const ObserverPtr&);
+    ObserverPtr getObserver();
 
     void opened(broker::Connection& connection);
     void closed(broker::Connection& connection);
 
-    void setStatus(BrokerStatus);
-
   private:
-    void reject(broker::Connection&);
-
-    HaBroker& haBroker;
+    sys::Mutex lock;
     std::string logPrefix;
+    ObserverPtr observer;
     types::Uuid self;
 };
 
 }} // namespace qpid::ha
 
-#endif  /*!QPID_HA_CONNECTIONEXCLUDER_H*/
+#endif  /*!QPID_HA_CONNECTIONOBSERVER_H*/

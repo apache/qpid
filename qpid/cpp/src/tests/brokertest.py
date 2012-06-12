@@ -248,7 +248,7 @@ class Broker(Popen):
         self.log = "%s.log" % self.name
         i = 1
         while (os.path.exists(self.log)):
-            self.log = "%s-%d.log" % (self.name, i)
+            self.log = "%s.%d.log" % (self.name, i)
             i += 1
 
     def get_log(self):

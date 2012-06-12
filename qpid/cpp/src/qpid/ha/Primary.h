@@ -22,7 +22,8 @@
  *
  */
 
-#include "LogPrefix.h"
+#include "UnreadyQueueSet.h"
+#include "types.h"
 #include "qpid/sys/Mutex.h"
 #include <boost/shared_ptr.hpp>
 #include <map>
@@ -36,10 +37,11 @@ class Queue;
 
 namespace ha {
 class HaBroker;
+class ReplicatingSubscription;
 
 /**
- * State associated with a primary broker.  Tracks replicating
- * subscriptions to determine when primary is ready.
+ * State associated with a primary broker. Tracks replicating
+ * subscriptions to determine when primary is active.
  *
  * THREAD SAFE: readyReplica is called in arbitray threads.
  */
@@ -47,22 +49,22 @@ class Primary
 {
   public:
     static Primary* get() { return instance; }
-    Primary(HaBroker& b);
 
-    void readyReplica(const std::string& q);
+    Primary(HaBroker& hb, const IdSet& expectedBackups);
+
+    void readyReplica(const ReplicatingSubscription&);
     void removeReplica(const std::string& q);
 
+    UnreadyQueueSet& getUnreadyQueueSet() { return queues; }
+    bool isActive() { return activated; }
+
   private:
-    typedef std::map<std::string, size_t> QueueCounts;
-
-    void activate(sys::Mutex::ScopedLock&);
-
     sys::Mutex lock;
     HaBroker& haBroker;
-    LogPrefix logPrefix;
-    QueueCounts queues;
+    std::string logPrefix;
     size_t expected, unready;
     bool activated;
+    UnreadyQueueSet queues;
 
     static Primary* instance;
 };

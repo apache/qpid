@@ -22,9 +22,11 @@
 #include "ConnectionExcluder.h"
 #include "HaBroker.h"
 #include "Primary.h"
+#include "ReplicatingSubscription.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/framing/FieldTable.h"
+#include "qpid/log/Statement.h"
 #include <boost/bind.hpp>
 
 namespace qpid {
@@ -32,52 +34,29 @@ namespace ha {
 
 Primary* Primary::instance = 0;
 
-Primary::Primary(HaBroker& b) :
-    haBroker(b), logPrefix(b),
-    expected(b.getSettings().expectedBackups),
-    unready(0), activated(false)
+Primary::Primary(HaBroker& hb, const IdSet& backups) :
+    haBroker(hb), logPrefix("HA primary: "),
+    unready(0), activated(false),
+    queues(hb.getBroker(), hb.getReplicationTest(), backups)
 {
+    assert(instance == 0);
     instance = this;            // Let queue replicators find us.
-    if (expected == 0)          // No need for ready check
-        activate(*(sys::Mutex::ScopedLock*)0); // fake lock, ok in ctor.
+    if (backups.empty()) {
+        QPID_LOG(debug, logPrefix << "Not waiting for backups");
+        activated = true;
+    }
     else {
-        // Set up the primary-ready check: ready when all queues have
-        // expected number of backups. Note clients are excluded at this point
-        // so dont't have to worry about changes to the set of queues.
-        HaBroker::QueueNames names = haBroker.getActiveBackups();
-        for (HaBroker::QueueNames::const_iterator i = names.begin(); i != names.end(); ++i)
-        {
-            queues[*i] = 0;
-            ++unready;
-            QPID_LOG(debug, logPrefix << "Need backup of " << *i
-                     << ", " << unready << " unready queues");
-        }
-        if (queues.empty())
-            activate(*(sys::Mutex::ScopedLock*)0); // fake lock, ok in ctor.
-        else {
-            QPID_LOG(debug, logPrefix << "Waiting for  " << expected
-                     << " backups on " << queues.size() << " queues");
-        }
+        QPID_LOG(debug, logPrefix << "Waiting for backups: " << backups);
     }
 }
 
-void Primary::readyReplica(const std::string& q) {
+void Primary::readyReplica(const ReplicatingSubscription& rs) {
     sys::Mutex::ScopedLock l(lock);
-    if (!activated) {
-        QueueCounts::iterator i = queues.find(q);
-        if (i != queues.end()) {
-            ++i->second;
-            if (i->second == expected) --unready;
-            QPID_LOG(debug, logPrefix << i->second << " backups caught up on " << q
-                     << ", " << unready << " unready queues");
-            if (unready == 0) activate(l);
-        }
+    if (queues.ready(rs.getQueue(), rs.getBrokerInfo().getSystemId()) && !activated) {
+        activated = true;
+        haBroker.activate();
+        QPID_LOG(notice, logPrefix << "Activated, all initial queues are safe.");
     }
-}
-
-void Primary::activate(sys::Mutex::ScopedLock&) {
-    activated = true;
-    haBroker.activate();
 }
 
 }} // namespace qpid::ha

@@ -25,31 +25,26 @@ namespace ha {
 
 
 void Membership::reset(const BrokerInfo& b) {
-    {
-        sys::Mutex::ScopedLock l(lock);
-        brokers.clear();
-        brokers[b.getSystemId()] = b;
-    }
-    update();
+    sys::Mutex::ScopedLock l(lock);
+    brokers.clear();
+    brokers[b.getSystemId()] = b;
+    update(l);
 }
 
 void Membership::add(const BrokerInfo& b) {
-    {
-        sys::Mutex::ScopedLock l(lock);
-        brokers[b.getSystemId()] = b;
-    }
-    update();
+    sys::Mutex::ScopedLock l(lock);
+    brokers[b.getSystemId()] = b;
+    update(l);
 }
 
 
 void Membership::remove(const types::Uuid& id) {
-    {
-        sys::Mutex::ScopedLock l(lock);
-        BrokerMap::iterator i = brokers.find(id);
-        if (i != brokers.end())
-            brokers.erase(i);
+    sys::Mutex::ScopedLock l(lock);
+    BrokerMap::iterator i = brokers.find(id);
+    if (i != brokers.end()) {
+        brokers.erase(i);
+        update(l);
     }
-    update();
 }
 
 bool Membership::contains(const types::Uuid& id) {
@@ -58,32 +53,47 @@ bool Membership::contains(const types::Uuid& id) {
 }
 
 void Membership::assign(const types::Variant::List& list) {
-    {
-        sys::Mutex::ScopedLock l(lock);
-        brokers.clear();
-        for (types::Variant::List::const_iterator i = list.begin(); i != list.end(); ++i) {
-            BrokerInfo b(i->asMap());
-            brokers[b.getSystemId()] = b;
-        }
+    sys::Mutex::ScopedLock l(lock);
+    brokers.clear();
+    for (types::Variant::List::const_iterator i = list.begin(); i != list.end(); ++i) {
+        BrokerInfo b(i->asMap());
+        brokers[b.getSystemId()] = b;
     }
-    update();
+    update(l);
 }
 
 types::Variant::List Membership::asList() const {
     sys::Mutex::ScopedLock l(lock);
+    return asList(l);
+}
+
+types::Variant::List Membership::asList(sys::Mutex::ScopedLock&) const {
     types::Variant::List list;
     for (BrokerMap::const_iterator i = brokers.begin(); i != brokers.end(); ++i)
         list.push_back(i->second.asMap());
     return list;
 }
 
-void Membership::update() {
+void Membership::update(sys::Mutex::ScopedLock& l) {
     if (updateCallback) {
-        types::Variant::List list;
-        for (BrokerMap::const_iterator i = brokers.begin(); i != brokers.end(); ++i)
-            list.push_back(i->second.asMap());
-        updateCallback(list);
+        types::Variant::List list = asList(l);
+        IdSet ids = otherBackups(l);
+        sys::Mutex::ScopedUnlock u(lock);
+        updateCallback(list, ids);
     }
+}
+
+IdSet Membership::otherBackups() const {
+    sys::Mutex::ScopedLock l(lock);
+    return otherBackups(l);
+}
+
+IdSet Membership::otherBackups(sys::Mutex::ScopedLock&) const {
+    IdSet result;
+    for (BrokerMap::const_iterator i = brokers.begin(); i != brokers.end(); ++i)
+        if (isBackup(i->second.getStatus()) && i->second.getSystemId() != self)
+            result.insert(i->second.getSystemId());
+    return result;
 }
 
 }} // namespace qpid::ha

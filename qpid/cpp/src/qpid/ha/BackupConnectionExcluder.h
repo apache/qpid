@@ -1,3 +1,6 @@
+#ifndef QPID_HA_BACKUPCONNECTIONEXCLUDER_H
+#define QPID_HA_BACKUPCONNECTIONEXCLUDER_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,33 +21,26 @@
  * under the License.
  *
  */
-#include "LogPrefix.h"
-#include "HaBroker.h"
-#include <iostream>
+
+#include "qpid/broker/ConnectionObserver.h"
+#include "qpid/broker/Connection.h"
 
 namespace qpid {
 namespace ha {
 
-LogPrefix::LogPrefix(HaBroker& hb, const std::string& msg) : haBroker(&hb), status(0) {
-    if (msg.size()) setMessage(msg);
-}
-
-LogPrefix::LogPrefix(LogPrefix& lp, const std::string& msg)
-  : haBroker(lp.haBroker), status(0)
+/**
+ * Exclude connections to a backup broker.
+ */
+class BackupConnectionExcluder : public broker::ConnectionObserver
 {
-    if (msg.size()) setMessage(msg);
-}
+  public:
+    void opened(broker::Connection& connection) {
+        throw Exception("HA backup rejected connection "+connection.getMgmtId());
+    }
 
-LogPrefix::LogPrefix(BrokerStatus& s) : haBroker(0), status(&s) {}
-
-void LogPrefix::setMessage(const std::string& msg) {
-    tail = " "+msg+":";
-}
-
-std::ostream& operator<<(std::ostream& o, const LogPrefix& l) {
-    return o << "HA("
-             << printable(l.status ? *l.status : l.haBroker->getStatus())
-             << ")" << l.tail << " ";
-}
+    void closed(broker::Connection&) {}
+};
 
 }} // namespace qpid::ha
+
+#endif  /*!QPID_HA_BACKUPCONNECTIONEXCLUDER_H*/

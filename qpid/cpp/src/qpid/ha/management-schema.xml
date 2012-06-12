@@ -31,9 +31,6 @@
     <property name="publicUrl" type="sstr"
 	      desc="URL advertized to clients to connect to the cluster."/>
 
-    <property name="expectedBackups" type="uint16"
-	      desc="Number of HA backup brokers expected."/>
-
     <property name="replicateDefault" type="sstr"
 	      desc="Replication for queues/exchanges with no qpid.replicate argument"/>
 
@@ -49,10 +46,6 @@
 
     <method name="setPublicUrl" desc="URL advertized to clients.">
       <arg name="url" type="sstr" dir="I"/>
-    </method>
-
-    <method name="setExpectedBackups" desc="Set number of backups expected">
-      <arg name="expectedBackups" type="uint16" dir="I"/>
     </method>
 
     <method name="replicate" desc="Replicate individual queue from remote broker.">
