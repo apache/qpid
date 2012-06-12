@@ -25,29 +25,36 @@ dmoduleexec_LTLIBRARIES += ha.la
 ha_la_SOURCES =					\
   qpid/ha/Backup.cpp				\
   qpid/ha/Backup.h				\
-  qpid/ha/BrokerInfo.h				\
+  qpid/ha/BackupConnectionExcluder.h		\
   qpid/ha/BrokerInfo.cpp			\
+  qpid/ha/BrokerInfo.h				\
   qpid/ha/BrokerReplicator.cpp			\
   qpid/ha/BrokerReplicator.h			\
-  qpid/ha/ConnectionExcluder.cpp		\
-  qpid/ha/ConnectionExcluder.h			\
+  qpid/ha/ConnectionObserver.cpp		\
+  qpid/ha/ConnectionObserver.h			\
   qpid/ha/Counter.h				\
-  qpid/ha/Enum.cpp				\
-  qpid/ha/Enum.h				\
   qpid/ha/HaBroker.cpp				\
   qpid/ha/HaBroker.h				\
   qpid/ha/HaPlugin.cpp				\
-  qpid/ha/LogPrefix.cpp				\
-  qpid/ha/LogPrefix.h				\
+  qpid/ha/HeldQueue.h				\
   qpid/ha/Membership.cpp			\
   qpid/ha/Membership.h				\
   qpid/ha/Primary.cpp				\
   qpid/ha/Primary.h				\
+  qpid/ha/PrimaryConnectionMonitor.		\
+  qpid/ha/QueueGuard.cpp			\
+  qpid/ha/QueueGuard.h				\
   qpid/ha/QueueReplicator.cpp			\
   qpid/ha/QueueReplicator.h			\
   qpid/ha/ReplicatingSubscription.cpp		\
   qpid/ha/ReplicatingSubscription.h		\
-  qpid/ha/Settings.h
+  qpid/ha/ReplicationTest.cpp			\
+  qpid/ha/ReplicationTest.h			\
+  qpid/ha/Settings.h				\
+  qpid/ha/UnreadyQueueSet.cpp			\
+  qpid/ha/UnreadyQueueSet.h			\
+  qpid/ha/types.cpp				\
+  qpid/ha/types.h
 
 ha_la_LIBADD = libqpidbroker.la
 ha_la_LDFLAGS = $(PLUGINLDFLAGS)

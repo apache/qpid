@@ -23,7 +23,7 @@
  */
 
 #include "BrokerInfo.h"
-#include "LogPrefix.h"
+#include "types.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/log/Statement.h"
 #include "qpid/types/Variant.h"
@@ -40,25 +40,32 @@ namespace ha {
 class Membership
 {
   public:
-    Membership(LogPrefix lp, boost::function<void(const types::Variant::List&)> updateFn)
-        : logPrefix(lp), updateCallback(updateFn) {}
+    typedef boost::function<void (const types::Variant::List&,
+                                  const IdSet&) > UpdateCallback;
+
+    Membership(const types::Uuid& self_, UpdateCallback updateFn)
+        : self(self_), updateCallback(updateFn) {}
 
     void reset(const BrokerInfo& b); ///< Reset to contain just one member.
     void add(const BrokerInfo& b);
     void remove(const types::Uuid& id);
     bool contains(const types::Uuid& id);
+    /** Return IDs of all backups other than self */
+    IdSet otherBackups() const;
 
     void assign(const types::Variant::List&);
     types::Variant::List asList() const;
 
   private:
     typedef std::map<types::Uuid, BrokerInfo> BrokerMap;
-    void update();
+    IdSet otherBackups(sys::Mutex::ScopedLock&) const;
+    types::Variant::List asList(sys::Mutex::ScopedLock&) const;
+    void update(sys::Mutex::ScopedLock&);
 
     mutable sys::Mutex lock;
-    LogPrefix logPrefix;
+    types::Uuid self;
     BrokerMap brokers;
-    boost::function<void(const types::Variant::List&)> updateCallback;
+    UpdateCallback updateCallback;
 };
 }} // namespace qpid::ha
 

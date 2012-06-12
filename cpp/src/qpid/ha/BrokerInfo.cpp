@@ -42,6 +42,9 @@ using types::Uuid;
 using types::Variant;
 using framing::FieldTable;
 
+BrokerInfo::BrokerInfo(const std::string& host, uint16_t port_, const types::Uuid& id) :
+    logId(id.str().substr(0,9)+"..."), hostName(host), port(port_), systemId(id) {}
+
 FieldTable BrokerInfo::asFieldTable() const {
     Variant::Map m = asMap();
     FieldTable ft;

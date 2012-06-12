@@ -19,8 +19,8 @@
  *
  */
 
+#include "QueueGuard.h"
 #include "ReplicatingSubscription.h"
-#include "HaBroker.h"
 #include "Primary.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/SessionContext.h"
@@ -129,14 +129,11 @@ ReplicatingSubscription::Factory::create(
     boost::shared_ptr<ReplicatingSubscription> rs;
     if (arguments.isSet(QPID_REPLICATING_SUBSCRIPTION)) {
         rs.reset(new ReplicatingSubscription(
-                     haBroker,
                      parent, name, queue, ack, acquire, exclusive, tag,
                      resumeId, resumeTtl, arguments));
-        queue->addObserver(rs);
-        // NOTE: initialize must be called _after_ addObserver, so
-        // messages can't be enqueued after setting readyPosition
-        // but before registering the observer.
-        rs->initialize();
+        boost::shared_ptr<QueueGuard> guard(new QueueGuard(*queue, rs->getBrokerInfo()));
+        guard->initialize();    // Must call before ReplicatingSubscription::initialize
+        rs->initialize(guard);
     }
     return rs;
 }
@@ -177,7 +174,6 @@ ostream& operator<<(ostream& o, const QueueRange& qr) {
 }
 
 ReplicatingSubscription::ReplicatingSubscription(
-    HaBroker& hb,
     SemanticState* parent,
     const string& name,
     Queue::shared_ptr queue,
@@ -190,24 +186,19 @@ ReplicatingSubscription::ReplicatingSubscription(
     const framing::FieldTable& arguments
 ) : ConsumerImpl(parent, name, queue, ack, acquire, exclusive, tag,
                  resumeId, resumeTtl, arguments),
-    haBroker(hb),
-    logPrefix(hb),
     dummy(new Queue(mask(name))),
     ready(false)
 {
     try {
-        // Set a log prefix message that identifies the remote broker.
-        // FIXME aconway 2012-05-24: use URL instead of host:port, include transport?
-        ostringstream os;
-        os << queue->getName() << "@";
         FieldTable ft;
-        if (arguments.getTable(ReplicatingSubscription::QPID_BROKER_INFO, ft)) {
-            BrokerInfo info(ft);
-            os << info.getHostName() << ":" << info.getPort();
-        }
-        else
-            os << parent->getSession().getConnection().getUrl();
-        logPrefix.setMessage(os.str());
+        if (!arguments.getTable(ReplicatingSubscription::QPID_BROKER_INFO, ft))
+            throw Exception("Replicating subscription does not have broker info");
+        info.assign(ft);
+
+        // Set a log prefix message that identifies the remote broker.
+        ostringstream os;
+        os << "HA subscription " << queue->getName() << "@" << info.getLogId() << ": ";
+        logPrefix = os.str();
 
         QueueRange primary(*queue);
         QueueRange backup(arguments);
@@ -251,17 +242,20 @@ ReplicatingSubscription::~ReplicatingSubscription() {
 }
 
 // Called in subscription's connection thread when the subscription is created.
-void ReplicatingSubscription::initialize() {
-    sys::Mutex::ScopedLock l(lock); // QueueObserver methods can be called concurrently
+void ReplicatingSubscription::initialize(const boost::shared_ptr<QueueGuard>& g) {
+    sys::Mutex::ScopedLock l(lock); // Note dequeued() can be called concurrently.
+     // Attach to the guard.
+     guard = g;
+     guard->attach(*this);
 
     // Send initial dequeues and position to the backup.
-    // There most be a shared_ptr(this) when sending.
+    // There must be a shared_ptr(this) when sending.
     sendDequeueEvent(l);
     sendPositionEvent(position, l);
     backupPosition = position;
 
     // Set the ready position.  All messages after this position have
-    // been seen by us as QueueObserver.
+    // been seen by the guard.
     QueueRange range;
     {
         // Drop the lock, QueueRange will lock the queues message lock
@@ -320,82 +314,28 @@ bool ReplicatingSubscription::deliver(QueuedMessage& qm) {
     }
 }
 
-void ReplicatingSubscription::setReady(const sys::Mutex::ScopedLock&) {
+void ReplicatingSubscription::setReady(sys::Mutex::ScopedLock&) {
     if (ready) return;
     ready = true;
     // Notify Primary that a subscription is ready.
     {
         sys::Mutex::ScopedUnlock u(lock);
         QPID_LOG(info, logPrefix << "Caught up at " << getPosition());
-        if (Primary::get()) Primary::get()->readyReplica(getQueue()->getName());
+        if (Primary::get()) Primary::get()->readyReplica(*this);
     }
-}
-
-// INVARIANT: delayed contains msg <=> we have outstanding startCompletion on msg
-
-// Mark a message completed. May be called by acknowledge or dequeued,
-// in arbitrary connection threads.
-void ReplicatingSubscription::complete(
-    const QueuedMessage& qm, const sys::Mutex::ScopedLock&)
-{
-    // Handle completions for the subscribed queue, not the internal event queue.
-    if (qm.queue == getQueue().get()) {
-        QPID_LOG(trace, logPrefix << "Completed " << qm);
-        Delayed::iterator i= delayed.find(qm.position);
-        // The same message can be completed twice, by acknowledged and
-        // dequeued, remove it from the set so it only gets completed
-        // once.
-        if (i != delayed.end()) {
-            assert(i->second.payload == qm.payload);
-            qm.payload->getIngressCompletion().finishCompleter();
-            delayed.erase(i);
-        }
-    }
-}
-
-// Called before we get notified of the message being available and
-// under the message lock in the queue.
-// Called in arbitrary connection thread *with the queue lock held*
-void ReplicatingSubscription::enqueued(const QueuedMessage& qm) {
-    // Delay completion
-    QPID_LOG(trace, logPrefix << "Delaying completion of " << qm);
-    qm.payload->getIngressCompletion().startCompleter();
-    {
-        sys::Mutex::ScopedLock l(lock);
-        assert(delayed.find(qm.position) == delayed.end());
-        delayed[qm.position] = qm;
-    }
-}
-
-// Function to complete a delayed message, called by cancel()
-void ReplicatingSubscription::cancelComplete(
-    const Delayed::value_type& v, const sys::Mutex::ScopedLock&)
-{
-    QPID_LOG(trace, logPrefix << "Cancel completed " << v.second);
-    v.second.payload->getIngressCompletion().finishCompleter();
 }
 
 // Called in the subscription's connection thread.
 void ReplicatingSubscription::cancel()
 {
-    getQueue()->removeObserver(
-        boost::dynamic_pointer_cast<QueueObserver>(shared_from_this()));
-    {
-        sys::Mutex::ScopedLock l(lock);
-        QPID_LOG(debug, logPrefix << "Cancel backup subscription to "
-                 << getQueue()->getName());
-        for_each(delayed.begin(), delayed.end(),
-                 boost::bind(&ReplicatingSubscription::cancelComplete, this, _1, boost::ref(l)));
-        delayed.clear();
-    }
+    guard->cancel();
     ConsumerImpl::cancel();
 }
 
 // Consumer override, called on primary in the backup's IO thread.
 void ReplicatingSubscription::acknowledged(const QueuedMessage& msg) {
-    sys::Mutex::ScopedLock l(lock);
     // Finish completion of message, it has been acknowledged by the backup.
-    complete(msg, l);
+    guard->complete(msg);
 }
 
 // Hide the "queue deleted" error for a ReplicatingSubscription when a
@@ -403,7 +343,7 @@ void ReplicatingSubscription::acknowledged(const QueuedMessage& msg) {
 bool ReplicatingSubscription::hideDeletedError() { return true; }
 
 // Called with lock held. Called in subscription's connection thread.
-void ReplicatingSubscription::sendDequeueEvent(const sys::Mutex::ScopedLock&)
+void ReplicatingSubscription::sendDequeueEvent(sys::Mutex::ScopedLock&)
 {
     if (dequeues.empty()) return;
     QPID_LOG(trace, logPrefix << "Sending dequeues " << dequeues);
@@ -418,24 +358,27 @@ void ReplicatingSubscription::sendDequeueEvent(const sys::Mutex::ScopedLock&)
     }
 }
 
-// QueueObserver override. Called after the message has been removed
+// Called via QueueObserver::dequeued override on guard.
+// Called after the message has been removed
 // from the deque and under the messageLock in the queue. Called in
 // arbitrary connection threads.
 void ReplicatingSubscription::dequeued(const QueuedMessage& qm)
 {
+    bool doComplete = false;
     QPID_LOG(trace, logPrefix << "Dequeued " << qm);
     {
         sys::Mutex::ScopedLock l(lock);
         dequeues.add(qm.position);
-        // If we have not yet sent this message to the backup, then
-        // complete it now as it will never be accepted.
-        if (qm.position > position) complete(qm, l);
+        if (qm.position > position) doComplete = true;
     }
+    // If we have not yet sent this message to the backup, then
+    // complete it now as it will never be accepted.
+    if (doComplete) guard->complete(qm);
     notify();                   // Ensure a call to doDispatch
 }
 
 // Called with lock held. Called in subscription's connection thread.
-void ReplicatingSubscription::sendPositionEvent(SequenceNumber pos, const sys::Mutex::ScopedLock&)
+void ReplicatingSubscription::sendPositionEvent(SequenceNumber pos, sys::Mutex::ScopedLock&)
 {
     if (pos == backupPosition) return; // No need to send.
     QPID_LOG(trace, logPrefix << "Sending position " << pos

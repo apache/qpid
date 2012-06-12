@@ -23,7 +23,9 @@
  */
 
 #include "qpid/types/Variant.h"
+#include "qpid/types/Uuid.h"
 #include <string>
+#include <set>
 #include <iosfwd>
 
 namespace qpid {
@@ -93,5 +95,15 @@ inline bool isPrimary(BrokerStatus s) {
 inline bool isBackup(BrokerStatus s) { return !isPrimary(s); }
 
 extern const std::string QPID_REPLICATE;
+
+// FIXME aconway 2012-06-04: rename types.h->types.h
+
+/**
+ * Define IdSet type, not a typedef so we can overload operator <<
+ */
+class IdSet : public std::set<types::Uuid> {};
+
+std::ostream& operator<<(std::ostream& o, const IdSet& ids);
+
 }} // qpid::ha
 #endif  /*!QPID_HA_ENUM_H*/
