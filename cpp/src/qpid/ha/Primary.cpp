@@ -99,7 +99,7 @@ Primary::~Primary() {
 void Primary::checkReady(Mutex::ScopedLock&) {
     if (!active && initialBackups.empty()) {
         active = true;
-        QPID_LOG(notice, logPrefix << "Active, all initial queues are safe.");
+        QPID_LOG(notice, logPrefix << "All initial backups are ready.");
         Mutex::ScopedUnlock u(lock); // Don't hold lock across callback
         haBroker.activate();
     }

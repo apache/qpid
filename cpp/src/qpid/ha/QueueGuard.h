@@ -49,22 +49,25 @@ class ReplicatingSubscription;
  * till they have been replicated.
  *
  * The guard is created before the ReplicatingSubscription to protect
- * messages arriving before the creation of the subscription has not
- * yet seen.
+ * messages arriving before the creation of the subscription.
  *
- * THREAD SAFE: Called concurrently via QueueObserver::enqueued in
- * arbitrary connection threads, and from ReplicatingSubscription
- * in the subscriptions thread.
+ * THREAD SAFE: Concurrent calls:
+ *  - enqueued() via QueueObserver in arbitrary connection threads.
+ *  - attach(), cancel(), complete() from ReplicatingSubscription in subscription thread.
  */
 class QueueGuard {
   public:
     QueueGuard(broker::Queue& q, const BrokerInfo&);
     ~QueueGuard();
 
-    /** QueueObserver override. Delay completion of the message. */
+    /** QueueObserver override. Delay completion of the message.
+     * NOTE: Called under the queues message lock.
+     */
     void enqueued(const broker::QueuedMessage&);
 
-    /** QueueObserver override: Complete a delayed message */
+    /** QueueObserver override: Complete a delayed message.
+     * NOTE: Called under the queues message lock.
+     */
     void dequeued(const broker::QueuedMessage&);
 
     /** Complete a delayed message. */
@@ -75,8 +78,10 @@ class QueueGuard {
 
     void attach(ReplicatingSubscription&);
 
-    /** The first sequence number that has been processed */
-    framing::SequenceNumber getReadyPosition();
+    /** The first sequence number protected by this guard.
+     * All messages at or after this position are protected.
+     */
+    framing::SequenceNumber getFirstSafe();
 
   private:
     class QueueObserver;
@@ -87,9 +92,9 @@ class QueueGuard {
     framing::SequenceSet delayed;
     ReplicatingSubscription* subscription;
     boost::shared_ptr<QueueObserver> observer;
-    framing::SequenceNumber readyPosition;
 
-    void complete(const broker::QueuedMessage&, sys::Mutex::ScopedLock&);
+    bool isFirstSet;
+    framing::SequenceNumber firstSafe; // Immutable
 };
 }} // namespace qpid::ha
 

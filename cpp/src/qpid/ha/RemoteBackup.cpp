@@ -34,8 +34,13 @@ RemoteBackup::RemoteBackup(
     const BrokerInfo& info, broker::Broker& broker, ReplicationTest rt) :
     logPrefix("HA primary, backup to "+info.getLogId()+": "), brokerInfo(info), replicationTest(rt)
 {
-    QPID_LOG(debug, logPrefix << "Guarding queues for backup broker. ");
+    QPID_LOG(debug, logPrefix << "Guarding queues for backup broker.");
     broker.getQueues().eachQueue(boost::bind(&RemoteBackup::initialQueue, this, _1));
+}
+
+RemoteBackup::~RemoteBackup() {
+    for (GuardMap::iterator i = guards.begin(); i != guards.end(); ++i)
+        i->second->cancel();
 }
 
 bool RemoteBackup::isReady() {
@@ -59,14 +64,14 @@ RemoteBackup::GuardPtr RemoteBackup::guard(const QueuePtr& q) {
 }
 
 void RemoteBackup::ready(const QueuePtr& q) {
+    QPID_LOG(debug, logPrefix << "Queue ready: " << q->getName());
     initialQueues.erase(q);
+    if (isReady()) QPID_LOG(debug, logPrefix << "All queues ready");
 }
 
 void RemoteBackup::queueCreate(const QueuePtr& q) {
-    if (replicationTest.isReplicated(ALL, *q)) {
-        QPID_LOG(debug, logPrefix << "Setting guard on " << q->getName());
+    if (replicationTest.isReplicated(ALL, *q))
         guards[q].reset(new QueueGuard(*q, brokerInfo));
-    }
 }
 
 void RemoteBackup::queueDestroy(const QueuePtr& q) {

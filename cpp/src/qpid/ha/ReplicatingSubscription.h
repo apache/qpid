@@ -87,7 +87,6 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
      */
     static bool getNext(broker::Queue&, framing::SequenceNumber from,
                         framing::SequenceNumber& result);
-    static bool isEmpty(broker::Queue&);
 
     ReplicatingSubscription(broker::SemanticState* parent,
                             const std::string& name, boost::shared_ptr<broker::Queue> ,
@@ -97,19 +96,24 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
 
     ~ReplicatingSubscription();
 
-    // Called via QueueGuard::dequeued
+    // Called via QueueGuard::dequeued.
+    //@return true if the message requires completion.
     void dequeued(const broker::QueuedMessage& qm);
+
+    // Called during initial scan for dequeues.
+    void dequeued(framing::SequenceNumber first, framing::SequenceNumber last);
 
     // Consumer overrides.
     bool deliver(broker::QueuedMessage& msg);
     void cancel();
     void acknowledged(const broker::QueuedMessage&);
     bool browseAcquired() const { return true; }
+    // Hide the "queue deleted" error for a ReplicatingSubscription when a
+    // queue is deleted, this is normal and not an error.
+    bool hideDeletedError() { return true; }
 
-    bool hideDeletedError();
-
-    /** Initialization that must be done after construction because it
-     * requires a shared_ptr to this to exist. Will attach to guard
+    /** Initialization that must be done separately from construction
+     * because it requires a shared_ptr to this to exist.
      */
     void initialize();
 
@@ -122,7 +126,6 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
     std::string logPrefix;
     boost::shared_ptr<broker::Queue> dummy; // Used to send event messages
     framing::SequenceSet dequeues;
-    framing::SequenceNumber readyPosition;
     framing::SequenceNumber backupPosition;
     bool ready;
     BrokerInfo info;
@@ -130,7 +133,7 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
 
     void sendDequeueEvent(sys::Mutex::ScopedLock&);
     void sendPositionEvent(framing::SequenceNumber, sys::Mutex::ScopedLock&);
-    void setReady(sys::Mutex::ScopedLock&);
+    void setReady();
     void sendEvent(const std::string& key, framing::Buffer&);
   friend struct Factory;
 };
