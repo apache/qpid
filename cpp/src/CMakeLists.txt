@@ -656,8 +656,8 @@ if (BUILD_HA)
         qpid/ha/Settings.h
         qpid/ha/Types.cpp
         qpid/ha/Types.h
-        qpid/ha/UnreadyQueueSet.cpp
-        qpid/ha/UnreadyQueueSet.h
+        qpid/ha/RemoteBackup.cpp
+        qpid/ha/RemoteBackup.h
     )
 
     add_library (ha MODULE ${ha_SOURCES})

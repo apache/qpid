@@ -95,7 +95,7 @@ class HaBroker : public management::Manageable
 
     const BrokerInfo& getBrokerInfo() const { return brokerInfo; }
     Membership& getMembership() { return membership; }
-    void membershipUpdate(const types::Variant::List&, const IdSet&);
+    void membershipUpdate(const types::Variant::List&);
 
   private:
     void setClientUrl(const Url&, sys::Mutex::ScopedLock&);

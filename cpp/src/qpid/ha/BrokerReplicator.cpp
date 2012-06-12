@@ -13,7 +13,7 @@
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-* KIND, either express or implied.  See the License for the
+ * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
  *
@@ -292,7 +292,10 @@ void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
     string name = values[QNAME].asString();
     Variant::Map argsMap = asMapVoid(values[ARGS]);
     if (!replicationTest.isReplicated(
-            values[ARGS].asMap(), values[AUTODEL].asBool(), values[EXCL].asBool()))
+            CONFIGURATION,
+            values[ARGS].asMap(),
+            values[AUTODEL].asBool(),
+            values[EXCL].asBool()))
         return;
     if (values[DISP] == CREATED && replicationTest.replicateLevel(argsMap)) {
         framing::FieldTable args;
@@ -441,9 +444,11 @@ void BrokerReplicator::doEventMembersUpdate(Variant::Map& values) {
 
 void BrokerReplicator::doResponseQueue(Variant::Map& values) {
     Variant::Map argsMap(asMapVoid(values[ARGUMENTS]));
-    if (!replicationTest.isReplicated(values[ARGUMENTS].asMap(),
-                      values[AUTODELETE].asBool(),
-                      values[EXCLUSIVE].asBool()))
+    if (!replicationTest.isReplicated(
+            CONFIGURATION,
+            values[ARGUMENTS].asMap(),
+            values[AUTODELETE].asBool(),
+            values[EXCLUSIVE].asBool()))
         return;
     framing::FieldTable args;
     amqp_0_10::translate(argsMap, args);

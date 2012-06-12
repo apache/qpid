@@ -59,7 +59,8 @@ bool Backup::isSelf(const Address& a) const {
 Url Backup::linkUrl(const Url& brokers) const {
     return brokers;
     /** FIXME aconway 2012-05-29: Problems with self-test, false positives.
-    // linkUrl contains only the addresses of *other* brokers, not this one.
+    // linkUrl contains only the addresses of *
+    other* brokers, not this one.
     Url url;
     for (Url::const_iterator i = brokers.begin(); i != brokers.end(); ++i)
         if (!isSelf(*i)) url.push_back(*i);

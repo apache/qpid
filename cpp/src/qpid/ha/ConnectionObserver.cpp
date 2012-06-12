@@ -21,6 +21,7 @@
 
 #include "ConnectionObserver.h"
 #include "BrokerInfo.h"
+#include "HaBroker.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/log/Statement.h"
@@ -28,9 +29,10 @@
 namespace qpid {
 namespace ha {
 
-ConnectionObserver::ConnectionObserver(const types::Uuid& uuid)
-    : logPrefix("HA: "), self(uuid) {}
+ConnectionObserver::ConnectionObserver(HaBroker& hb, const types::Uuid& uuid)
+    : haBroker(hb), logPrefix("HA: "), self(uuid) {}
 
+// FIXME aconway 2012-06-06: move to BrokerInfo
 bool ConnectionObserver::getBrokerInfo(broker::Connection& connection, BrokerInfo& info) {
     framing::FieldTable ft;
     if (connection.getClientProperties().getTable(ConnectionObserver::BACKUP_TAG, ft)) {
@@ -58,13 +60,16 @@ void ConnectionObserver::opened(broker::Connection& connection) {
         return;                 // No need to call observer, always allow admins.
     }
     BrokerInfo info;            // Avoid self connections.
-    if (getBrokerInfo(connection, info) && info.getSystemId() == self)
-        throw Exception("HA rejected self connection");
+    if (getBrokerInfo(connection, info)) {
+        if (info.getSystemId() == self)
+            throw Exception("HA rejected self connection");
+    }
     ObserverPtr o(getObserver());
     if (o) o->opened(connection);
 }
 
 void ConnectionObserver::closed(broker::Connection& connection) {
+    BrokerInfo info;
     ObserverPtr o(getObserver());
     if (o) o->closed(connection);
 }

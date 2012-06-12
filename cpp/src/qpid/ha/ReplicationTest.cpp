@@ -52,18 +52,23 @@ namespace {
 const std::string AUTO_DELETE_TIMEOUT("qpid.auto_delete_timeout");
 }
 
-bool ReplicationTest::isReplicated(const Variant::Map& args, bool autodelete, bool exclusive) {
+bool ReplicationTest::isReplicated(
+    ReplicateLevel level, const Variant::Map& args, bool autodelete, bool exclusive)
+{
     bool ignore = autodelete && exclusive && args.find(AUTO_DELETE_TIMEOUT) == args.end();
-    return replicateLevel(args) && !ignore;
+    return !ignore && replicateLevel(args) >= level;
 }
 
-bool ReplicationTest::isReplicated(const framing::FieldTable& args, bool autodelete, bool exclusive) {
+bool ReplicationTest::isReplicated(
+    ReplicateLevel level, const framing::FieldTable& args, bool autodelete, bool exclusive)
+{
     bool ignore = autodelete && exclusive && !args.isSet(AUTO_DELETE_TIMEOUT);
-    return replicateLevel(args) && !ignore;
+    return !ignore && replicateLevel(args) >= level;
 }
 
-bool ReplicationTest::isReplicated(const broker::Queue& q) {
-    return isReplicated(q.getSettings(), q.isAutoDelete(), q.hasExclusiveOwner());
+bool ReplicationTest::isReplicated(ReplicateLevel level, const broker::Queue& q)
+{
+    return isReplicated(level, q.getSettings(), q.isAutoDelete(), q.hasExclusiveOwner());
 }
 
 

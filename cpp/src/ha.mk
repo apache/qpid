@@ -51,8 +51,8 @@ ha_la_SOURCES =					\
   qpid/ha/ReplicationTest.cpp			\
   qpid/ha/ReplicationTest.h			\
   qpid/ha/Settings.h				\
-  qpid/ha/UnreadyQueueSet.cpp			\
-  qpid/ha/UnreadyQueueSet.h			\
+  qpid/ha/RemoteBackup.cpp			\
+  qpid/ha/RemoteBackup.h			\
   qpid/ha/types.cpp				\
   qpid/ha/types.h
 

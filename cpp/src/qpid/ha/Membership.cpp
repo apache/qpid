@@ -19,6 +19,9 @@
  *
  */
 #include "Membership.h"
+#include <boost/bind.hpp>
+#include <iostream>
+#include <iterator>
 
 namespace qpid {
 namespace ha {
@@ -77,23 +80,26 @@ types::Variant::List Membership::asList(sys::Mutex::ScopedLock&) const {
 void Membership::update(sys::Mutex::ScopedLock& l) {
     if (updateCallback) {
         types::Variant::List list = asList(l);
-        IdSet ids = otherBackups(l);
         sys::Mutex::ScopedUnlock u(lock);
-        updateCallback(list, ids);
+        // FIXME aconway 2012-06-06: messy: Make this a data object,
+        // move locking into HaBroker?
+        updateCallback(list);
     }
+    QPID_LOG(debug, " HA: Membership update: " << brokers);
 }
 
-IdSet Membership::otherBackups() const {
+BrokerInfo::Set Membership::otherBackups() const {
     sys::Mutex::ScopedLock l(lock);
     return otherBackups(l);
 }
 
-IdSet Membership::otherBackups(sys::Mutex::ScopedLock&) const {
-    IdSet result;
+BrokerInfo::Set Membership::otherBackups(sys::Mutex::ScopedLock&) const {
+    BrokerInfo::Set result;
     for (BrokerMap::const_iterator i = brokers.begin(); i != brokers.end(); ++i)
         if (isBackup(i->second.getStatus()) && i->second.getSystemId() != self)
-            result.insert(i->second.getSystemId());
+            result.insert(i->second);
     return result;
 }
+
 
 }} // namespace qpid::ha
