@@ -50,10 +50,13 @@ def set_reconnect_urls(conn, msg):
   reconnect_urls = []
   urls = msg.properties["amq.failover"]
   for u in urls:
+    # FIXME aconway 2012-06-12: Nasty hack parsing of the C++ broker's URL format.
     if u.startswith("amqp:"):
-      for p in u[5:].split(","):
-        parts = p.split(":")
-        host, port = parts[1:3]
+      for a in u[5:].split(","):
+        parts = a.split(":")
+        # Handle IPv6 addresses which have : in the host part.
+        port = parts[-1]        # Last : separated field is port
+        host = ":".join(parts[1:-1]) # First : separated field is protocol, host is the rest.
         reconnect_urls.append("%s:%s" % (host, port))
   conn.reconnect_urls = reconnect_urls
   log.warn("set reconnect_urls for conn %s: %s", conn, reconnect_urls)
