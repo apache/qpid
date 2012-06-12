@@ -128,7 +128,7 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     // FIXME aconway 2012-05-22: use a finite credit window
     peer.getMessage().flow(getName(), 0, 0xFFFFFFFF);
     peer.getMessage().flow(getName(), 1, 0xFFFFFFFF);
-    QPID_LOG(debug, logPrefix << "Subscribed bridge: " << bridgeName << " " << settings);
+    QPID_LOG(debug, logPrefix << "Subscribed: " << bridgeName);
 }
 
 namespace {
