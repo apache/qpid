@@ -191,6 +191,9 @@ class BrokerAgent(object):
   def getAcl(self):
     return self._getSingleObject(Acl)
 
+  def getMemory(self):
+    return self._getSingleObject(Memory)
+
   def echo(self, sequence, body):
     """Request a response to test the path to the management broker"""
     pass
