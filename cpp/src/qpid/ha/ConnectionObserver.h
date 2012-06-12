@@ -31,6 +31,7 @@
 namespace qpid {
 namespace ha {
 class BrokerInfo;
+class HaBroker;
 
 /**
  * Observes connections, delegates to another ConnectionObserver for
@@ -52,7 +53,7 @@ class ConnectionObserver : public broker::ConnectionObserver
 
     static bool getBrokerInfo(broker::Connection& connection, BrokerInfo& info);
 
-    ConnectionObserver(const types::Uuid& self);
+    ConnectionObserver(HaBroker& haBroker, const types::Uuid& self);
 
     void setObserver(const ObserverPtr&);
     ObserverPtr getObserver();
@@ -62,6 +63,7 @@ class ConnectionObserver : public broker::ConnectionObserver
 
   private:
     sys::Mutex lock;
+    HaBroker& haBroker;
     std::string logPrefix;
     ObserverPtr observer;
     types::Uuid self;

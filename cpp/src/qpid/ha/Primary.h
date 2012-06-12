@@ -22,8 +22,8 @@
  *
  */
 
-#include "UnreadyQueueSet.h"
 #include "types.h"
+#include "BrokerInfo.h"
 #include "qpid/sys/Mutex.h"
 #include <boost/shared_ptr.hpp>
 #include <map>
@@ -33,38 +33,63 @@ namespace qpid {
 
 namespace broker {
 class Queue;
+class Connection;
+class ConnectionObserver;
+class ConfigurationObserver;
 }
 
 namespace ha {
 class HaBroker;
 class ReplicatingSubscription;
+class RemoteBackup;
+class QueueGuard;
 
 /**
- * State associated with a primary broker. Tracks replicating
- * subscriptions to determine when primary is active.
+ * State associated with a primary broker:
+ * - tracks readiness of initial backups to determine when primary is active.
+ * - sets updates queue guards on new queues with for each backup.
  *
- * THREAD SAFE: readyReplica is called in arbitray threads.
+ * THREAD SAFE: readyReplica and ConfigurationObserver functions called concurrently.
  */
+
 class Primary
 {
   public:
+    typedef boost::shared_ptr<broker::Queue> QueuePtr;
+
     static Primary* get() { return instance; }
 
-    Primary(HaBroker& hb, const IdSet& expectedBackups);
+    Primary(HaBroker& hb, const BrokerInfo::Set& expectedBackups);
+    ~Primary();
 
     void readyReplica(const ReplicatingSubscription&);
     void removeReplica(const std::string& q);
 
-    UnreadyQueueSet& getUnreadyQueueSet() { return queues; }
-    bool isActive() { return activated; }
+    // Called via ConfigurationObserver
+    void queueCreate(const QueuePtr&);
+    void queueDestroy(const QueuePtr&);
+
+    // Called via ConnectionObserver
+    void opened(broker::Connection& connection);
+    void closed(broker::Connection& connection);
+
+    boost::shared_ptr<QueueGuard> getGuard(const QueuePtr& q, const BrokerInfo&);
 
   private:
+    typedef std::map<types::Uuid, boost::shared_ptr<RemoteBackup> > BackupMap;
+    typedef std::set<boost::shared_ptr<RemoteBackup> > BackupSet;
+
+    void checkReady(sys::Mutex::ScopedLock&);
+    void checkReady(BackupMap::iterator, sys::Mutex::ScopedLock&);
+
     sys::Mutex lock;
     HaBroker& haBroker;
     std::string logPrefix;
-    size_t expected, unready;
-    bool activated;
-    UnreadyQueueSet queues;
+    bool active;
+    BackupSet initialBackups;
+    BackupMap backups;
+    boost::shared_ptr<broker::ConnectionObserver> connectionObserver;
+    boost::shared_ptr<broker::ConfigurationObserver> configurationObserver;
 
     static Primary* instance;
 };

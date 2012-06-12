@@ -115,13 +115,13 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     FieldTable settings;
     settings.setInt(ReplicatingSubscription::QPID_REPLICATING_SUBSCRIPTION, 1);
     settings.setInt(QPID_SYNC_FREQUENCY, 1); // FIXME aconway 2012-05-22: optimize?
-    settings.setInt(ReplicatingSubscription::QPID_HIGH_SEQUENCE_NUMBER,
+    settings.setInt(ReplicatingSubscription::QPID_BACK,
                     queue->getPosition());
     settings.setTable(ReplicatingSubscription::QPID_BROKER_INFO,
                       brokerInfo.asFieldTable());
     SequenceNumber front;
     if (ReplicatingSubscription::getFront(*queue, front))
-        settings.setInt(ReplicatingSubscription::QPID_LOW_SEQUENCE_NUMBER, front);
+        settings.setInt(ReplicatingSubscription::QPID_FRONT, front);
     peer.getMessage().subscribe(
         args.i_src, args.i_dest, 0/*accept-explicit*/, 1/*not-acquired*/,
         false/*exclusive*/, "", 0, settings);

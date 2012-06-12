@@ -44,32 +44,17 @@ class HaBroker;
  *
  * THREAD SAFE: has no state, just mediates between other thread-safe objects.
  */
+// FIXME aconway 2012-06-06: rename observer
 class PrimaryConnectionMonitor : public broker::ConnectionObserver
 {
   public:
-    PrimaryConnectionMonitor(HaBroker& hb) : haBroker(hb) {}
+    PrimaryConnectionMonitor(Primary& p) : primary(p) {}
+    void opened(broker::Connection& connection) { primary.opened(connection); }
+    void closed(broker::Connection& connection) { primary.closed(connection); }
 
-    void opened(broker::Connection& connection) {
-        BrokerInfo info;
-        if (ha::ConnectionObserver::getBrokerInfo(connection, info)) {
-            QPID_LOG(debug, "HA primary: Backup connected: " << info);
-            haBroker.getMembership().add(info);
-            // FIXME aconway 2012-06-01: changes to expected backup set for unready queues.
-        }
-    }
-
-    void closed(broker::Connection& connection) {
-        BrokerInfo info;
-        if (ha::ConnectionObserver::getBrokerInfo(connection, info)) {
-            QPID_LOG(debug, "HA primary: Backup disconnected: " << info);
-            haBroker.getMembership().remove(info.getSystemId());
-            // FIXME aconway 2012-06-01: changes to expected backup set for unready queues.
-        }
-    }
-    private:
-        void reject(broker::Connection&);
-        HaBroker& haBroker;
-    };
+  private:
+    Primary& primary;
+};
 
 }} // namespace qpid::ha
 
