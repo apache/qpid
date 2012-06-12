@@ -23,7 +23,6 @@
 #include "ConnectionObserver.h"
 #include "HaBroker.h"
 #include "Primary.h"
-#include "PrimaryConnectionMonitor.h"
 #include "ReplicatingSubscription.h"
 #include "Settings.h"
 #include "qpid/amqp_0_10/Codecs.h"
@@ -53,6 +52,7 @@ using namespace management;
 using namespace std;
 using types::Variant;
 using types::Uuid;
+using sys::Mutex;
 
 HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     : logPrefix("HA: "),
@@ -61,11 +61,11 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
       settings(s),
       mgmtObject(0),
       status(STANDALONE),
-      observer(new ConnectionObserver(systemId)),
+      observer(new ConnectionObserver(*this, systemId)),
       brokerInfo(broker.getSystem()->getNodeName(),
                  // TODO aconway 2012-05-24: other transports?
                  broker.getPort(broker::Broker::TCP_TRANSPORT), systemId),
-      membership(systemId, boost::bind(&HaBroker::membershipUpdate, this, _1, _2)),
+      membership(systemId, boost::bind(&HaBroker::membershipUpdate, this, _1)),
       replicationTest(s.replicateDefault.get())
 {
     // Set up the management object.
@@ -95,7 +95,7 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
 
     // NOTE: lock is not needed in a constructor, but create one
     // to pass to functions that have a ScopedLock parameter.
-    sys::Mutex::ScopedLock l(lock);
+    Mutex::ScopedLock l(lock);
     if (!settings.clientUrl.empty()) setClientUrl(Url(settings.clientUrl), l);
     if (!settings.brokerUrl.empty()) setBrokerUrl(Url(settings.brokerUrl), l);
     statusChanged(l);
@@ -108,28 +108,26 @@ HaBroker::~HaBroker() {
     broker.getConnectionObservers().remove(observer);
 }
 
-void HaBroker::recover(sys::Mutex::ScopedLock& l) {
+void HaBroker::recover(Mutex::ScopedLock&) {
     setStatus(RECOVERING);
     backup.reset();                    // No longer replicating, close link.
-    IdSet backups = membership.otherBackups();
+    BrokerInfo::Set backups = membership.otherBackups();
     membership.reset(brokerInfo);
+    // Drop the lock, new Primary may call back on activate.
+    Mutex::ScopedUnlock u(lock);
     primary.reset(new Primary(*this, backups)); // Starts primary-ready check.
-    observer->setObserver(                      // Allow connections
-        boost::shared_ptr<broker::ConnectionObserver>(
-            new PrimaryConnectionMonitor(*this)));
-    if (primary->isActive()) activate(l);
 }
 
 // Called back from Primary active check.
 void HaBroker::activate() {
-    sys::Mutex::ScopedLock l(lock);
+    Mutex::ScopedLock l(lock);
     activate(l);
 }
 
-void HaBroker::activate(sys::Mutex::ScopedLock&) { setStatus(ACTIVE); }
+void HaBroker::activate(Mutex::ScopedLock&) { setStatus(ACTIVE); }
 
 Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, string&) {
-    sys::Mutex::ScopedLock l(lock);
+    Mutex::ScopedLock l(lock);
     switch (methodId) {
       case _qmf::HaBroker::METHOD_PROMOTE: {
           switch (status) {
@@ -186,13 +184,13 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
     return Manageable::STATUS_OK;
 }
 
-void HaBroker::setClientUrl(const Url& url, sys::Mutex::ScopedLock& l) {
+void HaBroker::setClientUrl(const Url& url, Mutex::ScopedLock& l) {
     if (url.empty()) throw Exception("Invalid empty URL for HA client failover");
     clientUrl = url;
     updateClientUrl(l);
 }
 
-void HaBroker::updateClientUrl(sys::Mutex::ScopedLock&) {
+void HaBroker::updateClientUrl(Mutex::ScopedLock&) {
     Url url = clientUrl.empty() ? brokerUrl : clientUrl;
     if (url.empty()) throw Url::Invalid("HA client URL is empty");
     mgmtObject->set_publicUrl(url.str());
@@ -201,7 +199,7 @@ void HaBroker::updateClientUrl(sys::Mutex::ScopedLock&) {
     QPID_LOG(debug, logPrefix << "Setting client URL to: " << url);
 }
 
-void HaBroker::setBrokerUrl(const Url& url, sys::Mutex::ScopedLock& l) {
+void HaBroker::setBrokerUrl(const Url& url, Mutex::ScopedLock& l) {
     if (url.empty()) throw Url::Invalid("HA broker URL is empty");
     brokerUrl = url;
     mgmtObject->set_brokersUrl(brokerUrl.str());
@@ -220,12 +218,12 @@ void HaBroker::shutdown() {
 }
 
 BrokerStatus HaBroker::getStatus() const {
-    sys::Mutex::ScopedLock l(lock);
+    Mutex::ScopedLock l(lock);
     return status;
 }
 
 void HaBroker::setStatus(BrokerStatus newStatus) {
-    sys::Mutex::ScopedLock l(lock);
+    Mutex::ScopedLock l(lock);
     setStatus(newStatus, l);
 }
 
@@ -249,7 +247,7 @@ bool checkTransition(BrokerStatus from, BrokerStatus to) {
 }
 } // namespace
 
-void HaBroker::setStatus(BrokerStatus newStatus, sys::Mutex::ScopedLock& l) {
+void HaBroker::setStatus(BrokerStatus newStatus, Mutex::ScopedLock& l) {
     QPID_LOG(notice, logPrefix << "Status change: "
              << printable(status) << " -> " << printable(newStatus));
     bool legal = checkTransition(status, newStatus);
@@ -263,22 +261,19 @@ void HaBroker::setStatus(BrokerStatus newStatus, sys::Mutex::ScopedLock& l) {
     statusChanged(l);
 }
 
-void HaBroker::statusChanged(sys::Mutex::ScopedLock& l) {
+void HaBroker::statusChanged(Mutex::ScopedLock& l) {
     mgmtObject->set_status(printable(status).str());
     brokerInfo.setStatus(status);
     setLinkProperties(l);
 }
 
-void HaBroker::membershipUpdate(const Variant::List& brokers, const IdSet& otherBackups)
-{
-    QPID_LOG(debug, logPrefix << "Membership update: " << brokers);
+void HaBroker::membershipUpdate(const Variant::List& brokers) {
+    // No lock, only calls thread-safe objects.
     mgmtObject->set_members(brokers);
     broker.getManagementAgent()->raiseEvent(_qmf::EventMembersUpdate(brokers));
-    sys::Mutex::ScopedLock l(lock);
-    if (primary.get()) primary->getUnreadyQueueSet().setExpectedBackups(otherBackups);
 }
 
-void HaBroker::setLinkProperties(sys::Mutex::ScopedLock&) {
+void HaBroker::setLinkProperties(Mutex::ScopedLock&) {
     framing::FieldTable linkProperties = broker.getLinkClientProperties();
     if (isBackup(status)) {
         // If this is a backup then any links we make are backup links
@@ -296,18 +291,18 @@ void HaBroker::setLinkProperties(sys::Mutex::ScopedLock&) {
 }
 
 void HaBroker::activatedBackup(const std::string& queue) {
-    sys::Mutex::ScopedLock l(lock);
+    Mutex::ScopedLock l(lock);
     activeBackups.insert(queue);
 }
 
 void HaBroker::deactivatedBackup(const std::string& queue) {
-    sys::Mutex::ScopedLock l(lock);
+    Mutex::ScopedLock l(lock);
     activeBackups.erase(queue);
 }
 
 // FIXME aconway 2012-05-31: strip out.
 HaBroker::QueueNames HaBroker::getActiveBackups() const {
-    sys::Mutex::ScopedLock l(lock);
+    Mutex::ScopedLock l(lock);
     return activeBackups;
 }
 

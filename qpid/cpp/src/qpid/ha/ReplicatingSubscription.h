@@ -73,8 +73,8 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
 
     // Argument names for consume command.
     static const std::string QPID_REPLICATING_SUBSCRIPTION;
-    static const std::string QPID_HIGH_SEQUENCE_NUMBER;
-    static const std::string QPID_LOW_SEQUENCE_NUMBER;
+    static const std::string QPID_BACK;
+    static const std::string QPID_FRONT;
     static const std::string QPID_BROKER_INFO;
 
     // TODO aconway 2012-05-23: these don't belong on ReplicatingSubscription
@@ -111,7 +111,7 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
     /** Initialization that must be done after construction because it
      * requires a shared_ptr to this to exist. Will attach to guard
      */
-    void initialize(const boost::shared_ptr<QueueGuard>& guard);
+    void initialize();
 
     BrokerInfo getBrokerInfo() const { return info; }
 

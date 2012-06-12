@@ -23,13 +23,11 @@
  */
 
 #include "types.h"
-#include "qpid/broker/QueueObserver.h"
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/types/Uuid.h"
 #include "qpid/sys/Mutex.h"
 #include <boost/shared_ptr.hpp>
-#include <boost/enable_shared_from_this.hpp>
 #include <deque>
 #include <set>
 
@@ -58,16 +56,10 @@ class ReplicatingSubscription;
  * arbitrary connection threads, and from ReplicatingSubscription
  * in the subscriptions thread.
  */
-class QueueGuard : public broker::QueueObserver,
-                   public boost::enable_shared_from_this<QueueGuard>
-{
+class QueueGuard {
   public:
     QueueGuard(broker::Queue& q, const BrokerInfo&);
-
-    /** Must be called after ctor, requires a shared_ptr to this to exist.
-     * Must be called before ReplicatingSubscription::initialize(this)
-     */
-    void initialize();
+    ~QueueGuard();
 
     /** QueueObserver override. Delay completion of the message. */
     void enqueued(const broker::QueuedMessage&);
@@ -83,16 +75,19 @@ class QueueGuard : public broker::QueueObserver,
 
     void attach(ReplicatingSubscription&);
 
-    // Unused QueueObserver functions.
-    void acquired(const broker::QueuedMessage&) {}
-    void requeued(const broker::QueuedMessage&) {}
+    /** The first sequence number that has been processed */
+    framing::SequenceNumber getReadyPosition();
 
   private:
+    class QueueObserver;
+
     sys::Mutex lock;
     std::string logPrefix;
     broker::Queue& queue;
     framing::SequenceSet delayed;
     ReplicatingSubscription* subscription;
+    boost::shared_ptr<QueueObserver> observer;
+    framing::SequenceNumber readyPosition;
 
     void complete(const broker::QueuedMessage&, sys::Mutex::ScopedLock&);
 };

@@ -29,6 +29,7 @@
 #include "qpid/types/Variant.h"
 #include <string>
 #include <iosfwd>
+#include <vector>
 
 namespace qpid {
 namespace ha {
@@ -39,6 +40,9 @@ namespace ha {
 class BrokerInfo
 {
   public:
+    typedef std::set<BrokerInfo> Set;
+    typedef std::map<types::Uuid, BrokerInfo> Map;
+
     BrokerInfo() {}
     BrokerInfo(const std::string& host, uint16_t port_, const types::Uuid& id);
     BrokerInfo(const framing::FieldTable& ft) { assign(ft); }
@@ -58,7 +62,11 @@ class BrokerInfo
     void assign(const framing::FieldTable&);
     void assign(const types::Variant::Map&);
 
+    // So it can be put in a set.
+    bool operator<(const BrokerInfo x) const { return systemId < x.systemId; }
+
   private:
+    void updateLogId();
     std::string logId;
     std::string hostName;
     uint16_t port;
@@ -67,6 +75,9 @@ class BrokerInfo
 };
 
 std::ostream& operator<<(std::ostream&, const BrokerInfo&);
+std::ostream& operator<<(std::ostream&, const BrokerInfo::Set&);
+std::ostream& operator<<(std::ostream&, const BrokerInfo::Map::value_type&);
+std::ostream& operator<<(std::ostream&, const BrokerInfo::Map&);
 
 }} // namespace qpid::ha
 

@@ -30,6 +30,7 @@
 #include <boost/function.hpp>
 #include <set>
 #include <vector>
+#include <iosfwd>
 namespace qpid {
 namespace ha {
 
@@ -40,9 +41,7 @@ namespace ha {
 class Membership
 {
   public:
-    typedef boost::function<void (const types::Variant::List&,
-                                  const IdSet&) > UpdateCallback;
-
+    typedef boost::function<void (const types::Variant::List&) > UpdateCallback;
     Membership(const types::Uuid& self_, UpdateCallback updateFn)
         : self(self_), updateCallback(updateFn) {}
 
@@ -51,22 +50,24 @@ class Membership
     void remove(const types::Uuid& id);
     bool contains(const types::Uuid& id);
     /** Return IDs of all backups other than self */
-    IdSet otherBackups() const;
+    BrokerInfo::Set otherBackups() const;
 
     void assign(const types::Variant::List&);
     types::Variant::List asList() const;
 
   private:
     typedef std::map<types::Uuid, BrokerInfo> BrokerMap;
-    IdSet otherBackups(sys::Mutex::ScopedLock&) const;
+    BrokerInfo::Set otherBackups(sys::Mutex::ScopedLock&) const;
     types::Variant::List asList(sys::Mutex::ScopedLock&) const;
     void update(sys::Mutex::ScopedLock&);
+    std::ostream& print(std::ostream& o, sys::Mutex::ScopedLock&) const;
 
     mutable sys::Mutex lock;
     types::Uuid self;
     BrokerMap brokers;
     UpdateCallback updateCallback;
 };
+
 }} // namespace qpid::ha
 
 #endif  /*!QPID_HA_MEMBERSHIP_H*/

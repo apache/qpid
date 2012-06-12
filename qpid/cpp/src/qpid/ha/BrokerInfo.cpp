@@ -26,7 +26,8 @@
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FieldValue.h"
 #include <iostream>
-
+#include <iterator>
+#include <sstream>
 
 namespace qpid {
 namespace ha {
@@ -43,7 +44,16 @@ using types::Variant;
 using framing::FieldTable;
 
 BrokerInfo::BrokerInfo(const std::string& host, uint16_t port_, const types::Uuid& id) :
-    logId(id.str().substr(0,9)+"..."), hostName(host), port(port_), systemId(id) {}
+    hostName(host), port(port_), systemId(id)
+{
+    updateLogId();
+}
+
+void BrokerInfo::updateLogId() {
+    std::ostringstream o;
+    o << hostName << ":" << port;
+    logId = o.str();
+}
 
 FieldTable BrokerInfo::asFieldTable() const {
     Variant::Map m = asMap();
@@ -81,11 +91,29 @@ void BrokerInfo::assign(const Variant::Map& m) {
     hostName = get(m, HOST_NAME).asString();
     port = get(m, PORT).asUint16();
     status = BrokerStatus(get(m, STATUS).asUint8());
+    updateLogId();
 }
 
 std::ostream& operator<<(std::ostream& o, const BrokerInfo& b) {
-    return o << b.getHostName() << ":" << b.getPort() << "(" << b.getSystemId()
-             << "," << printable(b.getStatus()) << ")";
+    return o << b.getHostName() << ":" << b.getPort() << "("
+             << printable(b.getStatus()) << ")";
+    // FIXME aconway 2012-06-06:  include << b.getSystemId()?
+}
+
+std::ostream& operator<<(std::ostream& o, const BrokerInfo::Set& infos) {
+    std::ostream_iterator<BrokerInfo> out(o, " ");
+    copy(infos.begin(), infos.end(), out);
+    return o;
+}
+
+std::ostream& operator<<(std::ostream& o, const BrokerInfo::Map::value_type& v) {
+    return o << v.second;
+}
+
+std::ostream& operator<<(std::ostream& o, const BrokerInfo::Map& infos) {
+    std::ostream_iterator<BrokerInfo::Map::value_type> out(o, " ");
+    copy(infos.begin(), infos.end(), out);
+    return o;
 }
 
 }}

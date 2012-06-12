@@ -47,13 +47,18 @@ class ReplicationTest
     ReplicationTest(ReplicateLevel replicateDefault_) :
         replicateDefault(replicateDefault_) {}
 
+    // Return the simple replication level, accounting for defaults.
     ReplicateLevel replicateLevel(const std::string& str);
     ReplicateLevel replicateLevel(const framing::FieldTable& f);
     ReplicateLevel replicateLevel(const types::Variant::Map& m);
 
-    bool isReplicated(const types::Variant::Map& args, bool autodelete, bool exclusive);
-    bool isReplicated(const framing::FieldTable& args, bool autodelete, bool exclusive);
-    bool isReplicated(const broker::Queue&);
+    // Return true if replication for a queue is enabled at level or
+    // higher, taking account of all settings.
+    bool isReplicated(ReplicateLevel level,
+                      const types::Variant::Map& args, bool autodelete, bool exclusive);
+    bool isReplicated(ReplicateLevel level,
+                      const framing::FieldTable& args, bool autodelete, bool exclusive);
+    bool isReplicated(ReplicateLevel level, const broker::Queue&);
   private:
     ReplicateLevel replicateDefault;
 };

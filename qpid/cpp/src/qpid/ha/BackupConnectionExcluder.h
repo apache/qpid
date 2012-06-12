@@ -27,6 +27,7 @@
 
 namespace qpid {
 namespace ha {
+// FIXME aconway 2012-06-06: move to Backup.cpp
 
 /**
  * Exclude connections to a backup broker.
