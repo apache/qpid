@@ -159,6 +159,7 @@ void QueueReplicator::route(Deliverable& msg)
         sys::Mutex::ScopedLock l(lock);
         if (!isEventKey(key)) {
             msg.deliverTo(queue);
+            // FIXME aconway 2012-06-10: race, position may have moved
             QPID_LOG(trace, logPrefix << "Enqueued message " << queue->getPosition());
         }
         else if (key == DEQUEUE_EVENT_KEY) {
