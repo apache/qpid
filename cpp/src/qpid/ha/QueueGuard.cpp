@@ -49,21 +49,16 @@ class QueueGuard::QueueObserver : public broker::QueueObserver
 
 
 QueueGuard::QueueGuard(broker::Queue& q, const BrokerInfo& info)
-    : queue(q), subscription(0), isFirstSet(false)
+    : queue(q), subscription(0)
 {
     std::ostringstream os;
     os << "HA primary guard " << queue.getName() << "@" << info.getLogId() << ": ";
     logPrefix = os.str();
     observer.reset(new QueueObserver(*this));
-    queue.addObserver(observer);         // We can now receive concurrent calls to dequeued
-    sys::Mutex::ScopedLock l(lock);
-    // Race between this thread and enqueued thread to set first safe position.
-    if (!isFirstSet) {
-        // Must set after addObserver so we don't miss any dequeues.
-        firstSafe = queue.getPosition()+1; // Next message will be safe.
-        isFirstSet = true;
-        QPID_LOG(debug, logPrefix << "First position (initial): " << firstSafe);
-    }
+    // Once we call addObserver we can get calls to enqueued and  dequeued
+    queue.addObserver(observer);
+    // Must set after addObserver so we don't miss any enqueues.
+    firstSafe = queue.getPosition()+1; // Next message will be safe.
 }
 
 QueueGuard::~QueueGuard() { cancel(); }
@@ -78,12 +73,6 @@ void QueueGuard::enqueued(const QueuedMessage& qm) {
         Mutex::ScopedLock l(lock);
         assert(!delayed.contains(qm.position));
         delayed += qm.position;
-        if (!isFirstSet) {
-            firstSafe = qm.position;
-            isFirstSet = true;
-            QPID_LOG(debug, logPrefix << "First position (enqueued): " << firstSafe);
-        }
-        assert(qm.position >= firstSafe);
     }
 }
 
@@ -132,7 +121,7 @@ void QueueGuard::complete(const QueuedMessage& qm) {
 }
 
 framing::SequenceNumber QueueGuard::getFirstSafe() {
-    // No lock, first is immutable.
+    // No lock, firstSafe is immutable.
     return firstSafe;
 }
 

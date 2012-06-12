@@ -97,7 +97,6 @@ void BrokerInfo::assign(const Variant::Map& m) {
 std::ostream& operator<<(std::ostream& o, const BrokerInfo& b) {
     return o << b.getHostName() << ":" << b.getPort() << "("
              << printable(b.getStatus()) << ")";
-    // FIXME aconway 2012-06-06:  include << b.getSystemId()?
 }
 
 std::ostream& operator<<(std::ostream& o, const BrokerInfo::Set& infos) {

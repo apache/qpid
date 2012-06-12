@@ -74,8 +74,9 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
     else {
         QPID_LOG(debug, logPrefix << "Expected backups: " << expect);
         for (BrokerInfo::Set::iterator i = expect.begin(); i != expect.end(); ++i) {
+            bool guard = true;  // Create queue guards immediately for expected backups.
             boost::shared_ptr<RemoteBackup> backup(
-                new RemoteBackup(*i, haBroker.getBroker(), haBroker.getReplicationTest()));
+                new RemoteBackup(*i, haBroker.getBroker(), haBroker.getReplicationTest(), guard));
             backups[i->getSystemId()] = backup;
             if (!backup->isReady()) initialBackups.insert(backup);
         }
@@ -107,6 +108,9 @@ void Primary::checkReady(Mutex::ScopedLock&) {
 
 void Primary::checkReady(BackupMap::iterator i, Mutex::ScopedLock& l)  {
     if (i != backups.end() && i->second->isReady()) {
+        BrokerInfo info = i->second->getBrokerInfo();
+        info.setStatus(READY);
+        haBroker.getMembership().add(info);
         initialBackups.erase(i->second);
         checkReady(l);
     }
@@ -140,16 +144,17 @@ void Primary::opened(broker::Connection& connection) {
     Mutex::ScopedLock l(lock);
     BrokerInfo info;
     if (ha::ConnectionObserver::getBrokerInfo(connection, info)) {
-        haBroker.getMembership().add(info);
         BackupMap::iterator i = backups.find(info.getSystemId());
         if (i == backups.end()) {
             QPID_LOG(debug, logPrefix << "New backup connected: " << info);
+            bool guard = false; // Lazy-create queue guards, pre-creating them here could cause deadlock.
             backups[info.getSystemId()].reset(
-                new RemoteBackup(info, haBroker.getBroker(), haBroker.getReplicationTest()));
+                new RemoteBackup(info, haBroker.getBroker(), haBroker.getReplicationTest(), guard));
         }
         else {
             QPID_LOG(debug, logPrefix << "Known backup connected: " << info);
         }
+        haBroker.getMembership().add(info);
     }
 }
 

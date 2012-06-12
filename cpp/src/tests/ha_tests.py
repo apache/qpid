@@ -65,6 +65,8 @@ class HaBroker(Broker):
         self.qpid_ha_script=import_script(self.qpid_ha_path)
         self._agent = None
 
+    def __str__(self): return Broker.__str__(self)
+
     def qpid_ha(self, args): self.qpid_ha_script.main(["", "-b", self.host_port()]+args)
 
     def promote(self): self.qpid_ha(["promote"])
@@ -78,7 +80,7 @@ class HaBroker(Broker):
     def ha_status(self): return self.agent().getHaBroker().status
 
     def wait_status(self, status):
-        assert retry(lambda: self.ha_status() == status), "%r != %r"%(self.ha_status(), status)
+        assert retry(lambda: self.ha_status() == status), "%s, %r != %r"%(self, self.ha_status(), status)
 
     # FIXME aconway 2012-05-01: do direct python call to qpid-config code.
     def qpid_config(self, args):
@@ -738,10 +740,12 @@ class LongTests(BrokerTest):
                 for r in receivers: r.receiver.assert_running()
                 n = receivers[0].received
                 # FIXME aconway 2012-05-01: don't kill primary till it's active
-                # otherwise we can lose messages. When we implement non-promotion
-                # of catchup brokers we can make this stronger: wait only for
-                # there to be at least one ready backup.
+                # and backups are ready, otherwise we can lose messages. When we
+                # implement non-promotion of catchup brokers we can make this
+                # stronger: wait only for there to be at least one ready backup.
                 brokers[i%3].wait_status("active")
+                brokers[(i+1)%3].wait_status("ready")
+                brokers[(i+2)%3].wait_status("ready")
                 brokers.bounce(i%3)
                 i += 1
                 def enough():        # Verify we're still running

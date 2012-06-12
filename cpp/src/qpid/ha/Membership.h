@@ -55,16 +55,16 @@ class Membership
     void assign(const types::Variant::List&);
     types::Variant::List asList() const;
 
+    bool get(const types::Uuid& id, BrokerInfo& result);
+
   private:
-    typedef std::map<types::Uuid, BrokerInfo> BrokerMap;
     BrokerInfo::Set otherBackups(sys::Mutex::ScopedLock&) const;
     types::Variant::List asList(sys::Mutex::ScopedLock&) const;
     void update(sys::Mutex::ScopedLock&);
-    std::ostream& print(std::ostream& o, sys::Mutex::ScopedLock&) const;
 
     mutable sys::Mutex lock;
     types::Uuid self;
-    BrokerMap brokers;
+    BrokerInfo::Map brokers;
     UpdateCallback updateCallback;
 };
 
