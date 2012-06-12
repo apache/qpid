@@ -69,10 +69,10 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
     assert(instance == 0);
     instance = this;            // Let queue replicators find us.
     if (expect.empty()) {
-        QPID_LOG(debug, logPrefix << "No initial backups");
+        QPID_LOG(debug, logPrefix << "Expected backups: none");
     }
     else {
-        QPID_LOG(debug, logPrefix << "Waiting for initial backups: " << expect);
+        QPID_LOG(debug, logPrefix << "Expected backups: " << expect);
         for (BrokerInfo::Set::iterator i = expect.begin(); i != expect.end(); ++i) {
             boost::shared_ptr<RemoteBackup> backup(
                 new RemoteBackup(*i, haBroker.getBroker(), haBroker.getReplicationTest()));
