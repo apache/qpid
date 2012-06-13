@@ -121,13 +121,10 @@
     <target name="deploy-config" depends="generate" description="Deploys the standalone file to the JBoss environment.">
         <copy todir="${jboss.config.dir}" overwrite="true">
             <fileset dir="${gen.dir}">
-                <include name="${jboss.server.config}.xml"/>
+                <include name="qpid-${jboss.server.config}.xml"/>
             </fileset>
         </copy>
     </target>
 
-    <target name="undeploy-ds" description="Undeploys the ds.xml file from the JBoss environment.">
-        <delete file="${jboss.deploy}/qpid-jca-ds.xml"/>
-    </target>
 
 </project>

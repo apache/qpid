@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='UTF-8'?>
 <!--
  -
  - Licensed to the Apache Software Foundation (ASF) under one
@@ -18,7 +19,6 @@
  - under the License.
  -
 -->
-<?xml version='1.0' encoding='UTF-8'?>
 
 <server xmlns="urn:jboss:domain:1.1" xmlns:xsd="http://www.w3.org/2001/XMLSchema-instance">
 
