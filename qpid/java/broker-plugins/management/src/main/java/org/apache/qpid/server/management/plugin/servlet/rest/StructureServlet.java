@@ -77,11 +77,17 @@ public class StructureServlet extends AbstractServlet
 
                 if(!childObjects.isEmpty())
                 {
-                    structure.put(childClass.getSimpleName().toLowerCase()+"s",childObjects);
+                    structure.put(pluralize(childClass),childObjects);
                 }
             }
         }
 
         return structure;
+    }
+
+    private String pluralize(Class<? extends ConfiguredObject> childClass)
+    {
+        String name = childClass.getSimpleName().toLowerCase();
+        return name + (name.endsWith("s") ? "es" : "s");
     }
 }
