@@ -142,6 +142,7 @@ bool SemanticState::cancel(const string& tag)
         DeliveryRecords::iterator removed =
             remove_if(unacked.begin(), unacked.end(), bind(&DeliveryRecord::isRedundant, _1));
         unacked.erase(removed, unacked.end());
+        getSession().setUnackedCount(unacked.size());
         return true;
     } else {
         return false;
@@ -270,6 +271,7 @@ void SemanticState::checkDtxTimeout()
 void SemanticState::record(const DeliveryRecord& delivery)
 {
     unacked.push_back(delivery);
+    getSession().setUnackedCount(unacked.size());
 }
 
 const std::string QPID_SYNC_FREQUENCY("qpid.sync_frequency");
@@ -555,6 +557,7 @@ void SemanticState::recover(bool requeue)
         //w.r.t id is lost
         sort(unacked.begin(), unacked.end());
     }
+    getSession().setUnackedCount(unacked.size());
 }
 
 void SemanticState::deliver(DeliveryRecord& msg, bool sync)
@@ -712,6 +715,7 @@ void SemanticState::release(DeliveryId first, DeliveryId last, bool setRedeliver
     DeliveryRecords::iterator removed =
         remove_if(range.start, range.end, bind(&DeliveryRecord::isRedundant, _1));
     unacked.erase(removed, range.end);
+    getSession().setUnackedCount(unacked.size());
 }
 
 void SemanticState::reject(DeliveryId first, DeliveryId last)
@@ -723,6 +727,7 @@ void SemanticState::reject(DeliveryId first, DeliveryId last)
         if (i->isRedundant()) i = unacked.erase(i);
         else i++;
     }
+    getSession().setUnackedCount(unacked.size());
 }
 
 bool SemanticState::ConsumerImpl::doOutput()
@@ -810,6 +815,7 @@ void SemanticState::accepted(const SequenceSet& commands) {
                                               (TransactionContext*) 0)));
         unacked.erase(removed, unacked.end());
     }
+    getSession().setUnackedCount(unacked.size());
 }
 
 void SemanticState::completed(const SequenceSet& commands) {
@@ -819,6 +825,7 @@ void SemanticState::completed(const SequenceSet& commands) {
                                      bind(&SemanticState::complete, this, _1)));
     unacked.erase(removed, unacked.end());
     requestDispatch();
+    getSession().setUnackedCount(unacked.size());
 }
 
 void SemanticState::attached()
