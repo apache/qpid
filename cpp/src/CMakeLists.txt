@@ -629,7 +629,6 @@ if (BUILD_HA)
 	qpid/ha/BackupConnectionExcluder.h
 	qpid/ha/BrokerInfo.cpp
 	qpid/ha/BrokerInfo.h
-	qpid/ha/HeldQueue.h
 	qpid/ha/QueueGuard.cpp
 	qpid/ha/QueueGuard.h
 	qpid/ha/ReplicationTest.cpp
@@ -654,8 +653,8 @@ if (BUILD_HA)
         qpid/ha/ReplicatingSubscription.cpp
         qpid/ha/ReplicatingSubscription.h
         qpid/ha/Settings.h
-        qpid/ha/Types.cpp
-        qpid/ha/Types.h
+        qpid/ha/types.cpp
+        qpid/ha/types.h
         qpid/ha/RemoteBackup.cpp
         qpid/ha/RemoteBackup.h
     )
