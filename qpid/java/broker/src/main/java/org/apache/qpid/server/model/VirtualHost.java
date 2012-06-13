@@ -43,12 +43,16 @@ public interface VirtualHost extends ConfiguredObject
     public static final String XA_TRANSACTION_BRANCH_ENDS = "xaTransactionBranchEnds";
     public static final String XA_TRANSACTION_BRANCH_STARTS = "xaTransactionBranchStarts";
     public static final String XA_TRANSACTION_BRANCH_SUSPENDS = "xaTransactionBranchSuspends";
+    public static final String QUEUE_COUNT = "queueCount";
+    public static final String EXCHANGE_COUNT = "exchangeCount";
+    public static final String CONNECTION_COUNT = "connectionCount";
 
     public static final Collection<String> AVAILABLE_STATISTICS =
             Collections.unmodifiableList(
                     Arrays.asList(BYTES_IN, BYTES_OUT, BYTES_RETAINED, LOCAL_TRANSACTION_BEGINS,
                             LOCAL_TRANSACTION_ROLLBACKS, MESSAGES_IN, MESSAGES_OUT, MESSAGES_RETAINED, STATE_CHANGED,
-                            XA_TRANSACTION_BRANCH_ENDS, XA_TRANSACTION_BRANCH_STARTS, XA_TRANSACTION_BRANCH_SUSPENDS));
+                            XA_TRANSACTION_BRANCH_ENDS, XA_TRANSACTION_BRANCH_STARTS, XA_TRANSACTION_BRANCH_SUSPENDS,
+                            QUEUE_COUNT, EXCHANGE_COUNT, CONNECTION_COUNT));
 
     String ALERT_REPEAT_GAP = "alertRepeatGap";
     String ALERT_THRESHOLD_MESSAGE_AGE = "alertThresholdMessageAge";

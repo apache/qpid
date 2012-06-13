@@ -23,9 +23,11 @@ package org.apache.qpid.server.model.adapter;
 import java.security.AccessControlException;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -85,7 +87,7 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
         super(virtualHost.getName());
         _broker = brokerAdapter;
         _virtualHost = virtualHost;
-        _statistics = new StatisticsAdapter(virtualHost);
+        _statistics = new VirtualHostStatisticsAdapter(virtualHost);
         virtualHost.getQueueRegistry().addRegistryChangeListener(this);
         populateQueues();
         virtualHost.getExchangeRegistry().addRegistryChangeListener(this);
@@ -793,5 +795,50 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
     public Collection<String> getAttributeNames()
     {
         return AVAILABLE_ATTRIBUTES;
+    }
+
+    private static class VirtualHostStatisticsAdapter extends StatisticsAdapter
+    {
+        private final org.apache.qpid.server.virtualhost.VirtualHost _vhost;
+
+        private static final Collection<String> VHOST_STATS = Arrays.asList(
+                VirtualHost.QUEUE_COUNT,
+                VirtualHost.EXCHANGE_COUNT,
+                VirtualHost.CONNECTION_COUNT);
+
+        public VirtualHostStatisticsAdapter(org.apache.qpid.server.virtualhost.VirtualHost virtualHost)
+        {
+            super(virtualHost);
+            _vhost = virtualHost;
+        }
+
+        @Override
+        public Collection<String> getStatisticNames()
+        {
+            Set<String> stats = new HashSet<String>(super.getStatisticNames());
+            stats.addAll(VHOST_STATS);
+            return stats;
+        }
+
+        @Override
+        public Object getStatistic(String name)
+        {
+            if(VirtualHost.QUEUE_COUNT.equals(name))
+            {
+                return _vhost.getQueueRegistry().getQueues().size();
+            }
+            else if(VirtualHost.EXCHANGE_COUNT.equals(name))
+            {
+                return _vhost.getExchangeRegistry().getExchanges().size();
+            }
+            else if(VirtualHost.CONNECTION_COUNT.equals(name))
+            {
+                return _vhost.getConnectionRegistry().getConnections().size();
+            }
+            else
+            {
+                return super.getStatistic(name);
+            }
+        }
     }
 }

@@ -91,7 +91,10 @@ define(["dojo/_base/xhr",
                              that.updateHeader();
                              that.vhostsGrid =
                                 new UpdatableStore(that.brokerData.vhosts, query(".broker-virtualhosts")[0],
-                                                [ { name: "Virtual Host",    field: "name",      width: "100%"}
+                                                [ { name: "Virtual Host",    field: "name",      width: "120px"},
+                                                    { name: "Connections",    field: "connectionCount",      width: "80px"},
+                                                    { name: "Queues",    field: "queueCount",      width: "80px"},
+                                                    { name: "Exchanges",    field: "exchangeCount",      width: "100%"}
                                                 ], function(obj) {
                                                         connect.connect(obj.grid, "onRowDblClick", obj.grid,
                                                         function(evt){
