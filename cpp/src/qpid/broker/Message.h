@@ -161,6 +161,7 @@ public:
 
     bool isExcluded(const std::vector<std::string>& excludes) const;
     void addTraceId(const std::string& id);
+    void clearTrace();
 
     void forcePersistent();
     bool isForcedPersistent();
