@@ -384,6 +384,18 @@ void Message::addTraceId(const std::string& id)
     }
 }
 
+void Message::clearTrace()
+{
+    sys::Mutex::ScopedLock l(lock);
+    if (isA<MessageTransferBody>()) {
+        FieldTable& headers = getModifiableProperties<MessageProperties>()->getApplicationHeaders();
+        std::string trace = headers.getAsString(X_QPID_TRACE);
+        if (!trace.empty()) {
+            headers.setString(X_QPID_TRACE, "");
+        }
+    }
+}
+
 void Message::setTimestamp()
 {
     sys::Mutex::ScopedLock l(lock);
