@@ -443,7 +443,7 @@
     <property name="expireTime"       type="absTime" access="RO" optional="y"/>
     <property name="maxClientRate"    type="uint32"  access="RO" unit="msgs/sec" optional="y"/>
 
-    <statistic name="framesOutstanding" type="count32"/>
+    <statistic name="unackedMessages" type="uint64" unit="message" desc="Unacknowledged messages in the session"/>
 
     <statistic name="TxnStarts"    type="count64"  unit="transaction" desc="Total transactions started "/>
     <statistic name="TxnCommits"   type="count64"  unit="transaction" desc="Total transactions committed"/>

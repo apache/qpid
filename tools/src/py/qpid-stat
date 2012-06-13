@@ -427,7 +427,8 @@ class BrokerManager:
         heads.append(Header("acked", Header.Y))
         heads.append(Header("excl", Header.Y))
         heads.append(Header("creditMode"))
-        heads.append(Header("delivered", Header.KMG))
+        heads.append(Header("delivered", Header.COMMAS))
+        heads.append(Header("sessUnacked", Header.COMMAS))
         rows = []
         subscriptions = self.broker.getAllSubscriptions()
         sessions = self.getSessionMap()
@@ -447,6 +448,7 @@ class BrokerManager:
                 row.append(s.exclusive)
                 row.append(s.creditMode)
                 row.append(s.delivered)
+                row.append(session.unackedMessages)
                 rows.append(row)
             except:
                 pass
