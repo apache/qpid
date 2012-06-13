@@ -110,7 +110,8 @@ define(["dojo/_base/xhr",
                                     var newExchange = convertToExchange(theForm.getValues());
                                     var that = this;
 
-                                    xhr.put({url: "/rest/exchange/"+addExchange.vhost+"/"+newExchange.name, sync: true, handleAs: "json",
+                                    xhr.put({url: "/rest/exchange/"+encodeURIComponent(addExchange.vhost) +
+                                                  "/"+encodeURIComponent(newExchange.name), sync: true, handleAs: "json",
                                              headers: { "Content-Type": "application/json"},
                                              putData: json.toJson(newExchange),
                                              load: function(x) {that.success = true; },

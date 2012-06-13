@@ -121,7 +121,8 @@ define(["dojo/_base/xhr",
                                     var newQueue = convertToQueue(theForm.getValues());
                                     var that = this;
 
-                                    xhr.put({url: "/rest/queue/"+addQueue.vhost+"/"+newQueue.name, sync: true, handleAs: "json",
+                                    xhr.put({url: "/rest/queue/"+encodeURIComponent(addQueue.vhost)
+                                                  +"/"+encodeURIComponent(newQueue.name), sync: true, handleAs: "json",
                                              headers: { "Content-Type": "application/json"},
                                              putData: json.toJson(newQueue),
                                              load: function(x) {that.success = true; },
