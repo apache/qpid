@@ -220,7 +220,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         return new WriteDeliverMethod(channelId);
     }
 
-    public synchronized void received(final ByteBuffer msg)
+    public void received(final ByteBuffer msg)
     {
         final long arrivalTime = System.currentTimeMillis();
         _lastReceivedTime = arrivalTime;
