@@ -661,7 +661,7 @@ if (BUILD_HA)
 
     add_library (ha MODULE ${ha_SOURCES})
     set_target_properties (ha PROPERTIES PREFIX "")
-    target_link_libraries (ha qpidcommon qpidbroker pthread ${Boost_PROGRAM_OPTIONS_LIBRARY})
+    target_link_libraries (ha qpidtypes qpidcommon qpidbroker)
     if (CMAKE_COMPILER_IS_GNUCXX)
       set_target_properties (ha PROPERTIES
                              PREFIX ""
@@ -806,6 +806,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread")
     if (CMAKE_COMPILER_IS_GNUCXX)
       set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${GCC_CATCH_UNDEFINED} -pthread")
+      set (CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -pthread")
     endif (CMAKE_COMPILER_IS_GNUCXX)
     # On Linux override memory status module
     set (qpid_memstat_module
