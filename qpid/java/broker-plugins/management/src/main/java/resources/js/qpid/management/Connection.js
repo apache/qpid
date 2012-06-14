@@ -95,7 +95,7 @@ define(["dojo/_base/xhr",
 
 
 
-               this.query = "/rest/connection/"+ encodeURIComponent(connectionObj.parent.virtualhost.name) + "/" + encodeURIComponent(connectionObj.name);
+               this.query = "rest/connection/"+ encodeURIComponent(connectionObj.parent.virtualhost.name) + "/" + encodeURIComponent(connectionObj.name);
 
                xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"}).then(function(data)
                                {

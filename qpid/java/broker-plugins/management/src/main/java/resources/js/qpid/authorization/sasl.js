@@ -58,7 +58,7 @@ var saslPlain = function saslPlain(user, password)
     // Using dojo.xhrGet, as very little information is being sent
     dojo.xhrPost({
         // The URL of the request
-        url: "/rest/sasl",
+        url: "rest/sasl",
         content: {
             mechanism: "PLAIN",
             response: plainResponse
@@ -89,7 +89,7 @@ var saslCramMD5 = function saslCramMD5(user, password)
     // Using dojo.xhrGet, as very little information is being sent
     dojo.xhrPost({
         // The URL of the request
-        url: "/rest/sasl",
+        url: "rest/sasl",
         content: {
             mechanism: "CRAM-MD5"
         },
@@ -114,7 +114,7 @@ var saslCramMD5 = function saslCramMD5(user, password)
 
                 dojo.xhrPost({
                         // The URL of the request
-                        url: "/rest/sasl",
+                        url: "rest/sasl",
                         content: {
                             id: id,
                             response: response
@@ -163,7 +163,7 @@ var updateAuthentication = function updateAuthentication()
 {
     dojo.xhrGet({
         // The URL of the request
-        url: "/rest/sasl",
+        url: "rest/sasl",
         handleAs: "json"
     }).then(function(data)
             {

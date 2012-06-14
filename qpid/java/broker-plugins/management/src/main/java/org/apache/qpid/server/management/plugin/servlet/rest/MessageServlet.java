@@ -20,10 +20,17 @@ package org.apache.qpid.server.management.plugin.servlet.rest;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.SocketAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
@@ -38,6 +45,11 @@ import org.codehaus.jackson.map.SerializationConfig;
 
 public class MessageServlet extends AbstractServlet
 {
+    public MessageServlet()
+    {
+        super();
+    }
+
     public MessageServlet(Broker broker, SocketAddress socketaddress)
     {
         super(broker, socketaddress);

@@ -20,8 +20,12 @@
  */
 package org.apache.qpid.server.management.plugin.servlet;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -59,7 +63,6 @@ public class FileServlet extends HttpServlet
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
         String filename = request.getServletPath();
-
         if(filename.contains("."))
         {
             String suffix = filename.substring(filename.lastIndexOf('.')+1);
@@ -69,19 +72,31 @@ public class FileServlet extends HttpServlet
                 response.setContentType(contentType);
             }
         }
-
-        final ServletOutputStream output = response.getOutputStream();
-        InputStream fileInput = getClass().getResourceAsStream("/resources" + filename);
-
-        if(fileInput != null)
+        URL resourceURL = getClass().getResource("/resources" + filename);
+        if(resourceURL != null)
         {
-            byte[] buffer = new byte[1024];
             response.setStatus(HttpServletResponse.SC_OK);
-            int read = 0;
-
-            while((read = fileInput.read(buffer)) > 0)
+            InputStream fileInput = resourceURL.openStream();
+            try
             {
-                output.write(buffer, 0, read);
+                byte[] buffer = new byte[1024];
+                int read = 0;
+                ServletOutputStream output = response.getOutputStream();
+                try
+                {
+                    while((read = fileInput.read(buffer)) != -1)
+                    {
+                        output.write(buffer, 0, read);
+                    }
+                }
+                finally
+                {
+                    output.close();
+                }
+            }
+            finally
+            {
+                fileInput.close();
             }
         }
         else

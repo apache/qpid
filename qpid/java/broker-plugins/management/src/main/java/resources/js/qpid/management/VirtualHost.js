@@ -112,8 +112,7 @@ define(["dojo/_base/xhr",
                            "bytesOutRate",
                            "bytesOutRateUnits"]);
 
-               this.query = "/rest/virtualhost/"+ encodeURIComponent(vhost.name);
-
+               this.query = "rest/virtualhost/"+ encodeURIComponent(vhost.name);
 
                var that = this;
 

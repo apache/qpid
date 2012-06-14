@@ -19,10 +19,16 @@ package org.apache.qpid.server.management.plugin.servlet.rest;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.SocketAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
@@ -31,6 +37,11 @@ import org.codehaus.jackson.map.SerializationConfig;
 
 public class StructureServlet extends AbstractServlet
 {
+    public StructureServlet()
+    {
+        super();
+    }
+
     public StructureServlet(Broker broker, SocketAddress socketaddress)
     {
         super(broker, socketaddress);

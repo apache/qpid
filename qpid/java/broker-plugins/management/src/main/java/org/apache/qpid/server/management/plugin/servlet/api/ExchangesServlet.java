@@ -28,6 +28,7 @@ import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -48,6 +49,12 @@ public class ExchangesServlet extends HttpServlet
 
 
     private Broker _broker;
+
+    public ExchangesServlet()
+    {
+        super();
+        _broker = ApplicationRegistry.getInstance().getBroker();
+    }
 
     public ExchangesServlet(Broker broker)
     {

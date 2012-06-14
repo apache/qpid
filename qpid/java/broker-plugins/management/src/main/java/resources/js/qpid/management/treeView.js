@@ -292,7 +292,7 @@ define(["dojo/_base/xhr",
            };
 
            query('div[qpid-type="treeView"]').forEach(function(node, index, arr) {
-               var treeModel = new TreeViewModel("/rest/structure");
+               var treeModel = new TreeViewModel("rest/structure");
                treeModel.update();
                var tree = new Tree({ model: treeModel }, node);
                tree.on("dblclick",

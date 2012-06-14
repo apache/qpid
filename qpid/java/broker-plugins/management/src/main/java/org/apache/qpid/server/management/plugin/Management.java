@@ -49,8 +49,6 @@ public class Management
 
     public Management()
     {
-        _logger.info("Starting up web server on port 8080");
-
         _broker = ApplicationRegistry.getInstance().getBroker();
 
         Collection<Port> ports = _broker.getPorts();
@@ -71,6 +69,8 @@ public class Management
 
     private Server createServer(int port)
     {
+        _logger.info("Starting up web server on port " + port);
+
         Server server = new Server(port);
         SocketAddress socketAddress = new InetSocketAddress(port);
 
@@ -100,7 +100,6 @@ public class Management
         root.addServlet(new ServletHolder(new SaslServlet(_broker, socketAddress)), "/rest/sasl");
 
         root.addServlet(new ServletHolder(new DefinedFileServlet("management.html")),"/management");
-
 
 
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.js");

@@ -19,27 +19,41 @@
 <head>
     <meta charset="utf-8">
     <title>Qpid Management</title>
-    <link rel="stylesheet" href="/dojo/dojo/resources/dojo.css">
-    <link rel="stylesheet" href="/dojo/dijit/themes/claro/claro.css">
-    <link rel="stylesheet" href="/dojo/dojox/grid/resources/claroGrid.css">
-    <link rel="stylesheet" href="/dojo/dojox/grid/enhanced/resources/claro/EnhancedGrid.css">
-    <link rel="stylesheet" href="/dojo/dojox/grid/enhanced/resources/EnhancedGrid_rtl.css">
+    <link rel="stylesheet" href="dojo/dojo/resources/dojo.css">
+    <link rel="stylesheet" href="dojo/dijit/themes/claro/claro.css">
+    <link rel="stylesheet" href="dojo/dojox/grid/resources/claroGrid.css">
+    <link rel="stylesheet" href="dojo/dojox/grid/enhanced/resources/claro/EnhancedGrid.css">
+    <link rel="stylesheet" href="dojo/dojox/grid/enhanced/resources/EnhancedGrid_rtl.css">
     <link rel="stylesheet" href="css/common.css" media="screen">
     <script>
+        function getContextPath()
+        {
+            var contextPath = "/";
+            var documentURL = document.URL;
+            var managementPageStart = documentURL.lastIndexOf("/");
+            var firstSlashPos = documentURL.indexOf("/", documentURL.indexOf("//") + 2);
+            if (managementPageStart > firstSlashPos)
+            {
+                contextPath = documentURL.substring(firstSlashPos, managementPageStart);
+            }
+            return contextPath;
+        }
+
         var dojoConfig = {
             tlmSiblingOfDojo:false,
             parseOnLoad:true,
             async:true,
+            baseUrl: getContextPath(),
             packages:[
-                { name:"dojo", location:"/dojo/dojo" },
-                { name:"dijit", location:"/dojo/dijit" },
-                { name:"dojox", location:"/dojo/dojox" },
-                { name:"qpid", location:"/js/qpid" }
+                { name:"dojo", location:"dojo/dojo" },
+                { name:"dijit", location:"dojo/dijit" },
+                { name:"dojox", location:"dojo/dojox" },
+                { name:"qpid", location:"js/qpid" }
             ]
         };
 
     </script>
-    <script src="/dojo/dojo/dojo.js">
+    <script src="dojo/dojo/dojo.js">
     </script>
 
     <script>
@@ -64,7 +78,7 @@
         <div id="login"></div>
     </div>
     <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'leading', splitter: true">
-        <div qpid-type="treeView" qpid-props="query: '/rest/structure'" ></div>
+        <div qpid-type="treeView" qpid-props="query: 'rest/structure'" ></div>
     </div>
     <div id="managedViews" data-dojo-type="dijit.layout.TabContainer" data-dojo-props="region:'center', tabPosition: 'top'">
     </div>

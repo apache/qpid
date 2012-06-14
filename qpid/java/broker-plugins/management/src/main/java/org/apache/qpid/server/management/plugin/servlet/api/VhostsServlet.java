@@ -28,6 +28,7 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 
 import javax.servlet.ServletException;
@@ -43,6 +44,12 @@ public class VhostsServlet extends HttpServlet
 
 
     private Broker _broker;
+
+    public VhostsServlet()
+    {
+        super();
+        _broker = ApplicationRegistry.getInstance().getBroker();
+    }
 
     public VhostsServlet(Broker broker)
     {

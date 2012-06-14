@@ -22,6 +22,7 @@ package org.apache.qpid.server.management.plugin;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
@@ -38,6 +39,12 @@ public class ManagementActivator implements  BundleActivator
     public void start(final BundleContext ctx) throws Exception
     {
         _ctx = ctx;
+        if (!ApplicationRegistry.getInstance().getConfiguration().getHTTPManagementEnabled())
+        {
+            _logger.info("Management plugin is diabled!");
+            ctx.getBundle().uninstall();
+            return;
+        }
         _managementService = new Management();
         _managementService.start();
         _bundleName = ctx.getBundle().getSymbolicName();
@@ -50,12 +57,16 @@ public class ManagementActivator implements  BundleActivator
 
     public void stop(final BundleContext bundleContext) throws Exception
     {
-        _logger.info("Stopping management plugin: " + _bundleName);
+        if (_managementService != null)
+        {
+            _logger.info("Stopping management plugin: " + _bundleName);
 
-        _managementService.stop();
+            _managementService.stop();
 
-	    // null object references
-	    _managementService = null;
-		_ctx = null;
+            // null object references
+            _managementService = null;
+        }
+        _ctx = null;
     }
+
 }

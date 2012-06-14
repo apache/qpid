@@ -114,7 +114,7 @@ define(["dojo/_base/xhr",
                                     var newBinding = convertToBinding(theForm.getValues());
                                     var that = this;
 
-                                    xhr.put({url: "/rest/binding/"+encodeURIComponent(addBinding.vhost)
+                                    xhr.put({url: "rest/binding/"+encodeURIComponent(addBinding.vhost)
                                                       +"/"+encodeURIComponent(newBinding.exchange)
                                                       +"/"+encodeURIComponent(newBinding.queue)
                                                       +"/"+encodeURIComponent(newBinding.name),
@@ -154,7 +154,7 @@ define(["dojo/_base/xhr",
 
 
 
-            xhr.get({url: "/rest/queue/" + encodeURIComponent(obj.virtualhost) + "?depth=0",
+            xhr.get({url: "rest/queue/" + encodeURIComponent(obj.virtualhost) + "?depth=0",
                      handleAs: "json"}).then(
                 function(data) {
                     var queues =  [];
@@ -181,7 +181,7 @@ define(["dojo/_base/xhr",
                         that.queueChooser.set("disabled", true);
                     }
 
-                    xhr.get({url: "/rest/exchange/" + encodeURIComponent(obj.virtualhost) + "?depth=0",
+                    xhr.get({url: "rest/exchange/" + encodeURIComponent(obj.virtualhost) + "?depth=0",
                                          handleAs: "json"}).then(
                         function(data) {
 

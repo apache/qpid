@@ -77,7 +77,7 @@ define(["dojo/_base/xhr",
                this.durable = dom.byId("durable");
                this.lifetimePolicy = dom.byId("lifetimePolicy");
                */
-               this.query = "/rest/broker";
+               this.query = "rest/broker";
 
                var that = this;
 
@@ -123,7 +123,7 @@ define(["dojo/_base/xhr",
 
                          });
 
-               xhr.get({url: "/rest/logrecords", sync: properties.useSyncGet, handleAs: "json"})
+               xhr.get({url: "rest/logrecords", sync: properties.useSyncGet, handleAs: "json"})
                    .then(function(data)
                          {
                              that.logData = data;
@@ -190,7 +190,7 @@ define(["dojo/_base/xhr",
                                                                                    });
 
 
-               xhr.get({url: "/rest/logrecords", sync: properties.useSyncGet, handleAs: "json"})
+               xhr.get({url: "rest/logrecords", sync: properties.useSyncGet, handleAs: "json"})
                    .then(function(data)
                          {
                              that.logData = data;

@@ -82,7 +82,7 @@ define(["dojo/_base/xhr",
 
                             that.queueUpdater.update();
 
-                            var myStore = new JsonRest({target:"/rest/message/"+ encodeURIComponent(that.getVirtualHostName()) +
+                            var myStore = new JsonRest({target:"rest/message/"+ encodeURIComponent(that.getVirtualHostName()) +
                                                                                "/" + encodeURIComponent(that.getQueueName())});
                             var messageGridDiv = query(".messages",contentPane.containerNode)[0];
                             that.dataStore = new ObjectStore({objectStore: myStore});
@@ -176,7 +176,7 @@ define(["dojo/_base/xhr",
 
                            queryParam += "id=" + data[i].id;
                        }
-                       var query = "/rest/message/"+ encodeURIComponent(that.getVirtualHostName())
+                       var query = "rest/message/"+ encodeURIComponent(that.getVirtualHostName())
                            + "/" + encodeURIComponent(that.getQueueName()) + queryParam;
                        xhr.del({url: query, sync: true, handleAs: "json"}).then(
                            function(data) {
@@ -268,7 +268,7 @@ define(["dojo/_base/xhr",
 
 
 
-               this.query = "/rest/queue/"+ encodeURIComponent(queueObj.getVirtualHostName()) + "/" + encodeURIComponent(queueObj.getQueueName());
+               this.query = "rest/queue/"+ encodeURIComponent(queueObj.getVirtualHostName()) + "/" + encodeURIComponent(queueObj.getQueueName());
 
                xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"}).then(function(data)
                                {

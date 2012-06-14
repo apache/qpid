@@ -56,6 +56,11 @@ public class SaslServlet extends AbstractServlet
     private static final long SASL_EXCHANGE_EXPIRY = 1000L;
 
 
+    public SaslServlet()
+    {
+        super();
+    }
+
     public SaslServlet(Broker broker, SocketAddress socketaddress)
     {
         super(broker, socketaddress);
@@ -75,7 +80,7 @@ public class SaslServlet extends AbstractServlet
         HttpSession session = request.getSession();
         Random rand = getRandom(session);
 
-        AuthenticationManager authManager = ApplicationRegistry.getInstance().getAuthenticationManager(getSocketAddress());
+        AuthenticationManager authManager = ApplicationRegistry.getInstance().getAuthenticationManager(getSocketAddress(request));
         String[] mechanisms = authManager.getMechanisms().split(" ");
         Map<String, Object> outputObject = new LinkedHashMap<String, Object>();
         final Subject subject = (Subject) session.getAttribute("subject");
@@ -127,7 +132,7 @@ public class SaslServlet extends AbstractServlet
         String id = request.getParameter("id");
         String saslResponse = request.getParameter("response");
 
-        AuthenticationManager authManager = ApplicationRegistry.getInstance().getAuthenticationManager(getSocketAddress());
+        AuthenticationManager authManager = ApplicationRegistry.getInstance().getAuthenticationManager(getSocketAddress(request));
 
         if(mechanism != null)
         {

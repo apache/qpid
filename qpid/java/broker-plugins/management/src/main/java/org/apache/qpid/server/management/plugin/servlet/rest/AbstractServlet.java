@@ -22,6 +22,7 @@
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.Principal;
 import java.util.Collections;
@@ -42,6 +43,13 @@ public abstract class AbstractServlet extends HttpServlet
     private Subject _subject;
     private final Broker _broker;
     private SocketAddress _socketAddress;
+
+    protected AbstractServlet()
+    {
+        super();
+        _broker = ApplicationRegistry.getInstance().getBroker();
+        _socketAddress = null;
+    }
 
     protected AbstractServlet(Broker broker, SocketAddress socketAddress)
     {
@@ -100,10 +108,9 @@ public abstract class AbstractServlet extends HttpServlet
                         String[] credentials = (new String(Base64.decodeBase64(tokens[1].getBytes()))).split(":",2);
                         if(credentials.length == 2)
                         {
-
-
+                            SocketAddress address = getSocketAddress(request);
                             AuthenticationManager authenticationManager =
-                                    ApplicationRegistry.getInstance().getAuthenticationManager(_socketAddress);
+                                    ApplicationRegistry.getInstance().getAuthenticationManager(address);
                             AuthenticationResult authResult =
                                     authenticationManager.authenticate(credentials[0], credentials[1]);
                             subject = authResult.getSubject();
@@ -189,8 +196,12 @@ public abstract class AbstractServlet extends HttpServlet
         return _broker;
     }
 
-    protected SocketAddress getSocketAddress()
+    protected SocketAddress getSocketAddress(HttpServletRequest request)
     {
+        if (_socketAddress == null)
+        {
+            return InetSocketAddress.createUnresolved(request.getServerName(), request.getServerPort());
+        }
         return _socketAddress;
     }
 }

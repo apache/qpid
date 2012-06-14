@@ -12,9 +12,12 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
@@ -40,13 +43,76 @@ import org.codehaus.jackson.map.SerializationConfig;
  */
 public class RestServlet extends AbstractServlet
 {
+    /**
+     * An initialization parameter to specify hierarchy
+     */
+    private static final String HIERARCHY_INIT_PARAMETER = "hierarchy";
+
     public static final String DEPTH_PARAM = "depth";
     private Class<? extends ConfiguredObject>[] _hierarchy;
+
+    private volatile boolean initializationRequired = false;
+
+    public RestServlet()
+    {
+        super();
+        initializationRequired = true;
+    }
 
     public RestServlet(Broker broker, SocketAddress socketaddress, Class<? extends ConfiguredObject>... hierarchy)
     {
         super(broker, socketaddress);
         _hierarchy = hierarchy;
+    }
+
+    @Override
+    public void init() throws ServletException
+    {
+        if (initializationRequired)
+        {
+            doInitialization();
+            initializationRequired = false;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void doInitialization() throws ServletException
+    {
+        ServletConfig config = getServletConfig();
+        String hierarchy = config.getInitParameter(HIERARCHY_INIT_PARAMETER);
+        if (hierarchy != null && !"".equals(hierarchy))
+        {
+            List<Class<? extends ConfiguredObject>> classes = new ArrayList<Class<? extends ConfiguredObject>>();
+            String[] hierarchyItems = hierarchy.split(",");
+            for (String item : hierarchyItems)
+            {
+                Class<?> itemClass = null;
+                try
+                {
+                    itemClass = Class.forName(item);
+                }
+                catch (ClassNotFoundException e)
+                {
+                    try
+                    {
+                        itemClass = Class.forName("org.apache.qpid.server.model." + item);
+                    }
+                    catch (ClassNotFoundException e1)
+                    {
+                        throw new ServletException("Unknown configured object class '" + item
+                                + "' is specified in hierarchy for " + config.getServletName());
+                    }
+                }
+                Class<? extends ConfiguredObject> clazz = (Class<? extends ConfiguredObject>)itemClass;
+                classes.add(clazz);
+            }
+            Class<? extends ConfiguredObject>[] hierachyClasses = (Class<? extends ConfiguredObject>[])new Class[classes.size()];
+            _hierarchy = classes.toArray(hierachyClasses);
+        }
+        else
+        {
+            _hierarchy = (Class<? extends ConfiguredObject>[])new Class[0];
+        }
     }
 
     protected Collection<ConfiguredObject> getObjects(HttpServletRequest request)

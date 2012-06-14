@@ -34,6 +34,11 @@ import org.codehaus.jackson.map.SerializationConfig;
 
 public class LogRecordsServlet extends AbstractServlet
 {
+    public LogRecordsServlet()
+    {
+        super(ApplicationRegistry.getInstance().getBroker(), null);
+    }
+
     public LogRecordsServlet(Broker broker, SocketAddress socketaddress)
     {
         super(broker, socketaddress);

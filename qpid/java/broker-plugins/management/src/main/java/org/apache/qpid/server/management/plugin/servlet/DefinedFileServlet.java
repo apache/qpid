@@ -2,6 +2,8 @@ package org.apache.qpid.server.management.plugin.servlet;
 
 import java.io.IOException;
 import java.io.InputStream;
+
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
@@ -27,11 +29,29 @@ import javax.servlet.http.HttpServletResponse;
 public class DefinedFileServlet extends HttpServlet
 {
 
-    private final String _filename;
+    private static final String FILENAME_INIT_PARAMETER = "filename";
+
+    private String _filename;
+
+    public DefinedFileServlet()
+    {
+        super();
+    }
 
     public DefinedFileServlet(String filename)
     {
         _filename = filename;
+    }
+
+    @Override
+    public void init() throws ServletException
+    {
+        ServletConfig config = getServletConfig();
+        String fileName = config.getInitParameter(FILENAME_INIT_PARAMETER);
+        if (fileName != null && !"".equals(fileName))
+        {
+            _filename = fileName;
+        }
     }
 
     @Override
