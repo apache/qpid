@@ -64,7 +64,7 @@ class PrimaryConfigurationObserver : public broker::ConfigurationObserver
 Primary* Primary::instance = 0;
 
 Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
-    haBroker(hb), logPrefix("HA primary: "), active(false)
+    haBroker(hb), logPrefix("Primary: "), active(false)
 {
     assert(instance == 0);
     instance = this;            // Let queue replicators find us.
@@ -163,10 +163,14 @@ void Primary::closed(broker::Connection& connection) {
     BrokerInfo info;
     if (ha::ConnectionObserver::getBrokerInfo(connection, info)) {
         haBroker.getMembership().remove(info.getSystemId());
-        QPID_LOG(debug, "HA primary: Backup disconnected: " << info);
-        backups.erase(info.getSystemId());
-        // FIXME aconway 2012-06-01: changes to expected backup set for unready queues.
+        QPID_LOG(debug, logPrefix << "Backup disconnected: " << info);
     }
+    // NOTE: we do not modify backups here, we only add to the known backups set
+    // we never remove from it.
+
+    // It is possible for a backup connection to be rejected while we are a backup,
+    // but the closed is seen when we have become primary. Removing the entry
+    // from backups in this case would be incorrect.
 }
 
 

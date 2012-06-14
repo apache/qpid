@@ -55,7 +55,7 @@ using types::Uuid;
 using sys::Mutex;
 
 HaBroker::HaBroker(broker::Broker& b, const Settings& s)
-    : logPrefix("HA: "),
+    : logPrefix("Broker: "),
       broker(b),
       systemId(broker.getSystem()->getSystemId().data()),
       settings(s),

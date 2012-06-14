@@ -24,6 +24,7 @@
 
 #include "qpid/broker/ConnectionObserver.h"
 #include "qpid/broker/Connection.h"
+#include "qpid/log/Statement.h"
 
 namespace qpid {
 namespace ha {
@@ -36,7 +37,9 @@ class BackupConnectionExcluder : public broker::ConnectionObserver
 {
   public:
     void opened(broker::Connection& connection) {
-        throw Exception("HA backup rejected connection "+connection.getMgmtId());
+        // FIXME aconway 2012-06-13: suppress caught error message, make this an info message.
+        QPID_LOG(error, "Backup broker rejected connection "+connection.getMgmtId());
+        throw Exception("Backup broker rejected connection "+connection.getMgmtId());
     }
 
     void closed(broker::Connection&) {}
