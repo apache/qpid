@@ -45,7 +45,7 @@ using types::Variant;
 using std::string;
 
 Backup::Backup(HaBroker& hb, const Settings& s) :
-    logPrefix("HA backup: "), haBroker(hb), broker(hb.getBroker()), settings(s)
+    logPrefix("Backup: "), haBroker(hb), broker(hb.getBroker()), settings(s)
 {
     // Empty brokerUrl means delay initialization until seBrokertUrl() is called.
     if (!s.brokerUrl.empty()) initialize(Url(s.brokerUrl));

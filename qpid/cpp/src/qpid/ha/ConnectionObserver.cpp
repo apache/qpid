@@ -30,7 +30,7 @@ namespace qpid {
 namespace ha {
 
 ConnectionObserver::ConnectionObserver(HaBroker& hb, const types::Uuid& uuid)
-    : haBroker(hb), logPrefix("HA connections: "), self(uuid) {}
+    : haBroker(hb), logPrefix("Connections: "), self(uuid) {}
 
 // FIXME aconway 2012-06-06: move to BrokerInfo
 bool ConnectionObserver::getBrokerInfo(broker::Connection& connection, BrokerInfo& info) {
@@ -61,8 +61,12 @@ void ConnectionObserver::opened(broker::Connection& connection) {
     }
     BrokerInfo info;            // Avoid self connections.
     if (getBrokerInfo(connection, info)) {
-        if (info.getSystemId() == self)
-            throw Exception(QPID_MSG(logPrefix << "Rejected connection from self"));
+        if (info.getSystemId() == self) {
+            // FIXME aconway 2012-06-13: suppress caught error message, make this an info message.
+            QPID_LOG(error, "HA broker rejected self connection "+connection.getMgmtId());
+            throw Exception("HA broker rejected self connection "+connection.getMgmtId());
+        }
+
     }
     ObserverPtr o(getObserver());
     if (o) o->opened(connection);

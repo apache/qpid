@@ -86,6 +86,11 @@ class Primary
     std::string logPrefix;
     bool active;
     BackupSet initialBackups;
+    /**
+     * Backups is a map of all the remote backups we know about: any expected
+     * backups plus all actual backups that have connected. We do not remove
+     * entries when a backup disconnects. @see Primary::closed()
+     */
     BackupMap backups;
     boost::shared_ptr<broker::ConnectionObserver> connectionObserver;
     boost::shared_ptr<broker::ConfigurationObserver> configurationObserver;

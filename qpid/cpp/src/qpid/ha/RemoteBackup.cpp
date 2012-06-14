@@ -32,7 +32,7 @@ using sys::Mutex;
 
 RemoteBackup::RemoteBackup(
     const BrokerInfo& info, broker::Broker& broker, ReplicationTest rt, bool cg) :
-    logPrefix("HA primary, backup to "+info.getLogId()+": "), brokerInfo(info), replicationTest(rt),
+    logPrefix("Primary remote backup "+info.getLogId()+": "), brokerInfo(info), replicationTest(rt),
     createGuards(cg)
 {
     QPID_LOG(debug, logPrefix << "Guarding queues for backup broker.");
@@ -85,11 +85,13 @@ void RemoteBackup::ready(const QueuePtr& q) {
     if (isReady()) QPID_LOG(debug, logPrefix << "All queues ready");
 }
 
+// Called via ConfigurationObserver
 void RemoteBackup::queueCreate(const QueuePtr& q) {
     if (createGuards && replicationTest.isReplicated(ALL, *q))
         guards[q].reset(new QueueGuard(*q, brokerInfo));
 }
 
+// Called via ConfigurationObserver
 void RemoteBackup::queueDestroy(const QueuePtr& q) {
     initialQueues.erase(q);
     GuardMap::iterator i = guards.find(q);

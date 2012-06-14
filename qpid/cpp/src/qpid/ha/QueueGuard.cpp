@@ -52,13 +52,13 @@ QueueGuard::QueueGuard(broker::Queue& q, const BrokerInfo& info)
     : queue(q), subscription(0)
 {
     std::ostringstream os;
-    os << "HA primary guard " << queue.getName() << "@" << info.getLogId() << ": ";
+    os << "Primary guard " << queue.getName() << "@" << info.getLogId() << ": ";
     logPrefix = os.str();
     observer.reset(new QueueObserver(*this));
     // Once we call addObserver we can get calls to enqueued and  dequeued
     queue.addObserver(observer);
     // Must set after addObserver so we don't miss any enqueues.
-    firstSafe = queue.getPosition()+1; // Next message will be safe.
+    firstSafe = queue.getPosition(); // FIXME aconway 2012-06-13: fencepost error
 }
 
 QueueGuard::~QueueGuard() { cancel(); }
