@@ -73,7 +73,7 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
     }
     else {
         QPID_LOG(debug, logPrefix << "Expected backups: " << expect);
-        for (BrokerInfo::Set::iterator i = expect.begin(); i != expect.end(); ++i) {
+        for (BrokerInfo::Set::const_iterator i = expect.begin(); i != expect.end(); ++i) {
             bool guard = true;  // Create queue guards immediately for expected backups.
             boost::shared_ptr<RemoteBackup> backup(
                 new RemoteBackup(*i, haBroker.getBroker(), haBroker.getReplicationTest(), guard));
