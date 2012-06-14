@@ -25,7 +25,6 @@ import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 
 import javax.management.JMException;
-import javax.management.NotCompliantMBeanException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

@@ -739,7 +739,7 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
         }
         else if(STORE_TYPE.equals(name))
         {
-            // TODO
+            return _virtualHost.getMessageStore().getStoreType();
         }
         else if(STORE_CONFIGURATION.equals(name))
         {

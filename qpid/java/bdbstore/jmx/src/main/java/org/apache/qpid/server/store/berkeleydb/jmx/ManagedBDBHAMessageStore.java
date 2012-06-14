@@ -17,7 +17,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
+package org.apache.qpid.server.store.berkeleydb.jmx;
 
 import java.io.IOException;
 

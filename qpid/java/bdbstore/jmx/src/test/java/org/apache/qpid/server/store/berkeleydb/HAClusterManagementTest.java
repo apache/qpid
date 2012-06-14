@@ -35,6 +35,7 @@ import javax.management.openmbean.TabularData;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.server.store.berkeleydb.jmx.ManagedBDBHAMessageStore;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 

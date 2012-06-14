@@ -17,7 +17,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
+package org.apache.qpid.server.store.berkeleydb.jmx;
 
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -37,9 +37,13 @@ import javax.management.openmbean.TabularData;
 import junit.framework.TestCase;
 
 import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
+import org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore;
+import org.apache.qpid.server.store.berkeleydb.jmx.BDBHAMessageStoreManagerMBean;
+import org.apache.qpid.server.store.berkeleydb.jmx.ManagedBDBHAMessageStore;
 
 public class BDBHAMessageStoreManagerMBeanTest extends TestCase
 {
@@ -54,6 +58,7 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
 
     private BDBHAMessageStore _store;
     private BDBHAMessageStoreManagerMBean _mBean;
+    private AMQManagedObject _mBeanParent;
 
     @Override
     protected void setUp() throws Exception
@@ -62,7 +67,8 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
 
         CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
         _store = mock(BDBHAMessageStore.class);
-        _mBean = new BDBHAMessageStoreManagerMBean(_store);
+        _mBeanParent = mock(AMQManagedObject.class);
+        _mBean = new BDBHAMessageStoreManagerMBean(_store, _mBeanParent);
     }
 
     @Override

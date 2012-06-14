@@ -21,7 +21,6 @@
 package org.apache.qpid.server.jmx;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import javax.management.JMException;
 import javax.management.MBeanInfo;
@@ -57,7 +56,6 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
         _typeName = typeName;
         _mbeanInfo = buildMBeanInfo();
     }
-
 
     public ManagedObjectRegistry getRegistry()
     {

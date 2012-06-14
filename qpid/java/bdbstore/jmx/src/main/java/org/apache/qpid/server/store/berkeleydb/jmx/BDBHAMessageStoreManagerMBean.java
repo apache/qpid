@@ -17,14 +17,13 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
+package org.apache.qpid.server.store.berkeleydb.jmx;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 import javax.management.JMException;
-import javax.management.NotCompliantMBeanException;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.CompositeType;
@@ -37,8 +36,19 @@ import javax.management.openmbean.TabularType;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.management.AMQManagedObject;
+import org.apache.qpid.server.jmx.AMQManagedObject;
+import org.apache.qpid.server.jmx.ManagedObject;
+import org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore;
 
+/**
+ * Management mbean for BDB HA.
+ * <p>
+ * At runtime, the classloader loading this clas must have visibility of the other Qpid JMX classes. This is
+ * currently arranged through OSGI using the <b>fragment</b> feature so that this bundle shares the
+ * same classloader as broker-plugins-jmx.  See the <b>Fragment-Host:</b> header within the MANIFEST.MF
+ * of this bundle.
+ * </p>
+ */
 public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements ManagedBDBHAMessageStore
 {
     private static final Logger LOGGER = Logger.getLogger(BDBHAMessageStoreManagerMBean.class);
@@ -70,10 +80,12 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
 
     private final BDBHAMessageStore _store;
 
-    protected BDBHAMessageStoreManagerMBean(BDBHAMessageStore store) throws NotCompliantMBeanException
+    protected BDBHAMessageStoreManagerMBean(BDBHAMessageStore store, ManagedObject parent) throws JMException
     {
-        super(ManagedBDBHAMessageStore.class, ManagedBDBHAMessageStore.TYPE);
+        super(ManagedBDBHAMessageStore.class, ManagedBDBHAMessageStore.TYPE, ((AMQManagedObject)parent).getRegistry());
+        LOGGER.debug("Creating BDBHAMessageStoreManagerMBean");
         _store = store;
+        register();
     }
 
     @Override
@@ -209,6 +221,12 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
             LOGGER.error("Failed to update address for node " + nodeName + " to " + newHostName + ":" + newPort, e);
             throw new JMException(e.getMessage());
         }
+    }
+
+    @Override
+    public ManagedObject getParentObject()
+    {
+        return null;
     }
 
 }

@@ -42,6 +42,7 @@ import com.sleepycat.je.EnvironmentConfig;
 public class BDBMessageStore extends AbstractBDBMessageStore
 {
     private static final Logger LOGGER = Logger.getLogger(BDBMessageStore.class);
+    private static final String BDB_STORE_TYPE = "BDB";
     private CommitThreadWrapper _commitThreadWrapper;
 
     @Override
@@ -103,4 +104,11 @@ public class BDBMessageStore extends AbstractBDBMessageStore
 
         return _commitThreadWrapper.commit(tx, syncCommit);
     }
+
+    @Override
+    public String getStoreType()
+    {
+        return BDB_STORE_TYPE;
+    }
+
 }

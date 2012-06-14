@@ -29,6 +29,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.server.store.berkeleydb.jmx.ManagedBDBHAMessageStore;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 

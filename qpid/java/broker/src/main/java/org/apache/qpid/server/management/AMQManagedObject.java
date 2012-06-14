@@ -32,7 +32,7 @@ import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
 
 /**
- * This class provides additinal feature of Notification Broadcaster to the
+ * This class provides additional feature of Notification Broadcaster to the
  * DefaultManagedObject.
  * @author  Bhupendra Bhardwaj
  * @version 0.1

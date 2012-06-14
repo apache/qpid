@@ -44,4 +44,4 @@ org.apache.qpid.management.jmx.ManagementActorLoggingTest#*
 # Expects management log messages in SystemOut that arent present anymore due to move to plugin
 org.apache.qpid.server.logging.ManagementLoggingTest#*
 #Need to implement a new way to instantiate the BDBHA MBean
-org.apache.qpid.server.store.berkeleydb.*
+#org.apache.qpid.server.store.berkeleydb.*
