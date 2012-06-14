@@ -63,12 +63,11 @@ QueueReplicator::QueueReplicator(const BrokerInfo& info,
                                  boost::shared_ptr<Queue> q,
                                  boost::shared_ptr<Link> l)
     : Exchange(replicatorName(q->getName()), 0, q->getBroker()),
-      logPrefix("HA backup of "+q->getName()+": "),
+      logPrefix("Backup queue "+q->getName()+": "),
       queue(q), link(l), brokerInfo(info)
 {
     Uuid uuid(true);
     bridgeName = replicatorName(q->getName()) + std::string(".") + uuid.str();
-    QPID_LOG(info, logPrefix << "Created");
 }
 
 // This must be separate from the constructor so we can call shared_from_this.
@@ -128,7 +127,11 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     // FIXME aconway 2012-05-22: use a finite credit window
     peer.getMessage().flow(getName(), 0, 0xFFFFFFFF);
     peer.getMessage().flow(getName(), 1, 0xFFFFFFFF);
-    QPID_LOG(debug, logPrefix << "Subscribed: " << bridgeName);
+
+    qpid::Address primary;
+    link->getRemoteAddress(primary);
+    QPID_LOG(info, logPrefix << "Connected to " << primary << "(" << bridgeName << ")");
+    QPID_LOG(trace, logPrefix << "Subscription settings: " << settings);
 }
 
 namespace {

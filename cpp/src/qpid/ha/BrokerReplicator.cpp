@@ -170,7 +170,7 @@ Variant::Map asMapVoid(const Variant& value) {
 
 BrokerReplicator::BrokerReplicator(HaBroker& hb, const boost::shared_ptr<Link>& l)
     : Exchange(QPID_CONFIGURATION_REPLICATOR),
-      logPrefix("HA backup: "), replicationTest(hb.getReplicationTest()),
+      logPrefix("Backup configuration: "), replicationTest(hb.getReplicationTest()),
       haBroker(hb), broker(hb.getBroker()), link(l)
 {}
 
@@ -243,7 +243,9 @@ void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionH
     sendQuery(ORG_APACHE_QPID_BROKER, QUEUE, queueName, sessionHandler);
     sendQuery(ORG_APACHE_QPID_BROKER, EXCHANGE, queueName, sessionHandler);
     sendQuery(ORG_APACHE_QPID_BROKER, BINDING, queueName, sessionHandler);
-    QPID_LOG(debug, logPrefix << "Opened configuration bridge: " << queueName);
+    qpid::Address primary;
+    link->getRemoteAddress(primary);
+    QPID_LOG(info, logPrefix << "Connected to " << primary << "(" << queueName << ")");
 }
 
 void BrokerReplicator::route(Deliverable& msg) {
@@ -320,7 +322,7 @@ void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
                 values[USER].asString(),
                 values[RHOST].asString());
         assert(result.second);  // Should be true since we destroyed existing queue above
-        QPID_LOG(debug, logPrefix << "Queue declare event: " << name);
+        QPID_LOG(debug, logPrefix << "Queue declare event, starting replication: " << name);
         startQueueReplicator(result.first);
     }
 }
@@ -466,8 +468,10 @@ void BrokerReplicator::doResponseQueue(Variant::Map& values) {
             ""/*TODO: who is the user?*/,
             ""/*TODO: what should we use as connection id?*/);
     // It is normal for the queue to already exist if we are failing over.
+    QPID_LOG(debug, logPrefix << "Queue response, "
+             << (result.second ? "starting replication: " : "already replicated: ")
+             << name);
     if (result.second) startQueueReplicator(result.first);
-    QPID_LOG(debug, logPrefix << "Queue response: " << name);
 }
 
 void BrokerReplicator::doResponseExchange(Variant::Map& values) {
@@ -475,20 +479,17 @@ void BrokerReplicator::doResponseExchange(Variant::Map& values) {
     if (!replicationTest.replicateLevel(argsMap)) return;
     framing::FieldTable args;
     amqp_0_10::translate(argsMap, args);
-    if (broker.createExchange(
-            values[NAME].asString(),
-            values[TYPE].asString(),
-            values[DURABLE].asBool(),
-            ""/*TODO: need to include alternate-exchange*/,
-            args,
-            ""/*TODO: who is the user?*/,
-            ""/*TODO: what should we use as connection id?*/).second)
-    {
-        QPID_LOG(debug, logPrefix << "Exchange response: " << values[NAME].asString());
-    } else {
-        QPID_LOG(warning, logPrefix << "Exchange response, already exists: " <<
-                 values[NAME].asString());
-    }
+    bool created = broker.createExchange(
+        values[NAME].asString(),
+        values[TYPE].asString(),
+        values[DURABLE].asBool(),
+        ""/*TODO: need to include alternate-exchange*/,
+        args,
+        ""/*TODO: who is the user?*/,
+        ""/*TODO: what should we use as connection id?*/).second;
+    QPID_LOG(debug, logPrefix << "Exchange response, "
+             << (created ? "created replica: " : "already exists: ")
+             << values[NAME].asString());
 }
 
 namespace {

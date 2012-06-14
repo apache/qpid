@@ -201,7 +201,7 @@ ReplicatingSubscription::ReplicatingSubscription(
 
         // Set a log prefix message that identifies the remote broker.
         ostringstream os;
-        os << "HA primary replica " << queue->getName() << "@" << info.getLogId() << ": ";
+        os << "Primary " << queue->getName() << "@" << info.getLogId() << ": ";
         logPrefix = os.str();
 
         // FIXME aconway 2012-06-10: unsafe to rely in queue front or position they are changing?
@@ -217,7 +217,7 @@ ReplicatingSubscription::ReplicatingSubscription(
         // However we must attach the guard _before_ we scan for
         // initial dequeues to be sure we don't miss any dequeues
         // between the scan and attaching the guard.
-        if (Primary::get()) guard = Primary::get()->getGuard(queue, getBrokerInfo());
+        if (Primary::get()) guard = Primary::get()->getGuard(queue, info);
         if (!guard) guard.reset(new QueueGuard(*queue, getBrokerInfo()));
         guard->attach(*this);
 

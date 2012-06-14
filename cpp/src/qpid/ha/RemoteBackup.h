@@ -51,20 +51,25 @@ class RemoteBackup
     typedef boost::shared_ptr<QueueGuard> GuardPtr;
     typedef boost::shared_ptr<broker::Queue> QueuePtr;
 
+    /** Note: isReady() can be true after construction */
     RemoteBackup(const BrokerInfo& info, broker::Broker&, ReplicationTest rt, bool createGuards);
     ~RemoteBackup();
 
     /** Return guard associated with a queue. Used to create ReplicatingSubscription. */
     GuardPtr guard(const QueuePtr&);
 
-    /** ReplicatingSubscription associated with queue is ready. */
+    /** ReplicatingSubscription associated with queue is ready.
+     * Note: may set isReady()
+     */
     void ready(const QueuePtr& queue);
 
-    // Called ConfigurationObserver
+    /** Called via ConfigurationObserver */
     void queueCreate(const QueuePtr&);
+
+    /** Called via ConfigurationObserver. Note: may set isReady() */
     void queueDestroy(const QueuePtr&);
 
-    /**@return true when all initial queues for this backup are ready */
+    /**@return true when all initial queues for this backup are ready. */
     bool isReady();
 
     BrokerInfo getBrokerInfo() const { return brokerInfo; }
