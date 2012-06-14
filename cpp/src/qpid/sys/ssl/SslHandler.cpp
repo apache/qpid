@@ -73,6 +73,8 @@ SslHandler::SslHandler(std::string id, ConnectionCodec::Factory* f, bool _nodict
 SslHandler::~SslHandler() {
     if (codec)
         codec->closed();
+    if (timeoutTimerTask)
+        timeoutTimerTask->cancel();
     delete codec;
 }
 
