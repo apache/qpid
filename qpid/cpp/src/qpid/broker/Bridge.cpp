@@ -59,12 +59,13 @@ void Bridge::PushHandler::handle(framing::AMQFrame& frame)
 
 Bridge::Bridge(const std::string& _name, Link* _link, framing::ChannelId _id,
                CancellationListener l, const _qmf::ArgsLinkBridge& _args,
-               InitializeCallback init) :
+               InitializeCallback init, const string& qn, const string& ae) :
     link(_link), channel(_id), args(_args), mgmtObject(0),
-    listener(l), name(_name), queueName("qpid.bridge_queue_"), persistenceId(0),
+    listener(l), name(_name), queueName(qn), altEx(ae), persistenceId(0),
     connState(0), conn(0), initialize(init), detached(false)
 {
-    queueName += Uuid(true).str();
+    if (queueName.empty()) 
+        queueName = "qpid.bridge_queue_" + Uuid(true).str();
     ManagementAgent* agent = link->getBroker()->getManagementAgent();
     if (agent != 0) {
         mgmtObject = new _qmf::Bridge
@@ -137,7 +138,7 @@ void Bridge::create(Connection& c)
 
         bool durable = false;//should this be an arg, or would we use srcIsQueue for durable queues?
         bool autoDelete = !durable;//auto delete transient queues?
-        peer->getQueue().declare(queueName, "", false, durable, true, autoDelete, queueSettings);
+        peer->getQueue().declare(queueName, altEx, false, durable, true, autoDelete, queueSettings);
         if (!args.i_dynamic)
             peer->getExchange().bind(queueName, args.i_src, args.i_key, FieldTable());
         peer->getMessage().subscribe(queueName, args.i_dest, 1, 0, false, "", 0, FieldTable());
