@@ -66,7 +66,7 @@ public class ControllerQueue
 
     public <T extends Command> T getNext(boolean assertMessageExists) throws JMSException
     {
-        final Message message = _controllerQueueMessageConsumer.receive(1000);
+        final Message message = _controllerQueueMessageConsumer.receive(2000);
         if(assertMessageExists)
         {
             Assert.assertNotNull("No message received from control queue", message);
