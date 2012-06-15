@@ -149,7 +149,7 @@ class Connection : public sys::ConnectionInputHandler,
     void setSecureConnection(SecureConnection* secured);
 
     /** True if this is a shadow connection in a cluster. */
-    bool isShadow() { return shadow; }
+    bool isShadow() const { return shadow; }
 
     // Used by cluster to update connection status
     sys::AggregateOutput& getOutputTasks() { return outputTasks; }
