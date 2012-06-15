@@ -64,6 +64,77 @@ std::string toString()
 }
 
 }
+
+%exception {
+
+    try {
+        $action
+    // --> Receive exceptions
+    } catch (qpid::messaging::NoMessageAvailable& ex) {
+        jenv->ThrowNew(JAVA_NO_MSG_AVAILABLE_EXP, ex.what());
+        return $null;
+    } catch (qpid::messaging::FetchError& ex) {
+        jenv->ThrowNew(JAVA_FETCH_EXP, ex.what());
+        return $null;
+    // --> Send exceptions
+    } catch (qpid::messaging::TargetCapacityExceeded& ex) {
+        jenv->ThrowNew(JAVA_TARGET_CAP_EXCEEDED_EXP, ex.what());
+        return $null;
+    } catch (qpid::messaging::SendError& ex) {
+        jenv->ThrowNew(JAVA_SEND_EXP, ex.what());
+        return $null;
+    // --> Address exceptions
+    } catch (qpid::messaging::NotFound& ex) {
+        jenv->ThrowNew(JAVA_ADDR_NOT_FOUND_EXP, ex.what());
+        return $null;
+    } catch (qpid::messaging::AssertionFailed& ex) {
+        jenv->ThrowNew(JAVA_ADDR_ASSERTION_EXP, ex.what());
+        return $null;
+    } catch (qpid::messaging::MalformedAddress& ex) {
+        jenv->ThrowNew(JAVA_MALFORMED_ADDR_EXP, ex.what());
+        return $null;
+    } catch (qpid::messaging::ResolutionError & ex) {
+        jenv->ThrowNew(JAVA_ADDR_RESOLUTION_EXP, ex.what());
+        return $null;
+    } catch (qpid::messaging::TransactionAborted & ex) {
+        jenv->ThrowNew(JAVA_TX_ABORTED_EXP, ex.what());
+        return $null;
+    // --> Session exceptions
+    } catch (qpid::messaging::TransactionError & ex) {
+        jenv->ThrowNew(JAVA_TRANSACTION_EXP, ex.what());
+        return $null;
+    } catch (qpid::messaging::UnauthorizedAccess & ex) {
+        jenv->ThrowNew(JAVA_UNAUTHORIZED_EXP, ex.what());
+        return $null;
+    // transport
+    } catch (qpid::messaging::TransportFailure & ex) {
+        jenv->ThrowNew(JAVA_TRANSPORT_FAILURE_EXP, ex.what());
+        return $null;
+    // general catch all exceptions
+    } catch (qpid::messaging::ConnectionError& ex) {
+        jenv->ThrowNew(JAVA_NO_MSG_AVAILABLE_EXP, ex.what());
+        return $null;
+    } catch (qpid::messaging::SessionError& ex) {
+        jenv->ThrowNew(JAVA_NO_MSG_AVAILABLE_EXP, ex.what());
+        return $null;
+    } catch (qpid::messaging::SenderError& ex) {
+        jenv->ThrowNew(JAVA_NO_MSG_AVAILABLE_EXP, ex.what());
+        return $null;
+    } catch (qpid::messaging::ReceiverError& ex) {
+        jenv->ThrowNew(JAVA_NO_MSG_AVAILABLE_EXP, ex.what());
+        return $null;
+    } catch (qpid::messaging::AddressError& ex) {
+        jenv->ThrowNew(JAVA_NO_MSG_AVAILABLE_EXP, ex.what());
+        return $null;
+    } catch (qpid::messaging::MessagingException& ex) {
+        jenv->ThrowNew(JAVA_NO_MSG_AVAILABLE_EXP, ex.what());
+        return $null;
+    } catch (qpid::types::Exception& ex) {
+        jenv->ThrowNew(JAVA_RUNTIME_EXP, ex.what());
+        return $null;
+    }
+}
+
 %rename(NativeConnection) qpid::messaging::Connection;
 %rename(NativeSession) qpid::messaging::Session;
 %rename(NativeSender) qpid::messaging::Sender;

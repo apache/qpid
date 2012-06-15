@@ -79,9 +79,40 @@ static jmethodID JAVA_DOUBLE_CTOR;
 static jmethodID JAVA_DOUBLE_VALUE_METHOD;
 
 static jclass JAVA_ILLEGAL_ARGUMENT_EXP;
+static jclass JAVA_RUNTIME_EXP;
 static jclass JAVA_JNI_LAYER_EXP;
 static jmethodID JAVA_JNI_LAYER_EXP_CTOR1; // takes a msg.
 static jmethodID JAVA_JNI_LAYER_EXP_CTOR2; // takes a msg and a throwable.
+
+// receiver
+static jclass JAVA_NO_MSG_AVAILABLE_EXP;
+static jclass JAVA_FETCH_EXP;
+
+// sender
+static jclass JAVA_TARGET_CAP_EXCEEDED_EXP;
+static jclass JAVA_SEND_EXP;
+
+// address
+static jclass JAVA_ADDR_NOT_FOUND_EXP;
+static jclass JAVA_MALFORMED_ADDR_EXP;
+static jclass JAVA_ADDR_RESOLUTION_EXP;
+static jclass JAVA_ADDR_ASSERTION_EXP;
+
+// session
+static jclass JAVA_TRANSACTION_EXP;
+static jclass JAVA_TX_ABORTED_EXP;
+static jclass JAVA_UNAUTHORIZED_EXP;
+
+// transport
+static jclass JAVA_TRANSPORT_FAILURE_EXP;
+
+// general catch all
+static jclass JAVA_MESSAGING_EXP;
+static jclass JAVA_CONNECTION_EXP;
+static jclass JAVA_SESSION_EXP;
+static jclass JAVA_SENDER_EXP;
+static jclass JAVA_RECEIVER_EXP;
+static jclass JAVA_ADDR_EXP;
 
 static jobject createGlobalRef(JNIEnv* env,jobject obj)
 {
@@ -160,9 +191,42 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
    JAVA_FLOAT_VALUE_METHOD = getMethodID(env,JAVA_FLOAT_CLASS,"floatValue", "()F");
 
    JAVA_ILLEGAL_ARGUMENT_EXP = static_cast<jclass>(createGlobalRef(env,findClass(env,"java/lang/IllegalArgumentException")));
+   JAVA_RUNTIME_EXP   = static_cast<jclass>(createGlobalRef(env,findClass(env,"java/lang/RuntimeException")));
    JAVA_JNI_LAYER_EXP = static_cast<jclass>(createGlobalRef(env,findClass(env,"org/apache/qpid/messaging/cpp/JNILayerException")));
    JAVA_JNI_LAYER_EXP_CTOR1 = getMethodID(env,JAVA_JNI_LAYER_EXP, "<init>", "(Ljava/lang/String;)V");
    JAVA_JNI_LAYER_EXP_CTOR2 = getMethodID(env,JAVA_JNI_LAYER_EXP, "<init>", "(Ljava/lang/String;Ljava/lang/Throwable;)V");
+
+   // Messaging exceptions ---------------
+
+   // receiver
+   JAVA_NO_MSG_AVAILABLE_EXP = static_cast<jclass>(createGlobalRef(env,findClass(env,"org/apache/qpid/messaging/NoMessageAvailableException")));
+   JAVA_FETCH_EXP            = static_cast<jclass>(createGlobalRef(env,findClass(env,"org/apache/qpid/messaging/FetchException")));
+
+   // sender
+   JAVA_TARGET_CAP_EXCEEDED_EXP = static_cast<jclass>(createGlobalRef(env,findClass(env,"org/apache/qpid/messaging/TargetCapacityExceededException")));
+   JAVA_SEND_EXP                = static_cast<jclass>(createGlobalRef(env,findClass(env,"org/apache/qpid/messaging/SendException")));
+
+   // address
+   JAVA_ADDR_NOT_FOUND_EXP   = static_cast<jclass>(createGlobalRef(env,findClass(env,"org/apache/qpid/messaging/AddressNotFoundException")));
+   JAVA_MALFORMED_ADDR_EXP   = static_cast<jclass>(createGlobalRef(env,findClass(env,"org/apache/qpid/messaging/MalformedAddressException")));
+   JAVA_ADDR_RESOLUTION_EXP  = static_cast<jclass>(createGlobalRef(env,findClass(env,"org/apache/qpid/messaging/AddressResolutionException")));
+   JAVA_ADDR_ASSERTION_EXP   = static_cast<jclass>(createGlobalRef(env,findClass(env,"org/apache/qpid/messaging/AddressAssertionFailedException")));
+
+   // session
+   JAVA_TRANSACTION_EXP  = static_cast<jclass>(createGlobalRef(env,findClass(env,"org/apache/qpid/messaging/TransactionException")));
+   JAVA_TX_ABORTED_EXP   = static_cast<jclass>(createGlobalRef(env,findClass(env,"org/apache/qpid/messaging/TransactionAbortedException")));
+   JAVA_UNAUTHORIZED_EXP = static_cast<jclass>(createGlobalRef(env,findClass(env,"org/apache/qpid/messaging/UnauthorizedAccessException")));
+
+   // transport
+   JAVA_TRANSPORT_FAILURE_EXP   = static_cast<jclass>(createGlobalRef(env,findClass(env,"org/apache/qpid/messaging/TransportFailureException")));
+
+   // general catch all
+   JAVA_MESSAGING_EXP = static_cast<jclass>(createGlobalRef(env,findClass(env,"org/apache/qpid/messaging/MessagingException")));
+   JAVA_CONNECTION_EXP = static_cast<jclass>(createGlobalRef(env,findClass(env,"org/apache/qpid/messaging/ConnectionException")));
+   JAVA_SESSION_EXP    = static_cast<jclass>(createGlobalRef(env,findClass(env,"org/apache/qpid/messaging/SessionException")));
+   JAVA_SENDER_EXP     = static_cast<jclass>(createGlobalRef(env,findClass(env,"org/apache/qpid/messaging/SenderException")));
+   JAVA_RECEIVER_EXP   = static_cast<jclass>(createGlobalRef(env,findClass(env,"org/apache/qpid/messaging/ReceiverException")));
+   JAVA_ADDR_EXP       = static_cast<jclass>(createGlobalRef(env,findClass(env,"org/apache/qpid/messaging/AddressException")));
 
    if (env->ExceptionCheck())
    {
