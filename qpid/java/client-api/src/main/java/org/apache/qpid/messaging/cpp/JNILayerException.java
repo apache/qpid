@@ -17,9 +17,10 @@
  */
 package org.apache.qpid.messaging.cpp;
 
-public class JNILayerException extends RuntimeException
-{
+import org.apache.qpid.messaging.MessagingException;
 
+public class JNILayerException extends MessagingException
+{
     public JNILayerException(String message)
     {
         super(message);
@@ -29,5 +30,4 @@ public class JNILayerException extends RuntimeException
     {
         super(message,t);
     }
-
 }

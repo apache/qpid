@@ -28,7 +28,7 @@ import org.apache.qpid.messaging.Sender;
 
 public class CppTest
 {
-    public static void main(String[] args)
+    public static void main(String[] args) throws Exception
     {
         Connection con = ConnectionFactory.get().createConnection("localhost:5672");
         con.open();

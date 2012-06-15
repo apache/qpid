@@ -20,104 +20,106 @@ package org.apache.qpid.messaging.cpp;
 import org.apache.qpid.messaging.Address;
 import org.apache.qpid.messaging.Connection;
 import org.apache.qpid.messaging.Message;
+import org.apache.qpid.messaging.MessagingException;
 import org.apache.qpid.messaging.Receiver;
 import org.apache.qpid.messaging.Sender;
 import org.apache.qpid.messaging.Session;
 
+/**
+ *  This class relies on the SessionManagementDecorator for
+ *  management and synchronized access to it's resources.
+ *  This class is merely a delegate/wrapper for the,
+ *  underlying c++ session object.
+ */
 public class CppSession implements Session
 {
-    org.apache.qpid.messaging.cpp.jni.Session _cppSession;
-    
-    public CppSession(org.apache.qpid.messaging.cpp.jni.Session cppSsn)
+    private org.apache.qpid.messaging.cpp.jni.Session _cppSession;
+    private CppConnection _conn;
+
+    public CppSession(CppConnection conn,
+            org.apache.qpid.messaging.cpp.jni.Session cppSsn)
     {
         _cppSession = cppSsn;
+        _conn = conn;
     }
-    
+
 
     @Override
     public boolean isClosed()
     {
-        return false;
+        return _cppSession.hasError();
     }
 
     @Override
-    public void close()
+    public void close() throws MessagingException
     {
         _cppSession.close();
+        _cppSession.delete(); // delete c++ object.
     }
 
     @Override
-    public void commit()
+    public void commit() throws MessagingException
     {
-        // TODO Auto-generated method stub
-
+        _cppSession.commit();
     }
 
     @Override
     public void rollback()
     {
-        // TODO Auto-generated method stub
-
+        _cppSession.rollback();
     }
 
     @Override
-    public void acknowledge(boolean sync)
+    public void acknowledge(boolean sync) throws MessagingException
     {
-        // TODO Auto-generated method stub
-
+        _cppSession.acknowledge(sync);
     }
 
     @Override
-    public <T> void acknowledge(Message message, boolean sync)
+    public void acknowledge(Message message, boolean sync) throws MessagingException
     {
-        // TODO Auto-generated method stub
-
+        _cppSession.acknowledge((org.apache.qpid.messaging.cpp.jni.Message)message, sync);
     }
 
     @Override
-    public <T> void reject(Message message)
+    public void reject(Message message) throws MessagingException
     {
-        // TODO Auto-generated method stub
-
+        _cppSession.reject((org.apache.qpid.messaging.cpp.jni.Message)message);
     }
 
     @Override
-    public <T> void release(Message message)
+    public void release(Message message) throws MessagingException
     {
-        // TODO Auto-generated method stub
-
+        _cppSession.release((org.apache.qpid.messaging.cpp.jni.Message)message);
     }
 
     @Override
-    public void sync(boolean block)
+    public void sync(boolean block) throws MessagingException
     {
-        // TODO Auto-generated method stub
-
+        _cppSession.sync(block);
     }
 
     @Override
-    public int getReceivable()
+    public int getReceivable() throws MessagingException
     {
-        // TODO Auto-generated method stub
-        return 0;
+        return _cppSession.getReceivable();
     }
 
     @Override
-    public int getUnsettledAcks()
+    public int getUnsettledAcks() throws MessagingException
     {
-        // TODO Auto-generated method stub
-        return 0;
+        return _cppSession.getUnsettledAcks();
     }
 
     @Override
-    public Receiver nextReceiver(long timeout)
+    public Receiver nextReceiver(long timeout) throws MessagingException
     {
-        // TODO Auto-generated method stub
-        return null;
+        // This is not correct ..need to revist
+        return new CppReceiver(_cppSession.nextReceiver(new org.apache.qpid.messaging.cpp.jni.Duration(timeout)));
     }
 
     @Override
-    public Sender createSender(Address address)
+    public Sender createSender(Address address) throws MessagingException
     {        
         return new CppSender(_cppSession
                 .createSender(new org.apache.qpid.messaging.cpp.jni.Address(
@@ -125,29 +127,43 @@ public class CppSession implements Session
     }
 
     @Override
-    public Sender createSender(String address)
+    public Sender createSender(String address) throws MessagingException
     {
         return new CppSender(_cppSession.createSender(address));
     }
 
     @Override
-    public Receiver createReceiver(Address address)
+    public Receiver createReceiver(Address address) throws MessagingException
     {
-        // TODO Auto-generated method stub
-        return null;
+        return new CppReceiver(_cppSession
+                .createReceiver(new org.apache.qpid.messaging.cpp.jni.Address(
+                        address.toString())));
     }
 
     @Override
-    public Receiver createReceiver(String address)
+    public Receiver createReceiver(String address) throws MessagingException
     {
         return new CppReceiver(_cppSession.createReceiver(address));
     }
 
     @Override
-    public Connection getConnection()
+    public Connection getConnection() throws MessagingException
     {
-        // TODO Auto-generated method stub
-        return null;
+        return _conn;
+    }
+
+
+    @Override
+    public boolean hasError()
+    {
+        return _cppSession.hasError();
+    }
+
+
+    @Override
+    public void checkError() throws MessagingException
+    {
+        _cppSession.checkError();
     }
 
 }

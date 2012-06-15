@@ -18,54 +18,58 @@
 package org.apache.qpid.messaging.cpp;
 
 import org.apache.qpid.messaging.Connection;
+import org.apache.qpid.messaging.MessagingException;
 import org.apache.qpid.messaging.Session;
 
+/**
+ *  This class relies on the ConnectionManagementDecorator for
+ *  management and synchronized access to it's resources.
+ *  This class is merely a delegate/wrapper for the,
+ *  underlying c++ connection object.
+ */
 public class CppConnection implements Connection
 {
     private org.apache.qpid.messaging.cpp.jni.Connection _cppConn;
-    
+
     public CppConnection(String url)
     {
         _cppConn = new org.apache.qpid.messaging.cpp.jni.Connection(url);
     }
 
     @Override
-    public void open()
+    public void open() throws MessagingException
     {
         _cppConn.open();
     }
 
     @Override
-    public boolean isOpen()
+    public boolean isOpen() throws MessagingException
     {
-        // TODO Auto-generated method stub
-        return false;
+        return _cppConn.isOpen();
     }
 
     @Override
-    public void close()
+    public void close() throws MessagingException
     {
         _cppConn.close();
+        _cppConn.delete(); //clean up the c++ object
     }
 
     @Override
-    public Session createSession(String name)
+    public Session createSession(String name) throws MessagingException
     {
-        return new CppSession(_cppConn.createSession());
+        return new CppSession(this,_cppConn.createSession());
     }
 
     @Override
-    public Session createTransactionalSession(String name)
+    public Session createTransactionalSession(String name) throws MessagingException
     {
-        // TODO Auto-generated method stub
-        return null;
+        return new CppSession(this,_cppConn.createTransactionalSession());
     }
 
     @Override
-    public String getAuthenticatedUsername()
+    public String getAuthenticatedUsername() throws MessagingException
     {
-        // TODO Auto-generated method stub
-        return null;
+        return _cppConn.getAuthenticatedUsername();
     }
-
 }

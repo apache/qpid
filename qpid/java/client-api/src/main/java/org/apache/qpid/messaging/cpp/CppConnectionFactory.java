@@ -19,30 +19,26 @@ package org.apache.qpid.messaging.cpp;
 
 import org.apache.qpid.messaging.Connection;
 import org.apache.qpid.messaging.ConnectionFactory;
+import org.apache.qpid.messaging.util.ConnectionManagementDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CppConnectionFactory extends ConnectionFactory
 {
     private static final Logger _logger = LoggerFactory.getLogger(CppConnectionFactory.class);
-    
+
     static 
     {
         System.loadLibrary("cqpid_java");
         _logger.info("native qpid library was loaded sucessfully");
     }
-    
+
     public CppConnectionFactory()
     {        
     }
 
-    public Connection create(String url)
-    {
-        return new CppConnection(url);
-    }
-
     public Connection createConnection(String url)
     {
-        return create(url);
+        return new ConnectionManagementDecorator(new CppConnection(url));
     }
 }
