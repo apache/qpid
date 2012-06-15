@@ -23,6 +23,26 @@ package org.apache.qpid.messaging;
 public interface Receiver
 {
     /**
+     * If passed as timeout, it will block indefinitely until a message arrives.
+     */
+    public static long FOREVER = 0;
+
+    /**
+     * If passed as timeout, it will return immediately.
+     */
+    public static long IMMEDIATE = 0;
+
+    /**
+     * If passed as timeout, it will wait a second until a message arrives.
+     */
+    public static long SECOND = 1000;
+
+    /**
+     * If passed as timeout, it will wait a minute until a message arrives.
+     */
+    public static long MINUTE = 60000;
+
+    /**
      * Retrieves a message from this receivers local queue, or waits for upto the specified timeout for a message to become available.
      * A timeout of zero never expires, and the call blocks indefinitely until a message arrives.
      * @param timeout Timeout in milliseconds.
@@ -46,6 +66,7 @@ public interface Receiver
 
     /**
      * Returns the capacity of this receiver
+     *
      * @return capacity
      */
     public int getCapacity() throws MessagingException;
@@ -70,7 +91,7 @@ public interface Receiver
     /**
      * Returns true if the receiver was closed by a call to close()
      */
-    public boolean isClosed() throws MessagingException;
+    public boolean isClosed();
 
     /**
      * Returns the name that uniquely identifies this receiver within the given session.
