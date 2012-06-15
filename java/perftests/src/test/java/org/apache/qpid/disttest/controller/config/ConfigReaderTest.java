@@ -26,9 +26,7 @@ import java.util.Map;
 import junit.framework.TestCase;
 
 import org.apache.qpid.disttest.ConfigFileHelper;
-import org.apache.qpid.disttest.client.MessageProvider;
 import org.apache.qpid.disttest.client.property.PropertyValue;
-import org.apache.qpid.disttest.controller.CommandForClient;
 
 public class ConfigReaderTest extends TestCase
 {

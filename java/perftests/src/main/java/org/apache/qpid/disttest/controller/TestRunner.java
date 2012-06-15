@@ -253,7 +253,7 @@ public class TestRunner
         setOriginalTestDetailsOn(result);
 
         _testResult.addParticipantResult(result);
-        LOGGER.info("Received result " + result);
+        LOGGER.debug("Received result " + result);
 
         _testResultsLatch.countDown();
         checkForResponseError(result);
