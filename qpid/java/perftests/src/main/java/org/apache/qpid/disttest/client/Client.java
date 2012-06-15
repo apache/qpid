@@ -103,9 +103,9 @@ public class Client
 
     public void processInstruction(final Command command)
     {
-        if (LOGGER.isInfoEnabled())
+        if (LOGGER.isDebugEnabled())
         {
-            LOGGER.info("Client " + getClientName() + " received command: " + command);
+            LOGGER.debug("Client " + getClientName() + " received command: " + command);
         }
         String responseMessage = null;
         try
@@ -174,7 +174,7 @@ public class Client
     {
         if (_state.compareAndSet(ClientState.RUNNING_TEST, ClientState.READY))
         {
-            LOGGER.info("Tearing down test on client: " + _clientJmsDelegate.getClientName());
+            LOGGER.debug("Tearing down test on client: " + _clientJmsDelegate.getClientName());
 
             _clientJmsDelegate.closeTestConnections();
         }
@@ -190,7 +190,7 @@ public class Client
     public void sendResults(ParticipantResult testResult)
     {
         _clientJmsDelegate.sendResponseMessage(testResult);
-        LOGGER.info("Sent test results " + testResult);
+        LOGGER.debug("Sent test results " + testResult);
     }
 
     @Override

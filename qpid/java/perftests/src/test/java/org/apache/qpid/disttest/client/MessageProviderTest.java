@@ -59,6 +59,7 @@ public class MessageProviderTest extends TestCase
     {
         MessageProvider messageProvider = new MessageProvider(null)
         {
+            @Override
             public String getMessagePayload(CreateProducerCommand command)
             {
                 return super.getMessagePayload(command);

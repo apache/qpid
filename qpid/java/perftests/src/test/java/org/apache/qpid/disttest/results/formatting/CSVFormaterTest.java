@@ -58,7 +58,6 @@ import org.apache.qpid.disttest.controller.ResultsForAllTests;
 import org.apache.qpid.disttest.controller.TestResult;
 import org.apache.qpid.disttest.message.ParticipantAttribute;
 import org.apache.qpid.disttest.message.ParticipantResult;
-import org.apache.qpid.qmf.QMFProperty.AccessCode;
 
 public class CSVFormaterTest extends TestCase
 {
