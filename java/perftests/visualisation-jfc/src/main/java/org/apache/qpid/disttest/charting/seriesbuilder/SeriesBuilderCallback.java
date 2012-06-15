@@ -17,11 +17,14 @@
  * under the License.
  *
  */
-package org.apache.qpid.disttest.charting.chartbuilder;
+package org.apache.qpid.disttest.charting.seriesbuilder;
 
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
 
-public interface DataPointCallback
+public interface SeriesBuilderCallback
 {
+    public void beginSeries(SeriesDefinition seriesDefinition);
     public void addDataPointToSeries(SeriesDefinition seriesDefinition, Object xValue, Object yValue);
+    public void endSeries(SeriesDefinition seriesDefinition);
+
 }

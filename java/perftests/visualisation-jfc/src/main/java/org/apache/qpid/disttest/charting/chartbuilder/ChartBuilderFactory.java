@@ -20,18 +20,25 @@
 package org.apache.qpid.disttest.charting.chartbuilder;
 
 import org.apache.qpid.disttest.charting.ChartType;
+import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
 
 public class ChartBuilderFactory
 {
 
-    public static ChartBuilder createChartBuilder(ChartType chartType)
+    public static ChartBuilder createChartBuilder(ChartType chartType, SeriesBuilder seriesBuilder)
     {
         switch (chartType)
         {
         case LINE:
-            return new LineChartBuilder();
+            return new LineChartBuilder(seriesBuilder);
+        case LINE3D:
+            return new LineChart3DBuilder(seriesBuilder);
         case BAR:
-            return new BarChartBuilder();
+            return new BarChartBuilder(seriesBuilder);
+        case BAR3D:
+            return new BarChart3DBuilder(seriesBuilder);
+        case XYLINE:
+            return new XYLineChartBuilder(seriesBuilder);
         default:
             throw new IllegalArgumentException("Unknown chart type " + chartType);
         }
