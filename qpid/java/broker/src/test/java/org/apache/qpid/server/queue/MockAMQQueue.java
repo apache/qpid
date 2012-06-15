@@ -29,7 +29,6 @@ import org.apache.qpid.server.configuration.QueueConfigType;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
@@ -511,11 +510,6 @@ public class MockAMQQueue implements AMQQueue
 
     public void checkCapacity(AMQSessionModel channel)
     {
-    }
-
-    public ManagedObject getManagedObject()
-    {
-        return null;
     }
 
     public int compareTo(AMQQueue o)

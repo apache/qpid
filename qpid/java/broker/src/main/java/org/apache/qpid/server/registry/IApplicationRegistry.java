@@ -27,9 +27,7 @@ import org.apache.qpid.server.configuration.ConfigurationManager;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
@@ -64,8 +62,6 @@ public interface IApplicationRegistry extends StatisticsGatherer
      * @return a Commons Configuration instance
      */
     ServerConfiguration getConfiguration();
-
-    ManagedObjectRegistry getManagedObjectRegistry();
 
     /**
      * Get the AuthenticationManager for the given socket address

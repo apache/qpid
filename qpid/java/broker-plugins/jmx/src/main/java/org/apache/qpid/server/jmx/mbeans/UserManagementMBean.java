@@ -29,7 +29,6 @@ import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
-import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 
 import javax.management.JMException;
 import javax.management.openmbean.CompositeData;

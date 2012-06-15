@@ -14,16 +14,19 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
-package org.apache.qpid.server.logging.management;
+package org.apache.qpid.server.jmx.mbeans;
+
+import static org.mockito.Mockito.*;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.server.management.LoggingManagementMBean;
+import org.apache.qpid.server.jmx.ManagedObject;
+import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_LEVEL;
@@ -42,6 +45,7 @@ import java.util.Map;
 
 public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
 {
+
     private static final String TEST_LOGGER = "LoggingManagementMBeanTestLogger";
     private static final String TEST_LOGGER_CHILD1 = "LoggingManagementMBeanTestLogger.child1";
     private static final String TEST_LOGGER_CHILD2 = "LoggingManagementMBeanTestLogger.child2";
@@ -54,13 +58,15 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
 
     private File _testConfigFile;
 
+    private ManagedObjectRegistry _registry = mock(ManagedObjectRegistry.class);
+
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
         _testConfigFile = createTempTestLog4JConfig();
     }
-    
+
     @Override
     public void tearDown() throws Exception
     {
@@ -69,9 +75,9 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
         {
             oldTestConfigFile.delete();
         }
-        
+
         _testConfigFile.delete();
-        
+
         super.tearDown();
     }
 
@@ -90,7 +96,7 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
             writer.write("<!DOCTYPE log4j:configuration SYSTEM \"log4j.dtd\">"+NEWLINE);
 
             writer.write("<log4j:configuration xmlns:log4j=\"http://jakarta.apache.org/log4j/\" debug=\"null\" " +
-            		                                                                "threshold=\"null\">"+NEWLINE);
+                                                                                 "threshold=\"null\">"+NEWLINE);
 
             writer.write("  <appender class=\"org.apache.log4j.ConsoleAppender\" name=\"STDOUT\">"+NEWLINE);
             writer.write("      <layout class=\"org.apache.log4j.PatternLayout\">"+NEWLINE);
@@ -138,13 +144,13 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
 
 
     //******* Test Methods ******* //
-   
+
     public void testSetRuntimeLoggerLevel()
     {
         LoggingManagementMBean lm = null;
         try
         {
-            lm = new LoggingManagementMBean(_testConfigFile.getAbsolutePath(), 0);
+            lm = new LoggingManagementMBean(_testConfigFile.getAbsolutePath(), 0, _registry);
         }
         catch (JMException e)
         {
@@ -157,26 +163,26 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
 
         //create child1 test logger, check its *effective* level is the same as the parent, "info"
         Logger log1 = Logger.getLogger(TEST_LOGGER_CHILD1);
-        assertTrue("Test logger's level was not the expected value", 
+        assertTrue("Test logger's level was not the expected value",
                     log1.getEffectiveLevel().toString().equalsIgnoreCase("info"));
 
         //now change its level to "warn"
         assertTrue("Failed to set logger level", lm.setRuntimeLoggerLevel(TEST_LOGGER_CHILD1, "warn"));
 
         //check the change, see its actual level is "warn
-        assertTrue("Test logger's level was not the expected value", 
+        assertTrue("Test logger's level was not the expected value",
                     log1.getLevel().toString().equalsIgnoreCase("warn"));
 
         //try an invalid level
         assertFalse("Trying to set an invalid level succeded", lm.setRuntimeLoggerLevel(TEST_LOGGER_CHILD1, "made.up.level"));
     }
-    
+
     public void testSetRuntimeRootLoggerLevel()
     {
         LoggingManagementMBean lm = null;
         try
         {
-            lm = new LoggingManagementMBean(_testConfigFile.getAbsolutePath(), 0);
+            lm = new LoggingManagementMBean(_testConfigFile.getAbsolutePath(), 0, _registry);
         }
         catch (JMException e)
         {
@@ -184,27 +190,27 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
         }
 
         Logger log = Logger.getRootLogger();
-        
+
         //get current root logger level
         Level origLevel = log.getLevel();
-        
+
         //change level twice to ensure a new level is actually selected
-        
+
         //set root loggers level to info
         assertTrue("Failed to set root logger level", lm.setRuntimeRootLoggerLevel("debug"));
         //check it is now actually info
         Level currentLevel = log.getLevel();
         assertTrue("Logger level was not expected value", currentLevel.equals(Level.toLevel("debug")));
-        
+
         //try an invalid level
         assertFalse("Trying to set an invalid level succeded", lm.setRuntimeRootLoggerLevel("made.up.level"));
-        
+
         //set root loggers level to warn
         assertTrue("Failed to set logger level", lm.setRuntimeRootLoggerLevel("info"));
         //check it is now actually warn
         currentLevel = log.getLevel();
         assertTrue("Logger level was not expected value", currentLevel.equals(Level.toLevel("info")));
-        
+
         //restore original level
         log.setLevel(origLevel);
     }
@@ -214,7 +220,7 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
         LoggingManagementMBean lm = null;
         try
         {
-            lm = new LoggingManagementMBean(_testConfigFile.getAbsolutePath(), 0);
+            lm = new LoggingManagementMBean(_testConfigFile.getAbsolutePath(), 0, _registry);
         }
         catch (JMException e)
         {
@@ -222,18 +228,18 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
         }
 
         Logger log = Logger.getRootLogger();
-        
+
         //get current root logger level
         Level origLevel = log.getLevel();
-        
+
         //change level twice to ensure a new level is actually selected
-        
+
         //set root loggers level to debug
         log.setLevel(Level.toLevel("debug"));
         //check it is now actually debug
         assertTrue("Logger level was not expected value", lm.getRuntimeRootLoggerLevel().equalsIgnoreCase("debug"));
-        
-        
+
+
         //set root loggers level to warn
         log.setLevel(Level.toLevel("info"));
         //check it is now actually warn
@@ -242,13 +248,13 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
         //restore original level
         log.setLevel(origLevel);
     }
-    
+
     public void testViewEffectiveRuntimeLoggerLevels()
     {
         LoggingManagementMBean lm = null;
         try
         {
-            lm = new LoggingManagementMBean(_testConfigFile.getAbsolutePath(), 0);
+            lm = new LoggingManagementMBean(_testConfigFile.getAbsolutePath(), 0, _registry);
         }
         catch (JMException e)
         {
@@ -258,7 +264,7 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
         //(re)create a parent test logger, set its level explicitly
         Logger log = Logger.getLogger(TEST_LOGGER);
         log.setLevel(Level.toLevel("info"));
-        
+
         //retrieve the current effective runtime logger level values
         TabularDataSupport levels = (TabularDataSupport) lm.viewEffectiveRuntimeLoggerLevels();
         Collection<Object> records = levels.values();
@@ -268,13 +274,13 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
             CompositeData data = (CompositeData) o;
             list.put(data.get(LOGGER_NAME).toString(), data.get(LOGGER_LEVEL).toString());
         }
-        
+
         //check child2 does not exist already
         assertFalse("Did not expect this logger to exist already", list.containsKey(TEST_LOGGER_CHILD2));
 
         //create child2 test logger
         Logger log2 = Logger.getLogger(TEST_LOGGER_CHILD2);
-        
+
         //retrieve the current effective runtime logger level values
         levels = (TabularDataSupport) lm.viewEffectiveRuntimeLoggerLevels();
         records = levels.values();
@@ -288,14 +294,14 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
         //verify the parent and child2 loggers are present in returned values
         assertTrue(TEST_LOGGER + " logger was not in the returned list", list.containsKey(TEST_LOGGER));
         assertTrue(TEST_LOGGER_CHILD2 + " logger was not in the returned list", list.containsKey(TEST_LOGGER_CHILD2));
-        
+
         //check child2's effective level is the same as the parent, "info"
-        assertTrue("Test logger's level was not the expected value", 
+        assertTrue("Test logger's level was not the expected value",
                     list.get(TEST_LOGGER_CHILD2).equalsIgnoreCase("info"));
 
         //now change its level explicitly to "warn"
         log2.setLevel(Level.toLevel("warn"));
-        
+
         //retrieve the current effective runtime logger level values
         levels = (TabularDataSupport) lm.viewEffectiveRuntimeLoggerLevels();
         records = levels.values();
@@ -307,7 +313,7 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
         }
 
         //check child2's effective level is now "warn"
-        assertTrue("Test logger's level was not the expected value", 
+        assertTrue("Test logger's level was not the expected value",
                     list.get(TEST_LOGGER_CHILD2).equalsIgnoreCase("warn"));
     }
 
@@ -316,7 +322,7 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
         LoggingManagementMBean lm =null;
         try
         {
-            lm = new LoggingManagementMBean(_testConfigFile.getAbsolutePath(), 0);
+            lm = new LoggingManagementMBean(_testConfigFile.getAbsolutePath(), 0, _registry);
         }
         catch (JMException e)
         {
@@ -379,13 +385,13 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
         assertTrue(TEST_CATEGORY_LEVEL + " logger's level was incorrect", list.get(TEST_CATEGORY_LEVEL).equalsIgnoreCase("error"));
         assertTrue(TEST_LOGGER_LEVEL + " logger's level was incorrect", list.get(TEST_LOGGER_LEVEL).equalsIgnoreCase("trace"));
     }
-    
+
     public void testGetAndSetConfigFileRootLoggerLevel() throws Exception
     {
         LoggingManagementMBean lm =null;
         try
         {
-            lm = new LoggingManagementMBean(_testConfigFile.getAbsolutePath(), 0);
+            lm = new LoggingManagementMBean(_testConfigFile.getAbsolutePath(), 0, _registry);
         }
         catch (JMException e)
         {
@@ -400,7 +406,7 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
 
         //try an invalid level
         assertFalse("Use of an invalid RootLogger level was successfull", lm.setConfigFileRootLoggerLevel("made.up.level"));
-        
+
         //change the level to warn
         assertTrue("Failed to set new RootLogger level", lm.setConfigFileRootLoggerLevel("warn"));
 
@@ -416,7 +422,7 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
         LoggingManagementMBean lm =null;
         try
         {
-            lm = new LoggingManagementMBean(_testConfigFile.getAbsolutePath(), 5000);
+            lm = new LoggingManagementMBean(_testConfigFile.getAbsolutePath(), 5000, _registry);
         }
         catch (JMException e)
         {

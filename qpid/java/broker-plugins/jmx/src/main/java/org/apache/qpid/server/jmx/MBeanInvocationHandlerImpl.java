@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.management;
+package org.apache.qpid.server.jmx;
 
 import org.apache.log4j.Logger;
 
@@ -174,41 +174,41 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
             }
 
             methodName = getMethodName(method, args);
-			if (isAccessMethod(methodName) || impact == MBeanOperationInfo.INFO)
-			{
-				// Check for read-only method invocation permission
+            if (isAccessMethod(methodName) || impact == MBeanOperationInfo.INFO)
+            {
+                // Check for read-only method invocation permission
                 if (!security.authoriseMethod(Operation.ACCESS, type, methodName))
                 {
                     throw new SecurityException("Permission denied: Access " + methodName);
                 }
-			}
-			else
-			{
-			    // Check for setting properties permission
-			    if (!security.authoriseMethod(Operation.UPDATE, type, methodName))
-			    {
-			        throw new SecurityException("Permission denied: Update " + methodName);
-			    }
-			}
+            }
+            else
+            {
+                // Check for setting properties permission
+                if (!security.authoriseMethod(Operation.UPDATE, type, methodName))
+                {
+                    throw new SecurityException("Permission denied: Update " + methodName);
+                }
+            }
 
-			boolean oldAccessChecksDisabled = false;
-			if(_managementRightsInferAllAccess)
-			{
-			    oldAccessChecksDisabled = SecurityManager.setAccessChecksDisabled(true);
-			}
+            boolean oldAccessChecksDisabled = false;
+            if(_managementRightsInferAllAccess)
+            {
+                oldAccessChecksDisabled = SecurityManager.setAccessChecksDisabled(true);
+            }
 
-			try
-			{
-			    // Actually invoke the method
-			    return method.invoke(_mbs, args);
-			}
-			finally
-			{
-			    if(_managementRightsInferAllAccess)
-			    {
-			        SecurityManager.setAccessChecksDisabled(oldAccessChecksDisabled);
-			    }
-			}
+            try
+            {
+                // Actually invoke the method
+                return method.invoke(_mbs, args);
+            }
+            finally
+            {
+                if(_managementRightsInferAllAccess)
+                {
+                    SecurityManager.setAccessChecksDisabled(oldAccessChecksDisabled);
+                }
+            }
         }
         catch (InvocationTargetException e)
         {
@@ -217,24 +217,24 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
     }
 
     private String getType(Method method, Object[] args)
-    {		
-		if (args[0] instanceof ObjectName)
-		{
-			ObjectName object = (ObjectName) args[0];
-			String type = object.getKeyProperty("type");
-			
-			return type;
-		}
-		return null;
+    {
+        if (args[0] instanceof ObjectName)
+        {
+            ObjectName object = (ObjectName) args[0];
+            String type = object.getKeyProperty("type");
+
+            return type;
+        }
+        return null;
     }
 
     private String getVirtualHost(Method method, Object[] args)
-    {       
+    {
         if (args[0] instanceof ObjectName)
         {
             ObjectName object = (ObjectName) args[0];
             String vhost = object.getKeyProperty("VirtualHost");
-            
+
             if(vhost != null)
             {
                 try
@@ -253,7 +253,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
         }
         return null;
     }
-    
+
     private String getMethodName(Method method, Object[] args)
     {
         String methodName = method.getName();
@@ -274,7 +274,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
                 methodName = (String) args[1];
             }
         }
-        
+
         return methodName;
     }
 
@@ -289,7 +289,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
             {
                 return -1;
             }
-            
+
             try
             {
                 //Get the impact attribute

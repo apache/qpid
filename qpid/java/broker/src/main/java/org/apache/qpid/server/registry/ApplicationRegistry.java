@@ -25,7 +25,6 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.logging.*;
 import org.osgi.framework.BundleContext;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.qmf.QMFService;
@@ -41,8 +40,6 @@ import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
-import org.apache.qpid.server.management.ManagedObjectRegistry;
-import org.apache.qpid.server.management.NoopManagedObjectRegistry;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.apache.qpid.server.plugins.Plugin;
@@ -80,8 +77,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     private final Map<InetSocketAddress, QpidAcceptor> _acceptors =
             Collections.synchronizedMap(new HashMap<InetSocketAddress, QpidAcceptor>());
-
-    private ManagedObjectRegistry _managedObjectRegistry;
 
     private IAuthenticationManagerRegistry _authenticationManagerRegistry;
 
@@ -127,11 +122,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         {
             return new HashMap<InetSocketAddress, QpidAcceptor>(_acceptors);
         }
-    }
-
-    protected void setManagedObjectRegistry(ManagedObjectRegistry managedObjectRegistry)
-    {
-        _managedObjectRegistry = managedObjectRegistry;
     }
 
     protected void setSecurityManager(SecurityManager securityManager)
@@ -311,8 +301,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
             _broker = new BrokerAdapter(this);
 
-            initialiseManagedObjectRegistry();
-
             configure();
 
             _qmfService = new QMFService(getConfigStore(), this);
@@ -336,8 +324,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
                 }
                 _authManagerChangeListeners.clear();
             }
-
-            _managedObjectRegistry.start();
         }
         finally
         {
@@ -370,11 +356,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             createVirtualHost(_configuration.getVirtualHostConfig(name));
         }
         getVirtualHostRegistry().setDefaultVirtualHostName(_configuration.getDefaultVirtualHost());
-    }
-
-    protected void initialiseManagedObjectRegistry() throws AMQException
-    {
-        _managedObjectRegistry = new NoopManagedObjectRegistry();
     }
 
     public void initialiseStatisticsReporting()
@@ -523,8 +504,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
             close(_pluginManager);
 
-            close(_managedObjectRegistry);
-
             BrokerConfig broker = getBrokerConfig();
             if(broker != null)
             {
@@ -601,11 +580,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     public SecurityManager getSecurityManager()
     {
         return _securityManager;
-    }
-
-    public ManagedObjectRegistry getManagedObjectRegistry()
-    {
-        return _managedObjectRegistry;
     }
 
     @Override

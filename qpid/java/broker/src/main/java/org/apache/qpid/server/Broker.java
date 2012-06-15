@@ -37,7 +37,6 @@ import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
-import org.apache.qpid.server.management.LoggingManagementMBean;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -129,8 +128,6 @@ public class Broker
 
         try
         {
-            configureLoggingManagementMBean(logConfigFile, options.getLogWatchFrequency());
-
             Set<Integer> ports = new HashSet<Integer>(options.getPorts());
             if(ports.isEmpty())
             {
@@ -483,12 +480,6 @@ public class Broker
         }
     }
 
-    private void configureLoggingManagementMBean(File logConfigFile, int logWatchTime) throws Exception
-    {
-        LoggingManagementMBean blm = new LoggingManagementMBean(logConfigFile.getPath(),logWatchTime);
-
-        blm.register();
-    }
 
     private void addShutdownHook()
     {
