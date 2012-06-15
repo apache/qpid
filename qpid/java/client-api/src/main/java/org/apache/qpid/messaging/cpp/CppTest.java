@@ -30,7 +30,7 @@ public class CppTest
 {
     public static void main(String[] args) throws Exception
     {
-        Connection con = ConnectionFactory.get().createConnection("localhost:5672");
+        /*Connection con = ConnectionFactory.get().createConnection("localhost:5672");
         con.open();
         Session ssn = con.createSession("hello");
         System.out.println("Got a session object "  + ssn);
@@ -64,7 +64,7 @@ public class CppTest
         System.out.println("Msg toString() : " + m);
 
         ssn.close();
-        con.close();
+        con.close();*/
     }
 
 }

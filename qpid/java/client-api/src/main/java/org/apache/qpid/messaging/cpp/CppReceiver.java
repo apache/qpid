@@ -26,27 +26,28 @@ public class CppReceiver implements Receiver
 {
     private CppSession _ssn;
     private org.apache.qpid.messaging.cpp.jni.Receiver _cppReceiver;
+    private CppMessageFactory _msgFactory;
 
     public CppReceiver(CppSession ssn,
-            org.apache.qpid.messaging.cpp.jni.Receiver cppReceiver)
+            org.apache.qpid.messaging.cpp.jni.Receiver cppReceiver) throws MessagingException
     {
         _ssn = ssn;
         _cppReceiver = cppReceiver;
+        _msgFactory = (CppMessageFactory)ssn.getConnection().getMessageFactory();
     }
 
     @Override
     public Message get(long timeout) throws MessagingException
     {
         org.apache.qpid.messaging.cpp.jni.Message m = _cppReceiver.get(CppDuration.getDuration(timeout));
-        return new TextMessage(m.getContent());
-
+        return _msgFactory.createMessage(m);
     }
 
     @Override
     public Message fetch(long timeout) throws MessagingException
     {
         org.apache.qpid.messaging.cpp.jni.Message m = _cppReceiver.fetch(CppDuration.getDuration(timeout));
-        return new TextMessage(m);
+        return _msgFactory.createMessage(m);
     }
 
     @Override
@@ -104,5 +105,4 @@ public class CppReceiver implements Receiver
         _ssn.checkError();
         return _ssn;
     }
-
 }

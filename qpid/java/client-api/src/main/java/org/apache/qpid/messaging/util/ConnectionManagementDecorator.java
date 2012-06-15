@@ -180,8 +180,9 @@ public class ConnectionManagementDecorator implements ConnectionExt
     }
 
     @Override
-    public MessageFactory getMessageFactory()
+    public MessageFactory getMessageFactory() throws MessagingException
     {
+        checkClosedAndThrowException();
         return _delegate.getMessageFactory();
     }
 
@@ -254,6 +255,12 @@ public class ConnectionManagementDecorator implements ConnectionExt
         return _connectionLock;
     }
 
+    @Override
+    public void recreate() throws MessagingException
+    {
+        // TODO Auto-generated method stub
+    }
+
     private void checkClosedAndThrowException() throws ConnectionException
     {
         checkClosedAndThrowException("Connection is closed. You cannot invoke methods on a closed connection");
@@ -289,12 +296,5 @@ public class ConnectionManagementDecorator implements ConnectionExt
     {
         // TODO add local IP and pid to the beginning;
         return _ssnNameGenerator.generate().toString();
-    }
-
-    @Override
-    public void recreate() throws MessagingException
-    {
-        // TODO Auto-generated method stub
-
     }
 }

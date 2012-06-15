@@ -21,23 +21,45 @@ import org.apache.qpid.messaging.Message;
 import org.apache.qpid.messaging.MessagingException;
 import org.apache.qpid.messaging.Sender;
 import org.apache.qpid.messaging.Session;
+import org.apache.qpid.messaging.ext.MessageInternal;
 
 public class CppSender implements Sender
 {
     private CppSession _ssn;
     private org.apache.qpid.messaging.cpp.jni.Sender _cppSender;
+    private CppMessageFactory _msgFactory;
 
     public CppSender(CppSession ssn,
-            org.apache.qpid.messaging.cpp.jni.Sender cppSender)
+            org.apache.qpid.messaging.cpp.jni.Sender cppSender) throws MessagingException
     {
         _ssn = ssn;
         _cppSender = cppSender;
+        _msgFactory = (CppMessageFactory)ssn.getConnection().getMessageFactory();
     }
 
     @Override
     public void send(Message message, boolean sync) throws MessagingException
     {
-        _cppSender.send(((TextMessage)message).getCppMessage(),true);
+        org.apache.qpid.messaging.cpp.jni.Message m = convertForSending(message);
+        _cppSender.send(m,true);
+    }
+
+    private org.apache.qpid.messaging.cpp.jni.Message convertForSending(Message m) throws MessagingException
+    {
+        if((m instanceof MessageInternal) &&
+           (_msgFactory.getClass() == ((MessageInternal)m).getMessageFactoryClass())
+          )
+        {
+            org.apache.qpid.messaging.cpp.jni.Message msg =
+                (org.apache.qpid.messaging.cpp.jni.Message)((MessageInternal)m).getFactorySpecificMessageDelegate();
+            msg.setContentAsByteBuffer(m.getContent());
+            return msg;
+        }
+        else
+        {
+            throw new MessagingException("Incompatible message implementation." +
+                     "You need to use the MessageFactory given by the connection that owns this ");
+        }
     }
 
     @Override

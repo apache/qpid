@@ -18,6 +18,7 @@
 package org.apache.qpid.messaging.cpp;
 
 import org.apache.qpid.messaging.Connection;
+import org.apache.qpid.messaging.MessageFactory;
 import org.apache.qpid.messaging.MessagingException;
 import org.apache.qpid.messaging.Session;
 
@@ -29,6 +30,8 @@ import org.apache.qpid.messaging.Session;
  */
 public class CppConnection implements Connection
 {
+    private static MessageFactory _MSG_FACTORY = new CppMessageFactory();
+
     private org.apache.qpid.messaging.cpp.jni.Connection _cppConn;
 
     public CppConnection(String url)
@@ -77,5 +80,11 @@ public class CppConnection implements Connection
     public String getAuthenticatedUsername() throws MessagingException
     {
         return _cppConn.getAuthenticatedUsername();
+    }
+
+    @Override
+    public MessageFactory getMessageFactory()
+    {
+        return _MSG_FACTORY;
     }
 }
