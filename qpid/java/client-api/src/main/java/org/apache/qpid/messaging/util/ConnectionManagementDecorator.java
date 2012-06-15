@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.qpid.messaging.Connection;
 import org.apache.qpid.messaging.ConnectionException;
+import org.apache.qpid.messaging.MessageFactory;
 import org.apache.qpid.messaging.MessagingException;
 import org.apache.qpid.messaging.Session;
 import org.apache.qpid.messaging.SessionException;
@@ -176,6 +177,12 @@ public class ConnectionManagementDecorator implements ConnectionExt
     {
         checkClosedAndThrowException();
         return _delegate.getAuthenticatedUsername();
+    }
+
+    @Override
+    public MessageFactory getMessageFactory()
+    {
+        return _delegate.getMessageFactory();
     }
 
     @Override

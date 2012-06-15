@@ -34,11 +34,12 @@ import java.util.UUID;
  */
 public final class BBEncoder extends AbstractEncoder
 {
+    private static boolean ALLOCATE_DIRECT = Boolean.getBoolean("qpid.allocate-direct");
     private ByteBuffer out;
     private int segment;
 
     public BBEncoder(int capacity) {
-        out = ByteBuffer.allocate(capacity);
+        out = ALLOCATE_DIRECT? ByteBuffer.allocateDirect(capacity) : ByteBuffer.allocate(capacity);
         out.order(ByteOrder.BIG_ENDIAN);
         segment = 0;
     }

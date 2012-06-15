@@ -44,7 +44,7 @@ public interface Connection
      * @param name Unique identifier for the session.
      * @return Session
      */
-    public Session createSession(String name)throws MessagingException;
+    public Session createSession(String name) throws MessagingException;
 
     /**
      * Creates a transactional session with the given name.
@@ -53,7 +53,7 @@ public interface Connection
      * @param name Unique identifier for the session.
      * @return Session
      */
-    public Session createTransactionalSession(String name)throws MessagingException;
+    public Session createTransactionalSession(String name) throws MessagingException;
 
     /**
      * Returns the authenticated username for this connection.
@@ -62,5 +62,11 @@ public interface Connection
      * For KERBEROS the username will be the kerberos username.
      * @return The authenticated username.
      */
-    public String getAuthenticatedUsername()throws MessagingException;
+    public String getAuthenticatedUsername() throws MessagingException;
+
+    /**
+     * Returns a reference to the message factory for this connection.
+     * @return MessageFactory
+     */
+    public MessageFactory getMessageFactory();
 }
