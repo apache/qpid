@@ -21,16 +21,17 @@ import org.apache.qpid.messaging.Message;
 import org.apache.qpid.messaging.MessagingException;
 import org.apache.qpid.messaging.Sender;
 import org.apache.qpid.messaging.Session;
+import org.apache.qpid.messaging.cpp.jni.NativeMessage;
+import org.apache.qpid.messaging.cpp.jni.NativeSender;
 import org.apache.qpid.messaging.ext.MessageInternal;
 
 public class CppSender implements Sender
 {
     private CppSession _ssn;
-    private org.apache.qpid.messaging.cpp.jni.Sender _cppSender;
+    private NativeSender _cppSender;
     private CppMessageFactory _msgFactory;
 
-    public CppSender(CppSession ssn,
-            org.apache.qpid.messaging.cpp.jni.Sender cppSender) throws MessagingException
+    public CppSender(CppSession ssn, NativeSender cppSender) throws MessagingException
     {
         _ssn = ssn;
         _cppSender = cppSender;
@@ -40,18 +41,17 @@ public class CppSender implements Sender
     @Override
     public void send(Message message, boolean sync) throws MessagingException
     {
-        org.apache.qpid.messaging.cpp.jni.Message m = convertForSending(message);
+        NativeMessage m = convertForSending(message);
         _cppSender.send(m,true);
     }
 
-    private org.apache.qpid.messaging.cpp.jni.Message convertForSending(Message m) throws MessagingException
+    private NativeMessage convertForSending(Message m) throws MessagingException
     {
         if((m instanceof MessageInternal) &&
            (_msgFactory.getClass() == ((MessageInternal)m).getMessageFactoryClass())
           )
         {
-            org.apache.qpid.messaging.cpp.jni.Message msg =
-                (org.apache.qpid.messaging.cpp.jni.Message)((MessageInternal)m).getFactorySpecificMessageDelegate();
+            NativeMessage msg = (NativeMessage)((MessageInternal)m).getFactorySpecificMessageDelegate();
             msg.setContentAsByteBuffer(m.getContent());
             return msg;
         }
@@ -119,5 +119,4 @@ public class CppSender implements Sender
         _ssn.checkError();
         return _ssn;
     }
-
 }

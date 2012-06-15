@@ -21,6 +21,7 @@ import org.apache.qpid.messaging.Connection;
 import org.apache.qpid.messaging.MessageFactory;
 import org.apache.qpid.messaging.MessagingException;
 import org.apache.qpid.messaging.Session;
+import org.apache.qpid.messaging.cpp.jni.NativeConnection;
 
 /**
  *  This class relies on the ConnectionManagementDecorator for
@@ -32,11 +33,11 @@ public class CppConnection implements Connection
 {
     private static MessageFactory _MSG_FACTORY = new CppMessageFactory();
 
-    private org.apache.qpid.messaging.cpp.jni.Connection _cppConn;
+    private NativeConnection _cppConn;
 
     public CppConnection(String url)
     {
-        _cppConn = new org.apache.qpid.messaging.cpp.jni.Connection(url);
+        _cppConn = new NativeConnection(url);
     }
 
     @Override

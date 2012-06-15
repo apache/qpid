@@ -30,6 +30,7 @@ import org.apache.qpid.messaging.MessagingException;
 import org.apache.qpid.messaging.StringMessage;
 import org.apache.qpid.messaging.cpp.jni.Address;
 import org.apache.qpid.messaging.cpp.jni.Duration;
+import org.apache.qpid.messaging.cpp.jni.NativeMessage;
 import org.apache.qpid.messaging.util.MessageFactory_AMQP_0_10;
 
 /**
@@ -49,21 +50,21 @@ public class CppMessageFactory extends MessageFactory_AMQP_0_10
         return new CppMessageDelegate();
     }
 
-    public Message createMessage(org.apache.qpid.messaging.cpp.jni.Message m) throws MessagingException
+    public Message createMessage(NativeMessage m) throws MessagingException
     {
         return createMessage(new CppMessageDelegate(m), m.getContentAsByteBuffer());
     }
 
     class CppMessageDelegate implements Message
     {
-        private org.apache.qpid.messaging.cpp.jni.Message _cppMessage;
+        private NativeMessage _cppMessage;
 
         public CppMessageDelegate()
         {
-            this(new org.apache.qpid.messaging.cpp.jni.Message());
+            this(new NativeMessage());
         }
 
-        public CppMessageDelegate(org.apache.qpid.messaging.cpp.jni.Message msg)
+        public CppMessageDelegate(NativeMessage msg)
         {
             _cppMessage = msg;
         }
@@ -214,7 +215,7 @@ public class CppMessageFactory extends MessageFactory_AMQP_0_10
             _cppMessage.setProperty(key, value);
         }
 
-        protected org.apache.qpid.messaging.cpp.jni.Message getCppMessage()
+        protected NativeMessage getCppMessage()
         {
             return _cppMessage;
         }
@@ -231,7 +232,7 @@ public class CppMessageFactory extends MessageFactory_AMQP_0_10
             return null; // The delegate is only for the headers
         }
 
-        public org.apache.qpid.messaging.cpp.jni.Message getNativeMessage()
+        public NativeMessage getNativeMessage()
         {
             return _cppMessage;
         }

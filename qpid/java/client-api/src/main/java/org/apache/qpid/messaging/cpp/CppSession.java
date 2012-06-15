@@ -25,6 +25,8 @@ import org.apache.qpid.messaging.Receiver;
 import org.apache.qpid.messaging.Sender;
 import org.apache.qpid.messaging.Session;
 import org.apache.qpid.messaging.cpp.jni.Duration;
+import org.apache.qpid.messaging.cpp.jni.NativeMessage;
+import org.apache.qpid.messaging.cpp.jni.NativeSession;
 
 /**
  *  This class relies on the SessionManagementDecorator for
@@ -34,11 +36,10 @@ import org.apache.qpid.messaging.cpp.jni.Duration;
  */
 public class CppSession implements Session
 {
-    private org.apache.qpid.messaging.cpp.jni.Session _cppSession;
+    private NativeSession _cppSession;
     private CppConnection _conn;
 
-    public CppSession(CppConnection conn,
-            org.apache.qpid.messaging.cpp.jni.Session cppSsn)
+    public CppSession(CppConnection conn,NativeSession cppSsn)
     {
         _cppSession = cppSsn;
         _conn = conn;
@@ -84,19 +85,19 @@ public class CppSession implements Session
     @Override
     public void acknowledge(Message message, boolean sync) throws MessagingException
     {
-        _cppSession.acknowledge((org.apache.qpid.messaging.cpp.jni.Message)message, sync);
+        _cppSession.acknowledge((NativeMessage)message, sync);
     }
 
     @Override
     public void reject(Message message) throws MessagingException
     {
-        _cppSession.reject((org.apache.qpid.messaging.cpp.jni.Message)message);
+        _cppSession.reject((NativeMessage)message);
     }
 
     @Override
     public void release(Message message) throws MessagingException
     {
-        _cppSession.release((org.apache.qpid.messaging.cpp.jni.Message)message);
+        _cppSession.release((NativeMessage)message);
     }
 
     @Override

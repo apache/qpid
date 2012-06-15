@@ -64,6 +64,11 @@ std::string toString()
 }
 
 }
+%rename(NativeConnection) qpid::messaging::Connection;
+%rename(NativeSession) qpid::messaging::Session;
+%rename(NativeSender) qpid::messaging::Sender;
+%rename(NativeReceiver) qpid::messaging::Receiver;
+%rename(NativeMessage) qpid::messaging::Message;
 
 %include "../qpid.i"
 

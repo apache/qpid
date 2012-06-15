@@ -21,15 +21,16 @@ import org.apache.qpid.messaging.Message;
 import org.apache.qpid.messaging.MessagingException;
 import org.apache.qpid.messaging.Receiver;
 import org.apache.qpid.messaging.Session;
+import org.apache.qpid.messaging.cpp.jni.NativeMessage;
+import org.apache.qpid.messaging.cpp.jni.NativeReceiver;
 
 public class CppReceiver implements Receiver
 {
     private CppSession _ssn;
-    private org.apache.qpid.messaging.cpp.jni.Receiver _cppReceiver;
+    private NativeReceiver _cppReceiver;
     private CppMessageFactory _msgFactory;
 
-    public CppReceiver(CppSession ssn,
-            org.apache.qpid.messaging.cpp.jni.Receiver cppReceiver) throws MessagingException
+    public CppReceiver(CppSession ssn, NativeReceiver cppReceiver) throws MessagingException
     {
         _ssn = ssn;
         _cppReceiver = cppReceiver;
@@ -39,14 +40,14 @@ public class CppReceiver implements Receiver
     @Override
     public Message get(long timeout) throws MessagingException
     {
-        org.apache.qpid.messaging.cpp.jni.Message m = _cppReceiver.get(CppDuration.getDuration(timeout));
+        NativeMessage m = _cppReceiver.get(CppDuration.getDuration(timeout));
         return _msgFactory.createMessage(m);
     }
 
     @Override
     public Message fetch(long timeout) throws MessagingException
     {
-        org.apache.qpid.messaging.cpp.jni.Message m = _cppReceiver.fetch(CppDuration.getDuration(timeout));
+        NativeMessage m = _cppReceiver.fetch(CppDuration.getDuration(timeout));
         return _msgFactory.createMessage(m);
     }
 
