@@ -18,7 +18,8 @@
  -->
 <project name="visualisation-jfc" xmlns:ivy="antlib:org.apache.ivy.ant" default="build">
     <property name="module.depends" value="common perftests" />
-    <property name="module.test.depends" value="test" />
+    <property name="module.test.depends" value="test common/test" />
+
     <property name="module.manifest" value="true" />
 
     <import file="../../module.xml" />

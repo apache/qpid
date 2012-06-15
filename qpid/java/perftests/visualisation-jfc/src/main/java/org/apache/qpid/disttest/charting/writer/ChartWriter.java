@@ -20,10 +20,14 @@
 package org.apache.qpid.disttest.charting.writer;
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.qpid.disttest.charting.ChartingException;
 import org.jfree.chart.ChartUtilities;
@@ -34,7 +38,11 @@ import org.slf4j.LoggerFactory;
 public class ChartWriter
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChartWriter.class);
+
+    static final String SUMMARY_FILE_NAME = "chart-summary.html";
+
     private File _chartDirectory = new File(".");
+    private List<File> _chartFiles = new ArrayList<File>();
 
     public void writeChartToFileSystem(JFreeChart chart, String chartStemName)
     {
@@ -46,6 +54,8 @@ public class ChartWriter
             pngOutputStream = new BufferedOutputStream(new FileOutputStream(pngFile));
             ChartUtilities.writeChartAsPNG(pngOutputStream, chart, 600, 400, true, 0);
             pngOutputStream.close();
+
+            _chartFiles.add(pngFile);
 
             LOGGER.info("Written {} chart", pngFile);
         }
@@ -64,6 +74,60 @@ public class ChartWriter
                 catch (IOException e)
                 {
                     throw new ChartingException("Failed to create chart", e);
+                }
+            }
+        }
+    }
+
+    public void writeHtmlSummaryToFileSystem()
+    {
+        if(_chartFiles.size() < 2)
+        {
+            LOGGER.info("Only " + _chartFiles.size() + " chart image(s) have been written so no HTML summary file will be produced");
+            return;
+        }
+
+        String htmlHeader =
+            "<html>\n" +
+            "    <head>\n" +
+            "        <title>Performance Charts</title>\n" +
+            "    </head>\n" +
+            "    <body>\n";
+
+        String htmlFooter =
+            "    </body>\n" +
+            "</html>";
+
+        BufferedWriter writer = null;
+        try
+        {
+            File summaryFile = new File(_chartDirectory, SUMMARY_FILE_NAME);
+            LOGGER.debug("About to produce HTML summary file " + summaryFile.getAbsolutePath() + " from charts " + _chartFiles);
+
+            writer = new BufferedWriter(new FileWriter(summaryFile));
+            writer.write(htmlHeader);
+            for (File chartFile : _chartFiles)
+            {
+                writer.write("        <img src='" + chartFile.getName() + "'/>\n");
+            }
+            writer.write(htmlFooter);
+            writer.close();
+        }
+        catch (Exception e)
+        {
+            throw new ChartingException("Failed to create HTML summary file", e);
+        }
+        finally
+        {
+            if(writer != null)
+            {
+                try
+                {
+                    writer.close();
+                }
+                catch(IOException e)
+                {
+                    throw new ChartingException("Failed to create HTML summary file", e);
                 }
             }
         }

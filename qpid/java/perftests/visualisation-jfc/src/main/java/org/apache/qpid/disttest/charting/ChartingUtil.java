@@ -100,6 +100,8 @@ public class ChartingUtil
             JFreeChart chart = chartBuilder.buildChart(chartingDefinition);
             writer.writeChartToFileSystem(chart, chartingDefinition.getChartStemName());
         }
+
+        writer.writeHtmlSummaryToFileSystem();
     }
 
     private List<ChartingDefinition> loadChartDefinitions(String chartingDefsDir)
