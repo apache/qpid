@@ -26,17 +26,17 @@ public interface Connection
      * Creates a network connection to the peer and negotiates with the peer to establish a protocol level connection.
      * When this method returns the connection is ready to be used.
      */
-    public void open() throws ConnectionException;
+    public void open() throws MessagingException;
 
     /**
      * Returns true if the connection is open.
      */
-    public boolean isOpen() throws ConnectionException;
+    public boolean isOpen() throws MessagingException;
 
     /**
      * Close the connection and any sessions associated with this connection.
      */
-    public void close() throws ConnectionException;
+    public void close() throws MessagingException;
 
     /**
      * Creates a session with the given name.The name should be unique.
@@ -44,7 +44,7 @@ public interface Connection
      * @param name Unique identifier for the session.
      * @return Session
      */
-    public Session createSession(String name)throws ConnectionException;
+    public Session createSession(String name)throws MessagingException;
 
     /**
      * Creates a transactional session with the given name.
@@ -53,7 +53,7 @@ public interface Connection
      * @param name Unique identifier for the session.
      * @return Session
      */
-    public Session createTransactionalSession(String name)throws ConnectionException;
+    public Session createTransactionalSession(String name)throws MessagingException;
 
     /**
      * Returns the authenticated username for this connection.
@@ -62,5 +62,5 @@ public interface Connection
      * For KERBEROS the username will be the kerberos username.
      * @return The authenticated username.
      */
-    public String getAuthenticatedUsername();
+    public String getAuthenticatedUsername()throws MessagingException;
 }

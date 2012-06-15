@@ -25,7 +25,7 @@ public interface Session
     /**
      * Returns true if the session is closed.
      */
-    public boolean isClosed() throws MessagingException;
+    public boolean isClosed();
 
     /**
      * Closes a session and all associated senders and receivers.
@@ -121,4 +121,12 @@ public interface Session
      * @return
      */
     public Connection getConnection() throws MessagingException;
+
+    public boolean hasError();
+
+    /**
+     * If the session has been rendered invalid by some exception,
+     * this method will result in that exception being thrown on calling this method.
+     */
+    public void checkError() throws MessagingException;
 }

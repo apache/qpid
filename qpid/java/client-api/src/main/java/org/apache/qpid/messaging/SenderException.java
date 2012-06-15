@@ -20,7 +20,7 @@ package org.apache.qpid.messaging;
 /**
  *  Base class for all Sender related exceptions thrown by the Messaging API.
  */
-public class SenderException extends MessagingException
+public class SenderException extends LinkException
 {
 
     public SenderException(String message, Throwable cause)

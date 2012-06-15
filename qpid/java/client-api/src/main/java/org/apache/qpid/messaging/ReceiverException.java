@@ -20,7 +20,7 @@ package org.apache.qpid.messaging;
 /**
  *  Base class for all Receiver related exceptions thrown by the Messaging API.
  */
-public class ReceiverException extends MessagingException
+public class ReceiverException extends LinkException
 {
 
     public ReceiverException(String message, Throwable cause)

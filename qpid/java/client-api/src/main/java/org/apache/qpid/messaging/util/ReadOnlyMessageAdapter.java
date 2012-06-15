@@ -15,10 +15,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpid.messaging;
+package org.apache.qpid.messaging.util;
 
 import java.util.Collections;
 import java.util.Map;
+
+import org.apache.qpid.messaging.Message;
+import org.apache.qpid.messaging.MessageNotWritableException;
+import org.apache.qpid.messaging.MessagingException;
 
 /**
  *  Ensures the message is read only by blocking the delegates

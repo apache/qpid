@@ -20,7 +20,7 @@ package org.apache.qpid.messaging;
 /**
  *  Base class for all address related exceptions thrown by the Messaging API.
  */
-public class AddressException extends MessagingException
+public class AddressException extends LinkException
 {
 
     public AddressException(String addr,String message, Throwable cause)

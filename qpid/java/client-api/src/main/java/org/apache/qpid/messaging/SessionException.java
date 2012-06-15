@@ -22,6 +22,7 @@ package org.apache.qpid.messaging;
  */
 public class SessionException extends MessagingException
 {
+    // might be useful to provide the current session state?
 
     public SessionException(String message, Throwable cause)
     {

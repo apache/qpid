@@ -22,6 +22,7 @@ package org.apache.qpid.messaging;
  */
 public class ConnectionException extends MessagingException
 {
+    // might be useful to provide the current connection state?
 
     public ConnectionException(String message, Throwable cause)
     {
