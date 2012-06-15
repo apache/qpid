@@ -38,6 +38,7 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.jmx.AMQManagedObject;
+import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
@@ -68,6 +69,7 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
         CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
         _store = mock(BDBHAMessageStore.class);
         _mBeanParent = mock(AMQManagedObject.class);
+        when(_mBeanParent.getRegistry()).thenReturn(mock(ManagedObjectRegistry.class));
         _mBean = new BDBHAMessageStoreManagerMBean(_store, _mBeanParent);
     }
 

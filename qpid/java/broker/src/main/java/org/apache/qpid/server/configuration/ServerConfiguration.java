@@ -640,14 +640,9 @@ public class ServerConfiguration extends ConfigurationPlugin
         return getBooleanValue("queue.auto_register", true);
     }
 
-    public boolean getManagementEnabled()
+    public boolean getJMXManagementEnabled()
     {
         return getBooleanValue("management.enabled", true);
-    }
-
-    public void setManagementEnabled(boolean enabled)
-    {
-        getConfig().setProperty("management.enabled", enabled);
     }
 
     public int getHeartBeatDelay()

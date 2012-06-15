@@ -20,46 +20,89 @@
  */
 package org.apache.qpid.server.jmx;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 
 public class JMXActivator implements  BundleActivator
 {
-    private static final Logger _logger = Logger.getLogger(JMXActivator.class);
+    private static final Logger LOGGER = Logger.getLogger(JMXActivator.class);
 
 
-    private BundleContext _ctx;
     private String _bundleName;
     private JMXService _jmxService;
+
+    private List<ServiceRegistration> _registeredServices;
 
 
     public void start(final BundleContext ctx) throws Exception
     {
-        _ctx = ctx;
-        _jmxService = new JMXService();
-        _jmxService.start();
-        _bundleName = ctx.getBundle().getSymbolicName();
+        boolean jmxManagementEnabled = ApplicationRegistry.getInstance().getConfiguration().getJMXManagementEnabled();
 
-        // register the service
-        _logger.info("Registering jmx plugin: " + _bundleName);
-        _ctx.registerService(JMXService.class.getName(), _jmxService, null);
-        _ctx.registerService(ConfigurationPluginFactory.class.getName(), JMXConfiguration.FACTORY, null);
+        if (jmxManagementEnabled)
+        {
+            _jmxService = new JMXService();
+            _jmxService.start();
+
+            _bundleName = ctx.getBundle().getSymbolicName();
+            LOGGER.info("Registering jmx plugin: " + _bundleName);
+
+            _registeredServices = registerServices(ctx);
+        }
+        else
+        {
+            LOGGER.debug("Skipping registration of JMX plugin as JMX Management disabled in config. ");
+        }
     }
 
     public void stop(final BundleContext bundleContext) throws Exception
     {
-        _logger.info("Stopping jmx plugin: " + _bundleName);
         try
         {
-            _jmxService.close();
+            if (_jmxService != null)
+            {
+                LOGGER.info("Stopping jmx plugin: " + _bundleName);
+                _jmxService.close();
+            }
+
+            if (_registeredServices != null)
+            {
+                unregisterServices();
+            }
         }
         finally
         {
-            // null object references
             _jmxService = null;
-            _ctx = null;
+            _registeredServices = null;
+        }
+    }
+
+
+    private List<ServiceRegistration> registerServices(BundleContext ctx)
+    {
+        List<ServiceRegistration> serviceRegistrations = new ArrayList<ServiceRegistration>();
+
+        ServiceRegistration jmxServiceRegistration = ctx.registerService(JMXService.class.getName(), _jmxService, null);
+        ServiceRegistration jmxConfigFactoryRegistration = ctx.registerService(ConfigurationPluginFactory.class.getName(), JMXConfiguration.FACTORY, null);
+
+        serviceRegistrations.add(jmxServiceRegistration);
+        serviceRegistrations.add(jmxConfigFactoryRegistration);
+        return serviceRegistrations;
+    }
+
+    private void unregisterServices()
+    {
+        for (Iterator<ServiceRegistration> iterator = _registeredServices.iterator(); iterator.hasNext();)
+        {
+            ServiceRegistration service = iterator.next();
+            service.unregister();
         }
     }
 }

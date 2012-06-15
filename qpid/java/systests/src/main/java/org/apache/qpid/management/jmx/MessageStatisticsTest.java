@@ -50,10 +50,10 @@ public class MessageStatisticsTest extends QpidBrokerTestCase
     @Override
     public void setUp() throws Exception
     {
-        super.setUp();
-
         _jmxUtils = new JMXTestUtils(this, TEST_USER, TEST_PASSWORD);
         _jmxUtils.setUp();
+
+        super.setUp();
 
         _brokerUrl = getBroker().toString();
         _test1 = new AMQConnection(_brokerUrl, TEST_USER, TEST_PASSWORD, "clientid", "test");

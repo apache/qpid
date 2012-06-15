@@ -59,11 +59,20 @@ public class Management
             {
                 if(port.getTransports().contains(Transport.TCP))
                 {
-                    _servers.add(createServer(port.getPort()));
+                    int portNumber = port.getPort();
+                    if (_logger.isInfoEnabled())
+                    {
+                        _logger.info("Creating web server on port " + portNumber);
+                    }
+                    _servers.add(createServer(portNumber));
                 }
             }
         }
 
+        if (_logger.isDebugEnabled())
+        {
+            _logger.info(_servers.size() + " server(s) defined");
+        }
 
     }
 
