@@ -111,6 +111,14 @@ public class Broker
 
         ConfigurationFileApplicationRegistry config = new ConfigurationFileApplicationRegistry(configFile, options.getBundleContext());
         ServerConfiguration serverConfig = config.getConfiguration();
+        if (options.getQpidWork() != null)
+        {
+            serverConfig.setQpidWork(options.getQpidWork());
+        }
+        if (options.getQpidHome() != null)
+        {
+            serverConfig.setQpidHome(options.getQpidHome());
+        }
         updateManagementPorts(serverConfig, options.getJmxPortRegistryServer(), options.getJmxPortConnectorServer());
 
         ApplicationRegistry.initialise(config);

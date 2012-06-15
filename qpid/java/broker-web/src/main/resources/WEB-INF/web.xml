@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one
+ - or more contributor license agreements.  See the NOTICE file
+ - distributed with this work for additional information
+ - regarding copyright ownership.  The ASF licenses this file
+ - to you under the Apache License, Version 2.0 (the
+ - "License"); you may not use this file except in compliance
+ - with the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing,
+ - software distributed under the License is distributed on an
+ - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ - KIND, either express or implied.  See the License for the
+ - specific language governing permissions and limitations
+ - under the License.
+ -->
+<web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+
+  <session-config><!--  10 minutes -->
+   <session-timeout>10</session-timeout>
+  </session-config>
+
+  <servlet>
+    <display-name>VhostsServlet</display-name>
+    <servlet-name>VhostsServlet</servlet-name>
+    <servlet-class>org.apache.qpid.server.management.plugin.servlet.api.VhostsServlet</servlet-class>
+  </servlet>
+
+  <servlet>
+    <display-name>ExchangesServlet</display-name>
+    <servlet-name>ExchangesServlet</servlet-name>
+    <servlet-class>org.apache.qpid.server.management.plugin.servlet.api.ExchangesServlet</servlet-class>
+  </servlet>
+
+  <servlet>
+    <display-name>BrokerRestServlet</display-name>
+    <servlet-name>BrokerRestServlet</servlet-name>
+    <servlet-class>org.apache.qpid.server.management.plugin.servlet.rest.RestServlet</servlet-class>
+  </servlet>
+
+  <servlet>
+    <display-name>VirtualHostRestServlet</display-name>
+    <servlet-name>VirtualHostRestServlet</servlet-name>
+    <servlet-class>org.apache.qpid.server.management.plugin.servlet.rest.RestServlet</servlet-class>
+    <init-param>
+     <param-name>hierarchy</param-name>
+     <param-value>VirtualHost</param-value>
+   </init-param>
+  </servlet>
+
+  <servlet>
+    <display-name>ExchangeRestServlet</display-name>
+    <servlet-name>ExchangeRestServlet</servlet-name>
+    <servlet-class>org.apache.qpid.server.management.plugin.servlet.rest.RestServlet</servlet-class>
+    <init-param>
+     <param-name>hierarchy</param-name>
+     <param-value>VirtualHost,Exchange</param-value>
+   </init-param>
+  </servlet>
+
+  <servlet>
+    <display-name>QueueRestServlet</display-name>
+    <servlet-name>QueueRestServlet</servlet-name>
+    <servlet-class>org.apache.qpid.server.management.plugin.servlet.rest.RestServlet</servlet-class>
+    <init-param>
+     <param-name>hierarchy</param-name>
+     <param-value>VirtualHost,Queue</param-value>
+   </init-param>
+  </servlet>
+
+  <servlet>
+    <display-name>ConnectionRestServlet</display-name>
+    <servlet-name>ConnectionRestServlet</servlet-name>
+    <servlet-class>org.apache.qpid.server.management.plugin.servlet.rest.RestServlet</servlet-class>
+    <init-param>
+     <param-name>hierarchy</param-name>
+     <param-value>VirtualHost,Connection</param-value>
+   </init-param>
+  </servlet>
+
+  <servlet>
+    <display-name>BindingRestServlet</display-name>
+    <servlet-name>BindingRestServlet</servlet-name>
+    <servlet-class>org.apache.qpid.server.management.plugin.servlet.rest.RestServlet</servlet-class>
+    <init-param>
+     <param-name>hierarchy</param-name>
+     <param-value>VirtualHost,Exchange,Queue,Binding</param-value>
+   </init-param>
+  </servlet>
+
+  <servlet>
+    <display-name>PortRestServlet</display-name>
+    <servlet-name>PortRestServlet</servlet-name>
+    <servlet-class>org.apache.qpid.server.management.plugin.servlet.rest.RestServlet</servlet-class>
+    <init-param>
+     <param-name>hierarchy</param-name>
+     <param-value>Port</param-value>
+   </init-param>
+  </servlet>
+
+  <servlet>
+    <display-name>SessionRestServlet</display-name>
+    <servlet-name>SessionRestServlet</servlet-name>
+    <servlet-class>org.apache.qpid.server.management.plugin.servlet.rest.RestServlet</servlet-class>
+    <init-param>
+     <param-name>hierarchy</param-name>
+     <param-value>VirtualHost,Connection,Session</param-value>
+   </init-param>
+  </servlet>
+
+  <servlet>
+    <display-name>StructureServlet</display-name>
+    <servlet-name>StructureServlet</servlet-name>
+    <servlet-class>org.apache.qpid.server.management.plugin.servlet.rest.StructureServlet</servlet-class>
+  </servlet>
+
+  <servlet>
+    <display-name>MessageServlet</display-name>
+    <servlet-name>MessageServlet</servlet-name>
+    <servlet-class>org.apache.qpid.server.management.plugin.servlet.rest.MessageServlet</servlet-class>
+  </servlet>
+
+  <servlet>
+    <display-name>MessageContentServlet</display-name>
+    <servlet-name>MessageContentServlet</servlet-name>
+    <servlet-class>org.apache.qpid.server.management.plugin.servlet.rest.MessageContentServlet</servlet-class>
+  </servlet>
+
+  <servlet>
+    <display-name>LogRecordsServlet</display-name>
+    <servlet-name>LogRecordsServlet</servlet-name>
+    <servlet-class>org.apache.qpid.server.management.plugin.servlet.rest.LogRecordsServlet</servlet-class>
+  </servlet>
+
+  <servlet>
+    <display-name>SaslServlet</display-name>
+    <servlet-name>SaslServlet</servlet-name>
+    <servlet-class>org.apache.qpid.server.management.plugin.servlet.rest.SaslServlet</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>VhostsServlet</servlet-name>
+    <url-pattern>/api/vhosts/*</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>ExchangesServlet</servlet-name>
+    <url-pattern>/api/exchanges/*</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>BrokerRestServlet</servlet-name>
+    <url-pattern>/rest/broker/*</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>VirtualHostRestServlet</servlet-name>
+    <url-pattern>/rest/virtualhost/*</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>ExchangeRestServlet</servlet-name>
+    <url-pattern>/rest/exchange/*</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>QueueRestServlet</servlet-name>
+    <url-pattern>/rest/queue/*</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>ConnectionRestServlet</servlet-name>
+    <url-pattern>/rest/connection/*</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>BindingRestServlet</servlet-name>
+    <url-pattern>/rest/binding/*</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>PortRestServlet</servlet-name>
+    <url-pattern>/rest/port/*</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>SessionRestServlet</servlet-name>
+    <url-pattern>/rest/session/*</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>StructureServlet</servlet-name>
+    <url-pattern>/rest/structure</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>MessageServlet</servlet-name>
+    <url-pattern>/rest/message/*</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>MessageContentServlet</servlet-name>
+    <url-pattern>/rest/message-content/*</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>LogRecordsServlet</servlet-name>
+    <url-pattern>/rest/logrecords</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>SaslServlet</servlet-name>
+    <url-pattern>/rest/sasl</url-pattern>
+  </servlet-mapping>
+
+  <listener>
+    <listener-class>org.apache.qpid.web.listener.QpidServletContextListener</listener-class>
+  </listener>
+
+  <welcome-file-list>
+    <welcome-file>index.html</welcome-file>
+    <welcome-file>management.html</welcome-file>
+  </welcome-file-list>
+
+</web-app>

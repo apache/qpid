@@ -33,6 +33,7 @@ public class BrokerOptions
     public static final String DEFAULT_CONFIG_FILE = "etc/config.xml";
     public static final String DEFAULT_LOG_CONFIG_FILE = "etc/log4j.xml";
     public static final String QPID_HOME = "QPID_HOME";
+    public static final String QPID_WORK = "QPID_WORK";
 
     private final Set<Integer> _ports = new HashSet<Integer>();
     private final Set<Integer> _sslPorts = new HashSet<Integer>();
@@ -47,6 +48,8 @@ public class BrokerOptions
     private BundleContext _bundleContext;
 
     private Integer _logWatchFrequency = 0;
+    private String _qpidWorkFolder;
+    private String _qpidHomeFolder;
 
     public void addPort(final int port)
     {
@@ -109,7 +112,7 @@ public class BrokerOptions
     }
     public String getQpidHome()
     {
-        return System.getProperty(QPID_HOME);
+        return _qpidHomeFolder == null? System.getProperty(QPID_HOME): _qpidHomeFolder;
     }
 
     public Set<Integer> getExcludedPorts(final ProtocolExclusion excludeProtocol)
@@ -178,5 +181,20 @@ public class BrokerOptions
 
         Set<Integer> ports = _inclusionMap.get(includeProtocol);
         ports.add(port);
+    }
+
+    public String getQpidWork()
+    {
+        return _qpidWorkFolder;
+    }
+
+    public void setQpidWork(String qpidWorkFolder)
+    {
+        _qpidWorkFolder = qpidWorkFolder;
+    }
+
+    public void setQpidHome(String qpidHomeFolder)
+    {
+        _qpidHomeFolder = qpidHomeFolder;
     }
 }

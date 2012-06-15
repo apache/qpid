@@ -178,6 +178,9 @@ csvjdbc.jar=lib/csvjdbc/csvjdbc-1.0.8.jar
 perftests-visualisation-jfc.libs=${jfreechart.jar} ${jcommon.jar} ${csvjdbc.jar}
 perftests-visualisation-jfc.test.libs=${test.libs}
 
+#optional qpid-web module deps
+broker-web.libs=${servlet-api}
+
 # Libraries used only within the build
 bnd=lib/required/bnd-0.0.384.jar
 jython=lib/required/jython-standalone-2.5.2.jar

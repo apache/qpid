@@ -76,6 +76,8 @@ public class ServerConfiguration extends ConfigurationPlugin
 
     private File _configFile;
     private File _vhostsFile;
+    private String _qpidWork;
+    private String _qpidHome;
 
     // Map of environment variables to config items
     private static final Map<String, String> envVarMap = new HashMap<String, String>();
@@ -504,12 +506,26 @@ public class ServerConfiguration extends ConfigurationPlugin
 
     public String getQpidWork()
     {
-        return System.getProperty(QPID_WORK, System.getProperty("java.io.tmpdir"));
+        if ( _qpidWork == null )
+        {
+            return System.getProperty(QPID_WORK, System.getProperty("java.io.tmpdir"));
+        }
+        else
+        {
+            return _qpidWork;
+        }
     }
 
     public String getQpidHome()
     {
-        return System.getProperty(QPID_HOME);
+        if ( _qpidHome == null )
+        {
+            return System.getProperty(QPID_HOME);
+        }
+        else
+        {
+            return _qpidHome;
+        }
     }
 
     public void setJMXPortRegistryServer(int registryServerPort)
@@ -979,5 +995,15 @@ public class ServerConfiguration extends ConfigurationPlugin
         String reply = getConfig().getString(CONNECTOR_AMQP_SUPPORTED_REPLY, null);
 
         return reply == null ? null : AmqpProtocolVersion.valueOf(reply);
+    }
+
+    public void setQpidWork(String path)
+    {
+        _qpidWork = path;
+    }
+
+    public void setQpidHome(String path)
+    {
+        _qpidHome = path;
     }
 }
