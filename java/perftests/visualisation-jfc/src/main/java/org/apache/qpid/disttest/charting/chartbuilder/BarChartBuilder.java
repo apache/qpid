@@ -19,23 +19,30 @@
  */
 package org.apache.qpid.disttest.charting.chartbuilder;
 
+import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.data.category.CategoryDataset;
+import org.jfree.data.general.Dataset;
 
-public class BarChartBuilder extends DataSetBasedChartBuilder
+public class BarChartBuilder extends CategoryDataSetBasedChartBuilder
 {
+
+    public BarChartBuilder(SeriesBuilder seriesBuilder)
+    {
+        super(seriesBuilder);
+    }
 
     @Override
     public JFreeChart createChartImpl(String title, String xAxisTitle,
-            String yAxisTitle, final DefaultCategoryDataset dataset, PlotOrientation plotOrientation,
+            String yAxisTitle, final Dataset dataset, PlotOrientation plotOrientation,
             boolean showLegend, boolean showToolTips, boolean showUrls)
     {
         JFreeChart chart = ChartFactory.createBarChart(title,
                 xAxisTitle,
                 yAxisTitle,
-                dataset,
+                (CategoryDataset) dataset,
                 plotOrientation,
                 showLegend,
                 showToolTips,

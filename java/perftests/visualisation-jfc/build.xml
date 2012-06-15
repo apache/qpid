@@ -19,9 +19,30 @@
 <project name="visualisation-jfc" xmlns:ivy="antlib:org.apache.ivy.ant" default="build">
     <property name="module.depends" value="common perftests" />
     <property name="module.test.depends" value="test" />
+    <property name="module.manifest" value="true" />
 
     <import file="../../module.xml" />
 
+    <!-- Overridden to produce Manifest containing Main-Class and Class-Path -->
+    <target name="jar.manifest" depends="compile" if="module.manifest">
+      <path id="class.path">
+        <fileset dir="${build.lib}" >
+          <include name="*.jar"/>
+          <exclude name="${qpid.jar.name}"/>
+        </fileset>
+      </path>
+      <pathconvert property="qpid.jar.classpath" pathsep=" " dirsep="/">
+        <path refid="class.path"/>
+        <globmapper from="${build.lib}${file.separator}*" to="*"/>
+      </pathconvert>
+
+      <jar destfile="${module.jar}" basedir="${module.classes}">
+        <manifest>
+          <attribute name="Class-Path" value="${qpid.jar.classpath}"/>
+          <attribute name="Main-Class" value="org.apache.qpid.disttest.charting.ChartingUtil"/>
+        </manifest>
+      </jar>
+    </target>
 
     <!-- JFreeChart and JFreeCommon -->
     <condition property="download.jfree.jars">

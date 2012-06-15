@@ -20,11 +20,7 @@
  */
 package org.apache.qpid.disttest.charting;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,11 +30,24 @@ import org.apache.qpid.disttest.charting.chartbuilder.ChartBuilder;
 import org.apache.qpid.disttest.charting.chartbuilder.ChartBuilderFactory;
 import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
 import org.apache.qpid.disttest.charting.definition.ChartingDefinitionCreator;
-import org.jfree.chart.ChartUtilities;
+import org.apache.qpid.disttest.charting.seriesbuilder.JdbcCsvSeriesBuilder;
+import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
+import org.apache.qpid.disttest.charting.writer.ChartWriter;
 import org.jfree.chart.JFreeChart;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Draws charts for data drawn from CSV datasources using rules described in
+ * charting definitions (.chartdef) files.
+ * <p>
+ * The following arguments are understood:
+ * </p>
+ * <ol>
+ *  <li>chart-defs=<i>directory contain chartdef file(s)</i></li>
+ *  <li>output-dir=<i>directory in which to produce the PNGs</i></li>
+ * </ol>
+ */
 public class ChartingUtil
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChartingUtil.class);
@@ -59,7 +68,7 @@ public class ChartingUtil
     {
         try
         {
-            LOGGER.debug("Starting charting");
+            LOGGER.info("Starting charting");
 
             ChartingUtil chartingUtil = new ChartingUtil();
             chartingUtil.parseArgumentsIntoConfig(args);
@@ -67,55 +76,29 @@ public class ChartingUtil
         }
         finally
         {
-            LOGGER.debug("Charting complete");
+            LOGGER.info("Charting complete");
         }
     }
 
     private void produceAllCharts()
     {
         final String chartingDefsDir = _cliOptions.get(CHART_DEFINITIONS_PROP);
+        final File chartDirectory = new File(_cliOptions.get(OUTPUT_DIR_PROP));
+        LOGGER.info("Chart chartdef directory/file: {} output directory : {}", chartingDefsDir, chartDirectory);
+
         List<ChartingDefinition> definitions  = loadChartDefinitions(chartingDefsDir);
 
-        LOGGER.debug("There are {} chart(s) to produce", definitions.size());
+        LOGGER.info("There are {} chart(s) to produce", definitions.size());
 
+        final ChartWriter writer = new ChartWriter();
+        writer.setOutputDirectory(chartDirectory);
+
+        final SeriesBuilder seriesBuilder = new JdbcCsvSeriesBuilder();
         for (ChartingDefinition chartingDefinition : definitions)
         {
-            ChartBuilder chartBuilder = ChartBuilderFactory.createChartBuilder(chartingDefinition.getChartType());
+            ChartBuilder chartBuilder = ChartBuilderFactory.createChartBuilder(chartingDefinition.getChartType(), seriesBuilder);
             JFreeChart chart = chartBuilder.buildChart(chartingDefinition);
-            writeChartToFileSystem(chart, chartingDefinition.getChartStemName());
-        }
-    }
-
-    private void writeChartToFileSystem(JFreeChart chart, String chartStemName)
-    {
-        OutputStream pngOutputStream = null;
-        try
-        {
-
-            File pngFile = new File(chartStemName + ".png");
-            pngOutputStream = new BufferedOutputStream(new FileOutputStream(pngFile));
-            ChartUtilities.writeChartAsPNG(pngOutputStream, chart, 600, 400, true, 0);
-            pngOutputStream.close();
-
-            LOGGER.debug("Written {} chart", pngFile);
-        }
-        catch (IOException e)
-        {
-            throw new ChartingException("Failed to create chart", e);
-        }
-        finally
-        {
-            if (pngOutputStream != null)
-            {
-                try
-                {
-                    pngOutputStream.close();
-                }
-                catch (IOException e)
-                {
-                    throw new ChartingException("Failed to create chart", e);
-                }
-            }
+            writer.writeChartToFileSystem(chart, chartingDefinition.getChartStemName());
         }
     }
 
@@ -130,6 +113,4 @@ public class ChartingUtil
         ArgumentParser argumentParser = new ArgumentParser();
         argumentParser.parseArgumentsIntoConfig(_cliOptions, args);
     }
-
-
 }
