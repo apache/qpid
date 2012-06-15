@@ -394,6 +394,9 @@ class FederationTests(TestBase010):
         for i in range(1, 11):
             try:
                 msg = queue.get(timeout=5)
+                mp = msg.get("message_properties").application_headers
+                self.assertEqual(mp.__class__, dict)
+                self.assertEqual(mp['x-qpid.trace'], 'REMOTE') # check that the federation-tag override works
                 self.assertEqual("Message %d" % i, msg.body)
             except Empty:
                 self.fail("Failed to find expected message containing 'Message %d'" % i)

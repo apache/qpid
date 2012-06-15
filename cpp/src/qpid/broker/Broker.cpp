@@ -173,6 +173,7 @@ Broker::Options::Options(const std::string& name) :
         ("link-maintenace-interval", optValue(linkMaintenanceInterval, "SECONDS"))
         ("link-heartbeat-interval", optValue(linkHeartbeatInterval, "SECONDS"))
         ("max-negotiate-time", optValue(maxNegotiateTime, "MilliSeconds"), "Maximum time a connection can take to send the initial protocol negotiation")
+        ("federation-tag", optValue(fedTag, "NAME"), "Override the federation tag")
         ;
 }
 
@@ -244,8 +245,11 @@ Broker::Broker(const Broker::Options& conf) :
         // management schema correct.
         Vhost* vhost = new Vhost(this, this);
         vhostObject = Vhost::shared_ptr(vhost);
-        framing::Uuid uuid(managementAgent->getUuid());
-        federationTag = uuid.str();
+        if (conf.fedTag.empty()) {
+            framing::Uuid uuid(managementAgent->getUuid());
+            federationTag = uuid.str();
+        } else
+            federationTag = conf.fedTag;
         vhostObject->setFederationTag(federationTag);
 
         queues.setParent(vhost);
@@ -254,8 +258,11 @@ Broker::Broker(const Broker::Options& conf) :
     } else {
         // Management is disabled so there is no broker management ID.
         // Create a unique uuid to use as the federation tag.
-        framing::Uuid uuid(true);
-        federationTag = uuid.str();
+        if (conf.fedTag.empty()) {
+            framing::Uuid uuid(true);
+            federationTag = uuid.str();
+        } else
+            federationTag = conf.fedTag;
     }
 
     QueuePolicy::setDefaultMaxSize(conf.queueLimit);
