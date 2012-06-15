@@ -51,8 +51,14 @@ public class CppConnection implements Connection
     @Override
     public void close() throws MessagingException
     {
-        _cppConn.close();
-        _cppConn.delete(); //clean up the c++ object
+        try
+        {
+            _cppConn.close();
+        }
+        finally
+        {
+            _cppConn.delete(); //clean up the c++ object
+        }
     }
 
     @Override

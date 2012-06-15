@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.qpid.messaging.Connection;
 import org.apache.qpid.messaging.ConnectionException;
+import org.apache.qpid.messaging.MessagingException;
 import org.apache.qpid.messaging.Session;
 
 /**
@@ -32,9 +33,11 @@ public interface ConnectionExt extends Connection
 
     public void removeConnectionStateListener(ConnectionStateListener l) throws ConnectionException;
 
-    public List<Session> getSessions() throws ConnectionException;
+    public List<SessionExt> getSessions() throws ConnectionException;
 
     public void exception(ConnectionException e);
+
+    public void recreate() throws MessagingException;
 
     /**
      *  The per connection lock that is used by the connection

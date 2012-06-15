@@ -24,6 +24,7 @@ import org.apache.qpid.messaging.MessagingException;
 import org.apache.qpid.messaging.Receiver;
 import org.apache.qpid.messaging.Sender;
 import org.apache.qpid.messaging.Session;
+import org.apache.qpid.messaging.cpp.jni.Duration;
 
 /**
  *  This class relies on the SessionManagementDecorator for
@@ -43,7 +44,6 @@ public class CppSession implements Session
         _conn = conn;
     }
 
-
     @Override
     public boolean isClosed()
     {
@@ -53,8 +53,14 @@ public class CppSession implements Session
     @Override
     public void close() throws MessagingException
     {
-        _cppSession.close();
-        _cppSession.delete(); // delete c++ object.
+        try
+        {
+            _cppSession.close();
+        }
+        finally
+        {
+            _cppSession.delete(); // delete c++ object.
+        }
     }
 
     @Override
@@ -114,36 +120,32 @@ public class CppSession implements Session
     @Override
     public Receiver nextReceiver(long timeout) throws MessagingException
     {
-        // This is not correct ..need to revist
-        return new CppReceiver(_cppSession.nextReceiver(new org.apache.qpid.messaging.cpp.jni.Duration(timeout)));
+        // This needs to be revisited.
+        return new CppReceiver(this,_cppSession.nextReceiver(CppDuration.getDuration(timeout)));
     }
 
     @Override
     public Sender createSender(Address address) throws MessagingException
     {        
-        return new CppSender(_cppSession
-                .createSender(new org.apache.qpid.messaging.cpp.jni.Address(
-                        address.toString())));
+        return new CppSender(this, _cppSession.createSender(address.toString()));
     }
 
     @Override
     public Sender createSender(String address) throws MessagingException
     {
-        return new CppSender(_cppSession.createSender(address));
+        return new CppSender(this,_cppSession.createSender(address));
     }
 
     @Override
     public Receiver createReceiver(Address address) throws MessagingException
     {
-        return new CppReceiver(_cppSession
-                .createReceiver(new org.apache.qpid.messaging.cpp.jni.Address(
-                        address.toString())));
+        return new CppReceiver(this, _cppSession.createReceiver(address.toString()));
     }
 
     @Override
     public Receiver createReceiver(String address) throws MessagingException
     {
-        return new CppReceiver(_cppSession.createReceiver(address));
+        return new CppReceiver(this,_cppSession.createReceiver(address));
     }
 
     @Override
@@ -165,5 +167,4 @@ public class CppSession implements Session
     {
         _cppSession.checkError();
     }
-
 }

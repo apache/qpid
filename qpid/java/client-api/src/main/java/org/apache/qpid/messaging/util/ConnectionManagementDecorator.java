@@ -30,6 +30,7 @@ import org.apache.qpid.messaging.Session;
 import org.apache.qpid.messaging.SessionException;
 import org.apache.qpid.messaging.ext.ConnectionExt;
 import org.apache.qpid.messaging.ext.ConnectionStateListener;
+import org.apache.qpid.messaging.ext.SessionExt;
 import org.apache.qpid.util.UUIDGen;
 import org.apache.qpid.util.UUIDs;
 import org.slf4j.Logger;
@@ -69,7 +70,7 @@ public class ConnectionManagementDecorator implements ConnectionExt
     private Connection _delegate;
     private ConnectionState _state = ConnectionState.UNDEFINED;
     private UUIDGen _ssnNameGenerator = UUIDs.newGenerator();
-    private Map<String, Session> _sessions = new ConcurrentHashMap<String,Session>();
+    private Map<String, SessionExt> _sessions = new ConcurrentHashMap<String,SessionExt>();
     private ConnectionException _lastException;
     private List<ConnectionStateListener> _stateListeners = new ArrayList<ConnectionStateListener>();
 
@@ -136,7 +137,7 @@ public class ConnectionManagementDecorator implements ConnectionExt
         try
         {
             if (name == null || name.isEmpty()) { name = generateSessionName(); }
-            Session ssn =  new SessionManagementDecorator(this,_delegate.createSession(name));
+            SessionExt ssn =  new SessionManagementDecorator(this,_delegate.createSession(name));
             _sessions.put(name, ssn);
             return ssn;
         }
@@ -157,7 +158,7 @@ public class ConnectionManagementDecorator implements ConnectionExt
         try
         {
             if (name == null || name.isEmpty()) { name = generateSessionName(); }
-            Session ssn = new SessionManagementDecorator(this,_delegate.createTransactionalSession(name));
+            SessionExt ssn = new SessionManagementDecorator(this,_delegate.createTransactionalSession(name));
             _sessions.put(name, ssn);
             return ssn;
         }
@@ -198,10 +199,10 @@ public class ConnectionManagementDecorator implements ConnectionExt
     }
 
     @Override
-    public List<Session> getSessions() throws ConnectionException
+    public List<SessionExt> getSessions() throws ConnectionException
     {
         checkClosedAndThrowException();
-        return new ArrayList<Session>(_sessions.values());
+        return new ArrayList<SessionExt>(_sessions.values());
     }
 
     @Override // Called by the delegate or a a session created by this connection.
@@ -281,5 +282,12 @@ public class ConnectionManagementDecorator implements ConnectionExt
     {
         // TODO add local IP and pid to the beginning;
         return _ssnNameGenerator.generate().toString();
+    }
+
+    @Override
+    public void recreate() throws MessagingException
+    {
+        // TODO Auto-generated method stub
+
     }
 }

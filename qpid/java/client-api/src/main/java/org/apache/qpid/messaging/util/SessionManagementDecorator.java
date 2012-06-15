@@ -30,6 +30,9 @@ import org.apache.qpid.messaging.Sender;
 import org.apache.qpid.messaging.Session;
 import org.apache.qpid.messaging.SessionException;
 import org.apache.qpid.messaging.ext.ConnectionExt;
+import org.apache.qpid.messaging.ext.ReceiverExt;
+import org.apache.qpid.messaging.ext.SenderExt;
+import org.apache.qpid.messaging.ext.SessionExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +66,8 @@ import org.slf4j.LoggerFactory;
  *      <ol>
  *       <li>The application (normal close)</li>
  *       <li>By the parent via failover (error)</li>
- *       <li>By the connection object, if not failover(error)</li>
+ *       <li>By the connection object, if no failover(error)</li>
+ *       <li>By itself if it receives and exception (error)</li>
  *      </ol>
  * </i>
  *
@@ -71,7 +75,7 @@ import org.slf4j.LoggerFactory;
  * For the time being, anytime a session exception is received, the session will be marked CLOSED.
  * We need to revisit this.
  */
-public class SessionManagementDecorator implements Session
+public class SessionManagementDecorator implements SessionExt
 {
     private static Logger _logger = LoggerFactory.getLogger(SessionManagementDecorator.class);
 
@@ -80,8 +84,8 @@ public class SessionManagementDecorator implements Session
     private ConnectionExt _conn;
     private Session _delegate;
     SessionState _state = SessionState.UNDEFINED;
-    private List<Receiver> _receivers = new ArrayList<Receiver>();
-    private List<Sender> _senders = new ArrayList<Sender>();
+    private List<ReceiverExt> _receivers = new ArrayList<ReceiverExt>();
+    private List<SenderExt> _senders = new ArrayList<SenderExt>();
     private final Object _connectionLock;  // global per connection lock
 
     public SessionManagementDecorator(ConnectionExt conn, Session delegate)
@@ -306,7 +310,7 @@ public class SessionManagementDecorator implements Session
         checkClosedAndThrowException();
         try
         {
-            Sender sender = _delegate.createSender(address);
+            SenderExt sender = new SenderManagementDecorator(this,_delegate.createSender(address));
             _senders.add(sender);
             return sender;
         }
@@ -326,7 +330,7 @@ public class SessionManagementDecorator implements Session
         checkClosedAndThrowException();
         try
         {
-            Sender sender = _delegate.createSender(address);
+            SenderExt sender = new SenderManagementDecorator(this,_delegate.createSender(address));
             _senders.add(sender);
             return sender;
         }
@@ -346,7 +350,7 @@ public class SessionManagementDecorator implements Session
         checkClosedAndThrowException();
         try
         {
-            Receiver receiver = _delegate.createReceiver(address);
+            ReceiverExt receiver = new ReceiverManagementDecorator(this,_delegate.createReceiver(address));
             _receivers.add(receiver);
             return receiver;
         }
@@ -366,7 +370,7 @@ public class SessionManagementDecorator implements Session
         checkClosedAndThrowException();
         try
         {
-            Receiver receiver = _delegate.createReceiver(address);
+            ReceiverExt receiver = new ReceiverManagementDecorator(this,_delegate.createReceiver(address));
             _receivers.add(receiver);
             return receiver;
         }
@@ -410,6 +414,32 @@ public class SessionManagementDecorator implements Session
         {
             throw handleSessionException(e);
         }
+    }
+
+    @Override
+    public void exception(MessagingException e)
+    {
+        if (e instanceof ConnectionException)
+        {
+            handleConnectionException((ConnectionException)e);
+        }
+        else if (e instanceof SessionException)
+        {
+            handleSessionException((SessionException)e);
+        }
+    }
+
+    @Override
+    public void recreate() throws MessagingException
+    {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public ConnectionExt getConnectionExt()
+    {
+        return _conn;
     }
 
     private void checkClosedAndThrowException() throws SessionException
@@ -470,7 +500,15 @@ public class SessionManagementDecorator implements Session
     {
         synchronized (_connectionLock)
         {
-            _state = SessionState.CLOSED;
+            try
+            {
+                close();
+            }
+            catch(MessagingException ex)
+            {
+                // Should not throw an exception here.
+                // Even if it did, does't matter as are closing.
+            }
         }
         return new SessionException("Session has been closed",e);
     }

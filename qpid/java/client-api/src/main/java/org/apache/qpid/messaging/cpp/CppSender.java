@@ -18,77 +18,84 @@
 package org.apache.qpid.messaging.cpp;
 
 import org.apache.qpid.messaging.Message;
+import org.apache.qpid.messaging.MessagingException;
 import org.apache.qpid.messaging.Sender;
 import org.apache.qpid.messaging.Session;
 
 public class CppSender implements Sender
 {
-    org.apache.qpid.messaging.cpp.jni.Sender _cppSender;
-    
-    public CppSender(org.apache.qpid.messaging.cpp.jni.Sender cppSender)
+    private CppSession _ssn;
+    private org.apache.qpid.messaging.cpp.jni.Sender _cppSender;
+
+    public CppSender(CppSession ssn,
+            org.apache.qpid.messaging.cpp.jni.Sender cppSender)
     {
+        _ssn = ssn;
         _cppSender = cppSender;
     }
 
     @Override
-    public void send(Message message, boolean sync)
+    public void send(Message message, boolean sync) throws MessagingException
     {
         _cppSender.send(((TextMessage)message).getCppMessage(),true);
     }
 
     @Override
-    public void close()
+    public void close() throws MessagingException
     {
-        // TODO Auto-generated method stub
-
+        try
+        {
+            _cppSender.close();
+        }
+        finally
+        {
+            _cppSender.delete();
+        }
     }
 
     @Override
-    public void setCapacity(int capacity)
+    public void setCapacity(int capacity) throws MessagingException
     {
-        //_cppSender.setCapacity(arg0)
+        _cppSender.setCapacity(capacity);
     }
 
     @Override
-    public int getCapacity()
+    public int getCapacity() throws MessagingException
     {
-        // TODO Auto-generated method stub
-        return 0;
+        return _cppSender.getCapacity();
     }
 
     @Override
-    public int getAvailable()
+    public int getAvailable() throws MessagingException
     {
-        // TODO Auto-generated method stub
-        return 0;
+        return _cppSender.getAvailable();
     }
 
     @Override
-    public int getUnsettled()
+    public int getUnsettled() throws MessagingException
     {
-        // TODO Auto-generated method stub
-        return 0;
+        return _cppSender.getUnsettled();
     }
 
     @Override
     public boolean isClosed()
     {
-        // TODO Auto-generated method stub
-        return false;
+        // The C++ version does not support it.
+        // Needs to be supported at a higher level.
+        throw new UnsupportedOperationException("Not supported by the underlying c++ client");
     }
 
     @Override
-    public String getName()
+    public String getName() throws MessagingException
     {
-        // TODO Auto-generated method stub
-        return null;
+        return _cppSender.getName();
     }
 
     @Override
-    public Session getSession()
+    public Session getSession() throws MessagingException
     {
-        // TODO Auto-generated method stub
-        return null;
+        _ssn.checkError();
+        return _ssn;
     }
 
 }

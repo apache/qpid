@@ -18,87 +18,91 @@
 package org.apache.qpid.messaging.cpp;
 
 import org.apache.qpid.messaging.Message;
+import org.apache.qpid.messaging.MessagingException;
 import org.apache.qpid.messaging.Receiver;
 import org.apache.qpid.messaging.Session;
 
 public class CppReceiver implements Receiver
 {
-    org.apache.qpid.messaging.cpp.jni.Receiver _cppReceiver;
-    
-    public CppReceiver(org.apache.qpid.messaging.cpp.jni.Receiver cppReceiver)
+    private CppSession _ssn;
+    private org.apache.qpid.messaging.cpp.jni.Receiver _cppReceiver;
+
+    public CppReceiver(CppSession ssn,
+            org.apache.qpid.messaging.cpp.jni.Receiver cppReceiver)
     {
+        _ssn = ssn;
         _cppReceiver = cppReceiver;
     }
 
     @Override
-    public Message get(long timeout)
+    public Message get(long timeout) throws MessagingException
     {
-        org.apache.qpid.messaging.cpp.jni.Message m = _cppReceiver.get();
+        org.apache.qpid.messaging.cpp.jni.Message m = _cppReceiver.get(CppDuration.getDuration(timeout));
         return new TextMessage(m.getContent());
-        
+
     }
 
     @Override
-    public Message fetch(long timeout)
+    public Message fetch(long timeout) throws MessagingException
     {
-        org.apache.qpid.messaging.cpp.jni.Message m = _cppReceiver.fetch();
+        org.apache.qpid.messaging.cpp.jni.Message m = _cppReceiver.fetch(CppDuration.getDuration(timeout));
         return new TextMessage(m);
     }
 
     @Override
-    public void setCapacity(int capacity)
+    public void setCapacity(int capacity) throws MessagingException
     {
-        // TODO Auto-generated method stub
-
+        _cppReceiver.setCapacity(capacity);
     }
 
     @Override
-    public int getCapacity()
+    public int getCapacity() throws MessagingException
     {
-        // TODO Auto-generated method stub
-        return 0;
+        return _cppReceiver.getCapacity();
     }
 
     @Override
-    public int getAvailable()
+    public int getAvailable() throws MessagingException
     {
-        // TODO Auto-generated method stub
-        return 0;
+        return _cppReceiver.getAvailable();
     }
 
     @Override
-    public int getUnsettled()
+    public int getUnsettled() throws MessagingException
     {
-        // TODO Auto-generated method stub
-        return 0;
+        return _cppReceiver.getUnsettled();
     }
 
     @Override
-    public void close()
+    public void close() throws MessagingException
     {
-        // TODO Auto-generated method stub
-
+        try
+        {
+            _cppReceiver.close();
+        }
+        finally
+        {
+            _cppReceiver.delete();
+        }
     }
 
     @Override
     public boolean isClosed()
     {
-        // TODO Auto-generated method stub
-        return false;
+        return _cppReceiver.isClosed();
     }
 
     @Override
     public String getName()
     {
-        // TODO Auto-generated method stub
-        return null;
+        return _cppReceiver.getName();
     }
 
     @Override
-    public Session getSession()
+    public Session getSession() throws MessagingException
     {
-        // TODO Auto-generated method stub
-        return null;
+        _ssn.checkError();
+        return _ssn;
     }
 
 }
