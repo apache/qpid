@@ -36,10 +36,10 @@ fi
 QPIDD_CMD="../qpidd --daemon --port 0 --no-data-dir $MODULES --auth no --log-enable=info+ --log-enable=debug+:Bridge --log-to-file"
 start_brokers() {
     rm -f fed_local.log fed_remote.log fed_b1.log fed_b2.log
-    LOCAL_PORT=$($QPIDD_CMD fed_local.log)
-    REMOTE_PORT=$($QPIDD_CMD fed_remote.log)
-    REMOTE_B1=$($QPIDD_CMD fed_b1.log)
-    REMOTE_B2=$($QPIDD_CMD fed_b2.log)
+    LOCAL_PORT=$($QPIDD_CMD fed_local.log --federation-tag LOCAL)
+    REMOTE_PORT=$($QPIDD_CMD fed_remote.log --federation-tag REMOTE)
+    REMOTE_B1=$($QPIDD_CMD fed_b1.log --federation-tag B1)
+    REMOTE_B2=$($QPIDD_CMD fed_b2.log --federation-tag B2)
 }
 
 stop_brokers() {
