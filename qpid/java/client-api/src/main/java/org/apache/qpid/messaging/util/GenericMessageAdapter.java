@@ -26,101 +26,170 @@ import org.apache.qpid.messaging.MessageNotWritableException;
 import org.apache.qpid.messaging.MessagingException;
 
 /**
- *  Ensures the message properties and content are read only.
+ *  A generic message adapter that simply delegates
+ *  all method calls to the underlying message delegate.
+ *  This is not intended to be used by itself,
+ *  rather as a base class for other adapters. For example,
+ *  @see ReadOnlyMessageAdapter
+ *  @see StringMessage_AMQP_0_10
+ *  @see MapMessage_AMQP_0_10
  */
-public class ReadOnlyMessageAdapter extends GenericMessageAdapter
+public class GenericMessageAdapter implements Message
 {
-    ReadOnlyMessageAdapter(Message delegate)
+    private Message _delegate;
+
+    GenericMessageAdapter(Message delegate)
     {
-        super(delegate);
+        _delegate = delegate;
+    }
+
+    @Override
+    public String getMessageId() throws MessagingException
+    {
+        return _delegate.getMessageId();
     }
 
     @Override
     public void setMessageId(String messageId) throws MessagingException
     {
-        throwMessageNotWritableException();
+        _delegate.setMessageId(messageId);
+    }
+
+    @Override
+    public String getSubject() throws MessagingException
+    {
+        return _delegate.getSubject();
     }
 
     @Override
     public void setSubject(String subject) throws MessagingException
     {
-        throwMessageNotWritableException();
+        _delegate.setSubject(subject);
+    }
+
+    @Override
+    public String getContentType() throws MessagingException
+    {
+        return _delegate.getContentType();
     }
 
     @Override
     public void setContentType(String contentType) throws MessagingException
     {
-        throwMessageNotWritableException();
+        _delegate.setContentType(contentType);
+    }
+
+    @Override
+    public String getCorrelationId() throws MessagingException
+    {
+        return _delegate.getCorrelationId();
     }
 
     @Override
     public void setCorrelationId(String correlationId) throws MessagingException
     {
-        throwMessageNotWritableException();
+        _delegate.setCorrelationId(correlationId);
+    }
+
+    @Override
+    public String getReplyTo() throws MessagingException
+    {
+        return _delegate.getReplyTo();
     }
 
     @Override
     public void setReplyTo(String replyTo) throws MessagingException
     {
-        throwMessageNotWritableException();
+        _delegate.setReplyTo(replyTo);
+    }
+
+    @Override
+    public String getUserId() throws MessagingException
+    {
+        return _delegate.getUserId();
     }
 
     @Override
     public void setUserId(String userId) throws MessagingException
     {
-        throwMessageNotWritableException();
+        _delegate.setUserId(userId);
+    }
+
+    @Override
+    public boolean isDurable() throws MessagingException
+    {
+        return _delegate.isDurable();
     }
 
     @Override
     public void setDurable(boolean durable) throws MessagingException
     {
-        throwMessageNotWritableException();
+        _delegate.setDurable(durable);
+    }
+
+    @Override
+    public boolean isRedelivered() throws MessagingException
+    {
+        return _delegate.isRedelivered();
     }
 
     @Override
     public void setRedelivered(boolean redelivered) throws MessagingException
     {
-        throwMessageNotWritableException();
+        _delegate.setRedelivered(redelivered);
+    }
+
+    @Override
+    public int getPriority() throws MessagingException
+    {
+        return _delegate.getPriority();
     }
 
     @Override
     public void setPriority(int priority) throws MessagingException
     {
-        throwMessageNotWritableException();
+        _delegate.setPriority(priority);
+    }
+
+    @Override
+    public long getTtl() throws MessagingException
+    {
+        return _delegate.getTtl();
     }
 
     @Override
     public void setTtl(long ttl) throws MessagingException
     {
-        throwMessageNotWritableException();
+        _delegate.setTtl(ttl);
+    }
+
+    @Override
+    public long getTimestamp() throws MessagingException
+    {
+        return _delegate.getTimestamp();
     }
 
     @Override
     public void setTimestamp(long timestamp) throws MessagingException
     {
-        throwMessageNotWritableException();
+        _delegate.setTimestamp(timestamp);
     }
 
     @Override
     public Map<String, Object> getProperties() throws MessagingException
     {
-        return Collections.unmodifiableMap(super.getProperties());
+        return _delegate.getProperties();
     }
 
     @Override
     public void setProperty(String key, Object value) throws MessagingException
     {
-        throwMessageNotWritableException();
+        _delegate.setProperty(key, value);
     }
 
     @Override
     public ByteBuffer getContent()
     {
-        return super.getContent().asReadOnlyBuffer();
-    }
-
-    private void throwMessageNotWritableException() throws MessageNotWritableException
-    {
-        throw new MessageNotWritableException("Message is read-only");
+        return _delegate.getContent();
     }
 }
