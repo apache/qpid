@@ -34,7 +34,8 @@ namespace acl {
 
 //
 // This module instantiates a broker::ConnectionObserver and limits client
-// connections by counting connections per user name and per client IP address.
+// connections by counting connections per user name, per client IP address
+// and per total connection count.
 //
 
 
@@ -225,44 +226,74 @@ bool ConnectionCounter::approveConnection(const broker::Connection& connection)
     bool okTotal  = true;
     if (totalLimit > 0) {
         okTotal = totalCurrentConnections <= totalLimit;
-        QPID_LOG(trace, "ACL ConnectionApprover totalLimit=" << totalLimit
-            << " curValue=" << totalCurrentConnections
-            << " result=" << (okTotal ? "allow" : "deny"));
+        if (!connection.isShadow()) {
+            QPID_LOG(trace, "ACL ConnectionApprover totalLimit=" << totalLimit
+                << " curValue=" << totalCurrentConnections
+                << " result=" << (okTotal ? "allow" : "deny"));
+        }
     }
 
     // Approve by IP host connections
-    bool okByIP   = limitApproveLH(connectByHostMap, hostName, hostLimit, true);
+    bool okByIP   = limitApproveLH(connectByHostMap, hostName, hostLimit, !connection.isShadow());
 
     // Count and Approve the connection by the user
-    bool okByUser = countConnectionLH(connectByNameMap, userName, nameLimit, true);
+    bool okByUser = countConnectionLH(connectByNameMap, userName, nameLimit, !connection.isShadow());
 
-    // Emit separate log for each disapproval
-    if (!okTotal) {
-        QPID_LOG(error, "Client max total connection count limit of " << totalLimit
-            << " exceeded by "
-            << connection.getMgmtId() << ", user: "
-            << userName << ". Connection refused");
-    }
-    if (!okByIP) {
-        QPID_LOG(error, "Client max per-host connection count limit of "
-            << hostLimit << " exceeded by "
-            << connection.getMgmtId() << ", user: "
-            << userName << ". Connection refused.");
-    }
-    if (!okByUser) {
-        QPID_LOG(error, "Client max per-user connection count limit of "
-            << nameLimit << " exceeded by "
-            << connection.getMgmtId() << ", user: "
-            << userName << ". Connection refused.");
-    }
+    if (!connection.isShadow()) {
+        // Emit separate log for each disapproval
+        if (!okTotal) {
+            QPID_LOG(error, "Client max total connection count limit of " << totalLimit
+                << " exceeded by '"
+                << connection.getMgmtId() << "', user: '"
+                << userName << "'. Connection refused");
+        }
+        if (!okByIP) {
+            QPID_LOG(error, "Client max per-host connection count limit of "
+                << hostLimit << " exceeded by '"
+                << connection.getMgmtId() << "', user: '"
+                << userName << "'. Connection refused.");
+        }
+        if (!okByUser) {
+            QPID_LOG(error, "Client max per-user connection count limit of "
+                << nameLimit << " exceeded by '"
+                << connection.getMgmtId() << "', user: '"
+                << userName << "'. Connection refused.");
+        }
 
-    // Count/Event once for each disapproval
-    bool result = okTotal && okByIP && okByUser;
-    if (!result) {
-        acl.reportConnectLimit(userName, hostName);
-    }
+        // Count/Event once for each disapproval
+        bool result = okTotal && okByIP && okByUser;
+        if (!result) {
+            acl.reportConnectLimit(userName, hostName);
+        }
 
-    return result;
+        return result;
+    } else {
+        // Always allow shadow connections
+        if (!okTotal) {
+            QPID_LOG(warning, "Client max total connection count limit of " << totalLimit
+                << " exceeded by '"
+                << connection.getMgmtId() << "', user: '"
+                << userName << "' but still within tolerance. Cluster connection allowed");
+        }
+        if (!okByIP) {
+            QPID_LOG(warning, "Client max per-host connection count limit of "
+                << hostLimit << " exceeded by '"
+                << connection.getMgmtId() << "', user: '"
+                << userName << "' but still within tolerance. Cluster connection allowed");
+        }
+        if (!okByUser) {
+            QPID_LOG(warning, "Client max per-user connection count limit of "
+                << nameLimit << " exceeded by '"
+                << connection.getMgmtId() << "', user: '"
+                << userName << "' but still within tolerance. Cluster connection allowed");
+        }
+        if (okTotal && okByIP && okByUser) {
+            QPID_LOG(debug, "Cluster client connection: '"
+                << connection.getMgmtId() << "', user '"
+                <<  userName << "' allowed");
+        }
+        return true;
+    }
 }
 
 //
