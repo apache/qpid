@@ -32,6 +32,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.disttest.client.Client;
 import org.apache.qpid.disttest.client.ClientState;
 import org.apache.qpid.disttest.jms.ClientJmsDelegate;
@@ -158,7 +159,7 @@ public class DistributedClientTest extends DistributedTestSystemTestBase
         assertState(_client, RUNNING_TEST);
     }
 
-    public void testParticipantsSendResults() throws JMSException
+    public void testParticipantsSendResults() throws Exception
     {
         createTestProducer(TEST_SESSION_NAME, TEST_PRODUCER_NAME, TEST_DESTINATION);
 
@@ -204,20 +205,21 @@ public class DistributedClientTest extends DistributedTestSystemTestBase
         assertState(_client, READY);
     }
 
-    private void sendCommandToClient(final Command command) throws JMSException
+    private void sendCommandToClient(final Command command) throws Exception
     {
         final Message message = JmsMessageAdaptor.commandToMessage(_session, command);
         _clientQueueProducer.send(message);
+        ((AMQSession<?, ?>)_session).sync();
     }
 
-    private void sendCommandAndValidateResponse(final Command command, boolean shouldSucceed) throws JMSException
+    private void sendCommandAndValidateResponse(final Command command, boolean shouldSucceed) throws Exception
     {
         sendCommandToClient(command);
         Response response = _controllerQueue.getNext();
         validateResponse(command.getType(), response, shouldSucceed);
     }
 
-    private void sendCommandAndValidateResponse(final Command command) throws JMSException
+    private void sendCommandAndValidateResponse(final Command command) throws Exception
     {
         sendCommandAndValidateResponse(command, true);
     }
@@ -258,7 +260,7 @@ public class DistributedClientTest extends DistributedTestSystemTestBase
         createTestSession(connectionName, sessionName, true);
     }
 
-    private void createTestProducer(String sessionName, String producerName, String destinationName, boolean shouldSucceed) throws JMSException
+    private void createTestProducer(String sessionName, String producerName, String destinationName, boolean shouldSucceed) throws Exception
     {
         final CreateProducerCommand createProducerCommand = new CreateProducerCommand();
         createProducerCommand.setParticipantName(producerName);
@@ -269,12 +271,12 @@ public class DistributedClientTest extends DistributedTestSystemTestBase
         sendCommandAndValidateResponse(createProducerCommand, shouldSucceed);
     }
 
-    private void createTestProducer(String sessionName, String producerName, String destinationName) throws JMSException
+    private void createTestProducer(String sessionName, String producerName, String destinationName) throws Exception
     {
         createTestProducer(sessionName, producerName, destinationName, true);
     }
 
-    private void createTestConsumer(String sessionName, String consumerName, String destinationName, boolean shouldSucceed) throws JMSException
+    private void createTestConsumer(String sessionName, String consumerName, String destinationName, boolean shouldSucceed) throws Exception
     {
         final CreateConsumerCommand createConsumerCommand = new CreateConsumerCommand();
         createConsumerCommand.setSessionName(sessionName);
@@ -285,7 +287,7 @@ public class DistributedClientTest extends DistributedTestSystemTestBase
         sendCommandAndValidateResponse(createConsumerCommand, shouldSucceed);
     }
 
-    private void createTestConsumer(String sessionName, String consumerName, String destinationName) throws JMSException
+    private void createTestConsumer(String sessionName, String consumerName, String destinationName) throws Exception
     {
         createTestConsumer(sessionName, consumerName, destinationName, true);
     }
