@@ -67,6 +67,7 @@ public interface Connection
     /**
      * Returns a reference to the message factory for this connection.
      * @return MessageFactory
+     * @exception If the connection is not valid.
      */
-    public MessageFactory getMessageFactory();
+    public MessageFactory getMessageFactory() throws MessagingException;
 }

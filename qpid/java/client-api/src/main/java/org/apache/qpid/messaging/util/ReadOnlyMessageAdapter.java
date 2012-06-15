@@ -114,7 +114,7 @@ public class ReadOnlyMessageAdapter extends GenericMessageAdapter
     }
 
     @Override
-    public ByteBuffer getContent()
+    public ByteBuffer getContent() throws MessagingException
     {
         return super.getContent().asReadOnlyBuffer();
     }

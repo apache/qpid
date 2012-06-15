@@ -22,8 +22,10 @@ import java.util.Collections;
 import java.util.Map;
 
 import org.apache.qpid.messaging.Message;
+import org.apache.qpid.messaging.MessageFactory;
 import org.apache.qpid.messaging.MessageNotWritableException;
 import org.apache.qpid.messaging.MessagingException;
+import org.apache.qpid.messaging.ext.MessageInternal;
 
 /**
  *  A generic message adapter that simply delegates
@@ -34,7 +36,7 @@ import org.apache.qpid.messaging.MessagingException;
  *  @see StringMessage_AMQP_0_10
  *  @see MapMessage_AMQP_0_10
  */
-public class GenericMessageAdapter implements Message
+public class GenericMessageAdapter implements MessageInternal
 {
     private Message _delegate;
 
@@ -188,8 +190,41 @@ public class GenericMessageAdapter implements Message
     }
 
     @Override
-    public ByteBuffer getContent()
+    public ByteBuffer getContent() throws MessagingException
     {
         return _delegate.getContent();
+    }
+
+    @Override
+    public Class<? extends MessageFactory> getMessageFactoryClass()
+    {
+        if (_delegate instanceof MessageInternal)
+        {
+            return ((MessageInternal)_delegate).getMessageFactoryClass();
+        }
+        else
+        {
+            throw new UnsupportedOperationException(
+                    "This Adapter nor it's delegate have the required info");
+        }
+    }
+
+    @Override
+    public Object getFactorySpecificMessageDelegate()
+    {
+        if (_delegate instanceof MessageInternal)
+        {
+            return ((MessageInternal)_delegate).getFactorySpecificMessageDelegate();
+        }
+        else
+        {
+            throw new UnsupportedOperationException(
+                    "This Adapter nor it's delegate have the required info");
+        }
+    }
+
+    public Message getDelegate()
+    {
+        return _delegate;
     }
 }

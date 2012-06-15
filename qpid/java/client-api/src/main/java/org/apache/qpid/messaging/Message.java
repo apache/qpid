@@ -49,7 +49,7 @@ public interface Message
 {
     public final static String QPID_SUBJECT = "qpid.subject";
 
-    public ByteBuffer getContent();
+    public ByteBuffer getContent() throws MessagingException;
 
     public String getMessageId() throws MessagingException;
 

@@ -27,14 +27,15 @@ public class CppConnectionFactory extends ConnectionFactory
 {
     private static final Logger _logger = LoggerFactory.getLogger(CppConnectionFactory.class);
 
-    static 
+    static
     {
+        System.setProperty("qpid.allocate-direct","true");
         System.loadLibrary("cqpid_java");
         _logger.info("native qpid library was loaded sucessfully");
     }
 
     public CppConnectionFactory()
-    {        
+    {
     }
 
     public Connection createConnection(String url)
