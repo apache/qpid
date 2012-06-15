@@ -21,6 +21,5 @@ package org.apache.qpid.disttest.charting;
 
 public enum ChartType
 {
-    LINE, BAR
-
+    LINE, LINE3D, BAR, BAR3D, XYLINE
 }
