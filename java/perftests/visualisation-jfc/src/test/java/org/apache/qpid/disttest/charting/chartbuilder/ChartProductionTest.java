@@ -32,6 +32,7 @@ import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilderCallback;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
 import org.apache.qpid.disttest.charting.writer.ChartWriter;
+import org.apache.qpid.test.utils.TestFileUtils;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.title.ShortTextTitle;
@@ -53,8 +54,6 @@ public class ChartProductionTest extends TestCase
 
     private static final String TEST_SERIESLEGEND = "TEST_SERIESLEGEND";
 
-    private static final String SYSTEM_TMP_DIR = System.getProperty("java.io.tmpdir");
-    private static final String CHART_DIRECTORY = "charts." + System.currentTimeMillis();
     private static final String RETAIN_TEST_CHARTS = "retainTestCharts";
 
     private SeriesDefinition _seriesDefinition = mock(SeriesDefinition.class);
@@ -74,8 +73,7 @@ public class ChartProductionTest extends TestCase
         when(_chartingDefinition.getYAxisTitle()).thenReturn(TEST_YAXIS);
         when(_chartingDefinition.getSeries()).thenReturn(Collections.singletonList(_seriesDefinition));
 
-        File chartDir = new File(SYSTEM_TMP_DIR, CHART_DIRECTORY);
-        chartDir.mkdirs();
+        File chartDir = TestFileUtils.createTestDirectory("charts", false);
         if (!System.getProperties().containsKey(RETAIN_TEST_CHARTS))
         {
             chartDir.deleteOnExit();
