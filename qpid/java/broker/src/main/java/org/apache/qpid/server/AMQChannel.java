@@ -214,7 +214,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
 
     public void receivedComplete()
     {
-        //sync();
+        sync();
     }
 
 
