@@ -27,50 +27,50 @@ public interface Sender
      * @param message The message to be sent.
      * @param sync  Blocks until the peer confirms the message received.
      */
-    public void send (Message message, boolean sync);
+    public void send (Message message, boolean sync) throws MessagingException;
 
     /**
      * Cancels the receiver.
      */
-    public void close();
+    public void close() throws MessagingException;
 
     /**
      * Sets the capacity for the sender.
      * @param capacity Number of messages
      */
-    public void setCapacity (int capacity);
+    public void setCapacity (int capacity) throws MessagingException;
 
     /**
      * Returns the capacity of this sender.
      * @return capacity
      */
-    public int getCapacity();
+    public int getCapacity() throws MessagingException;
 
     /**
      * Returns the number of messages for which there is available capacity.
      * @return available capacity
      */
-    public int getAvailable();
+    public int getAvailable() throws MessagingException;
 
     /**
      * Returns the number of sent messages pending confirmation of receipt by the broker.
      * @return unsettled message count.
      */
-    public int getUnsettled();
+    public int getUnsettled() throws MessagingException;
 
     /**
      * Returns true if the sender was closed by a call to close()
      */
-    public boolean isClosed();
+    public boolean isClosed() throws MessagingException;
 
     /**
      * Returns the name that uniquely identifies this sender within the given session.
      * @return Identifier for this Receiver.
      */
-    public String getName();
+    public String getName() throws MessagingException;
 
     /**
      * Returns the session associated with this sender.
      */
-    public Session getSession();
+    public Session getSession() throws MessagingException;
 }

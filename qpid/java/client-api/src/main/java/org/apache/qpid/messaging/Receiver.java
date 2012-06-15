@@ -28,7 +28,7 @@ public interface Receiver
      * @param timeout Timeout in milliseconds.
      * @return The message received and null if not.
      */
-    public Message get(long timeout);
+    public Message get(long timeout) throws MessagingException;
 
     /**
      * Retrieves a message for this receivers subscription or waits for up to the specified timeout for one to become available.
@@ -36,51 +36,51 @@ public interface Receiver
      * @param timeout Timeout in milliseconds.
      * @return The message received and null if not.
      */
-    public Message fetch(long timeout);
+    public Message fetch(long timeout) throws MessagingException;
 
     /**
      * Sets the capacity for the receiver.
      * @param capacity Number of messages
      */
-    public void setCapacity (int capacity);
+    public void setCapacity (int capacity) throws MessagingException;
 
     /**
      * Returns the capacity of this receiver
      * @return capacity
      */
-    public int getCapacity();
+    public int getCapacity() throws MessagingException;
 
     /**
      * Returns the number of messages for which there is available capacity.
      * @return available capacity
      */
-    public int getAvailable();
+    public int getAvailable() throws MessagingException;
 
     /**
      * Returns The number of messages received (by this receiver) that have been acknowledged, but for which that acknowledgment has not yet been confirmed by the peer.
      * @return unsettled message count.
      */
-    public int getUnsettled();
+    public int getUnsettled() throws MessagingException;
 
     /**
      * Cancels this receiver.
      */
-    public void close();
+    public void close() throws MessagingException;
 
     /**
      * Returns true if the receiver was closed by a call to close()
      */
-    public boolean isClosed();
+    public boolean isClosed() throws MessagingException;
 
     /**
      * Returns the name that uniquely identifies this receiver within the given session.
      * @return Identifier for this Receiver.
      */
-    public String getName();
+    public String getName() throws MessagingException;
 
     /**
      * Returns the session associated with this receiver.
      */
-    public Session getSession();
+    public Session getSession() throws MessagingException;
 
 }

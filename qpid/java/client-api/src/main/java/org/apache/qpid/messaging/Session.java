@@ -25,63 +25,63 @@ public interface Session
     /**
      * Returns true if the session is closed.
      */
-    public boolean isClosed();
+    public boolean isClosed() throws MessagingException;
 
     /**
      * Closes a session and all associated senders and receivers.
      */
-    public void  close();
+    public void  close() throws MessagingException;
 
     /**
      * Commits all messages sent or received during the current transaction.
      */
-    public void commit();
+    public void commit() throws MessagingException;
 
     /**
      * Rolls back all messages sent or received during the current transaction.
      */
-    public void rollback();
+    public void rollback() throws MessagingException;
 
     /**
      * Acknowledges all outstanding messages that have been received by the application on this session.
      * @param sync If true, request synchronization with the peer.
      */
-    public void acknowledge(boolean sync);
+    public void acknowledge(boolean sync) throws MessagingException;
 
     /**
      * Acknowledges the specified message.
      * @param message The message to be acknowledged
      * @param sync If true, request synchronization with the peer.
      */
-    public <T> void acknowledge (Message message, boolean sync);
+    public void acknowledge (Message message, boolean sync) throws MessagingException;
 
     /**
      * Rejects the specified message.
      * @param message The message to be rejected.
      */
-    public <T> void reject(Message message);
+    public void reject(Message message) throws MessagingException;
 
     /**
      * Releases the specified message.
      * @param message The message to be released.
      */
-    public <T> void release(Message message);
+    public void release(Message message) throws MessagingException;
 
     /**
      * Request synchronization with the peer.
      * @param block If true, block until synchronization is complete.
      */
-    public void sync(boolean block);
+    public void sync(boolean block) throws MessagingException;
 
     /**
      * Returns the total number of messages received and waiting to be fetched by all Receivers belonging to this session.
      */
-    public int getReceivable();
+    public int getReceivable() throws MessagingException;
 
     /**
      * Returns The number of messages received by this session that have been acknowledged, but for which that acknowledgment has not yet been confirmed by the peer.
      */
-    public int getUnsettledAcks();
+    public int getUnsettledAcks() throws MessagingException;
 
     /**
      * Returns the receiver for the next available message.
@@ -90,35 +90,35 @@ public interface Session
      * @param timeout The timeout value in milliseconds.
      * @return The receiver for the next available message.
      */
-    public Receiver nextReceiver(long timeout);
+    public Receiver nextReceiver(long timeout) throws MessagingException;
 
     /**
      * Create a new sender through which messages can be sent to the specified address.
      * @param address @see Address
      */
-    public Sender createSender(Address address);
+    public Sender createSender(Address address) throws MessagingException;
 
     /**
      * Create a new sender through which messages can be sent to the specified address.
      * @param address The string containing a valid address @see Address for the format.
      */
-    public Sender createSender (String address);
+    public Sender createSender (String address) throws MessagingException;
 
     /**
      * Create a new receiver through which messages can be received from the specified address.
      * @param address @see Address
      */
-    public Receiver createReceiver (Address address);
+    public Receiver createReceiver (Address address) throws MessagingException;
 
     /**
      * Create a new receiver through which messages can be received from the specified address.
      * @param address The string containing a valid address @see Address for the format.
      */
-    public Receiver createReceiver (String address);
+    public Receiver createReceiver (String address) throws MessagingException;
 
     /**
      * Returns the connection this session is associated with.
      * @return
      */
-    public Connection getConnection();
+    public Connection getConnection() throws MessagingException;
 }

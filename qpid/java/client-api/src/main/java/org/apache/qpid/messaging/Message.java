@@ -24,53 +24,53 @@ import java.util.Map;
  */
 public interface Message
 {
-    public Object getContent();
+    public Object getContent() throws MessagingException;
 
-    public String getMessageId();
+    public String getMessageId() throws MessagingException;
 
-    public void setMessageId(String messageId);
+    public void setMessageId(String messageId)throws MessagingException;
 
-    public String getSubject();
+    public String getSubject()throws MessagingException;
 
-    public void setSubject(String subject);
+    public void setSubject(String subject)throws MessagingException;
 
-    public String getContentType();
+    public String getContentType()throws MessagingException;
 
-    public void setContentType(String contentType);
+    public void setContentType(String contentType)throws MessagingException;
 
-    public String getCorrelationId();
+    public String getCorrelationId()throws MessagingException;
 
-    public void setCorrelationId(String correlationId);
+    public void setCorrelationId(String correlationId)throws MessagingException;
 
-    public String getReplyTo();
+    public String getReplyTo()throws MessagingException;
 
-    public void setReplyTo(String replyTo);
+    public void setReplyTo(String replyTo)throws MessagingException;
 
-    public String getUserId();
+    public String getUserId()throws MessagingException;
 
-    public void setUserId(String userId);
+    public void setUserId(String userId)throws MessagingException;
 
-    public boolean isDurable();
+    public boolean isDurable()throws MessagingException;
 
-    public void setDurable(boolean durable);
+    public void setDurable(boolean durable)throws MessagingException;
 
-    public boolean isRedelivered();
+    public boolean isRedelivered()throws MessagingException;
 
-    public void setRedelivered(boolean redelivered);
+    public void setRedelivered(boolean redelivered)throws MessagingException;
 
-    public int getPriority();
+    public int getPriority()throws MessagingException;
 
-    public void setPriority(int priority);
+    public void setPriority(int priority)throws MessagingException;
 
-    public long getTtl();
+    public long getTtl()throws MessagingException;
 
-    public void setTtl(long ttl);
+    public void setTtl(long ttl)throws MessagingException;
 
-    public long getTimestamp();
+    public long getTimestamp()throws MessagingException;
 
-    public void setTimestamp(long timestamp);
+    public void setTimestamp(long timestamp)throws MessagingException;
 
-    public Map<String, Object> getProperties();
+    public Map<String, Object> getProperties()throws MessagingException;
 
-    public void setProperty(String key, Object value);
+    public void setProperty(String key, Object value)throws MessagingException;
 }
