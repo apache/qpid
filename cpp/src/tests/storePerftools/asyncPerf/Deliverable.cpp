@@ -18,50 +18,26 @@
  */
 
 /**
- * \file TransactionAsyncContext.cpp
+ * \file Deliverable.cpp
  */
 
-#include "TransactionAsyncContext.h"
-
-#include <cassert>
+#include "Deliverable.h"
 
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-TransactionAsyncContext::TransactionAsyncContext(boost::shared_ptr<SimpleTransactionContext> tc,
-                                                 const qpid::asyncStore::AsyncOperation::opCode op):
-        m_tc(tc),
-        m_op(op)
-{
-    assert(m_tc.get() != 0);
-}
-
-TransactionAsyncContext::~TransactionAsyncContext()
+Deliverable::Deliverable() :
+        m_delivered(false)
 {}
 
-qpid::asyncStore::AsyncOperation::opCode
-TransactionAsyncContext::getOpCode() const
-{
-    return m_op;
-}
+Deliverable::~Deliverable()
+{}
 
-const char*
-TransactionAsyncContext::getOpStr() const
+bool
+Deliverable::isDelivered() const
 {
-    return qpid::asyncStore::AsyncOperation::getOpStr(m_op);
-}
-
-boost::shared_ptr<SimpleTransactionContext>
-TransactionAsyncContext::getTransactionContext() const
-{
-    return m_tc;
-}
-
-void
-TransactionAsyncContext::destroy()
-{
-    delete this;
+    return m_delivered;
 }
 
 }}} // namespace tests::storePerftools::asyncPerf

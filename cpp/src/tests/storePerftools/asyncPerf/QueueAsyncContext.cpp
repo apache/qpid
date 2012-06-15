@@ -31,10 +31,12 @@ namespace storePerftools {
 namespace asyncPerf {
 
 QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<SimplePersistableQueue> q,
+                                     qpid::broker::TxnHandle& th,
                                      const qpid::asyncStore::AsyncOperation::opCode op,
                                      qpid::broker::AsyncResultCallback rcb,
                                      qpid::broker::AsyncResultQueue* const arq) :
         m_q(q),
+        m_th(th),
         m_op(op),
         m_rcb(rcb),
         m_arq(arq)
@@ -44,11 +46,13 @@ QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<SimplePersistableQueue> q
 
 QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<SimplePersistableQueue> q,
                                      boost::intrusive_ptr<SimplePersistableMessage> msg,
+                                     qpid::broker::TxnHandle& th,
                                      const qpid::asyncStore::AsyncOperation::opCode op,
                                      qpid::broker::AsyncResultCallback rcb,
                                      qpid::broker::AsyncResultQueue* const arq) :
         m_q(q),
         m_msg(msg),
+        m_th(th),
         m_op(op),
         m_rcb(rcb),
         m_arq(arq)
@@ -84,6 +88,12 @@ QueueAsyncContext::getMessage() const
     return m_msg;
 }
 
+qpid::broker::TxnHandle
+QueueAsyncContext::getTxnHandle() const
+{
+    return m_th;
+}
+
 qpid::broker::AsyncResultQueue*
 QueueAsyncContext::getAsyncResultQueue() const
 {
@@ -99,7 +109,9 @@ QueueAsyncContext::getAsyncResultCallback() const
 void
 QueueAsyncContext::invokeCallback(const qpid::broker::AsyncResultHandle* const arh) const
 {
-    m_rcb(arh);
+    if (m_rcb) {
+        m_rcb(arh);
+    }
 }
 
 void

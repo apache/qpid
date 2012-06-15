@@ -51,20 +51,21 @@ public:
     virtual ~SimplePersistableMessage();
     const qpid::broker::MessageHandle& getHandle() const;
     qpid::broker::MessageHandle& getHandle();
+    uint64_t contentSize() const;
 
-    // Interface Persistable
+    // --- Interface Persistable ---
     virtual void setPersistenceId(uint64_t id) const;
     virtual uint64_t getPersistenceId() const;
     virtual void encode(qpid::framing::Buffer& buffer) const;
     virtual uint32_t encodedSize() const;
 
-    // Interface PersistableMessage
+    // --- Interface PersistableMessage ---
     virtual void allDequeuesComplete();
     virtual uint32_t encodedHeaderSize() const;
     virtual bool isPersistent() const;
 
-    // Interface DataStore
-    virtual uint64_t getSize();
+    // --- Interface DataSource ---
+    virtual uint64_t getSize(); // <- same as encodedSize()?
     virtual void write(char* target);
 
 private:

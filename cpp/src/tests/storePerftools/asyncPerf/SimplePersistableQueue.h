@@ -24,8 +24,7 @@
 #ifndef tests_storePerftools_asyncPerf_SimplePersistableQueue_h_
 #define tests_storePerftools_asyncPerf_SimplePersistableQueue_h_
 
-#include "AtomicCounter.h" // AsyncOpCounter
-
+#include "qpid/asyncStore/AtomicCounter.h" // AsyncOpCounter
 #include "qpid/broker/AsyncStore.h" // qpid::broker::DataSource
 #include "qpid/broker/PersistableQueue.h"
 #include "qpid/broker/QueueHandle.h"
@@ -41,6 +40,7 @@ class AsyncStoreImpl;
 }
 namespace broker {
 class AsyncResultQueue;
+class TxnHandle;
 }
 namespace framing {
 class FieldTable;
@@ -52,7 +52,6 @@ namespace asyncPerf {
 
 class Messages;
 class SimplePersistableMessage;
-class SimpleTransactionContext;
 class QueueAsyncContext;
 class QueuedMessage;
 
@@ -78,10 +77,12 @@ public:
     // --- Methods in msg handling path from qpid::Queue ---
     void deliver(boost::intrusive_ptr<SimplePersistableMessage> msg);
     bool dispatch(); // similar to qpid::broker::Queue::distpatch(Consumer&) but without Consumer param
-    bool enqueue(SimpleTransactionContext* ctxt,
+    bool enqueue(qpid::broker::TxnHandle& th,
                  QueuedMessage& qm);
-    bool dequeue(SimpleTransactionContext* ctxt,
+    bool dequeue(qpid::broker::TxnHandle& th,
                  QueuedMessage& qm);
+    void process(boost::intrusive_ptr<SimplePersistableMessage> msg);
+    void enqueueAborted(boost::intrusive_ptr<SimplePersistableMessage> msg);
 
     // --- Interface qpid::broker::Persistable ---
     virtual void encode(qpid::framing::Buffer& buffer) const;
@@ -99,10 +100,12 @@ public:
     virtual void write(char* target);
 
 private:
+    static qpid::broker::TxnHandle s_nullTxnHandle; // used for non-txn operations
+
     const std::string m_name;
     qpid::asyncStore::AsyncStoreImpl* m_store;
     qpid::broker::AsyncResultQueue& m_resultQueue;
-    AsyncOpCounter m_asyncOpCounter;
+    qpid::asyncStore::AsyncOpCounter m_asyncOpCounter;
     mutable uint64_t m_persistenceId;
     std::string m_persistableData;
     qpid::broker::QueueHandle m_queueHandle;
@@ -133,9 +136,9 @@ private:
               bool isRecovery = false);
 
     // -- Async ops ---
-    bool asyncEnqueue(SimpleTransactionContext* txn,
+    bool asyncEnqueue(qpid::broker::TxnHandle& th,
                       QueuedMessage& qm);
-    bool asyncDequeue(SimpleTransactionContext* txn,
+    bool asyncDequeue(qpid::broker::TxnHandle& th,
                       QueuedMessage& qm);
 
     // --- Async op counter ---

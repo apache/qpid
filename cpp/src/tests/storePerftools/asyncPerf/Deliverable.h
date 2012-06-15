@@ -17,21 +17,38 @@
  * under the License.
  */
 
-#include "AsyncStore.h"
+/**
+ * \file Deliverable.h
+ */
 
-namespace qpid {
-namespace broker {
+#ifndef tests_storePerftools_asyncPerf_Deliverable_h_
+#define tests_storePerftools_asyncPerf_Deliverable_h_
 
-AsyncResultQueue::~AsyncResultQueue()
-{}
+#include <boost/shared_ptr.hpp>
+#include <stdint.h> // uint64_t
 
-BrokerAsyncContext::~BrokerAsyncContext()
-{}
+namespace tests {
+namespace storePerftools {
+namespace asyncPerf {
 
-DataSource::~DataSource()
-{}
+class SimplePersistableMessage;
+class SimplePersistableQueue;
 
-AsyncStore::~AsyncStore()
-{}
+class Deliverable
+{
+public:
+    Deliverable();
+    virtual ~Deliverable();
 
-}} // namespace qpid::broker
+    virtual uint64_t contentSize() = 0;
+    virtual void deliverTo(const boost::shared_ptr<SimplePersistableQueue>& queue) = 0;
+    virtual SimplePersistableMessage& getMessage() = 0;
+    virtual bool isDelivered() const;
+
+protected:
+    bool m_delivered;
+};
+
+}}} // namespace tests::storePerftools::asyncPerf
+
+#endif // tests_storePerftools_asyncPerf_Deliverable_h_

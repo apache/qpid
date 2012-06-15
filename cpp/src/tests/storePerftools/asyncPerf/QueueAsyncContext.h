@@ -26,6 +26,7 @@
 
 #include "qpid/asyncStore/AsyncOperation.h"
 #include "qpid/broker/AsyncStore.h"
+#include "qpid/broker/TxnHandle.h"
 
 #include <boost/intrusive_ptr.hpp>
 #include <boost/shared_ptr.hpp>
@@ -42,11 +43,13 @@ class QueueAsyncContext: public qpid::broker::BrokerAsyncContext
 {
 public:
     QueueAsyncContext(boost::shared_ptr<SimplePersistableQueue> q,
+                      qpid::broker::TxnHandle& th,
                       const qpid::asyncStore::AsyncOperation::opCode op,
                       qpid::broker::AsyncResultCallback rcb,
                       qpid::broker::AsyncResultQueue* const arq);
     QueueAsyncContext(boost::shared_ptr<SimplePersistableQueue> q,
                       boost::intrusive_ptr<SimplePersistableMessage> msg,
+                      qpid::broker::TxnHandle& th,
                       const qpid::asyncStore::AsyncOperation::opCode op,
                       qpid::broker::AsyncResultCallback rcb,
                       qpid::broker::AsyncResultQueue* const arq);
@@ -55,6 +58,7 @@ public:
     const char* getOpStr() const;
     boost::shared_ptr<SimplePersistableQueue> getQueue() const;
     boost::intrusive_ptr<SimplePersistableMessage> getMessage() const;
+    qpid::broker::TxnHandle getTxnHandle() const;
     qpid::broker::AsyncResultQueue* getAsyncResultQueue() const;
     qpid::broker::AsyncResultCallback getAsyncResultCallback() const;
     void invokeCallback(const qpid::broker::AsyncResultHandle* const arh) const;
@@ -63,6 +67,7 @@ public:
 private:
     boost::shared_ptr<SimplePersistableQueue> m_q;
     boost::intrusive_ptr<SimplePersistableMessage> m_msg;
+    qpid::broker::TxnHandle m_th;
     const qpid::asyncStore::AsyncOperation::opCode m_op;
     qpid::broker::AsyncResultCallback m_rcb;
     qpid::broker::AsyncResultQueue* const m_arq;

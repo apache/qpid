@@ -28,9 +28,10 @@
 
 namespace qpid {
 namespace asyncStore {
-
 class AsyncStoreImpl;
-
+}
+namespace broker {
+class AsyncResultQueue;
 }}
 
 namespace tests {
@@ -39,6 +40,7 @@ namespace asyncPerf {
 
 class SimplePersistableQueue;
 class TestOptions;
+class TxnBuffer;
 
 class MessageProducer
 {
@@ -46,6 +48,7 @@ public:
     MessageProducer(const TestOptions& perfTestParams,
                     const char* msgData,
                     qpid::asyncStore::AsyncStoreImpl* store,
+                    qpid::broker::AsyncResultQueue& arq,
                     boost::shared_ptr<SimplePersistableQueue> queue);
     virtual ~MessageProducer();
     void* runProducers();
@@ -54,6 +57,7 @@ private:
     const TestOptions& m_perfTestParams;
     const char* m_msgData;
     qpid::asyncStore::AsyncStoreImpl* m_store;
+    qpid::broker::AsyncResultQueue& m_resultQueue;
     boost::shared_ptr<SimplePersistableQueue> m_queue;
 };
 

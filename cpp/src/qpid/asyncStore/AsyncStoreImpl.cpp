@@ -24,6 +24,7 @@
 #include "AsyncStoreImpl.h"
 
 #include "AsyncOperation.h"
+#include "TxnHandleImpl.h"
 
 #include "qpid/broker/ConfigHandle.h"
 #include "qpid/broker/EnqueueHandle.h"
@@ -62,6 +63,31 @@ void
 AsyncStoreImpl::initManagement(qpid::broker::Broker* /*broker*/)
 {}
 
+qpid::broker::TxnHandle
+AsyncStoreImpl::createTxnHandle()
+{
+    return qpid::broker::TxnHandle(new TxnHandleImpl);
+}
+
+qpid::broker::TxnHandle
+AsyncStoreImpl::createTxnHandle(qpid::broker::TxnBuffer* tb)
+{
+    return qpid::broker::TxnHandle(new TxnHandleImpl(tb));
+}
+
+qpid::broker::TxnHandle
+AsyncStoreImpl::createTxnHandle(const std::string& xid)
+{
+    return qpid::broker::TxnHandle(new TxnHandleImpl(xid));
+}
+
+qpid::broker::TxnHandle
+AsyncStoreImpl::createTxnHandle(const std::string& xid,
+                                qpid::broker::TxnBuffer* tb)
+{
+    return qpid::broker::TxnHandle(new TxnHandleImpl(xid, tb));
+}
+
 qpid::broker::ConfigHandle
 AsyncStoreImpl::createConfigHandle()
 {
@@ -94,12 +120,6 @@ AsyncStoreImpl::createQueueHandle(const std::string& name,
                                   const qpid::types::Variant::Map& opts)
 {
     return qpid::broker::QueueHandle(new QueueHandleImpl(name, opts));
-}
-
-qpid::broker::TxnHandle
-AsyncStoreImpl::createTxnHandle(const std::string& xid)
-{
-    return qpid::broker::TxnHandle(new TxnHandleImpl(xid));
 }
 
 void

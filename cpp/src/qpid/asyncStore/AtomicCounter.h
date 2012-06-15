@@ -21,16 +21,15 @@
  * \file AtomicCounter.h
  */
 
-#ifndef tests_storePerftools_asyncPerf_AtomicCounter_h_
-#define tests_storePerftools_asyncPerf_AtomicCounter_h_
+#ifndef qpid_asyncStore_AtomicCounter_h_
+#define qpid_asyncStore_AtomicCounter_h_
 
 #include "qpid/sys/Condition.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Time.h"
 
-namespace tests {
-namespace storePerftools {
-namespace asyncPerf {
+namespace qpid {
+namespace asyncStore {
 
 template <class T>
 class AtomicCounter
@@ -52,20 +51,37 @@ public:
         return m_cnt;
     }
 
-    void
+    AtomicCounter&
     operator++()
     {
         qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_cntMutex);
         ++m_cnt;
+        return *this;
     }
 
-    void
+    AtomicCounter&
     operator--()
     {
         qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_cntMutex);
         if (--m_cnt == 0) {
             m_cntCondition.notify();
         }
+        return *this;
+    }
+
+    bool
+    operator==(const AtomicCounter& rhs)
+    {
+        qpid::sys::ScopedLock<qpid::sys::Mutex> l1(m_cntMutex);
+        qpid::sys::ScopedLock<qpid::sys::Mutex> l2(rhs.m_cntMutex);
+        return m_cnt == rhs.m_cnt;
+    }
+
+    bool
+    operator==(const T rhs)
+    {
+        qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_cntMutex);
+        return m_cnt == rhs;
     }
 
     void
@@ -85,6 +101,6 @@ private:
 
 typedef AtomicCounter<uint32_t> AsyncOpCounter;
 
-}}} // namespace tests::storePerftools::asyncPerf
+}} // namespace qpid::asyncStore
 
-#endif // tests_storePerftools_asyncPerf_AtomicCounter_h_
+#endif // qpid_asyncStore_AtomicCounter_h_

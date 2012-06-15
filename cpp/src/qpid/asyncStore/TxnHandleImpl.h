@@ -24,23 +24,45 @@
 #ifndef qpid_asyncStore_TxnHandleImpl_h_
 #define qpid_asyncStore_TxnHandleImpl_h_
 
+#include "AtomicCounter.h"
+
 #include "qpid/RefCounted.h"
 
+#include <stdint.h> // uint32_t
 #include <string>
 
 namespace qpid {
+
+namespace broker {
+class TxnBuffer;
+}
+
 namespace asyncStore {
 
 class TxnHandleImpl : public virtual qpid::RefCounted
 {
 public:
-    TxnHandleImpl(const std::string& xid = std::string());
+    TxnHandleImpl();
+    TxnHandleImpl(qpid::broker::TxnBuffer* tb);
+    TxnHandleImpl(const std::string& xid);
+    TxnHandleImpl(const std::string& xid, qpid::broker::TxnBuffer* tb);
     virtual ~TxnHandleImpl();
     const std::string& getXid() const;
     bool is2pc() const;
+
+    void submitPrepare();
+    void submitCommit();
+    void submitAbort();
+
+    void incrOpCnt();
+    void decrOpCnt();
 private:
     std::string m_xid;
     bool m_tpcFlag;
+    AsyncOpCounter m_asyncOpCnt;
+    qpid::broker::TxnBuffer* const m_txnBuffer;
+
+    void createLocalXid();
 };
 
 }} // namespace qpid::asyncStore

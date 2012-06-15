@@ -49,7 +49,6 @@ AsyncResultQueueImpl::submit(boost::shared_ptr<AsyncResultHandle> arh)
 AsyncResultQueueImpl::ResultQueue::Batch::const_iterator
 AsyncResultQueueImpl::handle(const ResultQueue::Batch& e)
 {
-
     for (ResultQueue::Batch::const_iterator i = e.begin(); i != e.end(); ++i) {
 //std::cout << "<== AsyncResultQueueImpl::handle() errNo=" << (*i)->getErrNo() << " errMsg=\"" << (*i)->getErrMsg() << "\"" << std::endl << std::flush;
         if ((*i)->isValid()) {

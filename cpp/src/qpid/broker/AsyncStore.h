@@ -37,7 +37,7 @@ class AsyncResultHandle;
 // Broker to subclass as a pollable queue
 class AsyncResultQueue {
 public:
-    virtual ~AsyncResultQueue();
+    virtual ~AsyncResultQueue() {}
     // TODO: Remove boost::shared_ptr<> from this interface
     virtual void submit(boost::shared_ptr<AsyncResultHandle>) = 0;
 };
@@ -45,14 +45,14 @@ public:
 // Subclass this for specific contexts
 class BrokerAsyncContext {
 public:
-    virtual ~BrokerAsyncContext();
+    virtual ~BrokerAsyncContext() {}
     virtual AsyncResultQueue* getAsyncResultQueue() const = 0;
     virtual void invokeCallback(const AsyncResultHandle* const) const = 0;
 };
 
 class DataSource {
 public:
-    virtual ~DataSource();
+    virtual ~DataSource() {}
     virtual uint64_t getSize() = 0;
     virtual void write(char* target) = 0;
 };
@@ -65,13 +65,28 @@ class EnqueueHandle;
 class EventHandle;
 class MessageHandle;
 class QueueHandle;
+class TxnBuffer;
 class TxnHandle;
 
+class AsyncTransactionalStore {
+public:
+    virtual ~AsyncTransactionalStore() {}
+
+    virtual TxnHandle createTxnHandle() = 0;
+    virtual TxnHandle createTxnHandle(TxnBuffer* tb) = 0;
+    virtual TxnHandle createTxnHandle(const std::string& xid) = 0;
+    virtual TxnHandle createTxnHandle(const std::string& xid, TxnBuffer* tb) = 0;
+
+    // TODO: Remove boost::shared_ptr<> from this interface
+    virtual void submitPrepare(TxnHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0; // Distributed txns only
+    virtual void submitCommit(TxnHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
+    virtual void submitAbort(TxnHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
+};
 
 // Subclassed by store:
-class AsyncStore {
+class AsyncStore : public AsyncTransactionalStore {
 public:
-    virtual ~AsyncStore();
+    virtual ~AsyncStore() {}
 
     // --- Factory methods for creating handles ---
 
@@ -80,16 +95,11 @@ public:
     virtual EventHandle createEventHandle(QueueHandle&, const std::string& key=std::string()) = 0;
     virtual MessageHandle createMessageHandle(const DataSource* const) = 0;
     virtual QueueHandle createQueueHandle(const std::string& name, const qpid::types::Variant::Map& opts) = 0;
-    virtual TxnHandle createTxnHandle(const std::string& xid=std::string()) = 0; // Distr. txns must supply xid
 
 
     // --- Store async interface ---
 
     // TODO: Remove boost::shared_ptr<> from this interface
-    virtual void submitPrepare(TxnHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0; // Distributed txns only
-    virtual void submitCommit(TxnHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
-    virtual void submitAbort(TxnHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
-
     virtual void submitCreate(ConfigHandle&, const DataSource* const, boost::shared_ptr<BrokerAsyncContext>) = 0;
     virtual void submitDestroy(ConfigHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
 

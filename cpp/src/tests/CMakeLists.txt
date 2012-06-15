@@ -379,6 +379,7 @@ endif (UNIX)
 
 # Async store perf test (asyncPerf)
 set (asyncStorePerf_SOURCES
+    storePerftools/asyncPerf/Deliverable.cpp
     storePerftools/asyncPerf/MessageAsyncContext.cpp
     storePerftools/asyncPerf/MessageConsumer.cpp
     storePerftools/asyncPerf/MessageDeque.cpp
@@ -388,10 +389,9 @@ set (asyncStorePerf_SOURCES
 	storePerftools/asyncPerf/QueuedMessage.cpp
 	storePerftools/asyncPerf/SimplePersistableMessage.cpp
 	storePerftools/asyncPerf/SimplePersistableQueue.cpp
-	storePerftools/asyncPerf/SimpleTransactionContext.cpp
 	storePerftools/asyncPerf/TestOptions.cpp
 	storePerftools/asyncPerf/TestResult.cpp
-	storePerftools/asyncPerf/TransactionAsyncContext.cpp
+	storePerftools/asyncPerf/TxnPublish.cpp
 	
 	storePerftools/common/Parameters.cpp
     storePerftools/common/PerftoolError.cpp

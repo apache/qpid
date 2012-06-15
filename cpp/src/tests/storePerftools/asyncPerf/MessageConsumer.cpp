@@ -32,8 +32,6 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class SimpleTransactionContext;
-
 MessageConsumer::MessageConsumer(const TestOptions& perfTestParams,
                                  boost::shared_ptr<SimplePersistableQueue> queue) :
         m_perfTestParams(perfTestParams),
@@ -54,7 +52,7 @@ MessageConsumer::runConsumers()
             ::usleep(1000); // TODO - replace this poller with condition variable
         }
     }
-    return 0;
+    return reinterpret_cast<void*>(0);
 }
 
 //static

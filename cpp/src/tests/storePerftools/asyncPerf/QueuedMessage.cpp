@@ -79,4 +79,22 @@ QueuedMessage::enqHandle()
     return m_enqHandle;
 }
 
+void
+QueuedMessage::prepareEnqueue(qpid::broker::TxnHandle& th)
+{
+    m_queue->enqueue(th, *this);
+}
+
+void
+QueuedMessage::commitEnqueue()
+{
+    m_queue->process(m_msg);
+}
+
+void
+QueuedMessage::abortEnqueue()
+{
+    m_queue->enqueueAborted(m_msg);
+}
+
 }}} // namespace tests::storePerfTools

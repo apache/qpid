@@ -18,39 +18,23 @@
  */
 
 /**
- * \file TxnHandle.h
+ * \file TxnOp.h
  */
 
-#ifndef qpid_broker_TxnHandleImpl_h_
-#define qpid_broker_TxnHandleImpl_h_
-
-#include "IdHandle.h"
-
-#include "qpid/asyncStore/TxnHandleImpl.h"
-#include "qpid/messaging/Handle.h"
+#ifndef qpid_broker_TxnOp_h_
+#define qpid_broker_TxnOp_h_
 
 namespace qpid {
 namespace broker {
 
-class TxnHandle : public qpid::messaging::Handle<qpid::asyncStore::TxnHandleImpl>,
-                  public IdHandle
-{
+class TxnOp{
 public:
-    TxnHandle(qpid::asyncStore::TxnHandleImpl* p = 0);
-    TxnHandle(const TxnHandle& r);
-    ~TxnHandle();
-    TxnHandle& operator=(const TxnHandle& r);
-
-    // TxnHandleImpl methods
-    const std::string& getXid() const;
-    bool is2pc() const;
-    void incrOpCnt();
-    void decrOpCnt();
-
-private:
-    friend class qpid::messaging::PrivateImplRef<TxnHandle>;
+    virtual ~TxnOp() {}
+    virtual bool prepare(TxnHandle& th) throw() = 0;
+    virtual void commit()  throw() = 0;
+    virtual void rollback()  throw() = 0;
 };
 
 }} // namespace qpid::broker
 
-#endif // qpid_broker_TxnHandleImpl_h_
+#endif // qpid_broker_TxnOp_h_

@@ -52,6 +52,12 @@ SimplePersistableMessage::getHandle()
     return m_msgHandle;
 }
 
+uint64_t
+SimplePersistableMessage::contentSize() const
+{
+    return  static_cast<uint64_t>(m_msg.size());
+}
+
 void
 SimplePersistableMessage::setPersistenceId(uint64_t id) const
 {

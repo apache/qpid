@@ -18,20 +18,24 @@
  */
 
 /**
- * \file QueuedMessage.h
+ * \file TxnPublish.h
  */
 
-#ifndef tests_storePerftools_asyncPerf_QueuedMessage_h_
-#define tests_storePerftools_asyncPerf_QueuedMessage_h_
+#ifndef tests_storePerftools_asyncPerf_TxnPublish_h_
+#define tests_storePerftools_asyncPerf_TxnPublish_h_
 
-#include "qpid/broker/EnqueueHandle.h"
+#include "Deliverable.h"
+
+#include "qpid/broker/TxnOp.h"
 
 #include <boost/intrusive_ptr.hpp>
+#include <boost/shared_ptr.hpp>
+#include <list>
 
 namespace qpid {
 namespace broker {
 
-class TxnHandle;
+class TransactionContext;
 
 }}
 
@@ -39,33 +43,33 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
+class QueuedMessage;
 class SimplePersistableMessage;
 class SimplePersistableQueue;
 
-class QueuedMessage
+class TxnPublish : public qpid::broker::TxnOp,
+                   public Deliverable
 {
 public:
-    QueuedMessage();
-    QueuedMessage(SimplePersistableQueue* q,
-                  boost::intrusive_ptr<SimplePersistableMessage> msg);
-    QueuedMessage(const QueuedMessage& qm);
-    ~QueuedMessage();
-    QueuedMessage& operator=(const QueuedMessage& rhs);
-    boost::intrusive_ptr<SimplePersistableMessage> payload() const;
-    const qpid::broker::EnqueueHandle& enqHandle() const;
-    qpid::broker::EnqueueHandle& enqHandle();
+    TxnPublish(boost::intrusive_ptr<SimplePersistableMessage> msg);
+    virtual ~TxnPublish();
 
-    // -- Transaction handling ---
-    void prepareEnqueue(qpid::broker::TxnHandle& th);
-    void commitEnqueue();
-    void abortEnqueue();
+    // --- Interface TxOp ---
+    bool prepare(qpid::broker::TxnHandle& th) throw();
+    void commit() throw();
+    void rollback() throw();
+
+    // --- Interface Deliverable ---
+    uint64_t contentSize();
+    void deliverTo(const boost::shared_ptr<SimplePersistableQueue>& queue);
+    SimplePersistableMessage& getMessage();
 
 private:
-    SimplePersistableQueue* m_queue;
     boost::intrusive_ptr<SimplePersistableMessage> m_msg;
-    qpid::broker::EnqueueHandle m_enqHandle;
+    std::list<boost::shared_ptr<QueuedMessage> > m_queues;
+    std::list<boost::shared_ptr<QueuedMessage> > m_prepared;
 };
 
-}}} // namespace tests::storePerfTools
+}}} // namespace tests::storePerftools::asyncPerf
 
-#endif // tests_storePerftools_asyncPerf_QueuedMessage_h_
+#endif // tests_storePerftools_asyncPerf_TxnPublish_h_

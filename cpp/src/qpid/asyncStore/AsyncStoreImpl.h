@@ -54,6 +54,10 @@ public:
 
     // --- Factory methods for creating handles ---
 
+    qpid::broker::TxnHandle createTxnHandle();
+    qpid::broker::TxnHandle createTxnHandle(qpid::broker::TxnBuffer* tb);
+    qpid::broker::TxnHandle createTxnHandle(const std::string& xid);
+    qpid::broker::TxnHandle createTxnHandle(const std::string& xid, qpid::broker::TxnBuffer* tb);
 
     qpid::broker::ConfigHandle createConfigHandle();
     qpid::broker::EnqueueHandle createEnqueueHandle(qpid::broker::MessageHandle& msgHandle,
@@ -63,7 +67,6 @@ public:
     qpid::broker::MessageHandle createMessageHandle(const qpid::broker::DataSource* const dataSrc);
     qpid::broker::QueueHandle createQueueHandle(const std::string& name,
                                                 const qpid::types::Variant::Map& opts);
-    qpid::broker::TxnHandle createTxnHandle(const std::string& xid=std::string());
 
 
     // --- Store async interface ---

@@ -69,4 +69,16 @@ TxnHandle::is2pc() const
     return impl->is2pc();
 }
 
+void
+TxnHandle::incrOpCnt()
+{
+    impl->incrOpCnt();
+}
+
+void
+TxnHandle::decrOpCnt()
+{
+    impl->decrOpCnt();
+}
+
 }} // namespace qpid::broker

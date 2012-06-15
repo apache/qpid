@@ -18,39 +18,48 @@
  */
 
 /**
- * \file TransactionAsyncContext.h
+ * \file TxnAsyncContext.h
  */
 
-#ifndef tests_storePerftools_asyncPerf_TransactionAsyncContext_h_
-#define tests_storePerftools_asyncPerf_TransactionAsyncContext_h_
+#ifndef qpid_broker_TxnAsyncContext_h_
+#define qpid_broker_TxnAsyncContext_h_
+
+#include "AsyncStore.h" // qpid::broker::BrokerAsyncContext
+#include "TxnHandle.h"
 
 #include "qpid/asyncStore/AsyncOperation.h"
-#include "qpid/broker/AsyncStore.h" // qpid::broker::BrokerAsyncContext
 
 #include <boost/shared_ptr.hpp>
 
-namespace tests {
-namespace storePerftools {
-namespace asyncPerf {
+namespace qpid {
+namespace broker {
 
-class SimpleTransactionContext;
-
-class TransactionAsyncContext: public qpid::broker::BrokerAsyncContext
+class TxnAsyncContext: public BrokerAsyncContext
 {
 public:
-    TransactionAsyncContext(boost::shared_ptr<SimpleTransactionContext> tc,
-                            const qpid::asyncStore::AsyncOperation::opCode op);
-    virtual ~TransactionAsyncContext();
+    TxnAsyncContext(TxnBuffer* const tb,
+                    TxnHandle& th,
+                    const qpid::asyncStore::AsyncOperation::opCode op,
+                    qpid::broker::AsyncResultCallback rcb,
+                    qpid::broker::AsyncResultQueue* const arq);
+    virtual ~TxnAsyncContext();
+    TxnBuffer* getTxnBuffer() const;
     qpid::asyncStore::AsyncOperation::opCode getOpCode() const;
     const char* getOpStr() const;
-    boost::shared_ptr<SimpleTransactionContext> getTransactionContext() const;
-    void destroy();
+    TxnHandle getTransactionContext() const;
+
+    // --- Interface BrokerAsyncContext ---
+    AsyncResultQueue* getAsyncResultQueue() const;
+    void invokeCallback(const AsyncResultHandle* const) const;
 
 private:
-    boost::shared_ptr<SimpleTransactionContext> m_tc;
+    TxnBuffer* const m_tb;
+    TxnHandle m_th;
     const qpid::asyncStore::AsyncOperation::opCode m_op;
+    AsyncResultCallback m_rcb;
+    AsyncResultQueue* const m_arq;
 };
 
-}}} // namespace tests::storePerftools::asyncPerf
+}} // namespace qpid::broker
 
-#endif // tests_storePerftools_asyncPerf_TransactionAsyncContext_h_
+#endif // qpid_broker_TxnAsyncContext_h_

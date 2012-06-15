@@ -80,7 +80,7 @@ PerfTest::run()
         tests::storePerftools::common::ScopedTimer st(m_testResult);
 
         for (uint16_t q = 0; q < m_testOpts.m_numQueues; q++) {
-            boost::shared_ptr<MessageProducer> mp(new MessageProducer(m_testOpts, m_msgData, m_store, m_queueList[q]));
+            boost::shared_ptr<MessageProducer> mp(new MessageProducer(m_testOpts, m_msgData, m_store, m_resultQueue, m_queueList[q]));
             m_producers.push_back(mp);
             for (uint16_t t = 0; t < m_testOpts.m_numEnqThreadsPerQueue; t++) { // TODO - replace with qpid threads
                 boost::shared_ptr<tests::storePerftools::common::Thread> tp(new tests::storePerftools::common::Thread(mp->startProducers,

@@ -1076,10 +1076,6 @@ set (qpidbroker_SOURCES
      ${qpidbroker_platform_SOURCES}
      qpid/amqp_0_10/Connection.h
      qpid/amqp_0_10/Connection.cpp
-     qpid/broker/AsyncResultHandle.cpp
-     qpid/broker/AsyncResultHandleImpl.cpp
-     qpid/broker/AsyncResultQueueImpl.cpp
-     qpid/broker/AsyncStore.cpp
      qpid/broker/Broker.cpp
      qpid/broker/Credit.cpp
      qpid/broker/Exchange.cpp
@@ -1503,12 +1499,15 @@ set (asyncStore_SOURCES
 	qpid/asyncStore/TxnHandleImpl.cpp
 	qpid/broker/AsyncResultHandle.cpp
 	qpid/broker/AsyncResultHandleImpl.cpp
+    qpid/broker/AsyncResultQueueImpl.cpp
 	qpid/broker/ConfigHandle.cpp
 	qpid/broker/EnqueueHandle.cpp
 	qpid/broker/EventHandle.cpp
 	qpid/broker/IdHandle.cpp
 	qpid/broker/MessageHandle.cpp
 	qpid/broker/QueueHandle.cpp
+	qpid/broker/TxnAsyncContext.cpp
+    qpid/broker/TxnBuffer.cpp
 	qpid/broker/TxnHandle.cpp
 )
 
