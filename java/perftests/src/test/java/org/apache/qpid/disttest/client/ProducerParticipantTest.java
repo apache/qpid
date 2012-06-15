@@ -121,7 +121,7 @@ public class ProducerParticipantTest extends TestCase
         _command.setBatchSize(batchSize);
         _command.setDeliveryMode(deliveryMode);
 
-        ParticipantResult result = (ParticipantResult) _producer.doIt(CLIENT_NAME);
+        ParticipantResult result = _producer.doIt(CLIENT_NAME);
         assertExpectedProducerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime,
                                       Session.AUTO_ACKNOWLEDGE, null, numberOfMessages, PAYLOAD_SIZE_PER_MESSAGE, totalPayloadSize, null);
 

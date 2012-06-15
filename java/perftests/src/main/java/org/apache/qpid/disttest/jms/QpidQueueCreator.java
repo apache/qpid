@@ -69,7 +69,7 @@ public class QpidQueueCreator implements QueueCreator
                     EMPTY_QUEUE_BIND_ARGUMENTS, destination.getExchangeName(),
                     destination, autoDelete);
 
-            LOGGER.info("Created queue " + queueConfig);
+            LOGGER.debug("Created queue " + queueConfig);
         }
         catch (Exception e)
         {
@@ -86,7 +86,7 @@ public class QpidQueueCreator implements QueueCreator
             // use #deleteQueue.
             AMQDestination destination = (AMQDestination) session.createQueue(queueConfig.getName());
             session.sendQueueDelete(destination.getAMQQueueName());
-            LOGGER.info("Deleted queue " + queueConfig.getName());
+            LOGGER.debug("Deleted queue " + queueConfig.getName());
         }
         catch (Exception e)
         {

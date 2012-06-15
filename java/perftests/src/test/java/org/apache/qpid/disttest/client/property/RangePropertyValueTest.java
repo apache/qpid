@@ -26,6 +26,7 @@ public class RangePropertyValueTest extends TestCase
 {
     private RangePropertyValue _generator;
 
+    @Override
     public void setUp() throws Exception
     {
         super.setUp();
