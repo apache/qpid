@@ -17,14 +17,39 @@
  */
 package org.apache.qpid.messaging;
 
+import java.nio.ByteBuffer;
 import java.util.Map;
 
 /**
  * Representation of a message.
+ * The getters/setters are for the message headers.
+ *
+ * To get the content of a message you need to either,
+ * (1) use the generic method @see Message#getContent() which returns a ByteBuffer,
+ *
+ * (2) cast a generic Message, to a specific sub interface type and invoke the specific method.
+ * @see StringMessage#getString()
+ * @see MapMessage#getMap()
+ * @see ListMessage#getList()
+ *
+ * (2) Or use one of the convenience methods provided by the MessageFactory.
+ * @see MessageFactory#getContentAsString(Message)
+ * @see MessageFactory#getContentAsMap(Message)
+ * @see MessageFactory#getContentAsList(Message)
+ *
+ * To create a specific a concrete Message with a specific content type
+ * you need to use one of the following methods from the @see MessageFactory
+ * @see MessageFactory#createMessage(String)
+ * @see MessageFactory#createMessage(byte[])
+ * @see MessageFactory#createMessage(java.nio.ByteBuffer)
+ * @see MessageFactory#createMessage(java.util.Map)
+ * @see MessageFactory#createMessage(java.util.List)
  */
 public interface Message
 {
-    public Object getContent() throws MessagingException;
+    public final static String QPID_SUBJECT = "qpid.subject";
+
+    public ByteBuffer getContent();
 
     public String getMessageId() throws MessagingException;
 
