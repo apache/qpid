@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
 import javax.jms.BytesMessage;
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -46,6 +47,7 @@ import javax.jms.TextMessage;
 import javax.jms.Topic;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.lang.StringUtils;
@@ -167,13 +169,13 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected List<Connection> _connections = new ArrayList<Connection>();
     public static final String QUEUE = "queue";
     public static final String TOPIC = "topic";
-    
+
     /** Map to hold test defined environment properties */
     private Map<String, String> _env;
 
     /** Ensure our messages have some sort of size */
     protected static final int DEFAULT_MESSAGE_SIZE = 1024;
-    
+
     /** Size to create our message*/
     private int _messageSize = DEFAULT_MESSAGE_SIZE;
     /** Type of message*/
@@ -312,6 +314,24 @@ public class QpidBrokerTestCase extends QpidTestCase
     }
 
     /**
+     * The returned set of port numbers is only a guess because it assumes no ports have been overridden
+     * using system properties.
+     */
+    protected Set<Integer> guessAllPortsUsedByBroker(int mainPort)
+    {
+        Set<Integer> ports = new HashSet<Integer>();
+        int managementPort = getManagementPort(mainPort);
+        int connectorServerPort = managementPort + ServerConfiguration.JMXPORT_CONNECTORSERVER_OFFSET;
+
+        ports.add(mainPort);
+        ports.add(managementPort);
+        ports.add(connectorServerPort);
+        ports.add(DEFAULT_SSL_PORT);
+
+        return ports;
+    }
+
+    /**
      * Get the Port that is use by the current broker
      *
      * @return the current port
@@ -371,6 +391,8 @@ public class QpidBrokerTestCase extends QpidTestCase
             throw new IllegalStateException("There is already an existing broker running on port " + port);
         }
 
+        Set<Integer> portsUsedByBroker = guessAllPortsUsedByBroker(port);
+
         if (_brokerType.equals(BrokerType.INTERNAL) && !existingInternalBroker())
         {
             setConfigurationProperty(ServerConfiguration.MGMT_CUSTOM_REGISTRY_SOCKET, String.valueOf(false));
@@ -397,7 +419,7 @@ public class QpidBrokerTestCase extends QpidTestCase
             _logger.info("starting internal broker (same JVM)");
             broker.startup(options);
 
-            _brokers.put(port, new InternalBrokerHolder(broker, System.getProperty("QPID_WORK")));
+            _brokers.put(port, new InternalBrokerHolder(broker, System.getProperty("QPID_WORK"), portsUsedByBroker));
         }
         else if (!_brokerType.equals(BrokerType.EXTERNAL))
         {
@@ -504,14 +526,14 @@ public class QpidBrokerTestCase extends QpidTestCase
                 // this is expect if the broker started successfully
             }
 
-            _brokers.put(port, new SpawnedBrokerHolder(process, qpidWork));
+            _brokers.put(port, new SpawnedBrokerHolder(process, qpidWork, portsUsedByBroker));
         }
     }
 
     private void addExcludedPorts(int port, int sslPort, BrokerOptions options)
     {
         final String protocolExcludesList = getProtocolExcludesList(port, sslPort);
-        
+
         if (protocolExcludesList.equals(""))
         {
             return;
@@ -1030,7 +1052,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     {
         return (AMQConnectionFactory) getInitialContext().lookup(factoryName);
     }
-    
+
     public Connection getConnection() throws JMSException, NamingException
     {
         return getConnection(GUEST_USERNAME, GUEST_PASSWORD);
@@ -1324,14 +1346,14 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     /**
      * Reloads the broker security configuration using the ApplicationRegistry (InVM brokers) or the
-     * ConfigurationManagementMBean via the JMX interface (Standalone brokers, management must be 
+     * ConfigurationManagementMBean via the JMX interface (Standalone brokers, management must be
      * enabled before calling the method).
      */
     public void reloadBrokerSecurityConfig() throws Exception
     {
         JMXTestUtils jmxu = new JMXTestUtils(this);
         jmxu.open();
-        
+
         try
         {
             ConfigurationManagement configMBean = jmxu.getConfigurationManagement();
@@ -1341,7 +1363,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         {
             jmxu.close();
         }
-        
+
         LogMonitor _monitor = new LogMonitor(_outputFile);
         assertTrue("The expected server security configuration reload did not occur",
                 _monitor.waitForMessage(ServerConfiguration.SECURITY_CONFIG_RELOADED, LOGMONITOR_TIMEOUT));
