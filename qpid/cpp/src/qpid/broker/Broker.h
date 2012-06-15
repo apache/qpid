@@ -128,6 +128,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
         double linkMaintenanceInterval; // FIXME aconway 2012-02-13: consistent parsing of SECONDS values.
         uint16_t linkHeartbeatInterval;
         uint32_t maxNegotiateTime;  // Max time in ms for connection with no negotiation
+        std::string fedTag;
 
       private:
         std::string getHome();
