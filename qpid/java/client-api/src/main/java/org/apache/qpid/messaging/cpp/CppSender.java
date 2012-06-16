@@ -21,6 +21,7 @@ import org.apache.qpid.messaging.Message;
 import org.apache.qpid.messaging.MessagingException;
 import org.apache.qpid.messaging.Sender;
 import org.apache.qpid.messaging.Session;
+import org.apache.qpid.messaging.cpp.CppMessageFactory.CppMessageDelegate;
 import org.apache.qpid.messaging.cpp.jni.NativeMessage;
 import org.apache.qpid.messaging.cpp.jni.NativeSender;
 import org.apache.qpid.messaging.ext.MessageInternal;
@@ -51,7 +52,8 @@ public class CppSender implements Sender
            (_msgFactory.getClass() == ((MessageInternal)m).getMessageFactoryClass())
           )
         {
-            NativeMessage msg = (NativeMessage)((MessageInternal)m).getFactorySpecificMessageDelegate();
+            CppMessageDelegate delegate = (CppMessageDelegate)((MessageInternal)m).getFactorySpecificMessageDelegate();
+            NativeMessage msg = delegate.getNativeMessage();
             msg.setContentAsByteBuffer(m.getContent());
             return msg;
         }

@@ -291,6 +291,12 @@ public abstract class AbstractMessageFactory implements MessageFactory
         {
             return super.getDelegate();
         }
+
+        @Override
+        public String toString()
+        {
+            return super.getDelegate().toString();
+        }
     }
 
     protected class StringMessageImpl extends DefaultMessageImpl implements StringMessage
@@ -321,6 +327,7 @@ public abstract class AbstractMessageFactory implements MessageFactory
             if(str != null && !str.isEmpty())
             {
                 _rawData = encodeString(str);
+                setContentTypeIfNotSet(delegate,"text/plain");
             }
         }
 
@@ -366,6 +373,7 @@ public abstract class AbstractMessageFactory implements MessageFactory
             if(map != null && !map.isEmpty())
             {
                 _rawData = encodeMap(map);
+                setContentTypeIfNotSet(delegate,"amqp/map");
             }
         }
 
@@ -412,6 +420,7 @@ public abstract class AbstractMessageFactory implements MessageFactory
             if(list != null && !list.isEmpty())
             {
                 _rawData = encodeList(list);
+                setContentTypeIfNotSet(delegate,"amqp/list");
             }
         }
 
@@ -451,7 +460,6 @@ public abstract class AbstractMessageFactory implements MessageFactory
         try
         {
             b = encoder.encode(CharBuffer.wrap(str));
-            b.flip();
         }
         catch (CharacterCodingException e)
         {
@@ -469,6 +477,21 @@ public abstract class AbstractMessageFactory implements MessageFactory
         else
         {
             return b;
+        }
+    }
+
+    protected void setContentTypeIfNotSet(Message m, String contentType)
+    {
+        try
+        {
+            if (m.getContentType() == null || m.getContentType().isEmpty())
+            {
+                m.setContentType(contentType);
+            }
+        }
+        catch (MessagingException e)
+        {
+            //ignore.
         }
     }
 }

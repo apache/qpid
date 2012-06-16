@@ -79,11 +79,11 @@ public class SessionManagementDecorator implements SessionExt
 {
     private static Logger _logger = LoggerFactory.getLogger(SessionManagementDecorator.class);
 
-    public enum SessionState { UNDEFINED, OPENED, CLOSED, ERROR}
+    public enum SessionState {OPENED, CLOSED, ERROR}
 
     private ConnectionExt _conn;
     private Session _delegate;
-    SessionState _state = SessionState.UNDEFINED;
+    SessionState _state = SessionState.OPENED;
     private List<ReceiverExt> _receivers = new ArrayList<ReceiverExt>();
     private List<SenderExt> _senders = new ArrayList<SenderExt>();
     private final Object _connectionLock;  // global per connection lock
@@ -452,7 +452,6 @@ public class SessionManagementDecorator implements SessionExt
         switch (_state)
         {
         case ERROR:
-        case UNDEFINED:
             throw new SessionException("Session is in a temporary error state. The session may or may not recover from this");
         case CLOSED:
             throw new SessionException(closedMessage);

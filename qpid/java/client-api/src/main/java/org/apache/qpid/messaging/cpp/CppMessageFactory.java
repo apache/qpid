@@ -215,11 +215,6 @@ public class CppMessageFactory extends MessageFactory_AMQP_0_10
             _cppMessage.setProperty(key, value);
         }
 
-        protected NativeMessage getCppMessage()
-        {
-            return _cppMessage;
-        }
-
         @Override
         public String toString()
         {
@@ -232,7 +227,7 @@ public class CppMessageFactory extends MessageFactory_AMQP_0_10
             return null; // The delegate is only for the headers
         }
 
-        public NativeMessage getNativeMessage()
+        NativeMessage getNativeMessage()
         {
             return _cppMessage;
         }
