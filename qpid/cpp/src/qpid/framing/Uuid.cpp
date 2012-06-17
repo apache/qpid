@@ -46,7 +46,7 @@ Uuid::Uuid(const uint8_t* data) {
 Uuid::Uuid(const std::string& s) {
     if (s.size() != UNPARSED_SIZE)
         throw IllegalArgumentException(QPID_MSG("Invalid UUID: " << s));
-    if (uuid_parse(&s[0], c_array()) != 0)
+    if (uuid_parse(const_cast<char *>(&s[0]), c_array()) != 0)
         throw IllegalArgumentException(QPID_MSG("Invalid UUID: " << s));
 }
 

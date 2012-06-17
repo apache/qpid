@@ -23,6 +23,8 @@
 
 #ifdef _MSC_VER
 #  include <unordered_map>
+#elif defined(__SUNPRO_CC)
+#  include <boost/tr1/unordered_map.hpp>
 #else
 #  include <tr1/unordered_map>
 #endif /* _MSC_VER */
