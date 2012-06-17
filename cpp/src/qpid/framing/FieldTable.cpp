@@ -196,7 +196,7 @@ void FieldTable::setFloat(const std::string& name, const float value){
     flushRawCache();
 }
 
-void FieldTable::setDouble(const std::string& name, double value){
+void FieldTable::setDouble(const std::string& name, const double value){
     realDecode();
     values[name] = ValuePtr(new DoubleValue(value));
     flushRawCache();

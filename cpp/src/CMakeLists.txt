@@ -281,7 +281,7 @@ endif (CMAKE_COMPILER_IS_GNUCXX)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
   set (COMPILER_FLAGS "-library=stlport4 -mt")
-  set (WARNING_FLAGS "+w2")
+  set (WARNING_FLAGS "+w")
 endif (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
 
 option(ENABLE_WARNINGS "Enable lots of compiler warnings (recommended)" ON)
@@ -825,6 +825,12 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
       thread
     )
   endif (CMAKE_SYSTEM_NAME STREQUAL SunOS)
+
+  if (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
+    # -lmalloc needed for mallinfo.
+    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lmalloc")
+    set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lmalloc")
+  endif (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
 
   set (qpidtypes_platform_SOURCES)
   set (qpidtypes_platform_LIBS
