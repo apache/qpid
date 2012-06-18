@@ -41,7 +41,7 @@ string EnumBase::str() const {
 
 void EnumBase::parse(const string& s) {
     if (!parseNoThrow(s))
-        throw Exception(QPID_MSG("Invalid " << names[count] << " value: " << s));
+        throw Exception(QPID_MSG("Invalid " << name << " value: " << s));
 }
 
 bool EnumBase::parseNoThrow(const string& s) {
@@ -50,16 +50,15 @@ bool EnumBase::parseNoThrow(const string& s) {
     return value < count;
 }
 
-template <> const char* Enum<ReplicateLevel>::NAMES[] = {
-    "none", "configuration", "all", "replication"
-};
+template <> const char* Enum<ReplicateLevel>::NAME = "replication";
+template <> const char* Enum<ReplicateLevel>::NAMES[] = { "none", "configuration", "all" };
 template <> const size_t Enum<ReplicateLevel>::N = 3;
 
+template <> const char* Enum<BrokerStatus>::NAME = "HA broker status";
 template <> const char* Enum<BrokerStatus>::NAMES[] = {
-    "joining", "catchup", "ready", "recovering", "active",
-    "standalone", "broker status"
+    "joining", "catchup", "ready", "recovering", "active", "standalone"
 };
-template <> const size_t Enum<BrokerStatus>::N = 7;
+template <> const size_t Enum<BrokerStatus>::N = 6;
 
 ostream& operator<<(ostream& o, EnumBase e) {
     return o << e.str();

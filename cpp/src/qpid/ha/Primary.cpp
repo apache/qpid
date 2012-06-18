@@ -21,6 +21,7 @@
 #include "Backup.h"
 #include "HaBroker.h"
 #include "Primary.h"
+#include "ReplicationTest.h"
 #include "ReplicatingSubscription.h"
 #include "RemoteBackup.h"
 #include "ConnectionObserver.h"
@@ -72,6 +73,9 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
         QPID_LOG(debug, logPrefix << "Expected backups: none");
     }
     else {
+        // NOTE: RemoteBackups must be created before we set the ConfigurationObserver
+        // orr ConnectionObserver so that there is no client activity while
+        // the QueueGuards are created.
         QPID_LOG(debug, logPrefix << "Expected backups: " << expect);
         for (BrokerInfo::Set::const_iterator i = expect.begin(); i != expect.end(); ++i) {
             bool guard = true;  // Create queue guards immediately for expected backups.
@@ -126,6 +130,8 @@ void Primary::readyReplica(const ReplicatingSubscription& rs) {
 }
 
 void Primary::queueCreate(const QueuePtr& q) {
+    // Throw if there is an invalid replication level in the queue settings.
+    haBroker.getReplicationTest().replicateLevel(q->getSettings());
     Mutex::ScopedLock l(lock);
     for (BackupMap::iterator i = backups.begin(); i != backups.end(); ++i) {
         i->second->queueCreate(q);
@@ -147,7 +153,7 @@ void Primary::opened(broker::Connection& connection) {
         BackupMap::iterator i = backups.find(info.getSystemId());
         if (i == backups.end()) {
             QPID_LOG(debug, logPrefix << "New backup connected: " << info);
-            bool guard = false; // Lazy-create queue guards, pre-creating them here could cause deadlock.
+            bool guard = false; // Lazy-create guards for new backups. Creating them here could deadlock.
             backups[info.getSystemId()].reset(
                 new RemoteBackup(info, haBroker.getBroker(), haBroker.getReplicationTest(), guard));
         }

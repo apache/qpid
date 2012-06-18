@@ -610,11 +610,13 @@ class ReplicationTests(BrokerTest):
             self.fail("Excpected no-such-queue exception")
         except NotFound: pass
 
-    def test_invalid_default(self):
-        """Verify that a queue with an invalid qpid.replicate gets default treatment"""
-        cluster = HaCluster(self, 2, ha_replicate="all")
-        c = cluster[0].connect().session().sender("q;{create:always, node:{x-declare:{arguments:{'qpid.replicate':XXinvalidXX}}}}")
-        cluster[1].wait_backup("q")
+    def test_invalid_replication(self):
+        """Verify that we reject an attempt to declare a queue with invalid replication value."""
+        cluster = HaCluster(self, 1, ha_replicate="all")
+        try:
+            c = cluster[0].connect().session().sender("q;{create:always, node:{x-declare:{arguments:{'qpid.replicate':XXinvalidXX}}}}")
+            self.fail("Expected ConnectionError")
+        except ConnectionError: pass
 
     def test_exclusive_queue(self):
         """Ensure that we can back-up exclusive queues, i.e. the replicating
@@ -720,7 +722,7 @@ class LongTests(BrokerTest):
         brokers = HaCluster(self, 3)
 
         # Start sender and receiver threads
-        n = 1;           # FIXME aconway 2012-06-10: n = 10
+        n = 10;
         senders = [NumberedSender(brokers[0], max_depth=1024, failover_updates=False,
                                  queue="test%s"%(i)) for i in xrange(n)]
         receivers = [NumberedReceiver(brokers[0], sender=senders[i],

@@ -20,6 +20,7 @@
  */
 
 #include "QueueGuard.h"
+#include "QueueReplicator.h"
 #include "ReplicatingSubscription.h"
 #include "Primary.h"
 #include "qpid/broker/Queue.h"
@@ -161,7 +162,7 @@ struct QueueRange {
 
     QueueRange(const framing::FieldTable args) {
         back = args.getAsInt(ReplicatingSubscription::QPID_BACK);
-        front = back+1;
+        front = back+1;         // Assume empty
         empty = !args.isSet(ReplicatingSubscription::QPID_FRONT);
         if (!empty) {
             front = args.getAsInt(ReplicatingSubscription::QPID_FRONT);
@@ -223,7 +224,7 @@ ReplicatingSubscription::ReplicatingSubscription(
 
         // We can re-use some backup messages if backup and primary queues
         // overlap and the backup is not missing messages at the front of the queue.
-        // FIXME aconway 2012-06-10: disable re-use of backup queue till stall problem is solved.
+
         /*        if (!primary.empty &&   // Primary not empty
             !backup.empty &&    // Backup not empty
             primary.front >= backup.front && // Not missing messages at the front
