@@ -2328,7 +2328,6 @@ class FederationTests(TestBase010):
         self.verify_cleanup()
 
 
-
     def test_multilink_shared_queue(self):
         """ Verify that two distinct links can be created between federated
         brokers.
