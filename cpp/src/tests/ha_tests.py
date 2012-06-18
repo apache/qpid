@@ -77,10 +77,17 @@ class HaBroker(Broker):
         if not self._agent: self._agent = QmfAgent(self.host_port())
         return self._agent
 
-    def ha_status(self): return self.agent().getHaBroker().status
+    def ha_status(self):
+        hb = self.agent().getHaBroker()
+        hb.update()
+        return hb.status
 
     def wait_status(self, status):
-        assert retry(lambda: self.ha_status() == status), "%s, %r != %r"%(self, self.ha_status(), status)
+        def try_get_status():
+            # Ignore ConnectionError, the broker may not be up yet.
+            try: return self.ha_status() == status;
+            except ConnectionError: return False
+        assert retry(try_get_status, timeout=20), "%s, %r != %r"%(self, self.ha_status(), status)
 
     # FIXME aconway 2012-05-01: do direct python call to qpid-config code.
     def qpid_config(self, args):
@@ -755,12 +762,12 @@ class LongTests(BrokerTest):
                     return receivers[0].received > n + 100
                 # FIXME aconway 2012-05-17: client reconnect sometimes takes > 1 sec.
                 assert retry(enough, 10), "Stalled: %s < %s+100"%(receivers[0].received, n)
-            for s in senders: s.stop()
-            for r in receivers: r.stop()
         except:
             traceback.print_exc()
             raise
         finally:
+            for s in senders: s.stop()
+            for r in receivers: r.stop()
             dead = []
             for i in xrange(3):
                 if not brokers[i].is_running(): dead.append(i)
