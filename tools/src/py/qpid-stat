@@ -59,7 +59,7 @@ def OptionsAndArguments(argv):
        %prog -q [options] [queue-name]
        %prog -u [options]
        %prog -m [options]
-       %prog -acl [options]"""
+       %prog --acl [options]"""
 
     parser = OptionParser(usage=usage)
 
