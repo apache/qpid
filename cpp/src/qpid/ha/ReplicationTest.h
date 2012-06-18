@@ -52,8 +52,8 @@ class ReplicationTest
     ReplicateLevel replicateLevel(const framing::FieldTable& f);
     ReplicateLevel replicateLevel(const types::Variant::Map& m);
 
-    // Return true if replication for a queue is enabled at level or
-    // higher, taking account of all settings.
+    // Return true if replication for a queue is enabled at level or higher,
+    // taking account of default level and queue settings.
     bool isReplicated(ReplicateLevel level,
                       const types::Variant::Map& args, bool autodelete, bool exclusive);
     bool isReplicated(ReplicateLevel level,

@@ -23,6 +23,7 @@
 #include "ConnectionObserver.h"
 #include "HaBroker.h"
 #include "Primary.h"
+#include "QueueReplicator.h"
 #include "ReplicatingSubscription.h"
 #include "Settings.h"
 #include "qpid/amqp_0_10/Codecs.h"

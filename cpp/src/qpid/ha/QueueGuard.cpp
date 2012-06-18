@@ -51,13 +51,15 @@ class QueueGuard::QueueObserver : public broker::QueueObserver
 QueueGuard::QueueGuard(broker::Queue& q, const BrokerInfo& info)
     : queue(q), subscription(0)
 {
+    // NOTE: There is no activity on the queue while QueueGuard constructor is
+    // running It is called either from Primary before client connections are
+    // allowed or from ConfigurationObserver::queueCreate before the queue is
+    // visible.
     std::ostringstream os;
     os << "Primary guard " << queue.getName() << "@" << info.getLogId() << ": ";
     logPrefix = os.str();
     observer.reset(new QueueObserver(*this));
-    // Once we call addObserver we can get calls to enqueued and  dequeued
     queue.addObserver(observer);
-    // Must set after addObserver so we don't miss any enqueues.
     firstSafe = queue.getPosition(); // FIXME aconway 2012-06-13: fencepost error
 }
 
@@ -95,6 +97,7 @@ void QueueGuard::cancel() {
         Mutex::ScopedLock l(lock);
         if (delayed.empty()) return; // No need if no delayed messages.
     }
+    // FIXME aconway 2012-06-15: optimize, only messages in delayed set.
     queue.eachMessage(boost::bind(&QueueGuard::complete, this, _1));
 }
 

@@ -39,8 +39,8 @@ namespace ha {
 /** Base class for enums with string conversion */
 class EnumBase {
   public:
-    EnumBase(const char* names_[], size_t count_, unsigned value)
-        : value(value), names(names_), count(count_) {}
+    EnumBase(const char* name_, const char* names_[], size_t count_, unsigned value)
+        : name(name_), names(names_), count(count_), value(value) {}
 
     /** Convert to string */
     std::string str() const;
@@ -50,9 +50,10 @@ class EnumBase {
     bool parseNoThrow(const std::string&);
 
   protected:
-    unsigned value;
+    const char* name;
     const char** names;
     size_t count;
+    unsigned value;
 };
 
 std::ostream& operator<<(std::ostream&, EnumBase);
@@ -61,12 +62,14 @@ std::istream& operator>>(std::istream&, EnumBase&);
 /** Wrapper template for enums with string conversion */
 template <class T> class Enum : public EnumBase {
   public:
-    Enum(T x=T()) : EnumBase(NAMES, N, x) {}
+    Enum(T x=T()) : EnumBase(NAME, NAMES, N, x) {}
     T get() const { return T(value); }
     void operator=(T x) { value = x; }
+
   private:
-    static const size_t N;
-    static const char* NAMES[];
+    static const size_t N;      // Number of enum values.
+    static const char* NAMES[]; // Names of enum values.
+    static const char* NAME;    // Descriptive name for the enum type.
 };
 
 /** To print an enum x: o << printable(x) */
@@ -94,13 +97,10 @@ inline bool isPrimary(BrokerStatus s) {
 
 inline bool isBackup(BrokerStatus s) { return !isPrimary(s); }
 
+// String constants.
 extern const std::string QPID_REPLICATE;
 
-// FIXME aconway 2012-06-04: rename types.h->types.h
-
-/**
- * Define IdSet type, not a typedef so we can overload operator <<
- */
+/** Define IdSet type, not a typedef so we can overload operator << */
 class IdSet : public std::set<types::Uuid> {};
 
 std::ostream& operator<<(std::ostream& o, const IdSet& ids);

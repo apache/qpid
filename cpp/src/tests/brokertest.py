@@ -76,7 +76,7 @@ def error_line(filename, n=1):
     except: return ""
     return ":\n" + "".join(result)
 
-def retry(function, timeout=3, delay=.01):
+def retry(function, timeout=10, delay=.01):
     """Call function until it returns a true value or timeout expires.
     Double the delay for each retry. Returns what function returns if
     true, None if timeout expires."""
@@ -243,7 +243,7 @@ class Broker(Popen):
     _broker_count = 0
     _log_count = 0
 
-    def __str__(self): return "Broker<%s %s :%d>"%(self.name, self.pname, self.port())
+    def __str__(self): return "Broker<%s %s :%d>"%(self.log, self.pname, self.port())
 
     def find_log(self):
         self.log = "%03d:%s.log" % (Broker._log_count, self.name)
