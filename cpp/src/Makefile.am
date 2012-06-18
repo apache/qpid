@@ -53,7 +53,6 @@ windows_dist = \
   ../include/qpid/sys/windows/Time.h \
   qpid/sys/windows/uuid.cpp \
   qpid/sys/windows/uuid.h \
-  qpid/sys/windows/MemStat.cpp \
   windows/QpiddBroker.cpp \
   windows/SCM.h \
   windows/SCM.cpp \
