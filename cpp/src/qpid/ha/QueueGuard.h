@@ -43,12 +43,11 @@ class BrokerInfo;
 class ReplicatingSubscription;
 
 /**
- * A queue guard is a QueueObserver that delays completion of new
- * messages arriving on a queue.  It works as part of a
- * ReplicatingSubscription to ensure messages are not acknowledged
- * till they have been replicated.
+ * A queue guard is a QueueObserver that delays completion of new messages
+ * arriving on a queue.  It works as part of a ReplicatingSubscription to ensure
+ * messages are not acknowledged till they have been replicated.
  *
- * The guard is created before the ReplicatingSubscription to protect
+ * The guard can be created before the ReplicatingSubscription to protect
  * messages arriving before the creation of the subscription.
  *
  * THREAD SAFE: Concurrent calls:
@@ -78,8 +77,9 @@ class QueueGuard {
 
     void attach(ReplicatingSubscription&);
 
-    /** The first sequence number protected by this guard.
-     * All messages at or after this position are protected.
+    /**
+     * The first sequence number to be protected by this guard.  All messages at
+     * or after this position are protected.
      */
     framing::SequenceNumber getFirstSafe();
 

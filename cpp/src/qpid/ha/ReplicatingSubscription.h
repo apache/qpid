@@ -48,12 +48,17 @@ class QueueGuard;
 /**
  * A susbcription that replicates to a remote backup.
  *
- * Runs on the primary. In conjunction with a QueueGuard, delays
- * completion of messages till the backup has acknowledged, informs
- * backup of locally dequeued messages.
+ * Runs on the primary. In conjunction with a QueueGuard, delays completion of
+ * messages till the backup has acknowledged, informs backup of locally dequeued
+ * messages.
  *
- * THREAD SAFE: Called in subscription's connection thread but also
- * in arbitrary connection threads via dequeued.
+ * A ReplicatingSubscription is "ready" when all the messages on the queue have
+ * either been acknowledged by the backup, or are protected by the queue guard.
+ * On a primary broker the ReplicatingSubscription calls Primary::readyReplica
+ * when it is ready.
+ *
+ * THREAD SAFE: Called in subscription's connection thread but also in arbitrary
+ * connection threads via dequeued.
  *
  * Lifecycle: broker::Queue holds shared_ptrs to this as a consumer.
  *
