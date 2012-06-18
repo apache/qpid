@@ -76,20 +76,20 @@ def error_line(filename, n=1):
     except: return ""
     return ":\n" + "".join(result)
 
-def retry(function, timeout=10, delay=.01):
+def retry(function, timeout=10, delay=.01, max_delay=1):
     """Call function until it returns a true value or timeout expires.
-    Double the delay for each retry. Returns what function returns if
-    true, None if timeout expires."""
+    Double the delay for each retry up to max_delay.
+    Returns what function returns if true, None if timeout expires."""
     deadline = time.time() + timeout
     ret = None
-    while not ret:
+    while True:
         ret = function()
+        if ret: return ret
         remaining = deadline - time.time()
         if remaining <= 0: return False
         delay = min(delay, remaining)
         time.sleep(delay)
-        delay *= 2
-    return ret
+        delay = min(delay*2, max_delay)
 
 class AtomicCounter:
     def __init__(self):
@@ -657,7 +657,7 @@ class NumberedReceiver(Thread):
             m = self.read_message()
             while m != -1:
                 self.receiver.assert_running()
-                assert m <= self.received, "Missing message %s>%s"%(m, self.received)
+                assert m <= self.received, "%s missing message %s>%s"%(queue, m, self.received)
                 if (m == self.received): # Ignore duplicates
                     self.received += 1
                     if self.sender:
