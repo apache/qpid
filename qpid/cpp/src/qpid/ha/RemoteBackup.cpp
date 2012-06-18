@@ -50,8 +50,10 @@ bool RemoteBackup::isReady() {
 }
 
 void RemoteBackup::initialQueue(const QueuePtr& q) {
-    if (replicationTest.isReplicated(ALL, *q)) initialQueues.insert(q);
-    queueCreate(q);
+    if (replicationTest.isReplicated(ALL, *q)) {
+        initialQueues.insert(q);
+        queueCreate(q);
+    }
 }
 
 RemoteBackup::GuardPtr RemoteBackup::guard(const QueuePtr& q) {
@@ -81,11 +83,12 @@ std::ostream& operator<<(std::ostream& o, const QueueSetPrinter& qp) {
 
 void RemoteBackup::ready(const QueuePtr& q) {
     initialQueues.erase(q);
-    QPID_LOG(debug, logPrefix << "Queue ready: " << q->getName() << " remaining unready: " << QueueSetPrinter(initialQueues));
+    QPID_LOG(debug, logPrefix << "Queue ready: " << q->getName()
+             << " remaining unready: " << QueueSetPrinter(initialQueues));
     if (isReady()) QPID_LOG(debug, logPrefix << "All queues ready");
 }
 
-// Called via ConfigurationObserver
+// Called via ConfigurationObserver and from initialQueue
 void RemoteBackup::queueCreate(const QueuePtr& q) {
     if (createGuards && replicationTest.isReplicated(ALL, *q))
         guards[q].reset(new QueueGuard(*q, brokerInfo));

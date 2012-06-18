@@ -28,9 +28,9 @@ namespace ha {
 using types::Variant;
 
 ReplicateLevel ReplicationTest::replicateLevel(const std::string& str) {
-    Enum<ReplicateLevel> rl;
-    if (rl.parseNoThrow(str)) return ReplicateLevel(rl.get());
-    else return replicateDefault;
+    Enum<ReplicateLevel> rl(replicateDefault);
+    if (!str.empty()) rl.parse(str);
+    return rl.get();
 }
 
 ReplicateLevel ReplicationTest::replicateLevel(const framing::FieldTable& f) {
