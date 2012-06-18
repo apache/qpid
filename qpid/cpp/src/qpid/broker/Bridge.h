@@ -58,6 +58,7 @@ class Bridge : public PersistableConfig,
 
     Bridge(const std::string& name, Link* link, framing::ChannelId id, CancellationListener l,
            const qmf::org::apache::qpid::broker::ArgsLinkBridge& args,
+
            InitializeCallback init, const std::string& queueName="",
            const std::string& altExchange=""
     );
@@ -146,6 +147,9 @@ class Bridge : public PersistableConfig,
     void closed();
     friend class Link; // to call create, cancel, closed()
     boost::shared_ptr<ErrorListener> errorListener;
+
+    const bool useExistingQueue;
+    const std::string sessionName;
 };
 
 
