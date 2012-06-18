@@ -359,19 +359,29 @@ void Sender::sendByRate()
     }
     uint64_t interval = TIME_SEC/opts.rate;
     int64_t timeLimit = opts.timeLimit * TIME_SEC;
-    uint64_t sent = 0, missedRate = 0;
+    uint64_t sent = 0;
     AbsTime start = now();
+    AbsTime last = start;
     while (true) {
         AbsTime sentAt=now();
         msg.getDeliveryProperties().setTimestamp(Duration(EPOCH, sentAt));
         async(session).messageTransfer(arg::content=msg, arg::acceptMode=1);
         if (opts.sync) session.sync();
         ++sent;
+        if (Duration(last, sentAt) > TIME_SEC*2) {
+            Duration t(start, now());
+            //check rate actually achieved thus far
+            uint actualRate = sent / (t/TIME_SEC);
+            //report inability to stay within 1% of desired rate
+            if (actualRate < opts.rate && opts.rate - actualRate > opts.rate/100) {
+                std::cerr << "WARNING: Desired send rate: " << opts.rate << ", actual send rate: " << actualRate << std::endl;
+            }
+            last = sentAt;
+        }
+
         AbsTime waitTill(start, sent*interval);
         Duration delay(sentAt, waitTill);
-        if (delay < 0)
-            ++missedRate;
-        else
+        if (delay > 0)
             sys::usleep(delay / TIME_USEC);
         if (timeLimit != 0 && Duration(start, now()) > timeLimit) {
             session.sync();
