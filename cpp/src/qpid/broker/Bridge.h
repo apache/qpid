@@ -58,7 +58,6 @@ class Bridge : public PersistableConfig,
 
     Bridge(const std::string& name, Link* link, framing::ChannelId id, CancellationListener l,
            const qmf::org::apache::qpid::broker::ArgsLinkBridge& args,
-
            InitializeCallback init, const std::string& queueName="",
            const std::string& altExchange=""
     );
