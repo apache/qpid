@@ -24,7 +24,7 @@ import org.apache.qpid.messaging.Session;
 import org.apache.qpid.messaging.cpp.CppMessageFactory.CppMessageDelegate;
 import org.apache.qpid.messaging.cpp.jni.NativeMessage;
 import org.apache.qpid.messaging.cpp.jni.NativeSender;
-import org.apache.qpid.messaging.ext.MessageInternal;
+import org.apache.qpid.messaging.internal.MessageInternal;
 
 public class CppSender implements Sender
 {

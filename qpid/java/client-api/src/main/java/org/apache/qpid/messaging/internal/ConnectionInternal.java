@@ -15,16 +15,35 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpid.messaging.ext;
+package org.apache.qpid.messaging.internal;
 
+import java.util.List;
+
+import org.apache.qpid.messaging.Connection;
+import org.apache.qpid.messaging.ConnectionException;
 import org.apache.qpid.messaging.MessagingException;
 import org.apache.qpid.messaging.Session;
 
-public interface SessionExt extends Session
+/**
+ * An extended interface meant for API implementors.
+ */
+public interface ConnectionInternal extends Connection
 {
-    public ConnectionExt getConnectionExt();
+    public void addConnectionStateListener(ConnectionStateListener l) throws ConnectionException;
 
-    public void exception(MessagingException e);
+    public void removeConnectionStateListener(ConnectionStateListener l) throws ConnectionException;
+
+    public List<SessionInternal> getSessions() throws ConnectionException;
+
+    public void exception(ConnectionException e);
 
     public void recreate() throws MessagingException;
+
+    /**
+     *  The per connection lock that is used by the connection
+     *  and it's child objects. A single lock is used to prevent
+     *  deadlocks that could occur with having multiple locks,
+     *  perhaps at the cost of a minor perf degradation.
+     */
+    public Object getConnectionLock();
 }

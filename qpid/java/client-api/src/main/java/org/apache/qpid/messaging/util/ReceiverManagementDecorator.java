@@ -24,9 +24,8 @@ import org.apache.qpid.messaging.Receiver;
 import org.apache.qpid.messaging.ReceiverException;
 import org.apache.qpid.messaging.Session;
 import org.apache.qpid.messaging.SessionException;
-import org.apache.qpid.messaging.ext.ReceiverExt;
-import org.apache.qpid.messaging.ext.SessionExt;
-import org.apache.qpid.messaging.util.SessionManagementDecorator.SessionState;
+import org.apache.qpid.messaging.internal.ReceiverInternal;
+import org.apache.qpid.messaging.internal.SessionInternal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +36,7 @@ import org.slf4j.LoggerFactory;
  * 2. Exception handling.
  *
  */
-public class ReceiverManagementDecorator implements ReceiverExt
+public class ReceiverManagementDecorator implements ReceiverInternal
 {
     private static Logger _logger = LoggerFactory.getLogger(ReceiverManagementDecorator.class);
 
@@ -45,14 +44,14 @@ public class ReceiverManagementDecorator implements ReceiverExt
 
     private Receiver _delegate;
     private ReceiverState _state = ReceiverState.OPENED;
-    private SessionExt _ssn;
+    private SessionInternal _ssn;
     private final Object _connectionLock;  // global per connection lock
 
-    public ReceiverManagementDecorator(SessionExt ssn, Receiver delegate)
+    public ReceiverManagementDecorator(SessionInternal ssn, Receiver delegate)
     {
         _ssn = ssn;
         _delegate = delegate;
-        _connectionLock = ssn.getConnectionExt().getConnectionLock();
+        _connectionLock = ssn.getConnectionInternal().getConnectionLock();
     }
 
     @Override

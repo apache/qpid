@@ -15,15 +15,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpid.messaging.ext;
+package org.apache.qpid.messaging.internal;
 
-import org.apache.qpid.messaging.ConnectionException;
+import org.apache.qpid.messaging.MessagingException;
+import org.apache.qpid.messaging.Receiver;
 
-public interface ConnectionStateListener
+public interface ReceiverInternal extends Receiver
 {
-    public void exception(ConnectionException e);
-
-    public void opened();
-
-    public void closed();
+    public void recreate() throws MessagingException;
 }

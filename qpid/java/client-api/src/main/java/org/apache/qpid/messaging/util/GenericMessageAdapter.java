@@ -18,14 +18,12 @@
 package org.apache.qpid.messaging.util;
 
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import java.util.Map;
 
 import org.apache.qpid.messaging.Message;
 import org.apache.qpid.messaging.MessageFactory;
-import org.apache.qpid.messaging.MessageNotWritableException;
 import org.apache.qpid.messaging.MessagingException;
-import org.apache.qpid.messaging.ext.MessageInternal;
+import org.apache.qpid.messaging.internal.MessageInternal;
 
 /**
  *  A generic message adapter that simply delegates

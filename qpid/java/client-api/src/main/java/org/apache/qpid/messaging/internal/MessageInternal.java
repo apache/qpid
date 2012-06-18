@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpid.messaging.ext;
+package org.apache.qpid.messaging.internal;
 
 import org.apache.qpid.messaging.Message;
 import org.apache.qpid.messaging.MessageFactory;

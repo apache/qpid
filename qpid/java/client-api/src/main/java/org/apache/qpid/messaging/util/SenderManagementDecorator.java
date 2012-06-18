@@ -3,15 +3,13 @@ package org.apache.qpid.messaging.util;
 import org.apache.qpid.messaging.ConnectionException;
 import org.apache.qpid.messaging.Message;
 import org.apache.qpid.messaging.MessagingException;
-import org.apache.qpid.messaging.Receiver;
 import org.apache.qpid.messaging.ReceiverException;
 import org.apache.qpid.messaging.Sender;
 import org.apache.qpid.messaging.SenderException;
 import org.apache.qpid.messaging.Session;
 import org.apache.qpid.messaging.SessionException;
-import org.apache.qpid.messaging.ext.SenderExt;
-import org.apache.qpid.messaging.ext.SessionExt;
-import org.apache.qpid.messaging.util.ReceiverManagementDecorator.ReceiverState;
+import org.apache.qpid.messaging.internal.SenderInternal;
+import org.apache.qpid.messaging.internal.SessionInternal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +20,7 @@ import org.slf4j.LoggerFactory;
  * 2. Exception handling.
  *
  */
-public class SenderManagementDecorator implements SenderExt
+public class SenderManagementDecorator implements SenderInternal
 {
     private static Logger _logger = LoggerFactory.getLogger(SenderManagementDecorator.class);
 
@@ -30,14 +28,14 @@ public class SenderManagementDecorator implements SenderExt
 
     private Sender _delegate;
     private SenderState _state = SenderState.OPENED;
-    private SessionExt _ssn;
+    private SessionInternal _ssn;
     private final Object _connectionLock;  // global per connection lock
 
-    public SenderManagementDecorator(SessionExt ssn, Sender delegate)
+    public SenderManagementDecorator(SessionInternal ssn, Sender delegate)
     {
         _ssn = ssn;
         _delegate = delegate;
-        _connectionLock = ssn.getConnectionExt().getConnectionLock();
+        _connectionLock = ssn.getConnectionInternal().getConnectionLock();
     }
 
     @Override

@@ -29,10 +29,10 @@ import org.apache.qpid.messaging.Receiver;
 import org.apache.qpid.messaging.Sender;
 import org.apache.qpid.messaging.Session;
 import org.apache.qpid.messaging.SessionException;
-import org.apache.qpid.messaging.ext.ConnectionExt;
-import org.apache.qpid.messaging.ext.ReceiverExt;
-import org.apache.qpid.messaging.ext.SenderExt;
-import org.apache.qpid.messaging.ext.SessionExt;
+import org.apache.qpid.messaging.internal.ConnectionInternal;
+import org.apache.qpid.messaging.internal.ReceiverInternal;
+import org.apache.qpid.messaging.internal.SenderInternal;
+import org.apache.qpid.messaging.internal.SessionInternal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,20 +75,20 @@ import org.slf4j.LoggerFactory;
  * For the time being, anytime a session exception is received, the session will be marked CLOSED.
  * We need to revisit this.
  */
-public class SessionManagementDecorator implements SessionExt
+public class SessionManagementDecorator implements SessionInternal
 {
     private static Logger _logger = LoggerFactory.getLogger(SessionManagementDecorator.class);
 
     public enum SessionState {OPENED, CLOSED, ERROR}
 
-    private ConnectionExt _conn;
+    private ConnectionInternal _conn;
     private Session _delegate;
     SessionState _state = SessionState.OPENED;
-    private List<ReceiverExt> _receivers = new ArrayList<ReceiverExt>();
-    private List<SenderExt> _senders = new ArrayList<SenderExt>();
+    private List<ReceiverInternal> _receivers = new ArrayList<ReceiverInternal>();
+    private List<SenderInternal> _senders = new ArrayList<SenderInternal>();
     private final Object _connectionLock;  // global per connection lock
 
-    public SessionManagementDecorator(ConnectionExt conn, Session delegate)
+    public SessionManagementDecorator(ConnectionInternal conn, Session delegate)
     {
         _conn = conn;
         _delegate = delegate;
@@ -310,7 +310,7 @@ public class SessionManagementDecorator implements SessionExt
         checkClosedAndThrowException();
         try
         {
-            SenderExt sender = new SenderManagementDecorator(this,_delegate.createSender(address));
+            SenderInternal sender = new SenderManagementDecorator(this,_delegate.createSender(address));
             _senders.add(sender);
             return sender;
         }
@@ -330,7 +330,7 @@ public class SessionManagementDecorator implements SessionExt
         checkClosedAndThrowException();
         try
         {
-            SenderExt sender = new SenderManagementDecorator(this,_delegate.createSender(address));
+            SenderInternal sender = new SenderManagementDecorator(this,_delegate.createSender(address));
             _senders.add(sender);
             return sender;
         }
@@ -350,7 +350,7 @@ public class SessionManagementDecorator implements SessionExt
         checkClosedAndThrowException();
         try
         {
-            ReceiverExt receiver = new ReceiverManagementDecorator(this,_delegate.createReceiver(address));
+            ReceiverInternal receiver = new ReceiverManagementDecorator(this,_delegate.createReceiver(address));
             _receivers.add(receiver);
             return receiver;
         }
@@ -370,7 +370,7 @@ public class SessionManagementDecorator implements SessionExt
         checkClosedAndThrowException();
         try
         {
-            ReceiverExt receiver = new ReceiverManagementDecorator(this,_delegate.createReceiver(address));
+            ReceiverInternal receiver = new ReceiverManagementDecorator(this,_delegate.createReceiver(address));
             _receivers.add(receiver);
             return receiver;
         }
@@ -437,7 +437,7 @@ public class SessionManagementDecorator implements SessionExt
     }
 
     @Override
-    public ConnectionExt getConnectionExt()
+    public ConnectionInternal getConnectionInternal()
     {
         return _conn;
     }

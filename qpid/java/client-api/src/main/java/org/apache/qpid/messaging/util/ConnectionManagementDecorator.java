@@ -29,9 +29,9 @@ import org.apache.qpid.messaging.MessageFactory;
 import org.apache.qpid.messaging.MessagingException;
 import org.apache.qpid.messaging.Session;
 import org.apache.qpid.messaging.SessionException;
-import org.apache.qpid.messaging.ext.ConnectionExt;
-import org.apache.qpid.messaging.ext.ConnectionStateListener;
-import org.apache.qpid.messaging.ext.SessionExt;
+import org.apache.qpid.messaging.internal.ConnectionInternal;
+import org.apache.qpid.messaging.internal.ConnectionStateListener;
+import org.apache.qpid.messaging.internal.SessionInternal;
 import org.apache.qpid.util.UUIDGen;
 import org.apache.qpid.util.UUIDs;
 import org.slf4j.Logger;
@@ -61,17 +61,17 @@ import org.slf4j.LoggerFactory;
  *  If failover is handled at a layer below (or no failover at all) then an exception means the connection is no longer usable.
  *  Therefore this class will attempt to close the connection if the parent is null.
  */
-public class ConnectionManagementDecorator implements ConnectionExt
+public class ConnectionManagementDecorator implements ConnectionInternal
 {
     private static Logger _logger = LoggerFactory.getLogger(ConnectionManagementDecorator.class);
 
     public enum ConnectionState { UNDEFINED, OPENED, CLOSED, ERROR}
 
-    private ConnectionExt _parent;
+    private ConnectionInternal _parent;
     private Connection _delegate;
     private ConnectionState _state = ConnectionState.UNDEFINED;
     private UUIDGen _ssnNameGenerator = UUIDs.newGenerator();
-    private Map<String, SessionExt> _sessions = new ConcurrentHashMap<String,SessionExt>();
+    private Map<String, SessionInternal> _sessions = new ConcurrentHashMap<String,SessionInternal>();
     private ConnectionException _lastException;
     private List<ConnectionStateListener> _stateListeners = new ArrayList<ConnectionStateListener>();
 
@@ -82,7 +82,7 @@ public class ConnectionManagementDecorator implements ConnectionExt
         this(null,delegate);
     }
 
-    public ConnectionManagementDecorator(ConnectionExt parent, Connection delegate)
+    public ConnectionManagementDecorator(ConnectionInternal parent, Connection delegate)
     {
         _delegate = delegate;
         _parent = parent;
@@ -138,7 +138,7 @@ public class ConnectionManagementDecorator implements ConnectionExt
         try
         {
             if (name == null || name.isEmpty()) { name = generateSessionName(); }
-            SessionExt ssn =  new SessionManagementDecorator(this,_delegate.createSession(name));
+            SessionInternal ssn =  new SessionManagementDecorator(this,_delegate.createSession(name));
             _sessions.put(name, ssn);
             return ssn;
         }
@@ -159,7 +159,7 @@ public class ConnectionManagementDecorator implements ConnectionExt
         try
         {
             if (name == null || name.isEmpty()) { name = generateSessionName(); }
-            SessionExt ssn = new SessionManagementDecorator(this,_delegate.createTransactionalSession(name));
+            SessionInternal ssn = new SessionManagementDecorator(this,_delegate.createTransactionalSession(name));
             _sessions.put(name, ssn);
             return ssn;
         }
@@ -207,10 +207,10 @@ public class ConnectionManagementDecorator implements ConnectionExt
     }
 
     @Override
-    public List<SessionExt> getSessions() throws ConnectionException
+    public List<SessionInternal> getSessions() throws ConnectionException
     {
         checkClosedAndThrowException();
-        return new ArrayList<SessionExt>(_sessions.values());
+        return new ArrayList<SessionInternal>(_sessions.values());
     }
 
     @Override // Called by the delegate or a a session created by this connection.
