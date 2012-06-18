@@ -1,0 +1,14 @@
+1. Running the C++ binding
+============================
+1. Build the c++ source using cmake.
+   (I haven't added automake support yet, don't plan to do so.)
+
+2. Set the LD_LIBRARY_PATH path as follows.
+   export LD_LIBRARY_PATH=${cmake-build-dir}/src/:${cmake-build-dir}/bindings/qpid/java/
+
+3. Set the classpath for the java client and run the example as follows.
+   java -cp $QP org.apache.qpid.messaging.cpp.CppTest
+
+4. If it complains that libmawt.so cannot be found, then add it as follows to the  LD_LIBRARY_PATH
+   Ex export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${path-to-java}/jre/lib/amd64/xawt/
+   (You need to search for libmawt.so in your Java installation for the correct path and add it.)
