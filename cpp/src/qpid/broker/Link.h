@@ -147,7 +147,7 @@ class Link : public PersistableConfig, public management::Manageable {
     /** returns the current address of the remote, which may be different from the
         configured transport/host/port due to failover. Returns true if connection is
         active */
-    bool getRemoteAddress(qpid::Address& addr) const;
+    QPID_BROKER_EXTERN bool getRemoteAddress(qpid::Address& addr) const;
 
     bool isDurable() { return durable; }
     void maintenanceVisit ();
