@@ -23,6 +23,7 @@
  */
 
 #include "types.h"
+#include "QueueRange.h"
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/types/Uuid.h"
@@ -78,10 +79,19 @@ class QueueGuard {
     void attach(ReplicatingSubscription&);
 
     /**
-     * The first sequence number to be protected by this guard.  All messages at
-     * or after this position are protected.
+     * Return the queue range at the time the QueueGuard was created.  The
+     * QueueGuard is created before the queue becomes active: either when a
+     * backup is promoted, or when a new queue is created on the primary.
+     *
+     * NOTE: The first position protected by the guard is getRange().getBack()+1
      */
-    framing::SequenceNumber getFirstSafe();
+    const QueueRange& getRange() const { return range; } // range is immutable, no lock needed.
+
+    /** Inform the guard of the stating position for the attached subscription.
+     * Complete messages that will not be seen by the subscriptino.
+     *@return true if the subscription has already advanced to a guarded position.
+     */
+    bool subscriptionStart(framing::SequenceNumber position);
 
   private:
     class QueueObserver;
@@ -92,7 +102,7 @@ class QueueGuard {
     framing::SequenceSet delayed;
     ReplicatingSubscription* subscription;
     boost::shared_ptr<QueueObserver> observer;
-    framing::SequenceNumber firstSafe; // Immutable
+    const QueueRange range;
 };
 }} // namespace qpid::ha
 
