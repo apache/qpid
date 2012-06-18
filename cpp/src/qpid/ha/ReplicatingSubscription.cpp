@@ -20,6 +20,7 @@
  */
 
 #include "QueueGuard.h"
+#include "QueueRange.h"
 #include "QueueReplicator.h"
 #include "ReplicatingSubscription.h"
 #include "Primary.h"
@@ -56,31 +57,31 @@ class DequeueScanner
   public:
     DequeueScanner(
         ReplicatingSubscription& rs,
-        const SequenceNumber& first_,
-        const SequenceNumber& last_ // Inclusive
-    ) : subscription(rs), first(first_), last(last_)
+        SequenceNumber front_,
+        SequenceNumber back_    // Inclusive
+    ) : subscription(rs), front(front_), back(back_)
     {
-        assert(first <= last);
-        // INVARIANT no deques are needed for positions <= at.
-        at = first - 1;
+        assert(front <= back);
+        // INVARIANT deques have been added for positions <= at.
+        at = front - 1;
     }
 
     void operator()(const QueuedMessage& qm) {
-        if (qm.position >= first && qm.position <= last) {
-            if (qm.position > at+1)
-                subscription.dequeued(at+1, qm.position-1);
+        if (qm.position >= front && qm.position <= back) {
+            if (qm.position > at+1) subscription.dequeued(at+1, qm.position-1);
             at = qm.position;
         }
     }
+
     // Must call after scanning the queue.
     void finish() {
-        if (at < last) subscription.dequeued(at+1, last);
+        if (at < back) subscription.dequeued(at+1, back);
     }
 
   private:
     ReplicatingSubscription& subscription;
-    SequenceNumber first;
-    SequenceNumber last;
+    SequenceNumber front;
+    SequenceNumber back;
     SequenceNumber at;
 };
 
@@ -146,38 +147,6 @@ ReplicatingSubscription::Factory::create(
     return rs;
 }
 
-struct QueueRange {
-    bool empty;
-    SequenceNumber front;
-    SequenceNumber back;
-
-    QueueRange() { }
-
-    QueueRange(broker::Queue& q) {
-        back = q.getPosition();
-        front = back+1;         // Assume empty
-        empty = !ReplicatingSubscription::getFront(q, front);
-        assert(empty || front <= back);
-    }
-
-    QueueRange(const framing::FieldTable args) {
-        back = args.getAsInt(ReplicatingSubscription::QPID_BACK);
-        front = back+1;         // Assume empty
-        empty = !args.isSet(ReplicatingSubscription::QPID_FRONT);
-        if (!empty) {
-            front = args.getAsInt(ReplicatingSubscription::QPID_FRONT);
-            if (back < front)
-                throw InvalidArgumentException(
-                    QPID_MSG("Invalid range [" << front << "," << back <<"]"));
-        }
-    }
-};
-
-ostream& operator<<(ostream& o, const QueueRange& qr) {
-    if (qr.front > qr.back) return o << "[-" << qr.back << "]";
-    else return o << "[" << qr.front << "," << qr.back << "]";
-}
-
 ReplicatingSubscription::ReplicatingSubscription(
     SemanticState* parent,
     const string& name,
@@ -205,16 +174,9 @@ ReplicatingSubscription::ReplicatingSubscription(
         os << "Primary " << queue->getName() << "@" << info.getLogId() << ": ";
         logPrefix = os.str();
 
-        // FIXME aconway 2012-06-10: unsafe to rely in queue front or position they are changing?
-
-        QueueRange primary(*queue); // The local primary queue.
-        QueueRange backup(arguments); // The remote backup state.
-        backupPosition = backup.back;
-
         // NOTE: Once the guard is attached we can have concurrent
-        // calles to dequeued so we need to lock use of this->deques.
+        // calls to dequeued so we need to lock use of this->deques.
         //
-
         // However we must attach the guard _before_ we scan for
         // initial dequeues to be sure we don't miss any dequeues
         // between the scan and attaching the guard.
@@ -222,43 +184,44 @@ ReplicatingSubscription::ReplicatingSubscription(
         if (!guard) guard.reset(new QueueGuard(*queue, getBrokerInfo()));
         guard->attach(*this);
 
-        // We can re-use some backup messages if backup and primary queues
-        // overlap and the backup is not missing messages at the front of the queue.
+        QueueRange backup(arguments); // The remote backup state.
+        QueueRange primary(guard->getRange()); // The local state at the time the guard was set.
+        backupPosition = backup.back;
 
-        /*        if (!primary.empty &&   // Primary not empty
-            !backup.empty &&    // Backup not empty
-            primary.front >= backup.front && // Not missing messages at the front
-            primary.front <= backup.back     // Overlap
-        )
+        // Sync backup and primary queues, don't send messages already on the backup
+
+        if (backup.back < primary.front || backup.front > primary.back
+            || primary.empty() || backup.empty())
         {
-            // Scan primary queue for gaps that should be dequeued on the backup.
-            // NOTE: this runs concurrently with the guard calling dequeued()
-            // FIXME aconway 2012-05-22: optimize queue iteration
+            // No overlap - erase backup and start from the beginning
+            if (!backup.empty()) dequeued(backup.front, backup.back);
+            position = primary.front-1;
+        }
+        else {  // backup and primary do overlap.
+            // Remove messages from backup that are not in primary.
+            if (primary.back < backup.back) {
+                dequeued(primary.back+1, backup.back); // Trim excess messages at back
+                backup.back = primary.back;
+            }
+            if (backup.front < primary.front) {
+                dequeued(backup.front, primary.front-1); // Trim excess messages at front
+                backup.front = primary.front;
+            }
             DequeueScanner scan(*this, backup.front, backup.back);
-            queue->eachMessage(scan);
+            // FIXME aconway 2012-06-15: Optimize queue traversal, only in range.
+            queue->eachMessage(boost::ref(scan)); // Remove missing messages in between.
             scan.finish();
-            // If the backup was ahead it has been pruned back to the primary.
-            position = std::min(guard->getFirstSafe(), backup.back);
+            position = backup.back;
         }
-        else */ {
-            // Clear the backup queue and reset to start browsing at the
-            // front of the primary queue.
-            if (!backup.empty) dequeued(backup.front, backup.back);
-            position = primary.front - 1; // Start consuming from front.
-        }
-        QPID_LOG(debug, logPrefix << "Subscribed: "
+
+        QPID_LOG(debug, logPrefix << "Subscribed:"
                  << " backup:" << backup
                  << " primary:" << primary
-                 << " position:" << position
-                 << " safe position: " << guard->getFirstSafe()
-        );
+                 << " catch-up: " << position << "-" << primary.back
+                 << "(" << primary.back-position << ")");
 
-        // Are we ready yet?
-        if (position+1 >= guard->getFirstSafe()) // Next message will be safe.
-            setReady();
-        else
-            QPID_LOG(debug, logPrefix << "Catching up from "
-                     << position << " to " << guard->getFirstSafe());
+        // Check if we are ready yet.
+        if (guard->subscriptionStart(position)) setReady();
     }
     catch (const std::exception& e) {
         throw InvalidArgumentException(QPID_MSG(logPrefix << e.what()
@@ -307,11 +270,8 @@ bool ReplicatingSubscription::deliver(QueuedMessage& qm) {
                 // Backup will automatically advance by 1 on delivery of message.
                 backupPosition = qm.position;
             }
-            // Deliver the message
-            return ConsumerImpl::deliver(qm);
         }
-        else
-            return ConsumerImpl::deliver(qm); // Message is for internal event queue.
+        return ConsumerImpl::deliver(qm);
     } catch (const std::exception& e) {
         QPID_LOG(critical, logPrefix << "Error replicating " << qm
                  << ": " << e.what());
@@ -344,7 +304,7 @@ void ReplicatingSubscription::acknowledged(const QueuedMessage& qm) {
         QPID_LOG(trace, logPrefix << "Acknowledged " << qm);
         guard->complete(qm);
         // If next message is protected by the guard then we are ready
-        if (qm.position+1 >= guard->getFirstSafe()) setReady();
+        if (qm.position >= guard->getRange().back) setReady();
     }
     ConsumerImpl::acknowledged(qm);
 }

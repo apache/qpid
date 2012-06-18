@@ -50,15 +50,15 @@ class QueueGuard::QueueObserver : public broker::QueueObserver
 
 
 QueueGuard::QueueGuard(broker::Queue& q, const BrokerInfo& info)
-    : queue(q), subscription(0)
+    : queue(q), subscription(0), range(q)
 {
+    // NOTE: The QueueGuard is created before the queue becomes active: either
+    // when a backup is promoted, or when a new queue is created on the primary.
     std::ostringstream os;
     os << "Primary guard " << queue.getName() << "@" << info.getLogId() << ": ";
     logPrefix = os.str();
     observer.reset(new QueueObserver(*this));
     queue.addObserver(observer);
-    // Set after addObserver to ensure we dont miss an enqueue.
-    firstSafe = queue.getPosition() + 1; // Next message will be protected by the guard.
 }
 
 QueueGuard::~QueueGuard() { cancel(); }
@@ -99,24 +99,24 @@ void QueueGuard::cancel() {
     queue.eachMessage(boost::bind(&QueueGuard::complete, this, _1));
 }
 
+void QueueGuard::attach(ReplicatingSubscription& rs) {
+    Mutex::ScopedLock l(lock);
+     subscription = &rs;
+}
+
 namespace {
 void completeBefore(QueueGuard* guard, SequenceNumber position, const QueuedMessage& qm) {
     if (qm.position <= position) guard->complete(qm);
 }
 }
 
-void QueueGuard::attach(ReplicatingSubscription& rs) {
-    // NOTE: attach is called before the ReplicatingSubscription is active so
-    // it's position is not changing.
-    assert(firstSafe >= rs.getPosition());
-    // Complete any messages before or at the ReplicatingSubscription position.
-    if (!delayed.empty() && delayed.front() <= rs.getPosition()) {
+bool QueueGuard::subscriptionStart(SequenceNumber position) {
+   // Complete any messages before or at the ReplicatingSubscription start position.
+    if (!delayed.empty() && delayed.front() <= position) {
         // FIXME aconway 2012-06-15: queue iteration, only messages in delayed
-        queue.eachMessage(boost::bind(&completeBefore, this, rs.getPosition(), _1));
+        queue.eachMessage(boost::bind(&completeBefore, this, position, _1));
     }
-    Mutex::ScopedLock l(lock);
-    // FIXME aconway 2012-06-15: complete messages before rs.getPosition
-    subscription = &rs;
+    return position >= range.back;
 }
 
 void QueueGuard::complete(const QueuedMessage& qm) {
@@ -133,11 +133,6 @@ void QueueGuard::complete(const QueuedMessage& qm) {
     }
     QPID_LOG(trace, logPrefix << "Completed " << qm);
     qm.payload->getIngressCompletion().finishCompleter();
-}
-
-framing::SequenceNumber QueueGuard::getFirstSafe() {
-    // No lock, firstSafe is immutable.
-    return firstSafe;
 }
 
 // FIXME aconway 2012-06-04: TODO support for timeout.

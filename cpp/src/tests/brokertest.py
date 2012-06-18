@@ -572,7 +572,7 @@ class NumberedSender(Thread):
         """
         Thread.__init__(self)
         cmd = ["qpid-send",
-             "--broker", url or broker.host_port(),
+               "--broker", url or broker.host_port(),
                "--address", "%s;{create:always}"%queue,
                "--connection-options", "{%s}"%(connection_options),
                "--content-stdin"
@@ -647,6 +647,7 @@ class NumberedReceiver(Thread):
         self.error = None
         self.sender = sender
         self.received = 0
+        self.queue = queue
 
     def read_message(self):
         n = int(self.receiver.stdout.readline())
@@ -657,7 +658,7 @@ class NumberedReceiver(Thread):
             m = self.read_message()
             while m != -1:
                 self.receiver.assert_running()
-                assert m <= self.received, "%s missing message %s>%s"%(queue, m, self.received)
+                assert m <= self.received, "%s missing message %s>%s"%(self.queue, m, self.received)
                 if (m == self.received): # Ignore duplicates
                     self.received += 1
                     if self.sender:

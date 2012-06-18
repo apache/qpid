@@ -729,7 +729,7 @@ class LongTests(BrokerTest):
         brokers = HaCluster(self, 3)
 
         # Start sender and receiver threads
-        n = 10;
+        n = 10
         senders = [NumberedSender(brokers[0], max_depth=1024, failover_updates=False,
                                  queue="test%s"%(i)) for i in xrange(n)]
         receivers = [NumberedReceiver(brokers[0], sender=senders[i],
@@ -760,8 +760,7 @@ class LongTests(BrokerTest):
                 def enough():        # Verify we're still running
                     receivers[0].check() # Verify no exceptions
                     return receivers[0].received > n + 100
-                # FIXME aconway 2012-05-17: client reconnect sometimes takes > 1 sec.
-                assert retry(enough, 10), "Stalled: %s < %s+100"%(receivers[0].received, n)
+                assert retry(enough), "Stalled: %s < %s+100"%(receivers[0].received, n)
         except:
             traceback.print_exc()
             raise
