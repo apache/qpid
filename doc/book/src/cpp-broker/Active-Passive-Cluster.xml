@@ -22,15 +22,13 @@ under the License.
 
 <section id="chap-Messaging_User_Guide-Active_Passive_Cluster">
 
-  <title>Active-passive Messaging Clusters (Preview)</title>
+  <title>Active-passive Messaging Clusters</title>
 
   <section>
     <title>Overview</title>
     <para>
-      This release provides a preview of a new module for High Availability (HA). The new module is
-      not yet complete or ready for production use. It being made available so that users can
-      experiment with the new approach and provide feedback early in the development process.
-      Feedback should go to <ulink url="mailto:user@qpid.apache.org">dev@qpid.apache.org</ulink>.
+      This release provides a preview of a new module for High Availability (HA).
+      This module is intended to eventually replace the existing cluster module.
     </para>
     <para>
       The old cluster module takes an <firstterm>active-active</firstterm> approach, i.e. all the
@@ -45,13 +43,13 @@ under the License.
       promoted to take over as the new primary. Clients fail-over to the new primary
       automatically. If there are multiple backups, the backups also fail-over to become backups of
       the new primary.  Backup brokers reject connection attempts, to enforce the requirement that
-      only the primary be active.
+      only the primary be active. Clients fail-over till the successfully connect to the primary broker.
     </para>
     <para>
-      This approach depends on an external <firstterm>cluster resource manager</firstterm> to detect
-      failures and choose the primary. <ulink
-      url="https://fedorahosted.org/cluster/wiki/RGManager">Rgmanager</ulink> is supported
-      initially, but others may be supported in the future.
+      This approach requires on an external <firstterm>cluster resource
+      manager</firstterm> to detect failures and choose the new primary. <ulink
+      url="https://fedorahosted.org/cluster/wiki/RGManager">Rgmanager</ulink> is
+      supported initially, but others may be supported in the future.
     </para>
     <section>
       <title>Why the new approach?</title>
@@ -77,19 +75,17 @@ under the License.
 	    virtual IP addresses.
 	  </listitem>
 	  <listitem>
-	    Improved performance and scalability due to better use of multiple CPU s
+	    Improved performance and scalability due to better use of multiple CPUs
 	  </listitem>
 	</itemizedlist>
       </para>
     </section>
     <section>
       <title>Limitations</title>
-
       <para>
 	There are a number of known limitations in the current preview implementation. These
 	will be fixed in the production versions.
       </para>
-
       <itemizedlist>
 	<listitem>
 	  Transactional changes to queue state are not replicated atomically. If the primary crashes
@@ -97,23 +93,11 @@ under the License.
 	  changes introduced by a transaction.
 	</listitem>
 	<listitem>
-	  During a fail-over one backup is promoted to primary and any other backups switch to
-	  the new primary. Messages sent to the new primary before all the backups have
-	  switched could be lost if the new primary itself fails before all the backups have
-	  switched.
-	</listitem>
-	<listitem>
-	  Acknowledgments are confirmed to clients before the message has been dequeued
-	  from replicas or indeed from the local store if that is asynchronous.
-	</listitem>
-	<listitem>
-	  When used with a persistent store: if the entire cluster fails, there are no tools to help
-	  identify the most recent store.
-	</listitem>
-	<listitem>
-	  A persistent broker must have its store erased before joining an existing cluster.
-	  In the production version a persistent broker will be able to load its store and
-	  avoid downloading messages that are in the store from the primary.
+	  Not yet integrated with the persistent store.  A persistent broker must have its
+	  store erased before joining an existing cluster.  If the entire cluster fails,
+	  there are no tools to help identify the most recent store. In the future a
+	  persistent broker will be able to use its stored messages to avoid downloading
+	  messages from the primary when joining a cluster.
 	</listitem>
 	<listitem>
 	  Configuration changes (creating or deleting queues, exchanges and bindings) are
@@ -127,19 +111,8 @@ under the License.
 	  re-appear if that backup is promoted to primary on a subsequent failure.
 	</listitem>
 	<listitem>
-	  Better control is needed over which queues/exchanges are replicated and which are not.
-	</listitem>
-	<listitem>
-	  There are some known issues affecting performance, both the throughput of
-	  replication and the time taken for backups to fail-over. Performance will improve
-	  in the production version.
-	</listitem>
-	<listitem>
 	  Federated links from the primary will be lost in fail over, they will not be
 	  re-connected on the new primary. Federation links to the primary can fail over.
-	</listitem>
-	<listitem>
-	  Only plain FIFO queues can be replicated. LVQ and ring queues are not yet supported.
 	</listitem>
       </itemizedlist>
     </section>
@@ -196,7 +169,7 @@ under the License.
 	    </entry>
 	    <entry>
 	      <para>
-		A URL listing each broker in the cluster.
+		The URL
 		<footnote>
 		  <para>
 		  The full format of the URL is given by this grammar:
@@ -209,9 +182,10 @@ under the License.
 		  </programlisting>
 		  </para>
 		</footnote>
-		It is used by brokers to connect to each other. This URL must explicitly
-		list each broker, it cannot be a virtual IP address.
-		For example <literal>amqp:node1.exaple.com,node2.exaple.com,node3.exaple.com</literal>
+		used by cluster brokers to connect to each other. The URL can
+		contain a list of all the brokers' addresses or it can contain a single
+		virtual IP address.  If a list is used it is comma separated, for example
+		<literal>amqp:node1.exaple.com,node2.exaple.com,node3.exaple.com</literal>
 	      </para>
 	    </entry>
 	  </row>
@@ -219,18 +193,13 @@ under the License.
 	    <entry><literal>--ha-public-url <replaceable>URL</replaceable></literal> </entry>
 	    <entry>
 	      <para>
-		The URL that is advertized to clients. This has the same
-		format as the <literal>--ha-brokers-url</literal> URL above.
+		The URL that is advertized to clients. This defaults to the
+		<literal>--ha-brokers-url</literal> URL above, and has the same format.  A
+		virtual IP address is recommended for the public URL as it simplifies
+		deployment and hides changes to the cluster membership from clients.
 	      </para>
 	      <para>
-		This URL can contain a list of all the brokers'
-		addresses or a single virtual IP address.  A virtual
-		IP address is recommended as it simplifies deployment
-		and hides changes to the cluster membership from
-		clients.
-	      </para>
-	      <para>
-		You can use this option to put client traffic on a different network from
+		This option allows you to put client traffic on a different network from
 		broker traffic, which is recommended.
 	      </para>
 	    </entry>
@@ -274,7 +243,7 @@ under the License.
     </para>
     <para>
       The resource manager is responsible for starting the <command>qpidd</command> broker
-      on each node in the cluster. The resource manager <firstterm>promotes</firstterm>
+      on each node in the cluster. The resource manager then <firstterm>promotes</firstterm>
       one of the brokers to be the primary. The other brokers connect to the primary as
       backups, using the URL provided in the <literal>ha-brokers-url</literal> configuration
       option.
@@ -463,7 +432,8 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       option. It has one of the following values:
       <itemizedlist>
 	<listitem>
-	  <firstterm>all</firstterm>: Replicate everything automatically: queues, exchanges, bindings and messages.
+	  <firstterm>all</firstterm>: Replicate everything automatically: queues,
+	  exchanges, bindings and messages.
 	</listitem>
 	<listitem>
 	  <firstterm>configuration</firstterm>: Replicate the existence of queues,
@@ -658,6 +628,43 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
 	connectionfactory.qpidConnectionfactory = amqp://guest:guest@clientid/test?brokerlist=&#39;tcp://localhost:5672&#39;,idle_timeout=3
       </screen>
     </section>
+  </section>
+
+    <section>
+    <title>Integrating with other Cluster Resource Managers</title>
+    <para>
+      To integrate with a different resource manager you must configure it to:
+      <itemizedlist>
+	<listitem>Start a qpidd process on each node of the cluster.</listitem>
+	<listitem>Restart qpidd if it crases.</listitem>
+	<listitem>Promote exactly one of the brokers to primary.</listitem>
+	<listitem>Detect a failure and promote a new primary.</listitem>
+      </itemizedlist>
+    </para>
+    <para>
+      The <command>qpid-ha</command> command allows you to check if a broker is primary,
+      and to promote a backup to primary.
+    </para>
+    <para>
+      To test if a broker is the primary:
+      <programlisting>
+	qpid-ha -b <replaceable>broker-address</replaceable> status --expect=primary
+      </programlisting>
+      This command will return 0 if the broker at <replaceable>broker-address</replaceable>
+      is the primary, non-0 otherwise.
+    </para>
+    <para>
+      To promote a broker to primary:
+      <programlisting>
+	qpid-ha -b <replaceable>broker-address</replaceable> promote
+      </programlisting>
+    </para>
+    <para>
+      <command>qpid-ha --help</command> gives information on other commands and options available.
+      You can also use <command>qpid-ha</command> to manually examine and promote brokers. This
+      can be useful for testing failover scenarios without having to set up a full resource manager,
+      or to simulate a cluster on a single node. For deployment, a resource manager is required.
+    </para>
   </section>
 </section>
 
