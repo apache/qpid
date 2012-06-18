@@ -36,12 +36,11 @@ ha_la_SOURCES =					\
   qpid/ha/HaBroker.cpp				\
   qpid/ha/HaBroker.h				\
   qpid/ha/HaPlugin.cpp				\
-  qpid/ha/HeldQueue.h				\
   qpid/ha/Membership.cpp			\
   qpid/ha/Membership.h				\
   qpid/ha/Primary.cpp				\
   qpid/ha/Primary.h				\
-  qpid/ha/PrimaryConnectionMonitor.		\
+  qpid/ha/PrimaryConnectionMonitor.h		\
   qpid/ha/QueueGuard.cpp			\
   qpid/ha/QueueGuard.h				\
   qpid/ha/QueueReplicator.cpp			\
