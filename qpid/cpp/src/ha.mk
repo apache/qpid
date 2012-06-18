@@ -43,6 +43,7 @@ ha_la_SOURCES =					\
   qpid/ha/PrimaryConnectionMonitor.h		\
   qpid/ha/QueueGuard.cpp			\
   qpid/ha/QueueGuard.h				\
+  qpid/ha/QueueRange.h				\
   qpid/ha/QueueReplicator.cpp			\
   qpid/ha/QueueReplicator.h			\
   qpid/ha/ReplicatingSubscription.cpp		\
