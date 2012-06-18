@@ -39,6 +39,8 @@ public interface ConnectionInternal extends Connection
 
     public void recreate() throws MessagingException;
 
+    public void unregisterSession(SessionInternal sesion);
+
     /**
      *  The per connection lock that is used by the connection
      *  and it's child objects. A single lock is used to prevent

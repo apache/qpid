@@ -64,6 +64,7 @@ public class SenderManagementDecorator implements SenderInternal
         {
             _state = SenderState.CLOSED;
             _delegate.close();
+            _ssn.unregisterSender(this);
         }
     }
 

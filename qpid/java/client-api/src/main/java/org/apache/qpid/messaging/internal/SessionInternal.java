@@ -27,4 +27,10 @@ public interface SessionInternal extends Session
     public void exception(MessagingException e);
 
     public void recreate() throws MessagingException;
+
+    public String getName();
+
+    public void unregisterReceiver(ReceiverInternal receiver);
+
+    public void unregisterSender(SenderInternal sender);
 }

@@ -119,7 +119,14 @@ public class ConnectionManagementDecorator implements ConnectionInternal
             _state = ConnectionState.CLOSED;
             for (Session ssn : _sessions.values())
             {
-                ssn.close();
+                try
+                {
+                    ssn.close();
+                }
+                catch (Exception e)
+                {
+                    _logger.warn("Error closing session",e);
+                }
             }
             _sessions.clear();
 
@@ -138,7 +145,7 @@ public class ConnectionManagementDecorator implements ConnectionInternal
         try
         {
             if (name == null || name.isEmpty()) { name = generateSessionName(); }
-            SessionInternal ssn =  new SessionManagementDecorator(this,_delegate.createSession(name));
+            SessionInternal ssn =  new SessionManagementDecorator(this,name,_delegate.createSession(name));
             _sessions.put(name, ssn);
             return ssn;
         }
@@ -159,7 +166,7 @@ public class ConnectionManagementDecorator implements ConnectionInternal
         try
         {
             if (name == null || name.isEmpty()) { name = generateSessionName(); }
-            SessionInternal ssn = new SessionManagementDecorator(this,_delegate.createTransactionalSession(name));
+            SessionInternal ssn = new SessionManagementDecorator(this,name,_delegate.createTransactionalSession(name));
             _sessions.put(name, ssn);
             return ssn;
         }
@@ -211,6 +218,12 @@ public class ConnectionManagementDecorator implements ConnectionInternal
     {
         checkClosedAndThrowException();
         return new ArrayList<SessionInternal>(_sessions.values());
+    }
+
+    @Override
+    public void unregisterSession(SessionInternal ssn)
+    {
+        _sessions.remove(ssn.getName());
     }
 
     @Override // Called by the delegate or a a session created by this connection.

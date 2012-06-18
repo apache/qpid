@@ -170,6 +170,7 @@ public class ReceiverManagementDecorator implements ReceiverInternal
         {
             _state = ReceiverState.CLOSED;
             _delegate.close();
+            _ssn.unregisterReceiver(this);
         }
     }
 

@@ -83,15 +83,17 @@ public class SessionManagementDecorator implements SessionInternal
 
     private ConnectionInternal _conn;
     private Session _delegate;
+    private String _name;
     SessionState _state = SessionState.OPENED;
     private List<ReceiverInternal> _receivers = new ArrayList<ReceiverInternal>();
     private List<SenderInternal> _senders = new ArrayList<SenderInternal>();
     private final Object _connectionLock;  // global per connection lock
 
-    public SessionManagementDecorator(ConnectionInternal conn, Session delegate)
+    public SessionManagementDecorator(ConnectionInternal conn, String name, Session delegate)
     {
         _conn = conn;
         _delegate = delegate;
+        _name = name;
         _connectionLock = conn.getConnectionLock();
     }
 
@@ -110,16 +112,31 @@ public class SessionManagementDecorator implements SessionInternal
             _state = SessionState.CLOSED;
             for (Sender sender: _senders)
             {
-                sender.close();
+                try
+                {
+                    sender.close();
+                }
+                catch (Exception e)
+                {
+                    _logger.warn("Error closing sender", e);
+                }
             }
             _senders.clear();
 
             for (Receiver receiver: _receivers)
             {
-                receiver.close();
+                try
+                {
+                    receiver.close();
+                }
+                catch (Exception e)
+                {
+                    _logger.warn("Error closing receiver", e);
+                }
             }
             _receivers.clear();
             _delegate.close();
+            _conn.unregisterSession(this);
         }
     }
 
@@ -440,6 +457,24 @@ public class SessionManagementDecorator implements SessionInternal
     public ConnectionInternal getConnectionInternal()
     {
         return _conn;
+    }
+
+    @Override
+    public String getName()
+    {
+        return _name;
+    }
+
+    @Override
+    public void unregisterReceiver(ReceiverInternal receiver)
+    {
+        _receivers.remove(receiver);
+    }
+
+    @Override
+    public void unregisterSender(SenderInternal sender)
+    {
+        _senders.remove(sender);
     }
 
     private void checkClosedAndThrowException() throws SessionException
