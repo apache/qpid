@@ -24,9 +24,8 @@
 #ifndef qpid_asyncStore_TxnHandleImpl_h_
 #define qpid_asyncStore_TxnHandleImpl_h_
 
-#include "AtomicCounter.h"
-
 #include "qpid/RefCounted.h"
+#include "qpid/sys/Mutex.h"
 
 #include <stdint.h> // uint32_t
 #include <string>
@@ -59,7 +58,8 @@ public:
 private:
     std::string m_xid;
     bool m_tpcFlag;
-    AsyncOpCounter m_asyncOpCnt;
+    uint32_t m_asyncOpCnt;
+    qpid::sys::Mutex m_asyncOpCntMutex;
     qpid::broker::TxnBuffer* const m_txnBuffer;
 
     void createLocalXid();

@@ -89,12 +89,14 @@ TxnHandleImpl::is2pc() const
 void
 TxnHandleImpl::incrOpCnt()
 {
+    qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_asyncOpCntMutex);
     ++m_asyncOpCnt;
 }
 
 void
 TxnHandleImpl::decrOpCnt()
 {
+    qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_asyncOpCntMutex);
     if (m_asyncOpCnt == 0UL) {
         throw qpid::Exception("Transaction async operation count underflow");
     }

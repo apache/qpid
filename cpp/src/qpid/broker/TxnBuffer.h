@@ -54,8 +54,12 @@ public:
     void asyncLocalCommit();
     void asyncLocalAbort();
 
+    // --- Debug ---
+    //void printState(std::ostream& os);
+
 private:
     std::vector<boost::shared_ptr<TxnOp> > m_ops;
+    qpid::sys::Mutex m_opsMutex;
     TxnHandle m_txnHandle;
     AsyncTransactionalStore* m_store;
     AsyncResultQueue& m_resultQueue;

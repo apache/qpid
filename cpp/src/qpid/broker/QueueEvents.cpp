@@ -28,7 +28,7 @@ namespace qpid {
 namespace broker {
 
 QueueEvents::QueueEvents(const boost::shared_ptr<sys::Poller>& poller, bool isSync) : 
-    eventQueue(boost::bind(&QueueEvents::handle, this, _1), poller), enabled(true), sync(isSync) 
+    eventQueue(boost::bind(&QueueEvents::handle, this, _1), poller), enabled(true), sync(isSync)
 {
     if (!sync) eventQueue.start();
 }

@@ -48,6 +48,7 @@ void
 TxnBuffer::enlist(boost::shared_ptr<TxnOp> op)
 {
 //std::cout << "TTT TxnBuffer::enlist" << std::endl << std::flush;
+    qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_opsMutex);
     m_ops.push_back(op);
 }
 
@@ -55,6 +56,7 @@ bool
 TxnBuffer::prepare(TxnHandle& th)
 {
 //std::cout << "TTT TxnBuffer::prepare" << std::endl << std::flush;
+    qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_opsMutex);
     for(std::vector<boost::shared_ptr<TxnOp> >::iterator i = m_ops.begin(); i != m_ops.end(); ++i) {
         if (!(*i)->prepare(th)) {
             return false;
@@ -67,6 +69,7 @@ void
 TxnBuffer::commit()
 {
 //std::cout << "TTT TxnBuffer::commit" << std::endl << std::flush;
+    qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_opsMutex);
     for(std::vector<boost::shared_ptr<TxnOp> >::iterator i = m_ops.begin(); i != m_ops.end(); ++i) {
         (*i)->commit();
     }
@@ -77,6 +80,7 @@ void
 TxnBuffer::rollback()
 {
 //std::cout << "TTT TxnBuffer::rollback" << std::endl << std::flush;
+    qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_opsMutex);
     for(std::vector<boost::shared_ptr<TxnOp> >::iterator i = m_ops.begin(); i != m_ops.end(); ++i) {
         (*i)->rollback();
     }
@@ -184,5 +188,23 @@ TxnBuffer::asyncLocalAbort()
 //std::cout << "TTT TxnBuffer:asyncRollback: Unexpected state " << m_state << std::endl << std::flush;
     }
 }
+
+// for debugging
+/*
+void
+TxnBuffer::printState(std::ostream& os)
+{
+    os << "state=";
+    switch(m_state) {
+    case NONE: os << "NONE"; break;
+    case PREPARE: os << "PREPARE"; break;
+    case COMMIT: os << "COMMIT"; break;
+    case ROLLBACK: os << "ROLLBACK"; break;
+    case COMPLETE: os << "COMPLETE"; break;
+    default: os << m_state << "(unknown)";
+    }
+    os << "; " << m_ops.size() << "; store=" << m_store;
+}
+*/
 
 }} // namespace qpid::broker

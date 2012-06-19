@@ -49,11 +49,17 @@ AsyncResultQueueImpl::submit(boost::shared_ptr<AsyncResultHandle> arh)
 AsyncResultQueueImpl::ResultQueue::Batch::const_iterator
 AsyncResultQueueImpl::handle(const ResultQueue::Batch& e)
 {
-    for (ResultQueue::Batch::const_iterator i = e.begin(); i != e.end(); ++i) {
+    try {
+        for (ResultQueue::Batch::const_iterator i = e.begin(); i != e.end(); ++i) {
 //std::cout << "<== AsyncResultQueueImpl::handle() errNo=" << (*i)->getErrNo() << " errMsg=\"" << (*i)->getErrMsg() << "\"" << std::endl << std::flush;
-        if ((*i)->isValid()) {
-            (*i)->invokeAsyncResultCallback();
+            if ((*i)->isValid()) {
+                (*i)->invokeAsyncResultCallback();
+            }
         }
+    } catch (const std::exception& e) {
+        std::cerr << "qpid::broker::AsyncResultQueueImpl: Exception thrown processing async result: " << e.what() << std::endl;
+    } catch (...) {
+        std::cerr << "qpid::broker::AsyncResultQueueImpl: Unknown exception thrown processing async result" << std::endl;
     }
     return e.end();
 }

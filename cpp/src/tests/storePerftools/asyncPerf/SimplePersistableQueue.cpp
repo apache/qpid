@@ -354,13 +354,13 @@ SimplePersistableQueue::asyncEnqueue(qpid::broker::TxnHandle& th,
                                                                    qpid::asyncStore::AsyncOperation::MSG_ENQUEUE,
                                                                    &handleAsyncResult,
                                                                    &m_resultQueue));
+    if (th.isValid()) {
+        th.incrOpCnt();
+    }
     m_store->submitEnqueue(qm.enqHandle(),
                            th,
                            qac);
     ++m_asyncOpCounter;
-    if (th.isValid()) {
-        th.incrOpCnt();
-    }
     return true;
 }
 
@@ -376,13 +376,13 @@ SimplePersistableQueue::asyncDequeue(qpid::broker::TxnHandle& th,
                                                                    qpid::asyncStore::AsyncOperation::MSG_DEQUEUE,
                                                                    &handleAsyncResult,
                                                                    &m_resultQueue));
+    if (th.isValid()) {
+        th.incrOpCnt();
+    }
     m_store->submitDequeue(qm.enqHandle(),
                            th,
                            qac);
     ++m_asyncOpCounter;
-    if (th.isValid()) {
-        th.incrOpCnt();
-    }
     return true;
 }
 
