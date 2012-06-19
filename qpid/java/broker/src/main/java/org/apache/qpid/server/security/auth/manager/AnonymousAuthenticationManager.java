@@ -47,7 +47,7 @@ public class AnonymousAuthenticationManager implements AuthenticationManager
 
     private static final Principal ANONYMOUS_PRINCIPAL = new UsernamePrincipal("ANONYMOUS");
 
-    private static final Subject ANONYMOUS_SUBJECT = new Subject();
+    public static final Subject ANONYMOUS_SUBJECT = new Subject();
     static
     {
         ANONYMOUS_SUBJECT.getPrincipals().add(ANONYMOUS_PRINCIPAL);

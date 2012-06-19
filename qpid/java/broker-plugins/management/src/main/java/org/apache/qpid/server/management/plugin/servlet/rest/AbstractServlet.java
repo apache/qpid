@@ -36,11 +36,11 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
+import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 
 public abstract class AbstractServlet extends HttpServlet
 {
-    private Subject _subject;
     private final Broker _broker;
     private SocketAddress _socketAddress;
 
@@ -78,7 +78,6 @@ public abstract class AbstractServlet extends HttpServlet
 
     private void clearAuthorizedSubject()
     {
-        _subject = null;
         org.apache.qpid.server.security.SecurityManager.setThreadSubject(null);
     }
 
@@ -99,6 +98,12 @@ public abstract class AbstractServlet extends HttpServlet
             else
             {
                 String header = request.getHeader("Authorization");
+
+                /*
+                 * TODO - Should configure whether basic authentication is allowed... and in particular whether it
+                 * should be allowed over non-ssl connections
+                 * */
+
                 if (header != null)
                 {
                     String[] tokens = header.split("\\s");
@@ -120,14 +125,17 @@ public abstract class AbstractServlet extends HttpServlet
                 }
             }
         }
-        _subject = subject;
+        if (subject == null)
+        {
+            subject = AnonymousAuthenticationManager.ANONYMOUS_SUBJECT;
+        }
         org.apache.qpid.server.security.SecurityManager.setThreadSubject(subject);
 
     }
 
-    protected Subject getSubject()
+    protected Subject getSubject(HttpSession session)
     {
-        return _subject;
+        return (Subject)session.getAttribute("subject");
     }
 
     @Override

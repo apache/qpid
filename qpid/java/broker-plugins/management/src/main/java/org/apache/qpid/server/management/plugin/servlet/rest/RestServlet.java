@@ -18,6 +18,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
@@ -398,8 +399,7 @@ public class RestServlet extends AbstractServlet
             }
             catch (RuntimeException e)
             {
-                // TODO
-                response.setStatus(HttpServletResponse.SC_CONFLICT);
+                setResponseStatus(response, e);
                 return;
             }
 
@@ -470,13 +470,25 @@ public class RestServlet extends AbstractServlet
             }
             catch (RuntimeException e)
             {
-                // TODO
-                response.setStatus(HttpServletResponse.SC_CONFLICT);
+                setResponseStatus(response, e);
                 return;
             }
 
         }
         response.setStatus(HttpServletResponse.SC_CREATED);
+    }
+
+    private void setResponseStatus(HttpServletResponse response, RuntimeException e) throws IOException
+    {
+        if (e.getCause() instanceof AMQSecurityException)
+        {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        }
+        else
+        {
+            // TODO
+            response.setStatus(HttpServletResponse.SC_CONFLICT);
+        }
     }
 
 }

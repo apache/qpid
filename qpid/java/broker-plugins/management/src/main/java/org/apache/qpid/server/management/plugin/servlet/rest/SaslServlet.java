@@ -121,45 +121,25 @@ public class SaslServlet extends AbstractServlet
     {
         try
         {
-        response.setContentType("application/json");
-        response.setHeader("Cache-Control","no-cache");
-        response.setHeader("Pragma","no-cache");
-        response.setDateHeader("Expires", 0);
+            response.setContentType("application/json");
+            response.setHeader("Cache-Control","no-cache");
+            response.setHeader("Pragma","no-cache");
+            response.setDateHeader("Expires", 0);
 
-        HttpSession session = request.getSession();
+            HttpSession session = request.getSession();
 
-        String mechanism = request.getParameter("mechanism");
-        String id = request.getParameter("id");
-        String saslResponse = request.getParameter("response");
+            String mechanism = request.getParameter("mechanism");
+            String id = request.getParameter("id");
+            String saslResponse = request.getParameter("response");
 
-        AuthenticationManager authManager = ApplicationRegistry.getInstance().getAuthenticationManager(getSocketAddress(request));
+            AuthenticationManager authManager = ApplicationRegistry.getInstance().getAuthenticationManager(getSocketAddress(request));
 
-        if(mechanism != null)
-        {
-            if(id == null)
+            if(mechanism != null)
             {
-                SaslServer saslServer = authManager.createSaslServer(mechanism, request.getServerName(), null/*TODO*/);
-                evaluateSaslResponse(response, session, saslResponse, saslServer);
-            }
-            else
-            {
-                response.setStatus(HttpServletResponse.SC_EXPECTATION_FAILED);
-                session.removeAttribute(ATTR_ID);
-                session.removeAttribute(ATTR_SASL_SERVER);
-                session.removeAttribute(ATTR_EXPIRY);
-
-            }
-
-        }
-        else
-        {
-            if(id != null)
-            {
-                if(id.equals(session.getAttribute(ATTR_ID)) && System.currentTimeMillis() < (Long) session.getAttribute(ATTR_EXPIRY))
+                if(id == null)
                 {
-                    SaslServer saslServer = (SaslServer) session.getAttribute(ATTR_SASL_SERVER);
+                    SaslServer saslServer = authManager.createSaslServer(mechanism, request.getServerName(), null/*TODO*/);
                     evaluateSaslResponse(response, session, saslResponse, saslServer);
-
                 }
                 else
                 {
@@ -167,25 +147,47 @@ public class SaslServlet extends AbstractServlet
                     session.removeAttribute(ATTR_ID);
                     session.removeAttribute(ATTR_SASL_SERVER);
                     session.removeAttribute(ATTR_EXPIRY);
+
                 }
+
             }
             else
             {
-                response.setStatus(HttpServletResponse.SC_EXPECTATION_FAILED);
-                session.removeAttribute(ATTR_ID);
-                session.removeAttribute(ATTR_SASL_SERVER);
-                session.removeAttribute(ATTR_EXPIRY);
+                if(id != null)
+                {
+                    if(id.equals(session.getAttribute(ATTR_ID)) && System.currentTimeMillis() < (Long) session.getAttribute(ATTR_EXPIRY))
+                    {
+                        SaslServer saslServer = (SaslServer) session.getAttribute(ATTR_SASL_SERVER);
+                        evaluateSaslResponse(response, session, saslResponse, saslServer);
 
+                    }
+                    else
+                    {
+                        response.setStatus(HttpServletResponse.SC_EXPECTATION_FAILED);
+                        session.removeAttribute(ATTR_ID);
+                        session.removeAttribute(ATTR_SASL_SERVER);
+                        session.removeAttribute(ATTR_EXPIRY);
+                    }
+                }
+                else
+                {
+                    response.setStatus(HttpServletResponse.SC_EXPECTATION_FAILED);
+                    session.removeAttribute(ATTR_ID);
+                    session.removeAttribute(ATTR_SASL_SERVER);
+                    session.removeAttribute(ATTR_EXPIRY);
+
+                }
             }
-        }
         }
         catch(IOException e)
         {
+            //TODO
             e.printStackTrace();
             throw e;
         }
         catch(RuntimeException e)
         {
+            //TODO
             e.printStackTrace();
             throw e;
         }
