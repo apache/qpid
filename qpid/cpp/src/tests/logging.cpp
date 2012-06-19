@@ -347,7 +347,7 @@ QPID_AUTO_TEST_CASE(testLoggerStateure) {
     };
     opts.parse(ARGC(argv), const_cast<char**>(argv));
     l.configure(opts);
-    QPID_LOG(critical, "foo"); int srcline=__LINE__;
+    QPID_LOG_CAT(critical, test, "foo"); int srcline=__LINE__;
     ifstream log("logging.tmp");
     string line;
     getline(log, line);
