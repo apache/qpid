@@ -33,41 +33,68 @@
  * names as in the C++ library.  They get renamed to their Python
  * equivalents when brought into the Python wrapping
  */
+%define QPID_EXCEPTION(exception, parent)
 %{
-static PyObject* pNoMessageAvailable;
-static PyObject* pTargetCapacityExceeded;
-static PyObject* pNotFound;
-static PyObject* pTransportFailure;
+static PyObject* exception;
 %}
-
 %init %{
-    pNoMessageAvailable = PyErr_NewException(
-        "_cqpid.NoMessageAvailable", NULL, NULL);
-    Py_INCREF(pNoMessageAvailable);
-    PyModule_AddObject(m, "NoMessageAvailable", pNoMessageAvailable);
-
-    pTargetCapacityExceeded = PyErr_NewException(
-        "_cqpid.TargetCapacityExceeded", NULL, NULL);
-    Py_INCREF(pTargetCapacityExceeded);
-    PyModule_AddObject(m, "TargetCapacityExceeded", pTargetCapacityExceeded);
-
-    pNotFound = PyErr_NewException(
-        "_cqpid.NotFound", NULL, NULL);
-    Py_INCREF(pNotFound);
-    PyModule_AddObject(m, "NotFound", pNotFound);
-
-    pTransportFailure = PyErr_NewException(
-        "_cqpid.TransportFailure", NULL, NULL);
-    Py_INCREF(pTransportFailure);
-    PyModule_AddObject(m, "TransportFailure", pTransportFailure);
+    exception = PyErr_NewException(
+        (char *) ("_cqpid." #exception), parent, NULL);
+    Py_INCREF(exception);
+    PyModule_AddObject(m, #exception, exception);
 %}
-
 %pythoncode %{
-    Empty = _cqpid.NoMessageAvailable
-    TargetCapacityExceeded = _cqpid.TargetCapacityExceeded
-    NotFound = _cqpid.NotFound
-    ConnectError = _cqpid.TransportFailure
+    exception = _cqpid. ## exception
 %}
+%enddef
+
+ /* Python equivalents of C++ exceptions.                              */
+ /*                                                                    */
+ /* Commented out lines are exceptions in the Python library, but not  */
+ /* in the C++ library.                                                */
+
+QPID_EXCEPTION(MessagingError, NULL)
+
+QPID_EXCEPTION(LinkError, MessagingError)
+QPID_EXCEPTION(AddressError, LinkError)
+QPID_EXCEPTION(ResolutionError, AddressError)
+QPID_EXCEPTION(AssertionFailed, ResolutionError)
+QPID_EXCEPTION(NotFound, ResolutionError)
+QPID_EXCEPTION(InvalidOption, LinkError)
+QPID_EXCEPTION(MalformedAddress, LinkError)
+QPID_EXCEPTION(ReceiverError, LinkError)
+QPID_EXCEPTION(FetchError, ReceiverError)
+QPID_EXCEPTION(Empty, FetchError)
+/* QPID_EXCEPTION(InsufficientCapacity, LinkError) */
+/* QPID_EXCEPTION(LinkClosed, LinkError) */
+QPID_EXCEPTION(SenderError, LinkError)
+QPID_EXCEPTION(SendError, SenderError)
+QPID_EXCEPTION(TargetCapacityExceeded, SendError)
+
+QPID_EXCEPTION(ConnectionError, MessagingError)
+QPID_EXCEPTION(ConnectError, ConnectionError)
+/* QPID_EXCEPTION(AuthenticationFailure, ConnectError) */
+/* QPID_EXCEPTION(VersionError, ConnectError) */
+/* QPID_EXCEPTION(ConnectionClosed, ConnectionError) */
+/* QPID_EXCEPTION(HeartbeartTimeout, ConnectionError) */
+
+QPID_EXCEPTION(SessionError, MessagingError)
+/* QPID_EXCEPTION(Detached, SessionError) */
+/* QPID_EXCEPTION(NontransactionalSession, SessionError) */
+/* QPID_EXCEPTION(ServerError, SessionError) */
+/* QPID_EXCEPTION(SessionClosed, SessionError) */
+QPID_EXCEPTION(TransactionError, SessionError)
+QPID_EXCEPTION(TransactionAborted, TransactionError)
+QPID_EXCEPTION(UnauthorizedAccess, SessionError)
+
+/* QPID_EXCEPTION(InternalError, MessagingError) */
+
+%define TRANSLATE_EXCEPTION(cpp_exception, py_exception)
+    catch ( cpp_exception & ex) {
+        pExceptionType = py_exception;
+        error = ex.what();
+    }
+%enddef
 
 /* Define the general-purpose exception handling */
 %exception {
@@ -76,22 +103,31 @@ static PyObject* pTransportFailure;
     Py_BEGIN_ALLOW_THREADS;
     try {
         $action
-    } catch (qpid::messaging::NoMessageAvailable & ex) {
-        pExceptionType = pNoMessageAvailable;
-        error = ex.what();
-    } catch (qpid::messaging::TargetCapacityExceeded & ex) {
-        pExceptionType = pTargetCapacityExceeded;
-        error = ex.what();
-    } catch (qpid::messaging::NotFound & ex) {
-        pExceptionType = pNotFound;
-        error = ex.what();
-    } catch (qpid::messaging::TransportFailure & ex) {
-        pExceptionType = pTransportFailure;
-        error = ex.what();
-    } catch (qpid::types::Exception& ex) {
-        pExceptionType = PyExc_RuntimeError;
-        error = ex.what();
     }
+    /* Catch and translate exceptions. */
+    TRANSLATE_EXCEPTION(qpid::messaging::NoMessageAvailable, Empty)
+    TRANSLATE_EXCEPTION(qpid::messaging::NotFound, NotFound)
+    TRANSLATE_EXCEPTION(qpid::messaging::AssertionFailed, AssertionFailed)
+    TRANSLATE_EXCEPTION(qpid::messaging::ResolutionError, ResolutionError)
+    TRANSLATE_EXCEPTION(qpid::messaging::TargetCapacityExceeded,
+                        TargetCapacityExceeded)
+    TRANSLATE_EXCEPTION(qpid::messaging::TransportFailure, ConnectError)
+    TRANSLATE_EXCEPTION(qpid::messaging::MalformedAddress, MalformedAddress)
+    TRANSLATE_EXCEPTION(qpid::messaging::AddressError, AddressError)
+    TRANSLATE_EXCEPTION(qpid::messaging::FetchError, FetchError)
+    TRANSLATE_EXCEPTION(qpid::messaging::ReceiverError, ReceiverError)
+    TRANSLATE_EXCEPTION(qpid::messaging::SendError, SendError)
+    TRANSLATE_EXCEPTION(qpid::messaging::SenderError, SenderError)
+    TRANSLATE_EXCEPTION(qpid::messaging::InvalidOptionString, InvalidOption)
+    TRANSLATE_EXCEPTION(qpid::messaging::LinkError, LinkError)
+    TRANSLATE_EXCEPTION(qpid::messaging::TransactionAborted, TransactionAborted)
+    TRANSLATE_EXCEPTION(qpid::messaging::TransactionError, TransactionError)
+    TRANSLATE_EXCEPTION(qpid::messaging::UnauthorizedAccess, UnauthorizedAccess)
+    TRANSLATE_EXCEPTION(qpid::messaging::SessionError, SessionError)
+    TRANSLATE_EXCEPTION(qpid::messaging::ConnectionError, ConnectionError)
+    TRANSLATE_EXCEPTION(qpid::messaging::KeyError, PyExc_KeyError)
+    TRANSLATE_EXCEPTION(qpid::messaging::MessagingException, MessagingError)
+    TRANSLATE_EXCEPTION(qpid::types::Exception, PyExc_RuntimeError)
     Py_END_ALLOW_THREADS;
     if (!error.empty()) {
         PyErr_SetString(pExceptionType, error.c_str());
