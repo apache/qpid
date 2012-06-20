@@ -25,7 +25,6 @@ import static org.mockito.Mockito.*;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 

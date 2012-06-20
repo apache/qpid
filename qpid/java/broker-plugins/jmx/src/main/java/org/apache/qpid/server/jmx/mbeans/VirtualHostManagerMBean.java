@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -33,6 +34,7 @@ import javax.management.MBeanException;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
@@ -44,10 +46,14 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.queue.AMQQueueFactory;
 
 @MBeanDescription("This MBean exposes the broker level management features")
 public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<VirtualHost> implements ManagedBroker
 {
+    private static final Logger LOGGER = Logger.getLogger(VirtualHostManagerMBean.class);
+
+    private static final boolean _moveNonExclusiveQueueOwnerToDescription = Boolean.parseBoolean(System.getProperty("qpid.move_non_exclusive_queue_owner_to_description", Boolean.TRUE.toString()));
 
     private final VirtualHostMBean _virtualHostMBean;
 
@@ -159,11 +165,42 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
         createNewQueue(queueName, owner, durable, Collections.EMPTY_MAP);
     }
 
-    public void createNewQueue(String queueName, String owner, boolean durable, Map<String, Object> arguments)
+    public void createNewQueue(String queueName, String owner, boolean durable, Map<String, Object> originalArguments)
             throws IOException, JMException
     {
-        // TODO - ignores owner (not sure that this isn't actually a good thing though)
-        getConfiguredObject().createQueue(queueName, State.ACTIVE, durable, false, LifetimePolicy.PERMANENT, 0l, arguments);
+        final Map<String, Object> createArgs = processNewQueueArguments(queueName, owner, originalArguments);
+        getConfiguredObject().createQueue(queueName, State.ACTIVE, durable, false, LifetimePolicy.PERMANENT, 0l, createArgs);
+    }
+
+
+    /**
+     * Some users have been abusing the owner field to store a queue description.  As the owner field
+     * only makes sense if exclusive=true, and it is currently impossible to create an exclusive queue via
+     * the JMX interface, if the user specifies a owner, then we assume that they actually mean to pass a description.
+     */
+    private Map<String, Object> processNewQueueArguments(String queueName,
+            String owner, Map<String, Object> arguments)
+    {
+        final Map<String, Object> argumentsCopy;
+        if (_moveNonExclusiveQueueOwnerToDescription && owner != null)
+        {
+            argumentsCopy = new HashMap<String, Object>(arguments == null ? new HashMap<String, Object>() : arguments);
+            if (!argumentsCopy.containsKey(AMQQueueFactory.X_QPID_DESCRIPTION))
+            {
+                LOGGER.warn("Non-exclusive owner " + owner + " for new queue " + queueName + " moved to " + AMQQueueFactory.X_QPID_DESCRIPTION);
+
+                argumentsCopy.put(AMQQueueFactory.X_QPID_DESCRIPTION, owner);
+            }
+            else
+            {
+                LOGGER.warn("Non-exclusive owner " + owner + " for new queue " + queueName + " ignored.");
+            }
+        }
+        else
+        {
+            argumentsCopy = arguments;
+        }
+        return argumentsCopy;
     }
 
     public void deleteQueue(

@@ -82,7 +82,7 @@ public interface ConfiguredObject
      * @param desiredState the state the caller wishes the object to attain
      * @return the new current state
      * @throws IllegalStateTransitionException  the requested state tranisition is invalid
-     * @throws AccessControlException the current context does not have sufficeint permissions to change the state
+     * @throws AccessControlException the current context does not have sufficient permissions to change the state
      */
     State setDesiredState(State currentState, State desiredState) throws IllegalStateTransitionException,
                                                                          AccessControlException;
@@ -90,7 +90,7 @@ public interface ConfiguredObject
     /**
      * Get the actual state of the object.
      *
-     * This state is derived fromt the desired state of the object itself and
+     * This state is derived from the desired state of the object itself and
      * the actual state of its parents. If an object "desires" to be ACTIVE, but one of its parents is STOPPED, then
      * the actual state of the object will be STOPPED
      *
@@ -127,7 +127,7 @@ public interface ConfiguredObject
     /**
      * Returns whether the the object configuration is durably stored
      *
-     * @return the durablity
+     * @return the durability
      */
     boolean isDurable();
 

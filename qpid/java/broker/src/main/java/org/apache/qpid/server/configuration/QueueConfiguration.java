@@ -126,6 +126,11 @@ public class QueueConfiguration extends ConfigurationPlugin
         return _name;
     }
 
+    public String getDescription()
+    {
+        return getStringValue("description");
+    }
+
     public int getMaximumMessageAge()
     {
         return getIntValue("maximumMessageAge", _vHostConfig.getMaximumMessageAge());
@@ -226,4 +231,5 @@ public class QueueConfiguration extends ConfigurationPlugin
           
 
     }
+
 }

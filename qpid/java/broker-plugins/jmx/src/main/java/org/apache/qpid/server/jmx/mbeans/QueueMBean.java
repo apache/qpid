@@ -141,6 +141,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
         return _queue.getName();
     }
 
+
     public Integer getMessageCount()
     {
         return getStatisticValue(Queue.QUEUE_DEPTH_MESSAGES).intValue();
@@ -180,6 +181,12 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
     public String getOwner()
     {
         return (String) _queue.getAttribute(Queue.OWNER);
+    }
+
+    @Override
+    public String getQueueType()
+    {
+        return (String) _queue.getAttribute(Queue.TYPE);
     }
 
     public boolean isDurable()
@@ -660,6 +667,18 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
         MBeanNotificationInfo info1 = new MBeanNotificationInfo(notificationTypes, name, description);
 
         return new MBeanNotificationInfo[] { info1 };
+    }
+
+    @Override
+    public String getDescription()
+    {
+        return (String) _queue.getAttribute(Queue.DESCRIPTION);
+    }
+
+    @Override
+    public void setDescription(String description)
+    {
+        _queue.setAttribute(Queue.DESCRIPTION, getDescription(), description);
     }
 }
 

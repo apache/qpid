@@ -189,7 +189,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         }
         _queue = queue;
 
-        Map<String, Object> arguments = queue.getArguments() == null ? Collections.EMPTY_MAP : queue.getArguments();
+        Map<String, Object> arguments = queue.getArguments();
         _traceExclude = (String) arguments.get("qpid.trace.exclude");
         _trace = (String) arguments.get("qpid.trace.id");
         _id = getConfigStore().createId();

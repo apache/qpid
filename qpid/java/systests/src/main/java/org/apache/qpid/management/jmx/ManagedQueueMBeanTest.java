@@ -23,7 +23,10 @@ import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.configuration.ClientProperties;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
+import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
@@ -33,12 +36,14 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
+import javax.jms.Queue;
 import javax.jms.Session;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularData;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -55,7 +60,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ManagedQueueMBeanTest extends QpidBrokerTestCase
 {
-    protected static final Logger LOGGER = Logger.getLogger(ManagedQueueMBeanTest.class);
+    private static final Logger LOGGER = Logger.getLogger(ManagedQueueMBeanTest.class);
+
+    private static final String VIRTUAL_HOST = "test";
+    private static final String TEST_QUEUE_DESCRIPTION = "my description";
 
     private JMXTestUtils _jmxUtils;
     private Connection _connection;
@@ -67,6 +75,7 @@ public class ManagedQueueMBeanTest extends QpidBrokerTestCase
     private Destination _destinationQueue;
     private ManagedQueue _managedSourceQueue;
     private ManagedQueue _managedDestinationQueue;
+
 
     public void setUp() throws Exception
     {
@@ -99,6 +108,106 @@ public class ManagedQueueMBeanTest extends QpidBrokerTestCase
             _jmxUtils.close();
         }
         super.tearDown();
+    }
+
+    public void testQueueAttributes() throws Exception
+    {
+        Queue queue = _session.createQueue(getTestQueueName());
+        createQueueOnBroker(queue);
+
+        final String queueName = queue.getQueueName();
+
+        final ManagedQueue managedQueue = _jmxUtils.getManagedQueue(queueName);
+        assertEquals("Unexpected name", queueName, managedQueue.getName());
+        assertEquals("Unexpected queue type", "standard", managedQueue.getQueueType());
+    }
+
+    public void testExclusiveQueueHasJmsClientIdAsOwner() throws Exception
+    {
+        Queue tmpQueue = _session.createTemporaryQueue();
+
+        final String queueName = tmpQueue.getQueueName();
+
+        final ManagedQueue managedQueue = _jmxUtils.getManagedQueue(queueName);
+        assertNotNull(_connection.getClientID());
+        assertEquals("Unexpected owner", _connection.getClientID(), managedQueue.getOwner());
+    }
+
+    public void testNonExclusiveQueueHasNoOwner() throws Exception
+    {
+        Queue nonExclusiveQueue = _session.createQueue(getTestQueueName());
+        createQueueOnBroker(nonExclusiveQueue);
+
+        final String queueName = nonExclusiveQueue.getQueueName();
+
+        final ManagedQueue managedQueue = _jmxUtils.getManagedQueue(queueName);
+        assertNull("Unexpected owner", managedQueue.getOwner());
+    }
+
+    public void testSetNewQueueDescriptionOnExistingQueue() throws Exception
+    {
+        Queue queue = _session.createQueue(getTestQueueName());
+        createQueueOnBroker(queue);
+
+        final String queueName = queue.getQueueName();
+
+        final ManagedQueue managedQueue = _jmxUtils.getManagedQueue(queueName);
+        assertNull("Unexpected description", managedQueue.getDescription());
+
+        managedQueue.setDescription(TEST_QUEUE_DESCRIPTION);
+        assertEquals(TEST_QUEUE_DESCRIPTION, managedQueue.getDescription());
+    }
+
+    public void testNewQueueWithDescription() throws Exception
+    {
+        String queueName = getTestQueueName();
+        Map<String, Object> arguments = Collections.singletonMap(AMQQueueFactory.X_QPID_DESCRIPTION, (Object)TEST_QUEUE_DESCRIPTION);
+        ((AMQSession<?, ?>)_session).createQueue(AMQShortString.valueOf(queueName), false, true, false, arguments);
+
+        final ManagedQueue managedQueue = _jmxUtils.getManagedQueue(queueName);
+        assertEquals(TEST_QUEUE_DESCRIPTION, managedQueue.getDescription());
+    }
+
+    public void testQueueDescriptionSurvivesRestart() throws Exception
+    {
+        if (!isBrokerStorePersistent())
+        {
+            return;
+        }
+
+        String queueName = getTestQueueName();
+        Map<String, Object> arguments = Collections.singletonMap(AMQQueueFactory.X_QPID_DESCRIPTION, (Object)TEST_QUEUE_DESCRIPTION);
+
+        ((AMQSession<?, ?>)_session).createQueue(AMQShortString.valueOf(queueName), false, true, false, arguments);
+
+        ManagedQueue managedQueue = _jmxUtils.getManagedQueue(queueName);
+        assertEquals(TEST_QUEUE_DESCRIPTION, managedQueue.getDescription());
+
+        restartBroker();
+
+        managedQueue = _jmxUtils.getManagedQueue(queueName);
+        assertEquals(TEST_QUEUE_DESCRIPTION, managedQueue.getDescription());
+    }
+
+    /**
+     * Tests queue creation with {@link AMQQueueFactory#X_QPID_MAXIMUM_DELIVERY_COUNT} argument.  Also tests
+     * that the attribute is exposed correctly through {@link ManagedQueue#getMaximumDeliveryCount()}.
+     */
+    public void testCreateQueueWithMaximumDeliveryCountSet() throws Exception
+    {
+        final String queueName = getName();
+        final ManagedBroker managedBroker = _jmxUtils.getManagedBroker(VIRTUAL_HOST);
+
+        final Integer deliveryCount = 1;
+        final Map<String, Object> arguments = Collections.singletonMap(AMQQueueFactory.X_QPID_MAXIMUM_DELIVERY_COUNT, (Object)deliveryCount);
+        managedBroker.createNewQueue(queueName, null, true, arguments);
+
+        // Ensure the queue exists
+        assertNotNull("Queue object name expected to exist", _jmxUtils.getQueueObjectName("test", queueName));
+        assertNotNull("Manager queue expected to be available", _jmxUtils.getManagedQueue(queueName));
+
+        final ManagedQueue managedQueue = _jmxUtils.getManagedQueue(queueName);
+        assertEquals("Unexpected maximum delivery count", deliveryCount, managedQueue.getMaximumDeliveryCount());
     }
 
     /**
@@ -223,7 +332,7 @@ public class ManagedQueueMBeanTest extends QpidBrokerTestCase
         asyncConnection.stop();
 
         // The exact number of messages moved will be non deterministic, as the number of messages processed
-        // by the consumer cannot be predicited.  There is also the possibility that a message can remain
+        // by the consumer cannot be predicted.  There is also the possibility that a message can remain
         // on the source queue.  This situation will arise if a message has been acquired by the consumer, but not
         // yet delivered to the client application (i.e. MessageListener#onMessage()) when the Connection#stop() occurs.
         //

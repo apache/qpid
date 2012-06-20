@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,8 +33,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
-import javax.management.Notification;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
@@ -70,6 +69,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, MessageGroupManager.SubscriptionResetHelper
 {
     private static final Logger _logger = Logger.getLogger(SimpleAMQQueue.class);
+
     private static final String QPID_GROUP_HEADER_KEY = "qpid.group_header_key";
     private static final String QPID_SHARED_MSG_GROUP = "qpid.shared_msg_group";
     private static final String QPID_DEFAULT_MESSAGE_GROUP = "qpid.default-message-group";
@@ -77,11 +77,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     // TODO - should make this configurable at the vhost / broker level
     private static final int DEFAULT_MAX_GROUPS = 255;
 
-
     private final VirtualHost _virtualHost;
 
     private final AMQShortString _name;
-    private final String _resourceName;
 
     /** null means shared */
     private final AMQShortString _owner;
@@ -234,14 +232,13 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         }
 
         _name = name;
-        _resourceName = String.valueOf(name);
         _durable = durable;
         _owner = owner;
         _autoDelete = autoDelete;
         _exclusive = exclusive;
         _virtualHost = virtualHost;
         _entries = entryListFactory.createQueueEntryList(this);
-        _arguments = arguments;
+        _arguments = arguments == null ? new HashMap<String, Object>() : new HashMap<String, Object>(arguments);
 
         _id = id;
 
@@ -337,14 +334,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         return _exclusive;
     }
 
-    public void setExclusive(boolean exclusive) throws AMQException
+    public void setExclusive(boolean exclusive)
     {
         _exclusive = exclusive;
-
-        if(isDurable())
-        {
-            getVirtualHost().getMessageStore().updateQueue(this);
-        }
     }
 
     public Exchange getAlternateExchange()
@@ -381,6 +373,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         setAlternateExchange(exchange);
     }
 
+    /**
+     * Arguments used to create this queue.  The caller is assured
+     * that null will never be returned.
+     */
     public Map<String, Object> getArguments()
     {
         return _arguments;
@@ -2368,12 +2364,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         return _queueConfiguration;
     }
 
-    public String getResourceName()
-    {
-        return _resourceName;
-    }
-
-
     public ConfigStore getConfigStore()
     {
         return getVirtualHost().getConfigStore();
@@ -2522,4 +2512,24 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     {
         _notificationListener = listener;
     }
+
+    @Override
+    public void setDescription(String description)
+    {
+        if (description == null)
+        {
+            _arguments.remove(AMQQueueFactory.X_QPID_DESCRIPTION);
+        }
+        else
+        {
+            _arguments.put(AMQQueueFactory.X_QPID_DESCRIPTION, description);
+        }
+    }
+
+    @Override
+    public String getDescription()
+    {
+        return (String) _arguments.get(AMQQueueFactory.X_QPID_DESCRIPTION);
+    }
+
 }

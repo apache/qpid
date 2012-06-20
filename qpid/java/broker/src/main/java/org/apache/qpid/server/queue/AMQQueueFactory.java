@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.queue;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -41,6 +42,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 public class AMQQueueFactory
 {
     public static final String X_QPID_PRIORITIES = "x-qpid-priorities";
+    public static final String X_QPID_DESCRIPTION = "x-qpid-description";
     public static final String QPID_LVQ_KEY = "qpid.LVQ_key";
     public static final String QPID_LAST_VALUE_QUEUE = "qpid.last_value_queue";
     public static final String QPID_LAST_VALUE_QUEUE_KEY = "qpid.last_value_queue_key";
@@ -350,32 +352,7 @@ public class AMQQueueFactory
         boolean autodelete = config.getAutoDelete();
         boolean exclusive = config.getExclusive();
         String owner = config.getOwner();
-        Map<String,Object> arguments = null;
-
-        if(config.isLVQ() || config.getLVQKey() != null)
-        {
-            arguments = new HashMap<String,Object>();
-            arguments.put(QPID_LAST_VALUE_QUEUE, 1);
-            arguments.put(QPID_LAST_VALUE_QUEUE_KEY, config.getLVQKey() == null ? QPID_LVQ_KEY : config.getLVQKey());
-        }
-        else if (config.getPriority() || config.getPriorities() > 0)
-        {
-            arguments = new HashMap<String,Object>();
-            arguments.put(X_QPID_PRIORITIES, config.getPriorities() < 0 ? 10 : config.getPriorities());
-        }
-        else if (config.getQueueSortKey() != null && !"".equals(config.getQueueSortKey()))
-        {
-            arguments = new HashMap<String,Object>();
-            arguments.put(QPID_QUEUE_SORT_KEY, config.getQueueSortKey());
-        }
-        if (!config.getAutoDelete() && config.isDeadLetterQueueEnabled())
-        {
-            if (arguments == null)
-            {
-                arguments = new HashMap<String,Object>();
-            }
-            arguments.put(X_QPID_DLQ_ENABLED, true);
-        }
+        Map<String, Object> arguments = createQueueArgumentsFromConfig(config);
 
         // we need queues that are defined in config to have deterministic ids.
         UUID id = UUIDGenerator.generateUUID(queueName, host.getName());
@@ -384,7 +361,6 @@ public class AMQQueueFactory
         q.configure(config);
         return q;
     }
-
 
     /**
      * Validates DLQ and DLE names
@@ -475,4 +451,43 @@ public class AMQQueueFactory
         String dlExchangeName = name + serverConfig.getDeadLetterExchangeSuffix();
         return dlExchangeName;
     }
+
+    private static Map<String, Object> createQueueArgumentsFromConfig(QueueConfiguration config)
+    {
+        Map<String,Object> arguments = new HashMap<String,Object>();
+
+        if(config.isLVQ() || config.getLVQKey() != null)
+        {
+            arguments.put(QPID_LAST_VALUE_QUEUE, 1);
+            arguments.put(QPID_LAST_VALUE_QUEUE_KEY, config.getLVQKey() == null ? QPID_LVQ_KEY : config.getLVQKey());
+        }
+        else if (config.getPriority() || config.getPriorities() > 0)
+        {
+            arguments.put(X_QPID_PRIORITIES, config.getPriorities() < 0 ? 10 : config.getPriorities());
+        }
+        else if (config.getQueueSortKey() != null && !"".equals(config.getQueueSortKey()))
+        {
+            arguments.put(QPID_QUEUE_SORT_KEY, config.getQueueSortKey());
+        }
+
+        if (!config.getAutoDelete() && config.isDeadLetterQueueEnabled())
+        {
+            arguments.put(X_QPID_DLQ_ENABLED, true);
+        }
+
+        if (config.getDescription() != null && !"".equals(config.getDescription()))
+        {
+            arguments.put(X_QPID_DESCRIPTION, config.getDescription());
+        }
+
+        if (arguments.isEmpty())
+        {
+            return Collections.emptyMap();
+        }
+        else
+        {
+            return arguments;
+        }
+    }
+
 }

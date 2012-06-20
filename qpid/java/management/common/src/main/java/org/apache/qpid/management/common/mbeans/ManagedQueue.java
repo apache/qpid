@@ -69,6 +69,8 @@ public interface ManagedQueue
 
     //Individual attribute name constants
     static final String ATTR_NAME = "Name";
+    static final String ATTR_DESCRIPTION = "Description";
+    static final String ATTR_QUEUE_TYPE = "QueueType";
     static final String ATTR_OWNER = "Owner";
     static final String ATTR_MAX_MSG_AGE = "MaximumMessageAge";
     static final String ATTR_MAX_MSG_COUNT = "MaximumMessageCount";
@@ -95,6 +97,8 @@ public interface ManagedQueue
                         new HashSet<String>(
                                 Arrays.asList(
                                     ATTR_NAME,
+                                    ATTR_QUEUE_TYPE,
+                                    ATTR_DESCRIPTION,
                                     ATTR_OWNER,
                                     ATTR_MAX_MSG_AGE,
                                     ATTR_MAX_MSG_COUNT,
@@ -238,7 +242,7 @@ public interface ManagedQueue
      * Tells the maximum number of messages that can be stored in the queue.
      * This is useful in setting the notifications or taking required
      * action is the number of message increase this limit.
-     * @return maximum muber of message allowed to be stored in the queue.
+     * @return maximum nuumber of message allowed to be stored in the queue.
      * @throws IOException
      */
     Long getMaximumMessageCount() throws IOException;
@@ -290,13 +294,33 @@ public interface ManagedQueue
      */
     @MBeanAttribute(name="Capacity", description="The flow control Capacity (Bytes) of the queue")
     void setCapacity(Long value) throws IOException, IllegalArgumentException;
+
+    /**
+     * Gets the free text queue description.
+     * @since Qpid JMX API 2.5
+     */
+    String getDescription();
+
+    /**
+     * Sets the free text queue description.
+     * @since Qpid JMX API 2.5
+     */
+    @MBeanAttribute(name="Description", description="Free text description of the queue")
+    void setDescription(String string);
+
+    /**
+     * Gets the queue type
+     * @since Qpid JMX API 2.5
+     */
+    @MBeanAttribute(name="QueueType", description="Type of the queue e.g. standard, priority, etc")
+    String getQueueType();
     
     /**
      * Returns the current flow control FlowResumeCapacity of the queue in bytes.
      * 
      * @since Qpid JMX API 1.6
      * @return Capacity below which flow resumes in bytes
-     * @throws IOException
+     * @throws IOExceptionm
      */
     Long getFlowResumeCapacity() throws IOException;
 
@@ -477,4 +501,5 @@ public interface ManagedQueue
                       @MBeanOperationParameter(name="to MessageId", description="to MessageId")long toMessageId,
                       @MBeanOperationParameter(name= ManagedQueue.TYPE, description="to Queue Name")String toQueue)
             throws IOException, JMException;
+
 }

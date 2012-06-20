@@ -1226,11 +1226,7 @@ public class ServerSessionDelegate extends SessionDelegate
                     try
                     {
                         queue = createQueue(queueName, method, virtualHost, (ServerSession)session);
-                        if(method.getExclusive())
-                        {
-                            queue.setExclusive(true);
-                        }
-                        else if(method.getAutoDelete())
+                        if(!method.getExclusive() && method.getAutoDelete())
                         {
                             queue.setDeleteOnNoConsumers(true);
                         }

@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Consumer;
@@ -200,92 +201,116 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
     @Override
     public Object setAttribute(String name, Object expected, Object desired) throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
-        if(ALERT_REPEAT_GAP.equals(name))
+        try
         {
-            _queue.setMinimumAlertRepeatGap((Long)desired);
-            return desired;
-        }
-        else if(ALERT_THRESHOLD_MESSAGE_AGE.equals(name))
-        {
-            _queue.setMaximumMessageAge((Long)desired);
-            return desired;
-        }
-        else if(ALERT_THRESHOLD_MESSAGE_SIZE.equals(name))
-        {
-            _queue.setMaximumMessageSize((Long)desired);
-            return desired;
-        }
-        else if(ALERT_THRESHOLD_QUEUE_DEPTH_BYTES.equals(name))
-        {
-            _queue.setMaximumQueueDepth((Long)desired);
-            return desired;
-        }
-        else if(ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES.equals(name))
-        {
-            _queue.setMaximumMessageCount((Long)desired);
-            return desired;
-        }
-        else if(ALTERNATE_EXCHANGE.equals(name))
-        {
-            // TODO
-        }
-        else if(EXCLUSIVE.equals(name))
-        {
-            // TODO
-        }
-        else if(MESSAGE_GROUP_KEY.equals(name))
-        {
-            // TODO
-        }
-        else if(MESSAGE_GROUP_DEFAULT_GROUP.equals(name))
-        {
-            // TODO
-        }
-        else if(MESSAGE_GROUP_SHARED_GROUPS.equals(name))
-        {
-            // TODO
-        }
-        else if(LVQ_KEY.equals(name))
-        {
-            // TODO
-        }
-        else if(MAXIMUM_DELIVERY_ATTEMPTS.equals(name))
-        {
-            _queue.setMaximumDeliveryCount((Integer)desired);
-            return desired;
-        }
-        else if(NO_LOCAL.equals(name))
-        {
-            // TODO
-        }
-        else if(OWNER.equals(name))
-        {
-            // TODO
-        }
-        else if(QUEUE_FLOW_CONTROL_SIZE_BYTES.equals(name))
-        {
-            _queue.setCapacity((Long)desired);
-            return desired;
-        }
-        else if(QUEUE_FLOW_RESUME_SIZE_BYTES.equals(name))
-        {
-            _queue.setFlowResumeCapacity((Long)desired);
-            return desired;
-        }
-        else if(QUEUE_FLOW_STOPPED.equals(name))
-        {
-            // TODO
-        }
-        else if(SORT_KEY.equals(name))
-        {
-            // TODO
-        }
-        else if(TYPE.equals(name))
-        {
-            // TODO
-        }
+            if(ALERT_REPEAT_GAP.equals(name))
+            {
+                _queue.setMinimumAlertRepeatGap((Long)desired);
+                return desired;
+            }
+            else if(ALERT_THRESHOLD_MESSAGE_AGE.equals(name))
+            {
+                _queue.setMaximumMessageAge((Long)desired);
+                return desired;
+            }
+            else if(ALERT_THRESHOLD_MESSAGE_SIZE.equals(name))
+            {
+                _queue.setMaximumMessageSize((Long)desired);
+                return desired;
+            }
+            else if(ALERT_THRESHOLD_QUEUE_DEPTH_BYTES.equals(name))
+            {
+                _queue.setMaximumQueueDepth((Long)desired);
+                return desired;
+            }
+            else if(ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES.equals(name))
+            {
+                _queue.setMaximumMessageCount((Long)desired);
+                return desired;
+            }
+            else if(ALTERNATE_EXCHANGE.equals(name))
+            {
+                // TODO
+            }
+            else if(EXCLUSIVE.equals(name))
+            {
+                Boolean exclusiveFlag = (Boolean) desired;
+                _queue.setExclusive(exclusiveFlag);
+                return desired;
+            }
+            else if(MESSAGE_GROUP_KEY.equals(name))
+            {
+                // TODO
+            }
+            else if(MESSAGE_GROUP_DEFAULT_GROUP.equals(name))
+            {
+                // TODO
+            }
+            else if(MESSAGE_GROUP_SHARED_GROUPS.equals(name))
+            {
+                // TODO
+            }
+            else if(LVQ_KEY.equals(name))
+            {
+                // TODO
+            }
+            else if(MAXIMUM_DELIVERY_ATTEMPTS.equals(name))
+            {
+                _queue.setMaximumDeliveryCount((Integer)desired);
+                return desired;
+            }
+            else if(NO_LOCAL.equals(name))
+            {
+                // TODO
+            }
+            else if(OWNER.equals(name))
+            {
+                // TODO
+            }
+            else if(QUEUE_FLOW_CONTROL_SIZE_BYTES.equals(name))
+            {
+                _queue.setCapacity((Long)desired);
+                return desired;
+            }
+            else if(QUEUE_FLOW_RESUME_SIZE_BYTES.equals(name))
+            {
+                _queue.setFlowResumeCapacity((Long)desired);
+                return desired;
+            }
+            else if(QUEUE_FLOW_STOPPED.equals(name))
+            {
+                // TODO
+            }
+            else if(SORT_KEY.equals(name))
+            {
+                // TODO
+            }
+            else if(TYPE.equals(name))
+            {
+                // TODO
+            }
+            else if (DESCRIPTION.equals(name))
+            {
+                _queue.setDescription((String) desired);
+                return desired;
+            }
 
-        return super.setAttribute(name, expected, desired);
+            return super.setAttribute(name, expected, desired);
+        }
+        finally
+        {
+            if (_queue.isDurable())
+            {
+                try
+                {
+                    _queue.getVirtualHost().getMessageStore().updateQueue(_queue);
+                }
+                catch (AMQStoreException e)
+                {
+                    throw new IllegalStateException(e);
+                }
+            }
+        }
     }
 
     @Override
@@ -417,6 +442,10 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         else if(UPDATED.equals(name))
         {
             // TODO
+        }
+        else if (DESCRIPTION.equals(name))
+        {
+            return _queue.getDescription();
         }
 
         return super.getAttribute(name);

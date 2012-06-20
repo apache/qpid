@@ -45,7 +45,6 @@ import org.apache.qpid.server.util.InternalBrokerBaseCase;
  */
 public class UserManagementMBeanTest extends InternalBrokerBaseCase
 {
-    private PlainPasswordFilePrincipalDatabase _database;
     private UserManagementMBean _umMBean;
     
     private File _passwordFile;
@@ -60,8 +59,6 @@ public class UserManagementMBeanTest extends InternalBrokerBaseCase
     {
         super.setUp();
 
-        _database = new PlainPasswordFilePrincipalDatabase();
-        
         _passwordFile = File.createTempFile(this.getClass().getName(),".password");
         
         createFreshTestPasswordFile();

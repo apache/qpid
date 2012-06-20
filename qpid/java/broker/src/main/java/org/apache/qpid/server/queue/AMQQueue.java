@@ -261,12 +261,12 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
     }
 
     /**
-     * ExistingSubscriptionPreventsExclusive signals a failure to create an exclusize subscription, as a subscription
+     * ExistingSubscriptionPreventsExclusive signals a failure to create an exclusive subscription, as a subscription
      * already exists.
      *
      * <p/><table id="crc"><caption>CRC Card</caption>
      * <tr><th> Responsibilities <th> Collaborations
-     * <tr><td> Represent failure to create an exclusize subscription, as a subscription already exists.
+     * <tr><td> Represent failure to create an exclusive subscription, as a subscription already exists.
      * </table>
      *
      * @todo Not an AMQP exception as no status code.
@@ -290,7 +290,7 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
 
     ConfigurationPlugin getConfiguration();
 
-    void setExclusive(boolean exclusive) throws AMQException;
+    void setExclusive(boolean exclusive);
 
     /**
      * Gets the maximum delivery count.   If a message on this queue
@@ -310,4 +310,18 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
     public void setMaximumDeliveryCount(final int maximumDeliveryCount);
 
     void setNotificationListener(NotificationListener listener);
+
+    /**
+     * Sets the free text description of this queue.
+     *
+     * @param description
+     *
+     */
+    void setDescription(String description);
+
+    /**
+     * Gets the free text description of this queue.
+     */
+    String getDescription();
+
 }

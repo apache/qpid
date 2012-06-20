@@ -52,7 +52,6 @@ public class MockAMQQueue implements AMQQueue
     private AuthorizationHolder _authorizationHolder;
 
     private AMQSessionModel _exclusiveOwner;
-    private AMQShortString _owner;
     private List<Binding> _bindings = new CopyOnWriteArrayList<Binding>();
     private boolean _autoDelete;
 
@@ -572,12 +571,6 @@ public class MockAMQQueue implements AMQQueue
         _exclusiveOwner = exclusiveOwner;
     }
 
-
-    public String getResourceName()
-    {
-        return _name.toString();
-    }
-
     public boolean isOverfull()
     {
         return false;
@@ -625,7 +618,6 @@ public class MockAMQQueue implements AMQQueue
 
     public void setExclusive(boolean exclusive)
     {
-
     }
 
     public int getMaximumDeliveryCount()
@@ -648,5 +640,16 @@ public class MockAMQQueue implements AMQQueue
     @Override
     public void setNotificationListener(NotificationListener listener)
     {
+    }
+
+    @Override
+    public void setDescription(String description)
+    {
+    }
+
+    @Override
+    public String getDescription()
+    {
+        return null;
     }
 }
