@@ -547,7 +547,8 @@ void UpdateClient::updateConsumer(
         ci->isNotifyEnabled(),
         ci->getPosition(),
         ci->getCredit().used().messages,
-        ci->getCredit().used().bytes
+        ci->getCredit().used().bytes,
+	ci->getDeliveryCount()
     );
     consumerNumbering.add(ci.get());
 
