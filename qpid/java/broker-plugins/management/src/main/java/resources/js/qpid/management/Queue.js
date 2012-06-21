@@ -21,6 +21,7 @@
 define(["dojo/_base/xhr",
         "dojo/parser",
         "dojo/query",
+        "dijit/registry",
         "dojo/_base/connect",
         "dojo/_base/event",
         "dojo/json",
@@ -38,7 +39,7 @@ define(["dojo/_base/xhr",
         "dojox/grid/enhanced/plugins/Pagination",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, event, json, properties, updater, util, formatter,
+       function (xhr, parser, query, registry, connect, event, json, properties, updater, util, formatter,
                  UpdatableStore, addBinding, moveMessages, showMessage, JsonRest, EnhancedGrid, ObjectStore) {
 
            function Queue(name, parent, controller) {
@@ -127,13 +128,14 @@ define(["dojo/_base/xhr",
                                              });
 
                             var deleteMessagesButton = query(".deleteMessagesButton", contentPane.containerNode)[0];
-                            connect.connect(deleteMessagesButton, "onclick",
+                            var deleteWidget = registry.byNode(deleteMessagesButton);
+                            connect.connect(deleteWidget, "onClick",
                                             function(evt){
                                                 event.stop(evt);
                                                 that.deleteMessages();
                                             });
                             var moveMessagesButton = query(".moveMessagesButton", contentPane.containerNode)[0];
-                            connect.connect(moveMessagesButton, "onclick",
+                            connect.connect(registry.byNode(moveMessagesButton), "onClick",
                                             function(evt){
                                                 event.stop(evt);
                                                 that.moveOrCopyMessages({move: true});
@@ -141,14 +143,14 @@ define(["dojo/_base/xhr",
 
 
                             var copyMessagesButton = query(".copyMessagesButton", contentPane.containerNode)[0];
-                            connect.connect(copyMessagesButton, "onclick",
+                            connect.connect(registry.byNode(copyMessagesButton), "onClick",
                                             function(evt){
                                                 event.stop(evt);
                                                 that.moveOrCopyMessages({move: false});
                                             });
 
                             var addBindingButton = query(".addBindingButton", contentPane.containerNode)[0];
-                            connect.connect(addBindingButton, "onclick",
+                            connect.connect(registry.byNode(addBindingButton), "onClick",
                                             function(evt){
                                                 event.stop(evt);
                                                 addBinding.show({ virtualhost: that.getVirtualHostName(),
