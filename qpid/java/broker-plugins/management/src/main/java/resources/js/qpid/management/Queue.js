@@ -180,12 +180,17 @@ define(["dojo/_base/xhr",
                        }
                        var query = "rest/message/"+ encodeURIComponent(that.getVirtualHostName())
                            + "/" + encodeURIComponent(that.getQueueName()) + queryParam;
+                       that.success = true
                        xhr.del({url: query, sync: true, handleAs: "json"}).then(
                            function(data) {
                                that.grid.setQuery({id: "*"});
                                that.grid.selection.deselectAll();
                                that.queueUpdater.update();
-                           });
+                           },
+                           function(error) {that.success = false; that.failureReason = error;});
+                        if(!that.success ) {
+                            alert("Error:" + this.failureReason);
+                        }
                    }
                }
            };

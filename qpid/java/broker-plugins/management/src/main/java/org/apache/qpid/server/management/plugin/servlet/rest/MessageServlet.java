@@ -31,6 +31,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
@@ -39,12 +40,18 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.subscription.Subscription;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 
 public class MessageServlet extends AbstractServlet
 {
+    private static final Logger LOGGER = Logger.getLogger(MessageServlet.class);
+
     public MessageServlet()
     {
         super();
@@ -399,38 +406,43 @@ public class MessageServlet extends AbstractServlet
 
         try
         {
-        final Queue sourceQueue = getQueueFromRequest(request);
+            final Queue sourceQueue = getQueueFromRequest(request);
 
-        ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = new ObjectMapper();
 
-        @SuppressWarnings("unchecked")
-        Map<String,Object> providedObject = mapper.readValue(request.getInputStream(), LinkedHashMap.class);
+            @SuppressWarnings("unchecked")
+            Map<String,Object> providedObject = mapper.readValue(request.getInputStream(), LinkedHashMap.class);
 
+            String destQueueName = (String) providedObject.get("destinationQueue");
+            Boolean move = (Boolean) providedObject.get("move");
 
-        String destQueueName = (String) providedObject.get("destinationQueue");
-        Boolean move = (Boolean) providedObject.get("move");
+            final VirtualHost vhost = sourceQueue.getParent(VirtualHost.class);
 
+            boolean isMoveTransaction = move != null && Boolean.valueOf(move);
 
-        final VirtualHost vhost = sourceQueue.getParent(VirtualHost.class);
-
-        final Queue destinationQueue = getQueueFromVirtualHost(destQueueName, vhost);
-
-        final List messageIds = new ArrayList((List) providedObject.get("messages"));
-
-        QueueEntryTransaction txn =
-                (move != null && Boolean.valueOf(move))
-                        ? new MoveTransaction(sourceQueue, messageIds, destinationQueue)
-                        : new CopyTransaction(sourceQueue, messageIds, destinationQueue);
-        vhost.executeTransaction(txn);
+            // FIXME: added temporary authorization check until we introduce management layer
+            // and review current ACL rules to have common rules for all management interfaces
+            String methodName = isMoveTransaction? "moveMessages":"copyMessages";
+            if (isQueueUpdateMethodAuthorized(methodName, vhost.getName()))
+            {
+                final Queue destinationQueue = getQueueFromVirtualHost(destQueueName, vhost);
+                final List messageIds = new ArrayList((List) providedObject.get("messages"));
+                QueueEntryTransaction txn =
+                        isMoveTransaction
+                                ? new MoveTransaction(sourceQueue, messageIds, destinationQueue)
+                                : new CopyTransaction(sourceQueue, messageIds, destinationQueue);
+                vhost.executeTransaction(txn);
+                response.setStatus(HttpServletResponse.SC_OK);
+            }
+            else
+            {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            }
         }
         catch(RuntimeException e)
         {
-            e.printStackTrace();
-        }
-        catch(IOException e)
-        {
-            e.printStackTrace();
-            throw e;
+            LOGGER.error("Failure to perform message opertion", e);
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -444,11 +456,6 @@ public class MessageServlet extends AbstractServlet
 
         final Queue sourceQueue = getQueueFromRequest(request);
 
-        ObjectMapper mapper = new ObjectMapper();
-
-        /*@SuppressWarnings("unchecked")
-        Map<String,Object> providedObject = mapper.readValue(request.getInputStream(), LinkedHashMap.class);
-*/
         final VirtualHost vhost = sourceQueue.getParent(VirtualHost.class);
 
 
@@ -458,9 +465,39 @@ public class MessageServlet extends AbstractServlet
             messageIds.add(Long.valueOf(idStr));
         }
 
-        vhost.executeTransaction(new DeleteTransaction(sourceQueue, messageIds));
+        // FIXME: added temporary authorization check until we introduce management layer
+        // and review current ACL rules to have common rules for all management interfaces
+        if (isQueueUpdateMethodAuthorized("deleteMessages", vhost.getName()))
+        {
+            vhost.executeTransaction(new DeleteTransaction(sourceQueue, messageIds));
+            response.setStatus(HttpServletResponse.SC_OK);
+        }
+        else
+        {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        }
 
     }
 
+    private boolean isQueueUpdateMethodAuthorized(String methodName, String virtualHost)
+    {
+        SecurityManager securityManager = getSecurityManager(virtualHost);
+        return securityManager.authoriseMethod(Operation.UPDATE, "VirtualHost.Queue", methodName);
+    }
+
+    private SecurityManager getSecurityManager(String virtualHost)
+    {
+        IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
+        SecurityManager security;
+        if (virtualHost == null)
+        {
+            security = appRegistry.getSecurityManager();
+        }
+        else
+        {
+            security = appRegistry.getVirtualHostRegistry().getVirtualHost(virtualHost).getSecurityManager();
+        }
+        return security;
+    }
 
 }
