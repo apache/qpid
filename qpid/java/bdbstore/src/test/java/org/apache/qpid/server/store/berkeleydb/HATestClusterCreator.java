@@ -61,7 +61,7 @@ public class HATestClusterCreator
     private static final String SINGLE_BROKER_URL_WITHOUT_RETRY_FORMAT = "amqp://guest:guest@/%s?brokerlist='tcp://localhost:%d'";
 
     private static final int RETRIES = 30;
-    private static final int CONNECTDELAY = 75;
+    private static final int CONNECTDELAY = 150;
 
     private final QpidBrokerTestCase _testcase;
     private final Map<Integer, Integer> _brokerPortToBdbPortMap = new HashMap<Integer, Integer>();
