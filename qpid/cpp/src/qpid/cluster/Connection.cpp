@@ -406,11 +406,12 @@ void Connection::shadowSetUser(const std::string& userId) {
 }
 
 void Connection::consumerState(const string& name, bool blocked, bool notifyEnabled, const SequenceNumber& position,
-                               uint32_t usedMsgCredit, uint32_t usedByteCredit)
+                               uint32_t usedMsgCredit, uint32_t usedByteCredit, const uint32_t deliveryCount)
 {
     broker::SemanticState::ConsumerImpl::shared_ptr c = semanticState().find(name);
     c->setPosition(position);
     c->setBlocked(blocked);
+    c->setDeliveryCount(deliveryCount);
     if (c->getCredit().isWindowMode()) c->getCredit().consume(usedMsgCredit, usedByteCredit);
     if (notifyEnabled) c->enableNotify(); else c->disableNotify();
     updateIn.consumerNumbering.add(c);

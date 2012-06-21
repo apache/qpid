@@ -179,6 +179,7 @@
       <field name="position" type="sequence-no"/>
       <field name="used-msg-credit" type="uint32"/>
       <field name="used-byte-credit" type="uint32"/>
+      <field name="deliveryCount" type="uint32"/>
     </control>
 
     <!-- Delivery-record for outgoing messages sent but not yet accepted. -->

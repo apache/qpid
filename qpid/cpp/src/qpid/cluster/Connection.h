@@ -110,7 +110,7 @@ class Connection :
     void deliveredFrame(const EventFrame&);
 
     void consumerState(const std::string& name, bool blocked, bool notifyEnabled, const qpid::framing::SequenceNumber& position,
-                       uint32_t usedMsgCredit, uint32_t usedByteCredit);
+                       uint32_t usedMsgCredit, uint32_t usedByteCredit, const uint32_t deliveryCount);
 
     // ==== Used in catch-up mode to build initial state.
     //
