@@ -22,6 +22,7 @@ define(["dojo/_base/xhr",
         "dojo/parser",
         "dojo/query",
         "dojo/_base/connect",
+        "dijit/registry",
         "qpid/common/properties",
         "qpid/common/updater",
         "qpid/common/util",
@@ -30,7 +31,7 @@ define(["dojo/_base/xhr",
         "qpid/management/addQueue",
         "qpid/management/addExchange",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, properties, updater, util, formatter, UpdatableStore, addQueue, addExchange) {
+       function (xhr, parser, query, connect, registry, properties, updater, util, formatter, UpdatableStore, addQueue, addExchange) {
 
            function VirtualHost(name, parent, controller) {
                this.name = name;
@@ -63,10 +64,10 @@ define(["dojo/_base/xhr",
                             that.vhostUpdater.update();
 
                             var addQueueButton = query(".addQueueButton", contentPane.containerNode)[0];
-                            connect.connect(addQueueButton, "onclick", function(evt){ addQueue.show(that.name) });
+                            connect.connect(registry.byNode(addQueueButton), "onClick", function(evt){ addQueue.show(that.name) });
 
                             var addExchangeButton = query(".addExchangeButton", contentPane.containerNode)[0];
-                            connect.connect(addExchangeButton, "onclick", function(evt){ addExchange.show(that.name) });
+                            connect.connect(registry.byNode(addExchangeButton), "onClick", function(evt){ addExchange.show(that.name) });
                         }});
 
            };

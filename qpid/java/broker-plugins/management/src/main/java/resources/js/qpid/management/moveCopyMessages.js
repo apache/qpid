@@ -47,7 +47,7 @@ define(["dojo/_base/xhr",
 
 
                             var cancelButton = query(".moveMessageCancel")[0];
-                            connect.connect(cancelButton, "onclick",
+                            connect.connect(registry.byNode(cancelButton), "onClick",
                                             function(evt){
                                                 event.stop(evt);
                                                 registry.byId("moveMessages").hide();

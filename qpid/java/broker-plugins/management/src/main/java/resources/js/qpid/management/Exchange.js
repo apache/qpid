@@ -22,6 +22,7 @@ define(["dojo/_base/xhr",
         "dojo/parser",
         "dojo/query",
         "dojo/_base/connect",
+        "dijit/registry",
         "qpid/common/properties",
         "qpid/common/updater",
         "qpid/common/util",
@@ -29,7 +30,7 @@ define(["dojo/_base/xhr",
         "qpid/common/UpdatableStore",
         "qpid/management/addBinding",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, properties, updater, util, formatter, UpdatableStore, addBinding) {
+       function (xhr, parser, query, connect, registry, properties, updater, util, formatter, UpdatableStore, addBinding) {
 
            function Exchange(name, parent, controller) {
                this.name = name;
@@ -75,7 +76,7 @@ define(["dojo/_base/xhr",
 
 
                             var addBindingButton = query(".addBindingButton", contentPane.containerNode)[0];
-                            connect.connect(addBindingButton, "onclick",
+                            connect.connect(registry.byNode(addBindingButton), "onClick",
                                             function(evt){
                                                 addBinding.show({ virtualhost: that.getVirtualHostName(),
                                                                   exchange: that.getExchangeName()});
