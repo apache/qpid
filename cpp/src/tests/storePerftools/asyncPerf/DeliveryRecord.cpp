@@ -18,60 +18,65 @@
  */
 
 /**
- * \file MessageContext.cpp
+ * \file DeliveryRecord.cpp
  */
 
-#include "MessageAsyncContext.h"
-#include "SimpleMessage.h"
+#include "DeliveryRecord.h"
 
-#include <cassert>
+#include "SimpleMessage.h"
+#include "SimpleQueue.h"
 
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-MessageAsyncContext::MessageAsyncContext(boost::intrusive_ptr<SimpleMessage> msg,
-                                         const qpid::asyncStore::AsyncOperation::opCode op,
-                                         boost::shared_ptr<SimpleQueue> q) :
-        m_msg(msg),
-        m_op(op),
-        m_q(q)
-{
-    assert(m_msg.get() != 0);
-    assert(m_q.get() != 0);
-}
-
-MessageAsyncContext::~MessageAsyncContext()
+DeliveryRecord::DeliveryRecord(const QueuedMessage& qm,
+                               bool accepted) :
+        m_queuedMessage(qm),
+        m_accepted(accepted),
+        m_ended(accepted)
 {}
 
-qpid::asyncStore::AsyncOperation::opCode
-MessageAsyncContext::getOpCode() const
+DeliveryRecord::~DeliveryRecord()
+{}
+
+bool
+DeliveryRecord::accept(qpid::broker::TxnHandle* txn)
 {
-    return m_op;
+    if (!m_ended) {
+        assert(m_queuedMessage.getQueue());
+        m_queuedMessage.getQueue()->dequeue(*txn, m_queuedMessage);
+        m_accepted = true;
+        setEnded();
+    }
+    return isRedundant();
 }
 
-const char*
-MessageAsyncContext::getOpStr() const
+bool
+DeliveryRecord::isAccepted() const
 {
-    return qpid::asyncStore::AsyncOperation::getOpStr(m_op);
+    return m_accepted;
 }
 
-boost::intrusive_ptr<SimpleMessage>
-MessageAsyncContext::getMessage() const
+bool
+DeliveryRecord::setEnded()
 {
-    return m_msg;
+    m_ended = true;
+    m_queuedMessage.payload() = boost::intrusive_ptr<SimpleMessage>(0);
+    return isRedundant();
 }
 
-boost::shared_ptr<SimpleQueue>
-MessageAsyncContext::getQueue() const
+bool
+DeliveryRecord::isEnded() const
 {
-    return m_q;
+    return m_ended;
 }
 
-void
-MessageAsyncContext::destroy()
+bool
+DeliveryRecord::isRedundant() const
 {
-    delete this;
+    return m_ended;
 }
+
 
 }}} // namespace tests::storePerftools::asyncPerf

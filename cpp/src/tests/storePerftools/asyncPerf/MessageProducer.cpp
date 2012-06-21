@@ -23,8 +23,8 @@
 
 #include "MessageProducer.h"
 
-#include "SimplePersistableMessage.h"
-#include "SimplePersistableQueue.h"
+#include "SimpleMessage.h"
+#include "SimpleQueue.h"
 #include "TestOptions.h"
 #include "TxnPublish.h"
 
@@ -41,7 +41,7 @@ MessageProducer::MessageProducer(const TestOptions& perfTestParams,
                                  const char* msgData,
                                  qpid::asyncStore::AsyncStoreImpl* store,
                                  qpid::broker::AsyncResultQueue& arq,
-                                 boost::shared_ptr<SimplePersistableQueue> queue) :
+                                 boost::shared_ptr<SimpleQueue> queue) :
         m_perfTestParams(perfTestParams),
         m_msgData(msgData),
         m_store(store),
@@ -62,7 +62,7 @@ MessageProducer::runProducers()
         tb = new qpid::broker::TxnBuffer(m_resultQueue);
     }
     for (uint32_t numMsgs=0; numMsgs<m_perfTestParams.m_numMsgs; ++numMsgs) {
-        boost::intrusive_ptr<SimplePersistableMessage> msg(new SimplePersistableMessage(m_msgData, m_perfTestParams.m_msgSize, m_store));
+        boost::intrusive_ptr<SimpleMessage> msg(new SimpleMessage(m_msgData, m_perfTestParams.m_msgSize, m_store));
         if (useTxns) {
             boost::shared_ptr<TxnPublish> op(new TxnPublish(msg));
             op->deliverTo(m_queue);

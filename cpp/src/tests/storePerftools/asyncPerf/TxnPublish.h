@@ -34,9 +34,7 @@
 
 namespace qpid {
 namespace broker {
-
 class TransactionContext;
-
 }}
 
 namespace tests {
@@ -44,14 +42,14 @@ namespace storePerftools {
 namespace asyncPerf {
 
 class QueuedMessage;
-class SimplePersistableMessage;
-class SimplePersistableQueue;
+class SimpleMessage;
+class SimpleQueue;
 
 class TxnPublish : public qpid::broker::TxnOp,
                    public Deliverable
 {
 public:
-    TxnPublish(boost::intrusive_ptr<SimplePersistableMessage> msg);
+    TxnPublish(boost::intrusive_ptr<SimpleMessage> msg);
     virtual ~TxnPublish();
 
     // --- Interface TxOp ---
@@ -61,11 +59,11 @@ public:
 
     // --- Interface Deliverable ---
     uint64_t contentSize();
-    void deliverTo(const boost::shared_ptr<SimplePersistableQueue>& queue);
-    SimplePersistableMessage& getMessage();
+    void deliverTo(const boost::shared_ptr<SimpleQueue>& queue);
+    SimpleMessage& getMessage();
 
 private:
-    boost::intrusive_ptr<SimplePersistableMessage> m_msg;
+    boost::intrusive_ptr<SimpleMessage> m_msg;
     std::list<boost::shared_ptr<QueuedMessage> > m_queues;
     std::list<boost::shared_ptr<QueuedMessage> > m_prepared;
 };

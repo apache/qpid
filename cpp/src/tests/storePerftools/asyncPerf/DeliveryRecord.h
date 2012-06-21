@@ -18,25 +18,39 @@
  */
 
 /**
- * \file TxnOp.h
+ * \file DeliveryRecord.h
  */
 
-#ifndef qpid_broker_TxnOp_h_
-#define qpid_broker_TxnOp_h_
+#ifndef tests_storePerftools_asyncPerf_DeliveryRecord_h_
+#define tests_storePerftools_asyncPerf_DeliveryRecord_h_
 
-namespace qpid {
+#include "QueuedMessage.h"
+
+namespace qpid  {
 namespace broker {
-
 class TxnHandle;
+}}
 
-class TxnOp{
+namespace tests {
+namespace storePerftools {
+namespace asyncPerf {
+
+class DeliveryRecord {
 public:
-    virtual ~TxnOp() {}
-    virtual bool prepare(TxnHandle& th) throw() = 0;
-    virtual void commit()  throw() = 0;
-    virtual void rollback()  throw() = 0;
+    DeliveryRecord(const QueuedMessage& qm,
+                   bool accepted);
+    virtual ~DeliveryRecord();
+    bool accept(qpid::broker::TxnHandle* txn);
+    bool isAccepted() const;
+    bool setEnded();
+    bool isEnded() const;
+    bool isRedundant() const;
+private:
+    QueuedMessage m_queuedMessage;
+    bool m_accepted : 1;
+    bool m_ended : 1;
 };
 
-}} // namespace qpid::broker
+}}} // namespace tests::storePerftools::asyncPerf
 
-#endif // qpid_broker_TxnOp_h_
+#endif // tests_storePerftools_asyncPerf_DeliveryRecord_h_

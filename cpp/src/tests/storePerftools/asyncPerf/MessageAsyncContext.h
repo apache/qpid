@@ -34,26 +34,26 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class SimplePersistableMessage;
-class SimplePersistableQueue;
+class SimpleMessage;
+class SimpleQueue;
 
 class MessageAsyncContext : public qpid::broker::BrokerAsyncContext
 {
 public:
-    MessageAsyncContext(boost::intrusive_ptr<SimplePersistableMessage> msg,
+    MessageAsyncContext(boost::intrusive_ptr<SimpleMessage> msg,
                         const qpid::asyncStore::AsyncOperation::opCode op,
-                        boost::shared_ptr<SimplePersistableQueue> q);
+                        boost::shared_ptr<SimpleQueue> q);
     virtual ~MessageAsyncContext();
     qpid::asyncStore::AsyncOperation::opCode getOpCode() const;
     const char* getOpStr() const;
-    boost::intrusive_ptr<SimplePersistableMessage> getMessage() const;
-    boost::shared_ptr<SimplePersistableQueue> getQueue() const;
+    boost::intrusive_ptr<SimpleMessage> getMessage() const;
+    boost::shared_ptr<SimpleQueue> getQueue() const;
     void destroy();
 
 private:
-    boost::intrusive_ptr<SimplePersistableMessage> m_msg;
+    boost::intrusive_ptr<SimpleMessage> m_msg;
     const qpid::asyncStore::AsyncOperation::opCode m_op;
-    boost::shared_ptr<SimplePersistableQueue> m_q;
+    boost::shared_ptr<SimpleQueue> m_q;
 };
 
 }}} // namespace tests::storePerftools::asyncPerf

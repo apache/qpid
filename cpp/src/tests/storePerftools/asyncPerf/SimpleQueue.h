@@ -18,11 +18,11 @@
  */
 
 /**
- * \file SimplePersistableQueue.h
+ * \file SimpleQueue.h
  */
 
-#ifndef tests_storePerftools_asyncPerf_SimplePersistableQueue_h_
-#define tests_storePerftools_asyncPerf_SimplePersistableQueue_h_
+#ifndef tests_storePerftools_asyncPerf_SimpleQueue_h_
+#define tests_storePerftools_asyncPerf_SimpleQueue_h_
 
 #include "qpid/asyncStore/AtomicCounter.h" // AsyncOpCounter
 #include "qpid/broker/AsyncStore.h" // qpid::broker::DataSource
@@ -51,20 +51,20 @@ namespace storePerftools {
 namespace asyncPerf {
 
 class Messages;
-class SimplePersistableMessage;
+class SimpleMessage;
 class QueueAsyncContext;
 class QueuedMessage;
 
-class SimplePersistableQueue : public boost::enable_shared_from_this<SimplePersistableQueue>,
-                               public qpid::broker::PersistableQueue,
-                               public qpid::broker::DataSource
+class SimpleQueue : public boost::enable_shared_from_this<SimpleQueue>,
+                    public qpid::broker::PersistableQueue,
+                    public qpid::broker::DataSource
 {
 public:
-    SimplePersistableQueue(const std::string& name,
-                         const qpid::framing::FieldTable& args,
-                         qpid::asyncStore::AsyncStoreImpl* store,
-                         qpid::broker::AsyncResultQueue& arq);
-    virtual ~SimplePersistableQueue();
+    SimpleQueue(const std::string& name,
+                const qpid::framing::FieldTable& args,
+                qpid::asyncStore::AsyncStoreImpl* store,
+                qpid::broker::AsyncResultQueue& arq);
+    virtual ~SimpleQueue();
 
     static void handleAsyncResult(const qpid::broker::AsyncResultHandle* const res);
     const qpid::broker::QueueHandle& getHandle() const;
@@ -75,14 +75,14 @@ public:
     void asyncDestroy(const bool deleteQueue);
 
     // --- Methods in msg handling path from qpid::Queue ---
-    void deliver(boost::intrusive_ptr<SimplePersistableMessage> msg);
+    void deliver(boost::intrusive_ptr<SimpleMessage> msg);
     bool dispatch(); // similar to qpid::broker::Queue::distpatch(Consumer&) but without Consumer param
     bool enqueue(qpid::broker::TxnHandle& th,
                  QueuedMessage& qm);
     bool dequeue(qpid::broker::TxnHandle& th,
                  QueuedMessage& qm);
-    void process(boost::intrusive_ptr<SimplePersistableMessage> msg);
-    void enqueueAborted(boost::intrusive_ptr<SimplePersistableMessage> msg);
+    void process(boost::intrusive_ptr<SimpleMessage> msg);
+    void enqueueAborted(boost::intrusive_ptr<SimpleMessage> msg);
 
     // --- Interface qpid::broker::Persistable ---
     virtual void encode(qpid::framing::Buffer& buffer) const;
@@ -115,10 +115,10 @@ private:
     // --- Members & methods in msg handling path copied from qpid::Queue ---
     struct UsageBarrier
     {
-        SimplePersistableQueue& m_parent;
+        SimpleQueue& m_parent;
         uint32_t m_count;
         qpid::sys::Monitor m_monitor;
-        UsageBarrier(SimplePersistableQueue& q);
+        UsageBarrier(SimpleQueue& q);
         bool acquire();
         void release();
         void destroy();
@@ -154,4 +154,4 @@ private:
 
 }}} // namespace tests::storePerftools::asyncPerf
 
-#endif // tests_storePerftools_asyncPerf_SimplePersistableQueue_h_
+#endif // tests_storePerftools_asyncPerf_SimpleQueue_h_

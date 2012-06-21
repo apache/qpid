@@ -36,19 +36,19 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class SimplePersistableMessage;
-class SimplePersistableQueue;
+class SimpleMessage;
+class SimpleQueue;
 
 class QueueAsyncContext: public qpid::broker::BrokerAsyncContext
 {
 public:
-    QueueAsyncContext(boost::shared_ptr<SimplePersistableQueue> q,
+    QueueAsyncContext(boost::shared_ptr<SimpleQueue> q,
                       qpid::broker::TxnHandle& th,
                       const qpid::asyncStore::AsyncOperation::opCode op,
                       qpid::broker::AsyncResultCallback rcb,
                       qpid::broker::AsyncResultQueue* const arq);
-    QueueAsyncContext(boost::shared_ptr<SimplePersistableQueue> q,
-                      boost::intrusive_ptr<SimplePersistableMessage> msg,
+    QueueAsyncContext(boost::shared_ptr<SimpleQueue> q,
+                      boost::intrusive_ptr<SimpleMessage> msg,
                       qpid::broker::TxnHandle& th,
                       const qpid::asyncStore::AsyncOperation::opCode op,
                       qpid::broker::AsyncResultCallback rcb,
@@ -56,8 +56,8 @@ public:
     virtual ~QueueAsyncContext();
     qpid::asyncStore::AsyncOperation::opCode getOpCode() const;
     const char* getOpStr() const;
-    boost::shared_ptr<SimplePersistableQueue> getQueue() const;
-    boost::intrusive_ptr<SimplePersistableMessage> getMessage() const;
+    boost::shared_ptr<SimpleQueue> getQueue() const;
+    boost::intrusive_ptr<SimpleMessage> getMessage() const;
     qpid::broker::TxnHandle getTxnHandle() const;
     qpid::broker::AsyncResultQueue* getAsyncResultQueue() const;
     qpid::broker::AsyncResultCallback getAsyncResultCallback() const;
@@ -65,8 +65,8 @@ public:
     void destroy();
 
 private:
-    boost::shared_ptr<SimplePersistableQueue> m_q;
-    boost::intrusive_ptr<SimplePersistableMessage> m_msg;
+    boost::shared_ptr<SimpleQueue> m_q;
+    boost::intrusive_ptr<SimpleMessage> m_msg;
     qpid::broker::TxnHandle m_th;
     const qpid::asyncStore::AsyncOperation::opCode m_op;
     qpid::broker::AsyncResultCallback m_rcb;

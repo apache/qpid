@@ -38,7 +38,7 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class SimplePersistableQueue;
+class SimpleQueue;
 class TestOptions;
 class TxnBuffer;
 
@@ -49,7 +49,7 @@ public:
                     const char* msgData,
                     qpid::asyncStore::AsyncStoreImpl* store,
                     qpid::broker::AsyncResultQueue& arq,
-                    boost::shared_ptr<SimplePersistableQueue> queue);
+                    boost::shared_ptr<SimpleQueue> queue);
     virtual ~MessageProducer();
     void* runProducers();
     static void* startProducers(void* ptr);
@@ -58,7 +58,7 @@ private:
     const char* m_msgData;
     qpid::asyncStore::AsyncStoreImpl* m_store;
     qpid::broker::AsyncResultQueue& m_resultQueue;
-    boost::shared_ptr<SimplePersistableQueue> m_queue;
+    boost::shared_ptr<SimpleQueue> m_queue;
 };
 
 }}} // namespace tests::storePerftools::asyncPerf

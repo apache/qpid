@@ -39,19 +39,20 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class SimplePersistableMessage;
-class SimplePersistableQueue;
+class SimpleMessage;
+class SimpleQueue;
 
 class QueuedMessage
 {
 public:
     QueuedMessage();
-    QueuedMessage(SimplePersistableQueue* q,
-                  boost::intrusive_ptr<SimplePersistableMessage> msg);
+    QueuedMessage(SimpleQueue* q,
+                  boost::intrusive_ptr<SimpleMessage> msg);
     QueuedMessage(const QueuedMessage& qm);
     ~QueuedMessage();
     QueuedMessage& operator=(const QueuedMessage& rhs);
-    boost::intrusive_ptr<SimplePersistableMessage> payload() const;
+    SimpleQueue* getQueue() const;
+    boost::intrusive_ptr<SimpleMessage> payload() const;
     const qpid::broker::EnqueueHandle& enqHandle() const;
     qpid::broker::EnqueueHandle& enqHandle();
 
@@ -61,8 +62,8 @@ public:
     void abortEnqueue();
 
 private:
-    SimplePersistableQueue* m_queue;
-    boost::intrusive_ptr<SimplePersistableMessage> m_msg;
+    SimpleQueue* m_queue;
+    boost::intrusive_ptr<SimpleMessage> m_msg;
     qpid::broker::EnqueueHandle m_enqHandle;
 };
 

@@ -18,25 +18,29 @@
  */
 
 /**
- * \file TxnOp.h
+ * \file TxnAccept.h
  */
 
-#ifndef qpid_broker_TxnOp_h_
-#define qpid_broker_TxnOp_h_
+#ifndef tests_storePerftools_asyncPerf_TxnAccept_h_
+#define tests_storePerftools_asyncPerf_TxnAccept_h_
 
-namespace qpid {
-namespace broker {
+#include "qpid/broker/TxnOp.h"
 
-class TxnHandle;
+namespace tests {
+namespace storePerftools {
+namespace asyncPerf {
 
-class TxnOp{
+class TxnAccept: public qpid::broker::TxnOp {
 public:
-    virtual ~TxnOp() {}
-    virtual bool prepare(TxnHandle& th) throw() = 0;
-    virtual void commit()  throw() = 0;
-    virtual void rollback()  throw() = 0;
+    TxnAccept();
+    virtual ~TxnAccept();
+
+    // --- Interface TxnOp ---
+    bool prepare(qpid::broker::TxnHandle& th) throw();
+    void commit()  throw();
+    void rollback()  throw();
 };
 
-}} // namespace qpid::broker
+}}} // namespace tests::storePerftools::asyncPerf
 
-#endif // qpid_broker_TxnOp_h_
+#endif // tests_storePerftools_asyncPerf_TxnAccept_h_

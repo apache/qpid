@@ -23,8 +23,8 @@
 
 #include "QueuedMessage.h"
 
-#include "SimplePersistableMessage.h"
-#include "SimplePersistableQueue.h"
+#include "SimpleMessage.h"
+#include "SimpleQueue.h"
 
 #include "qpid/asyncStore/AsyncStoreImpl.h"
 
@@ -36,8 +36,8 @@ QueuedMessage::QueuedMessage() :
         m_queue(0)
 {}
 
-QueuedMessage::QueuedMessage(SimplePersistableQueue* q,
-                             boost::intrusive_ptr<SimplePersistableMessage> msg) :
+QueuedMessage::QueuedMessage(SimpleQueue* q,
+                             boost::intrusive_ptr<SimpleMessage> msg) :
         m_queue(q),
         m_msg(msg),
         m_enqHandle(q->getStore() ? q->getStore()->createEnqueueHandle(msg->getHandle(), q->getHandle()) : qpid::broker::EnqueueHandle(0))
@@ -61,7 +61,13 @@ QueuedMessage::operator=(const QueuedMessage& rhs)
     return *this;
 }
 
-boost::intrusive_ptr<SimplePersistableMessage>
+SimpleQueue*
+QueuedMessage::getQueue() const
+{
+    return m_queue;
+}
+
+boost::intrusive_ptr<SimpleMessage>
 QueuedMessage::payload() const
 {
     return m_msg;

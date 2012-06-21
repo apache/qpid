@@ -31,8 +31,8 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class SimplePersistableMessage;
-class SimplePersistableQueue;
+class SimpleMessage;
+class SimpleQueue;
 
 class Deliverable
 {
@@ -41,8 +41,8 @@ public:
     virtual ~Deliverable();
 
     virtual uint64_t contentSize() = 0;
-    virtual void deliverTo(const boost::shared_ptr<SimplePersistableQueue>& queue) = 0;
-    virtual SimplePersistableMessage& getMessage() = 0;
+    virtual void deliverTo(const boost::shared_ptr<SimpleQueue>& queue) = 0;
+    virtual SimpleMessage& getMessage() = 0;
     virtual bool isDelivered() const;
 
 protected:

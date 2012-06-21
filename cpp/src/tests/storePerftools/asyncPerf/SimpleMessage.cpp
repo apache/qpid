@@ -18,10 +18,10 @@
  */
 
 /**
- * \file SimplePersistableMessage.cpp
+ * \file SimpleMessage.cpp
  */
 
-#include "SimplePersistableMessage.h"
+#include "SimpleMessage.h"
 
 #include "qpid/asyncStore/AsyncStoreImpl.h"
 
@@ -29,83 +29,83 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-SimplePersistableMessage::SimplePersistableMessage(const char* msgData,
-                                                   const uint32_t msgSize,
-                                                   qpid::asyncStore::AsyncStoreImpl* store) :
+SimpleMessage::SimpleMessage(const char* msgData,
+                             const uint32_t msgSize,
+                             qpid::asyncStore::AsyncStoreImpl* store) :
         m_persistenceId(0ULL),
         m_msg(msgData, static_cast<size_t>(msgSize)),
         m_msgHandle(store ? store->createMessageHandle(this) : qpid::broker::MessageHandle(0))
 {}
 
-SimplePersistableMessage::~SimplePersistableMessage()
+SimpleMessage::~SimpleMessage()
 {}
 
 const qpid::broker::MessageHandle&
-SimplePersistableMessage::getHandle() const
+SimpleMessage::getHandle() const
 {
     return m_msgHandle;
 }
 
 qpid::broker::MessageHandle&
-SimplePersistableMessage::getHandle()
+SimpleMessage::getHandle()
 {
     return m_msgHandle;
 }
 
 uint64_t
-SimplePersistableMessage::contentSize() const
+SimpleMessage::contentSize() const
 {
     return  static_cast<uint64_t>(m_msg.size());
 }
 
 void
-SimplePersistableMessage::setPersistenceId(uint64_t id) const
+SimpleMessage::setPersistenceId(uint64_t id) const
 {
     m_persistenceId = id;
 }
 
 uint64_t
-SimplePersistableMessage::getPersistenceId() const
+SimpleMessage::getPersistenceId() const
 {
     return m_persistenceId;
 }
 
 void
-SimplePersistableMessage::encode(qpid::framing::Buffer& buffer) const
+SimpleMessage::encode(qpid::framing::Buffer& buffer) const
 {
     buffer.putRawData(m_msg);
 }
 
 uint32_t
-SimplePersistableMessage::encodedSize() const
+SimpleMessage::encodedSize() const
 {
     return static_cast<uint32_t>(m_msg.size());
 }
 
 void
-SimplePersistableMessage::allDequeuesComplete()
+SimpleMessage::allDequeuesComplete()
 {}
 
 uint32_t
-SimplePersistableMessage::encodedHeaderSize() const
+SimpleMessage::encodedHeaderSize() const
 {
     return 0;
 }
 
 bool
-SimplePersistableMessage::isPersistent() const
+SimpleMessage::isPersistent() const
 {
     return m_msgHandle.isValid();
 }
 
 uint64_t
-SimplePersistableMessage::getSize()
+SimpleMessage::getSize()
 {
     return m_msg.size();
 }
 
 void
-SimplePersistableMessage::write(char* target)
+SimpleMessage::write(char* target)
 {
     ::memcpy(target, m_msg.data(), m_msg.size());
 }

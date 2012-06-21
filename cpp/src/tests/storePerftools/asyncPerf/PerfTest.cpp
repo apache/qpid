@@ -25,7 +25,7 @@
 
 #include "MessageConsumer.h"
 #include "MessageProducer.h"
-#include "SimplePersistableQueue.h"
+#include "SimpleQueue.h"
 
 #include "tests/storePerftools/version.h"
 #include "tests/storePerftools/common/ScopedTimer.h"
@@ -87,7 +87,7 @@ PerfTest::run()
                                                                                                                       reinterpret_cast<void*>(mp.get())));
                 threads.push_back(tp);
             }
-            boost::shared_ptr<MessageConsumer> mc(new MessageConsumer(m_testOpts, m_queueList[q]));
+            boost::shared_ptr<MessageConsumer> mc(new MessageConsumer(m_testOpts, m_store, m_resultQueue, m_queueList[q]));
             m_consumers.push_back(mc);
             for (uint16_t dt = 0; dt < m_testOpts.m_numDeqThreadsPerQueue; ++dt) { // TODO - replace with qpid threads
                 boost::shared_ptr<tests::storePerftools::common::Thread> tp(new tests::storePerftools::common::Thread(mc->startConsumers,
@@ -138,7 +138,7 @@ PerfTest::prepareQueues()
     for (uint16_t i = 0; i < m_testOpts.m_numQueues; ++i) {
         std::ostringstream qname;
         qname << "queue_" << std::setw(4) << std::setfill('0') << i;
-        boost::shared_ptr<SimplePersistableQueue> mpq(new SimplePersistableQueue(qname.str(), m_queueArgs, m_store, m_resultQueue));
+        boost::shared_ptr<SimpleQueue> mpq(new SimpleQueue(qname.str(), m_queueArgs, m_store, m_resultQueue));
         mpq->asyncCreate();
         m_queueList.push_back(mpq);
     }

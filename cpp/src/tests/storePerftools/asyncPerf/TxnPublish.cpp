@@ -21,8 +21,8 @@
  * \file TxnPublish.cpp
  */
 
-#include "SimplePersistableMessage.h"
-#include "SimplePersistableQueue.h" // debug msg
+#include "SimpleMessage.h"
+#include "SimpleQueue.h" // debug msg
 #include "TxnPublish.h"
 
 #include "QueuedMessage.h"
@@ -31,7 +31,7 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-TxnPublish::TxnPublish(boost::intrusive_ptr<SimplePersistableMessage> msg) :
+TxnPublish::TxnPublish(boost::intrusive_ptr<SimpleMessage> msg) :
         m_msg(msg)
 {
 //std::cout << "TTT new TxnPublish" << std::endl << std::flush;
@@ -96,7 +96,7 @@ TxnPublish::contentSize()
 }
 
 void
-TxnPublish::deliverTo(const boost::shared_ptr<SimplePersistableQueue>& queue)
+TxnPublish::deliverTo(const boost::shared_ptr<SimpleQueue>& queue)
 {
 //std::cout << "TTT TxnPublish::deliverTo queue=\"" << queue->getName() << "\"" << std::endl << std::flush;
     boost::shared_ptr<QueuedMessage> qm(new QueuedMessage(queue.get(), m_msg));
@@ -104,7 +104,7 @@ TxnPublish::deliverTo(const boost::shared_ptr<SimplePersistableQueue>& queue)
     m_delivered = true;
 }
 
-SimplePersistableMessage&
+SimpleMessage&
 TxnPublish::getMessage()
 {
     return *m_msg;

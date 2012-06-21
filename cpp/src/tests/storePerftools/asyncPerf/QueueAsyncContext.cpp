@@ -22,7 +22,7 @@
  */
 
 #include "QueueAsyncContext.h"
-#include "SimplePersistableMessage.h"
+#include "SimpleMessage.h"
 
 #include <cassert>
 
@@ -30,7 +30,7 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<SimplePersistableQueue> q,
+QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<SimpleQueue> q,
                                      qpid::broker::TxnHandle& th,
                                      const qpid::asyncStore::AsyncOperation::opCode op,
                                      qpid::broker::AsyncResultCallback rcb,
@@ -44,8 +44,8 @@ QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<SimplePersistableQueue> q
     assert(m_q.get() != 0);
 }
 
-QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<SimplePersistableQueue> q,
-                                     boost::intrusive_ptr<SimplePersistableMessage> msg,
+QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<SimpleQueue> q,
+                                     boost::intrusive_ptr<SimpleMessage> msg,
                                      qpid::broker::TxnHandle& th,
                                      const qpid::asyncStore::AsyncOperation::opCode op,
                                      qpid::broker::AsyncResultCallback rcb,
@@ -76,13 +76,13 @@ QueueAsyncContext::getOpStr() const
     return qpid::asyncStore::AsyncOperation::getOpStr(m_op);
 }
 
-boost::shared_ptr<SimplePersistableQueue>
+boost::shared_ptr<SimpleQueue>
 QueueAsyncContext::getQueue() const
 {
     return m_q;
 }
 
-boost::intrusive_ptr<SimplePersistableMessage>
+boost::intrusive_ptr<SimpleMessage>
 QueueAsyncContext::getMessage() const
 {
     return m_msg;
