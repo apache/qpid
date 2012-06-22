@@ -56,7 +56,7 @@ class ConnectionObserver;
 class Primary;
 
 /**
- * HA state and actions associated with a broker.
+ * HA state and actions associated with a HA broker. Holds all the management info.
  *
  * THREAD SAFE: may be called in arbitrary broker IO or timer threads.
  */

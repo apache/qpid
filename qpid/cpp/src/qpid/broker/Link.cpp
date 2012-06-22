@@ -445,7 +445,7 @@ void Link::ioThreadProcessing()
 {
     Mutex::ScopedLock mutex(lock);
 
-    if (state != STATE_OPERATIONAL)
+    if (state != STATE_OPERATIONAL || closing)
         return;
 
     // check for bridge session errors and recover
@@ -482,7 +482,7 @@ void Link::ioThreadProcessing()
 void Link::maintenanceVisit ()
 {
     Mutex::ScopedLock mutex(lock);
-
+    if (closing) return;
     if (state == STATE_WAITING)
     {
         visitCount++;
@@ -500,7 +500,7 @@ void Link::maintenanceVisit ()
     }
     else if (state == STATE_OPERATIONAL && (!active.empty() || !created.empty() || !cancellations.empty()) && connection != 0)
         connection->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
-    }
+}
 
 void Link::reconnectLH(const Address& a)
 {

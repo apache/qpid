@@ -170,8 +170,9 @@ Variant::Map asMapVoid(const Variant& value) {
 
 BrokerReplicator::BrokerReplicator(HaBroker& hb, const boost::shared_ptr<Link>& l)
     : Exchange(QPID_CONFIGURATION_REPLICATOR),
-      logPrefix("Backup configuration: "), replicationTest(hb.getReplicationTest()),
-      haBroker(hb), broker(hb.getBroker()), link(l)
+      logPrefix("Backup: "), replicationTest(hb.getReplicationTest()),
+      haBroker(hb), broker(hb.getBroker()), link(l),
+      initialized(false)
 {}
 
 void BrokerReplicator::initialize() {
@@ -202,28 +203,32 @@ BrokerReplicator::~BrokerReplicator() { link->close(); }
 
 // This is called in the connection IO thread when the bridge is started.
 void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler) {
+    qpid::Address primary;
+    link->getRemoteAddress(primary);
+    string queueName = bridge.getQueueName();
+
+    QPID_LOG(info, logPrefix << (initialized ? "Connecting" : "Failing-over")
+             << " to primary " << primary
+             << " status:" << printable(haBroker.getStatus()));
+    initialized = true;
 
     switch (haBroker.getStatus()) {
       case JOINING:
         haBroker.setStatus(CATCHUP);
+        break;
       case CATCHUP:
-        // FIXME aconway 2012-04-27: distinguish catchup case, below.
         break;
       case READY:
-        // FIXME aconway 2012-04-27: distinguish ready case, reconnect to other backup.
         break;
       case RECOVERING:
       case ACTIVE:
-        // FIXME aconway 2012-04-27: link is connected to self!
-        // Promotion should close the link before allowing connections.
+        assert(0); // Primary does not reconnect.
         return;
-        break;
       case STANDALONE:
         return;
     }
 
     framing::AMQP_ServerProxy peer(sessionHandler.out);
-    string queueName = bridge.getQueueName();
     const qmf::org::apache::qpid::broker::ArgsLinkBridge& args(bridge.getArgs());
 
     //declare and bind an event queue
@@ -243,9 +248,9 @@ void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionH
     sendQuery(ORG_APACHE_QPID_BROKER, QUEUE, queueName, sessionHandler);
     sendQuery(ORG_APACHE_QPID_BROKER, EXCHANGE, queueName, sessionHandler);
     sendQuery(ORG_APACHE_QPID_BROKER, BINDING, queueName, sessionHandler);
-    qpid::Address primary;
-    link->getRemoteAddress(primary);
-    QPID_LOG(info, logPrefix << "Connected to " << primary << "(" << queueName << ")");
+
+    QPID_LOG(debug, logPrefix << "Connected to primary " << primary
+             << "(" << queueName << ")" << " status:" << printable(haBroker.getStatus()));
 }
 
 void BrokerReplicator::route(Deliverable& msg) {
@@ -570,10 +575,5 @@ bool BrokerReplicator::unbind(boost::shared_ptr<Queue>, const string&, const fra
 bool BrokerReplicator::isBound(boost::shared_ptr<Queue>, const string* const, const framing::FieldTable* const) { return false; }
 
 string BrokerReplicator::getType() const { return QPID_CONFIGURATION_REPLICATOR; }
-
-void BrokerReplicator::ready() {
-    assert(haBroker.getStatus() == CATCHUP);
-    haBroker.setStatus(READY);
-}
 
 }} // namespace broker

@@ -87,7 +87,7 @@ class HaBroker(Broker):
             # Ignore ConnectionError, the broker may not be up yet.
             try: return self.ha_status() == status;
             except ConnectionError: return False
-        assert retry(try_get_status, timeout=20), "%s, %r != %r"%(self, self.ha_status(), status)
+        assert retry(try_get_status, timeout=20), "%s status != %r"%(self, status)
 
     # FIXME aconway 2012-05-01: do direct python call to qpid-config code.
     def qpid_config(self, args):

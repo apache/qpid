@@ -53,7 +53,7 @@ class Backup
 
   private:
     bool isSelf(const Address& a) const;
-    Url linkUrl(const Url&) const;
+    Url removeSelf(const Url&) const;
     void initialize(const Url&);
 
     std::string logPrefix;
