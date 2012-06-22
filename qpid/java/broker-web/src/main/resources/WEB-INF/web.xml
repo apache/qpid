@@ -64,6 +64,17 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns
   </servlet>
 
   <servlet>
+    <display-name>UserRestServlet</display-name>
+    <servlet-name>UserRestServlet</servlet-name>
+    <servlet-class>org.apache.qpid.server.management.plugin.servlet.rest.RestServlet</servlet-class>
+    <init-param>
+     <param-name>hierarchy</param-name>
+     <param-value>AuthenticationProvider,User</param-value>
+   </init-param>
+  </servlet>
+
+
+  <servlet>
     <display-name>ExchangeRestServlet</display-name>
     <servlet-name>ExchangeRestServlet</servlet-name>
     <servlet-class>org.apache.qpid.server.management.plugin.servlet.rest.RestServlet</servlet-class>
@@ -176,6 +187,11 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns
   <servlet-mapping>
     <servlet-name>AuthenticationProviderRestServlet</servlet-name>
     <url-pattern>/rest/authenticationprovider/*</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>UserRestServlet</servlet-name>
+    <url-pattern>/rest/user/*</url-pattern>
   </servlet-mapping>
 
   <servlet-mapping>
