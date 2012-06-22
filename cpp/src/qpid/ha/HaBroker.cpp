@@ -66,7 +66,7 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
       brokerInfo(broker.getSystem()->getNodeName(),
                  // TODO aconway 2012-05-24: other transports?
                  broker.getPort(broker::Broker::TCP_TRANSPORT), systemId),
-      membership(systemId, boost::bind(&HaBroker::membershipUpdate, this, _1)),
+      membership(systemId),
       replicationTest(s.replicateDefault.get())
 {
     // Set up the management object.
@@ -271,15 +271,51 @@ void HaBroker::statusChanged(Mutex::ScopedLock& l) {
     setLinkProperties(l);
 }
 
-void HaBroker::membershipUpdate(const Variant::List& brokers) {
-    // FIXME aconway 2012-06-12: nasty callback in callback, clean up.
-    BrokerInfo info;
-    if (getStatus() == CATCHUP && getMembership().get(systemId, info) && info.getStatus() == READY)
-        setStatus(READY);
-
-    // No lock, only calls thread-safe objects.
+void HaBroker::membershipUpdated(const Variant::List& brokers) {
+    // No lock, these are thread-safe.
     mgmtObject->set_members(brokers);
     broker.getManagementAgent()->raiseEvent(_qmf::EventMembersUpdate(brokers));
+}
+
+void HaBroker::setMembership(const Variant::List& brokers) {
+    Mutex::ScopedLock l(lock);
+    membership.assign(brokers);
+    BrokerInfo info;
+    // Check if my own status has been updated to READY
+    if (getStatus() == CATCHUP &&
+        membership.get(systemId, info) && info.getStatus() == READY)
+        setStatus(READY, l);
+    membershipUpdated(brokers);
+}
+
+void HaBroker::resetMembership(const BrokerInfo& b) {
+    Variant::List members;
+    {
+        Mutex::ScopedLock l(lock);
+        membership.reset(b);
+        members = membership.asList();
+    }
+    membershipUpdated(members);
+}
+
+void HaBroker::addBroker(const BrokerInfo& b) {
+    Variant::List members;
+    {
+        Mutex::ScopedLock l(lock);
+        membership.add(b);
+        members = membership.asList();
+    }
+    membershipUpdated(members);
+}
+
+void HaBroker::removeBroker(const Uuid& id) {
+    Variant::List members;
+    {
+        Mutex::ScopedLock l(lock);
+        membership.remove(id);
+        members = membership.asList();
+    }
+    membershipUpdated(members);
 }
 
 void HaBroker::setLinkProperties(Mutex::ScopedLock&) {
