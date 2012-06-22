@@ -36,7 +36,6 @@ RemoteBackup::RemoteBackup(
     createGuards(cg)
 {
     QPID_LOG(debug, logPrefix << "Guarding queues for backup broker.");
-    // FIXME aconway 2012-06-12: potential deadlocks, this is called inside ConnectionObserver::opened.
     broker.getQueues().eachQueue(boost::bind(&RemoteBackup::initialQueue, this, _1));
 }
 
