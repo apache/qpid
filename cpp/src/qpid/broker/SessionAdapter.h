@@ -121,6 +121,9 @@ class Queue;
     {
         Broker& broker;
         std::vector< boost::shared_ptr<Queue> > exclusiveQueues;
+        //connectionId and userId are needed for queue-delete events for auto deleted, exclusive queues
+        std::string connectionId;
+        std::string userId;
 
       public:
         QueueHandlerImpl(SemanticState& session);

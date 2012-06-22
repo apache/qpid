@@ -206,7 +206,10 @@ ExchangeBoundResult SessionAdapter::ExchangeHandlerImpl::bound(const std::string
     }
 }
 
-SessionAdapter::QueueHandlerImpl::QueueHandlerImpl(SemanticState& session) : HandlerHelper(session), broker(getBroker())
+SessionAdapter::QueueHandlerImpl::QueueHandlerImpl(SemanticState& session)
+    : HandlerHelper(session), broker(getBroker()),
+      //record connection id and userid for deleting exclsuive queues after session has ended:
+      connectionId(getConnection().getUrl()), userId(getConnection().getUserId())
 {}
 
 
@@ -225,7 +228,7 @@ void SessionAdapter::QueueHandlerImpl::destroyExclusiveQueues()
         Queue::shared_ptr q(exclusiveQueues.front());
         q->releaseExclusiveOwnership();
         if (q->canAutoDelete()) {
-            Queue::tryAutoDelete(broker, q);
+            Queue::tryAutoDelete(broker, q, connectionId, userId);
         }
         exclusiveQueues.erase(exclusiveQueues.begin());
     }

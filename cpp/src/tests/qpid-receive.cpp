@@ -68,6 +68,7 @@ struct Options : public qpid::Options
     bool reportHeader;
     string readyAddress;
     uint receiveRate;
+    std::string replyto;
 
     Options(const std::string& argv0=std::string())
         : qpid::Options("Options"),
@@ -114,6 +115,7 @@ struct Options : public qpid::Options
             ("report-header", qpid::optValue(reportHeader, "yes|no"), "Headers on report.")
             ("ready-address", qpid::optValue(readyAddress, "ADDRESS"), "send a message to this address when ready to receive")
             ("receive-rate", qpid::optValue(receiveRate,"N"), "Receive at rate of N messages/second. 0 means receive as fast as possible.")
+            ("reply-to", qpid::optValue(replyto, "REPLY-TO"), "specify reply-to address on response messages")
             ("help", qpid::optValue(help), "print this usage statement");
         add(log);
     }
@@ -245,6 +247,9 @@ int main(int argc, char ** argv)
                     if (s.isNull()) {
                         s = session.createSender(msg.getReplyTo());
                         s.setCapacity(opts.capacity);
+                    }
+                    if (!opts.replyto.empty()) {
+                        msg.setReplyTo(Address(opts.replyto));
                     }
                     s.send(msg);
                 }

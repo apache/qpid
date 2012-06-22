@@ -49,6 +49,7 @@
 #include "qpid/types/Variant.h"
 #include "qmf/org/apache/qpid/broker/ArgsQueuePurge.h"
 #include "qmf/org/apache/qpid/broker/ArgsQueueReroute.h"
+#include "qmf/org/apache/qpid/broker/EventQueueDelete.h"
 
 #include <iostream>
 #include <algorithm>
@@ -1484,12 +1485,15 @@ boost::shared_ptr<Exchange> Queue::getAlternateExchange()
     return alternateExchange;
 }
 
-void tryAutoDeleteImpl(Broker& broker, Queue::shared_ptr queue)
+void tryAutoDeleteImpl(Broker& broker, Queue::shared_ptr queue, const std::string& connectionId, const std::string& userId)
 {
     if (broker.getQueues().destroyIf(queue->getName(),
                                      boost::bind(boost::mem_fn(&Queue::canAutoDelete), queue))) {
         QPID_LOG(debug, "Auto-deleting " << queue->getName());
         queue->destroyed();
+
+        if (broker.getManagementAgent())
+            broker.getManagementAgent()->raiseEvent(_qmf::EventQueueDelete(connectionId, userId, queue->getName()));
     }
 }
 
@@ -1497,9 +1501,11 @@ struct AutoDeleteTask : qpid::sys::TimerTask
 {
     Broker& broker;
     Queue::shared_ptr queue;
+    std::string connectionId;
+    std::string userId;
 
-    AutoDeleteTask(Broker& b, Queue::shared_ptr q, AbsTime fireTime)
-        : qpid::sys::TimerTask(fireTime, "DelayedAutoDeletion:"+q->getName()), broker(b), queue(q) {}
+    AutoDeleteTask(Broker& b, Queue::shared_ptr q, const std::string& cId, const std::string& uId, AbsTime fireTime)
+        : qpid::sys::TimerTask(fireTime, "DelayedAutoDeletion:"+q->getName()), broker(b), queue(q), connectionId(cId), userId(uId) {}
 
     void fire()
     {
@@ -1507,19 +1513,19 @@ struct AutoDeleteTask : qpid::sys::TimerTask
         //created, but then became unused again before the task fired;
         //in this case ignore this request as there will have already
         //been a later task added
-        tryAutoDeleteImpl(broker, queue);
+        tryAutoDeleteImpl(broker, queue, connectionId, userId);
     }
 };
 
-void Queue::tryAutoDelete(Broker& broker, Queue::shared_ptr queue)
+void Queue::tryAutoDelete(Broker& broker, Queue::shared_ptr queue, const std::string& connectionId, const std::string& userId)
 {
     if (queue->autoDeleteTimeout && queue->canAutoDelete()) {
         AbsTime time(now(), Duration(queue->autoDeleteTimeout * TIME_SEC));
-        queue->autoDeleteTask = boost::intrusive_ptr<qpid::sys::TimerTask>(new AutoDeleteTask(broker, queue, time));
+        queue->autoDeleteTask = boost::intrusive_ptr<qpid::sys::TimerTask>(new AutoDeleteTask(broker, queue, connectionId, userId, time));
         broker.getClusterTimer().add(queue->autoDeleteTask);
         QPID_LOG(debug, "Timed auto-delete for " << queue->getName() << " initiated");
     } else {
-        tryAutoDeleteImpl(broker, queue);
+        tryAutoDeleteImpl(broker, queue, connectionId, userId);
     }
 }
 
