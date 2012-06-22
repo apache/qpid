@@ -110,8 +110,11 @@ HaBroker::~HaBroker() {
 }
 
 void HaBroker::recover(Mutex::ScopedLock&) {
+    // No longer replicating, close link. Note: link must be closed before we
+    // setStatus(RECOVERING) as that will remove our broker info from the
+    // outgoing link properties so we won't recognize self-connects.
+    backup.reset();
     setStatus(RECOVERING);
-    backup.reset();                    // No longer replicating, close link.
     BrokerInfo::Set backups = membership.otherBackups();
     membership.reset(brokerInfo);
     // Drop the lock, new Primary may call back on activate.
