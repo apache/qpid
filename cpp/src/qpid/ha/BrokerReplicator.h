@@ -94,13 +94,13 @@ class BrokerReplicator : public broker::Exchange,
 
     QueueReplicatorPtr findQueueReplicator(const std::string& qname);
     void startQueueReplicator(const boost::shared_ptr<broker::Queue>&);
-    void ready();
 
     std::string logPrefix;
     ReplicationTest replicationTest;
     HaBroker& haBroker;
     broker::Broker& broker;
     boost::shared_ptr<broker::Link> link;
+    bool initialized;
 };
 }} // namespace qpid::broker
 

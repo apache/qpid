@@ -70,13 +70,13 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
     assert(instance == 0);
     instance = this;            // Let queue replicators find us.
     if (expect.empty()) {
-        QPID_LOG(debug, logPrefix << "Expected backups: none");
+        QPID_LOG(debug, logPrefix << "Promoted, no expected backups");
     }
     else {
         // NOTE: RemoteBackups must be created before we set the ConfigurationObserver
         // orr ConnectionObserver so that there is no client activity while
         // the QueueGuards are created.
-        QPID_LOG(debug, logPrefix << "Expected backups: " << expect);
+        QPID_LOG(debug, logPrefix << "Promoted, expected backups: " << expect);
         for (BrokerInfo::Set::const_iterator i = expect.begin(); i != expect.end(); ++i) {
             bool guard = true;  // Create queue guards immediately for expected backups.
             boost::shared_ptr<RemoteBackup> backup(
