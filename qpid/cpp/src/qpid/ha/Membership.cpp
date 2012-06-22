@@ -28,70 +28,42 @@ namespace ha {
 
 
 void Membership::reset(const BrokerInfo& b) {
-    sys::Mutex::ScopedLock l(lock);
     brokers.clear();
     brokers[b.getSystemId()] = b;
-    update(l);
 }
 
 void Membership::add(const BrokerInfo& b) {
-    sys::Mutex::ScopedLock l(lock);
     brokers[b.getSystemId()] = b;
-    update(l);
 }
 
 
 void Membership::remove(const types::Uuid& id) {
-    sys::Mutex::ScopedLock l(lock);
     BrokerInfo::Map::iterator i = brokers.find(id);
     if (i != brokers.end()) {
         brokers.erase(i);
-        update(l);
-    }
+        }
 }
 
 bool Membership::contains(const types::Uuid& id) {
-    sys::Mutex::ScopedLock l(lock);
     return brokers.find(id) != brokers.end();
 }
 
 void Membership::assign(const types::Variant::List& list) {
-    sys::Mutex::ScopedLock l(lock);
     brokers.clear();
     for (types::Variant::List::const_iterator i = list.begin(); i != list.end(); ++i) {
         BrokerInfo b(i->asMap());
         brokers[b.getSystemId()] = b;
     }
-    update(l);
 }
 
 types::Variant::List Membership::asList() const {
-    sys::Mutex::ScopedLock l(lock);
-    return asList(l);
-}
-
-types::Variant::List Membership::asList(sys::Mutex::ScopedLock&) const {
     types::Variant::List list;
     for (BrokerInfo::Map::const_iterator i = brokers.begin(); i != brokers.end(); ++i)
         list.push_back(i->second.asMap());
     return list;
 }
 
-void Membership::update(sys::Mutex::ScopedLock& l) {
-    if (updateCallback) {
-        types::Variant::List list = asList(l);
-        sys::Mutex::ScopedUnlock u(lock);
-        updateCallback(list);
-    }
-    QPID_LOG(debug, " HA: Membership update: " << brokers);
-}
-
 BrokerInfo::Set Membership::otherBackups() const {
-    sys::Mutex::ScopedLock l(lock);
-    return otherBackups(l);
-}
-
-BrokerInfo::Set Membership::otherBackups(sys::Mutex::ScopedLock&) const {
     BrokerInfo::Set result;
     for (BrokerInfo::Map::const_iterator i = brokers.begin(); i != brokers.end(); ++i)
         if (isBackup(i->second.getStatus()) && i->second.getSystemId() != self)
@@ -100,7 +72,6 @@ BrokerInfo::Set Membership::otherBackups(sys::Mutex::ScopedLock&) const {
 }
 
 bool Membership::get(const types::Uuid& id, BrokerInfo& result) {
-    sys::Mutex::ScopedLock l(lock);
     BrokerInfo::Map::iterator i = brokers.find(id);
     if (i == brokers.end()) return false;
     result = i->second;

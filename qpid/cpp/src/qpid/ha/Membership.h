@@ -36,14 +36,12 @@ namespace ha {
 
 /**
  * Keep track of the brokers in the membership.
- * THREAD SAFE: updated in arbitrary connection threads.
+ * THREAD UNSAFE: caller must serialize
  */
 class Membership
 {
   public:
-    typedef boost::function<void (const types::Variant::List&) > UpdateCallback;
-    Membership(const types::Uuid& self_, UpdateCallback updateFn)
-        : self(self_), updateCallback(updateFn) {}
+    Membership(const types::Uuid& self_) : self(self_) {}
 
     void reset(const BrokerInfo& b); ///< Reset to contain just one member.
     void add(const BrokerInfo& b);
@@ -58,14 +56,8 @@ class Membership
     bool get(const types::Uuid& id, BrokerInfo& result);
 
   private:
-    BrokerInfo::Set otherBackups(sys::Mutex::ScopedLock&) const;
-    types::Variant::List asList(sys::Mutex::ScopedLock&) const;
-    void update(sys::Mutex::ScopedLock&);
-
-    mutable sys::Mutex lock;
     types::Uuid self;
     BrokerInfo::Map brokers;
-    UpdateCallback updateCallback;
 };
 
 }} // namespace qpid::ha
