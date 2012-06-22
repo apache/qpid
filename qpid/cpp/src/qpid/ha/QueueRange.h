@@ -61,7 +61,7 @@ struct QueueRange {
 
 
 inline std::ostream& operator<<(std::ostream& o, const QueueRange& qr) {
-    if (qr.front > qr.back) return o << "[-" << qr.back << "]";
+    if (qr.front > qr.back) return o << "[-," << qr.back << "]";
     else return o << "[" << qr.front << "," << qr.back << "]";
 }
 

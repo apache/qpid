@@ -84,13 +84,6 @@ class HaBroker : public management::Manageable
     Backup* getBackup() { return backup.get(); }
     ReplicationTest getReplicationTest() const { return replicationTest; }
 
-    // Keep track of the set of actively replicated queues on a backup
-    // so that it can be transferred to the Primary on promotion.
-    typedef std::set<std::string> QueueNames;
-    void activatedBackup(const std::string& queue);
-    void deactivatedBackup(const std::string& queue);
-    QueueNames getActiveBackups() const;
-
     boost::shared_ptr<ConnectionObserver> getObserver() { return observer; }
 
     const BrokerInfo& getBrokerInfo() const { return brokerInfo; }
@@ -124,7 +117,6 @@ class HaBroker : public management::Manageable
     Url clientUrl, brokerUrl;
     std::vector<Url> knownBrokers;
     BrokerStatus status;
-    QueueNames activeBackups;
     boost::shared_ptr<ConnectionObserver> observer;
     BrokerInfo brokerInfo;
     Membership membership;
