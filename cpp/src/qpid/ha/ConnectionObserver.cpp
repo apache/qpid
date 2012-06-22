@@ -32,7 +32,6 @@ namespace ha {
 ConnectionObserver::ConnectionObserver(HaBroker& hb, const types::Uuid& uuid)
     : haBroker(hb), logPrefix("Connections: "), self(uuid) {}
 
-// FIXME aconway 2012-06-06: move to BrokerInfo
 bool ConnectionObserver::getBrokerInfo(broker::Connection& connection, BrokerInfo& info) {
     framing::FieldTable ft;
     if (connection.getClientProperties().getTable(ConnectionObserver::BACKUP_TAG, ft)) {
