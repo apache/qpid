@@ -114,7 +114,7 @@ void Primary::checkReady(BackupMap::iterator i, Mutex::ScopedLock& l)  {
     if (i != backups.end() && i->second->isReady()) {
         BrokerInfo info = i->second->getBrokerInfo();
         info.setStatus(READY);
-        haBroker.getMembership().add(info);
+        haBroker.addBroker(info);
         initialBackups.erase(i->second);
         checkReady(l);
     }
@@ -160,7 +160,7 @@ void Primary::opened(broker::Connection& connection) {
         else {
             QPID_LOG(debug, logPrefix << "Known backup connected: " << info);
         }
-        haBroker.getMembership().add(info);
+        haBroker.addBroker(info);
     }
 }
 
@@ -168,7 +168,7 @@ void Primary::closed(broker::Connection& connection) {
     Mutex::ScopedLock l(lock);
     BrokerInfo info;
     if (ha::ConnectionObserver::getBrokerInfo(connection, info)) {
-        haBroker.getMembership().remove(info.getSystemId());
+        haBroker.removeBroker(info.getSystemId());
         QPID_LOG(debug, logPrefix << "Backup disconnected: " << info);
     }
     // NOTE: we do not modify backups here, we only add to the known backups set

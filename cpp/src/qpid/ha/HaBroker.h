@@ -87,8 +87,11 @@ class HaBroker : public management::Manageable
     boost::shared_ptr<ConnectionObserver> getObserver() { return observer; }
 
     const BrokerInfo& getBrokerInfo() const { return brokerInfo; }
-    Membership& getMembership() { return membership; }
-    void membershipUpdate(const types::Variant::List&);
+
+    void setMembership(const types::Variant::List&); // Set membership from list.
+    void resetMembership(const BrokerInfo& b); // Reset to contain just one member.
+    void addBroker(const BrokerInfo& b);       // Add a broker to the membership.
+    void removeBroker(const types::Uuid& id);  // Remove a broker from membership.
 
   private:
     void setClientUrl(const Url&, sys::Mutex::ScopedLock&);
@@ -104,6 +107,8 @@ class HaBroker : public management::Manageable
     void setLinkProperties(sys::Mutex::ScopedLock&);
 
     std::vector<Url> getKnownBrokers() const;
+
+    void membershipUpdated(const types::Variant::List&);
 
     std::string logPrefix;
     broker::Broker& broker;

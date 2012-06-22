@@ -546,7 +546,7 @@ void BrokerReplicator::doResponseHaBroker(Variant::Map& values) {
         if (mine != primary)
             throw Exception(QPID_MSG("Replicate default on backup (" << mine
                                      << ") does not match primary (" <<  primary << ")"));
-        haBroker.getMembership().assign(values[MEMBERS].asList());
+        haBroker.setMembership(values[MEMBERS].asList());
     } catch (const std::exception& e) {
         QPID_LOG(critical, logPrefix << "Invalid HA Broker response: " << e.what());
         haBroker.shutdown();

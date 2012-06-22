@@ -83,6 +83,8 @@ void Backup::initialize(const Url& brokers) {
         false,                  // durable
         settings.mechanism, settings.username, settings.password,
         false);                 // amq.failover
+
+    sys::Mutex::ScopedLock l(lock);
     link = result.first;
     link->setUrl(url);
     replicator.reset(new BrokerReplicator(haBroker, link));
@@ -93,7 +95,6 @@ void Backup::initialize(const Url& brokers) {
 Backup::~Backup() {
     if (link) link->close();
     if (replicator.get()) broker.getExchanges().destroy(replicator->getName());
-    replicator.reset();
 }
 
 
