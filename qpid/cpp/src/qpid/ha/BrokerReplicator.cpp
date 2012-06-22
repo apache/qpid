@@ -198,8 +198,7 @@ void BrokerReplicator::initialize() {
     );
 }
 
-// FIXME aconway 2012-05-07: reference cycled between Link and BrokerReplicator.
-BrokerReplicator::~BrokerReplicator() { link->close(); }
+BrokerReplicator::~BrokerReplicator() { }
 
 // This is called in the connection IO thread when the bridge is started.
 void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler) {

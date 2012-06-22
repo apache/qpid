@@ -647,7 +647,6 @@ if (BUILD_HA)
         qpid/ha/Membership.h
         qpid/ha/Primary.cpp
         qpid/ha/Primary.h
-        qpid/ha/PrimaryConnectionMonitor.h
         qpid/ha/QueueRange.h
         qpid/ha/QueueReplicator.cpp
         qpid/ha/QueueReplicator.h
