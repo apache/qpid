@@ -86,7 +86,8 @@ class Connection : public sys::ConnectionInputHandler,
                bool isLink = false,
                uint64_t objectId = 0,
                bool shadow=false,
-               bool delayManagement = false);
+               bool delayManagement = false,
+               bool authenticated=true);
 
     ~Connection ();
 
@@ -151,6 +152,9 @@ class Connection : public sys::ConnectionInputHandler,
     /** True if this is a shadow connection in a cluster. */
     bool isShadow() const { return shadow; }
 
+    /** True if this connection is authenticated */
+    bool isAuthenticated() const { return authenticated; }
+
     // Used by cluster to update connection status
     sys::AggregateOutput& getOutputTasks() { return outputTasks; }
 
@@ -180,6 +184,8 @@ class Connection : public sys::ConnectionInputHandler,
 
     ChannelMap channels;
     qpid::sys::SecuritySettings securitySettings;
+    bool shadow;
+    bool authenticated;
     ConnectionHandler adapter;
     const bool link;
     bool mgmtClosing;
@@ -194,7 +200,6 @@ class Connection : public sys::ConnectionInputHandler,
     boost::intrusive_ptr<ConnectionTimeoutTask> timeoutTimer;
     ErrorListener* errorListener;
     uint64_t objectId;
-    bool shadow;
     framing::FieldTable clientProperties;
 
     /**

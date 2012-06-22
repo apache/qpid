@@ -87,10 +87,14 @@ Connection::Connection(ConnectionOutputHandler* out_,
                        bool link_,
                        uint64_t objectId_,
                        bool shadow_,
-                       bool delayManagement) :
+                       bool delayManagement,
+                       bool authenticated_
+) :
     ConnectionState(out_, broker_),
     securitySettings(external),
-    adapter(*this, link_, shadow_),
+    shadow(shadow_),
+    authenticated(authenticated_),
+    adapter(*this, link_),
     link(link_),
     mgmtClosing(false),
     mgmtId(mgmtId_),
@@ -100,7 +104,6 @@ Connection::Connection(ConnectionOutputHandler* out_,
     timer(broker_.getTimer()),
     errorListener(0),
     objectId(objectId_),
-    shadow(shadow_),
     outboundTracker(*this)
 {
     outboundTracker.wrap(out);

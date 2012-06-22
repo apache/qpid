@@ -85,7 +85,9 @@ Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
                        const std::string& mgmtId,
                        const ConnectionId& id, const qpid::sys::SecuritySettings& external)
     : cluster(c), self(id), catchUp(false), announced(false), output(*this, out),
-      connectionCtor(&output, cluster.getBroker(), mgmtId, external, false, 0, true),
+      connectionCtor(&output, cluster.getBroker(), mgmtId, external,
+                     false/*isLink*/, 0/*objectId*/, true/*shadow*/, false/*delayManagement*/,
+                     false/*authenticated*/),
       expectProtocolHeader(false),
       mcastFrameHandler(cluster.getMulticast(), self),
       updateIn(c.getUpdateReceiver()),
@@ -102,9 +104,10 @@ Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
                    external,
                    isLink,
                    isCatchUp ? ++catchUpId : 0,
-                   // The first catch-up connection is not considered a shadow
-                   // as it needs to be authenticated.
-                   isCatchUp && self.second > 1),
+                   // The first catch-up connection is not a shadow
+                   isCatchUp && self.second > 1,
+                   false,       // delayManagement
+                   true),       // catch up connecytions are authenticated
     expectProtocolHeader(isLink),
     mcastFrameHandler(cluster.getMulticast(), self),
     updateIn(c.getUpdateReceiver()),
