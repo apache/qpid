@@ -72,7 +72,8 @@ SemanticState::SemanticState(DeliveryAdapter& da, SessionContext& ss)
       dtxSelected(false),
       authMsg(getSession().getBroker().getOptions().auth && !getSession().getConnection().isUserProxyAuth()),
       userID(getSession().getConnection().getUserId()),
-      closeComplete(false)
+      closeComplete(false),
+      connectionId(getSession().getConnection().getUrl())
 {}
 
 SemanticState::~SemanticState() {
@@ -428,7 +429,7 @@ void SemanticState::cancel(ConsumerImpl::shared_ptr c)
     if(queue) {
         queue->cancel(c);
         if (queue->canAutoDelete() && !queue->hasExclusiveOwner()) {
-            Queue::tryAutoDelete(session.getBroker(), queue);
+            Queue::tryAutoDelete(session.getBroker(), queue, connectionId, userID);
         }
     }
     c->cancel();
