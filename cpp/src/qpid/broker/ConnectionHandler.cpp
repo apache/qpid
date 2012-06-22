@@ -106,9 +106,10 @@ void ConnectionHandler::setSecureConnection(SecureConnection* secured)
     handler->secured = secured;
 }
 
-ConnectionHandler::ConnectionHandler(Connection& connection, bool isClient, bool isShadow)  : handler(new Handler(connection, isClient, isShadow)) {}
+ConnectionHandler::ConnectionHandler(Connection& connection, bool isClient)  :
+    handler(new Handler(connection, isClient)) {}
 
-ConnectionHandler::Handler::Handler(Connection& c, bool isClient, bool isShadow) :
+ConnectionHandler::Handler::Handler(Connection& c, bool isClient) :
     proxy(c.getOutput()),
     connection(c), serverMode(!isClient), secured(0),
     isOpen(false)
@@ -119,14 +120,13 @@ ConnectionHandler::Handler::Handler(Connection& c, bool isClient, bool isShadow)
 
         properties.setString(QPID_FED_TAG, connection.getBroker().getFederationTag());
 
-        authenticator = SaslAuthenticator::createAuthenticator(c, isShadow);
+        authenticator = SaslAuthenticator::createAuthenticator(c);
         authenticator->getMechanisms(mechanisms);
 
         Array locales(0x95);
         boost::shared_ptr<FieldValue> l(new Str16Value(en_US));
         locales.add(l);
         proxy.start(properties, mechanisms, locales);
-        
     }
 
     maxFrameSize = (64 * 1024) - 1;

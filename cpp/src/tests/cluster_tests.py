@@ -227,6 +227,18 @@ acl deny all all
         self.assertEqual("x", cluster[0].get_message("q").content)
         self.assertEqual("y", cluster[1].get_message("q").content)
 
+    def test_other_mech(self):
+        """Test using a mechanism other than PLAIN/ANONYMOUS for cluster update  authentication.
+        Regression test for https://issues.apache.org/jira/browse/QPID-3849"""
+        sasl_config=os.path.join(self.rootdir, "sasl_config")
+        cluster = self.cluster(2, args=["--auth", "yes", "--sasl-config", sasl_config,
+                                        "--cluster-username=zig",
+                                        "--cluster-password=zig",
+                                        "--cluster-mechanism=DIGEST-MD5"])
+        cluster[0].connect()
+        cluster.start()         # Before the fix this broker falied to join the cluster.
+        cluster[2].connect()
+
     def test_link_events(self):
         """Regression test for https://bugzilla.redhat.com/show_bug.cgi?id=611543"""
         args = ["--mgmt-pub-interval", 1] # Publish management information every second.
