@@ -713,11 +713,55 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     public void stopAllBrokers()
     {
+        boolean exceptionOccured = false;
         Set<Integer> runningBrokerPorts = new HashSet<Integer>(getBrokerPortNumbers());
         for (int brokerPortNumber : runningBrokerPorts)
         {
+            if (!stopBrokerSafely(brokerPortNumber))
+            {
+                exceptionOccured = true;
+            }
+        }
+        if (exceptionOccured)
+        {
+            throw new RuntimeException("Exception occured on stopping of test broker. Please, examine logs for details");
+        }
+    }
+
+    protected boolean stopBrokerSafely(int brokerPortNumber)
+    {
+        boolean success = true;
+        BrokerHolder broker = _brokers.get(brokerPortNumber);
+        try
+        {
             stopBroker(brokerPortNumber);
         }
+        catch(Exception e)
+        {
+            success = false;
+            _logger.error("Failed to stop broker " + broker + " at port " + brokerPortNumber, e);
+            if (broker != null)
+            {
+                // save the thread dump in case of dead locks
+                try
+                {
+                    _logger.error("Broker " + broker + " thread dump:" + broker.dumpThreads());
+                }
+                finally
+                {
+                    // try to kill broker
+                    try
+                    {
+                        broker.kill();
+                    }
+                    catch(Exception killException)
+                    {
+                        // ignore
+                    }
+                }
+            }
+        }
+        return success;
     }
 
     public void stopBroker(int port)
