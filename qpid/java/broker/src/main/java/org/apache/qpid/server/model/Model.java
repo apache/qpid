@@ -66,6 +66,8 @@ public class Model
         addRelationship(VirtualHost.class, Connection.class);
         addRelationship(VirtualHost.class, VirtualHostAlias.class);
 
+        addRelationship(AuthenticationProvider.class, User.class);
+
         addRelationship(Connection.class, Session.class);
 
         addRelationship(Exchange.class, Binding.class);

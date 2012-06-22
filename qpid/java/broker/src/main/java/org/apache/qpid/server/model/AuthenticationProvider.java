@@ -20,10 +20,36 @@
  */
 package org.apache.qpid.server.model;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 
 public interface AuthenticationProvider extends ConfiguredObject
 {
+
+    public static final String ID = "id";
+    public static final String DESCRIPTION = "description";
+    public static final String NAME = "name";
+    public static final String STATE = "state";
+    public static final String DURABLE = "durable";
+    public static final String LIFETIME_POLICY = "lifetimePolicy";
+    public static final String TIME_TO_LIVE = "timeToLive";
+    public static final String CREATED = "created";
+    public static final String UPDATED = "updated";
+    public static final String TYPE = "type";
+
+    public static final Collection<String> AVAILABLE_ATTRIBUTES =
+            Collections.unmodifiableList(
+                    Arrays.asList(ID,
+                                  NAME,
+                                  DESCRIPTION,
+                                  STATE,
+                                  DURABLE,
+                                  LIFETIME_POLICY,
+                                  TIME_TO_LIVE,
+                                  CREATED,
+                                  UPDATED,
+                                  TYPE));
     //children
     Collection<VirtualHostAlias> getVirtualHostPortBindings();
 }

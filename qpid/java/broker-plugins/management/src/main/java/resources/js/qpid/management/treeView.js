@@ -271,7 +271,10 @@ define(["dojo/_base/xhr",
                    controller.show("connection", details.connection, { type: "virtualhost", name: details.virtualhost, parent: {broker: {type:"broker", name:""}}});
                } else if (details.type == 'port') {
                    controller.show("port", details.port, { type: "virtualhost", name: details.virtualhost, parent: {broker: {type:"broker", name:""}}});
+               } else if (details.type == 'authenticationprovider') {
+                   controller.show("authenticationprovider", details.authenticationprovider, {broker: {type:"broker", name:""}});
                }
+
 
 
            };

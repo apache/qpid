@@ -22,18 +22,17 @@ package org.apache.qpid.server.model.adapter;
 
 import java.security.AccessControlException;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.security.auth.login.AccountNotFoundException;
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.Statistics;
-import org.apache.qpid.server.model.VirtualHostAlias;
+import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.model.User;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
@@ -134,6 +133,54 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     }
 
     @Override
+    public Collection<String> getAttributeNames()
+    {
+        return AuthenticationProvider.AVAILABLE_ATTRIBUTES;
+    }
+
+    @Override
+    public Object getAttribute(String name)
+    {
+        if(TYPE.equals(name))
+        {
+            return _authManager.getClass().getSimpleName();
+        }
+        else if(CREATED.equals(name))
+        {
+            // TODO
+        }
+        else if(DURABLE.equals(name))
+        {
+            return true;
+        }
+        else if(ID.equals(name))
+        {
+            return getId();
+        }
+        else if(LIFETIME_POLICY.equals(name))
+        {
+            return LifetimePolicy.PERMANENT;
+        }
+        else if(NAME.equals(name))
+        {
+            return getName();
+        }
+        else if(STATE.equals(name))
+        {
+            return State.ACTIVE; // TODO
+        }
+        else if(TIME_TO_LIVE.equals(name))
+        {
+            // TODO
+        }
+        else if(UPDATED.equals(name))
+        {
+            // TODO
+        }
+        return super.getAttribute(name);    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
@@ -175,7 +222,22 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         @Override
         public void deleteUser(String username) throws AccountNotFoundException
         {
-            getPrincipalDatabase().deletePrincipal(new UsernamePrincipal(username));
+            if(getSecurityManager().authoriseMethod(Operation.DELETE,
+                                                    "UserManagement",
+                                                    "deleteUser"))
+            {
+
+                getPrincipalDatabase().deletePrincipal(new UsernamePrincipal(username));
+            }
+            else
+            {
+                throw new AccessControlException("Cannot delete user " + username);
+            }
+        }
+
+        private org.apache.qpid.server.security.SecurityManager getSecurityManager()
+        {
+            return ApplicationRegistry.getInstance().getSecurityManager();
         }
 
         private PrincipalDatabase getPrincipalDatabase()
@@ -199,6 +261,213 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                 users.put(principal.getName(), Collections.EMPTY_MAP);
             }
             return users;
+        }
+
+        @Override
+        public <C extends ConfiguredObject> C createChild(Class<C> childClass,
+                                                          Map<String, Object> attributes,
+                                                          ConfiguredObject... otherParents)
+        {
+            if(childClass == User.class)
+            {
+                Principal p = new UsernamePrincipal((String) attributes.get("name"));
+                if(getSecurityManager().authoriseMethod(Operation.UPDATE, "UserManagement", "createUser"))
+                {
+                    if(getPrincipalDatabase().createPrincipal(p, ((String)attributes.get("password")).toCharArray()))
+                    {
+                        return (C) new PrincipalAdapter(p);
+                    }
+                }
+                else
+                {
+                    throw new AccessControlException("Do not have permission to create a new user");
+                }
+
+            }
+
+            return super.createChild(childClass, attributes, otherParents);
+        }
+
+        @Override
+        public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
+        {
+            if(clazz == User.class)
+            {
+                List<Principal> users = getPrincipalDatabase().getUsers();
+                Collection<User> principals = new ArrayList<User>(users.size());
+                for(Principal user : users)
+                {
+                    principals.add(new PrincipalAdapter(user));
+                }
+                return (Collection<C>) Collections.unmodifiableCollection(principals);
+            }
+            else
+            {
+                return super.getChildren(clazz);
+            }
+        }
+
+        private class PrincipalAdapter extends AbstractAdapter implements User
+        {
+            private final Principal _user;
+
+
+            public PrincipalAdapter(Principal user)
+            {
+                super(PrincipalDatabaseAuthenticationManagerAdapter.this.getName(), user.getName());
+                _user = user;
+
+            }
+
+            @Override
+            public String getPassword()
+            {
+                return null;
+            }
+
+            @Override
+            public void setPassword(String password)
+            {
+                try
+                {
+                    PrincipalDatabaseAuthenticationManagerAdapter.this.setPassword(_user.getName(), password);
+                }
+                catch (AccountNotFoundException e)
+                {
+                    throw new IllegalStateException(e);
+                }
+            }
+
+            @Override
+            public String getName()
+            {
+                return _user.getName();
+            }
+
+            @Override
+            public String setName(String currentName, String desiredName)
+                    throws IllegalStateException, AccessControlException
+            {
+                throw new IllegalStateException("Names cannot be updated");
+            }
+
+            @Override
+            public State getActualState()
+            {
+                return State.ACTIVE;
+            }
+
+            @Override
+            public boolean isDurable()
+            {
+                return true;
+            }
+
+            @Override
+            public void setDurable(boolean durable)
+                    throws IllegalStateException, AccessControlException, IllegalArgumentException
+            {
+                throw new IllegalStateException("Durability cannot be updated");
+            }
+
+            @Override
+            public LifetimePolicy getLifetimePolicy()
+            {
+                return LifetimePolicy.PERMANENT;
+            }
+
+            @Override
+            public LifetimePolicy setLifetimePolicy(LifetimePolicy expected, LifetimePolicy desired)
+                    throws IllegalStateException, AccessControlException, IllegalArgumentException
+            {
+                throw new IllegalStateException("LifetimePolicy cannot be updated");
+            }
+
+            @Override
+            public long getTimeToLive()
+            {
+                return 0;
+            }
+
+            @Override
+            public long setTimeToLive(long expected, long desired)
+                    throws IllegalStateException, AccessControlException, IllegalArgumentException
+            {
+                throw new IllegalStateException("ttl cannot be updated");
+            }
+
+            @Override
+            public Statistics getStatistics()
+            {
+                return NoStatistics.getInstance();
+            }
+
+            @Override
+            public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
+            {
+                return null;
+            }
+
+            @Override
+            public <C extends ConfiguredObject> C createChild(Class<C> childClass,
+                                                              Map<String, Object> attributes,
+                                                              ConfiguredObject... otherParents)
+            {
+                return null;
+            }
+
+            @Override
+            public Collection<String> getAttributeNames()
+            {
+                return User.AVAILABLE_ATTRIBUTES;
+            }
+
+            @Override
+            public Object getAttribute(String name)
+            {
+                if(ID.equals(name))
+                {
+                    return getId();
+                }
+                else if(NAME.equals(name))
+                {
+                    return getName();
+                }
+                return super.getAttribute(name);    //To change body of overridden methods use File | Settings | File Templates.
+            }
+
+            @Override
+            public Object setAttribute(String name, Object expected, Object desired)
+                    throws IllegalStateException, AccessControlException, IllegalArgumentException
+            {
+                if(name.equals(PASSWORD))
+                {
+                    setPassword((String)desired);
+                }
+                return super.setAttribute(name,
+                                          expected,
+                                          desired);
+            }
+
+            @Override
+            public State setDesiredState(State currentState, State desiredState)
+                    throws IllegalStateTransitionException, AccessControlException
+            {
+                if(desiredState == State.DELETED)
+                {
+                    try
+                    {
+                        deleteUser(_user.getName());
+                    }
+                    catch (AccountNotFoundException e)
+                    {
+                        // TODO - log?
+                    }
+                    return State.DELETED;
+                }
+                return super.setDesiredState(currentState,
+                                             desiredState);    //To change body of overridden methods use File | Settings | File Templates.
+            }
         }
     }
 }

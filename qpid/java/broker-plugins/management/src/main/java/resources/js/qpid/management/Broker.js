@@ -84,9 +84,9 @@ define(["dojo/_base/xhr",
                xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"})
                    .then(function(data)
                          {
-                             that.brokerData = data[0];
+                             that.brokerData= data[0];
 
-                             util.flattenStatistics( that.brokerData );
+                             util.flattenStatistics( that.brokerData);
 
                              that.updateHeader();
                              that.vhostsGrid =

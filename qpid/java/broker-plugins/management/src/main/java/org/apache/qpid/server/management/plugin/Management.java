@@ -92,6 +92,8 @@ public class Management
 
         addRestServlet(root, "broker", socketAddress);
         addRestServlet(root, "virtualhost", socketAddress, VirtualHost.class);
+        addRestServlet(root, "authenticationprovider", socketAddress, AuthenticationProvider.class);
+        addRestServlet(root, "user", socketAddress, AuthenticationProvider.class, User.class);
         addRestServlet(root, "exchange", socketAddress, VirtualHost.class, Exchange.class);
         addRestServlet(root, "queue", socketAddress, VirtualHost.class, Queue.class);
         addRestServlet(root, "connection", socketAddress, VirtualHost.class, Connection.class);

@@ -3,16 +3,19 @@ package org.apache.qpid.server.management.plugin.servlet.rest;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.SocketAddress;
+import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import java.util.Set;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -22,6 +25,7 @@ import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
@@ -50,6 +54,10 @@ public class RestServlet extends AbstractServlet
     private static final String HIERARCHY_INIT_PARAMETER = "hierarchy";
 
     public static final String DEPTH_PARAM = "depth";
+    public static final String SORT_PARAM = "sort";
+
+    public static final Set<String> RESERVED_PARAMS = new HashSet<String>(Arrays.asList(DEPTH_PARAM, SORT_PARAM));
+
     private Class<? extends ConfiguredObject>[] _hierarchy;
 
     private volatile boolean initializationRequired = false;
@@ -214,7 +222,47 @@ public class RestServlet extends AbstractServlet
             }
         }
 
-        return parents;
+        return filter(parents, request);
+    }
+
+    private Collection<ConfiguredObject> filter(Collection<ConfiguredObject> objects, HttpServletRequest request)
+    {
+
+
+        Map<String, Collection<String>> filters = new HashMap<String, Collection<String>>();
+
+        for(String param : (Collection<String>) Collections.list(request.getParameterNames()))
+        {
+            if(!RESERVED_PARAMS.contains(param))
+            {
+                filters.put(param, Arrays.asList(request.getParameterValues(param)));
+            }
+        }
+
+        if(filters.isEmpty())
+        {
+            return objects;
+        }
+
+        Collection<ConfiguredObject> filteredObj = new ArrayList<ConfiguredObject>(objects);
+
+        Iterator<ConfiguredObject> iter = filteredObj.iterator();
+
+        while(iter.hasNext())
+        {
+            ConfiguredObject obj = iter.next();
+            for(Map.Entry<String, Collection<String>> entry : filters.entrySet())
+            {
+                Object value = obj.getAttribute(entry.getKey());
+                if(!entry.getValue().contains(String.valueOf(value)))
+                {
+                    iter.remove();
+                }
+            }
+
+        }
+
+        return filteredObj;
     }
 
     private Collection<? extends ConfiguredObject> getAncestors(Class<? extends ConfiguredObject> childType,
@@ -369,7 +417,6 @@ public class RestServlet extends AbstractServlet
         response.setContentType("application/json");
 
         ObjectMapper mapper = new ObjectMapper();
-
         @SuppressWarnings("unchecked")
         Map<String,Object> providedObject = mapper.readValue(request.getInputStream(), LinkedHashMap.class);
 
@@ -463,7 +510,6 @@ public class RestServlet extends AbstractServlet
             }
             ConfiguredObject theParent = parents.remove(0);
             ConfiguredObject[] otherParents = parents.toArray(new ConfiguredObject[parents.size()]);
-
             try
             {
                 theParent.createChild(objClass, providedObject, otherParents);
@@ -491,4 +537,28 @@ public class RestServlet extends AbstractServlet
         }
     }
 
+    @Override
+    protected void onDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+    {
+        response.setContentType("application/json");
+        response.setStatus(HttpServletResponse.SC_OK);
+
+        response.setHeader("Cache-Control","no-cache");
+        response.setHeader("Pragma","no-cache");
+        response.setDateHeader ("Expires", 0);
+        try
+        {
+            Collection<ConfiguredObject> allObjects = getObjects(request);
+            for(ConfiguredObject o : allObjects)
+            {
+                o.setDesiredState(o.getActualState(), State.DELETED);
+            }
+
+            response.setStatus(HttpServletResponse.SC_OK);
+        }
+        catch(RuntimeException e)
+        {
+            setResponseStatus(response, e);
+        }
+    }
 }
