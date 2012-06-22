@@ -31,6 +31,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFinder;
 import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -230,7 +231,10 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
             }
             else if(ALTERNATE_EXCHANGE.equals(name))
             {
-                // TODO
+                // In future we may want to accept a UUID as an alternative way to identifying the exchange
+                ExchangeAdapter alternateExchange = (ExchangeAdapter) desired;
+                _queue.setAlternateExchange(alternateExchange == null ? null : alternateExchange.getExchange());
+                return desired;
             }
             else if(EXCLUSIVE.equals(name))
             {
@@ -339,7 +343,10 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         }
         else if(ALTERNATE_EXCHANGE.equals(name))
         {
-            return _queue.getAlternateExchange() == null ? null : _queue.getAlternateExchange().getName();
+            org.apache.qpid.server.exchange.Exchange alternateExchange = _queue.getAlternateExchange();
+            return alternateExchange == null ? null :
+                                               ConfiguredObjectFinder.findConfiguredObjectByName(_vhost.getExchanges(),
+                                                                                                 alternateExchange.getName());
         }
         else if(EXCLUSIVE.equals(name))
         {

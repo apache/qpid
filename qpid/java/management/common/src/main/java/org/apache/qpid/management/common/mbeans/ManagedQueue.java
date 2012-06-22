@@ -359,7 +359,7 @@ public interface ManagedQueue
      * @since Qpid JMX API 2.0
      * @param exclusive the capacity in bytes
      * @throws IOException
-     * @throws JMException 
+     * @throws JMException
      */
     @MBeanAttribute(name="Exclusive", description="Whether the queue is Exclusive or not")
     void setExclusive(boolean exclusive) throws IOException, JMException;
@@ -371,8 +371,10 @@ public interface ManagedQueue
      * @param exchangeName the name of the exchange to use. Specifying null or the empty string will clear the
      *                     alternate exchange.
      * @throws IOException
+     * @throws JMException
      */
-    void setAlternateExchange(String exchangeName) throws IOException;
+    @MBeanAttribute(name="AlternateExchange", description="Alternate exchange for the queue")
+    void setAlternateExchange(String exchangeName) throws IOException, JMException;
 
     /**
      * Returns the name of the Alternate Exchange for the queue, or null if there isn't one.
@@ -381,7 +383,6 @@ public interface ManagedQueue
      * @return the name of the Alternate Exchange for the queue, or null if there isn't one
      * @throws IOException
      */
-    @MBeanAttribute(name="AlternateExchange", description="Alternate exchange for the queue")
     String getAlternateExchange() throws IOException;
 
     //********** Operations *****************//

@@ -232,8 +232,6 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
 
     void setAlternateExchange(Exchange exchange);
 
-    void setAlternateExchange(String exchangeName);
-
     Map<String, Object> getArguments();
 
     void checkCapacity(AMQSessionModel channel);

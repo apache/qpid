@@ -48,6 +48,8 @@ import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.ConfiguredObjectFinder;
+import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.QueueNotificationListener;
@@ -274,14 +276,25 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
         _queue.setAttribute(Queue.EXCLUSIVE, isExclusive(), exclusive);
     }
 
-    public void setAlternateExchange(String exchangeName)
+    public void setAlternateExchange(String exchangeName) throws OperationsException
     {
-        // TODO - implement setAlternateExchange()
+        if (exchangeName == null || "".equals(exchangeName))
+        {
+            _queue.setAttribute(Queue.ALTERNATE_EXCHANGE, getAlternateExchange(), null);
+        }
+        else
+        {
+            VirtualHost virtualHost = _queue.getParent(VirtualHost.class);
+            Exchange exchange = findExchangeFromExchangeName(virtualHost, exchangeName);
+
+            _queue.setAttribute(Queue.ALTERNATE_EXCHANGE, getAlternateExchange(), exchange);
+        }
     }
 
     public String getAlternateExchange()
     {
-        return null;  // TODO - implement getAlternateExchange()
+        Exchange alternateExchange = (Exchange) _queue.getAttribute(Queue.ALTERNATE_EXCHANGE);
+        return alternateExchange == null ? null : alternateExchange.getName();
     }
 
     public TabularData viewMessages(int fromIndex, int toIndex)
@@ -464,22 +477,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
         }
 
         VirtualHost vhost = _queue.getParent(VirtualHost.class);
-        Queue destinationQueue = null;
-        for(Queue q : vhost.getQueues())
-        {
-            if(q.getName().equals(toQueue))
-            {
-                destinationQueue = q;
-                break;
-            }
-        }
-        if(destinationQueue == null)
-        {
-            throw new OperationsException("No such queue \""+toQueue+"\"");
-        }
-
-        final Queue queue = destinationQueue;
-
+        final Queue destinationQueue = findQueueFromQueueName(vhost, toQueue);
 
         vhost.executeTransaction(new VirtualHost.TransactionalOperation()
         {
@@ -498,7 +496,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
                             if ((messageId >= fromMessageId)
                                 && (messageId <= toMessageId))
                             {
-                                txn.move(entry, queue);
+                                txn.move(entry, destinationQueue);
                             }
 
                         }
@@ -551,22 +549,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
         }
 
         VirtualHost vhost = _queue.getParent(VirtualHost.class);
-        Queue destinationQueue = null;
-        for(Queue q : vhost.getQueues())
-        {
-            if(q.getName().equals(toQueue))
-            {
-                destinationQueue = q;
-                break;
-            }
-        }
-        if(destinationQueue == null)
-        {
-            throw new OperationsException("No such queue \""+toQueue+"\"");
-        }
-
-        final Queue queue = destinationQueue;
-
+        final Queue destinationQueue = findQueueFromQueueName(vhost, toQueue);
 
         vhost.executeTransaction(new VirtualHost.TransactionalOperation()
         {
@@ -585,7 +568,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
                             if ((messageId >= fromMessageId)
                                 && (messageId <= toMessageId))
                             {
-                                txn.copy(entry, queue);
+                                txn.copy(entry, destinationQueue);
                             }
 
                         }
@@ -680,6 +663,30 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
     {
         _queue.setAttribute(Queue.DESCRIPTION, getDescription(), description);
     }
+
+    private Queue findQueueFromQueueName(VirtualHost virtualHost, String queueName) throws OperationsException
+    {
+        Queue queue = ConfiguredObjectFinder.findConfiguredObjectByName(virtualHost.getQueues(), queueName);
+        if (queue == null)
+        {
+            throw new OperationsException("No such queue \""+queueName+"\"");
+        }
+        else
+        {
+            return queue;
+        }
+    }
+
+    private Exchange findExchangeFromExchangeName(VirtualHost virtualHost, String exchangeName) throws OperationsException
+    {
+        Exchange exchange = ConfiguredObjectFinder.findConfiguredObjectByName(virtualHost.getExchanges(), exchangeName);
+        if (exchange == null)
+        {
+            throw new OperationsException("No such exchange \""+exchangeName+"\"");
+        }
+        else
+        {
+            return exchange;
+        }
+    }
 }
-
-

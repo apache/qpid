@@ -52,6 +52,7 @@ public class ConfiguredObjectHelper
             String queueName = (String) attributeMap.get(Queue.NAME);
             String owner = (String) attributeMap.get(Queue.OWNER);
             boolean exclusive = (Boolean) attributeMap.get(Queue.EXCLUSIVE);
+            UUID alternateExchangeId = attributeMap.get(Queue.ALTERNATE_EXCHANGE) == null ? null : UUID.fromString((String)attributeMap.get(Queue.ALTERNATE_EXCHANGE));
             @SuppressWarnings("unchecked")
             Map<String, Object> queueArgumentsMap = (Map<String, Object>) attributeMap.get(Queue.ARGUMENTS);
             FieldTable arguments = null;
@@ -59,7 +60,7 @@ public class ConfiguredObjectHelper
             {
                 arguments = FieldTable.convertToFieldTable(queueArgumentsMap);
             }
-            qrh.queue(configuredObject.getId(), queueName, owner, exclusive, arguments);
+            qrh.queue(configuredObject.getId(), queueName, owner, exclusive, arguments, alternateExchangeId);
         }
     }
 
@@ -68,6 +69,14 @@ public class ConfiguredObjectHelper
         Map<String, Object> attributesMap = _serializer.deserialize(queueRecord.getAttributes());
         attributesMap.put(Queue.NAME, queue.getName());
         attributesMap.put(Queue.EXCLUSIVE, queue.isExclusive());
+        if (queue.getAlternateExchange() != null)
+        {
+            attributesMap.put(Queue.ALTERNATE_EXCHANGE, queue.getAlternateExchange().getId());
+        }
+        else
+        {
+            attributesMap.remove(Queue.ALTERNATE_EXCHANGE);
+        }
         if (attributesMap.containsKey(Queue.ARGUMENTS))
         {
             // We wouldn't need this if createQueueConfiguredObject took only AMQQueue
@@ -89,6 +98,10 @@ public class ConfiguredObjectHelper
         attributesMap.put(Queue.NAME, queue.getName());
         attributesMap.put(Queue.OWNER, AMQShortString.toString(queue.getOwner()));
         attributesMap.put(Queue.EXCLUSIVE, queue.isExclusive());
+        if (queue.getAlternateExchange() != null)
+        {
+            attributesMap.put(Queue.ALTERNATE_EXCHANGE, queue.getAlternateExchange().getId());
+        }
         // TODO KW i think the arguments could come from the queue itself removing the need for the parameter arguments.
         // It would also do away with the need for the if/then/else within updateQueueConfiguredObject
         if (arguments != null)

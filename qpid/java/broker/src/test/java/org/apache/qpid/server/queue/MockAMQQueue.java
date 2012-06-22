@@ -629,10 +629,6 @@ public class MockAMQQueue implements AMQQueue
     {
     }
 
-    public void setAlternateExchange(String exchangeName)
-    {
-    }
-
     public void visit(final QueueEntryVisitor visitor)
     {
     }

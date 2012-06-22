@@ -27,6 +27,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.test.client.destination.AddressBasedDestinationTest;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
@@ -168,13 +169,11 @@ public class ManagedQueueMBeanTest extends QpidBrokerTestCase
         assertEquals(TEST_QUEUE_DESCRIPTION, managedQueue.getDescription());
     }
 
+    /**
+     * Requires persistent store.
+     */
     public void testQueueDescriptionSurvivesRestart() throws Exception
     {
-        if (!isBrokerStorePersistent())
-        {
-            return;
-        }
-
         String queueName = getTestQueueName();
         Map<String, Object> arguments = Collections.singletonMap(AMQQueueFactory.X_QPID_DESCRIPTION, (Object)TEST_QUEUE_DESCRIPTION);
 
@@ -208,6 +207,82 @@ public class ManagedQueueMBeanTest extends QpidBrokerTestCase
 
         final ManagedQueue managedQueue = _jmxUtils.getManagedQueue(queueName);
         assertEquals("Unexpected maximum delivery count", deliveryCount, managedQueue.getMaximumDeliveryCount());
+    }
+
+    /**
+     * Requires 0-10 as relies on ADDR addresses.
+     * @see AddressBasedDestinationTest for the testing of message routing to the alternate exchange
+     */
+    public void testGetSetAlternateExchange() throws Exception
+    {
+        String queueName = getTestQueueName();
+        String altExchange = "amq.fanout";
+        String addrWithAltExch = String.format("ADDR:%s;{create:always,node:{type:queue,x-declare:{alternate-exchange:'%s'}}}", queueName, altExchange);
+        Queue queue = _session.createQueue(addrWithAltExch);
+
+        createQueueOnBroker(queue);
+
+        final ManagedQueue managedQueue = _jmxUtils.getManagedQueue(queueName);
+        assertEquals("Newly created queue does not have expected alternate exchange", altExchange, managedQueue.getAlternateExchange());
+
+        String newAltExch = "amq.topic";
+        managedQueue.setAlternateExchange(newAltExch);
+        assertEquals("Unexpected alternate exchange after set", newAltExch, managedQueue.getAlternateExchange());
+    }
+
+    /**
+     * Requires 0-10 as relies on ADDR addresses.
+     */
+    public void testRemoveAlternateExchange() throws Exception
+    {
+        String queueName = getTestQueueName();
+        String altExchange = "amq.fanout";
+        String addrWithAltExch = String.format("ADDR:%s;{create:always,node:{type:queue,x-declare:{alternate-exchange:'%s'}}}", queueName, altExchange);
+        Queue queue = _session.createQueue(addrWithAltExch);
+
+        createQueueOnBroker(queue);
+
+        final ManagedQueue managedQueue = _jmxUtils.getManagedQueue(queueName);
+        assertEquals("Newly created queue does not have expected alternate exchange", altExchange, managedQueue.getAlternateExchange());
+
+        managedQueue.setAlternateExchange("");
+        assertNull("Unexpected alternate exchange after set", managedQueue.getAlternateExchange());
+    }
+
+    /**
+     * Requires persistent store
+     * Requires 0-10 as relies on ADDR addresses.
+     */
+    public void testAlternateExchangeSurvivesRestart() throws Exception
+    {
+        String queueName1 = getTestQueueName() + "1";
+        String altExchange1 = "amq.fanout";
+        String addr1WithAltExch = String.format("ADDR:%s;{create:always,node:{durable: true,type:queue,x-declare:{alternate-exchange:'%s'}}}", queueName1, altExchange1);
+        Queue queue1 = _session.createQueue(addr1WithAltExch);
+
+        String queueName2 = getTestQueueName() + "2";
+        String addr2WithoutAltExch = String.format("ADDR:%s;{create:always,node:{durable: true,type:queue,}}", queueName2);
+        Queue queue2 = _session.createQueue(addr2WithoutAltExch);
+
+        createQueueOnBroker(queue1);
+        createQueueOnBroker(queue2);
+
+        ManagedQueue managedQueue1 = _jmxUtils.getManagedQueue(queueName1);
+        assertEquals("Newly created queue1 does not have expected alternate exchange", altExchange1, managedQueue1.getAlternateExchange());
+
+        ManagedQueue managedQueue2 = _jmxUtils.getManagedQueue(queueName2);
+        assertNull("Newly created queue2 does not have expected alternate exchange", managedQueue2.getAlternateExchange());
+
+        String altExchange2 = "amq.fanout";
+        managedQueue2.setAlternateExchange(altExchange2);
+
+        restartBroker();
+
+        managedQueue1 = _jmxUtils.getManagedQueue(queueName1);
+        assertEquals("Queue1 does not have expected alternate exchange after restart", altExchange1, managedQueue1.getAlternateExchange());
+
+        managedQueue2 = _jmxUtils.getManagedQueue(queueName2);
+        assertEquals("Queue2 does not have expected updated alternate exchange after restart", altExchange2, managedQueue2.getAlternateExchange());
     }
 
     /**
