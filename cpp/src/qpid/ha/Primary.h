@@ -85,11 +85,15 @@ class Primary
     HaBroker& haBroker;
     std::string logPrefix;
     bool active;
+    /**
+     * Set of expected backups that must be ready before we declare ourselves
+     * active
+     */
     BackupSet initialBackups;
     /**
-     * Backups is a map of all the remote backups we know about: any expected
-     * backups plus all actual backups that have connected. We do not remove
-     * entries when a backup disconnects. @see Primary::closed()
+     * Map of all the remote backups we know about: any expected backups plus
+     * all actual backups that have connected. We do not remove entries when a
+     * backup disconnects. @see Primary::closed()
      */
     BackupMap backups;
     boost::shared_ptr<broker::ConnectionObserver> connectionObserver;
