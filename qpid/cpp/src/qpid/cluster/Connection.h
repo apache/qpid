@@ -228,6 +228,7 @@ class Connection :
         uint64_t objectId;
         bool shadow;
         bool delayManagement;
+        bool authenticated;
 
         ConnectionCtor(
             sys::ConnectionOutputHandler* out_,
@@ -237,17 +238,18 @@ class Connection :
             bool isLink_=false,
             uint64_t objectId_=0,
             bool shadow_=false,
-            bool delayManagement_=false
+            bool delayManagement_=false,
+            bool authenticated_=true
         ) : out(out_), broker(broker_), mgmtId(mgmtId_), external(external_),
             isLink(isLink_), objectId(objectId_), shadow(shadow_),
-            delayManagement(delayManagement_)
+            delayManagement(delayManagement_), authenticated(authenticated_)
         {}
 
         std::auto_ptr<broker::Connection> construct() {
             return std::auto_ptr<broker::Connection>(
                 new broker::Connection(
                     out, broker, mgmtId, external, isLink, objectId,
-                    shadow, delayManagement)
+                    shadow, delayManagement, authenticated)
             );
         }
     };

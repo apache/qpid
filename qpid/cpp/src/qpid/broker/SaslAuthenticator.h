@@ -54,7 +54,7 @@ public:
     static void init(const std::string& saslName, std::string const & saslConfigPath );
     static void fini(void);
 
-    static std::auto_ptr<SaslAuthenticator> createAuthenticator(Connection& connection, bool isShadow);
+    static std::auto_ptr<SaslAuthenticator> createAuthenticator(Connection& connection);
 
     virtual void callUserIdCallbacks() { }
 };
