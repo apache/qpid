@@ -297,20 +297,4 @@ void HaBroker::setLinkProperties(Mutex::ScopedLock&) {
     broker.setLinkClientProperties(linkProperties);
 }
 
-void HaBroker::activatedBackup(const std::string& queue) {
-    Mutex::ScopedLock l(lock);
-    activeBackups.insert(queue);
-}
-
-void HaBroker::deactivatedBackup(const std::string& queue) {
-    Mutex::ScopedLock l(lock);
-    activeBackups.erase(queue);
-}
-
-// FIXME aconway 2012-05-31: strip out.
-HaBroker::QueueNames HaBroker::getActiveBackups() const {
-    Mutex::ScopedLock l(lock);
-    return activeBackups;
-}
-
 }} // namespace qpid::ha
