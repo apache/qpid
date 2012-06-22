@@ -182,6 +182,8 @@ class SemanticState : private boost::noncopyable {
     const bool authMsg;
     const std::string userID;
     bool closeComplete;
+    //needed for queue delete events in auto-delete:
+    const std::string connectionId;
 
     void route(boost::intrusive_ptr<Message> msg, Deliverable& strategy);
     void checkDtxTimeout();
