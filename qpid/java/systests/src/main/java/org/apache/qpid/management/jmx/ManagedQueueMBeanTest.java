@@ -27,6 +27,8 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.queue.NotificationCheckTest;
+import org.apache.qpid.server.queue.SimpleAMQQueueTest;
 import org.apache.qpid.test.client.destination.AddressBasedDestinationTest;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
@@ -39,6 +41,8 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.Queue;
 import javax.jms.Session;
+import javax.management.Notification;
+import javax.management.NotificationListener;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularData;
 
@@ -54,6 +58,7 @@ import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Tests the JMX API for the Managed Queue.
@@ -61,6 +66,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ManagedQueueMBeanTest extends QpidBrokerTestCase
 {
+
     private static final Logger LOGGER = Logger.getLogger(ManagedQueueMBeanTest.class);
 
     private static final String VIRTUAL_HOST = "test";
@@ -283,6 +289,44 @@ public class ManagedQueueMBeanTest extends QpidBrokerTestCase
 
         managedQueue2 = _jmxUtils.getManagedQueue(queueName2);
         assertEquals("Queue2 does not have expected updated alternate exchange after restart", altExchange2, managedQueue2.getAlternateExchange());
+    }
+
+    /**
+     * Tests the ability to receive queue alerts as JMX notifications.
+     *
+     * @see NotificationCheckTest
+     * @see SimpleAMQQueueTest#testNotificationFiredAsync()
+     * @see SimpleAMQQueueTest#testNotificationFiredOnEnqueue()
+     */
+    public void testQueueNotification() throws Exception
+    {
+        final String queueName = getName();
+        final long maximumMessageCount = 3;
+
+        Queue queue = _session.createQueue(queueName);
+        createQueueOnBroker(queue);
+
+        ManagedQueue managedQueue = _jmxUtils.getManagedQueue(queueName);
+        managedQueue.setMaximumMessageCount(maximumMessageCount);
+
+        RecordingNotificationListener listener = new RecordingNotificationListener(1);
+
+        _jmxUtils.addNotificationListener(_jmxUtils.getQueueObjectName(VIRTUAL_HOST, queueName), listener, null, null);
+
+        // Send two messages - this should *not* trigger the notification
+        sendMessage(_session, queue, 2);
+
+        assertEquals("Premature notification received", 0, listener.getNumberOfNotificationsReceived());
+
+        // A further message should trigger the message count alert
+        sendMessage(_session, queue, 1);
+
+        listener.awaitExpectedNotifications(5, TimeUnit.SECONDS);
+
+        assertEquals("Unexpected number of JMX notifications received", 1, listener.getNumberOfNotificationsReceived());
+
+        Notification notification = listener.getLastNotification();
+        assertEquals("Unexpected notification message", "MESSAGE_COUNT_ALERT 3: Maximum count on queue threshold (3) breached.", notification.getMessage());
     }
 
     /**
@@ -523,6 +567,43 @@ public class ManagedQueueMBeanTest extends QpidBrokerTestCase
     private void syncSession(Session session) throws Exception
     {
         ((AMQSession<?,?>)session).sync();
+    }
+
+    private final class RecordingNotificationListener implements NotificationListener
+    {
+        private final CountDownLatch _notificationReceivedLatch;
+        private final AtomicInteger _numberOfNotifications;
+        private final AtomicReference<Notification> _lastNotification;
+
+        private RecordingNotificationListener(int expectedNumberOfNotifications)
+        {
+            _notificationReceivedLatch = new CountDownLatch(expectedNumberOfNotifications);
+            _numberOfNotifications = new AtomicInteger(0);
+            _lastNotification = new AtomicReference<Notification>();
+        }
+
+        @Override
+        public void handleNotification(Notification notification, Object handback)
+        {
+            _lastNotification.set(notification);
+            _numberOfNotifications.incrementAndGet();
+            _notificationReceivedLatch.countDown();
+        }
+
+        public int getNumberOfNotificationsReceived()
+        {
+            return _numberOfNotifications.get();
+        }
+
+        public Notification getLastNotification()
+        {
+            return _lastNotification.get();
+        }
+
+        public void awaitExpectedNotifications(long timeout, TimeUnit timeunit) throws InterruptedException
+        {
+            _notificationReceivedLatch.await(timeout, timeunit);
+        }
     }
 
 }

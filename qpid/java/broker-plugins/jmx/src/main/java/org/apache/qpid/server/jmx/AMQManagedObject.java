@@ -38,7 +38,7 @@ import javax.management.NotificationListener;
 public abstract class AMQManagedObject extends DefaultManagedObject
                                        implements NotificationBroadcaster
 {
-    private NotificationBroadcasterSupport _broadcaster = new NotificationBroadcasterSupport();
+    private final NotificationBroadcasterSupport _broadcaster = new NotificationBroadcasterSupport();
 
     private AtomicLong _notificationSequenceNumber = new AtomicLong();
 

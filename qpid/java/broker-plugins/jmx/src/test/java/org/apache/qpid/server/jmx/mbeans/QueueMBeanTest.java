@@ -21,16 +21,23 @@ package org.apache.qpid.server.jmx.mbeans;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Matchers.isNull;
+import static org.mockito.Matchers.argThat;
 
 import java.util.Arrays;
 import java.util.Collections;
 
+import javax.management.ListenerNotFoundException;
+import javax.management.Notification;
+import javax.management.NotificationListener;
 import javax.management.OperationsException;
 
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.queue.NotificationCheck;
+import org.mockito.ArgumentMatcher;
 
 import junit.framework.TestCase;
 
@@ -50,6 +57,7 @@ public class QueueMBeanTest extends TestCase
     protected void setUp() throws Exception
     {
         _mockQueue = mock(Queue.class);
+        when(_mockQueue.getName()).thenReturn(QUEUE_NAME);
         _mockVirtualHostMBean = mock(VirtualHostMBean.class);
 
         _mockManagedObjectRegistry = mock(ManagedObjectRegistry.class);
@@ -60,8 +68,6 @@ public class QueueMBeanTest extends TestCase
 
     public void testQueueName()
     {
-        when(_mockQueue.getName()).thenReturn(QUEUE_NAME);
-
         assertEquals(QUEUE_NAME, _queueMBean.getName());
     }
 
@@ -145,5 +151,52 @@ public class QueueMBeanTest extends TestCase
     {
         _queueMBean.setAlternateExchange("");
         verify(_mockQueue).setAttribute(Queue.ALTERNATE_EXCHANGE, null, null);
+    }
+
+    public void testNotificationListenerCalled() throws Exception
+    {
+        NotificationListener listener = mock(NotificationListener.class);
+        _queueMBean.addNotificationListener(listener, null, null);
+
+        NotificationCheck notification = mock(NotificationCheck.class);
+        String notificationMsg = "Test notification message";
+
+        _queueMBean.notifyClients(notification, _mockQueue, notificationMsg);
+        verify(listener).handleNotification(isNotificationWithMessage(notificationMsg),
+                                            isNull());
+    }
+
+    public void testAddRemoveNotificationListener() throws Exception
+    {
+        NotificationListener listener1 = mock(NotificationListener.class);
+        _queueMBean.addNotificationListener(listener1, null, null);
+        _queueMBean.removeNotificationListener(listener1);
+    }
+
+    public void testRemoveUnknownNotificationListener() throws Exception
+    {
+        NotificationListener listener1 = mock(NotificationListener.class);
+        try
+        {
+            _queueMBean.removeNotificationListener(listener1);
+            fail("Exception not thrown");
+        }
+        catch (ListenerNotFoundException e)
+        {
+            // PASS
+        }
+    }
+
+    private Notification isNotificationWithMessage(final String expectedMessage)
+    {
+        return argThat( new ArgumentMatcher<Notification>()
+        {
+            @Override
+            public boolean matches(Object argument)
+            {
+                Notification actual = (Notification) argument;
+                return actual.getMessage().endsWith(expectedMessage);
+            }
+        });
     }
 }

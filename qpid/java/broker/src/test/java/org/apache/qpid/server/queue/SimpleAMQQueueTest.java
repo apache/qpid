@@ -21,6 +21,13 @@
 
 package org.apache.qpid.server.queue;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Matchers.contains;
+import static org.mockito.Matchers.eq;
+
 import org.apache.commons.configuration.PropertiesConfiguration;
 
 import org.apache.qpid.AMQException;
@@ -79,7 +86,6 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
 
         public void setExchange(AMQShortString exchange)
         {
-            //To change body of implemented methods use File | Settings | File Templates.
         }
 
         public boolean isImmediate()
@@ -1096,7 +1102,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
     /**
      * Tests that entry in dequeued state are not enqueued and not delivered to subscription
      */
-    public void testEqueueDequeuedEntry()
+    public void testEnqueueDequeuedEntry()
     {
         // create a queue where each even entry is considered a dequeued
         SimpleAMQQueue queue = new SimpleAMQQueue(UUIDGenerator.generateUUID(), new AMQShortString("test"), false,
@@ -1229,6 +1235,39 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         //verify a subscription going suspended->suspended doesn't change the count
         queue.stateChange(subscription2, Subscription.State.SUSPENDED, Subscription.State.SUSPENDED);
         assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
+    }
+
+    public void testNotificationFiredOnEnqueue() throws Exception
+    {
+        AMQQueue.NotificationListener listener = mock(AMQQueue.NotificationListener.class);
+
+        _queue.setNotificationListener(listener);
+        _queue.setMaximumMessageCount(2);
+
+        _queue.enqueue(createMessage(new Long(24)));
+        verifyZeroInteractions(listener);
+
+        _queue.enqueue(createMessage(new Long(25)));
+
+        verify(listener, atLeastOnce()).notifyClients(eq(NotificationCheck.MESSAGE_COUNT_ALERT), eq(_queue), contains("Maximum count on queue threshold"));
+    }
+
+    public void testNotificationFiredAsync() throws Exception
+    {
+        AMQQueue.NotificationListener listener = mock(AMQQueue.NotificationListener.class);
+
+        _queue.enqueue(createMessage(new Long(24)));
+        _queue.enqueue(createMessage(new Long(25)));
+        _queue.enqueue(createMessage(new Long(26)));
+
+        _queue.setNotificationListener(listener);
+        _queue.setMaximumMessageCount(2);
+
+        verifyZeroInteractions(listener);
+
+        _queue.checkMessageStatus();
+
+        verify(listener, atLeastOnce()).notifyClients(eq(NotificationCheck.MESSAGE_COUNT_ALERT), eq(_queue), contains("Maximum count on queue threshold"));
     }
 
     /**

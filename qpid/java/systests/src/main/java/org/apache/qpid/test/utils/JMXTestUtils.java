@@ -33,11 +33,15 @@ import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.management.common.mbeans.ServerInformation;
 import org.apache.qpid.management.common.mbeans.UserManagement;
 
+import javax.management.InstanceNotFoundException;
 import javax.management.JMException;
+import javax.management.ListenerNotFoundException;
 import javax.management.MBeanException;
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
 import javax.management.MalformedObjectNameException;
+import javax.management.NotificationFilter;
+import javax.management.NotificationListener;
 import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
 import java.io.IOException;
@@ -99,6 +103,18 @@ public class JMXTestUtils
         {
             _jmxc.close();
         }
+    }
+
+    public void addNotificationListener(ObjectName name, NotificationListener listener, NotificationFilter filter, Object handback)
+            throws InstanceNotFoundException, IOException
+    {
+        _mbsc.addNotificationListener(name, listener, filter, handback);
+    }
+
+    public void removeNotificationListener(ObjectName name, NotificationListener listener)
+            throws InstanceNotFoundException, IOException, ListenerNotFoundException
+    {
+        _mbsc.removeNotificationListener(name, listener);
     }
 
     /**
