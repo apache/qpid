@@ -26,19 +26,26 @@
 
 #include "qpid/broker/TxnOp.h"
 
+#include "boost/shared_ptr.hpp"
+#include <deque>
+
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
+class DeliveryRecord;
+
 class TxnAccept: public qpid::broker::TxnOp {
 public:
-    TxnAccept();
+    TxnAccept(std::deque<boost::shared_ptr<DeliveryRecord> >& ops);
     virtual ~TxnAccept();
 
     // --- Interface TxnOp ---
     bool prepare(qpid::broker::TxnHandle& th) throw();
     void commit()  throw();
     void rollback()  throw();
+private:
+    std::deque<boost::shared_ptr<DeliveryRecord> > m_ops;
 };
 
 }}} // namespace tests::storePerftools::asyncPerf

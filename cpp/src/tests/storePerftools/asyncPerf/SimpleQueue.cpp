@@ -23,6 +23,8 @@
 
 #include "SimpleQueue.h"
 
+#include "DeliveryRecord.h"
+#include "MessageConsumer.h"
 #include "MessageDeque.h"
 #include "SimpleMessage.h"
 #include "QueueAsyncContext.h"
@@ -63,12 +65,7 @@ SimpleQueue::SimpleQueue(const std::string& name,
 }
 
 SimpleQueue::~SimpleQueue()
-{
-//    m_store->flush(*this);
-    // TODO: Make destroying the store a test parameter
-//    m_store->destroy(*this);
-//    m_store = 0;
-}
+{}
 
 // static
 void
@@ -170,13 +167,21 @@ SimpleQueue::deliver(boost::intrusive_ptr<SimpleMessage> msg)
 }
 
 bool
-SimpleQueue::dispatch()
+SimpleQueue::dispatch(MessageConsumer& mc)
 {
     QueuedMessage qm;
     if (m_messages->consume(qm)) {
-        return dequeue(s_nullTxnHandle, qm);
+        boost::shared_ptr<DeliveryRecord> dr(new DeliveryRecord(qm, mc, false));
+        mc.record(dr);
+        return true;
     }
     return false;
+}
+
+bool
+SimpleQueue::enqueue(QueuedMessage& qm)
+{
+    return enqueue(s_nullTxnHandle, qm);
 }
 
 bool
@@ -192,6 +197,12 @@ SimpleQueue::enqueue(qpid::broker::TxnHandle& th,
         return asyncEnqueue(th, qm);
     }
     return false;
+}
+
+bool
+SimpleQueue::dequeue(QueuedMessage& qm)
+{
+    return dequeue(s_nullTxnHandle, qm);
 }
 
 bool

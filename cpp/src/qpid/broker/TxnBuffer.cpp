@@ -111,7 +111,6 @@ TxnBuffer::handleAsyncResult(const AsyncResultHandle* const arh)
     if (arh) {
         boost::shared_ptr<TxnAsyncContext> tac = boost::dynamic_pointer_cast<TxnAsyncContext>(arh->getBrokerAsyncContext());
         if (arh->getErrNo()) {
-            tac->getTxnBuffer()->asyncLocalAbort();
             std::cerr << "Transaction xid=\"" << tac->getTransactionContext().getXid() << "\": Operation " << tac->getOpStr() << ": failure "
                       << arh->getErrNo() << " (" << arh->getErrMsg() << ")" << std::endl;
             tac->getTxnBuffer()->asyncLocalAbort();
@@ -153,7 +152,10 @@ TxnBuffer::asyncLocalCommit()
 //std::cout << "TTT TxnBuffer:asyncLocalCommit: COMMIT->COMPLETE" << std::endl << std::flush;
         commit();
         m_state = COMPLETE;
-        //delete this; // TODO: ugly! Find a better way to handle the life cycle of this class
+        delete this; // TODO: ugly! Find a better way to handle the life cycle of this class
+        break;
+//    case COMPLETE:
+//std::cout << "TTT TxnBuffer:asyncLocalCommit: COMPLETE" << std::endl << std::flush;
         break;
     default: ;
 //std::cout << "TTT TxnBuffer:asyncLocalCommit: Unexpected state " << m_state << std::endl << std::flush;
@@ -183,7 +185,7 @@ TxnBuffer::asyncLocalAbort()
 //std::cout << "TTT TxnBuffer:asyncRollback: ROLLBACK->COMPLETE" << std::endl << std::flush;
         rollback();
         m_state = COMPLETE;
-        //delete this; // TODO: ugly! Find a better way to handle the life cycle of this class
+        delete this; // TODO: ugly! Find a better way to handle the life cycle of this class
     default: ;
 //std::cout << "TTT TxnBuffer:asyncRollback: Unexpected state " << m_state << std::endl << std::flush;
     }

@@ -23,11 +23,14 @@
 
 #include "TxnAccept.h"
 
+#include "DeliveryRecord.h"
+
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-TxnAccept::TxnAccept()
+TxnAccept::TxnAccept(std::deque<boost::shared_ptr<DeliveryRecord> >& ops) :
+        m_ops(ops.begin(), ops.end())
 {}
 
 TxnAccept::~TxnAccept()
@@ -36,17 +39,42 @@ TxnAccept::~TxnAccept()
 // --- Interface TxnOp ---
 
 bool
-TxnAccept::prepare(qpid::broker::TxnHandle& /*th*/) throw()
+TxnAccept::prepare(qpid::broker::TxnHandle& th) throw()
 {
+//std::cout << "TTT TxnAccept::prepare" << std::endl << std::flush;
+    try {
+        for (std::deque<boost::shared_ptr<DeliveryRecord> >::iterator i = m_ops.begin(); i != m_ops.end(); ++i) {
+            (*i)->dequeue(th);
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "TxnAccept: Failed to prepare transaction: " << e.what() << std::endl;
+    } catch (...) {
+        std::cerr << "TxnAccept: Failed to prepare transaction: (unknown error)" << std::endl;
+    }
     return false;
 }
 
 void
 TxnAccept::commit()  throw()
-{}
+{
+//std::cout << "TTT TxnAccept::commit" << std::endl << std::flush;
+    try {
+        for (std::deque<boost::shared_ptr<DeliveryRecord> >::iterator i=m_ops.begin(); i!=m_ops.end(); ++i) {
+            (*i)->committed();
+            (*i)->setEnded();
+        }
+        //m_ops.clear();
+    } catch (const std::exception& e) {
+        std::cerr << "TxnAccept: Failed to commit transaction: " << e.what() << std::endl;
+    } catch(...) {
+        std::cerr << "TxnAccept: Failed to commit transaction: (unknown error)" << std::endl;
+    }
+}
 
 void
 TxnAccept::rollback()  throw()
-{}
+{
+//std::cout << "TTT TxnAccept::rollback" << std::endl << std::flush;
+}
 
 }}} // namespace tests::storePerftools::asyncPerf

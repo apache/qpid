@@ -25,6 +25,7 @@
 #define tests_storePerftools_asyncPerf_MessageConsumer_h_
 
 #include "boost/shared_ptr.hpp"
+#include <deque>
 
 namespace qpid {
 namespace asyncStore {
@@ -38,6 +39,7 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
+class DeliveryRecord;
 class SimpleQueue;
 class TestOptions;
 
@@ -49,6 +51,8 @@ public:
                     qpid::broker::AsyncResultQueue& arq,
                     boost::shared_ptr<SimpleQueue> queue);
     virtual ~MessageConsumer();
+    void record(boost::shared_ptr<DeliveryRecord> dr);
+    void dequeueComplete();
 
     void* runConsumers();
     static void* startConsumers(void* ptr);
@@ -57,6 +61,7 @@ private:
     qpid::asyncStore::AsyncStoreImpl* m_store;
     qpid::broker::AsyncResultQueue& m_resultQueue;
     boost::shared_ptr<SimpleQueue> m_queue;
+    std::deque<boost::shared_ptr<DeliveryRecord> > m_unacked;
 };
 
 }}} // namespace tests::storePerftools::asyncPerf

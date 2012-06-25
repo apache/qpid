@@ -56,7 +56,7 @@ void*
 MessageProducer::runProducers()
 {
     const bool useTxns = m_perfTestParams.m_enqTxnBlockSize > 0U;
-    uint16_t txnCnt = 0U;
+    uint16_t recsInTxnCnt = 0U;
     qpid::broker::TxnBuffer* tb = 0;
     if (useTxns) {
         tb = new qpid::broker::TxnBuffer(m_resultQueue);
@@ -67,27 +67,26 @@ MessageProducer::runProducers()
             boost::shared_ptr<TxnPublish> op(new TxnPublish(msg));
             op->deliverTo(m_queue);
             tb->enlist(op);
-            if (++txnCnt >= m_perfTestParams.m_enqTxnBlockSize) {
+            if (++recsInTxnCnt >= m_perfTestParams.m_enqTxnBlockSize) {
                 if (m_perfTestParams.m_durable) {
                     tb->commitLocal(m_store);
 
                     // TxnBuffer instance tb carries async state that precludes it being re-used for the next
                     // transaction until the current commit cycle completes. So use another instance. This
                     // instance should auto-delete when the async commit cycle completes.
-                    if (numMsgs<m_perfTestParams.m_numMsgs) {
-                        //tb = boost::shared_ptr<qpid::broker::TxnBuffer>(new qpid::broker::TxnBuffer(m_resultQueue));
+                    if ((numMsgs + 1) < m_perfTestParams.m_numMsgs) {
                         tb = new qpid::broker::TxnBuffer(m_resultQueue);
                     }
                 } else {
                     tb->commit();
                 }
-                txnCnt = 0U;
+                recsInTxnCnt = 0U;
             }
         } else {
             m_queue->deliver(msg);
         }
     }
-    if (txnCnt) {
+    if (recsInTxnCnt) {
         if (m_perfTestParams.m_durable) {
             tb->commitLocal(m_store);
         } else {

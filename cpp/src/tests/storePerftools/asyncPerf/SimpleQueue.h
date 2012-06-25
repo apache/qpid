@@ -50,6 +50,7 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
+class MessageConsumer;
 class Messages;
 class SimpleMessage;
 class QueueAsyncContext;
@@ -76,9 +77,11 @@ public:
 
     // --- Methods in msg handling path from qpid::Queue ---
     void deliver(boost::intrusive_ptr<SimpleMessage> msg);
-    bool dispatch(); // similar to qpid::broker::Queue::distpatch(Consumer&) but without Consumer param
+    bool dispatch(MessageConsumer& mc);
+    bool enqueue(QueuedMessage& qm);
     bool enqueue(qpid::broker::TxnHandle& th,
                  QueuedMessage& qm);
+    bool dequeue(QueuedMessage& qm);
     bool dequeue(qpid::broker::TxnHandle& th,
                  QueuedMessage& qm);
     void process(boost::intrusive_ptr<SimpleMessage> msg);

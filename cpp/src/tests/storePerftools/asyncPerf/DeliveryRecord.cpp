@@ -23,6 +23,7 @@
 
 #include "DeliveryRecord.h"
 
+#include "MessageConsumer.h"
 #include "SimpleMessage.h"
 #include "SimpleQueue.h"
 
@@ -31,8 +32,10 @@ namespace storePerftools {
 namespace asyncPerf {
 
 DeliveryRecord::DeliveryRecord(const QueuedMessage& qm,
+                               MessageConsumer& mc,
                                bool accepted) :
         m_queuedMessage(qm),
+        m_msgConsumer(mc),
         m_accepted(accepted),
         m_ended(accepted)
 {}
@@ -41,16 +44,28 @@ DeliveryRecord::~DeliveryRecord()
 {}
 
 bool
-DeliveryRecord::accept(qpid::broker::TxnHandle* txn)
+DeliveryRecord::accept()
 {
     if (!m_ended) {
-        assert(m_queuedMessage.getQueue());
-        m_queuedMessage.getQueue()->dequeue(*txn, m_queuedMessage);
+        m_queuedMessage.getQueue()->dequeue(m_queuedMessage);
         m_accepted = true;
         setEnded();
     }
     return isRedundant();
 }
+
+/*
+bool
+DeliveryRecord::accept(qpid::broker::TxnHandle& txn)
+{
+    if (!m_ended) {
+        m_queuedMessage.getQueue()->dequeue(txn, m_queuedMessage);
+        m_accepted = true;
+        setEnded();
+    }
+    return isRedundant();
+}
+*/
 
 bool
 DeliveryRecord::isAccepted() const
@@ -78,5 +93,24 @@ DeliveryRecord::isRedundant() const
     return m_ended;
 }
 
+void
+DeliveryRecord::dequeue(qpid::broker::TxnHandle& txn)
+{
+    m_queuedMessage.getQueue()->dequeue(txn, m_queuedMessage);
+}
+
+void
+DeliveryRecord::committed() const
+{
+//std::cout << "DeliveryRecord::committed()" << std::endl << std::flush;
+    m_msgConsumer.dequeueComplete();
+    //m_queuedMessage.getQueue()->dequeueCommitted(m_queuedMessage);
+}
+
+QueuedMessage
+DeliveryRecord::getQueuedMessage() const
+{
+    return m_queuedMessage;
+}
 
 }}} // namespace tests::storePerftools::asyncPerf

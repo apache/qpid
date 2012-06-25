@@ -35,18 +35,26 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
+class MessageConsumer;
+
 class DeliveryRecord {
 public:
     DeliveryRecord(const QueuedMessage& qm,
+                   MessageConsumer& mc,
                    bool accepted);
     virtual ~DeliveryRecord();
-    bool accept(qpid::broker::TxnHandle* txn);
+    bool accept();
+//    bool accept(qpid::broker::TxnHandle& txn);
     bool isAccepted() const;
     bool setEnded();
     bool isEnded() const;
     bool isRedundant() const;
+    void dequeue(qpid::broker::TxnHandle& txn);
+    void committed() const;
+    QueuedMessage getQueuedMessage() const;
 private:
     QueuedMessage m_queuedMessage;
+    MessageConsumer& m_msgConsumer;
     bool m_accepted : 1;
     bool m_ended : 1;
 };

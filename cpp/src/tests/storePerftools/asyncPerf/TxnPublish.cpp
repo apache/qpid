@@ -52,9 +52,9 @@ TxnPublish::prepare(qpid::broker::TxnHandle& th) throw()
         }
         return true;
     } catch (const std::exception& e) {
-        std::cerr << "Failed to prepare transaction: " << e.what() << std::endl;
+        std::cerr << "TxnPublish: Failed to prepare transaction: " << e.what() << std::endl;
     } catch (...) {
-        std::cerr << "Failed to prepare transaction: (unknown error)" << std::endl;
+        std::cerr << "TxnPublish: Failed to prepare transaction: (unknown error)" << std::endl;
     }
     return false;
 }
@@ -68,9 +68,9 @@ TxnPublish::commit() throw()
             (*i)->commitEnqueue();
         }
     } catch (const std::exception& e) {
-        std::cerr << "Failed to commit transaction: " << e.what() << std::endl;
+        std::cerr << "TxnPublish: Failed to commit transaction: " << e.what() << std::endl;
     } catch (...) {
-        std::cerr << "Failed to commit transaction: (unknown error)" << std::endl;
+        std::cerr << "TxnPublish: Failed to commit transaction: (unknown error)" << std::endl;
     }
 }
 
@@ -83,9 +83,9 @@ TxnPublish::rollback() throw()
             (*i)->abortEnqueue();
         }
     } catch (const std::exception& e) {
-        std::cerr << "Failed to rollback transaction: " << e.what() << std::endl;
+        std::cerr << "TxnPublish: Failed to rollback transaction: " << e.what() << std::endl;
     } catch (...) {
-        std::cerr << "Failed to rollback transaction: (unknown error)" << std::endl;
+        std::cerr << "TxnPublish: Failed to rollback transaction: (unknown error)" << std::endl;
     }
 }
 
