@@ -3,30 +3,13 @@ package org.apache.qpid.server.management.plugin.servlet.rest;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.SocketAddress;
-import java.security.AccessControlException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import java.util.Set;
+import java.util.*;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.apache.qpid.AMQSecurityException;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Model;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.model.*;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 
@@ -510,8 +493,19 @@ public class RestServlet extends AbstractServlet
             }
             ConfiguredObject theParent = parents.remove(0);
             ConfiguredObject[] otherParents = parents.toArray(new ConfiguredObject[parents.size()]);
+
             try
             {
+
+                Collection<? extends ConfiguredObject> existingChildren = theParent.getChildren(objClass);
+                for(ConfiguredObject obj: existingChildren)
+                {
+                    if((providedObject.containsKey("id") && String.valueOf(providedObject.get("id")).equals(obj.getId().toString()))
+                       || (obj.getName().equals(providedObject.get("name")) && equalParents(obj, otherParents)))
+                    {
+                        doUpdate(obj, providedObject);
+                    }
+                }
                 theParent.createChild(objClass, providedObject, otherParents);
             }
             catch (RuntimeException e)
@@ -522,6 +516,24 @@ public class RestServlet extends AbstractServlet
 
         }
         response.setStatus(HttpServletResponse.SC_CREATED);
+    }
+
+    private void doUpdate(ConfiguredObject obj, Map<String, Object> providedObject)
+    {
+        for(Map.Entry<String,Object> entry : providedObject.entrySet())
+        {
+            obj.setAttribute(entry.getKey(), obj.getAttribute(entry.getKey()), entry.getValue());
+        }
+        //TODO - Implement.
+    }
+
+    private boolean equalParents(ConfiguredObject obj, ConfiguredObject[] otherParents)
+    {
+        if(otherParents == null || otherParents.length == 0)
+        {
+            return true;
+        }
+        return false;  //TODO - Implement.
     }
 
     private void setResponseStatus(HttpServletResponse response, RuntimeException e) throws IOException

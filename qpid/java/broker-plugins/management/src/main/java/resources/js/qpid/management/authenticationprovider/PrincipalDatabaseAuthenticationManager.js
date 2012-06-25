@@ -113,9 +113,10 @@ define(["dojo/_base/xhr",
                                                 connect.connect(obj.grid, "onRowDblClick", obj.grid,
                                                 function(evt){
                                                     var idx = evt.rowIndex,
-                                                        theItem = this.getItem(idx);
+                                                    theItem = this.getItem(idx);
                                                     var name = obj.dataStore.getValue(theItem,"name");
-                                                    that.controller.show("virtualhost", name, brokerObj);
+                                                    var id = obj.dataStore.getValue(theItem,"id");
+                                                    setPassword.show(authProviderObj.name, {name: name, id: id});
                                                 });
                                         }, gridProperties, EnhancedGrid);
 
@@ -250,10 +251,76 @@ define(["dojo/_base/xhr",
                         }});
 
         addUser.show = function(authProvider) {
-                            addUser.authProvider = authProvider;
-                            registry.byId("formAddUser").reset();
-                            registry.byId("addUser").show();
-                        };
+            addUser.authProvider = authProvider;
+            registry.byId("formAddUser").reset();
+            registry.byId("addUser").show();
+        };
+
+
+        var setPassword = {};
+
+        var setPasswordNode = construct.create("div", null, win.body(), "last");
+
+        xhr.get({url: "authenticationprovider/setPassword.html",
+                 sync: true,
+                 load:  function(data) {
+                    var theForm;
+                    setPasswordNode.innerHTML = data;
+                    setPassword.dialogNode = dom.byId("setPassword");
+                    parser.instantiate([setPassword.dialogNode]);
+
+                    var that = this;
+
+                    theForm = registry.byId("formSetPassword");
+                    theForm.on("submit", function(e) {
+
+                        event.stop(e);
+                        if(theForm.validate()){
+
+                            var newUser = convertToUser(theForm.getValues());
+                            newUser.name = setPassword.name;
+                            newUser.id = setPassword.id;
+
+                            var url = "rest/user/"+encodeURIComponent(setPassword.authProvider) +
+                                "/"+encodeURIComponent(newUser.name);
+
+                            xhr.put({url: url, sync: true, handleAs: "json",
+                                     headers: { "Content-Type": "application/json"},
+                                     putData: json.toJson(newUser),
+                                     load: function(x) {that.success = true; },
+                                     error: function(error) {that.success = false; that.failureReason = error;}});
+
+                            if(that.success === true) {
+                                registry.byId("setPassword").hide();
+                            } else {
+                                alert("Error:" + that.failureReason);
+                            }
+
+                            return false;
+
+
+                        }else{
+                            alert('Form contains invalid data.  Please correct first');
+                            return false;
+                        }
+
+                    });
+                }});
+
+        setPassword.show = function(authProvider, user) {
+            setPassword.authProvider = authProvider;
+            setPassword.name = user.name;
+            setPassword.id = user.id;
+            registry.byId("formSetPassword").reset();
+
+            var namebox = registry.byId("formSetPassword.name");
+            namebox.set("value", user.name);
+            namebox.set("disabled", true);
+
+            registry.byId("setPassword").show();
+
+        };
+
 
 
         return DatabaseAuthManager;
