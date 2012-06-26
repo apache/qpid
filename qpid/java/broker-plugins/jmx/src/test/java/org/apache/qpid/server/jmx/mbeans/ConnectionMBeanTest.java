@@ -102,8 +102,9 @@ public class ConnectionMBeanTest extends TestCase
         int unacknowledgedMessages = 2;
         long localTransactionBegins = 1;
         boolean transactional = true;
+        boolean blocked = false;
 
-        Session mockSession = createMockedSession(channelId, unacknowledgedMessages, localTransactionBegins);
+        Session mockSession = createMockedSession(channelId, unacknowledgedMessages, localTransactionBegins, blocked);
 
         when(_mockConnection.getSessions()).thenReturn(Collections.singletonList(mockSession));
 
@@ -111,7 +112,7 @@ public class ConnectionMBeanTest extends TestCase
         assertEquals("Unexpected number of rows in table", 1, table.size());
 
         final CompositeData row = table.get(new Integer[] {channelId} );
-        assertRow(row, channelId, unacknowledgedMessages, transactional);
+        assertChannelRow(row, channelId, unacknowledgedMessages, transactional, blocked);
     }
 
     public void testChannelsWithSingleNonTransactionalSession() throws Exception
@@ -120,8 +121,9 @@ public class ConnectionMBeanTest extends TestCase
         int unacknowledgedMessages = 2;
         long localTransactionBegins = 0;
         boolean transactional  = false;
+        boolean blocked = false;
 
-        Session mockSession = createMockedSession(channelId, unacknowledgedMessages, localTransactionBegins);
+        Session mockSession = createMockedSession(channelId, unacknowledgedMessages, localTransactionBegins, blocked);
 
         when(_mockConnection.getSessions()).thenReturn(Collections.singletonList(mockSession));
 
@@ -129,7 +131,26 @@ public class ConnectionMBeanTest extends TestCase
         assertEquals("Unexpected number of rows in table", 1, table.size());
 
         final CompositeData row = table.get(new Integer[] {channelId} );
-        assertRow(row, channelId, unacknowledgedMessages, transactional);
+        assertChannelRow(row, channelId, unacknowledgedMessages, transactional, blocked);
+    }
+
+    public void testChannelsWithSessionBlocked() throws Exception
+    {
+        int channelId = 10;
+        int unacknowledgedMessages = 2;
+        long localTransactionBegins = 0;
+        boolean transactional  = false;
+        boolean blocked = true;
+
+        Session mockSession = createMockedSession(channelId, unacknowledgedMessages, localTransactionBegins, blocked);
+
+        when(_mockConnection.getSessions()).thenReturn(Collections.singletonList(mockSession));
+
+        TabularData table = _connectionMBean.channels();
+        assertEquals("Unexpected number of rows in table", 1, table.size());
+
+        final CompositeData row = table.get(new Integer[] {channelId} );
+        assertChannelRow(row, channelId, unacknowledgedMessages, transactional, blocked);
     }
 
     public void testParentObjectIsVirtualHost()
@@ -190,15 +211,16 @@ public class ConnectionMBeanTest extends TestCase
         assertEquals("Unexpected " + jmxAttributeName, expectedValue, actualValue);
     }
 
-    private void assertRow(final CompositeData row, int channelId, int unacknowledgedMessages, boolean isTransactional)
+    private void assertChannelRow(final CompositeData row, int channelId, int unacknowledgedMessages, boolean isTransactional, boolean flowBlocked)
     {
         assertNotNull("No row for channel id " + channelId, row);
         assertEquals("Unexpected channel id", channelId, row.get(ManagedConnection.CHAN_ID));
         assertEquals("Unexpected transactional flag", isTransactional, row.get(ManagedConnection.TRANSACTIONAL));
         assertEquals("Unexpected unacknowledged message count", unacknowledgedMessages, row.get(ManagedConnection.UNACKED_COUNT));
+        assertEquals("Unexpected flow blocked", flowBlocked, row.get(ManagedConnection.FLOW_BLOCKED));
     }
 
-    private Session createMockedSession(int channelId, int unacknowledgedMessages, long localTransactionBegins)
+    private Session createMockedSession(int channelId, int unacknowledgedMessages, long localTransactionBegins, boolean blocked)
     {
         Session mockSession = mock(Session.class);
         Statistics mockSessionStatistics = mock(Statistics.class);
@@ -207,6 +229,7 @@ public class ConnectionMBeanTest extends TestCase
 
         when(mockSession.getStatistics()).thenReturn(mockSessionStatistics);
         when(mockSession.getAttribute(Session.CHANNEL_ID)).thenReturn(channelId);
+        when(mockSession.getAttribute(Session.PRODUCER_FLOW_BLOCKED)).thenReturn(blocked);
         return mockSession;
     }
 }

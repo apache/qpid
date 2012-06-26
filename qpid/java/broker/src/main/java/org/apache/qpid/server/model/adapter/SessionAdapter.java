@@ -132,6 +132,10 @@ final class SessionAdapter extends AbstractAdapter implements Session
         {
             return _session.getChannelId();
         }
+        else if(name.equals(PRODUCER_FLOW_BLOCKED))
+        {
+            return _session.getBlocking();
+        }
         return super.getAttribute(name);    //TODO - Implement
     }
 

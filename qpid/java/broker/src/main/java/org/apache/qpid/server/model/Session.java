@@ -61,6 +61,9 @@ public interface Session extends ConfiguredObject
     public static final String UPDATED = "updated";
 
     public static final String CHANNEL_ID = "channelId";
+    // PRODUCER_FLOW_BLOCKED is exposed as an interim step.  We will expose attribute(s) that exposing
+    // available credit of both producer and consumer sides.
+    public static final String PRODUCER_FLOW_BLOCKED = "producerFlowBlocked";
 
     public static final Collection<String> AVAILABLE_ATTRIBUTES =
             Collections.unmodifiableCollection(Arrays.asList(ID,
@@ -71,8 +74,8 @@ public interface Session extends ConfiguredObject
                                                              TIME_TO_LIVE,
                                                              CREATED,
                                                              UPDATED,
-                                                             CHANNEL_ID));
-
+                                                             CHANNEL_ID,
+                                                             PRODUCER_FLOW_BLOCKED));
 
     Collection<Consumer> getSubscriptions();
     Collection<Publisher> getPublishers();

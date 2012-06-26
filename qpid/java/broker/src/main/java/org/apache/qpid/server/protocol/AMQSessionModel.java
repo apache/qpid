@@ -72,6 +72,7 @@ public interface AMQSessionModel extends Comparable<AMQSessionModel>
 
     void unblock();
 
+    boolean getBlocking();
 
     boolean onSameConnection(InboundMessage inbound);
 

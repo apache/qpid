@@ -1,5 +1,3 @@
-package org.apache.qpid.server.subscription;
-
 /*
 *
 * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,10 +19,11 @@ package org.apache.qpid.server.subscription;
 *
 */
 
+package org.apache.qpid.server.subscription;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.InboundMessage;
@@ -81,21 +80,6 @@ public class MockSubscription implements Subscription
             _listener.stateChange(this, _state, State.CLOSED);
         }
         _state = State.CLOSED;
-    }
-
-    public boolean filtersMessages()
-    {
-        return false;
-    }
-
-    public AMQChannel getChannel()
-    {
-        return null;
-    }
-
-    public AMQShortString getConsumerTag()
-    {
-        return tag;
     }
 
     public String getConsumerName()
@@ -191,11 +175,6 @@ public class MockSubscription implements Subscription
         return _isActive ;
     }
 
-    public void confirmAutoClose()
-    {
-
-    }
-
     public void set(String key, Object value)
     {
     }
@@ -206,11 +185,6 @@ public class MockSubscription implements Subscription
     }
 
     public boolean isAutoClose()
-    {
-        return false;
-    }
-
-    public boolean isBrowser()
     {
         return false;
     }
@@ -242,10 +216,6 @@ public class MockSubscription implements Subscription
     public void releaseSendLock()
     {
         _stateChangeLock.unlock();
-    }
-
-    public void resend(QueueEntry entry) throws AMQException
-    {
     }
 
     public void onDequeue(QueueEntry queueEntry)
@@ -384,6 +354,12 @@ public class MockSubscription implements Subscription
         @Override
         public void unblock()
         {
+        }
+
+        @Override
+        public boolean getBlocking()
+        {
+            return false;
         }
 
         @Override

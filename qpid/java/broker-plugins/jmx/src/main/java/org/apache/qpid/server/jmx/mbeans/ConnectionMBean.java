@@ -125,16 +125,14 @@ public class ConnectionMBean extends AbstractStatisticsGatheringMBean<Connection
         {
             Statistics statistics = session.getStatistics();
             Long txnBegins = (Long) statistics.getStatistic(Session.LOCAL_TRANSACTION_BEGINS);
-
-            boolean isTransactional = (txnBegins>0l);
-
+            Integer channelId = (Integer) session.getAttribute(Session.CHANNEL_ID);
             int unacknowledgedSize = ((Number) statistics.getStatistic(Session.UNACKNOWLEDGED_MESSAGES)).intValue();
-
-            boolean blocked = false; // TODO - implement query as to whether session is blocked
+            boolean blocked = (Boolean) session.getAttribute(Session.PRODUCER_FLOW_BLOCKED);
+            boolean isTransactional = (txnBegins>0l);
 
             Object[] itemValues =
                     {
-                            (Integer) session.getAttribute(Session.CHANNEL_ID),
+                            channelId,
                             isTransactional,
                             null, // TODO - default queue (which is meaningless)
                             unacknowledgedSize,
@@ -164,7 +162,7 @@ public class ConnectionMBean extends AbstractStatisticsGatheringMBean<Connection
         getConfiguredObject().delete();
     }
 
-    public synchronized boolean isStatisticsEnabled()
+    public boolean isStatisticsEnabled()
     {
         return true;
     }

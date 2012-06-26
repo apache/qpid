@@ -140,7 +140,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
 
     private UnacknowledgedMessageMap _unacknowledgedMessageMap = new UnacknowledgedMessageMapImpl(DEFAULT_PREFETCH);
 
-    // Set of messages being acknoweledged in the current transaction
+    // Set of messages being acknowledged in the current transaction
     private SortedSet<QueueEntry> _acknowledgedMessages = new TreeSet<QueueEntry>();
 
     private final AtomicBoolean _suspended = new AtomicBoolean(false);
@@ -445,7 +445,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
      * @param acks      Are acks enabled for this subscriber
      * @param filters   Filters to apply to this subscriber
      *
-     * @param noLocal   Flag stopping own messages being receivied.
+     * @param noLocal   Flag stopping own messages being received.
      * @param exclusive Flag requesting exclusive access to the queue
      * @return the consumer tag. This is returned to the subscriber and used in subsequent unsubscribe requests
      *
@@ -1434,6 +1434,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
         _session.writeFrame(responseBody.generateFrame(_channelId));
     }
 
+    @Override
     public boolean getBlocking()
     {
         return _blocking.get();
