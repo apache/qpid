@@ -80,16 +80,23 @@ PerfTest::run()
         tests::storePerftools::common::ScopedTimer st(m_testResult);
 
         for (uint16_t q = 0; q < m_testOpts.m_numQueues; q++) {
-            boost::shared_ptr<MessageProducer> mp(new MessageProducer(m_testOpts, m_msgData, m_store, m_resultQueue, m_queueList[q]));
-            m_producers.push_back(mp);
             for (uint16_t t = 0; t < m_testOpts.m_numEnqThreadsPerQueue; t++) { // TODO - replace with qpid threads
+                boost::shared_ptr<MessageProducer> mp(new MessageProducer(m_testOpts,
+                                                                          m_msgData,
+                                                                          m_store,
+                                                                          m_resultQueue,
+                                                                          m_queueList[q]));
+                m_producers.push_back(mp);
                 boost::shared_ptr<tests::storePerftools::common::Thread> tp(new tests::storePerftools::common::Thread(mp->startProducers,
                                                                                                                       reinterpret_cast<void*>(mp.get())));
                 threads.push_back(tp);
             }
-            boost::shared_ptr<MessageConsumer> mc(new MessageConsumer(m_testOpts, m_store, m_resultQueue, m_queueList[q]));
-            m_consumers.push_back(mc);
             for (uint16_t dt = 0; dt < m_testOpts.m_numDeqThreadsPerQueue; ++dt) { // TODO - replace with qpid threads
+                boost::shared_ptr<MessageConsumer> mc(new MessageConsumer(m_testOpts,
+                                                                          m_store,
+                                                                          m_resultQueue,
+                                                                          m_queueList[q]));
+                m_consumers.push_back(mc);
                 boost::shared_ptr<tests::storePerftools::common::Thread> tp(new tests::storePerftools::common::Thread(mc->startConsumers,
                                                                                                                       reinterpret_cast<void*>(mc.get())));
                 threads.push_back(tp);

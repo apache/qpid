@@ -54,19 +54,6 @@ DeliveryRecord::accept()
     return isRedundant();
 }
 
-/*
-bool
-DeliveryRecord::accept(qpid::broker::TxnHandle& txn)
-{
-    if (!m_ended) {
-        m_queuedMessage.getQueue()->dequeue(txn, m_queuedMessage);
-        m_accepted = true;
-        setEnded();
-    }
-    return isRedundant();
-}
-*/
-
 bool
 DeliveryRecord::isAccepted() const
 {
@@ -102,9 +89,7 @@ DeliveryRecord::dequeue(qpid::broker::TxnHandle& txn)
 void
 DeliveryRecord::committed() const
 {
-//std::cout << "DeliveryRecord::committed()" << std::endl << std::flush;
-    m_msgConsumer.dequeueComplete();
-    //m_queuedMessage.getQueue()->dequeueCommitted(m_queuedMessage);
+    m_msgConsumer.commitComplete();
 }
 
 QueuedMessage

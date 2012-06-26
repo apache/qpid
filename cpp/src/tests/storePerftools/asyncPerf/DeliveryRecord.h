@@ -44,7 +44,6 @@ public:
                    bool accepted);
     virtual ~DeliveryRecord();
     bool accept();
-//    bool accept(qpid::broker::TxnHandle& txn);
     bool isAccepted() const;
     bool setEnded();
     bool isEnded() const;

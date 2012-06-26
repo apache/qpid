@@ -110,7 +110,10 @@ void
 TxnHandleImpl::createLocalXid()
 {
     uuid_t uuid;
+
+    // TODO: This call might not be thread safe - Valgrind's helgrind tool emits warnings for this:
     ::uuid_generate_random(uuid);
+
     char uuidStr[37]; // 36-char uuid + trailing '\0'
     ::uuid_unparse(uuid, uuidStr);
     m_xid.assign(uuidStr);

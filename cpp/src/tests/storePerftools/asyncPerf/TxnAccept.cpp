@@ -30,7 +30,7 @@ namespace storePerftools {
 namespace asyncPerf {
 
 TxnAccept::TxnAccept(std::deque<boost::shared_ptr<DeliveryRecord> >& ops) :
-        m_ops(ops.begin(), ops.end())
+        m_ops(ops)
 {}
 
 TxnAccept::~TxnAccept()
@@ -63,7 +63,6 @@ TxnAccept::commit()  throw()
             (*i)->committed();
             (*i)->setEnded();
         }
-        //m_ops.clear();
     } catch (const std::exception& e) {
         std::cerr << "TxnAccept: Failed to commit transaction: " << e.what() << std::endl;
     } catch(...) {

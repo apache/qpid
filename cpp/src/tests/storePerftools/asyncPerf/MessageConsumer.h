@@ -52,7 +52,7 @@ public:
                     boost::shared_ptr<SimpleQueue> queue);
     virtual ~MessageConsumer();
     void record(boost::shared_ptr<DeliveryRecord> dr);
-    void dequeueComplete();
+    void commitComplete();
 
     void* runConsumers();
     static void* startConsumers(void* ptr);
