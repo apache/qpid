@@ -65,7 +65,7 @@ class EventTests (Base):
         snd = ssn2.sender("myq; {create:always, node:{x-declare:{auto-delete:True, exclusive:True}}}")
         ssn2.close()
 
-        event = helper.event(rcv.fetch(timeout=1))
+        event = helper.event(rcv.fetch(timeout=5))
         assert event.name, "org_apache_qpid_broker:queueDelete"
         assert event.qName, "myq"
 
@@ -77,7 +77,7 @@ class EventTests (Base):
         rcv2 = self.ssn.receiver("myq; {create:always, node:{x-declare:{auto-delete:True}}}")
         rcv2.close()
 
-        event = helper.event(rcv.fetch(timeout=1))
+        event = helper.event(rcv.fetch(timeout=5))
         assert event.name, "org_apache_qpid_broker:queueDelete"
         assert event.qName, "myq"
 
