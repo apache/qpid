@@ -35,6 +35,41 @@ import org.apache.qpid.messaging.util.AbstractSessionDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * <p>A Decorator that adds failover and basic housekeeping tasks to a session.
+ * This class adds,
+ * <ol>
+ * <li>Failover support.</li>
+ * <li>Management of receivers and senders created by this session.</li>
+ * <li>State management.</li>
+ * <li>Exception handling.</li>
+ * </ol></p>
+ *
+ * <p><b>Exception Handling</b><br>
+ * This class will wrap each method call to it's delegate to handle error situations.
+ * First it will check if the session is already CLOSED or FAILOVER_IN_PROGRESS state.
+ * If latter it will wait until the Session is moved to OPENED, CLOSED or the timer expires.
+ * For the last two cases a SessionException will be thrown and the Session closed.</p>
+ *
+ * <p><b>TransportFailureException</b><br>
+ * This class intercepts TransportFailureExceptions and are passed onto the connection.
+ * The Session will be marked as FAILOVER_IN_PROGRESS and the "operation" will be
+ * blocked until the exception() on the Connection object returns. At this point
+ * the Session is either moved to OPENED or CLOSED.</p>
+ *
+ * <p><b>SessionException</b><br>
+ * For the time being, anytime a session exception is received, the session will be marked CLOSED.
+ * We need to revisit this.</p>
+ *
+ * <p><i> <b>Close() can be called by,</b>
+ *      <ol>
+ *       <li>The application (normal close).</li>
+ *       <li>By the connection object, if close is called on it.(normal close)</li>
+ *       <li>By the connection object, if failover was unsuccessful(error)</li>
+ *       <li>By itself if it receives and exception (error).</li>
+ *      </ol>
+ * </i></p>
+ */
 public class SessionFailoverDecorator extends AbstractSessionDecorator implements ConnectionEventListener
 {
     private static Logger _logger = LoggerFactory.getLogger(SessionFailoverDecorator.class);
@@ -441,6 +476,7 @@ public class SessionFailoverDecorator extends AbstractSessionDecorator implement
             {
                 sender.recreate();
             }
+            _state = SessionState.OPENED;
         }
     }
 
@@ -528,6 +564,7 @@ public class SessionFailoverDecorator extends AbstractSessionDecorator implement
         {
             try
             {
+                _lastException = e;
                 close();
             }
             catch(MessagingException ex)
@@ -552,8 +589,26 @@ public class SessionFailoverDecorator extends AbstractSessionDecorator implement
             }
             if (_state == SessionState.CLOSED)
             {
-                throw new SessionException("Session is closed. Failover was unsuccesfull",_lastException);
+                throw new SessionException("Session is closed. Failover was unsuccesfull");
             }
+            else if  (_state == SessionState.FAILOVER_IN_PROGRESS)
+            {
+                closeInternal();
+                throw new SessionException("Session is closed. Failover did not complete on time");
+            }
+        }
+    }
+
+    /** Suppress Exceptions as */
+    private void closeInternal()
+    {
+        try
+        {
+            close();
+        }
+        catch (Exception e)
+        {
+            //ignore
         }
     }
 }

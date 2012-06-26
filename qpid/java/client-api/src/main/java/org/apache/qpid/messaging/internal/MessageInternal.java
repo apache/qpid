@@ -46,7 +46,7 @@ public interface MessageInternal extends Message
      * The calling Object should know how to cast the generic object
      * to the required type.
      * Ex @see {@link CppMessageFactory#CppMessageDelegate}
-     * and @see {@link CppSender
+     * and @see {@link CppSender}
      */
     public Object getFactorySpecificMessageDelegate();
 }

@@ -20,6 +20,9 @@ package org.apache.qpid.messaging.internal;
 import org.apache.qpid.messaging.MessagingException;
 import org.apache.qpid.messaging.Sender;
 
+/**
+ * An extended interface meant for API implementors.
+ */
 public interface SenderInternal extends Sender
 {
     public void recreate() throws MessagingException;

@@ -22,6 +22,9 @@ import org.apache.qpid.messaging.Session;
 import org.apache.qpid.messaging.SessionException;
 import org.apache.qpid.messaging.TransportFailureException;
 
+/**
+ * An extended interface meant for API implementors.
+ */
 public interface SessionInternal extends Session
 {
     public ConnectionInternal getConnectionInternal();

@@ -19,7 +19,7 @@ import org.apache.qpid.util.UUIDGen;
 import org.apache.qpid.util.UUIDs;
 
 /**
- * A generic message factory that is based on the AMQO 0-10 encoding.
+ * A generic message factory that is based on the AMQP 0-10 encoding.
  *
  */
 public class MessageFactory_AMQP_0_10 extends AbstractMessageFactory

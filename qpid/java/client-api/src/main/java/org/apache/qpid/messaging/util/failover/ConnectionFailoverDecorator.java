@@ -39,14 +39,36 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 
- * Closing after unsuccessful failover is not done yet!
- * 
+ *  <p>A Decorator that adds failover and basic housekeeping tasks to a connection.
+ *  This class adds,
+ *  <ol>
+ *  <li>Failover support.</li>
+ *  <li>Basic session mgt (tracking, default name generation ..etc).</li>
+ *  <li>Connection state management.</li>
+ *  <li>Error handling.</li>
+ *  </ol></p>
+ *
+ *  <p><i> <b>Close() can be called by,</b>
+ *      <ol>
+ *       <li>The application (normal close)</li>
+ *       <li>By this object if failover is unsuccessful(error)</li>
+ *      </ol>
+ *  </i></p>
+ *
+ *  <p><u>Failover</u><br>
+ *  This class intercepts TransportFailureExceptions immeidately notifies
+ *  it's children that the connection was lost. Any calls made will wait
+ *  until the connection is moved back to OPENED, CLOSED or the timer expires.
+ *  It then attempts failover if it's allowed by the selected FailoverStrategy.
+ *  If failover is successful it will move the connection to OPENED
+ *  and the blocked operations will continue.
+ *  If failover was not allowed or unsuccessful it will close the connection
+ *  and a ConnectionException will be thrown to the client.</p>
  */
 public class ConnectionFailoverDecorator extends AbstractConnectionDecorator
 {
     private static Logger _logger = LoggerFactory.getLogger(ConnectionFailoverDecorator.class);
-    
+
     public enum ConnectionState
     {
         UNDEFINED,
@@ -201,8 +223,8 @@ public class ConnectionFailoverDecorator extends AbstractConnectionDecorator
             failover(e,serialNumber);
         }
         catch(ConnectionException ex)
-        {   
-            //ignore. 
+        {
+            //ignore.
             //failover() handles notifications
         }
     }
@@ -227,36 +249,36 @@ public class ConnectionFailoverDecorator extends AbstractConnectionDecorator
             throw new ConnectionException("Connection is closed. You cannot invoke methods on a closed connection");
         case UNDEFINED:
             throw new ConnectionException("Connection should be opened before it can be used");
-        case CONNECTION_LOST:    
+        case CONNECTION_LOST:
         case FAILOVER_IN_PROGRESS:
             waitForFailoverToComplete();
         }
     }
-    
+
     protected void failover(TransportFailureException e,long serialNumber) throws ConnectionException
     {
         synchronized(_connectionLock)
-        {   
+        {
             if (_serialNumber > serialNumber)
             {
                 return; // Ignore, We have a working connection now.
             }
-         
+
             _logger.warn("Connection lost!");
             _state = ConnectionState.CONNECTION_LOST;
-            notifyEvent(new ConnectionEvent(this,EventType.CONNECTION_LOST,this));            
-                        
+            notifyEvent(new ConnectionEvent(this,EventType.CONNECTION_LOST,this));
+
             if (_failoverStrategy.failoverAllowed())
             {
                 // Failover is allowed at least once.
                 _state = ConnectionState.FAILOVER_IN_PROGRESS;
                 notifyEvent(new ConnectionEvent(this,EventType.PRE_FAILOVER,this));
-            
-            
-            
+
+
+
                 StringBuffer errorMsg = new StringBuffer();
                 while (_failoverStrategy.failoverAllowed())
-                {                
+                {
                     try
                     {
                         ConnectionString conString = _failoverStrategy.getNextConnectionString();
@@ -267,6 +289,7 @@ public class ConnectionFailoverDecorator extends AbstractConnectionDecorator
                         {
                             recreate();
                             _state = ConnectionState.OPENED;
+                            _logger.warn("Successfully connected to " + conString.getUrl());
                             _lastException = null;
                         }
                         catch (MessagingException ex)
@@ -286,12 +309,12 @@ public class ConnectionFailoverDecorator extends AbstractConnectionDecorator
                         notifyEvent(new ConnectionEvent(this,EventType.RECONNCTION_FAILED,this));
                     }
                 }
-                
+
                 if (_state != ConnectionState.OPENED)
                 {
                     closeInternal();
                     _lastException = new ConnectionException("Failover was unsuccessful." + errorMsg.toString());
-                    _logger.warn("Faiolver was unsuccesful" + errorMsg.toString());
+                    _logger.warn("Failover was unsuccesful" + errorMsg.toString());
                 }
                 notifyEvent(new ConnectionEvent(this,EventType.POST_FAILOVER,this));
             }
@@ -302,9 +325,9 @@ public class ConnectionFailoverDecorator extends AbstractConnectionDecorator
                 _lastException = new ConnectionException("Connection Failed!",e);
                 _logger.warn("Connection Failed!", e);
             }
-            
+
             _connectionLock.notifyAll();
-            
+
             if (_lastException != null)
             {
                 for (ConnectionEventListener l: _stateListeners)
@@ -315,7 +338,7 @@ public class ConnectionFailoverDecorator extends AbstractConnectionDecorator
             }
         }
     }
-    
+
     protected void waitForFailoverToComplete() throws ConnectionException
     {
         synchronized (_connectionLock)
@@ -340,7 +363,7 @@ public class ConnectionFailoverDecorator extends AbstractConnectionDecorator
         // TODO add local IP and pid to the beginning;
         return _ssnNameGenerator.generate().toString();
     }
-    
+
     // Suppresses the exceptions
     private void closeInternal()
     {
@@ -353,5 +376,5 @@ public class ConnectionFailoverDecorator extends AbstractConnectionDecorator
             //ignore
         }
     }
-    
+
 }

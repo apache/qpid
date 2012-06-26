@@ -29,15 +29,46 @@ import org.apache.qpid.messaging.internal.ConnectionEventListener;
 import org.apache.qpid.messaging.internal.ReceiverInternal;
 import org.apache.qpid.messaging.internal.SessionInternal;
 import org.apache.qpid.messaging.util.AbstractReceiverDecorator;
+import org.apache.qpid.messaging.util.failover.SessionFailoverDecorator.SessionState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A Decorator that adds basic housekeeping tasks to a Receiver.
+ * <p>A Decorator that adds failover and basic housekeeping tasks to a Sender.
  * This class adds,
- * 1. State management.
- * 2. Exception handling.
+ * <ol>
+ * <li>Failover support.</li>
+ * <li>State management.</li>
+ * <li>Exception handling.</li>
+ * <li>Failover</li>
+ * </ol></p>
  *
+ * <p><b>Exception Handling</b><br>
+ * This class will wrap each method call to it's delegate to handle error situations.
+ * First it will check if the Receiver is already CLOSED or FAILOVER_IN_PROGRESS state.
+ * If latter it will wait until the Receiver is moved to OPENED, CLOSED or the timer expires.
+ * For the last two cases a ReceiverException will be thrown and the Receiver closed.</p>
+ *
+ * <p><b>TransportFailureException</b><br>
+ * This class intercepts TransportFailureExceptions and are passed onto the session,
+ * via the exception() method, which in turn passes into the connection.
+ * The Receiver will be marked as FAILOVER_IN_PROGRESS and the "operation" will be
+ * blocked until the exception() on the Session object returns. At this point
+ * the Receiver is either moved to OPENED or CLOSED.</p>
+ *
+ * <p><b>SessionException</b><br>
+ * For the time being, anytime a session exception is received, the Receiver will be marked CLOSED.
+ * We need to revisit this.</p>
+ *
+ * <p><i> <b>Close() can be called by,</b>
+ *      <ol>
+ *       <li>The application (normal close).</li>
+ *       <li>By the session object, if close is called on it.(normal close)</li>
+ *       <li>By the connection object, if close is called on it.(normal close)</li>
+ *       <li>By the connection object, if failover was unsuccessful(error)</li>
+ *       <li>By itself (via the session) if it receives and exception (error).</li>
+ *      </ol>
+ * </i></p>
  */
 public class ReceiverFailoverDecorator extends AbstractReceiverDecorator implements ConnectionEventListener
 {
@@ -214,6 +245,7 @@ public class ReceiverFailoverDecorator extends AbstractReceiverDecorator impleme
         {
             _connSerialNumber = _ssn.getConnectionInternal().getSerialNumber();
             _delegate.recreate();
+            _state = ReceiverState.OPENED;
         }
     }
 
@@ -283,6 +315,11 @@ public class ReceiverFailoverDecorator extends AbstractReceiverDecorator impleme
             {
                 throw new ReceiverException("Receiver is closed. Failover was unsuccesfull",_lastException);
             }
+            else if  (_state == ReceiverState.FAILOVER_IN_PROGRESS)
+            {
+                closeInternal();
+                throw new ReceiverException("Receiver is closed. Failover did not complete on time");
+            }
         }
     }
 
@@ -307,6 +344,19 @@ public class ReceiverFailoverDecorator extends AbstractReceiverDecorator impleme
             _state = ReceiverState.FAILOVER_IN_PROGRESS;
             _ssn.exception(e, serialNumber); // This triggers failover.
             waitForFailoverToComplete();
+        }
+    }
+
+    /** Suppress Exceptions as */
+    private void closeInternal()
+    {
+        try
+        {
+            close();
+        }
+        catch (Exception e)
+        {
+            //ignore
         }
     }
 }
