@@ -21,6 +21,7 @@
 
 #The broker does not have the appropriate QMF support
 qpid_tests.broker_0_10.management.*
+qpid_tests.broker_0_10.qmf_events.*
 qpid_tests.broker_0_10.stats.BrokerStatsTests.*
 qpid_tests.broker_0_10.msg_groups.MultiConsumerMsgGroupTests.test_default_group_id
 qpid_tests.broker_0_10.msg_groups.MultiConsumerMsgGroupTests.test_move_*
