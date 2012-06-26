@@ -54,7 +54,7 @@ public abstract class AbstractSenderDecorator implements SenderInternal
     public int getCapacity() throws MessagingException
     {
         checkPreConditions();
-        return _delegate.getCapacity();        
+        return _delegate.getCapacity();
     }
 
     @Override

@@ -23,10 +23,14 @@ import org.apache.qpid.messaging.Message;
 import org.apache.qpid.messaging.MessagingException;
 import org.apache.qpid.messaging.Receiver;
 import org.apache.qpid.messaging.Sender;
-import org.apache.qpid.messaging.Session;
-import org.apache.qpid.messaging.cpp.jni.Duration;
+import org.apache.qpid.messaging.SessionException;
+import org.apache.qpid.messaging.TransportFailureException;
 import org.apache.qpid.messaging.cpp.jni.NativeMessage;
 import org.apache.qpid.messaging.cpp.jni.NativeSession;
+import org.apache.qpid.messaging.internal.ConnectionInternal;
+import org.apache.qpid.messaging.internal.ReceiverInternal;
+import org.apache.qpid.messaging.internal.SenderInternal;
+import org.apache.qpid.messaging.internal.SessionInternal;
 
 /**
  *  This class relies on the SessionManagementDecorator for
@@ -34,15 +38,17 @@ import org.apache.qpid.messaging.cpp.jni.NativeSession;
  *  This class is merely a delegate/wrapper for the,
  *  underlying c++ session object.
  */
-public class CppSession implements Session
+public class CppSession implements SessionInternal
 {
     private NativeSession _cppSession;
     private CppConnection _conn;
+    private String _name;
 
-    public CppSession(CppConnection conn,NativeSession cppSsn)
+    public CppSession(CppConnection conn,NativeSession cppSsn, String name)
     {
         _cppSession = cppSsn;
         _conn = conn;
+        _name = name;
     }
 
     @Override
@@ -122,31 +128,32 @@ public class CppSession implements Session
     public Receiver nextReceiver(long timeout) throws MessagingException
     {
         // This needs to be revisited.
-        return new CppReceiver(this,_cppSession.nextReceiver(CppDuration.getDuration(timeout)));
+        //return new CppReceiver(this,_cppSession.nextReceiver(CppDuration.getDuration(timeout)));
+        return null;
     }
 
     @Override
     public Sender createSender(Address address) throws MessagingException
-    {        
-        return new CppSender(this, _cppSession.createSender(address.toString()));
+    {
+        return new CppSender(this, _cppSession.createSender(address.toString()),address.toString());
     }
 
     @Override
     public Sender createSender(String address) throws MessagingException
     {
-        return new CppSender(this,_cppSession.createSender(address));
+        return new CppSender(this,_cppSession.createSender(address),address);
     }
 
     @Override
     public Receiver createReceiver(Address address) throws MessagingException
     {
-        return new CppReceiver(this, _cppSession.createReceiver(address.toString()));
+        return new CppReceiver(this, _cppSession.createReceiver(address.toString()),address.toString());
     }
 
     @Override
     public Receiver createReceiver(String address) throws MessagingException
     {
-        return new CppReceiver(this,_cppSession.createReceiver(address));
+        return new CppReceiver(this,_cppSession.createReceiver(address),address);
     }
 
     @Override
@@ -167,5 +174,49 @@ public class CppSession implements Session
     public void checkError() throws MessagingException
     {
         _cppSession.checkError();
+    }
+
+    @Override
+    public ConnectionInternal getConnectionInternal()
+    {
+        return _conn;
+    }
+
+    @Override
+    public void exception(TransportFailureException e, long serialNumber)
+    {//NOOP
+    }
+
+    @Override
+    public void exception(SessionException e)
+    {//NOOP
+    }
+
+    @Override
+    public void recreate() throws MessagingException
+    {
+        // TODO need to keep track if it's transactional or not
+        _cppSession = _conn.getNativeConnection().createSession(_name);
+    }
+
+    @Override
+    public String getName()
+    {//NOOP
+        return _name;
+    }
+
+    @Override
+    public void unregisterReceiver(ReceiverInternal receiver)
+    {//NOOP
+    }
+
+    @Override
+    public void unregisterSender(SenderInternal sender)
+    {//NOOP
+    }
+
+    NativeSession getNativeSession()
+    {
+        return _cppSession;
     }
 }

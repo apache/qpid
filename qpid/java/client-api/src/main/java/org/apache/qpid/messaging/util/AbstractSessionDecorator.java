@@ -90,7 +90,7 @@ public abstract class AbstractSessionDecorator implements SessionInternal
             _conn.unregisterSession(this);
         }
     }
-    
+
     @Override
     public boolean isClosed()
     {
@@ -137,14 +137,14 @@ public abstract class AbstractSessionDecorator implements SessionInternal
     public void release(Message message) throws MessagingException
     {
         checkPreConditions();
-        _delegate.release(message);        
+        _delegate.release(message);
     }
 
     @Override
     public void sync(boolean block) throws MessagingException
     {
         checkPreConditions();
-        _delegate.sync(block);        
+        _delegate.sync(block);
     }
 
     @Override

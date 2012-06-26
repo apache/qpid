@@ -19,12 +19,16 @@ package org.apache.qpid.messaging.internal;
 
 import org.apache.qpid.messaging.MessagingException;
 import org.apache.qpid.messaging.Session;
+import org.apache.qpid.messaging.SessionException;
+import org.apache.qpid.messaging.TransportFailureException;
 
 public interface SessionInternal extends Session
 {
     public ConnectionInternal getConnectionInternal();
 
-    public void exception(MessagingException e);
+    public void exception(TransportFailureException e, long serialNumber);
+
+    public void exception(SessionException e);
 
     public void recreate() throws MessagingException;
 

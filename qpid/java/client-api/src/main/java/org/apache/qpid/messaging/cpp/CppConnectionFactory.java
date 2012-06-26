@@ -17,9 +17,11 @@
  */
 package org.apache.qpid.messaging.cpp;
 
+import java.util.Map;
+
 import org.apache.qpid.messaging.Connection;
 import org.apache.qpid.messaging.ConnectionFactory;
-import org.apache.qpid.messaging.util.ConnectionManagementDecorator;
+import org.apache.qpid.messaging.util.failover.ConnectionFailoverDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,8 +40,15 @@ public class CppConnectionFactory extends ConnectionFactory
     {
     }
 
+    @Override
     public Connection createConnection(String url)
     {
-        return new ConnectionManagementDecorator(new CppConnection(url));
+        return createConnection(url, null);
+    }
+
+    @Override
+    public Connection createConnection(String url, Map<String, Object> options)
+    {
+        return new ConnectionFailoverDecorator(new CppConnection(url,options), new Object());
     }
 }

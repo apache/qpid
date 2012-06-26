@@ -17,6 +17,8 @@
  */
 package org.apache.qpid.messaging;
 
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,4 +51,6 @@ public abstract class ConnectionFactory
     }
 
     public abstract Connection createConnection(String url);
+
+    public abstract Connection createConnection(String url, Map<String,Object> options);
 }

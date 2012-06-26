@@ -19,22 +19,24 @@ package org.apache.qpid.messaging.cpp;
 
 import org.apache.qpid.messaging.Message;
 import org.apache.qpid.messaging.MessagingException;
-import org.apache.qpid.messaging.Receiver;
 import org.apache.qpid.messaging.Session;
 import org.apache.qpid.messaging.cpp.jni.NativeMessage;
 import org.apache.qpid.messaging.cpp.jni.NativeReceiver;
+import org.apache.qpid.messaging.internal.ReceiverInternal;
 
-public class CppReceiver implements Receiver
+public class CppReceiver implements ReceiverInternal
 {
-    private CppSession _ssn;
+    private final CppSession _ssn;
     private NativeReceiver _cppReceiver;
-    private CppMessageFactory _msgFactory;
+    private final CppMessageFactory _msgFactory;
+    private final String _address;
 
-    public CppReceiver(CppSession ssn, NativeReceiver cppReceiver) throws MessagingException
+    public CppReceiver(CppSession ssn, NativeReceiver cppReceiver, String address) throws MessagingException
     {
         _ssn = ssn;
         _cppReceiver = cppReceiver;
         _msgFactory = (CppMessageFactory)ssn.getConnection().getMessageFactory();
+        _address = address;
     }
 
     @Override
@@ -105,5 +107,11 @@ public class CppReceiver implements Receiver
     {
         _ssn.checkError();
         return _ssn;
+    }
+
+    @Override
+    public void recreate() throws MessagingException
+    {
+        _cppReceiver = _ssn.getNativeSession().createReceiver(_address);
     }
 }

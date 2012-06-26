@@ -581,7 +581,7 @@ void WriteOnlyVariantMapWrapper::put(const std::string& key, jobject obj)
 
   qpid::types::Variant v = convertJavaObjectToVariant(env,obj);
 
-  if (v)
+  if (!v.isVoid())
   {
       varMap_[key] = v;
   }

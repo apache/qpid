@@ -187,7 +187,7 @@ public class ReceiverFailoverDecorator extends AbstractReceiverDecorator impleme
             if (_state == ReceiverState.CLOSED)
             {
                 throw new MessagingException("Receiver is already closed");
-            }    
+            }
             _state = ReceiverState.CLOSED;
             super.close();
         }
@@ -216,7 +216,7 @@ public class ReceiverFailoverDecorator extends AbstractReceiverDecorator impleme
             _delegate.recreate();
         }
     }
-    
+
     @Override
     public void eventOccured(ConnectionEvent event)
     {
@@ -234,7 +234,7 @@ public class ReceiverFailoverDecorator extends AbstractReceiverDecorator impleme
             case POST_FAILOVER:
                 try
                 {
-                    if (_state != ReceiverState.OPENED) 
+                    if (_state != ReceiverState.OPENED)
                     {
                         close();
                     }
@@ -246,7 +246,7 @@ public class ReceiverFailoverDecorator extends AbstractReceiverDecorator impleme
                 _connectionLock.notifyAll();
                 break;
             default:
-                break; //ignore the rest 
+                break; //ignore the rest
             }
         }
     }
@@ -255,7 +255,7 @@ public class ReceiverFailoverDecorator extends AbstractReceiverDecorator impleme
     public void exception(ConnectionException e)
     {// NOOP
     }
-    
+
     protected void checkPreConditions() throws ReceiverException
     {
         switch (_state)
@@ -266,7 +266,7 @@ public class ReceiverFailoverDecorator extends AbstractReceiverDecorator impleme
             waitForFailoverToComplete();
         }
     }
-    
+
     protected void waitForFailoverToComplete() throws ReceiverException
     {
         synchronized (_connectionLock)
@@ -295,7 +295,7 @@ public class ReceiverFailoverDecorator extends AbstractReceiverDecorator impleme
         }
         return new ReceiverException("Session has been closed",e);
     }
-    
+
     protected void failover(TransportFailureException e, long serialNumber) throws ReceiverException
     {
         synchronized (_connectionLock)

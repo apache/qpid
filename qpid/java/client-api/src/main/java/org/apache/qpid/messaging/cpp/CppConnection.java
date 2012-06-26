@@ -17,11 +17,18 @@
  */
 package org.apache.qpid.messaging.cpp;
 
-import org.apache.qpid.messaging.Connection;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.qpid.messaging.ConnectionException;
 import org.apache.qpid.messaging.MessageFactory;
 import org.apache.qpid.messaging.MessagingException;
 import org.apache.qpid.messaging.Session;
+import org.apache.qpid.messaging.TransportFailureException;
 import org.apache.qpid.messaging.cpp.jni.NativeConnection;
+import org.apache.qpid.messaging.internal.ConnectionInternal;
+import org.apache.qpid.messaging.internal.ConnectionEventListener;
+import org.apache.qpid.messaging.internal.SessionInternal;
 
 /**
  *  This class relies on the ConnectionManagementDecorator for
@@ -29,21 +36,60 @@ import org.apache.qpid.messaging.cpp.jni.NativeConnection;
  *  This class is merely a delegate/wrapper for the,
  *  underlying c++ connection object.
  */
-public class CppConnection implements Connection
+public class CppConnection implements ConnectionInternal
 {
     private static MessageFactory _MSG_FACTORY = new CppMessageFactory();
 
     private NativeConnection _cppConn;
+    private String _url;
+    private Map<String,Object> _options;
+    private long _serialNumber = 0L; // used for avoiding spurious failover calls.
 
-    public CppConnection(String url)
+    public CppConnection(String url, Map<String,Object> options)
     {
-        _cppConn = new NativeConnection(url);
+        _cppConn = createNativeConnection(url,options);
+    }
+
+    private NativeConnection createNativeConnection(String url, Map<String,Object> options)
+    {
+        _url = url;
+        _options = options;
+        if (options == null || options.size() == 0)
+        {
+            return new NativeConnection(url);
+        }
+        else
+        {
+            return new NativeConnection(url,options);
+        }
     }
 
     @Override
     public void open() throws MessagingException
     {
         _cppConn.open();
+        _serialNumber++;  //wrap around ?
+    }
+
+    public void reconnect(String url,Map<String,Object> options) throws TransportFailureException
+    {
+        try
+        {
+            if (_cppConn != null && _cppConn.isOpen())
+            {
+                close();
+            }
+            _cppConn = createNativeConnection(url,options);
+            open();
+        }
+        catch (TransportFailureException e)
+        {
+            throw e;
+        }
+        catch (MessagingException e)
+        {
+            throw new TransportFailureException("Error reconnecting",e);
+        }
     }
 
     @Override
@@ -62,19 +108,20 @@ public class CppConnection implements Connection
         finally
         {
             _cppConn.delete(); //clean up the c++ object
+            _cppConn = null;
         }
     }
 
     @Override
     public Session createSession(String name) throws MessagingException
     {
-        return new CppSession(this,_cppConn.createSession());
+        return new CppSession(this,_cppConn.createSession(name),name);
     }
 
     @Override
     public Session createTransactionalSession(String name) throws MessagingException
     {
-        return new CppSession(this,_cppConn.createTransactionalSession());
+        return new CppSession(this,_cppConn.createTransactionalSession(name),name);
     }
 
     @Override
@@ -87,5 +134,67 @@ public class CppConnection implements Connection
     public MessageFactory getMessageFactory()
     {
         return _MSG_FACTORY;
+    }
+
+    @Override
+    public void addConnectionEventListener(ConnectionEventListener l)
+            throws ConnectionException
+    {  // NOOP
+    }
+
+    @Override
+    public void removeConnectionEventListener(ConnectionEventListener l)
+            throws ConnectionException
+    {  // NOOP
+    }
+
+    @Override
+    public List<SessionInternal> getSessions() throws ConnectionException
+    {  // NOOP
+       return null;
+    }
+
+    @Override
+    public void exception(TransportFailureException e, long serialNumber)
+    {  // NOOP
+    }
+
+    @Override
+    public void recreate() throws MessagingException
+    {  // NOOP
+    }
+
+    @Override
+    public void unregisterSession(SessionInternal sesion)
+    {  // NOOP
+    }
+
+    @Override
+    public Object getConnectionLock()
+    {  // NOOP
+       return null;
+    }
+
+    @Override
+    public String getConnectionURL()
+    {
+        return _url;
+    }
+
+    @Override
+    public Map<String, Object> getConnectionOptions()
+    {
+        return _options;
+    }
+
+    @Override
+    public long getSerialNumber()
+    {
+        return _serialNumber;
+    }
+
+    NativeConnection getNativeConnection()
+    {
+        return _cppConn;
     }
 }

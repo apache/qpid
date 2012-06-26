@@ -25,18 +25,21 @@ import org.apache.qpid.messaging.cpp.CppMessageFactory.CppMessageDelegate;
 import org.apache.qpid.messaging.cpp.jni.NativeMessage;
 import org.apache.qpid.messaging.cpp.jni.NativeSender;
 import org.apache.qpid.messaging.internal.MessageInternal;
+import org.apache.qpid.messaging.internal.SenderInternal;
 
-public class CppSender implements Sender
+public class CppSender implements SenderInternal
 {
-    private CppSession _ssn;
+    private final CppSession _ssn;
     private NativeSender _cppSender;
-    private CppMessageFactory _msgFactory;
+    private final CppMessageFactory _msgFactory;
+    private final String _address;
 
-    public CppSender(CppSession ssn, NativeSender cppSender) throws MessagingException
+    public CppSender(CppSession ssn, NativeSender cppSender, String address) throws MessagingException
     {
         _ssn = ssn;
         _cppSender = cppSender;
         _msgFactory = (CppMessageFactory)ssn.getConnection().getMessageFactory();
+        _address = address;
     }
 
     @Override
@@ -120,5 +123,11 @@ public class CppSender implements Sender
     {
         _ssn.checkError();
         return _ssn;
+    }
+
+    @Override
+    public void recreate() throws MessagingException
+    {
+        _cppSender = _ssn.getNativeSession().createSender(_address);
     }
 }

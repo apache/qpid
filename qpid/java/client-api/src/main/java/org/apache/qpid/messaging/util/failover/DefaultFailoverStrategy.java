@@ -32,8 +32,8 @@ public class DefaultFailoverStrategy implements FailoverStrategy
     /** seconds (give up and report failure after specified time) */
     private long _reconnectTimeout = 1000;
 
-    /** n (give up and report failure after specified number of attempts) */    
-    private int  _reconnectLimit = 1; 
+    /** n (give up and report failure after specified number of attempts) */
+    private int  _reconnectLimit = 1;
 
     /** seconds (initial delay between failed reconnection attempts) */
     private long _reconnectIntervalMin = 1000;
@@ -74,7 +74,7 @@ public class DefaultFailoverStrategy implements FailoverStrategy
     @Override
     public boolean failoverAllowed()
     {
-        return (_attempts < _reconnectLimit);       
+        return (_attempts < _reconnectLimit);
     }
 
     @Override
@@ -94,7 +94,7 @@ public class DefaultFailoverStrategy implements FailoverStrategy
     @Override
     public ConnectionString getCurrentConnectionString()
     {
-        return _currentUrl;       
+        return _currentUrl;
     }
 
     @Override
@@ -102,7 +102,7 @@ public class DefaultFailoverStrategy implements FailoverStrategy
     {
         _attempts = 0;
     }
-    
+
     class ConnectionStringImpl implements ConnectionString
     {
         private final String _url;
@@ -113,7 +113,7 @@ public class DefaultFailoverStrategy implements FailoverStrategy
             _url = url;
             _options = options;
         }
-        
+
         public String getUrl()
         {
             return _url;

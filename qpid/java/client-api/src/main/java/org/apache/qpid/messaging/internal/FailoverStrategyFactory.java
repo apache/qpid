@@ -29,5 +29,4 @@ public abstract class FailoverStrategyFactory
     }
 
     public abstract FailoverStrategy getFailoverStrategy(ConnectionInternal con);
-    
 }

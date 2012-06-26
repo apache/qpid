@@ -24,7 +24,7 @@ package org.apache.qpid.messaging;
  * to whatever settings have been configured), then an instance of
  * this class will be thrown to signal that.
  */
-public class TransportFailureException extends ConnectionException
+public class TransportFailureException extends MessagingException
 {
 
     public TransportFailureException(String message, Throwable cause)
@@ -36,5 +36,4 @@ public class TransportFailureException extends ConnectionException
     {
         super(message);
     }
-
 }

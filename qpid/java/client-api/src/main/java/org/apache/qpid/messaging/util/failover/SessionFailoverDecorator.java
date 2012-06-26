@@ -45,7 +45,7 @@ public class SessionFailoverDecorator extends AbstractSessionDecorator implement
     private long _failoverTimeout = Long.getLong("qpid.failover-timeout", 1000);
     private SessionException _lastException;
     private long _connSerialNumber = 0;
-    
+
     public SessionFailoverDecorator(ConnectionInternal conn, SessionInternal delegate)
     {
         super(conn,delegate);
@@ -278,7 +278,7 @@ public class SessionFailoverDecorator extends AbstractSessionDecorator implement
         try
         {
             SenderInternal sender = new SenderFailoverDecorator(this,
-                    (SenderInternal) _delegate.createSender(address));            
+                    (SenderInternal) _delegate.createSender(address));
             synchronized (_connectionLock)
             {
                 _senders.add(sender);
@@ -394,7 +394,7 @@ public class SessionFailoverDecorator extends AbstractSessionDecorator implement
             throw handleSessionException(e);
         }
     }
-    
+
     @Override
     public boolean isClosed()
     {
@@ -420,7 +420,7 @@ public class SessionFailoverDecorator extends AbstractSessionDecorator implement
             _lastException = ex;
         }
     }
-    
+
     public void exception(SessionException e)
     {
         handleSessionException(e);
@@ -473,7 +473,7 @@ public class SessionFailoverDecorator extends AbstractSessionDecorator implement
             case POST_FAILOVER:
                 try
                 {
-                    if (_state != SessionState.OPENED) 
+                    if (_state != SessionState.OPENED)
                     {
                         close();
                     }
@@ -485,7 +485,7 @@ public class SessionFailoverDecorator extends AbstractSessionDecorator implement
                 _connectionLock.notifyAll();
                 break;
             default:
-                break; //ignore the rest 
+                break; //ignore the rest
             }
         }
     }
@@ -503,7 +503,7 @@ public class SessionFailoverDecorator extends AbstractSessionDecorator implement
             waitForFailoverToComplete();
         }
     }
-    
+
     protected void checkPreConditions() throws SessionException
     {
         switch (_state)
@@ -537,7 +537,7 @@ public class SessionFailoverDecorator extends AbstractSessionDecorator implement
         }
         return new SessionException("Session has been closed",e);
     }
-    
+
     protected void waitForFailoverToComplete() throws SessionException
     {
         synchronized (_connectionLock)

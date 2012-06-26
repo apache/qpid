@@ -34,7 +34,7 @@ public class SenderFailoverDecorator extends AbstractSenderDecorator implements 
     private long _failoverTimeout = Long.getLong("qpid.failover-timeout", 1000);
     private ReceiverException _lastException;
     private long _connSerialNumber = 0;
-    
+
     public SenderFailoverDecorator(SessionInternal ssn, SenderInternal delegate)
     {
         super(ssn,delegate);
@@ -72,7 +72,7 @@ public class SenderFailoverDecorator extends AbstractSenderDecorator implements 
             if (_state == SenderState.CLOSED)
             {
                 throw new MessagingException("Sender is already closed");
-            }   
+            }
             _state = SenderState.CLOSED;
             super.close();
         }
@@ -188,7 +188,7 @@ public class SenderFailoverDecorator extends AbstractSenderDecorator implements 
             _delegate.recreate();
         }
     }
-    
+
     @Override
     public void eventOccured(ConnectionEvent event)
     {
@@ -206,7 +206,7 @@ public class SenderFailoverDecorator extends AbstractSenderDecorator implements 
             case POST_FAILOVER:
                 try
                 {
-                    if (_state != SenderState.OPENED) 
+                    if (_state != SenderState.OPENED)
                     {
                         close();
                     }
@@ -218,7 +218,7 @@ public class SenderFailoverDecorator extends AbstractSenderDecorator implements 
                 _connectionLock.notifyAll();
                 break;
             default:
-                break; //ignore the rest 
+                break; //ignore the rest
             }
         }
     }
@@ -246,7 +246,7 @@ public class SenderFailoverDecorator extends AbstractSenderDecorator implements 
             }
         }
     }
-    
+
     protected void failover(TransportFailureException e, long serialNumber) throws SenderException
     {
         synchronized (_connectionLock)
@@ -260,7 +260,7 @@ public class SenderFailoverDecorator extends AbstractSenderDecorator implements 
             waitForFailoverToComplete();
         }
     }
-    
+
     protected void checkPreConditions() throws SenderException
     {
         switch (_state)

@@ -19,11 +19,9 @@ package org.apache.qpid.messaging.internal;
 
 import org.apache.qpid.messaging.ConnectionException;
 
-public interface ConnectionStateListener
+public interface ConnectionEventListener
 {
     public void exception(ConnectionException e);
 
-    public void opened();
-
-    public void closed();
+    public void eventOccured(ConnectionEvent event);
 }

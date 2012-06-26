@@ -36,7 +36,9 @@ public class CppTest
 {
     public static void main(String[] args) throws Exception
     {
-        Connection con = ConnectionFactory.get().createConnection("localhost:5672");
+        HashMap<String,Object> options = new HashMap<String,Object>();
+        options.put("reconnect_urls", "localhost:6672,localhost:7672");
+        Connection con = ConnectionFactory.get().createConnection("localhost:5672",options);
         con.open();
         Session ssn = con.createSession(null);
         Sender sender = ssn.createSender("amq.topic/test");
@@ -49,6 +51,8 @@ public class CppTest
         msg.setProperty("price", 5);
         msg.setProperty("boolean", true);
         sender.send(msg, false);
+
+        Thread.sleep(2000);
 
         StringMessage stringMsg = (StringMessage) receiver.fetch(0);
         System.out.println("Received message "  + stringMsg + " with content type : " + stringMsg.getContentType() + " and content : " + stringMsg.getString());

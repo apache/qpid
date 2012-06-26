@@ -6,7 +6,6 @@ import org.apache.qpid.messaging.internal.FailoverStrategyFactory;
 
 public class DefaultFailoverStrategyFactory extends FailoverStrategyFactory
 {
-
     @Override
     public FailoverStrategy getFailoverStrategy(ConnectionInternal con)
     {

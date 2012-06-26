@@ -38,12 +38,12 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractConnectionDecorator implements ConnectionInternal
 {
     private final Logger _logger = LoggerFactory.getLogger(getClass());
-    
+
     protected ConnectionInternal _delegate;
     protected final Object _connectionLock;
     protected List<ConnectionEventListener> _stateListeners = new ArrayList<ConnectionEventListener>();
     protected Map<String, SessionInternal> _sessions = new ConcurrentHashMap<String,SessionInternal>();
-    
+
     protected AbstractConnectionDecorator(ConnectionInternal delegate, Object lock)
     {
         _delegate = delegate;
@@ -58,7 +58,7 @@ public abstract class AbstractConnectionDecorator implements ConnectionInternal
             _delegate.open();
         }
     }
-    
+
     public void reconnect(String url, Map<String,Object> options) throws TransportFailureException
     {
         synchronized (_connectionLock)
@@ -168,7 +168,7 @@ public abstract class AbstractConnectionDecorator implements ConnectionInternal
 
     @Override
     public Object getConnectionLock()
-    { 
+    {
         return _connectionLock;
     }
 
@@ -189,7 +189,7 @@ public abstract class AbstractConnectionDecorator implements ConnectionInternal
     {
         return _delegate.getSerialNumber();
     }
-    
+
     protected void notifyEvent(ConnectionEvent event)
     {
         for (ConnectionEventListener l: _stateListeners)
@@ -197,6 +197,6 @@ public abstract class AbstractConnectionDecorator implements ConnectionInternal
             l.eventOccured(event);
         }
     }
-    
+
     protected abstract void checkPreConditions() throws ConnectionException;
 }

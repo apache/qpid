@@ -20,10 +20,10 @@ package org.apache.qpid.messaging.internal;
 public interface FailoverStrategy
 {
     public boolean failoverAllowed();
-    
+
     public ConnectionString getNextConnectionString();
-    
+
     public ConnectionString getCurrentConnectionString();
-    
+
     public void connectionAttained(ConnectionInternal conn);
 }
