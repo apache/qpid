@@ -375,7 +375,7 @@ QPID_AUTO_TEST_CASE(testQuoteNonPrintable) {
 
     char s[] = "null\0tab\tspace newline\nret\r\x80\x99\xff";
     string str(s, sizeof(s));
-    QPID_LOG(critical, str);
+    QPID_LOG_CAT(critical, test, str);
     ifstream log("logging.tmp");
     string line;
     getline(log, line, '\0');
