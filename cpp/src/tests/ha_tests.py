@@ -67,7 +67,9 @@ class HaBroker(Broker):
 
     def __str__(self): return Broker.__str__(self)
 
-    def qpid_ha(self, args): self.qpid_ha_script.main(["", "-b", self.host_port()]+args)
+    # FIXME aconway 2012-06-26: check exit status from script.
+    def qpid_ha(self, args):
+        self.qpid_ha_script.main_except(["", "-b", self.host_port()]+args)
 
     def promote(self): self.qpid_ha(["promote"])
     def set_client_url(self, url): self.qpid_ha(["set", "--public-url", url])
@@ -164,7 +166,8 @@ class HaCluster(object):
 
     def update_urls(self):
         self.url = ",".join([b.host_port() for b in self])
-        for b in self: b.set_brokers_url(self.url)
+        if len(self) > 1:          # No failover addresses on a 1 cluster.
+            for b in self: b.set_brokers_url(self.url)
 
     def connect(self, i):
         """Connect with reconnect_urls"""
