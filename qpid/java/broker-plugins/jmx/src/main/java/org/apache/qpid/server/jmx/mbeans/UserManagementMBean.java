@@ -24,7 +24,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.management.common.mbeans.UserManagement;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
@@ -42,6 +41,7 @@ import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 import javax.security.auth.login.AccountNotFoundException;
 
+import java.io.IOException;
 import java.util.Map;
 
 @MBeanDescription("User Management Interface")
@@ -131,12 +131,19 @@ public class UserManagementMBean extends AMQManagedObject implements UserManagem
     @Override
     public boolean reloadData()
     {
-        //TODO - implement? deprecate?
-        throw new UnsupportedOperationException("The reload functionality is not currently supported");
+        try
+        {
+            _authProvider.reload();
+            return true;
+        }
+        catch (IOException e)
+        {
+            _logger.error("Unable to reload user data", e);
+            return false;
+        }
     }
 
     @Override
-    @MBeanOperation(name = "viewUsers", description = "All users that are currently available to the system.")
     public TabularData viewUsers()
     {
         Map<String, Map<String, String>> users = _authProvider.getUsers();

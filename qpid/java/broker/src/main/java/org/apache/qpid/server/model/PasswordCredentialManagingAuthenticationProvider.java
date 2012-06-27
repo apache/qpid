@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.model;
 
+import java.io.IOException;
 import java.util.Map;
 
 import javax.security.auth.login.AccountNotFoundException;
@@ -34,4 +35,12 @@ public interface PasswordCredentialManagingAuthenticationProvider extends Authen
 
     Map<String, Map<String,String>>  getUsers();
 
+    /**
+     * Refreshes the cache of user and password data from the underlying storage.
+     *
+     * If there is a failure whilst reloading the data, the implementation must
+     * throw an {@link IOException} and revert to using the previous cached username
+     * and password data.  In this way, the broker will remain usable.
+     */
+    void reload() throws IOException;
 }

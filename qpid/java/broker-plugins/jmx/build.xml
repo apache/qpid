@@ -18,7 +18,7 @@
  -->
 <project name="Qpid Broker-Plugins JMX" default="build">
     <property name="module.depends" value="common broker broker-plugins broker-plugins-jmx management/common" />
-    <property name="module.test.depends" value="test broker/test common/test management/common" />
+    <property name="module.test.depends" value="systests test broker/test common/test management/common client" />
     
     <property name="module.manifest" value="MANIFEST.MF" />
     <property name="module.plugin" value="true" />

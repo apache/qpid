@@ -102,10 +102,8 @@ org.apache.qpid.server.logging.actors.*
 
 // CPP Broker does not have a JMX interface to test
 org.apache.qpid.management.jmx.*
-org.apache.qpid.server.queue.AMQQueueMBeanTest#*
-org.apache.qpid.server.exchange.ExchangeMBeanTest#*
-org.apache.qpid.server.AMQBrokerManagerMBeanTest#*
-org.apache.qpid.server.protocol.AMQProtocolSessionMBeanTest#*
+org.apache.qpid.server.jmx.mbeans.*
+org.apache.qpid.systest.management.jmx.*
 
 // JMX is used in this test for validation
 org.apache.qpid.server.queue.ModelTest#*

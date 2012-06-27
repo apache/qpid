@@ -54,8 +54,8 @@ import java.util.Set;
  */
 public class JMXTestUtils
 {
-    private static final String DEFAULT_PASSWORD = "admin";
-    private static final String DEFAULT_USERID = "admin";
+    public static final String DEFAULT_PASSWORD = "admin";
+    public static final String DEFAULT_USERID = "admin";
 
     private MBeanServerConnection _mbsc;
     private JMXConnector _jmxc;
@@ -160,7 +160,6 @@ public class JMXTestUtils
             throws IOException, JMException, MBeanException
     {
         ManagedBroker managedBroker = getManagedBroker(virtualHostName);
-
         managedBroker.unregisterExchange(exchange);
     }
     
@@ -176,87 +175,81 @@ public class JMXTestUtils
             throws IOException, JMException, MBeanException
     {
         ManagedBroker managedBroker = getManagedBroker(virtualHostName);
-
         managedBroker.deleteQueue(queueName);
     }
-    
+
     /**
-	 * Sets the logging level.
+     * Sets the logging level.
      *
      * @throws JMException
      * @throws IOException if there is a problem with the JMX Connection
      * @throws MBeanException
      */
     public void setRuntimeLoggerLevel(String logger, String level)
-		throws IOException, JMException, MBeanException
+        throws IOException, JMException, MBeanException
     {
         LoggingManagement loggingManagement = getLoggingManagement();
-		
         loggingManagement.setRuntimeLoggerLevel(logger, level);
     }
-    
+
     /**
-	 * Reload logging config file.
+     * Reload logging config file.
      *
      * @throws JMException
      * @throws IOException if there is a problem with the JMX Connection
      * @throws MBeanException
      */
     public void reloadConfigFile()
-		throws IOException, JMException, MBeanException
+        throws IOException, JMException, MBeanException
     {
         LoggingManagement loggingManagement = getLoggingManagement();
-		
         loggingManagement.reloadConfigFile();
     }
     
     /**
-	 * Get list of available logger levels.
+     * Get list of available logger levels.
      *
      * @throws JMException
      * @throws IOException if there is a problem with the JMX Connection
      * @throws MBeanException
      */
     public String[] getAvailableLoggerLevels()
-		throws IOException, JMException, MBeanException
+        throws IOException, JMException, MBeanException
     {
         LoggingManagement loggingManagement = getLoggingManagement();
-		
         return loggingManagement.getAvailableLoggerLevels();
     }
-    
+
     /**
-	 * Set root logger level.
+     * Set root logger level.
      *
      * @throws JMException
      * @throws IOException if there is a problem with the JMX Connection
      * @throws MBeanException
      */
     public void setRuntimeRootLoggerLevel(String level)
-		throws IOException, JMException, MBeanException
+        throws IOException, JMException, MBeanException
     {
         LoggingManagement loggingManagement = getLoggingManagement();
-		
         loggingManagement.setRuntimeRootLoggerLevel(level);
     }
-    
+
     /**
-	 * Get root logger level.
+     * Get root logger level.
      *
      * @throws JMException
      * @throws IOException if there is a problem with the JMX Connection
      * @throws MBeanException
      */
     public String getRuntimeRootLoggerLevel()
-		throws IOException, JMException, MBeanException
+        throws IOException, JMException, MBeanException
     {
         LoggingManagement loggingManagement = getLoggingManagement();
-		
         return loggingManagement.getRuntimeRootLoggerLevel();
     }
     
     /**
-     * Retrive the ObjectName for a Virtualhost.
+     * Retrieve the ObjectName for a Virtualhost.
      *
      * This is then used to create a proxy to the ManagedBroker MBean.
      *
@@ -277,12 +270,12 @@ public class JMXTestUtils
 
         // We have verified we have only one value in objectNames so return it
         ObjectName objectName = objectNames.iterator().next();
-		_test.getLogger().info("Loading: " + objectName);
+        _test.getLogger().info("Loading: " + objectName);
         return objectName;
     }
 
     /**
-     * Retrive the ObjectName for the given Queue on a Virtualhost.
+     * Retrieve the ObjectName for the given Queue on a Virtualhost.
      *
      * This is then used to create a proxy to the ManagedQueue MBean.
      *
@@ -305,7 +298,7 @@ public class JMXTestUtils
 
         // We have verified we have only one value in objectNames so return it
         ObjectName objectName = objectNames.iterator().next();
-		_test.getLogger().info("Loading: " + objectName);
+        _test.getLogger().info("Loading: " + objectName);
         return objectName;
     }
 
@@ -333,7 +326,7 @@ public class JMXTestUtils
 
         // We have verified we have only one value in objectNames so return it
         ObjectName objectName = objectNames.iterator().next();
-		_test.getLogger().info("Loading: " + objectName);
+        _test.getLogger().info("Loading: " + objectName);
         return objectName;
     }
 
@@ -346,7 +339,7 @@ public class JMXTestUtils
         _test.assertEquals("Unexpected number of objects matching " + managedClass + " returned", 1, objectNames.size());
 
         ObjectName objectName = objectNames.iterator().next();
-		_test.getLogger().info("Loading: " + objectName);
+        _test.getLogger().info("Loading: " + objectName);
         return getManagedObject(managedClass, objectName);
     }
 
@@ -379,34 +372,34 @@ public class JMXTestUtils
     {
         return getManagedObject(ManagedBroker.class, getVirtualHostManagerObjectName(virtualHost));
     }
-	
+
     public ManagedExchange getManagedExchange(String exchangeName)
     {
-		ObjectName objectName = getExchangeObjectName("test", exchangeName);
+        ObjectName objectName = getExchangeObjectName("test", exchangeName);
         return MBeanServerInvocationHandler.newProxyInstance(_mbsc, objectName, ManagedExchange.class, false);
     }
-    
+
     public ManagedQueue getManagedQueue(String queueName)
     {
         ObjectName objectName = getQueueObjectName("test", queueName);
         return getManagedObject(ManagedQueue.class, objectName);
     }
 
-	public LoggingManagement getLoggingManagement() throws MalformedObjectNameException
+    public LoggingManagement getLoggingManagement() throws MalformedObjectNameException
     {
-		ObjectName objectName = new ObjectName("org.apache.qpid:type=LoggingManagement,name=LoggingManagement");
+        ObjectName objectName = new ObjectName("org.apache.qpid:type=LoggingManagement,name=LoggingManagement");
         return getManagedObject(LoggingManagement.class, objectName);
     }
-	
-	public ConfigurationManagement getConfigurationManagement() throws MalformedObjectNameException
+
+    public ConfigurationManagement getConfigurationManagement() throws MalformedObjectNameException
     {
-		ObjectName objectName = new ObjectName("org.apache.qpid:type=ConfigurationManagement,name=ConfigurationManagement");
+        ObjectName objectName = new ObjectName("org.apache.qpid:type=ConfigurationManagement,name=ConfigurationManagement");
         return getManagedObject(ConfigurationManagement.class, objectName);
     }
-	
-	public UserManagement getUserManagement() throws MalformedObjectNameException
+
+    public UserManagement getUserManagement() throws MalformedObjectNameException
     {
-		ObjectName objectName = new ObjectName("org.apache.qpid:type=UserManagement,name=UserManagement");
+        ObjectName objectName = new ObjectName("org.apache.qpid:type=UserManagement,name=UserManagement");
         return getManagedObject(UserManagement.class, objectName);
     }
 

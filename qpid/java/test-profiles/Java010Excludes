@@ -65,3 +65,8 @@ org.apache.qpid.client.failover.AddressBasedFailoverBehaviourTest#testFlowContro
 // QPID-3604: Immediate Prefetch no longer supported by 0-10
 org.apache.qpid.client.AsynchMessageListenerTest#testImmediatePrefetchWithMessageListener
 
+// QPID-4090: Can't connect from Java Client to Java Broker when Broker uses Base64MD5PasswordFilePrincipalDatabase principal database (0-10 protocol only)
+org.apache.qpid.systest.management.jmx.UserManagementWithBase64MD5PasswordsTest#testJmsLoginForNewUser
+org.apache.qpid.systest.management.jmx.UserManagementWithBase64MD5PasswordsTest#testJmsLoginNotPossibleForDeletedUser
+org.apache.qpid.systest.management.jmx.UserManagementWithBase64MD5PasswordsTest#testJmsLoginForPasswordChangedUser
+org.apache.qpid.systest.management.jmx.UserManagementWithBase64MD5PasswordsTest#testReload

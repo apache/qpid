@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.model.adapter;
 
+import java.io.IOException;
 import java.security.AccessControlException;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -29,8 +30,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.security.auth.login.AccountNotFoundException;
+
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.model.*;
-import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
@@ -40,6 +42,8 @@ import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 
 public abstract class AuthenticationProviderAdapter<T extends AuthenticationManager> extends AbstractAdapter implements AuthenticationProvider
 {
+    private static final Logger LOGGER = Logger.getLogger(AuthenticationProviderAdapter.class);
+
     private final BrokerAdapter _broker;
     private final T _authManager;
 
@@ -78,13 +82,13 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     @Override
     public String setName(String currentName, String desiredName) throws IllegalStateException, AccessControlException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     @Override
     public State getActualState()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     @Override
@@ -97,7 +101,6 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     public void setDurable(boolean durable)
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
@@ -110,7 +113,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     public LifetimePolicy setLifetimePolicy(LifetimePolicy expected, LifetimePolicy desired)
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     @Override
@@ -177,13 +180,13 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         {
             // TODO
         }
-        return super.getAttribute(name);    //To change body of overridden methods use File | Settings | File Templates.
+        return super.getAttribute(name);
     }
 
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     @Override
@@ -191,7 +194,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                                                       Map<String, Object> attributes,
                                                       ConfiguredObject... otherParents)
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     private static class SimpleAuthenticationProviderAdapter extends AuthenticationProviderAdapter<AuthenticationManager>
@@ -249,6 +252,18 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         public void setPassword(String username, String password) throws AccountNotFoundException
         {
             getPrincipalDatabase().updatePassword(new UsernamePrincipal(username), password.toCharArray());
+        }
+
+        public void reload() throws IOException
+        {
+            if(getSecurityManager().authoriseMethod(Operation.UPDATE, "UserManagement", "reload"))
+            {
+                getPrincipalDatabase().reload();
+            }
+            else
+            {
+                throw new AccessControlException("Do not have permission to reload principal database");
+            }
         }
 
         @Override
@@ -433,7 +448,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                 {
                     return getName();
                 }
-                return super.getAttribute(name);    //To change body of overridden methods use File | Settings | File Templates.
+                return super.getAttribute(name);
             }
 
             @Override
@@ -461,12 +476,11 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                     }
                     catch (AccountNotFoundException e)
                     {
-                        // TODO - log?
+                        LOGGER.warn("Failed to delete user " + _user, e);
                     }
                     return State.DELETED;
                 }
-                return super.setDesiredState(currentState,
-                                             desiredState);    //To change body of overridden methods use File | Settings | File Templates.
+                return super.setDesiredState(currentState, desiredState);
             }
         }
     }

@@ -21,35 +21,30 @@
 
 package org.apache.qpid.server.jmx.mbeans;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Map;
 
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularData;
+import javax.security.auth.login.AccountNotFoundException;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.XMLConfiguration;
+import junit.framework.TestCase;
+
 import org.apache.qpid.management.common.mbeans.UserManagement;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
-import org.apache.qpid.server.jmx.NoopManagedObjectRegistry;
+import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
-import org.apache.qpid.server.model.adapter.AuthenticationProviderAdapter;
-import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
-import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
-/** 
- * Tests the UserManagementMBean and its interaction with the PasswordCredentialManagingAuthenticationProvider.
- */
-public class UserManagementMBeanTest extends InternalBrokerBaseCase
+public class UserManagementMBeanTest extends TestCase
 {
-    private UserManagementMBean _umMBean;
-    
-    private File _passwordFile;
-    private PrincipalDatabaseAuthenticationManager _authManager;
-    private AuthenticationProviderAdapter<?> _authProvider;
+    private UserManagementMBean _userManagement;
+    private ManagedObjectRegistry _mockRegistry;
+    private PasswordCredentialManagingAuthenticationProvider _mockProvider;
 
     private static final String TEST_USERNAME = "testuser";
     private static final String TEST_PASSWORD = "password";
@@ -59,74 +54,92 @@ public class UserManagementMBeanTest extends InternalBrokerBaseCase
     {
         super.setUp();
 
-        _passwordFile = File.createTempFile(this.getClass().getName(),".password");
-        
-        createFreshTestPasswordFile();
-
-        ConfigurationPlugin config = getConfig(PlainPasswordFilePrincipalDatabase.class.getName(), "passwordFile", _passwordFile.getAbsolutePath());
-        _authManager = PrincipalDatabaseAuthenticationManager.FACTORY.newInstance(config);
-        _authProvider = AuthenticationProviderAdapter.createAuthenticationProviderAdapter(null, _authManager);
-        _umMBean = new UserManagementMBean((PasswordCredentialManagingAuthenticationProvider) _authProvider, new NoopManagedObjectRegistry());
+        _mockProvider = mock(PasswordCredentialManagingAuthenticationProvider.class);
+        _mockRegistry = mock(ManagedObjectRegistry.class);
+        _userManagement = new UserManagementMBean(_mockProvider, _mockRegistry);
     }
 
-    @Override
-    public void tearDown() throws Exception
+    public void testMBeanRegistersItself() throws Exception
     {
-        try
-        {
-            super.tearDown();
-        }
-        finally
-        {
-            //clean up test password files
-            File _oldPasswordFile = new File(_passwordFile.getAbsolutePath() + ".old");
-            _oldPasswordFile.delete();
-            _passwordFile.delete();
-        }
+        UserManagementMBean userManagementMBean = new UserManagementMBean(_mockProvider, _mockRegistry);
+        verify(_mockRegistry).registerObject(userManagementMBean);
     }
 
-    public void testDeleteUser()
+    public void testDeleteUser() throws Exception
     {
-        assertEquals("Unexpected number of users before test", 1,_umMBean.viewUsers().size());
-        assertTrue("Delete should return true to flag successful delete", _umMBean.deleteUser(TEST_USERNAME));
-        assertEquals("Unexpected number of users after test", 0,_umMBean.viewUsers().size());
+        boolean deleteSuccess = _userManagement.deleteUser(TEST_USERNAME);
+        assertTrue("Expected successful delete", deleteSuccess);
+
+        verify(_mockProvider).deleteUser(TEST_USERNAME);
     }
 
-    public void testDeleteUserWhereUserDoesNotExist()
+    public void testDeleteUserWhereUserDoesNotExist() throws Exception
     {
-        assertEquals("Unexpected number of users before test", 1,_umMBean.viewUsers().size());
-        assertFalse("Delete should return false to flag unsuccessful delete", _umMBean.deleteUser("made.up.username"));
-        assertEquals("Unexpected number of users after test", 1,_umMBean.viewUsers().size());
+        doThrow(AccountNotFoundException.class).when(_mockProvider).deleteUser(TEST_USERNAME);
 
+        boolean deleteSuccess = _userManagement.deleteUser(TEST_USERNAME);
+        assertFalse("Expected unsuccessful delete", deleteSuccess);
     }
     
-    public void testCreateUser()
+    public void testCreateUser() throws Exception
     {
-        assertEquals("Unexpected number of users before test", 1,_umMBean.viewUsers().size());
-        assertTrue("Create should return true to flag successful create", _umMBean.createUser("newuser", "mypass"));
-        assertEquals("Unexpected number of users before test", 2,_umMBean.viewUsers().size());
+        when(_mockProvider.createUser(TEST_USERNAME, TEST_PASSWORD, null)).thenReturn(true);
+
+        boolean createSuccess = _userManagement.createUser(TEST_USERNAME, TEST_PASSWORD);
+        assertTrue(createSuccess);
     }
 
     public void testCreateUserWhereUserAlreadyExists()
     {
-        assertEquals("Unexpected number of users before test", 1,_umMBean.viewUsers().size());
-        assertFalse("Create should return false to flag unsuccessful create", _umMBean.createUser(TEST_USERNAME, "mypass"));
-        assertEquals("Unexpected number of users before test", 1,_umMBean.viewUsers().size());
+        when(_mockProvider.createUser(TEST_USERNAME, TEST_PASSWORD, null)).thenReturn(false);
+
+        boolean createSuccess = _userManagement.createUser(TEST_USERNAME, TEST_PASSWORD);
+        assertFalse(createSuccess);
     }
 
-    public void testSetPassword()
+    public void testSetPassword() throws Exception
     {
-        assertTrue("Set password should return true to flag successful change", _umMBean.setPassword(TEST_USERNAME, "newpassword"));
-    }
-    
-    public void testSetPasswordWhereUserDoesNotExist()
-    {
-        assertFalse("Set password should return false to flag successful change", _umMBean.setPassword("made.up.username", "newpassword"));
+        boolean setPasswordSuccess = _userManagement.setPassword(TEST_USERNAME, TEST_PASSWORD);
+        assertTrue(setPasswordSuccess);
+
+        assertTrue("Set password should return true to flag successful change", setPasswordSuccess);
+
+        verify(_mockProvider).setPassword(TEST_USERNAME, TEST_PASSWORD);
     }
 
-    public void testViewUsers()
+    public void testSetPasswordWhereUserDoesNotExist() throws Exception
     {
-        TabularData userList = _umMBean.viewUsers();
+        doThrow(AccountNotFoundException.class).when(_mockProvider).setPassword(TEST_USERNAME, TEST_PASSWORD);
+
+        boolean setPasswordSuccess = _userManagement.setPassword(TEST_USERNAME, TEST_PASSWORD);
+
+        assertFalse("Set password should return false to flag unsuccessful change", setPasswordSuccess);
+    }
+
+    public void testReload() throws Exception
+    {
+        boolean reloadSuccess = _userManagement.reloadData();
+
+        assertTrue("Reload should return true to flag succesful update", reloadSuccess);
+
+        verify(_mockProvider).reload();
+    }
+
+    public void testReloadFails() throws Exception
+    {
+        doThrow(IOException.class).when(_mockProvider).reload();
+
+        boolean reloadSuccess = _userManagement.reloadData();
+
+        assertFalse("Expected reload to fail", reloadSuccess);
+    }
+
+    public void testViewUsers() throws Exception
+    {
+        Map<String,String> args = Collections.emptyMap();
+        when(_mockProvider.getUsers()).thenReturn(Collections.singletonMap(TEST_USERNAME, args));
+
+        TabularData userList = _userManagement.viewUsers();
 
         assertNotNull(userList);
         assertEquals("Unexpected number of users in user list", 1, userList.size());
@@ -140,43 +153,5 @@ public class UserManagementMBeanTest extends InternalBrokerBaseCase
         assertTrue(userRec.containsKey(UserManagement.RIGHTS_READ_WRITE));
         assertTrue(userRec.containsKey(UserManagement.RIGHTS_ADMIN));
         assertEquals(false, userRec.get(UserManagement.RIGHTS_ADMIN));
-    }
-
-    // ============================ Utility methods =========================
-
-    private void createFreshTestPasswordFile()
-    {
-        try
-        {
-            BufferedWriter passwordWriter = new BufferedWriter(new FileWriter(_passwordFile, false));
-            passwordWriter.write(TEST_USERNAME + ":" + TEST_PASSWORD);
-            passwordWriter.newLine();
-            passwordWriter.flush();
-            passwordWriter.close();
-        }
-        catch (IOException e)
-        {
-            fail("Unable to create test password file: " + e.getMessage());
-        }
-    }
-    
-    private ConfigurationPlugin getConfig(final String clazz, final String argName, final String argValue) throws Exception
-    {
-        final ConfigurationPlugin config = new PrincipalDatabaseAuthenticationManager.PrincipalDatabaseAuthenticationManagerConfiguration();
-
-        XMLConfiguration xmlconfig = new XMLConfiguration();
-        xmlconfig.addProperty("pd-auth-manager.principal-database.class", clazz);
-
-        if (argName != null)
-        {
-            xmlconfig.addProperty("pd-auth-manager.principal-database.attributes.attribute.name", argName);
-            xmlconfig.addProperty("pd-auth-manager.principal-database.attributes.attribute.value", argValue);
-        }
-
-        // Create a CompositeConfiguration as this is what the broker uses
-        CompositeConfiguration composite = new CompositeConfiguration();
-        composite.addConfiguration(xmlconfig);
-        config.setConfiguration("security", xmlconfig);
-        return config;
     }
 }
