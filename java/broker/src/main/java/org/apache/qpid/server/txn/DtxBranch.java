@@ -103,7 +103,7 @@ public class DtxBranch
             _timeoutFuture.cancel(false);
         }
         _timeout = timeout;
-        _expiration = timeout == 0 ? 0 : System.currentTimeMillis() + timeout;
+        _expiration = timeout == 0 ? 0 : System.currentTimeMillis() + (1000 * timeout);
 
         if(_timeout == 0)
         {
@@ -111,7 +111,7 @@ public class DtxBranch
         }
         else
         {
-            _timeoutFuture = _vhost.scheduleTask(_timeout, new Runnable()
+            _timeoutFuture = _vhost.scheduleTask(1000*_timeout, new Runnable()
             {
                 public void run()
                 {
