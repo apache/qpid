@@ -42,7 +42,6 @@ import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.adapter.BrokerAdapter;
-import org.apache.qpid.server.plugins.Plugin;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
@@ -585,7 +584,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     @Override
     public AuthenticationManager getAuthenticationManager(SocketAddress address)
     {
-        return _authenticationManagerRegistry.getAuthenticationManagerFor(address);
+        return _authenticationManagerRegistry.getAuthenticationManager(address);
     }
 
     @Override

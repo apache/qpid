@@ -28,7 +28,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 /**
  * Registry for {@link AuthenticationManager} instances.
  *
- * <p>A lookup method {@link #getAuthenticationManagerFor(SocketAddress)} allows a caller to determine
+ * <p>A lookup method {@link #getAuthenticationManager(SocketAddress)} allows a caller to determine
  * the AuthenticationManager associated with a particular port number.</p>
  *
  * <p>It is important to {@link #close()} the registry after use and this allows the AuthenticationManagers
@@ -44,7 +44,7 @@ public interface IAuthenticationManagerRegistry extends Closeable
      * @param address
      * @return authentication manager.
      */
-    public AuthenticationManager getAuthenticationManagerFor(SocketAddress address);
+    public AuthenticationManager getAuthenticationManager(SocketAddress address);
 
     Map<String, AuthenticationManager> getAvailableAuthenticationManagers();
 

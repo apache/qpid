@@ -98,7 +98,7 @@ public class TestApplicationRegistry extends ApplicationRegistry
             }
 
             @Override
-            public AuthenticationManager getAuthenticationManagerFor(
+            public AuthenticationManager getAuthenticationManager(
                     SocketAddress address)
             {
                 return pdam;
