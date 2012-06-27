@@ -32,6 +32,10 @@ except ImportError:
 # QMF address for the HA broker object.
 HA_BROKER = "org.apache.qpid.ha:habroker:ha-broker"
 
+class ExitStatus(Exception):
+    """Raised if a command want's a non-0 exit status from the script"""
+    def __init__(self, status): self.status = status
+
 class Command:
     commands = {}
 
@@ -54,7 +58,7 @@ class Command:
         qmf_broker = BrokerAgent(connection)
         ha_broker = qmf_broker.getHaBroker()
         if not ha_broker: raise Exception("HA module is not loaded on broker at %s"%broker)
-        try: return self.do_execute(qmf_broker, ha_broker, opts, args)
+        try: self.do_execute(qmf_broker, ha_broker, opts, args)
         finally: connection.close()
 
     def do_execute(self, qmf_broker, opts, args):
@@ -75,10 +79,10 @@ class StatusCmd(Command):
             help="Don't print status but return 0 if it matches <status>, 1 otherwise")
     def do_execute(self, qmf_broker, ha_broker, opts, args):
         if opts.expect:
-            if opts.expect != ha_broker.status: return 1
+            if opts.expect != ha_broker.status: raise ExitStatus(1)
         else:
             print ha_broker.status
-        return 0
+
 StatusCmd()
 
 class ReplicateCmd(Command):
@@ -134,18 +138,25 @@ def find_command(args):
             return Command.commands[arg]
     return None
 
-def main(argv):
-    try:
-        args=argv[1:]
-        if args and args[0] == "--help-all":
-            for c in Command.commands.itervalues():
-                c.op.print_help(); print
-            return 1
+def main_except(argv):
+    """This version of main raises exceptions"""
+    args=argv[1:]
+    if args and args[0] == "--help-all":
+        for c in Command.commands.itervalues():
+            c.op.print_help(); print
+    else:
         command = find_command(args)
         if not command:
             print_usage(os.path.basename(argv[0]));
-            return 1;
-        if command.execute(args): return 1
+            raise Exception("Command not found")
+        command.execute(args)
+
+def main(argv):
+    try:
+        main_except(argv)
+        return 0
+    except ExitStatus, e:
+        return e.status
     except Exception, e:
         print e
         return 1
