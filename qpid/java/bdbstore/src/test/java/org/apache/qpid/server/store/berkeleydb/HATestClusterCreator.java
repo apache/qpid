@@ -53,7 +53,7 @@ public class HATestClusterCreator
     private static final String MANY_BROKER_URL_FORMAT = "amqp://guest:guest@/%s?brokerlist='%s'&failover='roundrobin?cyclecount='%d''";
     private static final String BROKER_PORTION_FORMAT = "tcp://localhost:%d?connectdelay='%d',retries='%d'";
 
-    private static final int FAILOVER_CYCLECOUNT = 5;
+    private static final int FAILOVER_CYCLECOUNT = 10;
     private static final int FAILOVER_RETRIES = 1;
     private static final int FAILOVER_CONNECTDELAY = 1000;
 

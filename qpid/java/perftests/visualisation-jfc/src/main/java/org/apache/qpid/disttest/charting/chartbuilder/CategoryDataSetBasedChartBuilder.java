@@ -21,15 +21,19 @@ package org.apache.qpid.disttest.charting.chartbuilder;
 
 import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
+import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilderCallback;
+import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
 import org.jfree.chart.JFreeChart;
-import org.jfree.chart.axis.CategoryLabelPositions;
-import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
 
-public abstract class DataSetBasedChartBuilder implements ChartBuilder
+public abstract class CategoryDataSetBasedChartBuilder extends BaseChartBuilder
 {
-    private static final CategoryLabelPositions LABEL_POSITION = CategoryLabelPositions.UP_45;
-    private static final PlotOrientation PLOT_ORIENTATION = PlotOrientation.VERTICAL;
+    private final SeriesBuilder _seriesBuilder;
+
+    public CategoryDataSetBasedChartBuilder(SeriesBuilder seriesBuilder)
+    {
+        _seriesBuilder = seriesBuilder;
+    }
 
     @Override
     public JFreeChart buildChart(ChartingDefinition chartingDefinition)
@@ -40,29 +44,37 @@ public abstract class DataSetBasedChartBuilder implements ChartBuilder
 
         final DefaultCategoryDataset dataset = new DefaultCategoryDataset();
 
-        SeriesBuilder seriesBuilder = new SeriesBuilder(new DataPointCallback()
+        _seriesBuilder.setSeriesBuilderCallback(new SeriesBuilderCallback()
         {
             @Override
             public void addDataPointToSeries(SeriesDefinition seriesDefinition,
                     Object xValue, Object yValue)
             {
-                String x = (String) xValue;
-                double y = (Double) yValue;
+                String x = String.valueOf(xValue);
+                double y = Double.parseDouble(yValue.toString());
                 dataset.addValue( y, seriesDefinition.getSeriesLegend(), x);
+            }
+
+            @Override
+            public void beginSeries(SeriesDefinition seriesDefinition)
+            {
+                // unused
+            }
+
+            @Override
+            public void endSeries(SeriesDefinition seriesDefinition)
+            {
+                // unused
             }
         });
 
-        seriesBuilder.build(chartingDefinition.getSeries());
+        _seriesBuilder.build(chartingDefinition.getSeries());
 
         JFreeChart chart = createChartImpl(title, xAxisTitle, yAxisTitle,
-                dataset, PLOT_ORIENTATION, true, false, false);
+                dataset, PLOT_ORIENTATION, SHOW_LEGEND, SHOW_TOOL_TIPS, SHOW_URLS);
 
-        chart.getCategoryPlot().getDomainAxis().setCategoryLabelPositions(LABEL_POSITION);
+        addCommonChartAttributes(chart, chartingDefinition);
 
         return chart;
     }
-
-    public abstract JFreeChart createChartImpl(String title, String xAxisTitle,
-            String yAxisTitle, final DefaultCategoryDataset dataset, PlotOrientation plotOrientation,
-            boolean showLegend, boolean showToolTips, boolean showUrls);
 }

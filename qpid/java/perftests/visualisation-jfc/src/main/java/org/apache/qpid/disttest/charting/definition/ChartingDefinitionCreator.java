@@ -38,6 +38,7 @@ public class ChartingDefinitionCreator
 
     public static final String CHART_TYPE_KEY = "chartType";
     public static final String CHART_TITLE_KEY = "chartTitle";
+    public static final String CHART_SUBTITLE_KEY = "chartSubtitle";
     public static final String XAXIS_TITLE_KEY = "xAxisTitle";
     public static final String YAXIS_TITLE_KEY = "yAxisTitle";
 
@@ -80,6 +81,7 @@ public class ChartingDefinitionCreator
 
             final ChartType chartType = ChartType.valueOf(props.getProperty(CHART_TYPE_KEY));
             final String chartTitle = props.getProperty(CHART_TITLE_KEY);
+            final String chartSubtitle = props.getProperty(CHART_SUBTITLE_KEY);
             final String xAxisTitle = props.getProperty(XAXIS_TITLE_KEY);
             final String yAxisTitle = props.getProperty(YAXIS_TITLE_KEY);
 
@@ -88,9 +90,9 @@ public class ChartingDefinitionCreator
             final ChartingDefinition chartDefinition = new ChartingDefinition(chartStemName,
                                                                               chartType,
                                                                               chartTitle,
+                                                                              chartSubtitle,
                                                                               xAxisTitle,
-                                                                              yAxisTitle,
-                                                                              seriesDefinitions);
+                                                                              yAxisTitle, seriesDefinitions);
             return chartDefinition;
         }
         catch (IOException e)
@@ -134,7 +136,4 @@ public class ChartingDefinitionCreator
             return pathname.isFile() && pathname.getName().endsWith(CHARTDEF_FILE_EXTENSION);
         }
     }
-
-
-
 }

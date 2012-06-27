@@ -17,7 +17,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.disttest.charting.chartbuilder;
+package org.apache.qpid.disttest.charting.seriesbuilder;
 
 import java.io.File;
 import java.sql.Connection;
@@ -31,20 +31,23 @@ import java.util.List;
 import org.apache.qpid.disttest.charting.ChartingException;
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
 
-public class SeriesBuilder
+public class JdbcCsvSeriesBuilder implements SeriesBuilder
 {
+
     static
     {
         registerCsvDriver();
     }
 
-    private final DataPointCallback _dataPointCallback;
+    private SeriesBuilderCallback _callback;
 
-    public SeriesBuilder(DataPointCallback dataPointCallback)
+    @Override
+    public void setSeriesBuilderCallback(SeriesBuilderCallback callback)
     {
-        _dataPointCallback = dataPointCallback;
+        this._callback = callback;
     }
 
+    @Override
     public void build(List<SeriesDefinition> seriesDefinitions)
     {
         for (Iterator<SeriesDefinition> iterator = seriesDefinitions.iterator(); iterator.hasNext();)
@@ -69,13 +72,15 @@ public class SeriesBuilder
             stmt = conn.createStatement();
             ResultSet results = stmt.executeQuery(seriesStatement);
 
+            _callback.beginSeries(seriesDefinition);
             while (results.next())
             {
-                Object xValue = results.getString(1);
-                Object yValue = results.getDouble(2);
+                Object xValue = results.getObject(1);
+                Object yValue = results.getObject(2);
 
-                _dataPointCallback.addDataPointToSeries(seriesDefinition, xValue, yValue);
+                _callback.addDataPointToSeries(seriesDefinition, xValue, yValue);
             }
+            _callback.endSeries(seriesDefinition);
         }
         catch (SQLException e)
         {

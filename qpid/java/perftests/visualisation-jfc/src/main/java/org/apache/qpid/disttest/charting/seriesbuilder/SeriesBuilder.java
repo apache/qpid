@@ -17,18 +17,16 @@
  * under the License.
  *
  */
-package org.apache.qpid.disttest.charting.chartbuilder;
+package org.apache.qpid.disttest.charting.seriesbuilder;
 
-import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.PlotOrientation;
+import java.util.List;
 
-public interface ChartBuilder
+import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
+
+public interface SeriesBuilder
 {
-    public static final boolean SHOW_URLS = false;
-    public static final boolean SHOW_TOOL_TIPS = false;
-    public static final boolean SHOW_LEGEND = true;
-    public static final PlotOrientation PLOT_ORIENTATION = PlotOrientation.VERTICAL;
+    void build(List<SeriesDefinition> seriesDefinitions);
 
-    public JFreeChart buildChart(ChartingDefinition chartingDefinition);
+    void setSeriesBuilderCallback(SeriesBuilderCallback seriesBuilderCallback);
+
 }

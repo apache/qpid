@@ -56,7 +56,7 @@ public class ParticipantExecutor
     {
         _client = client;
 
-        LOGGER.info("Starting test participant in background thread: " + this);
+        LOGGER.debug("Starting test participant in background thread: " + this);
         _executor.execute(new ParticipantRunnable());
     }
 
@@ -94,9 +94,9 @@ public class ParticipantExecutor
             ParticipantResult result = null;
             try
             {
-                if (LOGGER.isInfoEnabled())
+                if (LOGGER.isDebugEnabled())
                 {
-                    LOGGER.info("About to run participant " + _participant);
+                    LOGGER.debug("About to run participant " + _participant);
                 }
                 result = _participant.doIt(_client.getClientName());
             }

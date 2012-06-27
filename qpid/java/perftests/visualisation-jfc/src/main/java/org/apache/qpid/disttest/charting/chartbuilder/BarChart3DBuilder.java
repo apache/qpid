@@ -19,6 +19,7 @@
  */
 package org.apache.qpid.disttest.charting.chartbuilder;
 
+
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
@@ -26,10 +27,10 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.general.Dataset;
 
-public class LineChartBuilder extends CategoryDataSetBasedChartBuilder
+public class BarChart3DBuilder extends CategoryDataSetBasedChartBuilder
 {
 
-    public LineChartBuilder(SeriesBuilder seriesBuilder)
+    public BarChart3DBuilder(SeriesBuilder seriesBuilder)
     {
         super(seriesBuilder);
     }
@@ -39,15 +40,17 @@ public class LineChartBuilder extends CategoryDataSetBasedChartBuilder
             String yAxisTitle, final Dataset dataset, PlotOrientation plotOrientation,
             boolean showLegend, boolean showToolTips, boolean showUrls)
     {
-        JFreeChart chart = ChartFactory.createLineChart(title,
-                                                        xAxisTitle,
-                                                        yAxisTitle,
-                                                        (CategoryDataset)dataset,
-                                                        plotOrientation,
-                                                        showLegend,
-                                                        showToolTips,
-                                                        showUrls);
+        JFreeChart chart = ChartFactory.createBarChart3D(title,
+                xAxisTitle,
+                yAxisTitle,
+                (CategoryDataset)dataset,
+                plotOrientation,
+                showLegend,
+                showToolTips,
+                showUrls);
+
         return chart;
     }
+
 
 }

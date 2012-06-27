@@ -17,7 +17,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.disttest.charting.chartbuilder;
+package org.apache.qpid.disttest.charting.seriesbuilder;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -31,14 +31,15 @@ import java.util.Collections;
 import junit.framework.TestCase;
 
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
+import org.apache.qpid.disttest.charting.seriesbuilder.JdbcCsvSeriesBuilder;
 
-public class SeriesBuilderTest extends TestCase
+public class JdbcCsvSeriesBuilderTest extends TestCase
 {
     private static final String TEST_SERIES_1_SELECT_STATEMENT = "SELECT A, B FROM test";
     private static final String TEST_SERIES_1_LEGEND = "SERIES_1_LEGEND";
 
-    private DataPointCallback _dataPointCallback = mock(DataPointCallback.class);
-    private SeriesBuilder _seriesBuilder = new SeriesBuilder(_dataPointCallback);
+    private SeriesBuilderCallback _seriesWalkerCallback = mock(SeriesBuilderCallback.class);
+    private JdbcCsvSeriesBuilder _seriesBuilder = new JdbcCsvSeriesBuilder();
 
     private File _testTempDir;
 
@@ -46,6 +47,7 @@ public class SeriesBuilderTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
+        _seriesBuilder.setSeriesBuilderCallback(_seriesWalkerCallback);
         _testTempDir = createTestTemporaryDirectory();
     }
 
@@ -56,9 +58,11 @@ public class SeriesBuilderTest extends TestCase
 
         _seriesBuilder.build(Collections.singletonList(seriesDefinition));
 
-        verify(_dataPointCallback).addDataPointToSeries(seriesDefinition, (Object)"elephant", (Object)2.0);
-        verify(_dataPointCallback).addDataPointToSeries(seriesDefinition, (Object)"lion", (Object)3.0);
-        verify(_dataPointCallback).addDataPointToSeries(seriesDefinition, (Object)"tiger", (Object)4.0);
+        verify(_seriesWalkerCallback).beginSeries(seriesDefinition);
+        verify(_seriesWalkerCallback).addDataPointToSeries(seriesDefinition, (Object)"elephant", (Object)"2");
+        verify(_seriesWalkerCallback).addDataPointToSeries(seriesDefinition, (Object)"lion", (Object)"3");
+        verify(_seriesWalkerCallback).addDataPointToSeries(seriesDefinition, (Object)"tiger", (Object)"4");
+        verify(_seriesWalkerCallback).endSeries(seriesDefinition);
     }
 
     private void createTestCsvIn(File testDir) throws Exception

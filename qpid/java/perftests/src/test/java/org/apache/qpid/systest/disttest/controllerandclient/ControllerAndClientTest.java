@@ -151,7 +151,7 @@ public class ControllerAndClientTest extends DistributedTestSystemTestBase
         List<ParticipantResult> test1ParticipantResults = testResult.getParticipantResults();
         assertEquals("Unexpected number of participant results for test", 2, test1ParticipantResults.size());
 
-        ParticipantResult producer1 = (ParticipantResult) test1ParticipantResults.get(1);
+        ParticipantResult producer1 = test1ParticipantResults.get(1);
 
         assertEquals(expectedMessageSize, producer1.getPayloadSize());
         assertEquals(iterationNumber, producer1.getIterationNumber());

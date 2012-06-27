@@ -23,13 +23,12 @@ import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.general.Dataset;
+import org.jfree.data.xy.XYDataset;
 
-public class LineChartBuilder extends CategoryDataSetBasedChartBuilder
+public class XYLineChartBuilder extends XYDataSetBasedChartBuilder
 {
-
-    public LineChartBuilder(SeriesBuilder seriesBuilder)
+    public XYLineChartBuilder(SeriesBuilder seriesBuilder)
     {
         super(seriesBuilder);
     }
@@ -39,15 +38,14 @@ public class LineChartBuilder extends CategoryDataSetBasedChartBuilder
             String yAxisTitle, final Dataset dataset, PlotOrientation plotOrientation,
             boolean showLegend, boolean showToolTips, boolean showUrls)
     {
-        JFreeChart chart = ChartFactory.createLineChart(title,
+        JFreeChart chart = ChartFactory.createXYLineChart(title,
                                                         xAxisTitle,
                                                         yAxisTitle,
-                                                        (CategoryDataset)dataset,
+                                                        (XYDataset)dataset,
                                                         plotOrientation,
                                                         showLegend,
                                                         showToolTips,
                                                         showUrls);
         return chart;
     }
-
 }

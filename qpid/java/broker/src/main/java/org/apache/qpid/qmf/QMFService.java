@@ -1741,6 +1741,12 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             return 0l;
         }
 
+        public Long getUnackedMessages()
+        {
+            // TODO
+            return 0l;
+        }
+
         public Long getTxnStarts()
         {
             return _obj.getTxnStarts();
