@@ -25,4 +25,5 @@ public interface BrokerHolder
     String getWorkingDirectory();
     void shutdown();
     void kill();
+    String dumpThreads();
 }

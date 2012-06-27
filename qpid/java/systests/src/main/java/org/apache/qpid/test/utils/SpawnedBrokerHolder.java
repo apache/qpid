@@ -20,7 +20,9 @@
  */
 package org.apache.qpid.test.utils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
@@ -158,4 +160,32 @@ public class SpawnedBrokerHolder implements BrokerHolder
         new PortHelper().waitUntilPortsAreFree(_portsUsedByBroker);
     }
 
+    @Override
+    public String dumpThreads()
+    {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try
+        {
+            Process process = Runtime.getRuntime().exec("jstack " + _pid);
+            InputStream is = process.getInputStream();
+            byte[] buffer = new byte[1024];
+            int length = -1;
+            while ((length = is.read(buffer)) != -1)
+            {
+                baos.write(buffer, 0, length);
+            }
+         }
+        catch (Exception e)
+        {
+            LOGGER.error("Error whilst collecting thread dump for " + _pid, e);
+        }
+        return new String(baos.toByteArray());
+    }
+
+    @Override
+    public String toString()
+    {
+        return "SpawnedBrokerHolder [_pid=" + _pid + ", _portsUsedByBroker="
+                + _portsUsedByBroker + "]";
+    }
 }

@@ -60,7 +60,7 @@ public class HATestClusterCreator
     private static final String SINGLE_BROKER_URL_WITH_RETRY_FORMAT = "amqp://guest:guest@/%s?brokerlist='tcp://localhost:%d?connectdelay='%d',retries='%d''";
     private static final String SINGLE_BROKER_URL_WITHOUT_RETRY_FORMAT = "amqp://guest:guest@/%s?brokerlist='tcp://localhost:%d'";
 
-    private static final int RETRIES = 30;
+    private static final int RETRIES = 60;
     private static final int CONNECTDELAY = 75;
 
     private final QpidBrokerTestCase _testcase;
