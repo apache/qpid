@@ -308,28 +308,17 @@ public class DtxRegistry
         return inDoubt;
     }
 
-    public synchronized void endAssociations(AMQSessionModel session) throws TimeoutDtxException
+    public synchronized void endAssociations(AMQSessionModel session)
     {
-        boolean timeout = false;
-        Xid id = null;
         for(DtxBranch branch : _branches.values())
         {
             if(branch.isAssociated(session))
             {
-                if(branch.expired() || branch.getState() == DtxBranch.State.TIMEDOUT)
-                {
-                    timeout = true;
-                    id = branch.getXid();
-                }
                 branch.setState(DtxBranch.State.ROLLBACK_ONLY);
                 branch.disassociateSession(session);
             }
         }
 
-        if(timeout)
-        {
-            throw new TimeoutDtxException(id);
-        }
     }
 
 
