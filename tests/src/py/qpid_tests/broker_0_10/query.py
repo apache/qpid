@@ -26,7 +26,7 @@ class QueryTests(TestBase010):
 
     def test_queue_query(self):
         session = self.session
-        session.queue_declare(queue="my-queue", exclusive=True)
+        session.queue_declare(queue="my-queue", exclusive=True, auto_delete=True)
         result = session.queue_query(queue="my-queue")
         self.assertEqual("my-queue", result.queue)
 
