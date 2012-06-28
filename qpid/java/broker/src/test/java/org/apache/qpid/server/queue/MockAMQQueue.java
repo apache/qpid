@@ -386,21 +386,6 @@ public class MockAMQQueue implements AMQQueue
         return null;
     }
 
-    public void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName)
-    {
-
-    }
-
-    public void copyMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName)
-    {
-
-    }
-
-    public void removeMessagesFromQueue(long fromMessageId, long toMessageId)
-    {
-
-    }
-
     public long getMaximumMessageSize()
     {
         return 0;

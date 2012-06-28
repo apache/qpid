@@ -160,13 +160,6 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
      */
     public List<QueueEntry> getMessagesRangeOnTheQueue(final long fromPosition, final long toPosition);
 
-
-    void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName);
-
-    void copyMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName);
-
-    void removeMessagesFromQueue(long fromMessageId, long toMessageId);
-
     void visit(QueueEntryVisitor visitor);
 
 
