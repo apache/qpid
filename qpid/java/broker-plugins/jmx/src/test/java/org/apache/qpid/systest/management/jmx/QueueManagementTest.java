@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpid.management.jmx;
+package org.apache.qpid.systest.management.jmx;
 
 import org.apache.commons.lang.time.FastDateFormat;
 
@@ -64,10 +64,10 @@ import java.util.concurrent.atomic.AtomicReference;
  * Tests the JMX API for the Managed Queue.
  *
  */
-public class ManagedQueueMBeanTest extends QpidBrokerTestCase
+public class QueueManagementTest extends QpidBrokerTestCase
 {
 
-    private static final Logger LOGGER = Logger.getLogger(ManagedQueueMBeanTest.class);
+    private static final Logger LOGGER = Logger.getLogger(QueueManagementTest.class);
 
     private static final String VIRTUAL_HOST = "test";
     private static final String TEST_QUEUE_DESCRIPTION = "my description";

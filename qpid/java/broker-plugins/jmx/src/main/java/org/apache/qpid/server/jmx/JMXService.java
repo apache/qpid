@@ -38,9 +38,6 @@ import org.apache.qpid.server.jmx.mbeans.ConfigurationManagementMBean;
 import org.apache.qpid.server.jmx.mbeans.ServerInformationMBean;
 import org.apache.qpid.server.jmx.mbeans.Shutdown;
 import org.apache.qpid.server.jmx.mbeans.VirtualHostMBean;
-import org.apache.qpid.server.logging.SystemOutMessageLogger;
-import org.apache.qpid.server.logging.actors.AbstractActor;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -66,17 +63,6 @@ public class JMXService implements ConfigurationChangeListener
 
     public JMXService() throws AMQException, JMException
     {
-        // TODO - logging actor
-        CurrentActor.set(new AbstractActor(new SystemOutMessageLogger())
-        {
-
-            @Override
-            public String getLogMessage()
-            {
-                return "[JMX Service]";
-            }
-        });
-
         _broker = ApplicationRegistry.getInstance().getBroker();
         _objectRegistry = new JMXManagedObjectRegistry();
 

@@ -35,7 +35,6 @@ public class JMXActivator implements  BundleActivator
 {
     private static final Logger LOGGER = Logger.getLogger(JMXActivator.class);
 
-
     private String _bundleName;
     private JMXService _jmxService;
 
@@ -49,10 +48,9 @@ public class JMXActivator implements  BundleActivator
         if (jmxManagementEnabled)
         {
             _jmxService = new JMXService();
-            _jmxService.start();
+            startJmsService(_jmxService);
 
             _bundleName = ctx.getBundle().getSymbolicName();
-            LOGGER.info("Registering jmx plugin: " + _bundleName);
 
             _registeredServices = registerServices(ctx);
         }
@@ -68,7 +66,10 @@ public class JMXActivator implements  BundleActivator
         {
             if (_jmxService != null)
             {
-                LOGGER.info("Stopping jmx plugin: " + _bundleName);
+                if (LOGGER.isInfoEnabled())
+                {
+                    LOGGER.info("Stopping jmx plugin: " + _bundleName);
+                }
                 _jmxService.close();
             }
 
@@ -87,6 +88,11 @@ public class JMXActivator implements  BundleActivator
 
     private List<ServiceRegistration> registerServices(BundleContext ctx)
     {
+        if (LOGGER.isInfoEnabled())
+        {
+            LOGGER.info("Registering jmx plugin: " + _bundleName);
+        }
+
         List<ServiceRegistration> serviceRegistrations = new ArrayList<ServiceRegistration>();
 
         ServiceRegistration jmxServiceRegistration = ctx.registerService(JMXService.class.getName(), _jmxService, null);
@@ -95,6 +101,28 @@ public class JMXActivator implements  BundleActivator
         serviceRegistrations.add(jmxServiceRegistration);
         serviceRegistrations.add(jmxConfigFactoryRegistration);
         return serviceRegistrations;
+    }
+
+    private void startJmsService(JMXService jmxService) throws Exception
+    {
+        if (LOGGER.isInfoEnabled())
+        {
+            LOGGER.info("Starting JMX service");
+        }
+        boolean startedSuccessfully = false;
+        try
+        {
+            jmxService.start();
+            startedSuccessfully = true;
+        }
+        finally
+        {
+            if (!startedSuccessfully)
+            {
+                LOGGER.error("JMX failed to start normally, closing service");
+                jmxService.close();
+            }
+        }
     }
 
     private void unregisterServices()

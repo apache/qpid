@@ -287,7 +287,9 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         RootMessageLogger[] messageLoggers = {new SystemOutMessageLogger(), _rootMessageLogger};
         _startupMessageLogger = new CompositeStartupMessageLogger(messageLoggers);
 
-        CurrentActor.set(new BrokerActor(_startupMessageLogger));
+        BrokerActor actor = new BrokerActor(_startupMessageLogger);
+        CurrentActor.setDefault(actor);
+        CurrentActor.set(actor);
 
         try
         {

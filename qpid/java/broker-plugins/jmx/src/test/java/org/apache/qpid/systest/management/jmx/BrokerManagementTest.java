@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpid.management.jmx;
+package org.apache.qpid.systest.management.jmx;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
@@ -31,7 +31,7 @@ import javax.management.ObjectName;
  * Tests the JMX API for the Managed Broker.
  *
  */
-public class ManagedBrokerMBeanTest extends QpidBrokerTestCase
+public class BrokerManagementTest extends QpidBrokerTestCase
 {
     /**
      * Test virtual host

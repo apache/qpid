@@ -18,10 +18,11 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.logging;
+package org.apache.qpid.systest.management.jmx;
 
 
 import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.logging.AbstractTestLogging;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.util.LogMonitor;
 
@@ -177,7 +178,7 @@ public class ManagementLoggingTest extends AbstractTestLogging
         if (isJavaBroker())
         {
             startBrokerAndCreateMonitor(true, false);
-            
+
             List<String> results = waitAndFindMatches("MNG-1002");
             // Validation
 

@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.management.jmx;
+package org.apache.qpid.server.stats;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
@@ -27,7 +27,6 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.util.LogMonitor;
 
@@ -41,14 +40,14 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 
 /**
- * Test generation of message statistics reporting.
+ * Test generation of message/data statistics reporting and the ability
+ * to control from the configuration file.
  */
-public class MessageStatisticsReportingTest extends QpidBrokerTestCase
+public class StatisticsReportingTest extends QpidBrokerTestCase
 {
     protected LogMonitor _monitor;
     protected static final String USER = "admin";
 
-    protected JMXTestUtils _jmxUtils;
     protected Connection _test, _dev, _local;
     protected String _queueName = "statistics";
     protected Destination _queue;
@@ -57,9 +56,6 @@ public class MessageStatisticsReportingTest extends QpidBrokerTestCase
     @Override
     public void setUp() throws Exception
     {
-        _jmxUtils = new JMXTestUtils(this, USER, USER);
-        _jmxUtils.setUp();
-
         setConfigurationProperty("statistics.generation.broker", "true");
         setConfigurationProperty("statistics.generation.virtualhosts", "true");
 
@@ -81,14 +77,11 @@ public class MessageStatisticsReportingTest extends QpidBrokerTestCase
         _dev.start();
         _local.start();
 
-        _jmxUtils.open();
     }
 
     @Override
     public void tearDown() throws Exception
     {
-        _jmxUtils.close();
-
         _test.close();
         _dev.close();
         _local.close();
@@ -104,14 +97,14 @@ public class MessageStatisticsReportingTest extends QpidBrokerTestCase
         sendUsing(_test, 10, 100);
         sendUsing(_dev, 20, 100);
         sendUsing(_local, 15, 100);
-        
+
         Thread.sleep(10 * 1000); // 15s
-        
+
         List<String> brokerStatsData = _monitor.findMatches("BRK-1008");
         List<String> brokerStatsMessages = _monitor.findMatches("BRK-1009");
         List<String> vhostStatsData = _monitor.findMatches("VHT-1003");
         List<String> vhostStatsMessages = _monitor.findMatches("VHT-1004");
-        
+
         assertEquals("Incorrect number of broker data stats log messages", 2, brokerStatsData.size());
         assertEquals("Incorrect number of broker message stats log messages", 2, brokerStatsMessages.size());
         assertEquals("Incorrect number of virtualhost data stats log messages", 6, vhostStatsData.size());
@@ -126,14 +119,14 @@ public class MessageStatisticsReportingTest extends QpidBrokerTestCase
         sendUsing(_test, 10, 100);
         sendUsing(_dev, 20, 100);
         sendUsing(_local, 15, 100);
-        
+
         Thread.sleep(10 * 1000); // 15s
-        
+
         List<String> brokerStatsData = _monitor.findMatches("BRK-1008");
         List<String> brokerStatsMessages = _monitor.findMatches("BRK-1009");
         List<String> vhostStatsData = _monitor.findMatches("VHT-1003");
         List<String> vhostStatsMessages = _monitor.findMatches("VHT-1004");
-        
+
         assertEquals("Incorrect number of broker data stats log messages", 0, brokerStatsData.size());
         assertEquals("Incorrect number of broker message stats log messages", 0, brokerStatsMessages.size());
         assertEquals("Incorrect number of virtualhost data stats log messages", 0, vhostStatsData.size());

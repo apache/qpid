@@ -43,5 +43,5 @@ org.apache.qpid.server.store.berkeleydb.*
 
 org.apache.qpid.server.store.DurableConfigurationStoreTest#*
 
-org.apache.qpid.management.jmx.ManagedQueueMBeanTest#testAlternateExchangeSurvivesRestart
-org.apache.qpid.management.jmx.ManagedQueueMBeanTest#testQueueDescriptionSurvivesRestart
+org.apache.qpid.systest.management.jmx.QueueManagementTest#testAlternateExchangeSurvivesRestart
+org.apache.qpid.systest.management.jmx.QueueManagementTest#testQueueDescriptionSurvivesRestart

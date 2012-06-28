@@ -22,6 +22,7 @@ package org.apache.qpid.server.jmx;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -199,8 +200,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
 
             try
             {
-                // Actually invoke the method
-                return method.invoke(_mbs, args);
+                return doInvokeWrappingWithManagementActor(method, args);
             }
             finally
             {
@@ -213,6 +213,21 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
         catch (InvocationTargetException e)
         {
             throw e.getTargetException();
+        }
+    }
+
+    private Object doInvokeWrappingWithManagementActor(Method method,
+            Object[] args) throws IllegalAccessException,
+            InvocationTargetException
+    {
+        try
+        {
+            CurrentActor.set(_logActor);
+            return method.invoke(_mbs, args);
+        }
+        finally
+        {
+            CurrentActor.remove();
         }
     }
 

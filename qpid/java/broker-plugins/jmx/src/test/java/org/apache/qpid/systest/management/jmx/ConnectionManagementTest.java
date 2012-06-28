@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpid.management.jmx;
+package org.apache.qpid.systest.management.jmx;
 
 import java.io.IOException;
 import java.util.Date;
@@ -42,7 +42,7 @@ import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
-public class ManagedConnectionMBeanTest extends QpidBrokerTestCase
+public class ConnectionManagementTest extends QpidBrokerTestCase
 {
     private static final String VIRTUAL_HOST_NAME = "test";
 

@@ -17,7 +17,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.management.jmx;
+package org.apache.qpid.systest.management.jmx;
 
 import java.util.List;
 
@@ -34,7 +34,7 @@ import org.apache.qpid.management.common.mbeans.ServerInformation;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
-public class MessageStatisticsTest extends QpidBrokerTestCase
+public class StatisticsTest extends QpidBrokerTestCase
 {
     private static final String TEST_USER = "admin";
     private static final String TEST_PASSWORD = "admin";
@@ -160,7 +160,7 @@ public class MessageStatisticsTest extends QpidBrokerTestCase
         final MessageConsumer consumer = session.createConsumer(queue);
         for (int i = 0 ; i < numberOfMessages ; i++)
         {
-            assertNotNull("an expected message was not recieved", consumer.receive(1500));
+            assertNotNull("an expected message was not received", consumer.receive(1500));
         }
         session.commit();
         consumer.close();

@@ -38,8 +38,3 @@ org.apache.qpid.systest.disttest.controlleronly.*
 org.apache.qpid.systest.disttest.controllerandclient.*
 org.apache.qpid.systest.disttest.endtoend.*
 
-
-//Temp Excludes for branch
-org.apache.qpid.management.jmx.ManagementActorLoggingTest#*
-# Expects management log messages in SystemOut that arent present anymore due to move to plugin
-org.apache.qpid.server.logging.ManagementLoggingTest#*

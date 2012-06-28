@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.management.jmx;
+package org.apache.qpid.systest.management.jmx;
 
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
