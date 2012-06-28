@@ -33,15 +33,7 @@ import javax.management.ObjectName;
  */
 public class BrokerManagementTest extends QpidBrokerTestCase
 {
-    /**
-     * Test virtual host
-     */
     private static final String VIRTUAL_HOST = "test";
-
-    /**
-     * Test exchange type
-     */
-    private static final String EXCHANGE_TYPE = "topic";
 
     /**
      * JMX helper.
@@ -82,7 +74,7 @@ public class BrokerManagementTest extends QpidBrokerTestCase
         _managedBroker.createNewQueue(queueName, "testowner", true);
 
         // Ensure the queue exists
-        assertNotNull("Queue object name expected to exist", _jmxUtils.getQueueObjectName("test", queueName));
+        assertNotNull("Queue object name expected to exist", _jmxUtils.getQueueObjectName(VIRTUAL_HOST, queueName));
         assertNotNull("Manager queue expected to be available", _jmxUtils.getManagedQueue(queueName));
 
         // Now verify that the default exchange has been bound.
@@ -104,14 +96,11 @@ public class BrokerManagementTest extends QpidBrokerTestCase
     {
         String exchangeName = getTestName();
         _managedBroker.createNewExchange(exchangeName, "topic", true);
-        String queryString = "org.apache.qpid:type=VirtualHost.Exchange,VirtualHost="
-                + ObjectName.quote(VIRTUAL_HOST) + ",name=" + ObjectName.quote(exchangeName) + ",ExchangeType="
-                + EXCHANGE_TYPE;
-        ManagedExchange exchange = _jmxUtils.getManagedObject(ManagedExchange.class, queryString);
+
+        ManagedExchange exchange = _jmxUtils.getManagedExchange(exchangeName);
         assertNotNull("Exchange should exist", exchange);
 
         _managedBroker.unregisterExchange(exchangeName);
-        assertFalse("Exchange should have been removed", _jmxUtils.isManagedObjectExist(queryString));
     }
 
     /**

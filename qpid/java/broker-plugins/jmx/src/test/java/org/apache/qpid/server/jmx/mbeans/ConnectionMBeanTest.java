@@ -31,7 +31,6 @@ import javax.management.openmbean.TabularData;
 
 import junit.framework.TestCase;
 
-import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
@@ -206,9 +205,7 @@ public class ConnectionMBeanTest extends TestCase
     private void assertAttribute(String jmxAttributeName, Object expectedValue, String underlyingAttributeName) throws Exception
     {
         when(_mockConnection.getAttribute(underlyingAttributeName)).thenReturn(expectedValue);
-
-        Object actualValue = PropertyUtils.getSimpleProperty(_connectionMBean, jmxAttributeName);
-        assertEquals("Unexpected " + jmxAttributeName, expectedValue, actualValue);
+        MBeanTestUtils.assertMBeanAttribute(_connectionMBean, jmxAttributeName, expectedValue);
     }
 
     private void assertChannelRow(final CompositeData row, int channelId, int unacknowledgedMessages, boolean isTransactional, boolean flowBlocked)

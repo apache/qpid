@@ -33,8 +33,11 @@ import javax.management.JMException;
 import javax.management.MBeanException;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
+import javax.management.OperationsException;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.AMQInvalidArgumentException;
+import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
@@ -66,6 +69,7 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
     }
 
 
+    @Override
     public String getObjectInstanceName()
     {
         return ObjectName.quote(_virtualHostMBean.getName());
@@ -77,17 +81,20 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
         return _virtualHostMBean;
     }
 
+    @Override
     public String[] getExchangeTypes() throws IOException
     {
         Collection<String> exchangeTypes = _virtualHostMBean.getVirtualHost().getExchangeTypes();
         return exchangeTypes.toArray(new String[exchangeTypes.size()]);
     }
 
+    @Override
     public List<String> retrieveQueueAttributeNames() throws IOException
     {
         return ManagedQueue.QUEUE_ATTRIBUTES;
     }
 
+    @Override
     public List<List<Object>> retrieveQueueAttributeValues(
             @MBeanOperationParameter(name = "attributes", description = "Attributes to retrieve") String[] attributes)
             throws IOException
@@ -125,46 +132,52 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
 
     }
 
+    @Override
     public void createNewExchange(String name, String type, boolean durable)
             throws IOException, JMException, MBeanException
     {
-        getConfiguredObject().createExchange(name, State.ACTIVE, durable,
-                                        LifetimePolicy.PERMANENT, 0l, type, Collections.EMPTY_MAP);
+        if (!getConfiguredObject().getExchangeTypes().contains(type))
+        {
+            throw new OperationsException("No such exchange type \""+type+"\"");
+        }
+
+        try
+        {
+            getConfiguredObject().createExchange(name, State.ACTIVE, durable,
+                                            LifetimePolicy.PERMANENT, 0l, type, Collections.EMPTY_MAP);
+        }
+        catch (IllegalArgumentException iae)
+        {
+            JMException jme = new JMException(iae.toString());
+            throw new MBeanException(jme, "Error in creating exchange " + name);
+        }
 
     }
 
+    @Override
     public void unregisterExchange(String exchangeName)
             throws IOException, JMException, MBeanException
     {
-        Exchange theExchange = null;
-        for(Exchange exchange : _virtualHostMBean.getVirtualHost().getExchanges())
+        Exchange theExchange = MBeanUtils.findExchangeFromExchangeName(_virtualHostMBean.getVirtualHost(), exchangeName);
+        try
         {
-            if(exchange.getName().equals(exchangeName))
-            {
-                theExchange = exchange;
-                break;
-            }
+            theExchange.delete();
         }
-        if(theExchange != null)
+        catch (IllegalStateException ex)
         {
-            try
-            {
-                theExchange.delete();
-            }
-            catch (IllegalStateException ex)
-            {
-                final JMException jme = new JMException(ex.toString());
-                throw new MBeanException(jme, "Error in unregistering exchange " + exchangeName);
-            }
+            final JMException jme = new JMException(ex.toString());
+            throw new MBeanException(jme, "Error in unregistering exchange " + exchangeName);
         }
     }
 
+    @Override
     public void createNewQueue(String queueName, String owner, boolean durable)
             throws IOException, JMException, MBeanException
     {
         createNewQueue(queueName, owner, durable, Collections.EMPTY_MAP);
     }
 
+    @Override
     public void createNewQueue(String queueName, String owner, boolean durable, Map<String, Object> originalArguments)
             throws IOException, JMException
     {
@@ -203,32 +216,20 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
         return argumentsCopy;
     }
 
+    @Override
     public void deleteQueue(
             @MBeanOperationParameter(name = ManagedQueue.TYPE, description = "Queue Name") String queueName)
             throws IOException, JMException, MBeanException
     {
-        Queue theQueue = null;
-        for(Queue queue : _virtualHostMBean.getVirtualHost().getQueues())
-        {
-            if(queue.getName().equals(queueName))
-            {
-                theQueue = queue;
-                break;
-            }
-        }
-        if(theQueue != null)
-        {
-            theQueue.delete();
-        }
+        Queue theQueue = MBeanUtils.findQueueFromQueueName(_virtualHostMBean.getVirtualHost(), queueName);
+        theQueue.delete();
     }
-
 
     @Override
     public ObjectName getObjectName() throws MalformedObjectNameException
     {
         return getObjectNameForSingleInstanceMBean();
     }
-
 
     public synchronized boolean isStatisticsEnabled()
     {

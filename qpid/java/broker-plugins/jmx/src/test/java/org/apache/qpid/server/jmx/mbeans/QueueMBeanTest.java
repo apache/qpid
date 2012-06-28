@@ -34,7 +34,9 @@ import javax.management.OperationsException;
 
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.NotificationCheck;
 import org.mockito.ArgumentMatcher;
@@ -49,6 +51,7 @@ public class QueueMBeanTest extends TestCase
     private static final String QUEUE_ALTERNATE_EXCHANGE = "QUEUE_ALTERNATE_EXCHANGE";
 
     private Queue _mockQueue;
+    private Statistics _mockQueueStatistics;
     private VirtualHostMBean _mockVirtualHostMBean;
     private ManagedObjectRegistry _mockManagedObjectRegistry;
     private QueueMBean _queueMBean;
@@ -57,7 +60,9 @@ public class QueueMBeanTest extends TestCase
     protected void setUp() throws Exception
     {
         _mockQueue = mock(Queue.class);
+        _mockQueueStatistics = mock(Statistics.class);
         when(_mockQueue.getName()).thenReturn(QUEUE_NAME);
+        when(_mockQueue.getStatistics()).thenReturn(_mockQueueStatistics);
         _mockVirtualHostMBean = mock(VirtualHostMBean.class);
 
         _mockManagedObjectRegistry = mock(ManagedObjectRegistry.class);
@@ -71,25 +76,160 @@ public class QueueMBeanTest extends TestCase
         assertEquals(QUEUE_NAME, _queueMBean.getName());
     }
 
-    public void testGetQueueDescription()
-    {
-        when(_mockQueue.getAttribute(Queue.DESCRIPTION)).thenReturn(QUEUE_DESCRIPTION);
+    /**********  Statistics **********/
 
-        assertEquals(QUEUE_DESCRIPTION, _queueMBean.getDescription());
+    public void testGetMessageCount() throws Exception
+    {
+        assertStatistic("messageCount", 1000, Queue.QUEUE_DEPTH_MESSAGES);
     }
 
-    public void testSetQueueDescription()
+    public void testGetReceivedMessageCount() throws Exception
     {
-        _queueMBean.setDescription(QUEUE_DESCRIPTION);
-        verify(_mockQueue).setAttribute(Queue.DESCRIPTION, null, QUEUE_DESCRIPTION);
+        assertStatistic("receivedMessageCount", 1000l, Queue.TOTAL_ENQUEUED_MESSAGES);
     }
 
-    public void testQueueType()
+    public void testQueueDepth() throws Exception
     {
-        when(_mockQueue.getAttribute(Queue.TYPE)).thenReturn(QUEUE_TYPE);
-
-        assertEquals(QUEUE_TYPE, _queueMBean.getQueueType());
+        assertStatistic("queueDepth", 4096l, Queue.QUEUE_DEPTH_BYTES);
     }
+
+    public void testActiveConsumerCount() throws Exception
+    {
+        assertStatistic("activeConsumerCount", 3, Queue.CONSUMER_COUNT_WITH_CREDIT);
+    }
+
+    public void testConsumerCount() throws Exception
+    {
+        assertStatistic("consumerCount", 3, Queue.CONSUMER_COUNT);
+    }
+
+    /**********  Simple Attributes **********/
+
+    public void testGetQueueDescription() throws Exception
+    {
+        assertAttribute("description", QUEUE_DESCRIPTION, Queue.DESCRIPTION);
+    }
+
+    public void testSetQueueDescription() throws Exception
+    {
+        testSetAttribute("description", Queue.DESCRIPTION, "descriptionold", "descriptionnew");
+    }
+
+    public void testQueueType() throws Exception
+    {
+        assertAttribute("queueType", QUEUE_TYPE, Queue.TYPE);
+    }
+
+    public void testMaximumDeliveryCount() throws Exception
+    {
+        assertAttribute("maximumDeliveryCount", 5, Queue.MAXIMUM_DELIVERY_ATTEMPTS);
+    }
+
+    public void testOwner() throws Exception
+    {
+        assertAttribute("owner", "testOwner", Queue.OWNER);
+    }
+
+    public void testIsDurable() throws Exception
+    {
+        when(_mockQueue.isDurable()).thenReturn(true);
+        assertTrue(_queueMBean.isDurable());
+    }
+
+    public void testIsNotDurable() throws Exception
+    {
+        when(_mockQueue.isDurable()).thenReturn(false);
+        assertFalse(_queueMBean.isDurable());
+    }
+
+    public void testIsAutoDelete() throws Exception
+    {
+        when(_mockQueue.getLifetimePolicy()).thenReturn(LifetimePolicy.AUTO_DELETE);
+        assertTrue(_queueMBean.isAutoDelete());
+    }
+
+    public void testIsNotAutoDelete() throws Exception
+    {
+        when(_mockQueue.getLifetimePolicy()).thenReturn(LifetimePolicy.PERMANENT);
+        assertFalse(_queueMBean.isAutoDelete());
+    }
+
+    public void testGetMaximumMessageAge() throws Exception
+    {
+        assertAttribute("maximumMessageAge", 10000l, Queue.ALERT_THRESHOLD_MESSAGE_AGE);
+    }
+
+    public void testSetMaximumMessageAge() throws Exception
+    {
+        testSetAttribute("maximumMessageAge", Queue.ALERT_THRESHOLD_MESSAGE_AGE, 1000l, 10000l);
+    }
+
+    public void testGetMaximumMessageSize() throws Exception
+    {
+        assertAttribute("maximumMessageSize", 1024l, Queue.ALERT_THRESHOLD_MESSAGE_SIZE);
+    }
+
+    public void testSetMaximumMessageSize() throws Exception
+    {
+        testSetAttribute("maximumMessageSize", Queue.ALERT_THRESHOLD_MESSAGE_SIZE, 1024l, 2048l);
+    }
+
+    public void testGetMaximumMessageCount() throws Exception
+    {
+        assertAttribute("maximumMessageCount", 5000l, Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES);
+    }
+
+    public void testSetMaximumMessageCount() throws Exception
+    {
+        testSetAttribute("maximumMessageCount", Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 4000l, 5000l);
+    }
+
+    public void testGetMaximumQueueDepth() throws Exception
+    {
+        assertAttribute("maximumQueueDepth", 1048576l, Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES);
+    }
+
+    public void testSetMaximumQueueDepth() throws Exception
+    {
+        testSetAttribute("maximumQueueDepth", Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,1048576l , 2097152l);
+    }
+
+    public void testGetCapacity() throws Exception
+    {
+        assertAttribute("capacity", 1048576l, Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES);
+    }
+
+    public void testSetCapacity() throws Exception
+    {
+        testSetAttribute("capacity", Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES,1048576l , 2097152l);
+    }
+
+    public void testGetFlowResumeCapacity() throws Exception
+    {
+        assertAttribute("flowResumeCapacity", 1048576l, Queue.QUEUE_FLOW_RESUME_SIZE_BYTES);
+    }
+
+    public void testSetFlowResumeCapacity() throws Exception
+    {
+        testSetAttribute("flowResumeCapacity", Queue.QUEUE_FLOW_RESUME_SIZE_BYTES,1048576l , 2097152l);
+    }
+
+    public void testIsExclusive() throws Exception
+    {
+        assertAttribute("exclusive", Boolean.TRUE, Queue.EXCLUSIVE);
+    }
+
+    public void testIsNotExclusive() throws Exception
+    {
+        assertAttribute("exclusive", Boolean.FALSE, Queue.EXCLUSIVE);
+    }
+
+    public void testSetExclusive() throws Exception
+    {
+        testSetAttribute("exclusive", Queue.EXCLUSIVE, Boolean.FALSE , Boolean.TRUE);
+    }
+
+    /**********  Other attributes **********/
 
     public void testGetAlternateExchange()
     {
@@ -153,6 +293,10 @@ public class QueueMBeanTest extends TestCase
         verify(_mockQueue).setAttribute(Queue.ALTERNATE_EXCHANGE, null, null);
     }
 
+    /**********  Operations **********/
+
+    /**********  Notifications **********/
+
     public void testNotificationListenerCalled() throws Exception
     {
         NotificationListener listener = mock(NotificationListener.class);
@@ -199,4 +343,26 @@ public class QueueMBeanTest extends TestCase
             }
         });
     }
+
+    private void assertStatistic(String jmxAttributeName, Object expectedValue, String underlyingAttributeName) throws Exception
+    {
+        when(_mockQueueStatistics.getStatistic(underlyingAttributeName)).thenReturn(expectedValue);
+        MBeanTestUtils.assertMBeanAttribute(_queueMBean, jmxAttributeName, expectedValue);
+    }
+
+    private void assertAttribute(String jmxAttributeName, Object expectedValue, String underlyingAttributeName) throws Exception
+    {
+        when(_mockQueue.getAttribute(underlyingAttributeName)).thenReturn(expectedValue);
+        MBeanTestUtils.assertMBeanAttribute(_queueMBean, jmxAttributeName, expectedValue);
+    }
+
+    private void testSetAttribute(String jmxAttributeName, String underlyingAttributeName, Object originalAttributeValue, Object newAttributeValue) throws Exception
+    {
+        when(_mockQueue.getAttribute(underlyingAttributeName)).thenReturn(originalAttributeValue);
+
+        MBeanTestUtils.setMBeanAttribute(_queueMBean, jmxAttributeName, newAttributeValue);
+
+        verify(_mockQueue).setAttribute(underlyingAttributeName, originalAttributeValue, newAttributeValue);
+    }
+
 }

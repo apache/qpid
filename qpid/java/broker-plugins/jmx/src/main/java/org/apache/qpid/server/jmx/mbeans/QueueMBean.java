@@ -48,7 +48,6 @@ import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.ConfiguredObjectFinder;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
@@ -143,16 +142,9 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
         return _queue.getName();
     }
 
-
     public Integer getMessageCount()
     {
         return getStatisticValue(Queue.QUEUE_DEPTH_MESSAGES).intValue();
-    }
-
-    private Number getStatisticValue(String name)
-    {
-        final Number statistic = (Number) _queue.getStatistics().getStatistic(name);
-        return statistic == null ? Integer.valueOf(0) : statistic;
     }
 
     public Integer getMaximumDeliveryCount()
@@ -285,7 +277,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
         else
         {
             VirtualHost virtualHost = _queue.getParent(VirtualHost.class);
-            Exchange exchange = findExchangeFromExchangeName(virtualHost, exchangeName);
+            Exchange exchange = MBeanUtils.findExchangeFromExchangeName(virtualHost, exchangeName);
 
             _queue.setAttribute(Queue.ALTERNATE_EXCHANGE, getAlternateExchange(), exchange);
         }
@@ -409,9 +401,8 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
         GetMessageVisitor visitor = new GetMessageVisitor(messageId);
         _queue.visit(visitor);
         return visitor.getEntry();
-
     }
-    
+
     public void deleteMessageFromTop() throws IOException, JMException
     {
         VirtualHost vhost = _queue.getParent(VirtualHost.class);
@@ -477,7 +468,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
         }
 
         VirtualHost vhost = _queue.getParent(VirtualHost.class);
-        final Queue destinationQueue = findQueueFromQueueName(vhost, toQueue);
+        final Queue destinationQueue = MBeanUtils.findQueueFromQueueName(vhost, toQueue);
 
         vhost.executeTransaction(new VirtualHost.TransactionalOperation()
         {
@@ -549,7 +540,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
         }
 
         VirtualHost vhost = _queue.getParent(VirtualHost.class);
-        final Queue destinationQueue = findQueueFromQueueName(vhost, toQueue);
+        final Queue destinationQueue = MBeanUtils.findQueueFromQueueName(vhost, toQueue);
 
         vhost.executeTransaction(new VirtualHost.TransactionalOperation()
         {
@@ -664,29 +655,9 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
         _queue.setAttribute(Queue.DESCRIPTION, getDescription(), description);
     }
 
-    private Queue findQueueFromQueueName(VirtualHost virtualHost, String queueName) throws OperationsException
+    private Number getStatisticValue(String name)
     {
-        Queue queue = ConfiguredObjectFinder.findConfiguredObjectByName(virtualHost.getQueues(), queueName);
-        if (queue == null)
-        {
-            throw new OperationsException("No such queue \""+queueName+"\"");
-        }
-        else
-        {
-            return queue;
-        }
-    }
-
-    private Exchange findExchangeFromExchangeName(VirtualHost virtualHost, String exchangeName) throws OperationsException
-    {
-        Exchange exchange = ConfiguredObjectFinder.findConfiguredObjectByName(virtualHost.getExchanges(), exchangeName);
-        if (exchange == null)
-        {
-            throw new OperationsException("No such exchange \""+exchangeName+"\"");
-        }
-        else
-        {
-            return exchange;
-        }
+        final Number statistic = (Number) _queue.getStatistics().getStatistic(name);
+        return statistic == null ? Integer.valueOf(0) : statistic;
     }
 }
