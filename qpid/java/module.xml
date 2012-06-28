@@ -52,10 +52,11 @@
   <property name="module.results"      location="${build.results}/${module}"/>
   <property name="module.failed"       location="${module.results}/FAILED"/>
   <property name="module.src"          location="src/main/java"/>
-  <property name="module.src.resources" location="src/main/resources"/>
   <property name="module.test.src"     location="src/test/java"/>
   <property name="module.bin"          location="bin"/>
   <property name="module.etc"          location="etc"/>
+  <property name="module.src.resources.metainf" location="src/main/resources/META-INF"/>
+  <property name="module.metainf" location="${module.build}/META-INF"/>
     
   <property name="module.namever"      value="${project.name}-${module.name}-${project.version}"/>
   <property name="module.namever.osgi" value="${project.name}-${module.name}_${project.version}.0.osgi"/>
@@ -83,6 +84,7 @@
   <available property="module.test.src.exists" file="${module.test.src}"/>
   <available property="module.etc.exists" file="${module.etc}"/>
   <available property="module.bin.exists" file="${module.bin}"/>
+  <available property="module.src.resources.metainf.exists" file="${module.src.resources.metainf}"/>
 
   <property name="module.source.jar"
             location="${build.lib}/${project.name}-${module.name}-${project.version}-sources.jar"/>
@@ -443,19 +445,29 @@
   <target name="postbuild" description="run after a build"/>
 
   <target name="build" depends="jar,jar-tests,jar-sources,libs,copy-bin,copy-etc,postbuild" description="compile and copy resources into build tree"/>
-  <target name="jar.manifest" depends="compile" if="module.manifest">
+
+  <target name="jar.manifest" depends="compile, copy-module-metainf" if="module.manifest">
     <jar destfile="${module.jar}" basedir="${module.classes}" manifest="${module.manifest}">
-       <metainf dir="${project.root}/resources/" />
-       <metainf dir="${module.src.resources}" erroronmissingdir="false"/>
+       <metainf dir="${module.metainf}" />
     </jar>
   </target>
 
-  <target name="jar.nomanifest" depends="compile" unless="module.manifest">
-
+  <target name="jar.nomanifest" depends="compile, copy-module-metainf" unless="module.manifest">
     <jar destfile="${module.jar}" basedir="${module.classes}">
-       <metainf dir="${project.root}/resources/" />
-       <metainf dir="${module.src.resources}" erroronmissingdir="false"/>
+       <metainf dir="${module.metainf}" />
     </jar>
+  </target>
+
+  <target name="copy-module-metainf" depends="copy-metainf-resources" if="module.src.resources.metainf.exists">
+    <copy todir="${module.metainf}" failonerror="true">
+        <fileset dir="${module.src.resources.metainf}"/>
+    </copy>
+  </target>
+
+  <target name="copy-metainf-resources">
+    <copy todir="${module.metainf}" failonerror="true">
+        <fileset dir="${project.root}/resources/"/>
+    </copy>
   </target>
 
   <target name="jar" depends="jar.manifest,jar.nomanifest" description="create jar"/>
