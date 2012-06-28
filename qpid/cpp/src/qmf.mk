@@ -30,7 +30,8 @@ lib_LTLIBRARIES +=	\
 #
 QMF_API =					\
   ../include/qpid/agent/ManagementAgent.h	\
-  ../include/qpid/agent/QmfAgentImportExport.h
+  ../include/qpid/agent/QmfAgentImportExport.h	\
+  ../include/qmf/BrokerImportExport.h
 
 #
 # Public headers for the QMF2 API
@@ -96,7 +97,6 @@ libqmf2_la_SOURCES = 		\
   qmf/AgentSessionImpl.h	\
   qmf/AgentSubscription.cpp	\
   qmf/AgentSubscription.h	\
-  qmf/BrokerImportExport.h	\
   qmf/ConsoleEvent.cpp		\
   qmf/ConsoleEventImpl.h	\
   qmf/ConsoleSession.cpp	\

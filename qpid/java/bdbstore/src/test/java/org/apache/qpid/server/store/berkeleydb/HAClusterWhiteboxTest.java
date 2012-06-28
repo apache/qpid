@@ -20,7 +20,6 @@
 package org.apache.qpid.server.store.berkeleydb;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Set;
 
 import javax.jms.Connection;
@@ -34,8 +33,6 @@ import javax.jms.Session;
 import org.apache.log4j.Logger;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.url.URLSyntaxException;
-
-import com.sleepycat.je.rep.ReplicationConfig;
 
 /**
  * The HA white box tests test the BDB cluster where the test retains the knowledge of the
@@ -103,7 +100,7 @@ public class HAClusterWhiteboxTest extends QpidBrokerTestCase
         final Connection initialConnection = getConnectionToNodeInCluster();
         assertNotNull(initialConnection);
 
-        killConnectionBroker(initialConnection);
+        closeConnectionAndKillBroker(initialConnection);
 
         final Connection subsequentConnection = getConnectionToNodeInCluster();
         assertNotNull(subsequentConnection);
@@ -119,7 +116,7 @@ public class HAClusterWhiteboxTest extends QpidBrokerTestCase
         final Connection initialConnection = getConnectionToNodeInCluster();
         assertNotNull(initialConnection);
 
-        killConnectionBroker(initialConnection);
+        closeConnectionAndKillBroker(initialConnection);
 
         final Connection subsequentConnection = getConnectionToNodeInCluster();
         assertNotNull(subsequentConnection);
@@ -139,6 +136,7 @@ public class HAClusterWhiteboxTest extends QpidBrokerTestCase
         assertNotNull(connection);
 
         final int brokerPortNumber = _clusterCreator.getBrokerPortNumberFromConnection(connection);
+        connection.close();
 
         _clusterCreator.stopNode(brokerPortNumber);
         _clusterCreator.startNode(brokerPortNumber);
@@ -157,7 +155,7 @@ public class HAClusterWhiteboxTest extends QpidBrokerTestCase
 
         populateBrokerWithData(initialConnection, inbuiltExchangeQueueUrl, customExchangeQueueUrl);
 
-        killConnectionBroker(initialConnection);
+        closeConnectionAndKillBroker(initialConnection);
 
         final Connection subsequentConnection = getConnectionToNodeInCluster();
 
@@ -229,10 +227,11 @@ public class HAClusterWhiteboxTest extends QpidBrokerTestCase
         return connection;
     }
 
-    private void killConnectionBroker(final Connection initialConnection) throws IOException,
-            InterruptedException
+    private void closeConnectionAndKillBroker(final Connection initialConnection) throws Exception
     {
         final int initialPortNumber = _clusterCreator.getBrokerPortNumberFromConnection(initialConnection);
+        initialConnection.close();
+
         killBroker(initialPortNumber); // kill awaits the death of the child
     }
 

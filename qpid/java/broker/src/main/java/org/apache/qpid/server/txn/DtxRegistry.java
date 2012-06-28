@@ -37,7 +37,7 @@ public class DtxRegistry
     private static final class ComparableXid
     {
         private final Xid _xid;
-        
+
         private ComparableXid(Xid xid)
         {
             _xid = xid;
@@ -58,7 +58,7 @@ public class DtxRegistry
             ComparableXid that = (ComparableXid) o;
 
             return compareBytes(_xid.getBranchId(), that._xid.getBranchId())
-                    && compareBytes(_xid.getGlobalId(), that._xid.getGlobalId()); 
+                    && compareBytes(_xid.getGlobalId(), that._xid.getGlobalId());
         }
 
         private static boolean compareBytes(byte[] a, byte[] b)
@@ -94,7 +94,7 @@ public class DtxRegistry
             return result;
         }
     }
-    
+
     public synchronized DtxBranch getBranch(Xid xid)
     {
         return _branches.get(new ComparableXid(xid));
@@ -318,6 +318,7 @@ public class DtxRegistry
                 branch.disassociateSession(session);
             }
         }
+
     }
 
 

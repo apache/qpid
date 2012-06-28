@@ -1,6 +1,6 @@
 package org.apache.qpid.test.unit.xa;
 /*
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,16 +8,16 @@ package org.apache.qpid.test.unit.xa;
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- * 
+ *
  */
 
 
@@ -344,7 +344,7 @@ public class FaultTest extends AbstractXATestCase
         {
             assertEquals("Wrong error code: ", XAException.XAER_PROTO, e.errorCode);
         }
-    }    
+    }
 
     /**
      * Strategy:
@@ -366,27 +366,28 @@ public class FaultTest extends AbstractXATestCase
     /**
      * Strategy:
      * Check that a transaction timeout as expected
-     * - set timeout to 10ms
-     * - sleep 1000ms
+     * - set timeout to 1s
+     * - sleep 1500ms
      * - call end and check that the expected exception is thrown
      */
     public void testTransactionTimeout() throws Exception
     {
+        _xaResource.setTransactionTimeout(1);
+
         Xid xid = getNewXid();
         try
         {
             _xaResource.start(xid, XAResource.TMNOFLAGS);
-            assertEquals("Wrong timeout", _xaResource.getTransactionTimeout(), 0);
-            _xaResource.setTransactionTimeout(10);
-            Thread.sleep(1000);
+            Thread.sleep(1500);
             _xaResource.end(xid, XAResource.TMSUCCESS);
+            fail("Timeout expected ");
         }
         catch (XAException e)
         {
             assertEquals("Wrong error code: ", XAException.XA_RBTIMEOUT, e.errorCode);
         }
     }
-    
+
     /**
      * Strategy:
      * Set the transaction timeout to 1000
@@ -394,18 +395,18 @@ public class FaultTest extends AbstractXATestCase
     public void testTransactionTimeoutAfterCommit() throws Exception
     {
         Xid xid = getNewXid();
-        
+
         _xaResource.start(xid, XAResource.TMNOFLAGS);
         _xaResource.setTransactionTimeout(1000);
         assertEquals("Wrong timeout", 1000,_xaResource.getTransactionTimeout());
-        
+
         //_xaResource.prepare(xid);
         _xaResource.end(xid, XAResource.TMSUCCESS);
         _xaResource.commit(xid, true);
-        
+
         _xaResource.setTransactionTimeout(2000);
         assertEquals("Wrong timeout", 2000,_xaResource.getTransactionTimeout());
-        
+
         xid = getNewXid();
         _xaResource.start(xid, XAResource.TMNOFLAGS);
         assertEquals("Wrong timeout", 2000, _xaResource.getTransactionTimeout());
