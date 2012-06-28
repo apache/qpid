@@ -55,7 +55,7 @@ add_test (clustered_replication_test ${CMAKE_CURRENT_SOURCE_DIR}/clustered_repli
 # CLEANFILES += cluster_test.acl cluster.ports
 
 # EXTRA_DIST +=					\
-# 	ais_check				\
+# 	cpg_check.sh.in				\
 # 	run_cluster_test			\
 # 	cluster_read_credit			\
 # 	test_watchdog				\

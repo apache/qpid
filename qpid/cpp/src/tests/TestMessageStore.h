@@ -31,7 +31,7 @@ using namespace qpid::framing;
 namespace qpid {
 namespace tests {
 
-typedef std::pair<string, boost::intrusive_ptr<PersistableMessage> > msg_queue_pair;
+typedef std::pair<std::string, boost::intrusive_ptr<PersistableMessage> > msg_queue_pair;
 
 class TestMessageStore : public NullMessageStore
 {

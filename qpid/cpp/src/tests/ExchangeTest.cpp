@@ -33,6 +33,8 @@
 #include <iostream>
 #include "MessageUtils.h"
 
+using std::string;
+
 using boost::intrusive_ptr;
 using namespace qpid::broker;
 using namespace qpid::framing;

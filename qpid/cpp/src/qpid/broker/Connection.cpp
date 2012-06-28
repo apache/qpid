@@ -43,7 +43,7 @@
 #include <iostream>
 #include <assert.h>
 
-
+using std::string;
 
 using namespace qpid::sys;
 using namespace qpid::framing;
@@ -87,10 +87,14 @@ Connection::Connection(ConnectionOutputHandler* out_,
                        bool link_,
                        uint64_t objectId_,
                        bool shadow_,
-                       bool delayManagement) :
+                       bool delayManagement,
+                       bool authenticated_
+) :
     ConnectionState(out_, broker_),
     securitySettings(external),
-    adapter(*this, link_, shadow_),
+    shadow(shadow_),
+    authenticated(authenticated_),
+    adapter(*this, link_),
     link(link_),
     mgmtClosing(false),
     mgmtId(mgmtId_),
@@ -100,14 +104,12 @@ Connection::Connection(ConnectionOutputHandler* out_,
     timer(broker_.getTimer()),
     errorListener(0),
     objectId(objectId_),
-    shadow(shadow_),
     outboundTracker(*this)
 {
     outboundTracker.wrap(out);
     broker.getConnectionObservers().connection(*this);
     // In a cluster, allow adding the management object to be delayed.
     if (!delayManagement) addManagementObject();
-    if (!isShadow()) broker.getConnectionCounter().inc_connectionCount();
 }
 
 void Connection::addManagementObject() {
@@ -148,8 +150,9 @@ Connection::~Connection()
         heartbeatTimer->cancel();
     if (timeoutTimer)
         timeoutTimer->cancel();
-
-    if (!isShadow()) broker.getConnectionCounter().dec_connectionCount();
+    if (linkHeartbeatTimer) {
+        linkHeartbeatTimer->cancel();
+    }
 }
 
 void Connection::received(framing::AMQFrame& frame) {
@@ -300,6 +303,9 @@ void Connection::close(connection::CloseCode code, const string& text)
         heartbeatTimer->cancel();
     if (timeoutTimer)
         timeoutTimer->cancel();
+    if (linkHeartbeatTimer) {
+        linkHeartbeatTimer->cancel();
+    }
     adapter.close(code, text);
     //make sure we delete dangling pointers from outputTasks before deleting sessions
     outputTasks.removeAll();
@@ -313,6 +319,9 @@ void Connection::sendClose() {
         heartbeatTimer->cancel();
     if (timeoutTimer)
         timeoutTimer->cancel();
+    if (linkHeartbeatTimer) {
+        linkHeartbeatTimer->cancel();
+    }
     adapter.close(connection::CLOSE_CODE_NORMAL, "OK");
     getOutput().close();
 }
@@ -326,6 +335,9 @@ void Connection::closed(){ // Physically closed, suspend open sessions.
         heartbeatTimer->cancel();
     if (timeoutTimer)
         timeoutTimer->cancel();
+    if (linkHeartbeatTimer) {
+        linkHeartbeatTimer->cancel();
+    }
     try {
         while (!channels.empty())
             ptr_map_ptr(channels.begin())->handleDetach();
@@ -435,6 +447,31 @@ struct ConnectionHeartbeatTask : public sys::TimerTask {
     }
 };
 
+class LinkHeartbeatTask : public qpid::sys::TimerTask {
+    sys::Timer& timer;
+    Connection& connection;
+    bool heartbeatSeen;
+
+    void fire() {
+        if (!heartbeatSeen) {
+            QPID_LOG(error, "Federation link connection " << connection.getMgmtId() << " missed 2 heartbeats - closing connection");
+            connection.abort();
+        } else {
+            heartbeatSeen = false;
+            // Setup next firing
+            setupNextFire();
+            timer.add(this);
+        }
+    }
+
+public:
+    LinkHeartbeatTask(sys::Timer& t, qpid::sys::Duration period, Connection& c) :
+        TimerTask(period, "LinkHeartbeatTask"), timer(t), connection(c), heartbeatSeen(false) {}
+
+    void heartbeatReceived() { heartbeatSeen = true; }
+};
+
+
 void Connection::abort()
 {
     // Make sure that we don't try to send a heartbeat as we're
@@ -460,10 +497,21 @@ void Connection::setHeartbeatInterval(uint16_t heartbeat)
     }
 }
 
+void Connection::startLinkHeartbeatTimeoutTask() {
+    if (!linkHeartbeatTimer && heartbeat > 0) {
+        linkHeartbeatTimer = new LinkHeartbeatTask(timer, 2 * heartbeat * TIME_SEC, *this);
+        timer.add(linkHeartbeatTimer);
+    }
+}
+
 void Connection::restartTimeout()
 {
     if (timeoutTimer)
         timeoutTimer->touch();
+
+    if (linkHeartbeatTimer) {
+        static_cast<LinkHeartbeatTask*>(linkHeartbeatTimer.get())->heartbeatReceived();
+    }
 }
 
 bool Connection::isOpen() { return adapter.isOpen(); }

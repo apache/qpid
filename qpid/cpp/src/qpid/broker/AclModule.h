@@ -22,6 +22,7 @@
 
 
 #include "qpid/RefCounted.h"
+#include "qpid/Exception.h"
 #include <boost/shared_ptr.hpp>
 #include <map>
 #include <set>
@@ -68,7 +69,6 @@ namespace acl {
         PROP_DURABLE,
         PROP_OWNER,
         PROP_ROUTINGKEY,
-        PROP_PASSIVE,
         PROP_AUTODELETE,
         PROP_EXCLUSIVE,
         PROP_TYPE,
@@ -88,7 +88,6 @@ namespace acl {
         SPECPROP_DURABLE         = PROP_DURABLE,
         SPECPROP_OWNER           = PROP_OWNER,
         SPECPROP_ROUTINGKEY      = PROP_ROUTINGKEY,
-        SPECPROP_PASSIVE         = PROP_PASSIVE,
         SPECPROP_AUTODELETE      = PROP_AUTODELETE,
         SPECPROP_EXCLUSIVE       = PROP_EXCLUSIVE,
         SPECPROP_TYPE            = PROP_TYPE,
@@ -114,6 +113,7 @@ namespace acl {
 
 namespace broker {
 
+    class Connection;
 
     class AclModule
     {
@@ -140,6 +140,11 @@ namespace broker {
 
         // Add specialized authorise() methods as required.
 
+        /** Approve connection by counting connections total, per-IP, and
+         *  per-user.
+         */
+        virtual bool approveConnection (const Connection& connection)=0;
+
         virtual ~AclModule() {};
     };
 } // namespace broker
@@ -156,7 +161,7 @@ namespace acl {
             if (str.compare("broker")   == 0) return OBJ_BROKER;
             if (str.compare("link")     == 0) return OBJ_LINK;
             if (str.compare("method")   == 0) return OBJ_METHOD;
-            throw str;
+            throw qpid::Exception(str);
         }
         static inline std::string getObjectTypeStr(const ObjectType o) {
             switch (o) {
@@ -179,7 +184,7 @@ namespace acl {
             if (str.compare("delete")  == 0) return ACT_DELETE;
             if (str.compare("purge")   == 0) return ACT_PURGE;
             if (str.compare("update")  == 0) return ACT_UPDATE;
-            throw str;
+            throw qpid::Exception(str);
         }
         static inline std::string getActionStr(const Action a) {
             switch (a) {
@@ -201,7 +206,6 @@ namespace acl {
             if (str.compare("durable")       == 0) return PROP_DURABLE;
             if (str.compare("owner")         == 0) return PROP_OWNER;
             if (str.compare("routingkey")    == 0) return PROP_ROUTINGKEY;
-            if (str.compare("passive")       == 0) return PROP_PASSIVE;
             if (str.compare("autodelete")    == 0) return PROP_AUTODELETE;
             if (str.compare("exclusive")     == 0) return PROP_EXCLUSIVE;
             if (str.compare("type")          == 0) return PROP_TYPE;
@@ -212,7 +216,7 @@ namespace acl {
             if (str.compare("policytype")    == 0) return PROP_POLICYTYPE;
             if (str.compare("maxqueuesize")  == 0) return PROP_MAXQUEUESIZE;
             if (str.compare("maxqueuecount") == 0) return PROP_MAXQUEUECOUNT;
-            throw str;
+            throw qpid::Exception(str);
         }
         static inline std::string getPropertyStr(const Property p) {
             switch (p) {
@@ -220,7 +224,6 @@ namespace acl {
             case PROP_DURABLE:       return "durable";
             case PROP_OWNER:         return "owner";
             case PROP_ROUTINGKEY:    return "routingkey";
-            case PROP_PASSIVE:       return "passive";
             case PROP_AUTODELETE:    return "autodelete";
             case PROP_EXCLUSIVE:     return "exclusive";
             case PROP_TYPE:          return "type";
@@ -240,7 +243,6 @@ namespace acl {
             if (str.compare("durable")       == 0) return SPECPROP_DURABLE;
             if (str.compare("owner")         == 0) return SPECPROP_OWNER;
             if (str.compare("routingkey")    == 0) return SPECPROP_ROUTINGKEY;
-            if (str.compare("passive")       == 0) return SPECPROP_PASSIVE;
             if (str.compare("autodelete")    == 0) return SPECPROP_AUTODELETE;
             if (str.compare("exclusive")     == 0) return SPECPROP_EXCLUSIVE;
             if (str.compare("type")          == 0) return SPECPROP_TYPE;
@@ -256,7 +258,7 @@ namespace acl {
             // Allow old names in ACL file as aliases for newly-named properties
             if (str.compare("maxqueuesize")             == 0) return SPECPROP_MAXQUEUESIZEUPPERLIMIT;
             if (str.compare("maxqueuecount")            == 0) return SPECPROP_MAXQUEUECOUNTUPPERLIMIT;
-            throw str;
+            throw qpid::Exception(str);
         }
         static inline std::string getPropertyStr(const SpecProperty p) {
             switch (p) {
@@ -264,7 +266,6 @@ namespace acl {
                 case SPECPROP_DURABLE:       return "durable";
                 case SPECPROP_OWNER:         return "owner";
                 case SPECPROP_ROUTINGKEY:    return "routingkey";
-                case SPECPROP_PASSIVE:       return "passive";
                 case SPECPROP_AUTODELETE:    return "autodelete";
                 case SPECPROP_EXCLUSIVE:     return "exclusive";
                 case SPECPROP_TYPE:          return "type";
@@ -286,7 +287,7 @@ namespace acl {
             if (str.compare("allow-log") == 0) return ALLOWLOG;
             if (str.compare("deny")      == 0) return DENY;
             if (str.compare("deny-log")  == 0) return DENYLOG;
-            throw str;
+            throw qpid::Exception(str);
         }
         static inline std::string getAclResultStr(const AclResult r) {
             switch (r) {
@@ -325,7 +326,6 @@ namespace acl {
             propSetPtr p1(new propSet);
             p1->insert(PROP_TYPE);
             p1->insert(PROP_ALTERNATE);
-            p1->insert(PROP_PASSIVE);
             p1->insert(PROP_DURABLE);
 
             propSetPtr p2(new propSet);
@@ -350,7 +350,6 @@ namespace acl {
 
             propSetPtr p4(new propSet);
             p4->insert(PROP_ALTERNATE);
-            p4->insert(PROP_PASSIVE);
             p4->insert(PROP_DURABLE);
             p4->insert(PROP_EXCLUSIVE);
             p4->insert(PROP_AUTODELETE);

@@ -3948,7 +3948,7 @@ class Event:
       return "<uninterpretable>"
     out = strftime("%c", gmtime(self.timestamp / 1000000000))
     out += " " + self._sevName() + " " + self.classKey.getPackageName() + ":" + self.classKey.getClassName()
-    out += " broker=" + self.broker.getUrl()
+    out += " broker=" + str(self.broker.getUrl())
     for arg in self.schema.arguments:
       disp = self.session._displayValue(self.arguments[arg.name], arg.type).encode("utf8")
       if " " in disp:

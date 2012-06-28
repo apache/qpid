@@ -57,22 +57,25 @@ void Bridge::PushHandler::handle(framing::AMQFrame& frame)
     conn->received(frame);
 }
 
-Bridge::Bridge(Link* _link, framing::ChannelId _id, CancellationListener l,
-               const _qmf::ArgsLinkBridge& _args,
-               InitializeCallback init) :
-    link(_link), id(_id), args(_args), mgmtObject(0),
-    listener(l), name(Uuid(true).str()), queueName("qpid.bridge_queue_"), persistenceId(0),
-    initialize(init)
+Bridge::Bridge(const std::string& _name, Link* _link, framing::ChannelId _id,
+               CancellationListener l, const _qmf::ArgsLinkBridge& _args,
+               InitializeCallback init, const std::string& _queueName, const string& ae) :
+    link(_link), channel(_id), args(_args), mgmtObject(0),
+    listener(l), name(_name),
+    queueName(_queueName.empty() ? "qpid.bridge_queue_" + name + "_" + link->getBroker()->getFederationTag()
+              : _queueName),
+    altEx(ae), persistenceId(0),
+    connState(0), conn(0), initialize(init), detached(false),
+    useExistingQueue(!_queueName.empty()),
+    sessionName("qpid.bridge_session_" + name + "_" + link->getBroker()->getFederationTag())
 {
-    std::stringstream title;
-    title << id << "_" << name;
-    queueName += title.str();
     ManagementAgent* agent = link->getBroker()->getManagementAgent();
     if (agent != 0) {
         mgmtObject = new _qmf::Bridge
-            (agent, this, link, id, args.i_durable, args.i_src, args.i_dest,
+            (agent, this, link, name, args.i_durable, args.i_src, args.i_dest,
              args.i_key, args.i_srcIsQueue, args.i_srcIsLocal,
              args.i_tag, args.i_excludes, args.i_dynamic, args.i_sync);
+        mgmtObject->set_channelId(channel);
         agent->addObject(mgmtObject);
     }
     QPID_LOG(debug, "Bridge " << name << " created from " << args.i_src << " to " << args.i_dest);
@@ -85,25 +88,27 @@ Bridge::~Bridge()
 
 void Bridge::create(Connection& c)
 {
+    detached = false;           // Reset detached in case we are recovering.
     connState = &c;
     conn = &c;
     FieldTable options;
     if (args.i_sync) options.setInt("qpid.sync_frequency", args.i_sync);
-    SessionHandler& sessionHandler = c.getChannel(id);
+    SessionHandler& sessionHandler = c.getChannel(channel);
+    sessionHandler.setErrorListener(shared_from_this());
     if (args.i_srcIsLocal) {
         if (args.i_dynamic)
             throw Exception("Dynamic routing not supported for push routes");
         // Point the bridging commands at the local connection handler
         pushHandler.reset(new PushHandler(&c));
-        channelHandler.reset(new framing::ChannelHandler(id, pushHandler.get()));
+        channelHandler.reset(new framing::ChannelHandler(channel, pushHandler.get()));
 
         session.reset(new framing::AMQP_ServerProxy::Session(*channelHandler));
         peer.reset(new framing::AMQP_ServerProxy(*channelHandler));
 
-        session->attach(name, false);
+        session->attach(sessionName, false);
         session->commandPoint(0,0);
     } else {
-        sessionHandler.attachAs(name);
+        sessionHandler.attachAs(sessionName);
         // Point the bridging commands at the remote peer broker
         peer.reset(new framing::AMQP_ServerProxy(sessionHandler.out));
     }
@@ -112,7 +117,7 @@ void Bridge::create(Connection& c)
     if (initialize) initialize(*this, sessionHandler);
     else if (args.i_srcIsQueue) {
         peer->getMessage().subscribe(args.i_src, args.i_dest, args.i_sync ? 0 : 1, 0, false, "", 0, options);
-        peer->getMessage().flow(args.i_dest, 0, 0xFFFFFFFF);
+        peer->getMessage().flow(args.i_dest, 0, args.i_sync ? 2 * args.i_sync : 0xFFFFFFFF);
         peer->getMessage().flow(args.i_dest, 1, 0xFFFFFFFF);
         QPID_LOG(debug, "Activated bridge " << name << " for route from queue " << args.i_src << " to " << args.i_dest);
     } else {
@@ -135,12 +140,13 @@ void Bridge::create(Connection& c)
         }
 
         bool durable = false;//should this be an arg, or would we use srcIsQueue for durable queues?
-        bool autoDelete = !durable;//auto delete transient queues?
-        peer->getQueue().declare(queueName, "", false, durable, true, autoDelete, queueSettings);
+        bool exclusive = !useExistingQueue;  // only exclusive if the queue is owned by the bridge
+        bool autoDelete = exclusive && !durable;//auto delete transient queues?
+        peer->getQueue().declare(queueName, altEx, false, durable, exclusive, autoDelete, queueSettings);
         if (!args.i_dynamic)
             peer->getExchange().bind(queueName, args.i_src, args.i_key, FieldTable());
-        peer->getMessage().subscribe(queueName, args.i_dest, 1, 0, false, "", 0, FieldTable());
-        peer->getMessage().flow(args.i_dest, 0, 0xFFFFFFFF);
+        peer->getMessage().subscribe(queueName, args.i_dest, (useExistingQueue && args.i_sync) ? 0 : 1, 0, false, "", 0, options);
+        peer->getMessage().flow(args.i_dest, 0, (useExistingQueue && args.i_sync) ? 2 * args.i_sync : 0xFFFFFFFF);
         peer->getMessage().flow(args.i_dest, 1, 0xFFFFFFFF);
 
         if (args.i_dynamic) {
@@ -160,11 +166,12 @@ void Bridge::cancel(Connection&)
 {
     if (resetProxy()) {
         peer->getMessage().cancel(args.i_dest);
-        peer->getSession().detach(name);
+        peer->getSession().detach(sessionName);
     }
     QPID_LOG(debug, "Cancelled bridge " << name);
 }
 
+/** Notify the bridge that the connection has closed */
 void Bridge::closed()
 {
     if (args.i_dynamic) {
@@ -174,15 +181,10 @@ void Bridge::closed()
     QPID_LOG(debug, "Closed bridge " << name);
 }
 
-void Bridge::destroy()
+/** Shut down the bridge */
+void Bridge::close()
 {
-    listener(this);
-}
-
-bool Bridge::isSessionReady() const
-{
-    SessionHandler& sessionHandler = conn->getChannel(id);
-    return sessionHandler.ready();
+    listener(this); // ask the LinkRegistry to destroy us
 }
 
 void Bridge::setPersistenceId(uint64_t pId) const
@@ -190,8 +192,21 @@ void Bridge::setPersistenceId(uint64_t pId) const
     persistenceId = pId;
 }
 
+
+const std::string Bridge::ENCODED_IDENTIFIER("bridge.v2");
+const std::string Bridge::ENCODED_IDENTIFIER_V1("bridge");
+
+bool Bridge::isEncodedBridge(const std::string& key)
+{
+    return key == ENCODED_IDENTIFIER || key == ENCODED_IDENTIFIER_V1;
+}
+
+
 Bridge::shared_ptr Bridge::decode(LinkRegistry& links, Buffer& buffer)
 {
+    string kind;
+    buffer.getShortString(kind);
+
     string   host;
     uint16_t port;
     string   src;
@@ -199,9 +214,33 @@ Bridge::shared_ptr Bridge::decode(LinkRegistry& links, Buffer& buffer)
     string   key;
     string   id;
     string   excludes;
+    string   name;
 
-    buffer.getShortString(host);
-    port = buffer.getShort();
+    Link::shared_ptr link;
+    if (kind == ENCODED_IDENTIFIER_V1) {
+        /** previous versions identified the bridge by host:port, not by name, and
+         * transport wasn't provided.  Try to find a link using those paramters.
+         */
+        buffer.getShortString(host);
+        port = buffer.getShort();
+
+        link = links.getLink(host, port);
+        if (!link) {
+            QPID_LOG(error, "Bridge::decode() failed: cannot find Link for host=" << host << ", port=" << port);
+            return Bridge::shared_ptr();
+        }
+    } else {
+        string linkName;
+
+        buffer.getShortString(name);
+        buffer.getShortString(linkName);
+        link = links.getLink(linkName);
+        if (!link) {
+            QPID_LOG(error, "Bridge::decode() failed: cannot find Link named='" << linkName << "'");
+            return Bridge::shared_ptr();
+        }
+    }
+
     bool durable(buffer.getOctet());
     buffer.getShortString(src);
     buffer.getShortString(dest);
@@ -213,15 +252,21 @@ Bridge::shared_ptr Bridge::decode(LinkRegistry& links, Buffer& buffer)
     bool dynamic(buffer.getOctet());
     uint16_t sync = buffer.getShort();
 
-    return links.declare(host, port, durable, src, dest, key,
-                         is_queue, is_local, id, excludes, dynamic, sync).first;
+    if (kind == ENCODED_IDENTIFIER_V1) {
+        /** previous versions did not provide a name for the bridge, so create one
+         */
+        name = createName(link->getName(), src, dest, key);
+    }
+
+    return links.declare(name, *link, durable, src, dest, key, is_queue,
+                         is_local, id, excludes, dynamic, sync).first;
 }
 
 void Bridge::encode(Buffer& buffer) const
 {
-    buffer.putShortString(string("bridge"));
-    buffer.putShortString(link->getHost());
-    buffer.putShort(link->getPort());
+    buffer.putShortString(ENCODED_IDENTIFIER);
+    buffer.putShortString(name);
+    buffer.putShortString(link->getName());
     buffer.putOctet(args.i_durable ? 1 : 0);
     buffer.putShortString(args.i_src);
     buffer.putShortString(args.i_dest);
@@ -236,9 +281,9 @@ void Bridge::encode(Buffer& buffer) const
 
 uint32_t Bridge::encodedSize() const
 {
-    return link->getHost().size() + 1 // short-string (host)
-        + 7                // short-string ("bridge")
-        + 2                // port
+    return ENCODED_IDENTIFIER.size() + 1  // +1 byte length
+        + name.size() + 1
+        + link->getName().size() + 1
         + 1                // durable
         + args.i_src.size()  + 1
         + args.i_dest.size() + 1
@@ -262,7 +307,8 @@ management::Manageable::status_t Bridge::ManagementMethod(uint32_t methodId,
 {
     if (methodId == _qmf::Bridge::METHOD_CLOSE) {
         //notify that we are closed
-        destroy();
+        QPID_LOG(debug, "Bridge::close() method called on bridge '" << name << "'");
+        close();
         return management::Manageable::STATUS_OK;
     } else {
         return management::Manageable::STATUS_UNKNOWN_METHOD;
@@ -309,7 +355,7 @@ void Bridge::sendReorigin()
 }
 bool Bridge::resetProxy()
 {
-    SessionHandler& sessionHandler = conn->getChannel(id);
+    SessionHandler& sessionHandler = conn->getChannel(channel);
     if (!sessionHandler.getSession()) peer.reset();
     else peer.reset(new framing::AMQP_ServerProxy(sessionHandler.out));
     return peer.get();
@@ -321,7 +367,7 @@ void Bridge::ioThreadPropagateBinding(const string& queue, const string& exchang
         peer->getExchange().bind(queue, exchange, key, args);
     } else {
         QPID_LOG(error, "Cannot propagate binding for dynamic bridge as session has been detached, deleting dynamic bridge");
-        destroy();
+        close();
     }
 }
 
@@ -334,6 +380,40 @@ bool Bridge::containsLocalTag(const string& tagList) const
 const string& Bridge::getLocalTag() const
 {
     return link->getBroker()->getFederationTag();
+}
+
+// SessionHandler::ErrorListener methods.
+void Bridge::connectionException(
+    framing::connection::CloseCode code, const std::string& msg)
+{
+    if (errorListener) errorListener->connectionException(code, msg);
+}
+
+void Bridge::channelException(
+    framing::session::DetachCode code, const std::string& msg)
+{
+    if (errorListener) errorListener->channelException(code, msg);
+}
+
+void Bridge::executionException(
+    framing::execution::ErrorCode code, const std::string& msg)
+{
+    if (errorListener) errorListener->executionException(code, msg);
+}
+
+void Bridge::detach() {
+    detached = true;
+    if (errorListener) errorListener->detach();
+}
+
+std::string Bridge::createName(const std::string& linkName,
+                               const std::string& src,
+                               const std::string& dest,
+                               const std::string& key)
+{
+    std::stringstream keystream;
+    keystream << linkName << "!" << src << "!" << dest << "!" << key;
+    return keystream.str();
 }
 
 }}

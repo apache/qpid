@@ -86,7 +86,8 @@ class Connection : public sys::ConnectionInputHandler,
                bool isLink = false,
                uint64_t objectId = 0,
                bool shadow=false,
-               bool delayManagement = false);
+               bool delayManagement = false,
+               bool authenticated=true);
 
     ~Connection ();
 
@@ -113,15 +114,20 @@ class Connection : public sys::ConnectionInputHandler,
     void requestIOProcessing (boost::function0<void>);
     void recordFromServer (const framing::AMQFrame& frame);
     void recordFromClient (const framing::AMQFrame& frame);
+
+    // gets for configured federation links
     std::string getAuthMechanism();
     std::string getAuthCredentials();
     std::string getUsername();
     std::string getPassword();
     std::string getHost();
     uint16_t    getPort();
+
     void notifyConnectionForced(const std::string& text);
     void setUserId(const std::string& uid);
     void raiseConnectEvent();
+
+    // credentials for connected client
     const std::string& getUserId() const { return ConnectionState::getUserId(); }
     const std::string& getMgmtId() const { return mgmtId; }
     management::ManagementAgent* getAgent() const { return agent; }
@@ -144,7 +150,10 @@ class Connection : public sys::ConnectionInputHandler,
     void setSecureConnection(SecureConnection* secured);
 
     /** True if this is a shadow connection in a cluster. */
-    bool isShadow() { return shadow; }
+    bool isShadow() const { return shadow; }
+
+    /** True if this connection is authenticated */
+    bool isAuthenticated() const { return authenticated; }
 
     // Used by cluster to update connection status
     sys::AggregateOutput& getOutputTasks() { return outputTasks; }
@@ -161,6 +170,7 @@ class Connection : public sys::ConnectionInputHandler,
     bool isOpen();
 
     bool isLink() { return link; }
+    void startLinkHeartbeatTimeoutTask();
 
     // Used by cluster during catch-up, see cluster::OutputInterceptor
     void doIoCallbacks();
@@ -174,6 +184,8 @@ class Connection : public sys::ConnectionInputHandler,
 
     ChannelMap channels;
     qpid::sys::SecuritySettings securitySettings;
+    bool shadow;
+    bool authenticated;
     ConnectionHandler adapter;
     const bool link;
     bool mgmtClosing;
@@ -184,11 +196,10 @@ class Connection : public sys::ConnectionInputHandler,
     LinkRegistry& links;
     management::ManagementAgent* agent;
     sys::Timer& timer;
-    boost::intrusive_ptr<sys::TimerTask> heartbeatTimer;
+    boost::intrusive_ptr<sys::TimerTask> heartbeatTimer, linkHeartbeatTimer;
     boost::intrusive_ptr<ConnectionTimeoutTask> timeoutTimer;
     ErrorListener* errorListener;
     uint64_t objectId;
-    bool shadow;
     framing::FieldTable clientProperties;
 
     /**

@@ -21,6 +21,7 @@
 #include "qpid/broker/MessageDeque.h"
 #include "qpid/broker/QueuedMessage.h"
 #include "qpid/log/Statement.h"
+#include "assert.h"
 
 namespace qpid {
 namespace broker {
@@ -40,12 +41,15 @@ bool MessageDeque::deleted(const QueuedMessage& m)
 {
     size_t i = index(m.position);
     if (i < messages.size()) {
-        messages[i].status = QueuedMessage::DELETED;
-        clean();
-        return true;
-    } else {
-        return false;
+        QueuedMessage *qm = &messages[i];
+        if (qm->status != QueuedMessage::DELETED) {
+            qm->status = QueuedMessage::DELETED;
+            qm->payload = 0; // message no longer needed
+            clean();
+            return true;
+        }
     }
+    return false;
 }
 
 size_t MessageDeque::size()
@@ -53,7 +57,7 @@ size_t MessageDeque::size()
     return available;
 }
 
-void MessageDeque::release(const QueuedMessage& message)
+QueuedMessage* MessageDeque::releasePtr(const QueuedMessage& message)
 {
     size_t i = index(message.position);
     if (i < messages.size()) {
@@ -62,11 +66,16 @@ void MessageDeque::release(const QueuedMessage& message)
             if (head > i) head = i;
             m.status = QueuedMessage::AVAILABLE;
             ++available;
+            return &messages[i];
         }
     } else {
+        assert(0);
         QPID_LOG(error, "Failed to release message at " << message.position << " " << message.payload->getFrames().getContent() << "; no such message (index=" << i << ", size=" << messages.size() << ")");
     }
+    return 0;
 }
+
+void MessageDeque::release(const QueuedMessage& message) { releasePtr(message); }
 
 bool MessageDeque::acquire(const framing::SequenceNumber& position, QueuedMessage& message)
 {
@@ -129,8 +138,7 @@ QueuedMessage padding(uint32_t pos) {
 }
 } // namespace
 
-bool MessageDeque::push(const QueuedMessage& added, QueuedMessage& /*not needed*/)
-{
+QueuedMessage* MessageDeque::pushPtr(const QueuedMessage& added) {
     //add padding to prevent gaps in sequence, which break the index
     //calculation (needed for queue replication)
     while (messages.size() && (added.position - messages.back().position) > 1)
@@ -139,7 +147,13 @@ bool MessageDeque::push(const QueuedMessage& added, QueuedMessage& /*not needed*
     messages.back().status = QueuedMessage::AVAILABLE;
     if (head >= messages.size()) head = messages.size() - 1;
     ++available;
-    return false;//adding a message never causes one to be removed for deque
+    clean();  // QPID-4046: let producer help clean the backlog of deleted messages
+    return &messages.back();
+}
+
+bool MessageDeque::push(const QueuedMessage& added, QueuedMessage& /*not needed*/) {
+    pushPtr(added);
+    return false; // adding a message never causes one to be removed for deque
 }
 
 void MessageDeque::updateAcquired(const QueuedMessage& acquired)
@@ -163,12 +177,37 @@ void MessageDeque::updateAcquired(const QueuedMessage& acquired)
     }
 }
 
+namespace {
+bool isNotDeleted(const QueuedMessage& qm) { return qm.status != QueuedMessage::DELETED; }
+} // namespace
+
+void MessageDeque::setPosition(const framing::SequenceNumber& n) {
+    size_t i = index(n+1);
+    if (i >= messages.size()) return; // Nothing to do.
+
+    // Assertion to verify the precondition: no messaages after n.
+    assert(std::find_if(messages.begin()+i, messages.end(), &isNotDeleted) ==
+           messages.end());
+    messages.erase(messages.begin()+i, messages.end());
+    if (head >= messages.size()) head = messages.size() - 1;
+    // Re-count the available messages
+    available = 0;
+    for (Deque::iterator i = messages.begin(); i != messages.end(); ++i) {
+        if (i->status == QueuedMessage::AVAILABLE) ++available;
+    }
+}
+
 void MessageDeque::clean()
 {
-    while (messages.size() && messages.front().status == QueuedMessage::DELETED) {
+    // QPID-4046: If a queue has multiple consumers, then it is possible for a large
+    // collection of deleted messages to build up.  Limit the number of messages cleaned
+    // up on each call to clean().
+    size_t count = 0;
+    while (messages.size() && messages.front().status == QueuedMessage::DELETED && count < 10) {
         messages.pop_front();
-        if (head) --head;
+        count += 1;
     }
+    head = (head > count) ? head - count : 0;
 }
 
 void MessageDeque::foreach(Functor f)

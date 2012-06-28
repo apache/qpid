@@ -330,6 +330,9 @@ class CliTests(TestBase010):
         ret = os.system(self.qpid_config_command(" add queue %s --alternate-exchange=%s" % (qName, altName)))
         self.assertEqual(ret, 0)
 
+        ret = os.system(self.qpid_config_command(" queues"))
+        self.assertEqual(ret, 0)
+
         queues = self.broker_access.getAllQueues()
         found = False
         for queue in queues:

@@ -44,9 +44,15 @@ class MessageDeque : public Messages
     bool consume(QueuedMessage&);
     bool push(const QueuedMessage& added, QueuedMessage& removed);
     void updateAcquired(const QueuedMessage& acquired);
-
+    void setPosition(const framing::SequenceNumber&);
     void foreach(Functor);
     void removeIf(Predicate);
+
+    // For use by other Messages implementations that use MessageDeque as a FIFO index
+    // and keep pointers to its elements in their own indexing strctures.
+    void clean();
+    QueuedMessage* releasePtr(const QueuedMessage&);
+    QueuedMessage* pushPtr(const QueuedMessage& added);
 
   private:
     typedef std::deque<QueuedMessage> Deque;
@@ -55,7 +61,6 @@ class MessageDeque : public Messages
     size_t head;
 
     size_t index(const framing::SequenceNumber&);
-    void clean();
 };
 }} // namespace qpid::broker
 

@@ -24,7 +24,6 @@
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/framing/Uuid.h"
-#include "qpid/sys/alloca.h"
 
 #include "unit_test.h"
 
@@ -32,6 +31,8 @@
 
 using namespace qpid::broker;
 using namespace qpid::framing;
+
+using std::string;
 
 namespace qpid {
 namespace tests {
@@ -69,11 +70,11 @@ QPID_AUTO_TEST_CASE(testEncodeDecode)
     dProps->setDeliveryMode(PERSISTENT);
     BOOST_CHECK(msg->isPersistent());
 
-    char* buff = static_cast<char*>(::alloca(msg->encodedSize()));
-    Buffer wbuffer(buff, msg->encodedSize());
+    std::vector<char> buff(msg->encodedSize());
+    Buffer wbuffer(&buff[0], msg->encodedSize());
     msg->encode(wbuffer);
 
-    Buffer rbuffer(buff, msg->encodedSize());
+    Buffer rbuffer(&buff[0], msg->encodedSize());
     msg = new Message();
     msg->decodeHeader(rbuffer);
     msg->decodeContent(rbuffer);

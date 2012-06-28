@@ -5,11 +5,11 @@ Feature: Creating a sender
 
   Scenario: The session is closed
     Given a closed session
-    Then creating a sender with "my-queue;{create:always}" raises an exception
+    Then creating a sender with "my-queue;{create:always,delete:always}" raises an exception
 
   Scenario: The connection is closed
     Given an open session with a closed connection
-    Then creating a sender with "my-queue;{create:always}" raises an exception
+    Then creating a sender with "my-queue;{create:always,delete:always}" raises an exception
 
   Scenario: The address is malformed
     Given an open session
@@ -17,7 +17,7 @@ Feature: Creating a sender
 
   Scenario: The address string is valid
     Given an open session
-    Then creating a sender with "my-queue;{create:always}" succeeds
+    Then creating a sender with "my-queue;{create:always,delete:always}" succeeds
 
   Scenario: Using an Address object
     Given an open session

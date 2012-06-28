@@ -32,6 +32,9 @@
 
 #include <winsock2.h>
 
+namespace qpid {
+namespace sys {
+
 // Need to initialize WinSock. Ideally, this would be a singleton or embedded
 // in some one-time initialization function. I tried boost singleton and could
 // not get it to compile (and others located in google had the same problem).
@@ -75,13 +78,6 @@ protected:
 };
 
 static WinSockSetup setup;
-
-} /* namespace */
-
-namespace qpid {
-namespace sys {
-
-namespace {
 
 std::string getName(SOCKET fd, bool local)
 {
@@ -270,14 +266,17 @@ int Socket::getError() const
 
 void Socket::setTcpNoDelay() const
 {
-    int flag = 1;
-    int result = setsockopt(impl->fd,
-                            IPPROTO_TCP,
-                            TCP_NODELAY,
-                            (char *)&flag,
-                            sizeof(flag));
-    QPID_WINSOCK_CHECK(result);
+    SOCKET& socket = impl->fd;
     nodelay = true;
+    if (socket != INVALID_SOCKET) {
+        int flag = 1;
+        int result = setsockopt(impl->fd,
+                                IPPROTO_TCP,
+                                TCP_NODELAY,
+                                (char *)&flag,
+                                sizeof(flag));
+        QPID_WINSOCK_CHECK(result);
+    }
 }
 
 inline IOHandlePrivate* IOHandlePrivate::getImpl(const qpid::sys::IOHandle &h)

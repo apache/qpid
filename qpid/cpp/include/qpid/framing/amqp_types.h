@@ -27,12 +27,10 @@
  */
 
 #include "qpid/sys/IntegerTypes.h"
-#include <string>
 
 namespace qpid {
 namespace framing {
 
-using std::string;
 typedef uint8_t FrameType;
 typedef uint16_t ChannelId;
 typedef uint32_t BatchOffset;

@@ -121,6 +121,9 @@ class Queue;
     {
         Broker& broker;
         std::vector< boost::shared_ptr<Queue> > exclusiveQueues;
+        //connectionId and userId are needed for queue-delete events for auto deleted, exclusive queues
+        std::string connectionId;
+        std::string userId;
 
       public:
         QueueHandlerImpl(SemanticState& session);
@@ -226,10 +229,8 @@ class Queue;
         void rollback();
     };
 
-    class DtxHandlerImpl : public DtxHandler, public HandlerHelper, private framing::StructHelper
+    class DtxHandlerImpl : public DtxHandler, public HandlerHelper
     {
-        std::string convert(const framing::Xid& xid);
-
       public:
         DtxHandlerImpl(SemanticState& session) : HandlerHelper(session) {}
 

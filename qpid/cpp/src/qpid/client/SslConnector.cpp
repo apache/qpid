@@ -94,8 +94,6 @@ class SslConnector : public Connector
 
     sys::ShutdownHandler* shutdownHandler;
     framing::InputHandler* input;
-    framing::InitiationHandler* initialiser;
-    framing::OutputHandler* output;
 
     Writer writer;
 
@@ -148,8 +146,10 @@ namespace {
     struct StaticInit {
         StaticInit() {
             try {
+                CommonOptions common("", "", QPIDC_CONF_FILE);
                 SslOptions options;
-                options.parse (0, 0, QPIDC_CONF_FILE, true);
+                common.parse(0, 0, common.clientConfig, true);
+                options.parse (0, 0, common.clientConfig, true);
                 if (options.certDbPath.empty()) {
                     QPID_LOG(info, "SSL connector not enabled, you must set QPID_SSL_CERT_DB to enable it.");
                 } else {
@@ -174,6 +174,7 @@ SslConnector::SslConnector(Poller::shared_ptr p,
       initiated(false),
       closed(true),
       shutdownHandler(0),
+      input(0),
       writer(maxFrameSize, cimpl),
       aio(0),
       poller(p)

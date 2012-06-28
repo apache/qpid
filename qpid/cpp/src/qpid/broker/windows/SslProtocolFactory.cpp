@@ -44,26 +44,34 @@
 
 namespace qpid {
 namespace sys {
+
+class Timer;
+
 namespace windows {
 
 struct SslServerOptions : qpid::Options
 {
     std::string certStore;
+    std::string certStoreLocation;
     std::string certName;
     uint16_t port;
     bool clientAuth;
 
     SslServerOptions() : qpid::Options("SSL Options"),
-                         certStore("My"), port(5671), clientAuth(false)
+                         certStore("My"),
+                         certStoreLocation("CurrentUser"),
+                         certName("localhost"),
+                         port(5671),
+                         clientAuth(false)
     {
         qpid::Address me;
         if (qpid::sys::SystemInfo::getLocalHostname(me))
             certName = me.host;
-        else
-            certName = "localhost";
 
         addOptions()
             ("ssl-cert-store", optValue(certStore, "NAME"), "Local store name from which to obtain certificate")
+            ("ssl-cert-store-location", optValue(certStoreLocation, "NAME"),
+             "Local store name location for certificates ( CurrentUser | LocalMachine | CurrentService )")
             ("ssl-cert-name", optValue(certName, "NAME"), "Name of the certificate to use")
             ("ssl-port", optValue(port, "PORT"), "Port on which to listen for SSL connections")
             ("ssl-require-client-authentication", optValue(clientAuth), 
@@ -72,10 +80,12 @@ struct SslServerOptions : qpid::Options
 };
 
 class SslProtocolFactory : public qpid::sys::ProtocolFactory {
-    const bool tcpNoDelay;
     boost::ptr_vector<Socket> listeners;
     boost::ptr_vector<AsynchAcceptor> acceptors;
+    Timer& brokerTimer;
+    uint32_t maxNegotiateTime;
     uint16_t listeningPort;
+    const bool tcpNoDelay;
     std::string brokerHost;
     const bool clientAuthSelected;
     std::auto_ptr<qpid::sys::AsynchAcceptor> acceptor;
@@ -83,7 +93,9 @@ class SslProtocolFactory : public qpid::sys::ProtocolFactory {
     CredHandle credHandle;
 
   public:
-    SslProtocolFactory(const SslServerOptions&, const std::string& host, const std::string& port, int backlog, bool nodelay);
+    SslProtocolFactory(const SslServerOptions&, const std::string& host, const std::string& port,
+                       int backlog, bool nodelay,
+                       Timer& timer, uint32_t maxTime);
     ~SslProtocolFactory();
     void accept(sys::Poller::shared_ptr, sys::ConnectionCodec::Factory*);
     void connect(sys::Poller::shared_ptr, const std::string& host, const std::string& port,
@@ -120,8 +132,8 @@ static struct SslPlugin : public Plugin {
                 const broker::Broker::Options& opts = broker->getOptions();
                 ProtocolFactory::shared_ptr protocol(new SslProtocolFactory(options,
                                                                             "", boost::lexical_cast<std::string>(options.port),
-                                                                            opts.connectionBacklog,
-                                                                            opts.tcpNoDelay));
+                                                                            opts.connectionBacklog, opts.tcpNoDelay,
+                                                                            broker->getTimer(), opts.maxNegotiateTime));
                 QPID_LOG(notice, "Listening for SSL connections on TCP port " << protocol->getPort());
                 broker->registerProtocolFactory("ssl", protocol);
             } catch (const std::exception& e) {
@@ -132,9 +144,12 @@ static struct SslPlugin : public Plugin {
 } sslPlugin;
 
 SslProtocolFactory::SslProtocolFactory(const SslServerOptions& options,
-                                       const std::string& host, const std::string& port, int backlog,
-                                       bool nodelay)
-    : tcpNoDelay(nodelay),
+                                       const std::string& host, const std::string& port,
+                                       int backlog, bool nodelay,
+                                       Timer& timer, uint32_t maxTime)
+    : brokerTimer(timer),
+      maxNegotiateTime(maxTime),
+      tcpNoDelay(nodelay),
       clientAuthSelected(options.clientAuth) {
 
     // Make sure that certificate store is good before listening to sockets
@@ -142,11 +157,25 @@ SslProtocolFactory::SslProtocolFactory(const SslServerOptions& options,
     SecInvalidateHandle(&credHandle);
 
     // Get the certificate for this server.
+    DWORD flags = 0;
+    std::string certStoreLocation = options.certStoreLocation;
+    std::transform(certStoreLocation.begin(), certStoreLocation.end(), certStoreLocation.begin(), ::tolower);
+    if (certStoreLocation == "currentuser") {
+        flags = CERT_SYSTEM_STORE_CURRENT_USER;
+    } else if (certStoreLocation == "localmachine") {
+        flags = CERT_SYSTEM_STORE_LOCAL_MACHINE;
+    } else if (certStoreLocation == "currentservice") {
+        flags = CERT_SYSTEM_STORE_CURRENT_SERVICE;
+    } else {
+        QPID_LOG(error, "Unrecognised SSL certificate store location: " << options.certStoreLocation
+            << " - Using default location");
+    }
     HCERTSTORE certStoreHandle;
     certStoreHandle = ::CertOpenStore(CERT_STORE_PROV_SYSTEM_A,
                                       X509_ASN_ENCODING,
                                       0,
-                                      CERT_SYSTEM_STORE_LOCAL_MACHINE,
+                                      flags |
+                                      CERT_STORE_READONLY_FLAG,
                                       options.certStore.c_str());
     if (!certStoreHandle)
         throw qpid::Exception(QPID_MSG("Opening store " << options.certStore << " " << qpid::sys::strError(GetLastError())));
@@ -252,7 +281,7 @@ void SslProtocolFactory::established(sys::Poller::shared_ptr poller,
                                                     boost::bind(&AsynchIOHandler::idle, async, _1));
     }
 
-    async->init(aio, 4);
+    async->init(aio, brokerTimer, maxNegotiateTime, 4);
     aio->start(poller);
 }
 

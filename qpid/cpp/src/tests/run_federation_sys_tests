@@ -26,12 +26,8 @@ source ./test_env.sh
 MODULENAME=federation_sys
 
 # Test for clustering
-ps -u root | grep 'aisexec\|corosync' > /dev/null
-if (( $? == 0 )); then
-    CLUSTERING_ENABLED=1
-else
-    echo "WARNING: No clustering detected; tests using it will be ignored."
-fi
+source cpg_check.sh
+if cpg_enabled; then CLUSTERING_ENABLED=1; fi
 
 # Test for long test
 if [[ "$1" == "LONG_TEST" ]]; then

@@ -79,10 +79,6 @@ void QueueListeners::NotificationSet::notify()
     std::for_each(browsers.begin(), browsers.end(), boost::mem_fn(&Consumer::notify));
 }
 
-bool QueueListeners::contains(Consumer::shared_ptr c) const {
-    return c->inListeners;
-}
-
 void QueueListeners::ListenerSet::notifyAll()
 {
     std::for_each(listeners.begin(), listeners.end(), boost::mem_fn(&Consumer::notify));

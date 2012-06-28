@@ -97,7 +97,8 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     const bool autodelete;
     MessageStore* store;
     const OwnershipToken* owner;
-    uint32_t consumerCount;
+    uint32_t consumerCount;     // Actually a count of all subscriptions, acquiring or not.
+    uint32_t browserCount;      // Count of non-acquiring subscriptions.
     OwnershipToken* exclusive;
     bool noLocal;
     bool persistLastNode;
@@ -107,7 +108,22 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     QueueListeners listeners;
     std::auto_ptr<Messages> messages;
     std::deque<QueuedMessage> pendingDequeues;//used to avoid dequeuing during recovery
-    mutable qpid::sys::Mutex consumerLock;
+    /** messageLock is used to keep the Queue's state consistent while processing message
+     * events, such as message dispatch, enqueue, acquire, and dequeue.  It must be held
+     * while updating certain members in order to keep these members consistent with
+     * each other:
+     *     o  messages
+     *     o  sequence
+     *     o  policy
+     *     o  listeners
+     *     o  allocator
+     *     o  observeXXX() methods
+     *     o  observers
+     *     o  pendingDequeues  (TBD: move under separate lock)
+     *     o  exclusive OwnershipToken (TBD: move under separate lock)
+     *     o  consumerCount  (TBD: move under separate lock)
+     *     o  Queue::UsageBarrier (TBD: move under separate lock)
+     */
     mutable qpid::sys::Monitor messageLock;
     mutable qpid::sys::Mutex ownershipLock;
     mutable uint64_t persistenceId;
@@ -143,22 +159,23 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     bool isExcluded(boost::intrusive_ptr<Message>& msg);
 
-    /** update queue observers, stats, policy, etc when the messages' state changes. Lock
-     * must be held by caller */
+    /** update queue observers, stats, policy, etc when the messages' state changes.
+     * messageLock is held by caller */
     void observeEnqueue(const QueuedMessage& msg, const sys::Mutex::ScopedLock& lock);
     void observeAcquire(const QueuedMessage& msg, const sys::Mutex::ScopedLock& lock);
     void observeRequeue(const QueuedMessage& msg, const sys::Mutex::ScopedLock& lock);
     void observeDequeue(const QueuedMessage& msg, const sys::Mutex::ScopedLock& lock);
-    bool popAndDequeue(QueuedMessage&, const sys::Mutex::ScopedLock& lock);
-    // acquire message @ position, return true and set msg if acquire succeeds
-    bool acquire(const qpid::framing::SequenceNumber& position, QueuedMessage& msg,
-                 const sys::Mutex::ScopedLock& held);
+    void observeConsumerAdd( const Consumer&, const sys::Mutex::ScopedLock& lock);
+    void observeConsumerRemove( const Consumer&, const sys::Mutex::ScopedLock& lock);
 
+    bool popAndDequeue(QueuedMessage&);
+    bool acquire(const qpid::framing::SequenceNumber& position, QueuedMessage& msg);
     void forcePersistent(QueuedMessage& msg);
     int getEventMode();
     void configureImpl(const qpid::framing::FieldTable& settings);
     void checkNotDeleted(const Consumer::shared_ptr& c);
     void notifyDeleted();
+    void dequeueIf(Messages::Predicate predicate, std::deque<QueuedMessage>& dequeued);
 
   public:
 
@@ -327,7 +344,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      * exclusive owner
      */
     static Queue::shared_ptr restore(QueueRegistry& queues, framing::Buffer& buffer);
-    static void tryAutoDelete(Broker& broker, Queue::shared_ptr);
+    static void tryAutoDelete(Broker& broker, Queue::shared_ptr, const std::string& connectionId, const std::string& userId);
 
     virtual void setExternalQueueStore(ExternalQueueStore* inst);
 
@@ -355,15 +372,25 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     /** Apply f to each Observer on the queue */
     template <class F> void eachObserver(F f) {
+        sys::Mutex::ScopedLock l(messageLock);
         std::for_each<Observers::iterator, F>(observers.begin(), observers.end(), f);
     }
 
-    /** Set the position sequence number  for the next message on the queue.
-     * Must be >= the current sequence number.
-     * Used by cluster to replicate queues.
+    /**
+     * Set the sequence number for the back of the queue, the
+     * next message enqueued will be pos+1.
+     * If pos > getPosition() this creates a gap in the sequence numbers.
+     * if pos < getPosition() the back of the queue is reset to pos,
+     *
+     * The _caller_ must ensure that any messages after pos have been dequeued.
+     *
+     * Used by HA/cluster code for queue replication.
      */
     QPID_BROKER_EXTERN void setPosition(framing::SequenceNumber pos);
-    /** return current position sequence number for the next message on the queue.
+
+    /**
+     *@return sequence number for the back of the queue. The next message pushed
+     * will be at getPosition+1
      */
     QPID_BROKER_EXTERN framing::SequenceNumber getPosition();
     QPID_BROKER_EXTERN void addObserver(boost::shared_ptr<QueueObserver>);

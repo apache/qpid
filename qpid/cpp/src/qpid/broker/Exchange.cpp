@@ -32,7 +32,11 @@
 #include "qpid/sys/ExceptionHolder.h"
 #include <stdexcept>
 
-using namespace qpid::broker;
+namespace qpid {
+namespace broker {
+
+using std::string;
+
 using namespace qpid::framing;
 using qpid::framing::Buffer;
 using qpid::framing::FieldTable;
@@ -165,7 +169,7 @@ void Exchange::routeIVE(){
 
 
 Exchange::Exchange (const string& _name, Manageable* parent, Broker* b) :
-    name(_name), durable(false), persistenceId(0), sequence(false),
+    name(_name), durable(false), alternateUsers(0), persistenceId(0), sequence(false),
     sequenceNo(0), ive(false), mgmtExchange(0), brokerMgmtObject(0), broker(b), destroyed(false)
 {
     if (parent != 0 && broker != 0)
@@ -408,3 +412,6 @@ bool Exchange::routeWithAlternate(Deliverable& msg)
     }
     return msg.delivered;
 }
+
+}}
+

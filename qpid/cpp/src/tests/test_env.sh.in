@@ -75,6 +75,7 @@ exportmodule XML_LIB xml.so
 # Qpid options
 export QPID_NO_MODULE_DIR=1	# Don't accidentally load installed modules
 export QPID_DATA_DIR=
+export QPID_CONFIG=$srcdir/qpidd-empty.conf
 
 # Use temporary directory if $HOME does not exist
 if [ ! -e "$HOME" ]; then

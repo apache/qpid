@@ -36,14 +36,25 @@
 #include <iostream>
 #include <memory>
 
-using namespace std;
-using namespace qpid::messaging;
-using namespace qpid::types;
+using std::string;
+using std::ios_base;
 
-typedef std::vector<std::string> string_vector;
+using qpid::messaging::Address;
+using qpid::messaging::Connection;
+using qpid::messaging::Duration;
+using qpid::messaging::FailoverUpdates;
+using qpid::messaging::Message;
+using qpid::messaging::Receiver;
+using qpid::messaging::Session;
+using qpid::messaging::Sender;
+using qpid::types::Exception;
+using qpid::types::Uuid;
+using qpid::types::Variant;
 
 namespace qpid {
 namespace tests {
+
+typedef std::vector<std::string> string_vector;
 
 struct Options : public qpid::Options
 {
@@ -74,7 +85,6 @@ struct Options : public qpid::Options
     uint reportEvery;
     bool reportHeader;
     uint sendRate;
-    uint flowControl;
     bool sequence;
     bool timestamp;
     std::string groupKey;
@@ -104,7 +114,6 @@ struct Options : public qpid::Options
           reportEvery(0),
           reportHeader(true),
           sendRate(0),
-          flowControl(0),
           sequence(true),
           timestamp(true),
           groupPrefix("GROUP-"),
@@ -138,7 +147,6 @@ struct Options : public qpid::Options
             ("report-every", qpid::optValue(reportEvery,"N"), "Report throughput statistics every N messages")
             ("report-header", qpid::optValue(reportHeader, "yes|no"), "Headers on report.")
             ("send-rate", qpid::optValue(sendRate,"N"), "Send at rate of N messages/second. 0 means send as fast as possible.")
-            ("flow-control", qpid::optValue(flowControl,"N"), "Do end to end flow control to limit queue depth to 2*N. 0 means no flow control.")
             ("sequence", qpid::optValue(sequence, "yes|no"), "Add a sequence number messages property (required for duplicate/lost message detection)")
             ("timestamp", qpid::optValue(timestamp, "yes|no"), "Add a time stamp messages property (required for latency measurement)")
             ("group-key", qpid::optValue(groupKey, "KEY"), "Generate groups of messages using message header 'KEY' to hold the group identifier")
@@ -222,10 +230,6 @@ struct Options : public qpid::Options
 const string EOS("eos");
 const string SN("sn");
 const string TS("ts");
-
-}} // namespace qpid::tests
-
-using namespace qpid::tests;
 
 class ContentGenerator {
   public:
@@ -329,6 +333,20 @@ public:
     }
 };
 
+}} // namespace qpid::tests
+
+using qpid::tests::Options;
+using qpid::tests::Reporter;
+using qpid::tests::Throughput;
+using qpid::tests::ContentGenerator;
+using qpid::tests::GroupGenerator;
+using qpid::tests::GetlineContentGenerator;
+using qpid::tests::MapContentGenerator;
+using qpid::tests::FixedContentGenerator;
+using qpid::tests::SN;
+using qpid::tests::TS;
+using qpid::tests::EOS;
+
 int main(int argc, char ** argv)
 {
     Connection connection;
@@ -350,8 +368,6 @@ int main(int argc, char ** argv)
                 msg.setPriority(opts.priority);
             }
             if (!opts.replyto.empty()) {
-                if (opts.flowControl)
-                    throw Exception("Can't use reply-to and flow-control together");
                 msg.setReplyTo(Address(opts.replyto));
             }
             if (!opts.userid.empty()) msg.setUserId(opts.userid);
@@ -385,26 +401,10 @@ int main(int argc, char ** argv)
             int64_t interval = 0;
             if (opts.sendRate) interval = qpid::sys::TIME_SEC/opts.sendRate;
 
-            Receiver flowControlReceiver;
-            Address flowControlAddress("flow-"+Uuid(true).str()+";{create:always,delete:always}");
-            uint flowSent = 0;
-            if (opts.flowControl) {
-                flowControlReceiver = session.createReceiver(flowControlAddress);
-                flowControlReceiver.setCapacity(2);
-            }
-
             while (contentGen->setContent(msg)) {
                 ++sent;
                 if (opts.sequence)
                     msg.getProperties()[SN] = sent;
-                if (opts.flowControl) {
-                    if ((sent % opts.flowControl) == 0) {
-                        msg.setReplyTo(flowControlAddress);
-                        ++flowSent;
-                    }
-                    else
-                        msg.setReplyTo(Address()); // Clear the reply address.
-                }
                 if (groupGen.get())
                     groupGen->setGroupInfo(msg);
 
@@ -423,19 +423,12 @@ int main(int argc, char ** argv)
                 }
                 if (opts.messages && sent >= opts.messages) break;
 
-                if (opts.flowControl && flowSent == 2) {
-                    flowControlReceiver.get(Duration::SECOND);
-                    --flowSent;
-                }
-
                 if (opts.sendRate) {
                     qpid::sys::AbsTime waitTill(start, sent*interval);
                     int64_t delay = qpid::sys::Duration(qpid::sys::now(), waitTill);
                     if (delay > 0) qpid::sys::usleep(delay/qpid::sys::TIME_USEC);
                 }
             }
-            for ( ; flowSent>0; --flowSent)
-                flowControlReceiver.get(Duration::SECOND);
             if (opts.reportTotal) reporter.report();
             for (uint i = opts.sendEos; i > 0; --i) {
                 if (opts.sequence)

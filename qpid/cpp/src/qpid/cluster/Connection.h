@@ -110,7 +110,7 @@ class Connection :
     void deliveredFrame(const EventFrame&);
 
     void consumerState(const std::string& name, bool blocked, bool notifyEnabled, const qpid::framing::SequenceNumber& position,
-                       uint32_t usedMsgCredit, uint32_t usedByteCredit);
+                       uint32_t usedMsgCredit, uint32_t usedByteCredit, const uint32_t deliveryCount);
 
     // ==== Used in catch-up mode to build initial state.
     //
@@ -200,6 +200,8 @@ class Connection :
                               const std::string& instance);
 
     void config(const std::string& encoded);
+    void internalState(const std::string& type, const std::string& name,
+                       const framing::FieldTable& state);
 
     void setSecureConnection ( broker::SecureConnection * sc );
 
@@ -226,6 +228,7 @@ class Connection :
         uint64_t objectId;
         bool shadow;
         bool delayManagement;
+        bool authenticated;
 
         ConnectionCtor(
             sys::ConnectionOutputHandler* out_,
@@ -235,17 +238,18 @@ class Connection :
             bool isLink_=false,
             uint64_t objectId_=0,
             bool shadow_=false,
-            bool delayManagement_=false
+            bool delayManagement_=false,
+            bool authenticated_=true
         ) : out(out_), broker(broker_), mgmtId(mgmtId_), external(external_),
             isLink(isLink_), objectId(objectId_), shadow(shadow_),
-            delayManagement(delayManagement_)
+            delayManagement(delayManagement_), authenticated(authenticated_)
         {}
 
         std::auto_ptr<broker::Connection> construct() {
             return std::auto_ptr<broker::Connection>(
                 new broker::Connection(
                     out, broker, mgmtId, external, isLink, objectId,
-                    shadow, delayManagement)
+                    shadow, delayManagement, authenticated)
             );
         }
     };

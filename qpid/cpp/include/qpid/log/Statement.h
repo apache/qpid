@@ -22,6 +22,7 @@
 #include "qpid/Msg.h"
 #include "qpid/CommonImportExport.h"
 #include <boost/current_function.hpp>
+#include <list>
 
 namespace qpid {
 namespace log {
@@ -55,15 +56,118 @@ struct LevelTraits {
     static const char* name(Level);
 };
 
-/** POD struct representing a logging statement in source code. */
+/** Formal message categories
+ * https://issues.apache.org/jira/browse/QPID-3902
+ *
+ * Category    Source code directory
+ * --------    ---------------------
+ * Security    acl ssl gssapi sasl cyrus
+ * Broker      broker
+ * Management  agent console qmf
+ * Protocol    amqp_0_10 framing
+ * System      log sys types xml thread mutex fork pipe time ...
+ * HA          cluster ha replication
+ * Messaging   messaging
+ * Client      client
+ * Store       store
+ * Network     tcp rdma AsynchIO socket epoll
+ * Test
+ * Unspecified
+ */
+enum Category { security, broker, management, protocol, system, ha, messaging,
+    store, network, test, client, unspecified };
+struct CategoryTraits {
+    static const int COUNT=unspecified+1;
+
+    /** Test if given name is a Category name
+     */
+    static bool isCategory(const std::string& name);
+
+    /** Get category from string name
+     * @exception if name invalid.
+     */
+    static Category category(const char* name);
+
+    /** Get category from string name.
+     * @exception if name invalid.
+     */
+    static  Category category(const std::string& name) {
+        return category(name.c_str());
+    }
+
+    /** String name of category */
+    static const char* name(Category);
+};
+
+
+class CategoryFileNameHints {
+public:
+    CategoryFileNameHints(){
+        hintList.push_back(std::make_pair("AsynchIo",    network));
+        hintList.push_back(std::make_pair("TCP",         network));
+        hintList.push_back(std::make_pair("epoll",       network));
+        hintList.push_back(std::make_pair("Pollable",    network));
+        hintList.push_back(std::make_pair("Socket",      network));
+
+        hintList.push_back(std::make_pair("Sasl",        security));
+        hintList.push_back(std::make_pair("Ssl",         security));
+        hintList.push_back(std::make_pair("Acl",         security));
+        hintList.push_back(std::make_pair("acl",         security));
+        hintList.push_back(std::make_pair("cyrus",       security));
+
+        hintList.push_back(std::make_pair("amqp_",       protocol));
+        hintList.push_back(std::make_pair("framing",     protocol));
+
+        hintList.push_back(std::make_pair("management",  management));
+        hintList.push_back(std::make_pair("qmf",         management));
+        hintList.push_back(std::make_pair("console",     management));
+        hintList.push_back(std::make_pair("Management",  management));
+
+        hintList.push_back(std::make_pair("cluster",     ha));
+        hintList.push_back(std::make_pair("qpid/ha",     ha));
+        hintList.push_back(std::make_pair("qpid\\ha",    ha));
+        hintList.push_back(std::make_pair("replication", ha));
+        hintList.push_back(std::make_pair("ClusterSafe", ha));
+
+        hintList.push_back(std::make_pair("broker",      broker));
+        hintList.push_back(std::make_pair("SessionState",broker));
+        hintList.push_back(std::make_pair("DataDir",     broker));
+        hintList.push_back(std::make_pair("qpidd",       broker));
+        hintList.push_back(std::make_pair("xml",         broker));
+        hintList.push_back(std::make_pair("QpidBroker",  broker));
+
+        hintList.push_back(std::make_pair("store",       store));
+
+        hintList.push_back(std::make_pair("assert",      system));
+        hintList.push_back(std::make_pair("Exception",   system));
+        hintList.push_back(std::make_pair("sys",         system));
+        hintList.push_back(std::make_pair("SCM",         system));
+
+        hintList.push_back(std::make_pair("tests",       test));
+
+        hintList.push_back(std::make_pair("messaging",   messaging));
+        hintList.push_back(std::make_pair("types",       messaging));
+
+        hintList.push_back(std::make_pair("client",      client));
+    }
+
+    static Category categoryOf(const char*const fName);
+
+private:
+    std::list<std::pair<const char* const, Category> > hintList;
+};
+
+ /** POD struct representing a logging statement in source code. */
 struct Statement {
     bool enabled;
     const char* file;
     int line;
     const char* function;
     Level level;
+    Category category;
 
     QPID_COMMON_EXTERN void log(const std::string& message);
+    QPID_COMMON_EXTERN static void categorize(Statement& s);
 
     struct Initializer {
         QPID_COMMON_EXTERN Initializer(Statement& s);
@@ -72,8 +176,14 @@ struct Statement {
 };
 
 ///@internal static initializer for a Statement.
-#define QPID_LOG_STATEMENT_INIT(level) \
-    { 0, __FILE__, __LINE__,  BOOST_CURRENT_FUNCTION, (::qpid::log::level) }
+#define QPID_LOG_STATEMENT_INIT_CAT(LEVEL, CATEGORY) \
+{ 0, __FILE__, __LINE__,  BOOST_CURRENT_FUNCTION, (::qpid::log::LEVEL), \
+(::qpid::log::CATEGORY) }
+
+
+///@internal static initializer for a Statement with unspecified category
+#define QPID_LOG_STATEMENT_INIT(LEVEL) \
+QPID_LOG_STATEMENT_INIT_CAT ( LEVEL , unspecified )
 
 /**
  * Like QPID_LOG but computes an additional boolean test expression
@@ -96,13 +206,26 @@ struct Statement {
     } while(0)
 
 /**
+ * Line QPID_LOG_IF but with the additional specification of a category.
+ * @param CATEGORY message category.
+ */
+#define QPID_LOG_IF_CAT(LEVEL, CATEGORY, TEST, MESSAGE)         \
+    do {                                                        \
+        using ::qpid::log::Statement;                           \
+        static Statement stmt_= QPID_LOG_STATEMENT_INIT_CAT(LEVEL, CATEGORY); \
+        static Statement::Initializer init_(stmt_);             \
+        if (stmt_.enabled && (TEST))                            \
+            stmt_.log(::qpid::Msg() << MESSAGE);                \
+    } while(0)
+
+/**
  * FLAG must be a boolean variable. Assigns FLAG to true iff logging
  * is enabled for LEVEL in the calling context.  Use when extra
  * support code is needed to generate log messages, to ensure that it
  * is only run if the logging level is enabled.
  * e.g.
  * bool logWarning;
- * QPID_LOG_TEST(LEVEL, logWarning);
+ * QPID_LOG_TEST(warning, logWarning);
  * if (logWarning) { do stuff needed for warning log messages }
  */
 #define QPID_LOG_TEST(LEVEL, FLAG)                              \
@@ -113,12 +236,31 @@ struct Statement {
         FLAG = stmt_.enabled;                                   \
     } while(0)
 
+    /**
+     * FLAG must be a boolean variable. Assigns FLAG to true iff logging
+     * is enabled for LEVEL in the calling context.  Use when extra
+     * support code is needed to generate log messages, to ensure that it
+     * is only run if the logging level is enabled.
+     * e.g.
+     * bool logWarning;
+     * QPID_LOG_TEST_CAT(warning, System, logWarning);
+     * if (logWarning) { do stuff needed for warning log messages }
+     */
+    #define QPID_LOG_TEST_CAT(LEVEL, CATEGORY, FLAG)                \
+    do {                                                        \
+        using ::qpid::log::Statement;                           \
+        static Statement stmt_= QPID_LOG_STATEMENT_INIT_CAT(LEVEL, CATEGORY); \
+        static Statement::Initializer init_(stmt_);             \
+        FLAG = stmt_.enabled;                                   \
+    } while(0)
+
 /**
  * Macro for log statements. Example of use:
  * @code
  * QPID_LOG(debug, "There are " << foocount << " foos in the bar.");
  * QPID_LOG(error, boost::format("Dohickey %s exploded") % dohicky.name());
  * @endcode
+ * Using QPID_LOG implies a category of Unspecified.
  *
  * You can subscribe to log messages by level, by component, by filename
  * or a combination @see Configuration.
@@ -129,6 +271,25 @@ struct Statement {
  * like of ostreamable objects separated by @e<<.
  */
 #define QPID_LOG(LEVEL, MESSAGE) QPID_LOG_IF(LEVEL, true, MESSAGE);
+
+/**
+ * Macro for log statements. Example of use:
+ * @code
+ * QPID_LOG_CAT(debug, System, "There are " << foocount << " foos in the bar.");
+ * QPID_LOG_CAT(error, System, boost::format("Dohickey %s exploded") % dohicky.name());
+ * @endcode
+ * Using QPID_LOG_CAT requires the specification of a category.
+ *
+ * You can subscribe to log messages by level, by component, by filename
+ * or a combination @see Configuration.
+ *
+ *@param LEVEL severity Level for message, should be one of:
+ * debug, info, notice, warning, error, critical. NB no qpid::log:: prefix.
+ *@param CATEGORY basic Category for the message.
+ *@param MESSAGE any object with an @eostream operator<<, or a sequence
+ * like of ostreamable objects separated by @e<<.
+ */
+#define QPID_LOG_CAT(LEVEL, CATEGORY, MESSAGE) QPID_LOG_IF_CAT(LEVEL, CATEGORY, true, MESSAGE);
 
 }} // namespace qpid::log
 

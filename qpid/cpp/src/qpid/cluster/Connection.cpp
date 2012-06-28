@@ -47,6 +47,7 @@
 #include "qpid/framing/ClusterConnectionAnnounceBody.h"
 #include "qpid/framing/ConnectionCloseBody.h"
 #include "qpid/framing/ConnectionCloseOkBody.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/ClusterSafe.h"
 #include "qpid/types/Variant.h"
@@ -56,6 +57,8 @@
 
 namespace qpid {
 namespace cluster {
+
+using std::string;
 
 using namespace framing;
 using namespace framing::cluster;
@@ -82,7 +85,9 @@ Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
                        const std::string& mgmtId,
                        const ConnectionId& id, const qpid::sys::SecuritySettings& external)
     : cluster(c), self(id), catchUp(false), announced(false), output(*this, out),
-      connectionCtor(&output, cluster.getBroker(), mgmtId, external, false, 0, true),
+      connectionCtor(&output, cluster.getBroker(), mgmtId, external,
+                     false/*isLink*/, 0/*objectId*/, true/*shadow*/, false/*delayManagement*/,
+                     false/*authenticated*/),
       expectProtocolHeader(false),
       mcastFrameHandler(cluster.getMulticast(), self),
       updateIn(c.getUpdateReceiver()),
@@ -99,9 +104,10 @@ Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
                    external,
                    isLink,
                    isCatchUp ? ++catchUpId : 0,
-                   // The first catch-up connection is not considered a shadow
-                   // as it needs to be authenticated.
-                   isCatchUp && self.second > 1),
+                   // The first catch-up connection is not a shadow
+                   isCatchUp && self.second > 1,
+                   false,       // delayManagement
+                   true),       // catch up connecytions are authenticated
     expectProtocolHeader(isLink),
     mcastFrameHandler(cluster.getMulticast(), self),
     updateIn(c.getUpdateReceiver()),
@@ -403,11 +409,12 @@ void Connection::shadowSetUser(const std::string& userId) {
 }
 
 void Connection::consumerState(const string& name, bool blocked, bool notifyEnabled, const SequenceNumber& position,
-                               uint32_t usedMsgCredit, uint32_t usedByteCredit)
+                               uint32_t usedMsgCredit, uint32_t usedByteCredit, const uint32_t deliveryCount)
 {
     broker::SemanticState::ConsumerImpl::shared_ptr c = semanticState().find(name);
     c->setPosition(position);
     c->setBlocked(blocked);
+    c->setDeliveryCount(deliveryCount);
     if (c->getCredit().isWindowMode()) c->getCredit().consume(usedMsgCredit, usedByteCredit);
     if (notifyEnabled) c->enableNotify(); else c->disableNotify();
     updateIn.consumerNumbering.add(c);
@@ -521,6 +528,7 @@ broker::QueuedMessage Connection::getUpdateMessage() {
     boost::shared_ptr<broker::Queue> updateq = findQueue(UpdateClient::UPDATE);
     assert(!updateq->isDurable());
     broker::QueuedMessage m = updateq->get();
+    updateq->dequeue(0, m);
     if (!m.payload) throw Exception(QPID_MSG(cluster << " empty update queue"));
     return m;
 }
@@ -781,20 +789,70 @@ void Connection::managementSetupState(
 void Connection::config(const std::string& encoded) {
     Buffer buf(const_cast<char*>(encoded.data()), encoded.size());
     string kind;
+    uint32_t p = buf.getPosition();
     buf.getShortString (kind);
-    if (kind == "link") {
+    buf.setPosition(p);
+    if (broker::Link::isEncodedLink(kind)) {
         broker::Link::shared_ptr link =
-            broker::Link::decode(cluster.getBroker().getLinks(), buf);
+          broker::Link::decode(cluster.getBroker().getLinks(), buf);
         QPID_LOG(debug, cluster << " updated link "
                  << link->getHost() << ":" << link->getPort());
     }
-    else if (kind == "bridge") {
+    else if (broker::Bridge::isEncodedBridge(kind)) {
         broker::Bridge::shared_ptr bridge =
-            broker::Bridge::decode(cluster.getBroker().getLinks(), buf);
+          broker::Bridge::decode(cluster.getBroker().getLinks(), buf);
         QPID_LOG(debug, cluster << " updated bridge " << bridge->getName());
     }
     else throw Exception(QPID_MSG("Update failed, invalid kind of config: " << kind));
 }
+
+namespace {
+    // find a Link that matches the given Address
+    class LinkFinder {
+        qpid::Address id;
+        boost::shared_ptr<broker::Link> link;
+    public:
+        LinkFinder(const qpid::Address& _id) : id(_id) {}
+        boost::shared_ptr<broker::Link> getLink() { return link; }
+        void operator() (boost::shared_ptr<broker::Link> l)
+        {
+            if (!link) {
+                qpid::Address addr(l->getTransport(), l->getHost(), l->getPort());
+                if (id == addr) {
+                    link = l;
+                }
+            }
+        }
+    };
+}
+
+void Connection::internalState(const std::string& type,
+                               const std::string& name,
+                               const framing::FieldTable& state)
+{
+    if (type == "link") {
+        // name is the string representation of the Link's _configured_ destination address
+        Url dest;
+        try {
+            dest = name;
+        } catch(...) {
+            throw Exception(QPID_MSG("Update failed, invalid format for Link destination address: " << name));
+        }
+        assert(dest.size());
+        LinkFinder finder(dest[0]);
+        cluster.getBroker().getLinks().eachLink(boost::ref(finder));
+        if (finder.getLink()) {
+            try {
+                finder.getLink()->setState(state);
+            } catch(...) {
+                throw Exception(QPID_MSG("Update failed, invalid state for Link " << name << ", state: " << state));
+            }
+            QPID_LOG(debug, cluster << " updated link " << dest[0] << " with state: " << state);
+        } else throw Exception(QPID_MSG("Update failed, unable to find Link named: " << name));
+    }
+    else throw Exception(QPID_MSG("Update failed, invalid object type for internal state replication: " << type));
+}
+
 
 void Connection::doCatchupIoCallbacks() {
     // We need to process IO callbacks during the catch-up phase in

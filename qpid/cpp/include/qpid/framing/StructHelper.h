@@ -34,7 +34,7 @@ class QPID_COMMON_CLASS_EXTERN StructHelper
 {
 public:
 
-    template <class T> void encode(const T t, std::string& data) {
+    template <class T> void encode(const T& t, std::string& data) {
         uint32_t size = t.bodySize() + 2/*type*/;
         data.resize(size);
         Buffer wbuffer(const_cast<char*>(data.data()), size);

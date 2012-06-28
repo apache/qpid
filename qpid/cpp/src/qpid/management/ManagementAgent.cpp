@@ -30,6 +30,7 @@
 #include "qpid/log/Statement.h"
 #include <qpid/broker/Message.h>
 #include "qpid/framing/MessageTransferBody.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/sys/Time.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/broker/ConnectionState.h"
@@ -44,14 +45,15 @@
 #include <sstream>
 #include <typeinfo>
 
+namespace qpid {
+namespace management {
+
 using boost::intrusive_ptr;
 using qpid::framing::Uuid;
 using qpid::types::Variant;
 using qpid::amqp_0_10::MapCodec;
 using qpid::amqp_0_10::ListCodec;
-using qpid::sys::Mutex;
 using namespace qpid::framing;
-using namespace qpid::management;
 using namespace qpid::broker;
 using namespace qpid;
 using namespace std;
@@ -1342,18 +1344,19 @@ void ManagementAgent::handleMethodRequestLH(Buffer& inBuffer, const string& repl
             outBuffer.putLong        (Manageable::STATUS_PARAMETER_INVALID);
             outBuffer.putMediumString(Manageable::StatusText (Manageable::STATUS_PARAMETER_INVALID));
         }
-        else
+        else {
+            uint32_t pos = outBuffer.getPosition();
             try {
-                outBuffer.record();
                 sys::Mutex::ScopedUnlock u(userLock);
                 string outBuf;
                 iter->second->doMethod(methodName, inArgs, outBuf, userId);
                 outBuffer.putRawData(outBuf);
             } catch(exception& e) {
-                outBuffer.restore();
+                outBuffer.setPosition(pos);;
                 outBuffer.putLong(Manageable::STATUS_EXCEPTION);
                 outBuffer.putMediumString(e.what());
             }
+        }
     }
 
     outLen = MA_BUFFER_SIZE - outBuffer.available();
@@ -1660,11 +1663,11 @@ void ManagementAgent::handleSchemaResponseLH(Buffer& inBuffer, const string& /*r
     string         packageName;
     SchemaClassKey key;
 
-    inBuffer.record();
+    uint32_t pos = inBuffer.getPosition();
     inBuffer.getOctet();
     inBuffer.getShortString(packageName);
     key.decode(inBuffer);
-    inBuffer.restore();
+    inBuffer.setPosition(pos);;
 
     QPID_LOG(debug, "RECV SchemaResponse class=" << packageName << ":" << key.name << "(" << Uuid(key.hash) << ")" << " seq=" << sequence);
 
@@ -2424,7 +2427,6 @@ size_t ManagementAgent::validateTableSchema(Buffer& inBuffer)
     uint8_t  hash[16];
 
     try {
-        inBuffer.record();
         uint8_t kind = inBuffer.getOctet();
         if (kind != ManagementItem::CLASS_KIND_TABLE)
             return 0;
@@ -2466,7 +2468,7 @@ size_t ManagementAgent::validateTableSchema(Buffer& inBuffer)
     }
 
     end = inBuffer.getPosition();
-    inBuffer.restore(); // restore original position
+    inBuffer.setPosition(start); // restore original position
     return end - start;
 }
 
@@ -2478,7 +2480,6 @@ size_t ManagementAgent::validateEventSchema(Buffer& inBuffer)
     uint8_t  hash[16];
 
     try {
-        inBuffer.record();
         uint8_t kind = inBuffer.getOctet();
         if (kind != ManagementItem::CLASS_KIND_EVENT)
             return 0;
@@ -2505,7 +2506,7 @@ size_t ManagementAgent::validateEventSchema(Buffer& inBuffer)
     }
 
     end = inBuffer.getPosition();
-    inBuffer.restore(); // restore original position
+    inBuffer.setPosition(start); // restore original position
     return end - start;
 }
 
@@ -2961,9 +2962,6 @@ bool ManagementAgent::moveDeletedObjectsLH() {
     return !deleteList.empty();
 }
 
-namespace qpid {
-namespace management {
-
 namespace {
 QPID_TSS const qpid::broker::ConnectionState* executionContext = 0;
 }
@@ -2978,3 +2976,4 @@ const qpid::broker::ConnectionState* getManagementExecutionContext()
 }
 
 }}
+

@@ -29,63 +29,71 @@ namespace tests {
 
 QPID_AUTO_TEST_SUITE(RangeSetTestSuite)
 
-typedef qpid::Range<int> TestRange;
-typedef qpid::RangeSet<int> TestRangeSet;
+typedef qpid::Range<int> TR;    // Test Range
+typedef RangeSet<int> TRSet;
 
 QPID_AUTO_TEST_CASE(testEmptyRange) {
-    TestRange r;
+    TR r;
+    BOOST_CHECK_EQUAL(r, TR(0,0));
     BOOST_CHECK(r.empty());
     BOOST_CHECK(!r.contains(0));
-    //    BOOST_CHECK(r.contiguous(0));
 }
 
 QPID_AUTO_TEST_CASE(testRangeSetAddPoint) {
-    TestRangeSet r;
+    TRSet r;
     BOOST_CHECK(r.empty());
     r += 3;
     BOOST_CHECK_MESSAGE(r.contains(3), r);
-    BOOST_CHECK_MESSAGE(r.contains(TestRange(3,4)), r);
+    BOOST_CHECK_MESSAGE(r.contains(TR(3,4)), r);
     BOOST_CHECK(!r.empty());
     r += 5;
     BOOST_CHECK_MESSAGE(r.contains(5), r);
-    BOOST_CHECK_MESSAGE(r.contains(TestRange(5,6)), r);
-    BOOST_CHECK_MESSAGE(!r.contains(TestRange(3,6)), r);
+    BOOST_CHECK_MESSAGE(r.contains(TR(5,6)), r);
+    BOOST_CHECK_MESSAGE(!r.contains(TR(3,6)), r);
     r += 4;
-    BOOST_CHECK_MESSAGE(r.contains(TestRange(3,6)), r);
+    BOOST_CHECK_MESSAGE(r.contains(TR(3,6)), r);
 }
 
 QPID_AUTO_TEST_CASE(testRangeSetAddRange) {
-    TestRangeSet r;
-    r += TestRange(0,3);
-    BOOST_CHECK(r.contains(TestRange(0,3)));
-    r += TestRange(4,6);
-    BOOST_CHECK_MESSAGE(r.contains(TestRange(4,6)), r);
+    TRSet r;
+    r += TR(0,3);
+    BOOST_CHECK(r.contains(TR(0,3)));
+    BOOST_CHECK(r.contiguous());
+    r += TR(4,6);
+    BOOST_CHECK(!r.contiguous());
+    BOOST_CHECK_MESSAGE(r.contains(TR(4,6)), r);
     r += 3;
-    BOOST_CHECK_MESSAGE(r.contains(TestRange(0,6)), r);
+    BOOST_CHECK_MESSAGE(r.contains(TR(0,6)), r);
     BOOST_CHECK(r.front() == 0);
     BOOST_CHECK(r.back() == 6);
+
+    // Merging additions
+    r = TRSet(0,3)+TR(5,6);
+    TRSet e(0,6);
+    BOOST_CHECK_EQUAL(r + TR(3,5), e);
+    BOOST_CHECK(e.contiguous());
+    r = TRSet(0,5)+TR(10,15)+TR(20,25)+TR(30,35)+TR(40,45);
+    BOOST_CHECK_EQUAL(r + TR(11,37), TRSet(0,5)+TR(11,37)+TR(40,45));
 }
 
 QPID_AUTO_TEST_CASE(testRangeSetAddSet) {
-    TestRangeSet r;
-    TestRangeSet s = TestRangeSet(0,3)+TestRange(5,10);
+    TRSet r;
+    TRSet s = TRSet(0,3)+TR(5,10);
     r += s;
     BOOST_CHECK_EQUAL(r,s);
-    r += TestRangeSet(3,5) + TestRange(7,12) + 15;
-    BOOST_CHECK_EQUAL(r, TestRangeSet(0,12) + 15);
+    r += TRSet(3,5) + TR(7,12) + 15;
+    BOOST_CHECK_EQUAL(r, TRSet(0,12) + 15);
 
     r.clear();
     BOOST_CHECK(r.empty());
-    r += TestRange::makeClosed(6,10);
-    BOOST_CHECK_EQUAL(r, TestRangeSet(6,11));
-    r += TestRangeSet(2,6)+8;
-    BOOST_CHECK_EQUAL(r, TestRangeSet(2,11));
+    r += TR::makeClosed(6,10);
+    BOOST_CHECK_EQUAL(r, TRSet(6,11));
+    r += TRSet(2,6)+8;
+    BOOST_CHECK_EQUAL(r, TRSet(2,11));
 }
 
 QPID_AUTO_TEST_CASE(testRangeSetIterate) {
-    TestRangeSet r;
-    (((r += 1) += 10) += TestRange(4,7)) += 2;
-    BOOST_MESSAGE(r);
+    TRSet r = TRSet(1,3)+TR(4,7)+TR(10,11);
     std::vector<int> actual;
     std::copy(r.begin(), r.end(), std::back_inserter(actual));
     std::vector<int> expect = boost::assign::list_of(1)(2)(4)(5)(6)(10);
@@ -94,51 +102,51 @@ QPID_AUTO_TEST_CASE(testRangeSetIterate) {
 
 QPID_AUTO_TEST_CASE(testRangeSetRemove) {
     // points
-    BOOST_CHECK_EQUAL(TestRangeSet(0,5)-3, TestRangeSet(0,3)+TestRange(4,5));
-    BOOST_CHECK_EQUAL(TestRangeSet(1,5)-5, TestRangeSet(1,5));
-    BOOST_CHECK_EQUAL(TestRangeSet(1,5)-0, TestRangeSet(1,5));
+    BOOST_CHECK_EQUAL(TRSet(0,5)-3, TRSet(0,3)+TR(4,5));
+    BOOST_CHECK_EQUAL(TRSet(1,5)-5, TRSet(1,5));
+    BOOST_CHECK_EQUAL(TRSet(1,5)-0, TRSet(1,5));
 
-    TestRangeSet r(TestRangeSet(0,5)+TestRange(10,15)+TestRange(20,25));
+    TRSet r(TRSet(0,5)+TR(10,15)+TR(20,25));
 
-    // TestRanges
-    BOOST_CHECK_EQUAL(r-TestRange(0,5), TestRangeSet(10,15)+TestRange(20,25));
-    BOOST_CHECK_EQUAL(r-TestRange(10,15), TestRangeSet(0,5)+TestRange(20,25));
-    BOOST_CHECK_EQUAL(r-TestRange(20,25), TestRangeSet(0,5)+TestRange(10,15));
+    // TRs
+    BOOST_CHECK_EQUAL(r-TR(0,5), TRSet(10,15)+TR(20,25));
+    BOOST_CHECK_EQUAL(r-TR(10,15), TRSet(0,5)+TR(20,25));
+    BOOST_CHECK_EQUAL(r-TR(20,25), TRSet(0,5)+TR(10,15));
 
-    BOOST_CHECK_EQUAL(r-TestRange(-5, 30), TestRangeSet());
+    BOOST_CHECK_EQUAL(r-TR(-5, 30), TRSet());
 
-    BOOST_CHECK_EQUAL(r-TestRange(-5, 7), TestRangeSet(10,15)+TestRange(20,25));
-    BOOST_CHECK_EQUAL(r-TestRange(8,19), TestRangeSet(0,5)+TestRange(20,25));
-    BOOST_CHECK_EQUAL(r-TestRange(17,30), TestRangeSet(0,5)+TestRange(10,15));
-    BOOST_CHECK_EQUAL(r-TestRange(17,30), TestRangeSet(0,5)+TestRange(10,15));
+    BOOST_CHECK_EQUAL(r-TR(-5, 7), TRSet(10,15)+TR(20,25));
+    BOOST_CHECK_EQUAL(r-TR(8,19), TRSet(0,5)+TR(20,25));
+    BOOST_CHECK_EQUAL(r-TR(17,30), TRSet(0,5)+TR(10,15));
 
-    BOOST_CHECK_EQUAL(r-TestRange(-5, 5), TestRangeSet(10,15)+TestRange(20,25));
-    BOOST_CHECK_EQUAL(r-TestRange(10,19), TestRangeSet(0,5)+TestRange(20,25));
-    BOOST_CHECK_EQUAL(r-TestRange(18,25), TestRangeSet(0,5)+TestRange(10,15));
-    BOOST_CHECK_EQUAL(r-TestRange(23,25), TestRangeSet(0,5)+TestRange(10,15)+TestRange(20,23));
+    BOOST_CHECK_EQUAL(r-TR(-5, 5), TRSet(10,15)+TR(20,25));
+    BOOST_CHECK_EQUAL(r-TR(10,19), TRSet(0,5)+TR(20,25));
+    BOOST_CHECK_EQUAL(r-TR(18,25), TRSet(0,5)+TR(10,15));
+    BOOST_CHECK_EQUAL(r-TR(23,25), TRSet(0,5)+TR(10,15)+TR(20,23));
 
-    BOOST_CHECK_EQUAL(r-TestRange(-3, 3), TestRangeSet(3,5)+TestRange(10,15)+TestRange(20,25));
-    BOOST_CHECK_EQUAL(r-TestRange(3, 7), TestRangeSet(0,2)+TestRange(10,15)+TestRange(20,25));
-    BOOST_CHECK_EQUAL(r-TestRange(3, 12), TestRangeSet(0,3)+TestRange(12,15)+TestRange(20,25));
-    BOOST_CHECK_EQUAL(r-TestRange(3, 22), TestRangeSet(12,15)+TestRange(22,25));
-    BOOST_CHECK_EQUAL(r-TestRange(12, 22), TestRangeSet(0,5)+TestRange(10,11)+TestRange(22,25));
+    BOOST_CHECK_EQUAL(r-TR(-3, 3), TRSet(3,5)+TR(10,15)+TR(20,25));
+    BOOST_CHECK_EQUAL(r-TR(3, 7), TRSet(0,2)+TR(10,15)+TR(20,25));
+    BOOST_CHECK_EQUAL(r-TR(3, 12), TRSet(0,3)+TR(12,15)+TR(20,25));
+    BOOST_CHECK_EQUAL(r-TR(3, 22), TRSet(12,15)+TR(22,25));
+    BOOST_CHECK_EQUAL(r-TR(12, 22), TRSet(0,5)+TR(10,11)+TR(22,25));
 
     // Sets
-    BOOST_CHECK_EQUAL(r-(TestRangeSet(-1,6)+TestRange(11,14)+TestRange(23,25)),
-                      TestRangeSet(10,11)+TestRange(14,15)+TestRange(20,23));
-}
-
-QPID_AUTO_TEST_CASE(testRangeContaining) {
-    TestRangeSet r;
-    (((r += 1) += TestRange(3,5)) += 7);
-    BOOST_CHECK_EQUAL(r.rangeContaining(0), TestRange(0,0));
-    BOOST_CHECK_EQUAL(r.rangeContaining(1), TestRange(1,2));
-    BOOST_CHECK_EQUAL(r.rangeContaining(2), TestRange(2,2));
-    BOOST_CHECK_EQUAL(r.rangeContaining(3), TestRange(3,5));
-    BOOST_CHECK_EQUAL(r.rangeContaining(4), TestRange(3,5));
-    BOOST_CHECK_EQUAL(r.rangeContaining(5), TestRange(5,5));
-    BOOST_CHECK_EQUAL(r.rangeContaining(6), TestRange(6,6));
-    BOOST_CHECK_EQUAL(r.rangeContaining(7), TestRange(7,8));
+    BOOST_CHECK_EQUAL(r-(TRSet(-1,6)+TR(11,14)+TR(23,25)),
+                      TRSet(10,11)+TR(14,15)+TR(20,23));
+    // Split the ranges
+    BOOST_CHECK_EQUAL(r-(TRSet(2,3)+TR(11,13)+TR(21,23)),
+                      TRSet(0,2)+TR(4,5)+
+                      TR(10,11)+TR(14,15)+
+                      TR(20,21)+TR(23,25));
+    // Truncate the ranges
+    BOOST_CHECK_EQUAL(r-(TRSet(0,3)+TR(13,15)+TR(19,23)),
+                      TRSet(3,5)+TR(10,13)+TR(20,23));
+    // Remove multiple ranges with truncation
+    BOOST_CHECK_EQUAL(r-(TRSet(3,23)), TRSet(0,3)+TR(23,25));
+    // Remove multiple ranges in middle
+    TRSet r2 = TRSet(0,5)+TR(10,15)+TR(20,25)+TR(30,35);
+    BOOST_CHECK_EQUAL(r2-TRSet(11,24),
+                      TRSet(0,5)+TR(10,11)+TR(24,25)+TR(30,35));
 }
 
 QPID_AUTO_TEST_SUITE_END()

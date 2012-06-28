@@ -40,6 +40,7 @@ class LegacyLVQ : public MessageMap
 {
   public:
     LegacyLVQ(const std::string& key, bool noBrowse = false, Broker* broker = 0);
+    bool deleted(const QueuedMessage&);
     bool acquire(const framing::SequenceNumber&, QueuedMessage&);
     bool browse(const framing::SequenceNumber&, QueuedMessage&, bool);
     bool push(const QueuedMessage& added, QueuedMessage& removed);

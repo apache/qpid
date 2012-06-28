@@ -32,6 +32,7 @@
 #include "qpid/framing/ExchangeBoundResult.h"
 #include "qpid/framing/ExchangeQueryResult.h"
 #include "qpid/framing/FieldTable.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/framing/QueueQueryResult.h"
 #include "qpid/framing/ReplyTo.h"
 #include "qpid/framing/reply_exceptions.h"

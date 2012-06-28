@@ -23,7 +23,11 @@ include (CTest)
 # Make sure that everything get built before the tests
 # Need to create a var with all the necessary top level targets
 
-add_definitions(-DBOOST_TEST_DYN_LINK)
+# If we're linking Boost for DLLs, turn that on for the unit test too.
+if (QPID_LINK_BOOST_DYNAMIC)
+    add_definitions(-DBOOST_TEST_DYN_LINK)
+endif (QPID_LINK_BOOST_DYNAMIC)
+
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
 include (FindPythonInterp)
@@ -145,18 +149,12 @@ set(unit_tests_to_build
     PollableCondition
     Variant
     ClientMessage
+    SystemInfo
     ${xml_tests}
     CACHE STRING "Which unit tests to build"
    )
 
 mark_as_advanced(unit_tests_to_build)
-
-# Disabled till we move to amqp_0_10 codec.
-# 	amqp_0_10/serialize.cpp allSegmentTypes.h \
-# 	amqp_0_10/ProxyTemplate.cpp \
-# 	amqp_0_10/apply.cpp \
-# 	amqp_0_10/Map.cpp \
-# 	amqp_0_10/handlers.cpp 
 
 add_executable (unit_test unit_test
                 ${unit_tests_to_build} ${platform_test_additions})
@@ -326,7 +324,7 @@ if (BUILD_MSSQL)
   add_test (store_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_store_tests${test_script_suffix} MSSQL)
 endif (BUILD_MSSQL)
 if (BUILD_MSCLFS)
-  add_test (store_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_store_tests${test_script_suffix} MSSQL-CLFS)
+  add_test (store_tests_clfs ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_store_tests${test_script_suffix} MSSQL-CLFS)
 endif (BUILD_MSCLFS)
 endif (PYTHON_EXECUTABLE)
 

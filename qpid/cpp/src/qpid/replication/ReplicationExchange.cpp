@@ -60,7 +60,13 @@ void ReplicationExchange::route(Deliverable& msg)
     if (args) {
         int eventType = args->getAsInt(REPLICATION_EVENT_TYPE);
         if (eventType) {
-            if (isDuplicate(args)) return;
+            if (isDuplicate(args)) {
+                if (mgmtExchange != 0) {
+                    mgmtExchange->inc_msgDrops();
+                    mgmtExchange->inc_byteDrops(msg.contentSize());
+                }
+	        return;
+	    }
             switch (eventType) {
               case ENQUEUE:
                 handleEnqueueEvent(args, msg);
@@ -178,7 +184,7 @@ bool ReplicationExchange::unbind(Queue::shared_ptr /*queue*/, const std::string&
     throw NotImplementedException("Replication exchange does not support unbind operation");
 }
 
-bool ReplicationExchange::isBound(Queue::shared_ptr /*queue*/, const string* const /*routingKey*/, const FieldTable* const /*args*/)
+bool ReplicationExchange::isBound(Queue::shared_ptr /*queue*/, const std::string* const /*routingKey*/, const FieldTable* const /*args*/)
 {
     return false;
 }

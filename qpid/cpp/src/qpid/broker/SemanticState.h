@@ -146,6 +146,8 @@ class SemanticState : private boost::noncopyable {
         std::string getResumeId() const { return resumeId; };
         const std::string& getTag() const { return tag; }
         uint64_t getResumeTtl() const { return resumeTtl; }
+	uint32_t getDeliveryCount() const { return deliveryCount; }
+	void setDeliveryCount(uint32_t _deliveryCount) { deliveryCount = _deliveryCount; }
         const framing::FieldTable& getArguments() const { return arguments; }
 
         SemanticState& getParent() { return *parent; }
@@ -180,6 +182,8 @@ class SemanticState : private boost::noncopyable {
     const bool authMsg;
     const std::string userID;
     bool closeComplete;
+    //needed for queue delete events in auto-delete:
+    const std::string connectionId;
 
     void route(boost::intrusive_ptr<Message> msg, Deliverable& strategy);
     void checkDtxTimeout();

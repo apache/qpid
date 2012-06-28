@@ -36,8 +36,8 @@ class Link;
 
 namespace ha {
 class Settings;
-class ConnectionExcluder;
 class BrokerReplicator;
+class HaBroker;
 
 /**
  * State associated with a backup broker. Manages connections to primary.
@@ -47,19 +47,23 @@ class BrokerReplicator;
 class Backup
 {
   public:
-    Backup(broker::Broker&, const Settings&);
+    Backup(HaBroker&, const Settings&);
     ~Backup();
     void setBrokerUrl(const Url&);
 
   private:
+    bool isSelf(const Address& a) const;
+    Url removeSelf(const Url&) const;
     void initialize(const Url&);
 
+    std::string logPrefix;
+
     sys::Mutex lock;
+    HaBroker& haBroker;
     broker::Broker& broker;
     Settings settings;
     boost::shared_ptr<broker::Link> link;
     boost::shared_ptr<BrokerReplicator> replicator;
-    boost::shared_ptr<ConnectionExcluder> excluder;
 };
 
 }} // namespace qpid::ha

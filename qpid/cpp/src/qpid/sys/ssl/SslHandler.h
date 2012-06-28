@@ -25,6 +25,8 @@
 #include "qpid/sys/ConnectionCodec.h"
 #include "qpid/sys/OutputControl.h"
 
+#include <boost/intrusive_ptr.hpp>
+
 namespace qpid {
 
 namespace framing {
@@ -32,6 +34,10 @@ namespace framing {
 }
 
 namespace sys {
+
+class Timer;
+class TimerTask;
+
 namespace ssl {
 
 class SslIO;
@@ -46,6 +52,7 @@ class SslHandler : public OutputControl {
     bool readError;
     bool isClient;
     bool nodict;
+    boost::intrusive_ptr<sys::TimerTask> timeoutTimerTask;
 
     void write(const framing::ProtocolInitiation&);
     qpid::sys::SecuritySettings getSecuritySettings(SslIO* aio);
@@ -53,7 +60,7 @@ class SslHandler : public OutputControl {
   public:
     SslHandler(std::string id, ConnectionCodec::Factory* f, bool nodict);
     ~SslHandler();
-    void init(SslIO* a, int numBuffs);
+    void init(SslIO* a, Timer& timer, uint32_t maxTime, int numBuffs);
 
     void setClient() { isClient = true; }
 

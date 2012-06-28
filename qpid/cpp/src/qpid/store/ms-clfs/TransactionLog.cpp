@@ -33,6 +33,10 @@
 #include "Transaction.h"
 #include "Lsn.h"
 
+namespace qpid {
+namespace store {
+namespace ms_clfs {
+
 namespace {
 
 // Structures that hold log records. Each has a type field at the start.
@@ -94,10 +98,6 @@ struct TransactionDelete {
 };
 
 }   // namespace
-
-namespace qpid {
-namespace store {
-namespace ms_clfs {
 
 void
 TransactionLog::initialize()

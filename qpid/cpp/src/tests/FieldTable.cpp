@@ -19,15 +19,18 @@
  *
  */
 #include <iostream>
+#include <algorithm>
+#include "qpid/sys/alloca.h"
 #include "qpid/framing/Array.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/framing/List.h"
-#include "qpid/sys/alloca.h"
 
 #include "unit_test.h"
 
 using namespace qpid::framing;
+
+using std::string;
 
 namespace qpid {
 namespace tests {
@@ -73,11 +76,11 @@ QPID_AUTO_TEST_CASE(testAssignment)
         FieldTable c;
         c = a;
 
-        char* buff = static_cast<char*>(::alloca(c.encodedSize()));
-        Buffer wbuffer(buff, c.encodedSize());
+        std::vector<char> buff(c.encodedSize());
+        Buffer wbuffer(&buff[0], c.encodedSize());
         wbuffer.put(c);
 
-        Buffer rbuffer(buff, c.encodedSize());
+        Buffer rbuffer(&buff[0], c.encodedSize());
         rbuffer.get(d);
         BOOST_CHECK_EQUAL(c, d);
         BOOST_CHECK(string("CCCC") == c.getAsString("A"));
@@ -127,7 +130,7 @@ QPID_AUTO_TEST_CASE(testNestedValues)
         BOOST_CHECK(string("B") == b.getAsString("id"));
         a.getArray("C", c);
         std::vector<std::string> items;
-        c.collect(items);
+        std::transform(c.begin(), c.end(), std::back_inserter(items), Array::get<std::string, Array::ValuePtr>);
         BOOST_CHECK((uint) 2 == items.size());
         BOOST_CHECK(string("one") == items[0]);
         BOOST_CHECK(string("two") == items[1]);

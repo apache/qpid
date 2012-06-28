@@ -31,14 +31,15 @@
 #include <unistd.h>
 #include <sys/utsname.h>
 
-using namespace std;
-using namespace qpid;
-using qpid::broker::Broker;
-using qpid::broker::Daemon;
+using std::cout;
+using std::endl;
+
+namespace qpid {
+namespace broker {
 
 BootstrapOptions::BootstrapOptions(const char* argv0)
   : qpid::Options("Options"),
-    common("", QPIDD_CONF_FILE),
+    common("", QPIDD_CONF_FILE, QPIDC_CONF_FILE),
     module(QPIDD_MODULE_DIR),
     log(argv0)
 {
@@ -90,7 +91,7 @@ struct QpiddPosixOptions : public QpiddOptionsPrivate {
 
 QpiddOptions::QpiddOptions(const char* argv0)
   : qpid::Options("Options"),
-    common("", QPIDD_CONF_FILE),
+    common("", QPIDD_CONF_FILE, QPIDC_CONF_FILE),
     module(QPIDD_MODULE_DIR),
     log(argv0)
 {
@@ -153,8 +154,14 @@ int QpiddBroker::execute (QpiddOptions *options) {
         throw Exception("Internal error obtaining platform options");
 
     if (myOptions->daemon.check || myOptions->daemon.quit) {
-        pid_t pid = Daemon::getPid(myOptions->daemon.piddir,
-                                   options->broker.port);
+        pid_t pid;
+        try {
+            pid = Daemon::getPid(myOptions->daemon.piddir, options->broker.port);
+        } catch (const ErrnoException& e) {
+            // This is not a critical error, usually means broker is not running
+            QPID_LOG(notice, "Cannot stop broker: " << e.what());
+            return 1;
+        }
         if (pid < 0) 
             return 1;
         if (myOptions->daemon.check)
@@ -197,7 +204,9 @@ int QpiddBroker::execute (QpiddOptions *options) {
     return 0;
 }
 
+}} // namespace qpid::Broker
+
 int main(int argc, char* argv[])
 {
-    return run_broker(argc, argv);
+    return qpid::broker::run_broker(argc, argv);
 }

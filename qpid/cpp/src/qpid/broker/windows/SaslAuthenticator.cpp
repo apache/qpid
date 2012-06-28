@@ -25,11 +25,14 @@
 #include "qpid/broker/Connection.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/framing/FieldValue.h"
 
 #include <windows.h>
 
 using namespace qpid::framing;
 using qpid::sys::SecurityLayer;
+
+using std::string;
 
 namespace qpid {
 namespace broker {

@@ -21,7 +21,8 @@
 
 
 source ./test_env.sh
-source ${srcdir}/ais_check
+source cpg_check.sh
+cpg_enabled || exit 0
 
 with_ais_group ${srcdir}/sasl_fed_ex queue cluster
 

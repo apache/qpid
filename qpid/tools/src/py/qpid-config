@@ -481,7 +481,7 @@ class BrokerManager:
                 if LVQ_KEY in args: print "--lvq-key=%s" % args[LVQ_KEY],
                 if QUEUE_EVENT_GENERATION in args: print "--generate-queue-events=%s" % args[QUEUE_EVENT_GENERATION],
                 if q.altExchange:
-                    print "--alternate-exchange=%s" % q._altExchange_.name,
+                    print "--alternate-exchange=%s" % q.altExchange,
                 if FLOW_STOP_SIZE in args: print "--flow-stop-size=%s" % args[FLOW_STOP_SIZE],
                 if FLOW_RESUME_SIZE in args: print "--flow-resume-size=%s" % args[FLOW_RESUME_SIZE],
                 if FLOW_STOP_COUNT in args: print "--flow-stop-count=%s" % args[FLOW_STOP_COUNT],

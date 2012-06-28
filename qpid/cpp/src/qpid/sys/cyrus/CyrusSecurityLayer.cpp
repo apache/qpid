@@ -18,6 +18,7 @@
  * under the License.
  *
  */
+#include <unistd.h>
 #include "qpid/sys/cyrus/CyrusSecurityLayer.h"
 #include <algorithm>
 #include "qpid/framing/reply_exceptions.h"

@@ -108,7 +108,6 @@ Broker::Options::Options(const std::string& name) :
     noDataDir(0),
     port(DEFAULT_PORT),
     workerThreads(5),
-    maxConnections(500),
     connectionBacklog(10),
     enableMgmt(1),
     mgmtPublish(1),
@@ -128,8 +127,10 @@ Broker::Options::Options(const std::string& name) :
     queueFlowResumeRatio(70),
     queueThresholdEventRatio(80),
     defaultMsgGroup("qpid.no-group"),
-    timestampRcvMsgs(false),     // set the 0.10 timestamp delivery property
-    linkMaintenanceInterval(2)
+    timestampRcvMsgs(false),    // set the 0.10 timestamp delivery property
+    linkMaintenanceInterval(2),
+    linkHeartbeatInterval(120),
+    maxNegotiateTime(2000)      // 2s
 {
     int c = sys::SystemInfo::concurrency();
     workerThreads=c+1;
@@ -146,7 +147,6 @@ Broker::Options::Options(const std::string& name) :
         ("no-data-dir", optValue(noDataDir), "Don't use a data directory.  No persistent configuration will be loaded or stored")
         ("port,p", optValue(port,"PORT"), "Tells the broker to listen on PORT")
         ("worker-threads", optValue(workerThreads, "N"), "Sets the broker thread pool size")
-        ("max-connections", optValue(maxConnections, "N"), "Sets the maximum allowed connections")
         ("connection-backlog", optValue(connectionBacklog, "N"), "Sets the connection backlog limit for the server socket")
         ("mgmt-enable,m", optValue(enableMgmt,"yes|no"), "Enable Management")
         ("mgmt-publish", optValue(mgmtPublish,"yes|no"), "Enable Publish of Management Data ('no' implies query-only)")
@@ -171,6 +171,9 @@ Broker::Options::Options(const std::string& name) :
         ("default-message-group", optValue(defaultMsgGroup, "GROUP-IDENTIFER"), "Group identifier to assign to messages delivered to a message group queue that do not contain an identifier.")
         ("enable-timestamp", optValue(timestampRcvMsgs, "yes|no"), "Add current time to each received message.")
         ("link-maintenace-interval", optValue(linkMaintenanceInterval, "SECONDS"))
+        ("link-heartbeat-interval", optValue(linkHeartbeatInterval, "SECONDS"))
+        ("max-negotiate-time", optValue(maxNegotiateTime, "MilliSeconds"), "Maximum time a connection can take to send the initial protocol negotiation")
+        ("federation-tag", optValue(fedTag, "NAME"), "Override the federation tag")
         ;
 }
 
@@ -208,7 +211,6 @@ Broker::Broker(const Broker::Options& conf) :
     inCluster(false),
     clusterUpdatee(false),
     expiryPolicy(new ExpiryPolicy),
-    connectionCounter(conf.maxConnections),
     getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this)),
     deferDelivery(boost::bind(&Broker::deferDeliveryImpl, this, _1, _2))
 {
@@ -227,7 +229,6 @@ Broker::Broker(const Broker::Options& conf) :
         mgmtObject->set_systemRef(system->GetManagementObject()->getObjectId());
         mgmtObject->set_port(conf.port);
         mgmtObject->set_workerThreads(conf.workerThreads);
-        mgmtObject->set_maxConns(conf.maxConnections);
         mgmtObject->set_connBacklog(conf.connectionBacklog);
         mgmtObject->set_mgmtPubInterval(conf.mgmtPubInterval);
         mgmtObject->set_mgmtPublish(conf.mgmtPublish);
@@ -244,8 +245,11 @@ Broker::Broker(const Broker::Options& conf) :
         // management schema correct.
         Vhost* vhost = new Vhost(this, this);
         vhostObject = Vhost::shared_ptr(vhost);
-        framing::Uuid uuid(managementAgent->getUuid());
-        federationTag = uuid.str();
+        if (conf.fedTag.empty()) {
+            framing::Uuid uuid(managementAgent->getUuid());
+            federationTag = uuid.str();
+        } else
+            federationTag = conf.fedTag;
         vhostObject->setFederationTag(federationTag);
 
         queues.setParent(vhost);
@@ -254,8 +258,11 @@ Broker::Broker(const Broker::Options& conf) :
     } else {
         // Management is disabled so there is no broker management ID.
         // Create a unique uuid to use as the federation tag.
-        framing::Uuid uuid(true);
-        federationTag = uuid.str();
+        if (conf.fedTag.empty()) {
+            framing::Uuid uuid(true);
+            federationTag = uuid.str();
+        } else
+            federationTag = conf.fedTag;
     }
 
     QueuePolicy::setDefaultMaxSize(conf.queueLimit);
@@ -346,7 +353,7 @@ Broker::Broker(const Broker::Options& conf) :
         knownBrokers.push_back(Url(conf.knownHosts));
     }
 
-    } catch (const std::exception& /*e*/) {
+    } catch (const std::exception&) {
         finalize();
         throw;
     }
@@ -438,7 +445,7 @@ Manageable* Broker::GetVhostObject(void) const
 
 Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
                                                Args&    args,
-                                               string&)
+                                               string&  text)
 {
     Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
 
@@ -453,6 +460,14 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
         status = Manageable::STATUS_OK;
         break;
     case _qmf::Broker::METHOD_CONNECT : {
+        /** Management is creating a Link to a remote broker using the host and port of
+         * the remote.  This (old) interface does not allow management to specify a name
+         * for the link, nor does it allow multiple Links to the same remote.  Use the
+         * "create()" broker method if these features are needed.
+         * TBD: deprecate this interface.
+         */
+        QPID_LOG(info, "The Broker::connect() method will be removed in a future release of QPID."
+                 " Please use the Broker::create() method with type='link' instead.");
         _qmf::ArgsBrokerConnect& hp=
             dynamic_cast<_qmf::ArgsBrokerConnect&>(args);
 
@@ -461,13 +476,24 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
                         "; durable=" << (hp.i_durable?"T":"F") << "; authMech=\"" << hp.i_authMechanism << "\"");
         if (!getProtocolFactory(transport)) {
             QPID_LOG(error, "Transport '" << transport << "' not supported");
+            text = "transport type not supported";
             return  Manageable::STATUS_NOT_IMPLEMENTED;
         }
-        std::pair<Link::shared_ptr, bool> response =
-            links.declare (hp.i_host, hp.i_port, transport, hp.i_durable,
-                           hp.i_authMechanism, hp.i_username, hp.i_password);
-        if (hp.i_durable && response.second)
-            store->create(*response.first);
+
+        // Does a link to the remote already exist?  If so, re-use the existing link
+        // - this behavior is backward compatible with previous releases.
+        if (!links.getLink(hp.i_host, hp.i_port, transport)) {
+            // new link, need to generate a unique name for it
+            std::pair<Link::shared_ptr, bool> response =
+              links.declare(Link::createName(transport, hp.i_host, hp.i_port),
+                            hp.i_host, hp.i_port, transport,
+                            hp.i_durable, hp.i_authMechanism, hp.i_username, hp.i_password);
+            if (!response.first) {
+                text = "Unable to create Link";
+                status = Manageable::STATUS_PARAMETER_INVALID;
+                break;
+            }
+        }
         status = Manageable::STATUS_OK;
         break;
       }
@@ -538,6 +564,8 @@ const std::string TYPE_QUEUE("queue");
 const std::string TYPE_EXCHANGE("exchange");
 const std::string TYPE_TOPIC("topic");
 const std::string TYPE_BINDING("binding");
+const std::string TYPE_LINK("link");
+const std::string TYPE_BRIDGE("bridge");
 const std::string DURABLE("durable");
 const std::string AUTO_DELETE("auto-delete");
 const std::string ALTERNATE_EXCHANGE("alternate-exchange");
@@ -549,6 +577,26 @@ const std::string ATTRIBUTE_TIMESTAMP_0_10("timestamp-0.10");
 
 const std::string _TRUE("true");
 const std::string _FALSE("false");
+
+// parameters for creating a Link object, see mgmt schema
+const std::string HOST("host");
+const std::string PORT("port");
+const std::string TRANSPORT("transport");
+const std::string AUTH_MECHANISM("authMechanism");
+const std::string USERNAME("username");
+const std::string PASSWORD("password");
+
+// parameters for creating a Bridge object, see mgmt schema
+const std::string LINK("link");
+const std::string SRC("src");
+const std::string DEST("dest");
+const std::string KEY("key");
+const std::string TAG("tag");
+const std::string EXCLUDES("excludes");
+const std::string SRC_IS_QUEUE("srcIsQueue");
+const std::string SRC_IS_LOCAL("srcIsLocal");
+const std::string DYNAMIC("dynamic");
+const std::string SYNC("sync");
 }
 
 struct InvalidBindingIdentifier : public qpid::Exception
@@ -596,6 +644,25 @@ struct UnknownObjectType : public qpid::Exception
 {
     UnknownObjectType(const std::string& type) : qpid::Exception(type) {}
     std::string getPrefix() const { return "unknown object type"; }
+};
+
+struct ReservedObjectName : public qpid::Exception
+{
+    ReservedObjectName(const std::string& type) : qpid::Exception(type) {}
+    std::string getPrefix() const { return std::string("names prefixed with '")
+          + QPID_NAME_PREFIX + std::string("' are reserved"); }
+};
+
+struct UnsupportedTransport : public qpid::Exception
+{
+    UnsupportedTransport(const std::string& type) : qpid::Exception(type) {}
+    std::string getPrefix() const { return "transport is not supported"; }
+};
+
+struct InvalidParameter : public qpid::Exception
+{
+    InvalidParameter(const std::string& type) : qpid::Exception(type) {}
+    std::string getPrefix() const { return "invalid parameter to method call"; }
 };
 
 void Broker::createObject(const std::string& type, const std::string& name,
@@ -669,6 +736,113 @@ void Broker::createObject(const std::string& type, const std::string& name,
         amqp_0_10::translate(extensions, arguments);
 
         bind(binding.queue, binding.exchange, binding.key, arguments, userId, connectionId);
+
+    } else if (type == TYPE_LINK) {
+
+        QPID_LOG (debug, "createObject: Link; name=" << name << "; args=" << properties );
+
+        if (name.compare(0, QPID_NAME_PREFIX.length(), QPID_NAME_PREFIX) == 0) {
+            QPID_LOG(error, "Link name='" << name << "' cannot use the reserved prefix '" << QPID_NAME_PREFIX << "'");
+            throw ReservedObjectName(name);
+        }
+
+        std::string host;
+        uint16_t port = 0;
+        std::string transport = TCP_TRANSPORT;
+        bool durable = false;
+        std::string authMech, username, password;
+
+        for (Variant::Map::const_iterator i = properties.begin(); i != properties.end(); ++i) {
+            if (i->first == HOST) host = i->second.asString();
+            else if (i->first == PORT) port = i->second.asUint16();
+            else if (i->first == TRANSPORT) transport = i->second.asString();
+            else if (i->first == DURABLE) durable = bool(i->second);
+            else if (i->first == AUTH_MECHANISM) authMech = i->second.asString();
+            else if (i->first == USERNAME) username = i->second.asString();
+            else if (i->first == PASSWORD) password = i->second.asString();
+            else {
+                // TODO: strict checking here
+            }
+        }
+
+        if (!getProtocolFactory(transport)) {
+            QPID_LOG(error, "Transport '" << transport << "' not supported.");
+            throw UnsupportedTransport(transport);
+        }
+
+        std::pair<boost::shared_ptr<Link>, bool> rc;
+        rc = links.declare(name, host, port, transport, durable, authMech, username, password);
+        if (!rc.first) {
+            QPID_LOG (error, "Failed to create Link object, name=" << name << " remote=" << host << ":" << port <<
+                      "; transport=" << transport << "; durable=" << (durable?"T":"F") << "; authMech=\"" << authMech << "\"");
+            throw InvalidParameter(name);
+        }
+        if (!rc.second) {
+            QPID_LOG (error, "Failed to create a new Link object, name=" << name << " already exists.");
+            throw ObjectAlreadyExists(name);
+        }
+
+    } else if (type == TYPE_BRIDGE) {
+
+        QPID_LOG (debug, "createObject: Bridge; name=" << name << "; args=" << properties );
+
+        if (name.compare(0, QPID_NAME_PREFIX.length(), QPID_NAME_PREFIX) == 0) {
+            QPID_LOG(error, "Bridge name='" << name << "' cannot use the reserved prefix '" << QPID_NAME_PREFIX << "'");
+            throw ReservedObjectName(name);
+        }
+
+        std::string linkName;
+        std::string src;
+        std::string dest;
+        std::string key;
+        std::string id;
+        std::string excludes;
+        std::string queueName;
+        bool durable = false;
+        bool srcIsQueue = false;
+        bool srcIsLocal = false;
+        bool dynamic = false;
+        uint16_t sync = 0;
+
+        for (Variant::Map::const_iterator i = properties.begin(); i != properties.end(); ++i) {
+
+            if (i->first == LINK) linkName = i->second.asString();
+            else if (i->first == SRC) src = i->second.asString();
+            else if (i->first == DEST) dest = i->second.asString();
+            else if (i->first == KEY) key = i->second.asString();
+            else if (i->first == TAG) id = i->second.asString();
+            else if (i->first == EXCLUDES) excludes = i->second.asString();
+            else if (i->first == SRC_IS_QUEUE) srcIsQueue = bool(i->second);
+            else if (i->first == SRC_IS_LOCAL) srcIsLocal = bool(i->second);
+            else if (i->first == DYNAMIC) dynamic = bool(i->second);
+            else if (i->first == SYNC) sync = i->second.asUint16();
+            else if (i->first == DURABLE) durable = bool(i->second);
+            else if (i->first == QUEUE_NAME) queueName = i->second.asString();
+            else {
+                // TODO: strict checking here
+            }
+        }
+
+        boost::shared_ptr<Link> link;
+        if (linkName.empty() || !(link = links.getLink(linkName))) {
+            QPID_LOG(error, "Link '" << linkName << "' not found; bridge create failed.");
+            throw InvalidParameter(name);
+        }
+        std::pair<Bridge::shared_ptr, bool> rc =
+          links.declare(name, *link, durable, src, dest, key, srcIsQueue, srcIsLocal, id, excludes,
+                        dynamic, sync,
+                        0,
+                        queueName);
+
+        if (!rc.first) {
+            QPID_LOG (error, "Failed to create Bridge object, name=" << name << " link=" << linkName <<
+                      "; src=" << src << "; dest=" << dest << "; key=" << key);
+            throw InvalidParameter(name);
+        }
+        if (!rc.second) {
+            QPID_LOG (error, "Failed to create a new Bridge object, name=" << name << " already exists.");
+            throw ObjectAlreadyExists(name);
+        }
     } else {
         throw UnknownObjectType(type);
     }
@@ -691,6 +865,16 @@ void Broker::deleteObject(const std::string& type, const std::string& name,
     } else if (type == TYPE_BINDING) {
         BindingIdentifier binding(name);
         unbind(binding.queue, binding.exchange, binding.key, userId, connectionId);
+    } else if (type == TYPE_LINK) {
+        boost::shared_ptr<Link> link = links.getLink(name);
+        if (link) {
+            link->close();
+        }
+    } else if (type == TYPE_BRIDGE) {
+        boost::shared_ptr<Bridge> bridge = links.getBridge(name);
+        if (bridge) {
+            bridge->close();
+        }
     } else {
         throw UnknownObjectType(type);
     }
@@ -883,7 +1067,6 @@ std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
     if (acl) {
         std::map<acl::Property, std::string> params;
         params.insert(make_pair(acl::PROP_ALTERNATE, alternateExchange));
-        params.insert(make_pair(acl::PROP_PASSIVE, _FALSE));
         params.insert(make_pair(acl::PROP_DURABLE, durable ? _TRUE : _FALSE));
         params.insert(make_pair(acl::PROP_EXCLUSIVE, owner ? _TRUE : _FALSE));
         params.insert(make_pair(acl::PROP_AUTODELETE, autodelete ? _TRUE : _FALSE));
@@ -954,7 +1137,6 @@ std::pair<Exchange::shared_ptr, bool> Broker::createExchange(
         std::map<acl::Property, std::string> params;
         params.insert(make_pair(acl::PROP_TYPE, type));
         params.insert(make_pair(acl::PROP_ALTERNATE, alternateExchange));
-        params.insert(make_pair(acl::PROP_PASSIVE, _FALSE));
         params.insert(make_pair(acl::PROP_DURABLE, durable ? _TRUE : _FALSE));
         if (!acl->authorise(userId,acl::ACT_CREATE,acl::OBJ_EXCHANGE,name,&params) )
             throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange create request from " << userId));
@@ -1044,6 +1226,7 @@ void Broker::bind(const std::string& queueName,
         throw framing::NotFoundException(QPID_MSG("Bind failed. No such exchange: " << exchangeName));
     } else {
         if (queue->bind(exchange, key, arguments)) {
+            getConfigurationObservers().bind(exchange, queue, key, arguments);
             if (managementAgent.get()) {
                 managementAgent->raiseEvent(_qmf::EventBind(connectionId, userId, exchangeName,
                                                   queueName, key, ManagementAgent::toMap(arguments)));
@@ -1079,11 +1262,27 @@ void Broker::unbind(const std::string& queueName,
             if (exchange->isDurable() && queue->isDurable()) {
                 store->unbind(*exchange, *queue, key, qpid::framing::FieldTable());
             }
+            getConfigurationObservers().unbind(
+                exchange, queue, key, framing::FieldTable());
             if (managementAgent.get()) {
                 managementAgent->raiseEvent(_qmf::EventUnbind(connectionId, userId, exchangeName, queueName, key));
             }
         }
     }
+}
+
+// FIXME aconway 2012-04-27: access to linkClientProperties is
+// not properly thread safe, you could lose fields if 2 threads
+// attempt to add a field concurrently.
+
+framing::FieldTable Broker::getLinkClientProperties() const {
+    sys::Mutex::ScopedLock l(linkClientPropertiesLock);
+    return linkClientProperties;
+}
+
+void Broker::setLinkClientProperties(const framing::FieldTable& ft) {
+    sys::Mutex::ScopedLock l(linkClientPropertiesLock);
+    linkClientProperties = ft;
 }
 
 }} // namespace qpid::broker

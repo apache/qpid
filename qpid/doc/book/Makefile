@@ -17,37 +17,22 @@
 # under the License.
 #
 
-#
-#  This Makefile requires the following:
-#
-#  Apache FOP, version 0.95 or higher
-#  Docbook 4.5
-#  Docbook XSL stylesheets - tested with xsl-stylesheets (1.75.2 and 1.65.1-2)
-#  xsltproc
-#  xmllint
-# 
+DIRS = src/java-broker src/cpp-broker src/programming
 
-all: cpp java programming
 
-cpp: build/AMQP-Messaging-Broker-CPP-Book
+.PHONY: all $(DIRS)
 
-java: build/AMQP-Messaging-Broker-Java-Book
+all: $(DIRS)     
 
-programming: build/Programming-In-Apache-Qpid
-
-qmf: build/QmfBook
-
-build/AMQP-Messaging-Broker-CPP-Book:
-	./build-book.sh AMQP-Messaging-Broker-CPP-Book
-
-build/AMQP-Messaging-Broker-Java-Book:
-	./build-book.sh AMQP-Messaging-Broker-Java-Book
-
-build/Programming-In-Apache-Qpid:
-	./build-book.sh Programming-In-Apache-Qpid
-
-build/QmfBook: src/QmfBook.xml src/QmfIntroduction.xml
-	./build-book.sh QmfBook
-
-clean:
+clean: 
 	rm -rf build
+
+html: TARGET = html
+html: all
+
+pdf: TARGET = pdf
+pdf: all
+
+$(DIRS):
+	$(MAKE) -C $@ $(TARGET) OUTPUTDIR=../../build/
+

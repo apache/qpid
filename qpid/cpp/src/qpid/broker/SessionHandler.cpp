@@ -35,23 +35,39 @@ SessionHandler::SessionHandler(Connection& c, ChannelId ch)
     : amqp_0_10::SessionHandler(&c.getOutput(), ch),
       connection(c),
       proxy(out),
-      clusterOrderProxy(c.getClusterOrderOutput() ? new SetChannelProxy(ch, c.getClusterOrderOutput()) : 0)
+      clusterOrderProxy(c.getClusterOrderOutput() ?
+                        new SetChannelProxy(ch, c.getClusterOrderOutput()) : 0)
 {}
 
 SessionHandler::~SessionHandler() {}
 
-void SessionHandler::connectionException(framing::connection::CloseCode code, const std::string& msg) {
+void SessionHandler::connectionException(
+    framing::connection::CloseCode code, const std::string& msg)
+{
     // NOTE: must tell the error listener _before_ calling connection.close()
-    if (connection.getErrorListener()) connection.getErrorListener()->connectionError(msg);
+    if (connection.getErrorListener())
+        connection.getErrorListener()->connectionError(msg);
+    if (errorListener)
+        errorListener->connectionException(code, msg);
     connection.close(code, msg);
 }
 
-void SessionHandler::channelException(framing::session::DetachCode, const std::string& msg) {
-    if (connection.getErrorListener()) connection.getErrorListener()->sessionError(getChannel(), msg);
+void SessionHandler::channelException(
+    framing::session::DetachCode code, const std::string& msg)
+{
+    if (connection.getErrorListener())
+        connection.getErrorListener()->sessionError(getChannel(), msg);
+    if (errorListener)
+        errorListener->channelException(code, msg);
 }
 
-void SessionHandler::executionException(framing::execution::ErrorCode, const std::string& msg) {
-    if (connection.getErrorListener()) connection.getErrorListener()->sessionError(getChannel(), msg);
+void SessionHandler::executionException(
+    framing::execution::ErrorCode code, const std::string& msg)
+{
+    if (connection.getErrorListener())
+        connection.getErrorListener()->sessionError(getChannel(), msg);
+    if (errorListener)
+        errorListener->executionException(code, msg);
 }
 
 ConnectionState& SessionHandler::getConnection() { return connection; }
@@ -64,6 +80,7 @@ void SessionHandler::handleDetach() {
     if (session.get())
         connection.getBroker().getSessionManager().detach(session);
     assert(!session.get());
+    if (errorListener) errorListener->detach();
     connection.closeChannel(channel.get());
 }
 

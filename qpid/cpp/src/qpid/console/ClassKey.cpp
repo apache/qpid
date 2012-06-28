@@ -21,6 +21,7 @@
 
 #include "qpid/console/ClassKey.h"
 #include <string.h>
+#include <iostream>
 #include <cstdio>
 
 using namespace std;

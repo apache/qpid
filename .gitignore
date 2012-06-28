@@ -32,7 +32,7 @@ configure
 .deps
 .libs
 autom4te.cache
-aclocal.m4
+*.m4
 developer.doxygen
 user.doxygen
 qpid/cpp/libtool
@@ -53,10 +53,15 @@ release
 .settings
 generated/
 target
+classes
+qpid/java/lib/*.jar
+qpid/java/lib/required
 qpid/java/lib/bdbstore
 qpid/java/lib/cobertura
 qpid/java/lib/findbugs
 qpid/java/lib/ivy
+qpid/java/lib/csvjdbc
+qpid/java/lib/jfree
 qpid/java/build.overrides
 qpid/java/felix-cache/*
 qpid/java/eclipse-projects

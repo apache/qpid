@@ -32,11 +32,12 @@
 #include <iostream>
 #include <windows.h>
 
-using namespace qpid::broker;
+namespace qpid {
+namespace broker {
 
 BootstrapOptions::BootstrapOptions(const char* argv0)
   : qpid::Options("Options"),
-    common("", QPIDD_CONF_FILE),
+    common("", QPIDD_CONF_FILE, QPIDC_CONF_FILE),
     module(QPIDD_MODULE_DIR),
     log(argv0)
 {
@@ -314,7 +315,7 @@ struct QpiddWindowsOptions : public QpiddOptionsPrivate {
 
 QpiddOptions::QpiddOptions(const char* argv0)
   : qpid::Options("Options"),
-    common("", QPIDD_CONF_FILE),
+    common("", QPIDD_CONF_FILE, QPIDC_CONF_FILE),
     module(QPIDD_MODULE_DIR),
     log(argv0)
 {
@@ -451,6 +452,7 @@ int QpiddBroker::execute (QpiddOptions *options) {
     return 0;
 }
 
+}} // namespace qpid::broker
 
 int main(int argc, char* argv[])
 {
@@ -459,13 +461,13 @@ int main(int argc, char* argv[])
     // the service is stopped.
     SERVICE_TABLE_ENTRY dispatchTable[] =
     {
-        { "", (LPSERVICE_MAIN_FUNCTION)ServiceMain },
+        { "", (LPSERVICE_MAIN_FUNCTION)qpid::broker::ServiceMain },
         { NULL, NULL }
     };
     if (!StartServiceCtrlDispatcher(dispatchTable)) {
         DWORD err = ::GetLastError();
         if (err == ERROR_FAILED_SERVICE_CONTROLLER_CONNECT) // Run as console
-            return run_broker(argc, argv);
+            return qpid::broker::run_broker(argc, argv);
         throw QPID_WINDOWS_ERROR(err);
     }
     return 0;

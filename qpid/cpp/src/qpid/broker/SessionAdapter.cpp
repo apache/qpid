@@ -21,8 +21,9 @@
 #include "qpid/Exception.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/enum.h"
-#include "qpid/log/Statement.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/framing/SequenceSet.h"
+#include "qpid/log/Statement.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/broker/SessionState.h"
 #include "qmf/org/apache/qpid/broker/EventExchangeDeclare.h"
@@ -39,6 +40,8 @@
 
 namespace qpid {
 namespace broker {
+
+using std::string;
 
 using namespace qpid;
 using namespace qpid::framing;
@@ -73,18 +76,12 @@ void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const 
     if(passive){
         AclModule* acl = getBroker().getAcl();
         if (acl) {
-            //TODO: why does a passive declare require create
-            //permission? The purpose of the passive flag is to state
-            //that the exchange should *not* created. For
-            //authorisation a passive declare is similar to
-            //exchange-query.
             std::map<acl::Property, std::string> params;
             params.insert(make_pair(acl::PROP_TYPE, type));
             params.insert(make_pair(acl::PROP_ALTERNATE, alternateExchange));
-            params.insert(make_pair(acl::PROP_PASSIVE, _TRUE));
             params.insert(make_pair(acl::PROP_DURABLE, durable ? _TRUE : _FALSE));
-            if (!acl->authorise(getConnection().getUserId(),acl::ACT_CREATE,acl::OBJ_EXCHANGE,exchange,&params) )
-                throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange create request from " << getConnection().getUserId()));
+            if (!acl->authorise(getConnection().getUserId(),acl::ACT_ACCESS,acl::OBJ_EXCHANGE,exchange,&params) )
+                throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange access request from " << getConnection().getUserId()));
         }
         Exchange::shared_ptr actual(getBroker().getExchanges().get(exchange));
         checkType(actual, type);
@@ -209,7 +206,10 @@ ExchangeBoundResult SessionAdapter::ExchangeHandlerImpl::bound(const std::string
     }
 }
 
-SessionAdapter::QueueHandlerImpl::QueueHandlerImpl(SemanticState& session) : HandlerHelper(session), broker(getBroker())
+SessionAdapter::QueueHandlerImpl::QueueHandlerImpl(SemanticState& session)
+    : HandlerHelper(session), broker(getBroker()),
+      //record connection id and userid for deleting exclsuive queues after session has ended:
+      connectionId(getConnection().getUrl()), userId(getConnection().getUserId())
 {}
 
 
@@ -228,7 +228,7 @@ void SessionAdapter::QueueHandlerImpl::destroyExclusiveQueues()
         Queue::shared_ptr q(exclusiveQueues.front());
         q->releaseExclusiveOwnership();
         if (q->canAutoDelete()) {
-            Queue::tryAutoDelete(broker, q);
+            Queue::tryAutoDelete(broker, q, connectionId, userId);
         }
         exclusiveQueues.erase(exclusiveQueues.begin());
     }
@@ -274,22 +274,16 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
     if (passive && !name.empty()) {
         AclModule* acl = getBroker().getAcl();
         if (acl) {
-            //TODO: why does a passive declare require create
-            //permission? The purpose of the passive flag is to state
-            //that the queue should *not* created. For
-            //authorisation a passive declare is similar to
-            //queue-query (or indeed a qmf query).
             std::map<acl::Property, std::string> params;
             params.insert(make_pair(acl::PROP_ALTERNATE, alternateExchange));
-            params.insert(make_pair(acl::PROP_PASSIVE, _TRUE));
             params.insert(make_pair(acl::PROP_DURABLE, std::string(durable ? _TRUE : _FALSE)));
             params.insert(make_pair(acl::PROP_EXCLUSIVE, std::string(exclusive ? _TRUE : _FALSE)));
             params.insert(make_pair(acl::PROP_AUTODELETE, std::string(autoDelete ? _TRUE : _FALSE)));
             params.insert(make_pair(acl::PROP_POLICYTYPE, arguments.getAsString("qpid.policy_type")));
             params.insert(make_pair(acl::PROP_MAXQUEUECOUNT, boost::lexical_cast<string>(arguments.getAsInt("qpid.max_count"))));
             params.insert(make_pair(acl::PROP_MAXQUEUESIZE, boost::lexical_cast<string>(arguments.getAsInt64("qpid.max_size"))));
-            if (!acl->authorise(getConnection().getUserId(),acl::ACT_CREATE,acl::OBJ_QUEUE,name,&params) )
-                throw UnauthorizedAccessException(QPID_MSG("ACL denied queue create request from " << getConnection().getUserId()));
+            if (!acl->authorise(getConnection().getUserId(),acl::ACT_ACCESS,acl::OBJ_QUEUE,name,&params) )
+                throw UnauthorizedAccessException(QPID_MSG("ACL denied queue access request from " << getConnection().getUserId()));
         }
         queue = getQueue(name);
         //TODO: check alternate-exchange is as expected
@@ -409,6 +403,7 @@ SessionAdapter::MessageHandlerImpl::subscribe(const string& queueName,
     if(!destination.empty() && state.exists(destination))
         throw NotAllowedException(QPID_MSG("Consumer tags must be unique"));
 
+    // We allow browsing (acquireMode == 1) of exclusive queues, this is required by HA.
     if (queue->hasExclusiveOwner() && !queue->isExclusiveOwner(&session) && acquireMode == 0)
         throw ResourceLockedException(QPID_MSG("Cannot subscribe to exclusive queue "
                                                << queue->getName()));
@@ -548,13 +543,6 @@ void SessionAdapter::TxHandlerImpl::rollback()
     state.rollback();
 }
 
-std::string SessionAdapter::DtxHandlerImpl::convert(const framing::Xid& xid)
-{
-    std::string encoded;
-    encode(xid, encoded);
-    return encoded;
-}
-
 void SessionAdapter::DtxHandlerImpl::select()
 {
     state.selectDtx();
@@ -566,7 +554,7 @@ XaResult SessionAdapter::DtxHandlerImpl::end(const Xid& xid,
 {
     try {
         if (fail) {
-            state.endDtx(convert(xid), true);
+            state.endDtx(DtxManager::convert(xid), true);
             if (suspend) {
                 throw CommandInvalidException(QPID_MSG("End and suspend cannot both be set."));
             } else {
@@ -574,9 +562,9 @@ XaResult SessionAdapter::DtxHandlerImpl::end(const Xid& xid,
             }
         } else {
             if (suspend) {
-                state.suspendDtx(convert(xid));
+                state.suspendDtx(DtxManager::convert(xid));
             } else {
-                state.endDtx(convert(xid), false);
+                state.endDtx(DtxManager::convert(xid), false);
             }
             return XaResult(XA_STATUS_XA_OK);
         }
@@ -594,9 +582,9 @@ XaResult SessionAdapter::DtxHandlerImpl::start(const Xid& xid,
     }
     try {
         if (resume) {
-            state.resumeDtx(convert(xid));
+            state.resumeDtx(DtxManager::convert(xid));
         } else {
-            state.startDtx(convert(xid), getBroker().getDtxManager(), join);
+            state.startDtx(DtxManager::convert(xid), getBroker().getDtxManager(), join);
         }
         return XaResult(XA_STATUS_XA_OK);
     } catch (const DtxTimeoutException& /*e*/) {
@@ -607,7 +595,7 @@ XaResult SessionAdapter::DtxHandlerImpl::start(const Xid& xid,
 XaResult SessionAdapter::DtxHandlerImpl::prepare(const Xid& xid)
 {
     try {
-        bool ok = getBroker().getDtxManager().prepare(convert(xid));
+        bool ok = getBroker().getDtxManager().prepare(DtxManager::convert(xid));
         return XaResult(ok ? XA_STATUS_XA_OK : XA_STATUS_XA_RBROLLBACK);
     } catch (const DtxTimeoutException& /*e*/) {
         return XaResult(XA_STATUS_XA_RBTIMEOUT);
@@ -618,7 +606,7 @@ XaResult SessionAdapter::DtxHandlerImpl::commit(const Xid& xid,
                             bool onePhase)
 {
     try {
-        bool ok = getBroker().getDtxManager().commit(convert(xid), onePhase);
+        bool ok = getBroker().getDtxManager().commit(DtxManager::convert(xid), onePhase);
         return XaResult(ok ? XA_STATUS_XA_OK : XA_STATUS_XA_RBROLLBACK);
     } catch (const DtxTimeoutException& /*e*/) {
         return XaResult(XA_STATUS_XA_RBTIMEOUT);
@@ -629,7 +617,7 @@ XaResult SessionAdapter::DtxHandlerImpl::commit(const Xid& xid,
 XaResult SessionAdapter::DtxHandlerImpl::rollback(const Xid& xid)
 {
     try {
-        getBroker().getDtxManager().rollback(convert(xid));
+        getBroker().getDtxManager().rollback(DtxManager::convert(xid));
         return XaResult(XA_STATUS_XA_OK);
     } catch (const DtxTimeoutException& /*e*/) {
         return XaResult(XA_STATUS_XA_RBTIMEOUT);
@@ -659,7 +647,7 @@ void SessionAdapter::DtxHandlerImpl::forget(const Xid& xid)
 
 DtxGetTimeoutResult SessionAdapter::DtxHandlerImpl::getTimeout(const Xid& xid)
 {
-    uint32_t timeout = getBroker().getDtxManager().getTimeout(convert(xid));
+    uint32_t timeout = getBroker().getDtxManager().getTimeout(DtxManager::convert(xid));
     return DtxGetTimeoutResult(timeout);
 }
 
@@ -667,7 +655,7 @@ DtxGetTimeoutResult SessionAdapter::DtxHandlerImpl::getTimeout(const Xid& xid)
 void SessionAdapter::DtxHandlerImpl::setTimeout(const Xid& xid,
                                                 uint32_t timeout)
 {
-    getBroker().getDtxManager().setTimeout(convert(xid), timeout);
+    getBroker().getDtxManager().setTimeout(DtxManager::convert(xid), timeout);
 }
 
 

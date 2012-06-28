@@ -30,7 +30,7 @@ pwcheck_method: auxprop
 auxprop_plugin: sasldb
 sasldb_path: $PWD/sasl_config/qpidd.sasldb
 sql_select: dummy select
-mech_list: ANONYMOUS PLAIN DIGEST-MD5 EXTERNAL
+mech_list: ANONYMOUS PLAIN DIGEST-MD5 EXTERNAL CRAM-MD5
 EOF
 
 # Populate temporary sasl db.

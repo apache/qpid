@@ -28,6 +28,9 @@
 #include "qpid/DataDir.h"
 #include "qpid/log/Statement.h"
 
+namespace qpid {
+namespace store {
+
 /*
  * The MessageStore pointer given to the Broker points to static storage.
  * Thus, it cannot be deleted, especially by the broker. To prevent deletion,
@@ -41,9 +44,6 @@ namespace {
       void operator()(qpid::broker::MessageStore * /*p*/) {}
   };
 }
-
-namespace qpid {
-namespace store {
 
 static MessageStorePlugin static_instance_registers_plugin;
 

@@ -39,8 +39,13 @@ struct AclOptions : public Options {
     AclValues& values;
 
     AclOptions(AclValues& v) : Options("ACL Options"), values(v) {
+        values.aclMaxConnectTotal = 500;
         addOptions()
-            ("acl-file", optValue(values.aclFile, "FILE"), "The policy file to load from, loaded from data dir");
+            ("acl-file",           optValue(values.aclFile, "FILE"), "The policy file to load from, loaded from data dir")
+            ("max-connections"         , optValue(values.aclMaxConnectTotal, "N"),   "The maximum combined number of connections allowed. 0 implies no limit.")
+            ("max-connections-per-user", optValue(values.aclMaxConnectPerUser, "N"), "The maximum number of connections allowed per user. 0 implies no limit.")
+            ("max-connections-per-ip"  , optValue(values.aclMaxConnectPerIp, "N"),   "The maximum number of connections allowed per host IP address. 0 implies no limit.")
+            ;
     }
 };
 
@@ -67,7 +72,6 @@ struct AclPlugin : public Plugin {
             oss << b.getDataDir().getPath() << "/" << values.aclFile;
             values.aclFile = oss.str();
     	}
-
         acl = new Acl(values, b);
         b.setAcl(acl.get());
         b.addFinalizer(boost::bind(&AclPlugin::shutdown, this));

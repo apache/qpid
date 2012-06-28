@@ -20,7 +20,8 @@
 #
 
 # Skip if cluster services not running.
-. `dirname $0`/ais_check
+. cpg_check.sh
+cpg_enabled || exit 0
 
 FAILING=`dirname $0`/cluster_python_tests_failing.txt
 source `dirname $0`/python_tests

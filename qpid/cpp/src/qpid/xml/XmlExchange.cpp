@@ -101,7 +101,7 @@ XmlBinding::XmlBinding(const std::string& key, const Queue::shared_ptr queue, co
 }
 
      
-XmlExchange::XmlExchange(const string& _name, Manageable* _parent, Broker* b) : Exchange(_name, _parent, b)
+XmlExchange::XmlExchange(const std::string& _name, Manageable* _parent, Broker* b) : Exchange(_name, _parent, b)
 {
     if (mgmtExchange != 0)
         mgmtExchange->set_type (typeName);
@@ -115,7 +115,7 @@ XmlExchange::XmlExchange(const std::string& _name, bool _durable,
         mgmtExchange->set_type (typeName);
 }
     
-bool XmlExchange::bind(Queue::shared_ptr queue, const string& bindingKey, const FieldTable* args)
+bool XmlExchange::bind(Queue::shared_ptr queue, const std::string& bindingKey, const FieldTable* args)
 { 
 
     // Federation uses bind for unbind and reorigin comands as well as for binds.
@@ -123,9 +123,9 @@ bool XmlExchange::bind(Queue::shared_ptr queue, const string& bindingKey, const 
     // Both federated and local binds are done in this method.  Other
     // federated requests are done by calling the relevent methods.
 
-    string fedOp;
-    string fedTags;
-    string fedOrigin;
+    std::string fedOp;
+    std::string fedTags;
+    std::string fedOrigin;
     
     if (args) 
         fedOp = args->getAsString(qpidFedOp);
@@ -146,7 +146,7 @@ bool XmlExchange::bind(Queue::shared_ptr queue, const string& bindingKey, const 
     
     else if (fedOp.empty() || fedOp == fedOpBind) {
 
-        string queryText = args->getAsString("xquery");
+        std::string queryText = args->getAsString("xquery");
 
         RWlock::ScopedWlock l(lock);   
  
@@ -175,7 +175,7 @@ bool XmlExchange::bind(Queue::shared_ptr queue, const string& bindingKey, const 
     return true;
 }
 
-bool XmlExchange::unbind(Queue::shared_ptr queue, const string& bindingKey, const FieldTable* args)
+bool XmlExchange::unbind(Queue::shared_ptr queue, const std::string& bindingKey, const FieldTable* args)
 {
     /*
      *  When called directly, no qpidFedOrigin argument will be
@@ -184,7 +184,7 @@ bool XmlExchange::unbind(Queue::shared_ptr queue, const string& bindingKey, cons
      *  This is a bit of a hack - the binding needs the origin, but
      *  this interface, as originally defined, would not supply one.
      */
-    string fedOrigin;
+    std::string fedOrigin;
     if (args) fedOrigin = args->getAsString(qpidFedOrigin);
 
     RWlock::ScopedWlock l(lock);
@@ -200,7 +200,7 @@ bool XmlExchange::unbind(Queue::shared_ptr queue, const string& bindingKey, cons
 
 bool XmlExchange::matches(Query& query, Deliverable& msg, const qpid::framing::FieldTable* args, bool parse_message_content) 
 {
-    string msgContent;
+    std::string msgContent;
 
     try {
         QPID_LOG(trace, "matches: query is [" << UTF8(query->getQueryText()) << "]");
@@ -285,7 +285,7 @@ bool XmlExchange::matches(Query& query, Deliverable& msg, const qpid::framing::F
 
 void XmlExchange::route(Deliverable& msg)
 {
-    const string& routingKey = msg.getMessage().getRoutingKey();
+    const std::string& routingKey = msg.getMessage().getRoutingKey();
     const FieldTable* args = msg.getMessage().getApplicationHeaders();
     PreRoute pr(msg, this);
     try {
@@ -309,7 +309,7 @@ void XmlExchange::route(Deliverable& msg)
 }
 
 
-bool XmlExchange::isBound(Queue::shared_ptr queue, const string* const bindingKey, const FieldTable* const) 
+bool XmlExchange::isBound(Queue::shared_ptr queue, const std::string* const bindingKey, const FieldTable* const) 
 {
     RWlock::ScopedRlock l(lock);
     if (bindingKey) {
@@ -345,7 +345,7 @@ void XmlExchange::propagateFedOp(const std::string& bindingKey, const std::strin
 
     if (args) {            
         for (qpid::framing::FieldTable::ValueMap::const_iterator i=args->begin(); i != args->end(); ++i)  {
-            const string& name(i->first);
+            const std::string& name(i->first);
             if (name != qpidFedOp &&
                 name != qpidFedTags &&
                 name != qpidFedOrigin)  {
@@ -358,7 +358,7 @@ void XmlExchange::propagateFedOp(const std::string& bindingKey, const std::strin
     Exchange::propagateFedOp(bindingKey, fedTags, fedOp, fedOrigin, propArgs);
 }
 
-bool XmlExchange::fedUnbind(const string& fedOrigin, const string& fedTags, Queue::shared_ptr queue, const string& bindingKey, const FieldTable* args)
+bool XmlExchange::fedUnbind(const std::string& fedOrigin, const std::string& fedTags, Queue::shared_ptr queue, const std::string& bindingKey, const FieldTable* args)
 {
     RWlock::ScopedRlock l(lock);
 
@@ -376,19 +376,19 @@ void XmlExchange::fedReorigin()
         RWlock::ScopedRlock l(lock);   
         for (XmlBindingsMap::iterator i = bindingsMap.begin(); i != bindingsMap.end(); ++i) {
             XmlBinding::vector::ConstPtr p = i->second.snapshot();
-            if (std::find_if(p->begin(), p->end(), MatchOrigin(string())) != p->end()) {
+            if (std::find_if(p->begin(), p->end(), MatchOrigin(std::string())) != p->end()) {
                 keys2prop.push_back(i->first);
             }
         }
     }   /* lock dropped */
     for (std::vector<std::string>::const_iterator key = keys2prop.begin();
          key != keys2prop.end(); key++) {
-        propagateFedOp( *key, string(), fedOpBind, string());
+        propagateFedOp( *key, std::string(), fedOpBind, std::string());
     }
 }
 
 
-XmlExchange::MatchOrigin::MatchOrigin(const string& _origin) : origin(_origin) {}
+XmlExchange::MatchOrigin::MatchOrigin(const std::string& _origin) : origin(_origin) {}
 
 bool XmlExchange::MatchOrigin::operator()(XmlBinding::shared_ptr b)
 {
@@ -396,7 +396,7 @@ bool XmlExchange::MatchOrigin::operator()(XmlBinding::shared_ptr b)
 }
 
 
-XmlExchange::MatchQueueAndOrigin::MatchQueueAndOrigin(Queue::shared_ptr _queue, const string& _origin) : queue(_queue), origin(_origin) {}
+XmlExchange::MatchQueueAndOrigin::MatchQueueAndOrigin(Queue::shared_ptr _queue, const std::string& _origin) : queue(_queue), origin(_origin) {}
 
 bool XmlExchange::MatchQueueAndOrigin::operator()(XmlBinding::shared_ptr b)
 {

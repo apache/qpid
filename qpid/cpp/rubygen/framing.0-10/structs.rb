@@ -185,6 +185,13 @@ class StructGen < CppGen
     end
   end
 
+  def check_field(f)
+    if (size = StringSizeMap[f.cpptype.encoded] and size < 4)
+      limit = 2 ** (size * 8)
+      genl "if (#{f.cppname}.size() >= #{limit}) throw IllegalArgumentException(\"Value for #{f.cppname} is too large\");"
+    end
+  end
+
   def process_packed_fields(s)
     s.fields.each { |f| yield f, s.fields.index(f) }
   end
@@ -260,11 +267,16 @@ EOS
         indent {
           process_packed_fields(s) { |f, i| genl "set#{f.name.caps}(_#{f.cppname});" if f.type_ == "bit"}
           process_packed_fields(s) { |f, i| genl "flags |= #{flag_mask(s, i)};" unless f.type_ == "bit"}
+          s.fields.each { |f| check_field(f) }
         }
         genl "}"          
       else
         indent { gen s.fields.collect { |f| " #{f.cppname}(_#{f.cppname})" }.join(",\n") }
-        genl "{}"
+        genl "{"
+        indent {
+          s.fields.each { |f| check_field(f) }
+        }
+        genl "}"
       end
     end
     #default constructors:
@@ -298,6 +310,7 @@ EOS
       indent {
         genl "#{f.cppname} = _#{f.cppname};"
         genl "flags |= #{flag_mask(s, i)};"
+        check_field(f)
       }
       genl "}"
       genl "#{f.cpptype.ret} #{s.cppname}::get#{f.name.caps}() const { return #{f.cppname}; }"
@@ -329,6 +342,7 @@ EOS
       indent {
         genl "#{f.cppname} = _#{f.cppname};"
         genl "flags |= #{flag_mask(s, i)};"
+        check_field(f)
       }
       genl "}"
       genl "#{f.cpptype.ret} #{s.body_name}::get#{f.name.caps}() const { return #{f.cppname}; }"
@@ -364,7 +378,12 @@ EOS
   end
 
   def define_accessors(f)
-    genl "void set#{f.name.caps}(#{f.cpptype.param} _#{f.cppname}) { #{f.cppname} = _#{f.cppname}; }"
+    genl "void set#{f.name.caps}(#{f.cpptype.param} _#{f.cppname}) {"
+    indent {
+      genl "#{f.cppname} = _#{f.cppname};"
+      check_field(f)
+    }
+    genl "}"
     genl "#{f.cpptype.ret} get#{f.name.caps}() const { return #{f.cppname}; }"
     if (f.cpptype.name == "FieldTable")
       genl "#{f.cpptype.name}& get#{f.name.caps}() { return #{f.cppname}; }"
@@ -401,6 +420,7 @@ EOS
 
 #include <ostream>
 #include "qpid/framing/amqp_types_full.h"
+#include "qpid/framing/reply_exceptions.h"
 #include "qpid/CommonImportExport.h"
 
 namespace qpid {
@@ -465,7 +485,7 @@ EOS
       end
       gen <<EOS
 #include "qpid/framing/#{classname}.h"
-#include "qpid/framing/reply_exceptions.h"
+#include "qpid/framing/Buffer.h"
 
 using namespace qpid::framing;
 

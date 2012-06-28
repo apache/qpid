@@ -35,8 +35,6 @@
 #include <vector>
 #include <string>
 
-using namespace std;
-
 namespace qpid {
 namespace broker {
 
@@ -62,7 +60,7 @@ struct XmlBinding : public Exchange::Binding {
 
 class XmlExchange : public virtual Exchange {
 
-    typedef std::map<string, XmlBinding::vector> XmlBindingsMap;
+    typedef std::map<std::string, XmlBinding::vector> XmlBindingsMap;
     XmlBindingsMap bindingsMap;
 
     qpid::sys::RWlock lock;

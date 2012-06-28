@@ -28,6 +28,7 @@ windows_dist = \
   qpid/log/windows/SinkOptions.cpp \
   qpid/log/windows/SinkOptions.h \
   ../include/qpid/sys/windows/check.h \
+  qpid/sys/MemState.cpp \
   qpid/sys/windows/AsynchIO.cpp \
   qpid/sys/windows/AsynchIoResult.h \
   ../include/qpid/sys/windows/Condition.h \
@@ -53,7 +54,6 @@ windows_dist = \
   ../include/qpid/sys/windows/Time.h \
   qpid/sys/windows/uuid.cpp \
   qpid/sys/windows/uuid.h \
-  qpid/sys/windows/MemStat.cpp \
   windows/QpiddBroker.cpp \
   windows/SCM.h \
   windows/SCM.cpp \
@@ -140,7 +140,7 @@ tmoduleexec_LTLIBRARIES=
 AM_CXXFLAGS += -DBOOST_FILESYSTEM_VERSION=2
 
 ## Automake macros to build libraries and executables.
-qpidd_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDD_MODULE_DIR=\"$(dmoduleexecdir)\" -DQPIDD_CONF_FILE=\"$(sysconfdir)/qpidd.conf\"
+qpidd_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDD_MODULE_DIR=\"$(dmoduleexecdir)\" -DQPIDD_CONF_FILE=\"$(sysconfdir)/qpidd.conf\" -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"
 libqpidclient_la_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDC_MODULE_DIR=\"$(cmoduleexecdir)\" -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"
 
 qpidd_LDADD =					\
@@ -380,7 +380,6 @@ libqpidcommon_la_SOURCES +=			\
   qpid/assert.h					\
   qpid/framing/AMQBody.cpp			\
   qpid/framing/AMQBody.h			\
-  qpid/framing/AMQCommandControlBody.h		\
   qpid/framing/AMQContentBody.cpp		\
   qpid/framing/AMQContentBody.h			\
   qpid/framing/AMQDataBlock.h			\
@@ -398,8 +397,6 @@ libqpidcommon_la_SOURCES +=			\
   qpid/framing/AccumulatedAck.h			\
   qpid/framing/Array.cpp			\
   qpid/framing/BodyFactory.h			\
-  qpid/framing/BodyHandler.cpp			\
-  qpid/framing/BodyHandler.h			\
   qpid/framing/Buffer.cpp			\
   qpid/framing/ResizableBuffer.h		\
   qpid/framing/ChannelHandler.h			\
@@ -552,6 +549,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/ConsumerFactory.h \
   qpid/broker/ConnectionObserver.h \
   qpid/broker/ConnectionObservers.h \
+  qpid/broker/ConfigurationObserver.h \
+  qpid/broker/ConfigurationObservers.h \
   qpid/broker/Daemon.cpp \
   qpid/broker/Daemon.h \
   qpid/broker/Deliverable.h \
@@ -614,6 +613,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/NameGenerator.h \
   qpid/broker/NullMessageStore.cpp \
   qpid/broker/NullMessageStore.h \
+  qpid/broker/Observers.h \
   qpid/broker/OwnershipToken.h \
   qpid/broker/Persistable.h \
   qpid/broker/PersistableConfig.h \
@@ -636,6 +636,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/QueuePolicy.h \
   qpid/broker/QueueRegistry.cpp \
   qpid/broker/QueueRegistry.h \
+  qpid/broker/QueuedMessage.cpp \
   qpid/broker/QueuedMessage.h \
   qpid/broker/QueueFlowLimit.h \
   qpid/broker/QueueFlowLimit.cpp \
@@ -682,6 +683,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/ThresholdAlerts.h \
   qpid/broker/TopicExchange.cpp \
   qpid/broker/TopicExchange.h \
+  qpid/broker/TopicKeyNode.h \
   qpid/broker/TransactionalStore.h \
   qpid/broker/TxAccept.cpp \
   qpid/broker/TxAccept.h \

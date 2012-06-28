@@ -23,9 +23,11 @@
 #  define _WIN32_WINNT 0x0501
 #endif
 
-#include "qpid/sys/IntegerTypes.h"
 #include "qpid/sys/SystemInfo.h"
+#include "qpid/sys/IntegerTypes.h"
+#include "qpid/Exception.h"
 
+#include <assert.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
@@ -91,6 +93,12 @@ void SystemInfo::getLocalIpAddresses (uint16_t port,
         }
         closesocket (s);
     }
+}
+
+bool SystemInfo::isLocalHost(const std::string& candidateHost) {
+    // FIXME aconway 2012-05-03: not implemented.
+    assert(0);
+    throw Exception("Not implemented: isLocalHost");
 }
 
 void SystemInfo::getSystemId (std::string &osName,

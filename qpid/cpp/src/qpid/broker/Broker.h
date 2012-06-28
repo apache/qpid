@@ -39,6 +39,7 @@
 #include "qpid/broker/ExpiryPolicy.h"
 #include "qpid/broker/ConsumerFactory.h"
 #include "qpid/broker/ConnectionObservers.h"
+#include "qpid/broker/ConfigurationObservers.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qmf/org/apache/qpid/broker/Broker.h"
@@ -63,8 +64,8 @@
 namespace qpid {
 
 namespace sys {
-    class ProtocolFactory;
-    class Poller;
+class ProtocolFactory;
+class Poller;
 }
 
 struct Url;
@@ -90,7 +91,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
                public management::Manageable,
                public RefCounted
 {
-public:
+  public:
 
     struct Options : public qpid::Options {
         static const std::string DEFAULT_DATA_DIR_LOCATION;
@@ -102,7 +103,6 @@ public:
         std::string dataDir;
         uint16_t port;
         int workerThreads;
-        int maxConnections;
         int connectionBacklog;
         bool enableMgmt;
         bool mgmtPublish;
@@ -126,29 +126,12 @@ public:
         std::string defaultMsgGroup;
         bool timestampRcvMsgs;
         double linkMaintenanceInterval; // FIXME aconway 2012-02-13: consistent parsing of SECONDS values.
+        uint16_t linkHeartbeatInterval;
+        uint32_t maxNegotiateTime;  // Max time in ms for connection with no negotiation
+        std::string fedTag;
 
       private:
         std::string getHome();
-    };
-
-    class ConnectionCounter {
-            int maxConnections;
-            int connectionCount;
-            sys::Mutex connectionCountLock;
-        public:
-            ConnectionCounter(int mc): maxConnections(mc),connectionCount(0) {};
-            void inc_connectionCount() {
-                sys::ScopedLock<sys::Mutex> l(connectionCountLock);
-                connectionCount++;
-            }
-            void dec_connectionCount() {
-                sys::ScopedLock<sys::Mutex> l(connectionCountLock);
-                connectionCount--;
-            }
-            bool allowConnection() {
-                sys::ScopedLock<sys::Mutex> l(connectionCountLock);
-                return (maxConnections <= connectionCount);
-            }
     };
 
   private:
@@ -182,6 +165,7 @@ public:
     AclModule* acl;
     DataDir dataDir;
     ConnectionObservers connectionObservers;
+    ConfigurationObservers configurationObservers;
 
     QueueRegistry queues;
     ExchangeRegistry exchanges;
@@ -202,8 +186,10 @@ public:
     bool recovery;
     bool inCluster, clusterUpdatee;
     boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
-    ConnectionCounter connectionCounter;
     ConsumerFactories consumerFactories;
+
+    mutable sys::Mutex linkClientPropertiesLock;
+    framing::FieldTable linkClientProperties;
 
   public:
     QPID_BROKER_EXTERN virtual ~Broker();
@@ -315,8 +301,6 @@ public:
 
     management::ManagementAgent* getManagementAgent() { return managementAgent.get(); }
 
-    ConnectionCounter& getConnectionCounter() {return connectionCounter;}
-
     /**
      * Never true in a stand-alone broker. In a cluster, return true
      * to defer delivery of messages deliveredg in a cluster-unsafe
@@ -375,6 +359,14 @@ public:
 
     ConsumerFactories&  getConsumerFactories() { return consumerFactories; }
     ConnectionObservers& getConnectionObservers() { return connectionObservers; }
+    ConfigurationObservers& getConfigurationObservers() { return configurationObservers; }
+
+    /** Properties to be set on outgoing link connections */
+    QPID_BROKER_EXTERN framing::FieldTable getLinkClientProperties() const;
+    QPID_BROKER_EXTERN void setLinkClientProperties(const framing::FieldTable&);
+
+    /** Information identifying this system */
+    boost::shared_ptr<const System> getSystem() const { return systemObject; }
 };
 
 }}

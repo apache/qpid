@@ -126,6 +126,11 @@ class SessionState : public qpid::SessionState,
     // the SessionState of a received Execution.Sync command.
     void addPendingExecutionSync();
 
+    void setUnackedCount(uint64_t count) {
+        if (mgmtObject)
+            mgmtObject->set_unackedMessages(count);
+    }
+
     // Used to delay creation of management object for sessions
     // belonging to inter-broker bridges
     void addManagementObject();

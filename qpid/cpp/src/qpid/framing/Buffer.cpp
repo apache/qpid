@@ -23,25 +23,15 @@
 #include "qpid/Msg.h"
 #include <string.h>
 #include <boost/format.hpp>
+
 namespace qpid {
 
 namespace framing {
 
+using std::string;
+
 Buffer::Buffer(char* _data, uint32_t _size)
     : size(_size), data(_data), position(0) {
-}
-
-void Buffer::record(){
-    r_position = position;
-}
-
-void Buffer::restore(bool reRecord){
-    uint32_t savedPosition = position;
-
-    position = r_position;
-
-    if (reRecord)
-	r_position = savedPosition;
 }
 
 void Buffer::reset(){

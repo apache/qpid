@@ -22,9 +22,13 @@
  *
  */
 
+#include "Counter.h"
+#include "types.h"
+#include "ReplicationTest.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/types/Variant.h"
 #include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 
 namespace qpid {
 
@@ -35,7 +39,13 @@ class Bridge;
 class SessionHandler;
 }
 
+namespace framing {
+class FieldTable;
+}
+
 namespace ha {
+class HaBroker;
+class QueueReplicator;
 
 /**
  * Replicate configuration on a backup broker.
@@ -48,20 +58,25 @@ namespace ha {
  * THREAD SAFE: Has no mutable state.
  *
  */
-class BrokerReplicator : public broker::Exchange
+class BrokerReplicator : public broker::Exchange,
+                         public boost::enable_shared_from_this<BrokerReplicator>
 {
   public:
-    BrokerReplicator(const boost::shared_ptr<broker::Link>&);
+    BrokerReplicator(HaBroker&, const boost::shared_ptr<broker::Link>&);
     ~BrokerReplicator();
-    std::string getType() const;
+
+    void initialize();
 
     // Exchange methods
+    std::string getType() const;
     bool bind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
     bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
     void route(broker::Deliverable&);
     bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const);
 
   private:
+    typedef boost::shared_ptr<QueueReplicator> QueueReplicatorPtr;
+
     void initializeBridge(broker::Bridge&, broker::SessionHandler&);
 
     void doEventQueueDeclare(types::Variant::Map& values);
@@ -70,15 +85,22 @@ class BrokerReplicator : public broker::Exchange
     void doEventExchangeDelete(types::Variant::Map& values);
     void doEventBind(types::Variant::Map&);
     void doEventUnbind(types::Variant::Map&);
+    void doEventMembersUpdate(types::Variant::Map&);
 
     void doResponseQueue(types::Variant::Map& values);
     void doResponseExchange(types::Variant::Map& values);
     void doResponseBind(types::Variant::Map& values);
+    void doResponseHaBroker(types::Variant::Map& values);
 
+    QueueReplicatorPtr findQueueReplicator(const std::string& qname);
     void startQueueReplicator(const boost::shared_ptr<broker::Queue>&);
 
+    std::string logPrefix;
+    ReplicationTest replicationTest;
+    HaBroker& haBroker;
     broker::Broker& broker;
     boost::shared_ptr<broker::Link> link;
+    bool initialized;
 };
 }} // namespace qpid::broker
 

@@ -22,5 +22,6 @@
 
 # Run the tests
 srcdir=`dirname $0`
-. $srcdir/ais_check
+source cpg_check.sh
+cpg_enabled || exit 0
 with_ais_group $srcdir/run_test ./cluster_test

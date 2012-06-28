@@ -47,6 +47,7 @@ class SessionContext : public OwnershipToken, public sys::OutputControl
     virtual uint16_t getChannel() const = 0;
     virtual const SessionId& getSessionId() const = 0;
     virtual void addPendingExecutionSync() = 0;
+    virtual void setUnackedCount(uint64_t) {}
 };
 
 }} // namespace qpid::broker

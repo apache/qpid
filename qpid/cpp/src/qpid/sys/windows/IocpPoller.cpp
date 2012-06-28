@@ -96,6 +96,7 @@ void Poller::shutdown() {
     // Allow sloppy code to shut us down more than once.
     if (impl->isShutdown)
         return;
+    impl->isShutdown = true;
     ULONG_PTR key = 1;    // Tell wait() it's a shutdown, not I/O
     PostQueuedCompletionStatus(impl->iocp, 0, key, 0);
 }
@@ -110,7 +111,7 @@ bool Poller::interrupt(PollerHandle&) {
 }
 
 void Poller::run() {
-    do {
+    while (!impl->isShutdown) {
         Poller::Event event = this->wait();
 
         // Handle shutdown
@@ -124,7 +125,7 @@ void Poller::run() {
           // This should be impossible
           assert(false);
         }
-    } while (true);
+    }
 }
 
 void Poller::monitorHandle(PollerHandle& handle, Direction dir) {

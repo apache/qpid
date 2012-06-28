@@ -24,6 +24,8 @@ dmoduleexec_LTLIBRARIES += acl.la
 acl_la_SOURCES = \
   qpid/acl/Acl.cpp \
   qpid/acl/Acl.h \
+  qpid/acl/AclConnectionCounter.cpp \
+  qpid/acl/AclConnectionCounter.h \
   qpid/acl/AclData.cpp \
   qpid/acl/AclData.h \
   qpid/acl/AclPlugin.cpp \

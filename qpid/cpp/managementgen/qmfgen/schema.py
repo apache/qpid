@@ -225,8 +225,7 @@ class SchemaType:
   def genRead (self, stream, varName, indent="    "):
     stream.write(indent + self.decode.replace("@", "buf").replace("#", varName) + ";\n")
 
-  def genUnmap (self, stream, varName, indent="    ", key=None, mapName="_map",
-                _optional=False):
+  def genUnmap (self, stream, varName, indent="    ", key=None, mapName="_map", _optional=False, _default=None):
     if key is None:
       key = varName
     stream.write(indent + "if ((_i = " + mapName + ".find(\"" + key + "\")) != " + mapName + ".end()) {\n")
@@ -234,6 +233,11 @@ class SchemaType:
                  self.unmap.replace("#", "_i->second") + ";\n")
     if _optional:
         stream.write(indent + "    _found = true;\n")
+    stream.write(indent + "} else {\n")
+    default = _default
+    if not default:
+        default = self.init
+    stream.write(indent + "    " + varName + " = " + default + ";\n")
     stream.write(indent + "}\n")
 
   def genWrite (self, stream, varName, indent="    "):
@@ -1405,7 +1409,9 @@ class SchemaClass:
                                  "ioArgs." + arg.dir.lower () + "_" + arg.name,
                                  "        ",
                                  arg.name,
-                                 "inMap")
+                                 "inMap",
+                                 False,
+                                 arg.default)
 
       stream.write ("        bool allow = coreObject->AuthorizeMethod(METHOD_" +\
                     method.getName().upper() + ", ioArgs, userId);\n")

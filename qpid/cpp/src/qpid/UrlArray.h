@@ -23,7 +23,6 @@
  */
 
 #include "qpid/framing/Array.h"
-#include "qpid/framing/FieldValue.h"
 #include "qpid/Url.h"
 #include <vector>
 

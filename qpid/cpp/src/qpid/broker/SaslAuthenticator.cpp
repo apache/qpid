@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,9 +23,11 @@
 #  include "config.h"
 #endif
 
+#include "qpid/broker/AclModule.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/sys/SecuritySettings.h"
 #include <boost/format.hpp>
 
@@ -36,6 +38,7 @@
 using qpid::sys::cyrus::CyrusSecurityLayer;
 #endif
 
+using std::string;
 using namespace qpid::framing;
 using qpid::sys::SecurityLayer;
 using qpid::sys::SecuritySettings;
@@ -163,13 +166,17 @@ void SaslAuthenticator::fini(void)
 
 #endif
 
-std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(Connection& c, bool isShadow )
+std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(Connection& c )
 {
     if (c.getBroker().getOptions().auth) {
-        if ( isShadow )
-            return std::auto_ptr<SaslAuthenticator>(new NullAuthenticator(c, c.getBroker().getOptions().requireEncrypted));
-        else 
-            return std::auto_ptr<SaslAuthenticator>(new CyrusAuthenticator(c, c.getBroker().getOptions().requireEncrypted));
+        // The cluster creates non-authenticated connections for internal shadow connections
+        // that are never connected to an external client.
+        if ( !c.isAuthenticated() )
+            return std::auto_ptr<SaslAuthenticator>(
+                new NullAuthenticator(c, c.getBroker().getOptions().requireEncrypted));
+        else
+            return std::auto_ptr<SaslAuthenticator>(
+                new CyrusAuthenticator(c, c.getBroker().getOptions().requireEncrypted));
     } else {
         QPID_LOG(debug, "SASL: No Authentication Performed");
         return std::auto_ptr<SaslAuthenticator>(new NullAuthenticator(c, c.getBroker().getOptions().requireEncrypted));
@@ -177,7 +184,7 @@ std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(Connecti
 }
 
 
-NullAuthenticator::NullAuthenticator(Connection& c, bool e) : connection(c), client(c.getOutput()), 
+NullAuthenticator::NullAuthenticator(Connection& c, bool e) : connection(c), client(c.getOutput()),
                                                               realm(c.getBroker().getOptions().realm), encrypt(e) {}
 NullAuthenticator::~NullAuthenticator() {}
 
@@ -213,7 +220,7 @@ void NullAuthenticator::start(const string& mechanism, const string* response)
             } else if (i != string::npos) {
                 //authorization id is first null delimited field
                 uid = response->substr(0, i);
-            }//else not a valid SASL PLAIN response, throw error?            
+            }//else not a valid SASL PLAIN response, throw error?
             if (!uid.empty()) {
                 //append realm if it has not already been added
                 i = uid.find(realm);
@@ -225,7 +232,12 @@ void NullAuthenticator::start(const string& mechanism, const string* response)
         }
     } else {
         connection.setUserId("anonymous");
-    }   
+    }
+    AclModule* acl = connection.getBroker().getAcl();
+    if (acl && !acl->approveConnection(connection))
+    {
+        throw ConnectionForcedException("User connection denied by configured limit");
+    }
     client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), 0, connection.getHeartbeatMax());
 }
 
@@ -239,7 +251,7 @@ std::auto_ptr<SecurityLayer> NullAuthenticator::getSecurityLayer(uint16_t)
 
 #if HAVE_SASL
 
-CyrusAuthenticator::CyrusAuthenticator(Connection& c, bool _encrypt) : 
+CyrusAuthenticator::CyrusAuthenticator(Connection& c, bool _encrypt) :
     sasl_conn(0), connection(c), client(c.getOutput()), encrypt(_encrypt)
 {
     init();
@@ -270,17 +282,17 @@ void CyrusAuthenticator::init()
                            NULL, /* Callbacks */
                            0, /* Connection flags */
                            &sasl_conn);
-    
+
     if (SASL_OK != code) {
         QPID_LOG(error, "SASL: Connection creation failed: [" << code << "] " << sasl_errdetail(sasl_conn));
-        
+
         // TODO: Change this to an exception signaling
         // server error, when one is available
         throw ConnectionForcedException("Unable to perform authentication");
     }
 
     sasl_security_properties_t secprops;
-    
+
     //TODO: should the actual SSF values be configurable here?
     secprops.min_ssf = encrypt ? 10: 0;
     secprops.max_ssf = 256;
@@ -318,14 +330,14 @@ void CyrusAuthenticator::init()
     secprops.property_values = 0;
     secprops.security_flags = 0; /* or SASL_SEC_NOANONYMOUS etc as appropriate */
     /*
-     * The nodict flag restricts SASL authentication mechanisms 
-     * to those that are not susceptible to dictionary attacks.  
-     * They are:  
+     * The nodict flag restricts SASL authentication mechanisms
+     * to those that are not susceptible to dictionary attacks.
+     * They are:
      *   SRP
      *   PASSDSS-3DES-1
      *   EXTERNAL
      */
-    if (external.nodict) secprops.security_flags |= SASL_SEC_NODICTIONARY;    
+    if (external.nodict) secprops.security_flags |= SASL_SEC_NODICTIONARY;
     int result = sasl_setprop(sasl_conn, SASL_SEC_PROPS, &secprops);
     if (result != SASL_OK) {
         throw framing::InternalErrorException(QPID_MSG("SASL error: " << result));
@@ -370,10 +382,10 @@ void CyrusAuthenticator::getMechanisms(Array& mechanisms)
                              "", separator, "",
                              &list, &list_len,
                              &count);
-    
+
     if (SASL_OK != code) {
         QPID_LOG(info, "SASL: Mechanism listing failed: " << sasl_errdetail(sasl_conn));
-        
+
         // TODO: Change this to an exception signaling
         // server error, when one is available
         throw ConnectionForcedException("Mechanism listing failed");
@@ -381,17 +393,17 @@ void CyrusAuthenticator::getMechanisms(Array& mechanisms)
         string mechanism;
         unsigned int start;
         unsigned int end;
-        
+
         QPID_LOG(info, "SASL: Mechanism list: " << list);
-        
+
         end = 0;
         do {
             start = end;
-            
+
             // Seek to end of next mechanism
             while (end < list_len && separator[0] != list[end])
                 end++;
-            
+
             // Record the mechanism
             mechanisms.add(boost::shared_ptr<FieldValue>(new Str16Value(string(list, start, end - start))));
             end++;
@@ -403,20 +415,20 @@ void CyrusAuthenticator::start(const string& mechanism, const string* response)
 {
     const char *challenge;
     unsigned int challenge_len;
-    
+
     // This should be at same debug level as mech list in getMechanisms().
     QPID_LOG(info, "SASL: Starting authentication with mechanism: " << mechanism);
     int code = sasl_server_start(sasl_conn,
                                  mechanism.c_str(),
                                  (response ? response->c_str() : 0), (response ? response->size() : 0),
                                  &challenge, &challenge_len);
-    
+
     processAuthenticationStep(code, challenge, challenge_len);
     qmf::org::apache::qpid::broker::Connection* cnxMgmt = connection.getMgmtObject();
-    if ( cnxMgmt ) 
+    if ( cnxMgmt )
         cnxMgmt->set_saslMechanism(mechanism);
 }
-        
+
 void CyrusAuthenticator::step(const string& response)
 {
     const char *challenge;
@@ -438,9 +450,16 @@ void CyrusAuthenticator::processAuthenticationStep(int code, const char *challen
             // authentication failure, when one is available
             throw ConnectionForcedException("Authenticated username unavailable");
         }
-        QPID_LOG(info, connection.getMgmtId() << " SASL: Authentication succeeded for: " << uid);
 
         connection.setUserId(uid);
+
+        AclModule* acl = connection.getBroker().getAcl();
+        if (acl && !acl->approveConnection(connection))
+        {
+            throw ConnectionForcedException("User connection denied by configured limit");
+        }
+
+        QPID_LOG(info, connection.getMgmtId() << " SASL: Authentication succeeded for: " << uid);
 
         client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), 0, connection.getHeartbeatMax());
     } else if (SASL_CONTINUE == code) {
@@ -489,7 +508,7 @@ std::auto_ptr<SecurityLayer> CyrusAuthenticator::getSecurityLayer(uint16_t maxFr
         securityLayer = std::auto_ptr<SecurityLayer>(new CyrusSecurityLayer(sasl_conn, maxFrameSize));
     }
     qmf::org::apache::qpid::broker::Connection* cnxMgmt = connection.getMgmtObject();
-    if ( cnxMgmt ) 
+    if ( cnxMgmt )
         cnxMgmt->set_saslSsf(ssf);
     return securityLayer;
 }

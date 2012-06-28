@@ -37,8 +37,9 @@
 
 #include <boost/bind.hpp>
 
-using namespace qpid::sys;
-using namespace qpid::sys::ssl;
+namespace qpid {
+namespace sys {
+namespace ssl {
 
 namespace {
 
@@ -256,6 +257,18 @@ void SslIO::queueWriteClose() {
     DispatchHandle::rewatchWrite();
 }
 
+void SslIO::requestCallback(RequestCallback callback) {
+    // TODO creating a function object every time isn't all that
+    // efficient - if this becomes heavily used do something better (what?)
+    assert(callback);
+    DispatchHandle::call(boost::bind(&SslIO::requestedCall, this, callback));
+}
+
+void SslIO::requestedCall(RequestCallback callback) {
+    assert(callback);
+    callback(*this);
+}
+
 /** Return a queued buffer if there are enough
  * to spare
  */
@@ -448,3 +461,5 @@ SecuritySettings SslIO::getSecuritySettings() {
     settings.authid = socket.getClientAuthId();
     return settings;
 }
+
+}}}

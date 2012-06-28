@@ -21,6 +21,7 @@
 //
 
 #include "qpid/management/Manageable.h"
+#include "qpid/framing/Uuid.h"
 #include "qmf/org/apache/qpid/broker/System.h"
 #include <boost/shared_ptr.hpp>
 #include <string>
@@ -35,6 +36,8 @@ class System : public management::Manageable
   private:
 
     qmf::org::apache::qpid::broker::System* mgmtObject;
+    framing::Uuid systemId;
+    std::string osName, nodeName, release, version, machine;
 
   public:
 
@@ -44,6 +47,20 @@ class System : public management::Manageable
 
     management::ManagementObject* GetManagementObject (void) const
     { return mgmtObject; }
+
+
+    /** Persistent UUID assigned by the management system to this broker. */
+    framing::Uuid getSystemId() const  { return systemId; }
+    /** Returns the OS name; e.g., GNU/Linux or Windows */
+    std::string getOsName() const { return osName; }
+    /** Returns the node name. Usually the same as the host name. */
+    std::string getNodeName() const { return nodeName; }
+    /** Returns the OS release identifier. */
+    std::string getRelease() const { return release; }
+    /** Returns the OS release version (kernel, build, sp, etc.) */
+    std::string getVersion() const { return version; }
+    /** Returns the hardware type. */
+    std::string getMachine() const { return machine; }
 };
 
 }}

@@ -30,7 +30,6 @@ QPID_AUTO_TEST_SUITE(FrameTestSuite)
 
 using namespace std;
 using namespace qpid::framing;
-using namespace boost;
 
 QPID_AUTO_TEST_CASE(testContentBody) {
     Frame f(42, AMQContentBody("foobar"));

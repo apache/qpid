@@ -18,10 +18,11 @@
  *
  */
 
+#include "qpid/log/Statement.h"
 #include "qpid/sys/SystemInfo.h"
-
 #include "qpid/sys/posix/check.h"
-
+#include <set>
+#include <arpa/inet.h>
 #include <sys/ioctl.h>
 #include <sys/utsname.h>
 #include <sys/types.h> // For FreeBSD
@@ -59,8 +60,21 @@ bool SystemInfo::getLocalHostname (Address &address) {
     return true;
 }
 
-static const string LOCALHOST("127.0.0.1");
+static const string LOOPBACK("127.0.0.1");
 static const string TCP("tcp");
+
+// Test IPv4 address for loopback
+inline bool IN_IS_ADDR_LOOPBACK(const ::in_addr* a) {
+    return ((ntohl(a->s_addr) & 0xff000000) == 0x7f000000);
+}
+
+inline bool isLoopback(const ::sockaddr* addr) {
+    switch (addr->sa_family) {
+        case AF_INET: return IN_IS_ADDR_LOOPBACK(&((const ::sockaddr_in*)(const void*)addr)->sin_addr);
+        case AF_INET6: return IN6_IS_ADDR_LOOPBACK(&((const ::sockaddr_in6*)(const void*)addr)->sin6_addr);
+        default: return false;
+    }
+}
 
 void SystemInfo::getLocalIpAddresses (uint16_t port,
                                       std::vector<Address> &addrList) {
@@ -68,39 +82,75 @@ void SystemInfo::getLocalIpAddresses (uint16_t port,
     QPID_POSIX_CHECK(::getifaddrs(&ifaddr));
     for (::ifaddrs* ifap = ifaddr; ifap != 0; ifap = ifap->ifa_next) {
         if (ifap->ifa_addr == 0) continue;
-
+        if (isLoopback(ifap->ifa_addr)) continue;
         int family = ifap->ifa_addr->sa_family;
         switch (family) {
-        case AF_INET: {
-            char dispName[NI_MAXHOST];
-            int rc = ::getnameinfo(
-                        ifap->ifa_addr,
-                        (family == AF_INET)
-                            ? sizeof(struct sockaddr_in)
-                            : sizeof(struct sockaddr_in6),
-                        dispName, sizeof(dispName),
-                        0, 0, NI_NUMERICHOST);
-            if (rc != 0) {
-                throw QPID_POSIX_ERROR(rc);
+            case AF_INET6: {
+                // Ignore link local addresses as:
+                // * The scope id is illegal in URL syntax
+                // * Clients won't be able to use a link local address
+                //   without adding their own (potentially different) scope id
+                sockaddr_in6* sa6 = (sockaddr_in6*)(ifap->ifa_addr);
+                if (IN6_IS_ADDR_LINKLOCAL(&sa6->sin6_addr)) break;
+                // Fallthrough
             }
-            string addr(dispName);
-            if (addr != LOCALHOST) {
-                addrList.push_back(Address(TCP, addr, port));
-            }
-            break;
-        }
-        // TODO: Url parsing currently can't cope with IPv6 addresses so don't return them
-        // when it can cope move this line to above "case AF_INET:"
-        case AF_INET6:
-        default:
+            case AF_INET: {
+              char dispName[NI_MAXHOST];
+              int rc = ::getnameinfo(
+                  ifap->ifa_addr,
+                  (family == AF_INET)
+                  ? sizeof(struct sockaddr_in)
+                  : sizeof(struct sockaddr_in6),
+                  dispName, sizeof(dispName),
+                  0, 0, NI_NUMERICHOST);
+              if (rc != 0) {
+                  throw QPID_POSIX_ERROR(rc);
+              }
+              string addr(dispName);
+              addrList.push_back(Address(TCP, addr, port));
+              break;
+          }
+          default:
             continue;
         }
     }
-    freeifaddrs(ifaddr);
+    ::freeifaddrs(ifaddr);
 
     if (addrList.empty()) {
-        addrList.push_back(Address(TCP, LOCALHOST, port));
+        addrList.push_back(Address(TCP, LOOPBACK, port));
     }
+}
+
+namespace {
+struct AddrInfo {
+    struct addrinfo* ptr;
+    AddrInfo(const std::string& host) : ptr(0) {
+        if (::getaddrinfo(host.c_str(), NULL, NULL, &ptr) != 0)
+            ptr = 0;
+    }
+    ~AddrInfo() { if (ptr) ::freeaddrinfo(ptr); }
+};
+}
+
+bool SystemInfo::isLocalHost(const std::string& host) {
+    std::vector<Address> myAddrs;
+    getLocalIpAddresses(0, myAddrs);
+    std::set<string> localHosts;
+    for (std::vector<Address>::const_iterator i = myAddrs.begin(); i != myAddrs.end(); ++i)
+        localHosts.insert(i->host);
+    // Resolve host
+    AddrInfo ai(host);
+    if (!ai.ptr) return false;
+    for (struct addrinfo *res = ai.ptr; res != NULL; res = res->ai_next) {
+        if (isLoopback(res->ai_addr)) return true;
+        // Get string form of IP addr
+        char addr[NI_MAXHOST] = "";
+        int error = ::getnameinfo(res->ai_addr, res->ai_addrlen, addr, NI_MAXHOST, NULL, 0,
+                                  NI_NUMERICHOST | NI_NUMERICSERV);
+        if (error) return false;
+        if (localHosts.find(addr) != localHosts.end()) return true;
+    }
+    return false;
 }
 
 void SystemInfo::getSystemId (std::string &osName,

@@ -131,12 +131,10 @@ uint32_t Message::getRequiredCredit()
 
 void Message::encode(framing::Buffer& buffer) const
 {
-    {
-        sys::Mutex::ScopedLock l(lock);   // prevent header modifications while encoding
-        //encode method and header frames
-        EncodeFrame f1(buffer);
-        frames.map_if(f1, TypeFilter2<METHOD_BODY, HEADER_BODY>());
-    }
+    sys::Mutex::ScopedLock l(lock);
+    //encode method and header frames
+    EncodeFrame f1(buffer);
+    frames.map_if(f1, TypeFilter2<METHOD_BODY, HEADER_BODY>());
 
     //then encode the payload of each content frame
     framing::EncodeBody f2(buffer);
@@ -145,6 +143,7 @@ void Message::encode(framing::Buffer& buffer) const
 
 void Message::encodeContent(framing::Buffer& buffer) const
 {
+    sys::Mutex::ScopedLock l(lock);
     //encode the payload of each content frame
     EncodeBody f2(buffer);
     frames.map_if(f2, TypeFilter<CONTENT_BODY>());
@@ -157,6 +156,7 @@ uint32_t Message::encodedSize() const
 
 uint32_t Message::encodedContentSize() const
 {
+    sys::Mutex::ScopedLock l(lock);
     return  frames.getContentSize();
 }
 
@@ -222,8 +222,9 @@ void Message::releaseContent()
             store->stage(pmsg);
             staged = true;
         }
-        //ensure required credit is cached before content frames are released
+        //ensure required credit and size is cached before content frames are released
         getRequiredCredit();
+        contentSize();
         //remove any content frames from the frameset
         frames.remove(TypeFilter<CONTENT_BODY>());
         setContentReleased();
@@ -379,6 +380,18 @@ void Message::addTraceId(const std::string& id)
             trace += ",";
             trace += id;
             headers.setString(X_QPID_TRACE, trace);
+        }
+    }
+}
+
+void Message::clearTrace()
+{
+    sys::Mutex::ScopedLock l(lock);
+    if (isA<MessageTransferBody>()) {
+        FieldTable& headers = getModifiableProperties<MessageProperties>()->getApplicationHeaders();
+        std::string trace = headers.getAsString(X_QPID_TRACE);
+        if (!trace.empty()) {
+            headers.setString(X_QPID_TRACE, "");
         }
     }
 }
