@@ -98,7 +98,7 @@ public abstract class AbstractUpgradeTestCase extends QpidTestCase
         finally
         {
             _environment = null;
-            //deleteDirectoryIfExists(_storeLocation);
+            deleteDirectoryIfExists(_storeLocation);
         }
         super.tearDown();
     }
