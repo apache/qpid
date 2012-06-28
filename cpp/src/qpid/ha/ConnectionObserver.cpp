@@ -61,9 +61,8 @@ void ConnectionObserver::opened(broker::Connection& connection) {
     BrokerInfo info;            // Avoid self connections.
     if (getBrokerInfo(connection, info)) {
         if (info.getSystemId() == self) {
-            // FIXME aconway 2012-06-13: suppress caught error message, make this an info message.
-            QPID_LOG(error, "HA broker rejected self connection "+connection.getMgmtId());
-            throw Exception("HA broker rejected self connection "+connection.getMgmtId());
+            QPID_LOG(debug, "HA broker rejected self connection "+connection.getMgmtId());
+            connection.abort();
         }
 
     }

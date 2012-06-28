@@ -36,9 +36,8 @@ class BackupConnectionExcluder : public broker::ConnectionObserver
 {
   public:
     void opened(broker::Connection& connection) {
-        // FIXME aconway 2012-06-13: suppress caught error message, make this an info message.
-        QPID_LOG(error, "Backup broker rejected connection "+connection.getMgmtId());
-        throw Exception("Backup broker rejected connection "+connection.getMgmtId());
+        QPID_LOG(debug, "Backup broker rejected connection "+connection.getMgmtId());
+        connection.abort();
     }
 
     void closed(broker::Connection&) {}
