@@ -37,8 +37,6 @@ import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
-import org.apache.qpid.server.management.Managable;
-import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
@@ -56,7 +54,7 @@ import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTIO
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SOCKET_FORMAT;
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.USER_FORMAT;
 
-public class ServerConnection extends Connection implements Managable, AMQConnectionModel, LogSubject, AuthorizationHolder
+public class ServerConnection extends Connection implements AMQConnectionModel, LogSubject, AuthorizationHolder
 {
     private ConnectionConfig _config;
     private Runnable _onOpenTask;
@@ -65,11 +63,9 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
 
     private Subject _authorizedSubject = null;
     private Principal _authorizedPrincipal = null;
-    private boolean _statisticsEnabled = false;
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
     private final long _connectionId;
     private final Object _reference = new Object();
-    private ServerConnectionMBean _mBean;
     private VirtualHost _virtualHost;
     private AtomicLong _lastIoTime = new AtomicLong();
     private boolean _blocking;
@@ -118,7 +114,6 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
             {
                 _virtualHost.getConnectionRegistry().deregisterConnection(this);
             }
-            unregisterConnectionMbean();
         }
 
         if (state == State.CLOSED)
@@ -156,8 +151,6 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
         _virtualHost = virtualHost;
 
         initialiseStatistics();
-
-        registerConnectionMbean();
     }
 
     public void setConnectionConfig(final ConnectionConfig config)
@@ -273,7 +266,6 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
     public void close(AMQConstant cause, String message) throws AMQException
     {
         closeSubscriptions();
-        unregisterConnectionMbean();
         ConnectionCloseCode replyCode = ConnectionCloseCode.NORMAL;
         try
         {
@@ -338,21 +330,15 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
 
     public void registerMessageDelivered(long messageSize)
     {
-        if (isStatisticsEnabled())
-        {
-            _messagesDelivered.registerEvent(1L);
-            _dataDelivered.registerEvent(messageSize);
-        }
+        _messagesDelivered.registerEvent(1L);
+        _dataDelivered.registerEvent(messageSize);
         _virtualHost.registerMessageDelivered(messageSize);
     }
 
     public void registerMessageReceived(long messageSize, long timestamp)
     {
-        if (isStatisticsEnabled())
-        {
-            _messagesReceived.registerEvent(1L, timestamp);
-            _dataReceived.registerEvent(messageSize, timestamp);
-        }
+        _messagesReceived.registerEvent(1L, timestamp);
+        _dataReceived.registerEvent(messageSize, timestamp);
         _virtualHost.registerMessageReceived(messageSize, timestamp);
     }
 
@@ -386,23 +372,10 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
 
     public void initialiseStatistics()
     {
-        setStatisticsEnabled(!StatisticsCounter.DISABLE_STATISTICS &&
-                _virtualHost.getApplicationRegistry().getConfiguration().isStatisticsGenerationConnectionsEnabled());
-
         _messagesDelivered = new StatisticsCounter("messages-delivered-" + getConnectionId());
         _dataDelivered = new StatisticsCounter("data-delivered-" + getConnectionId());
         _messagesReceived = new StatisticsCounter("messages-received-" + getConnectionId());
         _dataReceived = new StatisticsCounter("data-received-" + getConnectionId());
-    }
-
-    public boolean isStatisticsEnabled()
-    {
-        return _statisticsEnabled;
-    }
-
-    public void setStatisticsEnabled(boolean enabled)
-    {
-        _statisticsEnabled = enabled;
     }
 
     /**
@@ -448,6 +421,11 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
         return !super.hasSessionWithName(name);
     }
 
+    public String getRemoteAddressString()
+    {
+        return getConfig().getAddress();
+    }
+
     public String getUserName()
     {
         return _authorizedPrincipal.getName();
@@ -476,12 +454,6 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
         }
     }
 
-
-    public ManagedObject getManagedObject()
-    {
-        return _mBean;
-    }
-
     @Override
     public void send(ProtocolEvent event)
     {
@@ -489,44 +461,9 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
         super.send(event);
     }
 
-    public AtomicLong getLastIoTime()
+    public long getLastIoTime()
     {
-        return _lastIoTime;
-    }
-
-    void checkForNotification()
-    {
-        int channelsCount = getSessionModels().size();
-        if (_mBean != null && channelsCount >= getConnectionDelegate().getChannelMax())
-        {
-            _mBean.notifyClients("Channel count (" + channelsCount + ") has reached the threshold value");
-        }
-    }
-
-    private void registerConnectionMbean()
-    {
-        try
-        {
-            _mBean = new ServerConnectionMBean(this);
-            _mBean.register();
-        }
-        catch (JMException jme)
-        {
-            log.error("Unable to register mBean for ServerConnection", jme);
-        }
-    }
-
-    private void unregisterConnectionMbean()
-    {
-        if (_mBean != null)
-        {
-            if (log.isDebugEnabled())
-            {
-                log.debug("Unregistering mBean for ServerConnection" + _mBean);
-            }
-            _mBean.unregister();
-            _mBean = null;
-        }
+        return _lastIoTime.longValue();
     }
 
     public String getClientId()
@@ -537,6 +474,16 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
     public String getClientVersion()
     {
         return getConnectionDelegate().getClientVersion();
+    }
+
+    public String getPrincipalAsString()
+    {
+        return getAuthorizedPrincipal().getName();
+    }
+
+    public long getSessionCountLimit()
+    {
+        return getChannelMax();
     }
 
     public Principal getPeerPrincipal()

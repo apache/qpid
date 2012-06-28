@@ -55,7 +55,7 @@ import org.apache.qpid.transport.MessageTransfer;
 
 /**
  * Subclass of MessageStoreTest which runs the standard tests from the superclass against
- * the BDB Store as well as additional tests specific to the DBB store-implementation.
+ * the BDB Store as well as additional tests specific to the BDB store-implementation.
  */
 public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageStoreTest
 {

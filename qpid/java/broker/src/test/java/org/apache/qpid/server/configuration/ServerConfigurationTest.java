@@ -252,13 +252,13 @@ public class ServerConfigurationTest extends QpidTestCase
     {
         // Check default
         _serverConfig.initialise();
-        assertEquals(true, _serverConfig.getManagementSSLEnabled());
+        assertEquals(false, _serverConfig.getManagementSSLEnabled());
 
         // Check value we set
-        _config.setProperty("management.ssl.enabled", false);
+        _config.setProperty("management.ssl.enabled", true);
         _serverConfig = new ServerConfiguration(_config);
         _serverConfig.initialise();
-        assertEquals(false, _serverConfig.getManagementSSLEnabled());
+        assertEquals(true, _serverConfig.getManagementSSLEnabled());
     }
 
     public void testGetManagementKeystorePassword() throws ConfigurationException
@@ -287,25 +287,17 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals(false, _serverConfig.getQueueAutoRegister());
     }
 
-    public void testGetManagementEnabled() throws ConfigurationException
+    public void testGetJMXManagementEnabled() throws ConfigurationException
     {
         // Check default
         _serverConfig.initialise();
-        assertEquals(true, _serverConfig.getManagementEnabled());
+        assertEquals(true, _serverConfig.getJMXManagementEnabled());
 
         // Check value we set
         _config.setProperty("management.enabled", false);
         _serverConfig = new ServerConfiguration(_config);
         _serverConfig.initialise();
-        assertEquals(false, _serverConfig.getManagementEnabled());
-    }
-
-    public void testSetManagementEnabled() throws ConfigurationException
-    {
-        // Check value we set
-        _serverConfig.initialise();
-        _serverConfig.setManagementEnabled(false);
-        assertEquals(false, _serverConfig.getManagementEnabled());
+        assertEquals(false, _serverConfig.getJMXManagementEnabled());
     }
 
     public void testGetManagementRightsInferAllAccess() throws Exception

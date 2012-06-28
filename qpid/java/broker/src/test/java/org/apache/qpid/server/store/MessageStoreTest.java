@@ -99,7 +99,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
     {
         super.setUp();
 
-        String storePath = System.getProperty("QPID_WORK") + "/" + getName();
+        String storePath = System.getProperty("QPID_WORK") + File.separator + getName();
         
         _config = new PropertiesConfiguration();
         _config.addProperty("store.class", getTestProfileMessageStoreClassName());
@@ -267,14 +267,8 @@ public class MessageStoreTest extends InternalBrokerBaseCase
         //Validate normally expected properties of Queues/Topics
         validateDurableQueueProperties();
 
-        //Update the durable exclusive queue's exclusivity and verify it is persisted and recovered correctly
+        //Update the durable exclusive queue's exclusivity
         setQueueExclusivity(false);
-        validateQueueExclusivityProperty(false);
-
-        //Reload the Virtualhost to recover the queues again
-        reloadVirtualHost();
-
-        //verify the change was persisted and recovered correctly
         validateQueueExclusivityProperty(false);
     }
 

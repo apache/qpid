@@ -32,7 +32,6 @@ import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.federation.BrokerLink;
-import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
@@ -61,8 +60,6 @@ public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHo
     SecurityManager getSecurityManager();
 
     void close();
-
-    ManagedObject getManagedObject();
 
     UUID getBrokerId();
 

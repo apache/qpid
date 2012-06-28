@@ -403,11 +403,6 @@ public class TopicExchange extends AbstractExchange
         }
     }
 
-    protected AbstractExchangeMBean createMBean() throws JMException
-    {
-        return new TopicExchangeMBean(this);
-    }
-
     private Collection<AMQQueue> getMatchedQueues(InboundMessage message, AMQShortString routingKey)
     {
 

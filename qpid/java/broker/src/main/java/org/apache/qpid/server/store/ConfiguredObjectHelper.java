@@ -40,12 +40,7 @@ import org.apache.qpid.server.util.MapJsonSerializer;
 
 public class ConfiguredObjectHelper
 {
-    /**
-     * Name of queue attribute to store queue creation arguments.
-     * <p>
-     * This attribute is not defined yet on Queue configured object interface.
-     */
-    private static final String QUEUE_ARGUMENTS = "ARGUMENTS";
+
 
     private MapJsonSerializer _serializer = new MapJsonSerializer();
 
@@ -57,14 +52,15 @@ public class ConfiguredObjectHelper
             String queueName = (String) attributeMap.get(Queue.NAME);
             String owner = (String) attributeMap.get(Queue.OWNER);
             boolean exclusive = (Boolean) attributeMap.get(Queue.EXCLUSIVE);
+            UUID alternateExchangeId = attributeMap.get(Queue.ALTERNATE_EXCHANGE) == null ? null : UUID.fromString((String)attributeMap.get(Queue.ALTERNATE_EXCHANGE));
             @SuppressWarnings("unchecked")
-            Map<String, Object> queueArgumentsMap = (Map<String, Object>) attributeMap.get(QUEUE_ARGUMENTS);
+            Map<String, Object> queueArgumentsMap = (Map<String, Object>) attributeMap.get(Queue.ARGUMENTS);
             FieldTable arguments = null;
             if (queueArgumentsMap != null)
             {
                 arguments = FieldTable.convertToFieldTable(queueArgumentsMap);
             }
-            qrh.queue(configuredObject.getId(), queueName, owner, exclusive, arguments);
+            qrh.queue(configuredObject.getId(), queueName, owner, exclusive, arguments, alternateExchangeId);
         }
     }
 
@@ -73,6 +69,24 @@ public class ConfiguredObjectHelper
         Map<String, Object> attributesMap = _serializer.deserialize(queueRecord.getAttributes());
         attributesMap.put(Queue.NAME, queue.getName());
         attributesMap.put(Queue.EXCLUSIVE, queue.isExclusive());
+        if (queue.getAlternateExchange() != null)
+        {
+            attributesMap.put(Queue.ALTERNATE_EXCHANGE, queue.getAlternateExchange().getId());
+        }
+        else
+        {
+            attributesMap.remove(Queue.ALTERNATE_EXCHANGE);
+        }
+        if (attributesMap.containsKey(Queue.ARGUMENTS))
+        {
+            // We wouldn't need this if createQueueConfiguredObject took only AMQQueue
+            Map<String, Object> currentArgs = (Map<String, Object>) attributesMap.get(Queue.ARGUMENTS);
+            currentArgs.putAll(queue.getArguments());
+        }
+        else
+        {
+            attributesMap.put(Queue.ARGUMENTS, queue.getArguments());
+        }
         String newJson = _serializer.serialize(attributesMap);
         ConfiguredObjectRecord newQueueRecord = new ConfiguredObjectRecord(queue.getId(), queueRecord.getType(), newJson);
         return newQueueRecord;
@@ -84,9 +98,15 @@ public class ConfiguredObjectHelper
         attributesMap.put(Queue.NAME, queue.getName());
         attributesMap.put(Queue.OWNER, AMQShortString.toString(queue.getOwner()));
         attributesMap.put(Queue.EXCLUSIVE, queue.isExclusive());
+        if (queue.getAlternateExchange() != null)
+        {
+            attributesMap.put(Queue.ALTERNATE_EXCHANGE, queue.getAlternateExchange().getId());
+        }
+        // TODO KW i think the arguments could come from the queue itself removing the need for the parameter arguments.
+        // It would also do away with the need for the if/then/else within updateQueueConfiguredObject
         if (arguments != null)
         {
-            attributesMap.put(QUEUE_ARGUMENTS, FieldTable.convertToMap(arguments));
+            attributesMap.put(Queue.ARGUMENTS, FieldTable.convertToMap(arguments));
         }
         String json = _serializer.serialize(attributesMap);
         ConfiguredObjectRecord configuredObject = new ConfiguredObjectRecord(queue.getId(), Queue.class.getName(), json);

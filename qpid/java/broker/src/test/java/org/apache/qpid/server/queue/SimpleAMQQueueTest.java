@@ -21,6 +21,13 @@
 
 package org.apache.qpid.server.queue;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Matchers.contains;
+import static org.mockito.Matchers.eq;
+
 import org.apache.commons.configuration.PropertiesConfiguration;
 
 import org.apache.qpid.AMQException;
@@ -79,7 +86,6 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
 
         public void setExchange(AMQShortString exchange)
         {
-            //To change body of implemented methods use File | Settings | File Templates.
         }
 
         public boolean isImmediate()
@@ -839,120 +845,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         }
     }
 
-    /**
-     * Tests that dequeued message is not copied as part of invocation of
-     * {@link SimpleAMQQueue#copyMessagesToAnotherQueue(long, long, String)}
-     */
-    public void testCopyMessagesWithDequeuedEntry()
-    {
-        int messageNumber = 4;
-        int dequeueMessageIndex = 1;
-        String anotherQueueName = "testQueue2";
 
-        // put test messages into a test queue
-        enqueueGivenNumberOfMessages(_queue, messageNumber);
-
-        // dequeue message
-        dequeueMessage(_queue, dequeueMessageIndex);
-
-        // create another queue
-        SimpleAMQQueue queue = createQueue(anotherQueueName);
-
-        // copy messages into another queue
-        _queue.copyMessagesToAnotherQueue(0, messageNumber, anotherQueueName);
-
-        // get messages on another queue
-        List<QueueEntry> entries = queue.getMessagesOnTheQueue();
-
-        // assert another queue entries
-        assertEquals(messageNumber - 1, entries.size());
-        int expectedId = 0;
-        for (int i = 0; i < messageNumber - 1; i++)
-        {
-            Long id = ((AMQMessage)entries.get(i).getMessage()).getMessageId();
-            if (i == dequeueMessageIndex)
-            {
-                assertFalse("Message with id " + dequeueMessageIndex
-                        + " was dequeued and should not been copied into another queue!",
-                        new Long(expectedId).equals(id));
-                expectedId++;
-            }
-            assertEquals("Expected message with id " + expectedId + " but got message with id " + id,
-                    new Long(expectedId), id);
-            expectedId++;
-        }
-    }
-
-    /**
-     * Tests that dequeued message is not moved as part of invocation of
-     * {@link SimpleAMQQueue#moveMessagesToAnotherQueue(long, long, String)}
-     */
-    public void testMovedMessagesWithDequeuedEntry()
-    {
-        int messageNumber = 4;
-        int dequeueMessageIndex = 1;
-        String anotherQueueName = "testQueue2";
-
-        // put messages into a test queue
-        enqueueGivenNumberOfMessages(_queue, messageNumber);
-
-        // dequeue message
-        dequeueMessage(_queue, dequeueMessageIndex);
-
-        // create another queue
-        SimpleAMQQueue queue = createQueue(anotherQueueName);
-
-        // move messages into another queue
-        _queue.moveMessagesToAnotherQueue(0, messageNumber, anotherQueueName);
-
-        // get messages on another queue
-        List<QueueEntry> entries = queue.getMessagesOnTheQueue();
-
-        // assert another queue entries
-        assertEquals(messageNumber - 1, entries.size());
-        int expectedId = 0;
-        for (int i = 0; i < messageNumber - 1; i++)
-        {
-            Long id = ((AMQMessage)entries.get(i).getMessage()).getMessageId();
-            if (i == dequeueMessageIndex)
-            {
-                assertFalse("Message with id " + dequeueMessageIndex
-                        + " was dequeued and should not been copied into another queue!",
-                        new Long(expectedId).equals(id));
-                expectedId++;
-            }
-            assertEquals("Expected message with id " + expectedId + " but got message with id " + id,
-                    new Long(expectedId), id);
-            expectedId++;
-        }
-    }
-
-    /**
-     * Tests that messages in given range including dequeued one are deleted
-     * from the queue on invocation of
-     * {@link SimpleAMQQueue#removeMessagesFromQueue(long, long)}
-     */
-    public void testRemoveMessagesFromQueueWithDequeuedEntry()
-    {
-        int messageNumber = 4;
-        int dequeueMessageIndex = 1;
-
-        // put messages into a test queue
-        enqueueGivenNumberOfMessages(_queue, messageNumber);
-
-        // dequeue message
-        dequeueMessage(_queue, dequeueMessageIndex);
-
-        // remove messages
-        _queue.removeMessagesFromQueue(0, messageNumber);
-
-        // get queue entries
-        List<QueueEntry> entries = _queue.getMessagesOnTheQueue();
-
-        // assert queue entries
-        assertNotNull("Null is returned from getMessagesOnTheQueue", entries);
-        assertEquals("Queue should be empty", 0, entries.size());
-    }
 
     /**
      * Tests that dequeued message on the top is not accounted and next message
@@ -1096,7 +989,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
     /**
      * Tests that entry in dequeued state are not enqueued and not delivered to subscription
      */
-    public void testEqueueDequeuedEntry()
+    public void testEnqueueDequeuedEntry()
     {
         // create a queue where each even entry is considered a dequeued
         SimpleAMQQueue queue = new SimpleAMQQueue(UUIDGenerator.generateUUID(), new AMQShortString("test"), false,
@@ -1229,6 +1122,39 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         //verify a subscription going suspended->suspended doesn't change the count
         queue.stateChange(subscription2, Subscription.State.SUSPENDED, Subscription.State.SUSPENDED);
         assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
+    }
+
+    public void testNotificationFiredOnEnqueue() throws Exception
+    {
+        AMQQueue.NotificationListener listener = mock(AMQQueue.NotificationListener.class);
+
+        _queue.setNotificationListener(listener);
+        _queue.setMaximumMessageCount(2);
+
+        _queue.enqueue(createMessage(new Long(24)));
+        verifyZeroInteractions(listener);
+
+        _queue.enqueue(createMessage(new Long(25)));
+
+        verify(listener, atLeastOnce()).notifyClients(eq(NotificationCheck.MESSAGE_COUNT_ALERT), eq(_queue), contains("Maximum count on queue threshold"));
+    }
+
+    public void testNotificationFiredAsync() throws Exception
+    {
+        AMQQueue.NotificationListener listener = mock(AMQQueue.NotificationListener.class);
+
+        _queue.enqueue(createMessage(new Long(24)));
+        _queue.enqueue(createMessage(new Long(25)));
+        _queue.enqueue(createMessage(new Long(26)));
+
+        _queue.setNotificationListener(listener);
+        _queue.setMaximumMessageCount(2);
+
+        verifyZeroInteractions(listener);
+
+        _queue.checkMessageStatus();
+
+        verify(listener, atLeastOnce()).notifyClients(eq(NotificationCheck.MESSAGE_COUNT_ALERT), eq(_queue), contains("Maximum count on queue threshold"));
     }
 
     /**

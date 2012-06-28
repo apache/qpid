@@ -1,0 +1,92 @@
+<!DOCTYPE HTML>
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one or more
+  ~ contributor license agreements.  See the NOTICE file distributed with
+  ~ this work for additional information regarding copyright ownership.
+  ~ The ASF licenses this file to You under the Apache License, Version 2.0
+  ~ (the "License"); you may not use this file except in compliance with
+  ~ the License.  You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Qpid Management</title>
+    <link rel="stylesheet" href="dojo/dojo/resources/dojo.css">
+    <link rel="stylesheet" href="dojo/dijit/themes/claro/claro.css">
+    <link rel="stylesheet" href="dojo/dojox/grid/resources/claroGrid.css">
+    <link rel="stylesheet" href="dojo/dojox/grid/enhanced/resources/claro/EnhancedGrid.css">
+    <link rel="stylesheet" href="dojo/dojox/grid/enhanced/resources/EnhancedGrid_rtl.css">
+    <link rel="stylesheet" href="css/common.css" media="screen">
+    <script>
+        function getContextPath()
+        {
+            var contextPath = "/";
+            var documentURL = document.URL;
+            var managementPageStart = documentURL.lastIndexOf("/");
+            var firstSlashPos = documentURL.indexOf("/", documentURL.indexOf("//") + 2);
+            if (managementPageStart > firstSlashPos)
+            {
+                contextPath = documentURL.substring(firstSlashPos, managementPageStart);
+            }
+            return contextPath;
+        }
+
+        var dojoConfig = {
+            tlmSiblingOfDojo:false,
+            parseOnLoad:true,
+            async:true,
+            baseUrl: getContextPath(),
+            packages:[
+                { name:"dojo", location:"dojo/dojo" },
+                { name:"dijit", location:"dojo/dijit" },
+                { name:"dojox", location:"dojo/dojox" },
+                { name:"qpid", location:"js/qpid" }
+            ]
+        };
+
+    </script>
+    <script src="dojo/dojo/dojo.js">
+    </script>
+
+    <script>
+        require(["dijit/layout/BorderContainer",
+                    "dijit/layout/TabContainer",
+                    "dijit/layout/ContentPane",
+                    "dijit/TitlePane",
+                    "dojo/parser",
+                    "qpid/management/treeView",
+                    "qpid/management/controller",
+                    "qpid/common/footer",
+                    "qpid/authorization/sasl"]);
+    </script>
+
+</head>
+<body class="claro">
+
+<div id="pageLayout" data-dojo-type="dijit.layout.BorderContainer" data-dojo-props="design: 'headline', gutters: false">
+    <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'top'">
+        <div id="header" class="header"></div>
+    </div>
+    <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'top'">
+        <div id="login"></div>
+    </div>
+    <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'leading', splitter: true">
+        <div qpid-type="treeView" qpid-props="query: 'rest/structure'" ></div>
+    </div>
+    <div id="managedViews" data-dojo-type="dijit.layout.TabContainer" data-dojo-props="region:'center', tabPosition: 'top'">
+    </div>
+    <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'bottom'">
+        <div qpid-type="footer"></div>
+    </div>
+</div>
+
+</body>
+</html>

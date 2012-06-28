@@ -100,7 +100,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
         return this;
     }
 
-    public void queue(UUID id, String queueName, String owner, boolean exclusive, FieldTable arguments)
+    public void queue(UUID id, String queueName, String owner, boolean exclusive, FieldTable arguments, UUID alternateExchangeId)
     {
         try
         {
@@ -111,6 +111,17 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
                 q = AMQQueueFactory.createAMQQueueImpl(id, queueName, true, owner, false, exclusive, _virtualHost,
                                                        FieldTable.convertToMap(arguments));
                 _virtualHost.getQueueRegistry().registerQueue(q);
+
+                if (alternateExchangeId != null)
+                {
+                    Exchange altExchange = _virtualHost.getExchangeRegistry().getExchange(alternateExchangeId);
+                    if (altExchange == null)
+                    {
+                        _logger.error("Unknown exchange id " + alternateExchangeId + ", cannot set alternate exchange on queue with id " + id);
+                        return;
+                    }
+                    q.setAlternateExchange(altExchange);
+                }
             }
     
             CurrentActor.get().message(_logSubject, TransactionLogMessages.RECOVERY_START(queueName, true));

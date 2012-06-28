@@ -52,8 +52,8 @@ public abstract class AbstractUpgradeTestCase extends QpidTestCase
     }
 
     public static final String[] QUEUE_NAMES = { "clientid:myDurSubName", "clientid:mySelectorDurSubName", "myUpgradeQueue",
-            "queue-non-durable" };
-    public static int[] QUEUE_SIZES = { 1, 1, 10, 3 };
+            "queue-non-durable", "nonexclusive-with-erroneous-owner" };
+    public static int[] QUEUE_SIZES = { 1, 1, 10, 3, 0};
     public static int TOTAL_MESSAGE_NUMBER = 15;
     protected static final LogSubject LOG_SUBJECT = new TestBlankSubject();
 

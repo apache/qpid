@@ -21,7 +21,9 @@ package org.apache.qpid.server.security.auth.manager;
 
 import java.net.SocketAddress;
 
+import java.util.Map;
 import org.apache.qpid.common.Closeable;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 /**
  * Registry for {@link AuthenticationManager} instances.
@@ -43,4 +45,15 @@ public interface IAuthenticationManagerRegistry extends Closeable
      * @return authentication manager.
      */
     public AuthenticationManager getAuthenticationManager(SocketAddress address);
+
+    Map<String, AuthenticationManager> getAvailableAuthenticationManagers();
+
+    public static interface RegistryChangeListener
+    {
+        void authenticationManagerRegistered(AuthenticationManager authenticationManager);
+        void authenticationManagerUnregistered(AuthenticationManager authenticationManager);
+    }
+
+    public void addRegistryChangeListener(RegistryChangeListener listener);
+
 }

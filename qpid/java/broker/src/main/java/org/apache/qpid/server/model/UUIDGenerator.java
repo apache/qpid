@@ -40,11 +40,11 @@ public class UUIDGenerator
         return UUID.nameUUIDFromBytes(sb.toString().getBytes());
     }
 
-    public static UUID generateExchangeUUID(String echangeName, String virtualHostName)
+    public static UUID generateExchangeUUID(String exchangeName, String virtualHostName)
     {
-        if(ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString().equals(echangeName) || echangeName.startsWith("amq.") || echangeName.startsWith("qpid."))
+        if(ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString().equals(exchangeName) || exchangeName.startsWith("amq.") || exchangeName.startsWith("qpid."))
         {
-            return generateUUID(echangeName, virtualHostName);
+            return generateUUID(exchangeName, virtualHostName);
         }
         else
         {

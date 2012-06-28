@@ -20,12 +20,20 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.AMQBrokerManagerMBean;
 import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.server.configuration.BrokerConfig;
 import org.apache.qpid.server.configuration.ConfigStore;
@@ -45,11 +53,9 @@ import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
-import org.apache.qpid.server.management.AMQManagedObject;
-import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
@@ -65,20 +71,6 @@ import org.apache.qpid.server.store.OperationalLoggingListener;
 import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPlugin;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
-
-import javax.management.JMException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
 
 public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.RegistryChangeListener, EventListener
 {
@@ -104,10 +96,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
     private final VirtualHostConfiguration _vhostConfig;
 
-    private final VirtualHostMBean _virtualHostMBean;
-
-    private final AMQBrokerManagerMBean _brokerMBean;
-
     private final QueueRegistry _queueRegistry;
 
     private final ExchangeRegistry _exchangeRegistry;
@@ -123,8 +111,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
     private final MessageStore _messageStore;
 
     private volatile State _state = State.INITIALISING;
-
-    private boolean _statisticsEnabled = false;
 
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
@@ -144,7 +130,7 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         }
 
         _appRegistry = appRegistry;
-        _brokerConfig = _appRegistry.getBroker();
+        _brokerConfig = _appRegistry.getBrokerConfig();
         _vhostConfig = hostConfig;
         _name = _vhostConfig.getName();
         _dtxRegistry = new DtxRegistry();
@@ -153,7 +139,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
         CurrentActor.get().message(VirtualHostMessages.CREATED(_name));
 
-        _virtualHostMBean = new VirtualHostMBean();
         _securityManager = new SecurityManager(_appRegistry.getSecurityManager());
         _securityManager.configureHostPlugins(_vhostConfig);
 
@@ -170,8 +155,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         _exchangeRegistry = new DefaultExchangeRegistry(this);
 
         _bindingFactory = new BindingFactory(this);
-
-        _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
 
         _messageStore = initialiseMessageStore(hostConfig.getMessageStoreClass());
 
@@ -541,16 +524,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         CurrentActor.get().message(VirtualHostMessages.CLOSED());
     }
 
-    public ManagedObject getBrokerMBean()
-    {
-        return _brokerMBean;
-    }
-
-    public ManagedObject getManagedObject()
-    {
-        return _virtualHostMBean;
-    }
-
     public UUID getBrokerId()
     {
         return _appRegistry.getBrokerId();
@@ -568,21 +541,15 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
     public void registerMessageDelivered(long messageSize)
     {
-        if (isStatisticsEnabled())
-        {
-            _messagesDelivered.registerEvent(1L);
-            _dataDelivered.registerEvent(messageSize);
-        }
+        _messagesDelivered.registerEvent(1L);
+        _dataDelivered.registerEvent(messageSize);
         _appRegistry.registerMessageDelivered(messageSize);
     }
 
     public void registerMessageReceived(long messageSize, long timestamp)
     {
-        if (isStatisticsEnabled())
-        {
-            _messagesReceived.registerEvent(1L, timestamp);
-            _dataReceived.registerEvent(messageSize, timestamp);
-        }
+        _messagesReceived.registerEvent(1L, timestamp);
+        _dataReceived.registerEvent(messageSize, timestamp);
         _appRegistry.registerMessageReceived(messageSize, timestamp);
     }
 
@@ -621,23 +588,10 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
     public void initialiseStatistics()
     {
-        setStatisticsEnabled(!StatisticsCounter.DISABLE_STATISTICS &&
-                _appRegistry.getConfiguration().isStatisticsGenerationVirtualhostsEnabled());
-
         _messagesDelivered = new StatisticsCounter("messages-delivered-" + getName());
         _dataDelivered = new StatisticsCounter("bytes-delivered-" + getName());
         _messagesReceived = new StatisticsCounter("messages-received-" + getName());
         _dataReceived = new StatisticsCounter("bytes-received-" + getName());
-    }
-
-    public boolean isStatisticsEnabled()
-    {
-        return _statisticsEnabled;
-    }
-
-    public void setStatisticsEnabled(boolean enabled)
-    {
-        _statisticsEnabled = enabled;
     }
 
     public BrokerLink createBrokerConnection(UUID id, long createTime, Map<String,String> arguments)
@@ -772,36 +726,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         }
     }
 
-
-    /**
-     * Virtual host JMX MBean class.
-     *
-     * This has some of the methods implemented from management interface for exchanges. Any
-     * Implementation of an Exchange MBean should extend this class.
-     */
-    public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtualHost
-    {
-        public VirtualHostMBean() throws NotCompliantMBeanException
-        {
-            super(ManagedVirtualHost.class, ManagedVirtualHost.TYPE);
-        }
-
-        public String getObjectInstanceName()
-        {
-            return ObjectName.quote(_name);
-        }
-
-        public String getName()
-        {
-            return _name;
-        }
-
-        public VirtualHostImpl getVirtualHost()
-        {
-            return VirtualHostImpl.this;
-        }
-    }
-
     private final class BeforeActivationListener implements EventListener
    {
        @Override
@@ -825,17 +749,19 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
        public void event(Event event)
        {
            State finalState = State.ERRORED;
+
            try
            {
                initialiseHouseKeeping(_vhostConfig.getHousekeepingCheckPeriod());
-               try
-               {
-                   _brokerMBean.register();
-               }
-               catch (JMException e)
-               {
-                   throw new RuntimeException("Failed to register virtual host mbean for virtual host " + getName(), e);
-               }
+//TODO: implement state changing for the VirtualHost MBean instead of registering and unregistering
+//               try
+//               {
+//                   _brokerMBean.register();
+//               }
+//               catch (JMException e)
+//               {
+//                   throw new RuntimeException("Failed to register virtual host mbean for virtual host " + getName(), e);
+//               }
                finalState = State.ACTIVE;
            }
            finally
@@ -861,7 +787,8 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
                  */
 
                 _connectionRegistry.close(IConnectionRegistry.VHOST_PASSIVATE_REPLY_TEXT);
-                _brokerMBean.unregister();
+//TODO: implement state changing for the VirtualHost MBean instead of registering and unregistering
+//              _brokerMBean.unregister();
                 removeHouseKeepingTasks();
 
                 _queueRegistry.stopAllAndUnregisterMBeans();
@@ -884,7 +811,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         @Override
         public void event(Event event)
         {
-            _brokerMBean.unregister();
             shutdownHouseKeeping();
         }
     }

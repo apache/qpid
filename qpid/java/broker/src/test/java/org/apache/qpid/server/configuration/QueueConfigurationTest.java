@@ -204,6 +204,18 @@ public class QueueConfigurationTest extends TestCase
         assertEquals("test-sort-key", qConf.getQueueSortKey());
     }
 
+    public void testQueueDescription() throws ConfigurationException
+    {
+        //Check default value
+        QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
+        assertNull(qConf.getDescription());
+
+        // Check explicit value
+        final VirtualHostConfiguration vhostConfig = overrideConfiguration("description", "mydescription");
+        qConf = new QueueConfiguration("test", vhostConfig);
+        assertEquals("mydescription", qConf.getDescription());
+    }
+
     private VirtualHostConfiguration overrideConfiguration(String property, Object value)
             throws ConfigurationException
     {

@@ -30,7 +30,8 @@ public interface ConfigurationChangeListener
      * @param newState the state after the change
      */
     void stateChanged(ConfiguredObject object, State oldState, State newState);
-
+    
+    
     void childAdded(ConfiguredObject object, ConfiguredObject child);
 
     void childRemoved(ConfiguredObject object, ConfiguredObject child);

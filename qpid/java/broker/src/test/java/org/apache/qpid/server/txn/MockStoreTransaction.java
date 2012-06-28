@@ -124,6 +124,12 @@ class MockStoreTransaction implements Transaction
                 storeTransaction.setState(TransactionState.STARTED);
                 return storeTransaction;
             }
+
+            @Override
+            public String getStoreType()
+            {
+                return "TEST";
+            }
        };
     }
 }

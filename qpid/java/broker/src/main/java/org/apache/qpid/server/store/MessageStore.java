@@ -67,4 +67,6 @@ public interface MessageStore extends DurableConfigurationStore
     void addEventListener(EventListener eventListener, Event... events);
 
     String getStoreLocation();
+
+    String getStoreType();
 }

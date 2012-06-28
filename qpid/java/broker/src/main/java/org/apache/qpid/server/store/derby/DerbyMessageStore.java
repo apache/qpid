@@ -232,6 +232,8 @@ public class DerbyMessageStore implements MessageStore
 
     private static final String DERBY_SINGLE_DB_SHUTDOWN_CODE = "08006";
 
+    private static final String DERBY_STORE_TYPE = "DERBY";
+
     private final StateManager _stateManager;
 
     private final EventManager _eventManager = new EventManager();
@@ -2651,4 +2653,11 @@ public class DerbyMessageStore implements MessageStore
     {
         return _persistentSizeHighThreshold;
     }
+
+    @Override
+    public String getStoreType()
+    {
+        return DERBY_STORE_TYPE;
+    }
+
 }
