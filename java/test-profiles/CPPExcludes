@@ -157,7 +157,7 @@ org.apache.qpid.test.unit.transacted.TransactionTimeoutTest#*
 
 // Java broker only
 org.apache.qpid.server.SupportedProtocolVersionsTest#*
-
+org.apache.qpid.server.stats.StatisticsReportingTest#*
 
 // QPID-3133: On 0-10, the exception listener is currently not invoked when reconnection fails to occurs.
 org.apache.qpid.server.failover.FailoverMethodTest#*
