@@ -48,7 +48,6 @@
     <dependency org="org.apache.geronimo.specs" name="geronimo-jms_1.1_spec" rev="1.0" transitive="false"/>
     <dependency org="org.apache.geronimo.specs" name="geronimo-jta_1.1_spec" rev="1.1.1" transitive="false"/>
     <dependency org="org.apache.geronimo.specs" name="geronimo-servlet_2.5_spec" rev="1.2" transitive="false"/>
-    <dependency org="org.apache.geronimo.specs" name="geronimo-servlet_3.0_spec" rev="1.0" transitive="false"/>
     <dependency org="com.google.code.gson" name="gson" rev="2.0" transitive="false"/>
     <dependency org="org.codehaus.jackson" name="jackson-core-asl" rev="1.9.0" transitive="false"/>
     <dependency org="org.codehaus.jackson" name="jackson-mapper-asl" rev="1.9.0" transitive="false"/>
