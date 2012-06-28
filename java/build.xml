@@ -27,7 +27,7 @@
   <findSubProjects name="management" dir="management" excludes="common,example"/>
 
   <property name="optional" value="false"/>
-  <property name="modules.opt.default" value="bdbstore perftests/visualisation-jfc"/>
+  <property name="modules.opt.default" value="bdbstore bdbstore/jmx perftests/visualisation-jfc"/>
   <condition property="modules.opt" value="" else="${modules.opt.default}">
     <isfalse value="${optional}"/>
   </condition>

@@ -32,6 +32,7 @@ import javax.management.remote.JMXPrincipal;
 import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
+import java.net.InetSocketAddress;
 import java.util.Collections;
 
 /**
@@ -47,7 +48,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
 
     protected void setUp() throws Exception
     {
-        _rmipa = new RMIPasswordAuthenticator();
+        _rmipa = new RMIPasswordAuthenticator(new InetSocketAddress(5672));
 
         _credentials = new String[] {USERNAME, PASSWORD};
     }

@@ -21,9 +21,12 @@ package org.apache.qpid.server.security.auth.manager;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.configuration.ConfigurationException;
@@ -49,6 +52,8 @@ public class AuthenticationManagerRegistry implements Closeable, IAuthentication
     private final Map<String,AuthenticationManager> _classToAuthManagerMap = new HashMap<String,AuthenticationManager>();
     private final AuthenticationManager _defaultAuthenticationManager;
     private final Map<Integer,AuthenticationManager> _portToAuthenticationManagerMap;
+    private final List<RegistryChangeListener> _listeners =
+            Collections.synchronizedList(new ArrayList<RegistryChangeListener>());
 
     public AuthenticationManagerRegistry(ServerConfiguration serverConfiguration, PluginManager _pluginManager)
     throws ConfigurationException
@@ -114,9 +119,8 @@ public class AuthenticationManagerRegistry implements Closeable, IAuthentication
             final SecurityConfiguration securityConfiguration)
             throws ConfigurationException
     {
-        for (final Iterator<AuthenticationManagerPluginFactory<? extends Plugin>> iterator = factories.iterator(); iterator.hasNext();)
+        for(AuthenticationManagerPluginFactory<? extends Plugin> factory : factories)
         {
-            final AuthenticationManagerPluginFactory<? extends Plugin> factory = (AuthenticationManagerPluginFactory<? extends Plugin>) iterator.next();
             final AuthenticationManager tmp = factory.newInstance(securityConfiguration);
             if (tmp != null)
             {
@@ -127,6 +131,11 @@ public class AuthenticationManagerRegistry implements Closeable, IAuthentication
                                                      + " Remove configuration for one of the authentication managers.");
                 }
                 _classToAuthManagerMap.put(tmp.getClass().getSimpleName(),tmp);
+
+                for(RegistryChangeListener listener : _listeners)
+                {
+                    listener.authenticationManagerRegistered(tmp);
+                }
             }
         }
     }
@@ -179,5 +188,16 @@ public class AuthenticationManagerRegistry implements Closeable, IAuthentication
         return portToAuthenticationManagerMap;
     }
 
+    @Override
+    public Map<String, AuthenticationManager> getAvailableAuthenticationManagers()
+    {
+        return Collections.unmodifiableMap(new HashMap<String, AuthenticationManager>(_classToAuthManagerMap));
+    }
+
+    @Override
+    public void addRegistryChangeListener(RegistryChangeListener listener)
+    {
+        _listeners.add(listener);
+    }
 
 }

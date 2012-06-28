@@ -21,11 +21,7 @@
 package org.apache.qpid.server.message;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import org.apache.qpid.amqp_1_0.codec.ValueHandler;
 import org.apache.qpid.amqp_1_0.messaging.SectionDecoder;
 import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
@@ -486,6 +482,18 @@ public class MessageMetaData_1_0 implements StorableMessageMetaData
             return null;  //TODO
         }
 
+        public String getAppId()
+        {
+            //TODO
+            return null;
+        }
+
+        public String getUserId()
+        {
+            // TODO
+            return null;
+        }
+
         public Object getHeader(final String name)
         {
             return _appProperties == null ? null : _appProperties.get(name);
@@ -506,6 +514,16 @@ public class MessageMetaData_1_0 implements StorableMessageMetaData
                 }
             }
             return true;
+        }
+
+        @Override
+        public Collection<String> getHeaderNames()
+        {
+            if(_appProperties == null)
+            {
+                return Collections.emptySet();
+            }
+            return Collections.unmodifiableCollection(_appProperties.keySet());
         }
 
         public boolean containsHeader(final String name)

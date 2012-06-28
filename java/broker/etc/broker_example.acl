@@ -24,6 +24,8 @@
 #Define a 'messaging-users' group with users  'client' and  'server' in it
 GROUP messaging-users client server
 
+#Define a group for management web console users
+GROUP webadmins webadmin
 
 ### MANAGEMENT ####
 
@@ -73,6 +75,23 @@ ACL ALLOW-LOG server CREATE QUEUE name="example.RequestQueue"
 ACL ALLOW-LOG server CONSUME QUEUE name="example.RequestQueue"
 ACL ALLOW-LOG server BIND EXCHANGE
 ACL ALLOW-LOG server PUBLISH EXCHANGE name="amq.direct" routingKey="TempQueue*"
+
+# ACL for web management console admins
+# All rules below are required for console admin users
+# to perform create/update/delete operations
+ACL ALLOW-LOG webadmins CREATE QUEUE
+ACL ALLOW-LOG webadmins DELETE QUEUE
+ACL ALLOW-LOG webadmins PURGE  QUEUE
+ACL ALLOW-LOG webadmins CREATE EXCHANGE
+ACL ALLOW-LOG webadmins DELETE EXCHANGE
+ACL ALLOW-LOG webadmins BIND   EXCHANGE
+ACL ALLOW-LOG webadmins UNBIND EXCHANGE
+ACL ALLOW-LOG webadmins UPDATE METHOD
+
+# at the moment only the following UPDATE METHOD rules are supported by web management console
+#ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="moveMessages"
+#ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="copyMessages"
+#ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="deleteMessages"
 
 ### DEFAULT ###
 

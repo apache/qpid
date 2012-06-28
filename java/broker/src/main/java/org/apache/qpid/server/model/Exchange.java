@@ -77,7 +77,7 @@ public interface Exchange extends ConfiguredObject
     //children
     Collection<Binding> getBindings();
     Collection<Publisher> getPublishers();
-
+    
     //operations
     Binding createBinding(String bindingKey,
                           Queue queue,

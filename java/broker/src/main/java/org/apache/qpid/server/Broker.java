@@ -25,24 +25,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import javax.net.ssl.SSLContext;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.xml.QpidLog4JConfigurator;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.ServerNetworkTransportConfiguration;
-import org.apache.qpid.server.configuration.management.ConfigurationManagementMBean;
-import org.apache.qpid.server.information.management.ServerInformationMBean;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
-import org.apache.qpid.server.logging.management.LoggingManagementMBean;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
@@ -118,6 +111,14 @@ public class Broker
 
         ConfigurationFileApplicationRegistry config = new ConfigurationFileApplicationRegistry(configFile, options.getBundleContext());
         ServerConfiguration serverConfig = config.getConfiguration();
+        if (options.getQpidWork() != null)
+        {
+            serverConfig.setQpidWork(options.getQpidWork());
+        }
+        if (options.getQpidHome() != null)
+        {
+            serverConfig.setQpidHome(options.getQpidHome());
+        }
         updateManagementPorts(serverConfig, options.getJmxPortRegistryServer(), options.getJmxPortConnectorServer());
 
         ApplicationRegistry.initialise(config);
@@ -135,14 +136,6 @@ public class Broker
 
         try
         {
-            configureLoggingManagementMBean(logConfigFile, options.getLogWatchFrequency());
-
-            ConfigurationManagementMBean configMBean = new ConfigurationManagementMBean();
-            configMBean.register();
-
-            ServerInformationMBean sysInfoMBean = new ServerInformationMBean(config);
-            sysInfoMBean.register();
-
             Set<Integer> ports = new HashSet<Integer>(options.getPorts());
             if(ports.isEmpty())
             {
@@ -258,7 +251,7 @@ public class Broker
                     transport.accept(settings, protocolEngineFactory, null);
 
                     ApplicationRegistry.getInstance().addAcceptor(inetSocketAddress,
-                                    new QpidAcceptor(transport,"TCP"));
+                                    new QpidAcceptor(transport,QpidAcceptor.Transport.TCP, supported));
                     CurrentActor.get().message(BrokerMessages.LISTENING("TCP", port));
                 }
             }
@@ -302,7 +295,7 @@ public class Broker
                     transport.accept(settings, protocolEngineFactory, sslContext);
 
                     ApplicationRegistry.getInstance().addAcceptor(inetSocketAddress,
-                            new QpidAcceptor(transport,"TCP"));
+                            new QpidAcceptor(transport,QpidAcceptor.Transport.SSL, supported));
                     CurrentActor.get().message(BrokerMessages.LISTENING("TCP/SSL", sslPort));
                 }
             }
@@ -495,12 +488,6 @@ public class Broker
         }
     }
 
-    private void configureLoggingManagementMBean(File logConfigFile, int logWatchTime) throws Exception
-    {
-        LoggingManagementMBean blm = new LoggingManagementMBean(logConfigFile.getPath(),logWatchTime);
-
-        blm.register();
-    }
 
     private void addShutdownHook()
     {

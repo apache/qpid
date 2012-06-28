@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.server.subscription;
 
+import org.apache.qpid.server.queue.QueueEntryVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 
 import java.util.HashMap;
@@ -176,7 +176,7 @@ public class DefinedGroupMessageGroupManager implements MessageGroupManager
         return visitor.getEntry();
     }
 
-    private class EntryFinder implements AMQQueue.Visitor
+    private class EntryFinder implements QueueEntryVisitor
     {
         private QueueEntry _entry;
         private Subscription _sub;

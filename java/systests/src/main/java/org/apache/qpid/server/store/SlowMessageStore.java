@@ -24,7 +24,6 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
@@ -368,6 +367,12 @@ public class SlowMessageStore implements MessageStore
     public String getStoreLocation()
     {
         return _realStore.getStoreLocation();
+    }
+
+    @Override
+    public String getStoreType()
+    {
+        return "SLOW";
     }
 
 }

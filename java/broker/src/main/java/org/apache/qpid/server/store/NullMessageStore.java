@@ -28,7 +28,7 @@ import org.apache.qpid.server.federation.Bridge;
 import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.queue.AMQQueue;
 
-public class NullMessageStore implements MessageStore
+public abstract class NullMessageStore implements MessageStore
 {
     @Override
     public void configureConfigStore(String name,

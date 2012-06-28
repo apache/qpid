@@ -87,10 +87,6 @@
         </layout>
     </appender>
 
-    <category additivity="true" name="org.apache.qpid.server.queue.AMQQueueMBean">
-        <priority value="info"/>
-    </category>
-
     <!-- Provide warnings to standard output -->
     <category additivity="true" name="org.apache.qpid">
         <priority value="warn"/>
@@ -100,8 +96,6 @@
     <logger additivity="true" name="qpid.message">
       <level value="info"/>
     </logger>
-
-
 
     <!-- Examples of additional logging settings -->
     <!-- Used to generate extra debug. See debug.log4j.xml -->

@@ -26,8 +26,6 @@ import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-import org.apache.qpid.server.logging.management.LoggingManagementMBean;
-
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -65,7 +63,6 @@ public class QpidLog4JConfigurator
             LOCK.lock();
 
             parseXMLConfigFile(filename);
-            checkLoggerLevels(filename);
 
             DOMConfigurator.configure(filename);
             
@@ -84,7 +81,6 @@ public class QpidLog4JConfigurator
                                                                              SAXException, IllegalLoggerLevelException
     {
         parseXMLConfigFile(filename);
-        checkLoggerLevels(filename);
         
         QpidLog4JXMLWatchdog watchdog = new QpidLog4JXMLWatchdog(filename);
         watchdog.setDelay(delay);
@@ -200,23 +196,6 @@ public class QpidLog4JConfigurator
                     return;
                 }
 
-                try
-                {
-                    checkLoggerLevels(filename);
-                }
-                catch (Exception e)
-                {
-                    //logger will be instantiated following first configuration success, which has been pre-validated
-                    //and so the null check should never actually be required.
-                    if(_logger != null)
-                    {
-                        _logger.warn("Errors were found when validating the logger level values in the " +
-                                "log4j XML configuration file. The new configuration was not applied. " +
-                                "Correct the issues to prompt another update attempt: " + e.getMessage());
-                    }
-                    return;
-                }
-
                 //everything checked was ok, let the normal update process proceed
                 super.doOnChange();
 
@@ -235,60 +214,7 @@ public class QpidLog4JConfigurator
 
         }
     }
-    
-    protected static void checkLoggerLevels(String filename) throws IllegalLoggerLevelException, IOException
-    {
-        //check that the logger levels specified in the XML are actually valid
 
-        try
-        {
-            LOCK.lock();
-            
-            //get the Logger levels to check
-            Map<String, String> loggersLevels;
-            loggersLevels = LoggingManagementMBean.retrieveConfigFileLoggersLevels(filename);
-            //add the RootLogger to the list too
-            String rootLoggerlevelString = LoggingManagementMBean.retrieveConfigFileRootLoggerLevel(filename);
-            loggersLevels.put("Root", rootLoggerlevelString);
-            
-
-            for (Map.Entry<String, String> entry : loggersLevels.entrySet())
-            {
-                String loggerName = entry.getKey();
-                String levelString = entry.getValue();
-
-                //let log4j replace any properties in the string
-                String log4jConfiguredString = domConfig.subst(levelString);
-                
-                if(log4jConfiguredString.equals("") && ! log4jConfiguredString.equals(levelString))
-                {
-                    //log4j has returned an empty string but this isnt what we gave it.
-                    //There may have been an undefined property. Unlike an incorrect
-                    //literal value, we will allow this case to proceed, but warn users.
-                    
-                    if(_logger != null)
-                    {
-                        _logger.warn("Unable to detect Level value from '" + levelString 
-                                +"' for logger '" + loggerName + "', Log4J will default this to DEBUG");
-                    }
-                    else
-                    {
-                        System.err.println("Unable to detect Level value from '" + levelString 
-                                +"' for logger " + loggerName + ", Log4J will default this to DEBUG");
-                    }
-                    
-                    continue;
-                }
-                
-                checkLevel(loggerName,log4jConfiguredString);
-            }
-        }
-        finally
-        {
-            LOCK.unlock();
-        }
-    }
-    
     private static void checkLevel(String loggerName, String levelString) throws IllegalLoggerLevelException
     {
         if("null".equalsIgnoreCase(levelString) || "inherited".equalsIgnoreCase(levelString))

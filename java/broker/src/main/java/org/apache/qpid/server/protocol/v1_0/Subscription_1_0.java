@@ -49,6 +49,7 @@ import org.apache.qpid.amqp_1_0.type.transport.Transfer;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.subscription.Subscription;
@@ -630,5 +631,47 @@ class Subscription_1_0 implements Subscription
     public void setFilters(final FilterManager filters)
     {
         _filters = filters;
+    }
+
+    @Override
+    public AMQSessionModel getSessionModel()
+    {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public long getBytesOut()
+    {
+        // TODO
+        return 0;
+    }
+
+    @Override
+    public long getMessagesOut()
+    {
+        // TODO
+        return 0;
+    }
+
+    @Override
+    public long getUnacknowledgedBytes()
+    {
+        // TODO
+        return 0;
+    }
+
+    @Override
+    public long getUnacknowledgedMessages()
+    {
+        // TODO
+        return 0;
+    }
+
+    @Override
+    public String getConsumerName()
+    {
+        //TODO
+        return "TODO";
     }
 }

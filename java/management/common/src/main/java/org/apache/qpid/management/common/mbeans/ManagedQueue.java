@@ -63,9 +63,14 @@ public interface ManagedQueue
     String ENCODING = "Encoding";
     String CONTENT = "Content";
     List<String> VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES_DESC = Collections.unmodifiableList(Arrays.asList(MSG_AMQ_ID, MIME, ENCODING, CONTENT));
-    
+
+    /** Date/time format used for message expiration and message timestamp formatting */
+    String JMSTIMESTAMP_DATETIME_FORMAT = "MM-dd-yy HH:mm:ss.SSS z";
+
     //Individual attribute name constants
     static final String ATTR_NAME = "Name";
+    static final String ATTR_DESCRIPTION = "Description";
+    static final String ATTR_QUEUE_TYPE = "QueueType";
     static final String ATTR_OWNER = "Owner";
     static final String ATTR_MAX_MSG_AGE = "MaximumMessageAge";
     static final String ATTR_MAX_MSG_COUNT = "MaximumMessageCount";
@@ -92,6 +97,8 @@ public interface ManagedQueue
                         new HashSet<String>(
                                 Arrays.asList(
                                     ATTR_NAME,
+                                    ATTR_QUEUE_TYPE,
+                                    ATTR_DESCRIPTION,
                                     ATTR_OWNER,
                                     ATTR_MAX_MSG_AGE,
                                     ATTR_MAX_MSG_COUNT,
@@ -235,7 +242,7 @@ public interface ManagedQueue
      * Tells the maximum number of messages that can be stored in the queue.
      * This is useful in setting the notifications or taking required
      * action is the number of message increase this limit.
-     * @return maximum muber of message allowed to be stored in the queue.
+     * @return maximum nuumber of message allowed to be stored in the queue.
      * @throws IOException
      */
     Long getMaximumMessageCount() throws IOException;
@@ -287,13 +294,33 @@ public interface ManagedQueue
      */
     @MBeanAttribute(name="Capacity", description="The flow control Capacity (Bytes) of the queue")
     void setCapacity(Long value) throws IOException, IllegalArgumentException;
+
+    /**
+     * Gets the free text queue description.
+     * @since Qpid JMX API 2.5
+     */
+    String getDescription();
+
+    /**
+     * Sets the free text queue description.
+     * @since Qpid JMX API 2.5
+     */
+    @MBeanAttribute(name="Description", description="Free text description of the queue")
+    void setDescription(String string);
+
+    /**
+     * Gets the queue type
+     * @since Qpid JMX API 2.5
+     */
+    @MBeanAttribute(name="QueueType", description="Type of the queue e.g. standard, priority, etc")
+    String getQueueType();
     
     /**
      * Returns the current flow control FlowResumeCapacity of the queue in bytes.
      * 
      * @since Qpid JMX API 1.6
      * @return Capacity below which flow resumes in bytes
-     * @throws IOException
+     * @throws IOExceptionm
      */
     Long getFlowResumeCapacity() throws IOException;
 
@@ -332,7 +359,7 @@ public interface ManagedQueue
      * @since Qpid JMX API 2.0
      * @param exclusive the capacity in bytes
      * @throws IOException
-     * @throws JMException 
+     * @throws JMException
      */
     @MBeanAttribute(name="Exclusive", description="Whether the queue is Exclusive or not")
     void setExclusive(boolean exclusive) throws IOException, JMException;
@@ -341,10 +368,13 @@ public interface ManagedQueue
      * Sets the Alternate Exchange for the queue, for use in dead letter queue functionality.
      *
      * @since Qpid JMX API 2.4
-     * @param the name of the exchange to use. Specifying null or the empty string will clear the alternate exchange.
+     * @param exchangeName the name of the exchange to use. Specifying null or the empty string will clear the
+     *                     alternate exchange.
      * @throws IOException
+     * @throws JMException
      */
-    void setAlternateExchange(String exchangeName) throws IOException;
+    @MBeanAttribute(name="AlternateExchange", description="Alternate exchange for the queue")
+    void setAlternateExchange(String exchangeName) throws IOException, JMException;
 
     /**
      * Returns the name of the Alternate Exchange for the queue, or null if there isn't one.
@@ -353,7 +383,6 @@ public interface ManagedQueue
      * @return the name of the Alternate Exchange for the queue, or null if there isn't one
      * @throws IOException
      */
-    @MBeanAttribute(name="AlternateExchange", description="Alternate exchange for the queue")
     String getAlternateExchange() throws IOException;
 
     //********** Operations *****************//
@@ -473,4 +502,5 @@ public interface ManagedQueue
                       @MBeanOperationParameter(name="to MessageId", description="to MessageId")long toMessageId,
                       @MBeanOperationParameter(name= ManagedQueue.TYPE, description="to Queue Name")String toQueue)
             throws IOException, JMException;
+
 }

@@ -134,4 +134,10 @@ public class MemoryMessageStore extends NullMessageStore
     {
         _eventManager.addEventListener(eventListener, events);
     }
+
+    @Override
+    public String getStoreType()
+    {
+        return "Memory";
+    }
 }

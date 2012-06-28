@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.security.auth.rmi;
 
+import java.net.SocketAddress;
+
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
@@ -37,11 +40,13 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
     static final String INVALID_CREDENTIALS = "Invalid user details supplied";
     static final String CREDENTIALS_REQUIRED = "User details are required. " +
     		            "Please ensure you are using an up to date management console to connect.";
-    
-    private AuthenticationManager _authenticationManager = null;
 
-    public RMIPasswordAuthenticator()
+    private AuthenticationManager _authenticationManager = null;
+    private SocketAddress _socketAddress;
+
+    public RMIPasswordAuthenticator(SocketAddress socketAddress)
     {
+        _socketAddress = socketAddress;
     }
 
     public void setAuthenticationManager(final AuthenticationManager authenticationManager)
@@ -79,11 +84,25 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
         {
             throw new SecurityException(SHOULD_BE_NON_NULL);
         }
-        
+
         // Verify that an AuthenticationManager has been set.
         if (_authenticationManager == null)
         {
-            throw new SecurityException(UNABLE_TO_LOOKUP);
+            try
+            {
+                if(ApplicationRegistry.getInstance().getAuthenticationManager(_socketAddress) != null)
+                {
+                    _authenticationManager = ApplicationRegistry.getInstance().getAuthenticationManager(_socketAddress);
+                }
+                else
+                {
+                    throw new SecurityException(UNABLE_TO_LOOKUP);
+                }
+            }
+            catch(IllegalStateException e)
+            {
+                throw new SecurityException(UNABLE_TO_LOOKUP);
+            }
         }
         final AuthenticationResult result = _authenticationManager.authenticate(username, password);
 

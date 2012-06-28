@@ -42,7 +42,15 @@ public interface QueueRegistry
 
     AMQQueue getQueue(String queue);
 
+    void addRegistryChangeListener(RegistryChangeListener listener);
+
     void stopAllAndUnregisterMBeans();
 
     AMQQueue getQueue(UUID queueId);
+
+    interface RegistryChangeListener
+    {
+        void queueRegistered(AMQQueue queue);
+        void queueUnregistered(AMQQueue queue);
+    }
 }
