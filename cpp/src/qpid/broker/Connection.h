@@ -27,8 +27,7 @@
 #include <vector>
 #include <queue>
 
-#include <boost/ptr_container/ptr_map.hpp>
-
+#include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/ConnectionHandler.h"
 #include "qpid/broker/ConnectionState.h"
 #include "qpid/broker/SessionHandler.h"
@@ -94,8 +93,14 @@ class Connection : public sys::ConnectionInputHandler,
     /** Get the SessionHandler for channel. Create if it does not already exist */
     SessionHandler& getChannel(framing::ChannelId channel);
 
-    /** Close the connection */
-    void close(framing::connection::CloseCode code, const std::string& text);
+    /** Close the connection. Waits for the client to respond with close-ok
+     * before actually destroying the connection.
+     */
+    QPID_BROKER_EXTERN void close(
+        framing::connection::CloseCode code, const std::string& text);
+
+    /** Abort the connection. Close abruptly and immediately. */
+    QPID_BROKER_EXTERN void abort();
 
     // ConnectionInputHandler methods
     void received(framing::AMQFrame& frame);
@@ -139,8 +144,7 @@ class Connection : public sys::ConnectionInputHandler,
     void setHeartbeatInterval(uint16_t heartbeat);
     void sendHeartbeat();
     void restartTimeout();
-    void abort();
-
+    
     template <class F> void eachSessionHandler(F f) {
         for (ChannelMap::iterator i = channels.begin(); i != channels.end(); ++i)
             f(*ptr_map_ptr(i));
