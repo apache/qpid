@@ -65,12 +65,15 @@ AsynchIOHandler::AsynchIOHandler(const std::string& id, ConnectionCodec::Factory
     aio(0),
     factory(f),
     codec(0),
+    reads(0),
     readError(false),
     isClient(false),
     readCredit(InfiniteCredit)
 {}
 
 AsynchIOHandler::~AsynchIOHandler() {
+    if (timeoutTimerTask)
+        timeoutTimerTask->cancel();
     if (codec)
         codec->closed();
     if (timeoutTimerTask)
@@ -154,10 +157,18 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
         }
     }
 
+    ++reads;
     size_t decoded = 0;
     if (codec) {                // Already initiated
         try {
             decoded = codec->decode(buff->bytes+buff->dataStart, buff->dataCount);
+            // When we've decoded 3 reads (probably frames) we will have authenticated and
+            // started heartbeats, if specified, in many (but not all) cases so now we will cancel
+            // the idle connection timeout - this is really hacky, and would be better implemented
+            // in the connection, but that isn't actually created until the first decode.
+            if (reads == 3) {
+                timeoutTimerTask->cancel();
+            }
         }catch(const std::exception& e){
             QPID_LOG(error, e.what());
             readError = true;
@@ -168,8 +179,6 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
         framing::ProtocolInitiation protocolInit;
         if (protocolInit.decode(in)) {
             decoded = in.getPosition();
-            // We've just got the protocol negotiation so we can cancel the timeout for that
-            timeoutTimerTask->cancel();
 
             QPID_LOG(debug, "RECV [" << identifier << "]: INIT(" << protocolInit << ")");
             try {
