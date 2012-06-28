@@ -61,7 +61,7 @@ public class ServerConnectionDelegate extends ServerDelegate
 
     public ServerConnectionDelegate(IApplicationRegistry appRegistry, String localFQDN, AuthenticationManager authManager)
     {
-        this(createConnectionProperties(appRegistry.getBroker()), Collections.singletonList((Object)"en_US"), appRegistry, localFQDN, authManager);
+        this(createConnectionProperties(appRegistry.getBrokerConfig()), Collections.singletonList((Object)"en_US"), appRegistry, localFQDN, authManager);
     }
 
     private ServerConnectionDelegate(Map<String, Object> properties,
@@ -226,7 +226,7 @@ public class ServerConnectionDelegate extends ServerDelegate
     }
 
     @Override
-    protected int getChannelMax()
+    public int getChannelMax()
     {
         return _maxNoOfChannels;
     }
@@ -266,9 +266,6 @@ public class ServerConnectionDelegate extends ServerDelegate
         if(isSessionNameUnique(atc.getName(), conn))
         {
             super.sessionAttach(conn, atc);
-            final ServerConnection serverConnection = (ServerConnection) conn;
-
-            serverConnection.checkForNotification();
         }
         else
         {

@@ -1,5 +1,3 @@
-package org.apache.qpid.server.subscription;
-
 /*
 *
 * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,16 +19,24 @@ package org.apache.qpid.server.subscription;
 *
 */
 
+package org.apache.qpid.server.subscription;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntry.SubscriptionAcquiredState;
+import org.apache.qpid.server.stats.StatisticsCounter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -76,19 +82,9 @@ public class MockSubscription implements Subscription
         _state = State.CLOSED;
     }
 
-    public boolean filtersMessages()
+    public String getConsumerName()
     {
-        return false;
-    }
-
-    public AMQChannel getChannel()
-    {
-        return null;
-    }
-
-    public AMQShortString getConsumerTag()
-    {
-        return tag;
+        return tag == null ? null : tag.asString();
     }
 
     public long getSubscriptionID()
@@ -121,9 +117,34 @@ public class MockSubscription implements Subscription
         return false;
     }
 
+    public long getBytesOut()
+    {
+        return 0;  // TODO - Implement
+    }
+
+    public long getMessagesOut()
+    {
+        return 0;  // TODO - Implement
+    }
+
+    public long getUnacknowledgedBytes()
+    {
+        return 0;  // TODO - Implement
+    }
+
+    public long getUnacknowledgedMessages()
+    {
+        return 0;  // TODO - Implement
+    }
+
     public AMQQueue getQueue()
     {
         return queue;
+    }
+
+    public AMQSessionModel getSessionModel()
+    {
+        return new MockSessionModel();
     }
 
     public boolean trySendLock()
@@ -154,11 +175,6 @@ public class MockSubscription implements Subscription
         return _isActive ;
     }
 
-    public void confirmAutoClose()
-    {
-
-    }
-
     public void set(String key, Object value)
     {
     }
@@ -169,11 +185,6 @@ public class MockSubscription implements Subscription
     }
 
     public boolean isAutoClose()
-    {
-        return false;
-    }
-
-    public boolean isBrowser()
     {
         return false;
     }
@@ -207,10 +218,6 @@ public class MockSubscription implements Subscription
         _stateChangeLock.unlock();
     }
 
-    public void resend(QueueEntry entry) throws AMQException
-    {
-    }
-
     public void onDequeue(QueueEntry queueEntry)
     {
     }
@@ -232,7 +239,6 @@ public class MockSubscription implements Subscription
         messages.add(entry);
     }
 
-    @Override
     public void flushBatched()
     {
 
@@ -249,7 +255,7 @@ public class MockSubscription implements Subscription
     }
 
     public void setNoLocal(boolean noLocal)
-    {        
+    {
     }
 
     public void setStateListener(StateListener listener)
@@ -284,5 +290,260 @@ public class MockSubscription implements Subscription
     public void setActive(final boolean isActive)
     {
         _isActive = isActive;
+    }
+
+    private static class MockSessionModel implements AMQSessionModel
+    {
+
+        @Override
+        public int compareTo(AMQSessionModel o)
+        {
+            return 0;
+        }
+
+        @Override
+        public UUID getId()
+        {
+            return null;
+        }
+
+        @Override
+        public AMQConnectionModel getConnectionModel()
+        {
+            return new MockConnectionModel();
+        }
+
+        @Override
+        public String getClientID()
+        {
+            return null;
+        }
+
+        @Override
+        public void close() throws AMQException
+        {
+        }
+
+        @Override
+        public LogSubject getLogSubject()
+        {
+            return null;
+        }
+
+        @Override
+        public void checkTransactionStatus(long openWarn, long openClose,
+                long idleWarn, long idleClose) throws AMQException
+        {
+        }
+
+        @Override
+        public void block(AMQQueue queue)
+        {
+        }
+
+        @Override
+        public void unblock(AMQQueue queue)
+        {
+        }
+
+        @Override
+        public void block()
+        {
+        }
+
+        @Override
+        public void unblock()
+        {
+        }
+
+        @Override
+        public boolean getBlocking()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean onSameConnection(InboundMessage inbound)
+        {
+            return false;
+        }
+
+        @Override
+        public int getUnacknowledgedMessageCount()
+        {
+            return 0;
+        }
+
+        @Override
+        public Long getTxnCount()
+        {
+            return null;
+        }
+
+        @Override
+        public Long getTxnStart()
+        {
+            return null;
+        }
+
+        @Override
+        public Long getTxnCommits()
+        {
+            return null;
+        }
+
+        @Override
+        public Long getTxnRejects()
+        {
+            return null;
+        }
+
+        @Override
+        public int getChannelId()
+        {
+            return 0;
+        }
+    }
+
+    private static class MockConnectionModel implements AMQConnectionModel
+    {
+        @Override
+        public void initialiseStatistics()
+        {
+        }
+
+        @Override
+        public void registerMessageReceived(long messageSize, long timestamp)
+        {
+        }
+
+        @Override
+        public void registerMessageDelivered(long messageSize)
+        {
+        }
+
+        @Override
+        public StatisticsCounter getMessageDeliveryStatistics()
+        {
+            return null;
+        }
+
+        @Override
+        public StatisticsCounter getMessageReceiptStatistics()
+        {
+            return null;
+        }
+
+        @Override
+        public StatisticsCounter getDataDeliveryStatistics()
+        {
+            return null;
+        }
+
+        @Override
+        public StatisticsCounter getDataReceiptStatistics()
+        {
+            return null;
+        }
+
+        @Override
+        public void resetStatistics()
+        {
+
+        }
+
+        @Override
+        public UUID getId()
+        {
+            return null;
+        }
+
+        @Override
+        public void close(AMQConstant cause, String message)
+                throws AMQException
+        {
+        }
+
+        @Override
+        public void closeSession(AMQSessionModel session, AMQConstant cause,
+                String message) throws AMQException
+        {
+        }
+
+        @Override
+        public long getConnectionId()
+        {
+            return 0;
+        }
+
+        @Override
+        public List<AMQSessionModel> getSessionModels()
+        {
+            return null;
+        }
+
+        @Override
+        public void block()
+        {
+        }
+
+        @Override
+        public void unblock()
+        {
+        }
+
+        @Override
+        public LogSubject getLogSubject()
+        {
+            return null;
+        }
+
+        @Override
+        public String getUserName()
+        {
+            return null;
+        }
+
+        @Override
+        public boolean isSessionNameUnique(byte[] name)
+        {
+            return false;
+        }
+
+        @Override
+        public String getRemoteAddressString()
+        {
+            return "remoteAddress:1234";
+        }
+
+        @Override
+        public String getClientId()
+        {
+            return null;
+        }
+
+        @Override
+        public String getClientVersion()
+        {
+            return null;
+        }
+
+        @Override
+        public String getPrincipalAsString()
+        {
+            return null;
+        }
+
+        @Override
+        public long getSessionCountLimit()
+        {
+            return 0;
+        }
+
+        @Override
+        public long getLastIoTime()
+        {
+            return 0;
+        }
     }
 }

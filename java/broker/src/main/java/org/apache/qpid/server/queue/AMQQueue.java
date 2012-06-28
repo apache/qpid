@@ -28,21 +28,25 @@ import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeReferrer;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.management.Managable;
-import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeReferrer, TransactionLogResource, BaseQueue,
+public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, TransactionLogResource, BaseQueue,
                                   QueueConfig
 {
+    public interface NotificationListener
+    {
+        void notifyClients(NotificationCheck notification, AMQQueue queue, String notificationMsg);
+    }
+
     boolean getDeleteOnNoConsumers();
 
     void setDeleteOnNoConsumers(boolean b);
@@ -56,6 +60,12 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
     int getBindingCount();
 
     LogSubject getLogSubject();
+
+    long getUnackedMessageBytes();
+
+    long getTotalDequeueCount();
+
+    long getTotalEnqueueCount();
 
     public interface Context
     {
@@ -78,6 +88,17 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
     void registerSubscription(final Subscription subscription, final boolean exclusive) throws AMQException;
 
     void unregisterSubscription(final Subscription subscription) throws AMQException;
+
+    Collection<Subscription> getConsumers();
+
+    interface SubscriptionRegistrationListener
+    {
+        void subscriptionRegistered(AMQQueue queue, Subscription subscription);
+        void subscriptionUnregistered(AMQQueue queue, Subscription subscription);
+    }
+
+    void addSubscriptionRegistrationListener(SubscriptionRegistrationListener listener);
+    void removeSubscriptionRegistrationListener(SubscriptionRegistrationListener listener);
 
 
     int getConsumerCount();
@@ -109,7 +130,7 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
 
     void dequeue(QueueEntry entry, Subscription sub);
 
-    void decrementUnackedMsgCount();
+    void decrementUnackedMsgCount(QueueEntry queueEntry);
 
     boolean resend(final QueueEntry entry, final Subscription subscription) throws AMQException;
 
@@ -139,20 +160,8 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
      */
     public List<QueueEntry> getMessagesRangeOnTheQueue(final long fromPosition, final long toPosition);
 
+    void visit(QueueEntryVisitor visitor);
 
-    void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName);
-
-    void copyMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName);
-
-    void removeMessagesFromQueue(long fromMessageId, long toMessageId);
-
-    static interface Visitor
-    {
-        boolean visit(QueueEntry entry);
-    }
-    
-    void visit(Visitor visitor);
-    
 
     long getMaximumMessageSize();
 
@@ -216,8 +225,6 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
 
     void setAlternateExchange(Exchange exchange);
 
-    void setAlternateExchange(String exchangeName);
-
     Map<String, Object> getArguments();
 
     void checkCapacity(AMQSessionModel channel);
@@ -245,12 +252,12 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
     }
 
     /**
-     * ExistingSubscriptionPreventsExclusive signals a failure to create an exclusize subscription, as a subscription
+     * ExistingSubscriptionPreventsExclusive signals a failure to create an exclusive subscription, as a subscription
      * already exists.
      *
      * <p/><table id="crc"><caption>CRC Card</caption>
      * <tr><th> Responsibilities <th> Collaborations
-     * <tr><td> Represent failure to create an exclusize subscription, as a subscription already exists.
+     * <tr><td> Represent failure to create an exclusive subscription, as a subscription already exists.
      * </table>
      *
      * @todo Not an AMQP exception as no status code.
@@ -274,9 +281,7 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
 
     ConfigurationPlugin getConfiguration();
 
-    ManagedObject getManagedObject();
-
-    void setExclusive(boolean exclusive) throws AMQException;
+    void setExclusive(boolean exclusive);
 
     /**
      * Gets the maximum delivery count.   If a message on this queue
@@ -294,5 +299,20 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
      * @param maximumDeliveryCount maximum delivery count
      */
     public void setMaximumDeliveryCount(final int maximumDeliveryCount);
+
+    void setNotificationListener(NotificationListener listener);
+
+    /**
+     * Sets the free text description of this queue.
+     *
+     * @param description
+     *
+     */
+    void setDescription(String description);
+
+    /**
+     * Gets the free text description of this queue.
+     */
+    String getDescription();
 
 }

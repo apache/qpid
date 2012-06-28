@@ -22,10 +22,12 @@ package org.apache.qpid.server.virtualhost;
 
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.configuration.ConfigStore;
+import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -37,6 +39,8 @@ public class VirtualHostRegistry implements Closeable
 
     private String _defaultVirtualHostName;
     private ApplicationRegistry _applicationRegistry;
+    private final Collection<RegistryChangeListener> _listeners =
+            Collections.synchronizedCollection(new ArrayList<RegistryChangeListener>());
 
     public VirtualHostRegistry(ApplicationRegistry applicationRegistry)
     {
@@ -50,11 +54,25 @@ public class VirtualHostRegistry implements Closeable
             throw new Exception("Virtual Host with name " + host.getName() + " already registered.");
         }
         _registry.put(host.getName(),host);
+        synchronized (_listeners)
+        {
+            for(RegistryChangeListener listener : _listeners)
+            {
+                listener.virtualHostRegistered(host);
+            }
+        }
     }
     
     public synchronized void unregisterVirtualHost(VirtualHost host)
     {
         _registry.remove(host.getName());
+        synchronized (_listeners)
+        {
+            for(RegistryChangeListener listener : _listeners)
+            {
+                listener.virtualHostUnregistered(host);
+            }
+        }
     }
 
     public VirtualHost getVirtualHost(String name)
@@ -106,4 +124,17 @@ public class VirtualHostRegistry implements Closeable
         }
 
     }
+
+    public static interface RegistryChangeListener
+    {
+        void virtualHostRegistered(VirtualHost virtualHost);
+        void virtualHostUnregistered(VirtualHost virtualHost);
+
+    }
+
+    public void addRegistryChangeListener(RegistryChangeListener listener)
+    {
+        _listeners.add(listener);
+    }
+
 }

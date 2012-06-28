@@ -171,4 +171,10 @@ public class QuotaMessageStore extends NullMessageStore
             }
         }
     }
+
+    @Override
+    public String getStoreType()
+    {
+        return "QUOTA";
+    }
 }

@@ -630,9 +630,19 @@ public class ServerSession extends Session
         return _txnRejects.get();
     }
 
+    public int getChannelId()
+    {
+        return getChannel();
+    }
+
     public Long getTxnCount()
     {
         return _txnCount.get();
+    }
+
+    public Long getTxnStart()
+    {
+        return _txnStarts.get();
     }
 
     public Principal getAuthorizedPrincipal()
@@ -1059,5 +1069,4 @@ public class ServerSession extends Session
     {
         return getId().compareTo(session.getId());
     }
-
 }

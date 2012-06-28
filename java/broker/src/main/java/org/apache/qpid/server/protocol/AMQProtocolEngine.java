@@ -34,7 +34,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.management.JMException;
 import javax.security.auth.Subject;
 import javax.security.sasl.SaslServer;
 import org.apache.log4j.Logger;
@@ -62,8 +61,6 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.logging.subjects.ConnectionLogSubject;
-import org.apache.qpid.server.management.Managable;
-import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.output.ProtocolOutputConverterRegistry;
 import org.apache.qpid.server.queue.QueueEntry;
@@ -81,7 +78,7 @@ import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.util.BytesDataOutput;
 
-public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQProtocolSession, ConnectionConfig
+public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSession, ConnectionConfig
 {
     private static final Logger _logger = Logger.getLogger(AMQProtocolEngine.class);
 
@@ -105,8 +102,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
     private final AMQStateManager _stateManager;
 
     private AMQCodecFactory _codecFactory;
-
-    private AMQProtocolSessionMBean _managedObject;
 
     private SaslServer _saslServer;
 
@@ -148,8 +143,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
     private final ConfigStore _configStore;
     private long _createTime = System.currentTimeMillis();
 
-    private ApplicationRegistry _registry;
-    private boolean _statisticsEnabled = false;
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
     private NetworkConnection _network;
@@ -158,11 +151,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
     private volatile boolean _deferFlush;
     private long _lastReceivedTime;
     private boolean _blocking;
-
-    public ManagedObject getManagedObject()
-    {
-        return _managedObject;
-    }
 
     public AMQProtocolEngine(VirtualHostRegistry virtualHostRegistry, NetworkConnection network, final long connectionId)
     {
@@ -181,8 +169,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
 
         _actor.message(ConnectionMessages.OPEN(null, null, null, false, false, false));
 
-        _registry = virtualHostRegistry.getApplicationRegistry();
         initialiseStatistics();
+
     }
 
     public void setNetworkConnection(NetworkConnection network)
@@ -194,11 +182,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
     {
         _network = network;
         _sender = sender;
-    }
-
-    private AMQProtocolSessionMBean createMBean() throws JMException
-    {
-        return new AMQProtocolSessionMBean(this);
     }
 
     public long getSessionID()
@@ -649,17 +632,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
         {
             _cachedChannels[channelId] = channel;
         }
-
-        checkForNotification();
-    }
-
-    private void checkForNotification()
-    {
-        int channelsCount = _channelMap.size();
-        if (_managedObject != null && channelsCount >= _maxNoOfChannels)
-        {
-            _managedObject.notifyClients("Channel count (" + channelsCount + ") has reached the threshold value");
-        }
     }
 
     public Long getMaximumNumberOfChannels()
@@ -810,13 +782,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
                 closeAllChannels();
 
                 getConfigStore().removeConfiguredObject(this);
-
-                if (_managedObject != null)
-                {
-                    _managedObject.unregister();
-                    // Ensure we only do this once.
-                    _managedObject = null;
-                }
 
                 for (Task task : _taskList)
                 {
@@ -1004,16 +969,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
         _virtualHost.getConnectionRegistry().registerConnection(this);
 
         _configStore.addConfiguredObject(this);
-
-        try
-        {
-            _managedObject = createMBean();
-            _managedObject.register();
-        }
-        catch (JMException e)
-        {
-            _logger.error(e);
-        }
     }
 
     public void addSessionCloseTask(Task task)
@@ -1168,6 +1123,16 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
     public String getClientVersion()
     {
         return _clientVersion;
+    }
+
+    public String getPrincipalAsString()
+    {
+        return getAuthId();
+    }
+
+    public long getSessionCountLimit()
+    {
+        return getMaximumNumberOfChannels();
     }
 
     public Boolean isIncoming()
@@ -1400,12 +1365,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
 
     public List<AMQSessionModel> getSessionModels()
     {
-		List<AMQSessionModel> sessions = new ArrayList<AMQSessionModel>();
-		for (AMQChannel channel : getChannels())
-		{
-		    sessions.add((AMQSessionModel) channel);
-		}
-		return sessions;
+		return new ArrayList<AMQSessionModel>(getChannels());
     }
 
     public LogSubject getLogSubject()
@@ -1415,21 +1375,15 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
 
     public void registerMessageDelivered(long messageSize)
     {
-        if (isStatisticsEnabled())
-        {
-            _messagesDelivered.registerEvent(1L);
-            _dataDelivered.registerEvent(messageSize);
-        }
+        _messagesDelivered.registerEvent(1L);
+        _dataDelivered.registerEvent(messageSize);
         _virtualHost.registerMessageDelivered(messageSize);
     }
 
     public void registerMessageReceived(long messageSize, long timestamp)
     {
-        if (isStatisticsEnabled())
-        {
-            _messagesReceived.registerEvent(1L, timestamp);
-            _dataReceived.registerEvent(messageSize, timestamp);
-        }
+        _messagesReceived.registerEvent(1L, timestamp);
+        _dataReceived.registerEvent(messageSize, timestamp);
         _virtualHost.registerMessageReceived(messageSize, timestamp);
     }
 
@@ -1463,29 +1417,26 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
 
     public void initialiseStatistics()
     {
-        setStatisticsEnabled(!StatisticsCounter.DISABLE_STATISTICS &&
-                _registry.getConfiguration().isStatisticsGenerationConnectionsEnabled());
-
         _messagesDelivered = new StatisticsCounter("messages-delivered-" + getSessionID());
         _dataDelivered = new StatisticsCounter("data-delivered-" + getSessionID());
         _messagesReceived = new StatisticsCounter("messages-received-" + getSessionID());
         _dataReceived = new StatisticsCounter("data-received-" + getSessionID());
     }
 
-    public boolean isStatisticsEnabled()
-    {
-        return _statisticsEnabled;
-    }
-
-    public void setStatisticsEnabled(boolean enabled)
-    {
-        _statisticsEnabled = enabled;
-    }
-
     public boolean isSessionNameUnique(byte[] name)
     {
         // 0-8/0-9/0-9-1 sessions don't have names
         return true;
+    }
+
+    public String getRemoteAddressString()
+    {
+        return String.valueOf(getRemoteAddress());
+    }
+
+    public String getClientId()
+    {
+        return String.valueOf(getContextKey());
     }
 
     public void setDeferFlush(boolean deferFlush)

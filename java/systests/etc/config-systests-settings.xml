@@ -56,6 +56,9 @@
             <keyStorePath>${QPID_HOME}/../test-profiles/test_resources/ssl/java_broker_keystore.jks</keyStorePath>
             <keyStorePassword>password</keyStorePassword>
         </ssl>
+        <http>
+            <enabled>false</enabled>
+        </http>
     </management>
     <advanced>
         <framesize>65535</framesize>

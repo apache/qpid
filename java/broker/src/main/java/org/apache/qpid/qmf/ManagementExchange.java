@@ -540,6 +540,11 @@ public class ManagementExchange implements Exchange, QMFService.Listener
         return getMsgReceives();
     }
 
+    public long getMsgDrops()
+    {
+        return 0l;
+    }
+
     public long getByteReceives()
     {
         return _bytesReceived.get();
@@ -548,6 +553,11 @@ public class ManagementExchange implements Exchange, QMFService.Listener
     public long getByteRoutes()
     {
         return getByteReceives();
+    }
+
+    public long getByteDrops()
+    {
+        return 0l;
     }
 
     public long getCreateTime()

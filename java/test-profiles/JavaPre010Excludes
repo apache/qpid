@@ -70,3 +70,8 @@ org.apache.qpid.test.unit.ct.DurableSubscriberTest#testResubscribeWithChangedSel
 org.apache.qpid.ra.QpidRAConnectionTest#*
 org.apache.qpid.ra.QpidRAXAResourceTest#*
 
+// These tests rely on new address syntax
+org.apache.qpid.systest.management.jmx.QueueManagementTest#testGetSetAlternateExchange
+org.apache.qpid.systest.management.jmx.QueueManagementTest#testRemoveAlternateExchange
+org.apache.qpid.systest.management.jmx.QueueManagementTest#testAlternateExchangeSurvivesRestart
+

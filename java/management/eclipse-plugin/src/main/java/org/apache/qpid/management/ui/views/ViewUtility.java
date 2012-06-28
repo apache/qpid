@@ -404,13 +404,8 @@ public class ViewUtility
     
     private static void convertByteArray(FormToolkit toolkit, Composite compositeHolder, CompositeData data, String itemName, String encoding)
     {
-        Byte[] arrayItems = (Byte[])data.get(itemName);
-        byte[] byteArray = new byte[arrayItems.length];
+        byte[] byteArray = getByteArray(data, itemName);
 
-        for (int i = 0; i < arrayItems.length; i++)
-        {
-            byteArray[i] = arrayItems[i];
-        }
         try
         {
             String textMessage = new String(byteArray, encoding);
@@ -425,6 +420,27 @@ public class ViewUtility
         {
             ex.printStackTrace();
         }
+    }
+
+    private static byte[] getByteArray(CompositeData data, String itemName)
+    {
+        byte[] byteArray;
+        Object binaryData = data.get(itemName);
+
+        if(binaryData instanceof byte[])
+        {
+            byteArray = (byte[]) binaryData;
+        }
+        else
+        {
+            Byte[] objectArray = (Byte[]) binaryData;
+            byteArray = new byte[objectArray.length];
+            for(int i = 0; i < objectArray.length; i++)
+            {
+                byteArray[i] = objectArray[i];
+            }
+        }
+        return byteArray;
     }
 
     private static Shell getShell()
@@ -462,13 +478,8 @@ public class ViewUtility
     private static void handleBinaryMessageContent(FormToolkit toolkit, Composite compositeHolder, CompositeData data, String itemName, String encoding)
     {
         final String thisEncoding = encoding;
-        final Byte[] arrayItems = (Byte[]) data.get(itemName);
-        final byte[] byteArray = new byte[arrayItems.length];
 
-        for (int i = 0; i < arrayItems.length; i++)
-        {
-            byteArray[i] = arrayItems[i];
-        }
+        final byte[] byteArray = getByteArray(data, itemName);
 
         try
         {

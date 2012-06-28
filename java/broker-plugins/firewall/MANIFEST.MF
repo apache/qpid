@@ -12,12 +12,10 @@ Bundle-ClassPath: .
 Bundle-ActivationPolicy: lazy
 Import-Package:  org.apache.qpid,
  org.apache.qpid.framing,
- org.apache.qpid.junit.extensions.util,
  org.apache.qpid.protocol,
  org.apache.qpid.server.configuration,
  org.apache.qpid.server.configuration.plugins,
  org.apache.qpid.server.exchange,
- org.apache.qpid.server.management,
  org.apache.qpid.server.plugins,
  org.apache.qpid.server.queue,
  org.apache.qpid.server.security,

@@ -32,7 +32,6 @@ import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.federation.BrokerLink;
-import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
@@ -139,11 +138,6 @@ public class MockVirtualHost implements VirtualHost
     public long getHouseKeepingTaskCount()
     {
         return 0;
-    }
-
-    public ManagedObject getManagedObject()
-    {
-        return null;
     }
 
     public MessageStore getMessageStore()
@@ -257,11 +251,6 @@ public class MockVirtualHost implements VirtualHost
 
     }
 
-    public boolean isStatisticsEnabled()
-    {
-        return false;
-    }
-
     public void registerMessageDelivered(long messageSize)
     {
 
@@ -273,11 +262,6 @@ public class MockVirtualHost implements VirtualHost
     }
 
     public void resetStatistics()
-    {
-
-    }
-
-    public void setStatisticsEnabled(boolean enabled)
     {
 
     }

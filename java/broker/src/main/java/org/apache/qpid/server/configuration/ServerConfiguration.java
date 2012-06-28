@@ -64,6 +64,7 @@ public class ServerConfiguration extends ConfigurationPlugin
     public static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
     public static final int DEFAULT_JMXPORT_REGISTRYSERVER = 8999;
     public static final int JMXPORT_CONNECTORSERVER_OFFSET = 100;
+    public static final int DEFAULT_HTTP_MANAGEMENT_PORT = 8080;
 
     public static final String QPID_HOME = "QPID_HOME";
     public static final String QPID_WORK = "QPID_WORK";
@@ -75,6 +76,8 @@ public class ServerConfiguration extends ConfigurationPlugin
 
     private File _configFile;
     private File _vhostsFile;
+    private String _qpidWork;
+    private String _qpidHome;
 
     // Map of environment variables to config items
     private static final Map<String, String> envVarMap = new HashMap<String, String>();
@@ -110,6 +113,8 @@ public class ServerConfiguration extends ConfigurationPlugin
         envVarMap.put("QPID_MSGAUTH", "security.msg-auth");
         envVarMap.put("QPID_AUTOREGISTER", "auto_register");
         envVarMap.put("QPID_MANAGEMENTENABLED", "management.enabled");
+        envVarMap.put("QPID_HTTPMANAGEMENTENABLED", "management.http.enabled");
+        envVarMap.put("QPID_HTTPMANAGEMENTPORT", "management.http.port");
         envVarMap.put("QPID_HEARTBEATDELAY", "heartbeat.delay");
         envVarMap.put("QPID_HEARTBEATTIMEOUTFACTOR", "heartbeat.timeoutFactor");
         envVarMap.put("QPID_MAXIMUMMESSAGEAGE", "maximumMessageAge");
@@ -511,12 +516,26 @@ public class ServerConfiguration extends ConfigurationPlugin
 
     public String getQpidWork()
     {
-        return System.getProperty(QPID_WORK, System.getProperty("java.io.tmpdir"));
+        if ( _qpidWork == null )
+        {
+            return System.getProperty(QPID_WORK, System.getProperty("java.io.tmpdir"));
+        }
+        else
+        {
+            return _qpidWork;
+        }
     }
 
     public String getQpidHome()
     {
-        return System.getProperty(QPID_HOME);
+        if ( _qpidHome == null )
+        {
+            return System.getProperty(QPID_HOME);
+        }
+        else
+        {
+            return _qpidHome;
+        }
     }
 
     public void setJMXPortRegistryServer(int registryServerPort)
@@ -552,6 +571,16 @@ public class ServerConfiguration extends ConfigurationPlugin
     public boolean getPlatformMbeanserver()
     {
         return getBooleanValue("management.platform-mbeanserver", true);
+    }
+
+    public boolean getHTTPManagementEnabled()
+    {
+        return getBooleanValue("management.http.enabled", true);
+    }
+
+    public int getHTTPManagementPort()
+    {
+        return getIntValue("management.http.port", 8080);
     }
 
     public String[] getVirtualHosts()
@@ -622,7 +651,7 @@ public class ServerConfiguration extends ConfigurationPlugin
 
     public boolean getManagementSSLEnabled()
     {
-        return getBooleanValue("management.ssl.enabled", true);
+        return getBooleanValue("management.ssl.enabled", false);
     }
 
     public String getManagementKeyStorePassword()
@@ -636,14 +665,9 @@ public class ServerConfiguration extends ConfigurationPlugin
         return getBooleanValue("queue.auto_register", true);
     }
 
-    public boolean getManagementEnabled()
+    public boolean getJMXManagementEnabled()
     {
         return getBooleanValue("management.enabled", true);
-    }
-
-    public void setManagementEnabled(boolean enabled)
-    {
-        getConfig().setProperty("management.enabled", enabled);
     }
 
     public int getHeartBeatDelay()
@@ -980,5 +1004,15 @@ public class ServerConfiguration extends ConfigurationPlugin
         String reply = getConfig().getString(CONNECTOR_AMQP_SUPPORTED_REPLY, null);
 
         return reply == null ? null : AmqpProtocolVersion.valueOf(reply);
+    }
+
+    public void setQpidWork(String path)
+    {
+        _qpidWork = path;
+    }
+
+    public void setQpidHome(String path)
+    {
+        _qpidHome = path;
     }
 }

@@ -198,7 +198,7 @@ public abstract class AbstractPasswordFilePrincipalDatabase<U extends PasswordPr
         try
         {
             _userUpdate.lock();
-            _userMap.clear();
+            final Map<String, U> newUserMap = new HashMap<String, U>();
 
             BufferedReader reader = null;
             try
@@ -216,7 +216,7 @@ public abstract class AbstractPasswordFilePrincipalDatabase<U extends PasswordPr
 
                     U user = createUserFromFileData(result);
                     getLogger().info("Created user:" + user);
-                    _userMap.put(user.getName(), user);
+                    newUserMap.put(user.getName(), user);
                 }
             }
             finally
@@ -226,6 +226,9 @@ public abstract class AbstractPasswordFilePrincipalDatabase<U extends PasswordPr
                     reader.close();
                 }
             }
+
+            _userMap.clear();
+            _userMap.putAll(newUserMap);
         }
         finally
         {

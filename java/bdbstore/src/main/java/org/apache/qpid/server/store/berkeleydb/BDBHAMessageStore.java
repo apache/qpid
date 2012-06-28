@@ -105,6 +105,8 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
         put(ReplicationConfig.LOG_FLUSH_TASK_INTERVAL, "1 min");
     }});
 
+    public static final String BDB_HA_STORE_TYPE = "BDB-HA";
+
     private String _groupName;
     private String _nodeName;
     private String _nodeHostPort;
@@ -112,8 +114,6 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
     private Durability _durability;
 
     private String _name;
-
-    private BDBHAMessageStoreManagerMBean _managedObject;
 
     private CommitThreadWrapper _commitThreadWrapper;
     private boolean _coalescingSync;
@@ -149,8 +149,6 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
             throw new ConfigurationException("Coalescing sync cannot be used with master sync policy " + SyncPolicy.SYNC
                     + "! Please set highAvailability.coalescingSync to false in store configuration.");
         }
-        _managedObject = new BDBHAMessageStoreManagerMBean(this);
-        _managedObject.register();
 
         super.configure(name, storeConfig);
     }
@@ -394,28 +392,18 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
     @Override
     protected void closeInternal() throws Exception
     {
+        substituteNoOpStateChangeListenerOn(getReplicatedEnvironment());
+
         try
         {
-            substituteNoOpStateChangeListenerOn(getReplicatedEnvironment());
-
-            try
+            if(_coalescingSync)
             {
-                if(_coalescingSync)
-                {
-                    _commitThreadWrapper.stopCommitThread();
-                }
-            }
-            finally
-            {
-                super.closeInternal();
+                _commitThreadWrapper.stopCommitThread();
             }
         }
         finally
         {
-            if (_managedObject != null)
-            {
-                _managedObject.unregister();
-            }
+            super.closeInternal();
         }
     }
 
@@ -609,5 +597,11 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
                 throws RuntimeException
         {
         }
+    }
+
+    @Override
+    public String getStoreType()
+    {
+        return BDB_HA_STORE_TYPE;
     }
 }

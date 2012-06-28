@@ -48,11 +48,6 @@ public class FanoutExchange extends AbstractExchange
      */
     private final ConcurrentHashMap<AMQQueue,Integer> _queues = new ConcurrentHashMap<AMQQueue,Integer>();
 
-    protected AbstractExchangeMBean createMBean() throws JMException
-    {
-        return new FanoutExchangeMBean(this);
-    }
-
     public static final ExchangeType<FanoutExchange> TYPE = new ExchangeType<FanoutExchange>()
     {
 

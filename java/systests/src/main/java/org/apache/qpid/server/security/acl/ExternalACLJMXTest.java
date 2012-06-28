@@ -19,7 +19,6 @@
 package org.apache.qpid.server.security.acl;
 
 import org.apache.qpid.management.common.mbeans.ServerInformation;
-import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.test.utils.JMXTestUtils;
 
@@ -30,7 +29,7 @@ import java.lang.management.RuntimeMXBean;
  * Tests that access to the JMX interface is governed only by {@link ObjectType#METHOD}/{@link ObjectType#ALL}
  * rules and AMQP rights have no effect.
  *
- * Ensures that objects outside the Qpid domain ({@link ManagedObject#DOMAIN}) are not governed by the ACL model.
+ * Ensures that objects outside the Qpid domain are not governed by the ACL model.
  */
 public class ExternalACLJMXTest extends AbstractACLTestCase
 {

@@ -227,11 +227,6 @@ public class HeadersExchange extends AbstractExchange
         return !getBindings().isEmpty();
     }
 
-    protected AbstractExchangeMBean createMBean() throws JMException
-    {
-        return new HeadersExchangeMBean(this);
-    }
-
     protected void onBind(final Binding binding)
     {
         String bindingKey = binding.getBindingKey();

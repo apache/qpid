@@ -29,13 +29,14 @@ import org.apache.qpid.server.configuration.QueueConfigType;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,7 +52,6 @@ public class MockAMQQueue implements AMQQueue
     private AuthorizationHolder _authorizationHolder;
 
     private AMQSessionModel _exclusiveOwner;
-    private AMQShortString _owner;
     private List<Binding> _bindings = new CopyOnWriteArrayList<Binding>();
     private boolean _autoDelete;
 
@@ -98,7 +98,12 @@ public class MockAMQQueue implements AMQQueue
                 return "[MockAMQQueue]";
             }
 
-        }; 
+        };
+    }
+
+    public long getUnackedMessageBytes()
+    {
+        return 0;
     }
 
     public ConfigStore getConfigStore()
@@ -117,6 +122,16 @@ public class MockAMQQueue implements AMQQueue
     }
 
     public long getTotalDequeueSize()
+    {
+        return 0;
+    }
+
+    public long getTotalDequeueCount()
+    {
+        return 0;
+    }
+
+    public long getTotalEnqueueCount()
     {
         return 0;
     }
@@ -219,12 +234,27 @@ public class MockAMQQueue implements AMQQueue
 
     public void registerSubscription(Subscription subscription, boolean exclusive) throws AMQException
     {
-      
+
     }
 
     public void unregisterSubscription(Subscription subscription) throws AMQException
     {
-      
+
+    }
+
+    public Collection<Subscription> getConsumers()
+    {
+        return Collections.emptyList();
+    }
+
+    public void addSubscriptionRegistrationListener(final SubscriptionRegistrationListener listener)
+    {
+
+    }
+
+    public void removeSubscriptionRegistrationListener(final SubscriptionRegistrationListener listener)
+    {
+
     }
 
     public int getConsumerCount()
@@ -283,7 +313,7 @@ public class MockAMQQueue implements AMQQueue
     }
 
     public int delete() throws AMQException
-    {        
+    {
        _deleted = true;
        return getMessageCount();
     }
@@ -356,21 +386,6 @@ public class MockAMQQueue implements AMQQueue
         return null;
     }
 
-    public void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName)
-    {
-      
-    }
-
-    public void copyMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName)
-    {
-      
-    }
-
-    public void removeMessagesFromQueue(long fromMessageId, long toMessageId)
-    {
-      
-    }
-
     public long getMaximumMessageSize()
     {
         return 0;
@@ -378,7 +393,7 @@ public class MockAMQQueue implements AMQQueue
 
     public void setMaximumMessageSize(long value)
     {
-      
+
     }
 
     public long getMaximumMessageCount()
@@ -388,7 +403,7 @@ public class MockAMQQueue implements AMQQueue
 
     public void setMaximumMessageCount(long value)
     {
-      
+
     }
 
     public long getMaximumQueueDepth()
@@ -398,7 +413,7 @@ public class MockAMQQueue implements AMQQueue
 
     public void setMaximumQueueDepth(long value)
     {
-      
+
     }
 
     public long getMaximumMessageAge()
@@ -408,7 +423,7 @@ public class MockAMQQueue implements AMQQueue
 
     public void setMaximumMessageAge(long maximumMessageAge)
     {
-      
+
     }
 
     public long getMinimumAlertRepeatGap()
@@ -418,7 +433,7 @@ public class MockAMQQueue implements AMQQueue
 
     public void deleteMessageFromTop()
     {
-      
+
     }
 
     public long clearQueue()
@@ -429,7 +444,7 @@ public class MockAMQQueue implements AMQQueue
 
     public void checkMessageStatus() throws AMQException
     {
-      
+
     }
 
     public Set<NotificationCheck> getNotificationChecks()
@@ -439,22 +454,22 @@ public class MockAMQQueue implements AMQQueue
 
     public void flushSubscription(Subscription sub) throws AMQException
     {
-      
+
     }
 
     public void deliverAsync(Subscription sub)
     {
-      
+
     }
 
     public void deliverAsync()
     {
-      
+
     }
 
     public void stop()
     {
-      
+
     }
 
     public boolean isExclusive()
@@ -469,7 +484,7 @@ public class MockAMQQueue implements AMQQueue
 
     public void setAlternateExchange(Exchange exchange)
     {
-      
+
     }
 
     public Map<String, Object> getArguments()
@@ -479,11 +494,6 @@ public class MockAMQQueue implements AMQQueue
 
     public void checkCapacity(AMQSessionModel channel)
     {
-    }
-
-    public ManagedObject getManagedObject()
-    {
-        return null;
     }
 
     public int compareTo(AMQQueue o)
@@ -503,7 +513,7 @@ public class MockAMQQueue implements AMQQueue
 
     public void setCapacity(long capacity)
     {
-      
+
     }
 
     public long getFlowResumeCapacity()
@@ -513,7 +523,7 @@ public class MockAMQQueue implements AMQQueue
 
     public void setFlowResumeCapacity(long flowResumeCapacity)
     {
-      
+
     }
 
     public void configure(ConfigurationPlugin config)
@@ -546,12 +556,6 @@ public class MockAMQQueue implements AMQQueue
         _exclusiveOwner = exclusiveOwner;
     }
 
-
-    public String getResourceName()
-    {
-        return _name.toString();
-    }
-
     public boolean isOverfull()
     {
         return false;
@@ -582,7 +586,7 @@ public class MockAMQQueue implements AMQQueue
         return 0;
     }
 
-    public void decrementUnackedMsgCount()
+    public void decrementUnackedMsgCount(QueueEntry queueEntry)
     {
 
     }
@@ -599,7 +603,6 @@ public class MockAMQQueue implements AMQQueue
 
     public void setExclusive(boolean exclusive)
     {
-
     }
 
     public int getMaximumDeliveryCount()
@@ -611,11 +614,23 @@ public class MockAMQQueue implements AMQQueue
     {
     }
 
-    public void setAlternateExchange(String exchangeName)
+    public void visit(final QueueEntryVisitor visitor)
     {
     }
 
-    public void visit(final Visitor visitor)
+    @Override
+    public void setNotificationListener(NotificationListener listener)
     {
+    }
+
+    @Override
+    public void setDescription(String description)
+    {
+    }
+
+    @Override
+    public String getDescription()
+    {
+        return null;
     }
 }

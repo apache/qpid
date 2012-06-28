@@ -23,10 +23,13 @@ package org.apache.qpid.server.store.berkeleydb.upgrade;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
@@ -49,6 +52,7 @@ public class UpgradeFrom4to5Test extends AbstractUpgradeTestCase
 {
     private static final String NON_DURABLE_QUEUE = BDBStoreUpgradeTestPreparer.NON_DURABLE_QUEUE_NAME;
     private static final String DURABLE_QUEUE = BDBStoreUpgradeTestPreparer.QUEUE_NAME;
+    private static final String NON_EXCLUSIVE_WITH_ERRONEOUS_OWNER = "nonexclusive-with-erroneous-owner";
     private static final String DURABLE_SUBSCRIPTION_QUEUE_WITH_SELECTOR = "clientid:mySelectorDurSubName";
     private static final String DURABLE_SUBSCRIPTION_QUEUE = "clientid:myDurSubName";
     private static final String EXCHANGE_DB_NAME = "exchangeDb_v5";
@@ -87,6 +91,10 @@ public class UpgradeFrom4to5Test extends AbstractUpgradeTestCase
                 BDBStoreUpgradeTestPreparer.SELECTOR_TOPIC_NAME, "testprop='true'");
         assertBindingRecord(queueBindings, DURABLE_QUEUE, "amq.direct", DURABLE_QUEUE, null);
         assertBindingRecord(queueBindings, NON_DURABLE_QUEUE, "amq.direct", NON_DURABLE_QUEUE, null);
+        assertBindingRecord(queueBindings, NON_EXCLUSIVE_WITH_ERRONEOUS_OWNER, "amq.direct", NON_EXCLUSIVE_WITH_ERRONEOUS_OWNER, null);
+
+        assertQueueHasOwner(NON_EXCLUSIVE_WITH_ERRONEOUS_OWNER, "misused-owner-as-description");
+
         assertContent();
     }
 
@@ -94,7 +102,7 @@ public class UpgradeFrom4to5Test extends AbstractUpgradeTestCase
     {
         UpgradeFrom4To5 upgrade = new UpgradeFrom4To5();
         upgrade.performUpgrade(_environment, new StaticAnswerHandler(UpgradeInteractionResponse.NO), getVirtualHostName());
-        assertQueues(new HashSet<String>(Arrays.asList(DURABLE_SUBSCRIPTION_QUEUE, DURABLE_SUBSCRIPTION_QUEUE_WITH_SELECTOR, DURABLE_QUEUE)));
+        assertQueues(new HashSet<String>(Arrays.asList(DURABLE_SUBSCRIPTION_QUEUE, DURABLE_SUBSCRIPTION_QUEUE_WITH_SELECTOR, DURABLE_QUEUE, NON_EXCLUSIVE_WITH_ERRONEOUS_OWNER)));
 
         assertDatabaseRecordCount(DELIVERY_DB_NAME, 12);
         assertDatabaseRecordCount(MESSAGE_META_DATA_DB_NAME, 12);
@@ -112,6 +120,9 @@ public class UpgradeFrom4to5Test extends AbstractUpgradeTestCase
         assertBindingRecord(queueBindings, DURABLE_SUBSCRIPTION_QUEUE_WITH_SELECTOR, "amq.topic",
                 BDBStoreUpgradeTestPreparer.SELECTOR_TOPIC_NAME, "testprop='true'");
         assertBindingRecord(queueBindings, DURABLE_QUEUE, "amq.direct", DURABLE_QUEUE, null);
+
+        assertQueueHasOwner(NON_EXCLUSIVE_WITH_ERRONEOUS_OWNER, "misused-owner-as-description");
+
         assertContent();
     }
 
@@ -257,7 +268,7 @@ public class UpgradeFrom4to5Test extends AbstractUpgradeTestCase
 
     private void assertQueues(Set<String> expectedQueueNames)
     {
-        List<AMQShortString> durableSubNames = new ArrayList<AMQShortString>();
+        List<AMQShortString> durableSubNames = Collections.emptyList();
         final UpgradeFrom4To5.QueueRecordBinding binding = new UpgradeFrom4To5.QueueRecordBinding(durableSubNames);
         final Set<String> actualQueueNames = new HashSet<String>();
 
@@ -276,6 +287,35 @@ public class UpgradeFrom4to5Test extends AbstractUpgradeTestCase
         new DatabaseTemplate(_environment, "queueDb_v5", null).run(queueNameCollector);
 
         assertEquals("Unexpected queue names", expectedQueueNames, actualQueueNames);
+    }
+
+    private void assertQueueHasOwner(String queueName, final String expectedOwner)
+    {
+        List<AMQShortString> durableSubNames = Collections.emptyList();
+        final UpgradeFrom4To5.QueueRecordBinding binding = new UpgradeFrom4To5.QueueRecordBinding(durableSubNames);
+        final AtomicReference<String> actualOwner = new AtomicReference<String>();
+        final AtomicBoolean foundQueue = new AtomicBoolean(false);
+
+        CursorOperation queueNameCollector = new CursorOperation()
+        {
+
+            @Override
+            public void processEntry(Database sourceDatabase, Database targetDatabase, Transaction transaction,
+                    DatabaseEntry key, DatabaseEntry value)
+            {
+                QueueRecord record = binding.entryToObject(value);
+                String queueName = record.getNameShortString().asString();
+                if (queueName.equals(queueName))
+                {
+                    foundQueue.set(true);
+                    actualOwner.set(AMQShortString.toString(record.getOwner()));
+                }
+            }
+        };
+        new DatabaseTemplate(_environment, "queueDb_v5", null).run(queueNameCollector);
+
+        assertTrue("Could not find queue in database", foundQueue.get());
+        assertEquals("Queue has unexpected owner", expectedOwner, actualOwner.get());
     }
 
     private void assertContent()

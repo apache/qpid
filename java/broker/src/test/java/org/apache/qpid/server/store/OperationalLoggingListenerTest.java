@@ -147,6 +147,12 @@ public class OperationalLoggingListenerTest extends TestCase
         {
             _eventManager.addEventListener(eventListener, events);
         }
+
+        @Override
+        public String getStoreType()
+        {
+            return "TEST";
+        }
     }
 
     private static class TestActor implements LogActor

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.exchange;
 
+import java.util.Collection;
 import junit.framework.TestCase;
 
 import org.apache.qpid.server.binding.Binding;
@@ -50,6 +51,16 @@ public class HeadersBindingTest extends TestCase
             return 0;
         }
 
+        public String getUserId()
+        {
+            return null;
+        }
+
+        public String getAppId()
+        {
+            return null;
+        }
+
         public String getMessageId()
         {
             return null;
@@ -57,7 +68,7 @@ public class HeadersBindingTest extends TestCase
 
         public String getMimeType()
         {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return null;
         }
 
         public String getEncoding()
@@ -105,6 +116,12 @@ public class HeadersBindingTest extends TestCase
             return _headers.keySet().containsAll(names);
         }
 
+        @Override
+        public Collection<String> getHeaderNames()
+        {
+            return _headers.keySet();
+        }
+
         public boolean containsHeader(String name)
         {
             return _headers.containsKey(name);
@@ -125,13 +142,13 @@ public class HeadersBindingTest extends TestCase
     private MockHeader matchHeaders = new MockHeader();
     private int _count = 0;
     private MockAMQQueue _queue;
-    
+
     protected void setUp()
     {
         _count++;
         _queue = new MockAMQQueue(getQueueName());
     }
-    
+
     protected String getQueueName()
     {
         return "Queue" + _count;

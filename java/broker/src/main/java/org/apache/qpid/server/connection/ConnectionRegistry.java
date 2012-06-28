@@ -88,6 +88,13 @@ public class ConnectionRegistry implements IConnectionRegistry, Closeable
                 }
             }
         }
+        synchronized (_listeners)
+        {
+            for(RegistryChangeListener listener : _listeners)
+            {
+                listener.connectionRegistered(connnection);
+            }
+        }
     }
 
     public void deregisterConnection(AMQConnectionModel connnection)
@@ -102,6 +109,14 @@ public class ConnectionRegistry implements IConnectionRegistry, Closeable
                 {
                     listener.connectionUnregistered(connnection);
                 }
+            }
+        }
+
+        synchronized (_listeners)
+        {
+            for(RegistryChangeListener listener : _listeners)
+            {
+                listener.connectionUnregistered(connnection);
             }
         }
     }
