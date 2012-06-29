@@ -35,7 +35,7 @@ public class NotificationObject
     private String  _message;
     private Object  _source;       
     private String  _type;         // INFO, WARN, etc
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mm:ss dd/MM/yy z");
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss dd/MM/yy z");
     
     public NotificationObject(long seqNo, Date timeStamp, String message, Object source, String type)
     {
