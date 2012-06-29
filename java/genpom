@@ -111,8 +111,10 @@ for module in module_depends:
       <groupId>%s</groupId>
       <artifactId>%s</artifactId>
       <version>%s</version>
+      <scope>%s</scope>
     </dependency>
-""" % (opts.group, artifactId, opts.version))
+""" % (opts.group, artifactId, opts.version,
+       scopes.get(artifactId, "compile")))
 
 for jar in jars:
   base, ext = os.path.splitext(os.path.basename(jar))

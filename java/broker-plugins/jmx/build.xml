@@ -37,6 +37,7 @@
     <property name="module.manifest" value="MANIFEST.MF" />
     <property name="module.plugin" value="true" />
     <property name="module.genpom" value="true"/>
+    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided -Sqpid-management-common=provided"/>
 
     <property name="broker-plugins-jmx.libs" value=""/>
 
