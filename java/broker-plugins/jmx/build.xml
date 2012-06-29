@@ -31,11 +31,14 @@
       </or>
     </condition>
 
-    <property name="module.depends" value="common broker broker-plugins broker-plugins-jmx management/common" />
+    <property name="module.depends" value="common broker management/common" />
     <property name="module.test.depends" value="systests test broker/test common/test management/common client ${systests.optional.depends}" />
     
     <property name="module.manifest" value="MANIFEST.MF" />
     <property name="module.plugin" value="true" />
+    <property name="module.genpom" value="true"/>
+
+    <property name="broker-plugins-jmx.libs" value=""/>
 
     <import file="../../module.xml" />
 

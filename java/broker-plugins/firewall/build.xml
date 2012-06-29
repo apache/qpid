@@ -17,11 +17,14 @@
  - under the License.
  -->
 <project name="Qpid Broker-Plugins Firewall" default="build">
-    <property name="module.depends" value="common broker broker-plugins" />
+    <property name="module.depends" value="common broker" />
     <property name="module.test.depends" value="test broker/test common/test management/common" />
     
     <property name="module.manifest" value="MANIFEST.MF" />
     <property name="module.plugin" value="true" />
+    <property name="module.genpom" value="true"/>
+
+    <property name="broker-plugins-firewall.libs" value=""/>
 
     <import file="../../module.xml" />
 
