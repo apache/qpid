@@ -894,7 +894,10 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
             }
 
             assertTrue("Flow is not blocked", ((AMQSession<?, ?>) producerSession).isFlowBlocked());
-            assertEquals("Unexpected number of sent messages", 4, counter.get());
+            // Message counter could be 3 or 4 depending on the progression of producing thread relative
+            // to the receipt of the ChannelFlow.
+            final int currentCounter = counter.get();
+            assertTrue("Unexpected number of sent messages", currentCounter == 3 || currentCounter == 4);
 
             killBroker();
             startBroker();
