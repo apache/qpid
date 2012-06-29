@@ -17,11 +17,14 @@
  - under the License.
  -->
 <project name="Qpid Broker-Plugins Access Control" default="build">
-    <property name="module.depends" value="common broker broker-plugins" />
+    <property name="module.depends" value="common broker" />
     <property name="module.test.depends" value="test common/test broker/test management/common systests" />
 
     <property name="module.manifest" value="MANIFEST.MF" />
     <property name="module.plugin" value="true" />
+    <property name="module.genpom" value="true"/>
+
+    <property name="broker-plugins-access-control.libs" value=""/>
 
     <import file="../../module.xml" />
 
