@@ -48,7 +48,7 @@ public class MockSubscription implements Subscription
     private AMQShortString tag = new AMQShortString("mocktag");
     private AMQQueue queue = null;
     private StateListener _listener = null;
-    private AMQQueue.Context _queueContext = null;
+    private volatile AMQQueue.Context _queueContext = null;
     private State _state = State.ACTIVE;
     private ArrayList<QueueEntry> messages = new ArrayList<QueueEntry>();
     private final Lock _stateChangeLock = new ReentrantLock();

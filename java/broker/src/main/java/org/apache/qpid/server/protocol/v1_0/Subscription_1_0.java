@@ -67,7 +67,7 @@ class Subscription_1_0 implements Subscription
     private final QueueEntry.SubscriptionAssignedState _assignedState = new QueueEntry.SubscriptionAssignedState(this);
     private final long _id;
     private final boolean _acquires;
-    private AMQQueue.Context _queueContext;
+    private volatile AMQQueue.Context _queueContext;
     private Map<String, Object> _properties = new ConcurrentHashMap<String, Object>();
     private ReentrantLock _stateChangeLock = new ReentrantLock();
 

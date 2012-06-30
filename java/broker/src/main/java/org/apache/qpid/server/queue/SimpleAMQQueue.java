@@ -30,6 +30,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -296,7 +297,22 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     public void execute(Runnable runnable)
     {
-        _asyncDelivery.execute(runnable);
+        try
+        {
+            _asyncDelivery.execute(runnable);
+        }
+        catch (RejectedExecutionException ree)
+        {
+            if (_stopped.get())
+            {
+                // Ignore - SubFlusherRunner or QueueRunner submitted execution as queue was being stopped.
+            }
+            else
+            {
+                _logger.error("Unexpected rejected execution", ree);
+                throw ree;
+            }
+        }
     }
 
     public AMQShortString getNameShortString()
@@ -863,12 +879,15 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     private void setLastSeenEntry(final Subscription sub, final QueueEntry entry)
     {
         QueueContext subContext = (QueueContext) sub.getQueueContext();
-        QueueEntry releasedEntry = subContext.getReleasedEntry();
-
-        QueueContext._lastSeenUpdater.set(subContext, entry);
-        if(releasedEntry == entry)
+        if (subContext != null)
         {
-           QueueContext._releasedUpdater.compareAndSet(subContext, releasedEntry, null);
+            QueueEntry releasedEntry = subContext.getReleasedEntry();
+
+            QueueContext._lastSeenUpdater.set(subContext, entry);
+            if(releasedEntry == entry)
+            {
+               QueueContext._releasedUpdater.compareAndSet(subContext, releasedEntry, null);
+            }
         }
     }
 
