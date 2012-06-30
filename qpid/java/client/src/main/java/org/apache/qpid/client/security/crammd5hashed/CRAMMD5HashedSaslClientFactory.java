@@ -44,14 +44,13 @@ public class CRAMMD5HashedSaslClientFactory implements SaslClientFactory
                     throw new SaslException("CallbackHandler must not be null");
                 }
 
-                String[] mechs = {"CRAM-MD5"};
-                return Sasl.createSaslClient(mechs, authorizationId, protocol, serverName, props, cbh);
+                return new CRAMMD5HashedSaslClient(authorizationId, protocol, serverName, props, cbh);
             }
         }
         return null;
     }
 
-    public String[] getMechanismNames(Map props)
+    public String[] getMechanismNames(Map<String,?> props)
     {
         if (props != null)
         {
