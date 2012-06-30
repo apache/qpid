@@ -76,7 +76,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
 
     private final AtomicReference<State> _state = new AtomicReference<State>(State.ACTIVE);
-    private AMQQueue.Context _queueContext;
+    private volatile AMQQueue.Context _queueContext;
 
     private final ClientDeliveryMethod _deliveryMethod;
     private final RecordDeliveryMethod _recordMethod;
@@ -470,11 +470,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         _deleted.set(true);
     }
 
-    public boolean filtersMessages()
-    {
-        return _filters != null || _noLocal;
-    }
-
     public boolean hasInterest(QueueEntry entry)
     {
         //check that the message hasn't been rejected
@@ -508,13 +503,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         }
         return checkFilters(entry);
 
-    }
-
-    private String id = String.valueOf(System.identityHashCode(this));
-
-    private String debugIdentity()
-    {
-        return id;
     }
 
     private boolean checkFilters(QueueEntry msg)

@@ -98,7 +98,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     private final Lock _stateChangeLock = new ReentrantLock();
 
     private final AtomicReference<State> _state = new AtomicReference<State>(State.ACTIVE);
-    private AMQQueue.Context _queueContext;
+    private volatile AMQQueue.Context _queueContext;
     private final AtomicBoolean _deleted = new AtomicBoolean(false);
 
 
