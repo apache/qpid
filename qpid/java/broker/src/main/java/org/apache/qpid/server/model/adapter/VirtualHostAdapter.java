@@ -302,7 +302,7 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
                 throw new IllegalArgumentException("Queue with name "+name+" already exists");
             }
             AMQQueue queue =
-                    AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateUUID(name, _virtualHost.getName()), name,
+                    AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateQueueUUID(name, _virtualHost.getName()), name,
                                                        durable, owner, lifetime == LifetimePolicy.AUTO_DELETE,
                                                        exclusive, _virtualHost, attributes);
             _virtualHost.getBindingFactory().addBinding(name, queue, _virtualHost.getExchangeRegistry().getDefaultExchange(), null);

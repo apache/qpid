@@ -166,7 +166,7 @@ public class BindingFactory
 
         if (id == null)
         {
-            id = UUIDGenerator.generateUUID();
+            id = UUIDGenerator.generateBindingUUID(exchange.getName(), queue.getName(), bindingKey, _virtualHost.getName());
         }
         BindingImpl b = new BindingImpl(id, bindingKey, queue, exchange, arguments);
         BindingImpl existingMapping = _bindings.putIfAbsent(b, b);

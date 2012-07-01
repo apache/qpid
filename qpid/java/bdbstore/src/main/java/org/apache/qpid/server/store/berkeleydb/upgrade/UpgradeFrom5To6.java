@@ -383,7 +383,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
                         for (int i = 0; i < newDequeues.length; i++)
                         {
                             OldRecordImpl dequeue = oldDequeues[i];
-                            UUID id = UUIDGenerator.generateUUID(dequeue.getQueueName(), virtualHostName);
+                            UUID id = UUIDGenerator.generateQueueUUID(dequeue.getQueueName(), virtualHostName);
                             newDequeues[i] = new NewRecordImpl(id, dequeue.getMessageNumber());
                         }
                     }
@@ -393,7 +393,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
                         for (int i = 0; i < newEnqueues.length; i++)
                         {
                             OldRecordImpl enqueue = oldEnqueues[i];
-                            UUID id = UUIDGenerator.generateUUID(enqueue.getQueueName(), virtualHostName);
+                            UUID id = UUIDGenerator.generateQueueUUID(enqueue.getQueueName(), virtualHostName);
                             newEnqueues[i] = new NewRecordImpl(id, enqueue.getMessageNumber());
                         }
                     }
@@ -423,7 +423,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
                         Transaction transaction, DatabaseEntry key, DatabaseEntry value)
                 {
                     OldQueueEntryKey oldEntryRecord = oldBinding.entryToObject(key);
-                    UUID queueId = UUIDGenerator.generateUUID(oldEntryRecord.getQueueName().asString(), virtualHostName);
+                    UUID queueId = UUIDGenerator.generateQueueUUID(oldEntryRecord.getQueueName().asString(), virtualHostName);
 
                     NewQueueEntryKey newEntryRecord = new NewQueueEntryKey(queueId, oldEntryRecord.getMessageId());
                     DatabaseEntry newKey = new DatabaseEntry();
@@ -458,7 +458,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
                     String routingKey = bindingRecord.getRoutingKey().asString();
                     FieldTable arguments = bindingRecord.getArguments();
 
-                    UUID bindingId = UUIDGenerator.generateUUID();
+                    UUID bindingId = UUIDGenerator.generateBindingUUID(exchangeName, queueName, routingKey, virtualHostName);
                     UpgradeConfiguredObjectRecord configuredObject = createBindingConfiguredObjectRecord(exchangeName, queueName,
                             routingKey, arguments, virtualHostName);
                     storeConfiguredObjectEntry(configuredObjectsDatabase, bindingId, configuredObject, transaction);
@@ -492,7 +492,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
                         String exchangeType = exchangeRecord.getType().asString();
                         boolean autoDelete = exchangeRecord.isAutoDelete();
 
-                        UUID exchangeId = UUIDGenerator.generateUUID(exchangeName, virtualHostName);
+                        UUID exchangeId = UUIDGenerator.generateExchangeUUID(exchangeName, virtualHostName);
 
                         UpgradeConfiguredObjectRecord configuredObject = createExchangeConfiguredObjectRecord(exchangeName,
                                 exchangeType, autoDelete);
@@ -529,7 +529,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
                     boolean exclusive = queueRecord.isExclusive();
                     FieldTable arguments = queueRecord.getArguments();
 
-                    UUID queueId = UUIDGenerator.generateUUID(queueName, virtualHostName);
+                    UUID queueId = UUIDGenerator.generateQueueUUID(queueName, virtualHostName);
                     UpgradeConfiguredObjectRecord configuredObject = createQueueConfiguredObjectRecord(queueName, owner, exclusive,
                             arguments);
                     storeConfiguredObjectEntry(configuredObjectsDatabase, queueId, configuredObject, transaction);
@@ -620,8 +620,8 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
     {
         Map<String, Object> attributesMap = new HashMap<String, Object>();
         attributesMap.put(Binding.NAME, routingKey);
-        attributesMap.put(Binding.EXCHANGE, UUIDGenerator.generateUUID(exchangeName, virtualHostName));
-        attributesMap.put(Binding.QUEUE, UUIDGenerator.generateUUID(queueName, virtualHostName));
+        attributesMap.put(Binding.EXCHANGE, UUIDGenerator.generateExchangeUUID(exchangeName, virtualHostName));
+        attributesMap.put(Binding.QUEUE, UUIDGenerator.generateQueueUUID(queueName, virtualHostName));
         if (arguments != null)
         {
             attributesMap.put(Binding.ARGUMENTS, FieldTable.convertToMap(arguments));

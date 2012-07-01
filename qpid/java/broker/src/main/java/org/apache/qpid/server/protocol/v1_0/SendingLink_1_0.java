@@ -200,7 +200,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 if(queue == null)
                 {
                     queue = AMQQueueFactory.createAMQQueueImpl(
-                                UUIDGenerator.generateUUID(),
+                                UUIDGenerator.generateQueueUUID(name, _vhost.getName()),
                                 name,
                                 isDurable,
                                 null,

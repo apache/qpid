@@ -302,7 +302,7 @@ public class AMQQueueFactory
 
                 if(dlExchange == null)
                 {
-                    dlExchange = exchangeFactory.createExchange(UUIDGenerator.generateUUID(dlExchangeName, virtualHost.getName()), new AMQShortString(dlExchangeName), ExchangeDefaults.FANOUT_EXCHANGE_CLASS, true, false, 0);
+                    dlExchange = exchangeFactory.createExchange(UUIDGenerator.generateExchangeUUID(dlExchangeName, virtualHost.getName()), new AMQShortString(dlExchangeName), ExchangeDefaults.FANOUT_EXCHANGE_CLASS, true, false, 0);
 
                     exchangeRegistry.registerExchange(dlExchange);
 
@@ -324,7 +324,7 @@ public class AMQQueueFactory
                     args.put(X_QPID_DLQ_ENABLED, false);
                     args.put(X_QPID_MAXIMUM_DELIVERY_COUNT, 0);
 
-                    dlQueue = createAMQQueueImpl(UUIDGenerator.generateUUID(dlQueueName, virtualHost.getName()), dlQueueName, true, owner, false, exclusive, virtualHost, args);
+                    dlQueue = createAMQQueueImpl(UUIDGenerator.generateQueueUUID(dlQueueName, virtualHost.getName()), dlQueueName, true, owner, false, exclusive, virtualHost, args);
 
                     //enter the dlq in the persistent store
                     virtualHost.getMessageStore().createQueue(dlQueue, FieldTable.convertToFieldTable(args));
@@ -355,7 +355,7 @@ public class AMQQueueFactory
         Map<String, Object> arguments = createQueueArgumentsFromConfig(config);
 
         // we need queues that are defined in config to have deterministic ids.
-        UUID id = UUIDGenerator.generateUUID(queueName, host.getName());
+        UUID id = UUIDGenerator.generateQueueUUID(queueName, host.getName());
 
         AMQQueue q = createAMQQueueImpl(id, queueName, durable, owner, autodelete, exclusive, host, arguments);
         q.configure(config);
