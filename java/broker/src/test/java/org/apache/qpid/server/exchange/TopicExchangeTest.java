@@ -30,6 +30,7 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
@@ -64,7 +65,7 @@ public class TopicExchangeTest extends InternalBrokerBaseCase
 
     public void testNoRoute() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a*#b"), false, null, false, false, _vhost, null);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a*#b", false, null, false, false, _vhost, null);
         _exchange.registerQueue(new Binding(null,"a.*.#.b", queue,_exchange, null));
 
 
@@ -76,7 +77,7 @@ public class TopicExchangeTest extends InternalBrokerBaseCase
 
     public void testDirectMatch() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("ab"), false, null, false, false, _vhost, null);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "ab", false, null, false, false, _vhost, null);
         _exchange.registerQueue(new Binding(null,"a.b", queue,_exchange, null));
 
 
@@ -103,7 +104,7 @@ public class TopicExchangeTest extends InternalBrokerBaseCase
 
     public void testStarMatch() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a*"), false, null, false, false, _vhost, null);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a*", false, null, false, false, _vhost, null);
         _exchange.registerQueue(new Binding(null,"a.*", queue,_exchange, null));
 
 
@@ -142,7 +143,7 @@ public class TopicExchangeTest extends InternalBrokerBaseCase
 
     public void testHashMatch() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a#"), false, null, false, false, _vhost, null);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false, _vhost, null);
         _exchange.registerQueue(new Binding(null,"a.#", queue,_exchange, null));
 
 
@@ -205,7 +206,7 @@ public class TopicExchangeTest extends InternalBrokerBaseCase
 
     public void testMidHash() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a"), false, null, false, false, _vhost, null);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a", false, null, false, false, _vhost, null);
         _exchange.registerQueue(new Binding(null,"a.*.#.b", queue,_exchange, null));
 
 
@@ -235,7 +236,7 @@ public class TopicExchangeTest extends InternalBrokerBaseCase
 
     public void testMatchafterHash() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a#"), false, null, false, false, _vhost, null);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false, _vhost, null);
         _exchange.registerQueue(new Binding(null,"a.*.#.b.c", queue,_exchange, null));
 
 
@@ -281,7 +282,7 @@ public class TopicExchangeTest extends InternalBrokerBaseCase
 
     public void testHashAfterHash() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a#"), false, null, false, false, _vhost, null);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false, _vhost, null);
         _exchange.registerQueue(new Binding(null,"a.*.#.b.c.#.d", queue,_exchange, null));
 
 
@@ -308,7 +309,7 @@ public class TopicExchangeTest extends InternalBrokerBaseCase
 
     public void testHashHash() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a#"), false, null, false, false, _vhost, null);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false, _vhost, null);
         _exchange.registerQueue(new Binding(null,"a.#.*.#.d", queue,_exchange, null));
 
 
@@ -334,7 +335,7 @@ public class TopicExchangeTest extends InternalBrokerBaseCase
 
     public void testSubMatchFails() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a"), false, null, false, false, _vhost, null);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a", false, null, false, false, _vhost, null);
         _exchange.registerQueue(new Binding(null,"a.b.c.d", queue,_exchange, null));
 
 
@@ -364,7 +365,7 @@ public class TopicExchangeTest extends InternalBrokerBaseCase
 
     public void testMoreRouting() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a"), false, null, false, false, _vhost, null);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a", false, null, false, false, _vhost, null);
         _exchange.registerQueue(new Binding(null,"a.b", queue,_exchange, null));
 
 
@@ -379,7 +380,7 @@ public class TopicExchangeTest extends InternalBrokerBaseCase
 
     public void testMoreQueue() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a"), false, null, false, false, _vhost, null);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a", false, null, false, false, _vhost, null);
         _exchange.registerQueue(new Binding(null,"a.b", queue,_exchange, null));
 
 

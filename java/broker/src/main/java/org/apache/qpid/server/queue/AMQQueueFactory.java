@@ -171,29 +171,7 @@ public class AMQQueueFactory
     };
 
     /**
-     * Creates a new queue with a random id.
-     *
-     * @see #createAMQQueueImpl(UUID, String, boolean, String, boolean, boolean, VirtualHost, Map)
-     * @deprecated because only called from unit tests
-     * */
-    @Deprecated
-    public static AMQQueue createAMQQueueImpl(AMQShortString name,
-                                              boolean durable,
-                                              AMQShortString owner,
-                                              boolean autoDelete,
-                                              boolean exclusive,
-                                              VirtualHost virtualHost, final FieldTable arguments) throws AMQException
-    {
-        return createAMQQueueImpl(UUIDGenerator.generateUUID(),
-                                  name == null ? null : name.toString(),
-                                  durable,
-                                  owner == null ? null : owner.toString(),
-                                  autoDelete,
-                                  exclusive, virtualHost, FieldTable.convertToMap(arguments));
-    }
-
-    /**
-     * @param id the id to use. If default then one is generated from queueName. TODO check correctness of calls that pass a null value.
+     * @param id the id to use.
      */
     public static AMQQueue createAMQQueueImpl(UUID id,
                                               String queueName,

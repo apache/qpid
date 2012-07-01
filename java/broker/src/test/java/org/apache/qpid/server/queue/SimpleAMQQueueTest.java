@@ -117,7 +117,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         _virtualHost = new VirtualHostImpl(ApplicationRegistry.getInstance(), vhostConfig);
         applicationRegistry.getVirtualHostRegistry().registerVirtualHost(_virtualHost);
 
-        _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(_qname, false, _owner, false, false, _virtualHost, _arguments);
+        _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), _qname.asString(), false, _owner.asString(), false, false, _virtualHost, FieldTable.convertToMap(_arguments));
 
         _exchange = (DirectExchange)_virtualHost.getExchangeRegistry().getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME);
     }
@@ -133,7 +133,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
     {
         _queue.stop();
         try {
-            _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(null, false, _owner, false, false, _virtualHost, _arguments );
+            _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), null, false, _owner.asString(), false, false, _virtualHost, FieldTable.convertToMap(_arguments));
             assertNull("Queue was created", _queue);
         }
         catch (IllegalArgumentException e)
@@ -143,7 +143,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         }
 
         try {
-            _queue = new SimpleAMQQueue(UUIDGenerator.generateUUID(), _qname, false, _owner, false,false, null, Collections.EMPTY_MAP);
+            _queue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), _qname, false, _owner, false,false, null, Collections.EMPTY_MAP);
             assertNull("Queue was created", _queue);
         }
         catch (IllegalArgumentException e)
@@ -152,8 +152,8 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
                     e.getMessage().contains("Host"));
         }
 
-        _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(_qname, false, _owner, false,
-                                                                false, _virtualHost, _arguments);
+        _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), _qname.asString(), false, _owner.asString(), false,
+                                                                false, _virtualHost, FieldTable.convertToMap(_arguments));
         assertNotNull("Queue was not created", _queue);
     }
 
@@ -485,7 +485,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
     public void testAutoDeleteQueue() throws Exception
     {
        _queue.stop();
-       _queue = new SimpleAMQQueue(UUIDGenerator.generateUUID(), _qname, false, null, true, false, _virtualHost, Collections.EMPTY_MAP);
+       _queue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), _qname, false, null, true, false, _virtualHost, Collections.EMPTY_MAP);
        _queue.setDeleteOnNoConsumers(true);
        _queue.registerSubscription(_subscription, false);
        AMQMessage message = createMessage(new Long(25));
@@ -697,7 +697,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
     public void testProcessQueueWithUniqueSelectors() throws Exception
     {
         TestSimpleQueueEntryListFactory factory = new TestSimpleQueueEntryListFactory();
-        SimpleAMQQueue testQueue = new SimpleAMQQueue(UUIDGenerator.generateUUID(), "testQueue", false,"testOwner",
+        SimpleAMQQueue testQueue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), "testQueue", false,"testOwner",
                                                       false, false, _virtualHost, factory, null)
         {
             @Override
@@ -921,7 +921,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         int dequeueMessageIndex = 1;
 
         // create queue with overridden method deliverAsync
-        SimpleAMQQueue testQueue = new SimpleAMQQueue(UUIDGenerator.generateUUID(), new AMQShortString("test"),
+        SimpleAMQQueue testQueue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), new AMQShortString("test"),
                 false, new AMQShortString("testOwner"), false, false, _virtualHost, null)
         {
             @Override
@@ -992,7 +992,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
     public void testEnqueueDequeuedEntry()
     {
         // create a queue where each even entry is considered a dequeued
-        SimpleAMQQueue queue = new SimpleAMQQueue(UUIDGenerator.generateUUID(), new AMQShortString("test"), false,
+        SimpleAMQQueue queue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), new AMQShortString("test"), false,
                 new AMQShortString("testOwner"), false, false, _virtualHost, new QueueEntryListFactory()
                 {
                     public QueueEntryList createQueueEntryList(AMQQueue queue)
@@ -1070,7 +1070,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
 
     public void testActiveConsumerCount() throws Exception
     {
-        final SimpleAMQQueue queue = new SimpleAMQQueue(UUIDGenerator.generateUUID(), new AMQShortString("testActiveConsumerCount"), false,
+        final SimpleAMQQueue queue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), new AMQShortString("testActiveConsumerCount"), false,
                 new AMQShortString("testOwner"), false, false, _virtualHost, new SimpleQueueEntryList.Factory(), null);
 
         //verify adding an active subscription increases the count
@@ -1155,31 +1155,6 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         _queue.checkMessageStatus();
 
         verify(listener, atLeastOnce()).notifyClients(eq(NotificationCheck.MESSAGE_COUNT_ALERT), eq(_queue), contains("Maximum count on queue threshold"));
-    }
-
-    /**
-     * A helper method to create a queue with given name
-     *
-     * @param name
-     *            queue name
-     * @return queue
-     */
-    private SimpleAMQQueue createQueue(String name)
-    {
-        SimpleAMQQueue queue = null;
-        try
-        {
-            AMQShortString queueName = new AMQShortString(name);
-            AMQShortString ownerName = new AMQShortString(name + "Owner");
-            queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(queueName, false, ownerName, false, false,
-                    _virtualHost, _arguments);
-        }
-        catch (AMQException e)
-        {
-            fail("Failure to create a queue:" + e.getMessage());
-        }
-        assertNotNull("Queue was not created", queue);
-        return queue;
     }
 
     /**
