@@ -26,6 +26,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
@@ -140,8 +142,7 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
                 Map<String, Object> oldArgs = oldBinding.getArguments();
                 if((oldArgs == null && !bindingArguments.isEmpty()) || (oldArgs != null && !oldArgs.equals(bindingArguments)))
                 {
-                    //TODO: generate deterministic UUID
-                    virtualHost.getBindingFactory().replaceBinding(UUIDGenerator.generateUUID(), bindingKey, amqQueue, _exchange, bindingArguments);
+                    virtualHost.getBindingFactory().replaceBinding(oldBinding.getId(), bindingKey, amqQueue, _exchange, bindingArguments);
                 }
             }
             Binding binding = virtualHost.getBindingFactory().getBinding(bindingKey, amqQueue, _exchange, bindingArguments);

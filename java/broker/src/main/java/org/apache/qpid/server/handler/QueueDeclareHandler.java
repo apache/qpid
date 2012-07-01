@@ -225,7 +225,10 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         String owner = body.getExclusive() ? AMQShortString.toString(session.getContextKey()) : null;
 
         Map<String, Object> arguments = FieldTable.convertToMap(body.getArguments());
-        final AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateUUID(), AMQShortString.toString(queueName), body.getDurable(), owner, body.getAutoDelete(),
+        String queueNameString = AMQShortString.toString(queueName);
+
+        final AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateQueueUUID(queueNameString, virtualHost.getName()),
+                                                                  queueNameString, body.getDurable(), owner, body.getAutoDelete(),
                                                                   body.getExclusive(),virtualHost, arguments);
 
         if (body.getExclusive() && !body.getDurable())

@@ -22,33 +22,36 @@ package org.apache.qpid.server.model;
 
 import java.util.UUID;
 
-import org.apache.qpid.exchange.ExchangeDefaults;
-
-
 public class UUIDGenerator
 {
-
     public static UUID generateUUID()
     {
         return UUID.randomUUID();
     }
 
-    public static UUID generateUUID(String objectName, String virtualHostName)
+    public static UUID generateExchangeUUID(String exchangeName, String virtualHostName)
+    {
+        return generateUUID(exchangeName, virtualHostName, Exchange.class.getName());
+    }
+
+    public static UUID generateQueueUUID(String queueName, String virtualHostName)
+    {
+        return generateUUID(queueName, virtualHostName, Queue.class.getName());
+    }
+
+    private static UUID generateUUID(String objectName, String virtualHostName, String objectType)
     {
         StringBuilder sb = new StringBuilder();
-        sb.append(virtualHostName).append(objectName);
+        sb.append(virtualHostName).append(objectName).append(objectType);
+
         return UUID.nameUUIDFromBytes(sb.toString().getBytes());
     }
 
-    public static UUID generateExchangeUUID(String exchangeName, String virtualHostName)
+    public static UUID generateBindingUUID(String exchangeName, String queueName, String bindingKey, String virtualHostName)
     {
-        if(ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString().equals(exchangeName) || exchangeName.startsWith("amq.") || exchangeName.startsWith("qpid."))
-        {
-            return generateUUID(exchangeName, virtualHostName);
-        }
-        else
-        {
-            return generateUUID();
-        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(exchangeName).append(queueName).append(bindingKey).append(virtualHostName).append(Binding.class.getName());
+
+        return UUID.nameUUIDFromBytes(sb.toString().getBytes());
     }
 }

@@ -1385,7 +1385,7 @@ public class ServerSessionDelegate extends SessionDelegate
     {
         String owner = body.getExclusive() ? session.getClientID() : null;
 
-        final AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateUUID(), queueName, body.getDurable(), owner,
+        final AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateQueueUUID(queueName, virtualHost.getName()), queueName, body.getDurable(), owner,
                                                                   body.getAutoDelete(), body.getExclusive(), virtualHost, body.getArguments());
 
         return queue;
