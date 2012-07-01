@@ -24,7 +24,8 @@ import java.util.UUID;
 
 public class UUIDGenerator
 {
-    public static UUID generateUUID()
+    //Generates a random UUID. Used primarily by tests.
+    public static UUID generateRandomUUID()
     {
         return UUID.randomUUID();
     }

@@ -695,8 +695,8 @@ public class MessageStoreTest extends InternalBrokerBaseCase
         //Ideally we would be able to use the QueueDeclareHandler here.
         try
         {
-            queue = AMQQueueFactory.createAMQQueueImpl(queueName, durable, queueOwner, false, exclusive,
-                    getVirtualHost(), queueArguments);
+            queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName.asString(), durable, queueOwner.asString(), false, exclusive,
+                    getVirtualHost(), FieldTable.convertToMap(queueArguments));
 
             validateQueueProperties(queue, usePriority, durable, exclusive, lastValueQueue);
 
@@ -734,7 +734,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
         try
         {
-            exchange = type.newInstance(UUIDGenerator.generateUUID(), getVirtualHost(), name, durable, 0, false);
+            exchange = type.newInstance(UUIDGenerator.generateRandomUUID(), getVirtualHost(), name, durable, 0, false);
         }
         catch (AMQException e)
         {

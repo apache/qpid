@@ -37,6 +37,7 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
@@ -91,7 +92,7 @@ public class InternalBrokerBaseCase extends QpidTestCase
         QUEUE_NAME = new AMQShortString("test");        
         // Create a queue on the test Vhost.. this will aid in diagnosing duff tests
         // as the ExpiredMessage Task will log with the test Name.
-        _queue = AMQQueueFactory.createAMQQueueImpl(QUEUE_NAME, false, new AMQShortString("testowner"),
+        _queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), QUEUE_NAME.asString(), false, "testowner",
                                                     false, false, _virtualHost, null);
 
         Exchange defaultExchange = _virtualHost.getExchangeRegistry().getDefaultExchange();
@@ -100,7 +101,7 @@ public class InternalBrokerBaseCase extends QpidTestCase
         _virtualHost = _registry.getVirtualHostRegistry().getVirtualHost("test");
         _messageStore = _virtualHost.getMessageStore();
 
-        _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString(getName()), false, new AMQShortString("testowner"),
+        _queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), getName(), false, "testowner",
                                                     false, false, _virtualHost, null);
 
         _virtualHost.getQueueRegistry().registerQueue(_queue);

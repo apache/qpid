@@ -42,7 +42,7 @@ public class ConfiguredObjectBindingTest extends TestCase
     {
         super.setUp();
         _configuredObjectBinding = ConfiguredObjectBinding.getInstance();
-        _object = new ConfiguredObjectRecord(UUIDGenerator.generateUUID(), DUMMY_TYPE_STRING, DUMMY_ATTRIBUTES_STRING);
+        _object = new ConfiguredObjectRecord(UUIDGenerator.generateRandomUUID(), DUMMY_TYPE_STRING, DUMMY_ATTRIBUTES_STRING);
     }
 
     public void testObjectToEntryAndEntryToObject()

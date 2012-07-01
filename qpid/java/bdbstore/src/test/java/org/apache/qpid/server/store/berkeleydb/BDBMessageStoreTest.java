@@ -407,7 +407,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
 
         AbstractBDBMessageStore bdbStore = assertBDBStore(log);
 
-        final UUID mockQueueId = UUIDGenerator.generateUUID();
+        final UUID mockQueueId = UUIDGenerator.generateRandomUUID();
         TransactionLogResource mockQueue = new TransactionLogResource()
         {
             @Override
@@ -445,7 +445,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
 
         AbstractBDBMessageStore bdbStore = assertBDBStore(log);
 
-        final UUID mockQueueId = UUIDGenerator.generateUUID();
+        final UUID mockQueueId = UUIDGenerator.generateRandomUUID();
         TransactionLogResource mockQueue = new TransactionLogResource()
         {
             @Override
@@ -486,7 +486,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
 
         AbstractBDBMessageStore bdbStore = assertBDBStore(log);
 
-        final UUID mockQueueId = UUIDGenerator.generateUUID();
+        final UUID mockQueueId = UUIDGenerator.generateRandomUUID();
         TransactionLogResource mockQueue = new TransactionLogResource()
         {
             @Override

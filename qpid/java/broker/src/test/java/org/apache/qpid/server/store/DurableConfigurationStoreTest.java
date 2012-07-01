@@ -94,8 +94,8 @@ public class DurableConfigurationStoreTest extends QpidTestCase
     {
         super.setUp();
 
-        _queueId = UUIDGenerator.generateUUID();
-        _exchangeId = UUIDGenerator.generateUUID();
+        _queueId = UUIDGenerator.generateRandomUUID();
+        _exchangeId = UUIDGenerator.generateRandomUUID();
 
         _storeName = getName();
         _storePath = TMP_FOLDER + File.separator + _storeName;
@@ -161,7 +161,7 @@ public class DurableConfigurationStoreTest extends QpidTestCase
     public void testBindQueue() throws Exception
     {
         AMQQueue queue = createTestQueue(QUEUE_NAME, "queueOwner", false);
-        Binding binding = new Binding(UUIDGenerator.generateUUID(), ROUTING_KEY, queue, _exchange,
+        Binding binding = new Binding(UUIDGenerator.generateRandomUUID(), ROUTING_KEY, queue, _exchange,
                 FieldTable.convertToMap(_bindingArgs));
         _store.bindQueue(binding);
 
@@ -175,7 +175,7 @@ public class DurableConfigurationStoreTest extends QpidTestCase
     public void testUnbindQueue() throws Exception
     {
         AMQQueue queue = createTestQueue(QUEUE_NAME, "queueOwner", false);
-        Binding binding = new Binding(UUIDGenerator.generateUUID(), ROUTING_KEY, queue, _exchange,
+        Binding binding = new Binding(UUIDGenerator.generateRandomUUID(), ROUTING_KEY, queue, _exchange,
                 FieldTable.convertToMap(_bindingArgs));
         _store.bindQueue(binding);
 
@@ -360,7 +360,7 @@ public class DurableConfigurationStoreTest extends QpidTestCase
 
     private Record getTestRecord(long messageNumber)
     {
-        UUID queueId1 = UUIDGenerator.generateUUID();
+        UUID queueId1 = UUIDGenerator.generateRandomUUID();
         TransactionLogResource queue1 = mock(TransactionLogResource.class);
         when(queue1.getId()).thenReturn(queueId1);
         EnqueableMessage message1 = mock(EnqueableMessage.class);
