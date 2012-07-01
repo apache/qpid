@@ -319,7 +319,7 @@ public class Session_1_0 implements SessionEventListener
                                             ? null
                                             : (LifetimePolicy) properties.get(LIFETIME_POLICY);
 
-            final AMQQueue tempQueue = queue = AMQQueueFactory.createAMQQueueImpl( UUIDGenerator.generateUUID(),
+            final AMQQueue tempQueue = queue = AMQQueueFactory.createAMQQueueImpl( UUIDGenerator.generateQueueUUID(queueName, _vhost.getName()),
                                                                                    queueName,
                                                                                    false, // durable
                                                                                    null, // owner
