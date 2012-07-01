@@ -84,7 +84,7 @@ public class ManagementExchange implements Exchange, QMFService.Listener
 
     private class ManagementQueue implements BaseQueue
     {
-        private final UUID QUEUE_ID =  UUIDGenerator.generateUUID();
+        private final UUID QUEUE_ID =  UUIDGenerator.generateRandomUUID();
         private final String NAME_AS_STRING = "##__mgmt_pseudo_queue__##" + QUEUE_ID.toString();
         private final AMQShortString NAME_AS_SHORT_STRING = new AMQShortString(NAME_AS_STRING);
 
