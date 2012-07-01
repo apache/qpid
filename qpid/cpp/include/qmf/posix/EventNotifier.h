@@ -28,7 +28,7 @@
 namespace qmf {
 
     class PosixEventNotifierImpl;
-    class PosixEventNotifierImplAccess;
+    struct PosixEventNotifierImplAccess;
 
 namespace posix {
 
