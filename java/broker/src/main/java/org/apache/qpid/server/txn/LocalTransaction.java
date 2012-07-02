@@ -1,4 +1,3 @@
-package org.apache.qpid.server.txn;
 /*
  * 
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,6 +18,7 @@ package org.apache.qpid.server.txn;
  * under the License.
  * 
  */
+package org.apache.qpid.server.txn;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

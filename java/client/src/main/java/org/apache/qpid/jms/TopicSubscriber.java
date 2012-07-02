@@ -1,4 +1,3 @@
-package org.apache.qpid.jms;
 /*
  * 
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,6 +18,7 @@ package org.apache.qpid.jms;
  * under the License.
  * 
  */
+package org.apache.qpid.jms;
 
 
 import org.apache.qpid.AMQException;

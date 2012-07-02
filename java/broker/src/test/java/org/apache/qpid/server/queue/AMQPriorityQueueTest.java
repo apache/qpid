@@ -1,4 +1,3 @@
-package org.apache.qpid.server.queue;
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,6 +18,7 @@ package org.apache.qpid.server.queue;
  * under the License.
  *
  */
+package org.apache.qpid.server.queue;
 
 import junit.framework.AssertionFailedError;
 

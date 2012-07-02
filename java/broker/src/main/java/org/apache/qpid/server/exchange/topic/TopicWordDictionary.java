@@ -1,9 +1,3 @@
-package org.apache.qpid.server.exchange.topic;
-
-import org.apache.qpid.framing.AMQShortString;
-
-import java.util.concurrent.ConcurrentHashMap;
-
 /*
 *
 * Licensed to the Apache Software Foundation (ASF) under one
@@ -24,6 +18,12 @@ import java.util.concurrent.ConcurrentHashMap;
 * under the License.
 *
 */
+package org.apache.qpid.server.exchange.topic;
+
+import org.apache.qpid.framing.AMQShortString;
+
+import java.util.concurrent.ConcurrentHashMap;
+
 public class TopicWordDictionary
 {
     private final ConcurrentHashMap<AMQShortString,TopicWord> _dictionary =
