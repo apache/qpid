@@ -28,7 +28,7 @@ windows_dist = \
   qpid/log/windows/SinkOptions.cpp \
   qpid/log/windows/SinkOptions.h \
   ../include/qpid/sys/windows/check.h \
-  qpid/sys/MemState.cpp \
+  qpid/sys/MemStat.cpp \
   qpid/sys/windows/AsynchIO.cpp \
   qpid/sys/windows/AsynchIoResult.h \
   ../include/qpid/sys/windows/Condition.h \
