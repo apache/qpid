@@ -169,7 +169,6 @@ public class ConnectionMBean extends AbstractStatisticsGatheringMBean<Connection
 
     public void setStatisticsEnabled(boolean enabled)
     {
-        // TODO - Implement setStatisticsEnabled
         updateStats();
     }
 

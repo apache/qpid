@@ -38,7 +38,6 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueueFactory;
-import org.mockito.verification.VerificationMode;
 
 public class VirtualHostManagerMBeanTest extends TestCase
 {

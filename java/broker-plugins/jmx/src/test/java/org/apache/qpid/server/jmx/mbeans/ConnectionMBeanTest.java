@@ -172,6 +172,11 @@ public class ConnectionMBeanTest extends TestCase
         assertAttribute("authorizedId", "testAuthorizedId", Connection.PRINCIPAL);
     }
 
+    public void testGetClientId() throws Exception
+    {
+        assertAttribute("clientId", "testClientId", Connection.CLIENT_ID);
+    }
+
     public void testGetVersion() throws Exception
     {
         assertAttribute("version", "testVersion", Connection.CLIENT_VERSION);

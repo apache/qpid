@@ -463,10 +463,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
         {
             return QpidProperties.getReleaseVersion();
         }
-        else if(STATISTICS_ENABLED.equals(name))
-        {
-            // TODO
-        }
         else if(SUPPORTED_STORE_TYPES.equals(name))
         {
             // TODO

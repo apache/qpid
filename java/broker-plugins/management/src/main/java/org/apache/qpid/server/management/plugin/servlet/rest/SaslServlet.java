@@ -24,6 +24,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
@@ -47,6 +48,7 @@ import java.util.Random;
 
 public class SaslServlet extends AbstractServlet
 {
+    private static final Logger LOGGER = Logger.getLogger(SaslServlet.class);
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final String ATTR_RANDOM = "SaslServlet.Random";
@@ -181,14 +183,12 @@ public class SaslServlet extends AbstractServlet
         }
         catch(IOException e)
         {
-            //TODO
-            e.printStackTrace();
+            LOGGER.error("Error processing SASL request", e);
             throw e;
         }
         catch(RuntimeException e)
         {
-            //TODO
-            e.printStackTrace();
+            LOGGER.error("Error processing SASL request", e);
             throw e;
         }
 

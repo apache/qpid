@@ -36,8 +36,6 @@ import javax.management.ObjectName;
 import javax.management.OperationsException;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQInvalidArgumentException;
-import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
