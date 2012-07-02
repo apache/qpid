@@ -1,4 +1,3 @@
-package org.apache.qpid.transport.network.security.sasl;
 /*
  * 
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,6 +18,7 @@ package org.apache.qpid.transport.network.security.sasl;
  * under the License.
  * 
  */
+package org.apache.qpid.transport.network.security.sasl;
 
 
 import org.apache.qpid.transport.Receiver;

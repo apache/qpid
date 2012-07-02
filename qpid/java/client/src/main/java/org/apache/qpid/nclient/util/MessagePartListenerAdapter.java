@@ -1,4 +1,3 @@
-package org.apache.qpid.nclient.util;
 /*
  * 
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,6 +18,7 @@ package org.apache.qpid.nclient.util;
  * under the License.
  * 
  */
+package org.apache.qpid.nclient.util;
 
 
 import org.apache.qpid.nclient.MessagePartListener;

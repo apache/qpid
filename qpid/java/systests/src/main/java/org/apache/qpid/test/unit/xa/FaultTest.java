@@ -1,4 +1,3 @@
-package org.apache.qpid.test.unit.xa;
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,6 +18,7 @@ package org.apache.qpid.test.unit.xa;
  * under the License.
  *
  */
+package org.apache.qpid.test.unit.xa;
 
 
 import junit.framework.TestSuite;

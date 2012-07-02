@@ -1,8 +1,5 @@
-package org.apache.qpid;
-
-import org.apache.qpid.protocol.AMQConstant;
-
-/* Licensed to the Apache Software Foundation (ASF) under one
+/*
+* Licensed to the Apache Software Foundation (ASF) under one
 * or more contributor license agreements.  See the NOTICE file
 * distributed with this work for additional information
 * regarding copyright ownership.  The ASF licenses this file
@@ -19,6 +16,10 @@ import org.apache.qpid.protocol.AMQConstant;
 * specific language governing permissions and limitations
 * under the License.
 */
+package org.apache.qpid;
+
+import org.apache.qpid.protocol.AMQConstant;
+
 
 public class AMQProtocolException extends AMQException
 {

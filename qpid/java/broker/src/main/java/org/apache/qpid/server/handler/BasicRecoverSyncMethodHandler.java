@@ -1,4 +1,3 @@
-package org.apache.qpid.server.handler;
 /*
  * 
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,6 +18,7 @@ package org.apache.qpid.server.handler;
  * under the License.
  * 
  */
+package org.apache.qpid.server.handler;
 
 
 import org.apache.log4j.Logger;

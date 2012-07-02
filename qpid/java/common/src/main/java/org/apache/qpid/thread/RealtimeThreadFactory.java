@@ -1,4 +1,3 @@
-package org.apache.qpid.thread;
 /*
  * 
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,6 +18,7 @@ package org.apache.qpid.thread;
  * under the License.
  * 
  */
+package org.apache.qpid.thread;
 
 
 import java.lang.reflect.Constructor;
