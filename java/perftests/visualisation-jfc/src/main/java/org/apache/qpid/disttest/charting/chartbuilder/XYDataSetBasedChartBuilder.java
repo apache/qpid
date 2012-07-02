@@ -60,10 +60,10 @@ public abstract class XYDataSetBasedChartBuilder extends BaseChartBuilder
 
             @Override
             public void addDataPointToSeries(SeriesDefinition seriesDefinition,
-                    Object xValue, Object yValue)
+                    Object[] row)
             {
-                double x = Double.parseDouble(xValue.toString());
-                double y = Double.parseDouble(yValue.toString());
+                double x = Double.parseDouble(row[0].toString());
+                double y = Double.parseDouble(row[1].toString());
                 _xyPairs.add(new Double[] {x, y});
             }
 

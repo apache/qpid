@@ -62,10 +62,10 @@ public class EndToEndTest extends QpidBrokerTestCase
         assertEquals("Unexpected number of lines in CSV", numberOfExpectedRows, csvLines.length);
 
         assertDataRowsHaveCorrectTestAndClientName("End To End 1", "producingClient", "participantProducer1", csvLines[1], 1);
-        assertDataRowsHaveCorrectTestAndClientName("End To End 1", "consumingClient", "participantConsumer1", csvLines[2], 1);
+        assertDataRowsHaveCorrectTestAndClientName("End To End 1", "consumingClient", "participantConsumer1", csvLines[3], 1);
 
-        assertDataRowsHaveCorrectTestAndClientName("End To End 1", "", TestResultAggregator.ALL_PARTICIPANTS_NAME, csvLines[3], 1);
-        assertDataRowsHaveCorrectTestAndClientName("End To End 1", "", TestResultAggregator.ALL_CONSUMER_PARTICIPANTS_NAME, csvLines[4], 1);
+        assertDataRowsHaveCorrectTestAndClientName("End To End 1", "", TestResultAggregator.ALL_PARTICIPANTS_NAME, csvLines[4], 1);
+        assertDataRowsHaveCorrectTestAndClientName("End To End 1", "", TestResultAggregator.ALL_CONSUMER_PARTICIPANTS_NAME, csvLines[2], 1);
         assertDataRowsHaveCorrectTestAndClientName("End To End 1", "", TestResultAggregator.ALL_PRODUCER_PARTICIPANTS_NAME, csvLines[5], 1);
 
     }

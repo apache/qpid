@@ -54,7 +54,12 @@ public enum ParticipantAttribute
     TOTAL_PAYLOAD_PROCESSED("totalPayloadProcessedB"),
     THROUGHPUT("throughputKbPerS"),
     TIME_TAKEN("timeTakenMs"),
-    ERROR_MESSAGE("errorMessage");
+    ERROR_MESSAGE("errorMessage"),
+    MIN_LATENCY("minLatency"),
+    MAX_LATENCY("maxLatency"),
+    AVERAGE_LATENCY("averageLatency"),
+    LATENCY_STANDARD_DEVIATION("latencyStandardDeviation")
+    ;
 
     private String _displayName;
 

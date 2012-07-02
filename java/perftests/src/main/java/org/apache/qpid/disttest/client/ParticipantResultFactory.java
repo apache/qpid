@@ -18,6 +18,7 @@
  */
 package org.apache.qpid.disttest.client;
 
+import java.util.Collection;
 import java.util.Date;
 
 import org.apache.qpid.disttest.message.ConsumerParticipantResult;
@@ -26,12 +27,24 @@ import org.apache.qpid.disttest.message.CreateParticpantCommand;
 import org.apache.qpid.disttest.message.CreateProducerCommand;
 import org.apache.qpid.disttest.message.ParticipantResult;
 import org.apache.qpid.disttest.message.ProducerParticipantResult;
+import org.apache.qpid.disttest.results.aggregation.SeriesStatistics;
 
 public class ParticipantResultFactory
 {
-    public ConsumerParticipantResult createForConsumer(String participantName, String clientRegisteredName, CreateConsumerCommand command, int acknowledgeMode, int numberOfMessagesReceived, int payloadSize, long totalPayloadReceived, Date start, Date end)
+    public ConsumerParticipantResult createForConsumer(String participantName, String clientRegisteredName,
+            CreateConsumerCommand command, int acknowledgeMode, int numberOfMessagesReceived, int payloadSize,
+            long totalPayloadReceived, Date start, Date end)
+    {
+        return createForConsumer(participantName, clientRegisteredName, command, acknowledgeMode, numberOfMessagesReceived,
+                payloadSize, totalPayloadReceived, start, end, null);
+    }
+
+    public ConsumerParticipantResult createForConsumer(String participantName, String clientRegisteredName,
+            CreateConsumerCommand command, int acknowledgeMode, int numberOfMessagesReceived, int payloadSize,
+            long totalPayloadReceived, Date start, Date end, Collection<Long> messageLatencies)
     {
         ConsumerParticipantResult consumerParticipantResult = new ConsumerParticipantResult();
+        consumerParticipantResult.setMessageLatencies(messageLatencies);
 
         setTestProperties(consumerParticipantResult, command, participantName, clientRegisteredName, acknowledgeMode);
         setTestResultProperties(consumerParticipantResult, numberOfMessagesReceived, payloadSize, totalPayloadReceived, start, end);
@@ -45,6 +58,11 @@ public class ParticipantResultFactory
         consumerParticipantResult.setTotalNumberOfConsumers(1);
         consumerParticipantResult.setTotalNumberOfProducers(0);
 
+        SeriesStatistics statistics = new SeriesStatistics(messageLatencies);
+        consumerParticipantResult.setAverageLatency(statistics.getAverage());
+        consumerParticipantResult.setMinLatency(statistics.getMinimum());
+        consumerParticipantResult.setMaxLatency(statistics.getMaximum());
+        consumerParticipantResult.setLatencyStandardDeviation(statistics.getStandardDeviation());
         return consumerParticipantResult;
     }
 

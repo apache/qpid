@@ -16132,7 +16132,7 @@
           ]
         }
       ]
-    }
+    },
     {
       "_name": "queue-type:priority-queue";
       "_queues":[

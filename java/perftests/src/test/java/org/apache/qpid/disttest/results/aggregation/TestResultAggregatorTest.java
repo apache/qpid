@@ -19,6 +19,7 @@
 package org.apache.qpid.disttest.results.aggregation;
 
 import java.util.Date;
+import java.util.List;
 
 import junit.framework.TestCase;
 
@@ -26,8 +27,6 @@ import org.apache.qpid.disttest.controller.TestResult;
 import org.apache.qpid.disttest.message.ConsumerParticipantResult;
 import org.apache.qpid.disttest.message.ParticipantResult;
 import org.apache.qpid.disttest.message.ProducerParticipantResult;
-import org.apache.qpid.disttest.results.aggregation.AggregatedTestResult;
-import org.apache.qpid.disttest.results.aggregation.TestResultAggregator;
 
 public class TestResultAggregatorTest extends TestCase
 {
@@ -103,6 +102,55 @@ public class TestResultAggregatorTest extends TestCase
 
         AggregatedTestResult aggregatedTestResult = _aggregator.aggregateTestResult(result);
         assertEquals(TestResultAggregator.AGGREGATED_ERROR_MESSAGE, aggregatedTestResult.getAllParticipantResult().getErrorMessage());
+    }
+
+    public void testAggregateResultsForConsumerWithLatencyResults() throws Exception
+    {
+        TestResult originalTestResult = createResultsFromTest();
+        List<ParticipantResult> results = originalTestResult.getParticipantResults();
+        for (ParticipantResult participantResult : results)
+        {
+            if (participantResult instanceof ConsumerParticipantResult)
+            {
+                ((ConsumerParticipantResult)participantResult).setMessageLatencies(SeriesStatisticsTest.SERIES);
+                break;
+            }
+        }
+
+        int numberOfOriginalParticipantResults = originalTestResult.getParticipantResults().size();
+        int expectedNumberOfResults = numberOfOriginalParticipantResults + EXPECTED_NUMBER_OF_AGGREGATED_RESULTS;
+
+        AggregatedTestResult aggregatedTestResult = _aggregator.aggregateTestResult(originalTestResult);
+
+        aggregatedTestResult.getAllConsumerParticipantResult().getTotalPayloadProcessed();
+        assertEquals(expectedNumberOfResults, aggregatedTestResult.getParticipantResults().size());
+
+        assertMinimalAggregatedResults(
+                aggregatedTestResult.getAllConsumerParticipantResult(),
+                TEST1_NAME, TEST1_ITERATION_NUMBER,
+                BATCH_SIZE, NUMBER_OF_MESSAGES_CONSUMED_IN_TOTAL, 2, 0);
+
+        assertLatencyAggregatedResults(aggregatedTestResult.getAllConsumerParticipantResult());
+
+        assertMinimalAggregatedResults(
+                aggregatedTestResult.getAllProducerParticipantResult(),
+                TEST1_NAME, TEST1_ITERATION_NUMBER,
+                BATCH_SIZE, NUMBER_OF_MESSAGES_PRODUCED, 0, 1);
+
+        assertMinimalAggregatedResults(
+                aggregatedTestResult.getAllParticipantResult(),
+                TEST1_NAME, TEST1_ITERATION_NUMBER,
+                BATCH_SIZE, NUMBER_OF_MESSAGES_CONSUMED_IN_TOTAL, 2, 1);
+    }
+
+    private void assertLatencyAggregatedResults(ParticipantResult allConsumerParticipantResult)
+    {
+        assertTrue("Unexpected result", allConsumerParticipantResult instanceof ConsumerParticipantResult);
+        ConsumerParticipantResult results = (ConsumerParticipantResult)allConsumerParticipantResult;
+        assertEquals("Unexpected average", 5.0, results.getAverageLatency(), 0.01);
+        assertEquals("Unexpected min", 2, results.getMinLatency());
+        assertEquals("Unexpected max", 9, results.getMaxLatency());
+        assertEquals("Unexpected standard deviation", 2.0, results.getLatencyStandardDeviation(), 0.01);
     }
 
     private void assertMinimalAggregatedResults(ParticipantResult result, String expectedTestName, int expectedIterationNumber, int expectedBatchSize, long expectedNumberOfMessagesProcessed, int expectedTotalNumberOfConsumers, int expectedTotalNumberOfProducers)

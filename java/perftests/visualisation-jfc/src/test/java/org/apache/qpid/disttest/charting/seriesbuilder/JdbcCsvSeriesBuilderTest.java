@@ -59,9 +59,9 @@ public class JdbcCsvSeriesBuilderTest extends TestCase
         _seriesBuilder.build(Collections.singletonList(seriesDefinition));
 
         verify(_seriesWalkerCallback).beginSeries(seriesDefinition);
-        verify(_seriesWalkerCallback).addDataPointToSeries(seriesDefinition, (Object)"elephant", (Object)"2");
-        verify(_seriesWalkerCallback).addDataPointToSeries(seriesDefinition, (Object)"lion", (Object)"3");
-        verify(_seriesWalkerCallback).addDataPointToSeries(seriesDefinition, (Object)"tiger", (Object)"4");
+        verify(_seriesWalkerCallback).addDataPointToSeries(seriesDefinition, new Object[]{"elephant", "2"});
+        verify(_seriesWalkerCallback).addDataPointToSeries(seriesDefinition, new Object[]{"lion", "3"});
+        verify(_seriesWalkerCallback).addDataPointToSeries(seriesDefinition, new Object[]{"tiger", "4"});
         verify(_seriesWalkerCallback).endSeries(seriesDefinition);
     }
 

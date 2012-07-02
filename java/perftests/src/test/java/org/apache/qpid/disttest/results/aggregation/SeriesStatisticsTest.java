@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -17,14 +18,26 @@
  * under the License.
  *
  */
-package org.apache.qpid.disttest.charting.seriesbuilder;
+package org.apache.qpid.disttest.results.aggregation;
 
-import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
+import java.util.Arrays;
+import java.util.Collection;
 
-public interface SeriesBuilderCallback
+import junit.framework.TestCase;
+
+public class SeriesStatisticsTest extends TestCase
 {
-    public void beginSeries(SeriesDefinition seriesDefinition);
-    public void addDataPointToSeries(SeriesDefinition seriesDefinition, Object[] row);
-    public void endSeries(SeriesDefinition seriesDefinition);
+    public static Collection<Long> SERIES = Arrays.asList(new Long[] { 2l, 4l, 4l, 4l, 5l, 5l, 7l, 9l, 5l });
+
+    public void testAggregate()
+    {
+        SeriesStatistics results = new SeriesStatistics();
+        results.addMessageLatencies(SERIES);
+        results.aggregate();
+        assertEquals("Unexpected average", 5.0, results.getAverage(), 0.01);
+        assertEquals("Unexpected min", 2, results.getMinimum());
+        assertEquals("Unexpected max", 9, results.getMaximum());
+        assertEquals("Unexpected standard deviation", 2.0, results.getStandardDeviation(), 0.01);
+    }
 
 }

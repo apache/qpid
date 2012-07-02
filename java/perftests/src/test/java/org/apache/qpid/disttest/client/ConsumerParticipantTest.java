@@ -29,6 +29,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Collection;
+
 import javax.jms.Message;
 import javax.jms.Session;
 
@@ -36,6 +38,7 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.disttest.DistributedTestException;
 import org.apache.qpid.disttest.jms.ClientJmsDelegate;
+import org.apache.qpid.disttest.message.ConsumerParticipantResult;
 import org.apache.qpid.disttest.message.CreateConsumerCommand;
 import org.apache.qpid.disttest.message.ParticipantResult;
 import org.mockito.InOrder;
@@ -177,4 +180,24 @@ public class ConsumerParticipantTest extends TestCase
         verify(_delegate).closeTestConsumer(PARTICIPANT_NAME1);
     }
 
+    public void testLatency() throws Exception
+    {
+        int numberOfMessages = 1;
+        long totalPayloadSize = PAYLOAD_SIZE_PER_MESSAGE * numberOfMessages;
+        _command.setNumberOfMessages(numberOfMessages);
+        _command.setEvaluateLatency(true);
+        _consumerParticipant = new ConsumerParticipant(_delegate, _command);
+        ParticipantResult result = _consumerParticipant.doIt(CLIENT_NAME);
+
+        assertExpectedConsumerResults(result, PARTICIPANT_NAME1, CLIENT_NAME, _testStartTime,
+                                      Session.CLIENT_ACKNOWLEDGE, null, numberOfMessages, PAYLOAD_SIZE_PER_MESSAGE, totalPayloadSize, null);
+
+        _inOrder.verify(_delegate).consumeMessage(PARTICIPANT_NAME1, RECEIVE_TIMEOUT);
+        _inOrder.verify(_delegate).calculatePayloadSizeFrom(_mockMessage);
+        _inOrder.verify(_delegate).commitOrAcknowledgeMessage(_mockMessage, SESSION_NAME1);
+        assertTrue("Unexpected consuemr results", result instanceof ConsumerParticipantResult);
+        Collection<Long> latencies = ((ConsumerParticipantResult)result).getMessageLatencies();
+        assertNotNull("Message latency is not cllected", latencies);
+        assertEquals("Unexpected message latency results", 1,  latencies.size());
+    }
 }
