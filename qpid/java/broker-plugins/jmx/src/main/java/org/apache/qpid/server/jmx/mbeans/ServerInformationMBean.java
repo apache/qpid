@@ -24,7 +24,6 @@ import java.io.IOException;
 import javax.management.JMException;
 import javax.management.NotCompliantMBeanException;
 
-import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.management.common.mbeans.ServerInformation;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.server.jmx.ManagedObject;
@@ -34,16 +33,13 @@ import org.apache.qpid.server.model.Broker;
 @MBeanDescription("Server Information Interface")
 public class ServerInformationMBean extends AbstractStatisticsGatheringMBean<Broker> implements ServerInformation
 {
-    private String _buildVersion;
-    private String _productVersion;
+    private final Broker _broker;
 
     public ServerInformationMBean(ManagedObjectRegistry registry, Broker broker) 
                                                     throws NotCompliantMBeanException, JMException
     {
         super(ServerInformation.class, ServerInformation.TYPE, registry, broker);
-
-        _buildVersion = QpidProperties.getBuildVersion();
-        _productVersion = QpidProperties.getReleaseVersion();
+        _broker = broker;
 
         register();
     }
@@ -69,19 +65,19 @@ public class ServerInformationMBean extends AbstractStatisticsGatheringMBean<Bro
     @Override
     public String getBuildVersion() throws IOException
     {
-        return _buildVersion;
+        return (String) _broker.getAttribute(Broker.BUILD_VERSION);
     }
 
     @Override
     public String getProductVersion() throws IOException
     {
-        return _productVersion;
+        return (String) _broker.getAttribute(Broker.PRODUCT_VERSION);
     }
 
     @Override
     public boolean isStatisticsEnabled()
     {
-        return false;
+        return true;
     }
 
     @Override
