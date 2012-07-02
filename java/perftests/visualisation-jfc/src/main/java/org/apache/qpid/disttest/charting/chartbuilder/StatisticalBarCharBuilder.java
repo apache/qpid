@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,19 +20,29 @@
  */
 package org.apache.qpid.disttest.charting.chartbuilder;
 
+import java.awt.Font;
 
 import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
-import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilderCallback;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
+import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilderCallback;
 import org.jfree.chart.JFreeChart;
-import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.chart.axis.CategoryAxis;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.axis.ValueAxis;
+import org.jfree.chart.plot.CategoryPlot;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.renderer.category.CategoryItemRenderer;
+import org.jfree.chart.renderer.category.StatisticalBarRenderer;
+import org.jfree.data.general.Dataset;
+import org.jfree.data.statistics.DefaultStatisticalCategoryDataset;
+import org.jfree.data.statistics.StatisticalCategoryDataset;
 
-public abstract class CategoryDataSetBasedChartBuilder extends BaseChartBuilder
+public class StatisticalBarCharBuilder extends BaseChartBuilder
 {
     private final SeriesBuilder _seriesBuilder;
 
-    public CategoryDataSetBasedChartBuilder(SeriesBuilder seriesBuilder)
+    public StatisticalBarCharBuilder(SeriesBuilder seriesBuilder)
     {
         _seriesBuilder = seriesBuilder;
     }
@@ -43,7 +54,7 @@ public abstract class CategoryDataSetBasedChartBuilder extends BaseChartBuilder
         String xAxisTitle = chartingDefinition.getXAxisTitle();
         String yAxisTitle = chartingDefinition.getYAxisTitle();
 
-        final DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        final DefaultStatisticalCategoryDataset dataset = new DefaultStatisticalCategoryDataset();
 
         _seriesBuilder.setSeriesBuilderCallback(new SeriesBuilderCallback()
         {
@@ -51,8 +62,9 @@ public abstract class CategoryDataSetBasedChartBuilder extends BaseChartBuilder
             public void addDataPointToSeries(SeriesDefinition seriesDefinition, Object[] row)
             {
                 String x = String.valueOf(row[0]);
-                double y = Double.parseDouble(row[1].toString());
-                dataset.addValue( y, seriesDefinition.getSeriesLegend(), x);
+                double mean = Double.parseDouble(row[1].toString());
+                double stdDev = Double.parseDouble(row[2].toString());
+                dataset.add(mean, stdDev, seriesDefinition.getSeriesLegend(), x);
             }
 
             @Override
@@ -71,11 +83,26 @@ public abstract class CategoryDataSetBasedChartBuilder extends BaseChartBuilder
 
         _seriesBuilder.build(chartingDefinition.getSeries());
 
-        JFreeChart chart = createChartImpl(title, xAxisTitle, yAxisTitle,
-                dataset, PLOT_ORIENTATION, SHOW_LEGEND, SHOW_TOOL_TIPS, SHOW_URLS);
+        JFreeChart chart = createChartImpl(title, xAxisTitle, yAxisTitle, dataset, PLOT_ORIENTATION, SHOW_LEGEND,
+                SHOW_TOOL_TIPS, SHOW_URLS);
 
         addCommonChartAttributes(chart, chartingDefinition);
 
         return chart;
     }
+
+    @Override
+    public JFreeChart createChartImpl(String title, String xAxisTitle, String yAxisTitle, final Dataset dataset,
+            PlotOrientation plotOrientation, boolean showLegend, boolean showToolTips, boolean showUrls)
+    {
+        CategoryAxis xAxis = new CategoryAxis(xAxisTitle);
+        ValueAxis yAxis = new NumberAxis(yAxisTitle);
+        CategoryItemRenderer renderer = new StatisticalBarRenderer();
+
+        CategoryPlot plot = new CategoryPlot((StatisticalCategoryDataset) dataset, xAxis, yAxis, renderer);
+
+        JFreeChart chart = new JFreeChart(title, new Font("Arial", Font.PLAIN, 10), plot, true);
+        return chart;
+    }
+
 }

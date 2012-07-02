@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.NavigableSet;
 import java.util.TreeSet;
 
+import org.apache.qpid.disttest.message.ConsumerParticipantResult;
 import org.apache.qpid.disttest.message.ParticipantResult;
 
 public class ParticipantResultAggregator
@@ -44,6 +45,8 @@ public class ParticipantResultAggregator
     private NavigableSet<Integer> _encounteredAcknowledgeMode = new TreeSet<Integer>();
     private NavigableSet<String> _encountedTestNames = new TreeSet<String>();
 
+    private SeriesStatistics _latencyStatistics = new SeriesStatistics();
+
     public ParticipantResultAggregator(Class<? extends ParticipantResult> targetClass, String aggregateResultName)
     {
         _aggregatedResultName = aggregateResultName;
@@ -56,12 +59,31 @@ public class ParticipantResultAggregator
         {
             rollupConstantAttributes(result);
             computeVariableAttributes(result);
+            if (result instanceof ConsumerParticipantResult)
+            {
+                ConsumerParticipantResult consumerParticipantResult = (ConsumerParticipantResult)result;
+                _latencyStatistics.addMessageLatencies(consumerParticipantResult.getMessageLatencies());
+                _latencyStatistics.aggregate();
+            }
         }
     }
 
     public ParticipantResult getAggregatedResult()
     {
-        ParticipantResult aggregatedResult = new ParticipantResult(_aggregatedResultName);
+        ParticipantResult aggregatedResult;
+        if (_targetClass == ConsumerParticipantResult.class)
+        {
+            ConsumerParticipantResult consumerParticipantResult = new ConsumerParticipantResult(_aggregatedResultName);
+            consumerParticipantResult.setAverageLatency(_latencyStatistics.getAverage());
+            consumerParticipantResult.setMinLatency(_latencyStatistics.getMinimum());
+            consumerParticipantResult.setMaxLatency(_latencyStatistics.getMaximum());
+            consumerParticipantResult.setLatencyStandardDeviation(_latencyStatistics.getStandardDeviation());
+            aggregatedResult = consumerParticipantResult;
+        }
+        else
+        {
+            aggregatedResult = new ParticipantResult(_aggregatedResultName);
+        }
 
         setRolledUpConstantAttributes(aggregatedResult);
         setComputedVariableAttributes(aggregatedResult);

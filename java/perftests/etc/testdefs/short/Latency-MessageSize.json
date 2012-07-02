@@ -1,0 +1,189 @@
+{
+    "_tests":[
+    {
+      "_name": "Latency - Message Size - TRANSIENT";
+      "_iterations":[
+        {
+          "_messageSize": 256
+        },
+        {
+          "_messageSize": 512
+        },
+        {
+          "_messageSize": 1024
+        },
+        {
+          "_messageSize": 2048
+        },
+        {
+          "_messageSize": 4096
+        },
+        {
+          "_messageSize": 8192
+        },
+        {
+          "_messageSize": 16384
+        },
+        {
+          "_messageSize": 32768
+        },
+        {
+          "_messageSize": 65536
+        },
+        {
+          "_messageSize": 131072
+        },
+        {
+          "_messageSize": 262144
+        }
+      ],
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//latency-message-size-transient"
+        }
+      ],
+      "_clients":[
+        {
+          "_name": "producingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 1,
+                  "_producers": [
+                    {
+                      "_name": "Producer1",
+                      "_destinationName": "direct://amq.direct//latency-message-size-transient",
+                      "_deliveryMode": 1,
+                      "_maximumDuration": 60000,
+                      "_interval": 1000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "consumingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer1",
+                      "_destinationName": "direct://amq.direct//latency-message-size-transient",
+                      "_maximumDuration": 60000,
+                      "_evaluateLatency": true
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "_name": "Latency - Message Size - PERSISTENT";
+      "_iterations":[
+        {
+          "_messageSize": 256
+        },
+        {
+          "_messageSize": 512
+        },
+        {
+          "_messageSize": 1024
+        },
+        {
+          "_messageSize": 2048
+        },
+        {
+          "_messageSize": 4096
+        },
+        {
+          "_messageSize": 8192
+        },
+        {
+          "_messageSize": 16384
+        },
+        {
+          "_messageSize": 32768
+        },
+        {
+          "_messageSize": 65536
+        },
+        {
+          "_messageSize": 131072
+        },
+        {
+          "_messageSize": 262144
+        }
+      ],
+      "_queues":[
+        {
+          "_name": "direct://amq.direct//latency-message-size-persistent?durable='true'",
+          "_durable": true
+        }
+      ],
+      "_clients":[
+        {
+          "_name": "producingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 1,
+                  "_producers": [
+                    {
+                      "_name": "Producer1",
+                      "_destinationName": "direct://amq.direct//latency-message-size-persistent?durable='true'",
+                      "_deliveryMode": 2,
+                      "_maximumDuration": 60000,
+                      "_interval": 1000
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_name": "consumingClient",
+          "_connections":[
+            {
+              "_name": "connection1",
+              "_factory": "connectionfactory",
+              "_sessions": [
+                {
+                  "_sessionName": "session1",
+                  "_acknowledgeMode": 1,
+                  "_consumers": [
+                    {
+                      "_name": "Consumer1",
+                      "_destinationName": "direct://amq.direct//latency-message-size-persistent?durable='true'",
+                      "_maximumDuration": 60000,
+                      "_evaluateLatency": true
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

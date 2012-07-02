@@ -118,7 +118,10 @@ public class CSVFormaterTest extends TestCase
         participantAttributes.put(THROUGHPUT, 2048);
         participantAttributes.put(TIME_TAKEN, 1000);
         participantAttributes.put(ERROR_MESSAGE, "error");
-
+        participantAttributes.put(MIN_LATENCY, 2l);
+        participantAttributes.put(MAX_LATENCY, 9l);
+        participantAttributes.put(AVERAGE_LATENCY, 5.0f);
+        participantAttributes.put(LATENCY_STANDARD_DEVIATION, 2.0f);
         return participantAttributes;
     }
 

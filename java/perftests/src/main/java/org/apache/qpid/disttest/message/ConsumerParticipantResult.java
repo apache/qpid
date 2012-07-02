@@ -25,6 +25,8 @@ import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_SELECTOR;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_SYNCHRONOUS_CONSUMER;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_TOPIC;
 
+import java.util.Collection;
+
 public class ConsumerParticipantResult extends ParticipantResult
 {
     private boolean _topic;
@@ -33,6 +35,12 @@ public class ConsumerParticipantResult extends ParticipantResult
     private boolean _selector;
     private boolean _noLocal;
     private boolean _synchronousConsumer;
+
+    private Collection<Long> _messageLatencies;
+    private long _minLatency;
+    private long _maxLatency;
+    private double _averageLatency;
+    private double _latencyStandardDeviation;
 
     public ConsumerParticipantResult()
     {
@@ -115,4 +123,59 @@ public class ConsumerParticipantResult extends ParticipantResult
     {
         return _topic;
     }
+
+    public Collection<Long> getMessageLatencies()
+    {
+        return _messageLatencies;
+    }
+
+    public void setMessageLatencies(Collection<Long> messageLatencies)
+    {
+        _messageLatencies = messageLatencies;
+    }
+
+    @OutputAttribute(attribute=ParticipantAttribute.MIN_LATENCY)
+    public long getMinLatency()
+    {
+        return _minLatency;
+    }
+
+    public void setMinLatency(long minLatency)
+    {
+        _minLatency = minLatency;
+    }
+
+    @OutputAttribute(attribute=ParticipantAttribute.MAX_LATENCY)
+    public long getMaxLatency()
+    {
+        return _maxLatency;
+    }
+
+    public void setMaxLatency(long maxLatency)
+    {
+        _maxLatency = maxLatency;
+    }
+
+    @OutputAttribute(attribute=ParticipantAttribute.AVERAGE_LATENCY)
+    public double getAverageLatency()
+    {
+        return _averageLatency;
+    }
+
+    public void setAverageLatency(double averageLatency)
+    {
+        _averageLatency = averageLatency;
+    }
+
+    @OutputAttribute(attribute=ParticipantAttribute.LATENCY_STANDARD_DEVIATION)
+    public double getLatencyStandardDeviation()
+    {
+        return _latencyStandardDeviation;
+    }
+
+    public void setLatencyStandardDeviation(double latencyStandardDeviation)
+    {
+        _latencyStandardDeviation = latencyStandardDeviation;
+    }
+
 }
