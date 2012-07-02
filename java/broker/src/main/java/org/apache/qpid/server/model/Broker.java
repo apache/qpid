@@ -35,7 +35,6 @@ public interface Broker extends ConfiguredObject
     String PLATFORM = "platform";
     String PROCESS_PID = "processPid";
     String PRODUCT_VERSION = "productVersion";
-    String STATISTICS_ENABLED = "statisticsEnabled";
     String SUPPORTED_STORE_TYPES = "supportedStoreTypes";
     String CREATED = "created";
     String DURABLE = "durable";
@@ -55,7 +54,6 @@ public interface Broker extends ConfiguredObject
                               PLATFORM,
                               PROCESS_PID,
                               PRODUCT_VERSION,
-                              STATISTICS_ENABLED,
                               SUPPORTED_STORE_TYPES,
                               CREATED,
                               DURABLE,

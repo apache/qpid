@@ -21,6 +21,7 @@
 
 package org.apache.qpid.server.jmx.mbeans;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
@@ -42,6 +43,8 @@ import java.util.Map;
 
 public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtualHost, ConfigurationChangeListener
 {
+    private static final Logger LOGGER = Logger.getLogger(VirtualHostMBean.class);
+
     private final VirtualHost _virtualHost;
 
     private final Map<ConfiguredObject, AMQManagedObject> _children =
@@ -145,13 +148,13 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
                 }
                 else
                 {
-                    // TODO
+                    LOGGER.debug("Unsupported child : " + child.getName() + " type : " + child.getClass());
                 }
 
             }
             catch(JMException e)
             {
-                e.printStackTrace();  //TODO - report error on adding child MBean
+                LOGGER.error("Failed to add mbean for child : " + child.getName(), e);
             }
         }
     }
@@ -169,7 +172,7 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
                 }
                 catch(JMException e)
                 {
-                    e.printStackTrace();  //TODO - report error on removing child MBean
+                    LOGGER.error("Failed to remove mbean for child : " + child.getName(), e);
                 }
             }
         }

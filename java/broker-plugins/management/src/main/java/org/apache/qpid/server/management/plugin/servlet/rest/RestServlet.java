@@ -1,18 +1,3 @@
-package org.apache.qpid.server.management.plugin.servlet.rest;
-
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.SocketAddress;
-import java.util.*;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.apache.qpid.AMQSecurityException;
-import org.apache.qpid.server.model.*;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -29,6 +14,22 @@ import org.codehaus.jackson.map.SerializationConfig;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.qpid.server.management.plugin.servlet.rest;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.SocketAddress;
+import java.util.*;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.model.*;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
+
+
 public class RestServlet extends AbstractServlet
 {
     /**
