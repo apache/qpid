@@ -1,4 +1,3 @@
-package org.apache.qpid.server.output;
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,6 +18,7 @@ package org.apache.qpid.server.output;
  * under the License.
  *
  */
+package org.apache.qpid.server.output;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQBody;

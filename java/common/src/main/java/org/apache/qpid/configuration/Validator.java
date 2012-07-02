@@ -1,4 +1,3 @@
-package org.apache.qpid.configuration;
 /*
  * 
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,6 +18,7 @@ package org.apache.qpid.configuration;
  * under the License.
  * 
  */
+package org.apache.qpid.configuration;
 
 
 public interface Validator

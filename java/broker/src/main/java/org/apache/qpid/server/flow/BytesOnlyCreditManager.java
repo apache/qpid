@@ -1,8 +1,3 @@
-package org.apache.qpid.server.flow;
-
-
-import java.util.concurrent.atomic.AtomicLong;
-
 /*
 *
 * Licensed to the Apache Software Foundation (ASF) under one
@@ -23,6 +18,11 @@ import java.util.concurrent.atomic.AtomicLong;
 * under the License.
 *
 */
+package org.apache.qpid.server.flow;
+
+
+import java.util.concurrent.atomic.AtomicLong;
+
 public class BytesOnlyCreditManager extends AbstractFlowCreditManager
 {
     private final AtomicLong _bytesCredit;

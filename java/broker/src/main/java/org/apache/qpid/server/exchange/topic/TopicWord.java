@@ -1,7 +1,3 @@
-package org.apache.qpid.server.exchange.topic;
-
-import org.apache.qpid.framing.AMQShortString;
-
 /*
 *
 * Licensed to the Apache Software Foundation (ASF) under one
@@ -22,6 +18,11 @@ import org.apache.qpid.framing.AMQShortString;
 * under the License.
 *
 */
+
+package org.apache.qpid.server.exchange.topic;
+
+import org.apache.qpid.framing.AMQShortString;
+
 public final class TopicWord
 {
     public static final TopicWord ANY_WORD = new TopicWord("*");

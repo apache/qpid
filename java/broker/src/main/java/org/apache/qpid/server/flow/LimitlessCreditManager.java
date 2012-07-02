@@ -1,6 +1,3 @@
-package org.apache.qpid.server.flow;
-
-
 /*
 *
 * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,6 +18,9 @@ package org.apache.qpid.server.flow;
 * under the License.
 *
 */
+package org.apache.qpid.server.flow;
+
+
 public class LimitlessCreditManager extends AbstractFlowCreditManager implements FlowCreditManager
 {
     public long getMessageCredit()

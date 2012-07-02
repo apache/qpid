@@ -1,5 +1,3 @@
-package org.apache.qpid.server.store.berkeleydb.upgrade;
-
 /*
 *
 * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,6 +18,8 @@ package org.apache.qpid.server.store.berkeleydb.upgrade;
 * under the License.
 *
 */
+package org.apache.qpid.server.store.berkeleydb.upgrade;
+
 import com.sleepycat.je.Cursor;
 import com.sleepycat.je.CursorConfig;
 import com.sleepycat.je.Database;

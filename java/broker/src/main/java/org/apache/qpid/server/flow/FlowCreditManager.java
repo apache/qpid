@@ -1,6 +1,3 @@
-package org.apache.qpid.server.flow;
-
-
 /*
 *
 * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,6 +18,10 @@ package org.apache.qpid.server.flow;
 * under the License.
 *
 */
+package org.apache.qpid.server.flow;
+
+
+
 public interface FlowCreditManager
 {
     long getMessageCredit();

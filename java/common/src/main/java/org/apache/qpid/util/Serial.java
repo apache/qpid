@@ -1,4 +1,3 @@
-package org.apache.qpid.util;
 /*
  * 
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,6 +18,7 @@ package org.apache.qpid.util;
  * under the License.
  * 
  */
+package org.apache.qpid.util;
 
 
 import java.util.Comparator;
