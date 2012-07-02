@@ -10,6 +10,7 @@ public class ConsumerConfig extends ParticipantConfig
     private String _selector;
     private boolean _noLocal;
     private boolean _synchronous;
+    private boolean _evaluateLatency;
 
     // For Gson
     public ConsumerConfig()
@@ -58,6 +59,7 @@ public class ConsumerConfig extends ParticipantConfig
         createConsumerCommand.setSelector(_selector);
         createConsumerCommand.setNoLocal(_noLocal);
         createConsumerCommand.setSynchronous(_synchronous);
+        createConsumerCommand.setEvaluateLatency(_evaluateLatency);
 
         return createConsumerCommand;
     }

@@ -71,14 +71,17 @@ public class JdbcCsvSeriesBuilder implements SeriesBuilder
 
             stmt = conn.createStatement();
             ResultSet results = stmt.executeQuery(seriesStatement);
-
+            int columnCount = results.getMetaData().getColumnCount();
             _callback.beginSeries(seriesDefinition);
             while (results.next())
             {
-                Object xValue = results.getObject(1);
-                Object yValue = results.getObject(2);
+                Object[] row = new Object[columnCount];
+                for (int i = 0; i < row.length; i++)
+                {
+                    row[i] = results.getObject(i+1);
+                }
 
-                _callback.addDataPointToSeries(seriesDefinition, xValue, yValue);
+                _callback.addDataPointToSeries(seriesDefinition, row);
             }
             _callback.endSeries(seriesDefinition);
         }

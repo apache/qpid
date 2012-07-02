@@ -146,11 +146,11 @@ public class ChartProductionTest extends TestCase
             {
                 SeriesDefinition seriesDefinition = iterator.next();
                 _dataPointCallback.beginSeries(seriesDefinition);
-                _dataPointCallback.addDataPointToSeries(seriesDefinition, Double.valueOf(1), Double.valueOf(1));
-                _dataPointCallback.addDataPointToSeries(seriesDefinition, Double.valueOf(2), Double.valueOf(2));
-                _dataPointCallback.addDataPointToSeries(seriesDefinition, Double.valueOf(4), Double.valueOf(4));
-                _dataPointCallback.addDataPointToSeries(seriesDefinition, Double.valueOf(5), Double.valueOf(5));
-                _dataPointCallback.addDataPointToSeries(seriesDefinition, Double.valueOf(6), Double.valueOf(3));
+                _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{1d, 1d});
+                _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{2d, 2d});
+                _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{4d, 4d});
+                _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{5d, 5d});
+                _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{6d, 3d});
                 _dataPointCallback.endSeries(seriesDefinition);
             }
         }

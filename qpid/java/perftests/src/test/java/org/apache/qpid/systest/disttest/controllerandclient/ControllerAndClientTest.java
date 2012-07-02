@@ -23,6 +23,7 @@ import static org.apache.qpid.systest.disttest.SystemTestConstants.COMMAND_RESPO
 import static org.apache.qpid.systest.disttest.SystemTestConstants.REGISTRATION_TIMEOUT;
 import static org.apache.qpid.systest.disttest.SystemTestConstants.TEST_RESULT_TIMEOUT;
 
+import java.util.Collection;
 import java.util.List;
 
 import javax.jms.Message;
@@ -73,6 +74,19 @@ public class ControllerAndClientTest extends DistributedTestSystemTestBase
         List<ParticipantResult> test1ParticipantResults = testResult1.getParticipantResults();
         assertEquals("Unexpected number of participant results for test 1", 2, test1ParticipantResults.size());
         assertParticipantNames(test1ParticipantResults, "participantConsumer1", "participantProducer1");
+        ConsumerParticipantResult result = null;
+        for (ParticipantResult participantResult : test1ParticipantResults)
+        {
+            if (participantResult instanceof ConsumerParticipantResult)
+            {
+                result = (ConsumerParticipantResult)participantResult;
+                break;
+            }
+        }
+        assertNotNull("Consumer results not recived", result);
+        Collection<Long> latencies = result.getMessageLatencies();
+        assertNotNull("Latency results are not collected", latencies);
+        assertEquals("Unexpected latency results", 1, latencies.size());
     }
 
     public void testProducerClient() throws Exception
