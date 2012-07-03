@@ -19,6 +19,19 @@
 # under the License.
 #
 
+# Check whether we have any globally configured IPv6 addresses
+# - if not then we can't run the tests because ipv6 lookups won't
+#   work within the qpid code. This is a deliberate feature to avoid
+#   getting addresses that can't be routed by the machine.
+
+if ip -f inet6 -o addr | cut -f 9 -s -d' ' | grep global > /dev/null ; then
+    echo "IPv6 addresses configured continuing"
+else
+    echo "No global IPv6 addresses configured - skipping test"
+    exit 0
+fi
+
+
 # Run a simple test over IPv6
 source ./test_env.sh
 
