@@ -228,14 +228,6 @@ template <class T> std::string encode(const T& t) {
     t.encode(buf);
     return encoded;
 }
-
-template <class T> std::string encode(const T& t, bool encodeKind) {
-    std::string encoded;
-    encoded.resize(t.encodedSize());
-    framing::Buffer buf(const_cast<char*>(encoded.data()), encoded.size());
-    t.encode(buf, encodeKind);
-    return encoded;
-}
 } // namespace
 
 
