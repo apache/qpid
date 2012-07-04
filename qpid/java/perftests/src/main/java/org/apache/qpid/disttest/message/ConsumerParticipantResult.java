@@ -18,7 +18,7 @@
  */
 package org.apache.qpid.disttest.message;
 
-import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_BROWSIING_SUBSCRIPTION;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_BROWSING_SUBSCRIPTION;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_DURABLE_SUBSCRIPTION;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_NO_LOCAL;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_SELECTOR;
@@ -65,7 +65,7 @@ public class ConsumerParticipantResult extends ParticipantResult
     }
 
 
-    @OutputAttribute(attribute=IS_BROWSIING_SUBSCRIPTION)
+    @OutputAttribute(attribute=IS_BROWSING_SUBSCRIPTION)
     public boolean isBrowsingSubscription()
     {
         return _browsingSubscription;

@@ -22,7 +22,7 @@ import static org.apache.qpid.disttest.message.ParticipantAttribute.BATCH_SIZE;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.CONFIGURED_CLIENT_NAME;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.*;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.ERROR_MESSAGE;
-import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_BROWSIING_SUBSCRIPTION;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_BROWSING_SUBSCRIPTION;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_DURABLE_SUBSCRIPTION;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_NO_LOCAL;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_SELECTOR;
@@ -108,7 +108,7 @@ public class CSVFormaterTest extends TestCase
         participantAttributes.put(PRODUCER_INTERVAL, 9);
         participantAttributes.put(IS_TOPIC, true);
         participantAttributes.put(IS_DURABLE_SUBSCRIPTION, false);
-        participantAttributes.put(IS_BROWSIING_SUBSCRIPTION, true);
+        participantAttributes.put(IS_BROWSING_SUBSCRIPTION, true);
         participantAttributes.put(IS_SELECTOR, false);
         participantAttributes.put(IS_NO_LOCAL, true);
         participantAttributes.put(IS_SYNCHRONOUS_CONSUMER, false);

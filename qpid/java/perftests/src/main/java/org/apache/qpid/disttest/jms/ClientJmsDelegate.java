@@ -212,30 +212,35 @@ public class ClientJmsDelegate
             {
                 throw new DistributedTestException("No test session found called: " + command.getSessionName(), command);
             }
-            final Destination destination = session.createQueue(command.getDestinationName());
-            final MessageProducer jmsProducer = session.createProducer(destination);
-            if (command.getPriority() != -1)
-            {
-                jmsProducer.setPriority(command.getPriority());
-            }
-            if (command.getTimeToLive() > 0)
-            {
-                jmsProducer.setTimeToLive(command.getTimeToLive());
-            }
 
-            if (command.getDeliveryMode() == DeliveryMode.NON_PERSISTENT
-                            || command.getDeliveryMode() == DeliveryMode.PERSISTENT)
+            synchronized(session)
             {
-                jmsProducer.setDeliveryMode(command.getDeliveryMode());
-            }
+                final Destination destination = session.createQueue(command.getDestinationName());
 
-            addProducer(command.getParticipantName(), jmsProducer);
+                final MessageProducer jmsProducer = session.createProducer(destination);
+
+                if (command.getPriority() != -1)
+                {
+                    jmsProducer.setPriority(command.getPriority());
+                }
+                if (command.getTimeToLive() > 0)
+                {
+                    jmsProducer.setTimeToLive(command.getTimeToLive());
+                }
+
+                if (command.getDeliveryMode() == DeliveryMode.NON_PERSISTENT
+                        || command.getDeliveryMode() == DeliveryMode.PERSISTENT)
+                {
+                    jmsProducer.setDeliveryMode(command.getDeliveryMode());
+                }
+
+                addProducer(command.getParticipantName(), jmsProducer);
+            }
         }
         catch (final JMSException jmse)
         {
             throw new DistributedTestException("Unable to create new producer: " + command, jmse);
         }
-
     }
 
     public void createConsumer(final CreateConsumerCommand command)
@@ -247,11 +252,15 @@ public class ClientJmsDelegate
             {
                 throw new DistributedTestException("No test session found called: " + command.getSessionName(), command);
             }
-            final Destination destination = command.isTopic() ? session.createTopic(command.getDestinationName())
-                            : session.createQueue(command.getDestinationName());
-            final MessageConsumer jmsConsumer = session.createConsumer(destination, command.getSelector());
 
-            _testConsumers.put(command.getParticipantName(), jmsConsumer);
+            synchronized(session)
+            {
+                final Destination destination = command.isTopic() ? session.createTopic(command.getDestinationName())
+                                                    : session.createQueue(command.getDestinationName());
+                final MessageConsumer jmsConsumer = session.createConsumer(destination, command.getSelector());
+
+                _testConsumers.put(command.getParticipantName(), jmsConsumer);
+            }
         }
         catch (final JMSException jmse)
         {
@@ -346,7 +355,10 @@ public class ClientJmsDelegate
             final Session session = _testSessions.get(sessionName);
             if (session.getTransacted())
             {
-                session.commit();
+                synchronized(session)
+                {
+                    session.commit();
+                }
             }
             else if (message != null && session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
             {
@@ -461,13 +473,16 @@ public class ClientJmsDelegate
         try
         {
             final Session session = _testSessions.get(sessionName);
-            if (session.getTransacted())
+            synchronized(session)
             {
-                session.rollback();
-            }
-            else if (session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
-            {
-                session.recover();
+                if (session.getTransacted())
+                {
+                    session.rollback();
+                }
+                else if (session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
+                {
+                    session.recover();
+                }
             }
         }
         catch (final JMSException jmse)
@@ -482,13 +497,16 @@ public class ClientJmsDelegate
         try
         {
             final Session session = _testSessions.get(sessionName);
-            if (session.getTransacted())
+            synchronized(session)
             {
-                session.rollback();
-            }
-            else
-            {
-                session.recover();
+                if (session.getTransacted())
+                {
+                    session.rollback();
+                }
+                else
+                {
+                    session.recover();
+                }
             }
         }
         catch (final JMSException jmse)
@@ -568,15 +586,16 @@ public class ClientJmsDelegate
         }
     }
 
+    /** only supports text messages - returns 0 for other message types */
     public int calculatePayloadSizeFrom(Message message)
     {
         try
         {
             if (message != null && message instanceof TextMessage)
             {
-                    return ((TextMessage) message).getText().getBytes().length;
+                return ((TextMessage) message).getText().getBytes().length;
             }
-            // TODO support other message types
+
             return 0;
         }
         catch (JMSException e)
