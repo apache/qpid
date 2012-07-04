@@ -169,8 +169,14 @@ public class MessageProvider
     protected Message createTextMessage(Session ssn, final CreateProducerCommand command) throws JMSException
     {
         String payload = getMessagePayload(command);
-        TextMessage msg = ssn.createTextMessage();
+
+        TextMessage msg = null;
+        synchronized(ssn)
+        {
+            msg = ssn.createTextMessage();
+        }
         msg.setText(payload);
+
         return msg;
     }
 

@@ -22,7 +22,7 @@ import static org.apache.qpid.disttest.message.ParticipantAttribute.*;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.CONFIGURED_CLIENT_NAME;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.DELIVERY_MODE;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.ERROR_MESSAGE;
-import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_BROWSIING_SUBSCRIPTION;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_BROWSING_SUBSCRIPTION;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_DURABLE_SUBSCRIPTION;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_NO_LOCAL;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_SELECTOR;
@@ -127,7 +127,7 @@ public class ParticipantResultTest extends TestCase
 
         assertEquals(topic,                  result.getAttributes().get(IS_TOPIC));
         assertEquals(durable,                result.getAttributes().get(IS_DURABLE_SUBSCRIPTION));
-        assertEquals(browsingSubscription,   result.getAttributes().get(IS_BROWSIING_SUBSCRIPTION));
+        assertEquals(browsingSubscription,   result.getAttributes().get(IS_BROWSING_SUBSCRIPTION));
         assertEquals(selector,               result.getAttributes().get(IS_SELECTOR));
         assertEquals(noLocal,                result.getAttributes().get(IS_NO_LOCAL));
         assertEquals(synchronousConsumer,    result.getAttributes().get(IS_SYNCHRONOUS_CONSUMER));
