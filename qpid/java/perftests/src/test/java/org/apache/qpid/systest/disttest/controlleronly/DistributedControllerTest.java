@@ -38,7 +38,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TemporaryQueue;
 
-import org.apache.qpid.disttest.ConfigFileHelper;
+import org.apache.qpid.disttest.ConfigFileTestHelper;
 import org.apache.qpid.disttest.controller.Controller;
 import org.apache.qpid.disttest.controller.config.Config;
 import org.apache.qpid.disttest.jms.ControllerJmsDelegate;
@@ -96,7 +96,7 @@ public class DistributedControllerTest extends DistributedTestSystemTestBase
 
     public void testControllerSendsOneCommandToSingleClient() throws Exception
     {
-        Config config = ConfigFileHelper.getConfigFromResource(getClass(), "distributedControllerTest.json");
+        Config config = ConfigFileTestHelper.getConfigFromResource(getClass(), "distributedControllerTest.json");
         _controller.setConfig(config);
 
         sendRegistration(CLIENT1);

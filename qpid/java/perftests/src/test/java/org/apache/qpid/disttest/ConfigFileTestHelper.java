@@ -26,7 +26,7 @@ import java.io.Reader;
 import org.apache.qpid.disttest.controller.config.Config;
 import org.apache.qpid.disttest.controller.config.ConfigReader;
 
-public class ConfigFileHelper
+public class ConfigFileTestHelper
 {
     public static Reader getConfigFileReader(Class<?> testClass, String resourceName)
     {
