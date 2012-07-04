@@ -116,13 +116,13 @@ class HaBroker : public management::Manageable
     const Settings settings;
 
     mutable sys::Mutex lock;
+    boost::shared_ptr<ConnectionObserver> observer; // Used by Backup and Primary
     std::auto_ptr<Backup> backup;
     std::auto_ptr<Primary> primary;
     qmf::org::apache::qpid::ha::HaBroker* mgmtObject;
     Url clientUrl, brokerUrl;
     std::vector<Url> knownBrokers;
     BrokerStatus status;
-    boost::shared_ptr<ConnectionObserver> observer;
     BrokerInfo brokerInfo;
     Membership membership;
     ReplicationTest replicationTest;
