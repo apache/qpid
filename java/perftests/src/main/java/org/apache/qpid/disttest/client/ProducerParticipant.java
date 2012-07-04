@@ -93,7 +93,7 @@ public class ProducerParticipant implements Participant
             }
             catch (CancellationException ce)
             {
-                LOGGER.trace("Producer send was cancelled due to maximum duration {} ms", requiredDuration);
+                LOGGER.debug("Producer send was cancelled due to maximum duration {} ms", requiredDuration);
                 break;
             }
 

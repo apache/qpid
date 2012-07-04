@@ -45,7 +45,7 @@ public enum ParticipantAttribute
     PRODUCER_INTERVAL("producerIntervalMs"),
     IS_TOPIC("isTopic"),
     IS_DURABLE_SUBSCRIPTION("isDurableSubscription"),
-    IS_BROWSIING_SUBSCRIPTION("isBrowsingSubscription"),
+    IS_BROWSING_SUBSCRIPTION("isBrowsingSubscription"),
     IS_SELECTOR("isSelector"),
     IS_NO_LOCAL("isNoLocal"),
     IS_SYNCHRONOUS_CONSUMER("isSynchronousConsumer"),
