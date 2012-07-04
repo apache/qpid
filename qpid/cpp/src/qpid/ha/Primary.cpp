@@ -97,7 +97,6 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
 }
 
 Primary::~Primary() {
-    haBroker.getObserver()->setObserver(boost::shared_ptr<broker::ConnectionObserver>());
     haBroker.getBroker().getConfigurationObservers().remove(configurationObserver);
 }
 

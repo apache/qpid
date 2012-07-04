@@ -60,9 +60,9 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
       broker(b),
       systemId(broker.getSystem()->getSystemId().data()),
       settings(s),
+      observer(new ConnectionObserver(*this, systemId)),
       mgmtObject(0),
       status(STANDALONE),
-      observer(new ConnectionObserver(*this, systemId)),
       brokerInfo(broker.getSystem()->getNodeName(),
                  // TODO aconway 2012-05-24: other transports?
                  broker.getPort(broker::Broker::TCP_TRANSPORT), systemId),
