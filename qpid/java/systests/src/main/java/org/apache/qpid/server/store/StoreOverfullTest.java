@@ -157,6 +157,7 @@ public class StoreOverfullTest extends QpidBrokerTestCase
         AMQQueue queue2 = new AMQQueue(ExchangeDefaults.DIRECT_EXCHANGE_NAME, getTestQueueName() + "_2");
 
         ((AMQSession<?,?>) _producerSession).declareAndBind((AMQDestination)_queue);
+        ((AMQSession<?,?>) _producerSession).declareAndBind((AMQDestination)queue2);
 
         _producer = _producerSession.createProducer(_queue);
 
