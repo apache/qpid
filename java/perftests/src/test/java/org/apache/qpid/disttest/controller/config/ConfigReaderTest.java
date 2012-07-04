@@ -25,7 +25,7 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.disttest.ConfigFileHelper;
+import org.apache.qpid.disttest.ConfigFileTestHelper;
 import org.apache.qpid.disttest.client.property.PropertyValue;
 
 public class ConfigReaderTest extends TestCase
@@ -36,7 +36,7 @@ public class ConfigReaderTest extends TestCase
     protected void setUp()
     {
         ConfigReader configReader = new ConfigReader();
-        Reader reader = ConfigFileHelper.getConfigFileReader(getClass(), "sampleConfig.json");
+        Reader reader = ConfigFileTestHelper.getConfigFileReader(getClass(), "sampleConfig.json");
         _config = configReader.readConfig(reader);
     }
 
@@ -107,5 +107,39 @@ public class ConfigReaderTest extends TestCase
         assertNotNull("priority property is not found", properties.get("priority"));
         assertNotNull("id property is not found", properties.get("id"));
      }
+
+    public void testReadsJS() throws Exception
+    {
+        ConfigReader configReader = new ConfigReader();
+        String path = getClass().getClassLoader().getResource("org/apache/qpid/disttest/controller/config/test-config.js").toURI().getPath();
+        _config = configReader.getConfigFromFile(path);
+        List<TestConfig> testConfigs = _config.getTestConfigs();
+        assertEquals("Unexpected number of tests", 2, testConfigs.size());
+        TestConfig testConfig1 = _config.getTestConfigs().get(0);
+        List<ClientConfig> cleintConfigs = testConfig1.getClients();
+        assertEquals("Unexpected number of test 1 clients", 2, cleintConfigs.size());
+        List<QueueConfig> queueConfigs = testConfig1.getQueues();
+        assertEquals("Unexpected number of test 1 queue", 1, queueConfigs.size());
+        assertEquals("Unexpected queue name", "Json-Queue-Name", queueConfigs.get(0).getName());
+        ClientConfig cleintConfig = cleintConfigs.get(0);
+        List<ConnectionConfig> connectionConfigs = cleintConfig.getConnections();
+        assertEquals("Unexpected number of connections", 1, connectionConfigs.size());
+        List<SessionConfig> sessionConfigs = connectionConfigs.get(0).getSessions();
+        assertEquals("Unexpected number of sessions", 1, sessionConfigs.size());
+        assertEquals("Unexpected ack mode", 0, sessionConfigs.get(0).getAcknowledgeMode());
+
+        TestConfig testConfig2 = _config.getTestConfigs().get(1);
+        List<ClientConfig> cleintConfigs2 = testConfig2.getClients();
+        assertEquals("Unexpected number of test 1 clients", 2, cleintConfigs2.size());
+        List<QueueConfig> queueConfigs2 = testConfig2.getQueues();
+        assertEquals("Unexpected number of test 1 queue", 1, queueConfigs2.size());
+        assertEquals("Unexpected queue name", "Json-Queue-Name", queueConfigs2.get(0).getName());
+        ClientConfig cleintConfig2 = cleintConfigs2.get(0);
+        List<ConnectionConfig> connectionConfigs2 = cleintConfig2.getConnections();
+        assertEquals("Unexpected number of connections", 1, connectionConfigs2.size());
+        List<SessionConfig> sessionConfigs2 = connectionConfigs2.get(0).getSessions();
+        assertEquals("Unexpected number of sessions", 1, sessionConfigs2.size());
+        assertEquals("Unexpected ack mode", 1, sessionConfigs2.get(0).getAcknowledgeMode());
+    }
 
 }

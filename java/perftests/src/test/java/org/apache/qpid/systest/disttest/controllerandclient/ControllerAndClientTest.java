@@ -32,7 +32,7 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.naming.NamingException;
 
-import org.apache.qpid.disttest.ConfigFileHelper;
+import org.apache.qpid.disttest.ConfigFileTestHelper;
 import org.apache.qpid.disttest.client.Client;
 import org.apache.qpid.disttest.client.ClientState;
 import org.apache.qpid.disttest.controller.Controller;
@@ -100,7 +100,7 @@ public class ControllerAndClientTest extends DistributedTestSystemTestBase
         // cleaning manually
         while(consumer.receive(1000l) != null);
 
-        final Config config = ConfigFileHelper.getConfigFromResource(getClass(), "produceClient.json");
+        final Config config = ConfigFileTestHelper.getConfigFromResource(getClass(), "produceClient.json");
         _controller.setConfig(config);
         final Client client1 = new Client(new ClientJmsDelegate(_context));
         final Thread client1Thread = createBackgroundClientThread(client1);
@@ -181,7 +181,7 @@ public class ControllerAndClientTest extends DistributedTestSystemTestBase
 
     private List<TestResult> runTestsForTwoClients(String jsonConfigFile, int expectedNumberOfTests) throws NamingException, InterruptedException
     {
-        final Config config = ConfigFileHelper.getConfigFromResource(getClass(), jsonConfigFile);
+        final Config config = ConfigFileTestHelper.getConfigFromResource(getClass(), jsonConfigFile);
         _controller.setConfig(config);
 
         final Client client1 = new Client(new ClientJmsDelegate(_context));
