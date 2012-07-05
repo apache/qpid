@@ -89,6 +89,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected final static String QpidHome = System.getProperty("QPID_HOME");
     protected File _configFile = new File(System.getProperty("broker.config"));
+    protected File _logConfigFile = new File(System.getProperty("log4j.configuration"));
 
     protected static final Logger _logger = Logger.getLogger(QpidBrokerTestCase.class);
     protected static final int LOGMONITOR_TIMEOUT = 5000;
@@ -364,6 +365,7 @@ public class QpidBrokerTestCase extends QpidTestCase
                 .replace("@SSL_PORT", "" + sslPort)
                 .replace("@MPORT", "" + getManagementPort(port))
                 .replace("@CONFIG_FILE", _configFile.toString())
+                .replace("@LOG_CONFIG_FILE", _logConfigFile.toString())
                 .replace("@EXCLUDES", protocolExcludesList)
                 .replace("@INCLUDES", protocolIncludesList);
     }
@@ -413,7 +415,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
             //Set the log config file, relying on the log4j.configuration system property
             //set on the JVM by the JUnit runner task in module.xml.
-            options.setLogConfigFile(new URL(System.getProperty("log4j.configuration")).getFile());
+            options.setLogConfigFile(_logConfigFile.getAbsolutePath());
 
             Broker broker = new Broker();
             _logger.info("starting internal broker (same JVM)");
