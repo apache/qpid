@@ -125,7 +125,7 @@ public class ClientTest extends TestCase
 
         _client.tearDownTest();
 
-        verify(_delegate).closeTestConnections();
+        verify(_delegate).tearDownTest();
 
         verify(_participantRegistry).clear();
     }

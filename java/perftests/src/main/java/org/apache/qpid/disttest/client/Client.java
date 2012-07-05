@@ -176,7 +176,7 @@ public class Client
         {
             LOGGER.debug("Tearing down test on client: " + _clientJmsDelegate.getClientName());
 
-            _clientJmsDelegate.closeTestConnections();
+            _clientJmsDelegate.tearDownTest();
         }
         else
         {
