@@ -20,415 +20,226 @@
  */
 package org.apache.qpid.server.jmx.mbeans;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.Matchers.anyString;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.server.jmx.ManagedObjectRegistry;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
-
-import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_LEVEL;
-import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_NAME;
-
-import javax.management.JMException;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.TabularDataSupport;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
-public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.TabularData;
+
+import junit.framework.TestCase;
+
+import org.apache.qpid.management.common.mbeans.LoggingManagement;
+import org.apache.qpid.server.jmx.ManagedObjectRegistry;
+import org.apache.qpid.server.logging.log4j.LoggingFacade;
+
+public class LoggingManagementMBeanTest extends TestCase
 {
+    private static final String TEST_LEVEL1 = "LEVEL1";
+    private static final String TEST_LEVEL2 = "LEVEL2";
 
-    private static final String TEST_LOGGER = "LoggingManagementMBeanTestLogger";
-    private static final String TEST_LOGGER_CHILD1 = "LoggingManagementMBeanTestLogger.child1";
-    private static final String TEST_LOGGER_CHILD2 = "LoggingManagementMBeanTestLogger.child2";
-
-    private static final String TEST_CATEGORY_PRIORITY = "LogManMBeanTest.category.priority";
-    private static final String TEST_CATEGORY_LEVEL = "LogManMBeanTest.category.level";
-    private static final String TEST_LOGGER_LEVEL = "LogManMBeanTest.logger.level";
-
-    private static final String NEWLINE = System.getProperty("line.separator");
-
-    private File _testConfigFile;
-
-    private ManagedObjectRegistry _registry = mock(ManagedObjectRegistry.class);
+    private LoggingManagementMBean _loggingMBean;
+    private LoggingFacade _mockLoggingFacade;
+    private ManagedObjectRegistry _mockManagedObjectRegistry;
 
     @Override
-    public void setUp() throws Exception
+    protected void setUp() throws Exception
     {
-        super.setUp();
-        _testConfigFile = createTempTestLog4JConfig();
+        _mockLoggingFacade = mock(LoggingFacade.class);
+        final List<String> listOfLevels = new ArrayList<String>()
+        {{
+            add(TEST_LEVEL1);
+            add(TEST_LEVEL2);
+        }};
+        when(_mockLoggingFacade.getAvailableLoggerLevels()).thenReturn(listOfLevels);
+
+        _mockManagedObjectRegistry = mock(ManagedObjectRegistry.class);
+
+        _loggingMBean = new LoggingManagementMBean(_mockLoggingFacade, _mockManagedObjectRegistry);
     }
 
-    @Override
-    public void tearDown() throws Exception
+    public void testMBeanRegistersItself() throws Exception
     {
-        File oldTestConfigFile = new File(_testConfigFile.getAbsolutePath() + ".old");
-        if(oldTestConfigFile.exists())
-        {
-            oldTestConfigFile.delete();
-        }
-
-        _testConfigFile.delete();
-
-        super.tearDown();
+        LoggingManagementMBean connectionMBean = new LoggingManagementMBean(_mockLoggingFacade, _mockManagedObjectRegistry);
+        verify(_mockManagedObjectRegistry).registerObject(connectionMBean);
     }
 
-    private File createTempTestLog4JConfig()
+    public void testLog4jLogWatchInterval() throws Exception
     {
-        File tmpFile = null;
-        try
-        {
-            tmpFile = File.createTempFile("LogManMBeanTestLog4jConfig", ".tmp");
-            tmpFile.deleteOnExit();
+        final Integer value = 5000;
+        when(_mockLoggingFacade.getLog4jLogWatchInterval()).thenReturn(value);
 
-            FileWriter fstream = new FileWriter(tmpFile);
-            BufferedWriter writer = new BufferedWriter(fstream);
-
-            writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"+NEWLINE);
-            writer.write("<!DOCTYPE log4j:configuration SYSTEM \"log4j.dtd\">"+NEWLINE);
-
-            writer.write("<log4j:configuration xmlns:log4j=\"http://jakarta.apache.org/log4j/\" debug=\"null\" " +
-                                                                                 "threshold=\"null\">"+NEWLINE);
-
-            writer.write("  <appender class=\"org.apache.log4j.ConsoleAppender\" name=\"STDOUT\">"+NEWLINE);
-            writer.write("      <layout class=\"org.apache.log4j.PatternLayout\">"+NEWLINE);
-            writer.write("          <param name=\"ConversionPattern\" value=\"%d %-5p [%t] %C{2} (%F:%L) - %m%n\"/>"+NEWLINE);
-            writer.write("      </layout>"+NEWLINE);
-            writer.write("  </appender>"+NEWLINE);
-
-            //Example of a 'category' with a 'priority'
-            writer.write("  <category additivity=\"true\" name=\"" + TEST_CATEGORY_PRIORITY +"\">"+NEWLINE);
-            writer.write("      <priority value=\"info\"/>"+NEWLINE);
-            writer.write("      <appender-ref ref=\"STDOUT\"/>"+NEWLINE);
-            writer.write("  </category>"+NEWLINE);
-
-            //Example of a 'category' with a 'level'
-            writer.write("  <category additivity=\"true\" name=\"" + TEST_CATEGORY_LEVEL +"\">"+NEWLINE);
-            writer.write("      <level value=\"warn\"/>"+NEWLINE);
-            writer.write("      <appender-ref ref=\"STDOUT\"/>"+NEWLINE);
-            writer.write("  </category>"+NEWLINE);
-
-            //Example of a 'logger' with a 'level'
-            writer.write("  <logger additivity=\"true\" name=\"" + TEST_LOGGER_LEVEL + "\">"+NEWLINE);
-            writer.write("      <level value=\"error\"/>"+NEWLINE);
-            writer.write("      <appender-ref ref=\"STDOUT\"/>"+NEWLINE);
-            writer.write("  </logger>"+NEWLINE);
-
-            //'root' logger
-            writer.write("  <root>"+NEWLINE);
-            writer.write("      <priority value=\"info\"/>"+NEWLINE);
-            writer.write("      <appender-ref ref=\"STDOUT\"/>"+NEWLINE);
-            writer.write("  </root>"+NEWLINE);
-
-            writer.write("</log4j:configuration>"+NEWLINE);
-
-            writer.flush();
-            writer.close();
-        }
-        catch (IOException e)
-        {
-            fail("Unable to create temporary test log4j configuration");
-        }
-
-        return tmpFile;
+        assertEquals("Unexpected watch interval",value, _loggingMBean.getLog4jLogWatchInterval());
     }
 
-
-
-    //******* Test Methods ******* //
-
-    public void testSetRuntimeLoggerLevel()
+    public void testGetAvailableLoggerLevels()  throws Exception
     {
-        LoggingManagementMBean lm = null;
-        try
-        {
-            lm = new LoggingManagementMBean(_testConfigFile.getAbsolutePath(), 0, _registry);
-        }
-        catch (JMException e)
-        {
-            fail("Could not create test LoggingManagementMBean");
-        }
-
-        //create a parent test logger, set its level explicitly
-        Logger log = Logger.getLogger(TEST_LOGGER);
-        log.setLevel(Level.toLevel("info"));
-
-        //create child1 test logger, check its *effective* level is the same as the parent, "info"
-        Logger log1 = Logger.getLogger(TEST_LOGGER_CHILD1);
-        assertTrue("Test logger's level was not the expected value",
-                    log1.getEffectiveLevel().toString().equalsIgnoreCase("info"));
-
-        //now change its level to "warn"
-        assertTrue("Failed to set logger level", lm.setRuntimeLoggerLevel(TEST_LOGGER_CHILD1, "warn"));
-
-        //check the change, see its actual level is "warn
-        assertTrue("Test logger's level was not the expected value",
-                    log1.getLevel().toString().equalsIgnoreCase("warn"));
-
-        //try an invalid level
-        assertFalse("Trying to set an invalid level succeded", lm.setRuntimeLoggerLevel(TEST_LOGGER_CHILD1, "made.up.level"));
+        String[] actualLevels = _loggingMBean.getAvailableLoggerLevels();
+        assertEquals(3, actualLevels.length);
+        assertEquals(TEST_LEVEL1, actualLevels[0]);
+        assertEquals(TEST_LEVEL2, actualLevels[1]);
+        assertEquals(LoggingManagementMBean.INHERITED_PSUEDO_LOG_LEVEL, actualLevels[2]);
     }
 
-    public void testSetRuntimeRootLoggerLevel()
+    public void testViewEffectiveRuntimeLoggerLevels()  throws Exception
     {
-        LoggingManagementMBean lm = null;
-        try
-        {
-            lm = new LoggingManagementMBean(_testConfigFile.getAbsolutePath(), 0, _registry);
-        }
-        catch (JMException e)
-        {
-            fail("Could not create test LoggingManagementMBean");
-        }
+        Map<String, String> loggerLevels = new TreeMap<String, String>();
+        loggerLevels.put("a.b.D", TEST_LEVEL2);
+        loggerLevels.put("a.b.C", TEST_LEVEL1);
+        loggerLevels.put("a.b.c.E", TEST_LEVEL2);
 
-        Logger log = Logger.getRootLogger();
+        when(_mockLoggingFacade.retrieveRuntimeLoggersLevels()).thenReturn(loggerLevels );
 
-        //get current root logger level
-        Level origLevel = log.getLevel();
+        TabularData table = _loggingMBean.viewEffectiveRuntimeLoggerLevels();
+        assertEquals(3, table.size());
 
-        //change level twice to ensure a new level is actually selected
-
-        //set root loggers level to info
-        assertTrue("Failed to set root logger level", lm.setRuntimeRootLoggerLevel("debug"));
-        //check it is now actually info
-        Level currentLevel = log.getLevel();
-        assertTrue("Logger level was not expected value", currentLevel.equals(Level.toLevel("debug")));
-
-        //try an invalid level
-        assertFalse("Trying to set an invalid level succeded", lm.setRuntimeRootLoggerLevel("made.up.level"));
-
-        //set root loggers level to warn
-        assertTrue("Failed to set logger level", lm.setRuntimeRootLoggerLevel("info"));
-        //check it is now actually warn
-        currentLevel = log.getLevel();
-        assertTrue("Logger level was not expected value", currentLevel.equals(Level.toLevel("info")));
-
-        //restore original level
-        log.setLevel(origLevel);
+        final CompositeData row1 = table.get(new String[] {"a.b.C"} );
+        final CompositeData row2 = table.get(new String[] {"a.b.D"} );
+        final CompositeData row3 = table.get(new String[] {"a.b.c.E"} );
+        assertChannelRow(row1, "a.b.C", TEST_LEVEL1);
+        assertChannelRow(row2, "a.b.D", TEST_LEVEL2);
+        assertChannelRow(row3, "a.b.c.E", TEST_LEVEL2);
     }
 
-    public void testGetRuntimeRootLoggerLevel()
+    public void testGetRuntimeRootLoggerLevel()  throws Exception
     {
-        LoggingManagementMBean lm = null;
-        try
-        {
-            lm = new LoggingManagementMBean(_testConfigFile.getAbsolutePath(), 0, _registry);
-        }
-        catch (JMException e)
-        {
-            fail("Could not create test LoggingManagementMBean");
-        }
+        when(_mockLoggingFacade.retrieveRuntimeRootLoggerLevel()).thenReturn(TEST_LEVEL1);
 
-        Logger log = Logger.getRootLogger();
-
-        //get current root logger level
-        Level origLevel = log.getLevel();
-
-        //change level twice to ensure a new level is actually selected
-
-        //set root loggers level to debug
-        log.setLevel(Level.toLevel("debug"));
-        //check it is now actually debug
-        assertTrue("Logger level was not expected value", lm.getRuntimeRootLoggerLevel().equalsIgnoreCase("debug"));
-
-
-        //set root loggers level to warn
-        log.setLevel(Level.toLevel("info"));
-        //check it is now actually warn
-        assertTrue("Logger level was not expected value", lm.getRuntimeRootLoggerLevel().equalsIgnoreCase("info"));
-
-        //restore original level
-        log.setLevel(origLevel);
+        assertEquals(TEST_LEVEL1, _loggingMBean.getRuntimeRootLoggerLevel());
     }
 
-    public void testViewEffectiveRuntimeLoggerLevels()
+    public void testSetRuntimeRootLoggerLevel()  throws Exception
     {
-        LoggingManagementMBean lm = null;
-        try
-        {
-            lm = new LoggingManagementMBean(_testConfigFile.getAbsolutePath(), 0, _registry);
-        }
-        catch (JMException e)
-        {
-            fail("Could not create test LoggingManagementMBean");
-        }
-
-        //(re)create a parent test logger, set its level explicitly
-        Logger log = Logger.getLogger(TEST_LOGGER);
-        log.setLevel(Level.toLevel("info"));
-
-        //retrieve the current effective runtime logger level values
-        TabularDataSupport levels = (TabularDataSupport) lm.viewEffectiveRuntimeLoggerLevels();
-        Collection<Object> records = levels.values();
-        Map<String,String> list = new HashMap<String,String>();
-        for (Object o : records)
-        {
-            CompositeData data = (CompositeData) o;
-            list.put(data.get(LOGGER_NAME).toString(), data.get(LOGGER_LEVEL).toString());
-        }
-
-        //check child2 does not exist already
-        assertFalse("Did not expect this logger to exist already", list.containsKey(TEST_LOGGER_CHILD2));
-
-        //create child2 test logger
-        Logger log2 = Logger.getLogger(TEST_LOGGER_CHILD2);
-
-        //retrieve the current effective runtime logger level values
-        levels = (TabularDataSupport) lm.viewEffectiveRuntimeLoggerLevels();
-        records = levels.values();
-        list = new HashMap<String,String>();
-        for (Object o : records)
-        {
-            CompositeData data = (CompositeData) o;
-            list.put(data.get(LOGGER_NAME).toString(), data.get(LOGGER_LEVEL).toString());
-        }
-
-        //verify the parent and child2 loggers are present in returned values
-        assertTrue(TEST_LOGGER + " logger was not in the returned list", list.containsKey(TEST_LOGGER));
-        assertTrue(TEST_LOGGER_CHILD2 + " logger was not in the returned list", list.containsKey(TEST_LOGGER_CHILD2));
-
-        //check child2's effective level is the same as the parent, "info"
-        assertTrue("Test logger's level was not the expected value",
-                    list.get(TEST_LOGGER_CHILD2).equalsIgnoreCase("info"));
-
-        //now change its level explicitly to "warn"
-        log2.setLevel(Level.toLevel("warn"));
-
-        //retrieve the current effective runtime logger level values
-        levels = (TabularDataSupport) lm.viewEffectiveRuntimeLoggerLevels();
-        records = levels.values();
-        list = new HashMap<String,String>();
-        for (Object o : records)
-        {
-            CompositeData data = (CompositeData) o;
-            list.put(data.get(LOGGER_NAME).toString(), data.get(LOGGER_LEVEL).toString());
-        }
-
-        //check child2's effective level is now "warn"
-        assertTrue("Test logger's level was not the expected value",
-                    list.get(TEST_LOGGER_CHILD2).equalsIgnoreCase("warn"));
+        _loggingMBean.setRuntimeRootLoggerLevel(TEST_LEVEL1);
+        verify(_mockLoggingFacade).setRuntimeRootLoggerLevel(TEST_LEVEL1);
     }
 
-    public void testViewAndSetConfigFileLoggerLevel() throws Exception
+    public void testSetRuntimeRootLoggerLevelWhenLoggingLevelUnknown()  throws Exception
     {
-        LoggingManagementMBean lm =null;
-        try
-        {
-            lm = new LoggingManagementMBean(_testConfigFile.getAbsolutePath(), 0, _registry);
-        }
-        catch (JMException e)
-        {
-            fail("Could not create test LoggingManagementMBean");
-        }
-
-        //retrieve the current values
-        TabularDataSupport levels = (TabularDataSupport) lm.viewConfigFileLoggerLevels();
-        Collection<Object> records = levels.values();
-        Map<String,String> list = new HashMap<String,String>();
-        for (Object o : records)
-        {
-            CompositeData data = (CompositeData) o;
-            list.put(data.get(LOGGER_NAME).toString(), data.get(LOGGER_LEVEL).toString());
-        }
-
-        //check the 3 different types of logger definition are successfully retrieved before update
-        assertTrue("Wrong number of items in returned list", list.size() == 3);
-        assertTrue(TEST_CATEGORY_PRIORITY + " logger was not in the returned list", list.containsKey(TEST_CATEGORY_PRIORITY));
-        assertTrue(TEST_CATEGORY_LEVEL + " logger was not in the returned list", list.containsKey(TEST_CATEGORY_LEVEL));
-        assertTrue(TEST_LOGGER_LEVEL + " logger was not in the returned list", list.containsKey(TEST_LOGGER_LEVEL));
-
-        //check that their level is as expected
-        assertTrue(TEST_CATEGORY_PRIORITY + " logger's level was incorrect", list.get(TEST_CATEGORY_PRIORITY).equalsIgnoreCase("info"));
-        assertTrue(TEST_CATEGORY_LEVEL + " logger's level was incorrect", list.get(TEST_CATEGORY_LEVEL).equalsIgnoreCase("warn"));
-        assertTrue(TEST_LOGGER_LEVEL + " logger's level was incorrect", list.get(TEST_LOGGER_LEVEL).equalsIgnoreCase("error"));
-
-        //increase their levels a notch to test the 3 different types of logger definition are successfully updated
-        //change the category+priority to warn
-        assertTrue("failed to set new level", lm.setConfigFileLoggerLevel(TEST_CATEGORY_PRIORITY, "warn"));
-        //change the category+level to error
-        assertTrue("failed to set new level", lm.setConfigFileLoggerLevel(TEST_CATEGORY_LEVEL, "error"));
-        //change the logger+level to trace
-        assertTrue("failed to set new level", lm.setConfigFileLoggerLevel(TEST_LOGGER_LEVEL, "trace"));
-
-        //try an invalid level
-        assertFalse("Use of an invalid logger level was successfull", lm.setConfigFileLoggerLevel(TEST_LOGGER_LEVEL, "made.up.level"));
-
-        //try an invalid logger name
-        assertFalse("Use of an invalid logger name was successfull", lm.setConfigFileLoggerLevel("made.up.logger.name", "info"));
-
-        //retrieve the new values from the file and check them
-        levels = (TabularDataSupport) lm.viewConfigFileLoggerLevels();
-        records = levels.values();
-        list = new HashMap<String,String>();
-        for (Object o : records)
-        {
-            CompositeData data = (CompositeData) o;
-            list.put(data.get(LOGGER_NAME).toString(), data.get(LOGGER_LEVEL).toString());
-        }
-
-        //check the 3 different types of logger definition are successfully retrieved after update
-        assertTrue("Wrong number of items in returned list", list.size() == 3);
-        assertTrue(TEST_CATEGORY_PRIORITY + " logger was not in the returned list", list.containsKey(TEST_CATEGORY_PRIORITY));
-        assertTrue(TEST_CATEGORY_LEVEL + " logger was not in the returned list", list.containsKey(TEST_CATEGORY_LEVEL));
-        assertTrue(TEST_LOGGER_LEVEL + " logger was not in the returned list", list.containsKey(TEST_LOGGER_LEVEL));
-
-        //check that their level is as expected after the changes
-        assertTrue(TEST_CATEGORY_PRIORITY + " logger's level was incorrect", list.get(TEST_CATEGORY_PRIORITY).equalsIgnoreCase("warn"));
-        assertTrue(TEST_CATEGORY_LEVEL + " logger's level was incorrect", list.get(TEST_CATEGORY_LEVEL).equalsIgnoreCase("error"));
-        assertTrue(TEST_LOGGER_LEVEL + " logger's level was incorrect", list.get(TEST_LOGGER_LEVEL).equalsIgnoreCase("trace"));
+        boolean result = _loggingMBean.setRuntimeRootLoggerLevel("unknown");
+        assertFalse(result);
+        verify(_mockLoggingFacade, never()).setRuntimeRootLoggerLevel("unknown");
     }
 
-    public void testGetAndSetConfigFileRootLoggerLevel() throws Exception
+    public void testSetRuntimeRootLoggerLevelWhenLoggingLevelInherited()  throws Exception
     {
-        LoggingManagementMBean lm =null;
-        try
-        {
-            lm = new LoggingManagementMBean(_testConfigFile.getAbsolutePath(), 0, _registry);
-        }
-        catch (JMException e)
-        {
-            fail("Could not create test LoggingManagementMBean");
-        }
-
-        //retrieve the current value
-        String level = lm.getConfigFileRootLoggerLevel();
-
-        //check the value was successfully retrieved before update
-        assertTrue("Retrieved RootLogger level was incorrect", level.equalsIgnoreCase("info"));
-
-        //try an invalid level
-        assertFalse("Use of an invalid RootLogger level was successfull", lm.setConfigFileRootLoggerLevel("made.up.level"));
-
-        //change the level to warn
-        assertTrue("Failed to set new RootLogger level", lm.setConfigFileRootLoggerLevel("warn"));
-
-        //retrieve the current value
-        level = lm.getConfigFileRootLoggerLevel();
-
-        //check the value was successfully retrieved after update
-        assertTrue("Retrieved RootLogger level was incorrect", level.equalsIgnoreCase("warn"));
+        boolean result = _loggingMBean.setRuntimeRootLoggerLevel(LoggingManagementMBean.INHERITED_PSUEDO_LOG_LEVEL);
+        assertFalse(result);
+        verify(_mockLoggingFacade, never()).setRuntimeRootLoggerLevel(anyString());
     }
 
-    public void testGetLog4jLogWatchInterval()
+    public void testSetRuntimeLoggerLevel() throws Exception
     {
-        LoggingManagementMBean lm =null;
-        try
-        {
-            lm = new LoggingManagementMBean(_testConfigFile.getAbsolutePath(), 5000, _registry);
-        }
-        catch (JMException e)
-        {
-            fail("Could not create test LoggingManagementMBean");
-        }
-
-        assertTrue("Wrong value returned for logWatch period", lm.getLog4jLogWatchInterval() == 5000);
+        _loggingMBean.setRuntimeLoggerLevel("a.b.c.D", TEST_LEVEL1);
+        verify(_mockLoggingFacade).setRuntimeLoggerLevel("a.b.c.D", TEST_LEVEL1);
     }
 
+    public void testSetRuntimeLoggerLevelWhenLoggingLevelUnknown()  throws Exception
+    {
+        boolean result = _loggingMBean.setRuntimeLoggerLevel("a.b.c.D", "unknown");
+        assertFalse(result);
+        verify(_mockLoggingFacade, never()).setRuntimeLoggerLevel(anyString(), anyString());
+    }
+
+    public void testSetRuntimeLoggerLevelWhenLoggingLevelInherited()  throws Exception
+    {
+        boolean result = _loggingMBean.setRuntimeLoggerLevel("a.b.c.D", LoggingManagementMBean.INHERITED_PSUEDO_LOG_LEVEL);
+        assertTrue(result);
+        verify(_mockLoggingFacade).setRuntimeLoggerLevel("a.b.c.D", null);
+    }
+
+    public void testViewEffectiveConfigFileLoggerLevels()  throws Exception
+    {
+        Map<String, String> loggerLevels = new TreeMap<String, String>();
+        loggerLevels.put("a.b.D", "level2");
+        loggerLevels.put("a.b.C", TEST_LEVEL1);
+        loggerLevels.put("a.b.c.E", "level2");
+
+        when(_mockLoggingFacade.retrieveConfigFileLoggersLevels()).thenReturn(loggerLevels );
+
+        TabularData table = _loggingMBean.viewConfigFileLoggerLevels();
+        assertEquals(3, table.size());
+
+        final CompositeData row1 = table.get(new String[] {"a.b.C"} );
+        final CompositeData row2 = table.get(new String[] {"a.b.D"} );
+        final CompositeData row3 = table.get(new String[] {"a.b.c.E"} );
+        assertChannelRow(row1, "a.b.C", TEST_LEVEL1);
+        assertChannelRow(row2, "a.b.D", TEST_LEVEL2);
+        assertChannelRow(row3, "a.b.c.E", TEST_LEVEL2);
+    }
+
+    public void testGetConfigFileRootLoggerLevel() throws Exception
+    {
+        when(_mockLoggingFacade.retrieveConfigFileRootLoggerLevel()).thenReturn(TEST_LEVEL1);
+
+        assertEquals(TEST_LEVEL1, _loggingMBean.getConfigFileRootLoggerLevel());
+    }
+
+    public void testSetConfigFileRootLoggerLevel()  throws Exception
+    {
+        when(_mockLoggingFacade.getAvailableLoggerLevels()).thenReturn(Collections.singletonList(TEST_LEVEL1));
+        _loggingMBean.setConfigFileRootLoggerLevel(TEST_LEVEL1);
+        verify(_mockLoggingFacade).setConfigFileRootLoggerLevel(TEST_LEVEL1);
+    }
+
+    public void testSetConfigFileRootLoggerLevelWhenLoggingLevelUnknown()  throws Exception
+    {
+        when(_mockLoggingFacade.getAvailableLoggerLevels()).thenReturn(Collections.singletonList(TEST_LEVEL1));
+        boolean result = _loggingMBean.setConfigFileRootLoggerLevel("unknown");
+        assertFalse(result);
+        verify(_mockLoggingFacade, never()).setConfigFileRootLoggerLevel("unknown");
+    }
+
+    public void testSetConfigFileRootLoggerLevelWhenLoggingLevelInherited()  throws Exception
+    {
+        when(_mockLoggingFacade.getAvailableLoggerLevels()).thenReturn(Collections.singletonList(TEST_LEVEL1));
+        boolean result = _loggingMBean.setConfigFileRootLoggerLevel(LoggingManagementMBean.INHERITED_PSUEDO_LOG_LEVEL);
+        assertFalse(result);
+        verify(_mockLoggingFacade, never()).setConfigFileRootLoggerLevel(anyString());
+    }
+
+    public void testSetConfigFileLoggerLevel() throws Exception
+    {
+        when(_mockLoggingFacade.getAvailableLoggerLevels()).thenReturn(Collections.singletonList(TEST_LEVEL1));
+        _loggingMBean.setConfigFileLoggerLevel("a.b.c.D", TEST_LEVEL1);
+        verify(_mockLoggingFacade).setConfigFileLoggerLevel("a.b.c.D", TEST_LEVEL1);
+    }
+
+    public void testSetConfigFileLoggerLevelWhenLoggingLevelUnknown()  throws Exception
+    {
+        when(_mockLoggingFacade.getAvailableLoggerLevels()).thenReturn(Collections.singletonList(TEST_LEVEL1));
+        boolean result = _loggingMBean.setConfigFileLoggerLevel("a.b.c.D", "unknown");
+        assertFalse(result);
+        verify(_mockLoggingFacade, never()).setConfigFileLoggerLevel("a.b.c.D", "unknown");
+    }
+
+    public void testSetConfigFileLoggerLevelWhenLoggingLevelInherited()  throws Exception
+    {
+        when(_mockLoggingFacade.getAvailableLoggerLevels()).thenReturn(Collections.singletonList(TEST_LEVEL1));
+        boolean result = _loggingMBean.setConfigFileLoggerLevel("a.b.c.D", LoggingManagementMBean.INHERITED_PSUEDO_LOG_LEVEL);
+        assertTrue(result);
+        verify(_mockLoggingFacade).setConfigFileLoggerLevel("a.b.c.D", null);
+    }
+
+    public void testReloadConfigFile() throws Exception
+    {
+        _loggingMBean.reloadConfigFile();
+
+        verify(_mockLoggingFacade).reload();
+    }
+
+    private void assertChannelRow(final CompositeData row, String logger, String level)
+    {
+        assertNotNull("No row for  " + logger, row);
+        assertEquals("Unexpected logger name", logger, row.get(LoggingManagement.LOGGER_NAME));
+        assertEquals("Unexpected level", level, row.get(LoggingManagement.LOGGER_LEVEL));
+    }
 }

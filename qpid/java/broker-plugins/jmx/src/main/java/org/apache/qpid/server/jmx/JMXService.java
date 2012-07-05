@@ -33,11 +33,13 @@ import javax.management.StandardMBean;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.jmx.mbeans.LoggingManagementMBean;
 import org.apache.qpid.server.jmx.mbeans.UserManagementMBean;
 import org.apache.qpid.server.jmx.mbeans.ConfigurationManagementMBean;
 import org.apache.qpid.server.jmx.mbeans.ServerInformationMBean;
 import org.apache.qpid.server.jmx.mbeans.Shutdown;
 import org.apache.qpid.server.jmx.mbeans.VirtualHostMBean;
+import org.apache.qpid.server.logging.log4j.LoggingFacade;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -58,6 +60,7 @@ public class JMXService implements ConfigurationChangeListener
     private final Shutdown _shutdown;
     private final ServerInformationMBean _serverInfo;
     private final ConfigurationManagementMBean _configManagement;
+    private final LoggingManagementMBean _loggingManagement;
 
     private final Map<ConfiguredObject, AMQManagedObject> _children = new HashMap<ConfiguredObject, AMQManagedObject>();
 
@@ -80,6 +83,7 @@ public class JMXService implements ConfigurationChangeListener
         _shutdown = new Shutdown(_objectRegistry);
         _serverInfo = new ServerInformationMBean(_objectRegistry, _broker);
         _configManagement = new ConfigurationManagementMBean(_objectRegistry);
+        _loggingManagement = new LoggingManagementMBean(LoggingFacade.getCurrentInstance(), _objectRegistry);
     }
     
     public void start() throws IOException, ConfigurationException
