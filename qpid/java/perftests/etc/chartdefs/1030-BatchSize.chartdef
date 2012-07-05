@@ -17,12 +17,13 @@
 # under the License.
 #
 
-chartType=BAR
-chartTitle=Performance of acknowledgement modes (Transacted)
-xAxisTitle=Persistence
+chartType=LINE
+chartTitle=Transaction Batch Size
+chartSubtitle=Persistent 1KB messages
+xAxisTitle=Batch Size
 yAxisTitle=Throughput (KB/s)
 
-series.1.statement=SELECT testName, throughputKbPerS FROM AcknowledgementModes WHERE acknowledgeMode = '0' AND participantName = 'All'
+series.1.statement=SELECT batchSize, throughputKbPerS FROM BatchSize WHERE participantName = 'All'
 series.1.legend=Current
 series.1.dir=${csvCurrentDir}
 

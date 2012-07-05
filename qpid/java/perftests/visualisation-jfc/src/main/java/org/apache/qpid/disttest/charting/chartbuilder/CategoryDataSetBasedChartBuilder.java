@@ -25,6 +25,7 @@ import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilderCallback;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.CategoryLabelPositions;
 import org.jfree.data.category.DefaultCategoryDataset;
 
 public abstract class CategoryDataSetBasedChartBuilder extends BaseChartBuilder
@@ -73,6 +74,8 @@ public abstract class CategoryDataSetBasedChartBuilder extends BaseChartBuilder
 
         JFreeChart chart = createChartImpl(title, xAxisTitle, yAxisTitle,
                 dataset, PLOT_ORIENTATION, SHOW_LEGEND, SHOW_TOOL_TIPS, SHOW_URLS);
+
+        chart.getCategoryPlot().getDomainAxis().setCategoryLabelPositions(CategoryLabelPositions.UP_45);
 
         addCommonChartAttributes(chart, chartingDefinition);
 

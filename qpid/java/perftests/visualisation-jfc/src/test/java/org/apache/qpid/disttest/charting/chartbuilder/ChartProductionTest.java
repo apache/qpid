@@ -109,9 +109,44 @@ public class ChartProductionTest extends TestCase
         ChartBuilder builder = ChartBuilderFactory.createChartBuilder(ChartType.LINE3D, new SampleSeriesBuilder());
         assertChartTitlesAndWriteToFile(builder);
     }
+
     public void testXYLineChart() throws Exception
     {
         ChartBuilder builder = ChartBuilderFactory.createChartBuilder(ChartType.XYLINE, new SampleSeriesBuilder());
+        assertChartTitlesAndWriteToFile(builder);
+    }
+
+    public void testStatiscticalBarChart() throws Exception
+    {
+        ChartBuilder builder = ChartBuilderFactory.createChartBuilder(
+                ChartType.STATISTICAL_BAR,
+                new SeriesBuilder()
+                {
+                    private SeriesBuilderCallback _dataPointCallback;
+
+                    @Override
+                    public void build(List<SeriesDefinition> seriesDefinitions)
+                    {
+                        for (Iterator<SeriesDefinition> iterator = seriesDefinitions.iterator(); iterator.hasNext();)
+                        {
+                            SeriesDefinition seriesDefinition = iterator.next();
+                            _dataPointCallback.beginSeries(seriesDefinition);
+                            _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{1d, 1d, 0.5d});
+                            _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{2d, 2d, 0.4d});
+                            _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{4d, 4d, 0.3d});
+                            _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{5d, 5d, 0.2d});
+                            _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{6d, 3d, 0.1d});
+                            _dataPointCallback.endSeries(seriesDefinition);
+                        }
+                    }
+
+                    @Override
+                    public void setSeriesBuilderCallback(SeriesBuilderCallback dataPointCallback)
+                    {
+                        _dataPointCallback = dataPointCallback;
+                    }
+                });
+
         assertChartTitlesAndWriteToFile(builder);
     }
 
@@ -141,8 +176,7 @@ public class ChartProductionTest extends TestCase
         @Override
         public void build(List<SeriesDefinition> seriesDefinitions)
         {
-            for (Iterator<SeriesDefinition> iterator = seriesDefinitions.iterator(); iterator
-                    .hasNext();)
+            for (Iterator<SeriesDefinition> iterator = seriesDefinitions.iterator(); iterator.hasNext();)
             {
                 SeriesDefinition seriesDefinition = iterator.next();
                 _dataPointCallback.beginSeries(seriesDefinition);

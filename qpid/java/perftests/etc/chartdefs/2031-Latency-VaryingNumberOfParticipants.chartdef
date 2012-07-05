@@ -18,7 +18,8 @@
 #
 
 chartType=STATISTICAL_BAR
-chartTitle=Latency, Varying number of participants, persistent, message size 1K
+chartTitle=Latency, varying number of participants
+chartSubtitle=Persistent 1KB messages
 xAxisTitle=Consumers
 yAxisTitle=Latency (millis)
 

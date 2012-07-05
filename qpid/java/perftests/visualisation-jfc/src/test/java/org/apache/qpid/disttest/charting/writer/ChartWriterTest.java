@@ -73,8 +73,8 @@ public class ChartWriterTest extends TestCase
 
         writeDummyContentToSummaryFileToEnsureItGetsOverwritten(summaryFile);
 
-        _writer.writeChartToFileSystem(_chart1, "chart1");
         _writer.writeChartToFileSystem(_chart2, "chart2");
+        _writer.writeChartToFileSystem(_chart1, "chart1");
 
         _writer.writeHtmlSummaryToFileSystem();
 

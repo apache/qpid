@@ -18,11 +18,12 @@
 #
 
 chartType=BAR
-chartTitle=Queue Types
-xAxisTitle=Queue Types
+chartTitle=Performance of acknowledgement modes
+chartSubtitle=Transacted
+xAxisTitle=Persistence
 yAxisTitle=Throughput (KB/s)
 
-series.1.statement=SELECT testName, throughputKbPerS FROM QueueTypes WHERE participantName = 'All'
+series.1.statement=SELECT testName, throughputKbPerS FROM AcknowledgementModes WHERE acknowledgeMode = '0' AND participantName = 'All'
 series.1.legend=Current
 series.1.dir=${csvCurrentDir}
 
