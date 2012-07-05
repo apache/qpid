@@ -1,17 +1,17 @@
 {
     "_tests":[
     {
-      "_name": "Acknowledgement Modes - NON_PERSISTENT";
+      "_name": "Transient Ack Modes";
       "_iterations":[
         {
           "_messageSize": 1024,
-          "_numberOfMessages": 10000000,
+          "_maximumDuration": 30000,
           "_acknowledgeMode": 1,
           "_deliveryMode": 1
         },
         {
           "_messageSize": 1024,
-          "_numberOfMessages": 2500000,
+          "_maximumDuration": 30000,
           "_acknowledgeMode": 0,
           "_deliveryMode": 1
         }
@@ -70,17 +70,17 @@
       ]
     },
     {
-      "_name": "Acknowledgement Modes - PERSISTENT";
+      "_name": "Persistent Ack Modes";
       "_iterations":[
         {
           "_messageSize": 1024,
-          "_numberOfMessages": 1000000,
+          "_maximumDuration": 30000,
           "_acknowledgeMode": 1,
           "_deliveryMode": 2
         },
         {
           "_messageSize": 1024,
-          "_numberOfMessages": 250000,
+          "_maximumDuration": 30000,
           "_acknowledgeMode": 0,
           "_deliveryMode": 2
         }

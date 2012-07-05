@@ -17,19 +17,14 @@
 # under the License.
 #
 
-chartType=STATISTICAL_BAR
-chartTitle=Impact of transient message size on latency
+chartType=LINE
+chartTitle=Impact of Message Size
+chartSubtitle=Persistent messages
 xAxisTitle=Message Size (B)
-yAxisTitle=Latency (millis)
+yAxisTitle=Throughput (KB/s)
 
-series.1.statement=SELECT payloadSizeB, maxLatency, 0 FROM Latency-MessageSize WHERE testName like '%TRANSIENT' AND participantName = 'All Consumers'
-series.1.legend=Maximum latency
+series.1.statement=SELECT payloadSizeB, throughputKbPerS FROM MessageSize WHERE testName like '% PERSISTENT' AND participantName = 'All'
+series.1.legend=Current
 series.1.dir=${csvCurrentDir}
 
-series.2.statement=SELECT payloadSizeB, averageLatency,latencyStandardDeviation FROM Latency-MessageSize WHERE testName like '%TRANSIENT' AND participantName = 'All Consumers'
-series.2.legend=Average latency
-series.2.dir=${csvCurrentDir}
-
-series.3.statement=SELECT payloadSizeB, minLatency,0 FROM Latency-MessageSize WHERE testName like '%TRANSIENT' AND participantName = 'All Consumers'
-series.3.legend=Minimum latency
-series.3.dir=${csvCurrentDir}
+# Define series3/4 to chart the baseline

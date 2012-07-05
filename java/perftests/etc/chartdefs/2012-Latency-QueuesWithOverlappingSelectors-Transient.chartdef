@@ -18,19 +18,19 @@
 #
 
 chartType=STATISTICAL_BAR
-chartTitle=Latency with consumers having non-overlapping selectors, transient,  message size 1KB
+chartTitle=Latency with consumers having 50%-overlapping selectors
+chartSubtitle=Transient 1KB messages
 xAxisTitle=Consumers
 yAxisTitle=Latency (millis)
 
-series.1.statement=SELECT totalNumberOfConsumers, maxLatency, 0 FROM Latency-QueuesWithSelectors WHERE participantName = 'All Consumers' and testName like '%non overlapping - NON_PERSISTENT%'
+series.1.statement=SELECT totalNumberOfConsumers, maxLatency, 0 FROM Latency-QueuesWithSelectors WHERE participantName = 'All Consumers'  and testName like '%overlapping 50% - NON_PERSISTENT%'
 series.1.legend=Max latency
 series.1.dir=${csvCurrentDir}
 
-series.2.statement=SELECT totalNumberOfConsumers, averageLatency,latencyStandardDeviation FROM Latency-QueuesWithSelectors WHERE participantName = 'All Consumers' and testName like '%non overlapping - NON_PERSISTENT%'
+series.2.statement=SELECT totalNumberOfConsumers, averageLatency,latencyStandardDeviation FROM Latency-QueuesWithSelectors WHERE participantName = 'All Consumers'  and testName like '%overlapping 50% - NON_PERSISTENT%'
 series.2.legend=Average latency
 series.2.dir=${csvCurrentDir}
 
-series.3.statement=SELECT totalNumberOfConsumers, minLatency, 0 FROM Latency-QueuesWithSelectors WHERE participantName = 'All Consumers' and testName like '%non overlapping - NON_PERSISTENT%'
+series.3.statement=SELECT totalNumberOfConsumers, minLatency, 0 FROM Latency-QueuesWithSelectors WHERE participantName = 'All Consumers' and testName like '%overlapping 50% - NON_PERSISTENT%'
 series.3.legend=Min latency
 series.3.dir=${csvCurrentDir}
-

@@ -26,8 +26,8 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.apache.qpid.disttest.charting.ChartingException;
 import org.jfree.chart.ChartUtilities;
@@ -42,14 +42,13 @@ public class ChartWriter
     static final String SUMMARY_FILE_NAME = "chart-summary.html";
 
     private File _chartDirectory = new File(".");
-    private List<File> _chartFiles = new ArrayList<File>();
+    private SortedSet<File> _chartFiles = new TreeSet<File>();
 
     public void writeChartToFileSystem(JFreeChart chart, String chartStemName)
     {
         OutputStream pngOutputStream = null;
         try
         {
-
             File pngFile = new File(_chartDirectory, chartStemName + ".png");
             pngOutputStream = new BufferedOutputStream(new FileOutputStream(pngFile));
             ChartUtilities.writeChartAsPNG(pngOutputStream, chart, 600, 400, true, 0);

@@ -1,7 +1,7 @@
 {
     "_tests":[
     {
-      "_name": "Message Size - 1P-1C - NON_PERSISTENT";
+      "_name": "Message Size - 1P-1C - TRANSIENT";
       "_iterations":[
         {
           "_messageSize": 256,
