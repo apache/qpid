@@ -29,13 +29,13 @@ import java.util.*;
 import javax.net.ssl.SSLContext;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
-import org.apache.log4j.xml.QpidLog4JConfigurator;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.ServerNetworkTransportConfiguration;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
+import org.apache.qpid.server.logging.log4j.LoggingFacade;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
@@ -430,7 +430,7 @@ public class Broker
         }
     }
 
-    private void configureLogging(File logConfigFile, long logWatchTime) throws InitException, IOException
+    private void configureLogging(File logConfigFile, int logWatchTime) throws InitException, IOException
     {
         if (logConfigFile.exists() && logConfigFile.canRead())
         {
@@ -443,7 +443,7 @@ public class Broker
                 // log4j expects the watch interval in milliseconds
                 try
                 {
-                    QpidLog4JConfigurator.configureAndWatch(logConfigFile.getPath(), logWatchTime * 1000);
+                    LoggingFacade.configureAndWatch(logConfigFile.getPath(), logWatchTime * 1000);
                 }
                 catch (Exception e)
                 {
@@ -454,7 +454,7 @@ public class Broker
             {
                 try
                 {
-                    QpidLog4JConfigurator.configure(logConfigFile.getPath());
+                    LoggingFacade.configure(logConfigFile.getPath());
                 }
                 catch (Exception e)
                 {
