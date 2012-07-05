@@ -741,8 +741,15 @@ class LongTests(BrokerTest):
         for r in receivers: r.start()
         for s in senders: s.start()
 
-        # Wait for sender & receiver to get up and running
-        assert retry(lambda: receivers[0].received > 100), "%s<=100"%receivers[0].received
+        def wait_passed(r, n):
+            """Wait for receiver r to pass n"""
+            def check():
+                r.check()       # Verify no exceptions
+                return r.received > n
+            assert retry(check), "Stalled %s at %s"%(r.queue, n)
+
+        for r in receivers: wait_passed(r, 0)
+
         # Kill and restart brokers in a cycle:
         endtime = time.time() + self.duration()
         i = 0
@@ -750,20 +757,14 @@ class LongTests(BrokerTest):
             while time.time() < endtime or i < 3: # At least 3 iterations
                 for s in senders: s.sender.assert_running()
                 for r in receivers: r.receiver.assert_running()
-                n = receivers[0].received
-                # FIXME aconway 2012-05-01: don't kill primary till it's active
-                # and backups are ready, otherwise we can lose messages. When we
-                # implement non-promotion of catchup brokers we can make this
-                # stronger: wait only for there to be at least one ready backup.
+                checkpoint = [ r.received for r in receivers ]
+                # Don't kill primary till it is active and the next
+                # backup is ready, otherwise we can lose messages.
                 brokers[i%3].wait_status("active")
                 brokers[(i+1)%3].wait_status("ready")
-                brokers[(i+2)%3].wait_status("ready")
                 brokers.bounce(i%3)
                 i += 1
-                def enough():        # Verify we're still running
-                    receivers[0].check() # Verify no exceptions
-                    return receivers[0].received > n + 100
-                assert retry(enough), "Stalled: %s < %s+100"%(receivers[0].received, n)
+                map(wait_passed, receivers, checkpoint) # Wait for all receivers
         except:
             traceback.print_exc()
             raise
