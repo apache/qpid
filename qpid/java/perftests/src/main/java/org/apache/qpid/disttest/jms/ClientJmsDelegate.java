@@ -35,6 +35,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import javax.jms.Topic;
 import javax.naming.Context;
 import javax.naming.NamingException;
 
@@ -72,6 +73,7 @@ public class ClientJmsDelegate
     private Map<String, Session> _testSessions;
     private Map<String, MessageProducer> _testProducers;
     private Map<String, MessageConsumer> _testConsumers;
+    private Map<String, Session> _testSubscriptions;
     private Map<String, MessageProvider> _testMessageProviders;
 
     private final MessageProvider _defaultMessageProvider;
@@ -92,6 +94,7 @@ public class ClientJmsDelegate
             _testSessions = new HashMap<String, Session>();
             _testProducers = new HashMap<String, MessageProducer>();
             _testConsumers = new HashMap<String, MessageConsumer>();
+            _testSubscriptions = new HashMap<String, Session>();
             _testMessageProviders = new HashMap<String, MessageProvider>();
             _defaultMessageProvider = new MessageProvider(null);
         }
@@ -255,9 +258,31 @@ public class ClientJmsDelegate
 
             synchronized(session)
             {
-                final Destination destination = command.isTopic() ? session.createTopic(command.getDestinationName())
-                                                    : session.createQueue(command.getDestinationName());
-                final MessageConsumer jmsConsumer = session.createConsumer(destination, command.getSelector());
+                Destination destination;
+                MessageConsumer jmsConsumer;
+                if(command.isTopic())
+                {
+                    Topic topic = session.createTopic(command.getDestinationName());
+                    if(command.isDurableSubscription())
+                    {
+                        String subscription = "subscription-" + command.getParticipantName() + System.currentTimeMillis();
+                        jmsConsumer = session.createDurableSubscriber(topic, subscription);
+
+                        _testSubscriptions.put(subscription, session);
+                        LOGGER.debug("created durable suscription " + subscription + " to topic " + topic);
+                    }
+                    else
+                    {
+                        jmsConsumer = session.createConsumer(topic, command.getSelector());
+                    }
+
+                    destination = topic;
+                }
+                else
+                {
+                    destination = session.createQueue(command.getDestinationName());
+                    jmsConsumer = session.createConsumer(destination, command.getSelector());
+                }
 
                 _testConsumers.put(command.getParticipantName(), jmsConsumer);
             }
@@ -521,36 +546,59 @@ public class ClientJmsDelegate
         return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE).append("clientName", _clientName).toString();
     }
 
-    public void closeTestConnections()
+    public void tearDownTest()
     {
         StringBuilder jmsErrorMessages = new StringBuilder();
-        int failedCloseCounter = 0;
-        for (final Map.Entry<String, Connection> entry : _testConnections.entrySet())
+        int failureCounter = 0;
+
+        for(String subscription : _testSubscriptions.keySet())
         {
-            final Connection connection = entry.getValue();
+            Session session = _testSubscriptions.get(subscription);
+            try
+            {
+                session.unsubscribe(subscription);
+            }
+            catch (JMSException e)
+            {
+                LOGGER.error("Failed to unsubscribe '" + subscription + "' :" + e.getLocalizedMessage(), e);
+                failureCounter++;
+                appendErrorMessage(jmsErrorMessages, e);
+            }
+        }
+
+        for (Map.Entry<String, Connection> entry : _testConnections.entrySet())
+        {
+            Connection connection = entry.getValue();
             try
             {
                 connection.close();
             }
-            catch (final JMSException e)
+            catch (JMSException e)
             {
                 LOGGER.error("Failed to close connection '" + entry.getKey() + "' :" + e.getLocalizedMessage(), e);
-                failedCloseCounter++;
-                if (jmsErrorMessages.length() > 0)
-                {
-                    jmsErrorMessages.append('\n');
-                }
-                jmsErrorMessages.append(e.getMessage());
+                failureCounter++;
+                appendErrorMessage(jmsErrorMessages, e);
             }
         }
+
         _testConnections.clear();
         _testSessions.clear();
         _testProducers.clear();
         _testConsumers.clear();
-        if (failedCloseCounter > 0)
+
+        if (failureCounter > 0)
         {
-            throw new DistributedTestException("Close failed for " + failedCloseCounter + " connection(s) with the following errors: " + jmsErrorMessages.toString());
+            throw new DistributedTestException("Tear down test encountered " + failureCounter + " failures with the following errors: " + jmsErrorMessages.toString());
         }
+    }
+
+    private void appendErrorMessage(StringBuilder errorMessages, JMSException e)
+    {
+        if (errorMessages.length() > 0)
+        {
+            errorMessages.append('\n');
+        }
+        errorMessages.append(e.getMessage());
     }
 
     public void closeTestConsumer(String consumerName)

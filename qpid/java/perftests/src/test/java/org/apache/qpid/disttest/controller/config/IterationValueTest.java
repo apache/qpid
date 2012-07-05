@@ -22,19 +22,19 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
-import junit.framework.TestCase;
-
+import org.apache.qpid.disttest.message.CreateConnectionCommand;
 import org.apache.qpid.disttest.message.CreateConsumerCommand;
-import org.apache.qpid.disttest.message.CreateProducerCommand;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class IterationValueTest extends TestCase
+public class IterationValueTest extends QpidTestCase
 {
-    private static final int MESSAGE_SIZE = 10;
+    private static final int MAXIMUM_DURATION = 10;
 
-    private CreateProducerCommand _createProducerCommand;
+    private static final boolean IS_DURABLE_SUBSCRIPTION = true;
+
     private CreateConsumerCommand _createConsumerCommand;
     private Map<String, String> _iterationValueMap;
 
@@ -42,37 +42,40 @@ public class IterationValueTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        _createProducerCommand = mock(CreateProducerCommand.class);
         _createConsumerCommand = mock(CreateConsumerCommand.class);
 
-        _iterationValueMap = Collections.singletonMap("_messageSize", String.valueOf(MESSAGE_SIZE));
+        _iterationValueMap = new HashMap<String, String>();
+        _iterationValueMap.put("_maximumDuration", String.valueOf(MAXIMUM_DURATION));
+        _iterationValueMap.put("_durableSubscription", String.valueOf(IS_DURABLE_SUBSCRIPTION));
     }
 
     public void testApplyPopulatedIterationValueToCommandWithMatchingProperties() throws Exception
     {
         IterationValue iterationValue = new IterationValue(_iterationValueMap);
 
-        iterationValue.applyToCommand(_createProducerCommand);
+        iterationValue.applyToCommand(_createConsumerCommand);
 
-        verify(_createProducerCommand).setMessageSize(MESSAGE_SIZE);
+        verify(_createConsumerCommand).setMaximumDuration(MAXIMUM_DURATION);
+        verify(_createConsumerCommand).setDurableSubscription(IS_DURABLE_SUBSCRIPTION);
     }
 
     public void testApplyPopulatedIterationValueToCommandWithoutMatchingProperties() throws Exception
     {
         IterationValue iterationValue = new IterationValue(_iterationValueMap);
 
-        iterationValue.applyToCommand(_createConsumerCommand);
+        CreateConnectionCommand createConnectionCommand = mock(CreateConnectionCommand.class);
+        iterationValue.applyToCommand(createConnectionCommand);
 
-        verifyZeroInteractions(_createConsumerCommand);
+        verifyZeroInteractions(createConnectionCommand);
     }
 
     public void testApplyUnpopulatedIterationValueToCommand() throws Exception
     {
         IterationValue iterationValue = new IterationValue();
 
-        iterationValue.applyToCommand(_createProducerCommand);
+        iterationValue.applyToCommand(_createConsumerCommand);
 
-        verifyZeroInteractions(_createProducerCommand);
+        verifyZeroInteractions(_createConsumerCommand);
     }
 
 }
