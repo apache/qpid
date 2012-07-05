@@ -94,15 +94,14 @@ class HaBroker : public management::Manageable
     void removeBroker(const types::Uuid& id);  // Remove a broker from membership.
 
   private:
-    void setClientUrl(const Url&, sys::Mutex::ScopedLock&);
-    void setBrokerUrl(const Url&, sys::Mutex::ScopedLock&);
+    void setClientUrl(const Url&);
+    void setBrokerUrl(const Url&);
     void updateClientUrl(sys::Mutex::ScopedLock&);
 
     bool isPrimary(sys::Mutex::ScopedLock&) { return !backup.get(); }
 
     void setStatus(BrokerStatus, sys::Mutex::ScopedLock&);
-    void recover(sys::Mutex::ScopedLock&);
-    void activate(sys::Mutex::ScopedLock&);
+    void recover();
     void statusChanged(sys::Mutex::ScopedLock&);
     void setLinkProperties(sys::Mutex::ScopedLock&);
 
