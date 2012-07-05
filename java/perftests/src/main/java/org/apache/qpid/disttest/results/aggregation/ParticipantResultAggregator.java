@@ -25,6 +25,7 @@ import java.util.TreeSet;
 
 import org.apache.qpid.disttest.message.ConsumerParticipantResult;
 import org.apache.qpid.disttest.message.ParticipantResult;
+import org.apache.qpid.disttest.message.ProducerParticipantResult;
 
 public class ParticipantResultAggregator
 {
@@ -43,6 +44,9 @@ public class ParticipantResultAggregator
     private NavigableSet<Integer> _encounteredIterationNumbers = new TreeSet<Integer>();
     private NavigableSet<Integer> _encounteredBatchSizes = new TreeSet<Integer>();
     private NavigableSet<Integer> _encounteredAcknowledgeMode = new TreeSet<Integer>();
+    private NavigableSet<Integer> _encounteredDeliveryModes = new TreeSet<Integer>();
+    private NavigableSet<Boolean> _encounteredDurableSubscriptions = new TreeSet<Boolean>();
+    private NavigableSet<Boolean> _encounteredTopics = new TreeSet<Boolean>();
     private NavigableSet<String> _encountedTestNames = new TreeSet<String>();
 
     private SeriesStatistics _latencyStatistics = new SeriesStatistics();
@@ -116,6 +120,17 @@ public class ParticipantResultAggregator
         _encounteredIterationNumbers.add(result.getIterationNumber());
         _encounteredBatchSizes.add(result.getBatchSize());
         _encounteredAcknowledgeMode.add(result.getAcknowledgeMode());
+        if (result instanceof ProducerParticipantResult)
+        {
+            ProducerParticipantResult producerParticipantResult = (ProducerParticipantResult) result;
+            _encounteredDeliveryModes.add(producerParticipantResult.getDeliveryMode());
+        }
+        else if(result instanceof ConsumerParticipantResult)
+        {
+            ConsumerParticipantResult consumerParticipantResult = (ConsumerParticipantResult)result;
+            _encounteredDurableSubscriptions.add(consumerParticipantResult.isDurableSubscription());
+            _encounteredTopics.add(consumerParticipantResult.isTopic());
+        }
     }
 
     private void setComputedVariableAttributes(ParticipantResult aggregatedResult)
@@ -150,6 +165,26 @@ public class ParticipantResultAggregator
         if (_encounteredAcknowledgeMode.size() == 1)
         {
             aggregatedResult.setAcknowledgeMode(_encounteredAcknowledgeMode.first());
+        }
+        if (aggregatedResult instanceof ProducerParticipantResult)
+        {
+            ProducerParticipantResult producerParticipantResult = (ProducerParticipantResult) aggregatedResult;
+            if(_encounteredDeliveryModes.size() == 1)
+            {
+                producerParticipantResult.setDeliveryMode(_encounteredDeliveryModes.first());
+            }
+        }
+        if (aggregatedResult instanceof ConsumerParticipantResult)
+        {
+            ConsumerParticipantResult consumerParticipantResult = (ConsumerParticipantResult) aggregatedResult;
+            if(_encounteredDurableSubscriptions.size() == 1)
+            {
+                consumerParticipantResult.setDurableSubscription(_encounteredDurableSubscriptions.first());
+            }
+            if(_encounteredTopics.size() == 1)
+            {
+                consumerParticipantResult.setTopic(_encounteredTopics.first());
+            }
         }
     }
 

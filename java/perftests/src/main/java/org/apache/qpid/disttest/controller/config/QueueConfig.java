@@ -38,7 +38,6 @@ public class QueueConfig
 
     public QueueConfig(String name, boolean durable, Map<String, Object> attributes)
     {
-        super();
         this._name = name;
         this._durable = durable;
         this._attributes = attributes;
@@ -49,8 +48,6 @@ public class QueueConfig
         return _name;
     }
 
-    // TODO x-qpid-capacity and x-qpid-flow-resume-capacity need to be typed as numeric but we currrently
-    // pass these as a string.
     public Map<String, Object> getAttributes()
     {
         return _attributes;
