@@ -94,11 +94,12 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
         broker.getKnownBrokers = boost::bind(&HaBroker::getKnownBrokers, this);
     }
 
+    if (!settings.clientUrl.empty()) setClientUrl(Url(settings.clientUrl));
+    if (!settings.brokerUrl.empty()) setBrokerUrl(Url(settings.brokerUrl));
+
     // NOTE: lock is not needed in a constructor, but create one
     // to pass to functions that have a ScopedLock parameter.
     Mutex::ScopedLock l(lock);
-    if (!settings.clientUrl.empty()) setClientUrl(Url(settings.clientUrl), l);
-    if (!settings.brokerUrl.empty()) setBrokerUrl(Url(settings.brokerUrl), l);
     statusChanged(l);
 
     QPID_LOG(notice, logPrefix << "Broker starting: " << brokerInfo);
@@ -109,40 +110,43 @@ HaBroker::~HaBroker() {
     broker.getConnectionObservers().remove(observer);
 }
 
-void HaBroker::recover(Mutex::ScopedLock&) {
-    // No longer replicating, close link. Note: link must be closed before we
-    // setStatus(RECOVERING) as that will remove our broker info from the
-    // outgoing link properties so we won't recognize self-connects.
-    backup.reset();
-    setStatus(RECOVERING);
-    BrokerInfo::Set backups = membership.otherBackups();
-    membership.reset(brokerInfo);
-    // Drop the lock, new Primary may call back on activate.
-    Mutex::ScopedUnlock u(lock);
+void HaBroker::recover() {
+    auto_ptr<Backup> b;
+    {
+        Mutex::ScopedLock l(lock);
+        // No longer replicating, close link. Note: link must be closed before we
+        // setStatus(RECOVERING) as that will remove our broker info from the
+        // outgoing link properties so we won't recognize self-connects.
+        b = backup;
+    }
+    b.reset();                  // Call destructor outside of lock.
+    BrokerInfo::Set backups;
+    {
+        Mutex::ScopedLock l(lock);
+        setStatus(RECOVERING, l);
+        backups = membership.otherBackups();
+        membership.reset(brokerInfo);
+        // Drop the lock, new Primary may call back on activate.
+    }
+    // Outside of lock, may call back on activate()
     primary.reset(new Primary(*this, backups)); // Starts primary-ready check.
 }
 
 // Called back from Primary active check.
-void HaBroker::activate() {
-    Mutex::ScopedLock l(lock);
-    activate(l);
-}
-
-void HaBroker::activate(Mutex::ScopedLock&) { setStatus(ACTIVE); }
+void HaBroker::activate() { setStatus(ACTIVE); }
 
 Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, string&) {
-    Mutex::ScopedLock l(lock);
     switch (methodId) {
       case _qmf::HaBroker::METHOD_PROMOTE: {
-          switch (status) {
-            case JOINING: recover(l); break;
+          switch (getStatus()) {
+            case JOINING: recover(); break;
             case CATCHUP:
               // FIXME aconway 2012-04-27: don't allow promotion in catch-up
               // QPID_LOG(error, logPrefix << "Still catching up, cannot be promoted.");
               // throw Exception("Still catching up, cannot be promoted.");
-              recover(l);
+              recover();
               break;
-            case READY: recover(l); break;
+            case READY: recover(); break;
             case RECOVERING: break;
             case ACTIVE: break;
             case STANDALONE: break;
@@ -150,11 +154,11 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
           break;
       }
       case _qmf::HaBroker::METHOD_SETBROKERSURL: {
-          setBrokerUrl(Url(dynamic_cast<_qmf::ArgsHaBrokerSetBrokersUrl&>(args).i_url), l);
+          setBrokerUrl(Url(dynamic_cast<_qmf::ArgsHaBrokerSetBrokersUrl&>(args).i_url));
           break;
       }
       case _qmf::HaBroker::METHOD_SETPUBLICURL: {
-          setClientUrl(Url(dynamic_cast<_qmf::ArgsHaBrokerSetPublicUrl&>(args).i_url), l);
+          setClientUrl(Url(dynamic_cast<_qmf::ArgsHaBrokerSetPublicUrl&>(args).i_url));
           break;
       }
       case _qmf::HaBroker::METHOD_REPLICATE: {
@@ -188,7 +192,8 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
     return Manageable::STATUS_OK;
 }
 
-void HaBroker::setClientUrl(const Url& url, Mutex::ScopedLock& l) {
+void HaBroker::setClientUrl(const Url& url) {
+    Mutex::ScopedLock l(lock);
     if (url.empty()) throw Exception("Invalid empty URL for HA client failover");
     clientUrl = url;
     updateClientUrl(l);
@@ -203,7 +208,8 @@ void HaBroker::updateClientUrl(Mutex::ScopedLock&) {
     QPID_LOG(debug, logPrefix << "Setting client URL to: " << url);
 }
 
-void HaBroker::setBrokerUrl(const Url& url, Mutex::ScopedLock& l) {
+void HaBroker::setBrokerUrl(const Url& url) {
+    Mutex::ScopedLock l(lock);
     if (url.empty()) throw Url::Invalid("HA broker URL is empty");
     brokerUrl = url;
     mgmtObject->set_brokersUrl(brokerUrl.str());
