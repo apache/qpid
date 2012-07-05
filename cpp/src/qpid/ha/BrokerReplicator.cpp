@@ -312,6 +312,7 @@ void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
         if (broker.getQueues().find(name)) {
             QPID_LOG(warning, logPrefix << "Replacing exsiting queue: " << name);
             broker.getQueues().destroy(name);
+            stopQueueReplicator(name);
         }
         std::pair<boost::shared_ptr<Queue>, bool> result =
             broker.createQueue(
@@ -343,13 +344,7 @@ void BrokerReplicator::doEventQueueDelete(Variant::Map& values) {
     boost::shared_ptr<Queue> queue = broker.getQueues().find(name);
     if (queue && replicationTest.replicateLevel(queue->getSettings())) {
         QPID_LOG(debug, logPrefix << "Queue delete event: " << name);
-        boost::shared_ptr<QueueReplicator> qr = findQueueReplicator(name);
-        if (qr) {
-            qr->deactivate();
-            // QueueReplicator's bridge is now queued for destruction but may not
-            // actually be destroyed.
-            broker.getExchanges().destroy(qr->getName());
-        }
+        stopQueueReplicator(name);
         broker.deleteQueue(name, values[USER].asString(), values[RHOST].asString());
     }
 }
@@ -560,6 +555,16 @@ void BrokerReplicator::startQueueReplicator(const boost::shared_ptr<Queue>& queu
         if (!broker.getExchanges().registerExchange(qr))
             throw Exception(QPID_MSG("Duplicate queue replicator " << qr->getName()));
         qr->activate();
+    }
+}
+
+void BrokerReplicator::stopQueueReplicator(const std::string& name) {
+    boost::shared_ptr<QueueReplicator> qr = findQueueReplicator(name);
+    if (qr) {
+        qr->deactivate();
+        // QueueReplicator's bridge is now queued for destruction but may not
+        // actually be destroyed.
+        broker.getExchanges().destroy(qr->getName());
     }
 }
 

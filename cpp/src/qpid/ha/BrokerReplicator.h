@@ -94,6 +94,7 @@ class BrokerReplicator : public broker::Exchange,
 
     QueueReplicatorPtr findQueueReplicator(const std::string& qname);
     void startQueueReplicator(const boost::shared_ptr<broker::Queue>&);
+    void stopQueueReplicator(const std::string& name);
 
     std::string logPrefix;
     ReplicationTest replicationTest;
