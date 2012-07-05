@@ -18,11 +18,19 @@
 #
 
 chartType=LINE
-chartTitle=Transaction Batch Size
-xAxisTitle=Batch Size
+chartTitle=Varying number of consumers
+chartSubtitle=Persistent 1KB messages
+xAxisTitle=Consumers
 yAxisTitle=Throughput (KB/s)
 
-series.1.statement=SELECT batchSize, throughputKbPerS FROM BatchSize WHERE participantName = 'All'
-series.1.legend=Current
+series.1.statement=SELECT totalNumberOfConsumers, throughputKbPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfProducers = '1'
+series.1.legend=1 Producer
 series.1.dir=${csvCurrentDir}
 
+series.2.statement=SELECT totalNumberOfConsumers, throughputKbPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfProducers = '5'
+series.2.legend=5 Producers
+series.2.dir=${csvCurrentDir}
+
+series.3.statement=SELECT totalNumberOfConsumers, throughputKbPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfProducers = '10'
+series.3.legend=10 Producers
+series.3.dir=${csvCurrentDir}

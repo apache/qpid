@@ -18,18 +18,19 @@
 #
 
 chartType=STATISTICAL_BAR
-chartTitle=Impact of persistent message size on latency
+chartTitle=Impact of message size on latency
+chartSubtitle=Transient messages
 xAxisTitle=Message Size (B)
 yAxisTitle=Latency (millis)
 
-series.1.statement=SELECT payloadSizeB, maxLatency, 0 FROM Latency-MessageSize WHERE testName like '%PERSISTENT' AND participantName = 'All Consumers'
+series.1.statement=SELECT payloadSizeB, maxLatency, 0 FROM Latency-MessageSize WHERE testName like '%TRANSIENT' AND participantName = 'All Consumers'
 series.1.legend=Maximum latency
 series.1.dir=${csvCurrentDir}
 
-series.2.statement=SELECT payloadSizeB, averageLatency, latencyStandardDeviation FROM Latency-MessageSize WHERE testName like '%PERSISTENT' AND participantName = 'All Consumers'
+series.2.statement=SELECT payloadSizeB, averageLatency,latencyStandardDeviation FROM Latency-MessageSize WHERE testName like '%TRANSIENT' AND participantName = 'All Consumers'
 series.2.legend=Average latency
 series.2.dir=${csvCurrentDir}
 
-series.3.statement=SELECT payloadSizeB, minLatency, 0 FROM Latency-MessageSize WHERE testName like '%PERSISTENT' AND participantName = 'All Consumers'
+series.3.statement=SELECT payloadSizeB, minLatency,0 FROM Latency-MessageSize WHERE testName like '%TRANSIENT' AND participantName = 'All Consumers'
 series.3.legend=Minimum latency
 series.3.dir=${csvCurrentDir}

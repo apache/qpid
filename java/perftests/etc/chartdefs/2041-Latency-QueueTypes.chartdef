@@ -17,13 +17,20 @@
 # under the License.
 #
 
-chartType=LINE
-chartTitle=Impact of Message Size (Persistent)
-xAxisTitle=Message Size (B)
-yAxisTitle=Throughput (KB/s)
+chartType=STATISTICAL_BAR
+chartTitle=Latency on different queues
+chartSubtitle=Persistent 1KB messages
+xAxisTitle=Queue type
+yAxisTitle=Latency (millis)
 
-series.1.statement=SELECT payloadSizeB, throughputKbPerS FROM MessageSize WHERE testName like '% PERSISTENT' AND participantName = 'All'
-series.1.legend=Current
+series.1.statement=SELECT testName, maxLatency,0 FROM Latency-QueueTypes WHERE participantName = 'All Consumers'
+series.1.legend=Maximum latency
 series.1.dir=${csvCurrentDir}
 
-# Define series3/4 to chart the baseline
+series.2.statement=SELECT testName, averageLatency,latencyStandardDeviation FROM Latency-QueueTypes WHERE participantName = 'All Consumers'
+series.2.legend=Average Latency
+series.2.dir=${csvCurrentDir}
+
+series.3.statement=SELECT testName, minLatency,0 FROM Latency-QueueTypes WHERE participantName = 'All Consumers'
+series.3.legend=Minimum latency
+series.3.dir=${csvCurrentDir}

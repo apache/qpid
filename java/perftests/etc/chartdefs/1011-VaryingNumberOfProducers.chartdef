@@ -17,20 +17,20 @@
 # under the License.
 #
 
-chartType=STATISTICAL_BAR
-chartTitle=Latency with consumers having 50%-overlapping selectors, persistent, message size 1KB
-xAxisTitle=Consumers
-yAxisTitle=Latency (millis)
+chartType=LINE
+chartTitle=Varying number of producers
+chartSubtitle=Persistent 1KB messages
+xAxisTitle=Producers
+yAxisTitle=Throughput (KB/s)
 
-series.1.statement=SELECT totalNumberOfConsumers, maxLatency, 0 FROM Latency-QueuesWithSelectors WHERE participantName = 'All Consumers' and testName like '%overlapping 50% - PERSISTENT%'
-series.1.legend=Max latency
+series.1.statement=SELECT totalNumberOfProducers, throughputKbPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfConsumers = '1'
+series.1.legend=1 Consumer
 series.1.dir=${csvCurrentDir}
 
-series.2.statement=SELECT totalNumberOfConsumers, averageLatency,latencyStandardDeviation FROM Latency-QueuesWithSelectors WHERE participantName = 'All Consumers' and testName like '%overlapping 50% - PERSISTENT%'
-series.2.legend=Average latency
+series.2.statement=SELECT totalNumberOfProducers, throughputKbPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfConsumers = '5'
+series.2.legend=5 Consumer
 series.2.dir=${csvCurrentDir}
 
-series.3.statement=SELECT totalNumberOfConsumers, minLatency, 0 FROM Latency-QueuesWithSelectors WHERE participantName = 'All Consumers' and testName like '%overlapping 50% - PERSISTENT%'
-series.3.legend=Min latency
+series.3.statement=SELECT totalNumberOfProducers, throughputKbPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfConsumers = '10'
+series.3.legend=10 Consumer
 series.3.dir=${csvCurrentDir}
-
