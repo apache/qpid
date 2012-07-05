@@ -83,13 +83,14 @@ void Backup::initialize(const Url& brokers) {
         false,                  // durable
         settings.mechanism, settings.username, settings.password,
         false);                 // amq.failover
-
-    sys::Mutex::ScopedLock l(lock);
-    link = result.first;
-    link->setUrl(url);
-    replicator.reset(new BrokerReplicator(haBroker, link));
-    replicator->initialize();
-    broker.getExchanges().registerExchange(replicator);
+    {
+        sys::Mutex::ScopedLock l(lock);
+        link = result.first;
+        replicator.reset(new BrokerReplicator(haBroker, link));
+        replicator->initialize();
+        broker.getExchanges().registerExchange(replicator);
+    }
+    link->setUrl(url);          // Outside the lock, once set link doesn't change.
 }
 
 Backup::~Backup() {
@@ -97,19 +98,21 @@ Backup::~Backup() {
     if (replicator.get()) broker.getExchanges().destroy(replicator->getName());
 }
 
-
+// Called via management.
 void Backup::setBrokerUrl(const Url& url) {
     // Ignore empty URLs seen during start-up for some tests.
     if (url.empty()) return;
+    bool linkSet = false;
     {
         sys::Mutex::ScopedLock l(lock);
-        if (link) {
-            QPID_LOG(info, logPrefix << "Broker URL set to: " << url);
-            link->setUrl(removeSelf(url));
-            return;
-        }
+        linkSet = link;
     }
-    initialize(url);        // Deferred initialization
+    if (linkSet) {
+        QPID_LOG(info, logPrefix << "Broker URL set to: " << url);
+        link->setUrl(removeSelf(url)); // Outside lock, once set link doesn't change
+    }
+    else
+        initialize(url);        // Deferred initialization
 }
 
 }} // namespace qpid::ha
