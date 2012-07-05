@@ -19,7 +19,6 @@
  *
  */
 
-#include "Counter.h"
 #include "QueueReplicator.h"
 #include "ReplicatingSubscription.h"
 #include "qpid/broker/Bridge.h"

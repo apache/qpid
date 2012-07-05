@@ -22,7 +22,6 @@
  *
  */
 
-#include "Counter.h"
 #include "types.h"
 #include "ReplicationTest.h"
 #include "qpid/broker/Exchange.h"
