@@ -94,7 +94,7 @@ void QueueReplicator::activate() {
     bridge = result.first;
 }
 
-QueueReplicator::~QueueReplicator() {}
+QueueReplicator::~QueueReplicator() { deactivate(); }
 
 void QueueReplicator::deactivate() {
     // destroy the route

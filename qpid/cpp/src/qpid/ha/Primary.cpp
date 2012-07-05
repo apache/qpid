@@ -28,6 +28,7 @@
 #include "qpid/assert.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/ConfigurationObserver.h"
+#include "qpid/broker/Connection.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/log/Statement.h"
@@ -161,6 +162,9 @@ void Primary::opened(broker::Connection& connection) {
         }
         haBroker.addBroker(info);
     }
+    else
+        QPID_LOG(debug, logPrefix << "Accepted client connection "
+                 << connection.getMgmtId())
 }
 
 void Primary::closed(broker::Connection& connection) {
