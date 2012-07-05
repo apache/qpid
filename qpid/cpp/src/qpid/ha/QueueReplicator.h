@@ -41,8 +41,6 @@ class Deliverable;
 
 namespace ha {
 
-class Counter;
-
 /**
  * Exchange created on a backup broker to replicate a queue on the primary.
  *
