@@ -213,6 +213,7 @@ void HaBroker::setBrokerUrl(const Url& url, Mutex::ScopedLock& l) {
 }
 
 std::vector<Url> HaBroker::getKnownBrokers() const {
+    Mutex::ScopedLock l(lock);
     return knownBrokers;
 }
 
