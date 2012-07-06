@@ -37,10 +37,10 @@ SenderImpl::SenderImpl(SessionImpl& _parent, const std::string& _name,
 void SenderImpl::send(const qpid::messaging::Message& message, bool sync) 
 {
     if (unreliable) {           // immutable, don't need lock
-        UnreliableSend f(*this, &message);
+        UnreliableSend f(*this, message);
         parent->execute(f);
     } else {
-        Send f(*this, &message);
+        Send f(*this, message);
         while (f.repeat) parent->execute(f);
     }
     if (sync) parent->sync(true);
@@ -117,8 +117,8 @@ void SenderImpl::sendImpl(const qpid::messaging::Message& m)
 {
     sys::Mutex::ScopedLock l(lock);
     std::auto_ptr<OutgoingMessage> msg(new OutgoingMessage());
-    msg->convert(m);
     msg->setSubject(m.getSubject().empty() ? address.getSubject() : m.getSubject());
+    msg->convert(m);
     outgoing.push_back(msg.release());
     sink->send(session, name, outgoing.back());
 }
@@ -127,8 +127,8 @@ void SenderImpl::sendUnreliable(const qpid::messaging::Message& m)
 {
     sys::Mutex::ScopedLock l(lock);
     OutgoingMessage msg;
-    msg.convert(m);
     msg.setSubject(m.getSubject().empty() ? address.getSubject() : m.getSubject());
+    msg.convert(m);
     sink->send(session, name, msg);
 }
 
