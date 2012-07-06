@@ -99,32 +99,32 @@ class SenderImpl : public qpid::messaging::SenderImpl
 
     struct Send : Command
     {
-        const qpid::messaging::Message* message;
+        const qpid::messaging::Message& message;
         bool repeat;
 
-        Send(SenderImpl& i, const qpid::messaging::Message* m) : Command(i), message(m), repeat(true) {}
+        Send(SenderImpl& i, const qpid::messaging::Message& m) : Command(i), message(m), repeat(true) {}
         void operator()() 
         {
             impl.waitForCapacity();
             //from this point message will be recorded if there is any
             //failure (and replayed) so need not repeat the call
             repeat = false;
-            impl.sendImpl(*message);
+            impl.sendImpl(message);
         }
     };
 
     struct UnreliableSend : Command
     {
-        const qpid::messaging::Message* message;
+        const qpid::messaging::Message& message;
 
-        UnreliableSend(SenderImpl& i, const qpid::messaging::Message* m) : Command(i), message(m) {}
+        UnreliableSend(SenderImpl& i, const qpid::messaging::Message& m) : Command(i), message(m) {}
         void operator()() 
         {
             //TODO: ideally want to put messages on the outbound
             //queue and pull them off in io thread, but the old
             //0-10 client doesn't support that option so for now
             //we simply don't queue unreliable messages
-            impl.sendUnreliable(*message);                
+            impl.sendUnreliable(message);
         }
     };
 
