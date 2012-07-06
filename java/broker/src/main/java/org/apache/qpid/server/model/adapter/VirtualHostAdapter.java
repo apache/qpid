@@ -214,7 +214,6 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
         return createExchange(name, state, durable, lifetime, ttl, type, attributes);
     }
 
-
     public Exchange createExchange(final String name,
                                    final State initialState,
                                    final boolean durable,
@@ -224,6 +223,8 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
                                    final Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException
     {
+        checkVHostStateIsActive();
+
         try
         {
             org.apache.qpid.server.exchange.Exchange exchange =
@@ -285,6 +286,8 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
                              final Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException
     {
+        checkVHostStateIsActive();
+
         String owner = null;
         if(exclusive)
         {
@@ -796,6 +799,16 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
     {
         return AVAILABLE_ATTRIBUTES;
     }
+
+    private void checkVHostStateIsActive()
+    {
+        if (!org.apache.qpid.server.virtualhost.State.ACTIVE.equals(_virtualHost.getState()))
+        {
+            throw new IllegalStateException("The virtual hosts state of " + _virtualHost.getState()
+                    + " does not permit this operation.");
+        }
+    }
+
 
     private static class VirtualHostStatisticsAdapter extends StatisticsAdapter
     {
