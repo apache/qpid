@@ -103,31 +103,27 @@ class VariantImpl
         int64_t i64;
         float f;
         double d;
-        void* v;//variable width data
+        Uuid* uuid;
+        Variant::Map* map;
+        Variant::List* list;
+        std::string* string;
     } value;
     std::string encoding;//optional encoding for variable length data
 
     template<class T> T convertFromString() const
     {
-        std::string* s = reinterpret_cast<std::string*>(value.v);
-        if (std::numeric_limits<T>::is_signed || s->find('-') != 0) {
+        const std::string& s = *value.string;
+        try {
+            T r = boost::lexical_cast<T>(s);
             //lexical_cast won't fail if string is a negative number and T is unsigned
-            try {
-                return boost::lexical_cast<T>(*s);
-            } catch(const boost::bad_lexical_cast&) {
-                //don't return, throw exception below
+            //So check that and allow special case of negative zero
+            //else its a non-zero negative number so throw exception at end of function
+            if (std::numeric_limits<T>::is_signed || s.find('-') != 0 || r == 0) {
+                return r;
             }
-        } else {
-            //T is unsigned and number starts with '-'
-            try {
-                //handle special case of negative zero
-                if (boost::lexical_cast<int>(*s) == 0) return 0;
-                //else its a non-zero negative number so throw exception at end of function
-            } catch(const boost::bad_lexical_cast&) {
-                //wasn't a valid int, therefore not a valid uint
-            }
+        } catch(const boost::bad_lexical_cast&) {
         }
-        throw InvalidConversion(QPID_MSG("Cannot convert " << *s));
+        throw InvalidConversion(QPID_MSG("Cannot convert " << s));
     }
 };
 
@@ -145,24 +141,24 @@ VariantImpl::VariantImpl(int64_t i) : type(VAR_INT64) { value.i64 = i; }
 VariantImpl::VariantImpl(float f) : type(VAR_FLOAT) { value.f = f; }
 VariantImpl::VariantImpl(double d) : type(VAR_DOUBLE) { value.d = d; }
 VariantImpl::VariantImpl(const std::string& s, const std::string& e)
-    : type(VAR_STRING), encoding(e) { value.v = new std::string(s); }
-VariantImpl::VariantImpl(const Variant::Map& m) : type(VAR_MAP) { value.v = new Variant::Map(m); }
-VariantImpl::VariantImpl(const Variant::List& l) : type(VAR_LIST) { value.v = new Variant::List(l); }
-VariantImpl::VariantImpl(const Uuid& u) : type(VAR_UUID) { value.v = new Uuid(u); }
+    : type(VAR_STRING), encoding(e) { value.string = new std::string(s); }
+VariantImpl::VariantImpl(const Variant::Map& m) : type(VAR_MAP) { value.map = new Variant::Map(m); }
+VariantImpl::VariantImpl(const Variant::List& l) : type(VAR_LIST) { value.list = new Variant::List(l); }
+VariantImpl::VariantImpl(const Uuid& u) : type(VAR_UUID) { value.uuid = new Uuid(u); }
 
 VariantImpl::~VariantImpl() {
     switch (type) {
       case VAR_STRING:
-        delete reinterpret_cast<std::string*>(value.v);
+        delete value.string;
         break;
       case VAR_MAP:
-        delete reinterpret_cast<Variant::Map*>(value.v);
+        delete value.map;
         break;
       case VAR_LIST:
-        delete reinterpret_cast<Variant::List*>(value.v);
+        delete value.list;
         break;
       case VAR_UUID:
-        delete reinterpret_cast<Uuid*>(value.v);
+        delete value.uuid;
         break;
       default:
         break;
@@ -221,7 +217,7 @@ bool VariantImpl::asBool() const
       case VAR_INT16: return value.i16;
       case VAR_INT32: return value.i32;
       case VAR_INT64: return value.i64;
-      case VAR_STRING: return toBool(*reinterpret_cast<std::string*>(value.v));
+      case VAR_STRING: return toBool(*value.string);
       default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_BOOL)));
     }
 }
@@ -500,8 +496,8 @@ std::string VariantImpl::asString() const
       case VAR_INT64: return boost::lexical_cast<std::string>(value.i64);
       case VAR_DOUBLE: return boost::lexical_cast<std::string>(value.d);
       case VAR_FLOAT: return boost::lexical_cast<std::string>(value.f);
-      case VAR_STRING: return *reinterpret_cast<std::string*>(value.v);
-      case VAR_UUID: return reinterpret_cast<Uuid*>(value.v)->str();
+      case VAR_STRING: return *value.string;
+      case VAR_UUID: return value.uuid->str();
       case VAR_LIST: return toString(asList());
       case VAR_MAP: return toString(asMap());
       default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_STRING)));
@@ -510,7 +506,7 @@ std::string VariantImpl::asString() const
 Uuid VariantImpl::asUuid() const
 {
     switch(type) {
-      case VAR_UUID: return *reinterpret_cast<Uuid*>(value.v);
+      case VAR_UUID: return *value.uuid;
       default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_UUID)));
     }
 }
@@ -531,10 +527,8 @@ bool VariantImpl::isEqualTo(VariantImpl& other) const
           case VAR_INT64: return value.i64 == other.value.i64;
           case VAR_DOUBLE: return value.d == other.value.d;
           case VAR_FLOAT: return value.f == other.value.f;
-          case VAR_STRING: return *reinterpret_cast<std::string*>(value.v)
-                == *reinterpret_cast<std::string*>(other.value.v);
-          case VAR_UUID: return *reinterpret_cast<Uuid*>(value.v)
-                == *reinterpret_cast<Uuid*>(other.value.v);
+          case VAR_STRING: return *value.string == *other.value.string;
+          case VAR_UUID: return *value.uuid == *other.value.uuid;
           case VAR_LIST: return equal(asList(), other.asList());
           case VAR_MAP: return equal(asMap(), other.asMap());
         }
@@ -545,7 +539,7 @@ bool VariantImpl::isEqualTo(VariantImpl& other) const
 const Variant::Map& VariantImpl::asMap() const
 {
     switch(type) {
-      case VAR_MAP: return *reinterpret_cast<Variant::Map*>(value.v);
+      case VAR_MAP: return *value.map;
       default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_MAP)));
     }
 }
@@ -553,7 +547,7 @@ const Variant::Map& VariantImpl::asMap() const
 Variant::Map& VariantImpl::asMap()
 {
     switch(type) {
-      case VAR_MAP: return *reinterpret_cast<Variant::Map*>(value.v);
+      case VAR_MAP: return *value.map;
       default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_MAP)));
     }
 }
@@ -561,7 +555,7 @@ Variant::Map& VariantImpl::asMap()
 const Variant::List& VariantImpl::asList() const
 {
     switch(type) {
-      case VAR_LIST: return *reinterpret_cast<Variant::List*>(value.v);
+      case VAR_LIST: return *value.list;
       default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_LIST)));
     }
 }
@@ -569,7 +563,7 @@ const Variant::List& VariantImpl::asList() const
 Variant::List& VariantImpl::asList()
 {
     switch(type) {
-      case VAR_LIST: return *reinterpret_cast<Variant::List*>(value.v);
+      case VAR_LIST: return *value.list;
       default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_LIST)));
     }
 }
@@ -577,7 +571,7 @@ Variant::List& VariantImpl::asList()
 std::string& VariantImpl::getString()
 {
     switch(type) {
-      case VAR_STRING: return *reinterpret_cast<std::string*>(value.v);
+      case VAR_STRING: return *value.string;
       default: throw InvalidConversion(QPID_MSG("Variant is not a string; use asString() if conversion is required."));
     }
 }
@@ -585,7 +579,7 @@ std::string& VariantImpl::getString()
 const std::string& VariantImpl::getString() const
 {
     switch(type) {
-      case VAR_STRING: return *reinterpret_cast<std::string*>(value.v);
+      case VAR_STRING: return *value.string;
       default: throw InvalidConversion(QPID_MSG("Variant is not a string; use asString() if conversion is required."));
     }
 }
