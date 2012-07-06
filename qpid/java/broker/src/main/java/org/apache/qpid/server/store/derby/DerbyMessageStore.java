@@ -60,6 +60,7 @@ import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
+import org.apache.qpid.server.store.ConfigurationRecoveryHandler.BrokerLinkRecoveryHandler;
 import org.apache.qpid.server.store.ConfiguredObjectHelper;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.Event;
@@ -78,6 +79,9 @@ import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
 import org.apache.qpid.server.store.TransactionLogResource;
+import org.apache.qpid.server.store.ConfigurationRecoveryHandler.BindingRecoveryHandler;
+import org.apache.qpid.server.store.ConfigurationRecoveryHandler.ExchangeRecoveryHandler;
+import org.apache.qpid.server.store.ConfigurationRecoveryHandler.QueueRecoveryHandler;
 
 /**
  * An implementation of a {@link MessageStore} that uses Apache Derby as the persistence
@@ -558,16 +562,17 @@ public class DerbyMessageStore implements MessageStore
         try
         {
             List<ConfiguredObjectRecord> configuredObjects = loadConfiguredObjects();
-            ConfigurationRecoveryHandler.QueueRecoveryHandler qrh = recoveryHandler.begin(this);
-            _configuredObjectHelper.recoverQueues(qrh, configuredObjects);
 
-            ConfigurationRecoveryHandler.ExchangeRecoveryHandler erh = qrh.completeQueueRecovery();
+            ExchangeRecoveryHandler erh = recoveryHandler.begin(this);
             _configuredObjectHelper.recoverExchanges(erh, configuredObjects);
 
-            ConfigurationRecoveryHandler.BindingRecoveryHandler brh = erh.completeExchangeRecovery();
+            QueueRecoveryHandler qrh = erh.completeExchangeRecovery();
+            _configuredObjectHelper.recoverQueues(qrh, configuredObjects);
+
+            BindingRecoveryHandler brh = qrh.completeQueueRecovery();
             _configuredObjectHelper.recoverBindings(brh, configuredObjects);
 
-            ConfigurationRecoveryHandler.BrokerLinkRecoveryHandler lrh = brh.completeBindingRecovery();
+            BrokerLinkRecoveryHandler lrh = brh.completeBindingRecovery();
             recoverBrokerLinks(lrh);
         }
         catch (SQLException e)

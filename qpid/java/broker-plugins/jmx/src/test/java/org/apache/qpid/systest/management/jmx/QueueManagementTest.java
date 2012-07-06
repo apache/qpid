@@ -261,13 +261,18 @@ public class QueueManagementTest extends QpidBrokerTestCase
      */
     public void testAlternateExchangeSurvivesRestart() throws Exception
     {
+        String nonMandatoryExchangeName = "exch" + getName();
+
+        final ManagedBroker managedBroker = _jmxUtils.getManagedBroker(VIRTUAL_HOST);
+        managedBroker.createNewExchange(nonMandatoryExchangeName, "fanout", true);
+
         String queueName1 = getTestQueueName() + "1";
         String altExchange1 = "amq.fanout";
         String addr1WithAltExch = String.format("ADDR:%s;{create:always,node:{durable: true,type:queue,x-declare:{alternate-exchange:'%s'}}}", queueName1, altExchange1);
         Queue queue1 = _session.createQueue(addr1WithAltExch);
 
         String queueName2 = getTestQueueName() + "2";
-        String addr2WithoutAltExch = String.format("ADDR:%s;{create:always,node:{durable: true,type:queue,}}", queueName2);
+        String addr2WithoutAltExch = String.format("ADDR:%s;{create:always,node:{durable: true,type:queue}}", queueName2);
         Queue queue2 = _session.createQueue(addr2WithoutAltExch);
 
         createQueueOnBroker(queue1);
@@ -279,7 +284,7 @@ public class QueueManagementTest extends QpidBrokerTestCase
         ManagedQueue managedQueue2 = _jmxUtils.getManagedQueue(queueName2);
         assertNull("Newly created queue2 does not have expected alternate exchange", managedQueue2.getAlternateExchange());
 
-        String altExchange2 = "amq.fanout";
+        String altExchange2 = nonMandatoryExchangeName;
         managedQueue2.setAlternateExchange(altExchange2);
 
         restartBroker();
