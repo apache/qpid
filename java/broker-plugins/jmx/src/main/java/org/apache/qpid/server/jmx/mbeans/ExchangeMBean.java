@@ -22,8 +22,6 @@
 package org.apache.qpid.server.jmx.mbeans;
 
 import org.apache.qpid.management.common.mbeans.ManagedExchange;
-import org.apache.qpid.management.common.mbeans.ManagedQueue;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.model.Binding;
@@ -35,6 +33,7 @@ import org.apache.qpid.server.model.VirtualHost;
 import javax.management.JMException;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
+import javax.management.OperationsException;
 import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
@@ -55,6 +54,9 @@ import java.util.Map;
 
 public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
 {
+
+    public static final String FANOUT_EXCHANGE_TYPE = "fanout";
+    public static final String HEADERS_EXCHANGE_TYPE  = "headers";
 
     private static final String[] TABULAR_UNIQUE_INDEX_ARRAY =
             TABULAR_UNIQUE_INDEX.toArray(new String[TABULAR_UNIQUE_INDEX.size()]);
@@ -79,7 +81,6 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
             HEADERS_COMPOSITE_ITEM_DESC.toArray(new String[HEADERS_COMPOSITE_ITEM_DESC.size()]);
     private static final  String[] HEADERS_TABULAR_UNIQUE_INDEX_ARRAY =
             HEADERS_TABULAR_UNIQUE_INDEX.toArray(new String[HEADERS_TABULAR_UNIQUE_INDEX.size()]);
-    public static final   String   HEADERS_EXCHANGE_TYPE              = "headers";
 
     static
     {
@@ -179,7 +180,6 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
         }
     }
 
-
     private TabularData getHeadersBindings(Collection<Binding> bindings) throws OpenDataException
     {
         TabularType bindinglistDataType =
@@ -234,7 +234,7 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
 
         for (Binding binding : bindings)
         {
-            String key = "fanout".equals(_exchange.getExchangeType()) ? "*" : binding.getName();
+            String key = FANOUT_EXCHANGE_TYPE.equals(_exchange.getExchangeType()) ? "*" : binding.getName();
             List<String> queueList = bindingMap.get(key);
             if(queueList == null)
             {
@@ -269,7 +269,7 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
                 final String[] keyAndValue = bindings[i].split("=");
                 if (keyAndValue == null || keyAndValue.length == 0 || keyAndValue.length > 2 || keyAndValue[0].length() == 0)
                 {
-                    throw new JMException("Format for headers binding should be \"<attribute1>=<value1>,<attribute2>=<value2>\" ");
+                    throw new JMException("Format for headers binding should be \"<attribute1>=<value1>,<attribute2>=<value2>\"");
                 }
 
                 if(keyAndValue.length == 1)
@@ -284,40 +284,30 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
             }
         }
 
-        Queue queue = null;
-        VirtualHost vhost = _exchange.getParent(VirtualHost.class);
-        for(Queue aQueue : vhost.getQueues())
-        {
-            if(aQueue.getName().equals(queueName))
-            {
-                queue = aQueue;
-                break;
-            }
-        }
+        VirtualHost virtualHost = _exchange.getParent(VirtualHost.class);
+        Queue queue = MBeanUtils.findQueueFromQueueName(virtualHost, queueName);
         _exchange.createBinding(binding, queue, arguments, Collections.EMPTY_MAP);
     }
 
     public void removeBinding(String queueName, String bindingKey)
             throws IOException, JMException
     {
-        Queue queue = null;
-        VirtualHost vhost = _exchange.getParent(VirtualHost.class);
-        for(Queue aQueue : vhost.getQueues())
-        {
-            if(aQueue.getName().equals(queueName))
-            {
-                queue = aQueue;
-                break;
-            }
-        }
+        VirtualHost virtualHost = _exchange.getParent(VirtualHost.class);
+        Queue queue = MBeanUtils.findQueueFromQueueName(virtualHost, queueName);;
 
+        boolean deleted = false;
         for(Binding binding : _exchange.getBindings())
         {
             if(queue.equals(binding.getParent(Queue.class)) && bindingKey.equals(binding.getName()))
             {
                 binding.delete();
+                deleted = true;
             }
         }
-        
+
+        if (!deleted)
+        {
+            throw new OperationsException("No such binding \"" + bindingKey + "\" on queue \"" + queueName + "\"");
+        }
     }
 }
