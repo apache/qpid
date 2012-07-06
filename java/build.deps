@@ -84,7 +84,7 @@ broker-plugins.libs=${felix.libs} ${log4j} ${commons-configuration.libs}
 
 test.libs=${slf4j-log4j} ${log4j} ${junit} ${slf4j-api} ${mockito-all}
 
-perftests.libs=${geronimo-jms} ${slf4j-api} ${commons-collections} ${commons-beanutils-core} ${commons-lang} ${gson-all}
+perftests.libs=${geronimo-jms} ${slf4j-api} ${log4j} ${slf4j-log4j} ${commons-collections} ${commons-beanutils-core} ${commons-lang} ${gson-all}
 
 ibm-icu=lib/com.ibm.icu_3.8.1.v20080530.jar
 ecl-core-jface=lib/org.eclipse.jface_3.4.1.M20080827-2000.jar
