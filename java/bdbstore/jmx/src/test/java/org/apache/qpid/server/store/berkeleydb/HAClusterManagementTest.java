@@ -35,7 +35,9 @@ import javax.management.openmbean.TabularData;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.server.store.berkeleydb.jmx.ManagedBDBHAMessageStore;
+import org.apache.qpid.server.virtualhost.ManagedVirtualHost;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
@@ -221,11 +223,47 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
         }
     }
 
-    private ManagedBDBHAMessageStore getStoreBeanForNodeAtBrokerPort(
-            final int activeBrokerPortNumber) throws Exception
+    public void testVirtualHostOperationsDeniedForNonMasterNode() throws Exception
     {
-        _jmxUtils.open(activeBrokerPortNumber);
+        final Connection activeConnection = getConnection(_brokerFailoverUrl);
+        final int inactiveBrokerPortNumber = _clusterCreator.getPortNumberOfAnInactiveBroker(activeConnection);
+
+        ManagedBroker inactiveBroker = getManagedBrokerBeanForNodeAtBrokerPort(inactiveBrokerPortNumber);
+
+        try
+        {
+            inactiveBroker.createNewQueue(getTestQueueName(), null, true);
+            fail("Exception not thrown");
+        }
+        catch  (Exception e)
+        {
+            String message = e.getMessage();
+            assertEquals(message, "The virtual hosts state of INITIALISING does not permit this operation.");
+        }
+
+        try
+        {
+            inactiveBroker.createNewExchange(getName(), "direct", true);
+            fail("Exception not thrown");
+        }
+        catch  (Exception e)
+        {
+            String message = e.getMessage();
+            assertEquals(message, "The virtual hosts state of INITIALISING does not permit this operation.");
+        }
+    }
+
+    private ManagedBDBHAMessageStore getStoreBeanForNodeAtBrokerPort(final int brokerPortNumber) throws Exception
+    {
+        _jmxUtils.open(brokerPortNumber);
 
         return _jmxUtils.getManagedObject(ManagedBDBHAMessageStore.class, MANAGED_OBJECT_QUERY);
+    }
+
+    private ManagedBroker getManagedBrokerBeanForNodeAtBrokerPort(final int brokerPortNumber) throws Exception
+    {
+        _jmxUtils.open(brokerPortNumber);
+
+        return _jmxUtils.getManagedBroker(VIRTUAL_HOST);
     }
 }
