@@ -582,6 +582,7 @@ public class ClientJmsDelegate
         }
 
         _testConnections.clear();
+        _testSubscriptions.clear();
         _testSessions.clear();
         _testProducers.clear();
         _testConsumers.clear();
