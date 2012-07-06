@@ -43,4 +43,13 @@
     <property name="qpid.logging.level" value="-Damqj.logging.level=warn"/>
     <property name="log4j.config" value="-Dlog4j.configuration=perftests.log4j"/>
     <property name="properties" value="perftests.properties"/>
+
+    <target name="release-bin" depends="release-bin-tasks"/>
+
+    <target name="copy-etc-release" description="override target from module.xml to set flatten=false">
+        <copy todir="${module.release}/etc" failonerror="false" flatten="false">
+            <fileset dir="${module.etc}"/>
+        </copy>
+    </target>
+
 </project>
