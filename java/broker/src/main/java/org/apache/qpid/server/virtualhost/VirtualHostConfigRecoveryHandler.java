@@ -76,15 +76,12 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
     private final VirtualHost _virtualHost;
 
-    private MessageStoreLogSubject _logSubject;
-
-    private MessageStore _store;
-
     private final Map<String, Integer> _queueRecoveries = new TreeMap<String, Integer>();
-    private Map<Long, AbstractServerMessageImpl> _recoveredMessages = new HashMap<Long, AbstractServerMessageImpl>();
-    private Map<Long, StoredMessage> _unusedMessages = new HashMap<Long, StoredMessage>();
+    private final Map<Long, AbstractServerMessageImpl> _recoveredMessages = new HashMap<Long, AbstractServerMessageImpl>();
+    private final Map<Long, StoredMessage> _unusedMessages = new HashMap<Long, StoredMessage>();
 
-
+    private MessageStoreLogSubject _logSubject;
+    private MessageStore _store;
 
     public VirtualHostConfigRecoveryHandler(VirtualHost virtualHost)
     {
@@ -131,12 +128,12 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
         }
         catch (AMQException e)
         {
-            // TODO
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error recovering queue uuid " + id + " name " + queueName, e);
         }
     }
 
-    public ExchangeRecoveryHandler completeQueueRecovery()
+    @Override
+    public BindingRecoveryHandler completeQueueRecovery()
     {
         return this;
     }
@@ -156,19 +153,17 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
         }
         catch (AMQException e)
         {
-            // TODO
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error recovering exchange uuid " + id + " name " + exchangeName, e);
         }
     }
 
-    public BindingRecoveryHandler completeExchangeRecovery()
+    public QueueRecoveryHandler completeExchangeRecovery()
     {
         return this;
     }
 
     public StoredMessageRecoveryHandler begin()
     {
-        // TODO - log begin
         return this;
     }
 
@@ -193,7 +188,6 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
     public void completeMessageRecovery()
     {
-        //TODO - log end
     }
 
     public BridgeRecoveryHandler brokerLink(final UUID id,
