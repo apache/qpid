@@ -29,8 +29,8 @@ public abstract class ParticipantConfig
 
     public static final String DURATION_OVERRIDE_SYSTEM_PROPERTY = "qpid.disttest.duration";
 
-    /** we cache the overridden duration so that we only compute and - more importantly - log it once */
-    private static Long cachedOverriddenDuration;
+    /** used to ensure we only log about the overridden duration once */
+    private boolean _alreadyLoggedAboutOverriddenDuration;
 
     private String _destinationName;
     private long _numberOfMessages;
@@ -75,19 +75,19 @@ public abstract class ParticipantConfig
 
     private Long getOverriddenDuration()
     {
-        if(cachedOverriddenDuration != null)
-        {
-            return cachedOverriddenDuration;
-        }
-
         String overriddenDurationString = System.getProperty(DURATION_OVERRIDE_SYSTEM_PROPERTY);
         if(overriddenDurationString != null)
         {
             try
             {
                 long overriddenDuration = Long.valueOf(overriddenDurationString);
-                LOGGER.info("Applied overridden maximum duration " + overriddenDuration);
-                cachedOverriddenDuration = overriddenDuration;
+
+                if(!_alreadyLoggedAboutOverriddenDuration)
+                {
+                    LOGGER.info("Applied overridden maximum duration " + overriddenDuration);
+                    _alreadyLoggedAboutOverriddenDuration = true;
+                }
+
                 return overriddenDuration;
             }
             catch (NumberFormatException e)
