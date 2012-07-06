@@ -271,6 +271,16 @@ uint32_t encodedSize(const Variant::Map& values)
     return size;
 }
 
+uint32_t encodedSize(const Variant::Map& values, const std::string& efield, const Variant& evalue)
+{
+    uint32_t size = 4/*size field*/ + 4/*count field*/;
+    for(Variant::Map::const_iterator i = values.begin(); i != values.end(); ++i) {
+        size += 1/*size of key*/ + (i->first).size() + 1/*typecode*/ + encodedSize(i->second);
+    }
+    size += 1/*size of key*/ + efield.size() + 1/*typecode*/ + encodedSize(evalue);
+    return size;
+}
+
 uint32_t encodedSize(const Variant::List& values)
 {
     uint32_t size = 4/*size field*/ + 4/*count field*/;
@@ -399,6 +409,21 @@ void encode(const Variant::Map& map, uint32_t len, qpid::framing::Buffer& buffer
     assert(s + len == buffer.getPosition());
 }
 
+void encode(const Variant::Map& map, const std::string& efield, const Variant& evalue, uint32_t len, qpid::framing::Buffer& buffer)
+{
+    uint32_t s = buffer.getPosition();
+    buffer.putLong(len - 4);//exclusive of the size field itself
+    buffer.putLong(map.size() + 1 /* The extra field */ );
+    for (Variant::Map::const_iterator i = map.begin(); i != map.end(); ++i) {
+        buffer.putShortString(i->first);
+        encode(i->second, buffer);
+    }
+    buffer.putShortString(efield);
+    encode(evalue, buffer);
+
+    assert(s + len == buffer.getPosition());
+}
+
 void encode(const Variant::List& list, uint32_t len, qpid::framing::Buffer& buffer)
 {
     uint32_t s = buffer.getPosition();
@@ -475,8 +500,26 @@ void translate(const Variant::Map& from, FieldTable& to)
     assert( len == buff.getPosition() );
     buff.reset();
     to.decode(buff);
+}
 
-    //convert(from, to, &toFieldTableEntry);
+void translate(const Variant::Map& from, const std::string& efield, const Variant& evalue, FieldTable& to)
+{
+    // Create buffer of correct size to encode Variant::Map
+    uint32_t len = encodedSize(from, efield, evalue);
+    std::vector<char> space(len);
+    qpid::framing::Buffer buff(&space[0], len);
+
+    // Encode Variant::Map into buffer directly -
+    // We pass the already calculated length in to avoid
+    // recalculating it.
+    encode(from, efield, evalue, len, buff);
+
+    // Give buffer to FieldTable
+    // Could speed this up a bit by avoiding copying
+    // the buffer we just created into the FieldTable
+    assert( len == buff.getPosition() );
+    buff.reset();
+    to.decode(buff);
 }
 
 void translate(const FieldTable& from, Variant::Map& to)
