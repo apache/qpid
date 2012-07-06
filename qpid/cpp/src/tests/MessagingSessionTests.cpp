@@ -1146,6 +1146,24 @@ QPID_AUTO_TEST_CASE(testLargeRoutingKey)
     BOOST_CHECK_THROW(fix.session.createReceiver(address), qpid::messaging::MessagingException);
 }
 
+QPID_AUTO_TEST_CASE(testAlternateExchangeInLinkDeclare)
+{
+    MessagingFixture fix;
+    Sender s = fix.session.createSender("amq.direct/key");
+    Receiver r1 = fix.session.createReceiver("amq.direct/key;{link:{x-declare:{alternate-exchange:'amq.fanout'}}}");
+    Receiver r2 = fix.session.createReceiver("amq.fanout");
+
+    for (uint i = 0; i < 10; ++i) {
+        s.send(Message((boost::format("Message_%1%") % (i+1)).str()), true);
+    }
+    r1.close();//orphans all messages in subscription queue, which should then be routed through alternate exchange
+    for (uint i = 0; i < 10; ++i) {
+        Message received;
+        BOOST_CHECK(r2.fetch(received, Duration::SECOND));
+        BOOST_CHECK_EQUAL(received.getContent(), (boost::format("Message_%1%") % (i+1)).str());
+    }
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
