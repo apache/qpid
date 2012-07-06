@@ -28,19 +28,20 @@ import java.util.UUID;
 
 public interface ConfigurationRecoveryHandler
 {
-    QueueRecoveryHandler begin(MessageStore store);
-
-    public static interface QueueRecoveryHandler
-    {
-        void queue(UUID id, String queueName, String owner, boolean exclusive, FieldTable arguments, UUID alternateExchangeId);
-        ExchangeRecoveryHandler completeQueueRecovery();
-    }
+    ExchangeRecoveryHandler begin(MessageStore store);
 
     public static interface ExchangeRecoveryHandler
     {
         void exchange(UUID id, String exchangeName, String type, boolean autoDelete);
-        BindingRecoveryHandler completeExchangeRecovery();
+        QueueRecoveryHandler completeExchangeRecovery();
     }
+
+    public static interface QueueRecoveryHandler
+    {
+        void queue(UUID id, String queueName, String owner, boolean exclusive, FieldTable arguments, UUID alternateExchangeId);
+        BindingRecoveryHandler completeQueueRecovery();
+    }
+
 
     public static interface BindingRecoveryHandler
     {
