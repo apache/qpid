@@ -55,7 +55,7 @@ bool TimerTask::readyToFire() const {
 bool TimerTask::prepareToFire() {
     Monitor::ScopedLock l(stateMonitor);
     if (state != CANCELLED) {
-        state = CALLBACK;
+        state = CALLING;
         return true;
     } else {
         return false;
@@ -90,7 +90,7 @@ void TimerTask::restart() {
 
 void TimerTask::cancel() {
     Monitor::ScopedLock l(stateMonitor);
-    while (state == CALLBACK) {
+    while (state == CALLING) {
         stateMonitor.wait();
     }
     state = CANCELLED;

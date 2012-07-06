@@ -49,7 +49,7 @@ class TimerTask : public RefCounted {
     Duration period;
     AbsTime nextFireTime;
     qpid::sys::Monitor stateMonitor;
-    enum {WAITING, CALLBACK, CANCELLED} state;
+    enum {WAITING, CALLING, CANCELLED} state;
 
     bool prepareToFire();
     void finishFiring();
