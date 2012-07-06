@@ -753,15 +753,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
            try
            {
                initialiseHouseKeeping(_vhostConfig.getHousekeepingCheckPeriod());
-//TODO: implement state changing for the VirtualHost MBean instead of registering and unregistering
-//               try
-//               {
-//                   _brokerMBean.register();
-//               }
-//               catch (JMException e)
-//               {
-//                   throw new RuntimeException("Failed to register virtual host mbean for virtual host " + getName(), e);
-//               }
                finalState = State.ACTIVE;
            }
            finally
@@ -787,8 +778,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
                  */
 
                 _connectionRegistry.close(IConnectionRegistry.VHOST_PASSIVATE_REPLY_TEXT);
-//TODO: implement state changing for the VirtualHost MBean instead of registering and unregistering
-//              _brokerMBean.unregister();
                 removeHouseKeepingTasks();
 
                 _queueRegistry.stopAllAndUnregisterMBeans();
