@@ -45,7 +45,7 @@ import org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore;
  * <p>
  * At runtime, the classloader loading this clas must have visibility of the other Qpid JMX classes. This is
  * currently arranged through OSGI using the <b>fragment</b> feature so that this bundle shares the
- * same classloader as broker-plugins-jmx.  See the <b>Fragment-Host:</b> header within the MANIFEST.MF
+ * same classloader as broker-plugins-management-jmx.  See the <b>Fragment-Host:</b> header within the MANIFEST.MF
  * of this bundle.
  * </p>
  */

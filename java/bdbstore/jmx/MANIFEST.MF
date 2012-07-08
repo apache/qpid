@@ -8,7 +8,7 @@ Bundle-DocURL: http://www.apache.org/
 Bundle-Version: 1.0.0
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ClassPath: .
-Fragment-Host: broker-plugins-jmx
+Fragment-Host: broker-plugins-management-jmx
 Import-Package:  org.apache.qpid,
  org.apache.qpid.management.common.mbeans.annotations,
  org.apache.qpid.server.model,
