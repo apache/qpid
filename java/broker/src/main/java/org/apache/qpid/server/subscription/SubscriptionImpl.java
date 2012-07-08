@@ -91,7 +91,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     private final long _subscriptionID;
     private LogSubject _logSubject;
     private LogActor _logActor;
-    private UUID _id;
+    private UUID _qmfId;
     private final AtomicLong _deliveredCount = new AtomicLong(0);
     private final AtomicLong _deliveredBytes = new AtomicLong(0);
 
@@ -391,7 +391,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         }
         _queue = queue;
 
-        _id = getConfigStore().createId();
+        _qmfId = getConfigStore().createId();
         getConfigStore().addConfiguredObject(this);
 
         _logSubject = new SubscriptionLogSubject(this);
@@ -767,9 +767,10 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         return true;
     }
 
-    public UUID getId()
+    @Override
+    public UUID getQMFId()
     {
-        return _id;
+        return _qmfId;
     }
 
     public boolean isDurable()

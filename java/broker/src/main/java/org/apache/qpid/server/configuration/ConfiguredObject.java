@@ -25,7 +25,7 @@ import java.util.UUID;
 
 public interface ConfiguredObject<T extends ConfigObjectType<T,C>, C extends ConfiguredObject<T, C>>
 {
-    public UUID getId();
+    public UUID getQMFId();
 
     public T getConfigType();
 

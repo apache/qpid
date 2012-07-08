@@ -75,11 +75,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         _connectionId = connectionId;
     }
 
-    public UUID getId()
-    {
-        return _config.getId();
-    }
-
     public Object getReference()
     {
         return _reference;

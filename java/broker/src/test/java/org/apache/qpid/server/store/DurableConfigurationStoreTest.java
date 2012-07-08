@@ -161,8 +161,8 @@ public class DurableConfigurationStoreTest extends QpidTestCase
     public void testBindQueue() throws Exception
     {
         AMQQueue queue = createTestQueue(QUEUE_NAME, "queueOwner", false);
-        Binding binding = new Binding(UUIDGenerator.generateRandomUUID(), ROUTING_KEY, queue, _exchange,
-                FieldTable.convertToMap(_bindingArgs));
+        Binding binding = new Binding(UUIDGenerator.generateRandomUUID(), null, ROUTING_KEY, queue,
+                _exchange, FieldTable.convertToMap(_bindingArgs));
         _store.bindQueue(binding);
 
         reopenStore();
@@ -175,8 +175,8 @@ public class DurableConfigurationStoreTest extends QpidTestCase
     public void testUnbindQueue() throws Exception
     {
         AMQQueue queue = createTestQueue(QUEUE_NAME, "queueOwner", false);
-        Binding binding = new Binding(UUIDGenerator.generateRandomUUID(), ROUTING_KEY, queue, _exchange,
-                FieldTable.convertToMap(_bindingArgs));
+        Binding binding = new Binding(UUIDGenerator.generateRandomUUID(), null, ROUTING_KEY, queue,
+                _exchange, FieldTable.convertToMap(_bindingArgs));
         _store.bindQueue(binding);
 
         _store.unbindQueue(binding);

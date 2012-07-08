@@ -436,7 +436,7 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             QMFObject qmfObject = classObjects.remove(object);
             if(qmfObject != null)
             {
-                _managedObjectsById.get(qmfClass).remove(object.getId());
+                _managedObjectsById.get(qmfClass).remove(object.getQMFId());
                 objectRemoved(qmfObject);
             }
         }
@@ -468,7 +468,7 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             }
         }
 
-        classObjectsById.put(object.getId(),qmfObject);
+        classObjectsById.put(object.getQMFId(),qmfObject);
 
         if(classObjects.putIfAbsent(object, qmfObject) == null)
         {
@@ -570,7 +570,7 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
 
         public UUID getSystemId()
         {
-            return _obj.getId();
+            return _obj.getQMFId();
         }
 
         public String getOsName()
@@ -598,9 +598,9 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             return _obj.getOSArchitecture();
         }
 
-        public UUID getId()
+        public UUID getQMFId()
         {
-            return _obj.getId();
+            return _obj.getQMFId();
         }
 
         public long getCreateTime()
@@ -964,9 +964,9 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
         }
 
-        public UUID getId()
+        public UUID getQMFId()
         {
-            return _obj.getId();
+            return _obj.getQMFId();
         }
 
         public long getCreateTime()
@@ -1004,9 +1004,9 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             return _obj.getFederationTag();
         }
 
-        public UUID getId()
+        public UUID getQMFId()
         {
-            return _obj.getId();
+            return _obj.getQMFId();
         }
 
         public long getCreateTime()
@@ -1135,9 +1135,9 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             return _obj.getByteRoutes();
         }
 
-        public UUID getId()
+        public UUID getQMFId()
         {
-            return _obj.getId();
+            return _obj.getQMFId();
         }
 
         public long getCreateTime()
@@ -1470,9 +1470,9 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             return _obj.getArguments();
         }
 
-        public UUID getId()
+        public UUID getQMFId()
         {
-            return _obj.getId();
+            return _obj.getQMFId();
         }
 
         public long getCreateTime()
@@ -1526,9 +1526,9 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             return _obj.getMatches();
         }
 
-        public UUID getId()
+        public UUID getQMFId()
         {
-            return _obj.getId();
+            return _obj.getQMFId();
         }
 
         public long getCreateTime()
@@ -1647,9 +1647,9 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             return factory.createResponseCommand();
         }
 
-        public UUID getId()
+        public UUID getQMFId()
         {
-            return _obj.getId();
+            return _obj.getQMFId();
         }
 
         public long getCreateTime()
@@ -1805,9 +1805,9 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             return factory.createResponseCommand();
         }
 
-        public UUID getId()
+        public UUID getQMFId()
         {
-            return _obj.getId();
+            return _obj.getQMFId();
         }
 
         public long getCreateTime()
@@ -1876,9 +1876,9 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             return _obj.getDelivered();
         }
 
-        public UUID getId()
+        public UUID getQMFId()
         {
-            return _obj.getId();
+            return _obj.getQMFId();
         }
 
         public long getCreateTime()
@@ -1972,9 +1972,9 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             return null;
         }
 
-        public UUID getId()
+        public UUID getQMFId()
         {
-            return _obj.getId();
+            return _obj.getQMFId();
         }
 
         public long getCreateTime()
@@ -2066,9 +2066,9 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             return factory.createResponseCommand();
         }
 
-        public UUID getId()
+        public UUID getQMFId()
         {
-            return _obj.getId();
+            return _obj.getQMFId();
         }
 
         public long getCreateTime()

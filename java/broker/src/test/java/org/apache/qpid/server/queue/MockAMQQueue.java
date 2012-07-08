@@ -186,6 +186,12 @@ public class MockAMQQueue implements AMQQueue
         return null;
     }
 
+    @Override
+    public UUID getQMFId()
+    {
+        return null;
+    }
+
     public QueueConfigType getConfigType()
     {
         return null;

@@ -53,6 +53,7 @@ import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
@@ -78,9 +79,11 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
     private static final int HOUSEKEEPING_SHUTDOWN_TIMEOUT = 5;
 
-    private final UUID _id;
+    private final UUID _qmfId;
 
     private final String _name;
+
+    private final UUID _id;
 
     private final long _createTime = System.currentTimeMillis();
 
@@ -135,7 +138,8 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         _name = _vhostConfig.getName();
         _dtxRegistry = new DtxRegistry();
 
-        _id = _appRegistry.getConfigStore().createId();
+        _qmfId = _appRegistry.getConfigStore().createId();
+        _id = UUIDGenerator.generateVhostUUID(_name);
 
         CurrentActor.get().message(VirtualHostMessages.CREATED(_name));
 
@@ -181,6 +185,12 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
     public UUID getId()
     {
         return _id;
+    }
+
+    @Override
+    public UUID getQMFId()
+    {
+        return _qmfId;
     }
 
     public VirtualHostConfigType getConfigType()

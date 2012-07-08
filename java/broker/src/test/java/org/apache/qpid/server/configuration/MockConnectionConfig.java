@@ -25,14 +25,14 @@ import java.util.UUID;
 public class MockConnectionConfig implements ConnectionConfig
 {
 
-    public MockConnectionConfig(UUID _id, ConnectionConfigType _configType,
+    public MockConnectionConfig(UUID _qmfId, ConnectionConfigType _configType,
                     ConfiguredObject<ConnectionConfigType, ConnectionConfig> _parent, boolean _durable,
                     long _createTime, VirtualHostConfig _virtualHost, String _address, Boolean _incoming,
                     Boolean _systemConnection, Boolean _federationLink, String _authId, String _remoteProcessName,
                     Integer _remotePID, Integer _remoteParentPID, ConfigStore _configStore, Boolean _shadow)
     {
         super();
-        this._id = _id;
+        this._qmfId = _qmfId;
         this._configType = _configType;
         this._parent = _parent;
         this._durable = _durable;
@@ -50,7 +50,7 @@ public class MockConnectionConfig implements ConnectionConfig
         this._shadow = _shadow;
     }
 
-    private UUID _id;
+    private UUID _qmfId;
     private ConnectionConfigType _configType;
     private ConfiguredObject<ConnectionConfigType, ConnectionConfig> _parent;
     private boolean _durable;
@@ -68,9 +68,9 @@ public class MockConnectionConfig implements ConnectionConfig
     private Boolean _shadow;
 
     @Override
-    public UUID getId()
+    public UUID getQMFId()
     {
-        return _id;
+        return _qmfId;
     }
 
     @Override
