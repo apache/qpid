@@ -37,16 +37,13 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 
 final class ConnectionAdapter extends AbstractAdapter implements Connection
 {
-
-
-
-
     private AMQConnectionModel _connection;
 
     private final Map<AMQSessionModel, SessionAdapter> _sessionAdapters =
@@ -55,6 +52,7 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
 
     public ConnectionAdapter(final AMQConnectionModel conn)
     {
+        super(UUIDGenerator.generateRandomUUID());
         _connection = conn;
         _statistics = new ConnectionStatisticsAdapter(conn);
     }

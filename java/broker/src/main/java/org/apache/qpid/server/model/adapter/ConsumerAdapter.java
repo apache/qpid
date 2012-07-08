@@ -26,6 +26,7 @@ import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.subscription.Subscription;
 
 import java.security.AccessControlException;
@@ -40,12 +41,11 @@ public class ConsumerAdapter extends AbstractAdapter implements Consumer
 
     public ConsumerAdapter(final QueueAdapter queueAdapter, final Subscription subscription)
     {
-        super(queueAdapter.getVirtualHost().getName(),
-              queueAdapter.getName(),
-              subscription.getSessionModel().getConnectionModel().getRemoteAddressString(),
-              String.valueOf(subscription.getSessionModel().getChannelId()),
-              subscription.getConsumerName() );
-
+        super(UUIDGenerator.generateConsumerUUID(queueAdapter.getVirtualHost().getName(),
+                                               queueAdapter.getName(),
+                                               subscription.getSessionModel().getConnectionModel().getRemoteAddressString(),
+                                               String.valueOf(subscription.getSessionModel().getChannelId()),
+                                               subscription.getConsumerName()));
         _subscription = subscription;
         _queue = queueAdapter;
         _statistics = new ConsumerStatistics();

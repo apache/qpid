@@ -41,19 +41,9 @@ abstract class AbstractAdapter implements ConfiguredObject
 
     private final UUID _id;
 
-    protected AbstractAdapter(String... names)
+    protected AbstractAdapter(UUID id)
     {
-        StringBuilder sb = new StringBuilder();
-        for(String name : names)
-        {
-            sb.append('/').append(name);
-        }
-        _id = UUID.nameUUIDFromBytes(sb.toString().getBytes());
-    }
-
-    protected AbstractAdapter()
-    {
-        _id = UUID.randomUUID();
+        _id = id;
     }
 
     static String getStringAttribute(String name, Map<String,Object> attributes, String defaultVal)
