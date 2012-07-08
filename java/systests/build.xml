@@ -32,7 +32,7 @@ nn - or more contributor license agreements.  See the NOTICE file
       </or>
     </condition>
 
-    <property name="module.depends" value="client management/common broker broker/test common amqp-1-0-common common/test jca broker-plugins/management ${systests.optional.depends}"/>
+    <property name="module.depends" value="client management/common broker broker/test common amqp-1-0-common common/test jca broker-plugins/management-http ${systests.optional.depends}"/>
     <property name="module.test.src" location="src/main/java"/>
     <property name="module.test.excludes"
               value="**/DropInTest.java,**/TestClientControlledTest.java"/>
