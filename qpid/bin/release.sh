@@ -205,19 +205,21 @@ fi
 if [ "JAVA" == "$JAVA" ] ; then
   # generate the java 'release' archive seperately to ensure it doesnt have any optional feature dependencies in it
   pushd qpid-${VER}/java
-  ant build release -Dsvnversion.output=${REV}
+  ant clean build release -Dsvnversion.output=${REV}
   popd
 
   cp qpid-${VER}/java/release/*.tar.gz  artifacts/qpid-java-${VER}.tar.gz
 
   # now generate the binary packages, with the glue for optional features
   pushd qpid-${VER}/java
-  ant build release-bin release-mvn -Dsvnversion.output=${REV} -Dmaven.snapshot=false -Dmodules.opt=bdbstore -Ddownload-bdb=true
+  ant build release-bin -Dsvnversion.output=${REV} -Dmodules.opt="bdbstore,bdbstore/jmx" -Ddownload-bdb=true
+  ant release-mvn -Dsvnversion.output=${REV} -Dmodules.opt="bdbstore,bdbstore/jmx" -Dmaven.snapshot=false
   popd
 
   cp qpid-${VER}/java/broker/release/*.tar.gz artifacts/qpid-java-broker-${VER}.tar.gz
   cp qpid-${VER}/java/client/release/*.tar.gz artifacts/qpid-java-client-${VER}.tar.gz
-  cp qpid-${VER}/java/management/eclipse-plugin/release/*.tar.gz qpid-${VER}/java/management/eclipse-plugin/release/*.zip artifacts/
+  cp qpid-${VER}/java/management/eclipse-plugin/release/*.tar.gz artifacts/
+  cp qpid-${VER}/java/management/eclipse-plugin/release/*.zip artifacts/
 
   # copy the Maven artifacts
   cp -a qpid-${VER}/java/client/release/maven artifacts/
@@ -225,6 +227,12 @@ if [ "JAVA" == "$JAVA" ] ; then
   cp -a qpid-${VER}/java/broker/release/maven artifacts/
   cp -a qpid-${VER}/java/bdbstore/release/maven artifacts/
   cp -a qpid-${VER}/java/management/common/release/maven artifacts/
+  cp -a qpid-${VER}/java/amqp-1-0-common/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/access-control/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/firewall/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/management-jmx/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/management-http/release/maven artifacts/
+  cp -a qpid-${VER}/java/bdbstore/jmx/release/maven artifacts/
 fi
 
 if [ "TOOLS" = "$TOOLS" ] ; then
