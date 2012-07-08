@@ -89,7 +89,7 @@ public class BrokerLink implements LinkConfig, ConnectionListener
     private final String _username;
     private final String _password;
     private final VirtualHost _virtualHost;
-    private UUID _id;
+    private UUID _qmfId;
     private AtomicBoolean _closing = new AtomicBoolean();
     private final long _createTime;
     private Connection _qpidConnection;
@@ -133,7 +133,7 @@ public class BrokerLink implements LinkConfig, ConnectionListener
     private class ConnectionConfigAdapter implements ConnectionConfig
     {
         private long _adapterCreateTime = System.currentTimeMillis();
-        private UUID _id = BrokerLink.this.getConfigStore().createId();
+        private UUID _qmfId = BrokerLink.this.getConfigStore().createId();
 
         public VirtualHost getVirtualHost()
         {
@@ -185,9 +185,10 @@ public class BrokerLink implements LinkConfig, ConnectionListener
             return getVirtualHost().getConfigStore();
         }
 
-        public UUID getId()
+        @Override
+        public UUID getQMFId()
         {
-            return _id;
+            return _qmfId;
         }
 
         public ConnectionConfigType getConfigType()
@@ -230,11 +231,11 @@ public class BrokerLink implements LinkConfig, ConnectionListener
         }
     };
 
-    public BrokerLink(final VirtualHost virtualHost, UUID id, long createTime, Map<String, String> arguments)
+    public BrokerLink(final VirtualHost virtualHost, UUID qmfId, long createTime, Map<String, String> arguments)
     {
         _virtualHost = virtualHost;
-        _id = id;
-        virtualHost.getConfigStore().persistentIdInUse(id);
+        _qmfId = qmfId;
+        virtualHost.getConfigStore().persistentIdInUse(qmfId);
         _createTime = createTime;
         _transport = arguments.get(TRANSPORT);
 
@@ -289,7 +290,7 @@ public class BrokerLink implements LinkConfig, ConnectionListener
         _authMechanism = authMechanism;
         _username = username;
         _password = password;
-        _id = durable ? virtualHost.getConfigStore().createPersistentId() : virtualHost.getConfigStore().createId();
+        _qmfId = durable ? virtualHost.getConfigStore().createPersistentId() : virtualHost.getConfigStore().createId();
 
         if(durable)
         {
@@ -457,9 +458,10 @@ public class BrokerLink implements LinkConfig, ConnectionListener
         return _remoteVhost;
     }
 
-    public UUID getId()
+    @Override
+    public UUID getQMFId()
     {
-        return _id;
+        return _qmfId;
     }
 
     public LinkConfigType getConfigType()
@@ -672,7 +674,7 @@ public class BrokerLink implements LinkConfig, ConnectionListener
     public String toString()
     {
         return "BrokerLink{" +
-               " _id=" + _id +
+               " _id=" + _qmfId +
                ", _transport='" + _transport + '\'' +
                ", _host='" + _host + '\'' +
                ", _port=" + _port +

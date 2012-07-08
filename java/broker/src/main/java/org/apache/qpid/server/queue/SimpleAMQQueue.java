@@ -185,6 +185,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     //TODO : persist creation time
     private long _createTime = System.currentTimeMillis();
+    private UUID _qmfId;
     private ConfigurationPlugin _queueConfiguration;
 
     /** the maximum delivery count for each message on this queue or 0 if maximum delivery count is not to be enforced. */
@@ -242,7 +243,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         _arguments = arguments == null ? new HashMap<String, Object>() : new HashMap<String, Object>(arguments);
 
         _id = id;
-
+        _qmfId = getConfigStore().createId();
         _asyncDelivery = ReferenceCountingExecutorService.getInstance().acquireExecutorService();
 
         _logSubject = new QueueLogSubject(this);
@@ -328,6 +329,12 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     public UUID getId()
     {
         return _id;
+    }
+
+    @Override
+    public UUID getQMFId()
+    {
+        return _qmfId;
     }
 
     public QueueConfigType getConfigType()

@@ -990,8 +990,8 @@ public class DerbyMessageStore implements MessageStore
                 try
                 {
 
-                    stmt.setLong(1, link.getId().getLeastSignificantBits());
-                    stmt.setLong(2, link.getId().getMostSignificantBits());
+                    stmt.setLong(1, link.getQMFId().getLeastSignificantBits());
+                    stmt.setLong(2, link.getQMFId().getMostSignificantBits());
                     ResultSet rs = stmt.executeQuery();
                     try
                     {
@@ -1004,8 +1004,8 @@ public class DerbyMessageStore implements MessageStore
                             try
                             {
 
-                                insertStmt.setLong(1, link.getId().getLeastSignificantBits());
-                                insertStmt.setLong(2, link.getId().getMostSignificantBits());
+                                insertStmt.setLong(1, link.getQMFId().getLeastSignificantBits());
+                                insertStmt.setLong(2, link.getQMFId().getMostSignificantBits());
                                 insertStmt.setLong(3, link.getCreateTime());
 
                                 byte[] argumentBytes = convertStringMapToBytes(link.getArguments());
@@ -1082,8 +1082,8 @@ public class DerbyMessageStore implements MessageStore
         {
             conn = newAutoCommitConnection();
             stmt = conn.prepareStatement(DELETE_FROM_LINKS);
-            stmt.setLong(1, link.getId().getLeastSignificantBits());
-            stmt.setLong(2, link.getId().getMostSignificantBits());
+            stmt.setLong(1, link.getQMFId().getLeastSignificantBits());
+            stmt.setLong(2, link.getQMFId().getMostSignificantBits());
             int results = stmt.executeUpdate();
 
             if (results == 0)
@@ -1119,7 +1119,7 @@ public class DerbyMessageStore implements MessageStore
                 try
                 {
 
-                    UUID id = bridge.getId();
+                    UUID id = bridge.getQMFId();
                     stmt.setLong(1, id.getLeastSignificantBits());
                     stmt.setLong(2, id.getMostSignificantBits());
                     ResultSet rs = stmt.executeQuery();
@@ -1139,7 +1139,7 @@ public class DerbyMessageStore implements MessageStore
 
                                 insertStmt.setLong(3, bridge.getCreateTime());
 
-                                UUID linkId = bridge.getLink().getId();
+                                UUID linkId = bridge.getLink().getQMFId();
                                 insertStmt.setLong(4, linkId.getLeastSignificantBits());
                                 insertStmt.setLong(5, linkId.getMostSignificantBits());
 
@@ -1185,8 +1185,8 @@ public class DerbyMessageStore implements MessageStore
         {
             conn = newAutoCommitConnection();
             stmt = conn.prepareStatement(DELETE_FROM_BRIDGES);
-            stmt.setLong(1, bridge.getId().getLeastSignificantBits());
-            stmt.setLong(2, bridge.getId().getMostSignificantBits());
+            stmt.setLong(1, bridge.getQMFId().getLeastSignificantBits());
+            stmt.setLong(2, bridge.getQMFId().getMostSignificantBits());
             int results = stmt.executeUpdate();
 
             if (results == 0)

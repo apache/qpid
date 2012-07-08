@@ -945,7 +945,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         if (_stateManager.isInState(State.ACTIVE))
         {
             DatabaseEntry key = new DatabaseEntry();
-            UUIDTupleBinding.getInstance().objectToEntry(link.getId(), key);
+            UUIDTupleBinding.getInstance().objectToEntry(link.getQMFId(), key);
 
             DatabaseEntry value = new DatabaseEntry();
             LongBinding.longToEntry(link.getCreateTime(), value);
@@ -966,7 +966,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     public void deleteBrokerLink(final BrokerLink link) throws AMQStoreException
     {
         DatabaseEntry key = new DatabaseEntry();
-        UUIDTupleBinding.getInstance().objectToEntry(link.getId(), key);
+        UUIDTupleBinding.getInstance().objectToEntry(link.getQMFId(), key);
         try
         {
             OperationStatus status = _linkDb.delete(null, key);
@@ -986,10 +986,10 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         if (_stateManager.isInState(State.ACTIVE))
         {
             DatabaseEntry key = new DatabaseEntry();
-            UUIDTupleBinding.getInstance().objectToEntry(bridge.getId(), key);
+            UUIDTupleBinding.getInstance().objectToEntry(bridge.getQMFId(), key);
 
             DatabaseEntry value = new DatabaseEntry();
-            UUIDTupleBinding.getInstance().objectToEntry(bridge.getLink().getId(),value);
+            UUIDTupleBinding.getInstance().objectToEntry(bridge.getLink().getQMFId(),value);
             LongBinding.longToEntry(bridge.getCreateTime(),value);
             StringMapBinding.getInstance().objectToEntry(bridge.getArguments(), value);
 
@@ -1009,7 +1009,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     public void deleteBridge(final Bridge bridge) throws AMQStoreException
     {
         DatabaseEntry key = new DatabaseEntry();
-        UUIDTupleBinding.getInstance().objectToEntry(bridge.getId(), key);
+        UUIDTupleBinding.getInstance().objectToEntry(bridge.getQMFId(), key);
         try
         {
             OperationStatus status = _bridgeDb.delete(null, key);

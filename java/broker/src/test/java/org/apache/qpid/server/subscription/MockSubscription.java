@@ -302,7 +302,7 @@ public class MockSubscription implements Subscription
         }
 
         @Override
-        public UUID getId()
+        public UUID getQMFId()
         {
             return null;
         }
@@ -450,12 +450,6 @@ public class MockSubscription implements Subscription
         public void resetStatistics()
         {
 
-        }
-
-        @Override
-        public UUID getId()
-        {
-            return null;
         }
 
         @Override

@@ -91,7 +91,7 @@ public class Bridge implements BridgeConfig
     private final String _tag;
     private final String _excludes;
     private final BrokerLink _link;
-    private UUID _id;
+    private UUID _qmfId;
     private long _createTime = System.currentTimeMillis();
 
     private Session _session;
@@ -124,7 +124,7 @@ public class Bridge implements BridgeConfig
         _key = key;
         _tag = tag;
         _excludes = excludes;
-        _id = durable ? brokerLink.getConfigStore().createPersistentId() : brokerLink.getConfigStore().createId();
+        _qmfId = durable ? brokerLink.getConfigStore().createPersistentId() : brokerLink.getConfigStore().createId();
 
         _transaction = new AutoCommitTransaction(getVirtualHost().getMessageStore());
 
@@ -198,7 +198,7 @@ public class Bridge implements BridgeConfig
     {
         _link = brokerLink;
         _bridgeNo = bridgeNo;
-        _id = id;
+        _qmfId = id;
         brokerLink.getConfigStore().persistentIdInUse(id);
         _createTime = createTime;
 
@@ -249,9 +249,10 @@ public class Bridge implements BridgeConfig
         return Collections.unmodifiableMap(arguments);
     }
 
-    public UUID getId()
+    @Override
+    public UUID getQMFId()
     {
-        return _id;
+        return _qmfId;
     }
 
     public BridgeConfigType getConfigType()

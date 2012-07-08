@@ -169,7 +169,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
     private List<QueueEntry> _resendList = new ArrayList<QueueEntry>();
     private static final
     AMQShortString IMMEDIATE_DELIVERY_REPLY_TEXT = new AMQShortString("Immediate delivery is not possible.");
-    private final UUID _id;
+    private final UUID _qmfId;
     private long _createTime = System.currentTimeMillis();
 
     private final ClientDeliveryMethod _clientDeliveryMethod;
@@ -182,7 +182,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
 
         _actor = new AMQPChannelActor(this, session.getLogActor().getRootMessageLogger());
         _logSubject = new ChannelLogSubject(this);
-        _id = getConfigStore().createId();
+        _qmfId = getConfigStore().createId();
         _actor.message(ChannelMessages.CREATE());
 
         getConfigStore().addConfiguredObject(this);
@@ -1491,9 +1491,10 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
         return false;
     }
 
-    public UUID getId()
+    @Override
+    public UUID getQMFId()
     {
-        return _id;
+        return _qmfId;
     }
 
     public String getSessionName()
@@ -1659,6 +1660,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
 
     public int compareTo(AMQSessionModel session)
     {
-        return getId().compareTo(session.getId());
+        return getQMFId().compareTo(session.getQMFId());
     }
 }

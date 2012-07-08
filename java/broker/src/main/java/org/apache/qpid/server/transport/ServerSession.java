@@ -680,7 +680,8 @@ public class ServerSession extends Session
         return (VirtualHost) _connectionConfig.getVirtualHost();
     }
 
-    public UUID getId()
+    @Override
+    public UUID getQMFId()
     {
         return _id;
     }
@@ -1067,6 +1068,6 @@ public class ServerSession extends Session
 
     public int compareTo(AMQSessionModel session)
     {
-        return getId().compareTo(session.getId());
+        return getQMFId().compareTo(session.getQMFId());
     }
 }

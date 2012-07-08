@@ -146,7 +146,7 @@ public class TopicDeletePolicyTest extends InternalBrokerBaseCase
 
         MockAMQQueue queue = createOwnedQueue();
 
-        queue.addBinding(new Binding(null, "bindingKey", queue, new DirectExchange(), null));
+        queue.addBinding(new Binding(null, null, "bindingKey", queue, new DirectExchange(), null));
 
         policy.performPolicy(queue);
 
@@ -165,7 +165,7 @@ public class TopicDeletePolicyTest extends InternalBrokerBaseCase
 
         MockAMQQueue queue = createOwnedQueue();
 
-        queue.addBinding(new Binding(null, "bindingKey", queue, new TopicExchange(), null));
+        queue.addBinding(new Binding(null, null, "bindingKey", queue, new TopicExchange(), null));
 
         queue.setAutoDelete(false);
 
@@ -186,7 +186,7 @@ public class TopicDeletePolicyTest extends InternalBrokerBaseCase
 
         final MockAMQQueue queue = createOwnedQueue();
 
-        queue.addBinding(new Binding(null, "bindingKey", queue, new TopicExchange(), null));
+        queue.addBinding(new Binding(null, null, "bindingKey", queue, new TopicExchange(), null));
 
         setQueueToAutoDelete(queue);
 
@@ -207,7 +207,7 @@ public class TopicDeletePolicyTest extends InternalBrokerBaseCase
 
         MockAMQQueue queue = createOwnedQueue();
 
-        queue.addBinding(new Binding(null, "bindingKey", queue, new TopicExchange(), null));
+        queue.addBinding(new Binding(null, null, "bindingKey", queue, new TopicExchange(), null));
 
         policy.performPolicy(queue);
 
@@ -233,7 +233,7 @@ public class TopicDeletePolicyTest extends InternalBrokerBaseCase
 
         MockAMQQueue queue = createOwnedQueue();
 
-        queue.addBinding(new Binding(null, "bindingKey", queue, new TopicExchange(), null));
+        queue.addBinding(new Binding(null, null, "bindingKey", queue, new TopicExchange(), null));
 
         policy.performPolicy(queue);
 
@@ -253,7 +253,7 @@ public class TopicDeletePolicyTest extends InternalBrokerBaseCase
 
         MockAMQQueue queue = createOwnedQueue();
 
-        queue.addBinding(new Binding(null, "bindingKey", queue, new TopicExchange(), null));
+        queue.addBinding(new Binding(null, null, "bindingKey", queue, new TopicExchange(), null));
 
         policy.performPolicy(queue);
 
