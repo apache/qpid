@@ -33,6 +33,7 @@ import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.Consumer;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 
 final class SessionAdapter extends AbstractAdapter implements Session
@@ -45,6 +46,7 @@ final class SessionAdapter extends AbstractAdapter implements Session
 
     public SessionAdapter(final AMQSessionModel session)
     {
+        super(UUIDGenerator.generateRandomUUID());
         _session = session;
         _statistics = new SessionStatistics();
     }

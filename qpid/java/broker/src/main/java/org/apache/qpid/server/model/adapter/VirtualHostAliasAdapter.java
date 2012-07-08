@@ -28,6 +28,7 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostAlias;
 
@@ -42,7 +43,7 @@ public class VirtualHostAliasAdapter  extends AbstractAdapter implements Virtual
 
     public VirtualHostAliasAdapter(VirtualHostAdapter virtualHostAdapter, Port port)
     {
-        super(virtualHostAdapter.getName(), port.getName());
+        super(UUIDGenerator.generateVhostAliasUUID(virtualHostAdapter.getName(), port.getName()));
         _vhost = virtualHostAdapter;
         _port = port;
     }

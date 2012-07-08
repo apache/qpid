@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
@@ -39,7 +38,6 @@ import org.apache.qpid.server.model.Publisher;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
-import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -56,7 +54,7 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
     public ExchangeAdapter(final VirtualHostAdapter virtualHostAdapter,
                            final org.apache.qpid.server.exchange.Exchange exchange)
     {
-        super(virtualHostAdapter.getName(), exchange.getName());
+        super(exchange.getId());
         _statistics = new ExchangeStatistics();
         _vhost = virtualHostAdapter;
         _exchange = exchange;

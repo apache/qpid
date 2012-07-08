@@ -84,7 +84,7 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
     VirtualHostAdapter(BrokerAdapter brokerAdapter,
                        final org.apache.qpid.server.virtualhost.VirtualHost virtualHost)
     {
-        super(virtualHost.getName());
+        super(virtualHost.getId());
         _broker = brokerAdapter;
         _virtualHost = virtualHost;
         _statistics = new VirtualHostStatisticsAdapter(virtualHost);

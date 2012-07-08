@@ -30,6 +30,7 @@ import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostAlias;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
@@ -51,6 +52,7 @@ public class PortAdapter extends AbstractAdapter implements Port
 
     public PortAdapter(BrokerAdapter brokerAdapter, QpidAcceptor acceptor, InetSocketAddress address)
     {
+        super(UUIDGenerator.generateRandomUUID());
         _broker = brokerAdapter;
         _acceptor = acceptor;
         _address = address;

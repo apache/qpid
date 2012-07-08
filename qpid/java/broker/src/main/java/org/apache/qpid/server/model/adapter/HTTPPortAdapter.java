@@ -33,6 +33,7 @@ import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHostAlias;
 
 public class HTTPPortAdapter extends AbstractAdapter implements Port
@@ -41,6 +42,7 @@ public class HTTPPortAdapter extends AbstractAdapter implements Port
     private int _port;
     public HTTPPortAdapter(BrokerAdapter brokerAdapter, int port)
     {
+        super(UUIDGenerator.generateRandomUUID());
         _broker = brokerAdapter;
         _port = port;
 
