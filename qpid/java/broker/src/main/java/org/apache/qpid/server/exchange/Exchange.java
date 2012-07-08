@@ -147,4 +147,6 @@ public interface Exchange extends ExchangeReferrer, ExchangeConfig
     {
         public void onClose(Exchange exchange) throws AMQSecurityException, AMQInternalException;
     }
+
+    UUID getId();
 }

@@ -125,7 +125,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
     private LogActor _logActor;
     private final Map<String, Object> _properties = new ConcurrentHashMap<String, Object>();
-    private UUID _id;
+    private UUID _qmfId;
     private String _traceExclude;
     private String _trace;
     private final long _createTime = System.currentTimeMillis();
@@ -192,7 +192,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         Map<String, Object> arguments = queue.getArguments();
         _traceExclude = (String) arguments.get("qpid.trace.exclude");
         _trace = (String) arguments.get("qpid.trace.id");
-        _id = getConfigStore().createId();
+        _qmfId = getConfigStore().createId();
         getConfigStore().addConfiguredObject(this);
         String filterLogString = null;
 
@@ -1011,9 +1011,10 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         return _flowMode.toString();
     }
 
-    public UUID getId()
+    @Override
+    public UUID getQMFId()
     {
-        return _id;
+        return _qmfId;
     }
 
     public String getName()

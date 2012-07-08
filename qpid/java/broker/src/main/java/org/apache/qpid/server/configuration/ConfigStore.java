@@ -101,7 +101,7 @@ public class ConfigStore
 
         }
 
-        typeMap.put(object.getId(), object);
+        typeMap.put(object.getQMFId(), object);
         sendEvent(Event.CREATED, object);
     }
 
@@ -111,7 +111,7 @@ public class ConfigStore
         ConcurrentHashMap typeMap = _typeMap.get(object.getConfigType());
         if(typeMap != null)
         {
-            typeMap.remove(object.getId());
+            typeMap.remove(object.getQMFId());
             sendEvent(Event.DELETED, object);
         }
     }

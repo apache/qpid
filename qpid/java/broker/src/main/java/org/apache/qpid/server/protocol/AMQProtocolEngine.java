@@ -139,7 +139,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     private long _maxFrameSize;
     private final AtomicBoolean _closing = new AtomicBoolean(false);
-    private final UUID _id;
+    private final UUID _qmfId;
     private final ConfigStore _configStore;
     private long _createTime = System.currentTimeMillis();
 
@@ -165,7 +165,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         _logSubject = new ConnectionLogSubject(this);
 
         _configStore = virtualHostRegistry.getConfigStore();
-        _id = _configStore.createId();
+        _qmfId = _configStore.createId();
 
         _actor.message(ConnectionMessages.OPEN(null, null, null, false, false, false));
 
@@ -1190,9 +1190,10 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         return false;
     }
 
-    public UUID getId()
+    @Override
+    public UUID getQMFId()
     {
-        return _id;
+        return _qmfId;
     }
 
     public long getConnectionId()

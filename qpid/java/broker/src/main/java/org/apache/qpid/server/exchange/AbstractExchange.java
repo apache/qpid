@@ -86,6 +86,8 @@ public abstract class AbstractExchange implements Exchange
     //TODO : persist creation time
     private long _createTime = System.currentTimeMillis();
 
+    private UUID _qmfId;
+
     public AbstractExchange(final ExchangeType<? extends Exchange> type)
     {
         _type = type;
@@ -111,7 +113,7 @@ public abstract class AbstractExchange implements Exchange
         _ticket = ticket;
 
         _id = id;
-
+        _qmfId = getConfigStore().createId();
         getConfigStore().addConfiguredObject(this);
         _logSubject = new ExchangeLogSubject(this, this.getVirtualHost());
 
@@ -294,6 +296,12 @@ public abstract class AbstractExchange implements Exchange
     public UUID getId()
     {
         return _id;
+    }
+
+    @Override
+    public UUID getQMFId()
+    {
+        return _qmfId;
     }
 
     public ExchangeConfigType getConfigType()

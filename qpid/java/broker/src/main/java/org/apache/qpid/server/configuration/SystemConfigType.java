@@ -65,7 +65,7 @@ public final class SystemConfigType extends ConfigObjectType<SystemConfigType, S
     {
         public UUID getValue(SystemConfig object)
         {
-            return object.getId();
+            return object.getQMFId();
         }
     };
 

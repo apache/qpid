@@ -44,13 +44,13 @@ public class BrokerConfigAdapter implements BrokerConfig
 
     private final Map<UUID, VirtualHostConfig> _vhosts = new ConcurrentHashMap<UUID, VirtualHostConfig>();
     private final long _createTime = System.currentTimeMillis();
-    private UUID _id;
+    private UUID _qmfId;
     private String _federationTag;
 
     public BrokerConfigAdapter(final IApplicationRegistry instance)
     {
         _instance = instance;
-        _id = instance.getConfigStore().createId();
+        _qmfId = instance.getConfigStore().createId();
         _federationTag = UUID.randomUUID().toString();
     }
 
@@ -114,7 +114,7 @@ public class BrokerConfigAdapter implements BrokerConfig
 
     public void addVirtualHost(final VirtualHostConfig virtualHost)
     {
-        _vhosts.put(virtualHost.getId(), virtualHost);
+        _vhosts.put(virtualHost.getQMFId(), virtualHost);
         getConfigStore().addConfiguredObject(virtualHost);
 
     }
@@ -141,9 +141,10 @@ public class BrokerConfigAdapter implements BrokerConfig
         vhost.createBrokerConnection(transport, host, port, "", durable, authMechanism, username, password);
     }
 
-    public UUID getId()
+    @Override
+    public UUID getQMFId()
     {
-        return _id;
+        return _qmfId;
     }
 
     public BrokerConfigType getConfigType()
@@ -184,7 +185,7 @@ public class BrokerConfigAdapter implements BrokerConfig
     public String toString()
     {
         return "BrokerConfigAdapter{" +
-               "_id=" + _id +
+               "_id=" + _qmfId +
                ", _system=" + _system +
                ", _vhosts=" + _vhosts +
                ", _createTime=" + _createTime +

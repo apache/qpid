@@ -216,6 +216,12 @@ public class MockVirtualHost implements VirtualHost
         return null;
     }
 
+    @Override
+    public UUID getQMFId()
+    {
+        return null;
+    }
+
     public ConfiguredObject<VirtualHostConfigType, VirtualHostConfig> getParent()
     {
         return null;

@@ -63,6 +63,8 @@ public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHo
 
     UUID getBrokerId();
 
+    UUID getId();
+
     void scheduleHouseKeepingTask(long period, HouseKeepingTask task);
 
     long getHouseKeepingTaskCount();

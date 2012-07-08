@@ -83,7 +83,7 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
     protected void unbind(TestQueue queue, String... bindings) throws AMQException
     {
         String queueName = queue.getName();
-        exchange.onUnbind(new Binding(null,queueName, queue, exchange, getHeadersMap(bindings)));
+        exchange.onUnbind(new Binding(null, null, queueName, queue, exchange, getHeadersMap(bindings)));
     }
     
     protected int getCount()
@@ -95,7 +95,7 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
     {
         TestQueue queue = new TestQueue(new AMQShortString(queueName));
         queues.add(queue);
-        exchange.onBind(new Binding(null,key, queue, exchange, args));
+        exchange.onBind(new Binding(null, null, key, queue, exchange, args));
         return queue;
     }
     

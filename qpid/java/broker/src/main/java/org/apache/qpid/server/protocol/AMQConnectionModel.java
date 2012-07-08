@@ -31,13 +31,6 @@ import java.util.UUID;
 public interface AMQConnectionModel extends StatisticsGatherer
 {
     /**
-     * get a unique id for this connection.
-     *
-     * @return a {@link UUID} representing the connection
-     */
-    public UUID getId();
-
-    /**
      * Close the underlying Connection
      *
      * @param cause

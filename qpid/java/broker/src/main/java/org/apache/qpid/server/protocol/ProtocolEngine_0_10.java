@@ -47,7 +47,7 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
     private long _readBytes;
     private long _writtenBytes;
     private ServerConnection _connection;
-    private final UUID _id;
+    private final UUID _qmfId;
     private final IApplicationRegistry _appRegistry;
     private long _createTime = System.currentTimeMillis();
 
@@ -59,7 +59,7 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
         _connection = conn;
         _connection.setConnectionConfig(this);
 
-        _id = appRegistry.getConfigStore().createId();
+        _qmfId = appRegistry.getConfigStore().createId();
         _appRegistry = appRegistry;
 
         if(network != null)
@@ -180,9 +180,10 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
         return _appRegistry.getConfigStore();
     }
 
-    public UUID getId()
+    @Override
+    public UUID getQMFId()
     {
-        return _id;
+        return _qmfId;
     }
 
     public ConnectionConfigType getConfigType()
