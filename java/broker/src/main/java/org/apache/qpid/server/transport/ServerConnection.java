@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import javax.management.JMException;
 import javax.security.auth.Subject;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;

@@ -76,7 +76,7 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
 
     public QueueAdapter(final VirtualHostAdapter virtualHostAdapter, final AMQQueue queue)
     {
-        super(virtualHostAdapter.getName(), queue.getName());
+        super(queue.getId());
         _vhost = virtualHostAdapter;
         addParent(org.apache.qpid.server.model.VirtualHost.class, virtualHostAdapter);
 

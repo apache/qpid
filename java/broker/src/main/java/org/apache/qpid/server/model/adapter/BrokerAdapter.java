@@ -35,6 +35,7 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
@@ -61,6 +62,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
 
     public BrokerAdapter(final IApplicationRegistry instance)
     {
+        super(UUIDGenerator.generateRandomUUID());
         _applicationRegistry = instance;
         _name = "Broker";
         _statistics = new StatisticsAdapter(instance);

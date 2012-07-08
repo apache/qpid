@@ -50,6 +50,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     private AuthenticationProviderAdapter(BrokerAdapter brokerAdapter,
                                           final T authManager)
     {
+        super(UUIDGenerator.generateRandomUUID());
         _broker = brokerAdapter;
         _authManager = authManager;
     }
@@ -329,7 +330,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
 
             public PrincipalAdapter(Principal user)
             {
-                super(PrincipalDatabaseAuthenticationManagerAdapter.this.getName(), user.getName());
+                super(UUIDGenerator.generateUserUUID(PrincipalDatabaseAuthenticationManagerAdapter.this.getName(), user.getName()));
                 _user = user;
 
             }
