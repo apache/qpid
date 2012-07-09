@@ -72,7 +72,7 @@ Url Backup::removeSelf(const Url& brokers) const {
 
 void Backup::initialize(const Url& brokers) {
     if (brokers.empty()) throw Url::Invalid("HA broker URL is empty");
-    QPID_LOG(info, logPrefix << "Initialized, broker URL: " << brokers);
+    QPID_LOG(info, logPrefix << "Connecting to cluster, broker URL: " << brokers);
     Url url = removeSelf(brokers);
     string protocol = url[0].protocol.empty() ? "tcp" : url[0].protocol;
     types::Uuid uuid(true);
@@ -82,7 +82,7 @@ void Backup::initialize(const Url& brokers) {
         url[0].host, url[0].port, protocol,
         false,                  // durable
         settings.mechanism, settings.username, settings.password,
-        false);                 // amq.failover
+        true);                  // amq.failover
     {
         sys::Mutex::ScopedLock l(lock);
         link = result.first;

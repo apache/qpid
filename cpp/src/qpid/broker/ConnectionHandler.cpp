@@ -172,7 +172,9 @@ void ConnectionHandler::Handler::startOk(const ConnectionStartOkBody& body)
         AclModule* acl =  connection.getBroker().getAcl();
         FieldTable properties;
     	if (acl && !acl->authorise(connection.getUserId(),acl::ACT_CREATE,acl::OBJ_LINK,"")){
-            proxy.close(framing::connection::CLOSE_CODE_CONNECTION_FORCED,"ACL denied creating a federation link");
+            proxy.close(framing::connection::CLOSE_CODE_CONNECTION_FORCED,
+                        QPID_MSG("ACL denied " << connection.getUserId()
+                                 << " creating a federation link"));
             return;
         }
         QPID_LOG(info, "Connection is a federation link");
