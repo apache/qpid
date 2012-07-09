@@ -46,15 +46,18 @@ class Command:
         usage="%s [options] %s\n\n%s"%(name, " ".join(arg_names), help)
         self.help = help
         self.op=optparse.OptionParser(usage)
-        self.op.add_option("-b", "--broker", metavar="<url>", help="Connect to broker at <url>")
+        self.op.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
+        self.op.add_option("-b", "--broker", action="store", type="string", default="localhost:5672", metavar="<address>", help="Address of qpidd broker with syntax: [username/password@] hostname | ip-address [:<port>]")
 
     def execute(self, args):
         opts, args = self.op.parse_args(args)
         if len(args) != len(self.arg_names)+1:
             self.op.print_help()
             raise Exception("Wrong number of arguments")
-        broker = opts.broker or "localhost:5672"
-        connection = Connection.establish(broker, client_properties={"qpid.ha-admin":1})
+        connection = Connection.establish(
+            opts.broker,
+            sasl_mechanisms=opts.sasl_mechanism,
+            client_properties={"qpid.ha-admin":1})
         qmf_broker = BrokerAgent(connection)
         ha_broker = qmf_broker.getHaBroker()
         if not ha_broker: raise Exception("HA module is not loaded on broker at %s"%broker)

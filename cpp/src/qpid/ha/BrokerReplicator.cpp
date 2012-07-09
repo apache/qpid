@@ -22,6 +22,7 @@
 #include "HaBroker.h"
 #include "QueueReplicator.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/Connection.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/Link.h"
 #include "qpid/framing/FieldTable.h"
@@ -90,9 +91,7 @@ const string KEY("key");
 const string NAME("name");
 const string QNAME("qName");
 const string QUEUE("queue");
-const string RHOST("rhost");
 const string TYPE("type");
-const string USER("user");
 const string HA_BROKER("habroker");
 
 const string AGENT_EVENT_BROKER("agent.ind.event.org_apache_qpid_broker.#");
@@ -202,6 +201,14 @@ BrokerReplicator::~BrokerReplicator() { }
 
 // This is called in the connection IO thread when the bridge is started.
 void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler) {
+    // Use the credentials of the outgoing Link connection for creating queues,
+    // exchanges etc. We know link->getConnection() is non-zero because we are
+    // being called in the connections thread context.
+    //
+    assert(link->getConnection());
+    userId = link->getConnection()->getUserId();
+    remoteHost = link->getConnection()->getUrl();
+
     qpid::Address primary;
     link->getRemoteAddress(primary);
     string queueName = bridge.getQueueName();
@@ -320,10 +327,11 @@ void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
                 values[DURABLE].asBool(),
                 autoDel,
                 0, // no owner regardless of exclusivity on primary
+                // FIXME aconway 2012-07-06: handle alternate exchange
                 values[ALTEX].asString(),
                 args,
-                values[USER].asString(),
-                values[RHOST].asString());
+                userId,
+                remoteHost);
         assert(result.second);  // Should be true since we destroyed existing queue above
         startQueueReplicator(result.first);
     }
@@ -345,7 +353,7 @@ void BrokerReplicator::doEventQueueDelete(Variant::Map& values) {
     if (queue && replicationTest.replicateLevel(queue->getSettings())) {
         QPID_LOG(debug, logPrefix << "Queue delete event: " << name);
         stopQueueReplicator(name);
-        broker.deleteQueue(name, values[USER].asString(), values[RHOST].asString());
+        broker.deleteQueue(name, userId, remoteHost);
     }
 }
 
@@ -368,10 +376,11 @@ void BrokerReplicator::doEventExchangeDeclare(Variant::Map& values) {
                 name,
                 values[EXTYPE].asString(),
                 values[DURABLE].asBool(),
+                // FIXME aconway 2012-07-06: handle alternate exchanges
                 values[ALTEX].asString(),
                 args,
-                values[USER].asString(),
-                values[RHOST].asString());
+                userId,
+                remoteHost);
         assert(result.second);
     }
 }
@@ -385,10 +394,7 @@ void BrokerReplicator::doEventExchangeDelete(Variant::Map& values) {
         QPID_LOG(warning, logPrefix << "Exchange delete event, not replicated: " << name);
     } else {
         QPID_LOG(debug, logPrefix << "Exchange delete event:" << name);
-        broker.deleteExchange(
-            name,
-            values[USER].asString(),
-            values[RHOST].asString());
+        broker.deleteExchange(name, userId, remoteHost);
     }
 }
 
@@ -458,8 +464,9 @@ void BrokerReplicator::doResponseQueue(Variant::Map& values) {
             0 /*i.e. no owner regardless of exclusivity on master*/,
             ""/*TODO: need to include alternate-exchange*/,
             args,
-            ""/*TODO: who is the user?*/,
-            ""/*TODO: what should we use as connection id?*/);
+            userId,
+            remoteHost);
+
     // It is normal for the queue to already exist if we are failing over.
      if (result.second)
          startQueueReplicator(result.first);
@@ -478,10 +485,11 @@ void BrokerReplicator::doResponseExchange(Variant::Map& values) {
         name,
         values[TYPE].asString(),
         values[DURABLE].asBool(),
-        ""/*TODO: need to include alternate-exchange*/,
+        "", // FIXME aconway 2012-07-09: need to include alternate-exchange
         args,
-        ""/*TODO: who is the user?*/,
-        ""/*TODO: what should we use as connection id?*/).second;
+        userId,
+        remoteHost
+    ).second;
     QPID_LOG_IF(debug, !created, logPrefix << "Exchange already exists: " << name);
 }
 
