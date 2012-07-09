@@ -2,7 +2,7 @@
 
 Qpid is an cross-platform enterprise messaging system.
 
-Version :: 0.17.0
+Version :: 0.19.0
 
 = Links
 
