@@ -54,7 +54,7 @@ class QueueReplicator;
  * exchanges and bindings to replicate the primary.
  * It also creates QueueReplicators for newly replicated queues.
  *
- * THREAD SAFE: Has no mutable state.
+ * THREAD UNSAFE: Only called in Link connection thread, no need for locking.
  *
  */
 class BrokerReplicator : public broker::Exchange,
@@ -96,6 +96,7 @@ class BrokerReplicator : public broker::Exchange,
     void stopQueueReplicator(const std::string& name);
 
     std::string logPrefix;
+    std::string userId, remoteHost;
     ReplicationTest replicationTest;
     HaBroker& haBroker;
     broker::Broker& broker;
