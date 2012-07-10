@@ -31,21 +31,21 @@ namespace ha {
 using sys::Mutex;
 
 RemoteBackup::RemoteBackup(
-    const BrokerInfo& info, broker::Broker& broker, ReplicationTest rt, bool cg) :
-    logPrefix("Primary remote backup "+info.getLogId()+": "), brokerInfo(info), replicationTest(rt),
-    createGuards(cg)
+    const BrokerInfo& info, broker::Broker& broker, ReplicationTest rt, bool cg, bool con) :
+    logPrefix("Primary remote backup "+info.getLogId()+": "),
+    brokerInfo(info), replicationTest(rt),
+    createGuards(cg), connected(con)
 {
     QPID_LOG(debug, logPrefix << "Guarding queues for backup broker.");
     broker.getQueues().eachQueue(boost::bind(&RemoteBackup::initialQueue, this, _1));
 }
 
-RemoteBackup::~RemoteBackup() {
-    for (GuardMap::iterator i = guards.begin(); i != guards.end(); ++i)
-        i->second->cancel();
-}
+RemoteBackup::~RemoteBackup() { cancel(); }
+
+void RemoteBackup::cancel() { guards.clear(); }
 
 bool RemoteBackup::isReady() {
-    return initialQueues.empty();
+    return connected && initialQueues.empty();
 }
 
 void RemoteBackup::initialQueue(const QueuePtr& q) {
