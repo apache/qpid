@@ -779,6 +779,9 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     {
         if(_closing.compareAndSet(false,true))
         {
+            // force sync of outstanding async work
+            receiveComplete();
+
             // REMOVE THIS SHOULD NOT BE HERE.
             if (CurrentActor.get() == null)
             {
