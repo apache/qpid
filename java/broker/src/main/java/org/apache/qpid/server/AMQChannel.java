@@ -952,9 +952,11 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
 
     public void commit() throws AMQException
     {
-        commit(null);
+        commit(null, false);
     }
-    public void commit(Runnable immediateAction) throws AMQException
+
+
+    public void commit(final Runnable immediateAction, boolean async) throws AMQException
     {
 
         if (!isTransactional())
@@ -962,11 +964,29 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
             throw new AMQException("Fatal error: commit called on non-transactional channel");
         }
 
-        _transaction.commit(immediateAction);
+        if(async && _transaction instanceof LocalTransaction)
+        {
 
-        _txnCommits.incrementAndGet();
-        _txnStarts.incrementAndGet();
-        decrementOutstandingTxnsIfNecessary();
+            ((LocalTransaction)_transaction).commitAsync(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    immediateAction.run();
+                    _txnCommits.incrementAndGet();
+                    _txnStarts.incrementAndGet();
+                    decrementOutstandingTxnsIfNecessary();
+                }
+            });
+        }
+        else
+        {
+            _transaction.commit(immediateAction);
+
+            _txnCommits.incrementAndGet();
+            _txnStarts.incrementAndGet();
+            decrementOutstandingTxnsIfNecessary();
+        }
     }
 
     public void rollback() throws AMQException
@@ -1623,6 +1643,10 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
         {
             cmd.awaitReadyForCompletion();
             cmd.complete();
+        }
+        if(_transaction instanceof LocalTransaction)
+        {
+            ((LocalTransaction)_transaction).sync();
         }
     }
 
