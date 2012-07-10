@@ -26,6 +26,7 @@
 #include "BrokerInfo.h"
 #include "qpid/sys/Mutex.h"
 #include <boost/shared_ptr.hpp>
+#include <boost/intrusive_ptr.hpp>
 #include <map>
 #include <string>
 
@@ -36,6 +37,10 @@ class Queue;
 class Connection;
 class ConnectionObserver;
 class ConfigurationObserver;
+}
+
+namespace sys {
+class TimerTask;
 }
 
 namespace ha {
@@ -74,6 +79,9 @@ class Primary
 
     boost::shared_ptr<QueueGuard> getGuard(const QueuePtr& q, const BrokerInfo&);
 
+    // Called in timer thread when the deadline for expected backups expires.
+    void timeoutExpectedBackups();
+
   private:
     typedef std::map<types::Uuid, boost::shared_ptr<RemoteBackup> > BackupMap;
     typedef std::set<boost::shared_ptr<RemoteBackup> > BackupSet;
@@ -89,7 +97,7 @@ class Primary
      * Set of expected backups that must be ready before we declare ourselves
      * active
      */
-    BackupSet initialBackups;
+    BackupSet expectedBackups;
     /**
      * Map of all the remote backups we know about: any expected backups plus
      * all actual backups that have connected. We do not remove entries when a
@@ -98,6 +106,7 @@ class Primary
     BackupMap backups;
     boost::shared_ptr<broker::ConnectionObserver> connectionObserver;
     boost::shared_ptr<broker::ConfigurationObserver> configurationObserver;
+    boost::intrusive_ptr<sys::TimerTask> timerTask;
 
     static Primary* instance;
 };

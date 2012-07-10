@@ -34,7 +34,7 @@ namespace ha {
 class Settings
 {
   public:
-    Settings() : cluster(false), replicateDefault(NONE)
+    Settings() : cluster(false), replicateDefault(NONE), backupTimeout(2)
     {}
 
     bool cluster;               // True if we are a cluster member.
@@ -42,6 +42,7 @@ class Settings
     std::string brokerUrl;
     Enum<ReplicateLevel> replicateDefault;
     std::string username, password, mechanism;
+    double backupTimeout;
   private:
 };
 }} // namespace qpid::ha
