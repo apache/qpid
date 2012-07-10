@@ -46,9 +46,9 @@ public class TxCommitHandler implements StateAwareMethodListener<TxCommitBody>
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, TxCommitBody body, int channelId) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, TxCommitBody body, final int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
+        final AMQProtocolSession session = stateManager.getProtocolSession();
 
         try
         {
@@ -62,11 +62,19 @@ public class TxCommitHandler implements StateAwareMethodListener<TxCommitBody>
             {
                 throw body.getChannelNotFoundException(channelId);
             }
-            channel.commit();
+            channel.commit(new Runnable()
+            {
 
-            MethodRegistry methodRegistry = session.getMethodRegistry();
-            AMQMethodBody responseBody = methodRegistry.createTxCommitOkBody();
-            session.writeFrame(responseBody.generateFrame(channelId));
+                @Override
+                public void run()
+                {
+                    MethodRegistry methodRegistry = session.getMethodRegistry();
+                    AMQMethodBody responseBody = methodRegistry.createTxCommitOkBody();
+                    session.writeFrame(responseBody.generateFrame(channelId));
+                }
+            }, true);
+
+
                         
         }
         catch (AMQException e)
