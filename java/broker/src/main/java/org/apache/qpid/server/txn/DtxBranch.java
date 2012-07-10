@@ -98,10 +98,27 @@ public class DtxBranch
 
     public void setTimeout(long timeout)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("Setting timeout to " + timeout + "s for DtxBranch " + _xid);
+        }
+
         if(_timeoutFuture != null)
         {
-            _timeoutFuture.cancel(false);
+            if(_logger.isDebugEnabled())
+            {
+                _logger.debug("Attempting to cancel previous timeout task future for DtxBranch " + _xid);
+            }
+
+            boolean succeeded = _timeoutFuture.cancel(false);
+
+            if(_logger.isDebugEnabled())
+            {
+                _logger.debug("Cancelling previous timeout task " + (succeeded ? "succeeded" : "failed")
+                              + " for DtxBranch " + _xid);
+            }
         }
+
         _timeout = timeout;
         _expiration = timeout == 0 ? 0 : System.currentTimeMillis() + (1000 * timeout);
 
@@ -111,10 +128,23 @@ public class DtxBranch
         }
         else
         {
-            _timeoutFuture = _vhost.scheduleTask(1000*_timeout, new Runnable()
+            long delay = 1000*_timeout;
+
+            if(_logger.isDebugEnabled())
+            {
+                _logger.debug("Scheduling timeout and rollback after " + delay/1000 +
+                              "s for DtxBranch " + _xid);
+            }
+
+            _timeoutFuture = _vhost.scheduleTask(delay, new Runnable()
             {
                 public void run()
                 {
+                    if(_logger.isDebugEnabled())
+                    {
+                        _logger.debug("Timing out DtxBranch " + _xid);
+                    }
+
                     setState(State.TIMEDOUT);
                     try
                     {
@@ -122,8 +152,7 @@ public class DtxBranch
                     }
                     catch (AMQStoreException e)
                     {
-                        _logger.error("Unexpected error when attempting to rollback XA transaction ("+
-                                      _xid + ") due to  timeout", e);
+                        _logger.error("Unexpected error when attempting to rollback DtxBranch "+ _xid + " due to timeout", e);
                         throw new RuntimeException(e);
                     }
                 }
@@ -199,6 +228,10 @@ public class DtxBranch
 
     public void prepare() throws AMQStoreException
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("Performing prepare for DtxBranch " + _xid);
+        }
 
         Transaction txn = _store.newTransaction();
         txn.recordXid(_xid.getFormat(),
@@ -213,12 +246,27 @@ public class DtxBranch
 
     public synchronized void rollback() throws AMQStoreException
     {
-        if(_timeoutFuture != null)
+        if(_logger.isDebugEnabled())
         {
-            _timeoutFuture.cancel(false);
-            _timeoutFuture = null;
+            _logger.debug("Performing rollback for DtxBranch " + _xid);
         }
 
+        if(_timeoutFuture != null)
+        {
+            if(_logger.isDebugEnabled())
+            {
+                _logger.debug("Attempting to cancel previous timeout task future for DtxBranch " + _xid);
+            }
+
+            boolean succeeded = _timeoutFuture.cancel(false);
+            _timeoutFuture = null;
+
+            if(_logger.isDebugEnabled())
+            {
+                _logger.debug("Cancelling previous timeout task " + (succeeded ? "succeeded" : "failed")
+                              + " for DtxBranch " + _xid);
+            }
+        }
 
         if(_transaction != null)
         {
@@ -240,10 +288,26 @@ public class DtxBranch
 
     public void commit() throws AMQStoreException
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("Performing commit for DtxBranch " + _xid);
+        }
+
         if(_timeoutFuture != null)
         {
-            _timeoutFuture.cancel(false);
+            if(_logger.isDebugEnabled())
+            {
+                _logger.debug("Attempting to cancel previous timeout task future for DtxBranch " + _xid);
+            }
+
+            boolean succeeded = _timeoutFuture.cancel(false);
             _timeoutFuture = null;
+
+            if(_logger.isDebugEnabled())
+            {
+                _logger.debug("Cancelling previous timeout task " + (succeeded ? "succeeded" : "failed")
+                              + " for DtxBranch " + _xid);
+            }
         }
 
         if(_transaction == null)
@@ -342,7 +406,7 @@ public class DtxBranch
             }
             catch(AMQStoreException e)
             {
-                _logger.error("Error while closing XA branch", e);
+                _logger.error("Error while closing DtxBranch " + _xid, e);
             }
         }
     }
