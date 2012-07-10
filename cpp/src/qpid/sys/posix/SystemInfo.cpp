@@ -34,6 +34,7 @@
 #include <fstream>
 #include <sstream>
 #include <netdb.h>
+#include <string.h>
 
 #ifndef HOST_NAME_MAX
 #  define HOST_NAME_MAX 256
@@ -125,7 +126,10 @@ namespace {
 struct AddrInfo {
     struct addrinfo* ptr;
     AddrInfo(const std::string& host) : ptr(0) {
-        if (::getaddrinfo(host.c_str(), NULL, NULL, &ptr) != 0)
+        ::addrinfo hints;
+        ::memset(&hints, 0, sizeof(hints));
+        hints.ai_family = AF_UNSPEC; // Allow both IPv4 and IPv6
+        if (::getaddrinfo(host.c_str(), NULL, &hints, &ptr) != 0)
             ptr = 0;
     }
     ~AddrInfo() { if (ptr) ::freeaddrinfo(ptr); }
