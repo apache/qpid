@@ -869,9 +869,9 @@ class RecoveryTests(BrokerTest):
         cluster[3].promote()    # New primary, backups will be 1 and 2
         cluster[3].wait_status("recovering")
 
-        def trySync(s):
+        def assertSyncTimeout(s):
             try:
-                s.sync(timeout=.1)
+                s.sync(timeout=.01)
                 self.fail("Expected Timeout exception")
             except Timeout: pass
 
@@ -879,18 +879,18 @@ class RecoveryTests(BrokerTest):
         s2 = cluster.connect(3).session().sender("q2;{create:always}")
         # Verify that messages sent are not completed
         for i in xrange(100,200): s1.send(str(i), sync=False); s2.send(str(i), sync=False)
-        trySync(s1)
+        assertSyncTimeout(s1)
         self.assertEqual(s1.unsettled(), 100)
-        trySync(s2)
+        assertSyncTimeout(s2)
         self.assertEqual(s2.unsettled(), 100)
 
         # Verify we can receive even if sending is on hold:
         cluster[3].assert_browse("q1", [str(i) for i in range(100)+range(100,200)])
         # Restart backups, verify queues are released only when both backups are up
         cluster.restart(1)
-        trySync(s1)
+        assertSyncTimeout(s1)
         self.assertEqual(s1.unsettled(), 100)
-        trySync(s2)
+        assertSyncTimeout(s2)
         self.assertEqual(s2.unsettled(), 100)
         self.assertEqual(cluster[3].ha_status(), "recovering")
         cluster.restart(2)
@@ -904,7 +904,26 @@ class RecoveryTests(BrokerTest):
         s1.session.connection.close()
         s2.session.connection.close()
 
-
+    def test_expected_backup_timeout(self):
+        """Verify that we time-out expected backups and release held queues
+        after a configured interval
+        """
+        cluster = HaCluster(self, 3, args=["--ha-backup-timeout=0.5"]);
+        cluster[0].wait_status("active") # Primary ready
+        for b in cluster[1:4]: b.wait_status("ready") # Backups ready
+        for i in [0,1]: cluster.kill(i, False)
+        cluster[2].promote()    # New primary, backups will be 1 and 2
+        cluster[2].wait_status("recovering")
+        # Should not go active till the expected backup connects or times out.
+        self.assertEqual(cluster[2].ha_status(), "recovering")
+        # Messages should be held expected backup times out
+        s = cluster[2].connect().session().sender("q;{create:always}")
+        for i in xrange(100): s.send(str(i), sync=False)
+        # Verify message held initially.
+        try: s.sync(timeout=.01); self.fail("Expected Timeout exception")
+        except Timeout: pass
+        s.sync(timeout=1)      # And released after the timeout.
+        self.assertEqual(cluster[2].ha_status(), "active")
 
 if __name__ == "__main__":
     shutil.rmtree("brokertest.tmp", True)

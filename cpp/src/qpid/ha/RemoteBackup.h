@@ -52,11 +52,16 @@ class RemoteBackup
     typedef boost::shared_ptr<broker::Queue> QueuePtr;
 
     /** Note: isReady() can be true after construction */
-    RemoteBackup(const BrokerInfo& info, broker::Broker&, ReplicationTest rt, bool createGuards);
+    RemoteBackup(const BrokerInfo& info, broker::Broker&, ReplicationTest rt,
+                 bool createGuards, bool connected);
     ~RemoteBackup();
 
     /** Return guard associated with a queue. Used to create ReplicatingSubscription. */
     GuardPtr guard(const QueuePtr&);
+
+    /** Is the remote backup connected? */
+    void setConnected(bool b) { connected=b; }
+    bool isConnected() const { return connected; }
 
     /** ReplicatingSubscription associated with queue is ready.
      * Note: may set isReady()
@@ -72,6 +77,9 @@ class RemoteBackup
     /**@return true when all initial queues for this backup are ready. */
     bool isReady();
 
+    /**Cancel all queue guards, called if we are timed out. */
+    void cancel();
+
     BrokerInfo getBrokerInfo() const { return brokerInfo; }
   private:
     typedef std::map<QueuePtr, GuardPtr> GuardMap;
@@ -83,6 +91,7 @@ class RemoteBackup
     GuardMap guards;
     QueueSet initialQueues;
     bool createGuards;
+    bool connected;
 
     void initialQueue(const QueuePtr&);
 };

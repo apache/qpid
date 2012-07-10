@@ -32,6 +32,7 @@
 #include "qpid/broker/Queue.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/log/Statement.h"
+#include "qpid/sys/Timer.h"
 #include <boost/bind.hpp>
 
 namespace qpid {
@@ -40,7 +41,7 @@ namespace ha {
 using sys::Mutex;
 
 namespace {
-// No-op connection observer, allows all connections.
+
 class PrimaryConnectionObserver : public broker::ConnectionObserver
 {
   public:
@@ -61,6 +62,15 @@ class PrimaryConfigurationObserver : public broker::ConfigurationObserver
     Primary& primary;
 };
 
+class ExpectedBackupTimerTask : public sys::TimerTask {
+  public:
+    ExpectedBackupTimerTask(Primary& p, sys::AbsTime deadline)
+        : TimerTask(deadline, "ExpectedBackupTimerTask"), primary(p) {}
+    void fire() { primary.timeoutExpectedBackups(); }
+  private:
+    Primary& primary;
+};
+
 } // namespace
 
 Primary* Primary::instance = 0;
@@ -75,16 +85,24 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
     }
     else {
         // NOTE: RemoteBackups must be created before we set the ConfigurationObserver
-        // orr ConnectionObserver so that there is no client activity while
+        // or ConnectionObserver so that there is no client activity while
         // the QueueGuards are created.
         QPID_LOG(debug, logPrefix << "Promoted, expected backups: " << expect);
         for (BrokerInfo::Set::const_iterator i = expect.begin(); i != expect.end(); ++i) {
-            bool guard = true;  // Create queue guards immediately for expected backups.
             boost::shared_ptr<RemoteBackup> backup(
-                new RemoteBackup(*i, haBroker.getBroker(), haBroker.getReplicationTest(), guard));
+                new RemoteBackup(
+                    *i, haBroker.getBroker(), haBroker.getReplicationTest(),
+                    true, // Create queue guards immediately for expected backups.
+                    false  // Not yet connected.
+                ));
             backups[i->getSystemId()] = backup;
-            if (!backup->isReady()) initialBackups.insert(backup);
+            if (!backup->isReady()) expectedBackups.insert(backup);
         }
+        // Set timeout for expected brokers to connect and become ready.
+        sys::Duration timeout(hb.getSettings().backupTimeout*sys::TIME_SEC);
+        sys::AbsTime deadline(sys::now(), timeout);
+        timerTask.reset(new ExpectedBackupTimerTask(*this, deadline));
+        hb.getBroker().getTimer().add(timerTask);
     }
 
     configurationObserver.reset(new PrimaryConfigurationObserver(*this));
@@ -98,14 +116,15 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
 }
 
 Primary::~Primary() {
+    if (timerTask) timerTask->cancel();
     haBroker.getBroker().getConfigurationObservers().remove(configurationObserver);
 }
 
 void Primary::checkReady(Mutex::ScopedLock&) {
-    if (!active && initialBackups.empty()) {
+    if (!active && expectedBackups.empty()) {
         active = true;
-        QPID_LOG(notice, logPrefix << "All initial backups are ready.");
         Mutex::ScopedUnlock u(lock); // Don't hold lock across callback
+        QPID_LOG(notice, logPrefix << "Finished waiting for backups, primary is active.");
         haBroker.activate();
     }
 }
@@ -113,11 +132,24 @@ void Primary::checkReady(Mutex::ScopedLock&) {
 void Primary::checkReady(BackupMap::iterator i, Mutex::ScopedLock& l)  {
     if (i != backups.end() && i->second->isReady()) {
         BrokerInfo info = i->second->getBrokerInfo();
+        QPID_LOG(info, "Expected backup is ready: " << info);
         info.setStatus(READY);
         haBroker.addBroker(info);
-        initialBackups.erase(i->second);
+        expectedBackups.erase(i->second);
         checkReady(l);
     }
+}
+
+void Primary::timeoutExpectedBackups() {
+    sys::Mutex::ScopedLock l(lock);
+    if (active) return;         // Already activated
+    for (BackupSet::iterator i = expectedBackups.begin(); i != expectedBackups.end(); ++i)
+    {
+        QPID_LOG(error, "Expected backup timed out: " << (*i)->getBrokerInfo());
+        (*i)->cancel();
+    }
+    expectedBackups.clear();
+    checkReady(l);
 }
 
 void Primary::readyReplica(const ReplicatingSubscription& rs) {
@@ -153,12 +185,17 @@ void Primary::opened(broker::Connection& connection) {
         BackupMap::iterator i = backups.find(info.getSystemId());
         if (i == backups.end()) {
             QPID_LOG(debug, logPrefix << "New backup connected: " << info);
-            bool guard = false; // Lazy-create guards for new backups. Creating them here could deadlock.
             backups[info.getSystemId()].reset(
-                new RemoteBackup(info, haBroker.getBroker(), haBroker.getReplicationTest(), guard));
+                new RemoteBackup(
+                    info, haBroker.getBroker(), haBroker.getReplicationTest(),
+                    false, // Lazy-create guards for new backups, creating now deadlocks
+                    true // Backup is connected
+                ));
         }
         else {
             QPID_LOG(debug, logPrefix << "Known backup connected: " << info);
+            i->second->setConnected(true);
+            checkReady(i, l);
         }
         haBroker.addBroker(info);
     }
@@ -171,14 +208,16 @@ void Primary::closed(broker::Connection& connection) {
     Mutex::ScopedLock l(lock);
     BrokerInfo info;
     if (ha::ConnectionObserver::getBrokerInfo(connection, info)) {
-        haBroker.removeBroker(info.getSystemId());
         QPID_LOG(debug, logPrefix << "Backup disconnected: " << info);
+        haBroker.removeBroker(info.getSystemId());
+        BackupMap::iterator i = backups.find(info.getSystemId());
+        if (i != backups.end()) i->second->setConnected(false);
     }
-    // NOTE: we do not modify backups here, we only add to the known backups set
-    // we never remove from it.
-
+    // NOTE: we do not remove from the backups map here, the backups map holds
+    // all the backups we know about whether connected or not.
+    //
     // It is possible for a backup connection to be rejected while we are a backup,
-    // but the closed is seen when we have become primary. Removing the entry
+    // but the closed is seen after we have become primary. Removing the entry
     // from backups in this case would be incorrect.
 }
 
