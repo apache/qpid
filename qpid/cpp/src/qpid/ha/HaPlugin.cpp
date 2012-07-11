@@ -46,6 +46,8 @@ struct Options : public qpid::Options {
              "Password for connections between HA brokers")
             ("ha-mechanism", optValue(settings.mechanism, "MECH"),
              "Authentication mechanism for connections between HA brokers")
+            ("ha-backup-timeout", optValue(settings.backupTimeout, "SECONDS"),
+             "Maximum time to wait for an expected backup to connect and become ready.")
             ;
     }
 };
