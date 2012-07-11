@@ -175,7 +175,8 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
               broker::QPID_NAME_PREFIX + string("ha.link.") + uuid.str(),
               url[0].host, url[0].port, protocol,
               false,              // durable
-              settings.mechanism, settings.username, settings.password);
+              settings.mechanism, settings.username, settings.password,
+              false);           // no amq.failover - don't want to use client URL.
           boost::shared_ptr<broker::Link> link = result.first;
           link->setUrl(url);
           // Create a queue replicator

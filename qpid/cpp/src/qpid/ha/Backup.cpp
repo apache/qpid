@@ -82,7 +82,7 @@ void Backup::initialize(const Url& brokers) {
         url[0].host, url[0].port, protocol,
         false,                  // durable
         settings.mechanism, settings.username, settings.password,
-        true);                  // amq.failover
+        false);               // no amq.failover - don't want to use client URL.
     {
         sys::Mutex::ScopedLock l(lock);
         link = result.first;
