@@ -403,6 +403,12 @@ public class MockSubscription implements Subscription
         {
             return 0;
         }
+
+        @Override
+        public int getConsumerCount()
+        {
+            return 0;
+        }
     }
 
     private static class MockConnectionModel implements AMQConnectionModel

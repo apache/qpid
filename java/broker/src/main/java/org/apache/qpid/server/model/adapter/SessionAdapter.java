@@ -198,8 +198,7 @@ final class SessionAdapter extends AbstractAdapter implements Session
             }
             else if(name.equals(CONSUMER_COUNT))
             {
-                final Collection<Consumer> subscriptions = getSubscriptions();
-                return subscriptions == null ? 0 : subscriptions.size();
+                return _session.getConsumerCount();
             }
             else if(name.equals(LOCAL_TRANSACTION_BEGINS))
             {
@@ -207,12 +206,12 @@ final class SessionAdapter extends AbstractAdapter implements Session
             }
             else if(name.equals(LOCAL_TRANSACTION_OPEN))
             {
-                long open = _session.getTxnCount() - (_session.getTxnCommits() + _session.getTxnRejects());
+                long open = _session.getTxnStart() - (_session.getTxnCommits() + _session.getTxnRejects());
                 return (Boolean) (open > 0l);
             }
             else if(name.equals(LOCAL_TRANSACTION_ROLLBACKS))
             {
-                return _session.getTxnCommits();
+                return _session.getTxnRejects();
             }
             else if(name.equals(STATE_CHANGED))
             {
