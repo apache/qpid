@@ -101,7 +101,7 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
         // Set timeout for expected brokers to connect and become ready.
         sys::Duration timeout(hb.getSettings().backupTimeout*sys::TIME_SEC);
         sys::AbsTime deadline(sys::now(), timeout);
-        timerTask.reset(new ExpectedBackupTimerTask(*this, deadline));
+        timerTask = new ExpectedBackupTimerTask(*this, deadline);
         hb.getBroker().getTimer().add(timerTask);
     }
 
