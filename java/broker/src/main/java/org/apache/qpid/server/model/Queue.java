@@ -99,7 +99,7 @@ public interface Queue extends ConfiguredObject
     public static final String QUEUE_FLOW_STOPPED = "queueFlowStopped";
     public static final String SORT_KEY = "sortKey";
     public static final String TYPE = "type";
-
+    public static final String PRIORITIES = "priorities";
 
 
 
@@ -132,7 +132,8 @@ public interface Queue extends ConfiguredObject
                                   ALERT_THRESHOLD_MESSAGE_SIZE,
                                   ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
                                   ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
-                                  ALERT_REPEAT_GAP
+                                  ALERT_REPEAT_GAP,
+                                  PRIORITIES
                     ));
 
     //children
