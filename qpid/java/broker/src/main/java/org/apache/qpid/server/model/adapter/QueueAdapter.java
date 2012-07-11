@@ -58,9 +58,9 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         QueueAdapter.ATTRIBUTE_MAPPINGS.put(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES, "x-qpid-capacity");
         QueueAdapter.ATTRIBUTE_MAPPINGS.put(Queue.QUEUE_FLOW_RESUME_SIZE_BYTES, "x-qpid-flow-resume-capacity");
 
-        QueueAdapter.ATTRIBUTE_MAPPINGS.put(Queue.SORT_KEY, "qpid.sort_key");
-        QueueAdapter.ATTRIBUTE_MAPPINGS.put(Queue.LVQ_KEY, "qpid.last_value_queue_key");
-
+        QueueAdapter.ATTRIBUTE_MAPPINGS.put(Queue.SORT_KEY, AMQQueueFactory.QPID_QUEUE_SORT_KEY);
+        QueueAdapter.ATTRIBUTE_MAPPINGS.put(Queue.LVQ_KEY, AMQQueueFactory.QPID_LAST_VALUE_QUEUE_KEY);
+        QueueAdapter.ATTRIBUTE_MAPPINGS.put(Queue.PRIORITIES, AMQQueueFactory.X_QPID_PRIORITIES);
     }
 
     private final AMQQueue _queue;
@@ -454,7 +454,13 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         {
             return _queue.getDescription();
         }
-
+        else if(PRIORITIES.equals(name))
+        {
+            if(_queue instanceof AMQPriorityQueue)
+            {
+                return ((AMQPriorityQueue)_queue).getPriorities();
+            }
+        }
         return super.getAttribute(name);
     }
 

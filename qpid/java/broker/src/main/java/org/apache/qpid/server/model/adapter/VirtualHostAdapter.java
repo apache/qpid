@@ -43,6 +43,7 @@ import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.QueueType;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.UUIDGenerator;
@@ -252,6 +253,31 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
     {
         attributes = new HashMap<String, Object>(attributes);
 
+        if (attributes.containsKey(Queue.TYPE))
+        {
+            String typeAttribute = getStringAttribute(Queue.TYPE, attributes, null);
+            QueueType queueType = null;
+            try
+            {
+                queueType = QueueType.valueOf(typeAttribute.toUpperCase());
+            }
+            catch(Exception e)
+            {
+                throw new IllegalArgumentException("Unsupported queue type :" + typeAttribute);
+            }
+            if (queueType == QueueType.LVQ && attributes.get(Queue.LVQ_KEY) == null)
+            {
+                attributes.put(Queue.LVQ_KEY, AMQQueueFactory.QPID_LVQ_KEY);
+            }
+            else if (queueType == QueueType.PRIORITY && attributes.get(Queue.PRIORITIES) == null)
+            {
+                attributes.put(Queue.PRIORITIES, 10);
+            }
+            else if (queueType == QueueType.SORTED && attributes.get(Queue.SORT_KEY) == null)
+            {
+                throw new IllegalArgumentException("Sort key is not specified for sorted queue");
+            }
+        }
         String         name     = getStringAttribute(Queue.NAME, attributes, null);
         State          state    = getEnumAttribute(State.class, Queue.STATE, attributes, State.ACTIVE);
         boolean        durable  = getBooleanAttribute(Queue.DURABLE, attributes, false);

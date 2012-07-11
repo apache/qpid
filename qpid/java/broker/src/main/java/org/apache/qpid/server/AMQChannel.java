@@ -1686,4 +1686,10 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
     {
         return getQMFId().compareTo(session.getQMFId());
     }
+
+    @Override
+    public int getConsumerCount()
+    {
+        return _tag2SubscriptionMap.size();
+    }
 }

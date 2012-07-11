@@ -233,10 +233,10 @@ define(["dojo/_base/xhr",
                                              load: function(x) {that.success = true; },
                                              error: function(error) {that.success = false; that.failureReason = error;}});
 
-                                    if(this.success === true) {
+                                    if(that.success === true) {
                                         registry.byId("addUser").hide();
                                     } else {
-                                        alert("Error:" + this.failureReason);
+                                        alert("Error:" + that.failureReason);
                                     }
 
                                     return false;

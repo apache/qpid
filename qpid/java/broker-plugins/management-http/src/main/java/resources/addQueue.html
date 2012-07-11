@@ -56,7 +56,7 @@
                     <tr>
                         <td valign="top"><strong>Priorities:  </strong></td>
                         <td><input data-dojo-type="dijit.form.NumberSpinner" id="formAddQueue.priorities"
-                                   name="numPriorities" value="3" smallDelta="1" constraints="{min:1,max:10,places:0}"/>
+                                   name="priorities" value="10" smallDelta="1" constraints="{min:1,max:10,places:0}"/>
                     </tr>
                 </table>
             </div>
@@ -78,7 +78,7 @@
                 <table cellpadding="0" cellspacing="2">
                     <tr>
                         <td valign="top"><strong>Sort Message Property:  </strong></td>
-                        <td><input type="text" name="sortKey" id="formAddQueue.sortkey"
+                        <td><input type="text" name="sortKey" id="formAddQueue.sortkey" required="false"
                                                        placeholder="" dojoType="dijit.form.ValidationTextBox" /></td>
                     </tr>
                 </table>
