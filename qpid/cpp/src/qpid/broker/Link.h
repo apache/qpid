@@ -196,6 +196,11 @@ class Link : public PersistableConfig, public management::Manageable {
     static std::string createName(const std::string& transport,
                                   const std::string& host,
                                   uint16_t  port);
+
+    /** The current connction for this link. Note returns 0 if the link is not
+     * presently connected.
+     */
+    Connection* getConnection() { return connection; }
 };
 }
 }

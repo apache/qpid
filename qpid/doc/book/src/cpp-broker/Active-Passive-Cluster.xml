@@ -221,7 +221,10 @@ under the License.
 	      <para><literal>--ha-mechanism <replaceable>MECH</replaceable></literal></para>
 	    </entry>
 	    <entry>
-	      Authentication settings used by brokers to connect to each other.
+	      Authentication settings used by HA brokers to connect to each other.
+	      If you are using authorization
+	      (<xref linkend="sect-Messaging_User_Guide-Security-Authorization"/>)
+	      then this user must have all permissions.
 	    </entry>
 	  </row>
 	</tbody>
@@ -630,7 +633,53 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     </section>
   </section>
 
-    <section>
+  <section>
+    <title>Security.</title>
+    <para>
+      You can secure your cluster using the authenticiation and authorization features
+      described in <xref linkend="chap-Messaging_User_Guide-Security"/>.
+    </para>
+    <para>
+      Backup brokers connect to the primary broker and subscribe for management
+      events and queue contents. You can specifiy the identity used to connect
+      to the primary with the following options:
+    </para>
+    <table frame="all" id="ha-broker-security-options">
+      <title>Security options for High Availability Messaging Cluster</title>
+      <tgroup align="left" cols="2" colsep="1" rowsep="1">
+	<colspec colname="c1" colwidth="1*"/>
+	<colspec colname="c2" colwidth="3*"/>
+	<thead>
+	  <row>
+	    <entry align="center" nameend="c2" namest="c1">
+	      Security options for High Availability Messaging Cluster
+	    </entry>
+	  </row>
+	</thead>
+	<tbody>
+	  <row>
+	    <entry>
+	      <para><literal>--ha-username <replaceable>USER</replaceable></literal></para>
+	      <para><literal>--ha-password <replaceable>PASS</replaceable></literal></para>
+	      <para><literal>--ha-mechanism <replaceable>MECH</replaceable></literal></para>
+	    </entry>
+	    <entry>
+	      Authentication settings used by HA brokers to connect to each other.
+	      If you are using authorization
+	      (<xref linkend="sect-Messaging_User_Guide-Security-Authorization"/>)
+	      then this user must have all permissions.
+	    </entry>
+	  </row>
+	</tbody>
+      </tgroup>
+    </table>
+    <para>
+      This identity is also used to authorize actions taken on the backup broker to replicate
+      from the primary, for example to create queues or exchanges.
+    </para>
+  </section>
+
+  <section>
     <title>Integrating with other Cluster Resource Managers</title>
     <para>
       To integrate with a different resource manager you must configure it to:
