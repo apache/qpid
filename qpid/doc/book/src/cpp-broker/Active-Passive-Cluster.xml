@@ -81,6 +81,79 @@ under the License.
       </para>
     </section>
     <section>
+      <title>Avoiding messge loss</title>
+      <para>
+	In order to avoid message loss, the primary broker <emphasis>delays
+	acknowledgement</emphasis> of messages received from clients until the
+	message has been replicated to and acknowledged by all of the back-up
+	brokers.
+      </para>
+      <para>
+	Clients buffer unacknowledged messages and re-send them in the event of
+	a fail-over. If the primary crashes before a message is replicated to
+	all the backups, the client will re-send the message when it fails over
+	to the new primary.
+      </para>
+      <para>
+	Note that this means it is possible for messages to be
+	<emphasis>duplicated</emphasis>. In the event of a failure it is
+	possible for a message to be both received by the backup that becomes
+	the new primary <emphasis>and</emphasis> re-sent by the client.
+      </para>
+      <para>
+	When a new primary is promoted after a fail-over it is initially in
+	"recovering" mode. In this mode, it delays acknowledgement of messages
+	on behalf of all the backups that were connected to the previous
+	primary. This protects those messages against a failure of the new
+	primary until the backups have a chance to connect and catch up.
+      </para>
+      <variablelist>
+	<title>Status of a HA broker</title>
+	<varlistentry>
+	  <term>Joining</term>
+	  <listitem>
+	    <para>
+	      Initial status of a new broker that has not yet connected to the primary.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>Catch-up</term>
+	  <listitem>
+	    <para>
+	      A backup broker that is connected to the primary and catching up
+	      on queues and messages.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>Ready</term>
+	  <listitem>
+	    <para>
+	      A backup broker that is fully caught-up and ready to take over as
+	      primary.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>Recovering</term>
+	  <listitem>
+	    <para>
+	      The newly-promoted primary, waiting for backups to connect and catch up.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>Active</term>
+	  <listitem>
+	    <para>
+	      The active primary broker with all backups connected and caught-up.
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </section>
+    <section>
       <title>Limitations</title>
       <para>
 	There are a number of known limitations in the current preview implementation. These
@@ -135,7 +208,7 @@ under the License.
       virtual IP addresses for clients or brokers.
     </para>
   </section>
-  
+
   <section>
     <title>Configuring the Brokers</title>
     <para>
@@ -208,7 +281,7 @@ under the License.
 	    <entry><literal>--ha-replicate</literal></entry>
 	    <foo/>
 	    <entry>
-	      <para> 
+	      <para>
 		Specifies whether queues and exchanges are replicated by default.
 		For details see <xref linkend="ha-creating-replicated"/>
 	      </para>
@@ -225,6 +298,15 @@ under the License.
 	      If you are using authorization
 	      (<xref linkend="sect-Messaging_User_Guide-Security-Authorization"/>)
 	      then this user must have all permissions.
+	    </entry>
+	  </row>
+	  <row>
+	    <entry><literal>--ha-backup-timeout <replaceable>SECONDS</replaceable></literal> </entry>
+	    <entry>
+	      <para>
+		Maximum time that a recovering primary will wait for an expected
+		backup to connect and become ready.
+	      </para>
 	    </entry>
 	  </row>
 	</tbody>
@@ -374,7 +456,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     <para>
       The <literal>resources</literal> section also defines a pair of virtual IP
       addresses on different sub-nets. One will be used for broker-to-broker
-      communication, the other for client-to-broker. 
+      communication, the other for client-to-broker.
     </para>
     <para>
       To take advantage of the virtual IP addresses, <filename>qpidd.conf</filename>
@@ -426,7 +508,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       command line.
     </para>
   </section>
-  
+
   <section id="ha-creating-replicated">
     <title>Creating replicated queues and exchanges</title>
     <para>
