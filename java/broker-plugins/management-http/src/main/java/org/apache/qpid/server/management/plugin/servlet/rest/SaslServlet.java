@@ -91,6 +91,10 @@ public class SaslServlet extends AbstractServlet
             final Principal principal = subject.getPrincipals().iterator().next();
             outputObject.put("user", principal.getName());
         }
+        else if (request.getRemoteUser() != null)
+        {
+            outputObject.put("user", request.getRemoteUser());
+        }
 
         outputObject.put("mechanisms", (Object) mechanisms);
 
