@@ -23,11 +23,11 @@ package org.apache.qpid.server.protocol;
 import java.net.SocketAddress;
 import java.security.Principal;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
 
 import javax.security.auth.Subject;
 import javax.security.sasl.SaslServer;
 
-import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -217,4 +217,5 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
 
     public Principal getPeerPrincipal();
 
+    Lock getReceivedLock();
 }

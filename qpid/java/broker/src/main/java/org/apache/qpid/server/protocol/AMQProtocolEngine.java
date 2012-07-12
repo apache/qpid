@@ -1323,25 +1323,17 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     public void closeSession(AMQSessionModel session, AMQConstant cause, String message) throws AMQException
     {
-        _receivedLock.lock();
-        try
-        {
-            int channelId = ((AMQChannel)session).getChannelId();
-            closeChannel(channelId);
+        int channelId = ((AMQChannel)session).getChannelId();
+        closeChannel(channelId);
 
-            MethodRegistry methodRegistry = getMethodRegistry();
-            ChannelCloseBody responseBody =
-                    methodRegistry.createChannelCloseBody(
-                            cause.getCode(),
-                            new AMQShortString(message),
-                            0,0);
+        MethodRegistry methodRegistry = getMethodRegistry();
+        ChannelCloseBody responseBody =
+                methodRegistry.createChannelCloseBody(
+                        cause.getCode(),
+                        new AMQShortString(message),
+                        0,0);
 
-            writeFrame(responseBody.generateFrame(channelId));
-        }
-        finally
-        {
-            _receivedLock.unlock();
-        }
+        writeFrame(responseBody.generateFrame(channelId));
     }
 
     public void close(AMQConstant cause, String message) throws AMQException
@@ -1496,5 +1488,10 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     public Object getReference()
     {
         return _reference;
+    }
+
+    public Lock getReceivedLock()
+    {
+        return _receivedLock;
     }
 }
