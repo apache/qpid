@@ -82,7 +82,10 @@
 
     <target name="check-bdbstore-requested">
          <condition property="bdbstore-requested">
-             <contains string="${modules.opt}" substring="bdbstore"/>
+             <or>
+                 <contains string="${modules.opt}" substring="bdbstore"/>
+                 <istrue value="${optional}"/>
+             </or>
          </condition>
     </target>
 
