@@ -36,6 +36,8 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Lock;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
@@ -1552,15 +1554,34 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
                 _logger.warn("OPEN TRANSACTION ALERT " + _logSubject.toString() + " " + openTime + " ms");
             }
 
-            // Close session for idle or open transactions that have timed out
+            // Close _connection_ for idle or open transactions that have timed out (this is different
+            // than the 0-10 code path which closes the session).
             if (idleClose > 0L && idleTime > idleClose)
             {
-                getConnectionModel().closeSession(this, AMQConstant.RESOURCE_ERROR, "Idle transaction timed out");
+                closeConnection("Idle transaction timed out");
             }
             else if (openClose > 0L && openTime > openClose)
             {
-                getConnectionModel().closeSession(this, AMQConstant.RESOURCE_ERROR, "Open transaction timed out");
+                closeConnection("Open transaction timed out");
             }
+        }
+    }
+
+    /**
+     * Typically called from the HouseKeepingThread instead of the main receiver thread,
+     * therefore uses a lock to close the connection in a thread-safe manner.
+     */
+    private void closeConnection(String reason) throws AMQException
+    {
+        Lock receivedLock = _session.getReceivedLock();
+        receivedLock.lock();
+        try
+        {
+            _session.close(AMQConstant.RESOURCE_ERROR, reason);
+        }
+        finally
+        {
+            receivedLock.unlock();
         }
     }
 
