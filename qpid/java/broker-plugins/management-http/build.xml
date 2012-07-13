@@ -17,9 +17,23 @@
  - under the License.
  -->
 <project name="Qpid Broker-Plugins Management HTTP" default="build">
+
+    <condition property="systests.optional.depends" value="bdbstore" else="">
+      <or>
+        <and>
+            <contains string="${modules.opt}" substring="bdbstore"/>
+            <contains string="${profile}" substring="bdb"/>
+        </and>
+        <and>
+            <istrue value="${optional}"/>
+            <contains string="${profile}" substring="bdb"/>
+        </and>
+      </or>
+    </condition>
+
     <property name="module.depends" value="common broker" />
-    <property name="module.test.depends" value="test broker/test common/test management/common" />
-    
+    <property name="module.test.depends" value="systests test broker/test common/test management/common client ${systests.optional.depends}" />
+
     <property name="module.manifest" value="MANIFEST.MF" />
     <property name="module.plugin" value="true" />
     <property name="module.genpom" value="true"/>

@@ -251,6 +251,7 @@ define(["dojo/_base/xhr",
                            "state",
                            "durable",
                            "lifetimePolicy",
+                           "type",
                            "alertRepeatGap",
                            "alertRepeatGapUnits",
                            "alertThresholdMessageAge",
@@ -314,6 +315,7 @@ define(["dojo/_base/xhr",
                this.state.innerHTML = this.queueData[ "state" ];
                this.durable.innerHTML = this.queueData[ "durable" ];
                this.lifetimePolicy.innerHTML = this.queueData[ "lifetimePolicy" ];
+               this.type.innerHTML = this.queueData[ "type" ];
 
                this.queueDepthMessages.innerHTML = this.queueData["queueDepthMessages"];
                bytesDepth = formatter.formatBytes( this.queueData["queueDepthBytes"] );

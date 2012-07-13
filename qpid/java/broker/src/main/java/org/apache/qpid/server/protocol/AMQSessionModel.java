@@ -84,4 +84,6 @@ public interface AMQSessionModel extends Comparable<AMQSessionModel>
     Long getTxnRejects();
 
     int getChannelId();
+
+    int getConsumerCount();
 }

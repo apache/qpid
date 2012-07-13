@@ -48,11 +48,15 @@ define(["dojo/_base/xhr",
         var node = construct.create("div", null, win.body(), "last");
 
         var typeSpecificFields = {
-                        numPriorities: "priority",
+                        priorities: "priority",
                         lvqKey: "lvq",
                         sortKey: "sorted"
                     };
 
+        var requiredFields = {
+                priority: "priorities",
+                sorted: "sortkey"
+            };
 
         var convertToQueue = function convertToQueue(formValues)
             {
@@ -98,14 +102,19 @@ define(["dojo/_base/xhr",
                                     if(widget.name === "type") {
                                         widget.on("change", function(isChecked) {
 
-                                            var obj = registry.byId(widget.id + ":fields");
+                                            var objId = widget.id + ":fields";
+                                            var obj = registry.byId(objId);
                                             if(obj) {
                                                 if(isChecked) {
                                                     obj.domNode.style.display = "block";
-                                                    obj.resize();
                                                 } else {
                                                     obj.domNode.style.display = "none";
-                                                    obj.resize();
+                                                }
+                                                obj.resize();
+                                                var widgetValue = widget.value;
+                                                if (requiredFields.hasOwnProperty(widgetValue))
+                                                {
+                                                    dijit.byId('formAddQueue.' + requiredFields[widgetValue]).required = isChecked;
                                                 }
                                             }
                                         })

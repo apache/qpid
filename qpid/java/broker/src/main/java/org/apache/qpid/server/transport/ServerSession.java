@@ -1070,4 +1070,10 @@ public class ServerSession extends Session
     {
         return getQMFId().compareTo(session.getQMFId());
     }
+
+    @Override
+    public int getConsumerCount()
+    {
+        return _subscriptions.values().size();
+    }
 }
