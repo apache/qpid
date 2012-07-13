@@ -63,7 +63,6 @@ class HaBroker(Broker):
         args = copy(args)
         args += ["--load-module", BrokerTest.ha_lib,
                  "--log-enable=debug+:ha::",
-                 "--log-enable=trace+:ha::", # FIXME aconway 2012-07-12: 
                  # FIXME aconway 2012-02-13: workaround slow link failover.
                  "--link-maintenace-interval=0.1",
                  "--ha-cluster=%s"%ha_cluster]

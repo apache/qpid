@@ -288,6 +288,7 @@ void HaBroker::membershipUpdated(const Variant::List& brokers) {
 void HaBroker::setMembership(const Variant::List& brokers) {
     Mutex::ScopedLock l(lock);
     membership.assign(brokers);
+    QPID_LOG(debug, logPrefix << "Membership update: " <<  membership);
     BrokerInfo info;
     // Check if my own status has been updated to READY
     if (getStatus() == CATCHUP &&

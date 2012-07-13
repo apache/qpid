@@ -436,7 +436,6 @@ void BrokerReplicator::doEventUnbind(Variant::Map& values) {
 
 void BrokerReplicator::doEventMembersUpdate(Variant::Map& values) {
     Variant::List members = values[MEMBERS].asList();
-    QPID_LOG(debug, logPrefix << "Membership update event: " <<  members);
     haBroker.setMembership(members);
 }
 
