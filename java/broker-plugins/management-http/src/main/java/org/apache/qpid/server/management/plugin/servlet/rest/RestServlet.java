@@ -55,9 +55,9 @@ public class RestServlet extends AbstractServlet
         initializationRequired = true;
     }
 
-    public RestServlet(Broker broker, SocketAddress socketaddress, Class<? extends ConfiguredObject>... hierarchy)
+    public RestServlet(Broker broker, Class<? extends ConfiguredObject>... hierarchy)
     {
-        super(broker, socketaddress);
+        super(broker);
         _hierarchy = hierarchy;
     }
 
