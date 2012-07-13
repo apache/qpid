@@ -78,4 +78,8 @@ bool Membership::get(const types::Uuid& id, BrokerInfo& result) {
     return true;
 }
 
+std::ostream& operator<<(std::ostream& o, const Membership& members) {
+    return o << members.brokers;
+}
+
 }} // namespace qpid::ha
