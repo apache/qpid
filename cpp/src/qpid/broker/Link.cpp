@@ -498,7 +498,9 @@ void Link::maintenanceVisit ()
             }
         }
     }
-    else if (state == STATE_OPERATIONAL && (!active.empty() || !created.empty() || !cancellations.empty()) && connection != 0)
+    else if (state == STATE_OPERATIONAL &&
+             (!active.empty() || !created.empty() || !cancellations.empty()) &&
+             connection && connection->isOpen())
         connection->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
 }
 
