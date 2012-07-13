@@ -152,12 +152,20 @@ void ConnectionHandler::Handler::startOk(const ConnectionStartOkBody& body)
         authenticator->start(body.getMechanism(), body.hasResponse() ? &body.getResponse() : 0);
     } catch (std::exception& /*e*/) {
         management::ManagementAgent* agent = connection.getAgent();
-        if (agent) {
+        bool logEnabled;
+        QPID_LOG_TEST_CAT(debug, model, logEnabled);
+        if (logEnabled || agent)
+        {
             string error;
             string uid;
             authenticator->getError(error);
             authenticator->getUid(uid);
-            agent->raiseEvent(_qmf::EventClientConnectFail(connection.getMgmtId(), uid, error));
+            if (agent) {
+                agent->raiseEvent(_qmf::EventClientConnectFail(connection.getMgmtId(), uid, error));
+            }
+            QPID_LOG_CAT(debug, model, "Failed connection. rhost:" << connection.getMgmtId()
+                << " user:" << uid
+                << " reason:" << error );
         }
         throw;
     }
@@ -200,12 +208,20 @@ void ConnectionHandler::Handler::secureOk(const string& response)
         authenticator->step(response);
     } catch (std::exception& /*e*/) {
         management::ManagementAgent* agent = connection.getAgent();
-        if (agent) {
+        bool logEnabled;
+        QPID_LOG_TEST_CAT(debug, model, logEnabled);
+        if (logEnabled || agent)
+        {
             string error;
             string uid;
             authenticator->getError(error);
             authenticator->getUid(uid);
-            agent->raiseEvent(_qmf::EventClientConnectFail(connection.getMgmtId(), uid, error));
+            if (agent) {
+                agent->raiseEvent(_qmf::EventClientConnectFail(connection.getMgmtId(), uid, error));
+            }
+            QPID_LOG_CAT(debug, model, "Failed connection. rhost:" << connection.getMgmtId()
+                << " user:" << uid
+                << " reason:" << error );
         }
         throw;
     }
@@ -283,7 +299,7 @@ void ConnectionHandler::Handler::start(const FieldTable& serverProperties,
                                                   service,
                                                   host,
                                                   0,   // TODO -- mgoulish Fri Sep 24 2010
-                                                  256,  
+                                                  256,
                                                   false ); // disallow interaction
     }
     std::string supportedMechanismsList;
