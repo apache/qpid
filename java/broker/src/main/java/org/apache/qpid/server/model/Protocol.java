@@ -28,5 +28,6 @@ public enum Protocol
     AMQP_0_10,
     AMQP_1_0,
     JMX,
-    HTTP
+    HTTP,
+    HTTPS
 }

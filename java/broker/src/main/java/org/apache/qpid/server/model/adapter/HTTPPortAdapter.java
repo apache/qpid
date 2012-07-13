@@ -39,13 +39,22 @@ import org.apache.qpid.server.model.VirtualHostAlias;
 public class HTTPPortAdapter extends AbstractAdapter implements Port
 {
     private final BrokerAdapter _broker;
-    private int _port;
+    private final int _port;
+    private final Protocol _protocol;
+    private final Transport _transport;
+
     public HTTPPortAdapter(BrokerAdapter brokerAdapter, int port)
+    {
+        this(brokerAdapter, port, Protocol.HTTP, Transport.TCP);
+    }
+
+    public HTTPPortAdapter(BrokerAdapter brokerAdapter, int port, Protocol protocol, Transport transport)
     {
         super(UUIDGenerator.generateRandomUUID());
         _broker = brokerAdapter;
         _port = port;
-
+        _protocol = protocol;
+        _transport = transport;
     }
 
     @Override
@@ -63,7 +72,7 @@ public class HTTPPortAdapter extends AbstractAdapter implements Port
     @Override
     public Collection<Transport> getTransports()
     {
-        return Collections.singleton(Transport.TCP);        
+        return Collections.singleton(_transport);
     }
 
     @Override
@@ -83,7 +92,7 @@ public class HTTPPortAdapter extends AbstractAdapter implements Port
     @Override
     public Collection<Protocol> getProtocols()
     {
-        return Collections.singleton(Protocol.HTTP);
+        return Collections.singleton(_protocol);
     }
 
     @Override

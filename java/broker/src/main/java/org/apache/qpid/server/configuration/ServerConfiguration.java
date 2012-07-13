@@ -65,6 +65,7 @@ public class ServerConfiguration extends ConfigurationPlugin
     public static final int DEFAULT_JMXPORT_REGISTRYSERVER = 8999;
     public static final int JMXPORT_CONNECTORSERVER_OFFSET = 100;
     public static final int DEFAULT_HTTP_MANAGEMENT_PORT = 8080;
+    public static final int DEFAULT_HTTPS_MANAGEMENT_PORT = 8443;
 
     public static final String QPID_HOME = "QPID_HOME";
     public static final String QPID_WORK = "QPID_WORK";
@@ -580,7 +581,17 @@ public class ServerConfiguration extends ConfigurationPlugin
 
     public int getHTTPManagementPort()
     {
-        return getIntValue("management.http.port", 8080);
+        return getIntValue("management.http.port", DEFAULT_HTTP_MANAGEMENT_PORT);
+    }
+
+    public boolean getHTTPSManagementEnabled()
+    {
+        return getBooleanValue("management.https.enabled", false);
+    }
+
+    public int getHTTPSManagementPort()
+    {
+        return getIntValue("management.https.port", DEFAULT_HTTPS_MANAGEMENT_PORT);
     }
 
     public String[] getVirtualHosts()
@@ -1015,4 +1026,5 @@ public class ServerConfiguration extends ConfigurationPlugin
     {
         _qpidHome = path;
     }
+
 }

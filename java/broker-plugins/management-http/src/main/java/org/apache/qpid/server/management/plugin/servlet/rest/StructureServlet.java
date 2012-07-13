@@ -18,7 +18,6 @@ package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -42,9 +41,9 @@ public class StructureServlet extends AbstractServlet
         super();
     }
 
-    public StructureServlet(Broker broker, SocketAddress socketaddress)
+    public StructureServlet(Broker broker)
     {
-        super(broker, socketaddress);
+        super(broker);
     }
 
     @Override
