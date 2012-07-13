@@ -143,6 +143,8 @@ Connection::~Connection()
         // a cluster-unsafe context. Don't raise an event in that case.
         if (!link && isClusterSafe())
             agent->raiseEvent(_qmf::EventClientDisconnect(mgmtId, ConnectionState::getUserId()));
+        QPID_LOG_CAT(debug, model, "Delete connection. user:" << ConnectionState::getUserId()
+            << " rhost:" << mgmtId );
     }
     broker.getConnectionObservers().closed(*this);
 
@@ -287,6 +289,10 @@ void Connection::raiseConnectEvent() {
         mgmtObject->set_authIdentity(userId);
         agent->raiseEvent(_qmf::EventClientConnect(mgmtId, userId));
     }
+
+    QPID_LOG_CAT(debug, model, "Create connection. user:" << userId
+        << " rhost:" << mgmtId );
+
 }
 
 void Connection::setUserProxyAuth(bool b)

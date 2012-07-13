@@ -304,6 +304,9 @@ class Generator:
   def testGenQMFv1 (self, variables):
     return variables["genQmfV1"]
 
+  def testGenLogs (self, variables):
+    return variables["genLogs"]
+
   def genDisclaimer (self, stream, variables):
     prefix = variables["commentPrefix"]
     stream.write (prefix + " This source file was created by a code generator.\n")

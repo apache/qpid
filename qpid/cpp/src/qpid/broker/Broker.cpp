@@ -1099,6 +1099,13 @@ std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
                                         ManagementAgent::toMap(arguments),
                                         "created"));
         }
+        QPID_LOG_CAT(debug, model, "Create queue. name:" << name
+            << " user:" << userId
+            << " rhost:" << connectionId
+            << " durable:" << (durable ? "T" : "F")
+            << " owner:" << owner
+            << " autodelete:" << (autodelete ? "T" : "F")
+            << " alternateExchange:" << alternateExchange );
     }
     return result;
 }
@@ -1121,6 +1128,10 @@ void Broker::deleteQueue(const std::string& name, const std::string& userId,
 
     if (managementAgent.get())
         managementAgent->raiseEvent(_qmf::EventQueueDelete(connectionId, userId, name));
+    QPID_LOG_CAT(debug, model, "Delete queue. name:" << name
+        << " user:" << userId
+        << " rhost:" << connectionId
+    );
 
 }
 
@@ -1172,6 +1183,12 @@ std::pair<Exchange::shared_ptr, bool> Broker::createExchange(
                                                          ManagementAgent::toMap(arguments),
                                                          "created"));
         }
+        QPID_LOG_CAT(debug, model, "Create exchange. name:" << name
+            << " user:" << userId
+            << " rhost:" << connectionId
+            << " type:" << type
+            << " alternateExchange:" << alternateExchange
+            << " durable:" << (durable ? "T" : "F"));
     }
     return result;
 }
@@ -1196,7 +1213,9 @@ void Broker::deleteExchange(const std::string& name, const std::string& userId,
 
     if (managementAgent.get())
         managementAgent->raiseEvent(_qmf::EventExchangeDelete(connectionId, userId, name));
-
+    QPID_LOG_CAT(debug, model, "Delete exchange. name:" << name
+        << " user:" << userId
+        << " rhost:" << connectionId);
 }
 
 void Broker::bind(const std::string& queueName,
@@ -1231,6 +1250,11 @@ void Broker::bind(const std::string& queueName,
                 managementAgent->raiseEvent(_qmf::EventBind(connectionId, userId, exchangeName,
                                                   queueName, key, ManagementAgent::toMap(arguments)));
             }
+            QPID_LOG_CAT(debug, model, "Create binding. exchange:" << exchangeName
+                << " queue:" << queueName
+                << " key:" << key
+                << " user:" << userId
+                << " rhost:" << connectionId);
         }
     }
 }
@@ -1267,6 +1291,11 @@ void Broker::unbind(const std::string& queueName,
             if (managementAgent.get()) {
                 managementAgent->raiseEvent(_qmf::EventUnbind(connectionId, userId, exchangeName, queueName, key));
             }
+            QPID_LOG_CAT(debug, model, "Delete binding. exchange:" << exchangeName
+                << " queue:" << queueName
+                << " key:" << key
+                << " user:" << userId
+                << " rhost:" << connectionId);
         }
     }
 }
