@@ -49,6 +49,8 @@ parser.add_option("-b", "--broker-plugin", dest="brokerplugin", default=False, a
                   help="Generate code for use in a qpid broker plugin")
 parser.add_option("-2", "--v2-style", dest="v2_style", default=False, action="store_true",
                   help="Generate code for use with the QMFv2 Agent API")
+parser.add_option("-l", "--qpid-logs", dest="qpidlogs", default=False, action="store_true",
+                  help="Generate code for QPID_LOG statements in classes constructor/destructor")
 
 (opts, args) = parser.parse_args()
 
@@ -69,6 +71,11 @@ if opts.brokerplugin:
 else:
   vargs["agentHeaderDir"] = "agent"
   vargs["genQmfV1"]       = None
+
+if opts.qpidlogs:
+  vargs["genLogs"]        = True
+else:
+  vargs["genLogs"]        = False
 
 for schemafile in args:
   package = SchemaPackage(typefile, schemafile, opts)

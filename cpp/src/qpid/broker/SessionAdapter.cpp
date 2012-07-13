@@ -109,6 +109,12 @@ void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const 
                                                                  false,
                                                                  ManagementAgent::toMap(args),
                                                                  "existing"));
+                QPID_LOG_CAT(debug, model, "Create exchange. name:" << exchange
+                    << " user:" << getConnection().getUserId()
+                    << " rhost:" << getConnection().getUrl()
+                    << " type:" << type
+                    << " alternateExchange:" << alternateExchange
+                    << " durable:" << (durable ? "T" : "F"));
             }
         }catch(UnknownExchangeTypeException& /*e*/){
             throw NotFoundException(QPID_MSG("Exchange type not implemented: " << type));
@@ -312,6 +318,14 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
                 agent->raiseEvent(_qmf::EventQueueDeclare(getConnection().getUrl(), getConnection().getUserId(),
                                                           name, durable, exclusive, autoDelete, alternateExchange, ManagementAgent::toMap(arguments),
                                                           "existing"));
+            QPID_LOG_CAT(debug, model, "Create queue. name:" << name
+                << " user:" << getConnection().getUserId()
+                << " rhost:" << getConnection().getUrl()
+                << " durable:" << (durable ? "T" : "F")
+                << " exclusive:" << (exclusive ? "T" : "F")
+                << " autodelete:" << (autoDelete ? "T" : "F")
+                << " alternateExchange:" << alternateExchange
+            );
         }
 
     }
@@ -416,6 +430,12 @@ SessionAdapter::MessageHandlerImpl::subscribe(const string& queueName,
     if (agent)
         agent->raiseEvent(_qmf::EventSubscribe(getConnection().getUrl(), getConnection().getUserId(),
                                                queueName, destination, exclusive, ManagementAgent::toMap(arguments)));
+    QPID_LOG_CAT(debug, model, "Create subscription. queue:" << queueName
+        << " destination:" << destination
+        << " user:" << getConnection().getUserId()
+        << " rhost:" << getConnection().getUrl()
+        << " exclusive:" << (exclusive ? "T" : "F")
+    );
 }
 
 void
@@ -428,6 +448,9 @@ SessionAdapter::MessageHandlerImpl::cancel(const string& destination )
     ManagementAgent* agent = getBroker().getManagementAgent();
     if (agent)
         agent->raiseEvent(_qmf::EventUnsubscribe(getConnection().getUrl(), getConnection().getUserId(), destination));
+    QPID_LOG_CAT(debug, model, "Delete subscription. destination:" << destination
+        << " user:" << getConnection().getUserId()
+        << " rhost:" << getConnection().getUrl() );
 }
 
 void

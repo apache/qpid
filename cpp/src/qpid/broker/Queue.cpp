@@ -1494,6 +1494,9 @@ void tryAutoDeleteImpl(Broker& broker, Queue::shared_ptr queue, const std::strin
 
         if (broker.getManagementAgent())
             broker.getManagementAgent()->raiseEvent(_qmf::EventQueueDelete(connectionId, userId, queue->getName()));
+        QPID_LOG_CAT(debug, model, "Delete queue. name:" << queue->getName()
+            << " user:" << userId
+            << " rhost:" << connectionId );
     }
 }
 

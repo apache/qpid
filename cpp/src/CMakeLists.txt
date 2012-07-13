@@ -220,7 +220,7 @@ execute_process(COMMAND ${RUBY_EXECUTABLE} -I ${rgen_dir} ${rgen_dir}/generate $
   endforeach (spec_file ${mgmt_specs})
   if (regen_mgmt)
     message(STATUS "Regenerating Qpid Management Framework sources")
-execute_process(COMMAND ${PYTHON_EXECUTABLE} ${mgen_dir}/qmf-gen -c managementgen.cmake -b -q -o ${CMAKE_CURRENT_BINARY_DIR}/qmf ${mgmt_specs}
+execute_process(COMMAND ${PYTHON_EXECUTABLE} ${mgen_dir}/qmf-gen -c managementgen.cmake -b -l -q -o ${CMAKE_CURRENT_BINARY_DIR}/qmf ${mgmt_specs}
                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
   else (regen_mgmt)
     message(STATUS "No need to generate Qpid Management Framework sources")

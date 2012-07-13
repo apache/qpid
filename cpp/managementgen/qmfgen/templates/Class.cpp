@@ -7,9 +7,9 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -27,6 +27,9 @@
 #include "qpid//*MGEN:Class.AgentHeaderLocation*//ManagementAgent.h"
 #include "/*MGEN:Class.NameCap*/.h"
 /*MGEN:Class.MethodArgIncludes*/
+/*MGEN:IF(Root.GenLogs)*/
+#include "qpid/log/Statement.h"
+/*MGEN:ENDIF*/
 #include <iostream>
 #include <sstream>
 #include <string.h>
@@ -59,10 +62,26 @@ uint8_t /*MGEN:Class.NameCap*/::md5Sum[MD5_LEN]   =
     for (int idx = 0; idx < maxThreads; idx++)
         perThreadStatsArray[idx] = 0;
 /*MGEN:ENDIF*/
+/*MGEN:IF(Root.GenLogs)*/
+    QPID_LOG_CAT(trace, model, "Mgmt create " << className
+        << ". id:" << getKey());
+/*MGEN:ENDIF*/
 }
 
 /*MGEN:Class.NameCap*/::~/*MGEN:Class.NameCap*/ ()
 {
+/*MGEN:IF(Root.GenLogs)*/
+    bool logEnabled;
+    QPID_LOG_TEST_CAT(trace, model, logEnabled);
+    if (logEnabled)
+    {
+        ::qpid::types::Variant::Map map;
+        mapEncodeValues(map, false, true);
+        QPID_LOG_CAT(trace, model, "Mgmt delete " << className
+            << ". id:" << getKey()
+            << " Statistics: " << map);
+    }
+/*MGEN:ENDIF*/
 /*MGEN:IF(Class.ExistPerThreadStats)*/
     for (int idx = 0; idx < maxThreads; idx++)
         if (perThreadStatsArray[idx] != 0)
@@ -273,7 +292,6 @@ std::string /*MGEN:Class.NameCap*/::getKey() const
 /*MGEN:Class.PrimaryKey*/
     return key.str();
 }
-
 
 
 void /*MGEN:Class.NameCap*/::mapEncodeValues (::qpid::types::Variant::Map& _map,
