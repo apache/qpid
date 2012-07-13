@@ -18,7 +18,6 @@ package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,12 +35,12 @@ public class LogRecordsServlet extends AbstractServlet
 {
     public LogRecordsServlet()
     {
-        super(ApplicationRegistry.getInstance().getBroker(), null);
+        super(ApplicationRegistry.getInstance().getBroker());
     }
 
-    public LogRecordsServlet(Broker broker, SocketAddress socketaddress)
+    public LogRecordsServlet(Broker broker)
     {
-        super(broker, socketaddress);
+        super(broker);
     }
 
     @Override

@@ -19,7 +19,6 @@ package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -57,9 +56,9 @@ public class MessageServlet extends AbstractServlet
         super();
     }
 
-    public MessageServlet(Broker broker, SocketAddress socketaddress)
+    public MessageServlet(Broker broker)
     {
-        super(broker, socketaddress);
+        super(broker);
     }
 
     @Override

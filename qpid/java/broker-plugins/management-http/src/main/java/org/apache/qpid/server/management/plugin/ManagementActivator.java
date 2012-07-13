@@ -39,9 +39,10 @@ public class ManagementActivator implements  BundleActivator
     public void start(final BundleContext ctx) throws Exception
     {
         _ctx = ctx;
-        if (!ApplicationRegistry.getInstance().getConfiguration().getHTTPManagementEnabled())
+        if (!ApplicationRegistry.getInstance().getConfiguration().getHTTPManagementEnabled()
+                && !ApplicationRegistry.getInstance().getConfiguration().getHTTPSManagementEnabled())
         {
-            _logger.info("Management plugin is diabled!");
+            _logger.info("Management plugin is disabled!");
             ctx.getBundle().uninstall();
             return;
         }

@@ -119,6 +119,10 @@ public interface IApplicationRegistry extends StatisticsGatherer
 
     int getHTTPManagementPort();
 
+    boolean useHTTPSManagement();
+
+    int getHTTPSManagementPort();
+
     void addRegistryChangeListener(IAuthenticationManagerRegistry.RegistryChangeListener registryChangeListener);
 
     public interface PortBindingListener

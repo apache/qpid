@@ -57,6 +57,9 @@
             <keyStorePath>${conf}/qpid.keystore</keyStorePath>
             <keyStorePassword>password</keyStorePassword>
         </ssl>
+        <https>
+            <enabled>false</enabled>
+        </https>
     </management>
     <advanced>
         <framesize>65535</framesize>
