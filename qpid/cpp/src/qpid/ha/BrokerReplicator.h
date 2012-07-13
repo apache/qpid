@@ -24,8 +24,10 @@
 
 #include "types.h"
 #include "ReplicationTest.h"
+#include "AlternateExchangeSetter.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/types/Variant.h"
+#include "qpid/management/ManagementObject.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
@@ -95,6 +97,20 @@ class BrokerReplicator : public broker::Exchange,
     void startQueueReplicator(const boost::shared_ptr<broker::Queue>&);
     void stopQueueReplicator(const std::string& name);
 
+    boost::shared_ptr<broker::Queue> createQueue(
+        const std::string& name,
+        bool durable,
+        bool autodelete,
+        const qpid::framing::FieldTable& arguments,
+        const std::string& alternateExchange);
+
+    boost::shared_ptr<broker::Exchange> createExchange(
+        const std::string& name,
+        const std::string& type,
+        bool durable,
+        const qpid::framing::FieldTable& args,
+        const std::string& alternateExchange);
+
     std::string logPrefix;
     std::string userId, remoteHost;
     ReplicationTest replicationTest;
@@ -102,6 +118,7 @@ class BrokerReplicator : public broker::Exchange,
     broker::Broker& broker;
     boost::shared_ptr<broker::Link> link;
     bool initialized;
+    AlternateExchangeSetter alternates;
 };
 }} // namespace qpid::broker
 
