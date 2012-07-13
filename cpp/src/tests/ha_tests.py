@@ -857,7 +857,8 @@ class RecoveryTests(BrokerTest):
         """Verify that the broker holds queues without sufficient backup,
         i.e. does not complete messages sent to those queues."""
 
-        cluster = HaCluster(self, 4);
+        # We don't want backups to time out for this test, set long timeout.
+        cluster = HaCluster(self, 4, args=["--ha-backup-timeout=100000"]);
         # Wait for the primary to be ready
         cluster[0].wait_status("active")
         # Create a queue before the failure.
@@ -877,6 +878,7 @@ class RecoveryTests(BrokerTest):
 
         # Create a queue after the failure
         s2 = cluster.connect(3).session().sender("q2;{create:always}")
+
         # Verify that messages sent are not completed
         for i in xrange(100,200): s1.send(str(i), sync=False); s2.send(str(i), sync=False)
         assertSyncTimeout(s1)
@@ -886,6 +888,7 @@ class RecoveryTests(BrokerTest):
 
         # Verify we can receive even if sending is on hold:
         cluster[3].assert_browse("q1", [str(i) for i in range(100)+range(100,200)])
+
         # Restart backups, verify queues are released only when both backups are up
         cluster.restart(1)
         assertSyncTimeout(s1)
@@ -895,6 +898,7 @@ class RecoveryTests(BrokerTest):
         self.assertEqual(cluster[3].ha_status(), "recovering")
         cluster.restart(2)
 
+        # Verify everything is up to date and active
         def settled(sender): sender.sync(); return sender.unsettled() == 0;
         assert retry(lambda: settled(s1)), "Unsetttled=%s"%(s1.unsettled())
         assert retry(lambda: settled(s2)), "Unsetttled=%s"%(s2.unsettled())
