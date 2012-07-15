@@ -305,7 +305,9 @@ namespace acl {
     // lookup
     //
     // The ACL main business logic function of matching rules and declaring
-    // an allow or deny result.
+    // an allow or deny result. This lookup is the fastpath per-message
+    // lookup to verify if a user is allowed to publish to an exchange with
+    // a given key.
     //
     AclResult AclData::lookup(
         const std::string&              id,
@@ -331,7 +333,8 @@ namespace acl {
 
             if (itrRule != actionList[action][objType]->end() )
             {
-                //loop the vector
+                // Found a rule list for this user-action-object set.
+                // Search the rule list for a matching rule.
                 ruleSetItr rsItr = itrRule->second.end();
                 for (int cnt = itrRule->second.size(); cnt != 0; cnt--)
                 {
@@ -339,56 +342,46 @@ namespace acl {
 
                     QPID_LOG(debug, "ACL: checking rule " <<  rsItr->toString());
 
-                    // loop the names looking for match
+                    // Search on exchange name and routing key only if specfied in rule.
                     bool match =true;
-                    for (specPropertyMapItr pMItr  = rsItr->props.begin();
-                                           (pMItr != rsItr->props.end()) && match;
-                                            pMItr++)
+                    if (rsItr->pubExchNameInRule)
                     {
-                        //match name is exists first
-                        switch (pMItr->first)
+                        if (matchProp(rsItr->pubExchName, name))
                         {
-                        case acl::SPECPROP_NAME:
-                            if (matchProp(pMItr->second, name))
-                            {
-                                QPID_LOG(debug, "ACL: lookup exchange name '"
-                                    << name << "' matched with rule name '"
-                                    << pMItr->second << "'");
+                            QPID_LOG(debug, "ACL: Rule: " << rsItr->rawRuleNum << " lookup exchange name '"
+                                << name << "' matched with rule name '"
+                                << rsItr->pubExchName << "'");
 
-                            }
-                            else
-                            {
-                                match= false;
-                                QPID_LOG(debug, "ACL: lookup exchange name '"
-                                    << name << "' did not match with rule name '"
-                                    << pMItr->second << "'");
-                            }
-                            break;
-
-                        case acl::SPECPROP_ROUTINGKEY:
-                            if (matchProp(pMItr->second, routingKey))
-                            {
-                                QPID_LOG(debug, "ACL: lookup key name '"
-                                    << routingKey << "' matched with rule routing key '"
-                                    << pMItr->second << "'");
-                            }
-                            else
-                            {
-                                match= false;
-                                QPID_LOG(debug, "ACL: lookup key name '"
-                                    << routingKey << "' did not match with rule routing key '"
-                                    << pMItr->second << "'");
-                            }
-                            break;
-
-                        default:
-                            // Don't care
-                            break;
-                        };
+                        }
+                        else
+                        {
+                            match= false;
+                            QPID_LOG(debug, "ACL: Rule: " << rsItr->rawRuleNum << " lookup exchange name '"
+                                << name << "' did not match with rule name '"
+                                << rsItr->pubExchName << "'");
+                        }
                     }
+
+                    if (match && rsItr->pubRoutingKeyInRule)
+                    {
+                        if (rsItr->matchRoutingKey(routingKey))
+                        {
+                            QPID_LOG(debug, "ACL: Rule: " << rsItr->rawRuleNum << " lookup key name '"
+                                << routingKey << "' matched with rule routing key '"
+                                << rsItr->pubRoutingKey << "'");
+                        }
+                        else
+                        {
+                            QPID_LOG(debug, "ACL: Rule: " << rsItr->rawRuleNum << " lookup key name '"
+                                << routingKey << "' did not match with rule routing key '"
+                                << rsItr->pubRoutingKey << "'");
+                            match = false;
+                        }
+                    }
+
                     if (match){
                         aclresult = rsItr->ruleMode;
-                        QPID_LOG(debug,"ACL: Successful match, the decision is:"
+                        QPID_LOG(debug,"ACL: Rule: " << rsItr->rawRuleNum << " Successful match, the decision is:"
                             << AclHelper::getAclResultStr(aclresult));
                         return aclresult;
                     }
