@@ -21,6 +21,9 @@
  */
 
 #include "qpid/broker/AclModule.h"
+#include "AclTopicMatch.h"
+#include "qpid/log/Statement.h"
+#include "boost/shared_ptr.hpp"
 #include <vector>
 #include <sstream>
 
@@ -48,18 +51,29 @@ public:
     // A single ACL file entry may create many rule entries in
     //  many ruleset vectors.
     //
-    struct rule {
+    struct Rule {
+        typedef broker::TopicExchange::TopicExchangeTester topicTester;
 
         int                   rawRuleNum;   // rule number in ACL file
         qpid::acl::AclResult  ruleMode;     // combined allow/deny log/nolog
         specPropertyMap       props;        //
+        bool                  pubRoutingKeyInRule;
+        std::string           pubRoutingKey;
+        boost::shared_ptr<topicTester> pTTest;
+        bool                  pubExchNameInRule;
+        std::string           pubExchName;
 
-
-        rule (int ruleNum, qpid::acl::AclResult res, specPropertyMap& p) :
+        Rule (int ruleNum, qpid::acl::AclResult res, specPropertyMap& p) :
             rawRuleNum(ruleNum),
             ruleMode(res),
-            props(p)
-            {};
+            props(p),
+            pubRoutingKeyInRule(false),
+            pubRoutingKey(),
+            pTTest(boost::shared_ptr<topicTester>(new topicTester())),
+            pubExchNameInRule(false),
+            pubExchName()
+            {}
+
 
         std::string toString () const {
             std::ostringstream ruleStr;
@@ -76,9 +90,21 @@ public:
             ruleStr << " }]";
             return ruleStr.str();
         }
+
+        void addTopicTest(const std::string& pattern) {
+            pTTest->addBindingKey(broker::TopicExchange::normalize(pattern));
+        }
+
+        // Topic Exchange tester
+        // return true if any bindings match 'pattern'
+        bool matchRoutingKey(const std::string& pattern) const
+        {
+            topicTester::BindingVec bv;
+            return pTTest->findMatches(pattern, bv);
+        }
     };
 
-    typedef  std::vector<rule>               ruleSet;
+    typedef  std::vector<Rule>               ruleSet;
     typedef  ruleSet::const_iterator         ruleSetItr;
     typedef  std::map<std::string, ruleSet > actionObject; // user
     typedef  actionObject::iterator          actObjItr;

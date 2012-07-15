@@ -310,7 +310,7 @@ class ACLTests(TestBase010):
                 self.fail("ACL should allow queue create request");
             self.fail("Error during queue create request");
 
-        
+
 
     def test_user_realm(self):
         """
@@ -1535,6 +1535,124 @@ class ACLTests(TestBase010):
         self.Lookup('mrQ', 'create', 'queue', '',    {"maxqueuesize":"0",   "maxqueuecount":"401"}, "deny")
         self.Lookup('mrQ', 'create', 'queue', '',    {"maxqueuesize":"150", "maxqueuecount":"0"  }, "deny")
 
+
+   #=====================================
+   # QMF Topic Exchange tests
+   #=====================================
+
+    def test_qmf_topic_exchange_tests(self):
+        """
+        Test using QMF method hooks into ACL logic
+        """
+        aclf = self.get_acl_file()
+        aclf.write('# begin hack alert: allow anonymous to access the lookup debug functions\n')
+        aclf.write('acl allow-log anonymous create  queue\n')
+        aclf.write('acl allow-log anonymous all     exchange name=qmf.*\n')
+        aclf.write('acl allow-log anonymous all     exchange name=amq.direct\n')
+        aclf.write('acl allow-log anonymous all     exchange name=qpid.management\n')
+        aclf.write('acl allow-log anonymous access  method   name=*\n')
+        aclf.write('# end hack alert\n')
+        aclf.write('acl allow-log uPlain1@COMPANY   publish exchange name=X routingkey=ab.cd.e\n')
+        aclf.write('acl allow-log uPlain2@COMPANY   publish exchange name=X routingkey=.\n')
+        aclf.write('acl allow-log uStar1@COMPANY    publish exchange name=X routingkey=a.*.b\n')
+        aclf.write('acl allow-log uStar2@COMPANY    publish exchange name=X routingkey=*.x\n')
+        aclf.write('acl allow-log uStar3@COMPANY    publish exchange name=X routingkey=x.x.*\n')
+        aclf.write('acl allow-log uHash1@COMPANY    publish exchange name=X routingkey=a.#.b\n')
+        aclf.write('acl allow-log uHash2@COMPANY    publish exchange name=X routingkey=a.#\n')
+        aclf.write('acl allow-log uHash3@COMPANY    publish exchange name=X routingkey=#.a\n')
+        aclf.write('acl allow-log uHash4@COMPANY    publish exchange name=X routingkey=a.#.b.#.c\n')
+        aclf.write('acl allow-log uMixed1@COMPANY   publish exchange name=X routingkey=*.x.#.y\n')
+        aclf.write('acl allow-log uMixed2@COMPANY   publish exchange name=X routingkey=a.#.b.*\n')
+        aclf.write('acl allow-log uMixed3@COMPANY   publish exchange name=X routingkey=*.*.*.#\n')
+
+        aclf.write('acl allow-log all publish exchange name=X routingkey=MN.OP.Q\n')
+        aclf.write('acl allow-log all publish exchange name=X routingkey=M.*.N\n')
+        aclf.write('acl allow-log all publish exchange name=X routingkey=M.#.N\n')
+        aclf.write('acl allow-log all publish exchange name=X routingkey=*.M.#.N\n')
+
+        aclf.write('acl deny-log all all\n')
+        aclf.close()
+
+        result = self.reload_acl()
+        if (result):
+            self.fail(result)
+
+        #                                  aclKey: "ab.cd.e"
+        self.LookupPublish("uPlain1@COMPANY", "X", "ab.cd.e",   "allow-log")
+        self.LookupPublish("uPlain1@COMPANY", "X", "abx.cd.e",  "deny-log")
+        self.LookupPublish("uPlain1@COMPANY", "X", "ab.cd",     "deny-log")
+        self.LookupPublish("uPlain1@COMPANY", "X", "ab.cd..e.", "deny-log")
+        self.LookupPublish("uPlain1@COMPANY", "X", "ab.cd.e.",  "deny-log")
+        self.LookupPublish("uPlain1@COMPANY", "X", ".ab.cd.e",  "deny-log")
+        #                                  aclKey: "."
+        self.LookupPublish("uPlain2@COMPANY", "X", ".",         "allow-log")
+
+        #                                  aclKey: "a.*.b"
+        self.LookupPublish("uStar1@COMPANY", "X", "a.xx.b",   "allow-log")
+        self.LookupPublish("uStar1@COMPANY", "X", "a.b",      "deny-log")
+        #                                  aclKey: "*.x"
+        self.LookupPublish("uStar2@COMPANY", "X", "y.x",      "allow-log")
+        self.LookupPublish("uStar2@COMPANY", "X", ".x",       "allow-log")
+        self.LookupPublish("uStar2@COMPANY", "X", "x",        "deny-log")
+        #                                  aclKey: "x.x.*"
+        self.LookupPublish("uStar3@COMPANY", "X", "x.x.y",      "allow-log")
+        self.LookupPublish("uStar3@COMPANY", "X", "x.x.",       "allow-log")
+        self.LookupPublish("uStar3@COMPANY", "X", "x.x",        "deny-log")
+        self.LookupPublish("uStar3@COMPANY", "X", "q.x.y",      "deny-log")
+
+        #                                  aclKey: "a.#.b"
+        self.LookupPublish("uHash1@COMPANY", "X", "a.b",         "allow-log")
+        self.LookupPublish("uHash1@COMPANY", "X", "a.x.b",       "allow-log")
+        self.LookupPublish("uHash1@COMPANY", "X", "a..x.y.zz.b", "allow-log")
+        self.LookupPublish("uHash1@COMPANY", "X", "a.b.",        "deny-log")
+        self.LookupPublish("uHash1@COMPANY", "X", "q.x.b",       "deny-log")
+
+        #                                  aclKey: "a.#"
+        self.LookupPublish("uHash2@COMPANY", "X", "a",         "allow-log")
+        self.LookupPublish("uHash2@COMPANY", "X", "a.b",       "allow-log")
+        self.LookupPublish("uHash2@COMPANY", "X", "a.b.c",     "allow-log")
+
+        #                                  aclKey: "#.a"
+        self.LookupPublish("uHash3@COMPANY", "X", "a",         "allow-log")
+        self.LookupPublish("uHash3@COMPANY", "X", "x.y.a",     "allow-log")
+
+        #                                  aclKey: "a.#.b.#.c"
+        self.LookupPublish("uHash4@COMPANY", "X", "a.b.c",         "allow-log")
+        self.LookupPublish("uHash4@COMPANY", "X", "a.x.b.y.c",     "allow-log")
+        self.LookupPublish("uHash4@COMPANY", "X", "a.x.x.b.y.y.c", "allow-log")
+
+        #                                  aclKey: "*.x.#.y"
+        self.LookupPublish("uMixed1@COMPANY", "X", "a.x.y",          "allow-log")
+        self.LookupPublish("uMixed1@COMPANY", "X", "a.x.p.qq.y",     "allow-log")
+        self.LookupPublish("uMixed1@COMPANY", "X", "a.a.x.y",        "deny-log")
+        self.LookupPublish("uMixed1@COMPANY", "X", "aa.x.b.c",       "deny-log")
+
+        #                                  aclKey: "a.#.b.*"
+        self.LookupPublish("uMixed2@COMPANY", "X", "a.b.x",          "allow-log")
+        self.LookupPublish("uMixed2@COMPANY", "X", "a.x.x.x.b.x",    "allow-log")
+
+        #                                  aclKey: "*.*.*.#"
+        self.LookupPublish("uMixed3@COMPANY", "X", "x.y.z",          "allow-log")
+        self.LookupPublish("uMixed3@COMPANY", "X", "x.y.z.a.b.c",    "allow-log")
+        self.LookupPublish("uMixed3@COMPANY", "X", "x.y",            "deny-log")
+        self.LookupPublish("uMixed3@COMPANY", "X", "x",              "deny-log")
+
+        # Repeat the keys with wildcard user spec
+        self.LookupPublish("uPlain1@COMPANY", "X", "MN.OP.Q",        "allow-log")
+        self.LookupPublish("uStar1@COMPANY" , "X", "M.xx.N",         "allow-log")
+        self.LookupPublish("uHash1@COMPANY" , "X", "M.N",            "allow-log")
+        self.LookupPublish("uHash1@COMPANY" , "X", "M.x.N",          "allow-log")
+        self.LookupPublish("uHash1@COMPANY" , "X", "M..x.y.zz.N",    "allow-log")
+        self.LookupPublish("uMixed1@COMPANY", "X", "a.M.N",          "allow-log")
+        self.LookupPublish("uMixed1@COMPANY", "X", "a.M.p.qq.N",     "allow-log")
+
+        self.LookupPublish("dev@QPID", "X", "MN.OP.Q",        "allow-log")
+        self.LookupPublish("dev@QPID", "X", "M.xx.N",         "allow-log")
+        self.LookupPublish("dev@QPID", "X", "M.N",            "allow-log")
+        self.LookupPublish("dev@QPID", "X", "M.x.N",          "allow-log")
+        self.LookupPublish("dev@QPID", "X", "M..x.y.zz.N",    "allow-log")
+        self.LookupPublish("dev@QPID", "X", "a.M.N",          "allow-log")
+        self.LookupPublish("dev@QPID", "X", "a.M.p.qq.N",     "allow-log")
 
    #=====================================
    # Connection limits
