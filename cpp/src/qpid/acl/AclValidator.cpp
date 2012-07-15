@@ -131,7 +131,7 @@ namespace acl {
             boost::bind(&AclValidator::validateRule, this, _1));
     }
 
-    void AclValidator::validateRule(qpid::acl::AclData::rule& rule){
+    void AclValidator::validateRule(qpid::acl::AclData::Rule& rule){
         std::for_each(rule.props.begin(),
             rule.props.end(),
             boost::bind(&AclValidator::validateProperty, this, _1));
