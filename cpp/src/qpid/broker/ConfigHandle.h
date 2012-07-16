@@ -21,19 +21,21 @@
  * \file ConfigHandle.h
  */
 
-#ifndef qpid_broker_ConfigHandleImpl_h_
-#define qpid_broker_ConfigHandleImpl_h_
+#ifndef qpid_broker_ConfigHandle_h_
+#define qpid_broker_ConfigHandle_h_
 
-#include "IdHandle.h"
+#include "Handle.h"
 
-#include "qpid/asyncStore/ConfigHandleImpl.h"
-#include "qpid/messaging/Handle.h"
+#include "qpid/asyncStore/AsyncStoreHandle.h"
 
 namespace qpid {
+namespace asyncStore {
+class ConfigHandleImpl;
+}
 namespace broker {
 
-class ConfigHandle : public qpid::messaging::Handle<qpid::asyncStore::ConfigHandleImpl>,
-                     public IdHandle
+class ConfigHandle : public Handle<qpid::asyncStore::ConfigHandleImpl>,
+                     public qpid::asyncStore::AsyncStoreHandle
 {
 public:
     ConfigHandle(qpid::asyncStore::ConfigHandleImpl* p = 0);
@@ -45,9 +47,9 @@ public:
     // <none>
 
 private:
-    friend class qpid::messaging::PrivateImplRef<ConfigHandle>;
+    friend class PrivateImplRef<ConfigHandle>;
 };
 
 }} // namespace qpid::broker
 
-#endif // qpid_broker_ConfigHandleImpl_h_
+#endif // qpid_broker_ConfigHandle_h_

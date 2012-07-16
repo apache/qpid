@@ -24,13 +24,15 @@
 #ifndef qpid_broker_Plugin_h_
 #define qpid_broker_Plugin_h_
 
-#include "AsyncStoreImpl.h"
 #include "AsyncStoreOptions.h"
 
 #include "qpid/Plugin.h"
 
 namespace qpid {
 class Options;
+namespace asyncStore {
+class AsyncStoreImpl;
+}
 namespace broker {
 
 class Plugin : public qpid::Plugin

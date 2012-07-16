@@ -24,14 +24,17 @@
 #ifndef qpid_broker_AsyncResultHandle_h_
 #define qpid_broker_AsyncResultHandle_h_
 
-#include "AsyncResultHandleImpl.h"
+#include "Handle.h"
 
-#include "qpid/messaging/Handle.h"
+#include <boost/shared_ptr.hpp>
+#include <string>
 
 namespace qpid {
 namespace broker {
+class AsyncResultHandleImpl;
+class BrokerAsyncContext;
 
-class AsyncResultHandle : public qpid::messaging::Handle<AsyncResultHandleImpl>
+class AsyncResultHandle : public Handle<AsyncResultHandleImpl>
 {
 public:
     AsyncResultHandle(AsyncResultHandleImpl* p = 0);
@@ -47,7 +50,7 @@ public:
     void invokeAsyncResultCallback() const;
 
 private:
-    friend class qpid::messaging::PrivateImplRef<AsyncResultHandle>;
+    friend class PrivateImplRef<AsyncResultHandle>;
 };
 
 }} // namespace qpid::broker

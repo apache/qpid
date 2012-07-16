@@ -28,13 +28,6 @@
 #include "qpid/broker/MessageHandle.h"
 #include "qpid/broker/PersistableMessage.h"
 
-#include <set>
-
-namespace qpid {
-namespace asyncStore {
-class AsyncStoreImpl;
-}}
-
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
@@ -46,8 +39,10 @@ class SimpleMessage: public qpid::broker::PersistableMessage,
 {
 public:
     SimpleMessage(const char* msgData,
+                  const uint32_t msgSize);
+    SimpleMessage(const char* msgData,
                   const uint32_t msgSize,
-                  qpid::asyncStore::AsyncStoreImpl* store);
+                  qpid::broker::AsyncStore* store);
     virtual ~SimpleMessage();
     const qpid::broker::MessageHandle& getHandle() const;
     qpid::broker::MessageHandle& getHandle();
@@ -71,6 +66,8 @@ public:
 private:
     mutable uint64_t m_persistenceId;
     const std::string m_msg;
+    qpid::broker::AsyncStore* m_store;
+
     qpid::broker::MessageHandle m_msgHandle;
 };
 

@@ -23,6 +23,8 @@
 
 #include "Plugin.h"
 
+#include "AsyncStoreImpl.h"
+
 #include "qpid/broker/Broker.h"
 
 namespace qpid {

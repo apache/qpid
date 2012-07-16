@@ -59,7 +59,7 @@ typedef enum {
     RS_STOPPED
 } RunState_t;
 
-class RunState: public qpid::asyncStore::jrnl2::State<RunState_t>
+class RunState : public qpid::asyncStore::jrnl2::State<RunState_t>
 {
 public:
     RunState();

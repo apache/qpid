@@ -38,7 +38,7 @@ AsyncOperation::AsyncOperation() :
 {}
 
 AsyncOperation::AsyncOperation(const opCode op,
-                               const qpid::broker::IdHandle* th,
+                               const AsyncStoreHandle* th,
                                boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt) :
         m_op(op),
         m_targetHandle(th),
@@ -48,7 +48,7 @@ AsyncOperation::AsyncOperation(const opCode op,
 {}
 
 AsyncOperation::AsyncOperation(const opCode op,
-                               const qpid::broker::IdHandle* th,
+                               const AsyncStoreHandle* th,
                                const qpid::broker::DataSource* const dataSrc,
                                boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt) :
         m_op(op),
@@ -59,7 +59,7 @@ AsyncOperation::AsyncOperation(const opCode op,
 {}
 
 AsyncOperation::AsyncOperation(const opCode op,
-                               const qpid::broker::IdHandle* th,
+                               const AsyncStoreHandle* th,
                                const qpid::broker::TxnHandle* txnHandle,
                                boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt) :
         m_op(op),
@@ -70,7 +70,7 @@ AsyncOperation::AsyncOperation(const opCode op,
 {}
 
 AsyncOperation::AsyncOperation(const opCode op,
-                               const qpid::broker::IdHandle* th,
+                               const AsyncStoreHandle* th,
                                const qpid::broker::DataSource* const dataSrc,
                                const qpid::broker::TxnHandle* txnHandle,
                                boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt) :

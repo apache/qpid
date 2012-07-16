@@ -23,21 +23,22 @@
 
 #include "AsyncResultHandle.h"
 
-#include "qpid/messaging/PrivateImplRef.h"
+#include "AsyncResultHandleImpl.h"
+#include "PrivateImplRef.h"
 
 namespace qpid {
 namespace broker {
 
-typedef qpid::messaging::PrivateImplRef<AsyncResultHandle> PrivateImpl;
+typedef PrivateImplRef<AsyncResultHandle> PrivateImpl;
 
 AsyncResultHandle::AsyncResultHandle(AsyncResultHandleImpl* p) :
-            qpid::messaging::Handle<AsyncResultHandleImpl>()
+            Handle<AsyncResultHandleImpl>()
 {
     PrivateImpl::ctor(*this, p);
 }
 
 AsyncResultHandle::AsyncResultHandle(const AsyncResultHandle& r) :
-            qpid::messaging::Handle<AsyncResultHandleImpl>()
+            Handle<AsyncResultHandleImpl>()
 {
     PrivateImpl::copy(*this, r);
 }

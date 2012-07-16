@@ -24,16 +24,11 @@
 #ifndef qpid_asyncStore_AsyncStoreOptions_h_
 #define qpid_asyncStore_AsyncStoreOptions_h_
 
-#include "qpid/asyncStore/jrnl2/Streamable.h"
-
 #include "qpid/Options.h"
 
 #include <string>
 
 namespace qpid {
-namespace broker {
-class Options;
-}
 namespace asyncStore {
 
 class AsyncStoreOptions : public qpid::Options
@@ -49,7 +44,8 @@ public:
     std::string m_storeDir;
 
 private:
-    // Static initialization race condition avoidance with static instance of Plugin class (using construct-on-first-use idiom).
+    // Static initialization race condition avoidance with static instance of Plugin class
+    // (using construct-on-first-use idiom).
     static std::string& getDefaultStoreDir();
 };
 

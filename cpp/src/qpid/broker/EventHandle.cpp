@@ -23,23 +23,23 @@
 
 #include "EventHandle.h"
 
-#include "qpid/messaging/PrivateImplRef.h"
+#include "PrivateImplRef.h"
+
+#include "qpid/asyncStore/EventHandleImpl.h"
 
 namespace qpid {
 namespace broker {
 
-typedef qpid::messaging::PrivateImplRef<EventHandle> PrivateImpl;
+typedef PrivateImplRef<EventHandle> PrivateImpl;
 
 EventHandle::EventHandle(qpid::asyncStore::EventHandleImpl* p) :
-        qpid::messaging::Handle<qpid::asyncStore::EventHandleImpl>(),
-        IdHandle()
+        Handle<qpid::asyncStore::EventHandleImpl>()
 {
     PrivateImpl::ctor(*this, p);
 }
 
 EventHandle::EventHandle(const EventHandle& r) :
-        qpid::messaging::Handle<qpid::asyncStore::EventHandleImpl>(),
-        IdHandle()
+        Handle<qpid::asyncStore::EventHandleImpl>()
 {
     PrivateImpl::copy(*this, r);
 }

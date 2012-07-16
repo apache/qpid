@@ -21,18 +21,23 @@
  * \file QueueHandle.h
  */
 
-#ifndef qpid_broker_QueueHandleImpl_h_
-#define qpid_broker_QueueHandleImpl_h_
+#ifndef qpid_broker_QueueHandle_h_
+#define qpid_broker_QueueHandle_h_
 
-#include "IdHandle.h"
+#include "Handle.h"
 
-#include "qpid/asyncStore/QueueHandleImpl.h"
-#include "qpid/messaging/Handle.h"
+#include "qpid/asyncStore/AsyncStoreHandle.h"
+
+#include <string>
 
 namespace qpid {
+namespace asyncStore {
+class QueueHandleImpl;
+}
 namespace broker {
 
-class QueueHandle : public qpid::messaging::Handle<qpid::asyncStore::QueueHandleImpl>, public IdHandle
+class QueueHandle : public Handle<qpid::asyncStore::QueueHandleImpl>,
+                    public qpid::asyncStore::AsyncStoreHandle
 {
 public:
     QueueHandle(qpid::asyncStore::QueueHandleImpl* p = 0);
@@ -44,9 +49,9 @@ public:
     const std::string& getName() const;
 
 private:
-    friend class qpid::messaging::PrivateImplRef<QueueHandle>;
+    friend class PrivateImplRef<QueueHandle>;
 };
 
 }} // namespace qpid::broker
 
-#endif // qpid_broker_QueueHandleImpl_h_
+#endif // qpid_broker_QueueHandle_h_

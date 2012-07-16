@@ -23,22 +23,23 @@
 
 #include "MessageHandle.h"
 
-#include "qpid/messaging/PrivateImplRef.h"
+#include "PrivateImplRef.h"
+
+#include "qpid/asyncStore/MessageHandleImpl.h"
 
 namespace qpid {
 namespace broker {
 
-typedef qpid::messaging::PrivateImplRef<MessageHandle> PrivateImpl;
+typedef PrivateImplRef<MessageHandle> PrivateImpl;
 
 MessageHandle::MessageHandle(qpid::asyncStore::MessageHandleImpl* p) :
-        IdHandle()
+        Handle<qpid::asyncStore::MessageHandleImpl>()
 {
     PrivateImpl::ctor(*this, p);
 }
 
 MessageHandle::MessageHandle(const MessageHandle& r) :
-        qpid::messaging::Handle<qpid::asyncStore::MessageHandleImpl>(),
-        IdHandle()
+        Handle<qpid::asyncStore::MessageHandleImpl>()
 {
     PrivateImpl::copy(*this, r);
 }

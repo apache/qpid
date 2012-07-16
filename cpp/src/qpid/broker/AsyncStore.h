@@ -20,12 +20,10 @@
 #ifndef qpid_broker_AsyncStore_h_
 #define qpid_broker_AsyncStore_h_
 
-// TODO: See if we can replace this with a forward declaration, but current definition of qpid::types::Variant::Map
-// does not allow it. Using a local map<std::string, Variant> definition also precludes forward declaration.
 #include "qpid/types/Variant.h" // qpid::types::Variant::Map
 
 #include <boost/shared_ptr.hpp>
-#include <stdint.h>
+#include <stdint.h> // uint64_t
 #include <string>
 
 namespace qpid {
@@ -57,66 +55,91 @@ public:
     virtual void write(char* target) = 0;
 };
 
-// Callback invoked by AsyncResultQueue to pass back async results
-typedef void (*AsyncResultCallback)(const AsyncResultHandle* const);
+// Opaque async handles used for carrying persistence state.
 
 class ConfigHandle;
 class EnqueueHandle;
 class EventHandle;
 class MessageHandle;
 class QueueHandle;
-class TxnBuffer;
 class TxnHandle;
 
-class AsyncTransactionalStore {
+class TxnBuffer;
+
+class AsyncTransaction {
 public:
-    virtual ~AsyncTransactionalStore() {}
+    virtual ~AsyncTransaction() {}
 
     virtual TxnHandle createTxnHandle() = 0;
     virtual TxnHandle createTxnHandle(TxnBuffer* tb) = 0;
     virtual TxnHandle createTxnHandle(const std::string& xid) = 0;
-    virtual TxnHandle createTxnHandle(const std::string& xid, TxnBuffer* tb) = 0;
+    virtual TxnHandle createTxnHandle(const std::string& xid,
+                                       TxnBuffer* tb) = 0;
 
-    // TODO: Remove boost::shared_ptr<> from this interface
-    virtual void submitPrepare(TxnHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0; // Distributed txns only
-    virtual void submitCommit(TxnHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
-    virtual void submitAbort(TxnHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
+    // TODO: Remove boost::shared_ptr<BrokerAsyncContext> from this interface
+    virtual void submitPrepare(TxnHandle&,
+                               boost::shared_ptr<BrokerAsyncContext>) = 0; // Distributed txns only
+    virtual void submitCommit(TxnHandle&,
+                              boost::shared_ptr<BrokerAsyncContext>) = 0;
+    virtual void submitAbort(TxnHandle&,
+                             boost::shared_ptr<BrokerAsyncContext>) = 0;
 };
 
 // Subclassed by store:
-class AsyncStore : public AsyncTransactionalStore {
+class AsyncStore : public AsyncTransaction {
 public:
     virtual ~AsyncStore() {}
 
     // --- Factory methods for creating handles ---
 
     virtual ConfigHandle createConfigHandle() = 0;
-    virtual EnqueueHandle createEnqueueHandle(MessageHandle&, QueueHandle&) = 0;
-    virtual EventHandle createEventHandle(QueueHandle&, const std::string& key=std::string()) = 0;
+    virtual EnqueueHandle createEnqueueHandle(MessageHandle&,
+                                              QueueHandle&) = 0;
+    virtual EventHandle createEventHandle(QueueHandle&,
+                                          const std::string& key=std::string()) = 0;
     virtual MessageHandle createMessageHandle(const DataSource* const) = 0;
-    virtual QueueHandle createQueueHandle(const std::string& name, const qpid::types::Variant::Map& opts) = 0;
+    virtual QueueHandle createQueueHandle(const std::string& name,
+                                          const qpid::types::Variant::Map& opts) = 0;
 
 
     // --- Store async interface ---
 
-    // TODO: Remove boost::shared_ptr<> from this interface
-    virtual void submitCreate(ConfigHandle&, const DataSource* const, boost::shared_ptr<BrokerAsyncContext>) = 0;
-    virtual void submitDestroy(ConfigHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
+    // TODO: Remove boost::shared_ptr<BrokerAsyncContext> from this interface
+    virtual void submitCreate(ConfigHandle&,
+                              const DataSource* const,
+                              boost::shared_ptr<BrokerAsyncContext>) = 0;
+    virtual void submitDestroy(ConfigHandle&,
+                               boost::shared_ptr<BrokerAsyncContext>) = 0;
 
-    virtual void submitCreate(QueueHandle&, const DataSource* const, boost::shared_ptr<BrokerAsyncContext>) = 0;
-    virtual void submitDestroy(QueueHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
-    virtual void submitFlush(QueueHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
+    virtual void submitCreate(QueueHandle&,
+                              const DataSource* const,
+                              boost::shared_ptr<BrokerAsyncContext>) = 0;
+    virtual void submitDestroy(QueueHandle&,
+                               boost::shared_ptr<BrokerAsyncContext>) = 0;
+    virtual void submitFlush(QueueHandle&,
+                             boost::shared_ptr<BrokerAsyncContext>) = 0;
 
-    virtual void submitCreate(EventHandle&, const DataSource* const, boost::shared_ptr<BrokerAsyncContext>) = 0;
-    virtual void submitCreate(EventHandle&, const DataSource* const, TxnHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
-    virtual void submitDestroy(EventHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
-    virtual void submitDestroy(EventHandle&, TxnHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
+    virtual void submitCreate(EventHandle&,
+                              const DataSource* const,
+                              TxnHandle&,
+                              boost::shared_ptr<BrokerAsyncContext>) = 0;
+    virtual void submitDestroy(EventHandle&,
+                               TxnHandle&,
+                               boost::shared_ptr<BrokerAsyncContext>) = 0;
 
-    virtual void submitEnqueue(EnqueueHandle&, TxnHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
-    virtual void submitDequeue(EnqueueHandle&, TxnHandle&, boost::shared_ptr<BrokerAsyncContext>) = 0;
+    virtual void submitEnqueue(EnqueueHandle&,
+                               TxnHandle&,
+                               boost::shared_ptr<BrokerAsyncContext>) = 0;
+    virtual void submitDequeue(EnqueueHandle&,
+                               TxnHandle&,
+                               boost::shared_ptr<BrokerAsyncContext>) = 0;
 
     // Legacy - Restore FTD message, is NOT async!
-    virtual int loadContent(MessageHandle&, QueueHandle&, char* data, uint64_t offset, const uint64_t length) = 0;
+    virtual int loadContent(MessageHandle&,
+                            QueueHandle&,
+                            char* data,
+                            uint64_t offset,
+                            const uint64_t length) = 0;
 };
 
 

@@ -42,7 +42,7 @@ MessageDeque::size()
 }
 
 bool
-MessageDeque::push(const QueuedMessage& added, QueuedMessage& /*removed*/)
+MessageDeque::push(boost::shared_ptr<QueuedMessage>& added)
 {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_msgMutex);
     m_messages.push_back(added);
@@ -50,7 +50,7 @@ MessageDeque::push(const QueuedMessage& added, QueuedMessage& /*removed*/)
 }
 
 bool
-MessageDeque::consume(QueuedMessage& msg)
+MessageDeque::consume(boost::shared_ptr<QueuedMessage>& msg)
 {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_msgMutex);
     if (!m_messages.empty()) {

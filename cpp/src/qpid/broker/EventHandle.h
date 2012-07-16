@@ -21,19 +21,23 @@
  * \file EventHandle.h
  */
 
-#ifndef qpid_broker_EventHandleImpl_h_
-#define qpid_broker_EventHandleImpl_h_
+#ifndef qpid_broker_EventHandle_h_
+#define qpid_broker_EventHandle_h_
 
-#include "IdHandle.h"
+#include "Handle.h"
 
-#include "qpid/asyncStore/EventHandleImpl.h"
-#include "qpid/messaging/Handle.h"
+#include "qpid/asyncStore/AsyncStoreHandle.h"
+
+#include <string>
 
 namespace qpid {
+namespace asyncStore {
+class EventHandleImpl;
+}
 namespace broker {
 
-class EventHandle : public qpid::messaging::Handle<qpid::asyncStore::EventHandleImpl>,
-                    public IdHandle
+class EventHandle : public Handle<qpid::asyncStore::EventHandleImpl>,
+                    public qpid::asyncStore::AsyncStoreHandle
 {
 public:
     EventHandle(qpid::asyncStore::EventHandleImpl* p = 0);
@@ -45,9 +49,9 @@ public:
     const std::string& getKey() const;
 
 private:
-    friend class qpid::messaging::PrivateImplRef<EventHandle>;
+    friend class PrivateImplRef<EventHandle>;
 };
 
 }} // namespace qpid::broker
 
-#endif // qpid_broker_EventHandleImpl_h_
+#endif // qpid_broker_EventHandle_h_

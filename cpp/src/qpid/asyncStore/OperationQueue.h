@@ -26,7 +26,7 @@
 
 #include "AsyncOperation.h"
 
-#include "qpid/broker/AsyncStore.h"
+//#include "qpid/broker/AsyncStore.h"
 #include "qpid/sys/PollableQueue.h"
 
 namespace qpid {

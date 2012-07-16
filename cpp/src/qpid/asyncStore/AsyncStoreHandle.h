@@ -18,20 +18,20 @@
  */
 
 /**
- * \file IdHandle.h
+ * \file AsyncStoreHandle.h
  */
 
-#ifndef qpid_broker_IdHandle_h_
-#define qpid_broker_IdHandle_h_
+#ifndef qpid_asyncStore_AsyncStoreHandle_h_
+#define qpid_asyncStore_AsyncStoreHandle_h_
 
 namespace qpid {
-namespace broker {
+namespace asyncStore {
 
-class IdHandle {
+class AsyncStoreHandle {
 public:
-    virtual ~IdHandle();
+    virtual ~AsyncStoreHandle() {}
 };
 
-}} // namespace qpid::broker
+}} // namespace qpid::asyncStore
 
-#endif // qpid_broker_IdHandle_h_
+#endif // qpid_asyncStore_AsyncStoreHandle_h_

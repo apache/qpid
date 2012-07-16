@@ -30,6 +30,7 @@
 #ifndef tests_storePerftools_asyncPerf_Messages_h_
 #define tests_storePerftools_asyncPerf_Messages_h_
 
+#include <boost/shared_ptr.hpp>
 #include <stdint.h>
 
 namespace tests {
@@ -43,8 +44,8 @@ class Messages
 public:
     virtual ~Messages() {}
     virtual uint32_t size() = 0;
-    virtual bool push(const QueuedMessage& added, QueuedMessage& removed) = 0;
-    virtual bool consume(QueuedMessage& msg) = 0;
+    virtual bool push(boost::shared_ptr<QueuedMessage>& added) = 0;
+    virtual bool consume(boost::shared_ptr<QueuedMessage>& msg) = 0;
 };
 
 }}} // namespace tests::storePerftools::asyncPerf

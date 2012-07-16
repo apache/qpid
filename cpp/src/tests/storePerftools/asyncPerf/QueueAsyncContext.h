@@ -31,6 +31,10 @@
 #include <boost/intrusive_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
+namespace qpid {
+namespace broker {
+typedef void (*AsyncResultCallback)(const AsyncResultHandle* const);
+}}
 
 namespace tests {
 namespace storePerftools {

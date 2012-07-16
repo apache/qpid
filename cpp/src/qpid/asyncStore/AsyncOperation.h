@@ -25,10 +25,10 @@
 #define qpid_asyncStore_AsyncOperation_h_
 
 #include "qpid/broker/AsyncStore.h"
-#include "qpid/broker/IdHandle.h"
 
 namespace qpid {
 namespace asyncStore {
+class AsyncStoreHandle;
 
 class AsyncOperation {
 public:
@@ -49,18 +49,18 @@ public:
 
     AsyncOperation();
     AsyncOperation(const opCode op,
-                   const qpid::broker::IdHandle* th,
+                   const AsyncStoreHandle* th,
                    boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
     AsyncOperation(const opCode op,
-                   const qpid::broker::IdHandle* th,
+                   const AsyncStoreHandle* th,
                    const qpid::broker::DataSource* const dataSrc,
                    boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
     AsyncOperation(const opCode op,
-                   const qpid::broker::IdHandle* th,
+                   const AsyncStoreHandle* th,
                    const qpid::broker::TxnHandle* txnHandle,
                    boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
     AsyncOperation(const opCode op,
-                   const qpid::broker::IdHandle* th,
+                   const AsyncStoreHandle* th,
                    const qpid::broker::DataSource* const dataSrc,
                    const qpid::broker::TxnHandle* txnHandle,
                    boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
@@ -71,7 +71,7 @@ public:
 
 private:
     opCode m_op;
-    const qpid::broker::IdHandle* m_targetHandle;
+    const AsyncStoreHandle* m_targetHandle;
     const qpid::broker::DataSource* const m_dataSrc;
     const qpid::broker::TxnHandle* m_txnHandle;
     boost::shared_ptr<qpid::broker::BrokerAsyncContext> const m_brokerCtxt;

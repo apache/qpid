@@ -46,10 +46,10 @@ public:
     MessageDeque();
     virtual ~MessageDeque();
     uint32_t size();
-    bool push(const QueuedMessage& added, QueuedMessage& removed);
-    bool consume(QueuedMessage& msg);
+    bool push(boost::shared_ptr<QueuedMessage>& added);
+    bool consume(boost::shared_ptr<QueuedMessage>& msg);
 private:
-    std::deque<QueuedMessage> m_messages;
+    std::deque<boost::shared_ptr<QueuedMessage> > m_messages;
     qpid::sys::Mutex m_msgMutex;
 
 };

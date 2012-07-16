@@ -23,8 +23,6 @@
 
 #include "EnqueueHandleImpl.h"
 
-#include "qpid/messaging/PrivateImplRef.h"
-
 namespace qpid {
 namespace asyncStore {
 

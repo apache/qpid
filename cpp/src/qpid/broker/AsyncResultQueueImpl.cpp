@@ -21,8 +21,11 @@
  * \file AsyncResultQueueImpl.cpp
  */
 
-#include "AsyncResultHandle.h"
 #include "AsyncResultQueueImpl.h"
+
+#include "AsyncResultHandle.h"
+
+#include "qpid/log/Statement.h"
 
 namespace qpid {
 namespace broker {
@@ -41,7 +44,6 @@ AsyncResultQueueImpl::~AsyncResultQueueImpl()
 void
 AsyncResultQueueImpl::submit(boost::shared_ptr<AsyncResultHandle> arh)
 {
-//std::cout << "==> AsyncResultQueueImpl::submit() errNo=" << arh->getErrNo() << " errMsg=\"" << arh->getErrMsg() << "\"" << std::endl << std::flush;
     m_resQueue.push(arh);
 }
 
@@ -51,15 +53,14 @@ AsyncResultQueueImpl::handle(const ResultQueue::Batch& e)
 {
     try {
         for (ResultQueue::Batch::const_iterator i = e.begin(); i != e.end(); ++i) {
-//std::cout << "<== AsyncResultQueueImpl::handle() errNo=" << (*i)->getErrNo() << " errMsg=\"" << (*i)->getErrMsg() << "\"" << std::endl << std::flush;
             if ((*i)->isValid()) {
                 (*i)->invokeAsyncResultCallback();
             }
         }
     } catch (const std::exception& e) {
-        std::cerr << "qpid::broker::AsyncResultQueueImpl: Exception thrown processing async result: " << e.what() << std::endl;
+        QPID_LOG(error, "Exception thrown processing async result: " << e.what());
     } catch (...) {
-        std::cerr << "qpid::broker::AsyncResultQueueImpl: Unknown exception thrown processing async result" << std::endl;
+        QPID_LOG(error, "Unknown exception thrown processing async result");
     }
     return e.end();
 }

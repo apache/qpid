@@ -31,7 +31,10 @@
 #include "tests/storePerftools/common/ScopedTimer.h"
 #include "tests/storePerftools/common/Thread.h"
 
+#include "qpid/Modules.h" // Use with loading store as module
 #include "qpid/asyncStore/AsyncStoreImpl.h"
+#include "qpid/asyncStore/AsyncStoreOptions.h"
+#include "qpid/broker/AsyncStore.h"
 #include "qpid/sys/Poller.h"
 
 #include <iomanip>
@@ -161,16 +164,15 @@ PerfTest::destroyQueues()
     }
 }
 
-}}} // namespace tests::storePerftools::asyncPerf
-
-// -----------------------------------------------------------------
-
 int
-main(int argc, char** argv)
+runPerfTest(int argc, char** argv)
 {
+    // Load async store module
+    qpid::tryShlib ("asyncStore.so", false);
+
     qpid::CommonOptions co;
     qpid::asyncStore::AsyncStoreOptions aso;
-    tests::storePerftools::asyncPerf::TestOptions to;
+    TestOptions to;
     qpid::Options opts;
     opts.add(co).add(aso).add(to);
     try {
@@ -203,5 +205,16 @@ main(int argc, char** argv)
     // Print test result
     std::cout << apt << std::endl;
     //::sleep(1);
+
     return 0;
+}
+
+}}} // namespace tests::storePerftools::asyncPerf
+
+// -----------------------------------------------------------------
+
+int
+main(int argc, char** argv)
+{
+    return tests::storePerftools::asyncPerf::runPerfTest(argc, argv);
 }

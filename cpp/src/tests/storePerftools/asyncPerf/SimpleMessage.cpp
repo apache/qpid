@@ -30,11 +30,20 @@ namespace storePerftools {
 namespace asyncPerf {
 
 SimpleMessage::SimpleMessage(const char* msgData,
-                             const uint32_t msgSize,
-                             qpid::asyncStore::AsyncStoreImpl* store) :
+                             const uint32_t msgSize) :
         m_persistenceId(0ULL),
         m_msg(msgData, static_cast<size_t>(msgSize)),
-        m_msgHandle(store ? store->createMessageHandle(this) : qpid::broker::MessageHandle(0))
+        m_store(0),
+        m_msgHandle(qpid::broker::MessageHandle())
+{}
+
+SimpleMessage::SimpleMessage(const char* msgData,
+                             const uint32_t msgSize,
+                             qpid::broker::AsyncStore* store) :
+        m_persistenceId(0ULL),
+        m_msg(msgData, static_cast<size_t>(msgSize)),
+        m_store(store),
+        m_msgHandle(store ? store->createMessageHandle(this) : qpid::broker::MessageHandle())
 {}
 
 SimpleMessage::~SimpleMessage()
@@ -95,7 +104,7 @@ SimpleMessage::encodedHeaderSize() const
 bool
 SimpleMessage::isPersistent() const
 {
-    return m_msgHandle.isValid();
+    return m_store != 0;
 }
 
 uint64_t

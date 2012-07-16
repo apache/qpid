@@ -27,7 +27,6 @@
 #include "qpid/RefCounted.h"
 
 namespace qpid {
-
 namespace broker {
 class DataSource;
 }

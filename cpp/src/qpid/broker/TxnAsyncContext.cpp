@@ -23,8 +23,6 @@
 
 #include "TxnAsyncContext.h"
 
-#include <cassert>
-
 namespace qpid {
 namespace broker {
 
@@ -38,9 +36,7 @@ TxnAsyncContext::TxnAsyncContext(TxnBuffer* const tb,
         m_op(op),
         m_rcb(rcb),
         m_arq(arq)
-{
-    assert(m_th.isValid());
-}
+{}
 
 TxnAsyncContext::~TxnAsyncContext()
 {}
@@ -63,7 +59,7 @@ TxnAsyncContext::getOpStr() const
     return qpid::asyncStore::AsyncOperation::getOpStr(m_op);
 }
 
-TxnHandle
+TxnHandle&
 TxnAsyncContext::getTransactionContext() const
 {
     return m_th;

@@ -26,7 +26,8 @@
 
 #include "TxnHandle.h"
 
-//#include <boost/enable_shared_from_this.hpp>
+#include "qpid/sys/Mutex.h"
+
 #include <boost/shared_ptr.hpp>
 #include <vector>
 
@@ -35,10 +36,10 @@ namespace broker {
 
 class AsyncResultHandle;
 class AsyncResultQueue;
-class AsyncTransactionalStore;
+class AsyncTransaction;
 class TxnOp;
 
-class TxnBuffer /*: public boost::enable_shared_from_this<TxnBuffer>*/ {
+class TxnBuffer {
 public:
     TxnBuffer(AsyncResultQueue& arq);
     virtual ~TxnBuffer();
@@ -47,21 +48,18 @@ public:
     bool prepare(TxnHandle& th);
     void commit();
     void rollback();
-    bool commitLocal(AsyncTransactionalStore* const store);
+    bool commitLocal(AsyncTransaction* const store);
 
     // --- Async operations ---
     static void handleAsyncResult(const AsyncResultHandle* const arh);
     void asyncLocalCommit();
     void asyncLocalAbort();
 
-    // --- Debug ---
-    //void printState(std::ostream& os);
-
 private:
     std::vector<boost::shared_ptr<TxnOp> > m_ops;
     qpid::sys::Mutex m_opsMutex;
     TxnHandle m_txnHandle;
-    AsyncTransactionalStore* m_store;
+    AsyncTransaction* m_store;
     AsyncResultQueue& m_resultQueue;
 
     typedef enum {NONE = 0, PREPARE, COMMIT, ROLLBACK, COMPLETE} e_txnState;

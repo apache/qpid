@@ -21,19 +21,23 @@
  * \file TxnHandle.h
  */
 
-#ifndef qpid_broker_TxnHandleImpl_h_
-#define qpid_broker_TxnHandleImpl_h_
+#ifndef qpid_broker_TxnHandle_h_
+#define qpid_broker_TxnHandle_h_
 
-#include "IdHandle.h"
+#include "Handle.h"
 
-#include "qpid/asyncStore/TxnHandleImpl.h"
-#include "qpid/messaging/Handle.h"
+#include "qpid/asyncStore/AsyncStoreHandle.h"
+
+#include <string>
 
 namespace qpid {
+namespace asyncStore {
+class TxnHandleImpl;
+}
 namespace broker {
 
-class TxnHandle : public qpid::messaging::Handle<qpid::asyncStore::TxnHandleImpl>,
-                  public IdHandle
+class TxnHandle : public Handle<qpid::asyncStore::TxnHandleImpl>,
+                  public qpid::asyncStore::AsyncStoreHandle
 {
 public:
     TxnHandle(qpid::asyncStore::TxnHandleImpl* p = 0);
@@ -48,9 +52,9 @@ public:
     void decrOpCnt();
 
 private:
-    friend class qpid::messaging::PrivateImplRef<TxnHandle>;
+    friend class PrivateImplRef<TxnHandle>;
 };
 
 }} // namespace qpid::broker
 
-#endif // qpid_broker_TxnHandleImpl_h_
+#endif // qpid_broker_TxnHandle_h_

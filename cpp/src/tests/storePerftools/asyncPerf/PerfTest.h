@@ -36,6 +36,9 @@
 #include <deque>
 
 namespace qpid {
+namespace broker {
+class AsyncStore;
+}
 namespace asyncStore {
 class AsyncStoreImpl;
 class AsyncStoreOptions;
@@ -82,6 +85,8 @@ private:
     void destroyQueues();
 
 };
+
+int runPerfTest(int argc, char** argv);
 
 }}} // namespace tests::storePerftools::asyncPerf
 

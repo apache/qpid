@@ -24,8 +24,9 @@
 #ifndef tests_storePerftools_asyncPerf_QueuedMessage_h_
 #define tests_storePerftools_asyncPerf_QueuedMessage_h_
 
-#include "qpid/broker/EnqueueHandle.h"
+#include "qpid/broker/AsyncStore.h"
 
+#include <boost/enable_shared_from_this.hpp>
 #include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
@@ -42,19 +43,17 @@ namespace asyncPerf {
 class SimpleMessage;
 class SimpleQueue;
 
-class QueuedMessage
+class QueuedMessage : public boost::enable_shared_from_this<QueuedMessage>
 {
 public:
     QueuedMessage();
     QueuedMessage(SimpleQueue* q,
                   boost::intrusive_ptr<SimpleMessage> msg);
     QueuedMessage(const QueuedMessage& qm);
-    ~QueuedMessage();
-    QueuedMessage& operator=(const QueuedMessage& rhs);
+    QueuedMessage(QueuedMessage* const qm);
+    virtual ~QueuedMessage();
     SimpleQueue* getQueue() const;
     boost::intrusive_ptr<SimpleMessage> payload() const;
-    const qpid::broker::EnqueueHandle& enqHandle() const;
-    qpid::broker::EnqueueHandle& enqHandle();
 
     // -- Transaction handling ---
     void prepareEnqueue(qpid::broker::TxnHandle& th);
@@ -64,7 +63,6 @@ public:
 private:
     SimpleQueue* m_queue;
     boost::intrusive_ptr<SimpleMessage> m_msg;
-    qpid::broker::EnqueueHandle m_enqHandle;
 };
 
 }}} // namespace tests::storePerfTools

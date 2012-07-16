@@ -31,7 +31,7 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-DeliveryRecord::DeliveryRecord(const QueuedMessage& qm,
+DeliveryRecord::DeliveryRecord(boost::shared_ptr<QueuedMessage> qm,
                                MessageConsumer& mc,
                                bool accepted) :
         m_queuedMessage(qm),
@@ -47,7 +47,7 @@ bool
 DeliveryRecord::accept()
 {
     if (!m_ended) {
-        m_queuedMessage.getQueue()->dequeue(m_queuedMessage);
+        m_queuedMessage->getQueue()->dequeue(m_queuedMessage);
         m_accepted = true;
         setEnded();
     }
@@ -64,7 +64,7 @@ bool
 DeliveryRecord::setEnded()
 {
     m_ended = true;
-    m_queuedMessage.payload() = boost::intrusive_ptr<SimpleMessage>(0);
+    m_queuedMessage->payload() = boost::intrusive_ptr<SimpleMessage>(0);
     return isRedundant();
 }
 
@@ -83,7 +83,7 @@ DeliveryRecord::isRedundant() const
 void
 DeliveryRecord::dequeue(qpid::broker::TxnHandle& txn)
 {
-    m_queuedMessage.getQueue()->dequeue(txn, m_queuedMessage);
+    m_queuedMessage->getQueue()->dequeue(txn, m_queuedMessage);
 }
 
 void
@@ -92,7 +92,7 @@ DeliveryRecord::committed() const
     m_msgConsumer.commitComplete();
 }
 
-QueuedMessage
+boost::shared_ptr<QueuedMessage>
 DeliveryRecord::getQueuedMessage() const
 {
     return m_queuedMessage;

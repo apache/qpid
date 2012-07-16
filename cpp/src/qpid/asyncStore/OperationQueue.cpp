@@ -24,6 +24,8 @@
 #include "OperationQueue.h"
 
 #include "qpid/broker/AsyncResultHandle.h"
+#include "qpid/broker/AsyncResultHandleImpl.h"
+#include "qpid/log/Statement.h"
 
 namespace qpid {
 namespace asyncStore {
@@ -42,7 +44,6 @@ OperationQueue::~OperationQueue()
 void
 OperationQueue::submit(boost::shared_ptr<const AsyncOperation> op)
 {
-//std::cout << "--> OperationQueue::submit() op=" << op->getOpStr() << std::endl << std::flush;
     m_opQueue.push(op);
 }
 
@@ -52,7 +53,6 @@ OperationQueue::handle(const OperationQueue::OpQueue::Batch& e)
 {
     try {
         for (OpQueue::Batch::const_iterator i = e.begin(); i != e.end(); ++i) {
-//std::cout << "<-- OperationQueue::handle() Op=" << (*i)->getOpStr() << std::endl << std::flush;
             boost::shared_ptr<qpid::broker::BrokerAsyncContext> bc = (*i)->getBrokerContext();
             if (bc) {
                 qpid::broker::AsyncResultQueue* const arq = bc->getAsyncResultQueue();
@@ -64,9 +64,9 @@ OperationQueue::handle(const OperationQueue::OpQueue::Batch& e)
             }
         }
     } catch (const std::exception& e) {
-        std::cerr << "qpid::asyncStore::OperationQueue: Exception thrown processing async op: " << e.what() << std::endl;
+        QPID_LOG(error, "qpid::asyncStore::OperationQueue: Exception thrown processing async op: " << e.what());
     } catch (...) {
-        std::cerr << "qpid::asyncStore::OperationQueue: Unknown exception thrown processing async op" << std::endl;
+        QPID_LOG(error, "qpid::asyncStore::OperationQueue: Unknown exception thrown processing async op");
     }
     return e.end();
 }

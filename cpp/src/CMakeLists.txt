@@ -666,6 +666,9 @@ include (rdma.cmake)
 # Check for optional SSL support requirements
 include (ssl.cmake)
 
+# Check for optional async store build requirements
+#include (asyncstore.cmake)
+
 # Check for syslog capabilities not present on all systems
 check_symbol_exists (LOG_AUTHPRIV "sys/syslog.h" HAVE_LOG_AUTHPRIV)
 check_symbol_exists (LOG_FTP "sys/syslog.h" HAVE_LOG_FTP)
@@ -1147,6 +1150,13 @@ set (qpidbroker_SOURCES
      qpid/management/ManagementDirectExchange.cpp
      qpid/management/ManagementTopicExchange.cpp
      qpid/sys/TCPIOPlugin.cpp
+# New async store objects and new versions of broker objects
+#     qpid/broker/AsyncResultHandle.cpp
+#     qpid/broker/AsyncResultHandleImpl.cpp
+#     qpid/broker/IdHandle.cpp
+#     qpid/broker/TxnAsyncContext.cpp
+#     qpid/broker/TxnBuffer.cpp
+#     qpid/broker/TxnHandle.cpp
 )
 add_msvc_version (qpidbroker library dll)
 add_library (qpidbroker SHARED ${qpidbroker_SOURCES})
@@ -1459,71 +1469,12 @@ if (UNIX)
            COMPONENT ${QPID_COMPONENT_COMMON})
 endif (UNIX)
 
-
 # Async Store support
-
-# Journal 2 source files
-set (jrnl2_SOURCES
-	qpid/asyncStore/jrnl2/AsyncJournal.cpp
-	qpid/asyncStore/jrnl2/DataOpState.cpp
-	qpid/asyncStore/jrnl2/DataToken.cpp
-	qpid/asyncStore/jrnl2/DataWrComplState.cpp
-	qpid/asyncStore/jrnl2/DequeueHeader.cpp
-	qpid/asyncStore/jrnl2/EnqueueHeader.cpp
-	qpid/asyncStore/jrnl2/EventHeader.cpp
-	qpid/asyncStore/jrnl2/FileHeader.cpp
-	qpid/asyncStore/jrnl2/JournalDirectory.cpp
-	qpid/asyncStore/jrnl2/JournalError.cpp
-	qpid/asyncStore/jrnl2/JournalParameters.cpp
-	qpid/asyncStore/jrnl2/JournalRunState.cpp
-	qpid/asyncStore/jrnl2/RecordHeader.cpp
-	qpid/asyncStore/jrnl2/RecordTail.cpp
-	qpid/asyncStore/jrnl2/ScopedLock.cpp
-	qpid/asyncStore/jrnl2/Streamable.cpp
-	qpid/asyncStore/jrnl2/TransactionHeader.cpp
-)
-
-# AsyncStore source files
-set (asyncStore_SOURCES
-    qpid/asyncStore/AsyncOperation.cpp
-	qpid/asyncStore/AsyncStoreImpl.cpp
-	qpid/asyncStore/AsyncStoreOptions.cpp
-	qpid/asyncStore/ConfigHandleImpl.cpp
-	qpid/asyncStore/EnqueueHandleImpl.cpp
-	qpid/asyncStore/EventHandleImpl.cpp
-	qpid/asyncStore/MessageHandleImpl.cpp
-	qpid/asyncStore/OperationQueue.cpp
-	qpid/asyncStore/Plugin.cpp
-	qpid/asyncStore/QueueHandleImpl.cpp
-	qpid/asyncStore/RunState.cpp
-	qpid/asyncStore/TxnHandleImpl.cpp
-	qpid/broker/AsyncResultHandle.cpp
-	qpid/broker/AsyncResultHandleImpl.cpp
-    qpid/broker/AsyncResultQueueImpl.cpp
-	qpid/broker/ConfigHandle.cpp
-	qpid/broker/EnqueueHandle.cpp
-	qpid/broker/EventHandle.cpp
-	qpid/broker/IdHandle.cpp
-	qpid/broker/MessageHandle.cpp
-	qpid/broker/QueueHandle.cpp
-	qpid/broker/TxnAsyncContext.cpp
-    qpid/broker/TxnBuffer.cpp
-	qpid/broker/TxnHandle.cpp
-)
-
-if (UNIX)
-    add_library (asyncStore MODULE
-	    ${jrnl2_SOURCES}
-	    ${asyncStore_SOURCES}
-    )
-    set_target_properties (asyncStore PROPERTIES
-        PREFIX ""
-        OUTPUT_NAME asyncStore
-        SOVERSION ${asyncStore_version}
-    )
-    target_link_libraries (asyncStore
-	    aio
-	    rt
-	    uuid
-    )
-endif (UNIX)
+# -------------------
+# NOTE: Currently this must be included AFTER the "add_subdirectory(tests)"
+# line (a few lines above) to work - otherwise cmake complains of linking
+# to lib of type MODULE_LIBRARY (the fact that position of include makes a
+# difference might be a possible CMake bug?). The link issue is being
+# corrected separately, and when it is, this can be moved up to the location
+# of the other module includes.
+include (asyncstore.cmake)

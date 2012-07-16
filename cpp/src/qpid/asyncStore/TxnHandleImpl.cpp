@@ -25,7 +25,7 @@
 
 #include "qpid/Exception.h"
 #include "qpid/broker/TxnBuffer.h"
-#include "qpid/messaging/PrivateImplRef.h"
+#include "qpid/log/Statement.h"
 
 #include <uuid/uuid.h>
 
@@ -117,7 +117,7 @@ TxnHandleImpl::createLocalXid()
     char uuidStr[37]; // 36-char uuid + trailing '\0'
     ::uuid_unparse(uuid, uuidStr);
     m_xid.assign(uuidStr);
-//std::cout << "TTT TxnHandleImpl::createLocalXid(): Local XID created: \"" << m_xid << "\"" << std::endl << std::flush;
+    QPID_LOG(debug, "Local XID created: \"" << m_xid << "\"");
 }
 
 }} // namespace qpid::asyncStore

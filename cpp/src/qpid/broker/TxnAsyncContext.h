@@ -25,14 +25,15 @@
 #define qpid_broker_TxnAsyncContext_h_
 
 #include "AsyncStore.h" // qpid::broker::BrokerAsyncContext
-#include "TxnHandle.h"
 
 #include "qpid/asyncStore/AsyncOperation.h"
 
-#include <boost/shared_ptr.hpp>
-
 namespace qpid {
 namespace broker {
+
+class TxnHandle;
+
+typedef void (*AsyncResultCallback)(const AsyncResultHandle* const);
 
 class TxnAsyncContext: public BrokerAsyncContext
 {
@@ -46,7 +47,7 @@ public:
     TxnBuffer* getTxnBuffer() const;
     qpid::asyncStore::AsyncOperation::opCode getOpCode() const;
     const char* getOpStr() const;
-    TxnHandle getTransactionContext() const;
+    TxnHandle& getTransactionContext() const;
 
     // --- Interface BrokerAsyncContext ---
     AsyncResultQueue* getAsyncResultQueue() const;
@@ -54,7 +55,7 @@ public:
 
 private:
     TxnBuffer* const m_tb;
-    TxnHandle m_th;
+    TxnHandle& m_th;
     const qpid::asyncStore::AsyncOperation::opCode m_op;
     AsyncResultCallback m_rcb;
     AsyncResultQueue* const m_arq;

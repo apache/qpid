@@ -21,19 +21,21 @@
  * \file EnqueueHandle.h
  */
 
-#ifndef qpid_broker_EnqueueHandleImpl_h_
-#define qpid_broker_EnqueueHandleImpl_h_
+#ifndef qpid_broker_EnqueueHandle_h_
+#define qpid_broker_EnqueueHandle_h_
 
-#include "IdHandle.h"
+#include "Handle.h"
 
-#include "qpid/asyncStore/EnqueueHandleImpl.h"
-#include "qpid/messaging/Handle.h"
+#include "qpid/asyncStore/AsyncStoreHandle.h"
 
 namespace qpid {
+namespace asyncStore {
+class EnqueueHandleImpl;
+}
 namespace broker {
 
-class EnqueueHandle : public qpid::messaging::Handle<qpid::asyncStore::EnqueueHandleImpl>,
-                      public IdHandle
+class EnqueueHandle : public Handle<qpid::asyncStore::EnqueueHandleImpl>,
+                      public qpid::asyncStore::AsyncStoreHandle
 {
 public:
     EnqueueHandle(qpid::asyncStore::EnqueueHandleImpl* p = 0);
@@ -45,9 +47,9 @@ public:
     // <none>
 
 private:
-    friend class qpid::messaging::PrivateImplRef<EnqueueHandle>;
+    friend class PrivateImplRef<EnqueueHandle>;
 };
 
 }} // namespace qpid::broker
 
-#endif // qpid_broker_EnqueueHandleImpl_h_
+#endif // qpid_broker_EnqueueHandle_h_

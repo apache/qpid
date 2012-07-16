@@ -30,17 +30,19 @@
 
 #include "qpid/asyncStore/jrnl2/RecordIdCounter.h"
 #include "qpid/broker/AsyncStore.h"
-#include "qpid/sys/Poller.h"
 
 namespace qpid {
-
 namespace broker {
 class Broker;
-} // namespace qpid::broker
+}
+
+namespace sys {
+class Poller;
+}
 
 namespace asyncStore {
 
-class AsyncStoreImpl: public qpid::broker::AsyncStore {
+class AsyncStoreImpl : public qpid::broker::AsyncStore {
 public:
     AsyncStoreImpl(boost::shared_ptr<qpid::sys::Poller> poller,
                    const AsyncStoreOptions& opts);
@@ -52,12 +54,23 @@ public:
 
     void initManagement(qpid::broker::Broker* broker);
 
-    // --- Factory methods for creating handles ---
+    // --- Interface from AsyncTransactionalStore ---
 
     qpid::broker::TxnHandle createTxnHandle();
     qpid::broker::TxnHandle createTxnHandle(qpid::broker::TxnBuffer* tb);
     qpid::broker::TxnHandle createTxnHandle(const std::string& xid);
-    qpid::broker::TxnHandle createTxnHandle(const std::string& xid, qpid::broker::TxnBuffer* tb);
+    qpid::broker::TxnHandle createTxnHandle(const std::string& xid,
+                                            qpid::broker::TxnBuffer* tb);
+
+    void submitPrepare(qpid::broker::TxnHandle& txnHandle,
+                       boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
+    void submitCommit(qpid::broker::TxnHandle& txnHandle,
+                      boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
+    void submitAbort(qpid::broker::TxnHandle& txnHandle,
+                     boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
+
+
+    // --- Interface from AsyncStore ---
 
     qpid::broker::ConfigHandle createConfigHandle();
     qpid::broker::EnqueueHandle createEnqueueHandle(qpid::broker::MessageHandle& msgHandle,
@@ -67,16 +80,6 @@ public:
     qpid::broker::MessageHandle createMessageHandle(const qpid::broker::DataSource* const dataSrc);
     qpid::broker::QueueHandle createQueueHandle(const std::string& name,
                                                 const qpid::types::Variant::Map& opts);
-
-
-    // --- Store async interface ---
-
-    void submitPrepare(qpid::broker::TxnHandle& txnHandle,
-                       boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
-    void submitCommit(qpid::broker::TxnHandle& txnHandle,
-                      boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
-    void submitAbort(qpid::broker::TxnHandle& txnHandle,
-                     boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
 
     void submitCreate(qpid::broker::ConfigHandle& cfgHandle,
                       const qpid::broker::DataSource* const dataSrc,
@@ -94,12 +97,7 @@ public:
 
     void submitCreate(qpid::broker::EventHandle& eventHandle,
                       const qpid::broker::DataSource* const dataSrc,
-                      boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
-    void submitCreate(qpid::broker::EventHandle& eventHandle,
-                      const qpid::broker::DataSource* const dataSrc,
                       qpid::broker::TxnHandle& txnHandle,
-                      boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
-    void submitDestroy(qpid::broker::EventHandle& eventHandle,
                       boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
     void submitDestroy(qpid::broker::EventHandle& eventHandle,
                       qpid::broker::TxnHandle& txnHandle,

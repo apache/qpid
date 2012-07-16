@@ -26,6 +26,8 @@
 
 #include "QueuedMessage.h"
 
+#include <boost/shared_ptr.hpp>
+
 namespace qpid  {
 namespace broker {
 class TxnHandle;
@@ -39,7 +41,7 @@ class MessageConsumer;
 
 class DeliveryRecord {
 public:
-    DeliveryRecord(const QueuedMessage& qm,
+    DeliveryRecord(boost::shared_ptr<QueuedMessage> qm,
                    MessageConsumer& mc,
                    bool accepted);
     virtual ~DeliveryRecord();
@@ -50,9 +52,9 @@ public:
     bool isRedundant() const;
     void dequeue(qpid::broker::TxnHandle& txn);
     void committed() const;
-    QueuedMessage getQueuedMessage() const;
+    boost::shared_ptr<QueuedMessage> getQueuedMessage() const;
 private:
-    QueuedMessage m_queuedMessage;
+    boost::shared_ptr<QueuedMessage> m_queuedMessage;
     MessageConsumer& m_msgConsumer;
     bool m_accepted : 1;
     bool m_ended : 1;
