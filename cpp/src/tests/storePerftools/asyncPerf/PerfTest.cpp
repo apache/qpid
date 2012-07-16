@@ -34,8 +34,6 @@
 #include "qpid/Modules.h" // Use with loading store as module
 #include "qpid/asyncStore/AsyncStoreImpl.h"
 #include "qpid/asyncStore/AsyncStoreOptions.h"
-#include "qpid/broker/AsyncStore.h"
-#include "qpid/sys/Poller.h"
 
 #include <iomanip>
 

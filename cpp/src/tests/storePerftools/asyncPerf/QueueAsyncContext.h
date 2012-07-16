@@ -25,6 +25,7 @@
 #define tests_storePerftools_asyncPerf_QueueContext_h_
 
 #include "qpid/asyncStore/AsyncOperation.h"
+#include "qpid/broker/AsyncResultHandle.h"
 #include "qpid/broker/AsyncStore.h"
 #include "qpid/broker/TxnHandle.h"
 

@@ -22,6 +22,7 @@
  */
 
 #include "MessageDeque.h"
+
 #include "QueuedMessage.h"
 
 namespace tests {

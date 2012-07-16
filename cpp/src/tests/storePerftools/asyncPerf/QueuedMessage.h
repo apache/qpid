@@ -55,7 +55,7 @@ public:
     SimpleQueue* getQueue() const;
     boost::intrusive_ptr<SimpleMessage> payload() const;
 
-    // -- Transaction handling ---
+    // --- Transaction handling ---
     void prepareEnqueue(qpid::broker::TxnHandle& th);
     void commitEnqueue();
     void abortEnqueue();

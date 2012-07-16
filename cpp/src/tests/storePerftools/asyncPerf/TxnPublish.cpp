@@ -26,7 +26,7 @@
 #include "PersistableQueuedMessage.h"
 #include "QueuedMessage.h"
 #include "SimpleMessage.h"
-#include "SimpleQueue.h" // debug msg
+#include "SimpleQueue.h"
 
 #include "qpid/log/Statement.h"
 

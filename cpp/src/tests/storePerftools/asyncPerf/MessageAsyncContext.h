@@ -25,7 +25,6 @@
 #define tests_storePerfTools_asyncPerf_MessageContext_h_
 
 #include "qpid/asyncStore/AsyncOperation.h"
-#include "qpid/broker/AsyncStore.h" // qpid::broker::BrokerAsyncContext
 
 #include <boost/intrusive_ptr.hpp>
 #include <boost/shared_ptr.hpp>

@@ -32,8 +32,6 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class SimpleQueue;
-
 class SimpleMessage: public qpid::broker::PersistableMessage,
                      public qpid::broker::DataSource
 {

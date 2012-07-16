@@ -36,7 +36,7 @@
 
 namespace qpid {
 namespace asyncStore {
-class AsyncStoreImpl;
+//class AsyncStoreImpl;
 }
 namespace broker {
 class AsyncResultQueue;

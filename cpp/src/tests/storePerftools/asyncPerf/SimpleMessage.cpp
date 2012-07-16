@@ -23,7 +23,7 @@
 
 #include "SimpleMessage.h"
 
-#include "qpid/asyncStore/AsyncStoreImpl.h"
+#include <string.h> // memcpy()
 
 namespace tests {
 namespace storePerftools {

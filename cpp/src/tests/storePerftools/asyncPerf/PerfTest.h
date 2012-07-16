@@ -36,9 +36,6 @@
 #include <deque>
 
 namespace qpid {
-namespace broker {
-class AsyncStore;
-}
 namespace asyncStore {
 class AsyncStoreImpl;
 class AsyncStoreOptions;
@@ -63,6 +60,8 @@ public:
              const qpid::asyncStore::AsyncStoreOptions& aso);
     virtual ~PerfTest();
     void run();
+
+    // --- Interface tests::storePerftools::common::Streamable ---
     void toStream(std::ostream& os = std::cout) const;
 
 private:

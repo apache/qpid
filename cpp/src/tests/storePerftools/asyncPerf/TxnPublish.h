@@ -32,11 +32,6 @@
 #include <boost/shared_ptr.hpp>
 #include <list>
 
-namespace qpid {
-namespace broker {
-class TransactionContext;
-}}
-
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {

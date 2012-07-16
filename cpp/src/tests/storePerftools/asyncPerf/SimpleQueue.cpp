@@ -28,13 +28,13 @@
 #include "MessageDeque.h"
 #include "PersistableQueuedMessage.h"
 #include "QueueAsyncContext.h"
-#include "QueuedMessage.h"
 #include "SimpleMessage.h"
 
-#include "qpid/asyncStore/AsyncStoreImpl.h"
 #include "qpid/broker/AsyncResultHandle.h"
+#include "qpid/broker/TxnHandle.h"
 
 #include <boost/make_shared.hpp>
+#include <string.h> // memcpy()
 
 namespace tests {
 namespace storePerftools {
@@ -80,7 +80,6 @@ SimpleQueue::handleAsyncResult(const qpid::broker::AsyncResultHandle* const arh)
             std::cerr << "Queue name=\"" << qc->getQueue()->m_name << "\": Operation " << qc->getOpStr() << ": failure "
                       << arh->getErrNo() << " (" << arh->getErrMsg() << ")" << std::endl;
         } else {
-//std::cout << "QQQ SimpleQueue::handleAsyncResult() op=" << qc->getOpStr() << std::endl << std::flush;
             // Handle async success here
             switch(qc->getOpCode()) {
             case qpid::asyncStore::AsyncOperation::QUEUE_CREATE:
@@ -169,11 +168,7 @@ SimpleQueue::deliver(boost::intrusive_ptr<SimpleMessage> msg)
     } else {
         qm = boost::make_shared<QueuedMessage>(new QueuedMessage(this, msg));
     }
-//boost::shared_ptr<PersistableQueuedMessage> pqm1 = boost::dynamic_pointer_cast<PersistableQueuedMessage>(qm);
-//assert(pqm1.get());
     enqueue(s_nullTxnHandle, qm);
-//boost::shared_ptr<PersistableQueuedMessage> pqm2 = boost::dynamic_pointer_cast<PersistableQueuedMessage>(qm);
-//assert(pqm2.get());
     push(qm);
 }
 
@@ -226,10 +221,6 @@ SimpleQueue::dequeue(qpid::broker::TxnHandle& th,
     }
     if (qm->payload()->isPersistent() && m_store) {
         qm->payload()->dequeueAsync(shared_from_this(), m_store);
-//assert(qm.get());
-//boost::shared_ptr<PersistableQueuedMessage> pqm = boost::dynamic_pointer_cast<PersistableQueuedMessage>(qm);
-//assert(pqm.get());
-//return asyncDequeue(th, pqm);
         return asyncDequeue(th, boost::dynamic_pointer_cast<PersistableQueuedMessage>(qm));
     }
     return true;
@@ -381,7 +372,6 @@ SimpleQueue::asyncEnqueue(qpid::broker::TxnHandle& th,
 {
     assert(pqm.get());
 //    qm.payload()->setPersistenceId(m_store->getNextRid()); // TODO: rid is set by store itself - find way to do this
-//std::cout << "QQQ Queue=\"" << m_name << "\": asyncEnqueue() rid=0x" << std::hex << pqm->payload()->getPersistenceId() << std::dec << std::endl << std::flush;
     boost::shared_ptr<QueueAsyncContext> qac(new QueueAsyncContext(shared_from_this(),
                                                                    pqm->payload(),
                                                                    th,
@@ -405,7 +395,6 @@ SimpleQueue::asyncDequeue(qpid::broker::TxnHandle& th,
                           boost::shared_ptr<PersistableQueuedMessage> pqm)
 {
     assert(pqm.get());
-//std::cout << "QQQ Queue=\"" << m_name << "\": asyncDequeue() rid=0x" << std::hex << qm.payload()->getPersistenceId() << std::dec << std::endl << std::flush;
     boost::shared_ptr<QueueAsyncContext> qac(new QueueAsyncContext(shared_from_this(),
                                                                    pqm->payload(),
                                                                    th,
@@ -438,7 +427,6 @@ SimpleQueue::destroyCheck(const std::string& opDescr) const
 void
 SimpleQueue::createComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 {
-//std::cout << "QQQ Queue name=\"" << qc->getQueue()->getName() << "\": createComplete()" << std::endl << std::flush;
     assert(qc->getQueue().get() == this);
     --m_asyncOpCounter;
 }
@@ -447,7 +435,6 @@ SimpleQueue::createComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 void
 SimpleQueue::flushComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 {
-//std::cout << "QQQ Queue name=\"" << qc->getQueue()->getName() << "\": flushComplete()" << std::endl << std::flush;
     assert(qc->getQueue().get() == this);
     --m_asyncOpCounter;
 }
@@ -456,7 +443,6 @@ SimpleQueue::flushComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 void
 SimpleQueue::destroyComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 {
-//std::cout << "QQQ Queue name=\"" << qc->getQueue()->getName() << "\": destroyComplete()" << std::endl << std::flush;
     assert(qc->getQueue().get() == this);
     --m_asyncOpCounter;
     m_destroyed = true;
@@ -466,7 +452,6 @@ SimpleQueue::destroyComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 void
 SimpleQueue::enqueueComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 {
-//std::cout << "QQQ Queue name=\"" << qc->getQueue()->getName() << "\": enqueueComplete() rid=0x" << std::hex << qc->getMessage()->getPersistenceId() << std::dec << std::endl << std::flush;
     assert(qc->getQueue().get() == this);
     --m_asyncOpCounter;
 
@@ -482,7 +467,6 @@ SimpleQueue::enqueueComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 void
 SimpleQueue::dequeueComplete(const boost::shared_ptr<QueueAsyncContext> qc)
 {
-//std::cout << "QQQ Queue name=\"" << qc->getQueue()->getName() << "\": dequeueComplete() rid=0x" << std::hex << qc->getMessage()->getPersistenceId() << std::dec << std::endl << std::flush;
     assert(qc->getQueue().get() == this);
     --m_asyncOpCounter;
 

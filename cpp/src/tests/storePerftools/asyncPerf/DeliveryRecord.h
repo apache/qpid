@@ -24,7 +24,7 @@
 #ifndef tests_storePerftools_asyncPerf_DeliveryRecord_h_
 #define tests_storePerftools_asyncPerf_DeliveryRecord_h_
 
-#include "QueuedMessage.h"
+//#include "QueuedMessage.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -38,6 +38,7 @@ namespace storePerftools {
 namespace asyncPerf {
 
 class MessageConsumer;
+class QueuedMessage;
 
 class DeliveryRecord {
 public:

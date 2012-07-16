@@ -24,6 +24,7 @@
 #include "DeliveryRecord.h"
 
 #include "MessageConsumer.h"
+#include "QueuedMessage.h"
 #include "SimpleMessage.h"
 #include "SimpleQueue.h"
 
