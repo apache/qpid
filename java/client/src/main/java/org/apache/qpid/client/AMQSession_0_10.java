@@ -390,11 +390,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
      */
     public void sendClose(long timeout) throws AMQException, FailoverException
     {
-        if (flushTask != null)
-        {
-            flushTask.cancel();
-            flushTask = null;
-        }
+        cancelTimerTask();
         flushAcknowledgments();
         try
         {
@@ -1051,8 +1047,18 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             {
                 code = ee.getErrorCode().getValue();
             }
-            AMQException amqe = new AMQException(AMQConstant.getConstant(code), se.getMessage(), se.getCause());
+            AMQException amqe = new AMQException(AMQConstant.getConstant(code), false, se.getMessage(), se.getCause());
             _currentException = amqe;
+        }
+        cancelTimerTask();
+        stopDispatcherThread();
+        try
+        {
+            closed(_currentException);
+        }
+        catch(Exception e)
+        {
+            _logger.warn("Error closing session", e);
         }
         getAMQConnection().exceptionReceived(_currentException);
     }
@@ -1414,5 +1420,13 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         return _qpidSession.isFlowBlocked();
     }
 
+    private void cancelTimerTask()
+    {
+        if (flushTask != null)
+        {
+            flushTask.cancel();
+            flushTask = null;
+        }
+    }
 }
 
