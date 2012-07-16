@@ -23,7 +23,7 @@
 dmoduleexec_LTLIBRARIES += ha.la
 
 ha_la_SOURCES =					\
-  qpid/ha/AlternateExchangeSetter.h			\
+  qpid/ha/AlternateExchangeSetter.h		\
   qpid/ha/Backup.cpp				\
   qpid/ha/Backup.h				\
   qpid/ha/BackupConnectionExcluder.h		\
