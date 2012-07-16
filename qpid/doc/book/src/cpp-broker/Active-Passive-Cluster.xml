@@ -90,7 +90,17 @@ under the License.
       </para>
       <para>
 	Clients buffer unacknowledged messages and re-send them in the event of
-	a fail-over. If the primary crashes before a message is replicated to
+	a fail-over.
+	<footnote>
+	  <para>
+	  Clients must use 'at-least-once' reliability to enable re-send of
+	  unacknowledged messages. This is the default behavior, no options
+	  need be set to enable it. For details of client addressing options see
+	  &#34;Using the Qpid Messaging API&#34; in <citetitle>Programming in Apache
+      Qpid</citetitle>
+	  </para>
+	</footnote>
+	If the primary crashes before a message is replicated to
 	all the backups, the client will re-send the message when it fails over
 	to the new primary.
       </para>
@@ -494,10 +504,11 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
   <section>
     <title>Broker Administration Tools</title>
     <para>
-      Normally, clients are not allowed to connect to a backup broker. However management tools are
-      allowed to connect to a backup brokers. If you use these tools you <emphasis>must
-      not</emphasis> add or remove messages from replicated queues, or delete replicated queues or
-      exchanges as this will corrupt the replication process and may cause message loss.
+      Normally, clients are not allowed to connect to a backup broker. However
+      management tools are allowed to connect to a backup brokers. If you use
+      these tools you <emphasis>must not</emphasis> add or remove messages from
+      replicated queues, nor create or delete replicated queues or exchanges as
+      this will disrupt the replication process and may cause message loss.
     </para>
     <para>
       <command>qpid-ha</command> allows you to view and change HA configuration settings.
@@ -600,10 +611,12 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       membership.
     </para>
     <para>
-      Suppose your cluster has 3 nodes: <literal>node1</literal>, <literal>node2</literal>
-      and <literal>node3</literal> all using the default AMQP port. To connect a client you
-      need to specify the address(es) and set the <literal>reconnect</literal> property to
-      <literal>true</literal>. Here's how to connect each type of client:
+      Suppose your cluster has 3 nodes: <literal>node1</literal>,
+      <literal>node2</literal> and <literal>node3</literal> all using the
+      default AMQP port, and you are not using a virtual IP address. To connect
+      a client you need to specify the address(es) and set the
+      <literal>reconnect</literal> property to <literal>true</literal>. The
+      following sub-sections show how to connect each type of client.
     </para>
     <section>
       <title>C++ clients</title>
