@@ -92,15 +92,18 @@ public class Controller
         }
     }
 
-    private void awaitLatch(CountDownLatch latch, long timeout, String messageWithOneDecimalPlaceholder)
+    private void awaitStopResponses(CountDownLatch latch, long timeout)
     {
+        String message = "Timed out after %d waiting for stop command responses. Expecting %d more responses.";
+
         try
         {
-            final boolean countedDownOK = latch.await(timeout, TimeUnit.MILLISECONDS);
+            boolean countedDownOK = latch.await(timeout, TimeUnit.MILLISECONDS);
             if (!countedDownOK)
             {
-                final long latchCount = latch.getCount();
-                String formattedMessage = String.format(messageWithOneDecimalPlaceholder, latchCount);
+                long latchCount = latch.getCount();
+                String formattedMessage = String.format(message, timeout, latchCount);
+                LOGGER.error(formattedMessage);
                 throw new DistributedTestException(formattedMessage);
             }
         }
@@ -141,7 +144,7 @@ public class Controller
             _jmsDelegate.sendCommandToClient(clientName, command);
         }
 
-        awaitLatch(_stopClientsResponseLatch, _commandResponseTimeout, "Timed out waiting for stop command responses. Expecting %d more responses.");
+        awaitStopResponses(_stopClientsResponseLatch, _commandResponseTimeout);
 
         LOGGER.info("Stopped all clients");
     }

@@ -30,7 +30,8 @@ var jsonObject = {
                     {
                       "_name": "Producer",
                       "_destinationName": topicName,
-                      "_maximumDuration": duration
+                      "_maximumDuration": duration,
+                      "_startDelay": 2000 // gives the consumers time to implicitly create the topic
                     }
                   ]
                 }
