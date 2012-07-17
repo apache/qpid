@@ -34,7 +34,7 @@ namespace ha {
 class Settings
 {
   public:
-    Settings() : cluster(false), replicateDefault(NONE), backupTimeout(2)
+    Settings() : cluster(false), replicateDefault(NONE), backupTimeout(5)
     {}
 
     bool cluster;               // True if we are a cluster member.
