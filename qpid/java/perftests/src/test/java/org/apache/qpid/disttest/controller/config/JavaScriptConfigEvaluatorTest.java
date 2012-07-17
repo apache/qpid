@@ -20,29 +20,47 @@
  */
 package org.apache.qpid.disttest.controller.config;
 
+import java.io.File;
+import java.util.TreeMap;
+
+import org.apache.qpid.util.FileUtils;
+
 import junit.framework.TestCase;
+
+import com.google.gson.Gson;
 
 public class JavaScriptConfigEvaluatorTest extends TestCase
 {
     public void testEvaluateJavaScript() throws Exception
     {
-        String path = getClass().getClassLoader().getResource("org/apache/qpid/disttest/controller/config/test-config.js")
-                .toURI().getPath();
+        String jsFilePath = getClass().getResource("JavaScriptConfigEvaluatorTest-test-config.js").getPath();
 
-        String config = new JavaScriptConfigEvaluator().evaluateJavaScript(path);
+        String rawConfig = new JavaScriptConfigEvaluator().evaluateJavaScript(jsFilePath);
 
-        String expected = "{\"_tests\":[{\"_queues\":[{\"_name\":\"Json-Queue-Name\"}],\"_clients\":"
-                + "[{\"_connections\":[{\"_name\":\"connection1\",\"_sessions\":[{\"_acknowledgeMode\":\"0\","
-                + "\"_sessionName\":\"session1\",\"_consumers\":[]}]}],\"_name\":\"repeatingClient0\"},"
-                + "{\"_connections\":[{\"_name\":\"connection1\",\"_sessions\":[{\"_acknowledgeMode\":\"0\","
-                + "\"_sessionName\":\"session1\",\"_consumers\":[]}]}],\"_name\":\"repeatingClient1\"}]"
-                + ",\"_iterationNumber\":0,\"_name\":\"Test 1\"},{\"_queues\":[{\"_name\":\"Json-Queue-Name\"}],"
-                + "\"_clients\":[{\"_connections\":[{\"_name\":\"connection1\",\"_sessions\":"
-                + "[{\"_acknowledgeMode\":\"1\",\"_sessionName\":\"session1\",\"_consumers\":[]}]}],"
-                + "\"_name\":\"repeatingClient0\"},{\"_connections\":[{\"_name\":\"connection1\",\"_sessions\":"
-                + "[{\"_acknowledgeMode\":\"1\",\"_sessionName\":\"session1\",\"_consumers\":[]}]}],"
-                + "\"_name\":\"repeatingClient1\"}],\"_iterationNumber\":1,\"_name\":\"Test 1\"}]}";
+        String config = formatForComparison(rawConfig);
+        assertTrue(config.contains("\"_iterationNumber\":1"));
+
+        File expectedJsonFile = new File(getClass().getResource("JavaScriptConfigEvaluatorTest-expected-json.json").getPath());
+        String rawExpected = FileUtils.readFileAsString(expectedJsonFile);
+
+        String expected = formatForComparison(rawExpected);
 
         assertEquals("Unexpected configuration", expected, config);
+    }
+
+    /**
+     * Does an unmarshall-then-marshall on the supplied JSON string so that
+     * we can compare the output when testing for equivalent JSON strings,
+     * ignoring ordering of attributes.
+     */
+    private String formatForComparison(String jsonStringIn)
+    {
+        Gson gson = new Gson();
+
+        @SuppressWarnings("rawtypes")
+        TreeMap configObj = gson.fromJson(jsonStringIn, TreeMap.class);
+
+        String jsonStringOut = gson.toJson(configObj);
+        return jsonStringOut;
     }
 }
