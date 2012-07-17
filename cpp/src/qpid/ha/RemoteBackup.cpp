@@ -29,6 +29,7 @@ namespace qpid {
 namespace ha {
 
 using sys::Mutex;
+using boost::bind;
 
 RemoteBackup::RemoteBackup(const BrokerInfo& info, ReplicationTest rt, bool con) :
     logPrefix("Primary remote backup "+info.getLogId()+": "),
@@ -43,7 +44,11 @@ void RemoteBackup::createGuards(broker::QueueRegistry& queues)
 
 RemoteBackup::~RemoteBackup() { cancel(); }
 
-void RemoteBackup::cancel() { guards.clear(); }
+void RemoteBackup::cancel() {
+    for_each(guards.begin(), guards.end(),
+             bind(&QueueGuard::cancel, bind(&GuardMap::value_type::second, _1)));
+    guards.clear();
+}
 
 bool RemoteBackup::isReady() {
     return connected && initialQueues.empty();
@@ -70,9 +75,11 @@ namespace {
 typedef std::set<boost::shared_ptr<broker::Queue> > QS;
 struct QueueSetPrinter {
     const QS& qs;
-    QueueSetPrinter(const QS& q) : qs(q) {}
+    std::string prefix;
+    QueueSetPrinter(const std::string& p, const QS& q) : qs(q), prefix(p) {}
 };
 std::ostream& operator<<(std::ostream& o, const QueueSetPrinter& qp) {
+    if (!qp.qs.empty()) o << qp.prefix;
     for (QS::const_iterator i = qp.qs.begin(); i != qp.qs.end(); ++i)
         o << (*i)->getName() << " ";
     return o;
@@ -82,7 +89,7 @@ std::ostream& operator<<(std::ostream& o, const QueueSetPrinter& qp) {
 void RemoteBackup::ready(const QueuePtr& q) {
     initialQueues.erase(q);
     QPID_LOG(debug, logPrefix << "Queue ready: " << q->getName()
-             << " remaining unready: " << QueueSetPrinter(initialQueues));
+             <<  QueueSetPrinter(", waiting for: ", initialQueues));
     if (isReady()) QPID_LOG(debug, logPrefix << "All queues ready");
 }
 

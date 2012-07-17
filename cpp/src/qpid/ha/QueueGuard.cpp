@@ -135,6 +135,4 @@ void QueueGuard::complete(const QueuedMessage& qm) {
     qm.payload->getIngressCompletion().finishCompleter();
 }
 
-// FIXME aconway 2012-06-04: TODO support for timeout.
-
 }} // namespaces qpid::ha
