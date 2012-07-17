@@ -211,7 +211,7 @@ class HaCluster(object):
         if promote_next: self[(i+1) % len(self)].promote()
 
     def restart(self, i):
-        """Start a broker with the same name and data directory. It will get
+        """Start a broker with the same port, name and data directory. It will get
         a separate log file: foo.n.log"""
         b = self._brokers[i]
         self._brokers[i] = HaBroker(
@@ -956,7 +956,8 @@ class RecoveryTests(BrokerTest):
 
     def test_expected_backup_timeout(self):
         """Verify that we time-out expected backups and release held queues
-        after a configured interval
+        after a configured interval. Verify backup is demoted to catch-up,
+        but can still rejoin.
         """
         cluster = HaCluster(self, 3, args=["--ha-backup-timeout=0.5"]);
         cluster[0].wait_status("active") # Primary ready

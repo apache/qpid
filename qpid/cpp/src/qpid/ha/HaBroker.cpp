@@ -141,10 +141,8 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
           switch (getStatus()) {
             case JOINING: recover(); break;
             case CATCHUP:
-              // FIXME aconway 2012-04-27: don't allow promotion in catch-up
-              // QPID_LOG(error, logPrefix << "Still catching up, cannot be promoted.");
-              // throw Exception("Still catching up, cannot be promoted.");
-              recover();
+              QPID_LOG(error, logPrefix << "Still catching up, cannot be promoted.");
+              throw Exception("Still catching up, cannot be promoted.");
               break;
             case READY: recover(); break;
             case RECOVERING: break;
@@ -243,12 +241,12 @@ namespace {
 bool checkTransition(BrokerStatus from, BrokerStatus to) {
     // Legal state transitions. Initial state is JOINING, ACTIVE is terminal.
     static const BrokerStatus TRANSITIONS[][2] = {
-        { CATCHUP, RECOVERING }, // FIXME aconway 2012-04-27: illegal transition, allow while fixing behavior
-        { JOINING, CATCHUP },   // Connected to primary
-        { JOINING, RECOVERING },    // Chosen as initial primary.
-        { CATCHUP, READY },     // Caught up all queues, ready to take over.
+        { JOINING, CATCHUP },    // Connected to primary
+        { JOINING, RECOVERING }, // Chosen as initial primary.
+        { CATCHUP, READY },      // Caught up all queues, ready to take over.
         { READY, RECOVERING },   // Chosen as new primary
-        { RECOVERING, ACTIVE }
+        { READY, CATCHUP },      // Timed out failing over, demoted to catch-up.
+        { RECOVERING, ACTIVE }   // All expected backups are ready
     };
     static const size_t N = sizeof(TRANSITIONS)/sizeof(TRANSITIONS[0]);
     for (size_t i = 0; i < N; ++i) {
@@ -290,10 +288,9 @@ void HaBroker::setMembership(const Variant::List& brokers) {
     membership.assign(brokers);
     QPID_LOG(debug, logPrefix << "Membership update: " <<  membership);
     BrokerInfo info;
-    // Check if my own status has been updated to READY
-    if (getStatus() == CATCHUP &&
-        membership.get(systemId, info) && info.getStatus() == READY)
-        setStatus(READY, l);
+    // Update my status to what the primary thinks.
+    if (membership.get(systemId, info) && status != info.getStatus())
+        setStatus(info.getStatus(), l);
     membershipUpdated(brokers);
 }
 

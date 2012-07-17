@@ -140,12 +140,23 @@ void Primary::checkReady(BackupMap::iterator i, Mutex::ScopedLock& l)  {
 void Primary::timeoutExpectedBackups() {
     sys::Mutex::ScopedLock l(lock);
     if (active) return;         // Already activated
-    for (BackupSet::iterator i = expectedBackups.begin(); i != expectedBackups.end(); ++i)
+    // Remove records for any expectedBackups that are not yet connected
+    // Allow backups that are connected to continue becoming ready.
+    for (BackupSet::iterator i = expectedBackups.begin(); i != expectedBackups.end();)
     {
-        QPID_LOG(error, "Expected backup timed out: " << (*i)->getBrokerInfo());
-        (*i)->cancel();
+        boost::shared_ptr<RemoteBackup> rb = *i;
+        if (!rb->isConnected()) {
+            BrokerInfo info = rb->getBrokerInfo();
+            QPID_LOG(error, "Expected backup timed out: " << info);
+            expectedBackups.erase(i++);
+            backups.erase(info.getSystemId());
+            rb->cancel();
+            // Downgrade the broker to CATCHUP
+            info.setStatus(CATCHUP);
+            haBroker.addBroker(info);
+        }
+        else ++i;
     }
-    expectedBackups.clear();
     checkReady(l);
 }
 
@@ -191,6 +202,7 @@ void Primary::opened(broker::Connection& connection) {
             i->second->setConnected(true);
             checkReady(i, l);
         }
+        if (info.getStatus() == JOINING) info.setStatus(CATCHUP);
         haBroker.addBroker(info);
     }
     else
@@ -218,6 +230,7 @@ void Primary::closed(broker::Connection& connection) {
 
 boost::shared_ptr<QueueGuard> Primary::getGuard(const QueuePtr& q, const BrokerInfo& info)
 {
+    Mutex::ScopedLock l(lock);
     BackupMap::iterator i = backups.find(info.getSystemId());
     return i == backups.end() ? boost::shared_ptr<QueueGuard>() : i->second->guard(q);
 }
