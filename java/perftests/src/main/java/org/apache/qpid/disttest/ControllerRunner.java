@@ -103,6 +103,10 @@ public class ControllerRunner extends AbstractRunner
                 runTest(controller, testConfigFile);
             }
         }
+        catch(Exception e)
+        {
+            LOGGER.error("Problem running test", e);
+        }
         finally
         {
             controller.stopAllRegisteredClients();

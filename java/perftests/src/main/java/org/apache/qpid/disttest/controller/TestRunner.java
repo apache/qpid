@@ -104,6 +104,11 @@ public class TestRunner
 
             return _testResult;
         }
+        catch(RuntimeException e)
+        {
+            LOGGER.error("Couldn't run test", e);
+            throw e;
+        }
         finally
         {
             _jmsDelegate.removeCommandListener(participantResultListener);
@@ -140,7 +145,6 @@ public class TestRunner
             }
 
             Runtime.getRuntime().removeShutdownHook(_removeQueuesShutdownHook);
-
         }
     }
 
@@ -176,7 +180,7 @@ public class TestRunner
 
     void awaitCommandResponses()
     {
-        awaitLatch(_commandResponseLatch, _commandResponseTimeout, "Timed out waiting for command responses. Expecting %d more responses.");
+        awaitLatch(_commandResponseLatch, _commandResponseTimeout, "Timed out waiting for command responses");
     }
 
 
@@ -204,7 +208,7 @@ public class TestRunner
         {
             try
             {
-                awaitLatch(_testResultsLatch, interval, "Waiting for participant results... Expecting %d more responses.");
+                awaitLatch(_testResultsLatch, interval, "Timed out waiting for participant results");
             }
             catch (DistributedTestException e)
             {
@@ -276,7 +280,7 @@ public class TestRunner
         _jmsDelegate.sendCommandToClient(registeredClientName, command);
     }
 
-    private void awaitLatch(CountDownLatch latch, long timeout, String messageWithOneDecimalPlaceholder)
+    private void awaitLatch(CountDownLatch latch, long timeout, String message)
     {
         try
         {
@@ -284,7 +288,8 @@ public class TestRunner
             if (!countedDownOK)
             {
                 final long latchCount = latch.getCount();
-                String formattedMessage = String.format(messageWithOneDecimalPlaceholder, latchCount);
+                String formattedMessage = "After " + timeout + "ms ... " + message + " ... Expecting " + latchCount + " more responses.";
+                LOGGER.error(formattedMessage);
                 throw new DistributedTestException(formattedMessage);
             }
         }
