@@ -111,7 +111,7 @@ public class ConfigReaderTest extends TestCase
     public void testReadsJS() throws Exception
     {
         ConfigReader configReader = new ConfigReader();
-        String path = getClass().getClassLoader().getResource("org/apache/qpid/disttest/controller/config/test-config.js").toURI().getPath();
+        String path = getClass().getResource("ConfigReaderTest-test-config.js").getPath();
         _config = configReader.getConfigFromFile(path);
         List<TestConfig> testConfigs = _config.getTestConfigs();
         assertEquals("Unexpected number of tests", 2, testConfigs.size());
