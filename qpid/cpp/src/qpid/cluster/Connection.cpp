@@ -277,6 +277,8 @@ void Connection::closed() {
             if (announced)
                 cluster.getMulticast().mcastControl(
                     ClusterConnectionDeliverCloseBody(), self);
+            else
+                close();
         }
     }
     catch (const std::exception& e) {
