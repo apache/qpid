@@ -79,18 +79,17 @@ QueueRegistry::declare(const string& declareName, bool durable,
     return result;
 }
 
-void QueueRegistry::destroyLH (const string& name) {
-    QueueMap::iterator i = queues.find(name);
-    if (i != queues.end()) {
-        Queue::shared_ptr q = i->second;
-        queues.erase(i);
-        if (broker) broker->getConfigurationObservers().queueDestroy(q);
+void QueueRegistry::destroy(const string& name) {
+    Queue::shared_ptr q;
+    {
+        qpid::sys::RWlock::ScopedWlock locker(lock);
+        QueueMap::iterator i = queues.find(name);
+        if (i != queues.end()) {
+            Queue::shared_ptr q = i->second;
+            queues.erase(i);
+        }
     }
-}
-
-void QueueRegistry::destroy (const string& name){
-    RWlock::ScopedWlock locker(lock);
-    destroyLH (name);
+    if (broker && q) broker->getConfigurationObservers().queueDestroy(q);
 }
 
 Queue::shared_ptr QueueRegistry::find(const string& name){

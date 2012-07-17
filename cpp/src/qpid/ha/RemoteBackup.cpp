@@ -30,14 +30,15 @@ namespace ha {
 
 using sys::Mutex;
 
-RemoteBackup::RemoteBackup(
-    const BrokerInfo& info, broker::Broker& broker, ReplicationTest rt, bool cg, bool con) :
+RemoteBackup::RemoteBackup(const BrokerInfo& info, ReplicationTest rt, bool con) :
     logPrefix("Primary remote backup "+info.getLogId()+": "),
-    brokerInfo(info), replicationTest(rt),
-    createGuards(cg), connected(con)
+    brokerInfo(info), replicationTest(rt), connected(con)
+{}
+
+void RemoteBackup::createGuards(broker::QueueRegistry& queues)
 {
     QPID_LOG(debug, logPrefix << "Guarding queues for backup broker.");
-    broker.getQueues().eachQueue(boost::bind(&RemoteBackup::initialQueue, this, _1));
+    queues.eachQueue(boost::bind(&RemoteBackup::initialQueue, this, _1));
 }
 
 RemoteBackup::~RemoteBackup() { cancel(); }
@@ -56,14 +57,12 @@ void RemoteBackup::initialQueue(const QueuePtr& q) {
 }
 
 RemoteBackup::GuardPtr RemoteBackup::guard(const QueuePtr& q) {
-    if (!createGuards) return RemoteBackup::GuardPtr();
     GuardMap::iterator i = guards.find(q);
-    if (i == guards.end()) {
-        assert(0);
-        throw Exception(logPrefix+": Cannot find queue guard: "+q->getName());
+    GuardPtr guard;
+    if (i != guards.end()) {
+        guard = i->second;
+        guards.erase(i);
     }
-    GuardPtr guard = i->second;
-    guards.erase(i);
     return guard;
 }
 
@@ -89,7 +88,7 @@ void RemoteBackup::ready(const QueuePtr& q) {
 
 // Called via ConfigurationObserver and from initialQueue
 void RemoteBackup::queueCreate(const QueuePtr& q) {
-    if (createGuards && replicationTest.isReplicated(ALL, *q))
+    if (replicationTest.isReplicated(ALL, *q))
         guards[q].reset(new QueueGuard(*q, brokerInfo));
 }
 
