@@ -33,14 +33,14 @@ public class JavaScriptConfigEvaluatorTest extends TestCase
 {
     public void testEvaluateJavaScript() throws Exception
     {
-        String jsFilePath = getClass().getResource("JavaScriptConfigEvaluatorTest-test-config.js").getPath();
+        String jsFilePath = getClass().getResource("JavaScriptConfigEvaluatorTest-test-config.js").toURI().getPath();
 
         String rawConfig = new JavaScriptConfigEvaluator().evaluateJavaScript(jsFilePath);
 
         String config = formatForComparison(rawConfig);
         assertTrue(config.contains("\"_iterationNumber\":1"));
 
-        File expectedJsonFile = new File(getClass().getResource("JavaScriptConfigEvaluatorTest-expected-json.json").getPath());
+        File expectedJsonFile = new File(getClass().getResource("JavaScriptConfigEvaluatorTest-expected-json.json").toURI().getPath());
         String rawExpected = FileUtils.readFileAsString(expectedJsonFile);
 
         String expected = formatForComparison(rawExpected);
