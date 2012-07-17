@@ -1269,7 +1269,7 @@ spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
 		    unreliable will be used and for durable messages on
 		    durable queues there is the possibility that messages
 		    will be redelivered; if exactly-once is requested,
-		    at-most-once will be used and the application needs to
+		    at-least-once will be used and the application needs to
 		    be able to deal with duplicates.</para></footnote>
 		  </entry>
 		</row>
