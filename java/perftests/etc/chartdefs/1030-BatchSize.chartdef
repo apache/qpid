@@ -17,7 +17,7 @@
 # under the License.
 #
 
-chartType=LINE
+chartType=XYLINE
 chartTitle=Transaction Batch Size
 chartSubtitle=Persistent 1KB messages
 xAxisTitle=Batch Size
@@ -26,4 +26,8 @@ yAxisTitle=Throughput (KB/s)
 series.1.statement=SELECT batchSize, throughputKbPerS FROM BatchSize WHERE participantName = 'All'
 series.1.legend=Current
 series.1.dir=${csvCurrentDir}
+
+series.2.statement=SELECT batchSize, throughputKbPerS FROM BatchSize WHERE participantName = 'All'
+series.2.legend=Baseline
+series.2.dir=${csvBaselineDir}
 

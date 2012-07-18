@@ -27,3 +27,6 @@ series.1.statement=SELECT testName, throughputKbPerS FROM QueueTypes WHERE parti
 series.1.legend=Current
 series.1.dir=${csvCurrentDir}
 
+series.2.statement=SELECT testName, throughputKbPerS FROM QueueTypes WHERE participantName = 'All'
+series.2.legend=Baseline
+series.2.dir=${csvBaselineDir}

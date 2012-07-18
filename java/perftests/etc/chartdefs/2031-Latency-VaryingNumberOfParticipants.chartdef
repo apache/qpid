@@ -39,3 +39,6 @@ series.4.statement=SELECT totalNumberOfConsumers, averageLatency,latencyStandard
 series.4.legend=10 producers
 series.4.dir=${csvCurrentDir}
 
+series.5.statement=SELECT totalNumberOfConsumers, averageLatency,latencyStandardDeviation FROM Latency-VaryingNumberOfParticipants WHERE participantName = 'All Consumers' and testName like '% - 10 producers - PERSISTENT'
+series.5.legend=10 producers (baseline)
+series.5.dir=${csvBaselineDir}

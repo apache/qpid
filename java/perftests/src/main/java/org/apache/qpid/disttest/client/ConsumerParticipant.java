@@ -86,6 +86,8 @@ public class ConsumerParticipant implements Participant
         }
         else
         {
+            LOGGER.info("Consumer {} registering listener", getName());
+
             _jmsDelegate.registerListener(_command.getParticipantName(), new MessageListener(){
 
                 @Override
@@ -120,7 +122,7 @@ public class ConsumerParticipant implements Participant
 
     private void synchronousRun()
     {
-        LOGGER.debug("entered synchronousRun: " + this);
+        LOGGER.info("Consumer {} about to consume messages", getName());
 
         _startTime = System.currentTimeMillis();
 

@@ -17,7 +17,7 @@
 # under the License.
 #
 
-chartType=LINE
+chartType=XYLINE
 chartTitle=Impact of Message Size
 chartSubtitle=Persistent messages
 xAxisTitle=Message Size (B)
@@ -27,4 +27,6 @@ series.1.statement=SELECT payloadSizeB, throughputKbPerS FROM MessageSize WHERE 
 series.1.legend=Current
 series.1.dir=${csvCurrentDir}
 
-# Define series3/4 to chart the baseline
+series.2.statement=SELECT payloadSizeB, throughputKbPerS FROM MessageSize WHERE testName like '% PERSISTENT' AND participantName = 'All'
+series.2.legend=Baseline
+series.2.dir=${csvBaselineDir}
