@@ -129,11 +129,10 @@ void Primary::checkReady(Mutex::ScopedLock&) {
 void Primary::checkReady(BackupMap::iterator i, Mutex::ScopedLock& l)  {
     if (i != backups.end() && i->second->isReady()) {
         BrokerInfo info = i->second->getBrokerInfo();
-        QPID_LOG(info, "Expected backup is ready: " << info);
         info.setStatus(READY);
+        QPID_LOG(info, "Expected backup is ready: " << info);
         haBroker.addBroker(info);
-        expectedBackups.erase(i->second);
-        checkReady(l);
+        if (expectedBackups.erase(i->second)) checkReady(l);
     }
 }
 
