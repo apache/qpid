@@ -36,10 +36,10 @@ RemoteBackup::RemoteBackup(const BrokerInfo& info, ReplicationTest rt, bool con)
     brokerInfo(info), replicationTest(rt), connected(con)
 {}
 
-void RemoteBackup::createGuards(broker::QueueRegistry& queues)
+void RemoteBackup::setInitialQueues(broker::QueueRegistry& queues, bool createGuards)
 {
-    QPID_LOG(debug, logPrefix << "Guarding queues for backup broker.");
-    queues.eachQueue(boost::bind(&RemoteBackup::initialQueue, this, _1));
+    QPID_LOG(debug, logPrefix << "Setting initial queues" << (createGuards ? " and guards" : ""));
+    queues.eachQueue(boost::bind(&RemoteBackup::initialQueue, this, _1, createGuards));
 }
 
 RemoteBackup::~RemoteBackup() { cancel(); }
@@ -54,10 +54,10 @@ bool RemoteBackup::isReady() {
     return connected && initialQueues.empty();
 }
 
-void RemoteBackup::initialQueue(const QueuePtr& q) {
+void RemoteBackup::initialQueue(const QueuePtr& q, bool createGuard) {
     if (replicationTest.isReplicated(ALL, *q)) {
         initialQueues.insert(q);
-        queueCreate(q);
+        if (createGuard) guards[q].reset(new QueueGuard(*q, brokerInfo));
     }
 }
 
@@ -93,7 +93,7 @@ void RemoteBackup::ready(const QueuePtr& q) {
     if (isReady()) QPID_LOG(debug, logPrefix << "All queues ready");
 }
 
-// Called via ConfigurationObserver and from initialQueue
+// Called via ConfigurationObserver::queueCreate and from initialQueue
 void RemoteBackup::queueCreate(const QueuePtr& q) {
     if (replicationTest.isReplicated(ALL, *q))
         guards[q].reset(new QueueGuard(*q, brokerInfo));
