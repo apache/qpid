@@ -45,8 +45,8 @@ void RemoteBackup::setInitialQueues(broker::QueueRegistry& queues, bool createGu
 RemoteBackup::~RemoteBackup() { cancel(); }
 
 void RemoteBackup::cancel() {
-    for_each(guards.begin(), guards.end(),
-             bind(&QueueGuard::cancel, bind(&GuardMap::value_type::second, _1)));
+    for (GuardMap::iterator i = guards.begin(); i != guards.end(); ++i)
+        i->second->cancel();
     guards.clear();
 }
 
