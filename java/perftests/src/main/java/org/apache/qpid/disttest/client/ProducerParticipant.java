@@ -78,6 +78,8 @@ public class ProducerParticipant implements Participant
 
         _limiter = ExecutorWithLimitsFactory.createExecutorWithLimit(startTime, requiredDuration);
 
+        LOGGER.info("Producer {} about to send messages", getName());
+
         while (true)
         {
             try
@@ -162,6 +164,7 @@ public class ProducerParticipant implements Participant
         long sleepTime = _command.getStartDelay();
         if (sleepTime > 0)
         {
+            LOGGER.debug("{} sleeping for {} milliseconds before starting", getName(), sleepTime);
             // start delay is specified. Sleeping...
             doSleep(sleepTime);
         }

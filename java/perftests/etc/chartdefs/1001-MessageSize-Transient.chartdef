@@ -17,7 +17,7 @@
 # under the License.
 #
 
-chartType=LINE
+chartType=XYLINE
 chartTitle=Impact of Message Size
 chartSubtitle=Transient messages
 xAxisTitle=Message Size (B)
@@ -26,3 +26,7 @@ yAxisTitle=Throughput (KB/s)
 series.1.statement=SELECT payloadSizeB, throughputKbPerS FROM MessageSize WHERE testName like '%TRANSIENT' AND participantName = 'All'
 series.1.legend=Current
 series.1.dir=${csvCurrentDir}
+
+series.2.statement=SELECT payloadSizeB, throughputKbPerS FROM MessageSize WHERE testName like '%TRANSIENT' AND participantName = 'All'
+series.2.legend=Baseline
+series.2.dir=${csvBaselineDir}

@@ -17,7 +17,7 @@
 # under the License.
 #
 
-chartType=LINE
+chartType=XYLINE
 chartTitle=Varying number of producers
 chartSubtitle=Persistent 1KB messages
 xAxisTitle=Producers
@@ -34,3 +34,7 @@ series.2.dir=${csvCurrentDir}
 series.3.statement=SELECT totalNumberOfProducers, throughputKbPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfConsumers = '10'
 series.3.legend=10 Consumer
 series.3.dir=${csvCurrentDir}
+
+series.4.statement=SELECT totalNumberOfProducers, throughputKbPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfConsumers = '1'
+series.4.legend=1 Consumer (baseline)
+series.4.dir=${csvBaselineDir}

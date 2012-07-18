@@ -31,7 +31,10 @@ series.2.statement=SELECT totalNumberOfConsumers, averageLatency,latencyStandard
 series.2.legend=Average latency
 series.2.dir=${csvCurrentDir}
 
-series.3.statement=SELECT totalNumberOfConsumers, minLatency, 0 FROM Latency-QueuesWithSelectors WHERE participantName = 'All Consumers' and testName like '%non overlapping - NON_PERSISTENT%'
-series.3.legend=Min latency
-series.3.dir=${csvCurrentDir}
+series.3.statement=SELECT totalNumberOfConsumers, averageLatency,latencyStandardDeviation FROM Latency-QueuesWithSelectors WHERE participantName = 'All Consumers' and testName like '%non overlapping - NON_PERSISTENT%'
+series.3.legend=Average latency (baseline)
+series.3.dir=${csvBaselineDir}
 
+series.4.statement=SELECT totalNumberOfConsumers, minLatency, 0 FROM Latency-QueuesWithSelectors WHERE participantName = 'All Consumers' and testName like '%non overlapping - NON_PERSISTENT%'
+series.4.legend=Min latency
+series.4.dir=${csvCurrentDir}

@@ -4,48 +4,37 @@
       "_name": "Message Size - 1P-1C - TRANSIENT";
       "_iterations":[
         {
-          "_messageSize": 256,
-          "_maximumDuration": 30000
+          "_messageSize": 256
         },
         {
-          "_messageSize": 512,
-          "_maximumDuration": 30000
+          "_messageSize": 512
         },
         {
-          "_messageSize": 1024,
-          "_maximumDuration": 30000
+          "_messageSize": 1024
         },
         {
-          "_messageSize": 2048,
-          "_maximumDuration": 30000
+          "_messageSize": 2048
         },
         {
-          "_messageSize": 4096,
-          "_maximumDuration": 30000
+          "_messageSize": 4096
         },
         {
-          "_messageSize": 8192,
-          "_maximumDuration": 30000
+          "_messageSize": 8192
         },
         {
-          "_messageSize": 16384,
-          "_maximumDuration": 30000
+          "_messageSize": 16384
         },
         {
-          "_messageSize": 32768,
-          "_maximumDuration": 30000
+          "_messageSize": 32768
         },
         {
-          "_messageSize": 65536,
-          "_maximumDuration": 30000
+          "_messageSize": 65536
         },
         {
-          "_messageSize": 131072,
-          "_maximumDuration": 30000
+          "_messageSize": 131072
         },
         {
-          "_messageSize": 262144,
-          "_maximumDuration": 30000
+          "_messageSize": 262144
         }
       ],
       "_queues":[
@@ -73,7 +62,8 @@
                     {
                       "_name": "Producer1",
                       "_destinationName": "direct://amq.direct//messageSize",
-                      "_deliveryMode": 1
+                      "_deliveryMode": 1,
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -94,7 +84,8 @@
                   "_consumers": [
                     {
                       "_name": "Consumer1",
-                      "_destinationName": "direct://amq.direct//messageSize"
+                      "_destinationName": "direct://amq.direct//messageSize",
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
@@ -108,48 +99,37 @@
       "_name": "Message Size - 1P-1C - PERSISTENT";
       "_iterations":[
         {
-          "_messageSize": 256,
-          "_maximumDuration": 30000
+          "_messageSize": 256
         },
         {
-          "_messageSize": 512,
-          "_maximumDuration": 30000
+          "_messageSize": 512
         },
         {
-          "_messageSize": 1024,
-          "_maximumDuration": 30000
+          "_messageSize": 1024
         },
         {
-          "_messageSize": 2048,
-          "_maximumDuration": 30000
+          "_messageSize": 2048
         },
         {
-          "_messageSize": 4096,
-          "_maximumDuration": 30000
+          "_messageSize": 4096
         },
         {
-          "_messageSize": 8192,
-          "_maximumDuration": 30000
+          "_messageSize": 8192
         },
         {
-          "_messageSize": 16384,
-          "_maximumDuration": 30000
+          "_messageSize": 16384
         },
         {
-          "_messageSize": 32768,
-          "_maximumDuration": 30000
+          "_messageSize": 32768
         },
         {
-          "_messageSize": 65536,
-          "_maximumDuration": 30000
+          "_messageSize": 65536
         },
         {
-          "_messageSize": 131072,
-          "_maximumDuration": 30000
+          "_messageSize": 131072
         },
         {
-          "_messageSize": 262144,
-          "_maximumDuration": 30000
+          "_messageSize": 262144
         }
       ],
       "_queues":[
@@ -178,7 +158,9 @@
                     {
                       "_name": "Producer1",
                       "_destinationName": "direct://amq.direct//messageSize?durable='true'",
-                      "_deliveryMode": 2
+                      "_deliveryMode": 2,
+                      "_maximumDuration": 30000
+
                     }
                   ]
                 }
@@ -199,7 +181,8 @@
                   "_consumers": [
                     {
                       "_name": "Consumer1",
-                      "_destinationName": "direct://amq.direct//messageSize?durable='true'"
+                      "_destinationName": "direct://amq.direct//messageSize?durable='true'",
+                      "_maximumDuration": 30000
                     }
                   ]
                 }
