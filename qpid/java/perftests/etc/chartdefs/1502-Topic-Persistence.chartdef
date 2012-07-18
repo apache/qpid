@@ -26,3 +26,7 @@ yAxisTitle=Throughput (KB/s)
 series.1.statement=SELECT isDurableSubscription, throughputKbPerS FROM Topic-Persistence WHERE participantName = 'All Consumers'
 series.1.legend=Current
 series.1.dir=${csvCurrentDir}
+
+series.2.statement=SELECT isDurableSubscription, throughputKbPerS FROM Topic-Persistence WHERE participantName = 'All Consumers'
+series.2.legend=Baseline
+series.2.dir=${csvBaselineDir}

@@ -17,7 +17,7 @@
 # under the License.
 #
 
-chartType=LINE
+chartType=XYLINE
 chartTitle=Number of topic consumers
 chartSubtitle=Transient 1KB messages
 xAxisTitle=Numer of consumers
@@ -27,3 +27,6 @@ series.1.statement=SELECT testName, throughputKbPerS FROM Topic-NumberOfConsumer
 series.1.legend=Current
 series.1.dir=${csvCurrentDir}
 
+series.2.statement=SELECT testName, throughputKbPerS FROM Topic-NumberOfConsumers WHERE participantName = 'All'
+series.2.legend=Baseline
+series.2.dir=${csvBaselineDir}

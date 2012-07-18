@@ -31,6 +31,10 @@ series.2.statement=SELECT testName, averageLatency,latencyStandardDeviation FROM
 series.2.legend=Average Latency
 series.2.dir=${csvCurrentDir}
 
-series.3.statement=SELECT testName, minLatency,0 FROM Latency-QueueTypes WHERE participantName = 'All Consumers'
-series.3.legend=Minimum latency
-series.3.dir=${csvCurrentDir}
+series.3.statement=SELECT testName, averageLatency,latencyStandardDeviation FROM Latency-QueueTypes WHERE participantName = 'All Consumers'
+series.3.legend=Average Latency (baseline)
+series.3.dir=${csvBaselineDir}
+
+series.4.statement=SELECT testName, minLatency,0 FROM Latency-QueueTypes WHERE participantName = 'All Consumers'
+series.4.legend=Minimum latency
+series.4.dir=${csvCurrentDir}
