@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.disttest.controller.config;
 
-import java.io.File;
-import java.util.TreeMap;
+import static org.apache.commons.beanutils.PropertyUtils.getProperty;
 
-import org.apache.qpid.util.FileUtils;
+import java.util.List;
+import java.util.TreeMap;
 
 import junit.framework.TestCase;
 
@@ -37,30 +37,45 @@ public class JavaScriptConfigEvaluatorTest extends TestCase
 
         String rawConfig = new JavaScriptConfigEvaluator().evaluateJavaScript(jsFilePath);
 
-        String config = formatForComparison(rawConfig);
-        assertTrue(config.contains("\"_iterationNumber\":1"));
+        Object configAsObject = getObject(rawConfig);
 
-        File expectedJsonFile = new File(getClass().getResource("JavaScriptConfigEvaluatorTest-expected-json.json").toURI().getPath());
-        String rawExpected = FileUtils.readFileAsString(expectedJsonFile);
+        // Tests are produced by the QPID.iterations js function
+        assertEquals("Unexpected number of countries", 2, getPropertyAsList(configAsObject, "_countries").size());
 
-        String expected = formatForComparison(rawExpected);
+        Object country0 = getProperty(configAsObject, "_countries.[0]");
+        assertEquals("Unexpected country name", "Country", getProperty(country0, "_name"));
+        assertEquals("Unexpected country iteration number", 0, getPropertyAsInt(country0, "_iterationNumber"));
 
-        assertEquals("Unexpected configuration", expected, config);
+        assertEquals("Unexpected number of regions", 2, getPropertyAsList(country0, "_regions").size());
+        // Region names are produced by the QPID.times js function
+        assertEquals("Unexpected region name", "repeatingRegion0", getProperty(country0, "_regions.[0]._name"));
+        assertEquals("Unexpected region name", "repeatingRegion1", getProperty(country0, "_regions.[1]._name"));
+        // Iterating attribute are produced by the QPID.iterations js function
+        assertEquals("Unexpected iterating attribute", "0", getProperty(country0, "_regions.[0]._towns.[0]._iteratingAttribute"));
+
+        Object country1 = getProperty(configAsObject, "_countries.[1]");
+        assertEquals("Unexpected country iteration number", 1, getPropertyAsInt(country1, "_iterationNumber"));
+        assertEquals("Unexpected iterating attribute", "1", getProperty(country1, "_regions.[0]._towns.[0]._iteratingAttribute"));
     }
 
-    /**
-     * Does an unmarshall-then-marshall on the supplied JSON string so that
-     * we can compare the output when testing for equivalent JSON strings,
-     * ignoring ordering of attributes.
-     */
-    private String formatForComparison(String jsonStringIn)
+    private int getPropertyAsInt(Object configAsObject, String property) throws Exception
+    {
+        Number propertyValue = (Number) getProperty(configAsObject, property);
+
+        return propertyValue.intValue();
+    }
+
+    private List<?> getPropertyAsList(Object configAsObject, String property)
+            throws Exception
+    {
+        return (List<?>)getProperty(configAsObject, property);
+    }
+
+    private Object getObject(String jsonStringIn)
     {
         Gson gson = new Gson();
-
         @SuppressWarnings("rawtypes")
-        TreeMap configObj = gson.fromJson(jsonStringIn, TreeMap.class);
-
-        String jsonStringOut = gson.toJson(configObj);
-        return jsonStringOut;
+        TreeMap object = gson.fromJson(jsonStringIn, TreeMap.class);
+        return object;
     }
 }
