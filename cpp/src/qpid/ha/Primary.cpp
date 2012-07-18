@@ -93,7 +93,7 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
                 new RemoteBackup(*i, haBroker.getReplicationTest(), false));
             backups[i->getSystemId()] = backup;
             if (!backup->isReady()) expectedBackups.insert(backup);
-            backup->createGuards(hb.getBroker().getQueues());
+            backup->setInitialQueues(hb.getBroker().getQueues(), true); // Create guards
         }
         // Set timeout for expected brokers to connect and become ready.
         sys::Duration timeout(int64_t(hb.getSettings().backupTimeout*sys::TIME_SEC));
@@ -187,13 +187,18 @@ void Primary::queueDestroy(const QueuePtr& q) {
 }
 
 void Primary::opened(broker::Connection& connection) {
-    Mutex::ScopedLock l(lock);
     BrokerInfo info;
-    boost::shared_ptr<RemoteBackup> backup;
     if (ha::ConnectionObserver::getBrokerInfo(connection, info)) {
+        Mutex::ScopedLock l(lock);
         BackupMap::iterator i = backups.find(info.getSystemId());
         if (i == backups.end()) {
-            backup.reset(new RemoteBackup(info, haBroker.getReplicationTest(), true));
+            boost::shared_ptr<RemoteBackup> backup(
+                new RemoteBackup(info, haBroker.getReplicationTest(), true));
+            {
+                // Avoid deadlock with queue registry lock.
+                Mutex::ScopedUnlock u(lock);
+                backup->setInitialQueues(haBroker.getBroker().getQueues(), false);
+            }
             backups[info.getSystemId()] = backup;
             QPID_LOG(debug, logPrefix << "New backup connected: " << info);
         }
@@ -207,7 +212,7 @@ void Primary::opened(broker::Connection& connection) {
     }
     else
         QPID_LOG(debug, logPrefix << "Accepted client connection "
-                 << connection.getMgmtId())
+                 << connection.getMgmtId());
 }
 
 void Primary::closed(broker::Connection& connection) {
