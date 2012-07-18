@@ -288,7 +288,7 @@ void HaBroker::setMembership(const Variant::List& brokers) {
     membership.assign(brokers);
     QPID_LOG(debug, logPrefix << "Membership update: " <<  membership);
     BrokerInfo info;
-    // Update my status to what the primary thinks.
+    // Update my status to what the primary says.
     if (membership.get(systemId, info) && status != info.getStatus())
         setStatus(info.getStatus(), l);
     membershipUpdated(brokers);
