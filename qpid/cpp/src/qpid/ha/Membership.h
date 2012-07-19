@@ -58,7 +58,10 @@ class Membership
   private:
     types::Uuid self;
     BrokerInfo::Map brokers;
+    friend std::ostream& operator<<(std::ostream&, const Membership&);
 };
+
+std::ostream& operator<<(std::ostream&, const Membership&);
 
 }} // namespace qpid::ha
 
