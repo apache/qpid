@@ -42,19 +42,16 @@ import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 public abstract class AbstractServlet extends HttpServlet
 {
     private final Broker _broker;
-    private SocketAddress _socketAddress;
 
     protected AbstractServlet()
     {
         super();
         _broker = ApplicationRegistry.getInstance().getBroker();
-        _socketAddress = null;
     }
 
-    protected AbstractServlet(Broker broker, SocketAddress socketAddress)
+    protected AbstractServlet(Broker broker)
     {
         _broker = broker;
-        _socketAddress = socketAddress;
     }
 
     @Override
@@ -206,10 +203,6 @@ public abstract class AbstractServlet extends HttpServlet
 
     protected SocketAddress getSocketAddress(HttpServletRequest request)
     {
-        if (_socketAddress == null)
-        {
-            return InetSocketAddress.createUnresolved(request.getServerName(), request.getServerPort());
-        }
-        return _socketAddress;
+        return InetSocketAddress.createUnresolved(request.getServerName(), request.getServerPort());
     }
 }

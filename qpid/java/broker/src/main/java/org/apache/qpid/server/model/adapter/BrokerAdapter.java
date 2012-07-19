@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.model.AuthenticationProvider;
@@ -33,8 +34,10 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.registry.IApplicationRegistry;
@@ -55,7 +58,8 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
             new HashMap<org.apache.qpid.server.virtualhost.VirtualHost, VirtualHostAdapter>();
     private final StatisticsAdapter _statistics;
     private final Map<QpidAcceptor, PortAdapter> _portAdapters = new HashMap<QpidAcceptor, PortAdapter>();
-    private HTTPPortAdapter _httpManagementPort;
+    private Collection<HTTPPortAdapter> _httpManagementPorts;
+
     private final Map<AuthenticationManager, AuthenticationProviderAdapter> _authManagerAdapters =
             new HashMap<AuthenticationManager, AuthenticationProviderAdapter>();
 
@@ -114,11 +118,19 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
                     _portAdapters.put(entry.getValue(), new PortAdapter(this, entry.getValue(), entry.getKey()));
                 }
             }
-            if(_applicationRegistry.useHTTPManagement())
+            if(_applicationRegistry.useHTTPManagement() || _applicationRegistry.useHTTPSManagement())
             {
-                _httpManagementPort = new HTTPPortAdapter(this, _applicationRegistry.getHTTPManagementPort());
+                ArrayList<HTTPPortAdapter> httpPorts = new ArrayList<HTTPPortAdapter>();
+                if (_applicationRegistry.useHTTPManagement())
+                {
+                    httpPorts.add(new HTTPPortAdapter(this, _applicationRegistry.getHTTPManagementPort()));
+                }
+                if (_applicationRegistry.useHTTPSManagement())
+                {
+                    httpPorts.add(new HTTPPortAdapter(this, _applicationRegistry.getHTTPSManagementPort(), Protocol.HTTPS, Transport.SSL));
+                }
+                _httpManagementPorts = Collections.unmodifiableCollection(httpPorts);
             }
-
         }
     }
 
@@ -127,9 +139,9 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
         synchronized (_portAdapters)
         {
             final ArrayList<Port> ports = new ArrayList<Port>(_portAdapters.values());
-            if(_httpManagementPort != null)
+            if(_httpManagementPorts != null)
             {
-                ports.add(_httpManagementPort);
+                ports.addAll(_httpManagementPorts);
             }
             return ports;
         }

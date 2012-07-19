@@ -108,7 +108,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     private final List<PortBindingListener> _portBindingListeners = new ArrayList<PortBindingListener>();
 
-    private int _httpManagementPort = -1;
+    private int _httpManagementPort = -1, _httpsManagementPort = -1;
 
     private LogRecorder _logRecorder;
 
@@ -298,6 +298,10 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             if(_configuration.getHTTPManagementEnabled())
             {
                 _httpManagementPort = _configuration.getHTTPManagementPort();
+            }
+            if (_configuration.getHTTPSManagementEnabled())
+            {
+                _httpsManagementPort = _configuration.getHTTPSManagementPort();
             }
 
             _broker = new BrokerAdapter(this);
@@ -734,6 +738,18 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     public int getHTTPManagementPort()
     {
         return _httpManagementPort;
+    }
+
+    @Override
+    public boolean useHTTPSManagement()
+    {
+        return _httpsManagementPort != -1;
+    }
+
+    @Override
+    public int getHTTPSManagementPort()
+    {
+        return _httpsManagementPort;
     }
 
     public LogRecorder getLogRecorder()

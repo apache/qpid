@@ -39,7 +39,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.SocketAddress;
 import java.security.Principal;
 import java.security.SecureRandom;
 import java.util.LinkedHashMap;
@@ -63,9 +62,9 @@ public class SaslServlet extends AbstractServlet
         super();
     }
 
-    public SaslServlet(Broker broker, SocketAddress socketaddress)
+    public SaslServlet(Broker broker)
     {
-        super(broker, socketaddress);
+        super(broker);
     }
 
     protected void onGet(HttpServletRequest request, HttpServletResponse response) throws
