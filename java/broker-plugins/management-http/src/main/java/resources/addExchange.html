@@ -25,7 +25,8 @@
                 <tr>
                     <td valign="top"><strong>Exchange Name*: </strong></td>
                     <td><input type="text" required="true" name="name" id="formAddExchange.name" placeholder="Exchange Name"
-                        dojoType="dijit.form.ValidationTextBox" missingMessage="A name must be supplied" /></td>
+                        dojoType="dijit.form.ValidationTextBox" missingMessage="A name must be supplied"
+                        data-dojo-props="regExp:'^(?!qpid\.|amq\.|\<\<default\>\>).*$', invalidMessage:'Reserved exchange name!'"/></td>
                 </tr>
                 <tr>
                     <td valign="top"><strong>Durable? </strong></td>
