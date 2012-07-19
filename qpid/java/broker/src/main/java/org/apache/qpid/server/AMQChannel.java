@@ -1532,7 +1532,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
                 _logger.warn("OPEN TRANSACTION ALERT " + _logSubject.toString() + " " + openTime + " ms");
             }
 
-            // Close connection for idle or open transactions that have timed out
+            // Close session for idle or open transactions that have timed out
             if (idleClose > 0L && idleTime > idleClose)
             {
                 getConnectionModel().closeSession(this, AMQConstant.RESOURCE_ERROR, "Idle transaction timed out");

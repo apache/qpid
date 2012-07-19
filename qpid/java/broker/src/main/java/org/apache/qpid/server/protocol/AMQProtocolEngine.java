@@ -34,6 +34,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import javax.security.auth.Subject;
 import javax.security.sasl.SaslServer;
 import org.apache.log4j.Logger;
@@ -152,8 +155,11 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     private long _lastReceivedTime;
     private boolean _blocking;
 
+    private final Lock _receivedLock;
+
     public AMQProtocolEngine(VirtualHostRegistry virtualHostRegistry, NetworkConnection network, final long connectionId)
     {
+        _receivedLock = new ReentrantLock();
         _stateManager = new AMQStateManager(virtualHostRegistry, this);
         _codecFactory = new AMQCodecFactory(true, this);
 
@@ -225,6 +231,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         final long arrivalTime = System.currentTimeMillis();
         _lastReceivedTime = arrivalTime;
         _lastIoTime = arrivalTime;
+
+        _receivedLock.lock();
         try
         {
             final ArrayList<AMQDataBlock> dataBlocks = _codecFactory.getDecoder().decodeBuffer(msg);
@@ -248,6 +256,10 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         {
             _logger.error("Unexpected exception when processing datablock", e);
             closeProtocolSession();
+        }
+        finally
+        {
+            _receivedLock.unlock();
         }
     }
 
@@ -815,7 +827,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         }
     }
 
-    public void closeConnection(int channelId, AMQConnectionException e) throws AMQException
+    private void closeConnection(int channelId, AMQConnectionException e) throws AMQException
     {
         try
         {
@@ -1308,17 +1320,25 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     public void closeSession(AMQSessionModel session, AMQConstant cause, String message) throws AMQException
     {
-        int channelId = ((AMQChannel)session).getChannelId();
-        closeChannel(channelId);
+        _receivedLock.lock();
+        try
+        {
+            int channelId = ((AMQChannel)session).getChannelId();
+            closeChannel(channelId);
 
-        MethodRegistry methodRegistry = getMethodRegistry();
-        ChannelCloseBody responseBody =
-                methodRegistry.createChannelCloseBody(
-                        cause.getCode(),
-                        new AMQShortString(message),
-                        0,0);
+            MethodRegistry methodRegistry = getMethodRegistry();
+            ChannelCloseBody responseBody =
+                    methodRegistry.createChannelCloseBody(
+                            cause.getCode(),
+                            new AMQShortString(message),
+                            0,0);
 
-        writeFrame(responseBody.generateFrame(channelId));
+            writeFrame(responseBody.generateFrame(channelId));
+        }
+        finally
+        {
+            _receivedLock.unlock();
+        }
     }
 
     public void close(AMQConstant cause, String message) throws AMQException
