@@ -540,7 +540,7 @@ const string REPLICATE_DEFAULT="replicateDefault";
 // Received the ha-broker configuration object for the primary broker.
 void BrokerReplicator::doResponseHaBroker(Variant::Map& values) {
     try {
-        QPID_LOG(debug, logPrefix << "HA Broker response: " << values);
+        QPID_LOG(trace, logPrefix << "HA Broker response: " << values);
         ReplicateLevel mine = haBroker.getSettings().replicateDefault.get();
         ReplicateLevel primary = replicationTest.replicateLevel(
             values[REPLICATE_DEFAULT].asString());
@@ -549,7 +549,8 @@ void BrokerReplicator::doResponseHaBroker(Variant::Map& values) {
                                      << ") does not match primary (" <<  primary << ")"));
         haBroker.setMembership(values[MEMBERS].asList());
     } catch (const std::exception& e) {
-        QPID_LOG(critical, logPrefix << "Invalid HA Broker response: " << e.what());
+        QPID_LOG(critical, logPrefix << "Invalid HA Broker response: " << e.what()
+                 << ": " << values);
         haBroker.shutdown();
     }
 }

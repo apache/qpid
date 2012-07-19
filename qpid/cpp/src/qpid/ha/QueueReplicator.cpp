@@ -123,7 +123,7 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     peer.getMessage().subscribe(
         args.i_src, args.i_dest, 0/*accept-explicit*/, 1/*not-acquired*/,
         false/*exclusive*/, "", 0, settings);
-    // FIXME aconway 2012-05-22: use a finite credit window
+    // FIXME aconway 2012-05-22: use a finite credit window?
     peer.getMessage().flow(getName(), 0, 0xFFFFFFFF);
     peer.getMessage().flow(getName(), 1, 0xFFFFFFFF);
 
