@@ -225,4 +225,21 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         }
     }
 
+    public boolean isReservedExchangeName(String name)
+    {
+        if (name == null || "".equals(name) || ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString().equals(name)
+                || name.startsWith("amq.") || name.startsWith("qpid."))
+        {
+            return true;
+        }
+        Collection<ExchangeType<? extends Exchange>> registeredTypes = _host.getExchangeFactory().getRegisteredTypes();
+        for (ExchangeType<? extends Exchange> type : registeredTypes)
+        {
+            if (type.getDefaultExchangeName().toString().equals(name))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 }
