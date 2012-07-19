@@ -62,14 +62,19 @@ struct HaPlugin : public Plugin {
 
     Options* getOptions() { return &options; }
 
-    void earlyInitialize(Plugin::Target& ) {}
-
-    void initialize(Plugin::Target& target) {
+    void earlyInitialize(Plugin::Target& target) {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
         if (broker) {
+            // Must create the HaBroker in earlyInitialize so it can set up its
+            // connection observer before clients start conneting.
             haBroker.reset(new ha::HaBroker(*broker, settings));
             broker->addFinalizer(boost::bind(&HaPlugin::finalize, this));
         }
+    }
+
+    void initialize(Plugin::Target& target) {
+        broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
+        if (broker) haBroker->initialize();
     }
 
     void finalize() {

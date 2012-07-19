@@ -63,8 +63,12 @@ class Primary;
 class HaBroker : public management::Manageable
 {
   public:
+    /** HaBroker is constructed during earlyInitialize */
     HaBroker(broker::Broker&, const Settings&);
     ~HaBroker();
+
+    /** Called during plugin initialization */
+    void initialize();
 
     // Implement Manageable.
     qpid::management::ManagementObject* GetManagementObject() const { return mgmtObject; }
