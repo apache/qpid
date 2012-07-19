@@ -225,22 +225,6 @@ void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionH
              << " status:" << printable(haBroker.getStatus()));
     initialized = true;
 
-    switch (haBroker.getStatus()) {
-      case JOINING:
-        haBroker.setStatus(CATCHUP);
-        break;
-      case CATCHUP:
-        break;
-      case READY:
-        break;
-      case RECOVERING:
-      case ACTIVE:
-        assert(0); // Primary does not reconnect.
-        return;
-      case STANDALONE:
-        return;
-    }
-
     framing::AMQP_ServerProxy peer(sessionHandler.out);
     const qmf::org::apache::qpid::broker::ArgsLinkBridge& args(bridge.getArgs());
 
@@ -267,6 +251,10 @@ void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionH
 }
 
 void BrokerReplicator::route(Deliverable& msg) {
+    // We transition from JOINING->CATCHUP on the first message received from the primary.
+    // Until now we couldn't be sure if we had a good connection to the primary.
+    if (haBroker.getStatus() == JOINING) haBroker.setStatus(CATCHUP);
+
     const framing::FieldTable* headers = msg.getMessage().getApplicationHeaders();
     const MessageProperties* messageProperties = msg.getMessage().getProperties<MessageProperties>();
     Variant::List list;
