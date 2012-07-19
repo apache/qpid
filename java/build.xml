@@ -46,6 +46,9 @@
 
   <property name="resources"     value="${project.root}/resources"/>
 
+  <!-- Modules for which coverage will be created by the cover-test target -->
+  <property name="coverage.modules" value="${modules}"/>
+
   <map property="release.excludes" value="${modules}">
     <globmapper from="*" to="*/\*\*"/>
   </map>
@@ -217,33 +220,39 @@
   </target>
 
   <target name="coverage-report" description="generate coverage report" depends="cobertura-init">
-    <cobertura-merge datafile="${build.coveragereport}/cobertura.ser">
+    <mkdir dir="${build.coverage.report}" />
+    <mkdir dir="${build.coverage.src}" />
+
+    <cobertura-merge datafile="${build.coverage.report}/cobertura.ser">
       <!-- merge all module coverage reports -->
       <fileset dir="${build}">
         <include name="**/*.ser"/>
       </fileset>
     </cobertura-merge>
+
+    <!-- Copy all covered sources to single directory for cobertura report -->
+
+    <foreach property="module" list="${coverage.modules}">
+
+      <copy todir="${build.coverage.src}">
+        <fileset dir="${module}/src/main/java" includes="**/*.java"/>
+      </copy>
+
+      <copy todir="${build.coverage.src}">
+        <fileset dir="build/scratch/${module}/src" includes="**/*.java"/>
+      </copy>
+    </foreach>
+
     <cobertura-report format="xml"
-                      destdir="${build.coveragereport}"
-		      datafile="${build.coveragereport}/cobertura.ser"
-		      >
-      <fileset dir="${project.root}/common/src/main/java" includes="**/*.java" />
-      <fileset dir="${project.root}/build/scratch/common/src" includes="**/*.java" />
-      <fileset dir="${project.root}/broker/src/main/java" includes="**/*.java" />
-      <fileset dir="${project.root}/build/scratch/broker/src" includes="**/*.java" />
-      <fileset dir="${project.root}/client/src/main/java" includes="**/*.java" />
-      <fileset dir="${project.root}/build/scratch/client/src" includes="**/*.java" />
+                      destdir="${build.coverage.report}"
+		      datafile="${build.coverage.report}/cobertura.ser">
+      <fileset dir="${build.coverage.src}" includes="**/*.java" />
     </cobertura-report>
-	<cobertura-report format="html"
-                      destdir="${build.coveragereport}"
-		      datafile="${build.coveragereport}/cobertura.ser"
-		      >
-      <fileset dir="${project.root}/common/src/main/java" includes="**/*.java" />
-      <fileset dir="${project.root}/build/scratch/common/src" includes="**/*.java" />
-      <fileset dir="${project.root}/broker/src/main/java" includes="**/*.java" />
-      <fileset dir="${project.root}/build/scratch/broker/src" includes="**/*.java" />
-      <fileset dir="${project.root}/client/src/main/java" includes="**/*.java" />
-      <fileset dir="${project.root}/build/scratch/client/src" includes="**/*.java" />
+
+    <cobertura-report format="html"
+                      destdir="${build.coverage.report}"
+		      datafile="${build.coverage.report}/cobertura.ser">
+      <fileset dir="${build.coverage.src}" includes="**/*.java" />
     </cobertura-report>
   </target>
 
@@ -252,7 +261,7 @@
   </target>
 
   <target name="cover-test" description="run tests and generate coverage information" depends="build">
-    <iterate target="cover-test" modules="broker client common"/>
+    <iterate target="cover-test" modules="${coverage.modules}"/>
   </target>
 
   <target name="test-interop" depends="build,compile-tests"
