@@ -33,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.codehaus.jackson.JsonGenerationException;
@@ -54,16 +55,23 @@ public class QpidRestTestCase extends QpidBrokerTestCase
     private String _hostName;
     private List<HttpURLConnection> _httpConnections;
 
+    @Override
     public void setUp() throws Exception
     {
         _httpConnections = new ArrayList<HttpURLConnection>();
         _hostName = InetAddress.getLocalHost().getHostName();
         _httpPort = findFreePort();
-        setConfigurationProperty("management.enabled", "true");
-        setConfigurationProperty("management.http.enabled", "true");
-        setConfigurationProperty("management.http.port", Integer.toString(_httpPort));
-        setConfigurationProperty("management.jmx.enabled", "false");
+        customizeConfiguration();
         super.setUp();
+
+    }
+
+    protected void customizeConfiguration() throws ConfigurationException, IOException
+    {
+        setConfigurationProperty("management.enabled", "false");
+        setConfigurationProperty("management.http.enabled", "true");
+        setConfigurationProperty("management.https.enabled", "false");
+        setConfigurationProperty("management.http.port", Integer.toString(_httpPort));
     }
 
     public void teearDown() throws Exception
@@ -92,9 +100,14 @@ public class QpidRestTestCase extends QpidBrokerTestCase
         return _hostName;
     }
 
+    protected String getProtocol()
+    {
+        return "http";
+    }
+
     protected String getManagementURL()
     {
-        return "http://" + _hostName + ":" + _httpPort;
+        return getProtocol() + "://" + getHostName() + ":" + getHttpPort();
     }
 
     protected URL getManagementURL(String path) throws MalformedURLException
