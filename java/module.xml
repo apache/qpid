@@ -328,8 +328,42 @@
          <contains substring="${module.name}" string="${exclude.modules}" />
   </condition>
 
+  <!-- JVM args pass to forked Junit JVM -->
   <property name="jvm.args" value=""/>
+  <!-- Following properties are used by the tests -->
+  <property name="test.output" value="${module.results}"/>
+  <property name="QPID_HOME" value="${qpid.home}"/>
+  <property name="QPID_WORK" value="${qpid.work}"/>
   <property name="broker.existing.qpid.work" value=""/>
+  <!-- Used by PluginTest -->
+  <property name="example.plugin.target" value="${project.root}/build/lib/plugins"/>
+
+  <propertyset id="all.test.systemproperties">
+    <propertyref prefix="test"/>
+    <propertyref prefix="profile"/>
+    <propertyref prefix="javax.net.ssl"/>
+    <propertyref prefix="broker"/>
+
+    <propertyref name="amqj.logging.level"/>
+    <propertyref name="amqj.server.logging.level"/>
+    <propertyref name="amqj.protocol.logging.level"/>
+
+    <propertyref name="log4j.debug"/>
+    <propertyref name="log4j.configuration"/>
+
+    <propertyref name="root.logging.level"/>
+    <propertyref name="java.naming.factory.initial"/>
+    <propertyref name="java.naming.provider.url"/>
+    <propertyref name="messagestore.class.name" />
+    <propertyref name="qpid.amqp.version"/>
+    <propertyref name="max_prefetch"/>
+    <propertyref name="qpid.dest_syntax"/>
+
+    <propertyref name="test.output"/>
+    <propertyref name="QPID_HOME"/>
+    <propertyref name="QPID_WORK"/>
+    <propertyref name="example.plugin.target"/>
+  </propertyset>
 
   <target name="test" depends="build,compile-tests" if="module.test.src.exists"
          unless="${dontruntest}" description="execute unit tests">
@@ -344,38 +378,7 @@
 
       <jvmarg line="${jvm.args}" />
 
-      <sysproperty key="amqj.logging.level" value="${amqj.logging.level}"/>
-      <sysproperty key="amqj.server.logging.level" value="${amqj.server.logging.level}"/>
-      <sysproperty key="amqj.protocol.logging.level" value="${amqj.protocol.logging.level}"/>
-      <sysproperty key="log4j.debug" value="${log4j.debug}"/>
-      <sysproperty key="root.logging.level" value="${root.logging.level}"/>
-      <sysproperty key="log4j.configuration" value="${log4j.configuration}"/>
-      <sysproperty key="java.naming.factory.initial" value="${java.naming.factory.initial}"/>
-      <sysproperty key="java.naming.provider.url" value="${java.naming.provider.url}"/>
-      <sysproperty key="messagestore.class.name" value="${messagestore.class.name}" />
-      <sysproperty key="test.output" value="${module.results}"/>
-      <sysproperty key="qpid.amqp.version" value="${qpid.amqp.version}"/>
-
-      <syspropertyset>
-        <propertyref prefix="test"/>
-      </syspropertyset>
-      <syspropertyset>
-        <propertyref prefix="profile"/>
-      </syspropertyset>
-      <syspropertyset>
-        <propertyref prefix="javax.net.ssl"/>
-      </syspropertyset>  
-      <syspropertyset>
-         <propertyref prefix="broker"/>
-      </syspropertyset>
-      
-      <sysproperty key="max_prefetch" value ="${max_prefetch}"/>
-      <sysproperty key="qpid.dest_syntax" value ="${qpid.dest_syntax}"/>
-
-      <sysproperty key="example.plugin.target" value="${project.root}/build/lib/plugins"/>
-      <sysproperty key="QPID_EXAMPLE_HOME" value="${qpid.home}"/>
-      <sysproperty key="QPID_HOME" value="${qpid.home}"/>
-      <sysproperty key="QPID_WORK" value="${qpid.work}"/>
+      <syspropertyset refid="all.test.systemproperties"/>
 
       <formatter type="plain"/>
       <formatter type="xml"/>
@@ -677,39 +680,17 @@
 
   <target name="cover-test" depends="instrument">
 
-    <mkdir dir="${build.coveragereport}" />
     <junit fork="yes" forkmode="once" maxmemory="${test.mem}" reloading="no"
            haltonfailure="${haltonfailure}" haltonerror="${haltonerror}"
            failureproperty="test.failures" printsummary="on" timeout="600000"
            dir="${project.root}" >
+      <jvmarg line="${jvm.args}" />
 
-      <sysproperty key="amqj.logging.level" value="${amqj.logging.level}"/>
-      <sysproperty key="amqj.protocol.logging.level" value="${amqj.protocol.logging.level}"/>
-      <sysproperty key="log4j.debug" value="${log4j.debug}"/>
-      <sysproperty key="root.logging.level" value="${root.logging.level}"/>
-      <sysproperty key="log4j.configuration" value="${log4j.configuration}"/>
-      <sysproperty key="java.naming.factory.initial" value="${java.naming.factory.initial}"/>
-      <sysproperty key="java.naming.provider.url" value="${java.naming.provider.url}"/>
-      <sysproperty key="broker" value="${broker}"/>
-      <sysproperty key="broker.version" value="${broker.version}"/>
-      <sysproperty key="broker.ready" value="${broker.ready}" />
-      <sysproperty key="test.output" value="${module.results}"/>
-
-      <syspropertyset>
-        <propertyref prefix="test"/>
-      </syspropertyset>
-      <syspropertyset>
-          <propertyref prefix="broker"/>
-      </syspropertyset>
-
-      <sysproperty key="max_prefetch" value ="${max_prefetch}"/>
-      <sysproperty key="example.plugin.target" value="${project.root}/build/lib/plugins"/>
-      <sysproperty key="QPID_EXAMPLE_HOME" value="${project.root}/build"/>
-      <sysproperty key="QPID_HOME" value="${project.root}/build"/>
+      <syspropertyset refid="all.test.systemproperties"/>
 
       <sysproperty key="net.sourceforge.cobertura.datafile"
 		file="${cobertura.datafile}" />
-      
+
       <formatter type="plain"/>
       <formatter type="xml"/>
 
@@ -731,14 +712,13 @@
   </target>
 
   <target name="coverage-report" depends="cobertura-init">
-      <echo message="${cobertura.datafile}"/>
       <cobertura-report format="html"
                       destdir="${module.coverage}"
 		      datafile="${cobertura.datafile}">
       <fileset dir="${module.src}" includes="**/*.java" />
     </cobertura-report>
   </target>
-  
+
   <property name="version.file" location="${module.classes}/qpidversion.properties"/>
   <property file="${version.file}" prefix="old."/>
 
