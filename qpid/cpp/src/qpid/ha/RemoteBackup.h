@@ -31,8 +31,8 @@
 namespace qpid {
 
 namespace broker {
-class Broker;
 class Queue;
+class QueueRegistry;
 }
 
 namespace ha {
@@ -51,10 +51,14 @@ class RemoteBackup
     typedef boost::shared_ptr<QueueGuard> GuardPtr;
     typedef boost::shared_ptr<broker::Queue> QueuePtr;
 
-    /** Note: isReady() can be true after construction */
-    RemoteBackup(const BrokerInfo& info, broker::Broker&, ReplicationTest rt,
-                 bool createGuards, bool connected);
+    /** Note: isReady() can be true after construction
+     *@param connected true if the backup is already connected.
+     */
+    RemoteBackup(const BrokerInfo& info, ReplicationTest, bool connected);
     ~RemoteBackup();
+
+    /** Create initial guards for all the replicated queues in the registry. */
+    void createGuards(broker::QueueRegistry&);
 
     /** Return guard associated with a queue. Used to create ReplicatingSubscription. */
     GuardPtr guard(const QueuePtr&);
@@ -85,15 +89,15 @@ class RemoteBackup
     typedef std::map<QueuePtr, GuardPtr> GuardMap;
     typedef std::set<QueuePtr> QueueSet;
 
+    /** Add queue to guard as an initial queue */
+    void initialQueue(const QueuePtr&);
+
     std::string logPrefix;
     BrokerInfo brokerInfo;
     ReplicationTest replicationTest;
     GuardMap guards;
     QueueSet initialQueues;
-    bool createGuards;
     bool connected;
-
-    void initialQueue(const QueuePtr&);
 };
 
 }} // namespace qpid::ha

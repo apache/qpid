@@ -90,13 +90,10 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
         QPID_LOG(debug, logPrefix << "Promoted, expected backups: " << expect);
         for (BrokerInfo::Set::const_iterator i = expect.begin(); i != expect.end(); ++i) {
             boost::shared_ptr<RemoteBackup> backup(
-                new RemoteBackup(
-                    *i, haBroker.getBroker(), haBroker.getReplicationTest(),
-                    true, // Create queue guards immediately for expected backups.
-                    false  // Not yet connected.
-                ));
+                new RemoteBackup(*i, haBroker.getReplicationTest(), false));
             backups[i->getSystemId()] = backup;
             if (!backup->isReady()) expectedBackups.insert(backup);
+            backup->createGuards(hb.getBroker().getQueues());
         }
         // Set timeout for expected brokers to connect and become ready.
         sys::Duration timeout(int64_t(hb.getSettings().backupTimeout*sys::TIME_SEC));
@@ -181,16 +178,13 @@ void Primary::queueDestroy(const QueuePtr& q) {
 void Primary::opened(broker::Connection& connection) {
     Mutex::ScopedLock l(lock);
     BrokerInfo info;
+    boost::shared_ptr<RemoteBackup> backup;
     if (ha::ConnectionObserver::getBrokerInfo(connection, info)) {
         BackupMap::iterator i = backups.find(info.getSystemId());
         if (i == backups.end()) {
+            backup.reset(new RemoteBackup(info, haBroker.getReplicationTest(), true));
+            backups[info.getSystemId()] = backup;
             QPID_LOG(debug, logPrefix << "New backup connected: " << info);
-            backups[info.getSystemId()].reset(
-                new RemoteBackup(
-                    info, haBroker.getBroker(), haBroker.getReplicationTest(),
-                    false, // Lazy-create guards for new backups, creating now deadlocks
-                    true // Backup is connected
-                ));
         }
         else {
             QPID_LOG(debug, logPrefix << "Known backup connected: " << info);
