@@ -232,6 +232,18 @@ define(["dojo/_base/xhr",
                updater.remove( this.queueUpdater );
            };
 
+           var queueTypeKeys = {
+                   priority: "priorities",
+                   lvq: "lvqKey",
+                   sorted: "sortKey"
+               };
+
+           var queueTypeKeyNames = {
+                   priority: "Number of priorities",
+                   lvq: "LVQ key",
+                   sorted: "Sort key"
+               };
+
            function QueueUpdater(containerNode, queueObj, controller)
            {
                var that = this;
@@ -252,6 +264,8 @@ define(["dojo/_base/xhr",
                            "durable",
                            "lifetimePolicy",
                            "type",
+                           "keyName",
+                           "keyValue",
                            "alertRepeatGap",
                            "alertRepeatGapUnits",
                            "alertThresholdMessageAge",
@@ -325,8 +339,17 @@ define(["dojo/_base/xhr",
                this.unacknowledgedMessages.innerHTML = this.queueData["unacknowledgedMessages"];
                bytesDepth = formatter.formatBytes( this.queueData["unacknowledgedBytes"] );
                this.unacknowledgedBytes.innerHTML = "(" + bytesDepth.value;
-               this.unacknowledgedBytesUnits.innerHTML = bytesDepth.units + ")"
-
+               this.unacknowledgedBytesUnits.innerHTML = bytesDepth.units + ")";
+               if (this.queueData.type == "standard")
+               {
+                   this.keyName.style.display = "none";
+                   this.keyValue.style.display = "none";
+               }
+               else
+               {
+                   this.keyName.innerHTML = queueTypeKeyNames[this.queueData.type] + ":";
+                   this.keyValue.innerHTML = this.queueData[queueTypeKeys[this.queueData.type]];
+               }
 
            };
 
