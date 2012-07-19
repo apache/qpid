@@ -157,6 +157,12 @@ define(["dojo/_base/xhr",
                                                                   queue: that.getQueueName()});
                                             });
 
+                            var deleteQueueButton = query(".deleteQueueButton", contentPane.containerNode)[0];
+                            connect.connect(registry.byNode(deleteQueueButton), "onClick",
+                                    function(evt){
+                                        event.stop(evt);
+                                        that.deleteQueue();
+                                    });
                         }});
 
 
@@ -458,6 +464,23 @@ define(["dojo/_base/xhr",
                    });
            };
 
+           Queue.prototype.deleteQueue = function() {
+               if(confirm("Are you sure you want to delete queue '" +this.name+"'?")) {
+                   var query = "rest/queue/"+ encodeURIComponent(this.getVirtualHostName()) + "/" + encodeURIComponent(this.name);
+                   this.success = true
+                   var that = this;
+                   xhr.del({url: query, sync: true, handleAs: "json"}).then(
+                       function(data) {
+                           that.contentPane.onClose()
+                           that.controller.tabContainer.removeChild(that.contentPane);
+                           that.contentPane.destroyRecursive();
+                       },
+                       function(error) {that.success = false; that.failureReason = error;});
+                   if(!this.success ) {
+                       alert("Error:" + this.failureReason);
+                   }
+               }
+           }
 
            return Queue;
        });

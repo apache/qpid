@@ -246,6 +246,56 @@ public class VirtualHostRestTest extends QpidRestTestCase
         assertNull("Queue of unsupported type was created", queue);
     }
 
+    public void testDeleteQueue() throws Exception
+    {
+        String queueName = getTestQueueName();
+        createQueue(queueName, null, null);
+
+        HttpURLConnection connection = openManagementConection("/rest/queue/test/" + queueName, "DELETE");
+        connection.connect();
+        assertEquals("Unexpected response code", 200, connection.getResponseCode());
+        List<Map<String, Object>> queues = getJsonAsList("/rest/queue/test/" + queueName);
+        assertEquals("Queue should be deleted", 0, queues.size());
+    }
+
+    public void testDeleteQueueById() throws Exception
+    {
+        String queueName = getTestQueueName();
+        createQueue(queueName, null, null);
+        Map<String, Object> queueDetails = getJsonAsSingletonList("/rest/queue/test/" + queueName);
+
+        HttpURLConnection connection = openManagementConection("/rest/queue/test?id=" + queueDetails.get(Queue.ID), "DELETE");
+        connection.connect();
+        assertEquals("Unexpected response code", 200, connection.getResponseCode());
+        List<Map<String, Object>> queues = getJsonAsList("/rest/queue/test/" + queueName);
+        assertEquals("Queue should be deleted", 0, queues.size());
+    }
+
+    public void testDeleteExchange() throws Exception
+    {
+        String exchangeName = getTestName();
+        createExchange(exchangeName, "direct");
+
+        HttpURLConnection connection = openManagementConection("/rest/exchange/test/" + exchangeName, "DELETE");
+        connection.connect();
+        assertEquals("Unexpected response code", 200, connection.getResponseCode());
+        List<Map<String, Object>> queues = getJsonAsList("/rest/exchange/test/" + exchangeName);
+        assertEquals("Exchange should be deleted", 0, queues.size());
+    }
+
+    public void testDeleteExchangeById() throws Exception
+    {
+        String exchangeName = getTestName();
+        createExchange(exchangeName, "direct");
+        Map<String, Object> echangeDetails = getJsonAsSingletonList("/rest/exchange/test/" + exchangeName);
+
+        HttpURLConnection connection = openManagementConection("/rest/exchange/test?id=" + echangeDetails.get(Exchange.ID), "DELETE");
+        connection.connect();
+        assertEquals("Unexpected response code", 200, connection.getResponseCode());
+        List<Map<String, Object>> queues = getJsonAsList("/rest/exchange/test/" + exchangeName);
+        assertEquals("Exchange should be deleted", 0, queues.size());
+    }
+
     private void createExchange(String exchangeName, String exchangeType) throws IOException
     {
         HttpURLConnection connection = openManagementConection("/rest/exchange/test/" + exchangeName, "PUT");

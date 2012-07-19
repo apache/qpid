@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-define([],
-       function () {
+define(["dojo/_base/xhr"],
+       function (xhr) {
            var util = {};
            if (Array.isArray) {
                util.isArray = function (object) {
@@ -52,5 +52,69 @@ define([],
                    }
                }
            };
+
+           util.isReservedExchangeName = function(exchangeName)
+           {
+               return exchangeName == null || exchangeName == "" || "<<default>>" == exchangeName || exchangeName.indexOf("amq.") == 0 || exchangeName.indexOf("qpid.") == 0;
+           };
+
+           util.deleteGridSelections = function(updater, gridName, url, confirmationMessageStart)
+           {
+               var grid = updater[gridName].grid;
+               var data = grid.selection.getSelected();
+               if(data.length)
+               {
+                   var confirmationMessage = null;
+                   if (data.length == 1)
+                   {
+                       confirmationMessage = confirmationMessageStart + " '" + data[0].name + "'?";
+                   }
+                   else
+                   {
+                       var names = '';
+                       for(var i = 0; i<data.length; i++)
+                       {
+                           if (names)
+                           {
+                               names += ', ';
+                           }
+                           names += "\""+ data[i].name + "\"";
+                       }
+                       confirmationMessage = confirmationMessageStart + "s " + names + "?";
+                   }
+                   if(confirm(confirmationMessage))
+                   {
+                       var i, queryParam;
+                       for(i = 0; i<data.length; i++)
+                       {
+                           if(queryParam)
+                           {
+                               queryParam += "&";
+                           }
+                           else
+                           {
+                               queryParam = "?";
+                           }
+                           queryParam += "id=" + data[i].id;
+                       }
+                       var query = url + queryParam;
+                       var success = true
+                       var failureReason = "";
+                       xhr.del({url: query, sync: true, handleAs: "json"}).then(
+                           function(data)
+                           {
+                               grid.setQuery({id: "*"});
+                               grid.selection.deselectAll();
+                               updater.update();
+                           },
+                           function(error) {success = false; failureReason = error;});
+                       if(!success )
+                       {
+                           alert("Error:" + failureReason);
+                       }
+                   }
+               }
+           }
+
            return util;
        });
