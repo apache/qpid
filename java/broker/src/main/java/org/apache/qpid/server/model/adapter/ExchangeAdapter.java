@@ -30,9 +30,13 @@ import java.util.Map;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Publisher;
 import org.apache.qpid.server.model.Queue;
@@ -49,7 +53,6 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
             new HashMap<Binding, BindingAdapter>();
     private VirtualHostAdapter _vhost;
     private final ExchangeStatistics _statistics;
-
 
     public ExchangeAdapter(final VirtualHostAdapter virtualHostAdapter,
                            final org.apache.qpid.server.exchange.Exchange exchange)
@@ -164,7 +167,21 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
     {
         try
         {
-            _vhost.getVirtualHost().getExchangeRegistry().unregisterExchange(getName(), false);
+            ExchangeRegistry exchangeRegistry = _vhost.getVirtualHost().getExchangeRegistry();
+            if (exchangeRegistry.isReservedExchangeName(getName()))
+            {
+                throw new UnsupportedOperationException("'" + getName() + "' is a reserved exchange and can't be deleted");
+            }
+
+            if(_exchange.hasReferrers())
+            {
+                throw new AMQException( AMQConstant.NOT_ALLOWED, "Exchange in use as an alternate exchange", null);
+            }
+
+            synchronized(exchangeRegistry)
+            {
+                exchangeRegistry.unregisterExchange(getName(), false);
+            }
         }
         catch(AMQException e)
         {
@@ -362,6 +379,18 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
     public Collection<String> getAttributeNames()
     {
         return AVAILABLE_ATTRIBUTES;
+    }
+
+    @Override
+    public State setDesiredState(State currentState, State desiredState) throws IllegalStateTransitionException,
+            AccessControlException
+    {
+        if (desiredState == State.DELETED)
+        {
+            delete();
+            return State.DELETED;
+        }
+        return super.setDesiredState(currentState, desiredState);
     }
 
     private class ExchangeStatistics implements Statistics

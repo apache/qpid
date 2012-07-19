@@ -31,6 +31,7 @@ import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
@@ -215,5 +216,17 @@ final class BindingAdapter extends AbstractAdapter implements Binding
     public Collection<String> getAttributeNames()
     {
         return Binding.AVAILABLE_ATTRIBUTES;
+    }
+
+    @Override
+    public State setDesiredState(State currentState, State desiredState) throws IllegalStateTransitionException,
+            AccessControlException
+    {
+        if (desiredState == State.DELETED)
+        {
+            delete();
+            return State.DELETED;
+        }
+        return super.setDesiredState(currentState, desiredState);
     }
 }
