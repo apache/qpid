@@ -167,7 +167,7 @@ class Display:
     for head in heads:
       width = len (head)
       for row in rows:
-        cellWidth = len (unicode (row[col]))
+        cellWidth = len (unicode (row[col].decode('utf-8')))
         if cellWidth > width:
           width = cellWidth
       colWidth.append (width + self.tableSpacing)
@@ -187,9 +187,9 @@ class Display:
       line = self.tablePrefix
       col  = 0
       for width in colWidth:
-        line = line + unicode (row[col])
+        line = line + unicode (row[col].decode('utf-8'))
         if col < len (heads) - 1:
-          for i in range (width - len (unicode (row[col]))):
+          for i in range (width - len (unicode (row[col].decode('utf-8')))):
             line = line + " "
         col = col + 1
       print line
