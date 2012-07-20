@@ -228,18 +228,29 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
 
         try
         {
-            org.apache.qpid.server.exchange.Exchange exchange =
-                    _virtualHost.getExchangeFactory().createExchange(name, type, durable,
-                                                                     lifetime == LifetimePolicy.AUTO_DELETE);
-            _virtualHost.getExchangeRegistry().registerExchange(exchange);
-            if(durable)
+            ExchangeRegistry exchangeRegistry = _virtualHost.getExchangeRegistry();
+            if (exchangeRegistry.isReservedExchangeName(name))
             {
-                _virtualHost.getMessageStore().createExchange(exchange);
+                throw new UnsupportedOperationException("'" + name + "' is a reserved exchange name");
             }
-
-            synchronized (_exchangeAdapters)
+            synchronized(exchangeRegistry)
             {
-                return _exchangeAdapters.get(exchange);
+                org.apache.qpid.server.exchange.Exchange exchange = exchangeRegistry.getExchange(name);
+                if (exchange != null)
+                {
+                    throw new IllegalArgumentException("Exchange with name '" + name + "' already exists");
+                }
+                exchange = _virtualHost.getExchangeFactory().createExchange(name, type, durable,
+                                                                     lifetime == LifetimePolicy.AUTO_DELETE);
+                _virtualHost.getExchangeRegistry().registerExchange(exchange);
+                if(durable)
+                {
+                    _virtualHost.getMessageStore().createExchange(exchange);
+                }
+                synchronized (_exchangeAdapters)
+                {
+                    return _exchangeAdapters.get(exchange);
+                }
             }
         }
         catch(AMQException e)
@@ -326,23 +337,27 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
         }
         try
         {
-            if(_virtualHost.getQueueRegistry().getQueue(name)!=null)
+            QueueRegistry queueRegistry = _virtualHost.getQueueRegistry();
+            synchronized (queueRegistry)
             {
-                throw new IllegalArgumentException("Queue with name "+name+" already exists");
-            }
-            AMQQueue queue =
-                    AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateQueueUUID(name, _virtualHost.getName()), name,
-                                                       durable, owner, lifetime == LifetimePolicy.AUTO_DELETE,
-                                                       exclusive, _virtualHost, attributes);
-            _virtualHost.getBindingFactory().addBinding(name, queue, _virtualHost.getExchangeRegistry().getDefaultExchange(), null);
+                if(_virtualHost.getQueueRegistry().getQueue(name)!=null)
+                {
+                    throw new IllegalArgumentException("Queue with name "+name+" already exists");
+                }
+                AMQQueue queue =
+                        AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateQueueUUID(name, _virtualHost.getName()), name,
+                                                           durable, owner, lifetime == LifetimePolicy.AUTO_DELETE,
+                                                           exclusive, _virtualHost, attributes);
+                _virtualHost.getBindingFactory().addBinding(name, queue, _virtualHost.getExchangeRegistry().getDefaultExchange(), null);
 
-            if(durable)
-            {
-                _virtualHost.getMessageStore().createQueue(queue, FieldTable.convertToFieldTable(attributes));
-            }
-            synchronized (_queueAdapters)
-            {
-                return _queueAdapters.get(queue);
+                if(durable)
+                {
+                    _virtualHost.getMessageStore().createQueue(queue, FieldTable.convertToFieldTable(attributes));
+                }
+                synchronized (_queueAdapters)
+                {
+                    return _queueAdapters.get(queue);
+                }
             }
 
         }
@@ -567,13 +582,6 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
         {
             return _queueAdapters.get(queue);
         }
-    }
-
-    public void deleteQueue(Queue queue)
-        throws AccessControlException, IllegalStateException
-    {
-        // TODO
-        throw new UnsupportedOperationException("Not Yet Implemented");
     }
 
     public Collection<String> getExchangeTypes()
@@ -880,4 +888,5 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
             }
         }
     }
+
 }

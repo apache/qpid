@@ -131,8 +131,6 @@ public interface VirtualHost extends ConfiguredObject
                       boolean exclusive, LifetimePolicy lifetime, long ttl, Map<String, Object> attributes)
                     throws AccessControlException, IllegalArgumentException;
 
-    void deleteQueue(Queue queue) throws AccessControlException, IllegalStateException;
-
     Collection<String> getExchangeTypes();
 
     public static interface Transaction

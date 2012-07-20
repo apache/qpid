@@ -62,6 +62,13 @@ public interface ExchangeRegistry
 
     void addRegistryChangeListener(RegistryChangeListener listener);
 
+    /**
+     * Validates the name of user custom exchange.
+     * <p>
+     * Return true if the exchange name is reserved and false otherwise.
+     */
+    boolean isReservedExchangeName(String name);
+
     interface RegistryChangeListener
     {
         void exchangeRegistered(Exchange exchange);

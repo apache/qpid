@@ -29,8 +29,9 @@ define(["dojo/_base/xhr",
         "qpid/common/formatter",
         "qpid/common/UpdatableStore",
         "qpid/management/addBinding",
+        "dojox/grid/EnhancedGrid",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, registry, properties, updater, util, formatter, UpdatableStore, addBinding) {
+       function (xhr, parser, query, connect, registry, properties, updater, util, formatter, UpdatableStore, addBinding, EnhancedGrid) {
 
            function Exchange(name, parent, controller) {
                this.name = name;
@@ -82,12 +83,42 @@ define(["dojo/_base/xhr",
                                                                   exchange: that.getExchangeName()});
                                             });
 
+                            var deleteBindingButton = query(".deleteBindingButton", contentPane.containerNode)[0];
+                            connect.connect(registry.byNode(deleteBindingButton), "onClick",
+                                            function(evt){
+                                                that.deleteBindings();
+                                            });
+
+                            var isStandard = util.isReservedExchangeName(that.name);
+                            var deleteExchangeButton = query(".deleteExchangeButton", contentPane.containerNode)[0];
+                            var node = registry.byNode(deleteExchangeButton);
+                            if(isStandard)
+                            {
+                                node.set('disabled', true);
+                            }
+                            else
+                            {
+                                connect.connect(node, "onClick",
+                                        function(evt){
+                                            that.deleteExchange();
+                                        });
+                            }
+
                         }});
            };
 
            Exchange.prototype.close = function() {
                updater.remove( this.exchangeUpdater );
            };
+
+           Exchange.prototype.deleteBindings = function()
+           {
+               util.deleteGridSelections(
+                       this.exchangeUpdater,
+                       "bindingsGrid",
+                       "rest/binding/"+ encodeURIComponent(this.getVirtualHostName()) + "/" + encodeURIComponent(this.name),
+                       "Are you sure you want to delete binding for queue");
+           }
 
            function ExchangeUpdater(containerNode, exchangeObj, controller)
            {
@@ -138,7 +169,21 @@ define(["dojo/_base/xhr",
                                                            [ { name: "Queue",    field: "queue",      width: "90px"},
                                                              { name: "Binding Key", field: "name",          width: "120px"},
                                                              { name: "Arguments",   field: "argumentString",     width: "100%"}
-                                                           ]);
+                                                           ], null, {
+                                                               keepSelection: true,
+                                                               plugins: {
+                                                                         pagination: {
+                                                                             pageSizes: ["10", "25", "50", "100"],
+                                                                             description: true,
+                                                                             sizeSwitch: true,
+                                                                             pageStepper: true,
+                                                                             gotoButton: true,
+                                                                             maxPageStep: 4,
+                                                                             position: "bottom"
+                                                                         },
+                                                                         indirectSelection: true
+
+                                                                }}, EnhancedGrid);
 
                                });
 
@@ -224,6 +269,23 @@ define(["dojo/_base/xhr",
                    });
            };
 
+           Exchange.prototype.deleteExchange = function() {
+               if(confirm("Are you sure you want to delete exchange '" +this.name+"'?")) {
+                   var query = "rest/exchange/"+ encodeURIComponent(this.getVirtualHostName()) + "/" + encodeURIComponent(this.name);
+                   this.success = true
+                   var that = this;
+                   xhr.del({url: query, sync: true, handleAs: "json"}).then(
+                       function(data) {
+                           that.contentPane.onClose()
+                           that.controller.tabContainer.removeChild(that.contentPane);
+                           that.contentPane.destroyRecursive();
+                       },
+                       function(error) {that.success = false; that.failureReason = error;});
+                   if(!this.success ) {
+                       alert("Error:" + this.failureReason);
+                   }
+               }
+           }
 
            return Exchange;
        });

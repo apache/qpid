@@ -24,9 +24,6 @@ import org.apache.qpid.management.common.mbeans.ManagedExchange;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
-import javax.management.MBeanException;
-import javax.management.ObjectName;
-
 /**
  * Tests the JMX API for the Managed Broker.
  *
@@ -115,11 +112,10 @@ public class BrokerManagementTest extends QpidBrokerTestCase
             _managedBroker.unregisterExchange(defaultExchangeName);
             fail("Exception not thrown");
         }
-        catch (MBeanException mbe)
+        catch (UnsupportedOperationException e)
         {
             // PASS
-            assertEquals("Error in unregistering exchange " + defaultExchangeName, mbe.getMessage());
-            assertTrue(mbe.getCause().getMessage().contains("Cannot unregister the default exchange"));
+            assertEquals("'<<default>>' is a reserved exchange and can't be deleted", e.getMessage());
         }
         final ManagedExchange defaultExchange = _jmxUtils.getManagedExchange(defaultExchangeName);
         assertNotNull("Exchange should exist", defaultExchange);

@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.binding.Binding;
@@ -34,6 +35,7 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFinder;
 import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.QueueNotificationListener;
@@ -130,11 +132,14 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
     {
         try
         {
-            _queue.delete();
-            if (_queue.isDurable())
+            QueueRegistry queueRegistry = _queue.getVirtualHost().getQueueRegistry();
+            synchronized(queueRegistry)
             {
-
-                _queue.getVirtualHost().getMessageStore().removeQueue(_queue);
+                _queue.delete();
+                if (_queue.isDurable())
+                {
+                    _queue.getVirtualHost().getMessageStore().removeQueue(_queue);
+                }
             }
         }
         catch(AMQException e)
@@ -705,4 +710,17 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
             listener.notifyClients(notification, this, notificationMsg);
         }
     }
+
+    @Override
+    public State setDesiredState(State currentState, State desiredState) throws IllegalStateTransitionException,
+            AccessControlException
+    {
+        if (desiredState == State.DELETED)
+        {
+            delete();
+            return State.DELETED;
+        }
+        return super.setDesiredState(currentState, desiredState);
+    }
+
 }

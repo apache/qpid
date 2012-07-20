@@ -30,8 +30,9 @@ define(["dojo/_base/xhr",
         "qpid/common/UpdatableStore",
         "qpid/management/addQueue",
         "qpid/management/addExchange",
+        "dojox/grid/EnhancedGrid",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, registry, properties, updater, util, formatter, UpdatableStore, addQueue, addExchange) {
+       function (xhr, parser, query, connect, registry, properties, updater, util, formatter, UpdatableStore, addQueue, addExchange, EnhancedGrid) {
 
            function VirtualHost(name, parent, controller) {
                this.name = name;
@@ -66,8 +67,31 @@ define(["dojo/_base/xhr",
                             var addQueueButton = query(".addQueueButton", contentPane.containerNode)[0];
                             connect.connect(registry.byNode(addQueueButton), "onClick", function(evt){ addQueue.show(that.name) });
 
+                            var deleteQueueButton = query(".deleteQueueButton", contentPane.containerNode)[0];
+                            connect.connect(registry.byNode(deleteQueueButton), "onClick",
+                                    function(evt){
+                                        util.deleteGridSelections(
+                                                that.vhostUpdater,
+                                                "queuesGrid",
+                                                "rest/queue/"+ encodeURIComponent(that.name),
+                                                "Are you sure you want to delete queue");
+                                }
+                            );
+
                             var addExchangeButton = query(".addExchangeButton", contentPane.containerNode)[0];
                             connect.connect(registry.byNode(addExchangeButton), "onClick", function(evt){ addExchange.show(that.name) });
+
+                            var deleteExchangeButton = query(".deleteExchangeButton", contentPane.containerNode)[0];
+                            connect.connect(registry.byNode(deleteExchangeButton), "onClick",
+                                    function(evt)
+                                    {
+                                        util.deleteGridSelections(
+                                                that.vhostUpdater,
+                                                "exchangesGrid",
+                                                "rest/exchange/"+ encodeURIComponent(that.name),
+                                                "Are you sure you want to delete exchange");
+                                    }
+                            );
                         }});
 
            };
@@ -75,7 +99,6 @@ define(["dojo/_base/xhr",
            VirtualHost.prototype.close = function() {
                updater.remove( this.vhostUpdater );
            };
-
 
            function Updater(node, vhost, controller)
            {
@@ -123,6 +146,22 @@ define(["dojo/_base/xhr",
                        // flatten statistics into attributes
                        util.flattenStatistics( that.vhostData );
 
+                       var gridProperties = {
+                               keepSelection: true,
+                               plugins: {
+                                         pagination: {
+                                             pageSizes: ["10", "25", "50", "100"],
+                                             description: true,
+                                             sizeSwitch: true,
+                                             pageStepper: true,
+                                             gotoButton: true,
+                                             maxPageStep: 4,
+                                             position: "bottom"
+                                         },
+                                         indirectSelection: true
+
+                                }};
+
                    that.updateHeader();
                    that.queuesGrid = new UpdatableStore(that.vhostData.queues, findNode("queues"),
                                                         [ { name: "Name",    field: "name",      width: "90px"},
@@ -138,24 +177,24 @@ define(["dojo/_base/xhr",
                                                                              var queueName = obj.dataStore.getValue(theItem,"name");
                                                                              controller.show("queue", queueName, vhost);
                                                                          });
-                                                        } );
+                                                        } , gridProperties, EnhancedGrid);
 
                    that.exchangesGrid = new UpdatableStore(that.vhostData.exchanges, findNode("exchanges"),
-                                                           [ { name: "Name",    field: "name",      width: "120px"},
-                                                               { name: "Type", field: "type", width: "120px"},
-                                                               { name: "Binding Count", field: "bindingCount",
-                                                                   width: "100%"}
+                                                           [
+                                                             { name: "Name",    field: "name", width: "120px"},
+                                                             { name: "Type", field: "type", width: "120px"},
+                                                             { name: "Binding Count", field: "bindingCount", width: "100%"}
                                                            ],
                                                            function(obj)
                                                            {
                                                                connect.connect(obj.grid, "onRowDblClick", obj.grid,
                                                                             function(evt){
                                                                                 var idx = evt.rowIndex,
-                                                                                    theItem = this.getItem(idx);
+                                                                                theItem = this.getItem(idx);
                                                                                 var exchangeName = obj.dataStore.getValue(theItem,"name");
                                                                                 controller.show("exchange", exchangeName, vhost);
                                                                             });
-                                                           } );
+                                                           } , gridProperties, EnhancedGrid);
 
 
                    that.connectionsGrid = new UpdatableStore(that.vhostData.connections,
@@ -314,6 +353,18 @@ define(["dojo/_base/xhr",
 
                        // update exchanges
                        thisObj.exchangesGrid.update(thisObj.vhostData.exchanges);
+
+                       var exchangesGrid = thisObj.exchangesGrid.grid;
+                       for(var i=0; i< thisObj.vhostData.exchanges.length; i++)
+                       {
+                           var data = exchangesGrid.getItem(i);
+                           var isStandard = false;
+                           if (data && data.name)
+                           {
+                               isStandard = util.isReservedExchangeName(data.name);
+                           }
+                           exchangesGrid.rowSelectCell.setDisabled(i, isStandard);
+                       }
 
                        // update connections
                        thisObj.connectionsGrid.update(thisObj.vhostData.connections)
