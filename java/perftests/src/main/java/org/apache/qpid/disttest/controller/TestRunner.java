@@ -208,7 +208,7 @@ public class TestRunner
         {
             try
             {
-                awaitLatch(_testResultsLatch, interval, "Timed out waiting for participant results");
+                awaitLatch(_testResultsLatch, interval, "still waiting for participant results");
             }
             catch (DistributedTestException e)
             {
@@ -289,7 +289,7 @@ public class TestRunner
             {
                 final long latchCount = latch.getCount();
                 String formattedMessage = "After " + timeout + "ms ... " + message + " ... Expecting " + latchCount + " more responses.";
-                LOGGER.error(formattedMessage);
+                LOGGER.info(formattedMessage); // info rather than error because we time out periodically so we can log progress
                 throw new DistributedTestException(formattedMessage);
             }
         }
