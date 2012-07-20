@@ -29,6 +29,9 @@
 #include "qpid/asyncStore/AsyncOperation.h"
 
 namespace qpid {
+namespace asyncStore {
+class AsyncOperation;
+}
 namespace broker {
 
 class TxnHandle;
@@ -39,15 +42,10 @@ class TxnAsyncContext: public BrokerAsyncContext
 {
 public:
     TxnAsyncContext(TxnBuffer* const tb,
-                    TxnHandle& th,
-                    const qpid::asyncStore::AsyncOperation::opCode op,
-                    qpid::broker::AsyncResultCallback rcb,
-                    qpid::broker::AsyncResultQueue* const arq);
+                    AsyncResultCallback rcb,
+                    AsyncResultQueue* const arq);
     virtual ~TxnAsyncContext();
     TxnBuffer* getTxnBuffer() const;
-    qpid::asyncStore::AsyncOperation::opCode getOpCode() const;
-    const char* getOpStr() const;
-    TxnHandle& getTransactionContext() const;
 
     // --- Interface BrokerAsyncContext ---
     AsyncResultQueue* getAsyncResultQueue() const;
@@ -55,8 +53,6 @@ public:
 
 private:
     TxnBuffer* const m_tb;
-    TxnHandle& m_th;
-    const qpid::asyncStore::AsyncOperation::opCode m_op;
     AsyncResultCallback m_rcb;
     AsyncResultQueue* const m_arq;
 };

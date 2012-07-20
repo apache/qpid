@@ -46,6 +46,10 @@ public:
     virtual ~BrokerAsyncContext() {}
     virtual AsyncResultQueue* getAsyncResultQueue() const = 0;
     virtual void invokeCallback(const AsyncResultHandle* const) const = 0;
+    void setOpStr(const char* opStr) { m_opStr = opStr; }
+    const char* getOpStr() const { return m_opStr; }
+private:
+    const char* m_opStr;
 };
 
 class DataSource {
@@ -83,6 +87,7 @@ public:
                               boost::shared_ptr<BrokerAsyncContext>) = 0;
     virtual void submitAbort(TxnHandle&,
                              boost::shared_ptr<BrokerAsyncContext>) = 0;
+    void testOp() const {}
 };
 
 // Subclassed by store:

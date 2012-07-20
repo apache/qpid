@@ -49,18 +49,14 @@ class QueueAsyncContext: public qpid::broker::BrokerAsyncContext
 public:
     QueueAsyncContext(boost::shared_ptr<SimpleQueue> q,
                       qpid::broker::TxnHandle& th,
-                      const qpid::asyncStore::AsyncOperation::opCode op,
                       qpid::broker::AsyncResultCallback rcb,
                       qpid::broker::AsyncResultQueue* const arq);
     QueueAsyncContext(boost::shared_ptr<SimpleQueue> q,
                       boost::intrusive_ptr<SimpleMessage> msg,
                       qpid::broker::TxnHandle& th,
-                      const qpid::asyncStore::AsyncOperation::opCode op,
                       qpid::broker::AsyncResultCallback rcb,
                       qpid::broker::AsyncResultQueue* const arq);
     virtual ~QueueAsyncContext();
-    qpid::asyncStore::AsyncOperation::opCode getOpCode() const;
-    const char* getOpStr() const;
     boost::shared_ptr<SimpleQueue> getQueue() const;
     boost::intrusive_ptr<SimpleMessage> getMessage() const;
     qpid::broker::TxnHandle getTxnHandle() const;
@@ -72,8 +68,7 @@ public:
 private:
     boost::shared_ptr<SimpleQueue> m_q;
     boost::intrusive_ptr<SimpleMessage> m_msg;
-    qpid::broker::TxnHandle m_th;
-    const qpid::asyncStore::AsyncOperation::opCode m_op;
+    qpid::broker::TxnHandle m_th; // TODO: get rid of this
     qpid::broker::AsyncResultCallback m_rcb;
     qpid::broker::AsyncResultQueue* const m_arq;
 };

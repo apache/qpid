@@ -32,10 +32,8 @@ namespace storePerftools {
 namespace asyncPerf {
 
 MessageAsyncContext::MessageAsyncContext(boost::intrusive_ptr<SimpleMessage> msg,
-                                         const qpid::asyncStore::AsyncOperation::opCode op,
                                          boost::shared_ptr<SimpleQueue> q) :
         m_msg(msg),
-        m_op(op),
         m_q(q)
 {
     assert(m_msg.get() != 0);
@@ -44,18 +42,6 @@ MessageAsyncContext::MessageAsyncContext(boost::intrusive_ptr<SimpleMessage> msg
 
 MessageAsyncContext::~MessageAsyncContext()
 {}
-
-qpid::asyncStore::AsyncOperation::opCode
-MessageAsyncContext::getOpCode() const
-{
-    return m_op;
-}
-
-const char*
-MessageAsyncContext::getOpStr() const
-{
-    return qpid::asyncStore::AsyncOperation::getOpStr(m_op);
-}
 
 boost::intrusive_ptr<SimpleMessage>
 MessageAsyncContext::getMessage() const

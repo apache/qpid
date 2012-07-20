@@ -44,6 +44,7 @@ private:
     typedef qpid::sys::PollableQueue<boost::shared_ptr<const AsyncResultHandle> > ResultQueue;
     ResultQueue m_resQueue;
 
+    // Callback function for pollable queue, defined in qpid::sys::PollableQueue
     ResultQueue::Batch::const_iterator handle(const ResultQueue::Batch& e);
 };
 

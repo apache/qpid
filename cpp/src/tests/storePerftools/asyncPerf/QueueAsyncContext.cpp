@@ -33,12 +33,10 @@ namespace asyncPerf {
 
 QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<SimpleQueue> q,
                                      qpid::broker::TxnHandle& th,
-                                     const qpid::asyncStore::AsyncOperation::opCode op,
                                      qpid::broker::AsyncResultCallback rcb,
                                      qpid::broker::AsyncResultQueue* const arq) :
         m_q(q),
         m_th(th),
-        m_op(op),
         m_rcb(rcb),
         m_arq(arq)
 {
@@ -48,13 +46,11 @@ QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<SimpleQueue> q,
 QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<SimpleQueue> q,
                                      boost::intrusive_ptr<SimpleMessage> msg,
                                      qpid::broker::TxnHandle& th,
-                                     const qpid::asyncStore::AsyncOperation::opCode op,
                                      qpid::broker::AsyncResultCallback rcb,
                                      qpid::broker::AsyncResultQueue* const arq) :
         m_q(q),
         m_msg(msg),
         m_th(th),
-        m_op(op),
         m_rcb(rcb),
         m_arq(arq)
 {
@@ -64,18 +60,6 @@ QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<SimpleQueue> q,
 
 QueueAsyncContext::~QueueAsyncContext()
 {}
-
-qpid::asyncStore::AsyncOperation::opCode
-QueueAsyncContext::getOpCode() const
-{
-    return m_op;
-}
-
-const char*
-QueueAsyncContext::getOpStr() const
-{
-    return qpid::asyncStore::AsyncOperation::getOpStr(m_op);
-}
 
 boost::shared_ptr<SimpleQueue>
 QueueAsyncContext::getQueue() const

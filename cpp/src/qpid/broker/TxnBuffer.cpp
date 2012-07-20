@@ -96,26 +96,6 @@ TxnBuffer::commitLocal(AsyncTransaction* const store)
     return false;
 }
 
-// static
-void
-TxnBuffer::handleAsyncResult(const AsyncResultHandle* const arh)
-{
-    if (arh) {
-        boost::shared_ptr<TxnAsyncContext> tac = boost::dynamic_pointer_cast<TxnAsyncContext>(arh->getBrokerAsyncContext());
-        if (arh->getErrNo()) {
-            QPID_LOG(error, "TxnBuffer::handleAsyncResult: Transactional operation " << tac->getOpStr() << " failed: err=" << arh->getErrNo()
-                    << " (" << arh->getErrMsg() << ")");
-            tac->getTxnBuffer()->asyncLocalAbort();
-        } else {
-            if (tac->getOpCode() == qpid::asyncStore::AsyncOperation::TXN_ABORT) {
-                tac->getTxnBuffer()->asyncLocalAbort();
-            } else {
-                tac->getTxnBuffer()->asyncLocalCommit();
-            }
-        }
-    }
-}
-
 void
 TxnBuffer::asyncLocalCommit()
 {
@@ -130,10 +110,9 @@ TxnBuffer::asyncLocalCommit()
         m_state = COMMIT;
         {
             boost::shared_ptr<TxnAsyncContext> tac(new TxnAsyncContext(this,
-                                                                       m_txnHandle,
-                                                                       qpid::asyncStore::AsyncOperation::TXN_COMMIT,
-                                                                       &handleAsyncResult,
+                                                                       &handleAsyncCommitResult,
                                                                        &m_resultQueue));
+            m_store->testOp();
             m_store->submitCommit(m_txnHandle, tac);
         }
         break;
@@ -144,6 +123,21 @@ TxnBuffer::asyncLocalCommit()
         break;
     case COMPLETE:
     default: ;
+    }
+}
+
+//static
+void
+TxnBuffer::handleAsyncCommitResult(const AsyncResultHandle* const arh) {
+    if (arh) {
+        boost::shared_ptr<TxnAsyncContext> tac = boost::dynamic_pointer_cast<TxnAsyncContext>(arh->getBrokerAsyncContext());
+        if (arh->getErrNo()) {
+            QPID_LOG(error, "TxnBuffer::handleAsyncCommitResult: Transactional operation " << tac->getOpStr() << " failed: err=" << arh->getErrNo()
+                    << " (" << arh->getErrMsg() << ")");
+            tac->getTxnBuffer()->asyncLocalAbort();
+        } else {
+            tac->getTxnBuffer()->asyncLocalCommit();
+        }
     }
 }
 
@@ -158,9 +152,7 @@ TxnBuffer::asyncLocalAbort()
         m_state = ROLLBACK;
         {
             boost::shared_ptr<TxnAsyncContext> tac(new TxnAsyncContext(this,
-                                                                       m_txnHandle,
-                                                                       qpid::asyncStore::AsyncOperation::TXN_ABORT,
-                                                                       &handleAsyncResult,
+                                                                       &handleAsyncAbortResult,
                                                                        &m_resultQueue));
             m_store->submitCommit(m_txnHandle, tac);
         }
@@ -170,6 +162,19 @@ TxnBuffer::asyncLocalAbort()
         m_state = COMPLETE;
         delete this; // TODO: ugly! Find a better way to handle the life cycle of this class
     default: ;
+    }
+}
+
+//static
+void
+TxnBuffer::handleAsyncAbortResult(const AsyncResultHandle* const arh) {
+    if (arh) {
+        boost::shared_ptr<TxnAsyncContext> tac = boost::dynamic_pointer_cast<TxnAsyncContext>(arh->getBrokerAsyncContext());
+        if (arh->getErrNo()) {
+            QPID_LOG(error, "TxnBuffer::handleAsyncAbortResult: Transactional operation " << tac->getOpStr() << " failed: err=" << arh->getErrNo()
+                    << " (" << arh->getErrMsg() << ")");
+        }
+        tac->getTxnBuffer()->asyncLocalAbort();
     }
 }
 

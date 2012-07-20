@@ -51,9 +51,10 @@ public:
     bool commitLocal(AsyncTransaction* const store);
 
     // --- Async operations ---
-    static void handleAsyncResult(const AsyncResultHandle* const arh);
     void asyncLocalCommit();
+    static void handleAsyncCommitResult(const AsyncResultHandle* const arh);
     void asyncLocalAbort();
+    static void handleAsyncAbortResult(const AsyncResultHandle* const arh);
 
 private:
     std::vector<boost::shared_ptr<TxnOp> > m_ops;

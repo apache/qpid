@@ -54,7 +54,7 @@ OperationQueue::handle(const OperationQueue::OpQueue::Batch& e)
     try {
         for (OpQueue::Batch::const_iterator i = e.begin(); i != e.end(); ++i) {
             boost::shared_ptr<qpid::broker::BrokerAsyncContext> bc = (*i)->getBrokerContext();
-            if (bc) {
+            if (bc.get()) {
                 qpid::broker::AsyncResultQueue* const arq = bc->getAsyncResultQueue();
                 if (arq) {
                     qpid::broker::AsyncResultHandleImpl* arhi = new qpid::broker::AsyncResultHandleImpl(bc);

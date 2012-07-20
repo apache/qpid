@@ -40,18 +40,14 @@ class MessageAsyncContext : public qpid::broker::BrokerAsyncContext
 {
 public:
     MessageAsyncContext(boost::intrusive_ptr<SimpleMessage> msg,
-                        const qpid::asyncStore::AsyncOperation::opCode op,
                         boost::shared_ptr<SimpleQueue> q);
     virtual ~MessageAsyncContext();
-    qpid::asyncStore::AsyncOperation::opCode getOpCode() const;
-    const char* getOpStr() const;
     boost::intrusive_ptr<SimpleMessage> getMessage() const;
     boost::shared_ptr<SimpleQueue> getQueue() const;
     void destroy();
 
 private:
     boost::intrusive_ptr<SimpleMessage> m_msg;
-    const qpid::asyncStore::AsyncOperation::opCode m_op;
     boost::shared_ptr<SimpleQueue> m_q;
 };
 

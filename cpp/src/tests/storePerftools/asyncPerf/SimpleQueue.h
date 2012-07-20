@@ -35,9 +35,6 @@
 #include <boost/enable_shared_from_this.hpp>
 
 namespace qpid {
-namespace asyncStore {
-//class AsyncStoreImpl;
-}
 namespace broker {
 class AsyncResultQueue;
 }
@@ -67,13 +64,14 @@ public:
                 qpid::broker::AsyncResultQueue& arq);
     virtual ~SimpleQueue();
 
-    static void handleAsyncResult(const qpid::broker::AsyncResultHandle* const res);
     const qpid::broker::QueueHandle& getHandle() const;
     qpid::broker::QueueHandle& getHandle();
     qpid::broker::AsyncStore* getStore();
 
     void asyncCreate();
+    static void handleAsyncCreateResult(const qpid::broker::AsyncResultHandle* const arh);
     void asyncDestroy(const bool deleteQueue);
+    static void handleAsyncDestroyResult(const qpid::broker::AsyncResultHandle* const arh);
 
     // --- Methods in msg handling path from qpid::Queue ---
     void deliver(boost::intrusive_ptr<SimpleMessage> msg);
@@ -98,7 +96,7 @@ public:
     virtual const std::string& getName() const;
     virtual void setExternalQueueStore(qpid::broker::ExternalQueueStore* inst);
 
-    // --- Interface DataStore ---
+    // --- Interface qpid::broker::DataStore ---
     virtual uint64_t getSize();
     virtual void write(char* target);
 
@@ -116,8 +114,7 @@ private:
     bool m_destroyed;
 
     // --- Members & methods in msg handling path copied from qpid::Queue ---
-    struct UsageBarrier
-    {
+    struct UsageBarrier {
         SimpleQueue& m_parent;
         uint32_t m_count;
         qpid::sys::Monitor m_monitor;
@@ -126,8 +123,7 @@ private:
         void release();
         void destroy();
     };
-    struct ScopedUse
-    {
+    struct ScopedUse {
         UsageBarrier& m_barrier;
         const bool m_acquired;
         ScopedUse(UsageBarrier& b);
@@ -141,8 +137,10 @@ private:
     // -- Async ops ---
     bool asyncEnqueue(qpid::broker::TxnHandle& th,
                       boost::shared_ptr<PersistableQueuedMessage> pqm);
+    static void handleAsyncEnqueueResult(const qpid::broker::AsyncResultHandle* const arh);
     bool asyncDequeue(qpid::broker::TxnHandle& th,
                       boost::shared_ptr<PersistableQueuedMessage> pqm);
+    static void handleAsyncDequeueResult(const qpid::broker::AsyncResultHandle* const arh);
 
     // --- Async op counter ---
     void destroyCheck(const std::string& opDescr) const;

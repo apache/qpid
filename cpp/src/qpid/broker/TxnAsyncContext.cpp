@@ -27,13 +27,9 @@ namespace qpid {
 namespace broker {
 
 TxnAsyncContext::TxnAsyncContext(TxnBuffer* const tb,
-                                 TxnHandle& th,
-                                 const qpid::asyncStore::AsyncOperation::opCode op,
-                                 qpid::broker::AsyncResultCallback rcb,
-                                 qpid::broker::AsyncResultQueue* const arq):
+                                 AsyncResultCallback rcb,
+                                 AsyncResultQueue* const arq):
         m_tb(tb),
-        m_th(th),
-        m_op(op),
         m_rcb(rcb),
         m_arq(arq)
 {}
@@ -45,24 +41,6 @@ TxnBuffer*
 TxnAsyncContext::getTxnBuffer() const
 {
     return m_tb;
-}
-
-qpid::asyncStore::AsyncOperation::opCode
-TxnAsyncContext::getOpCode() const
-{
-    return m_op;
-}
-
-const char*
-TxnAsyncContext::getOpStr() const
-{
-    return qpid::asyncStore::AsyncOperation::getOpStr(m_op);
-}
-
-TxnHandle&
-TxnAsyncContext::getTransactionContext() const
-{
-    return m_th;
 }
 
 AsyncResultQueue*

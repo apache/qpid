@@ -26,7 +26,6 @@
 
 #include "AsyncOperation.h"
 
-//#include "qpid/broker/AsyncStore.h"
 #include "qpid/sys/PollableQueue.h"
 
 namespace qpid {
@@ -43,6 +42,7 @@ private:
     typedef qpid::sys::PollableQueue<boost::shared_ptr<const AsyncOperation> > OpQueue;
     OpQueue m_opQueue;
 
+    // Callback function for pollable queue, defined in qpid::sys::PollableQueue
     OpQueue::Batch::const_iterator handle(const OpQueue::Batch& e);
 };
 
