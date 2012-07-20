@@ -37,6 +37,7 @@
 namespace qpid {
 namespace broker {
 class AsyncResultQueue;
+class QueueAsyncContext;
 }
 namespace framing {
 class FieldTable;
@@ -49,7 +50,6 @@ namespace asyncPerf {
 class MessageConsumer;
 class Messages;
 class PersistableQueuedMessage;
-class QueueAsyncContext;
 class QueuedMessage;
 class SimpleMessage;
 
@@ -146,11 +146,11 @@ private:
     void destroyCheck(const std::string& opDescr) const;
 
     // --- Async op completions (called through handleAsyncResult) ---
-    void createComplete(const boost::shared_ptr<QueueAsyncContext> qc);
-    void flushComplete(const boost::shared_ptr<QueueAsyncContext> qc);
-    void destroyComplete(const boost::shared_ptr<QueueAsyncContext> qc);
-    void enqueueComplete(const boost::shared_ptr<QueueAsyncContext> qc);
-    void dequeueComplete(const boost::shared_ptr<QueueAsyncContext> qc);
+    void createComplete(const boost::shared_ptr<qpid::broker::QueueAsyncContext> qc);
+    void flushComplete(const boost::shared_ptr<qpid::broker::QueueAsyncContext> qc);
+    void destroyComplete(const boost::shared_ptr<qpid::broker::QueueAsyncContext> qc);
+    void enqueueComplete(const boost::shared_ptr<qpid::broker::QueueAsyncContext> qc);
+    void dequeueComplete(const boost::shared_ptr<qpid::broker::QueueAsyncContext> qc);
 };
 
 }}} // namespace tests::storePerftools::asyncPerf

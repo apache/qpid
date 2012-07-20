@@ -18,23 +18,22 @@
  */
 
 /**
- * \file QueueContext.cpp
+ * \file QueueAsyncContext.cpp
  */
 
 #include "QueueAsyncContext.h"
 
-#include "SimpleMessage.h"
+#include "qpid/broker/PersistableMessage.h"
 
 #include <cassert>
 
-namespace tests {
-namespace storePerftools {
-namespace asyncPerf {
+namespace qpid {
+namespace broker {
 
-QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<SimpleQueue> q,
-                                     qpid::broker::TxnHandle& th,
-                                     qpid::broker::AsyncResultCallback rcb,
-                                     qpid::broker::AsyncResultQueue* const arq) :
+QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
+                                     TxnHandle& th,
+                                     AsyncResultCallback rcb,
+                                     AsyncResultQueue* const arq) :
         m_q(q),
         m_th(th),
         m_rcb(rcb),
@@ -43,11 +42,11 @@ QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<SimpleQueue> q,
     assert(m_q.get() != 0);
 }
 
-QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<SimpleQueue> q,
-                                     boost::intrusive_ptr<SimpleMessage> msg,
-                                     qpid::broker::TxnHandle& th,
-                                     qpid::broker::AsyncResultCallback rcb,
-                                     qpid::broker::AsyncResultQueue* const arq) :
+QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
+                                     boost::intrusive_ptr<PersistableMessage> msg,
+                                     TxnHandle& th,
+                                     AsyncResultCallback rcb,
+                                     AsyncResultQueue* const arq) :
         m_q(q),
         m_msg(msg),
         m_th(th),
@@ -61,38 +60,38 @@ QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<SimpleQueue> q,
 QueueAsyncContext::~QueueAsyncContext()
 {}
 
-boost::shared_ptr<SimpleQueue>
+boost::shared_ptr<PersistableQueue>
 QueueAsyncContext::getQueue() const
 {
     return m_q;
 }
 
-boost::intrusive_ptr<SimpleMessage>
+boost::intrusive_ptr<PersistableMessage>
 QueueAsyncContext::getMessage() const
 {
     return m_msg;
 }
 
-qpid::broker::TxnHandle
+TxnHandle
 QueueAsyncContext::getTxnHandle() const
 {
     return m_th;
 }
 
-qpid::broker::AsyncResultQueue*
+AsyncResultQueue*
 QueueAsyncContext::getAsyncResultQueue() const
 {
     return m_arq;
 }
 
-qpid::broker::AsyncResultCallback
+AsyncResultCallback
 QueueAsyncContext::getAsyncResultCallback() const
 {
     return m_rcb;
 }
 
 void
-QueueAsyncContext::invokeCallback(const qpid::broker::AsyncResultHandle* const arh) const
+QueueAsyncContext::invokeCallback(const AsyncResultHandle* const arh) const
 {
     if (m_rcb) {
         m_rcb(arh);
@@ -105,4 +104,4 @@ QueueAsyncContext::destroy()
     delete this;
 }
 
-}}} // namespace tests::storePerftools::asyncPerf
+}} // namespace qpid::broker

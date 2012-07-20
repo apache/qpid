@@ -59,7 +59,7 @@ set (asyncStorePerf_SOURCES
     storePerftools/asyncPerf/MessageProducer.cpp
 	storePerftools/asyncPerf/PerfTest.cpp
 	storePerftools/asyncPerf/PersistableQueuedMessage.cpp
-	storePerftools/asyncPerf/QueueAsyncContext.cpp
+#	storePerftools/asyncPerf/QueueAsyncContext.cpp
 	storePerftools/asyncPerf/QueuedMessage.cpp
 	storePerftools/asyncPerf/SimpleMessage.cpp
 	storePerftools/asyncPerf/SimpleQueue.cpp
