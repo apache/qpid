@@ -55,6 +55,7 @@ using types::Variant;
 using types::Uuid;
 using sys::Mutex;
 
+// Called in Plugin::earlyInitialize
 HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     : logPrefix("Broker: "),
       broker(b),
@@ -63,12 +64,26 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
       observer(new ConnectionObserver(*this, systemId)),
       mgmtObject(0),
       status(STANDALONE),
-      brokerInfo(broker.getSystem()->getNodeName(),
-                 // TODO aconway 2012-05-24: other transports?
-                 broker.getPort(broker::Broker::TCP_TRANSPORT), systemId),
       membership(systemId),
       replicationTest(s.replicateDefault.get())
 {
+    // If we are joining a cluster we must start excluding clients now,
+    // otherwise there's a window for a client to connect before we get to
+    // initialize()
+    if (settings.cluster) {
+        observer->setObserver(boost::shared_ptr<broker::ConnectionObserver>(
+                              new BackupConnectionExcluder));
+        broker.getConnectionObservers().add(observer);
+    }
+}
+
+// Called in Plugin::initialize
+void HaBroker::initialize() {
+
+    // FIXME aconway 2012-07-19: assumes there's a TCP transport with a meaningful port.
+    brokerInfo = BrokerInfo(
+        broker.getSystem()->getNodeName(), broker.getPort(broker::Broker::TCP_TRANSPORT), systemId);
+
     // Set up the management object.
     ManagementAgent* ma = broker.getManagementAgent();
     if (settings.cluster && !ma)
@@ -87,10 +102,7 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     // If we are in a cluster, start as backup in joining state.
     if (settings.cluster) {
         status = JOINING;
-        observer->setObserver(boost::shared_ptr<broker::ConnectionObserver>(
-                                  new BackupConnectionExcluder));
-        broker.getConnectionObservers().add(observer);
-        backup.reset(new Backup(*this, s));
+        backup.reset(new Backup(*this, settings));
         broker.getKnownBrokers = boost::bind(&HaBroker::getKnownBrokers, this);
     }
 
