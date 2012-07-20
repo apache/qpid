@@ -218,8 +218,6 @@ if [ "JAVA" == "$JAVA" ] ; then
 
   cp qpid-${VER}/java/broker/release/*.tar.gz artifacts/qpid-java-broker-${VER}.tar.gz
   cp qpid-${VER}/java/client/release/*.tar.gz artifacts/qpid-java-client-${VER}.tar.gz
-  cp qpid-${VER}/java/management/eclipse-plugin/release/*.tar.gz artifacts/
-  cp qpid-${VER}/java/management/eclipse-plugin/release/*.zip artifacts/
 
   # copy the Maven artifacts
   cp -a qpid-${VER}/java/client/release/maven artifacts/

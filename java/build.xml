@@ -24,7 +24,6 @@
 
   <findSubProjects name="broker-plugins" dir="broker-plugins"/>
   <findSubProjects name="client-plugins" dir="client-plugins"/>
-  <findSubProjects name="management" dir="management" excludes="common,example"/>
 
   <property name="optional" value="false"/>
   <property name="modules.opt.default" value="bdbstore bdbstore/jmx perftests/visualisation-jfc"/>
@@ -35,11 +34,10 @@
   <property name="modules.core"       value="common management/common amqp-1-0-common broker client amqp-1-0-client amqp-1-0-client-jms tools"/>
   <property name="modules.examples"   value="client/example management/example"/>
   <property name="modules.tests"      value="systests perftests"/>
-  <property name="modules.management" value="${management}"/>
   <property name="modules.plugin"     value="${broker-plugins} ${client-plugins}"/>
   <property name="modules.jca"        value="jca"/>
   <property name="modules"            value="${modules.core} ${modules.examples}
-   ${modules.management} ${modules.jca} ${modules.tests} ${modules.plugin} ${modules.opt}"/>
+   ${modules.jca} ${modules.tests} ${modules.plugin} ${modules.opt}"/>
 
   <property name="qpid.jar"           location="${build.lib}/qpid-all.jar"/>
   <basename property="qpid.jar.name"  file="${qpid.jar}"/>
