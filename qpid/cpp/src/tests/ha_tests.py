@@ -758,7 +758,7 @@ acl deny all all
         s1.sender("ex").send("foo");
         self.assertEqual(s1.receiver("q").fetch().content, "foo")
 
-    def test_alterante_exchange(self):
+    def test_alternate_exchange(self):
         """Verify that alternate-exchange on exchanges and queues is propagated
         to new members of a cluster. """
         cluster = HaCluster(self, 2)
