@@ -66,7 +66,8 @@ def filter_log(log):
         'debug Sending keepalive signal to watchdog', # Watchdog timer thread
         'last broker standing joined by 1 replicas, updating queue policies.',
         'Connection .* timed out: closing', # heartbeat connection close
-        "org.apache.qpid.broker:bridge:"  # ignore bridge index
+        "org.apache.qpid.broker:bridge:",  # ignore bridge index
+        "closed connection"
         ])
     # Regex to match a UUID
     uuid='\w\w\w\w\w\w\w\w-\w\w\w\w-\w\w\w\w-\w\w\w\w-\w\w\w\w\w\w\w\w\w\w\w\w'
