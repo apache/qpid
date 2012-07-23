@@ -249,17 +249,19 @@ void Link::established(Connection* c)
 
     if (!hideManagement() && agent)
         agent->raiseEvent(_qmf::EventBrokerLinkUp(addr.str()));
-
-    Mutex::ScopedLock mutex(lock);
-    setStateLH(STATE_OPERATIONAL);
-    currentInterval = 1;
-    visitCount      = 0;
-    connection = c;
-
-    if (closing)
+    bool isClosing = false;
+    {
+        Mutex::ScopedLock mutex(lock);
+        setStateLH(STATE_OPERATIONAL);
+        currentInterval = 1;
+        visitCount      = 0;
+        connection = c;
+        isClosing = closing;
+    }
+    if (isClosing)
         destroy();
     else // Process any IO tasks bridges added before established.
-        connection->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
+        c->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
 }
 
 
