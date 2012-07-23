@@ -175,13 +175,13 @@ ReplicatingSubscription::ReplicatingSubscription(
         logPrefix = os.str();
 
         // NOTE: Once the guard is attached we can have concurrent
-        // calls to dequeued so we need to lock use of this->deques.
+        // calls to dequeued so we need to lock use of this->dequeues.
         //
         // However we must attach the guard _before_ we scan for
         // initial dequeues to be sure we don't miss any dequeues
         // between the scan and attaching the guard.
         if (Primary::get()) guard = Primary::get()->getGuard(queue, info);
-        if (!guard) guard.reset(new QueueGuard(*queue, getBrokerInfo()));
+        if (!guard) guard.reset(new QueueGuard(*queue, info));
         guard->attach(*this);
 
         QueueRange backup(arguments); // The remote backup state.
@@ -213,6 +213,9 @@ ReplicatingSubscription::ReplicatingSubscription(
             scan.finish();
             position = backup.back;
         }
+        // NOTE: we are assuming that the messages that are on the backup are
+        // consistent with those on the primary. If the backup is a replica
+        // queue and hasn't been tampered with then that will be the case.
 
         QPID_LOG(debug, logPrefix << "Subscribed:"
                  << " backup:" << backup
@@ -332,7 +335,7 @@ void ReplicatingSubscription::sendDequeueEvent(Mutex::ScopedLock&)
 void ReplicatingSubscription::dequeued(const QueuedMessage& qm)
 {
     assert (qm.queue == getQueue().get());
-     QPID_LOG(trace, logPrefix << "Dequeued " << qm);
+    QPID_LOG(trace, logPrefix << "Dequeued " << qm);
     {
         Mutex::ScopedLock l(lock);
         dequeues.add(qm.position);

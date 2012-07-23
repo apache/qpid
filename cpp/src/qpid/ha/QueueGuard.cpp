@@ -101,7 +101,7 @@ void QueueGuard::cancel() {
 
 void QueueGuard::attach(ReplicatingSubscription& rs) {
     Mutex::ScopedLock l(lock);
-     subscription = &rs;
+    subscription = &rs;
 }
 
 namespace {

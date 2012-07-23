@@ -66,7 +66,7 @@ struct HaPlugin : public Plugin {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
         if (broker) {
             // Must create the HaBroker in earlyInitialize so it can set up its
-            // connection observer before clients start conneting.
+            // connection observer before clients start connecting.
             haBroker.reset(new ha::HaBroker(*broker, settings));
             broker->addFinalizer(boost::bind(&HaPlugin::finalize, this));
         }
