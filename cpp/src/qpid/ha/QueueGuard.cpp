@@ -50,15 +50,15 @@ class QueueGuard::QueueObserver : public broker::QueueObserver
 
 
 QueueGuard::QueueGuard(broker::Queue& q, const BrokerInfo& info)
-    : queue(q), subscription(0), range(q)
+    : queue(q), subscription(0)
 {
-    // NOTE: The QueueGuard is created before the queue becomes active: either
-    // when a backup is promoted, or when a new queue is created on the primary.
     std::ostringstream os;
     os << "Primary guard " << queue.getName() << "@" << info.getLogId() << ": ";
     logPrefix = os.str();
     observer.reset(new QueueObserver(*this));
     queue.addObserver(observer);
+    // Set range after addObserver so we know that range.back+1 is a guarded position.
+    range = QueueRange(q);
 }
 
 QueueGuard::~QueueGuard() { cancel(); }
@@ -112,6 +112,7 @@ void completeBefore(QueueGuard* guard, SequenceNumber position, const QueuedMess
 
 bool QueueGuard::subscriptionStart(SequenceNumber position) {
    // Complete any messages before or at the ReplicatingSubscription start position.
+   // Those messages are already on the backup.
     if (!delayed.empty() && delayed.front() <= position) {
         // FIXME aconway 2012-06-15: queue iteration, only messages in delayed
         queue.eachMessage(boost::bind(&completeBefore, this, position, _1));
