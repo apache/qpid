@@ -326,13 +326,13 @@ void LinkRegistry::notifyConnection(const std::string& key, Connection* c)
             if (l->second->pendingConnection(host, port)) {
                 link = l->second;
                 connections[key] = link->getName();
-                link->established(c);
                 break;
             }
         }
     }
 
     if (link) {
+        link->established(c);
         c->setUserId(str(format("%1%@%2%") % link->getUsername() % realm));
     }
 }
