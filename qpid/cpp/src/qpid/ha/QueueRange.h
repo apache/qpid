@@ -33,17 +33,31 @@ namespace ha {
 
 /**
  * Get the front/back range of a queue or from a ReplicatingSubscription arguments table.
+ *
+ * The *back* of the queue is the position of the latest (most recently pushed)
+ * message on the queue or, if the queue is empty, the back is n-1 where n is
+ * the position that will be assigned to the next message pushed onto the queue.
+ *
+ * The *front* of the queue is the position of the oldest (next to be consumed) message
+ * on the queue or, if the queue is empty, it is the position that will be occupied
+ * by the next message pushed onto the queue.
+ *
+ * This leads to the slightly surprising conclusion that for an empty queue
+ * front = back+1
  */
 struct QueueRange {
   public:
     framing::SequenceNumber front, back;
 
-    QueueRange() { }
+    QueueRange() : front(1), back(0) { } // Empty range.
 
     QueueRange(broker::Queue& q) {
-        back = q.getPosition();
-        front = back+1;         // assume empty
-        ReplicatingSubscription::getFront(q, front);
+        if (ReplicatingSubscription::getFront(q, front))
+            back = q.getPosition();
+        else {
+            back = q.getPosition();
+            front = back+1;     // empty
+        }
         assert(front <= back + 1);
     }
 
