@@ -27,64 +27,35 @@ under the License.
   <section>
     <title>Overview</title>
     <para>
-      This release provides a preview of a new module for High Availability (HA).
-      This module is intended to eventually replace the existing cluster module.
+
+      The High Availability (HA) module provides
+      <firstterm>active-passive</firstterm>, <firstterm>hot-standby</firstterm>
+      messaging clusters to provide fault tolerant message delivery.
     </para>
     <para>
-      The old cluster module takes an <firstterm>active-active</firstterm> approach, i.e. all the
-      brokers in a cluster are able to handle client requests simultaneously. The new HA module
-      takes an <firstterm>active-passive</firstterm>, <firstterm>hot-standby</firstterm> approach.
+      In an active-passive cluster only one broker, known as the
+      <firstterm>primary</firstterm>, is active and serving clients at a time. The other
+      brokers are standing by as <firstterm>backups</firstterm>. Changes on the primary
+      are replicated to all the backups so they are always up-to-date or "hot". Backup
+      brokers reject client connection attempts, to enforce the requirement that clients
+      only connect to the primary.
     </para>
     <para>
-      In an active-passive cluster only one broker, known as the <firstterm>primary</firstterm>, is
-      active and serving clients at a time. The other brokers are standing by as
-      <firstterm>backups</firstterm>. Changes on the primary are immediately replicated to all the
-      backups so they are always up-to-date or "hot".  If the primary fails, one of the backups is
-      promoted to take over as the new primary. Clients fail-over to the new primary
-      automatically. If there are multiple backups, the backups also fail-over to become backups of
-      the new primary.  Backup brokers reject connection attempts, to enforce the requirement that
-      only the primary be active. Clients fail-over till the successfully connect to the primary broker.
+      If the primary fails, one of the backups is promoted to take over as the new
+      primary. Clients fail-over to the new primary automatically. If there are multiple
+      backups, the other backups also fail-over to become backups of the new primary.
     </para>
     <para>
-      This approach requires on an external <firstterm>cluster resource
-      manager</firstterm> to detect failures and choose the new primary. <ulink
-      url="https://fedorahosted.org/cluster/wiki/RGManager">Rgmanager</ulink> is
-      supported initially, but others may be supported in the future.
+      This approach relies on an external <firstterm>cluster resource manager</firstterm>
+      to detect failures, choose the new primary and handle network partitions. <ulink
+      url="https://fedorahosted.org/cluster/wiki/RGManager">Rgmanager</ulink> is supported
+      initially, but others may be supported in the future.
     </para>
     <section>
-      <title>Why the new approach?</title>
-      <para>
-	The new active-passive approach has several advantages compared to the
-	existing active-active cluster module.
-	<itemizedlist>
-	  <listitem>
-	    It does not depend directly on openais or corosync. It does not use multicast
-	    which simplifies deployment.
-	  </listitem>
-	  <listitem>
-	    It is more portable: in environments that don't support corosync, it can be
-	    integrated with a resource manager available in that environment.
-	  </listitem>
-	  <listitem>
-	    Replication to a <firstterm>disaster recovery</firstterm> site can be handled as
-	    simply another node in the cluster, it does not require a separate replication
-	    mechanism.
-	  </listitem>
-	  <listitem>
-	    It can take advantage of features provided by the resource manager, for example
-	    virtual IP addresses.
-	  </listitem>
-	  <listitem>
-	    Improved performance and scalability due to better use of multiple CPUs
-	  </listitem>
-	</itemizedlist>
-      </para>
-    </section>
-    <section>
-      <title>Avoiding messge loss</title>
+      <title>Avoiding message loss</title>
       <para>
 	In order to avoid message loss, the primary broker <emphasis>delays
-	acknowledgement</emphasis> of messages received from clients until the
+	acknowledgment</emphasis> of messages received from clients until the
 	message has been replicated to and acknowledged by all of the back-up
 	brokers.
       </para>
@@ -93,11 +64,10 @@ under the License.
 	a fail-over.
 	<footnote>
 	  <para>
-	  Clients must use 'at-least-once' reliability to enable re-send of
-	  unacknowledged messages. This is the default behavior, no options
-	  need be set to enable it. For details of client addressing options see
-	  &#34;Using the Qpid Messaging API&#34; in <citetitle>Programming in Apache
-      Qpid</citetitle>
+	  Clients must use "at-least-once" reliability to enable re-send of unacknowledged
+	  messages. This is the default behavior, no options need be set to enable it. For
+	  details of client addressing options see &#34;Using the Qpid Messaging API&#34;
+	  in <citetitle>Programming in Apache Qpid</citetitle>
 	  </para>
 	</footnote>
 	If the primary crashes before a message is replicated to
@@ -112,7 +82,7 @@ under the License.
       </para>
       <para>
 	When a new primary is promoted after a fail-over it is initially in
-	"recovering" mode. In this mode, it delays acknowledgement of messages
+	"recovering" mode. In this mode, it delays acknowledgment of messages
 	on behalf of all the backups that were connected to the previous
 	primary. This protects those messages against a failure of the new
 	primary until the backups have a chance to connect and catch up.
@@ -162,6 +132,37 @@ under the License.
 	  </listitem>
 	</varlistentry>
       </variablelist>
+    </section>
+    <section>
+      <title>Replacing the old cluster module</title>
+      <para>
+	The High Availability (HA) module replaces the previous
+	<firstterm>active-active</firstterm> cluster module.  The new active-passive
+	approach has several advantages compared to the existing active-active cluster
+	module.
+	<itemizedlist>
+	  <listitem>
+	    It does not depend directly on openais or corosync. It does not use multicast
+	    which simplifies deployment.
+	  </listitem>
+	  <listitem>
+	    It is more portable: in environments that don't support corosync, it can be
+	    integrated with a resource manager available in that environment.
+	  </listitem>
+	  <listitem>
+	    Replication to a <firstterm>disaster recovery</firstterm> site can be handled as
+	    simply another node in the cluster, it does not require a separate replication
+	    mechanism.
+	  </listitem>
+	  <listitem>
+	    It can take advantage of features provided by the resource manager, for example
+	    virtual IP addresses.
+	  </listitem>
+	  <listitem>
+	    Improved performance and scalability due to better use of multiple CPUs
+	  </listitem>
+	</itemizedlist>
+      </para>
     </section>
     <section>
       <title>Limitations</title>
@@ -266,7 +267,7 @@ under the License.
 		  </para>
 		</footnote>
 		used by cluster brokers to connect to each other. The URL can
-		contain a list of all the brokers' addresses or it can contain a single
+		contain a list of all the broker addresses or it can contain a single
 		virtual IP address.  If a list is used it is comma separated, for example
 		<literal>amqp:node1.exaple.com,node2.exaple.com,node3.exaple.com</literal>
 	      </para>
@@ -276,7 +277,7 @@ under the License.
 	    <entry><literal>--ha-public-url <replaceable>URL</replaceable></literal> </entry>
 	    <entry>
 	      <para>
-		The URL that is advertized to clients. This defaults to the
+		The URL that is advertised to clients. This defaults to the
 		<literal>--ha-brokers-url</literal> URL above, and has the same format.  A
 		virtual IP address is recommended for the public URL as it simplifies
 		deployment and hides changes to the cluster membership from clients.
@@ -371,7 +372,7 @@ under the License.
       clustered services using <command>cman</command> and
       <command>rgmanager</command>. It will show you how to configure an active-passive,
       hot-standby <command>qpidd</command> HA cluster with <command>rgmanager</command>.
-    </para>
+    </para> 
     <para>
       You must provide a <literal>cluster.conf</literal> file to configure
       <command>cman</command> and <command>rgmanager</command>.  Here is
@@ -731,12 +732,12 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
   <section>
     <title>Security.</title>
     <para>
-      You can secure your cluster using the authenticiation and authorization features
+      You can secure your cluster using the authentication and authorization features
       described in <xref linkend="chap-Messaging_User_Guide-Security"/>.
     </para>
     <para>
       Backup brokers connect to the primary broker and subscribe for management
-      events and queue contents. You can specifiy the identity used to connect
+      events and queue contents. You can specify the identity used to connect
       to the primary with the following options:
     </para>
     <table frame="all" id="ha-broker-security-options">
@@ -780,7 +781,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       To integrate with a different resource manager you must configure it to:
       <itemizedlist>
 	<listitem>Start a qpidd process on each node of the cluster.</listitem>
-	<listitem>Restart qpidd if it crases.</listitem>
+	<listitem>Restart qpidd if it crashes.</listitem>
 	<listitem>Promote exactly one of the brokers to primary.</listitem>
 	<listitem>Detect a failure and promote a new primary.</listitem>
       </itemizedlist>
