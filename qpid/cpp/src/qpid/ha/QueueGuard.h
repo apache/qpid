@@ -79,13 +79,20 @@ class QueueGuard {
     void attach(ReplicatingSubscription&);
 
     /**
-     * Return the queue range at the time the QueueGuard was created.  The
-     * QueueGuard is created before the queue becomes active: either when a
-     * backup is promoted, or when a new queue is created on the primary.
+     * Return the un-guarded queue range at the time the QueueGuard was created.
      *
-     * NOTE: The first position guaranteed to be protected by the guard is
-     * getRange().getBack()+1. It is possible that the guard has protected
-     * some messages before that point.
+     * The first position guaranteed to be protected by the guard is
+     * getRange().getBack()+1. It is possible that the guard has protected some
+     * messages before that point. Any such messages are dealt with in subscriptionStart
+     *
+     * The QueueGuard is created in 3 situations
+     * - when a backup is promoted, guards are created for expected backups.
+     * - when a new queue is created on the primary
+     * - when a new backup joins.
+     *
+     * In the last situation the queue is active while the guard is being
+     * created.
+     *
      */
     const QueueRange& getRange() const { return range; } // range is immutable, no lock needed.
 

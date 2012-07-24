@@ -54,7 +54,9 @@ class Consumer
     bool preAcquires() const { return acquires; }
     const std::string& getName() const { return name; }
 
+    /**@return the position of the last message seen by this consumer */
     virtual framing::SequenceNumber getPosition() const  { return position; }
+
     virtual void setPosition(framing::SequenceNumber pos) { position = pos; }
 
     virtual bool deliver(QueuedMessage& msg) = 0;

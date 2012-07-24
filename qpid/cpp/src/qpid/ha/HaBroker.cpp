@@ -71,6 +71,7 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     // otherwise there's a window for a client to connect before we get to
     // initialize()
     if (settings.cluster) {
+        QPID_LOG(debug, logPrefix << "Rejecting client connections.");
         observer->setObserver(boost::shared_ptr<broker::ConnectionObserver>(
                               new BackupConnectionExcluder));
         broker.getConnectionObservers().add(observer);

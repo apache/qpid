@@ -129,11 +129,15 @@ void Primary::checkReady(Mutex::ScopedLock&) {
 void Primary::checkReady(BackupMap::iterator i, Mutex::ScopedLock& l)  {
     if (i != backups.end() && i->second->isReady()) {
         BrokerInfo info = i->second->getBrokerInfo();
-        QPID_LOG(info, "Expected backup is ready: " << info);
         info.setStatus(READY);
+        QPID_LOG(info, "Expected backup is ready: " << info);
         haBroker.addBroker(info);
-        expectedBackups.erase(i->second);
-        checkReady(l);
+        if (expectedBackups.erase(i->second)) {
+            QPID_LOG(info, logPrefix << "Expected backup is ready: " << info);
+            checkReady(l);
+        }
+        else
+            QPID_LOG(info, logPrefix << "Backup is ready: " << info);
     }
 }
 
@@ -147,7 +151,7 @@ void Primary::timeoutExpectedBackups() {
         boost::shared_ptr<RemoteBackup> rb = *i;
         if (!rb->isConnected()) {
             BrokerInfo info = rb->getBrokerInfo();
-            QPID_LOG(error, "Expected backup timed out: " << info);
+            QPID_LOG(error, logPrefix << "Expected backup timed out: " << info);
             expectedBackups.erase(i++);
             backups.erase(info.getSystemId());
             rb->cancel();
