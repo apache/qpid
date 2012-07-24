@@ -406,7 +406,7 @@ void encode(const Variant::Map& map, uint32_t len, qpid::framing::Buffer& buffer
         buffer.putShortString(i->first);
     	encode(i->second, buffer);
     }
-    assert(s + len == buffer.getPosition());
+    (void) s; assert(s + len == buffer.getPosition());
 }
 
 void encode(const Variant::Map& map, const std::string& efield, const Variant& evalue, uint32_t len, qpid::framing::Buffer& buffer)
@@ -421,7 +421,7 @@ void encode(const Variant::Map& map, const std::string& efield, const Variant& e
     buffer.putShortString(efield);
     encode(evalue, buffer);
 
-    assert(s + len == buffer.getPosition());
+    (void) s; assert(s + len == buffer.getPosition());
 }
 
 void encode(const Variant::List& list, uint32_t len, qpid::framing::Buffer& buffer)
@@ -432,7 +432,7 @@ void encode(const Variant::List& list, uint32_t len, qpid::framing::Buffer& buff
     for (Variant::List::const_iterator i = list.begin(); i != list.end(); ++i) {
     	encode(*i, buffer);
     }
-    assert(s + len == buffer.getPosition());
+    (void) s; assert(s + len == buffer.getPosition());
 }
 
 void decode(qpid::framing::Buffer&, Variant::Map&)

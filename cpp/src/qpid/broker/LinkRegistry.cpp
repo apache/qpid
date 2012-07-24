@@ -317,7 +317,7 @@ void LinkRegistry::notifyConnection(const std::string& key, Connection* c)
     // create a mapping from connection id to link
     QPID_LOG(debug, "LinkRegistry::notifyConnection(); key=" << key );
     std::string host;
-    uint16_t port;
+    uint16_t port = 0;
     extractHostPort( key, &host, &port );
     Link::shared_ptr link;
     {
