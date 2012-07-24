@@ -42,7 +42,9 @@ class Poller;
 
 namespace asyncStore {
 
-class AsyncStoreImpl : public qpid::broker::AsyncStore {
+class AsyncStoreImpl : public qpid::broker::AsyncTransactionalStore,
+                       public qpid::broker::AsyncStore
+{
 public:
     AsyncStoreImpl(boost::shared_ptr<qpid::sys::Poller> poller,
                    const AsyncStoreOptions& opts);
@@ -63,11 +65,11 @@ public:
                                             qpid::broker::TxnBuffer* tb);
 
     void submitPrepare(qpid::broker::TxnHandle& txnHandle,
-                       boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
+                       boost::shared_ptr<qpid::broker::TpcTxnAsyncContext> TxnCtxt);
     void submitCommit(qpid::broker::TxnHandle& txnHandle,
-                      boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
+                      boost::shared_ptr<qpid::broker::TxnAsyncContext> TxnCtxt);
     void submitAbort(qpid::broker::TxnHandle& txnHandle,
-                     boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
+                     boost::shared_ptr<qpid::broker::TxnAsyncContext> TxnCtxt);
 
 
     // --- Interface from AsyncStore ---
@@ -89,11 +91,11 @@ public:
 
     void submitCreate(qpid::broker::QueueHandle& queueHandle,
                       const qpid::broker::DataSource* const dataSrc,
-                      boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
+                      boost::shared_ptr<qpid::broker::QueueAsyncContext> QueueCtxt);
     void submitDestroy(qpid::broker::QueueHandle& queueHandle,
-                       boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
+                       boost::shared_ptr<qpid::broker::QueueAsyncContext> QueueCtxt);
     void submitFlush(qpid::broker::QueueHandle& queueHandle,
-                     boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
+                     boost::shared_ptr<qpid::broker::QueueAsyncContext> QueueCtxt);
 
     void submitCreate(qpid::broker::EventHandle& eventHandle,
                       const qpid::broker::DataSource* const dataSrc,
@@ -105,10 +107,10 @@ public:
 
     void submitEnqueue(qpid::broker::EnqueueHandle& enqHandle,
                        qpid::broker::TxnHandle& txnHandle,
-                       boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
+                       boost::shared_ptr<qpid::broker::QueueAsyncContext> QueueCtxt);
     void submitDequeue(qpid::broker::EnqueueHandle& enqHandle,
                        qpid::broker::TxnHandle& txnHandle,
-                       boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
+                       boost::shared_ptr<qpid::broker::QueueAsyncContext> QueueCtxt);
 
     // Legacy - Restore FTD message, is NOT async!
     virtual int loadContent(qpid::broker::MessageHandle& msgHandle,

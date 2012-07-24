@@ -29,17 +29,18 @@
 #include "qpid/asyncStore/AsyncOperation.h"
 
 namespace qpid {
-namespace asyncStore {
-class AsyncOperation;
-}
+//namespace asyncStore {
+//class AsyncOperation;
+//}
 namespace broker {
 
-class TxnHandle;
+class AsyncResultHandle;
+class AsyncResultQueue;
+//class TxnHandle;
 
 typedef void (*AsyncResultCallback)(const AsyncResultHandle* const);
 
-class TxnAsyncContext: public BrokerAsyncContext
-{
+class TxnAsyncContext: public BrokerAsyncContext {
 public:
     TxnAsyncContext(TxnBuffer* const tb,
                     AsyncResultCallback rcb,
@@ -55,6 +56,16 @@ private:
     TxnBuffer* const m_tb;
     AsyncResultCallback m_rcb;
     AsyncResultQueue* const m_arq;
+};
+
+class TpcTxnAsyncContext : public TxnAsyncContext {
+public:
+    TpcTxnAsyncContext(TxnBuffer* const tb,
+                       AsyncResultCallback rcb,
+                       AsyncResultQueue* const arq) :
+        TxnAsyncContext(tb, rcb, arq)
+    {}
+    virtual ~TpcTxnAsyncContext() {}
 };
 
 }} // namespace qpid::broker

@@ -81,7 +81,7 @@ TxnBuffer::rollback()
 }
 
 bool
-TxnBuffer::commitLocal(AsyncTransaction* const store)
+TxnBuffer::commitLocal(AsyncTransactionalStore* const store)
 {
     if (store) {
         try {

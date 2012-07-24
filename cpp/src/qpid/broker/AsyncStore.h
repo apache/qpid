@@ -68,11 +68,14 @@ class MessageHandle;
 class QueueHandle;
 class TxnHandle;
 
+class QueueAsyncContext;
+class TpcTxnAsyncContext;
+class TxnAsyncContext;
 class TxnBuffer;
 
-class AsyncTransaction {
+class AsyncTransactionalStore {
 public:
-    virtual ~AsyncTransaction() {}
+    virtual ~AsyncTransactionalStore() {}
 
     virtual TxnHandle createTxnHandle() = 0;
     virtual TxnHandle createTxnHandle(TxnBuffer* tb) = 0;
@@ -82,16 +85,16 @@ public:
 
     // TODO: Remove boost::shared_ptr<BrokerAsyncContext> from this interface
     virtual void submitPrepare(TxnHandle&,
-                               boost::shared_ptr<BrokerAsyncContext>) = 0; // Distributed txns only
+                               boost::shared_ptr<TpcTxnAsyncContext>) = 0; // Distributed txns only
     virtual void submitCommit(TxnHandle&,
-                              boost::shared_ptr<BrokerAsyncContext>) = 0;
+                              boost::shared_ptr<TxnAsyncContext>) = 0;
     virtual void submitAbort(TxnHandle&,
-                             boost::shared_ptr<BrokerAsyncContext>) = 0;
+                             boost::shared_ptr<TxnAsyncContext>) = 0;
     void testOp() const {}
 };
 
 // Subclassed by store:
-class AsyncStore : public AsyncTransaction {
+class AsyncStore {
 public:
     virtual ~AsyncStore() {}
 
@@ -110,6 +113,9 @@ public:
     // --- Store async interface ---
 
     // TODO: Remove boost::shared_ptr<BrokerAsyncContext> from this interface
+
+    // TODO: Switch from BrokerAsyncContext (parent class) to ConfigAsyncContext
+    // when theses features (and async context classes) are developed.
     virtual void submitCreate(ConfigHandle&,
                               const DataSource* const,
                               boost::shared_ptr<BrokerAsyncContext>) = 0;
@@ -118,12 +124,14 @@ public:
 
     virtual void submitCreate(QueueHandle&,
                               const DataSource* const,
-                              boost::shared_ptr<BrokerAsyncContext>) = 0;
+                              boost::shared_ptr<QueueAsyncContext>) = 0;
     virtual void submitDestroy(QueueHandle&,
-                               boost::shared_ptr<BrokerAsyncContext>) = 0;
+                               boost::shared_ptr<QueueAsyncContext>) = 0;
     virtual void submitFlush(QueueHandle&,
-                             boost::shared_ptr<BrokerAsyncContext>) = 0;
+                             boost::shared_ptr<QueueAsyncContext>) = 0;
 
+    // TODO: Switch from BrokerAsyncContext (parent class) to EventAsyncContext
+    // when theses features (and async context classes) are developed.
     virtual void submitCreate(EventHandle&,
                               const DataSource* const,
                               TxnHandle&,
@@ -134,10 +142,10 @@ public:
 
     virtual void submitEnqueue(EnqueueHandle&,
                                TxnHandle&,
-                               boost::shared_ptr<BrokerAsyncContext>) = 0;
+                               boost::shared_ptr<QueueAsyncContext>) = 0;
     virtual void submitDequeue(EnqueueHandle&,
                                TxnHandle&,
-                               boost::shared_ptr<BrokerAsyncContext>) = 0;
+                               boost::shared_ptr<QueueAsyncContext>) = 0;
 
     // Legacy - Restore FTD message, is NOT async!
     virtual int loadContent(MessageHandle&,

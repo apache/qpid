@@ -35,10 +35,10 @@
 #include "qpid/broker/EnqueueHandle.h"
 #include "qpid/broker/EventHandle.h"
 #include "qpid/broker/MessageHandle.h"
+#include "qpid/broker/QueueAsyncContext.h"
 #include "qpid/broker/QueueHandle.h"
+#include "qpid/broker/TxnAsyncContext.h"
 #include "qpid/broker/TxnHandle.h"
-
-//#include <boost/make_shared.hpp>
 
 namespace qpid {
 namespace asyncStore {
@@ -95,28 +95,28 @@ AsyncStoreImpl::createTxnHandle(const std::string& xid,
 
 void
 AsyncStoreImpl::submitPrepare(qpid::broker::TxnHandle& txnHandle,
-                              boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt)
+                              boost::shared_ptr<qpid::broker::TpcTxnAsyncContext> TxnCtxt)
 {
-    boost::shared_ptr<const AsyncOperation> op(new AsyncOpTxnPrepare(txnHandle, brokerCtxt));
-    brokerCtxt->setOpStr(op->getOpStr());
+    boost::shared_ptr<const AsyncOperation> op(new AsyncOpTxnPrepare(txnHandle, TxnCtxt));
+    TxnCtxt->setOpStr(op->getOpStr());
     m_operations.submit(op);
 }
 
 void
 AsyncStoreImpl::submitCommit(qpid::broker::TxnHandle& txnHandle,
-                             boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt)
+                             boost::shared_ptr<qpid::broker::TxnAsyncContext> TxnCtxt)
 {
-    boost::shared_ptr<const AsyncOperation> op(new AsyncOpTxnCommit(txnHandle, brokerCtxt));
-    brokerCtxt->setOpStr(op->getOpStr());
+    boost::shared_ptr<const AsyncOperation> op(new AsyncOpTxnCommit(txnHandle, TxnCtxt));
+    TxnCtxt->setOpStr(op->getOpStr());
     m_operations.submit(op);
 }
 
 void
 AsyncStoreImpl::submitAbort(qpid::broker::TxnHandle& txnHandle,
-                            boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt)
+                            boost::shared_ptr<qpid::broker::TxnAsyncContext> TxnCtxt)
 {
-    boost::shared_ptr<const AsyncOperation> op(new AsyncOpTxnAbort(txnHandle, brokerCtxt));
-    brokerCtxt->setOpStr(op->getOpStr());
+    boost::shared_ptr<const AsyncOperation> op(new AsyncOpTxnAbort(txnHandle, TxnCtxt));
+    TxnCtxt->setOpStr(op->getOpStr());
     m_operations.submit(op);
 }
 
@@ -178,28 +178,28 @@ AsyncStoreImpl::submitDestroy(qpid::broker::ConfigHandle& cfgHandle,
 void
 AsyncStoreImpl::submitCreate(qpid::broker::QueueHandle& queueHandle,
                              const qpid::broker::DataSource* const dataSrc,
-                             boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt)
+                             boost::shared_ptr<qpid::broker::QueueAsyncContext> QueueCtxt)
 {
-    boost::shared_ptr<const AsyncOperation> op(new AsyncOpQueueCreate(queueHandle, dataSrc, brokerCtxt));
-    brokerCtxt->setOpStr(op->getOpStr());
+    boost::shared_ptr<const AsyncOperation> op(new AsyncOpQueueCreate(queueHandle, dataSrc, QueueCtxt));
+    QueueCtxt->setOpStr(op->getOpStr());
     m_operations.submit(op);
 }
 
 void
 AsyncStoreImpl::submitDestroy(qpid::broker::QueueHandle& queueHandle,
-                              boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt)
+                              boost::shared_ptr<qpid::broker::QueueAsyncContext> QueueCtxt)
 {
-    boost::shared_ptr<const AsyncOperation> op(new AsyncOpQueueDestroy(queueHandle, brokerCtxt));
-    brokerCtxt->setOpStr(op->getOpStr());
+    boost::shared_ptr<const AsyncOperation> op(new AsyncOpQueueDestroy(queueHandle, QueueCtxt));
+    QueueCtxt->setOpStr(op->getOpStr());
     m_operations.submit(op);
 }
 
 void
 AsyncStoreImpl::submitFlush(qpid::broker::QueueHandle& queueHandle,
-                            boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt)
+                            boost::shared_ptr<qpid::broker::QueueAsyncContext> QueueCtxt)
 {
-    boost::shared_ptr<const AsyncOperation> op(new AsyncOpQueueFlush(queueHandle, brokerCtxt));
-    brokerCtxt->setOpStr(op->getOpStr());
+    boost::shared_ptr<const AsyncOperation> op(new AsyncOpQueueFlush(queueHandle, QueueCtxt));
+    QueueCtxt->setOpStr(op->getOpStr());
     m_operations.submit(op);
 }
 
@@ -227,20 +227,20 @@ AsyncStoreImpl::submitDestroy(qpid::broker::EventHandle& eventHandle,
 void
 AsyncStoreImpl::submitEnqueue(qpid::broker::EnqueueHandle& enqHandle,
                               qpid::broker::TxnHandle& txnHandle,
-                              boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt)
+                              boost::shared_ptr<qpid::broker::QueueAsyncContext> QueueCtxt)
 {
-    boost::shared_ptr<const AsyncOperation> op(new AsyncOpMsgEnqueue(enqHandle, txnHandle, brokerCtxt));
-    brokerCtxt->setOpStr(op->getOpStr());
+    boost::shared_ptr<const AsyncOperation> op(new AsyncOpMsgEnqueue(enqHandle, txnHandle, QueueCtxt));
+    QueueCtxt->setOpStr(op->getOpStr());
     m_operations.submit(op);
 }
 
 void
 AsyncStoreImpl::submitDequeue(qpid::broker::EnqueueHandle& enqHandle,
                               qpid::broker::TxnHandle& txnHandle,
-                              boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt)
+                              boost::shared_ptr<qpid::broker::QueueAsyncContext> QueueCtxt)
 {
-    boost::shared_ptr<const AsyncOperation> op(new AsyncOpMsgDequeue(enqHandle, txnHandle, brokerCtxt));
-    brokerCtxt->setOpStr(op->getOpStr());
+    boost::shared_ptr<const AsyncOperation> op(new AsyncOpMsgDequeue(enqHandle, txnHandle, QueueCtxt));
+    QueueCtxt->setOpStr(op->getOpStr());
     m_operations.submit(op);
 }
 

@@ -29,7 +29,6 @@
 #include "SimpleQueue.h"
 
 #include "qpid/log/Statement.h"
-
 #include <boost/make_shared.hpp>
 
 namespace tests {
@@ -100,9 +99,9 @@ TxnPublish::deliverTo(const boost::shared_ptr<SimpleQueue>& queue)
 {
     boost::shared_ptr<QueuedMessage> qm;
     if (m_msg->isPersistent() && queue->getStore()) {
-        qm = boost::make_shared<PersistableQueuedMessage>(new PersistableQueuedMessage(queue.get(), m_msg));
+        qm = boost::shared_ptr<PersistableQueuedMessage>(new PersistableQueuedMessage(queue.get(), m_msg));
     } else {
-        qm = boost::make_shared<QueuedMessage>(new QueuedMessage(queue.get(), m_msg));
+        qm = boost::shared_ptr<QueuedMessage>(new QueuedMessage(queue.get(), m_msg));
     }
     m_queues.push_back(qm);
     m_delivered = true;

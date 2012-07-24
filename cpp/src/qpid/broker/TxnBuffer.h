@@ -36,7 +36,7 @@ namespace broker {
 
 class AsyncResultHandle;
 class AsyncResultQueue;
-class AsyncTransaction;
+class AsyncTransactionalStore;
 class TxnOp;
 
 class TxnBuffer {
@@ -48,7 +48,7 @@ public:
     bool prepare(TxnHandle& th);
     void commit();
     void rollback();
-    bool commitLocal(AsyncTransaction* const store);
+    bool commitLocal(AsyncTransactionalStore* const store);
 
     // --- Async operations ---
     void asyncLocalCommit();
@@ -60,7 +60,7 @@ private:
     std::vector<boost::shared_ptr<TxnOp> > m_ops;
     qpid::sys::Mutex m_opsMutex;
     TxnHandle m_txnHandle;
-    AsyncTransaction* m_store;
+    AsyncTransactionalStore* m_store;
     AsyncResultQueue& m_resultQueue;
 
     typedef enum {NONE = 0, PREPARE, COMMIT, ROLLBACK, COMPLETE} e_txnState;

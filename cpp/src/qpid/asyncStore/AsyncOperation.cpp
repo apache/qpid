@@ -23,11 +23,10 @@
 
 #include "AsyncOperation.h"
 
-//#include "qpid/Exception.h"
 #include "qpid/broker/AsyncResultHandle.h"
 #include "qpid/broker/AsyncResultHandleImpl.h"
-
-//#include <sstream>
+#include "qpid/broker/QueueAsyncContext.h"
+#include "qpid/broker/TxnAsyncContext.h"
 
 namespace qpid {
 namespace asyncStore {
@@ -68,8 +67,8 @@ AsyncOperation::submitResult(const int errNo,
 // --- class AsyncOpTxnPrepare ---
 
 AsyncOpTxnPrepare::AsyncOpTxnPrepare(qpid::broker::TxnHandle& txnHandle,
-                                     boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt) :
-        AsyncOperation(brokerCtxt),
+                                     boost::shared_ptr<qpid::broker::TpcTxnAsyncContext> txnCtxt) :
+        AsyncOperation(boost::dynamic_pointer_cast<qpid::broker::BrokerAsyncContext>(txnCtxt)),
         m_txnHandle(txnHandle)
 {}
 
@@ -91,8 +90,8 @@ AsyncOpTxnPrepare::getOpStr() const {
 // --- class AsyncOpTxnCommit ---
 
 AsyncOpTxnCommit::AsyncOpTxnCommit(qpid::broker::TxnHandle& txnHandle,
-                                   boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt) :
-        AsyncOperation(brokerCtxt),
+                                   boost::shared_ptr<qpid::broker::TxnAsyncContext> txnCtxt) :
+        AsyncOperation(boost::dynamic_pointer_cast<qpid::broker::BrokerAsyncContext>(txnCtxt)),
         m_txnHandle(txnHandle)
 {}
 
@@ -113,8 +112,8 @@ AsyncOpTxnCommit::getOpStr() const {
 // --- class AsyncOpTxnAbort ---
 
 AsyncOpTxnAbort::AsyncOpTxnAbort(qpid::broker::TxnHandle& txnHandle,
-                                 boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt) :
-        AsyncOperation(brokerCtxt),
+                                 boost::shared_ptr<qpid::broker::TxnAsyncContext> txnCtxt) :
+        AsyncOperation(boost::dynamic_pointer_cast<qpid::broker::BrokerAsyncContext>(txnCtxt)),
         m_txnHandle(txnHandle)
 {}
 
@@ -181,9 +180,9 @@ AsyncOpConfigDestroy::getOpStr() const {
 // --- class AsyncOpQueueCreate ---
 
 AsyncOpQueueCreate::AsyncOpQueueCreate(qpid::broker::QueueHandle& queueHandle,
-                   const qpid::broker::DataSource* const data,
-                   boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt) :
-        AsyncOperation(brokerCtxt),
+                                       const qpid::broker::DataSource* const data,
+                                       boost::shared_ptr<qpid::broker::QueueAsyncContext> queueCtxt) :
+        AsyncOperation(boost::dynamic_pointer_cast<qpid::broker::BrokerAsyncContext>(queueCtxt)),
         m_queueHandle(queueHandle),
         m_data(data)
 {}
@@ -205,8 +204,8 @@ AsyncOpQueueCreate::getOpStr() const {
 // --- class AsyncOpQueueFlush ---
 
 AsyncOpQueueFlush::AsyncOpQueueFlush(qpid::broker::QueueHandle& queueHandle,
-                  boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt) :
-        AsyncOperation(brokerCtxt),
+                                     boost::shared_ptr<qpid::broker::QueueAsyncContext> queueCtxt) :
+        AsyncOperation(boost::dynamic_pointer_cast<qpid::broker::BrokerAsyncContext>(queueCtxt)),
         m_queueHandle(queueHandle)
 {}
 
@@ -227,8 +226,8 @@ AsyncOpQueueFlush::getOpStr() const {
 // --- class AsyncOpQueueDestroy ---
 
 AsyncOpQueueDestroy::AsyncOpQueueDestroy(qpid::broker::QueueHandle& queueHandle,
-                                         boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt) :
-        AsyncOperation(brokerCtxt),
+                                         boost::shared_ptr<qpid::broker::QueueAsyncContext> queueCtxt) :
+        AsyncOperation(boost::dynamic_pointer_cast<qpid::broker::BrokerAsyncContext>(queueCtxt)),
         m_queueHandle(queueHandle)
 {}
 
