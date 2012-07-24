@@ -146,7 +146,7 @@ bool MessageMap::push(const QueuedMessage& added, QueuedMessage& removed)
 void MessageMap::setPosition(const framing::SequenceNumber& seq) {
     // Nothing to do, just assert that the precondition is respected and there
     // are no undeleted messages after seq.
-    assert(messages.empty() || (--messages.end())->first <= seq);
+    (void) seq; assert(messages.empty() || (--messages.end())->first <= seq);
 }
 
 void MessageMap::foreach(Functor f)
