@@ -23,7 +23,6 @@
 
 #include "TxnPublish.h"
 
-#include "PersistableQueuedMessage.h"
 #include "QueuedMessage.h"
 #include "SimpleMessage.h"
 #include "SimpleQueue.h"
@@ -97,13 +96,7 @@ TxnPublish::contentSize()
 void
 TxnPublish::deliverTo(const boost::shared_ptr<SimpleQueue>& queue)
 {
-    boost::shared_ptr<QueuedMessage> qm;
-    if (m_msg->isPersistent() && queue->getStore()) {
-        qm = boost::shared_ptr<PersistableQueuedMessage>(new PersistableQueuedMessage(queue.get(), m_msg));
-    } else {
-        qm = boost::shared_ptr<QueuedMessage>(new QueuedMessage(queue.get(), m_msg));
-    }
-    m_queues.push_back(qm);
+    m_queues.push_back(boost::shared_ptr<QueuedMessage>(new QueuedMessage(queue.get(), m_msg)));
     m_delivered = true;
 }
 

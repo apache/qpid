@@ -41,18 +41,24 @@ QueuedMessage::QueuedMessage(SimpleQueue* q,
         boost::enable_shared_from_this<QueuedMessage>(),
         m_queue(q),
         m_msg(msg)
-{}
+{
+    if (m_queue->getStore()) {
+        m_enqHandle = q->getStore()->createEnqueueHandle(msg->getHandle(), q->getHandle());
+    }
+}
 
 QueuedMessage::QueuedMessage(const QueuedMessage& qm) :
         boost::enable_shared_from_this<QueuedMessage>(),
         m_queue(qm.m_queue),
-        m_msg(qm.m_msg)
+        m_msg(qm.m_msg),
+        m_enqHandle(qm.m_enqHandle)
 {}
 
 QueuedMessage::QueuedMessage(QueuedMessage* const qm) :
         boost::enable_shared_from_this<QueuedMessage>(),
         m_queue(qm->m_queue),
-        m_msg(qm->m_msg)
+        m_msg(qm->m_msg),
+        m_enqHandle(qm->m_enqHandle)
 {}
 
 QueuedMessage::~QueuedMessage()
@@ -68,6 +74,18 @@ boost::intrusive_ptr<SimpleMessage>
 QueuedMessage::payload() const
 {
     return m_msg;
+}
+
+const qpid::broker::EnqueueHandle&
+QueuedMessage::enqHandle() const
+{
+    return m_enqHandle;
+}
+
+qpid::broker::EnqueueHandle&
+QueuedMessage::enqHandle()
+{
+    return m_enqHandle;
 }
 
 void

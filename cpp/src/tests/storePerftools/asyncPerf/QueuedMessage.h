@@ -25,6 +25,7 @@
 #define tests_storePerftools_asyncPerf_QueuedMessage_h_
 
 #include "qpid/broker/AsyncStore.h"
+#include "qpid/broker/EnqueueHandle.h"
 
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/intrusive_ptr.hpp>
@@ -54,6 +55,8 @@ public:
     virtual ~QueuedMessage();
     SimpleQueue* getQueue() const;
     boost::intrusive_ptr<SimpleMessage> payload() const;
+    const qpid::broker::EnqueueHandle& enqHandle() const;
+    qpid::broker::EnqueueHandle& enqHandle();
 
     // --- Transaction handling ---
     void prepareEnqueue(qpid::broker::TxnHandle& th);
@@ -63,6 +66,7 @@ public:
 private:
     SimpleQueue* m_queue;
     boost::intrusive_ptr<SimpleMessage> m_msg;
+    qpid::broker::EnqueueHandle m_enqHandle;
 };
 
 }}} // namespace tests::storePerfTools

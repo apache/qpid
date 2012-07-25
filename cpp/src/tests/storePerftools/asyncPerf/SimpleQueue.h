@@ -49,7 +49,6 @@ namespace asyncPerf {
 
 class MessageConsumer;
 class Messages;
-class PersistableQueuedMessage;
 class QueuedMessage;
 class SimpleMessage;
 
@@ -136,10 +135,10 @@ private:
 
     // -- Async ops ---
     bool asyncEnqueue(qpid::broker::TxnHandle& th,
-                      boost::shared_ptr<PersistableQueuedMessage> pqm);
+                      boost::shared_ptr<QueuedMessage> qm);
     static void handleAsyncEnqueueResult(const qpid::broker::AsyncResultHandle* const arh);
     bool asyncDequeue(qpid::broker::TxnHandle& th,
-                      boost::shared_ptr<PersistableQueuedMessage> pqm);
+                      boost::shared_ptr<QueuedMessage> qm);
     static void handleAsyncDequeueResult(const qpid::broker::AsyncResultHandle* const arh);
 
     // --- Async op counter ---
