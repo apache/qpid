@@ -546,7 +546,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
                 long messageId = LongBinding.entryToLong(key);
                 StorableMessageMetaData metaData = valueBinding.entryToObject(value);
 
-                StoredBDBMessage message = new StoredBDBMessage(messageId, metaData, false);
+                StoredBDBMessage message = new StoredBDBMessage(messageId, metaData, true);
 
                 mrh.message(message);
 
@@ -1576,34 +1576,26 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     {
 
         private final long _messageId;
-        private volatile SoftReference<StorableMessageMetaData> _metaDataRef;
+        private final boolean _isRecovered;
 
         private StorableMessageMetaData _metaData;
-        private volatile SoftReference<byte[]> _dataRef;
+        private volatile SoftReference<StorableMessageMetaData> _metaDataRef;
+
         private byte[] _data;
+        private volatile SoftReference<byte[]> _dataRef;
 
         StoredBDBMessage(long messageId, StorableMessageMetaData metaData)
         {
-            this(messageId, metaData, true);
+            this(messageId, metaData, false);
         }
 
-
-        StoredBDBMessage(long messageId,
-                           StorableMessageMetaData metaData, boolean persist)
+        StoredBDBMessage(long messageId, StorableMessageMetaData metaData, boolean isRecovered)
         {
-            try
-            {
-                _messageId = messageId;
-                _metaData = metaData;
+            _messageId = messageId;
+            _isRecovered = isRecovered;
 
-                _metaDataRef = new SoftReference<StorableMessageMetaData>(metaData);
-
-            }
-            catch (DatabaseException e)
-            {
-                throw new RuntimeException(e);
-            }
-
+            _metaData = metaData;
+            _metaDataRef = new SoftReference<StorableMessageMetaData>(metaData);
         }
 
         public StorableMessageMetaData getMetaData()
@@ -1693,8 +1685,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
         synchronized void store(com.sleepycat.je.Transaction txn)
         {
-
-            if(unstored())
+            if (!stored())
             {
                 try
                 {
@@ -1724,14 +1715,9 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             }
         }
 
-        private boolean unstored()
-        {
-            return _metaData != null;
-        }
-
         public synchronized StoreFuture flushToStore()
         {
-            if(unstored())
+            if(!stored())
             {
                 com.sleepycat.je.Transaction txn = _environment.beginTransaction(null, null);
                 store(txn);
@@ -1754,6 +1740,11 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             {
                 throw new RuntimeException(e);
             }
+        }
+
+        private boolean stored()
+        {
+            return _metaData == null || _isRecovered;
         }
     }
 
