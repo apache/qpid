@@ -57,11 +57,10 @@ class EventReceiver(Thread):
   This class does not use the "reconnect" option because it needs to report as
   events when the connection is established and when it's lost.
   """
-  def __init__(self, printer, url, mechanism, options):
+  def __init__(self, printer, url, options):
     Thread.__init__(self)
     self.printer   = printer
     self.url       = url
-    self.mechanism = mechanism
     self.options   = options
     self.running   = True
     self.helper    = EventHelper()
@@ -73,7 +72,7 @@ class EventReceiver(Thread):
     isOpen = False
     while self.running:
       try:
-        conn = Connection.establish(self.url, sasl_mechanisms=self.mechanism, client_properties=self.options)
+        conn = Connection.establish(self.url, **options)
         isOpen = True
         self.printer.pr(strftime("%c", gmtime(time())) + " NOTIC qpid-printevents:brokerConnected broker=%s" % self.url)
 
@@ -133,23 +132,37 @@ def main(argv=None):
   p = optparse.OptionParser(usage=_usage, description=_description, formatter=JHelpFormatter())
   p.add_option("--heartbeats", action="store_true", default=False, help="Use heartbeats.")
   p.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
+  p.add_option("--ssl-certificate", action="store", type="string", metavar="<cert>", help="Client SSL certificate (PEM Format)")
+  p.add_option("--ssl-key", action="store", type="string", metavar="<key>", help="Client SSL private key (PEM Format)")
+  p.add_option("--ha-admin", action="store_true", help="Allow connection to a HA backup broker.")
 
   options, arguments = p.parse_args(args=argv)
   if len(arguments) == 0:
     arguments.append("localhost")
 
   brokers   = []
-  mechanism = options.sasl_mechanism
-  props     = {'qpid.ha-admin' : 1}
+  conn_options = {}
+  props = {}
   printer   = Printer()
 
+  if options.sasl_mechanism:
+    conn_options['sasl_mechanisms'] = options.sasl_mechanism
+  if options.ssl_certificate:
+    conn_options['ssl_certfile'] = options.ssl_certificate
+  if options.ssl_key:
+    conn_options['ssl_key'] = options.ssl_key
+  if options.ha_admin:
+    props['qpid.ha-admin'] = 1
   if options.heartbeats:
     props['heartbeat'] = 5
+
+  if len(props) > 0:
+    conn_options['client_properties'] = props
 
   try:
     try:
       for host in arguments:
-        er = EventReceiver(printer, host, mechanism, props)
+        er = EventReceiver(printer, host, conn_options)
         brokers.append(er)
         er.start()
 

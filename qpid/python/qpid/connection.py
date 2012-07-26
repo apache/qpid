@@ -166,8 +166,9 @@ class Connection(Framer):
         # If we have a security layer and it sends us no decoded data,
         # that's OK as long as its return code is happy.
         if self.security_layer_rx:
-          status, data = self.security_layer_rx.decode(data)
-          if not status:
+          try:
+            data = self.security_layer_rx.decode(data)
+          except:
             self.detach_all()
             break
       # When we do not use SSL transport, we get periodic 

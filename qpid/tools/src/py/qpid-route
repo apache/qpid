@@ -53,16 +53,15 @@ def Usage():
 
 class Config:
     def __init__(self):
-        self._verbose   = False
-        self._quiet     = False
-        self._durable   = False
-        self._dellink   = False
-        self._srclocal  = False
-        self._transport = "tcp"
-        self._ack       = 0
-        self._connTimeout = 10
-        self._client_sasl_mechanism = None
-        self._ha_admin  = False
+        self._verbose      = False
+        self._quiet        = False
+        self._durable      = False
+        self._dellink      = False
+        self._srclocal     = False
+        self._transport    = "tcp"
+        self._ack          = 0
+        self._connTimeout  = 10
+        self._conn_options = {}
 
 config = Config()
 
@@ -97,6 +96,7 @@ def OptionsAndArguments(argv):
     parser.add_option("-t", "--transport", action="store", type="string", default="tcp", metavar="<transport>", help="Transport to use for links, defaults to tcp")
 
     parser.add_option("--client-sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). Used when the client connects to the destination broker (not for authentication between the source and destination brokers - that is specified using the [mechanisms] argument to 'add route'). SASL automatically picks the most secure available mechanism - use this option to override.")
+    parser.add_option("--ssl-certificate", action="store", type="string", metavar="<cert>", help="Client SSL certificate (PEM Format)")
     parser.add_option("--ha-admin", action="store_true", help="Allow connection to a HA backup broker.")
     opts, encArgs = parser.parse_args(args=argv)
 
@@ -130,13 +130,16 @@ def OptionsAndArguments(argv):
         config._transport = opts.transport
 
     if opts.ha_admin:
-        config._ha_admin = True
+        config._conn_options['client_properties'] = {'qpid.ha-admin' : 1}
 
     if opts.ack:
         config._ack = opts.ack
 
     if opts.client_sasl_mechanism:
-        config._client_sasl_mechanism = opts.client_sasl_mechanism
+        config._conn_options['mechanisms'] = opts.client_sasl_mechanism
+
+    if opts.ssl_certificate:
+        config._conn_options['ssl_certfile'] = opts.ssl_certificate
 
     return args
 
@@ -147,9 +150,7 @@ class RouteManager:
         self.local = BrokerURL(localBroker)
         self.remote  = None
         self.qmf = Session()
-        client_properties = {}
-        if config._ha_admin: client_properties["qpid.ha-admin"] = 1
-        self.broker = self.qmf.addBroker(localBroker, config._connTimeout, config._client_sasl_mechanism, client_properties=client_properties)
+        self.broker = self.qmf.addBroker(localBroker, config._connTimeout, **config._conn_options)
         self.broker._waitForStable()
         self.agent = self.broker.getBrokerAgent()
 

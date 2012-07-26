@@ -19,8 +19,7 @@
 # under the License.
 #
 
-import qmf.console, optparse, sys, time, os
-from qpid.management import managementChannel, managementClient
+import optparse, sys, time, os
 from qpid.messaging import Connection
 from qpid.messaging import Message as QpidMessage
 from qpidtoollibs.broker import BrokerAgent
@@ -47,6 +46,8 @@ class Command:
         self.help = help
         self.op=optparse.OptionParser(usage)
         self.op.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
+        self.op.add_option("--ssl-certificate", action="store", type="string", metavar="<cert>", help="Client SSL certificate (PEM Format)")
+        self.op.add_option("--ssl-key", action="store", type="string", metavar="<key>", help="Client SSL private key (PEM Format)")
         self.op.add_option("-b", "--broker", action="store", type="string", default="localhost:5672", metavar="<address>", help="Address of qpidd broker with syntax: [username/password@] hostname | ip-address [:<port>]")
 
     def execute(self, args):
@@ -54,13 +55,19 @@ class Command:
         if len(args) != len(self.arg_names)+1:
             self.op.print_help()
             raise Exception("Wrong number of arguments")
-        connection = Connection.establish(
-            opts.broker,
-            sasl_mechanisms=opts.sasl_mechanism,
-            client_properties={"qpid.ha-admin":1})
+        conn_options = {}
+        if opts.sasl_mechanism:
+            conn_options['sasl_mechanisms'] = opts.sasl_mechanism
+        if opts.ssl_certificate:
+            conn_options['ssl_certfile'] = opts.ssl_certificate
+        if opts.ssl_key:
+            conn_options['ssl_key'] = opts.ssl_key
+        conn_options['client_properties'] = {'qpid.ha-admin' : 1}
+
+        connection = Connection.establish(opts.broker, **conn_options)
         qmf_broker = BrokerAgent(connection)
         ha_broker = qmf_broker.getHaBroker()
-        if not ha_broker: raise Exception("HA module is not loaded on broker at %s"%broker)
+        if not ha_broker: raise Exception("HA module is not loaded on broker at %s" % opts.broker)
         try: self.do_execute(qmf_broker, ha_broker, opts, args)
         finally: connection.close()
 

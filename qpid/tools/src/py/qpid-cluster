@@ -64,17 +64,19 @@ class IpAddr:
         return bestAddr
 
 class BrokerManager:
-    def __init__(self, config):
-        self.config = config
-        self.brokerName = None
-        self.qmf        = None
-        self.broker     = None
-        self.brokers    = []
+    def __init__(self, config, conn_options):
+        self.config       = config
+        self.cert         = None
+        self.conn_options = conn_options
+        self.brokerName   = None
+        self.qmf          = None
+        self.broker       = None
+        self.brokers      = []
 
     def SetBroker(self, brokerUrl):
         self.url = brokerUrl
         self.qmf = Session()
-        self.broker = self.qmf.addBroker(brokerUrl, self.config._connTimeout)
+        self.broker = self.qmf.addBroker(brokerUrl, self.config._connTimeout, **self.conn_options)
         agents = self.qmf.getAgents()
         for a in agents:
             if a.getAgentBank() == '0':
@@ -240,6 +242,8 @@ def main(argv=None):
                       description="Example: $ qpid-cluster -C  broker-host:10000")
 
         parser.add_option("-t", "--timeout", action="store", type="int", default=10, metavar="SECS", help="Maximum time to wait for broker connection (in seconds)")
+        parser.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
+        parser.add_option("--ssl-certificate", action="store", type="string", metavar="<cert>", help="Client SSL certificate (PEM Format)")
         parser.add_option("-C", "--all-connections", action="store_true", default=False, help="View client connections to all cluster members")
         parser.add_option("-c", "--connections",  metavar="ID", help="View client connections to specified member")
         parser.add_option("-d", "--del-connection",  metavar="HOST:PORT", help="Disconnect a client connection")
@@ -280,7 +284,13 @@ def main(argv=None):
         config._force = opts.force
         config._numeric = opts.numeric
 
-        bm    = BrokerManager(config)
+        conn_options = {}
+        if opts.sasl_mechanism:
+            conn_options['mechanisms'] = opts.sasl_mechanism
+        if opts.ssl_certificate:
+            conn_options['ssl_certfile'] = opts.ssl_certificate
+
+        bm = BrokerManager(config, conn_options)
 
         try:
             bm.SetBroker(config._host)
@@ -303,7 +313,6 @@ def main(argv=None):
 
         bm.Disconnect()
     except Exception, e:
-        raise
         print str(e)
         return 1
 
