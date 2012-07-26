@@ -111,7 +111,7 @@ class HaBroker : public management::Manageable
 
     std::vector<Url> getKnownBrokers() const;
 
-    void membershipUpdated(const types::Variant::List&);
+    void membershipUpdated(sys::Mutex::ScopedLock&);
 
     std::string logPrefix;
     broker::Broker& broker;
