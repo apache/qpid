@@ -51,9 +51,10 @@ class Framer(Packer):
     self.sock_lock.acquire()
     try:
       if self.security_layer_tx:
-        status, cipher_buf = self.security_layer_tx.encode(self.tx_buf)
-        if status == False:
-          raise Closed(self.security_layer_tx.getError())
+        try:
+          cipher_buf = self.security_layer_tx.encode(self.tx_buf)
+        except SASLError, e:
+          raise Closed(str(e))
         self._write(cipher_buf)
       else:
         self._write(self.tx_buf)
@@ -91,9 +92,10 @@ class Framer(Packer):
       try:
         s = self.sock.recv(n) # NOTE: instead of "n", arg should be "self.maxbufsize"
         if self.security_layer_rx:
-          status, s = self.security_layer_rx.decode(s)
-          if status == False:
-            raise Closed(self.security_layer_tx.getError())
+          try:
+            s = self.security_layer_rx.decode(s)
+          except SASLError, e:
+            raise Closed(str(e))
       except socket.timeout:
         if self.aborted():
           raise Closed()
