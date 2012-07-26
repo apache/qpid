@@ -290,8 +290,8 @@ void HaBroker::statusChanged(Mutex::ScopedLock& l) {
     setLinkProperties(l);
 }
 
-void HaBroker::membershipUpdated(const Variant::List& brokers) {
-    // No lock, these are thread-safe.
+void HaBroker::membershipUpdated(Mutex::ScopedLock&) {
+    Variant::List brokers = membership.asList();
     mgmtObject->set_members(brokers);
     broker.getManagementAgent()->raiseEvent(_qmf::EventMembersUpdate(brokers));
 }
@@ -304,37 +304,28 @@ void HaBroker::setMembership(const Variant::List& brokers) {
     // Update my status to what the primary says.
     if (membership.get(systemId, info) && status != info.getStatus())
         setStatus(info.getStatus(), l);
-    membershipUpdated(brokers);
+    membershipUpdated(l);
 }
 
 void HaBroker::resetMembership(const BrokerInfo& b) {
-    Variant::List members;
-    {
-        Mutex::ScopedLock l(lock);
-        membership.reset(b);
-        members = membership.asList();
-    }
-    membershipUpdated(members);
+    Mutex::ScopedLock l(lock);
+    membership.reset(b);
+    QPID_LOG(debug, logPrefix << "Membership reset to: " <<  membership);
+    membershipUpdated(l);
 }
 
 void HaBroker::addBroker(const BrokerInfo& b) {
-    Variant::List members;
-    {
-        Mutex::ScopedLock l(lock);
-        membership.add(b);
-        members = membership.asList();
-    }
-    membershipUpdated(members);
+    Mutex::ScopedLock l(lock);
+    membership.add(b);
+    QPID_LOG(debug, logPrefix << "Membership add: " <<  b << " now: " << membership);
+    membershipUpdated(l);
 }
 
 void HaBroker::removeBroker(const Uuid& id) {
-    Variant::List members;
-    {
-        Mutex::ScopedLock l(lock);
-        membership.remove(id);
-        members = membership.asList();
-    }
-    membershipUpdated(members);
+    Mutex::ScopedLock l(lock);
+    membership.remove(id);
+    QPID_LOG(debug, logPrefix << "Membership remove: " <<  id << " now: " << membership);
+    membershipUpdated(l);
 }
 
 void HaBroker::setLinkProperties(Mutex::ScopedLock&) {

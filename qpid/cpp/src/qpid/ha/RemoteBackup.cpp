@@ -33,7 +33,7 @@ using boost::bind;
 
 RemoteBackup::RemoteBackup(const BrokerInfo& info, ReplicationTest rt, bool con) :
     logPrefix("Primary remote backup "+info.getLogId()+": "),
-    brokerInfo(info), replicationTest(rt), connected(con)
+    brokerInfo(info), replicationTest(rt), connected(con), reportedReady(false)
 {}
 
 void RemoteBackup::setInitialQueues(broker::QueueRegistry& queues, bool createGuards)
@@ -107,6 +107,14 @@ void RemoteBackup::queueDestroy(const QueuePtr& q) {
         i->second->cancel();
         guards.erase(i);
     }
+}
+
+bool RemoteBackup::reportReady() {
+    if (!reportedReady && isReady()) {
+        reportedReady = true;
+        return true;
+    }
+    return false;
 }
 
 }} // namespace qpid::ha

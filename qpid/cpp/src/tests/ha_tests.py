@@ -588,8 +588,10 @@ class ReplicationTests(BrokerTest):
         # correct result, the uncommented one is for the actualy buggy
         # result.  See https://issues.apache.org/jira/browse/QPID-3866
         #
-        # backup.assert_browse_backup("q", sorted(priorities,reverse=True)[0:5], transform=lambda m: m.priority)
-        backup.assert_browse_backup("q", [9,9,9,9,2], transform=lambda m: m.priority)
+        # expect = sorted(priorities,reverse=True)[0:5]
+        expect = [9,9,9,9,2]
+        primary.assert_browse("q", expect, transform=lambda m: m.priority)
+        backup.assert_browse_backup("q", expect, transform=lambda m: m.priority)
 
     def test_backup_acquired(self):
         """Verify that acquired messages are backed up, for all queue types."""
