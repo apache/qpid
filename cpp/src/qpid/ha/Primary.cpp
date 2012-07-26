@@ -127,7 +127,7 @@ void Primary::checkReady(Mutex::ScopedLock&) {
 }
 
 void Primary::checkReady(BackupMap::iterator i, Mutex::ScopedLock& l)  {
-    if (i != backups.end() && i->second->isReady()) {
+    if (i != backups.end() && i->second->reportReady()) {
         BrokerInfo info = i->second->getBrokerInfo();
         info.setStatus(READY);
         haBroker.addBroker(info);

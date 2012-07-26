@@ -83,6 +83,9 @@ class RemoteBackup
     /**@return true when all initial queues for this backup are ready. */
     bool isReady();
 
+    /**@return true if isReady() and this is the first call to reportReady */
+    bool reportReady();
+
     /**Cancel all queue guards, called if we are timed out. */
     void cancel();
 
@@ -100,6 +103,7 @@ class RemoteBackup
     GuardMap guards;
     QueueSet initialQueues;
     bool connected;
+    bool reportedReady;
 };
 
 }} // namespace qpid::ha
