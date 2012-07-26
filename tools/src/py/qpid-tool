@@ -173,11 +173,11 @@ class Mcli(Cmd):
 class QmfData(Console):
   """
   """
-  def __init__(self, disp, url):
+  def __init__(self, disp, url, cert):
     self.disp = disp
     self.url = url
     self.session = Session(self, manageConnections=True)
-    self.broker = self.session.addBroker(self.url)
+    self.broker = self.session.addBroker(self.url, ssl_certfile=cert)
     self.lock = Lock()
     self.connected = None
     self.closing = None
@@ -724,10 +724,13 @@ if _host[0] == '-':
   sys.exit(1)
 
 disp = Display()
+cert = None
+if len(cargs) > 1:
+  cert = cargs[1]
 
 # Attempt to make a connection to the target broker
 try:
-  data = QmfData(disp, _host)
+  data = QmfData(disp, _host, cert)
 except Exception, e:
   if str(e).find("Exchange not found") != -1:
     print "Management not enabled on broker:  Use '-m yes' option on broker startup."

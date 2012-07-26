@@ -32,13 +32,13 @@ from qpid.connection import Connection, ConnectionFailed
 from time            import sleep
 
 class BrokerManager(Console):
-  def __init__(self, host, mechanism):
+  def __init__(self, host, conn_options):
     self.url = host
     self.objects = {}
     self.filter  = None
     self.session = Session(self, rcvEvents=False, rcvHeartbeats=False,
                            userBindings=True, manageConnections=True)
-    self.broker  = self.session.addBroker(self.url, None, mechanism)
+    self.broker  = self.session.addBroker(self.url, **conn_options)
     self.firstError = True
 
   def setFilter(self,filter):
@@ -126,9 +126,15 @@ def main(argv=None):
   p.add_option('--broker-address','-a', default='localhost' , help='broker-addr is in the form:  [username/password@] hostname | ip-address [:<port>] \n ex:  localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost')
   p.add_option('--filter','-f' ,default=None ,help='a list of comma separated queue names (regex are accepted) to show')
   p.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
- 
+  p.add_option("--ssl-certificate", action="store", type="string", metavar="<cert>", help="Client SSL certificate (PEM Format)")
 
   options, arguments = p.parse_args(args=argv)
+
+  conn_options = {}
+  if options.sasl_mechanism:
+    conn_options['mechanisms'] = options.sasl_mechanism
+  if options.ssl_certificate:
+    conn_options['ssl_certfile'] = options.ssl_certificate
 
   host = options.broker_address
   filter = []
@@ -136,7 +142,7 @@ def main(argv=None):
     for s in options.filter.split(","):
         filter.append(re.compile(s))
 
-  bm = BrokerManager(host, options.sasl_mechanism)
+  bm = BrokerManager(host, conn_options)
   bm.setFilter(filter)
   bm.Display()
  

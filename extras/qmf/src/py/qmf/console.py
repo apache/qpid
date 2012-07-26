@@ -2422,8 +2422,12 @@ class Broker(Thread):
       sock.settimeout(5)
       oldTimeout = sock.gettimeout()
       sock.settimeout(self.connTimeout)
+      connSock = None
       if self.ssl:
-        connSock = ssl(sock)
+        if 'ssl_certfile' in self.connectArgs:
+          connSock = ssl(sock, certfile=self.connectArgs['ssl_certfile'])
+        else:
+          connSock = ssl(sock)
       else:
         connSock = sock
       self.conn = Connection(connSock, username=self.authUser, password=self.authPass,

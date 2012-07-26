@@ -42,15 +42,15 @@ class Config:
         self._limit = 50
         self._increasing = False
         self._sortcol = None
-        self._sasl_mechanism = None
-        self._ha_admin = False
 
 config = Config()
+conn_options = {}
 
 def OptionsAndArguments(argv):
     """ Set global variables for options, return arguments """
 
     global config
+    global conn_options
 
     usage = \
 """%prog -g [options]
@@ -70,6 +70,8 @@ def OptionsAndArguments(argv):
                       help="Maximum time to wait for broker connection (in seconds)")
     group1.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>",
                       help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
+    group1.add_option("--ssl-certificate", action="store", type="string", metavar="<cert>", help="Client SSL certificate (PEM Format)")
+    group1.add_option("--ssl-key", action="store", type="string", metavar="<key>", help="Client SSL private key (PEM Format)")
     group1.add_option("--ha-admin", action="store_true", help="Allow connection to a HA backup broker.")
     parser.add_option_group(group1)
 
@@ -100,8 +102,15 @@ def OptionsAndArguments(argv):
     config._connTimeout = opts.timeout
     config._increasing = opts.increasing
     config._limit = opts.limit
-    config._sasl_mechanism = opts.sasl_mechanism
-    config._ha_admin = opts.ha_admin
+
+    if opts.sasl_mechanism:
+        conn_options['sasl_mechanisms'] = opts.sasl_mechanism
+    if opts.ssl_certificate:
+        conn_options['ssl_certfile'] = opts.ssl_certificate
+    if opts.ssl_key:
+        conn_options['ssl_key'] = opts.ssl_key
+    if opts.ha_admin:
+        conn_options['client_properties'] = {'qpid.ha-admin' : 1}
 
     return args
 
@@ -137,11 +146,9 @@ class BrokerManager:
         self.broker     = None
         self.cluster    = None
 
-    def SetBroker(self, brokerUrl, mechanism):
+    def SetBroker(self, brokerUrl):
         self.url = brokerUrl
-        client_properties={}
-        if config._ha_admin: client_properties["qpid.ha-admin"] = 1
-        self.connection = Connection.establish(self.url, sasl_mechanisms=mechanism, client_properties=client_properties)
+        self.connection = Connection.establish(self.url, **conn_options)
         self.broker = BrokerAgent(self.connection)
 
     def Disconnect(self):
@@ -246,9 +253,10 @@ class BrokerManager:
     def displayConn(self):
         disp = Display(prefix="  ")
         heads = []
-        heads.append(Header('client-addr'))
+        heads.append(Header('connection'))
         heads.append(Header('cproc'))
         heads.append(Header('cpid'))
+        heads.append(Header('mech'))
         heads.append(Header('auth'))
         heads.append(Header('connected', Header.DURATION))
         heads.append(Header('idle', Header.DURATION))
@@ -262,6 +270,7 @@ class BrokerManager:
             row.append(conn.address)
             row.append(conn.remoteProcessName)
             row.append(conn.remotePid)
+            row.append(conn.saslMechanism)
             row.append(conn.authIdentity)
             row.append(broker.getUpdateTime() - conn.getCreateTime())
             row.append(broker.getUpdateTime() - conn.getUpdateTime())
@@ -537,7 +546,7 @@ def main(argv=None):
     bm   = BrokerManager()
 
     try:
-        bm.SetBroker(config._host, config._sasl_mechanism)
+        bm.SetBroker(config._host)
         bm.display(args)
         bm.Disconnect()
         return 0

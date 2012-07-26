@@ -88,7 +88,6 @@ class Config:
         self._altern_ex         = None
         self._durable           = False
         self._replicate       = None
-        self._ha_admin          = False
         self._clusterDurable    = False
         self._if_empty          = True
         self._if_unused         = True
@@ -102,7 +101,6 @@ class Config:
         self._ive               = False
         self._eventGeneration   = None
         self._file              = None
-        self._sasl_mechanism    = None
         self._flowStopCount     = None
         self._flowResumeCount   = None
         self._flowStopSize      = None
@@ -114,6 +112,7 @@ class Config:
         self._returnCode        = 0
 
 config = Config()
+conn_options = {}
 
 FILECOUNT = "qpid.file_count"
 FILESIZE  = "qpid.file_size"
@@ -177,6 +176,9 @@ def OptionsAndArguments(argv):
     group1.add_option("-r", "--recursive", action="store_true", help="Show bindings in queue or exchange list")
     group1.add_option("-b", "--broker", action="store", type="string", default="localhost:5672", metavar="<address>", help="Address of qpidd broker with syntax: [username/password@] hostname | ip-address [:<port>]")
     group1.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
+    group1.add_option("--ssl-certificate", action="store", type="string", metavar="<cert>", help="Client SSL certificate (PEM Format)")
+    group1.add_option("--ssl-key", action="store", type="string", metavar="<key>", help="Client SSL private key (PEM Format)")
+    group1.add_option("--ha-admin", action="store_true", help="Allow connection to a HA backup broker.")
     parser.add_option_group(group1)
 
     group_ls = OptionGroup(parser, "Options for Listing Exchanges and Queues")
@@ -187,7 +189,6 @@ def OptionsAndArguments(argv):
     group2.add_option("--alternate-exchange", action="store", type="string", metavar="<aexname>", help="Name of the alternate-exchange for the new queue or exchange. Exchanges route messages to the alternate exchange if they are unable to route them elsewhere. Queues route messages to the alternate exchange if they are rejected by a subscriber or orphaned by queue deletion.")
     group2.add_option("--durable", action="store_true", help="The new queue or exchange is durable.")
     group2.add_option("--replicate", action="store", metavar="<level>", help="Enable automatic replication in a HA cluster. <level> is 'none', 'configuration' or 'all').")
-    group2.add_option("--ha-admin", action="store_true", help="Allow connection to a HA backup broker.")
     parser.add_option_group(group2)
 
     group3 = OptionGroup(parser, "Options for Adding Queues")
@@ -306,6 +307,16 @@ def OptionsAndArguments(argv):
         config._extra_arguments = opts.extra_arguments
     if opts.start_replica:
         config._start_replica = opts.start_replica
+
+    if opts.sasl_mechanism:
+        conn_options['sasl_mechanisms'] = opts.sasl_mechanism
+    if opts.ssl_certificate:
+        conn_options['ssl_certfile'] = opts.ssl_certificate
+    if opts.ssl_key:
+        conn_options['ssl_key'] = opts.ssl_key
+    if opts.ha_admin:
+        conn_options['client_properties'] = {'qpid.ha-admin' : 1}
+
     return args
 
 
@@ -355,11 +366,9 @@ class BrokerManager:
         self.conn       = None
         self.broker     = None
 
-    def SetBroker(self, brokerUrl, mechanism):
+    def SetBroker(self, brokerUrl):
         self.url = brokerUrl
-        client_properties={}
-        if config._ha_admin: client_properties["qpid.ha-admin"] = 1
-        self.conn = Connection.establish(self.url, sasl_mechanisms=mechanism, client_properties=client_properties)
+        self.conn = Connection.establish(self.url, **conn_options)
         self.broker = BrokerAgent(self.conn)
 
     def Disconnect(self):
@@ -690,7 +699,7 @@ def main(argv=None):
     bm   = BrokerManager()
 
     try:
-        bm.SetBroker(config._host, config._sasl_mechanism)
+        bm.SetBroker(config._host)
         if len(args) == 0:
             bm.Overview()
         else:

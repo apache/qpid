@@ -194,9 +194,10 @@ class BrokerAgent(object):
   def getMemory(self):
     return self._getSingleObject(Memory)
 
-  def echo(self, sequence, body):
+  def echo(self, sequence = 1, body = "Body"):
     """Request a response to test the path to the management broker"""
-    pass
+    args = {'sequence' : sequence, 'body' : body}
+    return self._method('echo', args)
 
   def connect(self, host, port, durable, authMechanism, username, password, transport):
     """Establish a connection to another broker"""
