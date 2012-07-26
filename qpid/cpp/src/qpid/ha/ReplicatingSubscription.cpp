@@ -184,16 +184,17 @@ ReplicatingSubscription::ReplicatingSubscription(
         if (!guard) guard.reset(new QueueGuard(*queue, info));
         guard->attach(*this);
 
-        QueueRange backup(arguments); // The remote backup state.
-        QueueRange primary(guard->getRange()); // The local state at the time the guard was set.
+        QueueRange backup(arguments); // Remote backup range.
+        QueueRange primary(guard->getRange()); // Unguarded range when the guard was set.
         backupPosition = backup.back;
 
         // Sync backup and primary queues, don't send messages already on the backup
 
-        if (backup.back < primary.front || backup.front > primary.back
-            || primary.empty() || backup.empty())
+        if (backup.front > primary.front || // Missing messages at front
+            backup.back < primary.front ||  // No overlap
+            primary.empty() || backup.empty()) // Empty
         {
-            // No overlap - erase backup and start from the beginning
+            // No useful overlap - erase backup and start from the beginning
             if (!backup.empty()) dequeued(backup.front, backup.back);
             position = primary.front-1;
         }
