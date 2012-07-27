@@ -1594,7 +1594,10 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             _messageId = messageId;
             _isRecovered = isRecovered;
 
-            _metaData = metaData;
+            if(!_isRecovered)
+            {
+                _metaData = metaData;
+            }
             _metaDataRef = new SoftReference<StorableMessageMetaData>(metaData);
         }
 

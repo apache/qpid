@@ -2057,8 +2057,11 @@ public class DerbyMessageStore implements MessageStore
             _messageId = messageId;
             _isRecovered = isRecovered;
 
+            if(!_isRecovered)
+            {
+                _metaData = metaData;
+            }
             _metaDataRef = new SoftReference<StorableMessageMetaData>(metaData);
-            _metaData = metaData;
         }
 
         @Override
