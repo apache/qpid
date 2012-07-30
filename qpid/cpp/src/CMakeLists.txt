@@ -626,7 +626,7 @@ set (ha_default ON)
 option(BUILD_HA "Build Active-Passive HA plugin" ${ha_default})
 if (BUILD_HA)
     set (ha_SOURCES
-        qpid/ha/AltExchangeSetter.h
+        qpid/ha/AlternateExchangeSetter.h
 	qpid/ha/BackupConnectionExcluder.h
 	qpid/ha/BrokerInfo.cpp
 	qpid/ha/BrokerInfo.h
