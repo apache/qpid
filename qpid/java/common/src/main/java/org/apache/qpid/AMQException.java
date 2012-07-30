@@ -40,6 +40,8 @@ public class AMQException extends Exception
     /** Holds the AMQ error code constant associated with this exception. */
     private AMQConstant _errorCode;
    
+    private boolean _isHardError;
+
     /**
      * Creates an exception with an optional error code, optional message and optional underlying cause.
      *
@@ -49,8 +51,24 @@ public class AMQException extends Exception
      */
     public AMQException(AMQConstant errorCode, String msg, Throwable cause)
     {
+        // isHardError is defaulted to true to avoid unnessacery modification to
+        // existing code.
+        this(errorCode,true,msg,cause);
+    }
+
+    /**
+     * Creates an exception with an optional error code, optional message and optional underlying cause.
+     *
+     * @param errorCode   The error code. May be null if not to be set.
+     * @param isHardError Denotes if the underlying error is considered a hard error.
+     * @param msg         The exception message. May be null if not to be set.
+     * @param cause       The underlying cause of the exception. May be null if not to be set.
+     */
+    public AMQException(AMQConstant errorCode, boolean isHardError, String msg, Throwable cause)
+    {
         super(((msg == null) ? "" : msg), cause);
         _errorCode = errorCode;
+        _isHardError = isHardError;
     }
 
     /*
@@ -92,7 +110,7 @@ public class AMQException extends Exception
 
     public boolean isHardError()
     {
-        return true;
+        return _isHardError;
     }
 
     /**

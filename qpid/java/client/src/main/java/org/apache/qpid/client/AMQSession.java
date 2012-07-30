@@ -801,11 +801,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         if (e instanceof AMQDisconnectedException)
         {
-            if (_dispatcherThread != null)
-            {
-                // Failover failed and ain't coming back. Knife the dispatcher.
-                _dispatcherThread.interrupt();
-            }
+            // Failover failed and ain't coming back. Knife the dispatcher.
+            stopDispatcherThread();
 
        }
 
@@ -834,6 +831,13 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
     }
 
+    protected void stopDispatcherThread()
+    {
+        if (_dispatcherThread != null)
+        {
+            _dispatcherThread.interrupt();
+        }
+    }
     /**
      * Commits all messages done in this transaction and releases any locks currently held.
      *
