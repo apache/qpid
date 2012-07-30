@@ -233,7 +233,7 @@ public class SelectorTest extends QpidBrokerTestCase implements MessageListener
         {
             
         }
-        assertTrue("Connection should be closed", _connection.isClosed());
+        assertFalse("Connection should not be closed", _connection.isClosed());
     }
         
     public void testSelectorWithJMSMessageID() throws Exception
