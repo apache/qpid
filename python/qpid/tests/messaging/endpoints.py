@@ -1333,3 +1333,15 @@ class SenderTests(Base):
     self.drain(self.rcv, expected=msgs)
     self.ssn.acknowledge()
     assert caught, "did not exceed capacity"
+
+  def testEINTR(self):
+    m1 = self.content("testEINTR", 0)
+    m2 = self.content("testEINTR", 1)
+
+    self.snd.send(m1, timeout=self.timeout())
+    try:
+      os.setuid(500)
+      assert False, "setuid should fail"
+    except:
+      pass
+    self.snd.send(m2, timeout=self.timeout())
