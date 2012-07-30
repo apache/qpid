@@ -110,16 +110,17 @@ void HaBroker::initialize() {
     if (!settings.clientUrl.empty()) setClientUrl(Url(settings.clientUrl));
     if (!settings.brokerUrl.empty()) setBrokerUrl(Url(settings.brokerUrl));
 
+
+    QPID_LOG(notice, logPrefix << "Initializing: " << brokerInfo);
+
     // NOTE: lock is not needed in a constructor, but create one
     // to pass to functions that have a ScopedLock parameter.
     Mutex::ScopedLock l(lock);
     statusChanged(l);
-
-    QPID_LOG(notice, logPrefix << "Broker starting: " << brokerInfo);
 }
 
 HaBroker::~HaBroker() {
-    QPID_LOG(debug, logPrefix << "Broker shut down: " << brokerInfo);
+    QPID_LOG(notice, logPrefix << "Shut down: " << brokerInfo);
     broker.getConnectionObservers().remove(observer);
 }
 
@@ -271,7 +272,7 @@ bool checkTransition(BrokerStatus from, BrokerStatus to) {
 } // namespace
 
 void HaBroker::setStatus(BrokerStatus newStatus, Mutex::ScopedLock& l) {
-    QPID_LOG(notice, logPrefix << "Status change: "
+    QPID_LOG(info, logPrefix << "Status change: "
              << printable(status) << " -> " << printable(newStatus));
     bool legal = checkTransition(status, newStatus);
     assert(legal);
@@ -299,11 +300,14 @@ void HaBroker::membershipUpdated(Mutex::ScopedLock&) {
 void HaBroker::setMembership(const Variant::List& brokers) {
     Mutex::ScopedLock l(lock);
     membership.assign(brokers);
-    QPID_LOG(debug, logPrefix << "Membership update: " <<  membership);
+    QPID_LOG(info, logPrefix << "Membership update: " <<  membership);
     BrokerInfo info;
-    // Update my status to what the primary says.
-    if (membership.get(systemId, info) && status != info.getStatus())
+    // Update my status to what the primary says it is.  The primary can toggle
+    // status between READY and CATCHUP based on the state of our subscriptions.
+    if (membership.get(systemId, info) && status != info.getStatus()) {
         setStatus(info.getStatus(), l);
+        if (backup.get()) backup->setStatus(status);
+    }
     membershipUpdated(l);
 }
 

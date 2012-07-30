@@ -115,4 +115,16 @@ void Backup::setBrokerUrl(const Url& url) {
         initialize(url);        // Deferred initialization
 }
 
+void Backup::setStatus(BrokerStatus status) {
+    switch (status) {
+      case READY:
+        QPID_LOG(notice, logPrefix << "Ready to become primary.");
+        break;
+      case CATCHUP:
+        QPID_LOG(notice, logPrefix << "Catching up on primary, cannot be promoted.");
+      default:
+        assert(0);
+    }
+}
+
 }} // namespace qpid::ha
