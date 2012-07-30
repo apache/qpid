@@ -43,6 +43,7 @@ import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 import org.apache.commons.lang.time.FastDateFormat;
+import org.apache.log4j.Logger;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
@@ -59,6 +60,8 @@ import org.apache.qpid.server.queue.QueueEntryVisitor;
 
 public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueNotificationListener
 {
+    private static final Logger LOGGER = Logger.getLogger(QueueMBean.class);
+
     private static final String[] VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC_ARRAY =
             VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC.toArray(new String[VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC.size()]);
 
@@ -370,12 +373,14 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
         byte[] msgContent = new byte[bodySize];
 
         ByteBuffer buf = ByteBuffer.wrap(msgContent);
-        int position = 0;
+        int stored = serverMsg.getContent(buf, 0);
 
-        while(position < bodySize)
+        if(bodySize != stored)
         {
-            position += serverMsg.getContent(buf, position);
-
+            LOGGER.error(String.format("An unexpected amount of content was retrieved " +
+                    "(expected %d, got %d bytes) when viewing content for message with ID %d " +
+                    "on queue '%s' in virtual host '%s'",
+                    bodySize, stored, messageId, _queue.getName(), _vhostMBean.getName()));
         }
 
         AMQMessageHeader header = serverMsg.getMessageHeader();
@@ -591,7 +596,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
     }
 
 
-    private static class GetMessageVisitor implements QueueEntryVisitor
+    protected static class GetMessageVisitor implements QueueEntryVisitor
     {
 
         private final long _messageNumber;
