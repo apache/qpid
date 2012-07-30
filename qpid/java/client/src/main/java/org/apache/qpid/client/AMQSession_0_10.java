@@ -129,7 +129,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
      */
     private final RangeSet _txRangeSet = RangeSetFactory.createRangeSet();
     private int _txSize = 0;
-    private boolean _isHardError = Boolean.getBoolean("qpid.session.is_hard_error");
+    private boolean _isHardError = Boolean.getBoolean("qpid.session.legacy_exception_behaviour");
     //--- constructors
 
     /**
@@ -1051,15 +1051,18 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             AMQException amqe = new AMQException(AMQConstant.getConstant(code), _isHardError, se.getMessage(), se.getCause());
             _currentException = amqe;
         }
-        cancelTimerTask();
-        stopDispatcherThread();
-        try
+        if (!_isHardError)
         {
-            closed(_currentException);
-        }
-        catch(Exception e)
-        {
-            _logger.warn("Error closing session", e);
+            cancelTimerTask();
+            stopDispatcherThread();
+            try
+            {
+                closed(_currentException);
+            }
+            catch(Exception e)
+            {
+                _logger.warn("Error closing session", e);
+            }
         }
         getAMQConnection().exceptionReceived(_currentException);
     }
