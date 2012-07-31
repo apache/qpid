@@ -58,6 +58,16 @@ define(["dojo/_base/xhr",
                 sorted: "sortkey"
             };
 
+        var fieldConverters = {
+                queueFlowControlSizeBytes:        parseInt,
+                queueFlowResumeSizeBytes:         parseInt,
+                alertThresholdMessageSize:        parseInt,
+                alertThresholdQueueDepthMessages: parseInt,
+                maximumDeliveryAttempts:          parseInt,
+                alertThresholdMessageAge:         parseInt,
+                alertRepeatGap:                   parseInt
+            }
+
         var convertToQueue = function convertToQueue(formValues)
             {
                 var newQueue = {};
@@ -74,7 +84,14 @@ define(["dojo/_base/xhr",
                         } else if (!typeSpecificFields.hasOwnProperty(propName) ||
                                         formValues.type === typeSpecificFields[ propName ]) {
                             if(formValues[ propName ] !== "") {
-                                newQueue[ propName ] = formValues[propName];
+                                if (fieldConverters.hasOwnProperty(propName))
+                                {
+                                    newQueue[ propName ] = fieldConverters[propName](formValues[propName]);
+                                }
+                                else
+                                {
+                                    newQueue[ propName ] = formValues[propName];
+                                }
                             }
                         }
 
