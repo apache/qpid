@@ -19,6 +19,7 @@
  *
  */
 
+#include "HaBroker.h"
 #include "QueueReplicator.h"
 #include "ReplicatingSubscription.h"
 #include "qpid/broker/Bridge.h"
@@ -58,12 +59,13 @@ bool QueueReplicator::isEventKey(const std::string key) {
     return ret;
 }
 
-QueueReplicator::QueueReplicator(const BrokerInfo& info,
+QueueReplicator::QueueReplicator(HaBroker& hb,
                                  boost::shared_ptr<Queue> q,
                                  boost::shared_ptr<Link> l)
     : Exchange(replicatorName(q->getName()), 0, q->getBroker()),
+      haBroker(hb),
       logPrefix("Backup queue "+q->getName()+": "),
-      queue(q), link(l), brokerInfo(info)
+      queue(q), link(l), brokerInfo(hb.getBrokerInfo())
 {
     Uuid uuid(true);
     bridgeName = replicatorName(q->getName()) + std::string(".") + uuid.str();
@@ -183,6 +185,7 @@ void QueueReplicator::route(Deliverable& msg)
     }
     catch (const std::exception& e) {
         QPID_LOG(critical, logPrefix << "Replication failed: " << e.what());
+        haBroker.shutdown();
         throw;
     }
 }

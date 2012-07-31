@@ -193,7 +193,7 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
           link->setUrl(url);
           // Create a queue replicator
           boost::shared_ptr<QueueReplicator> qr(
-              new QueueReplicator(brokerInfo, queue, link));
+              new QueueReplicator(*this, queue, link));
           qr->activate();
           broker.getExchanges().registerExchange(qr);
           break;
