@@ -89,6 +89,8 @@ using namespace framing;
 namespace arg=client::arg;
 using client::SessionBase_0_10Access;
 
+namespace _qmf = qmf::org::apache::qpid::broker;
+
 // Reserved exchange/queue name for catch-up, avoid clashes with user queues/exchanges.
 const std::string UpdateClient::UPDATE("x-qpid.cluster-update");
 // Name for header used to carry expiration information.
@@ -371,13 +373,14 @@ class MessageUpdater {
 
 void UpdateClient::updateQueue(client::AsyncSession& s, const boost::shared_ptr<Queue>& q) {
     broker::Exchange::shared_ptr alternateExchange = q->getAlternateExchange();
+    _qmf::Queue* mgmtQueue = dynamic_cast<_qmf::Queue*>(q->GetManagementObject());
     s.queueDeclare(
         arg::queue = q->getName(),
         arg::durable = q->isDurable(),
         arg::autoDelete = q->isAutoDelete(),
         arg::alternateExchange = alternateExchange ? alternateExchange->getName() : "",
         arg::arguments = q->getSettings(),
-        arg::exclusive = q->hasExclusiveOwner()
+        arg::exclusive = mgmtQueue && mgmtQueue->get_exclusive()
     );
     MessageUpdater updater(q->getName(), s, expiry);
     q->eachMessage(boost::bind(&MessageUpdater::updateQueuedMessage, &updater, _1));
