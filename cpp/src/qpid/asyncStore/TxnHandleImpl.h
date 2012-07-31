@@ -43,26 +43,16 @@ class TxnHandleImpl : public virtual qpid::RefCounted
 public:
     TxnHandleImpl();
     TxnHandleImpl(qpid::broker::TxnBuffer* tb);
-    TxnHandleImpl(const std::string& xid);
-    TxnHandleImpl(const std::string& xid, qpid::broker::TxnBuffer* tb);
+    TxnHandleImpl(const std::string& xid, const bool tpcFlag);
+    TxnHandleImpl(const std::string& xid, const bool tpcFlag, qpid::broker::TxnBuffer* tb);
     virtual ~TxnHandleImpl();
     const std::string& getXid() const;
     bool is2pc() const;
 
-    void submitPrepare();
-    void submitCommit();
-    void submitAbort();
-
-    void incrOpCnt();
-    void decrOpCnt();
 private:
     std::string m_xid;
     bool m_tpcFlag;
-    uint32_t m_asyncOpCnt;
-    qpid::sys::Mutex m_asyncOpCntMutex;
     qpid::broker::TxnBuffer* const m_txnBuffer;
-
-    void createLocalXid();
 };
 
 }} // namespace qpid::asyncStore

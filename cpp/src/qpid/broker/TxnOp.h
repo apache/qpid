@@ -24,15 +24,17 @@
 #ifndef qpid_broker_TxnOp_h_
 #define qpid_broker_TxnOp_h_
 
+#include <boost/shared_ptr.hpp>
+
 namespace qpid {
 namespace broker {
 
-class TxnHandle;
+class TxnBuffer;
 
 class TxnOp{
 public:
     virtual ~TxnOp() {}
-    virtual bool prepare(TxnHandle& th) throw() = 0;
+    virtual bool prepare(qpid::broker::TxnBuffer*) throw() = 0;
     virtual void commit()  throw() = 0;
     virtual void rollback()  throw() = 0;
 };

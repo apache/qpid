@@ -43,7 +43,7 @@ public:
     ~EnqueueHandle();
     EnqueueHandle& operator=(const EnqueueHandle& r);
 
-    // EnqueueHandleImpl methods
+    // --- EnqueueHandleImpl methods ---
     // <none>
 
 private:

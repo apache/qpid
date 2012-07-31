@@ -47,22 +47,18 @@ MessageConsumer::MessageConsumer(const TestOptions& perfTestParams,
         m_queue(queue)
 {}
 
-MessageConsumer::~MessageConsumer()
-{}
+MessageConsumer::~MessageConsumer() {}
 
 void
-MessageConsumer::record(boost::shared_ptr<DeliveryRecord> dr)
-{
+MessageConsumer::record(boost::shared_ptr<DeliveryRecord> dr) {
     m_unacked.push_back(dr);
 }
 
 void
-MessageConsumer::commitComplete()
-{}
+MessageConsumer::commitComplete() {}
 
 void*
-MessageConsumer::runConsumers()
-{
+MessageConsumer::runConsumers() {
     const bool useTxns = m_perfTestParams.m_deqTxnBlockSize > 0U;
     uint16_t opsInTxnCnt = 0U;
     qpid::broker::TxnBuffer* tb = 0;
@@ -78,17 +74,13 @@ MessageConsumer::runConsumers()
             ++numMsgs;
             if (useTxns) {
                 // --- Transactional dequeue ---
+                boost::shared_ptr<TxnAccept> ta(new TxnAccept(m_unacked));
+                m_unacked.clear();
+                tb->enlist(ta);
                 if (++opsInTxnCnt >= m_perfTestParams.m_deqTxnBlockSize) {
-                    if (m_perfTestParams.m_durable) {
-                        boost::shared_ptr<TxnAccept> ta(new TxnAccept(m_unacked));
-                        m_unacked.clear();
-                        tb->enlist(ta);
-                        tb->commitLocal(m_store);
-                        if (numMsgs < m_perfTestParams.m_numMsgs) {
-                            tb = new qpid::broker::TxnBuffer(m_resultQueue);
-                        }
-                    } else {
-                        tb->commit();
+                    tb->commitLocal(m_store);
+                    if (numMsgs < m_perfTestParams.m_numMsgs) {
+                        tb = new qpid::broker::TxnBuffer(m_resultQueue);
                     }
                     opsInTxnCnt = 0U;
                 }
@@ -105,11 +97,7 @@ MessageConsumer::runConsumers()
     }
 
     if (opsInTxnCnt) {
-        if (m_perfTestParams.m_durable) {
-            tb->commitLocal(m_store);
-        } else {
-            tb->commit();
-        }
+        tb->commitLocal(m_store);
     }
 
     return reinterpret_cast<void*>(0);
@@ -117,8 +105,7 @@ MessageConsumer::runConsumers()
 
 //static
 void*
-MessageConsumer::startConsumers(void* ptr)
-{
+MessageConsumer::startConsumers(void* ptr) {
     return reinterpret_cast<MessageConsumer*>(ptr)->runConsumers();
 }
 

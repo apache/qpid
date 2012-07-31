@@ -57,28 +57,5 @@ TxnHandle::operator=(const TxnHandle& r)
 
 // --- TxnHandleImpl methods ---
 
-const std::string&
-TxnHandle::getXid() const
-{
-    return impl->getXid();
-}
-
-bool
-TxnHandle::is2pc() const
-{
-    return impl->is2pc();
-}
-
-void
-TxnHandle::incrOpCnt()
-{
-    impl->incrOpCnt();
-}
-
-void
-TxnHandle::decrOpCnt()
-{
-    impl->decrOpCnt();
-}
 
 }} // namespace qpid::broker

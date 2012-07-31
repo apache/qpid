@@ -41,9 +41,9 @@ public:
     virtual ~TxnAccept();
 
     // --- Interface TxnOp ---
-    bool prepare(qpid::broker::TxnHandle& th) throw();
-    void commit()  throw();
-    void rollback()  throw();
+    bool prepare(qpid::broker::TxnBuffer* tb) throw();
+    void commit() throw();
+    void rollback() throw();
 private:
     std::deque<boost::shared_ptr<DeliveryRecord> > m_ops;
 };

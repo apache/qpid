@@ -45,7 +45,7 @@ public:
     ~QueueHandle();
     QueueHandle& operator=(const QueueHandle& r);
 
-    // QueueHandleImpl methods
+    // --- QueueHandleImpl methods ---
     const std::string& getName() const;
 
 private:

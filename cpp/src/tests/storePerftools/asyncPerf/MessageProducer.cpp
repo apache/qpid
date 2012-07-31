@@ -49,12 +49,10 @@ MessageProducer::MessageProducer(const TestOptions& perfTestParams,
         m_queue(queue)
 {}
 
-MessageProducer::~MessageProducer()
-{}
+MessageProducer::~MessageProducer() {}
 
 void*
-MessageProducer::runProducers()
-{
+MessageProducer::runProducers() {
     const bool useTxns = m_perfTestParams.m_enqTxnBlockSize > 0U;
     uint16_t recsInTxnCnt = 0U;
     qpid::broker::TxnBuffer* tb = 0;
@@ -68,17 +66,13 @@ MessageProducer::runProducers()
             op->deliverTo(m_queue);
             tb->enlist(op);
             if (++recsInTxnCnt >= m_perfTestParams.m_enqTxnBlockSize) {
-                if (m_perfTestParams.m_durable) {
-                    tb->commitLocal(m_store);
+                tb->commitLocal(m_store);
 
-                    // TxnBuffer instance tb carries async state that precludes it being re-used for the next
-                    // transaction until the current commit cycle completes. So use another instance. This
-                    // instance should auto-delete when the async commit cycle completes.
-                    if ((numMsgs + 1) < m_perfTestParams.m_numMsgs) {
-                        tb = new qpid::broker::TxnBuffer(m_resultQueue);
-                    }
-                } else {
-                    tb->commit();
+                // TxnBuffer instance tb carries async state that precludes it being re-used for the next
+                // transaction until the current commit cycle completes. So use another instance. This
+                // instance should auto-delete when the async commit cycle completes.
+                if ((numMsgs + 1) < m_perfTestParams.m_numMsgs) {
+                    tb = new qpid::broker::TxnBuffer(m_resultQueue);
                 }
                 recsInTxnCnt = 0U;
             }
@@ -87,11 +81,7 @@ MessageProducer::runProducers()
         }
     }
     if (recsInTxnCnt) {
-        if (m_perfTestParams.m_durable) {
-            tb->commitLocal(m_store);
-        } else {
-            tb->commit();
-        }
+        tb->commitLocal(m_store);
     }
     return reinterpret_cast<void*>(0);
 }

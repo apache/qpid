@@ -35,18 +35,17 @@ TxnAccept::TxnAccept(std::deque<boost::shared_ptr<DeliveryRecord> >& ops) :
         m_ops(ops)
 {}
 
-TxnAccept::~TxnAccept()
-{}
+TxnAccept::~TxnAccept() {}
 
 // --- Interface TxnOp ---
 
 bool
-TxnAccept::prepare(qpid::broker::TxnHandle& th) throw()
-{
+TxnAccept::prepare(qpid::broker::TxnBuffer* tb) throw() {
     try {
         for (std::deque<boost::shared_ptr<DeliveryRecord> >::iterator i = m_ops.begin(); i != m_ops.end(); ++i) {
-            (*i)->dequeue(th);
+            (*i)->dequeue(tb);
         }
+        return true;
     } catch (const std::exception& e) {
         QPID_LOG(error, "TxnAccept: Failed to prepare transaction: " << e.what());
     } catch (...) {
@@ -56,8 +55,7 @@ TxnAccept::prepare(qpid::broker::TxnHandle& th) throw()
 }
 
 void
-TxnAccept::commit()  throw()
-{
+TxnAccept::commit() throw() {
     try {
         for (std::deque<boost::shared_ptr<DeliveryRecord> >::iterator i=m_ops.begin(); i!=m_ops.end(); ++i) {
             (*i)->committed();
@@ -71,7 +69,6 @@ TxnAccept::commit()  throw()
 }
 
 void
-TxnAccept::rollback()  throw()
-{}
+TxnAccept::rollback() throw() {}
 
 }}} // namespace tests::storePerftools::asyncPerf

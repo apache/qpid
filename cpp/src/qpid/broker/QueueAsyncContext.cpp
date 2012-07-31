@@ -29,13 +29,30 @@
 
 namespace qpid {
 namespace broker {
-
 QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
-                                     TxnHandle& th,
                                      AsyncResultCallback rcb,
                                      AsyncResultQueue* const arq) :
         m_q(q),
-        m_th(th),
+        m_rcb(rcb),
+        m_arq(arq)
+{}
+
+QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
+                                     boost::intrusive_ptr<PersistableMessage> msg,
+                                     AsyncResultCallback rcb,
+                                     AsyncResultQueue* const arq) :
+        m_q(q),
+        m_msg(msg),
+        m_rcb(rcb),
+        m_arq(arq)
+{}
+
+QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
+                                     TxnBuffer* tb,
+                                     AsyncResultCallback rcb,
+                                     AsyncResultQueue* const arq) :
+        m_q(q),
+        m_tb(tb),
         m_rcb(rcb),
         m_arq(arq)
 {
@@ -44,12 +61,12 @@ QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
 
 QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
                                      boost::intrusive_ptr<PersistableMessage> msg,
-                                     TxnHandle& th,
+                                     TxnBuffer* tb,
                                      AsyncResultCallback rcb,
                                      AsyncResultQueue* const arq) :
         m_q(q),
         m_msg(msg),
-        m_th(th),
+        m_tb(tb),
         m_rcb(rcb),
         m_arq(arq)
 {
@@ -72,10 +89,9 @@ QueueAsyncContext::getMessage() const
     return m_msg;
 }
 
-TxnHandle
-QueueAsyncContext::getTxnHandle() const
-{
-    return m_th;
+TxnBuffer*
+QueueAsyncContext::getTxnBuffer() const {
+    return m_tb;
 }
 
 AsyncResultQueue*

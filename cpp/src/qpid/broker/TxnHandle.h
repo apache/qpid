@@ -45,11 +45,8 @@ public:
     ~TxnHandle();
     TxnHandle& operator=(const TxnHandle& r);
 
-    // TxnHandleImpl methods
-    const std::string& getXid() const;
-    bool is2pc() const;
-    void incrOpCnt();
-    void decrOpCnt();
+    // --- TxnHandleImpl methods ---
+    // <none>
 
 private:
     friend class PrivateImplRef<TxnHandle>;

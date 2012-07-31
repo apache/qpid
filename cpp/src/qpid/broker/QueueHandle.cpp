@@ -56,6 +56,7 @@ QueueHandle::operator=(const QueueHandle& r)
 }
 
 // --- QueueHandleImpl methods ---
+
 const std::string&
 QueueHandle::getName() const
 {

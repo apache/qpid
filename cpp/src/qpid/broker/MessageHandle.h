@@ -43,7 +43,7 @@ public:
     ~MessageHandle();
     MessageHandle& operator=(const MessageHandle& r);
 
-    // MessageHandleImpl methods
+    // --- MessageHandleImpl methods ---
     // <none>
 
 private:

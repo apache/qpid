@@ -43,7 +43,7 @@ public:
     ~ConfigHandle();
     ConfigHandle& operator=(const ConfigHandle& r);
 
-    // ConfigHandleImpl methods
+    // --- ConfigHandleImpl methods ---
     // <none>
 
 private:

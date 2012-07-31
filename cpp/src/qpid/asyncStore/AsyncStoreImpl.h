@@ -60,8 +60,10 @@ public:
 
     qpid::broker::TxnHandle createTxnHandle();
     qpid::broker::TxnHandle createTxnHandle(qpid::broker::TxnBuffer* tb);
-    qpid::broker::TxnHandle createTxnHandle(const std::string& xid);
     qpid::broker::TxnHandle createTxnHandle(const std::string& xid,
+                                            const bool tpcFlag);
+    qpid::broker::TxnHandle createTxnHandle(const std::string& xid,
+                                            const bool tpcFlag,
                                             qpid::broker::TxnBuffer* tb);
 
     void submitPrepare(qpid::broker::TxnHandle& txnHandle,

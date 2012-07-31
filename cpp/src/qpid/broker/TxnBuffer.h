@@ -42,10 +42,16 @@ class TxnOp;
 class TxnBuffer {
 public:
     TxnBuffer(AsyncResultQueue& arq);
+    TxnBuffer(AsyncResultQueue& arq, std::string& xid);
     virtual ~TxnBuffer();
+    TxnHandle& getTxnHandle();
+    const std::string& getXid() const;
+    bool is2pc() const;
+    void incrOpCnt();
+    void decrOpCnt();
 
     void enlist(boost::shared_ptr<TxnOp> op);
-    bool prepare(TxnHandle& th);
+    bool prepare();
     void commit();
     void rollback();
     bool commitLocal(AsyncTransactionalStore* const store);
@@ -57,14 +63,25 @@ public:
     static void handleAsyncAbortResult(const AsyncResultHandle* const arh);
 
 private:
+    mutable qpid::sys::Mutex m_opsMutex;
+    mutable qpid::sys::Mutex m_submitOpCntMutex;
+    mutable qpid::sys::Mutex m_completeOpCntMutex;
+    static qpid::sys::Mutex s_uuidMutex;
+
     std::vector<boost::shared_ptr<TxnOp> > m_ops;
-    qpid::sys::Mutex m_opsMutex;
     TxnHandle m_txnHandle;
     AsyncTransactionalStore* m_store;
     AsyncResultQueue& m_resultQueue;
+    std::string m_xid;
+    bool m_tpcFlag;
+    uint32_t m_submitOpCnt;
+    uint32_t m_completeOpCnt;
 
     typedef enum {NONE = 0, PREPARE, COMMIT, ROLLBACK, COMPLETE} e_txnState;
     e_txnState m_state;
+
+    uint32_t getNumOps() const;
+    void createLocalXid();
 };
 
 }} // namespace qpid::broker

@@ -55,4 +55,6 @@ EnqueueHandle::operator=(const EnqueueHandle& r)
     return PrivateImpl::assign(*this, r);
 }
 
+// --- EnqueueHandleImpl methods ---
+
 }} // namespace qpid::broker

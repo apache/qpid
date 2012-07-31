@@ -30,7 +30,7 @@
 
 namespace qpid  {
 namespace broker {
-class TxnHandle;
+class TxnBuffer;
 }}
 
 namespace tests {
@@ -51,7 +51,7 @@ public:
     bool setEnded();
     bool isEnded() const;
     bool isRedundant() const;
-    void dequeue(qpid::broker::TxnHandle& txn);
+    void dequeue(qpid::broker::TxnBuffer* tb);
     void committed() const;
     boost::shared_ptr<QueuedMessage> getQueuedMessage() const;
 private:

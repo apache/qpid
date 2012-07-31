@@ -55,4 +55,6 @@ MessageHandle::operator=(const MessageHandle& r)
     return PrivateImpl::assign(*this, r);
 }
 
+// --- MessageHandleImpl methods ---
+
 }} // namespace qpid::broker

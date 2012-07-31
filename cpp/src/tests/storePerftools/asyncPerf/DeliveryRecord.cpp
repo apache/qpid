@@ -82,9 +82,9 @@ DeliveryRecord::isRedundant() const
 }
 
 void
-DeliveryRecord::dequeue(qpid::broker::TxnHandle& txn)
+DeliveryRecord::dequeue(qpid::broker::TxnBuffer* tb)
 {
-    m_queuedMessage->getQueue()->dequeue(txn, m_queuedMessage);
+    m_queuedMessage->getQueue()->dequeue(tb, m_queuedMessage);
 }
 
 void

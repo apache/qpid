@@ -55,4 +55,6 @@ ConfigHandle::operator=(const ConfigHandle& r)
     return PrivateImpl::assign(*this, r);
 }
 
+// --- ConfigHandleImpl methods ---
+
 }} // namespace qpid::broker

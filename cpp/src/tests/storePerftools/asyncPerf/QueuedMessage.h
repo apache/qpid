@@ -59,7 +59,7 @@ public:
     qpid::broker::EnqueueHandle& enqHandle();
 
     // --- Transaction handling ---
-    void prepareEnqueue(qpid::broker::TxnHandle& th);
+    void prepareEnqueue(qpid::broker::TxnBuffer* tb);
     void commitEnqueue();
     void abortEnqueue();
 

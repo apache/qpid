@@ -36,7 +36,6 @@ class AsyncResultHandle;
 class AsyncResultQueue {
 public:
     virtual ~AsyncResultQueue() {}
-    // TODO: Remove boost::shared_ptr<> from this interface
     virtual void submit(boost::shared_ptr<AsyncResultHandle>) = 0;
 };
 
@@ -79,11 +78,12 @@ public:
 
     virtual TxnHandle createTxnHandle() = 0;
     virtual TxnHandle createTxnHandle(TxnBuffer* tb) = 0;
-    virtual TxnHandle createTxnHandle(const std::string& xid) = 0;
     virtual TxnHandle createTxnHandle(const std::string& xid,
-                                       TxnBuffer* tb) = 0;
+                                      const bool tpcFlag) = 0;
+    virtual TxnHandle createTxnHandle(const std::string& xid,
+                                      const bool tpcFlag,
+                                      TxnBuffer* tb) = 0;
 
-    // TODO: Remove boost::shared_ptr<BrokerAsyncContext> from this interface
     virtual void submitPrepare(TxnHandle&,
                                boost::shared_ptr<TpcTxnAsyncContext>) = 0; // Distributed txns only
     virtual void submitCommit(TxnHandle&,
@@ -111,8 +111,6 @@ public:
 
 
     // --- Store async interface ---
-
-    // TODO: Remove boost::shared_ptr<BrokerAsyncContext> from this interface
 
     // TODO: Switch from BrokerAsyncContext (parent class) to ConfigAsyncContext
     // when theses features (and async context classes) are developed.

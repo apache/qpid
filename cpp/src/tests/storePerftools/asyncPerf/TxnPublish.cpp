@@ -38,15 +38,13 @@ TxnPublish::TxnPublish(boost::intrusive_ptr<SimpleMessage> msg) :
         m_msg(msg)
 {}
 
-TxnPublish::~TxnPublish()
-{}
+TxnPublish::~TxnPublish() {}
 
 bool
-TxnPublish::prepare(qpid::broker::TxnHandle& th) throw()
-{
-    try{
+TxnPublish::prepare(qpid::broker::TxnBuffer* tb) throw() {
+    try {
         while (!m_queues.empty()) {
-            m_queues.front()->prepareEnqueue(th);
+            m_queues.front()->prepareEnqueue(tb);
             m_prepared.push_back(m_queues.front());
             m_queues.pop_front();
         }
@@ -60,8 +58,7 @@ TxnPublish::prepare(qpid::broker::TxnHandle& th) throw()
 }
 
 void
-TxnPublish::commit() throw()
-{
+TxnPublish::commit() throw() {
     try {
         for (std::list<boost::shared_ptr<QueuedMessage> >::iterator i = m_prepared.begin(); i != m_prepared.end(); ++i) {
             (*i)->commitEnqueue();
@@ -74,8 +71,7 @@ TxnPublish::commit() throw()
 }
 
 void
-TxnPublish::rollback() throw()
-{
+TxnPublish::rollback() throw() {
     try {
         for (std::list<boost::shared_ptr<QueuedMessage> >::iterator i = m_prepared.begin(); i != m_prepared.end(); ++i) {
             (*i)->abortEnqueue();
@@ -88,21 +84,18 @@ TxnPublish::rollback() throw()
 }
 
 uint64_t
-TxnPublish::contentSize()
-{
+TxnPublish::contentSize() {
     return m_msg->contentSize();
 }
 
 void
-TxnPublish::deliverTo(const boost::shared_ptr<SimpleQueue>& queue)
-{
+TxnPublish::deliverTo(const boost::shared_ptr<SimpleQueue>& queue) {
     m_queues.push_back(boost::shared_ptr<QueuedMessage>(new QueuedMessage(queue.get(), m_msg)));
     m_delivered = true;
 }
 
 SimpleMessage&
-TxnPublish::getMessage()
-{
+TxnPublish::getMessage() {
     return *m_msg;
 }
 

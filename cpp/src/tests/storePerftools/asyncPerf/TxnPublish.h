@@ -48,7 +48,7 @@ public:
     virtual ~TxnPublish();
 
     // --- Interface TxOp ---
-    bool prepare(qpid::broker::TxnHandle& th) throw();
+    bool prepare(qpid::broker::TxnBuffer* tb) throw();
     void commit() throw();
     void rollback() throw();
 

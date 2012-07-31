@@ -45,7 +45,7 @@ public:
     ~EventHandle();
     EventHandle& operator=(const EventHandle& r);
 
-    // EventHandleImpl methods
+    // --- EventHandleImpl methods ---
     const std::string& getKey() const;
 
 private:

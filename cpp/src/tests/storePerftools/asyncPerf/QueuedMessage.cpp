@@ -89,9 +89,9 @@ QueuedMessage::enqHandle()
 }
 
 void
-QueuedMessage::prepareEnqueue(qpid::broker::TxnHandle& th)
+QueuedMessage::prepareEnqueue(qpid::broker::TxnBuffer* tb)
 {
-    m_queue->enqueue(th, shared_from_this());
+    m_queue->enqueue(tb, shared_from_this());
 }
 
 void

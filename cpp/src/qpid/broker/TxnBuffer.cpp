@@ -29,31 +29,86 @@
 
 #include "qpid/log/Statement.h"
 
+#include <uuid/uuid.h>
+
 namespace qpid {
 namespace broker {
+
+qpid::sys::Mutex TxnBuffer::s_uuidMutex;
 
 TxnBuffer::TxnBuffer(AsyncResultQueue& arq) :
         m_store(0),
         m_resultQueue(arq),
+        m_tpcFlag(false),
+        m_submitOpCnt(0),
+        m_completeOpCnt(0),
         m_state(NONE)
-{}
+{
+    createLocalXid();
+}
 
-TxnBuffer::~TxnBuffer()
-{}
+TxnBuffer::TxnBuffer(AsyncResultQueue& arq, std::string& xid) :
+        m_store(0),
+        m_resultQueue(arq),
+        m_xid(xid),
+        m_tpcFlag(!xid.empty()),
+        m_submitOpCnt(0),
+        m_completeOpCnt(0),
+        m_state(NONE)
+{
+    if (m_xid.empty()) {
+        createLocalXid();
+    }
+}
+
+TxnBuffer::~TxnBuffer() {}
+
+TxnHandle&
+TxnBuffer::getTxnHandle() {
+    return m_txnHandle;
+}
+
+const std::string&
+TxnBuffer::getXid() const {
+    return m_xid;
+}
+
+bool
+TxnBuffer::is2pc() const {
+    return m_tpcFlag;
+}
 
 void
-TxnBuffer::enlist(boost::shared_ptr<TxnOp> op)
-{
+TxnBuffer::incrOpCnt() {
+    qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_submitOpCntMutex);
+    ++m_submitOpCnt;
+}
+
+void
+TxnBuffer::decrOpCnt() {
+    const uint32_t numOps = getNumOps();
+    qpid::sys::ScopedLock<qpid::sys::Mutex> l2(m_completeOpCntMutex);
+    qpid::sys::ScopedLock<qpid::sys::Mutex> l3(m_submitOpCntMutex);
+    if (m_completeOpCnt == m_submitOpCnt) {
+        throw qpid::Exception("Transaction async operation count underflow");
+    }
+    ++m_completeOpCnt;
+    if (numOps == m_submitOpCnt && numOps == m_completeOpCnt) {
+        asyncLocalCommit();
+    }
+}
+
+void
+TxnBuffer::enlist(boost::shared_ptr<TxnOp> op) {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_opsMutex);
     m_ops.push_back(op);
 }
 
 bool
-TxnBuffer::prepare(TxnHandle& th)
-{
+TxnBuffer::prepare() {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_opsMutex);
     for(std::vector<boost::shared_ptr<TxnOp> >::iterator i = m_ops.begin(); i != m_ops.end(); ++i) {
-        if (!(*i)->prepare(th)) {
+        if (!(*i)->prepare(this)) {
             return false;
         }
     }
@@ -61,8 +116,7 @@ TxnBuffer::prepare(TxnHandle& th)
 }
 
 void
-TxnBuffer::commit()
-{
+TxnBuffer::commit() {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_opsMutex);
     for(std::vector<boost::shared_ptr<TxnOp> >::iterator i = m_ops.begin(); i != m_ops.end(); ++i) {
         (*i)->commit();
@@ -71,8 +125,7 @@ TxnBuffer::commit()
 }
 
 void
-TxnBuffer::rollback()
-{
+TxnBuffer::rollback() {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_opsMutex);
     for(std::vector<boost::shared_ptr<TxnOp> >::iterator i = m_ops.begin(); i != m_ops.end(); ++i) {
         (*i)->rollback();
@@ -81,45 +134,44 @@ TxnBuffer::rollback()
 }
 
 bool
-TxnBuffer::commitLocal(AsyncTransactionalStore* const store)
-{
-    if (store) {
-        try {
-            m_store = store;
-            asyncLocalCommit();
-        } catch (std::exception& e) {
-            QPID_LOG(error, "TxnBuffer::commitLocal: Commit failed: " << e.what());
-        } catch (...) {
-            QPID_LOG(error, "TxnBuffer::commitLocal: Commit failed (unknown exception)");
-        }
+TxnBuffer::commitLocal(AsyncTransactionalStore* const store) {
+    try {
+        m_store = store;
+        asyncLocalCommit();
+    } catch (std::exception& e) {
+        QPID_LOG(error, "TxnBuffer::commitLocal: Commit failed: " << e.what());
+    } catch (...) {
+        QPID_LOG(error, "TxnBuffer::commitLocal: Commit failed (unknown exception)");
     }
     return false;
 }
 
 void
-TxnBuffer::asyncLocalCommit()
-{
-    assert(m_store != 0);
+TxnBuffer::asyncLocalCommit() {
     switch(m_state) {
     case NONE:
         m_state = PREPARE;
-        m_txnHandle = m_store->createTxnHandle(this);
-        prepare(m_txnHandle);
-        break;
+        if (m_store) {
+            m_txnHandle = m_store->createTxnHandle(this);
+        }
+        prepare(/*shared_from_this()*/);
+        if (m_store) {
+            break;
+        }
     case PREPARE:
         m_state = COMMIT;
-        {
+        if (m_store) {
             boost::shared_ptr<TxnAsyncContext> tac(new TxnAsyncContext(this,
                                                                        &handleAsyncCommitResult,
                                                                        &m_resultQueue));
             m_store->testOp();
             m_store->submitCommit(m_txnHandle, tac);
+            break;
         }
-        break;
     case COMMIT:
         commit();
         m_state = COMPLETE;
-        delete this; // TODO: ugly! Find a better way to handle the life cycle of this class
+        delete this;
         break;
     case COMPLETE:
     default: ;
@@ -142,8 +194,7 @@ TxnBuffer::handleAsyncCommitResult(const AsyncResultHandle* const arh) {
 }
 
 void
-TxnBuffer::asyncLocalAbort()
-{
+TxnBuffer::asyncLocalAbort() {
     assert(m_store != 0);
     switch (m_state) {
     case NONE:
@@ -160,7 +211,7 @@ TxnBuffer::asyncLocalAbort()
     case ROLLBACK:
         rollback();
         m_state = COMPLETE;
-        delete this; // TODO: ugly! Find a better way to handle the life cycle of this class
+        delete this;
     default: ;
     }
 }
@@ -171,11 +222,33 @@ TxnBuffer::handleAsyncAbortResult(const AsyncResultHandle* const arh) {
     if (arh) {
         boost::shared_ptr<TxnAsyncContext> tac = boost::dynamic_pointer_cast<TxnAsyncContext>(arh->getBrokerAsyncContext());
         if (arh->getErrNo()) {
-            QPID_LOG(error, "TxnBuffer::handleAsyncAbortResult: Transactional operation " << tac->getOpStr() << " failed: err=" << arh->getErrNo()
-                    << " (" << arh->getErrMsg() << ")");
+            QPID_LOG(error, "TxnBuffer::handleAsyncAbortResult: Transactional operation " << tac->getOpStr()
+                     << " failed: err=" << arh->getErrNo() << " (" << arh->getErrMsg() << ")");
         }
         tac->getTxnBuffer()->asyncLocalAbort();
     }
+}
+
+// private
+uint32_t
+TxnBuffer::getNumOps() const {
+    qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_opsMutex);
+    return m_ops.size();
+}
+
+// private
+void
+TxnBuffer::createLocalXid()
+{
+    uuid_t uuid;
+    {
+        qpid::sys::ScopedLock<qpid::sys::Mutex> l(s_uuidMutex);
+        ::uuid_generate_random(uuid); // Not thread-safe
+    }
+    char uuidStr[37]; // 36-char uuid + trailing '\0'
+    ::uuid_unparse(uuid, uuidStr);
+    m_xid.assign(uuidStr);
+    QPID_LOG(debug, "Local XID created: \"" << m_xid << "\"");
 }
 
 }} // namespace qpid::broker

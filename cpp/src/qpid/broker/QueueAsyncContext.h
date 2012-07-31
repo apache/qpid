@@ -45,18 +45,25 @@ class QueueAsyncContext: public BrokerAsyncContext
 {
 public:
     QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
-                      TxnHandle& th,
                       AsyncResultCallback rcb,
                       AsyncResultQueue* const arq);
     QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
                       boost::intrusive_ptr<PersistableMessage> msg,
-                      TxnHandle& th,
+                      AsyncResultCallback rcb,
+                      AsyncResultQueue* const arq);
+    QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
+                      TxnBuffer* tb,
+                      AsyncResultCallback rcb,
+                      AsyncResultQueue* const arq);
+    QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
+                      boost::intrusive_ptr<PersistableMessage> msg,
+                      TxnBuffer* tb,
                       AsyncResultCallback rcb,
                       AsyncResultQueue* const arq);
     virtual ~QueueAsyncContext();
     boost::shared_ptr<PersistableQueue> getQueue() const;
     boost::intrusive_ptr<PersistableMessage> getMessage() const;
-    TxnHandle getTxnHandle() const;
+    TxnBuffer* getTxnBuffer() const;
     AsyncResultQueue* getAsyncResultQueue() const;
     AsyncResultCallback getAsyncResultCallback() const;
     void invokeCallback(const AsyncResultHandle* const arh) const;
@@ -65,7 +72,7 @@ public:
 private:
     boost::shared_ptr<PersistableQueue> m_q;
     boost::intrusive_ptr<PersistableMessage> m_msg;
-    TxnHandle m_th; // TODO: get rid of this when tests::storePerftools::asyncPerf::SimpleQueue has solved its TxnHandle issues.
+    TxnBuffer* m_tb;
     AsyncResultCallback m_rcb;
     AsyncResultQueue* const m_arq;
 };

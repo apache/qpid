@@ -23,53 +23,32 @@
 
 #include "TxnHandleImpl.h"
 
-#include "qpid/Exception.h"
-#include "qpid/broker/TxnBuffer.h"
-#include "qpid/log/Statement.h"
-
-#include <uuid/uuid.h>
-
 namespace qpid {
 namespace asyncStore {
 
 TxnHandleImpl::TxnHandleImpl() :
         m_tpcFlag(false),
-        m_asyncOpCnt(0UL),
         m_txnBuffer(0)
-{
-    createLocalXid();
-}
+{}
 
 TxnHandleImpl::TxnHandleImpl(qpid::broker::TxnBuffer* tb) :
         m_tpcFlag(false),
-        m_asyncOpCnt(0UL),
         m_txnBuffer(tb)
-{
-    createLocalXid();
-}
+{}
 
-TxnHandleImpl::TxnHandleImpl(const std::string& xid) :
+TxnHandleImpl::TxnHandleImpl(const std::string& xid, const bool tpcFlag) :
         m_xid(xid),
-        m_tpcFlag(!xid.empty()),
-        m_asyncOpCnt(0UL),
+        m_tpcFlag(tpcFlag),
         m_txnBuffer(0)
-{
-    if (m_xid.empty()) {
-        createLocalXid();
-    }
-}
+{}
 
 TxnHandleImpl::TxnHandleImpl(const std::string& xid,
+                             const bool tpcFlag,
                              qpid::broker::TxnBuffer* tb) :
         m_xid(xid),
-        m_tpcFlag(!xid.empty()),
-        m_asyncOpCnt(0UL),
+        m_tpcFlag(tpcFlag),
         m_txnBuffer(tb)
-{
-    if (m_xid.empty()) {
-        createLocalXid();
-    }
-}
+{}
 
 TxnHandleImpl::~TxnHandleImpl()
 {}
@@ -84,40 +63,6 @@ bool
 TxnHandleImpl::is2pc() const
 {
     return m_tpcFlag;
-}
-
-void
-TxnHandleImpl::incrOpCnt()
-{
-    qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_asyncOpCntMutex);
-    ++m_asyncOpCnt;
-}
-
-void
-TxnHandleImpl::decrOpCnt()
-{
-    qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_asyncOpCntMutex);
-    if (m_asyncOpCnt == 0UL) {
-        throw qpid::Exception("Transaction async operation count underflow");
-    }
-    if (--m_asyncOpCnt == 0UL && m_txnBuffer) {
-        m_txnBuffer->asyncLocalCommit();
-    }
-}
-
-// private
-void
-TxnHandleImpl::createLocalXid()
-{
-    uuid_t uuid;
-
-    // TODO: This call might not be thread safe - Valgrind's helgrind tool emits warnings for this:
-    ::uuid_generate_random(uuid);
-
-    char uuidStr[37]; // 36-char uuid + trailing '\0'
-    ::uuid_unparse(uuid, uuidStr);
-    m_xid.assign(uuidStr);
-    QPID_LOG(debug, "Local XID created: \"" << m_xid << "\"");
 }
 
 }} // namespace qpid::asyncStore

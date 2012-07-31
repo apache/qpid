@@ -32,6 +32,7 @@ class AsyncStoreImpl;
 }
 namespace broker {
 class AsyncResultQueue;
+class TxnBuffer;
 }}
 
 namespace tests {
@@ -40,7 +41,6 @@ namespace asyncPerf {
 
 class SimpleQueue;
 class TestOptions;
-class TxnBuffer;
 
 class MessageProducer
 {

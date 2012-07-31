@@ -38,6 +38,7 @@ namespace qpid {
 namespace broker {
 class AsyncResultQueue;
 class QueueAsyncContext;
+class TxnBuffer;
 }
 namespace framing {
 class FieldTable;
@@ -76,10 +77,10 @@ public:
     void deliver(boost::intrusive_ptr<SimpleMessage> msg);
     bool dispatch(MessageConsumer& mc);
     bool enqueue(boost::shared_ptr<QueuedMessage> qm);
-    bool enqueue(qpid::broker::TxnHandle& th,
+    bool enqueue(qpid::broker::TxnBuffer* tb,
                  boost::shared_ptr<QueuedMessage> qm);
     bool dequeue(boost::shared_ptr<QueuedMessage> qm);
-    bool dequeue(qpid::broker::TxnHandle& th,
+    bool dequeue(qpid::broker::TxnBuffer* tb,
                  boost::shared_ptr<QueuedMessage> qm);
     void process(boost::intrusive_ptr<SimpleMessage> msg);
     void enqueueAborted(boost::intrusive_ptr<SimpleMessage> msg);
@@ -134,10 +135,10 @@ private:
               bool isRecovery = false);
 
     // -- Async ops ---
-    bool asyncEnqueue(qpid::broker::TxnHandle& th,
+    bool asyncEnqueue(qpid::broker::TxnBuffer* tb,
                       boost::shared_ptr<QueuedMessage> qm);
     static void handleAsyncEnqueueResult(const qpid::broker::AsyncResultHandle* const arh);
-    bool asyncDequeue(qpid::broker::TxnHandle& th,
+    bool asyncDequeue(qpid::broker::TxnBuffer* tb,
                       boost::shared_ptr<QueuedMessage> qm);
     static void handleAsyncDequeueResult(const qpid::broker::AsyncResultHandle* const arh);
 
