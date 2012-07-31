@@ -296,6 +296,56 @@ public class VirtualHostRestTest extends QpidRestTestCase
         assertEquals("Exchange should be deleted", 0, queues.size());
     }
 
+    public void testPutCreateQueueWithAttributes() throws Exception
+    {
+        String queueName = getTestQueueName();
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(Queue.ALERT_REPEAT_GAP, 1000);
+        attributes.put(Queue.ALERT_THRESHOLD_MESSAGE_AGE, 3600000);
+        attributes.put(Queue.ALERT_THRESHOLD_MESSAGE_SIZE, 1000000000);
+        attributes.put(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 800);
+        attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 15);
+        attributes.put(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES, 2000000000);
+        attributes.put(Queue.QUEUE_FLOW_RESUME_SIZE_BYTES, 1500000000);
+
+        createQueue(queueName + "-standard", "standard", attributes);
+
+        Map<String, Object> sortedQueueAttributes = new HashMap<String, Object>();
+        sortedQueueAttributes.putAll(attributes);
+        sortedQueueAttributes.put(Queue.SORT_KEY, "sortme");
+        createQueue(queueName + "-sorted", "sorted", sortedQueueAttributes);
+
+        Map<String, Object> priorityQueueAttributes = new HashMap<String, Object>();
+        priorityQueueAttributes.putAll(attributes);
+        priorityQueueAttributes.put(Queue.PRIORITIES, 10);
+        createQueue(queueName + "-priority", "priority", priorityQueueAttributes);
+
+        Map<String, Object> lvqQueueAttributes = new HashMap<String, Object>();
+        lvqQueueAttributes.putAll(attributes);
+        lvqQueueAttributes.put(Queue.LVQ_KEY, "LVQ");
+        createQueue(queueName + "-lvq", "lvq", lvqQueueAttributes);
+
+        Map<String, Object> hostDetails = getJsonAsSingletonList("/rest/virtualhost/test");
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> queues = (List<Map<String, Object>>) hostDetails.get(VirtualHostRestTest.VIRTUALHOST_QUEUES_ATTRIBUTE);
+        Map<String, Object> standardQueue = find(Queue.NAME, queueName + "-standard" , queues);
+        Map<String, Object> sortedQueue = find(Queue.NAME, queueName + "-sorted" , queues);
+        Map<String, Object> priorityQueue = find(Queue.NAME, queueName + "-priority" , queues);
+        Map<String, Object> lvqQueue = find(Queue.NAME, queueName + "-lvq" , queues);
+
+        attributes.put(Queue.DURABLE, Boolean.TRUE);
+        Asserts.assertQueue(queueName + "-standard", "standard", standardQueue, attributes);
+        Asserts.assertQueue(queueName + "-sorted", "sorted", sortedQueue, attributes);
+        Asserts.assertQueue(queueName + "-priority", "priority", priorityQueue, attributes);
+        Asserts.assertQueue(queueName + "-lvq", "lvq", lvqQueue, attributes);
+
+        assertEquals("Unexpected sorted key attribute", "sortme", sortedQueue.get(Queue.SORT_KEY));
+        assertEquals("Unexpected lvq key attribute", "LVQ", lvqQueue.get(Queue.LVQ_KEY));
+        assertEquals("Unexpected priorities key attribute", 10, priorityQueue.get(Queue.PRIORITIES));
+    }
+
     private void createExchange(String exchangeName, String exchangeType) throws IOException
     {
         HttpURLConnection connection = openManagementConection("/rest/exchange/test/" + exchangeName, "PUT");
