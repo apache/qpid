@@ -219,7 +219,7 @@
 
     <property name="durable"     type="bool"  access="RC"/>
     <property name="autoDelete"  type="bool"  access="RC"/>
-    <property name="exclusive"   type="bool"  access="RC"/>
+    <property name="exclusive"   type="bool"  access="RO"/>
     <property name="arguments"   type="map"   access="RO" desc="Arguments supplied in queue.declare"/>
     <property name="altExchange" type="objId" references="Exchange" access="RO" optional="y"/>
 
