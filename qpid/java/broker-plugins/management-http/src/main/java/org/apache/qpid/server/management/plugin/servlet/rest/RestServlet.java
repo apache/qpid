@@ -292,7 +292,11 @@ public class RestServlet extends AbstractServlet
         for(String name : confObject.getAttributeNames())
         {
             Object value = confObject.getAttribute(name);
-            if(value != null)
+            if(value instanceof ConfiguredObject)
+            {
+                object.put(name, ((ConfiguredObject) value).getName());
+            }
+            else if(value != null)
             {
                 object.put(name, value);
             }
