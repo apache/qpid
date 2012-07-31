@@ -41,6 +41,7 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -66,6 +67,9 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
     private static final int MSG_COUNT = 15;
     private static final int MAX_DELIVERY_COUNT = 2;
     private CountDownLatch _awaitCompletion;
+
+    /** index numbers of messages to be redelivered */
+    private final List<Integer> _redeliverMsgs = Arrays.asList(1, 2, 5, 14);
 
     public void setUp() throws Exception
     {
@@ -144,13 +148,7 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
      */
     public void testAsynchronousClientAckSession() throws Exception
     {
-        final ArrayList<Integer> redeliverMsgs = new ArrayList<Integer>();
-        redeliverMsgs.add(1);
-        redeliverMsgs.add(2);
-        redeliverMsgs.add(5);
-        redeliverMsgs.add(14);
-
-        doTest(Session.CLIENT_ACKNOWLEDGE, redeliverMsgs, false, false);
+        doTest(Session.CLIENT_ACKNOWLEDGE, _redeliverMsgs, false, false);
     }
 
     /**
@@ -159,13 +157,7 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
      */
     public void testAsynchronousTransactedSession() throws Exception
     {
-        final ArrayList<Integer> redeliverMsgs = new ArrayList<Integer>();
-        redeliverMsgs.add(1);
-        redeliverMsgs.add(2);
-        redeliverMsgs.add(5);
-        redeliverMsgs.add(14);
-
-        doTest(Session.SESSION_TRANSACTED, redeliverMsgs, false, false);
+        doTest(Session.SESSION_TRANSACTED, _redeliverMsgs, false, false);
     }
 
     /**
@@ -174,13 +166,7 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
      */
     public void testAsynchronousAutoAckSession() throws Exception
     {
-        final ArrayList<Integer> redeliverMsgs = new ArrayList<Integer>();
-        redeliverMsgs.add(1);
-        redeliverMsgs.add(2);
-        redeliverMsgs.add(5);
-        redeliverMsgs.add(14);
-
-        doTest(Session.AUTO_ACKNOWLEDGE, redeliverMsgs, false, false);
+        doTest(Session.AUTO_ACKNOWLEDGE, _redeliverMsgs, false, false);
     }
 
     /**
@@ -189,13 +175,7 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
      */
     public void testAsynchronousDupsOkSession() throws Exception
     {
-        final ArrayList<Integer> redeliverMsgs = new ArrayList<Integer>();
-        redeliverMsgs.add(1);
-        redeliverMsgs.add(2);
-        redeliverMsgs.add(5);
-        redeliverMsgs.add(14);
-
-        doTest(Session.DUPS_OK_ACKNOWLEDGE, redeliverMsgs, false, false);
+        doTest(Session.DUPS_OK_ACKNOWLEDGE, _redeliverMsgs, false, false);
     }
 
     /**
@@ -204,13 +184,7 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
      */
     public void testSynchronousClientAckSession() throws Exception
     {
-        final ArrayList<Integer> redeliverMsgs = new ArrayList<Integer>();
-        redeliverMsgs.add(1);
-        redeliverMsgs.add(2);
-        redeliverMsgs.add(3);
-        redeliverMsgs.add(14);
-
-        doTest(Session.CLIENT_ACKNOWLEDGE, redeliverMsgs, true, false);
+        doTest(Session.CLIENT_ACKNOWLEDGE, _redeliverMsgs, true, false);
     }
 
     /**
@@ -219,27 +193,22 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
      */
     public void testSynchronousTransactedSession() throws Exception
     {
-        final ArrayList<Integer> redeliverMsgs = new ArrayList<Integer>();
-        redeliverMsgs.add(1);
-        redeliverMsgs.add(2);
-        redeliverMsgs.add(5);
-        redeliverMsgs.add(14);
-
-        doTest(Session.SESSION_TRANSACTED, redeliverMsgs, true, false);
+        doTest(Session.SESSION_TRANSACTED, _redeliverMsgs, true, false);
     }
 
     public void testDurableSubscription() throws Exception
     {
-        final ArrayList<Integer> redeliverMsgs = new ArrayList<Integer>();
-        redeliverMsgs.add(1);
-        redeliverMsgs.add(2);
-        redeliverMsgs.add(5);
-        redeliverMsgs.add(14);
-
-        doTest(Session.SESSION_TRANSACTED, redeliverMsgs, false, true);
+        doTest(Session.SESSION_TRANSACTED, _redeliverMsgs, false, true);
     }
 
-    public void doTest(final int deliveryMode, final ArrayList<Integer> redeliverMsgs, final boolean synchronous, final boolean durableSub) throws Exception
+    public void testWhenBrokerIsRestartedAfterEnqeuingMessages() throws Exception
+    {
+        restartBroker();
+
+        doTest(Session.SESSION_TRANSACTED, _redeliverMsgs, true, false);
+    }
+
+    private void doTest(final int deliveryMode, final List<Integer> redeliverMsgs, final boolean synchronous, final boolean durableSub) throws Exception
     {
         final Connection clientConnection = getConnection();
 
@@ -311,7 +280,6 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
             restartBroker();
 
             final Connection clientConnection2 = getConnection();
-            final Session clientSession2 = clientConnection2.createSession(transacted, deliveryMode);
             clientConnection2.start();
 
             //verify the messages on the DLQ
@@ -406,7 +374,7 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
     }
 
     private void addMessageListener(final Session session, final MessageConsumer consumer, final int deliveryMode, final int maxDeliveryCount,
-                                    final int expectedTotalNumberOfDeliveries, final ArrayList<Integer> redeliverMsgs) throws JMSException
+                                    final int expectedTotalNumberOfDeliveries, final List<Integer> redeliverMsgs) throws JMSException
     {
         if(deliveryMode == org.apache.qpid.jms.Session.NO_ACKNOWLEDGE
                 || deliveryMode == org.apache.qpid.jms.Session.PRE_ACKNOWLEDGE)
@@ -567,7 +535,7 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
     }
 
     private void doSynchronousTest(final Session session, final MessageConsumer consumer, final int deliveryMode, final int maxDeliveryCount,
-            final int expectedTotalNumberOfDeliveries, final ArrayList<Integer> redeliverMsgs) throws JMSException, AMQException, InterruptedException
+            final int expectedTotalNumberOfDeliveries, final List<Integer> redeliverMsgs) throws JMSException, AMQException, InterruptedException
    {
         if(deliveryMode == Session.AUTO_ACKNOWLEDGE
                 || deliveryMode == Session.DUPS_OK_ACKNOWLEDGE
@@ -637,7 +605,7 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
                             //sleep then do a synchronous op to give the broker
                             //time to resend all the messages
                             Thread.sleep(500);
-                            ((AMQSession) session).sync();
+                            ((AMQSession<?,?>) session).sync();
                             break;
                     }
 

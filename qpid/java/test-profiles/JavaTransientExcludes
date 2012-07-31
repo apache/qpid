@@ -47,3 +47,5 @@ org.apache.qpid.systest.management.jmx.QueueManagementTest#testAlternateExchange
 org.apache.qpid.systest.management.jmx.QueueManagementTest#testQueueDescriptionSurvivesRestart
 org.apache.qpid.systest.management.jmx.QueueManagementTest#testMoveMessageBetweenQueuesWithBrokerRestart
 org.apache.qpid.systest.management.jmx.QueueManagementTest#testCopyMessageBetweenQueuesWithBrokerRestart
+
+org.apache.qpid.test.unit.client.MaxDeliveryCountTest#testWhenBrokerIsRestartedAfterEnqeuingMessages
