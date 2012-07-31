@@ -346,6 +346,46 @@ public class VirtualHostRestTest extends QpidRestTestCase
         assertEquals("Unexpected priorities key attribute", 10, priorityQueue.get(Queue.PRIORITIES));
     }
 
+    @SuppressWarnings("unchecked")
+    public void testCreateQueueWithDLQEnabled() throws Exception
+    {
+        String queueName = getTestQueueName();
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(AMQQueueFactory.X_QPID_DLQ_ENABLED, true);
+
+        //verify the starting state
+        Map<String, Object> hostDetails = getJsonAsSingletonList("/rest/virtualhost/test");
+        List<Map<String, Object>> queues = (List<Map<String, Object>>) hostDetails.get(VirtualHostRestTest.VIRTUALHOST_QUEUES_ATTRIBUTE);
+        List<Map<String, Object>> exchanges = (List<Map<String, Object>>) hostDetails.get(VirtualHostRestTest.VIRTUALHOST_EXCHANGES_ATTRIBUTE);
+
+        assertNull("queue should not have already been present", find(Queue.NAME, queueName , queues));
+        assertNull("queue should not have already been present", find(Queue.NAME, queueName + "_DLQ" , queues));
+        assertNull("exchange should not have already been present", find(Exchange.NAME, queueName + "_DLE" , exchanges));
+
+        //create the queue
+        createQueue(queueName, "standard", attributes);
+
+        //verify the new queue, as well as the DLQueue and DLExchange have been created
+        hostDetails = getJsonAsSingletonList("/rest/virtualhost/test");
+        queues = (List<Map<String, Object>>) hostDetails.get(VirtualHostRestTest.VIRTUALHOST_QUEUES_ATTRIBUTE);
+        exchanges = (List<Map<String, Object>>) hostDetails.get(VirtualHostRestTest.VIRTUALHOST_EXCHANGES_ATTRIBUTE);
+
+        Map<String, Object> queue = find(Queue.NAME, queueName , queues);
+        Map<String, Object> dlqQueue = find(Queue.NAME, queueName + "_DLQ" , queues);
+        Map<String, Object> dlExchange = find(Exchange.NAME, queueName + "_DLE" , exchanges);
+        assertNotNull("queue should not have been present", queue);
+        assertNotNull("queue should not have been present", dlqQueue);
+        assertNotNull("exchange should not have been present", dlExchange);
+
+        //verify that the alternate exchange is set as expected on the new queue
+        Map<String, Object> queueAttributes = new HashMap<String, Object>();
+        queueAttributes.put(Queue.ALTERNATE_EXCHANGE, queueName + "_DLE");
+
+        Asserts.assertQueue(queueName, "standard", queue, queueAttributes);
+        Asserts.assertQueue(queueName, "standard", queue, null);
+    }
+
     private void createExchange(String exchangeName, String exchangeType) throws IOException
     {
         HttpURLConnection connection = openManagementConection("/rest/exchange/test/" + exchangeName, "PUT");
