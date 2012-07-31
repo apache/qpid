@@ -141,26 +141,32 @@ void Primary::checkReady(BackupMap::iterator i, Mutex::ScopedLock& l)  {
 }
 
 void Primary::timeoutExpectedBackups() {
-    sys::Mutex::ScopedLock l(lock);
-    if (active) return;         // Already activated
-    // Remove records for any expectedBackups that are not yet connected
-    // Allow backups that are connected to continue becoming ready.
-    for (BackupSet::iterator i = expectedBackups.begin(); i != expectedBackups.end();)
-    {
-        boost::shared_ptr<RemoteBackup> rb = *i;
-        if (!rb->isConnected()) {
-            BrokerInfo info = rb->getBrokerInfo();
-            QPID_LOG(error, logPrefix << "Expected backup timed out: " << info);
-            expectedBackups.erase(i++);
-            backups.erase(info.getSystemId());
-            rb->cancel();
-            // Downgrade the broker to CATCHUP
-            info.setStatus(CATCHUP);
-            haBroker.addBroker(info);
+    try {
+        sys::Mutex::ScopedLock l(lock);
+        if (active) return;         // Already activated
+        // Remove records for any expectedBackups that are not yet connected
+        // Allow backups that are connected to continue becoming ready.
+        for (BackupSet::iterator i = expectedBackups.begin(); i != expectedBackups.end();)
+        {
+            boost::shared_ptr<RemoteBackup> rb = *i;
+            if (!rb->isConnected()) {
+                BrokerInfo info = rb->getBrokerInfo();
+                QPID_LOG(error, logPrefix << "Expected backup timed out: " << info);
+                expectedBackups.erase(i++);
+                backups.erase(info.getSystemId());
+                rb->cancel();
+                // Downgrade the broker to CATCHUP
+                info.setStatus(CATCHUP);
+                haBroker.addBroker(info);
+            }
+            else ++i;
         }
-        else ++i;
+        checkReady(l);
     }
-    checkReady(l);
+    catch(const std::exception& e) {
+        QPID_LOG(error, logPrefix << "Error timing out backups: " << e.what());
+        // No-where for this exception to go.
+    }
 }
 
 void Primary::readyReplica(const ReplicatingSubscription& rs) {

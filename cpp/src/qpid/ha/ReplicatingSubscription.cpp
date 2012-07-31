@@ -228,8 +228,8 @@ ReplicatingSubscription::ReplicatingSubscription(
         if (guard->subscriptionStart(position)) setReady();
     }
     catch (const std::exception& e) {
-        throw InvalidArgumentException(QPID_MSG(logPrefix << e.what()
-                                                << ": arguments=" << arguments));
+        QPID_LOG(error, logPrefix << "Creation error: " << e.what()
+                 << ": arguments=" << getArguments());
     }
 }
 
@@ -242,13 +242,19 @@ ReplicatingSubscription::~ReplicatingSubscription() {
 // shared_from_this
 //
 void ReplicatingSubscription::initialize() {
-    Mutex::ScopedLock l(lock); // Note dequeued() can be called concurrently.
+    try {
+        Mutex::ScopedLock l(lock); // Note dequeued() can be called concurrently.
 
-    // Send initial dequeues and position to the backup.
-    // There must be a shared_ptr(this) when sending.
-    sendDequeueEvent(l);
-    sendPositionEvent(position, l);
-    backupPosition = position;
+        // Send initial dequeues and position to the backup.
+        // There must be a shared_ptr(this) when sending.
+        sendDequeueEvent(l);
+        sendPositionEvent(position, l);
+        backupPosition = position;
+    }
+    catch (const std::exception& e) {
+        QPID_LOG(error, logPrefix << "Initialization error: " << e.what()
+                 << ": arguments=" << getArguments());
+    }
 }
 
 // Message is delivered in the subscription's connection thread.
