@@ -216,11 +216,10 @@ void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionH
     userId = link->getConnection()->getUserId();
     remoteHost = link->getConnection()->getUrl();
 
-    qpid::Address primary;
     link->getRemoteAddress(primary);
     string queueName = bridge.getQueueName();
 
-    QPID_LOG(info, logPrefix << (initialized ? "Connecting" : "Failing-over")
+    QPID_LOG(info, logPrefix << (initialized ? "Connecting" : "Failing over")
              << " to primary " << primary
              << " status:" << printable(haBroker.getStatus()));
     initialized = true;
@@ -245,15 +244,15 @@ void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionH
     sendQuery(ORG_APACHE_QPID_BROKER, QUEUE, queueName, sessionHandler);
     sendQuery(ORG_APACHE_QPID_BROKER, EXCHANGE, queueName, sessionHandler);
     sendQuery(ORG_APACHE_QPID_BROKER, BINDING, queueName, sessionHandler);
-
-    QPID_LOG(debug, logPrefix << "Connected to primary " << primary
-             << "(" << queueName << ")" << " status:" << printable(haBroker.getStatus()));
 }
 
 void BrokerReplicator::route(Deliverable& msg) {
     // We transition from JOINING->CATCHUP on the first message received from the primary.
     // Until now we couldn't be sure if we had a good connection to the primary.
-    if (haBroker.getStatus() == JOINING) haBroker.setStatus(CATCHUP);
+    if (haBroker.getStatus() == JOINING) {
+        haBroker.setStatus(CATCHUP);
+        QPID_LOG(notice, logPrefix << "Connected to primary " << primary);
+    }
 
     const framing::FieldTable* headers = msg.getMessage().getApplicationHeaders();
     const MessageProperties* messageProperties = msg.getMessage().getProperties<MessageProperties>();

@@ -25,6 +25,7 @@
 #include "types.h"
 #include "ReplicationTest.h"
 #include "AlternateExchangeSetter.h"
+#include "qpid/Address.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/types/Variant.h"
 #include "qpid/management/ManagementObject.h"
@@ -119,6 +120,7 @@ class BrokerReplicator : public broker::Exchange,
     boost::shared_ptr<broker::Link> link;
     bool initialized;
     AlternateExchangeSetter alternates;
+    qpid::Address primary;
 };
 }} // namespace qpid::broker
 

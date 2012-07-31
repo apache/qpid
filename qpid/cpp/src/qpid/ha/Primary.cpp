@@ -81,13 +81,13 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
     assert(instance == 0);
     instance = this;            // Let queue replicators find us.
     if (expect.empty()) {
-        QPID_LOG(debug, logPrefix << "Promoted, no expected backups");
+        QPID_LOG(notice, logPrefix << "Promoted to primary. No expected backups.");
     }
     else {
         // NOTE: RemoteBackups must be created before we set the ConfigurationObserver
         // or ConnectionObserver so that there is no client activity while
         // the QueueGuards are created.
-        QPID_LOG(debug, logPrefix << "Promoted, expected backups: " << expect);
+        QPID_LOG(notice, logPrefix << "Promoted to primary. Expected backups: " << expect);
         for (BrokerInfo::Set::const_iterator i = expect.begin(); i != expect.end(); ++i) {
             boost::shared_ptr<RemoteBackup> backup(
                 new RemoteBackup(*i, haBroker.getReplicationTest(), false));
@@ -130,14 +130,13 @@ void Primary::checkReady(BackupMap::iterator i, Mutex::ScopedLock& l)  {
     if (i != backups.end() && i->second->reportReady()) {
         BrokerInfo info = i->second->getBrokerInfo();
         info.setStatus(READY);
-        QPID_LOG(info, "Expected backup is ready: " << info);
         haBroker.addBroker(info);
         if (expectedBackups.erase(i->second)) {
             QPID_LOG(info, logPrefix << "Expected backup is ready: " << info);
             checkReady(l);
         }
         else
-            QPID_LOG(info, logPrefix << "Backup is ready: " << info);
+            QPID_LOG(info, logPrefix << "New backup is ready: " << info);
     }
 }
 
