@@ -81,7 +81,14 @@ define(["dojo/_base/xhr",
                             if (formValues.durable[0] && formValues.durable[0] == "durable") {
                                 newQueue.durable = true;
                             }
-                        } else if (!typeSpecificFields.hasOwnProperty(propName) ||
+                        }
+                        else if(propName === "dlqEnabled")
+                        {
+                            if (formValues.dlqEnabled[0] && formValues.dlqEnabled[0] == "dlqEnabled") {
+                                newQueue["x-qpid-dlq-enabled"] = true;
+                            }
+                        }
+                        else if (!typeSpecificFields.hasOwnProperty(propName) ||
                                         formValues.type === typeSpecificFields[ propName ]) {
                             if(formValues[ propName ] !== "") {
                                 if (fieldConverters.hasOwnProperty(propName))

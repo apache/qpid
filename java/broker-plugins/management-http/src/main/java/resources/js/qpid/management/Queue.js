@@ -270,8 +270,7 @@ define(["dojo/_base/xhr",
                            "durable",
                            "lifetimePolicy",
                            "type",
-                           "keyName",
-                           "keyValue",
+                           "typeQualifier",
                            "alertRepeatGap",
                            "alertRepeatGapUnits",
                            "alertThresholdMessageAge",
@@ -281,6 +280,7 @@ define(["dojo/_base/xhr",
                            "alertThresholdQueueDepthBytes",
                            "alertThresholdQueueDepthBytesUnits",
                            "alertThresholdQueueDepthMessages",
+                           "alternateExchange",
                            "queueDepthMessages",
                            "queueDepthBytes",
                            "queueDepthBytesUnits",
@@ -335,7 +335,7 @@ define(["dojo/_base/xhr",
                this.state.innerHTML = this.queueData[ "state" ];
                this.durable.innerHTML = this.queueData[ "durable" ];
                this.lifetimePolicy.innerHTML = this.queueData[ "lifetimePolicy" ];
-               this.type.innerHTML = this.queueData[ "type" ];
+               this.alternateExchange.innerHTML = this.queueData[ "alternateExchange" ] ? this.queueData[ "alternateExchange" ]: "" ;
 
                this.queueDepthMessages.innerHTML = this.queueData["queueDepthMessages"];
                bytesDepth = formatter.formatBytes( this.queueData["queueDepthBytes"] );
@@ -346,15 +346,14 @@ define(["dojo/_base/xhr",
                bytesDepth = formatter.formatBytes( this.queueData["unacknowledgedBytes"] );
                this.unacknowledgedBytes.innerHTML = "(" + bytesDepth.value;
                this.unacknowledgedBytesUnits.innerHTML = bytesDepth.units + ")";
+               this.type.innerHTML = this.queueData[ "type" ];
                if (this.queueData.type == "standard")
                {
-                   this.keyName.style.display = "none";
-                   this.keyValue.style.display = "none";
+                   this.typeQualifier.style.display = "none";
                }
                else
                {
-                   this.keyName.innerHTML = queueTypeKeyNames[this.queueData.type] + ":";
-                   this.keyValue.innerHTML = this.queueData[queueTypeKeys[this.queueData.type]];
+                   this.typeQualifier.innerHTML = "(" + queueTypeKeyNames[this.queueData.type] + ": " + this.queueData[queueTypeKeys[this.queueData.type]] + ")";
                }
 
            };
