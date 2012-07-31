@@ -185,18 +185,20 @@ under the License.
 	</listitem>
 	<listitem>
 	  Configuration changes (creating or deleting queues, exchanges and bindings) are
-	  replicated asynchronously. Management tools used to make changes will consider the
-	  change complete when it is complete on the primary, it may not yet be replicated
-	  to all the backups.
+	  replicated asynchronously. Management tools used to make changes will consider
+	  the change complete when it is complete on the primary, it may not yet be
+	  replicated to all the backups.
 	</listitem>
 	<listitem>
-	  Deletions made immediately after a failure (before all the backups are ready) may
-	  be lost on a backup. Queues, exchange or bindings that were deleted on the primary could
-	  re-appear if that backup is promoted to primary on a subsequent failure.
+	  Deletions made immediately after a failure (before all the backups are ready)
+	  may be lost on a backup. Queues, exchange or bindings that were deleted on the
+	  primary could re-appear if that backup is promoted to primary on a subsequent
+	  failure.
 	</listitem>
 	<listitem>
-	  Federated links from the primary will be lost in fail over, they will not be
-	  re-connected on the new primary. Federation links to the primary can fail over.
+	  Federated links <emphasis>from</emphasis> the primary will be lost in fail over,
+	  they will not be re-connected to the new primary. Federation links
+	  <emphasis>to</emphasis> the primary can fail over.
 	</listitem>
       </itemizedlist>
     </section>
@@ -227,10 +229,10 @@ under the License.
       default. The following broker options are available for the HA module.
     </para>
     <table frame="all" id="ha-broker-options">
-      <title>Options for High Availability Messaging Cluster</title>
+      <title>Broker Options for High Availability Messaging Cluster</title>
       <tgroup align="left" cols="2" colsep="1" rowsep="1">
-	<colspec colname="c1" colwidth="1*"/>
-	<colspec colname="c2" colwidth="3*"/>
+	<colspec colname="c1"/>
+	<colspec colname="c2"/>
 	<thead>
 	  <row>
 	    <entry align="center" nameend="c2" namest="c1">
@@ -241,7 +243,7 @@ under the License.
 	<tbody>
 	  <row>
 	    <entry>
-	      <literal>--ha-cluster <replaceable>yes|no</replaceable></literal>
+	      <literal>ha-cluster <replaceable>yes|no</replaceable></literal>
 	    </entry>
 	    <entry>
 	      Set to "yes" to have the broker join a cluster.
@@ -249,7 +251,7 @@ under the License.
 	  </row>
 	  <row>
 	    <entry>
-	      <literal>--ha-brokers-url <replaceable>URL</replaceable></literal>
+	      <literal>ha-brokers-url <replaceable>URL</replaceable></literal>
 	    </entry>
 	    <entry>
 	      <para>
@@ -258,11 +260,11 @@ under the License.
 		  <para>
 		  The full format of the URL is given by this grammar:
 		  <programlisting>
-		    url = ["amqp:"][ user ["/" password] "@" ] addr ("," addr)*
-		    addr = tcp_addr / rmda_addr / ssl_addr / ...
-		    tcp_addr = ["tcp:"] host [":" port]
-		    rdma_addr = "rdma:" host [":" port]
-		    ssl_addr = "ssl:" host [":" port]'
+url = ["amqp:"][ user ["/" password] "@" ] addr ("," addr)*
+addr = tcp_addr / rmda_addr / ssl_addr / ...
+tcp_addr = ["tcp:"] host [":" port]
+rdma_addr = "rdma:" host [":" port]
+ssl_addr = "ssl:" host [":" port]'
 		  </programlisting>
 		  </para>
 		</footnote>
@@ -274,11 +276,11 @@ under the License.
 	    </entry>
 	  </row>
 	  <row>
-	    <entry><literal>--ha-public-url <replaceable>URL</replaceable></literal> </entry>
+	    <entry><literal>ha-public-url <replaceable>URL</replaceable></literal> </entry>
 	    <entry>
 	      <para>
 		The URL that is advertised to clients. This defaults to the
-		<literal>--ha-brokers-url</literal> URL above, and has the same format.  A
+		<literal>ha-brokers-url</literal> URL above, and has the same format.  A
 		virtual IP address is recommended for the public URL as it simplifies
 		deployment and hides changes to the cluster membership from clients.
 	      </para>
@@ -289,20 +291,22 @@ under the License.
 	    </entry>
 	  </row>
 	  <row>
-	    <entry><literal>--ha-replicate</literal></entry>
+	    <entry><literal>ha-replicate </literal><replaceable>VALUE</replaceable></entry>
 	    <foo/>
 	    <entry>
 	      <para>
 		Specifies whether queues and exchanges are replicated by default.
-		For details see <xref linkend="ha-creating-replicated"/>
+		<replaceable>VALUE</replaceable> is one of: <literal>none</literal>,
+		<literal>configuration</literal>, <literal>all</literal>.
+		For details see <xref linkend="ha-creating-replicated"/>.
 	      </para>
 	    </entry>
 	  </row>
 	  <row>
 	    <entry>
-	      <para><literal>--ha-username <replaceable>USER</replaceable></literal></para>
-	      <para><literal>--ha-password <replaceable>PASS</replaceable></literal></para>
-	      <para><literal>--ha-mechanism <replaceable>MECH</replaceable></literal></para>
+	      <para><literal>ha-username <replaceable>USER</replaceable></literal></para>
+	      <para><literal>ha-password <replaceable>PASS</replaceable></literal></para>
+	      <para><literal>ha-mechanism <replaceable>MECH</replaceable></literal></para>
 	    </entry>
 	    <entry>
 	      Authentication settings used by HA brokers to connect to each other.
@@ -312,11 +316,21 @@ under the License.
 	    </entry>
 	  </row>
 	  <row>
-	    <entry><literal>--ha-backup-timeout <replaceable>SECONDS</replaceable></literal> </entry>
+	    <entry><literal>ha-backup-timeout <replaceable>SECONDS</replaceable></literal> </entry>
 	    <entry>
 	      <para>
 		Maximum time that a recovering primary will wait for an expected
 		backup to connect and become ready.
+	      </para>
+	    </entry>
+	  </row>
+	  <row>
+	    <entry><literal>link-maintenance-interval <replaceable>SECONDS</replaceable></literal></entry>
+	    <entry>
+	      <para>
+		Interval for the broker to check link health and re-connect links if need
+		be. If you want brokers to fail over quickly you can set this to a
+		fraction of a second, for example: 0.1.
 	      </para>
 	    </entry>
 	  </row>
@@ -516,7 +530,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     </para>
     <para>
       The tools <command>qpid-config</command>, <command>qpid-route</command> and
-      <command>qpid-stat</command> will connect to a backup if you pass the flag <command>--ha-admin</command> on the
+      <command>qpid-stat</command> will connect to a backup if you pass the flag <command>ha-admin</command> on the
       command line.
     </para>
   </section>
@@ -755,9 +769,9 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
 	<tbody>
 	  <row>
 	    <entry>
-	      <para><literal>--ha-username <replaceable>USER</replaceable></literal></para>
-	      <para><literal>--ha-password <replaceable>PASS</replaceable></literal></para>
-	      <para><literal>--ha-mechanism <replaceable>MECH</replaceable></literal></para>
+	      <para><literal>ha-username <replaceable>USER</replaceable></literal></para>
+	      <para><literal>ha-password <replaceable>PASS</replaceable></literal></para>
+	      <para><literal>ha-mechanism <replaceable>MECH</replaceable></literal></para>
 	    </entry>
 	    <entry>
 	      Authentication settings used by HA brokers to connect to each other.
