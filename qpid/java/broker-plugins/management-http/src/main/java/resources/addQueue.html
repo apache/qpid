@@ -94,7 +94,7 @@
                         <td><input type="text" required="false" name="queueFlowControlSizeBytes" id="formAddQueue.capacity" placeholder="Size in bytes"
                             dojoType="dijit.form.ValidationTextBox"
                             trim="true"
-                            regexp="(^[0-9]+(b|K(b)?|M(b)?|G(b)?)?$)"
+                            regexp="[0-9]+"
                             invalidMessage= "Invalid value"/></td>
                     </tr>
                     <!-- x-qpid-flow-resume-capacity -->
@@ -103,7 +103,7 @@
                         <td><input type="text" required="false" name="queueFlowResumeSizeBytes" id="formAddQueue.flowResumeCapacity" placeholder="Size in bytes"
                             dojoType="dijit.form.ValidationTextBox"
                             trim="true"
-                            regexp="(^[0-9]+(b|K(b)?|M(b)?|G(b)?)?$)"
+                            regexp="[0-9]+"
                             invalidMessage= "Invalid value"/></td>
                     </tr>
                 </table>
@@ -111,27 +111,28 @@
             <br/>
             <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Alerting Settings', open: false">
                 <table cellpadding="0" cellspacing="2">
+                    <!-- x-qpid-maximum-message-count -->
                     <tr>
-                        <td valign="top"><strong>Maximum Message Age:  </strong></td>
+                        <td valign="top"><strong>Queue Depth:  </strong></td>
+                        <td><input type="text" required="false" name="alertThresholdQueueDepthMessages" id="formAddQueue.maximumMessageCount" placeholder="Count of messages"
+                            dojoType="dijit.form.ValidationTextBox"
+                            trim="true"
+                            regexp="[0-9]+"
+                            invalidMessage= "Invalid value" /></td>
+                    </tr>
+                    <!-- x-qpid-maximum-message-age -->
+                    <tr>
+                        <td valign="top"><strong>Message Age:  </strong></td>
                         <td><input type="text" required="false" name="alertThresholdMessageAge" id="formAddQueue.maximumMessageAge" placeholder="Time in ms"
                             dojoType="dijit.form.ValidationTextBox"
                             trim="true"
-                            regexp="(^[0-9]+(s(ec(ond(s)?)?)?|m(in(ute)?(s)?)?|h|d|w|M|y)?$)"
-                            invalidMessage= "Invalid value" /></td>
+                            regexp="[0-9]+"
+                            invalidMessage= "Invalid value"  /></td>
                     </tr>
                     <!-- x-qpid-maximum-message-size -->
                     <tr>
-                        <td valign="top"><strong>Maximum Message Size:  </strong></td>
+                        <td valign="top"><strong>Message Size:  </strong></td>
                         <td><input type="text" required="false" name="alertThresholdMessageSize" id="formAddQueue.maximumMessageSize" placeholder="Size in bytes"
-                            dojoType="dijit.form.ValidationTextBox"
-                            trim="true"
-                            regexp="(^[0-9]+(b|K(b)?|M(b)?|G(b)?)?$)"
-                            invalidMessage= "Invalid value"  /></td>
-                    </tr>
-                    <!-- x-qpid-maximum-message-count -->
-                    <tr>
-                        <td valign="top"><strong>Maximum Number in Queue:  </strong></td>
-                        <td><input type="text" required="false" name="alertThresholdQueueDepthMessages" id="formAddQueue.maximumMessageCount" placeholder="Count of messages"
                             dojoType="dijit.form.ValidationTextBox"
                             trim="true"
                             regexp="[0-9]+"
@@ -143,7 +144,7 @@
                         <td><input type="text" required="false" name="alertRepeatGap" id="formAddQueue.minimumAlertRepeatGap" placeholder="Time in ms"
                             dojoType="dijit.form.ValidationTextBox"
                             trim="true"
-                            regexp="(^[0-9]+(s(ec(ond(s)?)?)?|m(in(ute)?(s)?)?|h|d|w|M|y)?$)"
+                            regexp="[0-9]+"
                             invalidMessage= "Invalid value" /></td>
                     </tr>
                 </table>
