@@ -178,7 +178,8 @@ Queue::Queue(const string& _name, bool _autodelete,
         ManagementAgent* agent = broker->getManagementAgent();
 
         if (agent != 0) {
-            mgmtObject = new _qmf::Queue(agent, this, parent, _name, _store != 0, _autodelete, _owner != 0);
+            mgmtObject = new _qmf::Queue(agent, this, parent, _name, _store != 0, _autodelete);
+            mgmtObject->set_exclusive(_owner != 0);
             agent->addObject(mgmtObject, 0, store != 0);
             brokerMgmtObject = (qmf::org::apache::qpid::broker::Broker*) broker->GetManagementObject();
             if (brokerMgmtObject)
