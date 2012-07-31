@@ -176,6 +176,8 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
 
     private final ClientDeliveryMethod _clientDeliveryMethod;
 
+    private final TransactionTimeoutHelper _transactionTimeoutHelper;
+
     public AMQChannel(AMQProtocolSession session, int channelId, MessageStore messageStore)
             throws AMQException
     {
@@ -195,6 +197,8 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
         _transaction = new AsyncAutoCommitTransaction(_messageStore, this);
 
          _clientDeliveryMethod = session.createDeliveryMethod(_channelId);
+
+         _transactionTimeoutHelper = new TransactionTimeoutHelper(_logSubject);
     }
 
     public ConfigStore getConfigStore()
@@ -1407,7 +1411,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
             }
         }
     }
-    
+
     public synchronized void block(AMQQueue queue)
     {
         if(_blockingEntities.add(queue))
@@ -1542,27 +1546,20 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
             long openTime = currentTime - _transaction.getTransactionStartTime();
             long idleTime = currentTime - _txnUpdateTime.get();
 
-            // Log a warning on idle or open transactions
-            if (idleWarn > 0L && idleTime > idleWarn)
-            {
-                CurrentActor.get().message(_logSubject, ChannelMessages.IDLE_TXN(idleTime));
-                _logger.warn("IDLE TRANSACTION ALERT " + _logSubject.toString() + " " + idleTime + " ms");
-            }
-            else if (openWarn > 0L && openTime > openWarn)
-            {
-                CurrentActor.get().message(_logSubject, ChannelMessages.OPEN_TXN(openTime));
-                _logger.warn("OPEN TRANSACTION ALERT " + _logSubject.toString() + " " + openTime + " ms");
-            }
-
-            // Close _connection_ for idle or open transactions that have timed out (this is different
-            // than the 0-10 code path which closes the session).
-            if (idleClose > 0L && idleTime > idleClose)
+            _transactionTimeoutHelper.logIfNecessary(idleTime, idleWarn, ChannelMessages.IDLE_TXN(idleTime),
+                                                     TransactionTimeoutHelper.IDLE_TRANSACTION_ALERT);
+            if (_transactionTimeoutHelper.isTimedOut(idleTime, idleClose))
             {
                 closeConnection("Idle transaction timed out");
+                return;
             }
-            else if (openClose > 0L && openTime > openClose)
+
+            _transactionTimeoutHelper.logIfNecessary(openTime, openWarn, ChannelMessages.OPEN_TXN(openTime),
+                                                     TransactionTimeoutHelper.OPEN_TRANSACTION_ALERT);
+            if (_transactionTimeoutHelper.isTimedOut(openTime, openClose))
             {
                 closeConnection("Open transaction timed out");
+                return;
             }
         }
     }

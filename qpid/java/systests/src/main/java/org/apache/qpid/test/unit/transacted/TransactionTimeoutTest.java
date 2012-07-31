@@ -30,7 +30,7 @@ import javax.jms.Queue;
  * This tests the behaviour of transactional sessions when the {@code transactionTimeout} configuration
  * is set for a virtual host.
  * 
- * A producer that is idle for too long or open for too long will have its connection closed and
+ * A producer that is idle for too long or open for too long will have its connection/session(0-10) closed and
  * any further operations will fail with a 408 resource timeout exception. Consumers will not
  * be affected by the transaction timeout configuration.
  */
