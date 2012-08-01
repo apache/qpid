@@ -230,6 +230,7 @@ ReplicatingSubscription::ReplicatingSubscription(
     catch (const std::exception& e) {
         QPID_LOG(error, logPrefix << "Creation error: " << e.what()
                  << ": arguments=" << getArguments());
+        throw;
     }
 }
 
@@ -254,6 +255,7 @@ void ReplicatingSubscription::initialize() {
     catch (const std::exception& e) {
         QPID_LOG(error, logPrefix << "Initialization error: " << e.what()
                  << ": arguments=" << getArguments());
+        throw;
     }
 }
 

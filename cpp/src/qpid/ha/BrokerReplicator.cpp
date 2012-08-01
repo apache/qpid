@@ -537,6 +537,7 @@ void BrokerReplicator::doResponseHaBroker(Variant::Map& values) {
         QPID_LOG(critical, logPrefix << "Invalid HA Broker response: " << e.what()
                  << ": " << values);
         haBroker.shutdown();
+        throw;
     }
 }
 
