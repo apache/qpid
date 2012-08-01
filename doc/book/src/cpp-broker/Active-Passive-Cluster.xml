@@ -166,15 +166,11 @@ under the License.
     </section>
     <section>
       <title>Limitations</title>
-      <para>
-	There are a number of known limitations in the current preview implementation. These
-	will be fixed in the production versions.
-      </para>
       <itemizedlist>
 	<listitem>
-	  Transactional changes to queue state are not replicated atomically. If the primary crashes
-	  during a transaction, it is possible that the backup could contain only part of the
-	  changes introduced by a transaction.
+	  Transactional changes to queue state are not replicated atomically. If the
+	  primary crashes during a transaction, it is possible that the backup could
+	  contain only part of the changes introduced by a transaction.
 	</listitem>
 	<listitem>
 	  Not yet integrated with the persistent store.  A persistent broker must have its
