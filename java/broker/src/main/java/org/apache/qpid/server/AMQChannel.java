@@ -138,8 +138,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
 
     private final LinkedList<AsyncCommand> _unfinishedCommandsQueue = new LinkedList<AsyncCommand>();
 
-    private static final int UNFINISHED_COMMAND_QUEUE_THRESHOLD = 500;
-
     private UnacknowledgedMessageMap _unacknowledgedMessageMap = new UnacknowledgedMessageMapImpl(DEFAULT_PREFETCH);
 
     // Set of messages being acknowledged in the current transaction
@@ -1636,23 +1634,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
     {
         _unfinishedCommandsQueue.add(new AsyncCommand(future, action));
     }
-
-    public void completeAsyncCommands()
-    {
-        AsyncCommand cmd;
-        while((cmd = _unfinishedCommandsQueue.peek()) != null && cmd.isReadyForCompletion())
-        {
-            cmd.complete();
-            _unfinishedCommandsQueue.poll();
-        }
-        while(_unfinishedCommandsQueue.size() > UNFINISHED_COMMAND_QUEUE_THRESHOLD)
-        {
-            cmd = _unfinishedCommandsQueue.poll();
-            cmd.awaitReadyForCompletion();
-            cmd.complete();
-        }
-    }
-
 
     public void sync()
     {
