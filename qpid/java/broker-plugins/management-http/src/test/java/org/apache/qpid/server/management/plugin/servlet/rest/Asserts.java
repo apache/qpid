@@ -79,6 +79,11 @@ public class Asserts
 
     public static void assertQueue(String queueName, String queueType, Map<String, Object> queueData)
     {
+        assertQueue(queueName, queueType, queueData, null);
+    }
+
+    public static void assertQueue(String queueName, String queueType, Map<String, Object> queueData, Map<String, Object> expectedAttributes)
+    {
         assertNotNull("Queue " + queueName + " is not found!", queueData);
         Asserts.assertAttributesPresent(queueData, Queue.AVAILABLE_ATTRIBUTES, Queue.CREATED, Queue.UPDATED,
                 Queue.DESCRIPTION, Queue.TIME_TO_LIVE, Queue.ALTERNATE_EXCHANGE, Queue.OWNER, Queue.NO_LOCAL, Queue.LVQ_KEY,
@@ -91,18 +96,28 @@ public class Asserts
         assertEquals("Unexpected value of queue attribute " + Queue.LIFETIME_POLICY, LifetimePolicy.PERMANENT.name(),
                 queueData.get(Queue.LIFETIME_POLICY));
         assertEquals("Unexpected value of queue attribute " + Queue.TYPE, queueType, queueData.get(Queue.TYPE));
-        assertEquals("Unexpected value of queue attribute " + Queue.EXCLUSIVE, Boolean.FALSE, queueData.get(Queue.EXCLUSIVE));
-        assertEquals("Unexpected value of queue attribute " + Queue.MAXIMUM_DELIVERY_ATTEMPTS, 0,
-                queueData.get(Queue.MAXIMUM_DELIVERY_ATTEMPTS));
-        assertEquals("Unexpected value of queue attribute " + Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES, 0,
-                queueData.get(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES));
-        assertEquals("Unexpected value of queue attribute " + Queue.QUEUE_FLOW_RESUME_SIZE_BYTES, 0,
-                queueData.get(Queue.QUEUE_FLOW_RESUME_SIZE_BYTES));
-        assertEquals("Unexpected value of queue attribute " + Queue.QUEUE_FLOW_STOPPED, Boolean.FALSE,
-                queueData.get(Queue.QUEUE_FLOW_STOPPED));
+        if (expectedAttributes == null)
+        {
+            assertEquals("Unexpected value of queue attribute " + Queue.EXCLUSIVE, Boolean.FALSE, queueData.get(Queue.EXCLUSIVE));
+            assertEquals("Unexpected value of queue attribute " + Queue.MAXIMUM_DELIVERY_ATTEMPTS, 0,
+                    queueData.get(Queue.MAXIMUM_DELIVERY_ATTEMPTS));
+            assertEquals("Unexpected value of queue attribute " + Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES, 0,
+                    queueData.get(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES));
+            assertEquals("Unexpected value of queue attribute " + Queue.QUEUE_FLOW_RESUME_SIZE_BYTES, 0,
+                    queueData.get(Queue.QUEUE_FLOW_RESUME_SIZE_BYTES));
+            assertEquals("Unexpected value of queue attribute " + Queue.QUEUE_FLOW_STOPPED, Boolean.FALSE,
+                    queueData.get(Queue.QUEUE_FLOW_STOPPED));
+        }
+        else
+        {
+            for (Map.Entry<String, Object> attribute : expectedAttributes.entrySet())
+            {
+                assertEquals("Unexpected value of " + queueName + " queue attribute " + attribute.getKey(),
+                        attribute.getValue(), queueData.get(attribute.getKey()));
+            }
+        }
 
         assertNotNull("Unexpected value of queue attribute statistics", queueData.get(Asserts.STATISTICS_ATTRIBUTE));
-
         @SuppressWarnings("unchecked")
         Map<String, Object> statistics = (Map<String, Object>) queueData.get(Asserts.STATISTICS_ATTRIBUTE);
         Asserts.assertAttributesPresent(statistics, Queue.AVAILABLE_STATISTICS, Queue.DISCARDS_TTL_BYTES,
