@@ -18,12 +18,14 @@
  */
 package org.apache.qpid.server.jmx.mbeans;
 
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Matchers.isNull;
 import static org.mockito.Matchers.argThat;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -31,19 +33,26 @@ import javax.management.ListenerNotFoundException;
 import javax.management.Notification;
 import javax.management.NotificationListener;
 import javax.management.OperationsException;
+import javax.management.openmbean.CompositeDataSupport;
 
+import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
+import org.apache.qpid.server.jmx.mbeans.QueueMBean.GetMessageVisitor;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.NotificationCheck;
+import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.mockito.ArgumentMatcher;
+import org.mockito.Matchers;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
-import junit.framework.TestCase;
-
-public class QueueMBeanTest extends TestCase
+public class QueueMBeanTest extends QpidTestCase
 {
     private static final String QUEUE_NAME = "QUEUE_NAME";
     private static final String QUEUE_DESCRIPTION = "QUEUE_DESCRIPTION";
@@ -59,6 +68,7 @@ public class QueueMBeanTest extends TestCase
     @Override
     protected void setUp() throws Exception
     {
+        super.setUp();
         _mockQueue = mock(Queue.class);
         _mockQueueStatistics = mock(Statistics.class);
         when(_mockQueue.getName()).thenReturn(QUEUE_NAME);
@@ -365,4 +375,65 @@ public class QueueMBeanTest extends TestCase
         verify(_mockQueue).setAttribute(underlyingAttributeName, originalAttributeValue, newAttributeValue);
     }
 
+    public void testViewMessageContent() throws Exception
+    {
+        viewMessageContentTestImpl(16L, 1000, 1000);
+    }
+
+    public void testViewMessageContentWithMissingPayload() throws Exception
+    {
+        viewMessageContentTestImpl(16L, 1000, 0);
+    }
+
+    private void viewMessageContentTestImpl(final long messageNumber,
+                                       final int messageSize,
+                                       final int messageContentSize) throws Exception
+    {
+        final byte[] content = new byte[messageContentSize];
+
+        //mock message and queue entry to return a given message size, and have a given content
+        final ServerMessage<?> serverMessage = mock(ServerMessage.class);
+        when(serverMessage.getMessageNumber()).thenReturn(messageNumber);
+        when(serverMessage.getSize()).thenReturn((long)messageSize);
+        doAnswer(new Answer<Object>()
+        {
+            public Object answer(InvocationOnMock invocation)
+            {
+                Object[] args = invocation.getArguments();
+
+                //verify the arg types / expected values
+                assertEquals(2, args.length);
+                assertTrue(args[0] instanceof ByteBuffer);
+                assertTrue(args[1] instanceof Integer);
+
+                ByteBuffer dest = (ByteBuffer) args[0];
+                int offset = (Integer) args[1];
+                assertEquals(0, offset);
+
+                dest.put(content);
+                return messageContentSize;
+            }
+        }).when(serverMessage).getContent(Matchers.any(ByteBuffer.class), Matchers.anyInt());
+
+        final QueueEntry entry = mock(QueueEntry.class);
+        when(entry.getMessage()).thenReturn(serverMessage);
+
+        //mock the queue.visit() method to ensure we match the mock message
+        doAnswer(new Answer<Object>()
+        {
+            public Object answer(InvocationOnMock invocation)
+            {
+                Object[] args = invocation.getArguments();
+                GetMessageVisitor visitor = (GetMessageVisitor) args[0];
+                visitor.visit(entry);
+                return null;
+            }
+        }).when(_mockQueue).visit(Matchers.any(GetMessageVisitor.class));
+
+        //now retrieve the content and verify its size
+        CompositeDataSupport comp = (CompositeDataSupport) _queueMBean.viewMessageContent(messageNumber);
+        assertNotNull(comp);
+        byte[] data = (byte[]) comp.get(ManagedQueue.CONTENT);
+        assertEquals(messageSize, data.length);
+    }
 }
