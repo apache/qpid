@@ -40,7 +40,6 @@ class Deliverable;
 }
 
 namespace ha {
-class HaBroker;
 
 /**
  * Exchange created on a backup broker to replicate a queue on the primary.
@@ -61,7 +60,7 @@ class QueueReplicator : public broker::Exchange,
     /** Test if a string is an event key */
     static bool isEventKey(const std::string key);
 
-    QueueReplicator(HaBroker&,
+    QueueReplicator(const BrokerInfo&,
                     boost::shared_ptr<broker::Queue> q,
                     boost::shared_ptr<broker::Link> l);
 
@@ -81,7 +80,6 @@ class QueueReplicator : public broker::Exchange,
     void initializeBridge(broker::Bridge& bridge, broker::SessionHandler& sessionHandler);
     void dequeue(framing::SequenceNumber, sys::Mutex::ScopedLock&);
 
-    HaBroker& haBroker;
     std::string logPrefix;
     std::string bridgeName;
     sys::Mutex lock;

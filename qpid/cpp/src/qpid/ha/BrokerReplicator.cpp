@@ -299,11 +299,9 @@ void BrokerReplicator::route(Deliverable& msg) {
     } catch (const std::exception& e) {
         QPID_LOG(critical, logPrefix << "Configuration failed: " << e.what()
                  << ": while handling: " << list);
-        haBroker.shutdown();
         throw;
     }
 }
-
 
 void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
     Variant::Map argsMap = asMapVoid(values[ARGS]);
@@ -544,7 +542,7 @@ void BrokerReplicator::startQueueReplicator(const boost::shared_ptr<Queue>& queu
 {
     if (replicationTest.replicateLevel(queue->getSettings()) == ALL) {
         boost::shared_ptr<QueueReplicator> qr(
-            new QueueReplicator(haBroker, queue, link));
+            new QueueReplicator(haBroker.getBrokerInfo(), queue, link));
         if (!broker.getExchanges().registerExchange(qr))
             throw Exception(QPID_MSG("Duplicate queue replicator " << qr->getName()));
         qr->activate();
