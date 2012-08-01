@@ -678,7 +678,7 @@
     </cobertura-instrument>
   </target>
 
-  <target name="cover-test" depends="instrument">
+  <target name="cover-test" depends="instrument" if="module.test.src.exists">
 
     <junit fork="yes" forkmode="once" maxmemory="${test.mem}" reloading="no"
            haltonfailure="${haltonfailure}" haltonerror="${haltonerror}"
