@@ -18,21 +18,20 @@
  */
 
 /**
- * \file MessageContext.cpp
+ * \file SimpleMessageAsyncContext.cpp
  */
 
-#include "MessageAsyncContext.h"
+#include "SimpleMessageAsyncContext.h"
 
 #include "SimpleMessage.h"
 
 #include <cassert>
 
-namespace tests {
-namespace storePerftools {
-namespace asyncPerf {
+namespace qpid  {
+namespace broker {
 
-MessageAsyncContext::MessageAsyncContext(boost::intrusive_ptr<SimpleMessage> msg,
-                                         boost::shared_ptr<SimpleQueue> q) :
+SimpleMessageAsyncContext::SimpleMessageAsyncContext(boost::intrusive_ptr<SimpleMessage> msg,
+                                                     boost::shared_ptr<SimpleQueue> q) :
         m_msg(msg),
         m_q(q)
 {
@@ -40,25 +39,21 @@ MessageAsyncContext::MessageAsyncContext(boost::intrusive_ptr<SimpleMessage> msg
     assert(m_q.get() != 0);
 }
 
-MessageAsyncContext::~MessageAsyncContext()
-{}
+SimpleMessageAsyncContext::~SimpleMessageAsyncContext() {}
 
 boost::intrusive_ptr<SimpleMessage>
-MessageAsyncContext::getMessage() const
-{
+SimpleMessageAsyncContext::getMessage() const {
     return m_msg;
 }
 
 boost::shared_ptr<SimpleQueue>
-MessageAsyncContext::getQueue() const
-{
+SimpleMessageAsyncContext::getQueue() const {
     return m_q;
 }
 
 void
-MessageAsyncContext::destroy()
-{
+SimpleMessageAsyncContext::destroy() {
     delete this;
 }
 
-}}} // namespace tests::storePerftools::asyncPerf
+}} // namespace qpid::broker

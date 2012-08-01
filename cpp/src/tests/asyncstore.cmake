@@ -51,20 +51,20 @@ endif (UNIX)
 
 # Async store perf test (asyncPerf)
 set (asyncStorePerf_SOURCES
-    storePerftools/asyncPerf/Deliverable.cpp
-    storePerftools/asyncPerf/DeliveryRecord.cpp
-    storePerftools/asyncPerf/MessageAsyncContext.cpp
     storePerftools/asyncPerf/MessageConsumer.cpp
-    storePerftools/asyncPerf/MessageDeque.cpp
     storePerftools/asyncPerf/MessageProducer.cpp
 	storePerftools/asyncPerf/PerfTest.cpp
-	storePerftools/asyncPerf/QueuedMessage.cpp
-	storePerftools/asyncPerf/SimpleMessage.cpp
-	storePerftools/asyncPerf/SimpleQueue.cpp
+#    storePerftools/asyncPerf/SimpleDeliverable.cpp
+#    storePerftools/asyncPerf/SimpleDeliveryRecord.cpp
+#	storePerftools/asyncPerf/SimpleMessage.cpp
+#    storePerftools/asyncPerf/SimpleMessageAsyncContext.cpp
+#    storePerftools/asyncPerf/SimpleMessageDeque.cpp
+#	storePerftools/asyncPerf/SimpleQueue.cpp
+#	storePerftools/asyncPerf/SimpleQueuedMessage.cpp
+#	storePerftools/asyncPerf/SimpleTxnAccept.cpp
+#	storePerftools/asyncPerf/SimpleTxnPublish.cpp
 	storePerftools/asyncPerf/TestOptions.cpp
 	storePerftools/asyncPerf/TestResult.cpp
-	storePerftools/asyncPerf/TxnAccept.cpp
-	storePerftools/asyncPerf/TxnPublish.cpp
 	
 	storePerftools/common/Parameters.cpp
     storePerftools/common/PerftoolError.cpp

@@ -27,19 +27,17 @@
 #include "boost/shared_ptr.hpp"
 
 namespace qpid {
-namespace asyncStore {
-class AsyncStoreImpl;
-}
 namespace broker {
 class AsyncResultQueue;
-class TxnBuffer;
+class AsyncStore;
+class SimpleQueue;
+class SimpleTxnBuffer;
 }}
 
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class SimpleQueue;
 class TestOptions;
 
 class MessageProducer
@@ -47,18 +45,18 @@ class MessageProducer
 public:
     MessageProducer(const TestOptions& perfTestParams,
                     const char* msgData,
-                    qpid::asyncStore::AsyncStoreImpl* store,
+                    qpid::broker::AsyncStore* store,
                     qpid::broker::AsyncResultQueue& arq,
-                    boost::shared_ptr<SimpleQueue> queue);
+                    boost::shared_ptr<qpid::broker::SimpleQueue> queue);
     virtual ~MessageProducer();
     void* runProducers();
     static void* startProducers(void* ptr);
 private:
     const TestOptions& m_perfTestParams;
     const char* m_msgData;
-    qpid::asyncStore::AsyncStoreImpl* m_store;
+    qpid::broker::AsyncStore* m_store;
     qpid::broker::AsyncResultQueue& m_resultQueue;
-    boost::shared_ptr<SimpleQueue> m_queue;
+    boost::shared_ptr<qpid::broker::SimpleQueue> m_queue;
 };
 
 }}} // namespace tests::storePerftools::asyncPerf

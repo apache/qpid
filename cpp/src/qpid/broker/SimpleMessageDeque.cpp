@@ -18,41 +18,35 @@
  */
 
 /**
- * \file MessageDeque.cpp
+ * \file SimpleMessageDeque.cpp
  */
 
-#include "MessageDeque.h"
+#include "SimpleMessageDeque.h"
 
-#include "QueuedMessage.h"
+#include "SimpleQueuedMessage.h"
 
-namespace tests {
-namespace storePerftools {
-namespace asyncPerf {
+namespace qpid  {
+namespace broker {
 
-MessageDeque::MessageDeque()
-{}
+SimpleMessageDeque::SimpleMessageDeque() {}
 
-MessageDeque::~MessageDeque()
-{}
+SimpleMessageDeque::~SimpleMessageDeque() {}
 
 uint32_t
-MessageDeque::size()
-{
+SimpleMessageDeque::size() {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_msgMutex);
     return m_messages.size();
 }
 
 bool
-MessageDeque::push(boost::shared_ptr<QueuedMessage>& added)
-{
+SimpleMessageDeque::push(boost::shared_ptr<SimpleQueuedMessage>& added) {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_msgMutex);
     m_messages.push_back(added);
     return false;
 }
 
 bool
-MessageDeque::consume(boost::shared_ptr<QueuedMessage>& msg)
-{
+SimpleMessageDeque::consume(boost::shared_ptr<SimpleQueuedMessage>& msg) {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_msgMutex);
     if (!m_messages.empty()) {
         msg = m_messages.front();
@@ -62,4 +56,4 @@ MessageDeque::consume(boost::shared_ptr<QueuedMessage>& msg)
     return false;
 }
 
-}}} // namespace tests::storePerftools::asyncPerf
+}} // namespace qpid::broker

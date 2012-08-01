@@ -18,36 +18,23 @@
  */
 
 /**
- * \file Messages.h
+ * \file SimpleDeliverable.cpp
  */
 
-/*
- * This is a copy of qpid::broker::Messages.h, but using the local
- * tests::storePerftools::asyncPerf::QueuedMessage class instead of
- * qpid::broker::QueuedMessage.
- */
+#include "SimpleDeliverable.h"
 
-#ifndef tests_storePerftools_asyncPerf_Messages_h_
-#define tests_storePerftools_asyncPerf_Messages_h_
+namespace qpid {
+namespace broker {
 
-#include <boost/shared_ptr.hpp>
-#include <stdint.h>
+SimpleDeliverable::SimpleDeliverable() :
+        m_delivered(false)
+{}
 
-namespace tests {
-namespace storePerftools {
-namespace asyncPerf {
+SimpleDeliverable::~SimpleDeliverable() {}
 
-class QueuedMessage;
+bool
+SimpleDeliverable::isDelivered() const {
+    return m_delivered;
+}
 
-class Messages
-{
-public:
-    virtual ~Messages() {}
-    virtual uint32_t size() = 0;
-    virtual bool push(boost::shared_ptr<QueuedMessage>& added) = 0;
-    virtual bool consume(boost::shared_ptr<QueuedMessage>& msg) = 0;
-};
-
-}}} // namespace tests::storePerftools::asyncPerf
-
-#endif // tests_storePerftools_asyncPerf_Messages_h_
+}} // namespace qpid::broker

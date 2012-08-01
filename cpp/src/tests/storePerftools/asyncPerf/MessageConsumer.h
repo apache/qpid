@@ -24,44 +24,44 @@
 #ifndef tests_storePerftools_asyncPerf_MessageConsumer_h_
 #define tests_storePerftools_asyncPerf_MessageConsumer_h_
 
+#include "qpid/broker/SimpleConsumer.h"
+
 #include "boost/shared_ptr.hpp"
 #include <deque>
 
 namespace qpid {
-namespace asyncStore {
-class AsyncStoreImpl;
-}
 namespace broker {
 class AsyncResultQueue;
+class AsyncStore;
+class SimpleDeliveryRecord;
+class SimpleQueue;
 }}
 
 namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class DeliveryRecord;
-class SimpleQueue;
 class TestOptions;
 
-class MessageConsumer
+class MessageConsumer: public qpid::broker::SimpleConsumer
 {
 public:
     MessageConsumer(const TestOptions& perfTestParams,
-                    qpid::asyncStore::AsyncStoreImpl* store,
+                    qpid::broker::AsyncStore* store,
                     qpid::broker::AsyncResultQueue& arq,
-                    boost::shared_ptr<SimpleQueue> queue);
+                    boost::shared_ptr<qpid::broker::SimpleQueue> queue);
     virtual ~MessageConsumer();
-    void record(boost::shared_ptr<DeliveryRecord> dr);
+    void record(boost::shared_ptr<qpid::broker::SimpleDeliveryRecord> dr);
     void commitComplete();
 
     void* runConsumers();
     static void* startConsumers(void* ptr);
 private:
     const TestOptions& m_perfTestParams;
-    qpid::asyncStore::AsyncStoreImpl* m_store;
+    qpid::broker::AsyncStore* m_store;
     qpid::broker::AsyncResultQueue& m_resultQueue;
-    boost::shared_ptr<SimpleQueue> m_queue;
-    std::deque<boost::shared_ptr<DeliveryRecord> > m_unacked;
+    boost::shared_ptr<qpid::broker::SimpleQueue> m_queue;
+    std::deque<boost::shared_ptr<qpid::broker::SimpleDeliveryRecord> > m_unacked;
 };
 
 }}} // namespace tests::storePerftools::asyncPerf

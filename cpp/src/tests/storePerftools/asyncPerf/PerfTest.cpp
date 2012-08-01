@@ -25,7 +25,6 @@
 
 #include "MessageConsumer.h"
 #include "MessageProducer.h"
-#include "SimpleQueue.h"
 
 #include "tests/storePerftools/version.h"
 #include "tests/storePerftools/common/ScopedTimer.h"
@@ -34,6 +33,7 @@
 #include "qpid/Modules.h" // Use with loading store as module
 #include "qpid/asyncStore/AsyncStoreImpl.h"
 #include "qpid/asyncStore/AsyncStoreOptions.h"
+#include "qpid/broker/SimpleQueue.h"
 
 #include <iomanip>
 
@@ -55,8 +55,7 @@ PerfTest::PerfTest(const TestOptions& to,
     std::memset((void*)m_msgData, 0, (size_t)to.m_msgSize);
 }
 
-PerfTest::~PerfTest()
-{
+PerfTest::~PerfTest() {
     m_poller->shutdown();
     m_pollingThread.join();
 
@@ -68,8 +67,7 @@ PerfTest::~PerfTest()
 }
 
 void
-PerfTest::run()
-{
+PerfTest::run() {
     if (m_testOpts.m_durable) {
         prepareStore();
     }
@@ -113,8 +111,7 @@ PerfTest::run()
 }
 
 void
-PerfTest::toStream(std::ostream& os) const
-{
+PerfTest::toStream(std::ostream& os) const {
     m_testOpts.printVals(os);
     os << std::endl;
     m_storeOpts.printVals(os);
@@ -124,16 +121,15 @@ PerfTest::toStream(std::ostream& os) const
 
 // private
 void
-PerfTest::prepareStore()
-{
-    m_store = new qpid::asyncStore::AsyncStoreImpl(m_poller, m_storeOpts);
-    m_store->initialize();
+PerfTest::prepareStore() {
+    qpid::asyncStore::AsyncStoreImpl* s = new qpid::asyncStore::AsyncStoreImpl(m_poller, m_storeOpts);
+    s->initialize();
+    m_store = s;
 }
 
 // private
 void
-PerfTest::destroyStore()
-{
+PerfTest::destroyStore() {
     if (m_store) {
         delete m_store;
     }
@@ -141,12 +137,11 @@ PerfTest::destroyStore()
 
 // private
 void
-PerfTest::prepareQueues()
-{
+PerfTest::prepareQueues() {
     for (uint16_t i = 0; i < m_testOpts.m_numQueues; ++i) {
         std::ostringstream qname;
         qname << "queue_" << std::setw(4) << std::setfill('0') << i;
-        boost::shared_ptr<SimpleQueue> mpq(new SimpleQueue(qname.str(), m_queueArgs, m_store, m_resultQueue));
+        boost::shared_ptr<qpid::broker::SimpleQueue> mpq(new qpid::broker::SimpleQueue(qname.str(), m_queueArgs, m_store, m_resultQueue));
         mpq->asyncCreate();
         m_queueList.push_back(mpq);
     }
@@ -154,8 +149,7 @@ PerfTest::prepareQueues()
 
 // private
 void
-PerfTest::destroyQueues()
-{
+PerfTest::destroyQueues() {
     while (m_queueList.size() > 0) {
         m_queueList.front()->asyncDestroy(m_testOpts.m_destroyQueuesOnCompletion);
         m_queueList.pop_front();
@@ -163,8 +157,7 @@ PerfTest::destroyQueues()
 }
 
 int
-runPerfTest(int argc, char** argv)
-{
+runPerfTest(int argc, char** argv) {
     // Load async store module
     qpid::tryShlib ("asyncStore.so", false);
 
@@ -212,7 +205,6 @@ runPerfTest(int argc, char** argv)
 // -----------------------------------------------------------------
 
 int
-main(int argc, char** argv)
-{
+main(int argc, char** argv) {
     return tests::storePerftools::asyncPerf::runPerfTest(argc, argv);
 }

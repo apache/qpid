@@ -21,11 +21,11 @@
  * \file SimpleQueue.h
  */
 
-#ifndef tests_storePerftools_asyncPerf_SimpleQueue_h_
-#define tests_storePerftools_asyncPerf_SimpleQueue_h_
+#ifndef qpid_broker_SimpleQueue_h_
+#define qpid_broker_SimpleQueue_h_
 
 #include "qpid/asyncStore/AtomicCounter.h" // AsyncOpCounter
-#include "qpid/broker/AsyncStore.h" // qpid::broker::DataSource
+#include "qpid/broker/AsyncStore.h" // DataSource
 #include "qpid/broker/PersistableQueue.h"
 #include "qpid/broker/QueueHandle.h"
 #include "qpid/sys/Monitor.h"
@@ -35,53 +35,50 @@
 #include <boost/enable_shared_from_this.hpp>
 
 namespace qpid {
-namespace broker {
-class AsyncResultQueue;
-class QueueAsyncContext;
-class TxnBuffer;
-}
+
 namespace framing {
 class FieldTable;
-}}
+}
 
-namespace tests {
-namespace storePerftools {
-namespace asyncPerf {
+namespace broker {
 
-class MessageConsumer;
-class Messages;
-class QueuedMessage;
+class AsyncResultQueue;
+class QueueAsyncContext;
+class SimpleConsumer;
+class SimpleMessages;
+class SimpleQueuedMessage;
 class SimpleMessage;
+class SimpleTxnBuffer;
 
 class SimpleQueue : public boost::enable_shared_from_this<SimpleQueue>,
-                    public qpid::broker::PersistableQueue,
-                    public qpid::broker::DataSource
+                    public PersistableQueue,
+                    public DataSource
 {
 public:
     SimpleQueue(const std::string& name,
                 const qpid::framing::FieldTable& args,
-                qpid::broker::AsyncStore* store,
-                qpid::broker::AsyncResultQueue& arq);
+                AsyncStore* store,
+                AsyncResultQueue& arq);
     virtual ~SimpleQueue();
 
-    const qpid::broker::QueueHandle& getHandle() const;
-    qpid::broker::QueueHandle& getHandle();
-    qpid::broker::AsyncStore* getStore();
+    const QueueHandle& getHandle() const;
+    QueueHandle& getHandle();
+    AsyncStore* getStore();
 
     void asyncCreate();
-    static void handleAsyncCreateResult(const qpid::broker::AsyncResultHandle* const arh);
+    static void handleAsyncCreateResult(const AsyncResultHandle* const arh);
     void asyncDestroy(const bool deleteQueue);
-    static void handleAsyncDestroyResult(const qpid::broker::AsyncResultHandle* const arh);
+    static void handleAsyncDestroyResult(const AsyncResultHandle* const arh);
 
     // --- Methods in msg handling path from qpid::Queue ---
     void deliver(boost::intrusive_ptr<SimpleMessage> msg);
-    bool dispatch(MessageConsumer& mc);
-    bool enqueue(boost::shared_ptr<QueuedMessage> qm);
-    bool enqueue(qpid::broker::TxnBuffer* tb,
-                 boost::shared_ptr<QueuedMessage> qm);
-    bool dequeue(boost::shared_ptr<QueuedMessage> qm);
-    bool dequeue(qpid::broker::TxnBuffer* tb,
-                 boost::shared_ptr<QueuedMessage> qm);
+    bool dispatch(SimpleConsumer& sc);
+    bool enqueue(boost::shared_ptr<SimpleQueuedMessage> qm);
+    bool enqueue(SimpleTxnBuffer* tb,
+                 boost::shared_ptr<SimpleQueuedMessage> qm);
+    bool dequeue(boost::shared_ptr<SimpleQueuedMessage> qm);
+    bool dequeue(SimpleTxnBuffer* tb,
+                 boost::shared_ptr<SimpleQueuedMessage> qm);
     void process(boost::intrusive_ptr<SimpleMessage> msg);
     void enqueueAborted(boost::intrusive_ptr<SimpleMessage> msg);
 
@@ -94,22 +91,22 @@ public:
     // --- Interface qpid::broker::PersistableQueue ---
     virtual void flush();
     virtual const std::string& getName() const;
-    virtual void setExternalQueueStore(qpid::broker::ExternalQueueStore* inst);
+    virtual void setExternalQueueStore(ExternalQueueStore* inst);
 
     // --- Interface qpid::broker::DataStore ---
     virtual uint64_t getSize();
     virtual void write(char* target);
 
 private:
-    static qpid::broker::TxnHandle s_nullTxnHandle; // used for non-txn operations
+    static TxnHandle s_nullTxnHandle; // used for non-txn operations
 
     const std::string m_name;
-    qpid::broker::AsyncStore* m_store;
-    qpid::broker::AsyncResultQueue& m_resultQueue;
+    AsyncStore* m_store;
+    AsyncResultQueue& m_resultQueue;
     qpid::asyncStore::AsyncOpCounter m_asyncOpCounter; // TODO: change this to non-async store counter!
     mutable uint64_t m_persistenceId;
     std::string m_persistableData;
-    qpid::broker::QueueHandle m_queueHandle;
+    QueueHandle m_queueHandle;
     bool m_destroyPending;
     bool m_destroyed;
 
@@ -130,29 +127,29 @@ private:
         ~ScopedUse();
     };
     UsageBarrier m_barrier;
-    std::auto_ptr<Messages> m_messages;
-    void push(boost::shared_ptr<QueuedMessage> qm,
+    std::auto_ptr<SimpleMessages> m_messages;
+    void push(boost::shared_ptr<SimpleQueuedMessage> qm,
               bool isRecovery = false);
 
     // -- Async ops ---
-    bool asyncEnqueue(qpid::broker::TxnBuffer* tb,
-                      boost::shared_ptr<QueuedMessage> qm);
-    static void handleAsyncEnqueueResult(const qpid::broker::AsyncResultHandle* const arh);
-    bool asyncDequeue(qpid::broker::TxnBuffer* tb,
-                      boost::shared_ptr<QueuedMessage> qm);
-    static void handleAsyncDequeueResult(const qpid::broker::AsyncResultHandle* const arh);
+    bool asyncEnqueue(SimpleTxnBuffer* tb,
+                      boost::shared_ptr<SimpleQueuedMessage> qm);
+    static void handleAsyncEnqueueResult(const AsyncResultHandle* const arh);
+    bool asyncDequeue(SimpleTxnBuffer* tb,
+                      boost::shared_ptr<SimpleQueuedMessage> qm);
+    static void handleAsyncDequeueResult(const AsyncResultHandle* const arh);
 
     // --- Async op counter ---
     void destroyCheck(const std::string& opDescr) const;
 
     // --- Async op completions (called through handleAsyncResult) ---
-    void createComplete(const boost::shared_ptr<qpid::broker::QueueAsyncContext> qc);
-    void flushComplete(const boost::shared_ptr<qpid::broker::QueueAsyncContext> qc);
-    void destroyComplete(const boost::shared_ptr<qpid::broker::QueueAsyncContext> qc);
-    void enqueueComplete(const boost::shared_ptr<qpid::broker::QueueAsyncContext> qc);
-    void dequeueComplete(const boost::shared_ptr<qpid::broker::QueueAsyncContext> qc);
+    void createComplete(const boost::shared_ptr<QueueAsyncContext> qc);
+    void flushComplete(const boost::shared_ptr<QueueAsyncContext> qc);
+    void destroyComplete(const boost::shared_ptr<QueueAsyncContext> qc);
+    void enqueueComplete(const boost::shared_ptr<QueueAsyncContext> qc);
+    void dequeueComplete(const boost::shared_ptr<QueueAsyncContext> qc);
 };
 
-}}} // namespace tests::storePerftools::asyncPerf
+}} // namespace qpid::broker
 
-#endif // tests_storePerftools_asyncPerf_SimpleQueue_h_
+#endif // qpid_broker_SimpleQueue_h_

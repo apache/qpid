@@ -18,14 +18,14 @@
  */
 
 /**
- * \file QueuedMessage.h
+ * \file SimpleQueuedMessage.h
  */
 
-#ifndef tests_storePerftools_asyncPerf_QueuedMessage_h_
-#define tests_storePerftools_asyncPerf_QueuedMessage_h_
+#ifndef qpid_broker_SimpleQueuedMessage_h_
+#define qpid_broker_SimpleQueuedMessage_h_
 
-#include "qpid/broker/AsyncStore.h"
-#include "qpid/broker/EnqueueHandle.h"
+#include "AsyncStore.h"
+#include "EnqueueHandle.h"
 
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/intrusive_ptr.hpp>
@@ -33,33 +33,25 @@
 namespace qpid {
 namespace broker {
 
-class TxnHandle;
-
-}}
-
-namespace tests {
-namespace storePerftools {
-namespace asyncPerf {
-
 class SimpleMessage;
 class SimpleQueue;
 
-class QueuedMessage : public boost::enable_shared_from_this<QueuedMessage>
+class SimpleQueuedMessage : public boost::enable_shared_from_this<SimpleQueuedMessage>
 {
 public:
-    QueuedMessage();
-    QueuedMessage(SimpleQueue* q,
+    SimpleQueuedMessage();
+    SimpleQueuedMessage(SimpleQueue* q,
                   boost::intrusive_ptr<SimpleMessage> msg);
-    QueuedMessage(const QueuedMessage& qm);
-    QueuedMessage(QueuedMessage* const qm);
-    virtual ~QueuedMessage();
+    SimpleQueuedMessage(const SimpleQueuedMessage& qm);
+    SimpleQueuedMessage(SimpleQueuedMessage* const qm);
+    virtual ~SimpleQueuedMessage();
     SimpleQueue* getQueue() const;
     boost::intrusive_ptr<SimpleMessage> payload() const;
-    const qpid::broker::EnqueueHandle& enqHandle() const;
-    qpid::broker::EnqueueHandle& enqHandle();
+    const EnqueueHandle& enqHandle() const;
+    EnqueueHandle& enqHandle();
 
     // --- Transaction handling ---
-    void prepareEnqueue(qpid::broker::TxnBuffer* tb);
+    void prepareEnqueue(qpid::broker::SimpleTxnBuffer* tb);
     void commitEnqueue();
     void abortEnqueue();
 
@@ -69,6 +61,6 @@ private:
     qpid::broker::EnqueueHandle m_enqHandle;
 };
 
-}}} // namespace tests::storePerfTools
+}} // namespace qpid::broker
 
-#endif // tests_storePerftools_asyncPerf_QueuedMessage_h_
+#endif // qpid_broker_SimpleQueuedMessage_h_

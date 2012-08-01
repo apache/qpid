@@ -18,26 +18,36 @@
  */
 
 /**
- * \file Deliverable.cpp
+ * \file SimpleDeliverable.h
  */
 
-#include "Deliverable.h"
+#ifndef qpid_broker_SimpleDeliverable_h_
+#define qpid_broker_SimpleDeliverable_h_
 
-namespace tests {
-namespace storePerftools {
-namespace asyncPerf {
+#include <boost/shared_ptr.hpp>
+#include <stdint.h> // uint64_t
 
-Deliverable::Deliverable() :
-        m_delivered(false)
-{}
+namespace qpid {
+namespace broker {
 
-Deliverable::~Deliverable()
-{}
+class SimpleMessage;
+class SimpleQueue;
 
-bool
-Deliverable::isDelivered() const
+class SimpleDeliverable
 {
-    return m_delivered;
-}
+public:
+    SimpleDeliverable();
+    virtual ~SimpleDeliverable();
 
-}}} // namespace tests::storePerftools::asyncPerf
+    virtual uint64_t contentSize() = 0;
+    virtual void deliverTo(const boost::shared_ptr<SimpleQueue>& queue) = 0;
+    virtual SimpleMessage& getMessage() = 0;
+    virtual bool isDelivered() const;
+
+protected:
+    bool m_delivered;
+};
+
+}} // namespace qpid::broker
+
+#endif // qpid_broker_SimpleDeliverable_h_

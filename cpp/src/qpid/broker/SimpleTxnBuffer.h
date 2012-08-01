@@ -18,11 +18,11 @@
  */
 
 /**
- * \file TxnBuffer.h
+ * \file SimpleTxnBuffer.h
  */
 
-#ifndef qpid_broker_TxnBuffer_h_
-#define qpid_broker_TxnBuffer_h_
+#ifndef qpid_broker_SimpleTxnBuffer_h_
+#define qpid_broker_SimpleTxnBuffer_h_
 
 #include "TxnHandle.h"
 
@@ -37,20 +37,20 @@ namespace broker {
 class AsyncResultHandle;
 class AsyncResultQueue;
 class AsyncTransactionalStore;
-class TxnOp;
+class SimpleTxnOp;
 
-class TxnBuffer {
+class SimpleTxnBuffer {
 public:
-    TxnBuffer(AsyncResultQueue& arq);
-    TxnBuffer(AsyncResultQueue& arq, std::string& xid);
-    virtual ~TxnBuffer();
+    SimpleTxnBuffer(AsyncResultQueue& arq);
+    SimpleTxnBuffer(AsyncResultQueue& arq, std::string& xid);
+    virtual ~SimpleTxnBuffer();
     TxnHandle& getTxnHandle();
     const std::string& getXid() const;
     bool is2pc() const;
     void incrOpCnt();
     void decrOpCnt();
 
-    void enlist(boost::shared_ptr<TxnOp> op);
+    void enlist(boost::shared_ptr<SimpleTxnOp> op);
     bool prepare();
     void commit();
     void rollback();
@@ -68,7 +68,7 @@ private:
     mutable qpid::sys::Mutex m_completeOpCntMutex;
     static qpid::sys::Mutex s_uuidMutex;
 
-    std::vector<boost::shared_ptr<TxnOp> > m_ops;
+    std::vector<boost::shared_ptr<SimpleTxnOp> > m_ops;
     TxnHandle m_txnHandle;
     AsyncTransactionalStore* m_store;
     AsyncResultQueue& m_resultQueue;
@@ -86,4 +86,4 @@ private:
 
 }} // namespace qpid::broker
 
-#endif // qpid_broker_TxnBuffer_h_
+#endif // qpid_broker_SimpleTxnBuffer_h_

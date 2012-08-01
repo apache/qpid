@@ -31,7 +31,7 @@ TxnHandleImpl::TxnHandleImpl() :
         m_txnBuffer(0)
 {}
 
-TxnHandleImpl::TxnHandleImpl(qpid::broker::TxnBuffer* tb) :
+TxnHandleImpl::TxnHandleImpl(qpid::broker::SimpleTxnBuffer* tb) :
         m_tpcFlag(false),
         m_txnBuffer(tb)
 {}
@@ -44,7 +44,7 @@ TxnHandleImpl::TxnHandleImpl(const std::string& xid, const bool tpcFlag) :
 
 TxnHandleImpl::TxnHandleImpl(const std::string& xid,
                              const bool tpcFlag,
-                             qpid::broker::TxnBuffer* tb) :
+                             qpid::broker::SimpleTxnBuffer* tb) :
         m_xid(xid),
         m_tpcFlag(tpcFlag),
         m_txnBuffer(tb)

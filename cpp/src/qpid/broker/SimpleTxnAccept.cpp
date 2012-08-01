@@ -18,31 +18,30 @@
  */
 
 /**
- * \file TxnAccept.cpp
+ * \file SimpleTxnAccept.cpp
  */
 
-#include "TxnAccept.h"
+#include "SimpleTxnAccept.h"
 
-#include "DeliveryRecord.h"
+#include "SimpleDeliveryRecord.h"
 
 #include "qpid/log/Statement.h"
 
-namespace tests {
-namespace storePerftools {
-namespace asyncPerf {
+namespace qpid {
+namespace broker {
 
-TxnAccept::TxnAccept(std::deque<boost::shared_ptr<DeliveryRecord> >& ops) :
+SimpleTxnAccept::SimpleTxnAccept(std::deque<boost::shared_ptr<SimpleDeliveryRecord> >& ops) :
         m_ops(ops)
 {}
 
-TxnAccept::~TxnAccept() {}
+SimpleTxnAccept::~SimpleTxnAccept() {}
 
 // --- Interface TxnOp ---
 
 bool
-TxnAccept::prepare(qpid::broker::TxnBuffer* tb) throw() {
+SimpleTxnAccept::prepare(SimpleTxnBuffer* tb) throw() {
     try {
-        for (std::deque<boost::shared_ptr<DeliveryRecord> >::iterator i = m_ops.begin(); i != m_ops.end(); ++i) {
+        for (std::deque<boost::shared_ptr<SimpleDeliveryRecord> >::iterator i = m_ops.begin(); i != m_ops.end(); ++i) {
             (*i)->dequeue(tb);
         }
         return true;
@@ -55,9 +54,9 @@ TxnAccept::prepare(qpid::broker::TxnBuffer* tb) throw() {
 }
 
 void
-TxnAccept::commit() throw() {
+SimpleTxnAccept::commit() throw() {
     try {
-        for (std::deque<boost::shared_ptr<DeliveryRecord> >::iterator i=m_ops.begin(); i!=m_ops.end(); ++i) {
+        for (std::deque<boost::shared_ptr<SimpleDeliveryRecord> >::iterator i=m_ops.begin(); i!=m_ops.end(); ++i) {
             (*i)->committed();
             (*i)->setEnded();
         }
@@ -69,6 +68,6 @@ TxnAccept::commit() throw() {
 }
 
 void
-TxnAccept::rollback() throw() {}
+SimpleTxnAccept::rollback() throw() {}
 
-}}} // namespace tests::storePerftools::asyncPerf
+}} // namespace qpid::broker

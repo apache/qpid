@@ -18,43 +18,35 @@
  */
 
 /**
- * \file TransactionAsyncContext.cpp
+ * \file SimpleTxnAccept.h
  */
 
-#include "TxnAsyncContext.h"
+#ifndef tests_storePerftools_asyncPerf_SimpleTxnAccept_h_
+#define tests_storePerftools_asyncPerf_SimpleTxnAccept_h_
+
+#include "SimpleTxnOp.h"
+
+#include "boost/shared_ptr.hpp"
+#include <deque>
 
 namespace qpid {
 namespace broker {
 
-TxnAsyncContext::TxnAsyncContext(SimpleTxnBuffer* const tb,
-                                 AsyncResultCallback rcb,
-                                 AsyncResultQueue* const arq):
-        m_tb(tb),
-        m_rcb(rcb),
-        m_arq(arq)
-{}
+class SimpleDeliveryRecord;
 
-TxnAsyncContext::~TxnAsyncContext()
-{}
+class SimpleTxnAccept: public SimpleTxnOp {
+public:
+    SimpleTxnAccept(std::deque<boost::shared_ptr<SimpleDeliveryRecord> >& ops);
+    virtual ~SimpleTxnAccept();
 
-SimpleTxnBuffer*
-TxnAsyncContext::getTxnBuffer() const
-{
-    return m_tb;
-}
-
-AsyncResultQueue*
-TxnAsyncContext::getAsyncResultQueue() const
-{
-    return m_arq;
-}
-
-void
-TxnAsyncContext::invokeCallback(const AsyncResultHandle* const arh) const
-{
-    if (m_rcb) {
-        m_rcb(arh);
-    }
-}
+    // --- Interface TxnOp ---
+    bool prepare(SimpleTxnBuffer* tb) throw();
+    void commit() throw();
+    void rollback() throw();
+private:
+    std::deque<boost::shared_ptr<SimpleDeliveryRecord> > m_ops;
+};
 
 }} // namespace qpid::broker
+
+#endif // tests_storePerftools_asyncPerf_SimpleTxnAccept_h_

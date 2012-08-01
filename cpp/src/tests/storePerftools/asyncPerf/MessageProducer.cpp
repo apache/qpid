@@ -23,13 +23,12 @@
 
 #include "MessageProducer.h"
 
-#include "SimpleMessage.h"
-#include "SimpleQueue.h"
 #include "TestOptions.h"
-#include "TxnPublish.h"
 
-#include "qpid/asyncStore/AsyncStoreImpl.h"
-#include "qpid/broker/TxnBuffer.h"
+#include "qpid/broker/SimpleMessage.h"
+#include "qpid/broker/SimpleQueue.h"
+#include "qpid/broker/SimpleTxnBuffer.h"
+#include "qpid/broker/SimpleTxnPublish.h"
 
 #include <stdint.h> // uint32_t
 
@@ -39,9 +38,9 @@ namespace asyncPerf {
 
 MessageProducer::MessageProducer(const TestOptions& perfTestParams,
                                  const char* msgData,
-                                 qpid::asyncStore::AsyncStoreImpl* store,
+                                 qpid::broker::AsyncStore* store,
                                  qpid::broker::AsyncResultQueue& arq,
-                                 boost::shared_ptr<SimpleQueue> queue) :
+                                 boost::shared_ptr<qpid::broker::SimpleQueue> queue) :
         m_perfTestParams(perfTestParams),
         m_msgData(msgData),
         m_store(store),
@@ -55,14 +54,14 @@ void*
 MessageProducer::runProducers() {
     const bool useTxns = m_perfTestParams.m_enqTxnBlockSize > 0U;
     uint16_t recsInTxnCnt = 0U;
-    qpid::broker::TxnBuffer* tb = 0;
+    qpid::broker::SimpleTxnBuffer* tb = 0;
     if (useTxns) {
-        tb = new qpid::broker::TxnBuffer(m_resultQueue);
+        tb = new qpid::broker::SimpleTxnBuffer(m_resultQueue);
     }
     for (uint32_t numMsgs=0; numMsgs<m_perfTestParams.m_numMsgs; ++numMsgs) {
-        boost::intrusive_ptr<SimpleMessage> msg(new SimpleMessage(m_msgData, m_perfTestParams.m_msgSize, m_store));
+        boost::intrusive_ptr<qpid::broker::SimpleMessage> msg(new qpid::broker::SimpleMessage(m_msgData, m_perfTestParams.m_msgSize, m_store));
         if (useTxns) {
-            boost::shared_ptr<TxnPublish> op(new TxnPublish(msg));
+            boost::shared_ptr<qpid::broker::SimpleTxnPublish> op(new qpid::broker::SimpleTxnPublish(msg));
             op->deliverTo(m_queue);
             tb->enlist(op);
             if (++recsInTxnCnt >= m_perfTestParams.m_enqTxnBlockSize) {
@@ -72,7 +71,7 @@ MessageProducer::runProducers() {
                 // transaction until the current commit cycle completes. So use another instance. This
                 // instance should auto-delete when the async commit cycle completes.
                 if ((numMsgs + 1) < m_perfTestParams.m_numMsgs) {
-                    tb = new qpid::broker::TxnBuffer(m_resultQueue);
+                    tb = new qpid::broker::SimpleTxnBuffer(m_resultQueue);
                 }
                 recsInTxnCnt = 0U;
             }

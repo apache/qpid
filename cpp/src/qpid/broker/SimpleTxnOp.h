@@ -18,36 +18,27 @@
  */
 
 /**
- * \file TxnAccept.h
+ * \file SimpleTxnOp.h
  */
 
-#ifndef tests_storePerftools_asyncPerf_TxnAccept_h_
-#define tests_storePerftools_asyncPerf_TxnAccept_h_
+#ifndef qpid_broker_SimpleTxnOp_h_
+#define qpid_broker_SimpleTxnOp_h_
 
-#include "qpid/broker/TxnOp.h"
+#include <boost/shared_ptr.hpp>
 
-#include "boost/shared_ptr.hpp"
-#include <deque>
+namespace qpid {
+namespace broker {
 
-namespace tests {
-namespace storePerftools {
-namespace asyncPerf {
+class SimpleTxnBuffer;
 
-class DeliveryRecord;
-
-class TxnAccept: public qpid::broker::TxnOp {
+class SimpleTxnOp{
 public:
-    TxnAccept(std::deque<boost::shared_ptr<DeliveryRecord> >& ops);
-    virtual ~TxnAccept();
-
-    // --- Interface TxnOp ---
-    bool prepare(qpid::broker::TxnBuffer* tb) throw();
-    void commit() throw();
-    void rollback() throw();
-private:
-    std::deque<boost::shared_ptr<DeliveryRecord> > m_ops;
+    virtual ~SimpleTxnOp() {}
+    virtual bool prepare(SimpleTxnBuffer*) throw() = 0;
+    virtual void commit()  throw() = 0;
+    virtual void rollback()  throw() = 0;
 };
 
-}}} // namespace tests::storePerftools::asyncPerf
+}} // namespace qpid::broker
 
-#endif // tests_storePerftools_asyncPerf_TxnAccept_h_
+#endif // qpid_broker_SimpleTxnOp_h_

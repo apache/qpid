@@ -64,8 +64,17 @@ set (asyncStore_SOURCES
 	qpid/broker/MessageHandle.cpp
 	qpid/broker/QueueAsyncContext.cpp
 	qpid/broker/QueueHandle.cpp
+    qpid/broker/SimpleDeliverable.cpp
+    qpid/broker/SimpleDeliveryRecord.cpp
+	qpid/broker/SimpleMessage.cpp
+    qpid/broker/SimpleMessageAsyncContext.cpp
+    qpid/broker/SimpleMessageDeque.cpp
+	qpid/broker/SimpleQueue.cpp
+	qpid/broker/SimpleQueuedMessage.cpp
+	qpid/broker/SimpleTxnAccept.cpp
+    qpid/broker/SimpleTxnBuffer.cpp
+	qpid/broker/SimpleTxnPublish.cpp
     qpid/broker/TxnAsyncContext.cpp
-    qpid/broker/TxnBuffer.cpp
     qpid/broker/TxnHandle.cpp
 )
 

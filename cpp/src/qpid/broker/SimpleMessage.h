@@ -21,29 +21,28 @@
  * \file SimpleMessage.h
  */
 
-#ifndef tests_storePerftools_asyncPerf_SimpleMessage_h_
-#define tests_storePerftools_asyncPerf_SimpleMessage_h_
+#ifndef qpid_broker_SimpleMessage_h_
+#define qpid_broker_SimpleMessage_h_
 
-#include "qpid/broker/AsyncStore.h" // qpid::broker::DataSource
-#include "qpid/broker/MessageHandle.h"
-#include "qpid/broker/PersistableMessage.h"
+#include "AsyncStore.h" // DataSource
+#include "MessageHandle.h"
+#include "PersistableMessage.h"
 
-namespace tests {
-namespace storePerftools {
-namespace asyncPerf {
+namespace qpid  {
+namespace broker {
 
-class SimpleMessage: public qpid::broker::PersistableMessage,
-                     public qpid::broker::DataSource
+class SimpleMessage: public PersistableMessage,
+                     public DataSource
 {
 public:
     SimpleMessage(const char* msgData,
                   const uint32_t msgSize);
     SimpleMessage(const char* msgData,
                   const uint32_t msgSize,
-                  qpid::broker::AsyncStore* store);
+                  AsyncStore* store);
     virtual ~SimpleMessage();
-    const qpid::broker::MessageHandle& getHandle() const;
-    qpid::broker::MessageHandle& getHandle();
+    const MessageHandle& getHandle() const;
+    MessageHandle& getHandle();
     uint64_t contentSize() const;
 
     // --- Interface Persistable ---
@@ -64,11 +63,11 @@ public:
 private:
     mutable uint64_t m_persistenceId;
     const std::string m_msg;
-    qpid::broker::AsyncStore* m_store;
+    AsyncStore* m_store;
 
-    qpid::broker::MessageHandle m_msgHandle;
+    MessageHandle m_msgHandle;
 };
 
-}}} // namespace tests::storePerftools::asyncPerf
+}} // namespace qpid::broker
 
-#endif // tests_storePerftools_asyncPerf_SimpleMessage_h_
+#endif // qpid_broker_SimpleMessage_h_

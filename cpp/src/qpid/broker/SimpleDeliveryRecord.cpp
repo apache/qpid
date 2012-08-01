@@ -18,35 +18,32 @@
  */
 
 /**
- * \file DeliveryRecord.cpp
+ * \file SimpleDeliveryRecord.cpp
  */
 
-#include "DeliveryRecord.h"
+#include "SimpleDeliveryRecord.h"
 
-#include "MessageConsumer.h"
-#include "QueuedMessage.h"
+#include "SimpleConsumer.h"
 #include "SimpleMessage.h"
 #include "SimpleQueue.h"
+#include "SimpleQueuedMessage.h"
 
-namespace tests {
-namespace storePerftools {
-namespace asyncPerf {
+namespace qpid  {
+namespace broker {
 
-DeliveryRecord::DeliveryRecord(boost::shared_ptr<QueuedMessage> qm,
-                               MessageConsumer& mc,
-                               bool accepted) :
+SimpleDeliveryRecord::SimpleDeliveryRecord(boost::shared_ptr<SimpleQueuedMessage> qm,
+                                           SimpleConsumer& sc,
+                                           bool accepted) :
         m_queuedMessage(qm),
-        m_msgConsumer(mc),
+        m_msgConsumer(sc),
         m_accepted(accepted),
         m_ended(accepted)
 {}
 
-DeliveryRecord::~DeliveryRecord()
-{}
+SimpleDeliveryRecord::~SimpleDeliveryRecord() {}
 
 bool
-DeliveryRecord::accept()
-{
+SimpleDeliveryRecord::accept() {
     if (!m_ended) {
         m_queuedMessage->getQueue()->dequeue(m_queuedMessage);
         m_accepted = true;
@@ -56,47 +53,40 @@ DeliveryRecord::accept()
 }
 
 bool
-DeliveryRecord::isAccepted() const
-{
+SimpleDeliveryRecord::isAccepted() const {
     return m_accepted;
 }
 
 bool
-DeliveryRecord::setEnded()
-{
+SimpleDeliveryRecord::setEnded() {
     m_ended = true;
     m_queuedMessage->payload() = boost::intrusive_ptr<SimpleMessage>(0);
     return isRedundant();
 }
 
 bool
-DeliveryRecord::isEnded() const
-{
+SimpleDeliveryRecord::isEnded() const {
     return m_ended;
 }
 
 bool
-DeliveryRecord::isRedundant() const
-{
+SimpleDeliveryRecord::isRedundant() const {
     return m_ended;
 }
 
 void
-DeliveryRecord::dequeue(qpid::broker::TxnBuffer* tb)
-{
+SimpleDeliveryRecord::dequeue(qpid::broker::SimpleTxnBuffer* tb) {
     m_queuedMessage->getQueue()->dequeue(tb, m_queuedMessage);
 }
 
 void
-DeliveryRecord::committed() const
-{
+SimpleDeliveryRecord::committed() const {
     m_msgConsumer.commitComplete();
 }
 
-boost::shared_ptr<QueuedMessage>
-DeliveryRecord::getQueuedMessage() const
-{
+boost::shared_ptr<SimpleQueuedMessage>
+SimpleDeliveryRecord::getQueuedMessage() const {
     return m_queuedMessage;
 }
 
-}}} // namespace tests::storePerftools::asyncPerf
+}} // namespace qpid::broker

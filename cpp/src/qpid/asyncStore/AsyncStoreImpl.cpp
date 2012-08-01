@@ -75,7 +75,7 @@ AsyncStoreImpl::createTxnHandle()
 }
 
 qpid::broker::TxnHandle
-AsyncStoreImpl::createTxnHandle(qpid::broker::TxnBuffer* tb)
+AsyncStoreImpl::createTxnHandle(qpid::broker::SimpleTxnBuffer* tb)
 {
     return qpid::broker::TxnHandle(new TxnHandleImpl(tb));
 }
@@ -90,7 +90,7 @@ AsyncStoreImpl::createTxnHandle(const std::string& xid,
 qpid::broker::TxnHandle
 AsyncStoreImpl::createTxnHandle(const std::string& xid,
                                 const bool tpcFlag,
-                                qpid::broker::TxnBuffer* tb)
+                                qpid::broker::SimpleTxnBuffer* tb)
 {
     return qpid::broker::TxnHandle(new TxnHandleImpl(xid, tpcFlag, tb));
 }

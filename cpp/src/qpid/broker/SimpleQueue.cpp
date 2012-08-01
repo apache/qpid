@@ -23,31 +23,29 @@
 
 #include "SimpleQueue.h"
 
-#include "DeliveryRecord.h"
-#include "MessageConsumer.h"
-#include "MessageDeque.h"
-#include "QueuedMessage.h"
+#include "AsyncResultHandle.h"
+#include "QueueAsyncContext.h"
+#include "SimpleConsumer.h"
+#include "SimpleDeliveryRecord.h"
 #include "SimpleMessage.h"
-
-#include "qpid/broker/AsyncResultHandle.h"
-#include "qpid/broker/QueueAsyncContext.h"
-#include "qpid/broker/TxnBuffer.h"
+#include "SimpleMessageDeque.h"
+#include "SimpleQueuedMessage.h"
+#include "SimpleTxnBuffer.h"
 
 #include <string.h> // memcpy()
 
-namespace tests {
-namespace storePerftools {
-namespace asyncPerf {
+namespace qpid  {
+namespace broker {
 
 //static
-qpid::broker::TxnHandle SimpleQueue::s_nullTxnHandle; // used for non-txn operations
+TxnHandle SimpleQueue::s_nullTxnHandle; // used for non-txn operations
 
 
 SimpleQueue::SimpleQueue(const std::string& name,
                          const qpid::framing::FieldTable& /*args*/,
-                         qpid::broker::AsyncStore* store,
-                         qpid::broker::AsyncResultQueue& arq) :
-        qpid::broker::PersistableQueue(),
+                         AsyncStore* store,
+                         AsyncResultQueue& arq) :
+        PersistableQueue(),
         m_name(name),
         m_store(store),
         m_resultQueue(arq),
@@ -57,7 +55,7 @@ SimpleQueue::SimpleQueue(const std::string& name,
         m_destroyPending(false),
         m_destroyed(false),
         m_barrier(*this),
-        m_messages(new MessageDeque())
+        m_messages(new SimpleMessageDeque())
 {
     if (m_store != 0) {
         const qpid::types::Variant::Map qo;
@@ -67,17 +65,17 @@ SimpleQueue::SimpleQueue(const std::string& name,
 
 SimpleQueue::~SimpleQueue() {}
 
-const qpid::broker::QueueHandle&
+const QueueHandle&
 SimpleQueue::getHandle() const {
     return m_queueHandle;
 }
 
-qpid::broker::QueueHandle&
+QueueHandle&
 SimpleQueue::getHandle() {
     return m_queueHandle;
 }
 
-qpid::broker::AsyncStore*
+AsyncStore*
 SimpleQueue::getStore() {
     return m_store;
 }
@@ -85,9 +83,9 @@ SimpleQueue::getStore() {
 void
 SimpleQueue::asyncCreate() {
     if (m_store) {
-        boost::shared_ptr<qpid::broker::QueueAsyncContext> qac(new qpid::broker::QueueAsyncContext(shared_from_this(),
-                                                                                                   &handleAsyncCreateResult,
-                                                                                                   &m_resultQueue));
+        boost::shared_ptr<QueueAsyncContext> qac(new QueueAsyncContext(shared_from_this(),
+                                                                       &handleAsyncCreateResult,
+                                                                       &m_resultQueue));
         m_store->submitCreate(m_queueHandle, this, qac);
         ++m_asyncOpCounter;
     }
@@ -95,10 +93,9 @@ SimpleQueue::asyncCreate() {
 
 //static
 void
-SimpleQueue::handleAsyncCreateResult(const qpid::broker::AsyncResultHandle* const arh) {
+SimpleQueue::handleAsyncCreateResult(const AsyncResultHandle* const arh) {
     if (arh) {
-        boost::shared_ptr<qpid::broker::QueueAsyncContext> qc =
-                boost::dynamic_pointer_cast<qpid::broker::QueueAsyncContext>(arh->getBrokerAsyncContext());
+        boost::shared_ptr<QueueAsyncContext> qc = boost::dynamic_pointer_cast<QueueAsyncContext>(arh->getBrokerAsyncContext());
         boost::shared_ptr<SimpleQueue> sq = boost::dynamic_pointer_cast<SimpleQueue>(qc->getQueue());
         if (arh->getErrNo()) {
             // TODO: Handle async failure here (other than by simply printing a message)
@@ -116,9 +113,9 @@ SimpleQueue::asyncDestroy(const bool deleteQueue)
     m_destroyPending = true;
     if (m_store) {
         if (deleteQueue) {
-            boost::shared_ptr<qpid::broker::QueueAsyncContext> qac(new qpid::broker::QueueAsyncContext(shared_from_this(),
-                                                                                                       &handleAsyncDestroyResult,
-                                                                                                       &m_resultQueue));
+            boost::shared_ptr<QueueAsyncContext> qac(new QueueAsyncContext(shared_from_this(),
+                                                                           &handleAsyncDestroyResult,
+                                                                           &m_resultQueue));
             m_store->submitDestroy(m_queueHandle, qac);
             ++m_asyncOpCounter;
         }
@@ -128,10 +125,10 @@ SimpleQueue::asyncDestroy(const bool deleteQueue)
 
 //static
 void
-SimpleQueue::handleAsyncDestroyResult(const qpid::broker::AsyncResultHandle* const arh) {
+SimpleQueue::handleAsyncDestroyResult(const AsyncResultHandle* const arh) {
     if (arh) {
-        boost::shared_ptr<qpid::broker::QueueAsyncContext> qc =
-                boost::dynamic_pointer_cast<qpid::broker::QueueAsyncContext>(arh->getBrokerAsyncContext());
+        boost::shared_ptr<QueueAsyncContext> qc =
+                boost::dynamic_pointer_cast<QueueAsyncContext>(arh->getBrokerAsyncContext());
         boost::shared_ptr<SimpleQueue> sq = boost::dynamic_pointer_cast<SimpleQueue>(qc->getQueue());
         if (arh->getErrNo()) {
             // TODO: Handle async failure here (other than by simply printing a message)
@@ -145,30 +142,30 @@ SimpleQueue::handleAsyncDestroyResult(const qpid::broker::AsyncResultHandle* con
 
 void
 SimpleQueue::deliver(boost::intrusive_ptr<SimpleMessage> msg) {
-    boost::shared_ptr<QueuedMessage> qm(boost::shared_ptr<QueuedMessage>(new QueuedMessage(this, msg)));
+    boost::shared_ptr<SimpleQueuedMessage> qm(boost::shared_ptr<SimpleQueuedMessage>(new SimpleQueuedMessage(this, msg)));
     enqueue(qm);
     push(qm);
 }
 
 bool
-SimpleQueue::dispatch(MessageConsumer& mc) {
-    boost::shared_ptr<QueuedMessage> qm;
+SimpleQueue::dispatch(SimpleConsumer& sc) {
+    boost::shared_ptr<SimpleQueuedMessage> qm;
     if (m_messages->consume(qm)) {
-        boost::shared_ptr<DeliveryRecord> dr(new DeliveryRecord(qm, mc, false));
-        mc.record(dr);
+        boost::shared_ptr<SimpleDeliveryRecord> dr(new SimpleDeliveryRecord(qm, sc, false));
+        sc.record(dr);
         return true;
     }
     return false;
 }
 
 bool
-SimpleQueue::enqueue(boost::shared_ptr<QueuedMessage> qm) {
+SimpleQueue::enqueue(boost::shared_ptr<SimpleQueuedMessage> qm) {
     return enqueue(0, qm);
 }
 
 bool
-SimpleQueue::enqueue(qpid::broker::TxnBuffer* tb,
-                     boost::shared_ptr<QueuedMessage> qm) {
+SimpleQueue::enqueue(SimpleTxnBuffer* tb,
+                     boost::shared_ptr<SimpleQueuedMessage> qm) {
     ScopedUse u(m_barrier);
     if (!u.m_acquired) {
         return false;
@@ -181,13 +178,13 @@ SimpleQueue::enqueue(qpid::broker::TxnBuffer* tb,
 }
 
 bool
-SimpleQueue::dequeue(boost::shared_ptr<QueuedMessage> qm) {
+SimpleQueue::dequeue(boost::shared_ptr<SimpleQueuedMessage> qm) {
     return dequeue(0, qm);
 }
 
 bool
-SimpleQueue::dequeue(qpid::broker::TxnBuffer* tb,
-                     boost::shared_ptr<QueuedMessage> qm) {
+SimpleQueue::dequeue(SimpleTxnBuffer* tb,
+                     boost::shared_ptr<SimpleQueuedMessage> qm) {
     ScopedUse u(m_barrier);
     if (!u.m_acquired) {
         return false;
@@ -201,7 +198,7 @@ SimpleQueue::dequeue(qpid::broker::TxnBuffer* tb,
 
 void
 SimpleQueue::process(boost::intrusive_ptr<SimpleMessage> msg) {
-    push(boost::shared_ptr<QueuedMessage>(new QueuedMessage(this, msg)));
+    push(boost::shared_ptr<SimpleQueuedMessage>(new SimpleQueuedMessage(this, msg)));
 }
 
 void
@@ -238,7 +235,7 @@ SimpleQueue::getName() const {
 }
 
 void
-SimpleQueue::setExternalQueueStore(qpid::broker::ExternalQueueStore* inst) {
+SimpleQueue::setExternalQueueStore(ExternalQueueStore* inst) {
     if (externalQueueStore != inst && externalQueueStore)
         delete externalQueueStore;
     externalQueueStore = inst;
@@ -264,8 +261,7 @@ SimpleQueue::UsageBarrier::UsageBarrier(SimpleQueue& q) :
 
 // protected
 bool
-SimpleQueue::UsageBarrier::acquire()
-{
+SimpleQueue::UsageBarrier::acquire() {
     qpid::sys::Monitor::ScopedLock l(m_monitor);
     if (m_parent.m_destroyed) {
         return false;
@@ -276,8 +272,7 @@ SimpleQueue::UsageBarrier::acquire()
 }
 
 // protected
-void SimpleQueue::UsageBarrier::release()
-{
+void SimpleQueue::UsageBarrier::release() {
     qpid::sys::Monitor::Monitor::ScopedLock l(m_monitor);
     if (--m_count == 0) {
         m_monitor.notifyAll();
@@ -285,8 +280,7 @@ void SimpleQueue::UsageBarrier::release()
 }
 
 // protected
-void SimpleQueue::UsageBarrier::destroy()
-{
+void SimpleQueue::UsageBarrier::destroy() {
     qpid::sys::Monitor::Monitor::ScopedLock l(m_monitor);
     m_parent.m_destroyed = true;
     while (m_count) {
@@ -301,8 +295,7 @@ SimpleQueue::ScopedUse::ScopedUse(UsageBarrier& b) :
 {}
 
 // protected
-SimpleQueue::ScopedUse::~ScopedUse()
-{
+SimpleQueue::ScopedUse::~ScopedUse() {
     if (m_acquired) {
         m_barrier.release();
     }
@@ -310,9 +303,8 @@ SimpleQueue::ScopedUse::~ScopedUse()
 
 // private
 void
-SimpleQueue::push(boost::shared_ptr<QueuedMessage> qm,
-                  bool /*isRecovery*/)
-{
+SimpleQueue::push(boost::shared_ptr<SimpleQueuedMessage> qm,
+                  bool /*isRecovery*/) {
     m_messages->push(qm);
 }
 
@@ -320,14 +312,14 @@ SimpleQueue::push(boost::shared_ptr<QueuedMessage> qm,
 
 // private
 bool
-SimpleQueue::asyncEnqueue(qpid::broker::TxnBuffer* tb,
-                          boost::shared_ptr<QueuedMessage> qm) {
+SimpleQueue::asyncEnqueue(SimpleTxnBuffer* tb,
+                          boost::shared_ptr<SimpleQueuedMessage> qm) {
     assert(qm.get());
-    boost::shared_ptr<qpid::broker::QueueAsyncContext> qac(new qpid::broker::QueueAsyncContext(shared_from_this(),
-                                                                                               qm->payload(),
-                                                                                               tb,
-                                                                                               &handleAsyncEnqueueResult,
-                                                                                               &m_resultQueue));
+    boost::shared_ptr<QueueAsyncContext> qac(new QueueAsyncContext(shared_from_this(),
+                                                                   qm->payload(),
+                                                                   tb,
+                                                                   &handleAsyncEnqueueResult,
+                                                                   &m_resultQueue));
     if (tb) {
         tb->incrOpCnt();
         m_store->submitEnqueue(qm->enqHandle(), tb->getTxnHandle(), qac);
@@ -340,10 +332,10 @@ SimpleQueue::asyncEnqueue(qpid::broker::TxnBuffer* tb,
 
 // private static
 void
-SimpleQueue::handleAsyncEnqueueResult(const qpid::broker::AsyncResultHandle* const arh) {
+SimpleQueue::handleAsyncEnqueueResult(const AsyncResultHandle* const arh) {
     if (arh) {
-        boost::shared_ptr<qpid::broker::QueueAsyncContext> qc =
-                boost::dynamic_pointer_cast<qpid::broker::QueueAsyncContext>(arh->getBrokerAsyncContext());
+        boost::shared_ptr<QueueAsyncContext> qc =
+                boost::dynamic_pointer_cast<QueueAsyncContext>(arh->getBrokerAsyncContext());
         boost::shared_ptr<SimpleQueue> sq = boost::dynamic_pointer_cast<SimpleQueue>(qc->getQueue());
         if (arh->getErrNo()) {
             // TODO: Handle async failure here (other than by simply printing a message)
@@ -357,15 +349,14 @@ SimpleQueue::handleAsyncEnqueueResult(const qpid::broker::AsyncResultHandle* con
 
 // private
 bool
-SimpleQueue::asyncDequeue(/*boost::shared_ptr<qpid::broker::TxnBuffer>*/qpid::broker::TxnBuffer* tb,
-                          boost::shared_ptr<QueuedMessage> qm)
-{
+SimpleQueue::asyncDequeue(SimpleTxnBuffer* tb,
+                          boost::shared_ptr<SimpleQueuedMessage> qm) {
     assert(qm.get());
-    boost::shared_ptr<qpid::broker::QueueAsyncContext> qac(new qpid::broker::QueueAsyncContext(shared_from_this(),
-                                                                                               qm->payload(),
-                                                                                               tb,
-                                                                                               &handleAsyncDequeueResult,
-                                                                                               &m_resultQueue));
+    boost::shared_ptr<QueueAsyncContext> qac(new QueueAsyncContext(shared_from_this(),
+                                                                   qm->payload(),
+                                                                   tb,
+                                                                   &handleAsyncDequeueResult,
+                                                                   &m_resultQueue));
     if (tb) {
         tb->incrOpCnt();
         m_store->submitDequeue(qm->enqHandle(), tb->getTxnHandle(), qac);
@@ -375,12 +366,12 @@ SimpleQueue::asyncDequeue(/*boost::shared_ptr<qpid::broker::TxnBuffer>*/qpid::br
     ++m_asyncOpCounter;
     return true;
 }
+
 // private static
 void
-SimpleQueue::handleAsyncDequeueResult(const qpid::broker::AsyncResultHandle* const arh) {
+SimpleQueue::handleAsyncDequeueResult(const AsyncResultHandle* const arh) {
     if (arh) {
-        boost::shared_ptr<qpid::broker::QueueAsyncContext> qc =
-                boost::dynamic_pointer_cast<qpid::broker::QueueAsyncContext>(arh->getBrokerAsyncContext());
+        boost::shared_ptr<QueueAsyncContext> qc = boost::dynamic_pointer_cast<QueueAsyncContext>(arh->getBrokerAsyncContext());
         boost::shared_ptr<SimpleQueue> sq = boost::dynamic_pointer_cast<SimpleQueue>(qc->getQueue());
         if (arh->getErrNo()) {
             // TODO: Handle async failure here (other than by simply printing a message)
@@ -404,7 +395,7 @@ SimpleQueue::destroyCheck(const std::string& opDescr) const {
 
 // private
 void
-SimpleQueue::createComplete(const boost::shared_ptr<qpid::broker::QueueAsyncContext> qc) {
+SimpleQueue::createComplete(const boost::shared_ptr<QueueAsyncContext> qc) {
     if (qc.get()) {
         assert(qc->getQueue().get() == this);
     }
@@ -413,7 +404,7 @@ SimpleQueue::createComplete(const boost::shared_ptr<qpid::broker::QueueAsyncCont
 
 // private
 void
-SimpleQueue::flushComplete(const boost::shared_ptr<qpid::broker::QueueAsyncContext> qc) {
+SimpleQueue::flushComplete(const boost::shared_ptr<QueueAsyncContext> qc) {
     if (qc.get()) {
         assert(qc->getQueue().get() == this);
     }
@@ -422,7 +413,7 @@ SimpleQueue::flushComplete(const boost::shared_ptr<qpid::broker::QueueAsyncConte
 
 // private
 void
-SimpleQueue::destroyComplete(const boost::shared_ptr<qpid::broker::QueueAsyncContext> qc) {
+SimpleQueue::destroyComplete(const boost::shared_ptr<QueueAsyncContext> qc) {
     if (qc.get()) {
         assert(qc->getQueue().get() == this);
     }
@@ -432,7 +423,7 @@ SimpleQueue::destroyComplete(const boost::shared_ptr<qpid::broker::QueueAsyncCon
 
 // private
 void
-SimpleQueue::enqueueComplete(const boost::shared_ptr<qpid::broker::QueueAsyncContext> qc) {
+SimpleQueue::enqueueComplete(const boost::shared_ptr<QueueAsyncContext> qc) {
     if (qc.get()) {
         assert(qc->getQueue().get() == this);
         if (qc->getTxnBuffer()) { // transactional enqueue
@@ -444,7 +435,7 @@ SimpleQueue::enqueueComplete(const boost::shared_ptr<qpid::broker::QueueAsyncCon
 
 // private
 void
-SimpleQueue::dequeueComplete(const boost::shared_ptr<qpid::broker::QueueAsyncContext> qc) {
+SimpleQueue::dequeueComplete(const boost::shared_ptr<QueueAsyncContext> qc) {
     if (qc.get()) {
         assert(qc->getQueue().get() == this);
         if (qc->getTxnBuffer()) { // transactional enqueue
@@ -454,4 +445,4 @@ SimpleQueue::dequeueComplete(const boost::shared_ptr<qpid::broker::QueueAsyncCon
     --m_asyncOpCounter;
 }
 
-}}} // namespace tests::storePerftools::asyncPerf
+}} // namespace qpid::broker

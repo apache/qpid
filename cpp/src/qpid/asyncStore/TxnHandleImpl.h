@@ -33,7 +33,7 @@
 namespace qpid {
 
 namespace broker {
-class TxnBuffer;
+class SimpleTxnBuffer;
 }
 
 namespace asyncStore {
@@ -42,9 +42,9 @@ class TxnHandleImpl : public virtual qpid::RefCounted
 {
 public:
     TxnHandleImpl();
-    TxnHandleImpl(qpid::broker::TxnBuffer* tb);
+    TxnHandleImpl(qpid::broker::SimpleTxnBuffer* tb);
     TxnHandleImpl(const std::string& xid, const bool tpcFlag);
-    TxnHandleImpl(const std::string& xid, const bool tpcFlag, qpid::broker::TxnBuffer* tb);
+    TxnHandleImpl(const std::string& xid, const bool tpcFlag, qpid::broker::SimpleTxnBuffer* tb);
     virtual ~TxnHandleImpl();
     const std::string& getXid() const;
     bool is2pc() const;
@@ -52,7 +52,7 @@ public:
 private:
     std::string m_xid;
     bool m_tpcFlag;
-    qpid::broker::TxnBuffer* const m_txnBuffer;
+    qpid::broker::SimpleTxnBuffer* const m_txnBuffer;
 };
 
 }} // namespace qpid::asyncStore

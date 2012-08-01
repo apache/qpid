@@ -42,8 +42,7 @@ class Poller;
 
 namespace asyncStore {
 
-class AsyncStoreImpl : public qpid::broker::AsyncTransactionalStore,
-                       public qpid::broker::AsyncStore
+class AsyncStoreImpl : public qpid::broker::AsyncStore
 {
 public:
     AsyncStoreImpl(boost::shared_ptr<qpid::sys::Poller> poller,
@@ -59,12 +58,12 @@ public:
     // --- Interface from AsyncTransactionalStore ---
 
     qpid::broker::TxnHandle createTxnHandle();
-    qpid::broker::TxnHandle createTxnHandle(qpid::broker::TxnBuffer* tb);
+    qpid::broker::TxnHandle createTxnHandle(qpid::broker::SimpleTxnBuffer* tb);
     qpid::broker::TxnHandle createTxnHandle(const std::string& xid,
                                             const bool tpcFlag);
     qpid::broker::TxnHandle createTxnHandle(const std::string& xid,
                                             const bool tpcFlag,
-                                            qpid::broker::TxnBuffer* tb);
+                                            qpid::broker::SimpleTxnBuffer* tb);
 
     void submitPrepare(qpid::broker::TxnHandle& txnHandle,
                        boost::shared_ptr<qpid::broker::TpcTxnAsyncContext> TxnCtxt);

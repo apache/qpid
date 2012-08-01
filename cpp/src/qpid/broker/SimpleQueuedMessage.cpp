@@ -18,27 +18,24 @@
  */
 
 /**
- * \file QueuedMessage.cpp
+ * \file SimpleQueuedMessage.cpp
  */
 
-#include "QueuedMessage.h"
+#include "SimpleQueuedMessage.h"
 
 #include "SimpleMessage.h"
 #include "SimpleQueue.h"
 
-#include "qpid/asyncStore/AsyncStoreImpl.h"
+namespace qpid {
+namespace broker {
 
-namespace tests {
-namespace storePerftools {
-namespace asyncPerf {
-
-QueuedMessage::QueuedMessage() :
+SimpleQueuedMessage::SimpleQueuedMessage() :
         m_queue(0)
 {}
 
-QueuedMessage::QueuedMessage(SimpleQueue* q,
-                             boost::intrusive_ptr<SimpleMessage> msg) :
-        boost::enable_shared_from_this<QueuedMessage>(),
+SimpleQueuedMessage::SimpleQueuedMessage(SimpleQueue* q,
+                                         boost::intrusive_ptr<SimpleMessage> msg) :
+        boost::enable_shared_from_this<SimpleQueuedMessage>(),
         m_queue(q),
         m_msg(msg)
 {
@@ -47,63 +44,55 @@ QueuedMessage::QueuedMessage(SimpleQueue* q,
     }
 }
 
-QueuedMessage::QueuedMessage(const QueuedMessage& qm) :
-        boost::enable_shared_from_this<QueuedMessage>(),
+SimpleQueuedMessage::SimpleQueuedMessage(const SimpleQueuedMessage& qm) :
+        boost::enable_shared_from_this<SimpleQueuedMessage>(),
         m_queue(qm.m_queue),
         m_msg(qm.m_msg),
         m_enqHandle(qm.m_enqHandle)
 {}
 
-QueuedMessage::QueuedMessage(QueuedMessage* const qm) :
-        boost::enable_shared_from_this<QueuedMessage>(),
+SimpleQueuedMessage::SimpleQueuedMessage(SimpleQueuedMessage* const qm) :
+        boost::enable_shared_from_this<SimpleQueuedMessage>(),
         m_queue(qm->m_queue),
         m_msg(qm->m_msg),
         m_enqHandle(qm->m_enqHandle)
 {}
 
-QueuedMessage::~QueuedMessage()
-{}
+SimpleQueuedMessage::~SimpleQueuedMessage() {}
 
 SimpleQueue*
-QueuedMessage::getQueue() const
-{
+SimpleQueuedMessage::getQueue() const {
     return m_queue;
 }
 
 boost::intrusive_ptr<SimpleMessage>
-QueuedMessage::payload() const
-{
+SimpleQueuedMessage::payload() const {
     return m_msg;
 }
 
-const qpid::broker::EnqueueHandle&
-QueuedMessage::enqHandle() const
-{
+const EnqueueHandle&
+SimpleQueuedMessage::enqHandle() const {
     return m_enqHandle;
 }
 
-qpid::broker::EnqueueHandle&
-QueuedMessage::enqHandle()
-{
+EnqueueHandle&
+SimpleQueuedMessage::enqHandle() {
     return m_enqHandle;
 }
 
 void
-QueuedMessage::prepareEnqueue(qpid::broker::TxnBuffer* tb)
-{
+SimpleQueuedMessage::prepareEnqueue(SimpleTxnBuffer* tb) {
     m_queue->enqueue(tb, shared_from_this());
 }
 
 void
-QueuedMessage::commitEnqueue()
-{
+SimpleQueuedMessage::commitEnqueue() {
     m_queue->process(m_msg);
 }
 
 void
-QueuedMessage::abortEnqueue()
-{
+SimpleQueuedMessage::abortEnqueue() {
     m_queue->enqueueAborted(m_msg);
 }
 
-}}} // namespace tests::storePerfTools
+}} // namespace qpid::broker

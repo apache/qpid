@@ -25,98 +25,84 @@
 
 #include <string.h> // memcpy()
 
-namespace tests {
-namespace storePerftools {
-namespace asyncPerf {
+namespace qpid  {
+namespace broker {
 
 SimpleMessage::SimpleMessage(const char* msgData,
                              const uint32_t msgSize) :
         m_persistenceId(0ULL),
         m_msg(msgData, static_cast<size_t>(msgSize)),
         m_store(0),
-        m_msgHandle(qpid::broker::MessageHandle())
+        m_msgHandle(MessageHandle())
 {}
 
 SimpleMessage::SimpleMessage(const char* msgData,
                              const uint32_t msgSize,
-                             qpid::broker::AsyncStore* store) :
+                             AsyncStore* store) :
         m_persistenceId(0ULL),
         m_msg(msgData, static_cast<size_t>(msgSize)),
         m_store(store),
-        m_msgHandle(store ? store->createMessageHandle(this) : qpid::broker::MessageHandle())
+        m_msgHandle(store ? store->createMessageHandle(this) : MessageHandle())
 {}
 
-SimpleMessage::~SimpleMessage()
-{}
+SimpleMessage::~SimpleMessage() {}
 
-const qpid::broker::MessageHandle&
-SimpleMessage::getHandle() const
-{
+const MessageHandle&
+SimpleMessage::getHandle() const {
     return m_msgHandle;
 }
 
-qpid::broker::MessageHandle&
-SimpleMessage::getHandle()
-{
+MessageHandle&
+SimpleMessage::getHandle() {
     return m_msgHandle;
 }
 
 uint64_t
-SimpleMessage::contentSize() const
-{
+SimpleMessage::contentSize() const {
     return  static_cast<uint64_t>(m_msg.size());
 }
 
 void
-SimpleMessage::setPersistenceId(uint64_t id) const
-{
+SimpleMessage::setPersistenceId(uint64_t id) const {
     m_persistenceId = id;
 }
 
 uint64_t
-SimpleMessage::getPersistenceId() const
-{
+SimpleMessage::getPersistenceId() const {
     return m_persistenceId;
 }
 
 void
-SimpleMessage::encode(qpid::framing::Buffer& buffer) const
-{
+SimpleMessage::encode(qpid::framing::Buffer& buffer) const {
     buffer.putRawData(m_msg);
 }
 
 uint32_t
-SimpleMessage::encodedSize() const
-{
+SimpleMessage::encodedSize() const {
     return static_cast<uint32_t>(m_msg.size());
 }
 
 void
-SimpleMessage::allDequeuesComplete()
-{}
+SimpleMessage::allDequeuesComplete() {}
 
 uint32_t
-SimpleMessage::encodedHeaderSize() const
-{
+SimpleMessage::encodedHeaderSize() const {
     return 0;
 }
 
 bool
-SimpleMessage::isPersistent() const
-{
+SimpleMessage::isPersistent() const {
     return m_store != 0;
 }
 
 uint64_t
-SimpleMessage::getSize()
-{
+SimpleMessage::getSize() {
     return m_msg.size();
 }
 
 void
-SimpleMessage::write(char* target)
-{
+SimpleMessage::write(char* target) {
     ::memcpy(target, m_msg.data(), m_msg.size());
 }
 
-}}} // namespace tests::storePerftools::asyncPerf
+}} // namespace qpid::broker

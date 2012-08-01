@@ -18,49 +18,42 @@
  */
 
 /**
- * \file DeliveryRecord.h
+ * \file SimpleDeliveryRecord.h
  */
 
-#ifndef tests_storePerftools_asyncPerf_DeliveryRecord_h_
-#define tests_storePerftools_asyncPerf_DeliveryRecord_h_
-
-//#include "QueuedMessage.h"
+#ifndef qpid_broker_SimpleDeliveryRecord_h_
+#define qpid_broker_SimpleDeliveryRecord_h_
 
 #include <boost/shared_ptr.hpp>
 
 namespace qpid  {
 namespace broker {
-class TxnBuffer;
-}}
 
-namespace tests {
-namespace storePerftools {
-namespace asyncPerf {
+class SimpleConsumer;
+class SimpleQueuedMessage;
+class SimpleTxnBuffer;
 
-class MessageConsumer;
-class QueuedMessage;
-
-class DeliveryRecord {
+class SimpleDeliveryRecord {
 public:
-    DeliveryRecord(boost::shared_ptr<QueuedMessage> qm,
-                   MessageConsumer& mc,
-                   bool accepted);
-    virtual ~DeliveryRecord();
+    SimpleDeliveryRecord(boost::shared_ptr<SimpleQueuedMessage> qm,
+                         SimpleConsumer& sc,
+                         bool accepted);
+    virtual ~SimpleDeliveryRecord();
     bool accept();
     bool isAccepted() const;
     bool setEnded();
     bool isEnded() const;
     bool isRedundant() const;
-    void dequeue(qpid::broker::TxnBuffer* tb);
+    void dequeue(qpid::broker::SimpleTxnBuffer* tb);
     void committed() const;
-    boost::shared_ptr<QueuedMessage> getQueuedMessage() const;
+    boost::shared_ptr<SimpleQueuedMessage> getQueuedMessage() const;
 private:
-    boost::shared_ptr<QueuedMessage> m_queuedMessage;
-    MessageConsumer& m_msgConsumer;
+    boost::shared_ptr<SimpleQueuedMessage> m_queuedMessage;
+    SimpleConsumer& m_msgConsumer;
     bool m_accepted : 1;
     bool m_ended : 1;
 };
 
-}}} // namespace tests::storePerftools::asyncPerf
+}} // namespace qpid::broker
 
-#endif // tests_storePerftools_asyncPerf_DeliveryRecord_h_
+#endif // qpid_broker_SimpleDeliveryRecord_h_

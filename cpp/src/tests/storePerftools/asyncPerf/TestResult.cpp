@@ -32,12 +32,10 @@ TestResult::TestResult(const TestOptions& to) :
         m_testOpts(to)
 {}
 
-TestResult::~TestResult()
-{}
+TestResult::~TestResult() {}
 
 void
-TestResult::toStream(std::ostream& os) const
-{
+TestResult::toStream(std::ostream& os) const {
     double msgsRate;
     os << "TEST RESULTS:" << std::endl;
     os << "         Msgs per thread: " << m_testOpts.m_numMsgs << std::endl;

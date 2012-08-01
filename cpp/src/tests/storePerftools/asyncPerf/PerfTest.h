@@ -37,8 +37,10 @@
 
 namespace qpid {
 namespace asyncStore {
-class AsyncStoreImpl;
 class AsyncStoreOptions;
+}
+namespace broker {
+class SimpleQueue;
 }
 namespace sys {
 class Poller;
@@ -48,7 +50,6 @@ namespace tests {
 namespace storePerftools {
 namespace asyncPerf {
 
-class SimpleQueue;
 class MessageConsumer;
 class MessageProducer;
 class TestOptions;
@@ -73,8 +74,8 @@ private:
     boost::shared_ptr<qpid::sys::Poller> m_poller;
     qpid::sys::Thread m_pollingThread;
     qpid::broker::AsyncResultQueueImpl m_resultQueue;
-    qpid::asyncStore::AsyncStoreImpl* m_store;
-    std::deque<boost::shared_ptr<SimpleQueue> > m_queueList;
+    qpid::broker::AsyncStore* m_store;
+    std::deque<boost::shared_ptr<qpid::broker::SimpleQueue> > m_queueList;
     std::deque<boost::shared_ptr<MessageProducer> > m_producers;
     std::deque<boost::shared_ptr<MessageConsumer> > m_consumers;
 

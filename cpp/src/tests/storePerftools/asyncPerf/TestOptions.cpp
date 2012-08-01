@@ -62,12 +62,10 @@ TestOptions::TestOptions(const uint32_t numMsgs,
     doAddOptions();
 }
 
-TestOptions::~TestOptions()
-{}
+TestOptions::~TestOptions() {}
 
 void
-TestOptions::printVals(std::ostream& os) const
-{
+TestOptions::printVals(std::ostream& os) const {
     tests::storePerftools::common::TestOptions::printVals(os);
     os << "          Num enqueus per transaction [-t, --enq-txn-size]: " << m_enqTxnBlockSize << std::endl;
     os << "         Num dequeues per transaction [-d, --deq-txn-size]: " << m_deqTxnBlockSize << std::endl;
@@ -77,8 +75,7 @@ TestOptions::printVals(std::ostream& os) const
 
 // private
 void
-TestOptions::doAddOptions()
-{
+TestOptions::doAddOptions() {
     addOptions()
             ("enq-txn-size,t", qpid::optValue(m_enqTxnBlockSize, "N"),
                     "Num enqueus per transaction (0 = no transactions)")

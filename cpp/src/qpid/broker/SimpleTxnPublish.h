@@ -18,39 +18,50 @@
  */
 
 /**
- * \file MessageContext.h
+ * \file SimpleTxnPublish.h
  */
 
-#ifndef tests_storePerfTools_asyncPerf_MessageContext_h_
-#define tests_storePerfTools_asyncPerf_MessageContext_h_
+#ifndef qpid_broker_SimpleTxnPublish_h_
+#define qpid_broker_SimpleTxnPublish_h_
 
-#include "qpid/asyncStore/AsyncOperation.h"
+#include "SimpleDeliverable.h"
+#include "SimpleTxnOp.h"
 
 #include <boost/intrusive_ptr.hpp>
 #include <boost/shared_ptr.hpp>
+#include <list>
 
-namespace tests {
-namespace storePerftools {
-namespace asyncPerf {
 
+namespace qpid {
+namespace broker {
+
+class SimpleQueuedMessage;
 class SimpleMessage;
 class SimpleQueue;
 
-class MessageAsyncContext : public qpid::broker::BrokerAsyncContext
+class SimpleTxnPublish : public SimpleTxnOp,
+                         public SimpleDeliverable
 {
 public:
-    MessageAsyncContext(boost::intrusive_ptr<SimpleMessage> msg,
-                        boost::shared_ptr<SimpleQueue> q);
-    virtual ~MessageAsyncContext();
-    boost::intrusive_ptr<SimpleMessage> getMessage() const;
-    boost::shared_ptr<SimpleQueue> getQueue() const;
-    void destroy();
+    SimpleTxnPublish(boost::intrusive_ptr<SimpleMessage> msg);
+    virtual ~SimpleTxnPublish();
+
+    // --- Interface TxOp ---
+    bool prepare(SimpleTxnBuffer* tb) throw();
+    void commit() throw();
+    void rollback() throw();
+
+    // --- Interface Deliverable ---
+    uint64_t contentSize();
+    void deliverTo(const boost::shared_ptr<SimpleQueue>& queue);
+    SimpleMessage& getMessage();
 
 private:
     boost::intrusive_ptr<SimpleMessage> m_msg;
-    boost::shared_ptr<SimpleQueue> m_q;
+    std::list<boost::shared_ptr<SimpleQueuedMessage> > m_queues;
+    std::list<boost::shared_ptr<SimpleQueuedMessage> > m_prepared;
 };
 
-}}} // namespace tests::storePerftools::asyncPerf
+}} // namespace qpid::broker
 
-#endif // tests_storePerfTools_asyncPerf_MessageContext_h_
+#endif // qpid_broker_SimpleTxnPublish_h_

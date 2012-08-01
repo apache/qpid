@@ -70,19 +70,19 @@ class TxnHandle;
 class QueueAsyncContext;
 class TpcTxnAsyncContext;
 class TxnAsyncContext;
-class TxnBuffer;
+class SimpleTxnBuffer;
 
 class AsyncTransactionalStore {
 public:
     virtual ~AsyncTransactionalStore() {}
 
     virtual TxnHandle createTxnHandle() = 0;
-    virtual TxnHandle createTxnHandle(TxnBuffer* tb) = 0;
+    virtual TxnHandle createTxnHandle(SimpleTxnBuffer* tb) = 0;
     virtual TxnHandle createTxnHandle(const std::string& xid,
                                       const bool tpcFlag) = 0;
     virtual TxnHandle createTxnHandle(const std::string& xid,
                                       const bool tpcFlag,
-                                      TxnBuffer* tb) = 0;
+                                      SimpleTxnBuffer* tb) = 0;
 
     virtual void submitPrepare(TxnHandle&,
                                boost::shared_ptr<TpcTxnAsyncContext>) = 0; // Distributed txns only
@@ -94,7 +94,7 @@ public:
 };
 
 // Subclassed by store:
-class AsyncStore {
+class AsyncStore : public AsyncTransactionalStore {
 public:
     virtual ~AsyncStore() {}
 

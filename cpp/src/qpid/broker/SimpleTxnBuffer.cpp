@@ -18,14 +18,14 @@
  */
 
 /**
- * \file TxnBuffer.cpp
+ * \file SimpleTxnBuffer.cpp
  */
 
-#include "TxnBuffer.h"
+#include "SimpleTxnBuffer.h"
 
 #include "AsyncResultHandle.h"
+#include "SimpleTxnOp.h"
 #include "TxnAsyncContext.h"
-#include "TxnOp.h"
 
 #include "qpid/log/Statement.h"
 
@@ -34,9 +34,9 @@
 namespace qpid {
 namespace broker {
 
-qpid::sys::Mutex TxnBuffer::s_uuidMutex;
+qpid::sys::Mutex SimpleTxnBuffer::s_uuidMutex;
 
-TxnBuffer::TxnBuffer(AsyncResultQueue& arq) :
+SimpleTxnBuffer::SimpleTxnBuffer(AsyncResultQueue& arq) :
         m_store(0),
         m_resultQueue(arq),
         m_tpcFlag(false),
@@ -47,7 +47,7 @@ TxnBuffer::TxnBuffer(AsyncResultQueue& arq) :
     createLocalXid();
 }
 
-TxnBuffer::TxnBuffer(AsyncResultQueue& arq, std::string& xid) :
+SimpleTxnBuffer::SimpleTxnBuffer(AsyncResultQueue& arq, std::string& xid) :
         m_store(0),
         m_resultQueue(arq),
         m_xid(xid),
@@ -61,31 +61,31 @@ TxnBuffer::TxnBuffer(AsyncResultQueue& arq, std::string& xid) :
     }
 }
 
-TxnBuffer::~TxnBuffer() {}
+SimpleTxnBuffer::~SimpleTxnBuffer() {}
 
 TxnHandle&
-TxnBuffer::getTxnHandle() {
+SimpleTxnBuffer::getTxnHandle() {
     return m_txnHandle;
 }
 
 const std::string&
-TxnBuffer::getXid() const {
+SimpleTxnBuffer::getXid() const {
     return m_xid;
 }
 
 bool
-TxnBuffer::is2pc() const {
+SimpleTxnBuffer::is2pc() const {
     return m_tpcFlag;
 }
 
 void
-TxnBuffer::incrOpCnt() {
+SimpleTxnBuffer::incrOpCnt() {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_submitOpCntMutex);
     ++m_submitOpCnt;
 }
 
 void
-TxnBuffer::decrOpCnt() {
+SimpleTxnBuffer::decrOpCnt() {
     const uint32_t numOps = getNumOps();
     qpid::sys::ScopedLock<qpid::sys::Mutex> l2(m_completeOpCntMutex);
     qpid::sys::ScopedLock<qpid::sys::Mutex> l3(m_submitOpCntMutex);
@@ -99,15 +99,15 @@ TxnBuffer::decrOpCnt() {
 }
 
 void
-TxnBuffer::enlist(boost::shared_ptr<TxnOp> op) {
+SimpleTxnBuffer::enlist(boost::shared_ptr<SimpleTxnOp> op) {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_opsMutex);
     m_ops.push_back(op);
 }
 
 bool
-TxnBuffer::prepare() {
+SimpleTxnBuffer::prepare() {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_opsMutex);
-    for(std::vector<boost::shared_ptr<TxnOp> >::iterator i = m_ops.begin(); i != m_ops.end(); ++i) {
+    for(std::vector<boost::shared_ptr<SimpleTxnOp> >::iterator i = m_ops.begin(); i != m_ops.end(); ++i) {
         if (!(*i)->prepare(this)) {
             return false;
         }
@@ -116,25 +116,25 @@ TxnBuffer::prepare() {
 }
 
 void
-TxnBuffer::commit() {
+SimpleTxnBuffer::commit() {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_opsMutex);
-    for(std::vector<boost::shared_ptr<TxnOp> >::iterator i = m_ops.begin(); i != m_ops.end(); ++i) {
+    for(std::vector<boost::shared_ptr<SimpleTxnOp> >::iterator i = m_ops.begin(); i != m_ops.end(); ++i) {
         (*i)->commit();
     }
     m_ops.clear();
 }
 
 void
-TxnBuffer::rollback() {
+SimpleTxnBuffer::rollback() {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_opsMutex);
-    for(std::vector<boost::shared_ptr<TxnOp> >::iterator i = m_ops.begin(); i != m_ops.end(); ++i) {
+    for(std::vector<boost::shared_ptr<SimpleTxnOp> >::iterator i = m_ops.begin(); i != m_ops.end(); ++i) {
         (*i)->rollback();
     }
     m_ops.clear();
 }
 
 bool
-TxnBuffer::commitLocal(AsyncTransactionalStore* const store) {
+SimpleTxnBuffer::commitLocal(AsyncTransactionalStore* const store) {
     try {
         m_store = store;
         asyncLocalCommit();
@@ -147,7 +147,7 @@ TxnBuffer::commitLocal(AsyncTransactionalStore* const store) {
 }
 
 void
-TxnBuffer::asyncLocalCommit() {
+SimpleTxnBuffer::asyncLocalCommit() {
     switch(m_state) {
     case NONE:
         m_state = PREPARE;
@@ -180,7 +180,7 @@ TxnBuffer::asyncLocalCommit() {
 
 //static
 void
-TxnBuffer::handleAsyncCommitResult(const AsyncResultHandle* const arh) {
+SimpleTxnBuffer::handleAsyncCommitResult(const AsyncResultHandle* const arh) {
     if (arh) {
         boost::shared_ptr<TxnAsyncContext> tac = boost::dynamic_pointer_cast<TxnAsyncContext>(arh->getBrokerAsyncContext());
         if (arh->getErrNo()) {
@@ -194,7 +194,7 @@ TxnBuffer::handleAsyncCommitResult(const AsyncResultHandle* const arh) {
 }
 
 void
-TxnBuffer::asyncLocalAbort() {
+SimpleTxnBuffer::asyncLocalAbort() {
     assert(m_store != 0);
     switch (m_state) {
     case NONE:
@@ -218,7 +218,7 @@ TxnBuffer::asyncLocalAbort() {
 
 //static
 void
-TxnBuffer::handleAsyncAbortResult(const AsyncResultHandle* const arh) {
+SimpleTxnBuffer::handleAsyncAbortResult(const AsyncResultHandle* const arh) {
     if (arh) {
         boost::shared_ptr<TxnAsyncContext> tac = boost::dynamic_pointer_cast<TxnAsyncContext>(arh->getBrokerAsyncContext());
         if (arh->getErrNo()) {
@@ -231,14 +231,14 @@ TxnBuffer::handleAsyncAbortResult(const AsyncResultHandle* const arh) {
 
 // private
 uint32_t
-TxnBuffer::getNumOps() const {
+SimpleTxnBuffer::getNumOps() const {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(m_opsMutex);
     return m_ops.size();
 }
 
 // private
 void
-TxnBuffer::createLocalXid()
+SimpleTxnBuffer::createLocalXid()
 {
     uuid_t uuid;
     {

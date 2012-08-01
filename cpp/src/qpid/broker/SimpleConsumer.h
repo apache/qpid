@@ -18,27 +18,25 @@
  */
 
 /**
- * \file TxnOp.h
+ * \file SimpleConsumer.h
  */
 
-#ifndef qpid_broker_TxnOp_h_
-#define qpid_broker_TxnOp_h_
+#ifndef qpid_broker_SimpleConsumer_h_
+#define qpid_broker_SimpleConsumer_h_
 
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace broker {
+class SimpleDeliveryRecord;
 
-class TxnBuffer;
-
-class TxnOp{
+class SimpleConsumer {
 public:
-    virtual ~TxnOp() {}
-    virtual bool prepare(qpid::broker::TxnBuffer*) throw() = 0;
-    virtual void commit()  throw() = 0;
-    virtual void rollback()  throw() = 0;
+    virtual ~SimpleConsumer() {}
+    virtual void commitComplete() = 0;
+    virtual void record(boost::shared_ptr<SimpleDeliveryRecord> dr) = 0;
 };
 
 }} // namespace qpid::broker
 
-#endif // qpid_broker_TxnOp_h_
+#endif // qpid_broker_SimpleConsumer_h_

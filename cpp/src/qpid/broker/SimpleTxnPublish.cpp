@@ -18,30 +18,29 @@
  */
 
 /**
- * \file TxnPublish.cpp
+ * \file SimpleTxnPublish.cpp
  */
 
-#include "TxnPublish.h"
+#include "SimpleTxnPublish.h"
 
-#include "QueuedMessage.h"
 #include "SimpleMessage.h"
 #include "SimpleQueue.h"
+#include "SimpleQueuedMessage.h"
 
 #include "qpid/log/Statement.h"
 #include <boost/make_shared.hpp>
 
-namespace tests {
-namespace storePerftools {
-namespace asyncPerf {
+namespace qpid {
+namespace broker {
 
-TxnPublish::TxnPublish(boost::intrusive_ptr<SimpleMessage> msg) :
+SimpleTxnPublish::SimpleTxnPublish(boost::intrusive_ptr<SimpleMessage> msg) :
         m_msg(msg)
 {}
 
-TxnPublish::~TxnPublish() {}
+SimpleTxnPublish::~SimpleTxnPublish() {}
 
 bool
-TxnPublish::prepare(qpid::broker::TxnBuffer* tb) throw() {
+SimpleTxnPublish::prepare(SimpleTxnBuffer* tb) throw() {
     try {
         while (!m_queues.empty()) {
             m_queues.front()->prepareEnqueue(tb);
@@ -58,9 +57,9 @@ TxnPublish::prepare(qpid::broker::TxnBuffer* tb) throw() {
 }
 
 void
-TxnPublish::commit() throw() {
+SimpleTxnPublish::commit() throw() {
     try {
-        for (std::list<boost::shared_ptr<QueuedMessage> >::iterator i = m_prepared.begin(); i != m_prepared.end(); ++i) {
+        for (std::list<boost::shared_ptr<SimpleQueuedMessage> >::iterator i = m_prepared.begin(); i != m_prepared.end(); ++i) {
             (*i)->commitEnqueue();
         }
     } catch (const std::exception& e) {
@@ -71,9 +70,9 @@ TxnPublish::commit() throw() {
 }
 
 void
-TxnPublish::rollback() throw() {
+SimpleTxnPublish::rollback() throw() {
     try {
-        for (std::list<boost::shared_ptr<QueuedMessage> >::iterator i = m_prepared.begin(); i != m_prepared.end(); ++i) {
+        for (std::list<boost::shared_ptr<SimpleQueuedMessage> >::iterator i = m_prepared.begin(); i != m_prepared.end(); ++i) {
             (*i)->abortEnqueue();
         }
     } catch (const std::exception& e) {
@@ -84,19 +83,19 @@ TxnPublish::rollback() throw() {
 }
 
 uint64_t
-TxnPublish::contentSize() {
+SimpleTxnPublish::contentSize() {
     return m_msg->contentSize();
 }
 
 void
-TxnPublish::deliverTo(const boost::shared_ptr<SimpleQueue>& queue) {
-    m_queues.push_back(boost::shared_ptr<QueuedMessage>(new QueuedMessage(queue.get(), m_msg)));
+SimpleTxnPublish::deliverTo(const boost::shared_ptr<SimpleQueue>& queue) {
+    m_queues.push_back(boost::shared_ptr<SimpleQueuedMessage>(new SimpleQueuedMessage(queue.get(), m_msg)));
     m_delivered = true;
 }
 
 SimpleMessage&
-TxnPublish::getMessage() {
+SimpleTxnPublish::getMessage() {
     return *m_msg;
 }
 
-}}} // namespace tests::storePerftools::asyncPerf
+}} // namespace qpid::broker

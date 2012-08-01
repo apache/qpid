@@ -52,18 +52,18 @@ public:
                       AsyncResultCallback rcb,
                       AsyncResultQueue* const arq);
     QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
-                      TxnBuffer* tb,
+                      SimpleTxnBuffer* tb,
                       AsyncResultCallback rcb,
                       AsyncResultQueue* const arq);
     QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
                       boost::intrusive_ptr<PersistableMessage> msg,
-                      TxnBuffer* tb,
+                      SimpleTxnBuffer* tb,
                       AsyncResultCallback rcb,
                       AsyncResultQueue* const arq);
     virtual ~QueueAsyncContext();
     boost::shared_ptr<PersistableQueue> getQueue() const;
     boost::intrusive_ptr<PersistableMessage> getMessage() const;
-    TxnBuffer* getTxnBuffer() const;
+    SimpleTxnBuffer* getTxnBuffer() const;
     AsyncResultQueue* getAsyncResultQueue() const;
     AsyncResultCallback getAsyncResultCallback() const;
     void invokeCallback(const AsyncResultHandle* const arh) const;
@@ -72,7 +72,7 @@ public:
 private:
     boost::shared_ptr<PersistableQueue> m_q;
     boost::intrusive_ptr<PersistableMessage> m_msg;
-    TxnBuffer* m_tb;
+    SimpleTxnBuffer* m_tb;
     AsyncResultCallback m_rcb;
     AsyncResultQueue* const m_arq;
 };

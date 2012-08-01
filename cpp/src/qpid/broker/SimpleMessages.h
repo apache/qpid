@@ -18,42 +18,35 @@
  */
 
 /**
- * \file MessageDeque.h
+ * \file SimpleMessages.h
  */
 
 /*
- * This is a copy of qpid::broker::MessageDeque.h, but using the local
+ * This is a copy of qpid::broker::Messages.h, but using the local
  * tests::storePerftools::asyncPerf::QueuedMessage class instead of
  * qpid::broker::QueuedMessage.
  */
 
-#ifndef tests_storePerftools_asyncPerf_MessageDeque_h_
-#define tests_storePerftools_asyncPerf_MessageDeque_h_
+#ifndef qpid_broker_SimpleMessages_h_
+#define qpid_broker_SimpleMessages_h_
 
-#include "Messages.h"
+#include <boost/shared_ptr.hpp>
+#include <stdint.h>
 
-#include "qpid/sys/Mutex.h"
+namespace qpid  {
+namespace broker {
 
-#include <deque>
+class SimpleQueuedMessage;
 
-namespace tests {
-namespace storePerftools {
-namespace asyncPerf {
-
-class MessageDeque : public Messages
+class SimpleMessages
 {
 public:
-    MessageDeque();
-    virtual ~MessageDeque();
-    uint32_t size();
-    bool push(boost::shared_ptr<QueuedMessage>& added);
-    bool consume(boost::shared_ptr<QueuedMessage>& msg);
-private:
-    std::deque<boost::shared_ptr<QueuedMessage> > m_messages;
-    qpid::sys::Mutex m_msgMutex;
-
+    virtual ~SimpleMessages() {}
+    virtual uint32_t size() = 0;
+    virtual bool push(boost::shared_ptr<SimpleQueuedMessage>& added) = 0;
+    virtual bool consume(boost::shared_ptr<SimpleQueuedMessage>& msg) = 0;
 };
 
-}}} // namespace tests::storePerftools::asyncPerf
+}} // namespace qpid::broker
 
-#endif // tests_storePerftools_asyncPerf_MessageDeque_h_
+#endif // qpid_broker_SimpleMessages_h_

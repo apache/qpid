@@ -18,37 +18,40 @@
  */
 
 /**
- * \file Deliverable.h
+ * \file SimpleMessageDeque.h
  */
 
-#ifndef tests_storePerftools_asyncPerf_Deliverable_h_
-#define tests_storePerftools_asyncPerf_Deliverable_h_
+/*
+ * This is a copy of qpid::broker::MessageDeque.h, but using the local
+ * SimpleQueuedMessage class instead of QueuedMessage.
+ */
 
-#include <boost/shared_ptr.hpp>
-#include <stdint.h> // uint64_t
+#ifndef qpid_broker_SimpleMessageDeque_h_
+#define qpid_broker_SimpleMessageDeque_h_
 
-namespace tests {
-namespace storePerftools {
-namespace asyncPerf {
+#include "SimpleMessages.h"
 
-class SimpleMessage;
-class SimpleQueue;
+#include "qpid/sys/Mutex.h"
 
-class Deliverable
+#include <deque>
+
+namespace qpid  {
+namespace broker {
+
+class SimpleMessageDeque : public SimpleMessages
 {
 public:
-    Deliverable();
-    virtual ~Deliverable();
+    SimpleMessageDeque();
+    virtual ~SimpleMessageDeque();
+    uint32_t size();
+    bool push(boost::shared_ptr<SimpleQueuedMessage>& added);
+    bool consume(boost::shared_ptr<SimpleQueuedMessage>& msg);
+private:
+    std::deque<boost::shared_ptr<SimpleQueuedMessage> > m_messages;
+    qpid::sys::Mutex m_msgMutex;
 
-    virtual uint64_t contentSize() = 0;
-    virtual void deliverTo(const boost::shared_ptr<SimpleQueue>& queue) = 0;
-    virtual SimpleMessage& getMessage() = 0;
-    virtual bool isDelivered() const;
-
-protected:
-    bool m_delivered;
 };
 
-}}} // namespace tests::storePerftools::asyncPerf
+}} // namespace qpid::broker
 
-#endif // tests_storePerftools_asyncPerf_Deliverable_h_
+#endif // qpid_broker_SimpleMessageDeque_h_
