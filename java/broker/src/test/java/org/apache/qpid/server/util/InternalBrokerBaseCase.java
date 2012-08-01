@@ -254,7 +254,7 @@ public class InternalBrokerBaseCase extends QpidTestCase
 
             channel.publishContentHeader(_headerBody);
         }
-
+        channel.sync();
     }
 
     public void acknowledge(AMQChannel channel, long deliveryTag)
