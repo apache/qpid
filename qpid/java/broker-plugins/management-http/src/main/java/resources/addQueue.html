@@ -162,8 +162,15 @@
                             regexp="[0-9]+"
                             invalidMessage= "Invalid value"/></td>
                     </tr>
-
-
+                    <tr>
+                        <td valign="top"><strong>Create DLQ? </strong></td>
+                        <td><input type="checkbox" name="dlqEnabled" id="formAddQueue.dlqEnabled" value="dlqEnabled" dojoType="dijit.form.CheckBox" /></td>
+                    </tr>
+                </table>
+                <table cellpadding="0" cellspacing="2">
+                    <tr>
+                        <td valign="top">NOTE: Configuring maximum delivery retries on a queue which has no DLQ / AlternateExchange will result in messages being discarded after the limit is reached.</td>
+                    </tr>
                 </table>
             </div>
             <br/>
