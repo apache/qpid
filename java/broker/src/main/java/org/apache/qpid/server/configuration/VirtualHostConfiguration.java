@@ -270,7 +270,7 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
 
     public Long getMinimumAlertRepeatGap()
     {
-        return getLongValue("queues.minimumAlertRepeatGap");
+        return getLongValue("queues.minimumAlertRepeatGap", ApplicationRegistry.getInstance().getConfiguration().getMinimumAlertRepeatGap());
     }
 
     public long getCapacity()
