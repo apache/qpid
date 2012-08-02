@@ -52,20 +52,17 @@ EventHeader::EventHeader(const EventHeader& eh) :
         m_dataSize(eh.m_dataSize)
 {}
 
-EventHeader::~EventHeader()
-{}
+EventHeader::~EventHeader() {}
 
 void
-EventHeader::copy(const EventHeader& e)
-{
+EventHeader::copy(const EventHeader& e) {
     RecordHeader::copy(e);
     m_xidSize = e.m_xidSize;
     m_dataSize = e.m_dataSize;
 }
 
 void
-EventHeader::reset()
-{
+EventHeader::reset() {
     RecordHeader::reset();
     m_xidSize = 0;
     m_dataSize = 0;
@@ -73,20 +70,17 @@ EventHeader::reset()
 
 //static
 uint64_t
-EventHeader::getHeaderSize()
-{
+EventHeader::getHeaderSize() {
     return sizeof(EventHeader);
 }
 
 uint64_t
-EventHeader::getBodySize() const
-{
+EventHeader::getBodySize() const {
     return m_xidSize + m_dataSize;
 }
 
 uint64_t
-EventHeader::getRecordSize() const
-{
+EventHeader::getRecordSize() const {
     return getHeaderSize() + (getBodySize() ?
            getBodySize() + RecordTail::getSize() :
            0);

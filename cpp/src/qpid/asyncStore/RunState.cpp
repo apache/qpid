@@ -42,49 +42,41 @@ RunState::RunState(const RunState& s) :
         qpid::asyncStore::jrnl2::State<RunState_t>(s)
 {}
 
-RunState::~RunState()
-{}
+RunState::~RunState() {}
 
 void
-RunState::setInitializing()
-{
+RunState::setInitializing() {
     set(RS_INITIALIZING);
 }
 
 void
-RunState::setRestoring()
-{
+RunState::setRestoring() {
     set(RS_RESTORING);
 }
 
 void
-RunState::setRunning()
-{
+RunState::setRunning() {
     set(RS_RUNNING);
 }
 
 void
-RunState::setStopping()
-{
+RunState::setStopping() {
     set(RS_STOPPING);
 }
 
 void
-RunState::setStopped()
-{
+RunState::setStopped() {
     set(RS_STOPPED);
 }
 
 const char*
-RunState::getAsStr() const
-{
+RunState::getAsStr() const {
     return s_toStr(m_state);
 }
 
 //static
 const char*
-RunState::s_toStr(const RunState_t s)
-{
+RunState::s_toStr(const RunState_t s) {
     switch (s) {
     case RS_NONE:
         return "WR_NONE";
@@ -107,8 +99,7 @@ RunState::s_toStr(const RunState_t s)
 
 // private
 void
-RunState::set(const RunState_t s)
-{
+RunState::set(const RunState_t s) {
     // State transition logic: set stateError to true if an invalid transition is attempted
     bool stateTransitionError = false;
     switch (m_state) {

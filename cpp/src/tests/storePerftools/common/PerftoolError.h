@@ -61,7 +61,8 @@ namespace tests {
 namespace storePerftools {
 namespace common {
 
-class PerftoolError: public std::runtime_error, public Streamable
+class PerftoolError: public std::runtime_error,
+                     public Streamable
 {
 public:
     // --- Constructors & destructors ---

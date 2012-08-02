@@ -35,24 +35,20 @@ AsyncOperation::AsyncOperation(boost::shared_ptr<qpid::broker::BrokerAsyncContex
         m_brokerCtxt(brokerCtxt)
 {}
 
-AsyncOperation::~AsyncOperation()
-{}
+AsyncOperation::~AsyncOperation() {}
 
-boost::shared_ptr<qpid::broker::BrokerAsyncContext> AsyncOperation::getBrokerContext() const
-{
+boost::shared_ptr<qpid::broker::BrokerAsyncContext> AsyncOperation::getBrokerContext() const {
     return m_brokerCtxt;
 }
 
 void
-AsyncOperation::submitResult()
-{
+AsyncOperation::submitResult() {
     return submitResult(0, "");
 }
 
 void
 AsyncOperation::submitResult(const int errNo,
-                             const std::string& errMsg)
-{
+                             const std::string& errMsg) {
     if (m_brokerCtxt.get()) {
         qpid::broker::AsyncResultQueue* const arq = m_brokerCtxt->getAsyncResultQueue();
         if (arq) {

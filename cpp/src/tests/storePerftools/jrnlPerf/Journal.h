@@ -161,7 +161,6 @@ private:
     std::vector<X_DATA_TOKEN*> m_unprocCallbacks;   ///< List of unprocessed callbacks to be dequeued
     X_SCOPED_MUTEX m_unprocCallbacksMutex;          ///< Mutex which protects the unprocessed callback queue
 
-
 };
 
 }}} // namespace tests::storePerftools::jrnlPerf

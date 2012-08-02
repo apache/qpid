@@ -26,10 +26,8 @@
 namespace qpid {
 namespace asyncStore {
 
-ConfigHandleImpl::ConfigHandleImpl()
-{}
+ConfigHandleImpl::ConfigHandleImpl() {}
 
-ConfigHandleImpl::~ConfigHandleImpl()
-{}
+ConfigHandleImpl::~ConfigHandleImpl() {}
 
 }} // namespace qpid::asyncStore

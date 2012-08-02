@@ -43,31 +43,26 @@ DataWrComplState::DataWrComplState(const DataWrComplState& s) :
         State<wrComplState_t>(s)
 {}
 
-DataWrComplState::~DataWrComplState()
-{}
+DataWrComplState::~DataWrComplState() {}
 
 void
-DataWrComplState::complete()
-{
+DataWrComplState::complete() {
     set(WR_COMPLETE);
 }
 
 void
-DataWrComplState::partComplete()
-{
+DataWrComplState::partComplete() {
     set(WR_PART);
 }
 
 const char*
-DataWrComplState::getAsStr() const
-{
+DataWrComplState::getAsStr() const {
     return s_toStr(m_state);
 }
 
 // static
 const char*
-DataWrComplState::s_toStr(const wrComplState_t s)
-{
+DataWrComplState::s_toStr(const wrComplState_t s) {
     switch (s) {
     case WR_NONE:
         return "WR_NONE";
@@ -84,8 +79,7 @@ DataWrComplState::s_toStr(const wrComplState_t s)
 
 // protected
 void
-DataWrComplState::set(const wrComplState_t s)
-{
+DataWrComplState::set(const wrComplState_t s) {
     // State transition logic: set stateError to true if an invalid transition is attempted
     bool stateTransitionError = false;
     switch(m_state) {

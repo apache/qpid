@@ -49,6 +49,8 @@ public:
                     qpid::broker::AsyncResultQueue& arq,
                     boost::shared_ptr<qpid::broker::SimpleQueue> queue);
     virtual ~MessageProducer();
+    void stop();
+
     void* runProducers();
     static void* startProducers(void* ptr);
 private:
@@ -57,6 +59,7 @@ private:
     qpid::broker::AsyncStore* m_store;
     qpid::broker::AsyncResultQueue& m_resultQueue;
     boost::shared_ptr<qpid::broker::SimpleQueue> m_queue;
+    bool m_stopFlag;
 };
 
 }}} // namespace tests::storePerftools::asyncPerf

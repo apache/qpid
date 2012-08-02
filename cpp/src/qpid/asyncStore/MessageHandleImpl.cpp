@@ -30,7 +30,6 @@ MessageHandleImpl::MessageHandleImpl(const qpid::broker::DataSource* dataSrc) :
         m_dataSrc(dataSrc)
 {}
 
-MessageHandleImpl::~MessageHandleImpl()
-{}
+MessageHandleImpl::~MessageHandleImpl() {}
 
 }} // namespace qpid::asyncStore

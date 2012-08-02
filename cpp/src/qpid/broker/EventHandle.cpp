@@ -44,22 +44,19 @@ EventHandle::EventHandle(const EventHandle& r) :
     PrivateImpl::copy(*this, r);
 }
 
-EventHandle::~EventHandle()
-{
+EventHandle::~EventHandle() {
     PrivateImpl::dtor(*this);
 }
 
 EventHandle&
-EventHandle::operator=(const EventHandle& r)
-{
+EventHandle::operator=(const EventHandle& r) {
     return PrivateImpl::assign(*this, r);
 }
 
 // --- EventHandleImpl methods ---
 
 const std::string&
-EventHandle::getKey() const
-{
+EventHandle::getKey() const {
     return impl->getKey();
 }
 

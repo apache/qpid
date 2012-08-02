@@ -44,14 +44,12 @@ EnqueueHandle::EnqueueHandle(const EnqueueHandle& r) :
     PrivateImpl::copy(*this, r);
 }
 
-EnqueueHandle::~EnqueueHandle()
-{
+EnqueueHandle::~EnqueueHandle() {
     PrivateImpl::dtor(*this);
 }
 
 EnqueueHandle&
-EnqueueHandle::operator=(const EnqueueHandle& r)
-{
+EnqueueHandle::operator=(const EnqueueHandle& r) {
     return PrivateImpl::assign(*this, r);
 }
 

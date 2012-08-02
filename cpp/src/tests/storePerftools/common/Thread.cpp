@@ -45,21 +45,19 @@ Thread::Thread(Thread::startFn_t sf,
     PTHREAD_CHK(::pthread_create(&m_thread, NULL, sf, p), "::pthread_create", "Thread", "Thread");
 }
 
-Thread::~Thread()
-{
+Thread::~Thread() {
     if (m_running) {
         PTHREAD_CHK(::pthread_detach(m_thread), "pthread_detach", "~Thread", "Thread");
     }
 }
 
 const std::string&
-Thread::getId() const
-{
+Thread::getId() const {
     return m_id;
 }
 
-void Thread::join()
-{
+void
+Thread::join() {
     PTHREAD_CHK(::pthread_join(m_thread, NULL), "pthread_join", "join", "Thread");
     m_running = false;
 }

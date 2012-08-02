@@ -45,10 +45,16 @@ MessageProducer::MessageProducer(const TestOptions& perfTestParams,
         m_msgData(msgData),
         m_store(store),
         m_resultQueue(arq),
-        m_queue(queue)
+        m_queue(queue),
+        m_stopFlag(false)
 {}
 
 MessageProducer::~MessageProducer() {}
+
+void
+MessageProducer::stop() {
+    m_stopFlag = true;
+}
 
 void*
 MessageProducer::runProducers() {
@@ -58,7 +64,7 @@ MessageProducer::runProducers() {
     if (useTxns) {
         tb = new qpid::broker::SimpleTxnBuffer(m_resultQueue);
     }
-    for (uint32_t numMsgs=0; numMsgs<m_perfTestParams.m_numMsgs; ++numMsgs) {
+    for (uint32_t numMsgs=0; numMsgs<m_perfTestParams.m_numMsgs && !m_stopFlag; ++numMsgs) {
         boost::intrusive_ptr<qpid::broker::SimpleMessage> msg(new qpid::broker::SimpleMessage(m_msgData, m_perfTestParams.m_msgSize, m_store));
         if (useTxns) {
             boost::shared_ptr<qpid::broker::SimpleTxnPublish> op(new qpid::broker::SimpleTxnPublish(msg));
@@ -79,7 +85,7 @@ MessageProducer::runProducers() {
             m_queue->deliver(msg);
         }
     }
-    if (recsInTxnCnt) {
+    if (recsInTxnCnt && !m_stopFlag) {
         tb->commitLocal(m_store);
     }
     return reinterpret_cast<void*>(0);
@@ -87,8 +93,7 @@ MessageProducer::runProducers() {
 
 //static
 void*
-MessageProducer::startProducers(void* ptr)
-{
+MessageProducer::startProducers(void* ptr) {
     return reinterpret_cast<MessageProducer*>(ptr)->runProducers();
 }
 

@@ -93,12 +93,10 @@ JournalParameters::JournalParameters(const JournalParameters& jp) :
 #endif
 {}
 
-JournalParameters::~JournalParameters()
-{}
+JournalParameters::~JournalParameters() {}
 
 void
-JournalParameters::toStream(std::ostream& os) const
-{
+JournalParameters::toStream(std::ostream& os) const {
     os << "Journal Parameters:" << std::endl;
     os << "  jrnlDir = \"" << m_jrnlDir << "\"" << std::endl;
     os << "  jrnlBaseFileName = \"" << m_jrnlBaseFileName << "\"" << std::endl;
@@ -110,8 +108,7 @@ JournalParameters::toStream(std::ostream& os) const
 
 bool
 JournalParameters::parseArg(const int arg,
-                            const char* optarg)
-{
+                            const char* optarg) {
     switch(arg) {
     case 'j':
         m_jrnlDir.assign(optarg);
@@ -139,8 +136,7 @@ JournalParameters::parseArg(const int arg,
 
 // static
 void
-JournalParameters::printArgs(std::ostream& os)
-{
+JournalParameters::printArgs(std::ostream& os) {
     os << "Journal parameters:" << std::endl;
     os << " -j --jrnl_dir:                   Store directory [\""
        << JournalParameters::s_defaultJrnlDir << "\"]" << std::endl;
@@ -158,8 +154,7 @@ JournalParameters::printArgs(std::ostream& os)
 
 // static
 std::string
-JournalParameters::shortArgs()
-{
+JournalParameters::shortArgs() {
     return "j:b:f:s:p:c:";
 }
 

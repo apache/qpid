@@ -36,21 +36,18 @@ AsyncResultQueueImpl::AsyncResultQueueImpl(const boost::shared_ptr<qpid::sys::Po
     m_resQueue.start();
 }
 
-AsyncResultQueueImpl::~AsyncResultQueueImpl()
-{
+AsyncResultQueueImpl::~AsyncResultQueueImpl() {
     m_resQueue.stop();
 }
 
 void
-AsyncResultQueueImpl::submit(boost::shared_ptr<AsyncResultHandle> arh)
-{
+AsyncResultQueueImpl::submit(boost::shared_ptr<AsyncResultHandle> arh) {
     m_resQueue.push(arh);
 }
 
 // private
 AsyncResultQueueImpl::ResultQueue::Batch::const_iterator
-AsyncResultQueueImpl::handle(const ResultQueue::Batch& e)
-{
+AsyncResultQueueImpl::handle(const ResultQueue::Batch& e) {
     try {
         for (ResultQueue::Batch::const_iterator i = e.begin(); i != e.end(); ++i) {
             if ((*i)->isValid()) {

@@ -44,14 +44,12 @@ TxnHandle::TxnHandle(const TxnHandle& r) :
     PrivateImpl::copy(*this, r);
 }
 
-TxnHandle::~TxnHandle()
-{
+TxnHandle::~TxnHandle() {
     PrivateImpl::dtor(*this);
 }
 
 TxnHandle&
-TxnHandle::operator=(const TxnHandle& r)
-{
+TxnHandle::operator=(const TxnHandle& r) {
     return PrivateImpl::assign(*this, r);
 }
 

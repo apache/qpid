@@ -43,24 +43,20 @@ AsyncStoreOptions::AsyncStoreOptions(const std::string& storeDir,
         m_storeDir(storeDir)
 {}
 
-AsyncStoreOptions::~AsyncStoreOptions()
-{}
+AsyncStoreOptions::~AsyncStoreOptions() {}
 
 void
-AsyncStoreOptions::printVals(std::ostream& os) const
-{
+AsyncStoreOptions::printVals(std::ostream& os) const {
     os << "ASYNC STORE OPTIONS:" << std::endl;
     os << "      Store directory location for persistence [store-dir]: \"" <<  m_storeDir << "\"" << std::endl;
 }
 
 void
-AsyncStoreOptions::validate()
-{}
+AsyncStoreOptions::validate() {}
 
 // private static
 std::string&
-AsyncStoreOptions::getDefaultStoreDir()
-{
+AsyncStoreOptions::getDefaultStoreDir() {
     static std::string s_defaultStoreDir = "/tmp";
     return s_defaultStoreDir;
 }

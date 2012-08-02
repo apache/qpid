@@ -43,31 +43,26 @@ DataOpState::DataOpState(const DataOpState& s) :
         State<opState_t>(s)
 {}
 
-DataOpState::~DataOpState()
-{}
+DataOpState::~DataOpState() {}
 
 void
-DataOpState::enqueue()
-{
+DataOpState::enqueue() {
     set(OP_ENQUEUE);
 }
 
 void
-DataOpState::dequeue()
-{
+DataOpState::dequeue() {
     set(OP_DEQUEUE);
 }
 
 const char*
-DataOpState::getAsStr() const
-{
+DataOpState::getAsStr() const {
     return s_toStr(m_state);
 }
 
 // static
 const char*
-DataOpState::s_toStr(const opState_t s)
-{
+DataOpState::s_toStr(const opState_t s) {
     switch (s) {
     case OP_NONE:
         return "OP_NONE";
@@ -84,8 +79,7 @@ DataOpState::s_toStr(const opState_t s)
 
 // private
 void
-DataOpState::set(const opState_t s)
-{
+DataOpState::set(const opState_t s) {
     // State transition logic: set stateError to true if an invalid transition is attempted
     bool stateTransitionError = false;
     switch(m_state) {

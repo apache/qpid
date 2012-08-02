@@ -32,7 +32,6 @@ EnqueueHandleImpl::EnqueueHandleImpl(qpid::broker::MessageHandle& msgHandle,
         m_queueHandle(queueHandle)
 {}
 
-EnqueueHandleImpl::~EnqueueHandleImpl()
-{}
+EnqueueHandleImpl::~EnqueueHandleImpl() {}
 
 }} // namespace qpid::asyncStore

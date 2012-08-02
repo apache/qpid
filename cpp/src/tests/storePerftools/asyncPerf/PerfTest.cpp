@@ -170,32 +170,31 @@ runPerfTest(int argc, char** argv) {
         opts.parse(argc, argv);
         aso.validate();
         to.validate();
-    }
-    catch (std::exception& e) {
+
+        // Handle options that just print information then exit.
+        if (co.version) {
+            std::cout << tests::storePerftools::name() << " v." << tests::storePerftools::version() << std::endl;
+            return 0;
+        }
+        if (co.help) {
+            std::cout << tests::storePerftools::name() << ": asyncPerf" << std::endl;
+            std::cout << "Performance test for the async store through the qpid async store interface." << std::endl;
+            std::cout << "Usage: asyncPerf [options]" << std::endl;
+            std::cout << opts << std::endl;
+            return 0;
+        }
+
+        // Create and start test
+        tests::storePerftools::asyncPerf::PerfTest apt(to, aso);
+        apt.run();
+
+        // Print test result
+        std::cout << apt << std::endl;
+        //::sleep(1);
+    } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         return 1;
     }
-
-    // Handle options that just print information then exit.
-    if (co.version) {
-        std::cout << tests::storePerftools::name() << " v." << tests::storePerftools::version() << std::endl;
-        return 0;
-    }
-    if (co.help) {
-        std::cout << tests::storePerftools::name() << ": asyncPerf" << std::endl;
-        std::cout << "Performance test for the async store through the qpid async store interface." << std::endl;
-        std::cout << "Usage: asyncPerf [options]" << std::endl;
-        std::cout << opts << std::endl;
-        return 0;
-    }
-
-    // Create and start test
-    tests::storePerftools::asyncPerf::PerfTest apt(to, aso);
-    apt.run();
-
-    // Print test result
-    std::cout << apt << std::endl;
-    //::sleep(1);
 
     return 0;
 }

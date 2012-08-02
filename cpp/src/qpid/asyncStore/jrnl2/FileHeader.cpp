@@ -73,12 +73,10 @@ FileHeader::FileHeader(const FileHeader& fh) :
         m_reserved(fh.m_reserved)
 {}
 
-FileHeader::~FileHeader()
-{}
+FileHeader::~FileHeader() {}
 
 void
-FileHeader::copy(const FileHeader& fh)
-{
+FileHeader::copy(const FileHeader& fh) {
     RecordHeader::copy(fh);
     m_physicalFileId = fh.m_physicalFileId;
     m_logicalFileId = fh.m_logicalFileId;
@@ -89,8 +87,7 @@ FileHeader::copy(const FileHeader& fh)
 }
 
 void
-FileHeader::reset()
-{
+FileHeader::reset() {
     RecordHeader::reset();
     m_physicalFileId = 0;
     m_logicalFileId = 0;
@@ -102,26 +99,22 @@ FileHeader::reset()
 
 //static
 uint64_t
-FileHeader::getHeaderSize()
-{
+FileHeader::getHeaderSize() {
     return sizeof(FileHeader);
 }
 
 uint64_t
-FileHeader::getBodySize() const
-{
+FileHeader::getBodySize() const {
     return 0;
 }
 
 uint64_t
-FileHeader::getRecordSize() const
-{
+FileHeader::getRecordSize() const {
     return getHeaderSize();
 }
 
 void
-FileHeader::setTimestamp()
-{
+FileHeader::setTimestamp() {
     /// \todo TODO: Standardize on method for getting time that does not require a context switch.
     timespec ts;
     if (::clock_gettime(CLOCK_REALTIME, &ts)) {
@@ -133,8 +126,7 @@ FileHeader::setTimestamp()
 }
 
 void
-FileHeader::setTimestamp(const timespec& ts)
-{
+FileHeader::setTimestamp(const timespec& ts) {
     m_timestampSeconds = static_cast<uint64_t>(ts.tv_sec);
     m_timestampNanoSeconds = static_cast<uint32_t>(ts.tv_nsec);
 }

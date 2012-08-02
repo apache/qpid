@@ -22,19 +22,17 @@
 
 # New journal perf test (jrnl2Perf)
 set (jrnl2Perf_SOURCES
-	storePerftools/jrnlPerf/Journal.cpp
-	storePerftools/jrnlPerf/JournalParameters.cpp
-	storePerftools/jrnlPerf/PerfTest.cpp
-	storePerftools/jrnlPerf/TestResult.cpp
+    storePerftools/jrnlPerf/Journal.cpp
+    storePerftools/jrnlPerf/JournalParameters.cpp
+    storePerftools/jrnlPerf/PerfTest.cpp
+    storePerftools/jrnlPerf/TestResult.cpp
 	
-	storePerftools/common/Parameters.cpp
     storePerftools/common/PerftoolError.cpp
-	storePerftools/common/ScopedTimable.cpp
-	storePerftools/common/ScopedTimer.cpp
-	storePerftools/common/Streamable.cpp
-	storePerftools/common/TestParameters.cpp
-	storePerftools/common/TestResult.cpp
-	storePerftools/common/Thread.cpp
+    storePerftools/common/ScopedTimable.cpp
+    storePerftools/common/ScopedTimer.cpp
+    storePerftools/common/Streamable.cpp
+    storePerftools/common/TestParameters.cpp
+    storePerftools/common/Thread.cpp
 )
 
 if (UNIX)
@@ -47,33 +45,23 @@ if (UNIX)
 	    qpidbroker
 	    rt
     )
+    add_test (Store_Perftools_Smoke_Test ${CMAKE_CURRENT_SOURCE_DIR}/storePerftools/storePerftoolsSmokeTest.sh)
 endif (UNIX)
 
 # Async store perf test (asyncPerf)
 set (asyncStorePerf_SOURCES
     storePerftools/asyncPerf/MessageConsumer.cpp
     storePerftools/asyncPerf/MessageProducer.cpp
-	storePerftools/asyncPerf/PerfTest.cpp
-#    storePerftools/asyncPerf/SimpleDeliverable.cpp
-#    storePerftools/asyncPerf/SimpleDeliveryRecord.cpp
-#	storePerftools/asyncPerf/SimpleMessage.cpp
-#    storePerftools/asyncPerf/SimpleMessageAsyncContext.cpp
-#    storePerftools/asyncPerf/SimpleMessageDeque.cpp
-#	storePerftools/asyncPerf/SimpleQueue.cpp
-#	storePerftools/asyncPerf/SimpleQueuedMessage.cpp
-#	storePerftools/asyncPerf/SimpleTxnAccept.cpp
-#	storePerftools/asyncPerf/SimpleTxnPublish.cpp
-	storePerftools/asyncPerf/TestOptions.cpp
-	storePerftools/asyncPerf/TestResult.cpp
+    storePerftools/asyncPerf/PerfTest.cpp
+    storePerftools/asyncPerf/TestOptions.cpp
+    storePerftools/asyncPerf/TestResult.cpp
 	
-	storePerftools/common/Parameters.cpp
     storePerftools/common/PerftoolError.cpp
-	storePerftools/common/ScopedTimable.cpp
-	storePerftools/common/ScopedTimer.cpp
-	storePerftools/common/Streamable.cpp
-	storePerftools/common/TestOptions.cpp
-	storePerftools/common/TestResult.cpp
-	storePerftools/common/Thread.cpp
+    storePerftools/common/ScopedTimable.cpp
+    storePerftools/common/ScopedTimer.cpp
+    storePerftools/common/Streamable.cpp
+    storePerftools/common/TestOptions.cpp
+    storePerftools/common/Thread.cpp
 )
 
 if (UNIX)

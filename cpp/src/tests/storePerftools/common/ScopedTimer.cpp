@@ -41,16 +41,14 @@ ScopedTimer::ScopedTimer(ScopedTimable& st) :
     ::clock_gettime(CLOCK_REALTIME, &m_startTime);
 }
 
-ScopedTimer::~ScopedTimer()
-{
+ScopedTimer::~ScopedTimer() {
     ::timespec stopTime;
     ::clock_gettime(CLOCK_REALTIME, &stopTime);
     m_elapsed = _s_getDoubleTime(stopTime) - _s_getDoubleTime(m_startTime);
 }
 
 // private static
-double ScopedTimer::_s_getDoubleTime(const ::timespec& ts)
-{
+double ScopedTimer::_s_getDoubleTime(const ::timespec& ts) {
     return ts.tv_sec + (double(ts.tv_nsec) / 1e9);
 }
 

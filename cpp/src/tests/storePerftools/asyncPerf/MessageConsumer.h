@@ -53,6 +53,7 @@ public:
     virtual ~MessageConsumer();
     void record(boost::shared_ptr<qpid::broker::SimpleDeliveryRecord> dr);
     void commitComplete();
+    void stop();
 
     void* runConsumers();
     static void* startConsumers(void* ptr);
@@ -62,6 +63,7 @@ private:
     qpid::broker::AsyncResultQueue& m_resultQueue;
     boost::shared_ptr<qpid::broker::SimpleQueue> m_queue;
     std::deque<boost::shared_ptr<qpid::broker::SimpleDeliveryRecord> > m_unacked;
+    bool m_stopFlag;
 };
 
 }}} // namespace tests::storePerftools::asyncPerf

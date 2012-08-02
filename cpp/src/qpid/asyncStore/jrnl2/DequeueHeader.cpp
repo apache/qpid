@@ -55,34 +55,29 @@ DequeueHeader::DequeueHeader(const DequeueHeader& dh) :
         m_xidSize(dh.m_xidSize)
 {}
 
-DequeueHeader::~DequeueHeader()
-{}
+DequeueHeader::~DequeueHeader() {}
 
 void
-DequeueHeader::copy(const DequeueHeader& dh)
-{
+DequeueHeader::copy(const DequeueHeader& dh) {
     RecordHeader::copy(dh);
     m_dequeuedRecordId = dh.m_dequeuedRecordId;
     m_xidSize = dh.m_xidSize;
 }
 
 void
-DequeueHeader::reset()
-{
+DequeueHeader::reset() {
     RecordHeader::reset();
     m_dequeuedRecordId = 0;
     m_xidSize = 0;
 }
 
 bool
-DequeueHeader::getTplCommitOnTxnComplFlag() const
-{
+DequeueHeader::getTplCommitOnTxnComplFlag() const {
     return m_flags & DEQ_HDR_TPL_COMMIT_ON_TXN_COMPL_MASK;
 }
 
 void
-DequeueHeader::setTplCommitOnTxnComplFlag(const bool commitOnTxnCompl)
-{
+DequeueHeader::setTplCommitOnTxnComplFlag(const bool commitOnTxnCompl) {
     m_flags = commitOnTxnCompl ?
               m_flags | DEQ_HDR_TPL_COMMIT_ON_TXN_COMPL_MASK :
               m_flags & (~DEQ_HDR_TPL_COMMIT_ON_TXN_COMPL_MASK);
@@ -90,20 +85,17 @@ DequeueHeader::setTplCommitOnTxnComplFlag(const bool commitOnTxnCompl)
 
 //static
 uint64_t
-DequeueHeader::getHeaderSize()
-{
+DequeueHeader::getHeaderSize() {
     return static_cast<uint64_t>(sizeof(DequeueHeader));
 }
 
 uint64_t
-DequeueHeader::getBodySize() const
-{
+DequeueHeader::getBodySize() const {
     return m_xidSize;
 }
 
 uint64_t
-DequeueHeader::getRecordSize() const
-{
+DequeueHeader::getRecordSize() const {
     return getHeaderSize() + (getBodySize() > 0LL ?
                               getBodySize() + RecordTail::getSize() :
                               0);

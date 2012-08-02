@@ -32,12 +32,10 @@ QueueHandleImpl::QueueHandleImpl(const std::string& name,
         m_opts(opts)
 {}
 
-QueueHandleImpl::~QueueHandleImpl()
-{}
+QueueHandleImpl::~QueueHandleImpl() {}
 
 const std::string&
-QueueHandleImpl::getName() const
-{
+QueueHandleImpl::getName() const {
     return m_name;
 }
 

@@ -67,12 +67,10 @@ TestParameters::TestParameters(const TestParameters& tp):
         m_numDeqThreadsPerQueue(tp.m_numDeqThreadsPerQueue)
 {}
 
-TestParameters::~TestParameters()
-{}
+TestParameters::~TestParameters() {}
 
 void
-TestParameters::toStream(std::ostream& os) const
-{
+TestParameters::toStream(std::ostream& os) const {
     os << "Test Parameters:" << std::endl;
     os << "  num_msgs = " << m_numMsgs << std::endl;
     os << "  msg_size = " << m_msgSize << std::endl;
@@ -83,8 +81,7 @@ TestParameters::toStream(std::ostream& os) const
 
 bool
 TestParameters::parseArg(const int arg,
-                         const char* optarg)
-{
+                         const char* optarg) {
     switch(arg) {
     case 'm':
         m_numMsgs = uint32_t(std::atol(optarg));
@@ -109,8 +106,7 @@ TestParameters::parseArg(const int arg,
 
 // static
 void
-TestParameters::printArgs(std::ostream& os)
-{
+TestParameters::printArgs(std::ostream& os) {
     os << "Test parameters:" << std::endl;
     os << " -m --num_msgs:                   Number of messages to send per enqueue thread ["
        << TestParameters::s_defaultNumMsgs << "]" << std::endl;
@@ -127,8 +123,7 @@ TestParameters::printArgs(std::ostream& os)
 
 // static
 std::string
-TestParameters::shortArgs()
-{
+TestParameters::shortArgs() {
     return "m:S:q:e:d:";
 }
 

@@ -92,49 +92,41 @@ PerftoolError::PerftoolError(const uint32_t errCode,
         m_throwingFunction(throwingFunction)
 {}
 
-PerftoolError::~PerftoolError() throw()
-{}
+PerftoolError::~PerftoolError() throw() {}
 
 const char*
-PerftoolError::what() const throw ()
-{
+PerftoolError::what() const throw () {
     return m_what.c_str();
 }
 
 uint32_t
-PerftoolError::getErrorCode() const throw ()
-{
+PerftoolError::getErrorCode() const throw () {
     return m_errCode;
 }
 
 const std::string
-PerftoolError::getAdditionalInfo() const throw ()
-{
+PerftoolError::getAdditionalInfo() const throw () {
     return m_errMsg;
 }
 
 const std::string
-PerftoolError::getThrowingClass() const throw ()
-{
+PerftoolError::getThrowingClass() const throw () {
     return m_throwingClass;
 }
 
 const std::string
-PerftoolError::getThrowingFunction() const throw ()
-{
+PerftoolError::getThrowingFunction() const throw () {
     return m_throwingFunction;
 }
 
 void
-PerftoolError::toStream(std::ostream& os) const
-{
+PerftoolError::toStream(std::ostream& os) const {
     os << what();
 }
 
 // private
 void
-PerftoolError::formatWhatStr() throw ()
-{
+PerftoolError::formatWhatStr() throw () {
     try {
         const bool ai = !m_errMsg.empty();
         const bool tc = !m_throwingClass.empty();
@@ -164,8 +156,7 @@ PerftoolError::formatWhatStr() throw ()
 
 // private
 const char*
-PerftoolError::className()
-{
+PerftoolError::className() {
     return s_className;
 }
 
@@ -182,8 +173,7 @@ const uint32_t PerftoolError::PERR_PTHREAD          = 0x0001;
 
 // static
 const char*
-PerftoolError::s_errorMessage(const uint32_t err_no) throw ()
-{
+PerftoolError::s_errorMessage(const uint32_t err_no) throw () {
     s_errorMapIterator = s_errorMap.find(err_no);
     if (s_errorMapIterator == s_errorMap.end())
         return "<Unknown error code>";
@@ -192,8 +182,7 @@ PerftoolError::s_errorMessage(const uint32_t err_no) throw ()
 
 // private static
 bool
-PerftoolError::s_initialize()
-{
+PerftoolError::s_initialize() {
     s_errorMap[PERR_PTHREAD] = "ERR_PTHREAD: pthread operation failure";
 
     return true;

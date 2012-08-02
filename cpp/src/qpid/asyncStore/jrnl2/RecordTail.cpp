@@ -57,16 +57,14 @@ RecordTail::RecordTail(const RecordTail& rt) :
 {}
 
 void
-RecordTail::copy(const RecordTail& rt)
-{
+RecordTail::copy(const RecordTail& rt) {
     m_xMagic = rt.m_xMagic;
     m_checkSum = rt.m_checkSum;
     m_recordId = rt.m_recordId;
 }
 
 void
-RecordTail::reset()
-{
+RecordTail::reset() {
     m_xMagic = 0xffffffff;
     m_checkSum = 0;
     m_recordId = 0;
@@ -74,8 +72,7 @@ RecordTail::reset()
 
 //static
 uint64_t
-RecordTail::getSize()
-{
+RecordTail::getSize() {
     return sizeof(RecordTail);
 }
 

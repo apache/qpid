@@ -36,7 +36,8 @@ namespace common {
 /**
  * \brief Ultra-simple pthread class.
  */
-class Thread {
+class Thread
+{
 public:
     typedef void*(*startFn_t)(void*);   ///< Thread entry point function pointer type
 

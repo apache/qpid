@@ -47,39 +47,33 @@ TransactionHeader::TransactionHeader(const TransactionHeader& th) :
         m_xidSize(th.m_xidSize)
 {}
 
-TransactionHeader::~TransactionHeader()
-{}
+TransactionHeader::~TransactionHeader() {}
 
 void
-TransactionHeader::copy(const TransactionHeader& th)
-{
+TransactionHeader::copy(const TransactionHeader& th) {
     RecordHeader::copy(th);
     m_xidSize = th.m_xidSize;
 }
 
 void
-TransactionHeader::reset()
-{
+TransactionHeader::reset() {
     RecordHeader::reset();
     m_xidSize = 0;
 }
 
 //static
 uint64_t
-TransactionHeader::getHeaderSize()
-{
+TransactionHeader::getHeaderSize() {
     return sizeof(TransactionHeader);
 }
 
 uint64_t
-TransactionHeader::getBodySize() const
-{
+TransactionHeader::getBodySize() const {
     return m_xidSize;
 }
 
 uint64_t
-TransactionHeader::getRecordSize() const
-{
+TransactionHeader::getRecordSize() const {
     // By definition, TransactionRecords must always have an xid, hence a record
     // tail as well. No check on body size required in this case.
     return getHeaderSize() + getBodySize() + RecordTail::getSize();

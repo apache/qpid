@@ -30,23 +30,20 @@ namespace storePerftools {
 namespace common {
 
 std::string
-Streamable::toString() const
-{
+Streamable::toString() const {
     std::ostringstream oss;
     toStream(oss);
     return oss.str();
 }
 
 std::ostream&
-operator<<(std::ostream& os, const Streamable& s)
-{
+operator<<(std::ostream& os, const Streamable& s) {
     s.toStream(os);
     return os;
 }
 
 std::ostream&
-operator<<(std::ostream& os, const Streamable* sPtr)
-{
+operator<<(std::ostream& os, const Streamable* sPtr) {
     sPtr->toStream(os);
     return os;
 }

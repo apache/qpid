@@ -32,49 +32,43 @@ namespace broker {
 typedef PrivateImplRef<AsyncResultHandle> PrivateImpl;
 
 AsyncResultHandle::AsyncResultHandle(AsyncResultHandleImpl* p) :
-            Handle<AsyncResultHandleImpl>()
+        Handle<AsyncResultHandleImpl>()
 {
     PrivateImpl::ctor(*this, p);
 }
 
 AsyncResultHandle::AsyncResultHandle(const AsyncResultHandle& r) :
-            Handle<AsyncResultHandleImpl>()
+        Handle<AsyncResultHandleImpl>()
 {
     PrivateImpl::copy(*this, r);
 }
 
-AsyncResultHandle::~AsyncResultHandle()
-{
+AsyncResultHandle::~AsyncResultHandle() {
     PrivateImpl::dtor(*this);
 }
 
 AsyncResultHandle&
-AsyncResultHandle::operator=(const AsyncResultHandle& r)
-{
+AsyncResultHandle::operator=(const AsyncResultHandle& r) {
     return PrivateImpl::assign(*this, r);
 }
 
 int
-AsyncResultHandle::getErrNo() const
-{
+AsyncResultHandle::getErrNo() const {
     return impl->getErrNo();
 }
 
 std::string
-AsyncResultHandle::getErrMsg() const
-{
+AsyncResultHandle::getErrMsg() const {
     return impl->getErrMsg();
 }
 
 boost::shared_ptr<BrokerAsyncContext>
-AsyncResultHandle::getBrokerAsyncContext() const
-{
+AsyncResultHandle::getBrokerAsyncContext() const {
     return impl->getBrokerAsyncContext();
 }
 
 void
-AsyncResultHandle::invokeAsyncResultCallback() const
-{
+AsyncResultHandle::invokeAsyncResultCallback() const {
     impl->getBrokerAsyncContext()->invokeCallback(this);
 }
 

@@ -43,55 +43,46 @@ JournalRunState::JournalRunState(const journalState_t s) :
         State<journalState_t>(s)
 {}
 
-JournalRunState::~JournalRunState()
-{}
+JournalRunState::~JournalRunState() {}
 
 void
-JournalRunState::initialize()
-{
+JournalRunState::initialize() {
     set(JS_INITIALIZING);
 }
 
 void
-JournalRunState::recoverPhase1()
-{
+JournalRunState::recoverPhase1() {
     set(JS_RECOVERING_PHASE_1);
 }
 
 void
-JournalRunState::recoverPhase2()
-{
+JournalRunState::recoverPhase2() {
     set(JS_RECOVERING_PHASE_2);
 }
 
 void
-JournalRunState::run()
-{
+JournalRunState::run() {
     set(JS_RUNNING);
 }
 
 void
-JournalRunState::stop()
-{
+JournalRunState::stop() {
     set(JS_STOPPING);
 }
 
 void
-JournalRunState::stopped()
-{
+JournalRunState::stopped() {
     set(JS_STOPPED);
 }
 
 const char*
-JournalRunState::getAsStr() const
-{
+JournalRunState::getAsStr() const {
     return s_toStr(m_state);
 }
 
 // static
 const char*
-JournalRunState::s_toStr(const journalState_t s)
-{
+JournalRunState::s_toStr(const journalState_t s) {
     switch (s) {
     case JS_NONE:
         return "JS_NONE";
@@ -116,8 +107,7 @@ JournalRunState::s_toStr(const journalState_t s)
 
 // private
 void
-JournalRunState::set(const journalState_t s)
-{
+JournalRunState::set(const journalState_t s) {
     // State transition logic: set stateError to true if an invalid transition is attempted
     bool stateTransitionError = false;
     switch(m_state) {

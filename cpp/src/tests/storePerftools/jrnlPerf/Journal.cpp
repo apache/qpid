@@ -70,8 +70,7 @@ Journal::Journal(const uint32_t numMsgs,
         m_jrnlPtr(jrnlPtr)
 {}
 
-Journal::~Journal()
-{
+Journal::~Journal() {
     delete m_jrnlPtr;
 }
 
@@ -80,8 +79,7 @@ Journal::~Journal()
 // This method will be called by multiple threads simultaneously
 // Enqueue thread entry point
 void*
-Journal::runEnqueues()
-{
+Journal::runEnqueues() {
     bool misfireFlag = false;
     uint32_t i = 0;
     while (i < m_numMsgs) {
@@ -122,8 +120,7 @@ Journal::runEnqueues()
 // This method will be called by multiple threads simultaneously
 // Dequeue thread entry point
 void*
-Journal::runDequeues()
-{
+Journal::runDequeues() {
     uint32_t i = 0;
     X_JRNL_IO_OP_RES jrnlIoRes;
     while (i < m_numMsgs) {
@@ -170,23 +167,20 @@ Journal::runDequeues()
 
 //static
 void*
-Journal::startEnqueues(void* ptr)
-{
+Journal::startEnqueues(void* ptr) {
     return reinterpret_cast<Journal*>(ptr)->runEnqueues();
 }
 
 //static
 void*
-Journal:: startDequeues(void* ptr)
-{
+Journal:: startDequeues(void* ptr) {
     return reinterpret_cast<Journal*>(ptr)->runDequeues();
 }
 
 // *** MUST BE THREAD-SAFE ****
 // This method will be called by multiple threads simultaneously
 void
-Journal::X_AIO_WR_CALLBACK(std::vector<X_DATA_TOKEN*>& msgTokenList)
-{
+Journal::X_AIO_WR_CALLBACK(std::vector<X_DATA_TOKEN*>& msgTokenList) {
     X_DATA_TOKEN* mtokPtr;
     while (msgTokenList.size()) {
         mtokPtr = msgTokenList.back();
@@ -212,7 +206,6 @@ Journal::X_AIO_WR_CALLBACK(std::vector<X_DATA_TOKEN*>& msgTokenList)
 // *** MUST BE THREAD-SAFE ****
 // This method will be called by multiple threads simultaneously
 void
-Journal::X_AIO_RD_CALLBACK(std::vector<uint16_t>& /*buffPageCtrlBlkIndexList*/)
-{}
+Journal::X_AIO_RD_CALLBACK(std::vector<uint16_t>& /*buffPageCtrlBlkIndexList*/) {}
 
 }}} // namespace tests::storePerftools::jrnlPerf

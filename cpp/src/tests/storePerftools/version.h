@@ -31,8 +31,8 @@ namespace tests {
 namespace storePerftools {
 
 static const int versionMajor = 0;
-static const int versionMinor = 0;
-static const int versionRevision = 1;
+static const int versionMinor = 1;
+static const int versionRevision = 0;
 
 std::string name() {
     return "Qpid async store perftools";

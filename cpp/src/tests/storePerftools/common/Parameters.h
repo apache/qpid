@@ -20,6 +20,7 @@
 /**
  * \file Parameters.h
  */
+
 #ifndef tests_storePerftools_common_Parameters_h_
 #define tests_storePerftools_common_Parameters_h_
 
@@ -32,7 +33,7 @@ namespace common {
 class Parameters: public Streamable
 {
 public:
-    virtual ~Parameters();
+    virtual ~Parameters() {}
     virtual bool parseArg(const int arg,
                           const char* optarg) = 0;
 

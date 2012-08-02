@@ -66,15 +66,13 @@ PerfTest::PerfTest(const tests::storePerftools::common::TestParameters& tp,
         m_msgData(new char[tp.m_msgSize])
 {}
 
-PerfTest::~PerfTest()
-{
+PerfTest::~PerfTest() {
     delete[] m_msgData;
 }
 
 // private
 void
-PerfTest::prepareJournals(std::vector<Journal*>& jrnlList)
-{
+PerfTest::prepareJournals(std::vector<Journal*>& jrnlList) {
 #ifdef JOURNAL2
     if (qpid::asyncStore::jrnl2::JournalDirectory::s_exists(m_jrnlParams.m_jrnlDir)) {
         qpid::asyncStore::jrnl2::JournalDirectory::s_destroy(m_jrnlParams.m_jrnlDir);
@@ -114,8 +112,7 @@ PerfTest::prepareJournals(std::vector<Journal*>& jrnlList)
 
 // private
 void
-PerfTest::destroyJournals(std::vector<Journal*>& jrnlList)
-{
+PerfTest::destroyJournals(std::vector<Journal*>& jrnlList) {
     while (jrnlList.size()) {
         delete jrnlList.back();
         jrnlList.pop_back();
@@ -123,8 +120,7 @@ PerfTest::destroyJournals(std::vector<Journal*>& jrnlList)
 }
 
 void
-PerfTest::run()
-{
+PerfTest::run() {
     std::vector<Journal*> jrnlList;
     prepareJournals(jrnlList);
 
@@ -154,16 +150,14 @@ PerfTest::run()
 }
 
 void
-PerfTest::toStream(std::ostream& os) const
-{
+PerfTest::toStream(std::ostream& os) const {
     os << m_testParams << std::endl;
     os << m_jrnlParams << std::endl;
     os << m_testResult << std::endl;
 }
 
 void
-printArgs(std::ostream& os)
-{
+printArgs(std::ostream& os) {
     os << " -h --help:                       This help message" << std::endl;
     os << std::endl;
 
@@ -178,8 +172,7 @@ bool
 readArgs(int argc,
          char** argv,
          tests::storePerftools::common::TestParameters& tp,
-         JournalParameters& jp)
-{
+         JournalParameters& jp) {
     /// \todo TODO: At some point, find an easy way to aggregate these from JrnlPerfTestParameters and JrnlParameters themselves.
     static struct option long_options[] = {
         {"help", no_argument, 0, 'h'},
@@ -231,8 +224,7 @@ readArgs(int argc,
 // -----------------------------------------------------------------
 
 int
-main(int argc, char** argv)
-{
+main(int argc, char** argv) {
     tests::storePerftools::common::TestParameters tp;
     tests::storePerftools::jrnlPerf::JournalParameters jp;
     if (tests::storePerftools::jrnlPerf::readArgs(argc, argv, tp, jp)) return 1;

@@ -36,8 +36,7 @@ namespace asyncStore {
 namespace jrnl2 {
 
 std::string
-g_ioResAsString(const jrnlOpRes /*res*/)
-{
+g_ioResAsString(const jrnlOpRes /*res*/) {
     /// \todo TODO - provide implementation
     return ".[g_ioResAsString].";
 }
@@ -56,45 +55,38 @@ AsyncJournal::AsyncJournal(const std::string& jrnlId,
 }
 
 std::string
-AsyncJournal::getId() const
-{
+AsyncJournal::getId() const {
     return m_jrnlId;
 }
 
 JournalDirectory
-AsyncJournal::getJournalDir() const
-{
+AsyncJournal::getJournalDir() const {
     return m_jrnlDir;
 }
 
 std::string
-AsyncJournal::getJournalDirName() const
-{
+AsyncJournal::getJournalDirName() const {
     return m_jrnlDir.getFqName();
 }
 
 std::string
-AsyncJournal::getBaseFileName() const
-{
+AsyncJournal::getBaseFileName() const {
     return m_baseFileName;
 }
 
 const JournalRunState&
-AsyncJournal::getState() const
-{
+AsyncJournal::getState() const {
     return m_jrnlState;
 }
 
 const JournalParameters*
-AsyncJournal::getParameters() const
-{
+AsyncJournal::getParameters() const {
     return m_jrnlParamsPtr;
 }
 
 void
 AsyncJournal::initialize(const JournalParameters* jpPtr,
-                         AioCallback* const aiocbPtr)
-{
+                         AioCallback* const aiocbPtr) {
     m_jrnlParamsPtr = jpPtr;
     m_aioCallbackPtr = aiocbPtr;
     // --- temp code ---
@@ -108,8 +100,7 @@ AsyncJournal::enqueue(DataToken* dtokPtr,
                       const std::size_t /*dataLen*/,
                       const void* /*tidPtr*/,
                       const std::size_t /*tidLen*/,
-                      const bool /*transientFlag*/)
-{
+                      const bool /*transientFlag*/) {
     dtokPtr->getDataOpState().enqueue();
     // --- temp code ---
     { // --- START OF CRITICAL SECTION ---
@@ -127,8 +118,7 @@ AsyncJournal::enqueue(DataToken* dtokPtr,
 jrnlOpRes
 AsyncJournal::dequeue(DataToken* const dtokPtr,
                       const void* /*tidPtr*/,
-                      const std::size_t /*tidLen*/)
-{
+                      const std::size_t /*tidLen*/) {
     dtokPtr->getDataOpState().dequeue();
     dtokPtr->setDequeueRecordId(dtokPtr->getRecordId());
     // --- temp code ---
@@ -145,22 +135,19 @@ AsyncJournal::dequeue(DataToken* const dtokPtr,
 }
 
 jrnlOpRes
-AsyncJournal::commit()
-{
+AsyncJournal::commit() {
     /// \todo TODO - provide implementation
     return 0;
 }
 
 jrnlOpRes
-AsyncJournal::abort()
-{
+AsyncJournal::abort() {
     /// \todo TODO - provide implementation
     return 0;
 }
 
 jrnlOpRes
-AsyncJournal::flush()
-{
+AsyncJournal::flush() {
     // --- temp code ---
     // --- START OF CRITICAL SECTION ---
     ScopedTryLock l(m_writeDataTokensLock);
@@ -174,8 +161,7 @@ AsyncJournal::flush()
 
 // protected
 jrnlOpRes
-AsyncJournal::flushNoLock()
-{
+AsyncJournal::flushNoLock() {
     // --- temp code ---
     // Normally the page would be written to disk using libaio here (still to do).
     uint32_t cnt = 0UL;
@@ -190,8 +176,7 @@ AsyncJournal::flushNoLock()
 }
 
 jrnlOpRes
-AsyncJournal::sync(const double timeout)
-{
+AsyncJournal::sync(const double timeout) {
     // --- temp code ---
     // --- START OF CRITICAL SECTION ---
     ScopedTryLock l(m_writeDataTokensLock);
@@ -205,8 +190,7 @@ AsyncJournal::sync(const double timeout)
 
 // protected
 jrnlOpRes
-AsyncJournal::syncNoLock(const double /*timeout*/)
-{
+AsyncJournal::syncNoLock(const double /*timeout*/) {
     // --- temp code ---
     if (m_callbackDataTokens.size()) {
         processCompletedAioWriteEvents();
@@ -216,8 +200,7 @@ AsyncJournal::syncNoLock(const double /*timeout*/)
 }
 
 void
-AsyncJournal::processCompletedAioWriteEvents(const double /*timeout*/)
-{
+AsyncJournal::processCompletedAioWriteEvents(const double /*timeout*/) {
     // --- temp code ---
     // --- START OF CRITICAL SECTION 1 ---
     ScopedLock l1(m_callbackDataTokensLock);

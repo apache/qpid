@@ -34,8 +34,7 @@ namespace common {
 class TestResult : public ScopedTimable, public Streamable
 {
 public:
-    TestResult();
-    virtual ~TestResult();
+    virtual ~TestResult() {}
     void toStream(std::ostream& os = std::cout) const = 0;
 };
 

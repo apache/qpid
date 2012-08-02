@@ -49,32 +49,27 @@ EnqueueHeader::EnqueueHeader(const EnqueueHeader& eh) :
         EventHeader(eh)
 {}
 
-EnqueueHeader::~EnqueueHeader()
-{}
+EnqueueHeader::~EnqueueHeader() {}
 
 bool
-EnqueueHeader::getTransientFlag() const
-{
+EnqueueHeader::getTransientFlag() const {
     return m_flags & ENQ_HDR_TRANSIENT_MASK;
 }
 
 void
-EnqueueHeader::setTransientFlag(const bool transient)
-{
+EnqueueHeader::setTransientFlag(const bool transient) {
     m_flags = transient ?
               m_flags | ENQ_HDR_TRANSIENT_MASK :
               m_flags & (~ENQ_HDR_TRANSIENT_MASK);
 }
 
 bool
-EnqueueHeader::getExternalFlag() const
-{
+EnqueueHeader::getExternalFlag() const {
     return m_flags & ENQ_HDR_EXTERNAL_MASK;
 }
 
 void
-EnqueueHeader::setExternalFlag(const bool external)
-{
+EnqueueHeader::setExternalFlag(const bool external) {
     m_flags = external ?
               m_flags | ENQ_HDR_EXTERNAL_MASK :
               m_flags & (~ENQ_HDR_EXTERNAL_MASK);
@@ -82,8 +77,7 @@ EnqueueHeader::setExternalFlag(const bool external)
 
 //static
 uint64_t
-EnqueueHeader::getHeaderSize()
-{
+EnqueueHeader::getHeaderSize() {
     return sizeof(EnqueueHeader);
 }
 

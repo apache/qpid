@@ -34,12 +34,10 @@ TestResult::TestResult(const tests::storePerftools::common::TestParameters& tp) 
         m_testParams(tp)
 {}
 
-TestResult::~TestResult()
-{}
+TestResult::~TestResult() {}
 
 void
-TestResult::toStream(std::ostream& os) const
-{
+TestResult::toStream(std::ostream& os) const {
     double msgsRate;
     os << "TEST RESULTS:" << std::endl;
     os << "         Msgs per thread: " << m_testParams.m_numMsgs << std::endl;

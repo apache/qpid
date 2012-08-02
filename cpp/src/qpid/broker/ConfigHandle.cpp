@@ -44,14 +44,12 @@ ConfigHandle::ConfigHandle(const ConfigHandle& r) :
     PrivateImpl::copy(*this, r);
 }
 
-ConfigHandle::~ConfigHandle()
-{
+ConfigHandle::~ConfigHandle() {
     PrivateImpl::dtor(*this);
 }
 
 ConfigHandle&
-ConfigHandle::operator=(const ConfigHandle& r)
-{
+ConfigHandle::operator=(const ConfigHandle& r) {
     return PrivateImpl::assign(*this, r);
 }
 

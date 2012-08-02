@@ -42,81 +42,68 @@ DataToken::DataToken(const recordId_t rid) :
 DataToken::~DataToken() {}
 
 const DataOpState&
-DataToken::getDataOpState() const
-{
+DataToken::getDataOpState() const {
     return m_dataOpState;
 }
 
 DataOpState&
-DataToken::getDataOpState()
-{
+DataToken::getDataOpState() {
     return m_dataOpState;
 }
 
 const DataWrComplState&
-DataToken::getDataWrComplState() const
-{
+DataToken::getDataWrComplState() const {
     return m_dataWrComplState;
 }
 
 DataWrComplState&
-DataToken::getDataWrComplState()
-{
+DataToken::getDataWrComplState() {
     return m_dataWrComplState;
 }
 
 bool
-DataToken::isTransient() const
-{
+DataToken::isTransient() const {
     return m_transientFlag;
 }
 
 bool
-DataToken::isExternal() const
-{
+DataToken::isExternal() const {
     return m_externalFlag;
 }
 
 const std::string&
-DataToken::getExternalLocation() const
-{
+DataToken::getExternalLocation() const {
     return m_externalLocation;
 }
 
 recordId_t
-DataToken::getRecordId() const
-{
+DataToken::getRecordId() const {
     return m_recordId;
 }
 
 bool
-DataToken::isRecordIdExternal() const
-{
+DataToken::isRecordIdExternal() const {
     return m_externalRecordIdFlag;
 }
 
 recordId_t
-DataToken::getDequeueRecordId() const
-{
+DataToken::getDequeueRecordId() const {
     return m_dequeueRecordId;
 }
 
 void
-DataToken::setRecordId(const recordId_t rid)
-{
+DataToken::setRecordId(const recordId_t rid) {
     m_recordId = rid;
     m_externalRecordIdFlag = true;
 }
 
 void
-DataToken::setDequeueRecordId(const recordId_t drid)
-{
+DataToken::setDequeueRecordId(const recordId_t drid) {
     m_dequeueRecordId = drid;
 }
 
 void
-DataToken::toStream(std::ostream& os) const
-{
+DataToken::toStream(std::ostream& os) const {
     /// \todo TODO: Implementation required
     os << "status string";
 }

@@ -31,8 +31,7 @@ namespace qpid {
 namespace broker {
 
 void
-Plugin::earlyInitialize(Target& target)
-{
+Plugin::earlyInitialize(Target& target) {
     Broker* broker = dynamic_cast<Broker*>(&target);
     if (!broker) return;
     DataDir& dataDir = broker->getDataDir ();
@@ -52,8 +51,7 @@ Plugin::earlyInitialize(Target& target)
 }
 
 void
-Plugin::initialize(Target& target)
-{
+Plugin::initialize(Target& target) {
     Broker* broker = dynamic_cast<Broker*>(&target);
     if (!broker || !m_store) return;
 
@@ -67,14 +65,12 @@ Plugin::initialize(Target& target)
 }
 
 void
-Plugin::finalize()
-{
+Plugin::finalize() {
     m_store.reset();
 }
 
 qpid::Options*
-Plugin::getOptions()
-{
+Plugin::getOptions() {
     return &m_options;
 }
 

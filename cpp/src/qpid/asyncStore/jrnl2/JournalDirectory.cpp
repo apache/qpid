@@ -42,16 +42,14 @@ JournalDirectory::JournalDirectory(const std::string& fqName) :
 {}
 
 const
-std::string JournalDirectory::getFqName() const
-{
+std::string JournalDirectory::getFqName() const {
     return m_fqName;
 }
 
 void
 JournalDirectory::setFqName(const std::string newFqName,
                             const bool createNew,
-                            const bool destroyExisting)
-{
+                            const bool destroyExisting) {
     if (m_fqName.compare(newFqName) != 0) {
         if (destroyExisting) {
             destroy();
@@ -66,8 +64,7 @@ JournalDirectory::setFqName(const std::string newFqName,
 // static
 bool
 JournalDirectory::s_exists(const std::string& fqName,
-                           const bool checkIsWritable)
-{
+                           const bool checkIsWritable) {
     struct stat buff;
     if (::lstat(fqName.c_str(), &buff)) {
         if (errno == ENOENT) // No such dir or file
@@ -83,8 +80,7 @@ JournalDirectory::s_exists(const std::string& fqName,
 
 // static
 void
-JournalDirectory::s_create(const std::string& fqName)
-{
+JournalDirectory::s_create(const std::string& fqName) {
     std::size_t fdp = fqName.find_last_of('/');
     if (fdp != std::string::npos) {
         std::string parent_dir = fqName.substr(0, fdp);
@@ -100,8 +96,7 @@ JournalDirectory::s_create(const std::string& fqName)
 }
 
 void
-JournalDirectory::create()
-{
+JournalDirectory::create() {
     s_create(m_fqName);
     m_verified = true;
 }
@@ -109,14 +104,12 @@ JournalDirectory::create()
 //static
 void
 JournalDirectory::s_clear(const std::string& fqName,
-                          const bool recursiveDelete)
-{
+                          const bool recursiveDelete) {
     s_destroy(fqName, recursiveDelete, true);
 }
 
 void
-JournalDirectory::clear(const bool recursiveDelete)
-{
+JournalDirectory::clear(const bool recursiveDelete) {
     s_clear(m_fqName, recursiveDelete);
 }
 
@@ -124,8 +117,7 @@ JournalDirectory::clear(const bool recursiveDelete)
 void
 JournalDirectory::s_destroy(const std::string& fqName,
                             const bool recursiveDelete,
-                            const bool childrenOnly)
-{
+                            const bool childrenOnly) {
     if (s_exists(fqName)) {
         DIR* dir = ::opendir(fqName.c_str());
         if (dir) {
@@ -161,8 +153,7 @@ JournalDirectory::s_destroy(const std::string& fqName,
 
 void
 JournalDirectory::destroy(const bool recursiveDelete,
-                          const bool childrenOnly)
-{
+                          const bool childrenOnly) {
     if (m_verified) {
         s_destroy(m_fqName, recursiveDelete, childrenOnly);
         m_verified = false;
@@ -170,8 +161,7 @@ JournalDirectory::destroy(const bool recursiveDelete,
 }
 
 bool
-JournalDirectory::isVerified() const
-{
+JournalDirectory::isVerified() const {
     return m_verified;
 }
 

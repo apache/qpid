@@ -31,12 +31,10 @@ ScopedTimable::ScopedTimable() :
     m_elapsed(0.0)
 {}
 
-ScopedTimable::~ScopedTimable()
-{}
+ScopedTimable::~ScopedTimable() {}
 
 double&
-ScopedTimable::getElapsedRef()
-{
+ScopedTimable::getElapsedRef() {
     return m_elapsed;
 }
 

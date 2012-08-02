@@ -50,18 +50,15 @@ TxnHandleImpl::TxnHandleImpl(const std::string& xid,
         m_txnBuffer(tb)
 {}
 
-TxnHandleImpl::~TxnHandleImpl()
-{}
+TxnHandleImpl::~TxnHandleImpl() {}
 
 const std::string&
-TxnHandleImpl::getXid() const
-{
+TxnHandleImpl::getXid() const {
     return m_xid;
 }
 
 bool
-TxnHandleImpl::is2pc() const
-{
+TxnHandleImpl::is2pc() const {
     return m_tpcFlag;
 }
 

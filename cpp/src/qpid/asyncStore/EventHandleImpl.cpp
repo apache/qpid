@@ -32,12 +32,10 @@ EventHandleImpl::EventHandleImpl(qpid::broker::QueueHandle& queueHandle,
         m_key(key)
 {}
 
-EventHandleImpl::~EventHandleImpl()
-{}
+EventHandleImpl::~EventHandleImpl() {}
 
 const std::string&
-EventHandleImpl::getKey() const
-{
+EventHandleImpl::getKey() const {
     return m_key;
 }
 

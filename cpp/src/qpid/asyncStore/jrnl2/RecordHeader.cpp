@@ -56,12 +56,10 @@ RecordHeader::RecordHeader(const RecordHeader& rh) :
         m_recordId(rh.m_recordId)
 {}
 
-RecordHeader::~RecordHeader()
-{}
+RecordHeader::~RecordHeader() {}
 
 void
-RecordHeader::copy(const RecordHeader& rh)
-{
+RecordHeader::copy(const RecordHeader& rh) {
     m_magic = rh.m_magic;
     m_version = rh.m_version;
     m_bigEndianFlag = rh.m_bigEndianFlag;
@@ -70,8 +68,7 @@ RecordHeader::copy(const RecordHeader& rh)
 }
 
 void
-RecordHeader::reset()
-{
+RecordHeader::reset() {
     m_magic = 0;
     m_version = 0;
     m_bigEndianFlag = 0;
@@ -80,14 +77,12 @@ RecordHeader::reset()
 }
 
 bool
-RecordHeader::getOverwriteIndicator() const
-{
+RecordHeader::getOverwriteIndicator() const {
     return m_flags & HDR_OVERWRITE_INDICATOR_MASK;
 }
 
 void
-RecordHeader::setOverwriteIndicator(const bool owi)
-{
+RecordHeader::setOverwriteIndicator(const bool owi) {
     m_flags = owi ?
               m_flags | HDR_OVERWRITE_INDICATOR_MASK :
               m_flags & (~HDR_OVERWRITE_INDICATOR_MASK);
@@ -95,14 +90,12 @@ RecordHeader::setOverwriteIndicator(const bool owi)
 
 //static
 uint64_t
-RecordHeader::getHeaderSize()
-{
+RecordHeader::getHeaderSize() {
     return static_cast<uint64_t>(sizeof(RecordHeader));
 }
 
 uint32_t
-RecordHeader::getCheckSum(uint32_t initialValue) const
-{
+RecordHeader::getCheckSum(uint32_t initialValue) const {
     uint32_t cs = initialValue;
     for (unsigned char* p = (unsigned char*)this;
                         p < (unsigned char*)this + getHeaderSize() + getBodySize();

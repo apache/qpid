@@ -126,49 +126,41 @@ JournalError::JournalError(const uint32_t errorCode,
     formatWhatStr();
 }
 
-JournalError::~JournalError() throw ()
-{}
+JournalError::~JournalError() throw () {}
 
 const char*
-JournalError::what() const throw ()
-{
+JournalError::what() const throw () {
     return m_what.c_str();
 }
 
 uint32_t
-JournalError::getErrorCode() const throw ()
-{
+JournalError::getErrorCode() const throw () {
     return m_errorCode;
 }
 
 const std::string
-JournalError::getAdditionalInfo() const throw ()
-{
+JournalError::getAdditionalInfo() const throw () {
     return m_additionalInfo;
 }
 
 const std::string
-JournalError::getThrowingClass() const throw ()
-{
+JournalError::getThrowingClass() const throw () {
     return m_throwingClass;
 }
 
 const std::string
-JournalError::getThrowingFunction() const throw ()
-{
+JournalError::getThrowingFunction() const throw () {
     return m_throwingFunction;
 }
 
 void
-JournalError::toStream(std::ostream& os) const
-{
+JournalError::toStream(std::ostream& os) const {
     os << what();
 }
 
 // protected
 void
-JournalError::formatWhatStr() throw ()
-{
+JournalError::formatWhatStr() throw () {
     try {
         const bool ai = !m_additionalInfo.empty();
         const bool tc = !m_throwingClass.empty();
@@ -198,8 +190,7 @@ JournalError::formatWhatStr() throw ()
 
 // protected
 const char*
-JournalError::className()
-{
+JournalError::className() {
     return s_className;
 }
 
@@ -229,8 +220,7 @@ const uint32_t JournalError::JERR_DIRNOTEMPTY       = 0x0208;
 
 // static
 const char*
-JournalError::s_errorMessage(const uint32_t err_no) throw ()
-{
+JournalError::s_errorMessage(const uint32_t err_no) throw () {
     s_errorMapIterator = s_errorMap.find(err_no);
     if (s_errorMapIterator == s_errorMap.end())
         return "<Unknown error code>";
@@ -243,8 +233,7 @@ bool JournalError::s_initializedFlag = JournalError::s_initialize();
 
 // private static
 bool
-JournalError::s_initialize()
-{
+JournalError::s_initialize() {
     s_errorMap[JERR_PTHREAD] = "JERR_PTHREAD: pthread operation failure";
     s_errorMap[JERR_RTCLOCK] = "JERR_RTCLOCK: realtime clock operation failure";
 

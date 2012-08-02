@@ -238,8 +238,7 @@ SimpleTxnBuffer::getNumOps() const {
 
 // private
 void
-SimpleTxnBuffer::createLocalXid()
-{
+SimpleTxnBuffer::createLocalXid() {
     uuid_t uuid;
     {
         qpid::sys::ScopedLock<qpid::sys::Mutex> l(s_uuidMutex);

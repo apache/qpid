@@ -61,12 +61,10 @@ TestOptions::TestOptions(const uint32_t numMsgs,
     doAddOptions();
 }
 
-TestOptions::~TestOptions()
-{}
+TestOptions::~TestOptions() {}
 
 void
-TestOptions::printVals(std::ostream& os) const
-{
+TestOptions::printVals(std::ostream& os) const {
     os << "TEST OPTIONS:" << std::endl;
     os << "                       Number of queues [-q, --num-queues]: " << m_numQueues << std::endl;
     os << "       Number of producers per queue [-p, --num-producers]: " << m_numEnqThreadsPerQueue << std::endl;
@@ -76,8 +74,7 @@ TestOptions::printVals(std::ostream& os) const
 }
 
 void
-TestOptions::validate()
-{
+TestOptions::validate() {
     if (((m_numEnqThreadsPerQueue * m_numMsgs) % m_numDeqThreadsPerQueue) != 0) {
         throw qpid::Exception("Parameter Error: (num-producers * num-msgs) must be a multiple of num-consumers.");
     }
@@ -85,8 +82,7 @@ TestOptions::validate()
 
 // private
 void
-TestOptions::doAddOptions()
-{
+TestOptions::doAddOptions() {
     addOptions()
             ("num-queues,q", qpid::optValue(m_numQueues, "N"),
                     "Number of queues")

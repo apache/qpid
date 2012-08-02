@@ -34,24 +34,20 @@ TxnAsyncContext::TxnAsyncContext(SimpleTxnBuffer* const tb,
         m_arq(arq)
 {}
 
-TxnAsyncContext::~TxnAsyncContext()
-{}
+TxnAsyncContext::~TxnAsyncContext() {}
 
 SimpleTxnBuffer*
-TxnAsyncContext::getTxnBuffer() const
-{
+TxnAsyncContext::getTxnBuffer() const {
     return m_tb;
 }
 
 AsyncResultQueue*
-TxnAsyncContext::getAsyncResultQueue() const
-{
+TxnAsyncContext::getAsyncResultQueue() const {
     return m_arq;
 }
 
 void
-TxnAsyncContext::invokeCallback(const AsyncResultHandle* const arh) const
-{
+TxnAsyncContext::invokeCallback(const AsyncResultHandle* const arh) const {
     if (m_rcb) {
         m_rcb(arh);
     }

@@ -45,24 +45,20 @@ AsyncResultHandleImpl::AsyncResultHandleImpl(const int errNo,
         m_bc(bc)
 {}
 
-AsyncResultHandleImpl::~AsyncResultHandleImpl()
-{}
+AsyncResultHandleImpl::~AsyncResultHandleImpl() {}
 
 int
-AsyncResultHandleImpl::getErrNo() const
-{
+AsyncResultHandleImpl::getErrNo() const {
     return m_errNo;
 }
 
 std::string
-AsyncResultHandleImpl::getErrMsg() const
-{
+AsyncResultHandleImpl::getErrMsg() const {
     return m_errMsg;
 }
 
 boost::shared_ptr<BrokerAsyncContext>
-AsyncResultHandleImpl::getBrokerAsyncContext() const
-{
+AsyncResultHandleImpl::getBrokerAsyncContext() const {
     return m_bc;
 }
 

@@ -36,21 +36,18 @@ OperationQueue::OperationQueue(const boost::shared_ptr<qpid::sys::Poller>& polle
     m_opQueue.start();
 }
 
-OperationQueue::~OperationQueue()
-{
+OperationQueue::~OperationQueue() {
     m_opQueue.stop();
 }
 
 void
-OperationQueue::submit(boost::shared_ptr<const AsyncOperation> op)
-{
+OperationQueue::submit(boost::shared_ptr<const AsyncOperation> op) {
     m_opQueue.push(op);
 }
 
 // private
 OperationQueue::OpQueue::Batch::const_iterator
-OperationQueue::handle(const OperationQueue::OpQueue::Batch& e)
-{
+OperationQueue::handle(const OperationQueue::OpQueue::Batch& e) {
     try {
         for (OpQueue::Batch::const_iterator i = e.begin(); i != e.end(); ++i) {
             boost::shared_ptr<qpid::broker::BrokerAsyncContext> bc = (*i)->getBrokerContext();
