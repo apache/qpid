@@ -97,6 +97,12 @@
       <level value="info"/>
     </logger>
 
+    <!-- Subscription state may toggle frequently for clients with low prefetch
+    so switch off this operational logging by default-->
+    <logger additivity="true" name="qpid.message.subscription.state">
+      <level value="off"/>
+    </logger>
+
     <!-- Examples of additional logging settings -->
     <!-- Used to generate extra debug. See debug.log4j.xml -->
     
