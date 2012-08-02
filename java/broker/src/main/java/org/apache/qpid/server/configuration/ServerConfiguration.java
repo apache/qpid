@@ -66,6 +66,7 @@ public class ServerConfiguration extends ConfigurationPlugin
     public static final int JMXPORT_CONNECTORSERVER_OFFSET = 100;
     public static final int DEFAULT_HTTP_MANAGEMENT_PORT = 8080;
     public static final int DEFAULT_HTTPS_MANAGEMENT_PORT = 8443;
+    public static final long DEFAULT_MINIMUM_ALERT_REPEAT_GAP = 30000l;
 
     public static final String QPID_HOME = "QPID_HOME";
     public static final String QPID_WORK = "QPID_WORK";
@@ -713,7 +714,7 @@ public class ServerConfiguration extends ConfigurationPlugin
 
     public long getMinimumAlertRepeatGap()
     {
-        return getLongValue("minimumAlertRepeatGap");
+        return getLongValue("minimumAlertRepeatGap", DEFAULT_MINIMUM_ALERT_REPEAT_GAP);
     }
 
     public long getCapacity()
