@@ -637,7 +637,7 @@ class Subscription_1_0 implements Subscription
     public AMQSessionModel getSessionModel()
     {
         // TODO
-        return null;
+        return getSession();
     }
 
     @Override
