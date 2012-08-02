@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
+import java.text.MessageFormat;
 import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.ReceivingLinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SendingLinkEndpoint;
@@ -35,18 +36,26 @@ import org.apache.qpid.amqp_1_0.type.transport.*;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.transport.ServerConnection;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.*;
 
-public class Session_1_0 implements SessionEventListener
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CHANNEL_FORMAT;
+
+public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSubject
 {
     private static final Symbol LIFETIME_POLICY = Symbol.valueOf("lifetime-policy");
     private IApplicationRegistry _appRegistry;
@@ -56,6 +65,7 @@ public class Session_1_0 implements SessionEventListener
     private final LinkedHashMap<Integer, ServerTransaction> _openTransactions =
             new LinkedHashMap<Integer, ServerTransaction>();
     private final Connection_1_0 _connection;
+    private UUID _id = UUID.randomUUID();
 
 
     public Session_1_0(VirtualHost vhost, IApplicationRegistry appRegistry, final Connection_1_0 connection)
@@ -405,6 +415,8 @@ public class Session_1_0 implements SessionEventListener
             iter.remove();
         }
 
+        _connection.sessionEnded(this);
+
     }
 
     Integer binaryToInteger(final Binary txnId)
@@ -443,4 +455,153 @@ public class Session_1_0 implements SessionEventListener
     public void forceEnd()
     {
     }
+
+    @Override
+    public UUID getQMFId()
+    {
+        return _id;
+    }
+
+    @Override
+    public AMQConnectionModel getConnectionModel()
+    {
+        return _connection.getModel();
+    }
+
+    @Override
+    public String getClientID()
+    {
+        // TODO
+        return "";
+    }
+
+    @Override
+    public void close() throws AMQException
+    {
+        // TODO - required for AMQSessionModel / management initiated closing
+    }
+
+    @Override
+    public LogSubject getLogSubject()
+    {
+        return this;
+    }
+
+    @Override
+    public void checkTransactionStatus(long openWarn, long openClose, long idleWarn, long idleClose) throws AMQException
+    {
+        // TODO - required for AMQSessionModel / long running transaction detection
+    }
+
+    @Override
+    public void block(AMQQueue queue)
+    {
+        // TODO - required for AMQSessionModel / producer side flow control
+    }
+
+    @Override
+    public void unblock(AMQQueue queue)
+    {
+        // TODO - required for AMQSessionModel / producer side flow control
+    }
+
+    @Override
+    public void block()
+    {
+        // TODO - required for AMQSessionModel / producer side flow control
+    }
+
+    @Override
+    public void unblock()
+    {
+        // TODO - required for AMQSessionModel / producer side flow control
+    }
+
+    @Override
+    public boolean getBlocking()
+    {
+        // TODO
+        return false;
+    }
+
+    @Override
+    public boolean onSameConnection(InboundMessage inbound)
+    {
+        // TODO
+        return false;
+    }
+
+    @Override
+    public int getUnacknowledgedMessageCount()
+    {
+        // TODO
+        return 0;
+    }
+
+    @Override
+    public Long getTxnCount()
+    {
+        // TODO
+        return 0l;
+    }
+
+    @Override
+    public Long getTxnStart()
+    {
+        // TODO
+        return 0l;
+    }
+
+    @Override
+    public Long getTxnCommits()
+    {
+        // TODO
+        return 0l;
+    }
+
+    @Override
+    public Long getTxnRejects()
+    {
+        // TODO
+        return 0l;
+    }
+
+    @Override
+    public int getChannelId()
+    {
+        // TODO
+        return 0;
+    }
+
+    @Override
+    public int getConsumerCount()
+    {
+        // TODO
+        return 0;
+    }
+
+    @Override
+    public int compareTo(AMQSessionModel o)
+    {
+        return getQMFId().compareTo(o.getQMFId());
+    }
+
+
+
+    public String toLogString()
+    {
+        long connectionId = getConnectionModel().getConnectionId();
+
+        String remoteAddress = getConnectionModel().getRemoteAddressString();
+
+        return "[" +
+               MessageFormat.format(CHANNEL_FORMAT,
+                                    connectionId,
+                                    getClientID(),
+                                    remoteAddress,
+                                    _vhost.getName(), // TODO - virtual host
+                                    0) // TODO - channel)
+            + "] ";
+    }
+
 }
