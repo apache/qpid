@@ -176,20 +176,29 @@ public class QueueConfigurationTest extends TestCase
         assertEquals(1, qConf.getMaximumMessageCount());
     }
 
-    public void testGetMinimumAlertRepeatGap() throws ConfigurationException
+    public void testGetMinimumAlertRepeatGap() throws Exception
     {
-        // Check default value
-        QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
-        assertEquals(0, qConf.getMinimumAlertRepeatGap());
+        try
+        {
+            ApplicationRegistry registry = new TestApplicationRegistry(new ServerConfiguration(_env));
+            ApplicationRegistry.initialise(registry);
+            // Check default value
+            QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
+            assertEquals(ServerConfiguration.DEFAULT_MINIMUM_ALERT_REPEAT_GAP, qConf.getMinimumAlertRepeatGap());
 
-        // Check explicit value
-        VirtualHostConfiguration vhostConfig = overrideConfiguration("minimumAlertRepeatGap", 2);
-        qConf = new QueueConfiguration("test", vhostConfig);
-        assertEquals(2, qConf.getMinimumAlertRepeatGap());
+            // Check explicit value
+            VirtualHostConfiguration vhostConfig = overrideConfiguration("minimumAlertRepeatGap", 2);
+            qConf = new QueueConfiguration("test", vhostConfig);
+            assertEquals(2, qConf.getMinimumAlertRepeatGap());
 
-        // Check inherited value
-        qConf = new QueueConfiguration("test", _fullHostConf);
-        assertEquals(1, qConf.getMinimumAlertRepeatGap());
+            // Check inherited value
+            qConf = new QueueConfiguration("test", _fullHostConf);
+            assertEquals(1, qConf.getMinimumAlertRepeatGap());
+        }
+        finally
+        {
+            ApplicationRegistry.remove();
+        }
     }
 
     public void testSortQueueConfiguration() throws ConfigurationException

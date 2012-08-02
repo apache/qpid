@@ -394,7 +394,7 @@ public class ServerConfigurationTest extends QpidTestCase
     {
         // Check default
         _serverConfig.initialise();
-        assertEquals(0, _serverConfig.getMinimumAlertRepeatGap());
+        assertEquals(30000l, _serverConfig.getMinimumAlertRepeatGap());
 
         // Check value we set
         _config.setProperty("minimumAlertRepeatGap", 10L);
