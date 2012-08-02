@@ -221,8 +221,8 @@ class PollerPrivate {
         }
     };
 
-    static ReadablePipe alwaysReadable;
-    static int alwaysReadableFd;
+    ReadablePipe alwaysReadable;
+    int alwaysReadableFd;
 
     class InterruptHandle: public PollerHandle {
         std::queue<PollerHandle*> handles;
@@ -290,6 +290,7 @@ class PollerPrivate {
     }
 
     PollerPrivate() :
+        alwaysReadableFd(alwaysReadable.getFD()),
         epollFd(::epoll_create(DefaultFds)),
         isShutdown(false) {
         QPID_POSIX_CHECK(epollFd);
@@ -327,9 +328,6 @@ class PollerPrivate {
         QPID_POSIX_CHECK(::epoll_ctl(epollFd, EPOLL_CTL_MOD, alwaysReadableFd, &epe));  
     }
 };
-
-PollerPrivate::ReadablePipe PollerPrivate::alwaysReadable;
-int PollerPrivate::alwaysReadableFd = alwaysReadable.getFD();
 
 void Poller::registerHandle(PollerHandle& handle) {
     PollerHandlePrivate& eh = *handle.impl;
