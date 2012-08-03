@@ -26,15 +26,6 @@ import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Test : AMQPManagementActorTest
- * Validate the AMQPManagementActor class.
- *
- * The test creates a new AMQPActor and then logs a message using it.
- *
- * The test then verifies that the logged message was the only one created and
- * that the message contains the required message.
- */
 public class ManagementActorTest extends BaseActorTestCase
 {
 
@@ -131,4 +122,67 @@ public class ManagementActorTest extends BaseActorTestCase
         assertTrue("Message contains the [mng: prefix", logMessage.contains("[mng:guest(" + IP + ")"));
     }
 
+    public void testGetLogMessageWithSubject()
+    {
+        assertLogMessageInRMIThreadWithPrincipal("RMI TCP Connection(" + CONNECTION_ID + ")-" + IP, "my_principal");
+    }
+
+    public void testGetLogMessageWithoutSubjectButWithActorPrincipal()
+    {
+        String principalName = "my_principal";
+        _amqpActor = new ManagementActor(_rootLogger, principalName);
+        String message = _amqpActor.getLogMessage();
+        assertEquals("Unexpected log message", "[mng:" + principalName + "(" + IP + ")] ", message);
+    }
+
+    /** It's necessary to test successive calls because ManagementActor caches its log message based on thread and principal name */
+    public void testGetLogMessageCaching()
+    {
+        String originalThreadName = "RMI TCP Connection(1)-" + IP;
+        assertLogMessageInRMIThreadWithoutPrincipal(originalThreadName);
+        assertLogMessageInRMIThreadWithPrincipal(originalThreadName, "my_principal");
+        assertLogMessageInRMIThreadWithPrincipal("RMI TCP Connection(2)-" + IP, "my_principal");
+    }
+
+    public void testGetLogMessageAfterRemovingSubject()
+    {
+        assertLogMessageInRMIThreadWithPrincipal("RMI TCP Connection(1)-" + IP, "my_principal");
+
+        Thread.currentThread().setName("RMI TCP Connection(2)-" + IP );
+        String message = _amqpActor.getLogMessage();
+        assertEquals("Unexpected log message", "[mng:N/A(" + IP + ")] ", message);
+
+        assertLogMessageWithoutPrincipal("TEST");
+    }
+
+    private void assertLogMessageInRMIThreadWithoutPrincipal(String threadName)
+    {
+        Thread.currentThread().setName(threadName );
+        String message = _amqpActor.getLogMessage();
+        assertEquals("Unexpected log message", "[mng:N/A(" + IP + ")] ", message);
+    }
+
+    private void assertLogMessageWithoutPrincipal(String threadName)
+    {
+        Thread.currentThread().setName(threadName );
+        String message = _amqpActor.getLogMessage();
+        assertEquals("Unexpected log message", "[" + threadName +"] ", message);
+    }
+
+    private void assertLogMessageInRMIThreadWithPrincipal(String threadName, String principalName)
+    {
+        Thread.currentThread().setName(threadName);
+        Subject subject = new Subject(true, Collections.singleton(new JMXPrincipal(principalName)), Collections.EMPTY_SET,
+                Collections.EMPTY_SET);
+
+        final String message = Subject.doAs(subject, new PrivilegedAction<String>()
+        {
+            public String run()
+            {
+                return _amqpActor.getLogMessage();
+            }
+        });
+
+        assertEquals("Unexpected log message", "[mng:" + principalName + "(" + IP + ")] ", message);
+    }
 }
