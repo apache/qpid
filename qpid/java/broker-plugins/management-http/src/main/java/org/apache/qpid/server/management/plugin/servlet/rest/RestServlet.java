@@ -16,9 +16,9 @@
  */
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.SocketAddress;
+import java.io.Writer;
 import java.util.*;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -48,6 +48,8 @@ public class RestServlet extends AbstractServlet
     private Class<? extends ConfiguredObject>[] _hierarchy;
 
     private volatile boolean initializationRequired = false;
+
+    private final ConfiguredObjectToMapConverter _objectConverter = new ConfiguredObjectToMapConverter();
 
     public RestServlet()
     {
@@ -133,7 +135,7 @@ public class RestServlet extends AbstractServlet
 
         for(int i = 0; i < _hierarchy.length; i++)
         {
-            if(i == 0 || Model.getChildTypes(_hierarchy[i - 1]).contains(_hierarchy[i]))
+            if(i == 0 || Model.getInstance().getChildTypes(_hierarchy[i - 1]).contains(_hierarchy[i]))
             {
 
                 for(ConfiguredObject parent : parents)
@@ -257,7 +259,7 @@ public class RestServlet extends AbstractServlet
                                                                 ConfiguredObject child)
     {
         Collection<ConfiguredObject> ancestors = new HashSet<ConfiguredObject>();
-        Collection<Class<? extends ConfiguredObject>> parentTypes = Model.getParentTypes(childType);
+        Collection<Class<? extends ConfiguredObject>> parentTypes = Model.getInstance().getParentTypes(childType);
 
         for(Class<? extends ConfiguredObject> parentClazz : parentTypes)
         {
@@ -282,119 +284,33 @@ public class RestServlet extends AbstractServlet
         return ancestors;
     }
 
-
-    protected Map<String, Object> convertObjectToMap(final ConfiguredObject confObject,
-                                                     Class<? extends  ConfiguredObject> clazz,
-                                                     int depth)
-    {
-        Map<String, Object> object = new LinkedHashMap<String, Object>();
-
-        for(String name : confObject.getAttributeNames())
-        {
-            Object value = confObject.getAttribute(name);
-            if(value instanceof ConfiguredObject)
-            {
-                object.put(name, ((ConfiguredObject) value).getName());
-            }
-            else if(value != null)
-            {
-                object.put(name, value);
-            }
-        }
-
-        Statistics statistics = confObject.getStatistics();
-        Map<String, Object> statMap = new HashMap<String, Object>();
-        for(String name : statistics.getStatisticNames())
-        {
-            Object value = statistics.getStatistic(name);
-            if(value != null)
-            {
-                statMap.put(name, value);
-            }
-        }
-
-        if(!statMap.isEmpty())
-        {
-            object.put("statistics", statMap);
-        }
-
-        if(depth > 0)
-        {
-            for(Class<? extends ConfiguredObject> childClass : Model.getChildTypes(clazz))
-            {
-                Collection<? extends ConfiguredObject> children = confObject.getChildren(childClass);
-                if(children != null)
-                {
-                    List<Map<String, Object>> childObjects = new ArrayList<Map<String, Object>>();
-
-                    for(ConfiguredObject child : children)
-                    {
-                        childObjects.add(convertObjectToMap(child, childClass, depth-1));
-                    }
-
-                    if(!childObjects.isEmpty())
-                    {
-                        object.put(childClass.getSimpleName().toLowerCase()+"s",childObjects);
-                    }
-                }
-            }
-        }
-        return object;
-    }
-
     @Override
     protected void onGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);
 
-        response.setHeader("Cache-Control","no-cache");
-        response.setHeader("Pragma","no-cache");
-        response.setDateHeader ("Expires", 0);
+        setCachingHeadersOnResponse(response);
 
         Collection<ConfiguredObject> allObjects = getObjects(request);
 
-        @SuppressWarnings("unchecked")
-        Map params = new HashMap(request.getParameterMap());
-
-        int depth = 1;
-        try
-        {
-            depth = Integer.parseInt(String.valueOf(params.remove("depth")));
-        }
-        catch (NumberFormatException e)
-        {
-            // Ignore
-        }
+        // TODO - sort special params, everything else should act as a filter
+        int depth = getDepthParameterFromRequest(request);
 
         List<Map<String, Object>> output = new ArrayList<Map<String, Object>>();
-
-        // TODO - depth and sort special params, everything else should act as a filter
-        if(request.getParameter(DEPTH_PARAM)!=null)
-        {
-            try
-            {
-                depth = Integer.parseInt(request.getParameter(DEPTH_PARAM));
-            }
-            catch (NumberFormatException e)
-            {
-
-            }
-        }
-
         for(ConfiguredObject configuredObject : allObjects)
         {
-            output.add(convertObjectToMap(configuredObject, getConfiguredClass(),depth));
+            output.add(_objectConverter.convertObjectToMap(configuredObject, getConfiguredClass(),
+                    depth));
         }
 
-        final PrintWriter writer = response.getWriter();
+        final Writer writer = new BufferedWriter(response.getWriter());
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
         mapper.writeValue(writer, output);
 
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);
-
     }
 
     private Class<? extends ConfiguredObject> getConfiguredClass()
@@ -462,7 +378,7 @@ public class RestServlet extends AbstractServlet
                 {
                     for(int j = i-1; j >=0; j--)
                     {
-                        if(Model.getChildTypes(_hierarchy[j]).contains(_hierarchy[i]))
+                        if(Model.getInstance().getChildTypes(_hierarchy[j]).contains(_hierarchy[i]))
                         {
                             for(ConfiguredObject parent : objects[j])
                             {
@@ -482,7 +398,7 @@ public class RestServlet extends AbstractServlet
             }
             List<ConfiguredObject> parents = new ArrayList<ConfiguredObject>();
             Class<? extends ConfiguredObject> objClass = getConfiguredClass();
-            Collection<Class<? extends ConfiguredObject>> parentClasses = Model.getParentTypes(objClass);
+            Collection<Class<? extends ConfiguredObject>> parentClasses = Model.getInstance().getParentTypes(objClass);
             for(int i = _hierarchy.length-2; i >=0 ; i--)
             {
                 if(parentClasses.contains(_hierarchy[i]))
@@ -565,9 +481,7 @@ public class RestServlet extends AbstractServlet
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);
 
-        response.setHeader("Cache-Control","no-cache");
-        response.setHeader("Pragma","no-cache");
-        response.setDateHeader ("Expires", 0);
+        setCachingHeadersOnResponse(response);
         try
         {
             Collection<ConfiguredObject> allObjects = getObjects(request);
@@ -583,4 +497,31 @@ public class RestServlet extends AbstractServlet
             setResponseStatus(response, e);
         }
     }
+
+    private void setCachingHeadersOnResponse(HttpServletResponse response)
+    {
+        response.setHeader("Cache-Control","no-cache");
+        response.setHeader("Pragma","no-cache");
+        response.setDateHeader ("Expires", 0);
+    }
+
+    private int getDepthParameterFromRequest(HttpServletRequest request)
+    {
+        int depth = 1;
+        final String depthString = request.getParameter(DEPTH_PARAM);
+        if(depthString!=null)
+        {
+            try
+            {
+                depth = Integer.parseInt(depthString);
+            }
+            catch (NumberFormatException e)
+            {
+                LOGGER.warn("Could not parse " + depthString + " as integer");
+            }
+        }
+        return depth;
+    }
+
+
 }
