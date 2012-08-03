@@ -157,57 +157,14 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
 
             // Save the subject
             SecurityManager.setThreadSubject(subject);
-
-            // Get the component, type and impact, which may be null
-            String type = getType(method, args);
-            String vhost = getVirtualHost(method, args);
-            int impact = getImpact(method, args);
-
-            // Get the security manager for the virtual host (if set)
-            SecurityManager security;
-            if (vhost == null)
-            {
-                security = _appRegistry.getSecurityManager();
-            }
-            else
-            {
-                security = _appRegistry.getVirtualHostRegistry().getVirtualHost(vhost).getSecurityManager();
-            }
-
-            methodName = getMethodName(method, args);
-            if (isAccessMethod(methodName) || impact == MBeanOperationInfo.INFO)
-            {
-                // Check for read-only method invocation permission
-                if (!security.authoriseMethod(Operation.ACCESS, type, methodName))
-                {
-                    throw new SecurityException("Permission denied: Access " + methodName);
-                }
-            }
-            else
-            {
-                // Check for setting properties permission
-                if (!security.authoriseMethod(Operation.UPDATE, type, methodName))
-                {
-                    throw new SecurityException("Permission denied: Update " + methodName);
-                }
-            }
-
-            boolean oldAccessChecksDisabled = false;
-            if(_managementRightsInferAllAccess)
-            {
-                oldAccessChecksDisabled = SecurityManager.setAccessChecksDisabled(true);
-            }
-
+            CurrentActor.set(_logActor);
             try
             {
-                return doInvokeWrappingWithManagementActor(method, args);
+                return authoriseAndInvoke(method, args);
             }
             finally
             {
-                if(_managementRightsInferAllAccess)
-                {
-                    SecurityManager.setAccessChecksDisabled(oldAccessChecksDisabled);
-                }
+                CurrentActor.remove();
             }
         }
         catch (InvocationTargetException e)
@@ -216,18 +173,59 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
         }
     }
 
-    private Object doInvokeWrappingWithManagementActor(Method method,
-            Object[] args) throws IllegalAccessException,
-            InvocationTargetException
+    private Object authoriseAndInvoke(Method method, Object[] args) throws IllegalAccessException, InvocationTargetException
     {
+        String methodName;
+        // Get the component, type and impact, which may be null
+        String type = getType(method, args);
+        String vhost = getVirtualHost(method, args);
+        int impact = getImpact(method, args);
+
+        // Get the security manager for the virtual host (if set)
+        SecurityManager security;
+        if (vhost == null)
+        {
+            security = _appRegistry.getSecurityManager();
+        }
+        else
+        {
+            security = _appRegistry.getVirtualHostRegistry().getVirtualHost(vhost).getSecurityManager();
+        }
+
+        methodName = getMethodName(method, args);
+        if (isAccessMethod(methodName) || impact == MBeanOperationInfo.INFO)
+        {
+            // Check for read-only method invocation permission
+            if (!security.authoriseMethod(Operation.ACCESS, type, methodName))
+            {
+                throw new SecurityException("Permission denied: Access " + methodName);
+            }
+        }
+        else
+        {
+            // Check for setting properties permission
+            if (!security.authoriseMethod(Operation.UPDATE, type, methodName))
+            {
+                throw new SecurityException("Permission denied: Update " + methodName);
+            }
+        }
+
+        boolean oldAccessChecksDisabled = false;
+        if(_managementRightsInferAllAccess)
+        {
+            oldAccessChecksDisabled = SecurityManager.setAccessChecksDisabled(true);
+        }
+
         try
         {
-            CurrentActor.set(_logActor);
             return method.invoke(_mbs, args);
         }
         finally
         {
-            CurrentActor.remove();
+            if(_managementRightsInferAllAccess)
+            {
+                SecurityManager.setAccessChecksDisabled(oldAccessChecksDisabled);
+            }
         }
     }
 
