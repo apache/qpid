@@ -19,7 +19,6 @@
  -
  -->
 <project name="Management Examples" default="build">
-
     <property name="module.depends" value="management/common"/>
 
     <import file="../../module.xml"/>

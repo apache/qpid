@@ -24,13 +24,8 @@ org.apache.qpid.client.SessionCreateTest#*
 org.apache.qpid.test.client.queue.QueuePolicyTest#testRingPolicy
 org.apache.qpid.test.client.queue.QueuePolicyTest#testRejectPolicy
 
-///////////////////////////////////////////////////////
-//Moved from JavaStandaloneExcludes when it was removed
-///////////////////////////////////////////////////////
-
-//The Java broker doesnt support client auth
-org.apache.qpid.client.ssl.SSLTest#testMultipleCertsInSingleStore
-
 //QPID-3605 Durable subscriber with no-local true receives messages on re-connection
 org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testNoLocalMessagesNotDeliveredAfterReconnection
 
+//QPID-4153 Messages causing a runtime selector error should be dead-lettered (or something similar)
+org.apache.qpid.test.client.message.SelectorTest#testRuntimeSelectorError

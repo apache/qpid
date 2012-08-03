@@ -25,6 +25,7 @@ import org.apache.commons.configuration.XMLConfiguration;
 
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.util.TestApplicationRegistry;
@@ -251,13 +252,13 @@ public class ServerConfigurationTest extends QpidTestCase
     {
         // Check default
         _serverConfig.initialise();
-        assertEquals(true, _serverConfig.getManagementSSLEnabled());
+        assertEquals(false, _serverConfig.getManagementSSLEnabled());
 
         // Check value we set
-        _config.setProperty("management.ssl.enabled", false);
+        _config.setProperty("management.ssl.enabled", true);
         _serverConfig = new ServerConfiguration(_config);
         _serverConfig.initialise();
-        assertEquals(false, _serverConfig.getManagementSSLEnabled());
+        assertEquals(true, _serverConfig.getManagementSSLEnabled());
     }
 
     public void testGetManagementKeystorePassword() throws ConfigurationException
@@ -286,25 +287,17 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals(false, _serverConfig.getQueueAutoRegister());
     }
 
-    public void testGetManagementEnabled() throws ConfigurationException
+    public void testGetJMXManagementEnabled() throws ConfigurationException
     {
         // Check default
         _serverConfig.initialise();
-        assertEquals(true, _serverConfig.getManagementEnabled());
+        assertEquals(true, _serverConfig.getJMXManagementEnabled());
 
         // Check value we set
         _config.setProperty("management.enabled", false);
         _serverConfig = new ServerConfiguration(_config);
         _serverConfig.initialise();
-        assertEquals(false, _serverConfig.getManagementEnabled());
-    }
-
-    public void testSetManagementEnabled() throws ConfigurationException
-    {
-        // Check value we set
-        _serverConfig.initialise();
-        _serverConfig.setManagementEnabled(false);
-        assertEquals(false, _serverConfig.getManagementEnabled());
+        assertEquals(false, _serverConfig.getJMXManagementEnabled());
     }
 
     public void testGetManagementRightsInferAllAccess() throws Exception
@@ -401,7 +394,7 @@ public class ServerConfigurationTest extends QpidTestCase
     {
         // Check default
         _serverConfig.initialise();
-        assertEquals(0, _serverConfig.getMinimumAlertRepeatGap());
+        assertEquals(30000l, _serverConfig.getMinimumAlertRepeatGap());
 
         // Check value we set
         _config.setProperty("minimumAlertRepeatGap", 10L);
@@ -1588,6 +1581,168 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals(false, _serverConfig.isAmqp08enabled());
     }
 
+    public void testPortInclude08() throws ConfigurationException
+    {
+        // Check default
+        _serverConfig.initialise();
+        assertEquals(true, _serverConfig.getPortInclude08().isEmpty());
+
+        // Check values we set
+        _config.addProperty(ServerConfiguration.CONNECTOR_INCLUDE_08, "1");
+        _config.addProperty(ServerConfiguration.CONNECTOR_INCLUDE_08, "2");
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals(2, _serverConfig.getPortInclude08().size());
+        assertTrue(_serverConfig.getPortInclude08().contains("1"));
+        assertTrue(_serverConfig.getPortInclude08().contains("2"));
+    }
+
+    public void testPortInclude09() throws ConfigurationException
+    {
+        // Check default
+        _serverConfig.initialise();
+        assertEquals(true, _serverConfig.getPortInclude09().isEmpty());
+
+        // Check values we set
+        _config.addProperty(ServerConfiguration.CONNECTOR_INCLUDE_09, "3");
+        _config.addProperty(ServerConfiguration.CONNECTOR_INCLUDE_09, "4");
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals(2, _serverConfig.getPortInclude09().size());
+        assertTrue(_serverConfig.getPortInclude09().contains("3"));
+        assertTrue(_serverConfig.getPortInclude09().contains("4"));
+    }
+
+    public void testPortInclude091() throws ConfigurationException
+    {
+        // Check default
+        _serverConfig.initialise();
+        assertEquals(true, _serverConfig.getPortInclude091().isEmpty());
+
+        // Check values we set
+        _config.addProperty(ServerConfiguration.CONNECTOR_INCLUDE_091, "5");
+        _config.addProperty(ServerConfiguration.CONNECTOR_INCLUDE_091, "6");
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals(2, _serverConfig.getPortInclude091().size());
+        assertTrue(_serverConfig.getPortInclude091().contains("5"));
+        assertTrue(_serverConfig.getPortInclude091().contains("6"));
+    }
+
+    public void testPortInclude010() throws ConfigurationException
+    {
+        // Check default
+        _serverConfig.initialise();
+        assertEquals(true, _serverConfig.getPortInclude010().isEmpty());
+
+        // Check values we set
+        _config.addProperty(ServerConfiguration.CONNECTOR_INCLUDE_010, "7");
+        _config.addProperty(ServerConfiguration.CONNECTOR_INCLUDE_010, "8");
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals(2, _serverConfig.getPortInclude010().size());
+        assertTrue(_serverConfig.getPortInclude010().contains("7"));
+        assertTrue(_serverConfig.getPortInclude010().contains("8"));
+    }
+
+    public void testPortInclude10() throws ConfigurationException
+    {
+        // Check default
+        _serverConfig.initialise();
+        assertEquals(true, _serverConfig.getPortInclude10().isEmpty());
+
+        // Check values we set
+        _config.addProperty(ServerConfiguration.CONNECTOR_INCLUDE_10, "9");
+        _config.addProperty(ServerConfiguration.CONNECTOR_INCLUDE_10, "10");
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals(2, _serverConfig.getPortInclude10().size());
+        assertTrue(_serverConfig.getPortInclude10().contains("9"));
+        assertTrue(_serverConfig.getPortInclude10().contains("10"));
+    }
+
+    public void testGetDefaultSupportedProtocolReply() throws Exception
+    {
+        // Check default
+        _serverConfig.initialise();
+        assertNull("unexpected default value", _serverConfig.getDefaultSupportedProtocolReply());
+
+        // Check values we set
+        _config.addProperty(ServerConfiguration.CONNECTOR_AMQP_SUPPORTED_REPLY, "v0_10");
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals(AmqpProtocolVersion.v0_10, _serverConfig.getDefaultSupportedProtocolReply());
+    }
+
+    public void testDefaultAuthenticationManager() throws Exception
+    {
+        // Check default
+        _serverConfig.initialise();
+        assertNull("unexpected default value", _serverConfig.getDefaultAuthenticationManager());
+
+        // Check values we set
+        String testAuthManager = "myauthmanager";
+        _config.addProperty("security.default-auth-manager", testAuthManager);
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals(testAuthManager, _serverConfig.getDefaultAuthenticationManager());
+    }
+
+    public void testPortAuthenticationMappingsDefault() throws Exception
+    {
+        _serverConfig.initialise();
+        assertEquals("unexpected default number of port/authmanager mappings", 0, _serverConfig.getPortAuthenticationMappings().size());
+    }
+
+    public void testPortAuthenticationMappingsWithSingleMapping() throws Exception
+    {
+        String testAuthManager = "myauthmanager";
+        _config.addProperty("security.port-mappings.port-mapping.port", 1234);
+        _config.addProperty("security.port-mappings.port-mapping.auth-manager", testAuthManager);
+
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals("unexpected number of port/authmanager mappings", 1, _serverConfig.getPortAuthenticationMappings().size());
+        assertEquals("unexpected mapping for port", testAuthManager, _serverConfig.getPortAuthenticationMappings().get(1234));
+    }
+
+    public void testPortAuthenticationMappingsWithManyMapping() throws Exception
+    {
+        String testAuthManager1 = "myauthmanager1";
+        String testAuthManager2 = "myauthmanager2";
+        _config.addProperty("security.port-mappings.port-mapping(-1).port", 1234);
+        _config.addProperty("security.port-mappings.port-mapping.auth-manager", testAuthManager1);
+
+        _config.addProperty("security.port-mappings.port-mapping(-1).port", 2345);
+        _config.addProperty("security.port-mappings.port-mapping.auth-manager", testAuthManager2);
+
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+
+        assertEquals("unexpected number of port/authmanager mappings", 2, _serverConfig.getPortAuthenticationMappings().size());
+        assertEquals("unexpected mapping for port", testAuthManager1, _serverConfig.getPortAuthenticationMappings().get(1234));
+        assertEquals("unexpected mapping for port", testAuthManager2, _serverConfig.getPortAuthenticationMappings().get(2345));
+    }
+
+    public void testPortAuthenticationMappingWithMissingAuthManager() throws Exception
+    {
+        _config.addProperty("security.port-mappings.port-mapping(-1).port", 1234);
+        // no auth manager defined for port
+        _serverConfig = new ServerConfiguration(_config);
+        try
+        {
+            _serverConfig.initialise();
+            fail("Exception not thrown");
+        }
+        catch(ConfigurationException ce)
+        {
+            // PASS
+            assertEquals("Incorrect error message",
+                    "Validation error: Each port-mapping must have exactly one port and exactly one auth-manager.",
+                    ce.getMessage());
+        }
+    }
+
     /**
      * Convenience method to output required security preamble for broker config
      */
@@ -1605,7 +1760,6 @@ public class ServerConfigurationTest extends QpidTestCase
         out.write("\t\t\t\t\t</attribute>\n");
         out.write("\t\t\t\t</attributes>\n");
         out.write("\t\t\t</principal-database>\n");
-        out.write("\t\t\t<jmx-access>/dev/null</jmx-access>\n");
         out.write("\t\t</pd-auth-manager>\n");
         out.write("\t</security>\n");
     }

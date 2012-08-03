@@ -27,8 +27,7 @@
 #include <vector>
 #include <queue>
 
-#include <boost/ptr_container/ptr_map.hpp>
-
+#include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/ConnectionHandler.h"
 #include "qpid/broker/ConnectionState.h"
 #include "qpid/broker/SessionHandler.h"
@@ -86,15 +85,22 @@ class Connection : public sys::ConnectionInputHandler,
                bool isLink = false,
                uint64_t objectId = 0,
                bool shadow=false,
-               bool delayManagement = false);
+               bool delayManagement = false,
+               bool authenticated=true);
 
     ~Connection ();
 
     /** Get the SessionHandler for channel. Create if it does not already exist */
     SessionHandler& getChannel(framing::ChannelId channel);
 
-    /** Close the connection */
-    void close(framing::connection::CloseCode code, const std::string& text);
+    /** Close the connection. Waits for the client to respond with close-ok
+     * before actually destroying the connection.
+     */
+    QPID_BROKER_EXTERN void close(
+        framing::connection::CloseCode code, const std::string& text);
+
+    /** Abort the connection. Close abruptly and immediately. */
+    QPID_BROKER_EXTERN void abort();
 
     // ConnectionInputHandler methods
     void received(framing::AMQFrame& frame);
@@ -138,8 +144,7 @@ class Connection : public sys::ConnectionInputHandler,
     void setHeartbeatInterval(uint16_t heartbeat);
     void sendHeartbeat();
     void restartTimeout();
-    void abort();
-
+    
     template <class F> void eachSessionHandler(F f) {
         for (ChannelMap::iterator i = channels.begin(); i != channels.end(); ++i)
             f(*ptr_map_ptr(i));
@@ -149,7 +154,10 @@ class Connection : public sys::ConnectionInputHandler,
     void setSecureConnection(SecureConnection* secured);
 
     /** True if this is a shadow connection in a cluster. */
-    bool isShadow() { return shadow; }
+    bool isShadow() const { return shadow; }
+
+    /** True if this connection is authenticated */
+    bool isAuthenticated() const { return authenticated; }
 
     // Used by cluster to update connection status
     sys::AggregateOutput& getOutputTasks() { return outputTasks; }
@@ -166,6 +174,7 @@ class Connection : public sys::ConnectionInputHandler,
     bool isOpen();
 
     bool isLink() { return link; }
+    void startLinkHeartbeatTimeoutTask();
 
     // Used by cluster during catch-up, see cluster::OutputInterceptor
     void doIoCallbacks();
@@ -179,6 +188,8 @@ class Connection : public sys::ConnectionInputHandler,
 
     ChannelMap channels;
     qpid::sys::SecuritySettings securitySettings;
+    bool shadow;
+    bool authenticated;
     ConnectionHandler adapter;
     const bool link;
     bool mgmtClosing;
@@ -189,11 +200,10 @@ class Connection : public sys::ConnectionInputHandler,
     LinkRegistry& links;
     management::ManagementAgent* agent;
     sys::Timer& timer;
-    boost::intrusive_ptr<sys::TimerTask> heartbeatTimer;
+    boost::intrusive_ptr<sys::TimerTask> heartbeatTimer, linkHeartbeatTimer;
     boost::intrusive_ptr<ConnectionTimeoutTask> timeoutTimer;
     ErrorListener* errorListener;
     uint64_t objectId;
-    bool shadow;
     framing::FieldTable clientProperties;
 
     /**

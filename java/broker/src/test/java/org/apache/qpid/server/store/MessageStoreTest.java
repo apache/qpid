@@ -59,7 +59,6 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * This tests the MessageStores by using the available interfaces.
@@ -100,10 +99,10 @@ public class MessageStoreTest extends InternalBrokerBaseCase
     {
         super.setUp();
 
-        String storePath = System.getProperty("QPID_WORK") + "/" + getName();
+        String storePath = System.getProperty("QPID_WORK") + File.separator + getName();
         
         _config = new PropertiesConfiguration();
-        _config.addProperty("store.factoryclass", getTestProfileMessageStoreFactoryClassName());
+        _config.addProperty("store.class", getTestProfileMessageStoreClassName());
         _config.addProperty("store.environment-path", storePath);
 
         cleanup(new File(storePath));
@@ -268,14 +267,8 @@ public class MessageStoreTest extends InternalBrokerBaseCase
         //Validate normally expected properties of Queues/Topics
         validateDurableQueueProperties();
 
-        //Update the durable exclusive queue's exclusivity and verify it is persisted and recovered correctly
+        //Update the durable exclusive queue's exclusivity
         setQueueExclusivity(false);
-        validateQueueExclusivityProperty(false);
-
-        //Reload the Virtualhost to recover the queues again
-        reloadVirtualHost();
-
-        //verify the change was persisted and recovered correctly
         validateQueueExclusivityProperty(false);
     }
 
@@ -702,8 +695,8 @@ public class MessageStoreTest extends InternalBrokerBaseCase
         //Ideally we would be able to use the QueueDeclareHandler here.
         try
         {
-            queue = AMQQueueFactory.createAMQQueueImpl(queueName, durable, queueOwner, false, exclusive,
-                    getVirtualHost(), queueArguments);
+            queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName.asString(), durable, queueOwner.asString(), false, exclusive,
+                    getVirtualHost(), FieldTable.convertToMap(queueArguments));
 
             validateQueueProperties(queue, usePriority, durable, exclusive, lastValueQueue);
 
@@ -741,7 +734,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
         try
         {
-            exchange = type.newInstance(UUIDGenerator.generateUUID(), getVirtualHost(), name, durable, 0, false);
+            exchange = type.newInstance(UUIDGenerator.generateRandomUUID(), getVirtualHost(), name, durable, 0, false);
         }
         catch (AMQException e)
         {

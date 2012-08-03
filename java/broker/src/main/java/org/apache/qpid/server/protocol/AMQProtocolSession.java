@@ -20,12 +20,14 @@
  */
 package org.apache.qpid.server.protocol;
 
+import java.net.SocketAddress;
+import java.security.Principal;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
 
 import javax.security.auth.Subject;
 import javax.security.sasl.SaslServer;
 
-import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -59,6 +61,13 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
     ClientDeliveryMethod createDeliveryMethod(int channelId);
 
     long getLastReceivedTime();
+
+    /**
+     * Return the local socket address for the connection
+     *
+     * @return the socket address
+     */
+    SocketAddress getLocalAddress();
 
     public static interface Task
     {
@@ -145,10 +154,6 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
 
     void closeProtocolSession();
 
-    /** This must be called to close the session in order to free up any resources managed by the session. */
-    void closeConnection(int channelId, AMQConnectionException e) throws AMQException;
-
-
     /** @return a key that uniquely identifies this session */
     Object getKey();
 
@@ -210,4 +215,7 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
 
     void mgmtCloseChannel(int channelId);
 
+    public Principal getPeerPrincipal();
+
+    Lock getReceivedLock();
 }

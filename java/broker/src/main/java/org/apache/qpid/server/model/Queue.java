@@ -25,7 +25,6 @@ import java.util.Collection;
 import java.util.Collections;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
 
-
 public interface Queue extends ConfiguredObject
 {
     public static final String BINDING_COUNT = "bindingCount";
@@ -71,6 +70,7 @@ public interface Queue extends ConfiguredObject
 
 
     public static final String ID = "id";
+    public static final String DESCRIPTION = "description";
     public static final String NAME = "name";
     public static final String STATE = "state";
     public static final String DURABLE = "durable";
@@ -78,6 +78,7 @@ public interface Queue extends ConfiguredObject
     public static final String TIME_TO_LIVE = "timeToLive";
     public static final String CREATED = "created";
     public static final String UPDATED = "updated";
+    public static final String ARGUMENTS = "arguments";
 
     public static final String ALERT_REPEAT_GAP = "alertRepeatGap";
     public static final String ALERT_THRESHOLD_MESSAGE_AGE = "alertThresholdMessageAge";
@@ -98,7 +99,7 @@ public interface Queue extends ConfiguredObject
     public static final String QUEUE_FLOW_STOPPED = "queueFlowStopped";
     public static final String SORT_KEY = "sortKey";
     public static final String TYPE = "type";
-
+    public static final String PRIORITIES = "priorities";
 
 
 
@@ -106,6 +107,7 @@ public interface Queue extends ConfiguredObject
             Collections.unmodifiableList(
                     Arrays.asList(ID,
                                   NAME,
+                                  DESCRIPTION,
                                   STATE,
                                   DURABLE,
                                   LIFETIME_POLICY,
@@ -130,7 +132,8 @@ public interface Queue extends ConfiguredObject
                                   ALERT_THRESHOLD_MESSAGE_SIZE,
                                   ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
                                   ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
-                                  ALERT_REPEAT_GAP
+                                  ALERT_REPEAT_GAP,
+                                  PRIORITIES
                     ));
 
     //children
@@ -143,4 +146,6 @@ public interface Queue extends ConfiguredObject
     void visit(QueueEntryVisitor visitor);
 
     void delete();
+    
+    void setNotificationListener(QueueNotificationListener listener);
 }

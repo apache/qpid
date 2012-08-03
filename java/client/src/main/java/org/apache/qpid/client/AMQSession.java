@@ -20,6 +20,11 @@
  */
 package org.apache.qpid.client;
 
+import static org.apache.qpid.configuration.ClientProperties.DEFAULT_FLOW_CONTROL_WAIT_FAILURE;
+import static org.apache.qpid.configuration.ClientProperties.DEFAULT_FLOW_CONTROL_WAIT_NOTIFY_PERIOD;
+import static org.apache.qpid.configuration.ClientProperties.QPID_FLOW_CONTROL_WAIT_FAILURE;
+import static org.apache.qpid.configuration.ClientProperties.QPID_FLOW_CONTROL_WAIT_NOTIFY_PERIOD;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -117,18 +122,17 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     /** Immediate message prefetch default. */
     public static final String IMMEDIATE_PREFETCH_DEFAULT = "false";
 
-    public static final long DEFAULT_FLOW_CONTROL_WAIT_FAILURE = 120000L;
-
     /**
      * The period to wait while flow controlled before sending a log message confirming that the session is still
      * waiting on flow control being revoked
      */
-    private final long _flowControlWaitPeriod = Long.getLong("qpid.flow_control_wait_notify_period",5000L);
+    private final long _flowControlWaitPeriod = Long.getLong(QPID_FLOW_CONTROL_WAIT_NOTIFY_PERIOD,
+                                                                 DEFAULT_FLOW_CONTROL_WAIT_NOTIFY_PERIOD);
 
     /**
      * The period to wait while flow controlled before declaring a failure
      */
-    private final long _flowControlWaitFailure = Long.getLong("qpid.flow_control_wait_failure",
+    private final long _flowControlWaitFailure = Long.getLong(QPID_FLOW_CONTROL_WAIT_FAILURE,
                                                                   DEFAULT_FLOW_CONTROL_WAIT_FAILURE);
 
     private final boolean _delareQueues =
@@ -797,11 +801,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         if (e instanceof AMQDisconnectedException)
         {
-            if (_dispatcherThread != null)
-            {
-                // Failover failed and ain't coming back. Knife the dispatcher.
-                _dispatcherThread.interrupt();
-            }
+            // Failover failed and ain't coming back. Knife the dispatcher.
+            stopDispatcherThread();
 
        }
 
@@ -830,6 +831,13 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
     }
 
+    protected void stopDispatcherThread()
+    {
+        if (_dispatcherThread != null)
+        {
+            _dispatcherThread.interrupt();
+        }
+    }
     /**
      * Commits all messages done in this transaction and releases any locks currently held.
      *
@@ -2366,7 +2374,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             {
                 throw new Error("Error creating Dispatcher thread",e);
             }
-            _dispatcherThread.setName("Dispatcher-Channel-" + _channelId);
+
+            String dispatcherThreadName = "Dispatcher-" + _channelId + "-Conn-" + _connection.getConnectionNumber();
+
+            _dispatcherThread.setName(dispatcherThreadName);
             _dispatcherThread.setDaemon(DEAMON_DISPATCHER_THREAD);
             _dispatcher.setConnectionStopped(initiallyStopped);
             _dispatcherThread.start();
@@ -3128,6 +3139,14 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public void setTicket(int ticket)
     {
         _ticket = ticket;
+    }
+
+    public boolean isFlowBlocked()
+    {
+        synchronized (_flowControl)
+        {
+            return !_flowControl.getFlowControl();
+        }
     }
 
     public void setFlowControl(final boolean active)

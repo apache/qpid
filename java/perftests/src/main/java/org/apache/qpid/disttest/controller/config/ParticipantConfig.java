@@ -18,10 +18,20 @@
  */
 package org.apache.qpid.disttest.controller.config;
 
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.qpid.disttest.message.CreateParticpantCommand;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class ParticipantConfig
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ParticipantConfig.class);
+
+    public static final String DURATION_OVERRIDE_SYSTEM_PROPERTY = "qpid.disttest.duration";
+
+    /** used to ensure we only log about the overridden duration once */
+    private boolean _alreadyLoggedAboutOverriddenDuration;
+
     private String _destinationName;
     private long _numberOfMessages;
     private String _name;
@@ -58,7 +68,34 @@ public abstract class ParticipantConfig
         createParticipantCommand.setDestinationName(_destinationName);
         createParticipantCommand.setNumberOfMessages(_numberOfMessages);
         createParticipantCommand.setBatchSize(_batchSize);
-        createParticipantCommand.setMaximumDuration(_maximumDuration);
+
+        Long maximumDuration = (Long)ObjectUtils.defaultIfNull(getOverriddenDuration(), _maximumDuration);
+        createParticipantCommand.setMaximumDuration(maximumDuration);
     }
 
+    private Long getOverriddenDuration()
+    {
+        String overriddenDurationString = System.getProperty(DURATION_OVERRIDE_SYSTEM_PROPERTY);
+        if(overriddenDurationString != null)
+        {
+            try
+            {
+                long overriddenDuration = Long.valueOf(overriddenDurationString);
+
+                if(!_alreadyLoggedAboutOverriddenDuration)
+                {
+                    LOGGER.info("Applied overridden maximum duration " + overriddenDuration);
+                    _alreadyLoggedAboutOverriddenDuration = true;
+                }
+
+                return overriddenDuration;
+            }
+            catch (NumberFormatException e)
+            {
+                LOGGER.error("Couldn't parse overridden duration " + overriddenDurationString, e);
+            }
+        }
+
+        return null;
+    }
 }

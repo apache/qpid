@@ -40,7 +40,7 @@ class MockMessageStore : public NullMessageStore
 
     uint64_t id;
     boost::intrusive_ptr<PersistableMessage> expectedMsg;
-    string expectedData;
+    std::string expectedData;
     std::list<Op> ops;
 
     void checkExpectation(Op actual)
@@ -58,7 +58,7 @@ class MockMessageStore : public NullMessageStore
         ops.push_back(STAGE);
     }
 
-    void expectAppendContent(PersistableMessage& msg, const string& data)
+    void expectAppendContent(PersistableMessage& msg, const std::string& data)
     {
         expectedMsg = &msg;
         expectedData = data;
@@ -73,7 +73,7 @@ class MockMessageStore : public NullMessageStore
     }
 
     void appendContent(const boost::intrusive_ptr<const PersistableMessage>& msg,
-                       const string& data)
+                       const std::string& data)
     {
         checkExpectation(APPEND);
         BOOST_CHECK_EQUAL(boost::static_pointer_cast<const PersistableMessage>(expectedMsg), msg);

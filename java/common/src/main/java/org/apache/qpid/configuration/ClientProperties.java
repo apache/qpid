@@ -168,4 +168,28 @@ public class ClientProperties
     public static final String SEND_BUFFER_SIZE_PROP_NAME  = "qpid.send_buffer_size";
     @Deprecated
     public static final String LEGACY_SEND_BUFFER_SIZE_PROP_NAME  = "amqj.sendBufferSize";
+
+    /**
+     * System property to set the time (in millis) to wait before failing when sending and
+     * the client has been flow controlled by the broker.
+     */
+    public static final String QPID_FLOW_CONTROL_WAIT_FAILURE = "qpid.flow_control_wait_failure";
+
+    /**
+     * Default time (in millis) to wait before failing when sending and the client has been
+     * flow controlled by the broker.
+     */
+    public static final long DEFAULT_FLOW_CONTROL_WAIT_FAILURE = 60000L;
+
+    /**
+     * System property to set the time (in millis) between log notifications that a
+     * send is waiting because the client was flow controlled by the broker.
+     */
+    public static final String QPID_FLOW_CONTROL_WAIT_NOTIFY_PERIOD = "qpid.flow_control_wait_notify_period";
+
+    /**
+     * Default time (in millis) between log notifications that a send is
+     * waiting because the client was flow controlled by the broker.
+     */
+    public static final long DEFAULT_FLOW_CONTROL_WAIT_NOTIFY_PERIOD = 5000L;
 }

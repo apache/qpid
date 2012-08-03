@@ -31,6 +31,7 @@ import static org.apache.qpid.configuration.ClientProperties.SEND_BUFFER_SIZE_PR
 import static org.apache.qpid.configuration.ClientProperties.LEGACY_RECEIVE_BUFFER_SIZE_PROP_NAME;
 import static org.apache.qpid.configuration.ClientProperties.LEGACY_SEND_BUFFER_SIZE_PROP_NAME;
 
+import java.security.KeyStore;
 import java.util.Map;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -67,10 +68,12 @@ public class ConnectionSettings
     private boolean useSSL;
     private String keyStorePath = System.getProperty("javax.net.ssl.keyStore");
     private String keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword");
+    private String keyStoreType = System.getProperty("javax.net.ssl.keyStoreType",KeyStore.getDefaultType());
     private String keyManagerFactoryAlgorithm = QpidProperty.stringProperty(KeyManagerFactory.getDefaultAlgorithm(), QPID_SSL_KEY_MANAGER_FACTORY_ALGORITHM_PROP_NAME, QPID_SSL_KEY_STORE_CERT_TYPE_PROP_NAME).get();
     private String trustManagerFactoryAlgorithm = QpidProperty.stringProperty(TrustManagerFactory.getDefaultAlgorithm(), QPID_SSL_TRUST_MANAGER_FACTORY_ALGORITHM_PROP_NAME, QPID_SSL_TRUST_STORE_CERT_TYPE_PROP_NAME).get();
-    private String trustStorePath = System.getProperty("javax.net.ssl.trustStore");;
-    private String trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword");;
+    private String trustStorePath = System.getProperty("javax.net.ssl.trustStore");
+    private String trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword");
+    private String trustStoreType = System.getProperty("javax.net.ssl.trustStoreType",KeyStore.getDefaultType());
     private String certAlias;
     private boolean verifyHostname;
     
@@ -262,6 +265,16 @@ public class ConnectionSettings
         this.keyStorePassword = keyStorePassword;
     }
 
+    public void setKeyStoreType(String keyStoreType)
+    {
+        this.keyStoreType = keyStoreType;
+    }
+
+    public String getKeyStoreType()
+    {
+        return keyStoreType;
+    }
+
     public String getTrustStorePath()
     {
         return trustStorePath;
@@ -320,6 +333,16 @@ public class ConnectionSettings
     public void setTrustManagerFactoryAlgorithm(String trustManagerFactoryAlgorithm)
     {
         this.trustManagerFactoryAlgorithm = trustManagerFactoryAlgorithm;
+    }
+
+    public String getTrustStoreType()
+    {
+        return trustStoreType;
+    }
+
+    public void setTrustStoreType(String trustStoreType)
+    {
+        this.trustStoreType = trustStoreType;
     }
 
     public int getReadBufferSize()

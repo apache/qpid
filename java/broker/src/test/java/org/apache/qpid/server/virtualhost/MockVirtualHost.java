@@ -32,7 +32,6 @@ import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.federation.BrokerLink;
-import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
@@ -141,11 +140,6 @@ public class MockVirtualHost implements VirtualHost
         return 0;
     }
 
-    public ManagedObject getManagedObject()
-    {
-        return null;
-    }
-
     public MessageStore getMessageStore()
     {
         return null;
@@ -222,6 +216,12 @@ public class MockVirtualHost implements VirtualHost
         return null;
     }
 
+    @Override
+    public UUID getQMFId()
+    {
+        return null;
+    }
+
     public ConfiguredObject<VirtualHostConfigType, VirtualHostConfig> getParent()
     {
         return null;
@@ -257,11 +257,6 @@ public class MockVirtualHost implements VirtualHost
 
     }
 
-    public boolean isStatisticsEnabled()
-    {
-        return false;
-    }
-
     public void registerMessageDelivered(long messageSize)
     {
 
@@ -277,14 +272,16 @@ public class MockVirtualHost implements VirtualHost
 
     }
 
-    public void setStatisticsEnabled(boolean enabled)
-    {
-
-    }
-
-    @Override
     public State getState()
     {
         return State.ACTIVE;
+    }
+
+    public void block()
+    {
+    }
+
+    public void unblock()
+    {
     }
 }

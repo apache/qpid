@@ -32,6 +32,7 @@ import org.apache.qpid.server.flow.LimitlessCreditManager;
 import org.apache.qpid.server.flow.Pre0_10CreditManager;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -76,7 +77,7 @@ public class AckTest extends InternalBrokerBaseCase
 
         _protocolSession.addChannel(_channel);
 
-        _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("myQ"), false, new AMQShortString("guest"), true, false,
+        _queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "myQ", false, "guest", true, false,
                                                     _virtualHost, null);
     }
 

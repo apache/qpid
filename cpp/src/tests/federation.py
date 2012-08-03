@@ -23,6 +23,7 @@ from qpid.testlib import TestBase010
 from qpid.datatypes import Message
 from qpid.queue import Empty
 from qpid.util import URL
+import qpid.messaging
 from time import sleep, time
 
 
@@ -94,6 +95,11 @@ class FederationTests(TestBase010):
                     break
             self._brokers.append(_b)
 
+        # add a new-style messaging connection to each broker
+        for _b in self._brokers:
+            _b.connection = qpid.messaging.Connection(_b.url)
+            _b.connection.open()
+
     def _teardown_brokers(self):
         """ Un-does _setup_brokers()
         """
@@ -103,7 +109,7 @@ class FederationTests(TestBase010):
             if not _b.client_session.error():
                 _b.client_session.close(timeout=10)
             _b.client_conn.close(timeout=10)
-
+            _b.connection.close()
 
     def test_bridge_create_and_close(self):
         self.startQmf();
@@ -127,18 +133,28 @@ class FederationTests(TestBase010):
         self.verify_cleanup()
 
     def test_pull_from_exchange(self):
+        """ This test uses an alternative method to manage links and bridges
+        via the broker object.
+        """
         session = self.session
-        
+
         self.startQmf()
         qmf = self.qmf
         broker = qmf.getObjects(_class="broker")[0]
-        result = broker.connect(self.remote_host(), self.remote_port(), False, "PLAIN", "guest", "guest", "tcp")
-        self.assertEqual(result.status, 0, result)
 
+        # create link
+        link_args = {"host":self.remote_host(), "port":self.remote_port(), "durable":False,
+                     "authMechanism":"PLAIN", "username":"guest", "password":"guest",
+                     "transport":"tcp"}
+        result = broker.create("link", "test-link-1", link_args, False)
+        self.assertEqual(result.status, 0, result)
         link = qmf.getObjects(_class="link")[0]
-        result = link.bridge(False, "amq.direct", "amq.fanout", "my-key", "", "", False, False, False, 0)
-        self.assertEqual(result.status, 0, result)
 
+        # create bridge
+        bridge_args = {"link":"test-link-1", "src":"amq.direct", "dest":"amq.fanout",
+                       "key":"my-key"}
+        result = broker.create("bridge", "test-bridge-1", bridge_args, False);
+        self.assertEqual(result.status, 0, result)
         bridge = qmf.getObjects(_class="bridge")[0]
 
         #setup queue to receive messages from local broker
@@ -164,9 +180,11 @@ class FederationTests(TestBase010):
             self.fail("Got unexpected message in queue: " + extra.body)
         except Empty: None
 
-        result = bridge.close()
+
+        result = broker.delete("bridge", "test-bridge-1", {})
         self.assertEqual(result.status, 0, result)
-        result = link.close()
+
+        result = broker.delete("link", "test-link-1", {})
         self.assertEqual(result.status, 0, result)
 
         self.verify_cleanup()
@@ -376,6 +394,9 @@ class FederationTests(TestBase010):
         for i in range(1, 11):
             try:
                 msg = queue.get(timeout=5)
+                mp = msg.get("message_properties").application_headers
+                self.assertEqual(mp.__class__, dict)
+                self.assertEqual(mp['x-qpid.trace'], 'REMOTE') # check that the federation-tag override works
                 self.assertEqual("Message %d" % i, msg.body)
             except Empty:
                 self.fail("Failed to find expected message containing 'Message %d'" % i)
@@ -2152,4 +2173,434 @@ class FederationTests(TestBase010):
 
         self.verify_cleanup()
 
+
+    def test_multilink_direct(self):
+        """ Verify that two distinct links can be created between federated
+        brokers.
+        """
+        self.startQmf()
+        qmf = self.qmf
+        self._setup_brokers()
+        src_broker = self._brokers[0]
+        dst_broker = self._brokers[1]
+
+        # create a direct exchange on each broker
+        for _b in [src_broker, dst_broker]:
+            _b.client_session.exchange_declare(exchange="fedX.direct", type="direct")
+            self.assertEqual(_b.client_session.exchange_query(name="fedX.direct").type,
+                             "direct", "exchange_declare failed!")
+
+        # create destination queues
+        for _q in [("HiQ", "high"), ("MedQ", "medium"), ("LoQ", "low")]:
+            dst_broker.client_session.queue_declare(queue=_q[0], auto_delete=True)
+            dst_broker.client_session.exchange_bind(queue=_q[0], exchange="fedX.direct", binding_key=_q[1])
+
+        # create two connections, one for high priority traffic
+        for _q in ["HiPri", "Traffic"]:
+            result = dst_broker.qmf_object.create("link", _q,
+                                                  {"host":src_broker.host,
+                                                   "port":src_broker.port},
+                                                  False)
+            self.assertEqual(result.status, 0);
+
+        links = qmf.getObjects(_broker=dst_broker.qmf_broker, _class="link")
+        for _l in links:
+            if _l.name == "HiPri":
+                hi_link = _l
+            elif _l.name == "Traffic":
+                data_link = _l
+            else:
+                self.fail("Unexpected Link found: " + _l.name)
+
+        # now create a route for messages sent with key "high" to use the
+        # hi_link
+        result = dst_broker.qmf_object.create("bridge", "HiPriBridge",
+                                              {"link":hi_link.name,
+                                               "src":"fedX.direct",
+                                               "dest":"fedX.direct",
+                                               "key":"high"}, False)
+        self.assertEqual(result.status, 0);
+
+
+        # create routes for the "medium" and "low" links to use the normal
+        # data_link
+        for _b in [("MediumBridge", "medium"), ("LowBridge", "low")]:
+            result = dst_broker.qmf_object.create("bridge", _b[0],
+                                                  {"link":data_link.name,
+                                                   "src":"fedX.direct",
+                                                   "dest":"fedX.direct",
+                                                   "key":_b[1]}, False)
+            self.assertEqual(result.status, 0);
+
+        # now wait for the links to become operational
+        for _l in [hi_link, data_link]:
+            expire_time = time() + 30
+            while _l.state != "Operational" and time() < expire_time:
+                _l.update()
+            self.assertEqual(_l.state, "Operational", "Link failed to become operational")
+
+        # verify each link uses a different connection
+        self.assertNotEqual(hi_link.connectionRef, data_link.connectionRef,
+                            "Different links using the same connection")
+
+        hi_conn = qmf.getObjects(_broker=dst_broker.qmf_broker,
+                                 _objectId=hi_link.connectionRef)[0]
+        data_conn = qmf.getObjects(_broker=dst_broker.qmf_broker,
+                                 _objectId=data_link.connectionRef)[0]
+
+
+        # send hi data, verify only goes over hi link
+
+        r_ssn = dst_broker.connection.session()
+        hi_receiver = r_ssn.receiver("HiQ");
+        med_receiver = r_ssn.receiver("MedQ");
+        low_receiver = r_ssn.receiver("LoQ");
+
+        for _c in [hi_conn, data_conn]:
+            _c.update()
+            self.assertEqual(_c.msgsToClient, 0, "Unexpected messages received")
+
+        s_ssn = src_broker.connection.session()
+        hi_sender = s_ssn.sender("fedX.direct/high")
+        med_sender = s_ssn.sender("fedX.direct/medium")
+        low_sender = s_ssn.sender("fedX.direct/low")
+
+        try:
+            hi_sender.send(qpid.messaging.Message(content="hi priority"))
+            msg = hi_receiver.fetch(timeout=10)
+            r_ssn.acknowledge()
+            self.assertEqual(msg.content, "hi priority");
+        except:
+            self.fail("Hi Pri message failure")
+
+        hi_conn.update()
+        data_conn.update()
+        self.assertEqual(hi_conn.msgsToClient, 1, "Expected 1 hi pri message")
+        self.assertEqual(data_conn.msgsToClient, 0, "Expected 0 data messages")
+
+        # send low and medium, verify it does not go over hi link
+
+        try:
+            med_sender.send(qpid.messaging.Message(content="medium priority"))
+            msg = med_receiver.fetch(timeout=10)
+            r_ssn.acknowledge()
+            self.assertEqual(msg.content, "medium priority");
+        except:
+            self.fail("Medium Pri message failure")
+
+        hi_conn.update()
+        data_conn.update()
+        self.assertEqual(hi_conn.msgsToClient, 1, "Expected 1 hi pri message")
+        self.assertEqual(data_conn.msgsToClient, 1, "Expected 1 data message")
+
+        try:
+            low_sender.send(qpid.messaging.Message(content="low priority"))
+            msg = low_receiver.fetch(timeout=10)
+            r_ssn.acknowledge()
+            self.assertEqual(msg.content, "low priority");
+        except:
+            self.fail("Low Pri message failure")
+
+        hi_conn.update()
+        data_conn.update()
+        self.assertEqual(hi_conn.msgsToClient, 1, "Expected 1 hi pri message")
+        self.assertEqual(data_conn.msgsToClient, 2, "Expected 2 data message")
+
+        # cleanup
+
+        for _b in qmf.getObjects(_broker=dst_broker.qmf_broker,_class="bridge"):
+            result = _b.close()
+            self.assertEqual(result.status, 0)
+
+        for _l in qmf.getObjects(_broker=dst_broker.qmf_broker,_class="link"):
+            result = _l.close()
+            self.assertEqual(result.status, 0)
+
+        for _q in [("HiQ", "high"), ("MedQ", "medium"), ("LoQ", "low")]:
+            dst_broker.client_session.exchange_unbind(queue=_q[0], exchange="fedX.direct", binding_key=_q[1])
+            dst_broker.client_session.queue_delete(queue=_q[0])
+
+        for _b in [src_broker, dst_broker]:
+            _b.client_session.exchange_delete(exchange="fedX.direct")
+
+        self._teardown_brokers()
+
+        self.verify_cleanup()
+
+
+    def test_multilink_shared_queue(self):
+        """ Verify that two distinct links can be created between federated
+        brokers.
+        """
+        self.startQmf()
+        qmf = self.qmf
+        self._setup_brokers()
+        src_broker = self._brokers[0]
+        dst_broker = self._brokers[1]
+
+        # create a topic exchange on the destination broker
+        dst_broker.client_session.exchange_declare(exchange="fedX.topic", type="topic")
+        self.assertEqual(dst_broker.client_session.exchange_query(name="fedX.topic").type,
+                         "topic", "exchange_declare failed!")
+
+        # create a destination queue
+        dst_broker.client_session.queue_declare(queue="destQ", auto_delete=True)
+        dst_broker.client_session.exchange_bind(queue="destQ", exchange="fedX.topic", binding_key="srcQ")
+
+        # create a single source queue
+        src_broker.client_session.queue_declare(queue="srcQ", auto_delete=True)
+
+        # create two connections
+        for _q in ["Link1", "Link2"]:
+            result = dst_broker.qmf_object.create("link", _q,
+                                                  {"host":src_broker.host,
+                                                   "port":src_broker.port},
+                                                  False)
+            self.assertEqual(result.status, 0);
+
+        links = qmf.getObjects(_broker=dst_broker.qmf_broker, _class="link")
+        self.assertEqual(len(links), 2)
+
+        # now create two "parallel" queue routes from the source queue to the
+        # destination exchange.
+        result = dst_broker.qmf_object.create("bridge", "Bridge1",
+                                              {"link":"Link1",
+                                               "src":"srcQ",
+                                               "dest":"fedX.topic",
+                                               "srcIsQueue": True},
+                                              False)
+        self.assertEqual(result.status, 0);
+        result = dst_broker.qmf_object.create("bridge", "Bridge2",
+                                              {"link":"Link2",
+                                               "src":"srcQ",
+                                               "dest":"fedX.topic",
+                                               "srcIsQueue": True},
+                                              False)
+        self.assertEqual(result.status, 0);
+
+
+        # now wait for the links to become operational
+        for _l in links:
+            expire_time = time() + 30
+            while _l.state != "Operational" and time() < expire_time:
+                _l.update()
+            self.assertEqual(_l.state, "Operational", "Link failed to become operational")
+
+        # verify each link uses a different connection
+        self.assertNotEqual(links[0].connectionRef, links[1].connectionRef,
+                            "Different links using the same connection")
+
+        conn1 = qmf.getObjects(_broker=dst_broker.qmf_broker,
+                               _objectId=links[0].connectionRef)[0]
+        conn2 = qmf.getObjects(_broker=dst_broker.qmf_broker,
+                               _objectId=links[1].connectionRef)[0]
+
+        # verify messages sent to the queue are pulled by each connection
+
+        r_ssn = dst_broker.connection.session()
+        receiver = r_ssn.receiver("destQ");
+
+        for _c in [conn1, conn2]:
+            _c.update()
+            self.assertEqual(_c.msgsToClient, 0, "Unexpected messages received")
+
+        s_ssn = src_broker.connection.session()
+        sender = s_ssn.sender("srcQ")
+
+        try:
+            for x in range(5):
+                sender.send(qpid.messaging.Message(content="hello"))
+            for x in range(5):
+                msg = receiver.fetch(timeout=10)
+                self.assertEqual(msg.content, "hello");
+                r_ssn.acknowledge()
+        except:
+            self.fail("Message failure")
+
+        # expect messages to be split over each connection.
+        conn1.update()
+        conn2.update()
+        self.assertNotEqual(conn1.msgsToClient, 0, "No messages sent")
+        self.assertNotEqual(conn2.msgsToClient, 0, "No messages sent")
+        self.assertEqual(conn2.msgsToClient + conn1.msgsToClient, 5,
+                         "Expected 5 messages total")
+
+        for _b in qmf.getObjects(_broker=dst_broker.qmf_broker,_class="bridge"):
+            result = _b.close()
+            self.assertEqual(result.status, 0)
+
+        for _l in qmf.getObjects(_broker=dst_broker.qmf_broker,_class="link"):
+            result = _l.close()
+            self.assertEqual(result.status, 0)
+
+        dst_broker.client_session.exchange_unbind(queue="destQ", exchange="fedX.topic", binding_key="srcQ")
+        dst_broker.client_session.exchange_delete(exchange="fedX.topic")
+
+        self._teardown_brokers()
+
+        self.verify_cleanup()
+
+
+    def test_dynamic_direct_shared_queue(self):
+        """
+        Route Topology:
+
+               +<--- B1
+        B0 <---+<--- B2
+               +<--- B3
+        """
+        session = self.session
+
+        # create the federation
+
+        self.startQmf()
+        qmf = self.qmf
+
+        self._setup_brokers()
+
+        # create direct exchange on each broker, and retrieve the corresponding
+        # management object for that exchange
+
+        exchanges=[]
+        for _b in self._brokers:
+            _b.client_session.exchange_declare(exchange="fedX.direct", type="direct")
+            self.assertEqual(_b.client_session.exchange_query(name="fedX.direct").type,
+                             "direct", "exchange_declare failed!")
+            # pull the exchange out of qmf...
+            retries = 0
+            my_exchange = None
+            while my_exchange is None:
+                objs = qmf.getObjects(_broker=_b.qmf_broker, _class="exchange")
+                for ooo in objs:
+                    if ooo.name == "fedX.direct":
+                        my_exchange = ooo
+                        break
+                if my_exchange is None:
+                    retries += 1
+                    self.failIfEqual(retries, 10,
+                                     "QMF failed to find new exchange!")
+                    sleep(1)
+            exchanges.append(my_exchange)
+
+        self.assertEqual(len(exchanges), len(self._brokers), "Exchange creation failed!")
+
+        # Create 2 links per each source broker (1,2,3) to the downstream
+        # broker 0:
+        for _b in range(1,4):
+            for _l in ["dynamic", "queue"]:
+                result = self._brokers[0].qmf_object.create( "link",
+                                                             "Link-%d-%s" % (_b, _l),
+                                                             {"host":self._brokers[_b].host,
+                                                              "port":self._brokers[_b].port}, False)
+                self.assertEqual(result.status, 0)
+
+            # create queue on source brokers for use by the dynamic route
+            self._brokers[_b].client_session.queue_declare(queue="fedSrcQ", exclusive=False, auto_delete=True)
+
+        for _l in range(1,4):
+            # for each dynamic link, create a dynamic bridge for the "fedX.direct"
+            # exchanges, using the fedSrcQ on each upstream source broker
+            result = self._brokers[0].qmf_object.create("bridge",
+                                                        "Bridge-%d-dynamic" % _l,
+                                                        {"link":"Link-%d-dynamic" % _l,
+                                                         "src":"fedX.direct",
+                                                         "dest":"fedX.direct",
+                                                         "dynamic":True,
+                                                         "queue":"fedSrcQ"}, False)
+            self.assertEqual(result.status, 0)
+
+            # create a queue route that shares the queue used by the dynamic route
+            result = self._brokers[0].qmf_object.create("bridge",
+                                                        "Bridge-%d-queue" % _l,
+                                                        {"link":"Link-%d-queue" % _l,
+                                                         "src":"fedSrcQ",
+                                                         "dest":"fedX.direct",
+                                                         "srcIsQueue":True}, False)
+            self.assertEqual(result.status, 0)
+
+
+        # wait for the inter-broker links to become operational
+        retries = 0
+        operational = False
+        while not operational:
+            operational = True
+            for _l in qmf.getObjects(_class="link"):
+                #print("Link=%s:%s %s" % (_l.host, _l.port, str(_l.state)))
+                if _l.state != "Operational":
+                    operational = False
+            if not operational:
+                retries += 1
+                self.failIfEqual(retries, 10,
+                                 "inter-broker links failed to become operational.")
+                sleep(1)
+
+        # @todo - There is no way to determine when the bridge objects become
+        # active.  Hopefully, this is long enough!
+        sleep(6)
+
+        # create a queue on B0, bound to "spudboy"
+        self._brokers[0].client_session.queue_declare(queue="DestQ", exclusive=True, auto_delete=True)
+        self._brokers[0].client_session.exchange_bind(queue="DestQ", exchange="fedX.direct", binding_key="spudboy")
+
+        # subscribe to messages arriving on B2's queue
+        self.subscribe(self._brokers[0].client_session, queue="DestQ", destination="f1")
+        queue = self._brokers[0].client_session.incoming("f1")
+
+        # wait until the binding key has propagated to each broker
+
+        binding_counts = [1, 1, 1, 1]
+        self.assertEqual(len(binding_counts), len(exchanges), "Update Test!")
+        for i in range(3,-1,-1):
+            retries = 0
+            exchanges[i].update()
+            while exchanges[i].bindingCount < binding_counts[i]:
+                retries += 1
+                self.failIfEqual(retries, 10,
+                                 "binding failed to propagate to broker %d"
+                                 % i)
+                sleep(3)
+                exchanges[i].update()
+
+        for _b in range(1,4):
+            # send 3 msgs from each source broker
+            for i in range(3):
+                dp = self._brokers[_b].client_session.delivery_properties(routing_key="spudboy")
+                self._brokers[_b].client_session.message_transfer(destination="fedX.direct", message=Message(dp, "Message_drp %d" % i))
+
+        # get exactly 9 (3 per broker) on B0
+        for i in range(9):
+            msg = queue.get(timeout=5)
+
+        try:
+            extra = queue.get(timeout=1)
+            self.fail("Got unexpected message in queue: " + extra.body)
+        except Empty: None
+
+        # verify that messages went across every link
+        for _l in qmf.getObjects(_broker=self._brokers[0].qmf_broker,
+                                 _class="link"):
+            for _c in qmf.getObjects(_broker=self._brokers[0].qmf_broker,
+                                     _objectId=_l.connectionRef):
+                self.assertNotEqual(_c.msgsToClient, 0, "Messages did not pass over link as expected.")
+
+        # cleanup
+
+        self._brokers[0].client_session.exchange_unbind(queue="DestQ", exchange="fedX.direct", binding_key="spudboy")
+        self._brokers[0].client_session.message_cancel(destination="f1")
+        self._brokers[0].client_session.queue_delete(queue="DestQ")
+
+        for _b in qmf.getObjects(_class="bridge"):
+            result = _b.close()
+            self.assertEqual(result.status, 0)
+
+        for _l in qmf.getObjects(_class="link"):
+            result = _l.close()
+            self.assertEqual(result.status, 0)
+
+        for _b in self._brokers:
+            _b.client_session.exchange_delete(exchange="fedX.direct")
+
+        self._teardown_brokers()
+
+        self.verify_cleanup()
 

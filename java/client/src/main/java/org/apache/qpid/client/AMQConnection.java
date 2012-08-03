@@ -69,6 +69,7 @@ import javax.naming.StringRefAddr;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.ConnectException;
+import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.nio.channels.UnresolvedAddressException;
 import java.util.ArrayList;
@@ -78,11 +79,14 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class AMQConnection extends Closeable implements Connection, QueueConnection, TopicConnection, Referenceable
 {
     private static final Logger _logger = LoggerFactory.getLogger(AMQConnection.class);
+    private static final AtomicLong CONN_NUMBER_GENERATOR = new AtomicLong();
 
+    private final long _connectionNumber;
 
     /**
      * This is the "root" mutex that must be held when doing anything that could be impacted by failover. This must be
@@ -222,6 +226,13 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             throw new IllegalArgumentException("Connection must be specified");
         }
 
+        _connectionNumber = CONN_NUMBER_GENERATOR.incrementAndGet();
+
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Connection(" + _connectionNumber + "):" + connectionURL);
+        }
+
         // set this connection maxPrefetch
         if (connectionURL.getOption(ConnectionURL.OPTIONS_MAXPREFETCH) != null)
         {
@@ -306,11 +317,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         else
         {
             _delegate = new AMQConnectionDelegate_0_10(this);
-        }
-
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug("Connection:" + connectionURL);
         }
 
         _connectionURL = connectionURL;
@@ -1518,5 +1524,19 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     protected AMQConnectionDelegate getDelegate()
     {
         return _delegate;
+    }
+
+    public Long getConnectionNumber()
+    {
+        return _connectionNumber;
+    }
+
+    protected void logConnected(SocketAddress localAddress, SocketAddress remoteAddress)
+    {
+        if(_logger.isInfoEnabled())
+        {
+            _logger.info("Connection " + _connectionNumber + " now connected from "
+                         + localAddress + " to " + remoteAddress);
+        }
     }
 }

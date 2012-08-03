@@ -28,6 +28,7 @@ windows_dist = \
   qpid/log/windows/SinkOptions.cpp \
   qpid/log/windows/SinkOptions.h \
   ../include/qpid/sys/windows/check.h \
+  qpid/sys/MemStat.cpp \
   qpid/sys/windows/AsynchIO.cpp \
   qpid/sys/windows/AsynchIoResult.h \
   ../include/qpid/sys/windows/Condition.h \
@@ -53,7 +54,6 @@ windows_dist = \
   ../include/qpid/sys/windows/Time.h \
   qpid/sys/windows/uuid.cpp \
   qpid/sys/windows/uuid.h \
-  qpid/sys/windows/MemStat.cpp \
   windows/QpiddBroker.cpp \
   windows/SCM.h \
   windows/SCM.cpp \
@@ -107,7 +107,7 @@ mgen_xml=$(top_srcdir)/../specs/management-schema.xml \
 	$(srcdir)/qpid/cluster/management-schema.xml \
 	$(srcdir)/qpid/ha/management-schema.xml
 mgen_cmd=$(mgen_dir)/qmf-gen -m $(srcdir)/managementgen.mk \
-	-c $(srcdir)/managementgen.cmake -q -b -o qmf \
+	-c $(srcdir)/managementgen.cmake -q -b -l -o qmf \
 	$(mgen_xml)
 
 $(srcdir)/managementgen.mk $(mgen_broker_cpp) $(dist_qpid_management_HEADERS): mgen.timestamp
@@ -380,7 +380,6 @@ libqpidcommon_la_SOURCES +=			\
   qpid/assert.h					\
   qpid/framing/AMQBody.cpp			\
   qpid/framing/AMQBody.h			\
-  qpid/framing/AMQCommandControlBody.h		\
   qpid/framing/AMQContentBody.cpp		\
   qpid/framing/AMQContentBody.h			\
   qpid/framing/AMQDataBlock.h			\
@@ -553,6 +552,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/ConsumerFactory.h \
   qpid/broker/ConnectionObserver.h \
   qpid/broker/ConnectionObservers.h \
+  qpid/broker/ConfigurationObserver.h \
+  qpid/broker/ConfigurationObservers.h \
   qpid/broker/Daemon.cpp \
   qpid/broker/Daemon.h \
   qpid/broker/Deliverable.h \
@@ -615,6 +616,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/NameGenerator.h \
   qpid/broker/NullMessageStore.cpp \
   qpid/broker/NullMessageStore.h \
+  qpid/broker/Observers.h \
   qpid/broker/OwnershipToken.h \
   qpid/broker/Persistable.h \
   qpid/broker/PersistableConfig.h \
@@ -684,6 +686,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/ThresholdAlerts.h \
   qpid/broker/TopicExchange.cpp \
   qpid/broker/TopicExchange.h \
+  qpid/broker/TopicKeyNode.h \
   qpid/broker/TransactionalStore.h \
   qpid/broker/TxAccept.cpp \
   qpid/broker/TxAccept.h \

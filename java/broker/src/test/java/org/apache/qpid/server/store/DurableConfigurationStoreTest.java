@@ -1,3 +1,23 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
 package org.apache.qpid.server.store;
 
 import static org.mockito.Matchers.any;
@@ -27,7 +47,6 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
-import org.apache.qpid.server.logging.subjects.TestBlankSubject;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -41,7 +60,7 @@ import org.apache.qpid.server.store.ConfigurationRecoveryHandler.ExchangeRecover
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.QueueRecoveryHandler;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
 import org.apache.qpid.server.store.Transaction.Record;
-import org.apache.qpid.server.store.derby.DerbyMessageStoreFactory;
+import org.apache.qpid.server.store.derby.DerbyMessageStore;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 
@@ -75,11 +94,11 @@ public class DurableConfigurationStoreTest extends QpidTestCase
     {
         super.setUp();
 
-        _queueId = UUIDGenerator.generateUUID();
-        _exchangeId = UUIDGenerator.generateUUID();
+        _queueId = UUIDGenerator.generateRandomUUID();
+        _exchangeId = UUIDGenerator.generateRandomUUID();
 
         _storeName = getName();
-        _storePath = TMP_FOLDER + "/" + _storeName;
+        _storePath = TMP_FOLDER + File.separator + _storeName;
         FileUtils.delete(new File(_storePath), true);
         setTestSystemProperty("QPID_WORK", TMP_FOLDER);
         _configuration = mock(Configuration.class);
@@ -94,9 +113,9 @@ public class DurableConfigurationStoreTest extends QpidTestCase
         _dtxRecordRecoveryHandler = mock(TransactionLogRecoveryHandler.DtxRecordRecoveryHandler.class);
 
         when(_messageStoreRecoveryHandler.begin()).thenReturn(_storedMessageRecoveryHandler);
-        when(_recoveryHandler.begin(isA(MessageStore.class))).thenReturn(_queueRecoveryHandler);
-        when(_queueRecoveryHandler.completeQueueRecovery()).thenReturn(_exchangeRecoveryHandler);
-        when(_exchangeRecoveryHandler.completeExchangeRecovery()).thenReturn(_bindingRecoveryHandler);
+        when(_recoveryHandler.begin(isA(MessageStore.class))).thenReturn(_exchangeRecoveryHandler);
+        when(_exchangeRecoveryHandler.completeExchangeRecovery()).thenReturn(_queueRecoveryHandler);
+        when(_queueRecoveryHandler.completeQueueRecovery()).thenReturn(_bindingRecoveryHandler);
         when(_bindingRecoveryHandler.completeBindingRecovery()).thenReturn(_linkRecoveryHandler);
         when(_logRecoveryHandler.begin(any(MessageStore.class))).thenReturn(_queueEntryRecoveryHandler);
         when(_queueEntryRecoveryHandler.completeQueueEntryRecovery()).thenReturn(_dtxRecordRecoveryHandler);
@@ -142,8 +161,8 @@ public class DurableConfigurationStoreTest extends QpidTestCase
     public void testBindQueue() throws Exception
     {
         AMQQueue queue = createTestQueue(QUEUE_NAME, "queueOwner", false);
-        Binding binding = new Binding(UUIDGenerator.generateUUID(), ROUTING_KEY, queue, _exchange,
-                FieldTable.convertToMap(_bindingArgs));
+        Binding binding = new Binding(UUIDGenerator.generateRandomUUID(), null, ROUTING_KEY, queue,
+                _exchange, FieldTable.convertToMap(_bindingArgs));
         _store.bindQueue(binding);
 
         reopenStore();
@@ -156,8 +175,8 @@ public class DurableConfigurationStoreTest extends QpidTestCase
     public void testUnbindQueue() throws Exception
     {
         AMQQueue queue = createTestQueue(QUEUE_NAME, "queueOwner", false);
-        Binding binding = new Binding(UUIDGenerator.generateUUID(), ROUTING_KEY, queue, _exchange,
-                FieldTable.convertToMap(_bindingArgs));
+        Binding binding = new Binding(UUIDGenerator.generateRandomUUID(), null, ROUTING_KEY, queue,
+                _exchange, FieldTable.convertToMap(_bindingArgs));
         _store.bindQueue(binding);
 
         _store.unbindQueue(binding);
@@ -173,7 +192,7 @@ public class DurableConfigurationStoreTest extends QpidTestCase
         _store.createQueue(queue);
 
         reopenStore();
-        verify(_queueRecoveryHandler).queue(_queueId, getName(), getName() + "Owner", true, null);
+        verify(_queueRecoveryHandler).queue(_queueId, getName(), getName() + "Owner", true, null, null);
     }
 
     public void testCreateQueueAMQQueueFieldTable() throws Exception
@@ -187,10 +206,29 @@ public class DurableConfigurationStoreTest extends QpidTestCase
         _store.createQueue(queue, arguments);
 
         reopenStore();
-        verify(_queueRecoveryHandler).queue(_queueId, getName(), getName() + "Owner", true, arguments);
+        verify(_queueRecoveryHandler).queue(_queueId, getName(), getName() + "Owner", true, arguments, null);
     }
 
-    public void testUpdateQueue() throws Exception
+    public void testCreateQueueAMQQueueWithAlternateExchange() throws Exception
+    {
+        Exchange alternateExchange = createTestAlternateExchange();
+
+        AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true, alternateExchange);
+        _store.createQueue(queue);
+
+        reopenStore();
+        verify(_queueRecoveryHandler).queue(_queueId, getName(), getName() + "Owner", true, null, alternateExchange.getId());
+    }
+
+    private Exchange createTestAlternateExchange()
+    {
+        UUID exchUuid = UUID.randomUUID();
+        Exchange alternateExchange = mock(Exchange.class);
+        when(alternateExchange.getId()).thenReturn(exchUuid);
+        return alternateExchange;
+    }
+
+    public void testUpdateQueueExclusivity() throws Exception
     {
         // create queue
         AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true);
@@ -205,7 +243,26 @@ public class DurableConfigurationStoreTest extends QpidTestCase
         _store.updateQueue(queue);
 
         reopenStore();
-        verify(_queueRecoveryHandler).queue(_queueId, getName(), getName() + "Owner", false, arguments);
+        verify(_queueRecoveryHandler).queue(_queueId, getName(), getName() + "Owner", false, arguments, null);
+    }
+
+    public void testUpdateQueueAlternateExchange() throws Exception
+    {
+        // create queue
+        AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true);
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put("x-qpid-dlq-enabled", Boolean.TRUE);
+        attributes.put("x-qpid-maximum-delivery-count", new Integer(10));
+        FieldTable arguments = FieldTable.convertToFieldTable(attributes);
+        _store.createQueue(queue, arguments);
+
+        // update the queue to have exclusive=false
+        Exchange alternateExchange = createTestAlternateExchange();
+        queue = createTestQueue(getName(), getName() + "Owner", false, alternateExchange);
+        _store.updateQueue(queue);
+
+        reopenStore();
+        verify(_queueRecoveryHandler).queue(_queueId, getName(), getName() + "Owner", false, arguments, alternateExchange.getId());
     }
 
     public void testRemoveQueue() throws Exception
@@ -222,10 +279,15 @@ public class DurableConfigurationStoreTest extends QpidTestCase
         _store.removeQueue(queue);
         reopenStore();
         verify(_queueRecoveryHandler, never()).queue(any(UUID.class), anyString(), anyString(), anyBoolean(),
-                any(FieldTable.class));
+                any(FieldTable.class), any(UUID.class));
     }
 
     private AMQQueue createTestQueue(String queueName, String queueOwner, boolean exclusive) throws AMQStoreException
+    {
+        return createTestQueue(queueName, queueOwner, exclusive, null);
+    }
+
+    private AMQQueue createTestQueue(String queueName, String queueOwner, boolean exclusive, Exchange alternateExchange) throws AMQStoreException
     {
         AMQQueue queue = mock(AMQQueue.class);
         when(queue.getName()).thenReturn(queueName);
@@ -233,6 +295,7 @@ public class DurableConfigurationStoreTest extends QpidTestCase
         when(queue.getOwner()).thenReturn(AMQShortString.valueOf(queueOwner));
         when(queue.isExclusive()).thenReturn(exclusive);
         when(queue.getId()).thenReturn(_queueId);
+        when(queue.getAlternateExchange()).thenReturn(alternateExchange);
         return queue;
     }
 
@@ -262,14 +325,14 @@ public class DurableConfigurationStoreTest extends QpidTestCase
 
     protected MessageStore createStore() throws Exception
     {
-        String storeFactoryClass = System.getProperty(MS_FACTORY_CLASS_NAME_KEY);
-        if (storeFactoryClass == null)
+        String storeClass = System.getProperty(MESSAGE_STORE_CLASS_NAME_KEY);
+        if (storeClass == null)
         {
-            storeFactoryClass = DerbyMessageStoreFactory.class.getName();
+            storeClass = DerbyMessageStore.class.getName();
         }
         CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
-        MessageStoreFactory factory = (MessageStoreFactory) Class.forName(storeFactoryClass).newInstance();
-        return factory.createMessageStore();
+        MessageStore messageStore = (MessageStore) Class.forName(storeClass).newInstance();
+        return messageStore;
     }
 
     public void testRecordXid() throws Exception
@@ -297,7 +360,7 @@ public class DurableConfigurationStoreTest extends QpidTestCase
 
     private Record getTestRecord(long messageNumber)
     {
-        UUID queueId1 = UUIDGenerator.generateUUID();
+        UUID queueId1 = UUIDGenerator.generateRandomUUID();
         TransactionLogResource queue1 = mock(TransactionLogResource.class);
         when(queue1.getId()).thenReturn(queueId1);
         EnqueableMessage message1 = mock(EnqueableMessage.class);

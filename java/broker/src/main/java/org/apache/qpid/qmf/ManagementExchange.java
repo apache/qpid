@@ -70,6 +70,7 @@ public class ManagementExchange implements Exchange, QMFService.Listener
 
     private final Set<Binding> _bindingSet = new CopyOnWriteArraySet<Binding>();
     private UUID _id;
+    private UUID _qmfId;
     private static final String AGENT_BANK = "0";
 
     private int _bindingCountHigh;
@@ -84,7 +85,7 @@ public class ManagementExchange implements Exchange, QMFService.Listener
 
     private class ManagementQueue implements BaseQueue
     {
-        private final UUID QUEUE_ID =  UUIDGenerator.generateUUID();
+        private final UUID QUEUE_ID =  UUIDGenerator.generateRandomUUID();
         private final String NAME_AS_STRING = "##__mgmt_pseudo_queue__##" + QUEUE_ID.toString();
         private final AMQShortString NAME_AS_SHORT_STRING = new AMQShortString(NAME_AS_STRING);
 
@@ -196,6 +197,7 @@ public class ManagementExchange implements Exchange, QMFService.Listener
         _virtualHost = host;
         _id = id;
         _virtualHost.scheduleHouseKeepingTask(_virtualHost.getBroker().getManagementPublishInterval(), new UpdateTask(_virtualHost));
+        _qmfId = getConfigStore().createId();
         getConfigStore().addConfiguredObject(this);
         getQMFService().addListener(this);
     }
@@ -203,6 +205,12 @@ public class ManagementExchange implements Exchange, QMFService.Listener
     public UUID getId()
     {
         return _id;
+    }
+
+    @Override
+    public UUID getQMFId()
+    {
+        return _qmfId;
     }
 
     public ExchangeConfigType getConfigType()
@@ -540,6 +548,11 @@ public class ManagementExchange implements Exchange, QMFService.Listener
         return getMsgReceives();
     }
 
+    public long getMsgDrops()
+    {
+        return 0l;
+    }
+
     public long getByteReceives()
     {
         return _bytesReceived.get();
@@ -548,6 +561,11 @@ public class ManagementExchange implements Exchange, QMFService.Listener
     public long getByteRoutes()
     {
         return getByteReceives();
+    }
+
+    public long getByteDrops()
+    {
+        return 0l;
     }
 
     public long getCreateTime()

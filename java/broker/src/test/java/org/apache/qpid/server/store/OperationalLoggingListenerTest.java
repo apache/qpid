@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.qpid.server.store;
 
 import java.util.ArrayList;
@@ -12,22 +28,6 @@ import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.messages.MessageStoreMessages;
 import org.apache.qpid.server.logging.messages.TransactionLogMessages;
 
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- * <p/>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 public class OperationalLoggingListenerTest extends TestCase
 {
 
@@ -73,11 +73,11 @@ public class OperationalLoggingListenerTest extends TestCase
         }
 
 
-        messageStore.attainState(State.CONFIGURING);
+        messageStore.attainState(State.INITIALISING);
         assertEquals("Unexpected number of operational log messages on configuring", 1, messages.size());
         assertEquals(messages.remove(0).toString(), ConfigStoreMessages.CREATED().toString());
 
-        messageStore.attainState(State.CONFIGURED);
+        messageStore.attainState(State.INITIALISED);
         assertEquals("Unexpected number of operational log messages on CONFIGURED", setStoreLocation ? 3 : 2, messages.size());
         assertEquals(messages.remove(0).toString(), MessageStoreMessages.CREATED().toString());
         assertEquals(messages.remove(0).toString(), TransactionLogMessages.CREATED().toString());
@@ -86,7 +86,7 @@ public class OperationalLoggingListenerTest extends TestCase
             assertEquals(messages.remove(0).toString(), MessageStoreMessages.STORE_LOCATION(STORE_LOCATION).toString());
         }
 
-        messageStore.attainState(State.RECOVERING);
+        messageStore.attainState(State.ACTIVATING);
         assertEquals("Unexpected number of operational log messages on RECOVERING", 1, messages.size());
         assertEquals(messages.remove(0).toString(), MessageStoreMessages.RECOVERY_START().toString());
 
@@ -146,6 +146,12 @@ public class OperationalLoggingListenerTest extends TestCase
         public void addEventListener(EventListener eventListener, Event... events)
         {
             _eventManager.addEventListener(eventListener, events);
+        }
+
+        @Override
+        public String getStoreType()
+        {
+            return "TEST";
         }
     }
 

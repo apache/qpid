@@ -27,16 +27,19 @@ import org.apache.qpid.server.configuration.ConfigurationManager;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.management.ManagedObjectRegistry;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.IAuthenticationManagerRegistry;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.util.Map;
 import java.util.UUID;
 
 public interface IApplicationRegistry extends StatisticsGatherer
@@ -60,9 +63,18 @@ public interface IApplicationRegistry extends StatisticsGatherer
      */
     ServerConfiguration getConfiguration();
 
-    ManagedObjectRegistry getManagedObjectRegistry();
+    /**
+     * Get the AuthenticationManager for the given socket address
+     *
+     * If no AuthenticationManager has been specifically set for the given address, then use the default
+     * AuthenticationManager
+     *
+     * @param address The (listening) socket address for which the AuthenticationManager is required
+     * @return the AuthenticationManager
+     */
+    AuthenticationManager getAuthenticationManager(SocketAddress address);
 
-    AuthenticationManager getAuthenticationManager();
+    IAuthenticationManagerRegistry getAuthenticationManagerRegistry();
 
     VirtualHostRegistry getVirtualHostRegistry();
 
@@ -85,15 +97,39 @@ public interface IApplicationRegistry extends StatisticsGatherer
 
     QMFService getQMFService();
 
-    void setBroker(BrokerConfig broker);
+    void setBrokerConfig(BrokerConfig broker);
 
-    BrokerConfig getBroker();
+    BrokerConfig getBrokerConfig();
+
+    Broker getBroker();
 
     VirtualHost createVirtualHost(VirtualHostConfiguration vhostConfig) throws Exception;
 
     ConfigStore getConfigStore();
 
     void setConfigStore(ConfigStore store);
-    
+
     void initialiseStatisticsReporting();
+
+    Map<InetSocketAddress, QpidAcceptor> getAcceptors();
+
+    void addPortBindingListener(PortBindingListener listener);
+
+    boolean useHTTPManagement();
+
+    int getHTTPManagementPort();
+
+    boolean useHTTPSManagement();
+
+    int getHTTPSManagementPort();
+
+    void addRegistryChangeListener(IAuthenticationManagerRegistry.RegistryChangeListener registryChangeListener);
+
+    public interface PortBindingListener
+    {
+        public void bound(QpidAcceptor acceptor, InetSocketAddress bindAddress);
+        public void unbound(QpidAcceptor acceptor);
+
+    }
+
 }

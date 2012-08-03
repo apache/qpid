@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<section id="Qpid-Producer-Flow-Control">
+    <title>Producer Flow Control</title>
+
+    <section role="h2" id="QpidProducerFlowControlGeneralInformation">
+        <title>General Information</title>
+        <para>
+            The Qpid 0.6 release introduced a simplistic producer-side flow control mechanism
+            into the Java Messaging Broker, causing producers to be flow-controlled when they
+            attempt to send messages to an overfull queue. Qpid 0.18 introduced a similar
+            mechanism triggered by an overfull persistent message store on a virtual host.
+        </para>
+    </section>
+    <section role="h2" id="QpidProducerFlowControlServerConfiguration">
+        <title>Server Configuration</title>
+        <section role="h3">
+            <title>Configuring a Queue to use flow control</title>
+            <para>
+                Flow control is enabled on a producer when it sends a message to a Queue
+                which is "overfull". The producer flow control will be rescinded when all
+                Queues on which a producer is blocking become "underfull". A Queue is defined
+                as overfull when the size (in bytes) of the messages on the queue exceeds the
+                "capacity" of the Queue. A Queue becomes "underfull" when its size becomes
+                less than the "flowResumeCapacity".
+
+                <programlisting>
+                <![CDATA[
+<queue>
+    <name>test</name>
+    <test>
+        <exchange>amq.direct</exchange>
+        <capacity>10485760</capacity>                     <!-- set the queue capacity to 10Mb -->
+        <flowResumeCapacity>8388608</flowResumeCapacity>  <!-- set the resume capacity to 8Mb -->
+    </test>
+</queue>
+                ]]>
+                </programlisting>
+
+                The default for all queues on a virtual host can also be set
+
+                <programlisting>
+                <![CDATA[
+<virtualhosts>
+    <virtualhost>
+        <name>localhost</name>
+        <localhost>
+            <capacity>10485760</capacity>                     <!-- set the queue capacity to 10Mb -->
+            <flowResumeCapacity>8388608</flowResumeCapacity>  <!-- set the resume capacity to 8Mb -->
+        </localhost>
+    </virtualhost>
+</virtualhosts>
+                ]]>
+                </programlisting>
+
+                Where no flowResumeCapacity is set, the flowResumeCapacity is set to be equal
+                to the capacity. Where no capacity is set, capacity is defaulted to 0 meaning
+                there is no capacity limit.
+            </para>
+            <section role="h4">
+                <title>Broker Log Messages</title>
+                <para>
+                    There are four new Broker log messages that may occur if flow control through queue capacity limits is enabled.
+                    Firstly, when a capacity limited queue becomes overfull, a log message similar to the following is produced
+                </para>
+                <programlisting>
+MESSAGE [vh(/test)/qu(MyQueue)] [vh(/test)/qu(MyQueue)] QUE-1003 : Overfull : Size : 1,200 bytes, Capacity : 1,000
+                </programlisting>
+                <para>Then for each channel which becomes blocked upon the overful queue a log message similar to the following is produced:</para>
+                <programlisting>
+MESSAGE [con:2(guest@anonymous(713889609)/test)/ch:1] [con:2(guest@anonymous(713889609)/test)/ch:1] CHN-1005 : Flow Control Enforced (Queue MyQueue)
+                </programlisting>
+                <para>When enough messages have been consumed from the queue that it becomes underfull, then the following log is generated: </para>
+                <programlisting>
+MESSAGE [vh(/test)/qu(MyQueue)] [vh(/test)/qu(MyQueue)] QUE-1004 : Underfull : Size : 600 bytes, Resume Capacity : 800
+                </programlisting>
+                <para>And for every channel which becomes unblocked you will see a message similar to: </para>
+                <programlisting>
+MESSAGE [con:2(guest@anonymous(713889609)/test)/ch:1] [con:2(guest@anonymous(713889609)/test)/ch:1] CHN-1006 : Flow Control Removed
+                </programlisting>
+                <para>Obviously the details of connection, virtual host, queue, size, capacity, etc would depend on the configuration in use.</para>
+
+
+            </section><!-- Broker Log Messages -->
+        </section><!-- Configuring a Queue to use flow control -->
+
+        <section role="h3">
+            <title>Disk quota-based flow control</title>
+            <para>
+                Since version 0.18 of Qpid Broker, flow control can be triggered when a
+                configured disk quota is exceeded. This is supported by the BDB and Derby message stores.
+            </para>
+            <para>
+                This functionality blocks all producers on reaching the disk overflow limit. When consumers
+                consume the messages, causing disk space usage to falls below the underflow limit, the
+                producers are unblocked and continue working as normal.
+            </para>
+            <para>
+                Two limits can be configured:
+            </para>
+            <para>
+                overfull limit - the maximum space on disk (in bytes) which can be used by store.
+            </para>
+            <para>
+                underfull limit - when the space on disk drops below this limit, producers are allowed to resume publishing.
+            </para>
+            <para>
+                An example of quota configuration for the BDB message store is provided below.
+            </para>
+            <programlisting>
+            <![CDATA[
+<store>
+   <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>
+   <environment-path>${work}/bdbstore/test</environment-path>
+   <overfull-size>50000000</overfull-size>
+   <underfull-size>45000000</underfull-size>
+</store>
+            ]]>
+            </programlisting>
+            <para>
+                The disk quota functionality is based on "best effort" principle. This means the broker
+                cannot guarantee that the disk space limit will not be exceeded. If several concurrent
+                transactions are started before the limit is reached, which collectively cause the limit
+                to be exceeded, the broker may allow all of them to be committed.
+            </para>
+
+            <section role="h4">
+                <title>Broker Log Messages for quota flow control</title>
+                <para>
+                    There are 2 new broker log messages that may occur if flow control through disk quota limits is enabled.
+                    When the virtual host is blocked due to exceeding of the disk quota limit the following message
+                    appears in the broker log
+                    <programlisting>
+[vh(/test)/ms(BDBMessageStore)] MST-1008 : Store overfull, flow control will be enforced
+                    </programlisting>
+                    When virtual host is unblocked after cleaning the disk space the following message appears in the broker log
+                    <programlisting>
+[vh(/test)/ms(BDBMessageStore)] MST-1009 : Store overfull condition cleared
+                    </programlisting>
+                </para>
+            </section>
+        </section><!-- Disk quota-based flow control -->
+    </section><!-- Server configuration -->
+
+
+    <section role="h2" id="QpidProducerFlowControlClientImpact">
+        <title>Client impact and configuration</title>
+        <para>
+            If a producer sends to a queue which is overfull, the broker will respond by
+            instructing the client not to send any more messages. The impact of this is
+            that any future attempts to send will block until the broker rescinds the flow control order.
+        </para>
+        <para>
+            While blocking the client will periodically log the fact that it is blocked waiting on flow control.
+        </para>
+        <programlisting>
+WARN   Message send delayed by 5s due to broker enforced flow control
+WARN   Message send delayed by 10s due to broker enforced flow control
+        </programlisting>
+        <para>
+            After a set period the send will timeout and throw a JMSException to the calling code.
+        </para>
+        <para>
+            If such a JMSException is thrown, the message will not be sent to the broker,
+            however the underlying Session may still be active - in particular if the
+            Session is transactional then the current transaction will not be automatically
+            rolled back. Users may choose to either attempt to resend the message, or to
+            roll back any transactional work and close the Session.
+        </para>
+        <para>
+            Both the timeout delay and the periodicity of the warning messages can be set
+            using Java system properties.
+        </para>
+        <para>
+            The amount of time (in milliseconds) to wait before timing out
+            is controlled by the property qpid.flow_control_wait_failure.
+        </para>
+        <para>
+            The frequency at which the log message informing that the producer is flow
+            controlled is sent is controlled by the system property qpid.flow_control_wait_notify_period.
+        </para>
+        <para>
+            Adding the following to the command line to start the client would result in a timeout of one minute,
+            with warning messages every ten seconds:
+        </para>
+        <programlisting>
+-Dqpid.flow_control_wait_failure=60000
+-Dqpid.flow_control_wait_notify_period=10000
+        </programlisting>
+        <section role="h3">
+            <title>Older Clients</title>
+            <para>
+                The flow control feature was first added to the Java broker/client in the 0.6 release. If an older client connects to the broker then the flow control commands will be ignored by it and it will not be blocked. So to fully benefit from this feature both Client and Broker need to be at least version 0.6.
+            </para>
+        </section>
+    </section> <!-- Client impact and configuration -->
+</section>

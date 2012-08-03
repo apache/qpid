@@ -29,8 +29,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.net.DatagramSocket;
-import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -110,8 +108,8 @@ public class QpidTestCase extends TestCase
         }
     }
 
-    protected static final String MS_FACTORY_CLASS_NAME_KEY = "messagestorefactory.class.name";
-    protected static final String MEMORY_STORE_FACTORY_CLASS_NAME = "org.apache.qpid.server.store.MemoryMessageStoreFactory";
+    protected static final String MESSAGE_STORE_CLASS_NAME_KEY = "messagestore.class.name";
+    protected static final String MEMORY_STORE_CLASS_NAME = "org.apache.qpid.server.store.MemoryMessageStore";
 
     private static List<String> _exclusionList;
     
@@ -140,12 +138,12 @@ public class QpidTestCase extends TestCase
         }
     }
 
-    public String getTestProfileMessageStoreFactoryClassName()
+    public String getTestProfileMessageStoreClassName()
     {
-        final String storeFactoryClass = System.getProperty(MS_FACTORY_CLASS_NAME_KEY);
-        _logger.debug("MS_FACTORY_CLASS_NAME_KEY " + storeFactoryClass);
+        final String storeClass = System.getProperty(MESSAGE_STORE_CLASS_NAME_KEY);
+        _logger.debug("MESSAGE_STORE_CLASS_NAME_KEY " + storeClass);
         
-        return storeFactoryClass != null ? storeFactoryClass : MEMORY_STORE_FACTORY_CLASS_NAME ;
+        return storeClass != null ? storeClass : MEMORY_STORE_CLASS_NAME ;
     }
 
 
@@ -166,62 +164,15 @@ public class QpidTestCase extends TestCase
             throw new IllegalArgumentException("Invalid start port: " + fromPort);
         }
 
+        PortHelper portHelper = new PortHelper();
         for (int i = fromPort; i <= MAX_PORT_NUMBER; i++)
         {
-            if (available(i)) {
+            if (portHelper.isPortAvailable(i)) {
                 return i;
             }
         }
 
         throw new NoSuchElementException("Could not find an available port above " + fromPort);
-    }
-
-    /**
-     * Checks to see if a specific port is available.
-     *
-     * @param port the port to check for availability
-     */
-    private boolean available(int port)
-    {
-        if ((port < MIN_PORT_NUMBER) || (port > MAX_PORT_NUMBER))
-        {
-            throw new IllegalArgumentException("Invalid start port: " + port);
-        }
-
-        ServerSocket ss = null;
-        DatagramSocket ds = null;
-        try
-        {
-            ss = new ServerSocket(port);
-            ss.setReuseAddress(true);
-            ds = new DatagramSocket(port);
-            ds.setReuseAddress(true);
-            return true;
-        }
-        catch (IOException e)
-        {
-        }
-        finally
-        {
-            if (ds != null)
-            {
-                ds.close();
-            }
-
-            if (ss != null)
-            {
-                try
-                {
-                    ss.close();
-                }
-                catch (IOException e)
-                {
-                    /* should not be thrown */
-                }
-            }
-        }
-
-        return false;
     }
 
     public int findFreePort()

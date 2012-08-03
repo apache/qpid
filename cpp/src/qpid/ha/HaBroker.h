@@ -22,30 +22,53 @@
  *
  */
 
+#include "BrokerInfo.h"
+#include "Membership.h"
+#include "types.h"
+#include "ReplicationTest.h"
 #include "Settings.h"
 #include "qpid/Url.h"
 #include "qpid/sys/Mutex.h"
 #include "qmf/org/apache/qpid/ha/HaBroker.h"
 #include "qpid/management/Manageable.h"
+#include "qpid/types/Variant.h"
 #include <memory>
+#include <set>
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
+
+namespace types {
+class Variant;
+}
+
 namespace broker {
 class Broker;
+class Queue;
 }
+namespace framing {
+class FieldTable;
+}
+
 namespace ha {
 class Backup;
+class ConnectionObserver;
+class Primary;
 
 /**
- * HA state and actions associated with a broker.
+ * HA state and actions associated with a HA broker. Holds all the management info.
  *
  * THREAD SAFE: may be called in arbitrary broker IO or timer threads.
  */
 class HaBroker : public management::Manageable
 {
   public:
+    /** HaBroker is constructed during earlyInitialize */
     HaBroker(broker::Broker&, const Settings&);
     ~HaBroker();
+
+    /** Called during plugin initialization */
+    void initialize();
 
     // Implement Manageable.
     qpid::management::ManagementObject* GetManagementObject() const { return mgmtObject; }
@@ -55,26 +78,57 @@ class HaBroker : public management::Manageable
     broker::Broker& getBroker() { return broker; }
     const Settings& getSettings() const { return settings; }
 
-    // Log a critical error message and shut down the broker.
-    void shutdown(const std::string& message);
+    /** Shut down the broker. Caller should log a critical error message. */
+    void shutdown();
+
+    BrokerStatus getStatus() const;
+    void setStatus(BrokerStatus);
+    void activate();
+
+    Backup* getBackup() { return backup.get(); }
+    ReplicationTest getReplicationTest() const { return replicationTest; }
+
+    boost::shared_ptr<ConnectionObserver> getObserver() { return observer; }
+
+    const BrokerInfo& getBrokerInfo() const { return brokerInfo; }
+
+    void setMembership(const types::Variant::List&); // Set membership from list.
+    void resetMembership(const BrokerInfo& b); // Reset to contain just one member.
+    void addBroker(const BrokerInfo& b);       // Add a broker to the membership.
+    void removeBroker(const types::Uuid& id);  // Remove a broker from membership.
 
   private:
-    void setClientUrl(const Url&, const sys::Mutex::ScopedLock&);
-    void setBrokerUrl(const Url&, const sys::Mutex::ScopedLock&);
-    void setExpectedBackups(size_t, const sys::Mutex::ScopedLock&);
-    void updateClientUrl(const sys::Mutex::ScopedLock&);
-    bool isPrimary(const sys::Mutex::ScopedLock&) { return !backup.get(); }
+    void setClientUrl(const Url&);
+    void setBrokerUrl(const Url&);
+    void updateClientUrl(sys::Mutex::ScopedLock&);
+
+    bool isPrimary(sys::Mutex::ScopedLock&) { return !backup.get(); }
+
+    void setStatus(BrokerStatus, sys::Mutex::ScopedLock&);
+    void recover();
+    void statusChanged(sys::Mutex::ScopedLock&);
+    void setLinkProperties(sys::Mutex::ScopedLock&);
+
     std::vector<Url> getKnownBrokers() const;
 
+    void membershipUpdated(sys::Mutex::ScopedLock&);
+
+    std::string logPrefix;
     broker::Broker& broker;
+    types::Uuid systemId;
     const Settings settings;
 
-    sys::Mutex lock;
+    mutable sys::Mutex lock;
+    boost::shared_ptr<ConnectionObserver> observer; // Used by Backup and Primary
     std::auto_ptr<Backup> backup;
+    std::auto_ptr<Primary> primary;
     qmf::org::apache::qpid::ha::HaBroker* mgmtObject;
     Url clientUrl, brokerUrl;
     std::vector<Url> knownBrokers;
-    size_t expectedBackups;
+    BrokerStatus status;
+    BrokerInfo brokerInfo;
+    Membership membership;
+    ReplicationTest replicationTest;
 };
 }} // namespace qpid::ha
 

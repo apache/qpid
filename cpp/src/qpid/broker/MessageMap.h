@@ -6,7 +6,7 @@
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
+o * regarding copyright ownership.  The ASF licenses this file
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
@@ -50,6 +50,7 @@ class MessageMap : public Messages
     virtual bool browse(const framing::SequenceNumber&, QueuedMessage&, bool);
     bool consume(QueuedMessage&);
     virtual bool push(const QueuedMessage& added, QueuedMessage& removed);
+    void setPosition(const framing::SequenceNumber&);
 
     void foreach(Functor);
     virtual void removeIf(Predicate);

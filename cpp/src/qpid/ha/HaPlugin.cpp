@@ -20,7 +20,7 @@
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
 #include "qpid/broker/Broker.h"
-
+#include <boost/bind.hpp>
 
 namespace qpid {
 namespace ha {
@@ -33,21 +33,21 @@ struct Options : public qpid::Options {
         addOptions()
             ("ha-cluster", optValue(settings.cluster, "yes|no"),
              "Join a HA active/passive cluster.")
-            ("ha-brokers", optValue(settings.brokerUrl,"URL"),
-             "URL that backup brokers use to connect and fail over.")
-            ("ha-public-brokers", optValue(settings.clientUrl,"URL"),
-             "URL that clients use to connect and fail over, defaults to ha-brokers.")
+            ("ha-brokers-url", optValue(settings.brokerUrl,"URL"),
+             "URL with address of each broker in the cluster.")
+            ("ha-public-url", optValue(settings.clientUrl,"URL"),
+             "URL advertized to clients to connect to the cluster.")
             ("ha-replicate",
              optValue(settings.replicateDefault, "LEVEL"),
             "Replication level for creating queues and exchanges if there is no qpid.replicate argument supplied. LEVEL is 'none', 'configuration' or 'all'")
-            ("ha-expected-backups", optValue(settings.expectedBackups, "N"),
-             "Number of backups expected to be active in the HA cluster.")
             ("ha-username", optValue(settings.username, "USER"),
              "Username for connections between HA brokers")
             ("ha-password", optValue(settings.password, "PASS"),
              "Password for connections between HA brokers")
             ("ha-mechanism", optValue(settings.mechanism, "MECH"),
              "Authentication mechanism for connections between HA brokers")
+            ("ha-backup-timeout", optValue(settings.backupTimeout, "SECONDS"),
+             "Maximum time to wait for an expected backup to connect and become ready.")
             ;
     }
 };
@@ -62,14 +62,26 @@ struct HaPlugin : public Plugin {
 
     Options* getOptions() { return &options; }
 
-    void earlyInitialize(Plugin::Target& ) {}
+    void earlyInitialize(Plugin::Target& target) {
+        broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
+        if (broker) {
+            // Must create the HaBroker in earlyInitialize so it can set up its
+            // connection observer before clients start connecting.
+            haBroker.reset(new ha::HaBroker(*broker, settings));
+            broker->addFinalizer(boost::bind(&HaPlugin::finalize, this));
+        }
+    }
 
     void initialize(Plugin::Target& target) {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
-        if (broker) haBroker.reset(new ha::HaBroker(*broker, settings));
+        if (broker) haBroker->initialize();
+    }
+
+    void finalize() {
+        haBroker.reset();
     }
 };
 
-static HaPlugin instance; // Static initialization.
+HaPlugin instance;              // Static initialization.
 
 }} // namespace qpid::ha

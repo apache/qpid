@@ -28,7 +28,7 @@ public abstract class QMFObject<C extends QMFClass, D extends QMFObject.Delegate
 
     public interface Delegate
     {
-        UUID getId();
+        UUID getQMFId();
         long getCreateTime();
     }
 
@@ -49,7 +49,7 @@ public abstract class QMFObject<C extends QMFClass, D extends QMFObject.Delegate
 
     public final UUID getId()
     {
-        return _delegate.getId();
+        return _delegate.getQMFId();
     }
 
     public final long getCreateTime()

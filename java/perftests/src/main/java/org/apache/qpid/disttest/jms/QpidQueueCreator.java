@@ -21,7 +21,6 @@ package org.apache.qpid.disttest.jms;
 import java.util.List;
 
 import javax.jms.Session;
-
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.disttest.DistributedTestException;
@@ -29,11 +28,9 @@ import org.apache.qpid.disttest.controller.config.QueueConfig;
 import org.apache.qpid.framing.FieldTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 public class QpidQueueCreator implements QueueCreator
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(QpidQueueCreator.class);
-
     private static final FieldTable EMPTY_QUEUE_BIND_ARGUMENTS = new FieldTable();
 
     @Override
@@ -69,7 +66,7 @@ public class QpidQueueCreator implements QueueCreator
                     EMPTY_QUEUE_BIND_ARGUMENTS, destination.getExchangeName(),
                     destination, autoDelete);
 
-            LOGGER.info("Created queue " + queueConfig);
+            LOGGER.debug("Created queue " + queueConfig);
         }
         catch (Exception e)
         {
@@ -86,12 +83,11 @@ public class QpidQueueCreator implements QueueCreator
             // use #deleteQueue.
             AMQDestination destination = (AMQDestination) session.createQueue(queueConfig.getName());
             session.sendQueueDelete(destination.getAMQQueueName());
-            LOGGER.info("Deleted queue " + queueConfig.getName());
+            LOGGER.debug("Deleted queue " + queueConfig.getName());
         }
         catch (Exception e)
         {
             throw new DistributedTestException("Failed to delete queue:" + queueConfig.getName(), e);
         }
     }
-
 }

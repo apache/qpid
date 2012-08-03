@@ -258,7 +258,7 @@ QPID_AUTO_TEST_CASE(testOverhead) {
 Statement statement(
     Level level, const char* file="", int line=0, const char* fn=0)
 {
-    Statement s={0, file, line, fn, level};
+    Statement s={0, file, line, fn, level, ::qpid::log::unspecified};
     return s;
 }
 
@@ -347,11 +347,11 @@ QPID_AUTO_TEST_CASE(testLoggerStateure) {
     };
     opts.parse(ARGC(argv), const_cast<char**>(argv));
     l.configure(opts);
-    QPID_LOG(critical, "foo"); int srcline=__LINE__;
+    QPID_LOG_CAT(critical, test, "foo"); int srcline=__LINE__;
     ifstream log("logging.tmp");
     string line;
     getline(log, line);
-    string expect=(format("critical %s:%d: foo")%__FILE__%srcline).str();
+    string expect=(format("[Test] critical %s:%d: foo")%__FILE__%srcline).str();
     BOOST_CHECK_EQUAL(expect, line);
     log.close();
     unlink("logging.tmp");
@@ -375,11 +375,11 @@ QPID_AUTO_TEST_CASE(testQuoteNonPrintable) {
 
     char s[] = "null\0tab\tspace newline\nret\r\x80\x99\xff";
     string str(s, sizeof(s));
-    QPID_LOG(critical, str);
+    QPID_LOG_CAT(critical, test, str);
     ifstream log("logging.tmp");
     string line;
     getline(log, line, '\0');
-    string expect="critical null\\x00tab\tspace newline\nret\r\\x80\\x99\\xFF\\x00\n";
+    string expect="[Test] critical null\\x00tab\tspace newline\nret\r\\x80\\x99\\xFF\\x00\n";
     BOOST_CHECK_EQUAL(expect, line);
     log.close();
     unlink("logging.tmp");

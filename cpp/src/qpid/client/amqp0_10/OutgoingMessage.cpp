@@ -58,7 +58,12 @@ void OutgoingMessage::convert(const qpid::messaging::Message& from)
     if (address) {
         message.getMessageProperties().setReplyTo(AddressResolution::convert(address));
     }
-    translate(from.getProperties(), message.getMessageProperties().getApplicationHeaders());
+    if (!subject.empty()) {
+        Variant v(subject); v.setEncoding("utf8");
+        translate(from.getProperties(), SUBJECT, v, message.getMessageProperties().getApplicationHeaders());
+    } else {
+        translate(from.getProperties(), message.getMessageProperties().getApplicationHeaders());
+    }
     if (from.getTtl().getMilliseconds()) {
         message.getDeliveryProperties().setTtl(from.getTtl().getMilliseconds());
     }
@@ -89,16 +94,14 @@ void OutgoingMessage::convert(const qpid::messaging::Message& from)
     }
 }
 
-void OutgoingMessage::setSubject(const std::string& subject)
+void OutgoingMessage::setSubject(const std::string& s)
 {
-    if (!subject.empty()) {
-        message.getMessageProperties().getApplicationHeaders().setString(SUBJECT, subject);
-    }
+    subject = s;
 }
 
 std::string OutgoingMessage::getSubject() const
 {
-    return message.getMessageProperties().getApplicationHeaders().getAsString(SUBJECT);
+    return subject;
 }
 
 }}} // namespace qpid::client::amqp0_10

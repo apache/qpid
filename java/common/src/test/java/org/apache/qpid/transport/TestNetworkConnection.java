@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.transport;
 
+import java.security.Principal;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.transport.network.NetworkConnection;
@@ -69,6 +70,17 @@ public class TestNetworkConnection implements NetworkConnection
     public void setMaxReadIdle(int idleTime)
     {
 
+    }
+
+    @Override
+    public void setPeerPrincipal(Principal principal)
+    {
+    }
+
+    @Override
+    public Principal getPeerPrincipal()
+    {
+        return null;
     }
 
     public void setMaxWriteIdle(int idleTime)

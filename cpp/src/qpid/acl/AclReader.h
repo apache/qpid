@@ -26,6 +26,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <memory>
 #include "qpid/acl/AclData.h"
 #include "qpid/broker/AclModule.h"
 

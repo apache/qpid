@@ -48,32 +48,52 @@ private:
     enum CONNECTION_PROGRESS { C_CREATED=1, C_OPENED=2 };
 
     Acl&             acl;
-    uint32_t         nameLimit;
-    uint32_t         hostLimit;
+    uint16_t         nameLimit;
+    uint16_t         hostLimit;
+    uint16_t         totalLimit;
+    uint16_t         totalCurrentConnections;
     qpid::sys::Mutex dataLock;
 
+    /** Records per-connection state */
     connectCountsMap_t connectProgressMap;
+
+    /** Records per-username counts */
     connectCountsMap_t connectByNameMap;
+
+    /** Records per-host counts */
     connectCountsMap_t connectByHostMap;
 
+    /** Given a connection's management ID, return the client host name */
     std::string getClientHost(const std::string mgmtId);
 
-    bool limitCheckLH(connectCountsMap_t& theMap,
-                      const std::string& theName,
-                      uint32_t theLimit);
+    /** Return approval for proposed connection */
+    bool limitApproveLH(connectCountsMap_t& theMap,
+                        const std::string& theName,
+                        uint16_t theLimit,
+                        bool emitLog);
 
+    /** Record a connection.
+     * @return indication if user/host is over its limit */
+    bool countConnectionLH(connectCountsMap_t& theMap,
+                           const std::string& theName,
+                           uint16_t theLimit,
+                           bool emitLog);
+
+    /** Release a connection */
     void releaseLH(connectCountsMap_t& theMap,
                    const std::string& theName,
-                   uint32_t theLimit);
+                   uint16_t theLimit);
 
 public:
-    ConnectionCounter(Acl& acl, uint32_t nl, uint32_t hl);
+    ConnectionCounter(Acl& acl, uint16_t nl, uint16_t hl, uint16_t tl);
     ~ConnectionCounter();
 
+    // ConnectionObserver interface
     void connection(broker::Connection& connection);
-    void     opened(broker::Connection& connection);
     void     closed(broker::Connection& connection);
 
+    // Connection counting
+    bool approveConnection(const broker::Connection& conn);
 };
 
 }} // namespace qpid::ha

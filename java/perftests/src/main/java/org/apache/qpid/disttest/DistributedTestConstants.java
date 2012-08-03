@@ -26,8 +26,10 @@ public abstract class DistributedTestConstants
     public static final String MSG_COMMAND_PROPERTY = "COMMAND";
     public static final String MSG_JSON_PROPERTY = "JSON";
 
-    public static final long REGISTRATION_TIMEOUT = 60000;
-    public static final long COMMAND_RESPONSE_TIMEOUT = 10000;
+    public static final long REGISTRATION_TIMEOUT = 60 * 1000;
+
+    /** set to a long time out because stopping clients can take a long time */
+    public static final long COMMAND_RESPONSE_TIMEOUT = 120 * 1000;
 
     public static final String CONTROLLER_QUEUE_JNDI_NAME = "controllerqueue";
 }

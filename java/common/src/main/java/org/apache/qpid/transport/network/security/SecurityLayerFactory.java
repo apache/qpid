@@ -78,9 +78,11 @@ public class SecurityLayerFactory
                 sslCtx = SSLContextFactory
                         .buildClientContext(settings.getTrustStorePath(),
                                 settings.getTrustStorePassword(),
+                                settings.getTrustStoreType(),
                                 settings.getTrustManagerFactoryAlgorithm(),
                                 settings.getKeyStorePath(),
                                 settings.getKeyStorePassword(),
+                                settings.getKeyStoreType(),
                                 settings.getKeyManagerFactoryAlgorithm(),
                                 settings.getCertAlias());
             }

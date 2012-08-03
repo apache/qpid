@@ -76,15 +76,12 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
     private final VirtualHost _virtualHost;
 
-    private MessageStoreLogSubject _logSubject;
-
-    private MessageStore _store;
-
     private final Map<String, Integer> _queueRecoveries = new TreeMap<String, Integer>();
-    private Map<Long, AbstractServerMessageImpl> _recoveredMessages = new HashMap<Long, AbstractServerMessageImpl>();
-    private Map<Long, StoredMessage> _unusedMessages = new HashMap<Long, StoredMessage>();
+    private final Map<Long, AbstractServerMessageImpl> _recoveredMessages = new HashMap<Long, AbstractServerMessageImpl>();
+    private final Map<Long, StoredMessage> _unusedMessages = new HashMap<Long, StoredMessage>();
 
-
+    private MessageStoreLogSubject _logSubject;
+    private MessageStore _store;
 
     public VirtualHostConfigRecoveryHandler(VirtualHost virtualHost)
     {
@@ -100,7 +97,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
         return this;
     }
 
-    public void queue(UUID id, String queueName, String owner, boolean exclusive, FieldTable arguments)
+    public void queue(UUID id, String queueName, String owner, boolean exclusive, FieldTable arguments, UUID alternateExchangeId)
     {
         try
         {
@@ -111,6 +108,17 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
                 q = AMQQueueFactory.createAMQQueueImpl(id, queueName, true, owner, false, exclusive, _virtualHost,
                                                        FieldTable.convertToMap(arguments));
                 _virtualHost.getQueueRegistry().registerQueue(q);
+
+                if (alternateExchangeId != null)
+                {
+                    Exchange altExchange = _virtualHost.getExchangeRegistry().getExchange(alternateExchangeId);
+                    if (altExchange == null)
+                    {
+                        _logger.error("Unknown exchange id " + alternateExchangeId + ", cannot set alternate exchange on queue with id " + id);
+                        return;
+                    }
+                    q.setAlternateExchange(altExchange);
+                }
             }
     
             CurrentActor.get().message(_logSubject, TransactionLogMessages.RECOVERY_START(queueName, true));
@@ -120,12 +128,12 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
         }
         catch (AMQException e)
         {
-            // TODO
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error recovering queue uuid " + id + " name " + queueName, e);
         }
     }
 
-    public ExchangeRecoveryHandler completeQueueRecovery()
+    @Override
+    public BindingRecoveryHandler completeQueueRecovery()
     {
         return this;
     }
@@ -145,19 +153,17 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
         }
         catch (AMQException e)
         {
-            // TODO
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error recovering exchange uuid " + id + " name " + exchangeName, e);
         }
     }
 
-    public BindingRecoveryHandler completeExchangeRecovery()
+    public QueueRecoveryHandler completeExchangeRecovery()
     {
         return this;
     }
 
     public StoredMessageRecoveryHandler begin()
     {
-        // TODO - log begin
         return this;
     }
 
@@ -182,7 +188,6 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
     public void completeMessageRecovery()
     {
-        //TODO - log end
     }
 
     public BridgeRecoveryHandler brokerLink(final UUID id,

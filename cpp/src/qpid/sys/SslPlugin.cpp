@@ -39,6 +39,8 @@
 namespace qpid {
 namespace sys {
 
+class Timer;
+
 using namespace qpid::sys::ssl;
 
 struct SslServerOptions : ssl::SslOptions
@@ -68,6 +70,8 @@ class SslProtocolFactoryTmpl : public ProtocolFactory {
 
     typedef SslAcceptorTmpl<T> SslAcceptor;
 
+    Timer& brokerTimer;
+    uint32_t maxNegotiateTime;
     const bool tcpNoDelay;
     T listener;
     const uint16_t listeningPort;
@@ -75,7 +79,7 @@ class SslProtocolFactoryTmpl : public ProtocolFactory {
     bool nodict;
 
   public:
-    SslProtocolFactoryTmpl(const SslServerOptions&, int backlog, bool nodelay);
+    SslProtocolFactoryTmpl(const SslServerOptions&, int backlog, bool nodelay, Timer& timer, uint32_t maxTime);
     void accept(Poller::shared_ptr, ConnectionCodec::Factory*);
     void connect(Poller::shared_ptr, const std::string& host, const std::string& port,
                  ConnectionCodec::Factory*,
@@ -132,16 +136,18 @@ static struct SslPlugin : public Plugin {
                 try {
                     ssl::initNSS(options, true);
                     nssInitialized = true;
-                    
+
                     const broker::Broker::Options& opts = broker->getOptions();
 
                     ProtocolFactory::shared_ptr protocol(options.multiplex ?
                         static_cast<ProtocolFactory*>(new SslMuxProtocolFactory(options,
                                                   opts.connectionBacklog,
-                                                  opts.tcpNoDelay)) :
+                                                  opts.tcpNoDelay,
+                                                  broker->getTimer(), opts.maxNegotiateTime)) :
                         static_cast<ProtocolFactory*>(new SslProtocolFactory(options,
                                                opts.connectionBacklog,
-                                               opts.tcpNoDelay)));
+                                               opts.tcpNoDelay,
+                                               broker->getTimer(), opts.maxNegotiateTime)));
                     QPID_LOG(notice, "Listening for " <<
                                      (options.multiplex ? "SSL or TCP" : "SSL") <<
                                      " connections on TCP port " <<
@@ -156,14 +162,16 @@ static struct SslPlugin : public Plugin {
 } sslPlugin;
 
 template <class T>
-SslProtocolFactoryTmpl<T>::SslProtocolFactoryTmpl(const SslServerOptions& options, int backlog, bool nodelay) :
+SslProtocolFactoryTmpl<T>::SslProtocolFactoryTmpl(const SslServerOptions& options, int backlog, bool nodelay, Timer& timer, uint32_t maxTime) :
+    brokerTimer(timer),
+    maxNegotiateTime(maxTime),
     tcpNoDelay(nodelay), listeningPort(listener.listen(options.port, backlog, options.certName, options.clientAuth)),
     nodict(options.nodict)
 {}
 
 void SslEstablished(Poller::shared_ptr poller, const qpid::sys::SslSocket& s,
                     ConnectionCodec::Factory* f, bool isClient,
-                    bool tcpNoDelay, bool nodict) {
+                    Timer& timer, uint32_t maxTime, bool tcpNoDelay, bool nodict) {
     qpid::sys::ssl::SslHandler* async = new qpid::sys::ssl::SslHandler(s.getFullAddress(), f, nodict);
 
     if (tcpNoDelay) {
@@ -183,7 +191,7 @@ void SslEstablished(Poller::shared_ptr poller, const qpid::sys::SslSocket& s,
                                  boost::bind(&qpid::sys::ssl::SslHandler::nobuffs, async, _1),
                                  boost::bind(&qpid::sys::ssl::SslHandler::idle, async, _1));
 
-    async->init(aio, 4);
+    async->init(aio,timer, maxTime, 4);
     aio->start(poller);
 }
 
@@ -192,7 +200,7 @@ void SslProtocolFactory::established(Poller::shared_ptr poller, const Socket& s,
                                      ConnectionCodec::Factory* f, bool isClient) {
     const SslSocket *sslSock = dynamic_cast<const SslSocket*>(&s);
 
-    SslEstablished(poller, *sslSock, f, isClient, tcpNoDelay, nodict);
+    SslEstablished(poller, *sslSock, f, isClient, brokerTimer, maxNegotiateTime, tcpNoDelay, nodict);
 }
 
 template <class T>
@@ -216,7 +224,7 @@ void SslMuxProtocolFactory::established(Poller::shared_ptr poller, const Socket&
     const SslSocket *sslSock = dynamic_cast<const SslSocket*>(&s);
 
     if (sslSock) {
-        SslEstablished(poller, *sslSock, f, isClient, tcpNoDelay, nodict);
+        SslEstablished(poller, *sslSock, f, isClient, brokerTimer, maxNegotiateTime, tcpNoDelay, nodict);
         return;
     }
 
@@ -239,7 +247,7 @@ void SslMuxProtocolFactory::established(Poller::shared_ptr poller, const Socket&
        boost::bind(&AsynchIOHandler::nobuffs, async, _1),
        boost::bind(&AsynchIOHandler::idle, async, _1));
 
-    async->init(aio, 4);
+    async->init(aio, brokerTimer, maxNegotiateTime, 4);
     aio->start(poller);
 }
 

@@ -22,42 +22,124 @@ under the License.
 
 <section id="chap-Messaging_User_Guide-Active_Passive_Cluster">
 
-  <title>Active-passive Messaging Clusters (Preview)</title>
+  <title>Active-passive Messaging Clusters</title>
 
   <section>
     <title>Overview</title>
     <para>
-      This release provides a preview of a new module for High Availability (HA). The new module is
-      not yet complete or ready for production use. It being made available so that users can
-      experiment with the new approach and provide feedback early in the development process.
-      Feedback should go to <ulink url="mailto:user@qpid.apache.org">dev@qpid.apache.org</ulink>.
+
+      The High Availability (HA) module provides
+      <firstterm>active-passive</firstterm>, <firstterm>hot-standby</firstterm>
+      messaging clusters to provide fault tolerant message delivery.
     </para>
     <para>
-      The old cluster module takes an <firstterm>active-active</firstterm> approach, i.e. all the
-      brokers in a cluster are able to handle client requests simultaneously. The new HA module
-      takes an <firstterm>active-passive</firstterm>, <firstterm>hot-standby</firstterm> approach.
+      In an active-passive cluster only one broker, known as the
+      <firstterm>primary</firstterm>, is active and serving clients at a time. The other
+      brokers are standing by as <firstterm>backups</firstterm>. Changes on the primary
+      are replicated to all the backups so they are always up-to-date or "hot". Backup
+      brokers reject client connection attempts, to enforce the requirement that clients
+      only connect to the primary.
     </para>
     <para>
-      In an active-passive cluster only one broker, known as the <firstterm>primary</firstterm>, is
-      active and serving clients at a time. The other brokers are standing by as
-      <firstterm>backups</firstterm>. Changes on the primary are immediately replicated to all the
-      backups so they are always up-to-date or "hot".  If the primary fails, one of the backups is
-      promoted to take over as the new primary. Clients fail-over to the new primary
-      automatically. If there are multiple backups, the backups also fail-over to become backups of
-      the new primary.  Backup brokers reject connection attempts, to enforce the requirement that
-      only the primary be active.
+      If the primary fails, one of the backups is promoted to take over as the new
+      primary. Clients fail-over to the new primary automatically. If there are multiple
+      backups, the other backups also fail-over to become backups of the new primary.
     </para>
     <para>
-      This approach depends on an external <firstterm>cluster resource manager</firstterm> to detect
-      failures and choose the primary. <ulink
+      This approach relies on an external <firstterm>cluster resource manager</firstterm>
+      to detect failures, choose the new primary and handle network partitions. <ulink
       url="https://fedorahosted.org/cluster/wiki/RGManager">Rgmanager</ulink> is supported
       initially, but others may be supported in the future.
     </para>
     <section>
-      <title>Why the new approach?</title>
+      <title>Avoiding message loss</title>
       <para>
-	The new active-passive approach has several advantages compared to the
-	existing active-active cluster module.
+	In order to avoid message loss, the primary broker <emphasis>delays
+	acknowledgment</emphasis> of messages received from clients until the
+	message has been replicated to and acknowledged by all of the back-up
+	brokers.
+      </para>
+      <para>
+	Clients buffer unacknowledged messages and re-send them in the event of
+	a fail-over.
+	<footnote>
+	  <para>
+	  Clients must use "at-least-once" reliability to enable re-send of unacknowledged
+	  messages. This is the default behavior, no options need be set to enable it. For
+	  details of client addressing options see &#34;Using the Qpid Messaging API&#34;
+	  in <citetitle>Programming in Apache Qpid</citetitle>
+	  </para>
+	</footnote>
+	If the primary crashes before a message is replicated to
+	all the backups, the client will re-send the message when it fails over
+	to the new primary.
+      </para>
+      <para>
+	Note that this means it is possible for messages to be
+	<emphasis>duplicated</emphasis>. In the event of a failure it is
+	possible for a message to be both received by the backup that becomes
+	the new primary <emphasis>and</emphasis> re-sent by the client.
+      </para>
+      <para>
+	When a new primary is promoted after a fail-over it is initially in
+	"recovering" mode. In this mode, it delays acknowledgment of messages
+	on behalf of all the backups that were connected to the previous
+	primary. This protects those messages against a failure of the new
+	primary until the backups have a chance to connect and catch up.
+      </para>
+      <variablelist>
+	<title>Status of a HA broker</title>
+	<varlistentry>
+	  <term>Joining</term>
+	  <listitem>
+	    <para>
+	      Initial status of a new broker that has not yet connected to the primary.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>Catch-up</term>
+	  <listitem>
+	    <para>
+	      A backup broker that is connected to the primary and catching up
+	      on queues and messages.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>Ready</term>
+	  <listitem>
+	    <para>
+	      A backup broker that is fully caught-up and ready to take over as
+	      primary.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>Recovering</term>
+	  <listitem>
+	    <para>
+	      The newly-promoted primary, waiting for backups to connect and catch up.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>Active</term>
+	  <listitem>
+	    <para>
+	      The active primary broker with all backups connected and caught-up.
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </section>
+    <section>
+      <title>Replacing the old cluster module</title>
+      <para>
+	The High Availability (HA) module replaces the previous
+	<firstterm>active-active</firstterm> cluster module.  The new active-passive
+	approach has several advantages compared to the existing active-active cluster
+	module.
 	<itemizedlist>
 	  <listitem>
 	    It does not depend directly on openais or corosync. It does not use multicast
@@ -77,69 +159,42 @@ under the License.
 	    virtual IP addresses.
 	  </listitem>
 	  <listitem>
-	    Improved performance and scalability due to better use of multiple CPU s
+	    Improved performance and scalability due to better use of multiple CPUs
 	  </listitem>
 	</itemizedlist>
       </para>
     </section>
     <section>
       <title>Limitations</title>
-
-      <para>
-	There are a number of known limitations in the current preview implementation. These
-	will be fixed in the production versions.
-      </para>
-
       <itemizedlist>
 	<listitem>
-	  Transactional changes to queue state are not replicated atomically. If the primary crashes
-	  during a transaction, it is possible that the backup could contain only part of the
-	  changes introduced by a transaction.
+	  Transactional changes to queue state are not replicated atomically. If the
+	  primary crashes during a transaction, it is possible that the backup could
+	  contain only part of the changes introduced by a transaction.
 	</listitem>
 	<listitem>
-	  During a fail-over one backup is promoted to primary and any other backups switch to
-	  the new primary. Messages sent to the new primary before all the backups have
-	  switched could be lost if the new primary itself fails before all the backups have
-	  switched.
-	</listitem>
-	<listitem>
-	  Acknowledgments are confirmed to clients before the message has been dequeued
-	  from replicas or indeed from the local store if that is asynchronous.
-	</listitem>
-	<listitem>
-	  When used with a persistent store: if the entire cluster fails, there are no tools to help
-	  identify the most recent store.
-	</listitem>
-	<listitem>
-	  A persistent broker must have its store erased before joining an existing cluster.
-	  In the production version a persistent broker will be able to load its store and
-	  avoid downloading messages that are in the store from the primary.
+	  Not yet integrated with the persistent store.  A persistent broker must have its
+	  store erased before joining an existing cluster.  If the entire cluster fails,
+	  there are no tools to help identify the most recent store. In the future a
+	  persistent broker will be able to use its stored messages to avoid downloading
+	  messages from the primary when joining a cluster.
 	</listitem>
 	<listitem>
 	  Configuration changes (creating or deleting queues, exchanges and bindings) are
-	  replicated asynchronously. Management tools used to make changes will consider the
-	  change complete when it is complete on the primary, it may not yet be replicated
-	  to all the backups.
+	  replicated asynchronously. Management tools used to make changes will consider
+	  the change complete when it is complete on the primary, it may not yet be
+	  replicated to all the backups.
 	</listitem>
 	<listitem>
-	  Deletions made immediately after a failure (before all the backups are ready) may
-	  be lost on a backup. Queues, exchange or bindings that were deleted on the primary could
-	  re-appear if that backup is promoted to primary on a subsequent failure.
+	  Deletions made immediately after a failure (before all the backups are ready)
+	  may be lost on a backup. Queues, exchange or bindings that were deleted on the
+	  primary could re-appear if that backup is promoted to primary on a subsequent
+	  failure.
 	</listitem>
 	<listitem>
-	  Better control is needed over which queues/exchanges are replicated and which are not.
-	</listitem>
-	<listitem>
-	  There are some known issues affecting performance, both the throughput of
-	  replication and the time taken for backups to fail-over. Performance will improve
-	  in the production version.
-	</listitem>
-	<listitem>
-	  Federated links from the primary will be lost in fail over, they will not be
-	  re-connected on the new primary. Federation links to the primary can fail over.
-	</listitem>
-	<listitem>
-	  Only plain FIFO queues can be replicated. LVQ and ring queues are not yet supported.
+	  Federated links <emphasis>from</emphasis> the primary will be lost in fail over,
+	  they will not be re-connected to the new primary. Federation links
+	  <emphasis>to</emphasis> the primary can fail over.
 	</listitem>
       </itemizedlist>
     </section>
@@ -162,7 +217,7 @@ under the License.
       virtual IP addresses for clients or brokers.
     </para>
   </section>
-  
+
   <section>
     <title>Configuring the Brokers</title>
     <para>
@@ -170,10 +225,10 @@ under the License.
       default. The following broker options are available for the HA module.
     </para>
     <table frame="all" id="ha-broker-options">
-      <title>Options for High Availability Messaging Cluster</title>
+      <title>Broker Options for High Availability Messaging Cluster</title>
       <tgroup align="left" cols="2" colsep="1" rowsep="1">
-	<colspec colname="c1" colwidth="1*"/>
-	<colspec colname="c2" colwidth="3*"/>
+	<colspec colname="c1"/>
+	<colspec colname="c2"/>
 	<thead>
 	  <row>
 	    <entry align="center" nameend="c2" namest="c1">
@@ -184,7 +239,7 @@ under the License.
 	<tbody>
 	  <row>
 	    <entry>
-	      <literal>--ha-cluster <replaceable>yes|no</replaceable></literal>
+	      <literal>ha-cluster <replaceable>yes|no</replaceable></literal>
 	    </entry>
 	    <entry>
 	      Set to "yes" to have the broker join a cluster.
@@ -192,7 +247,7 @@ under the License.
 	  </row>
 	  <row>
 	    <entry>
-	      <literal>--ha-brokers <replaceable>URL</replaceable></literal>
+	      <literal>ha-brokers-url <replaceable>URL</replaceable></literal>
 	    </entry>
 	    <entry>
 	      <para>
@@ -201,54 +256,78 @@ under the License.
 		  <para>
 		  The full format of the URL is given by this grammar:
 		  <programlisting>
-		    url = ["amqp:"][ user ["/" password] "@" ] addr ("," addr)*
-		    addr = tcp_addr / rmda_addr / ssl_addr / ...
-		    tcp_addr = ["tcp:"] host [":" port]
-		    rdma_addr = "rdma:" host [":" port]
-		    ssl_addr = "ssl:" host [":" port]'
+url = ["amqp:"][ user ["/" password] "@" ] addr ("," addr)*
+addr = tcp_addr / rmda_addr / ssl_addr / ...
+tcp_addr = ["tcp:"] host [":" port]
+rdma_addr = "rdma:" host [":" port]
+ssl_addr = "ssl:" host [":" port]'
 		  </programlisting>
 		  </para>
 		</footnote>
-		used by brokers to connect to each other. If you use a virtual IP address
-		then this is a single address, for example
-		<literal>amqp:20.0.20.200</literal>. If you do not use a virtual IP
-		address then the URL must list all the addresses of brokers in the
-		cluster, for example <literal>amqp:node1,node2,node3</literal>
+		used by cluster brokers to connect to each other. The URL can
+		contain a list of all the broker addresses or it can contain a single
+		virtual IP address.  If a list is used it is comma separated, for example
+		<literal>amqp:node1.exaple.com,node2.exaple.com,node3.exaple.com</literal>
 	      </para>
 	    </entry>
 	  </row>
 	  <row>
-	    <entry><literal>--ha-public-brokers <replaceable>URL</replaceable></literal> </entry>
+	    <entry><literal>ha-public-url <replaceable>URL</replaceable></literal> </entry>
 	    <entry>
 	      <para>
-		The URL used by clients to connect to the brokers. This has the same
-		format as the <literal>--ha-brokers</literal> URL above.
+		The URL that is advertised to clients. This defaults to the
+		<literal>ha-brokers-url</literal> URL above, and has the same format.  A
+		virtual IP address is recommended for the public URL as it simplifies
+		deployment and hides changes to the cluster membership from clients.
 	      </para>
 	      <para>
-		If this option is not set, clients will use the same URL as brokers.
 		This option allows you to put client traffic on a different network from
 		broker traffic, which is recommended.
 	      </para>
 	    </entry>
 	  </row>
 	  <row>
-	    <entry><literal>--ha-replicate</literal></entry>
+	    <entry><literal>ha-replicate </literal><replaceable>VALUE</replaceable></entry>
 	    <foo/>
 	    <entry>
-	      <para> 
+	      <para>
 		Specifies whether queues and exchanges are replicated by default.
-		For details see <xref linkend="creating-replicated"/>
+		<replaceable>VALUE</replaceable> is one of: <literal>none</literal>,
+		<literal>configuration</literal>, <literal>all</literal>.
+		For details see <xref linkend="ha-creating-replicated"/>.
 	      </para>
 	    </entry>
 	  </row>
 	  <row>
 	    <entry>
-	      <para><literal>--ha-username <replaceable>USER</replaceable></literal></para>
-	      <para><literal>--ha-password <replaceable>PASS</replaceable></literal></para>
-	      <para><literal>--ha-mechanism <replaceable>MECH</replaceable></literal></para>
+	      <para><literal>ha-username <replaceable>USER</replaceable></literal></para>
+	      <para><literal>ha-password <replaceable>PASS</replaceable></literal></para>
+	      <para><literal>ha-mechanism <replaceable>MECH</replaceable></literal></para>
 	    </entry>
 	    <entry>
-	      Authentication settings used by brokers to connect to each other.
+	      Authentication settings used by HA brokers to connect to each other.
+	      If you are using authorization
+	      (<xref linkend="sect-Messaging_User_Guide-Security-Authorization"/>)
+	      then this user must have all permissions.
+	    </entry>
+	  </row>
+	  <row>
+	    <entry><literal>ha-backup-timeout <replaceable>SECONDS</replaceable></literal> </entry>
+	    <entry>
+	      <para>
+		Maximum time that a recovering primary will wait for an expected
+		backup to connect and become ready.
+	      </para>
+	    </entry>
+	  </row>
+	  <row>
+	    <entry><literal>link-maintenance-interval <replaceable>SECONDS</replaceable></literal></entry>
+	    <entry>
+	      <para>
+		Interval for the broker to check link health and re-connect links if need
+		be. If you want brokers to fail over quickly you can set this to a
+		fraction of a second, for example: 0.1.
+	      </para>
 	    </entry>
 	  </row>
 	</tbody>
@@ -256,7 +335,7 @@ under the License.
     </table>
     <para>
       To configure a HA cluster you must set at least <literal>ha-cluster</literal> and
-      <literal>ha-brokers</literal>.
+      <literal>ha-brokers-url</literal>.
     </para>
   </section>
 
@@ -270,9 +349,9 @@ under the License.
     </para>
     <para>
       The resource manager is responsible for starting the <command>qpidd</command> broker
-      on each node in the cluster. The resource manager <firstterm>promotes</firstterm>
+      on each node in the cluster. The resource manager then <firstterm>promotes</firstterm>
       one of the brokers to be the primary. The other brokers connect to the primary as
-      backups, using the URL provided in the <literal>ha-brokers</literal> configuration
+      backups, using the URL provided in the <literal>ha-brokers-url</literal> configuration
       option.
     </para>
     <para>
@@ -303,7 +382,7 @@ under the License.
       clustered services using <command>cman</command> and
       <command>rgmanager</command>. It will show you how to configure an active-passive,
       hot-standby <command>qpidd</command> HA cluster with <command>rgmanager</command>.
-    </para>
+    </para> 
     <para>
       You must provide a <literal>cluster.conf</literal> file to configure
       <command>cman</command> and <command>rgmanager</command>.  Here is
@@ -398,7 +477,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     <para>
       The <literal>resources</literal> section also defines a pair of virtual IP
       addresses on different sub-nets. One will be used for broker-to-broker
-      communication, the other for client-to-broker. 
+      communication, the other for client-to-broker.
     </para>
     <para>
       To take advantage of the virtual IP addresses, <filename>qpidd.conf</filename>
@@ -406,8 +485,8 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     </para>
     <programlisting>
       ha-cluster=yes
-      ha-brokers=20.0.20.200
-      ha-public-brokers=20.0.10.200
+      ha-brokers-url=20.0.20.200
+      ha-public-url=20.0.10.200
     </programlisting>
     <para>
       This configuration specifies that backup brokers will use 20.0.20.200
@@ -436,21 +515,22 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
   <section>
     <title>Broker Administration Tools</title>
     <para>
-      Normally, clients are not allowed to connect to a backup broker. However management tools are
-      allowed to connect to a backup brokers. If you use these tools you <emphasis>must
-      not</emphasis> add or remove messages from replicated queues, or delete replicated queues or
-      exchanges as this will corrupt the replication process and may cause message loss.
+      Normally, clients are not allowed to connect to a backup broker. However
+      management tools are allowed to connect to a backup brokers. If you use
+      these tools you <emphasis>must not</emphasis> add or remove messages from
+      replicated queues, nor create or delete replicated queues or exchanges as
+      this will disrupt the replication process and may cause message loss.
     </para>
     <para>
       <command>qpid-ha</command> allows you to view and change HA configuration settings.
     </para>
     <para>
       The tools <command>qpid-config</command>, <command>qpid-route</command> and
-      <command>qpid-stat</command> will connect to a backup if you pass the flag <command>--ha-admin</command> on the
+      <command>qpid-stat</command> will connect to a backup if you pass the flag <command>ha-admin</command> on the
       command line.
     </para>
   </section>
-  
+
   <section id="ha-creating-replicated">
     <title>Creating replicated queues and exchanges</title>
     <para>
@@ -459,7 +539,8 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       option. It has one of the following values:
       <itemizedlist>
 	<listitem>
-	  <firstterm>all</firstterm>: Replicate everything automatically: queues, exchanges, bindings and messages.
+	  <firstterm>all</firstterm>: Replicate everything automatically: queues,
+	  exchanges, bindings and messages.
 	</listitem>
 	<listitem>
 	  <firstterm>configuration</firstterm>: Replicate the existence of queues,
@@ -541,10 +622,12 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       membership.
     </para>
     <para>
-      Suppose your cluster has 3 nodes: <literal>node1</literal>, <literal>node2</literal>
-      and <literal>node3</literal> all using the default AMQP port. To connect a client you
-      need to specify the address(es) and set the <literal>reconnect</literal> property to
-      <literal>true</literal>. Here's how to connect each type of client:
+      Suppose your cluster has 3 nodes: <literal>node1</literal>,
+      <literal>node2</literal> and <literal>node3</literal> all using the
+      default AMQP port, and you are not using a virtual IP address. To connect
+      a client you need to specify the address(es) and set the
+      <literal>reconnect</literal> property to <literal>true</literal>. The
+      following sub-sections show how to connect each type of client.
     </para>
     <section>
       <title>C++ clients</title>
@@ -654,6 +737,89 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
 	connectionfactory.qpidConnectionfactory = amqp://guest:guest@clientid/test?brokerlist=&#39;tcp://localhost:5672&#39;,idle_timeout=3
       </screen>
     </section>
+  </section>
+
+  <section>
+    <title>Security.</title>
+    <para>
+      You can secure your cluster using the authentication and authorization features
+      described in <xref linkend="chap-Messaging_User_Guide-Security"/>.
+    </para>
+    <para>
+      Backup brokers connect to the primary broker and subscribe for management
+      events and queue contents. You can specify the identity used to connect
+      to the primary with the following options:
+    </para>
+    <table frame="all" id="ha-broker-security-options">
+      <title>Security options for High Availability Messaging Cluster</title>
+      <tgroup align="left" cols="2" colsep="1" rowsep="1">
+	<colspec colname="c1" colwidth="1*"/>
+	<colspec colname="c2" colwidth="3*"/>
+	<thead>
+	  <row>
+	    <entry align="center" nameend="c2" namest="c1">
+	      Security options for High Availability Messaging Cluster
+	    </entry>
+	  </row>
+	</thead>
+	<tbody>
+	  <row>
+	    <entry>
+	      <para><literal>ha-username <replaceable>USER</replaceable></literal></para>
+	      <para><literal>ha-password <replaceable>PASS</replaceable></literal></para>
+	      <para><literal>ha-mechanism <replaceable>MECH</replaceable></literal></para>
+	    </entry>
+	    <entry>
+	      Authentication settings used by HA brokers to connect to each other.
+	      If you are using authorization
+	      (<xref linkend="sect-Messaging_User_Guide-Security-Authorization"/>)
+	      then this user must have all permissions.
+	    </entry>
+	  </row>
+	</tbody>
+      </tgroup>
+    </table>
+    <para>
+      This identity is also used to authorize actions taken on the backup broker to replicate
+      from the primary, for example to create queues or exchanges.
+    </para>
+  </section>
+
+  <section>
+    <title>Integrating with other Cluster Resource Managers</title>
+    <para>
+      To integrate with a different resource manager you must configure it to:
+      <itemizedlist>
+	<listitem>Start a qpidd process on each node of the cluster.</listitem>
+	<listitem>Restart qpidd if it crashes.</listitem>
+	<listitem>Promote exactly one of the brokers to primary.</listitem>
+	<listitem>Detect a failure and promote a new primary.</listitem>
+      </itemizedlist>
+    </para>
+    <para>
+      The <command>qpid-ha</command> command allows you to check if a broker is primary,
+      and to promote a backup to primary.
+    </para>
+    <para>
+      To test if a broker is the primary:
+      <programlisting>
+	qpid-ha -b <replaceable>broker-address</replaceable> status --expect=primary
+      </programlisting>
+      This command will return 0 if the broker at <replaceable>broker-address</replaceable>
+      is the primary, non-0 otherwise.
+    </para>
+    <para>
+      To promote a broker to primary:
+      <programlisting>
+	qpid-ha -b <replaceable>broker-address</replaceable> promote
+      </programlisting>
+    </para>
+    <para>
+      <command>qpid-ha --help</command> gives information on other commands and options available.
+      You can also use <command>qpid-ha</command> to manually examine and promote brokers. This
+      can be useful for testing failover scenarios without having to set up a full resource manager,
+      or to simulate a cluster on a single node. For deployment, a resource manager is required.
+    </para>
   </section>
 </section>
 

@@ -21,7 +21,7 @@ java.naming.provider.url=${test.profiles}/test-provider.properties
 
 broker.ready=Listening on TCP
 broker.config=build/etc/config-systests.xml
-messagestorefactory.class.name=org.apache.qpid.server.store.MemoryMessageStoreFactory
+messagestore.class.name=org.apache.qpid.server.store.MemoryMessageStore
 broker.protocol.excludes=
 broker.persistent=false
 
@@ -33,7 +33,7 @@ amqj.logging.level=${log}
 amqj.server.logging.level=${log}
 amqj.protocol.logging.level=${log}
 root.logging.level=warn
-log4j.configuration=file:///${test.profiles}/log4j-test.xml
+log4j.configuration=test-profiles/log4j-test.xml
 log4j.debug=false
 
 # Note test-provider.properties also has variables of same name.

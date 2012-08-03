@@ -26,6 +26,7 @@ public class RandomPropertyValueTest extends TestCase
 {
     private RandomPropertyValue _generator;
 
+    @Override
     public void setUp() throws Exception
     {
         super.setUp();

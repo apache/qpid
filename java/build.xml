@@ -18,28 +18,34 @@
  - under the License.
  -
  -->
-<project name="AMQ Java" default="build">
+<project name="AMQ Java" xmlns:ivy="antlib:org.apache.ivy.ant" default="build">
 
   <import file="common.xml"/>
 
   <findSubProjects name="broker-plugins" dir="broker-plugins"/>
   <findSubProjects name="client-plugins" dir="client-plugins"/>
-  <findSubProjects name="management" dir="management" excludes="common,example"/>
+
+  <property name="optional" value="false"/>
+  <property name="modules.opt.default" value="bdbstore bdbstore/jmx perftests/visualisation-jfc"/>
+  <condition property="modules.opt" value="" else="${modules.opt.default}">
+    <isfalse value="${optional}"/>
+  </condition>
 
   <property name="modules.core"       value="common management/common amqp-1-0-common broker client amqp-1-0-client amqp-1-0-client-jms tools"/>
   <property name="modules.examples"   value="client/example management/example"/>
   <property name="modules.tests"      value="systests perftests"/>
-  <property name="modules.management" value="${management}"/>
   <property name="modules.plugin"     value="${broker-plugins} ${client-plugins}"/>
-  <property name="modules.opt"        value=""/>
   <property name="modules.jca"        value="jca"/>
   <property name="modules"            value="${modules.core} ${modules.examples}
-   ${modules.management} ${modules.jca} ${modules.tests} ${modules.plugin} ${modules.opt}"/>
+   ${modules.jca} ${modules.tests} ${modules.plugin} ${modules.opt}"/>
 
   <property name="qpid.jar"           location="${build.lib}/qpid-all.jar"/>
   <basename property="qpid.jar.name"  file="${qpid.jar}"/>
 
   <property name="resources"     value="${project.root}/resources"/>
+
+  <!-- Modules for which coverage will be created by the cover-test target -->
+  <property name="coverage.modules" value="${modules}"/>
 
   <map property="release.excludes" value="${modules}">
     <globmapper from="*" to="*/\*\*"/>
@@ -156,7 +162,7 @@
     <touch file="${qpid.jar}"/>
   </target>
 
-  <target name="build" description="build the project">
+  <target name="build" depends="retrieve-dependencies" description="build the project">
     <iterate target="build"/>
     <antcall target="manifest"/>
   </target>
@@ -212,33 +218,39 @@
   </target>
 
   <target name="coverage-report" description="generate coverage report" depends="cobertura-init">
-    <cobertura-merge datafile="${build.coveragereport}/cobertura.ser">
+    <mkdir dir="${build.coverage.report}" />
+    <mkdir dir="${build.coverage.src}" />
+
+    <cobertura-merge datafile="${build.coverage.report}/cobertura.ser">
       <!-- merge all module coverage reports -->
       <fileset dir="${build}">
         <include name="**/*.ser"/>
       </fileset>
     </cobertura-merge>
+
+    <!-- Copy all covered sources to single directory for cobertura report -->
+
+    <foreach property="module" list="${coverage.modules}">
+
+      <copy todir="${build.coverage.src}">
+        <fileset dir="${module}/src/main/java" includes="**/*.java"/>
+      </copy>
+
+      <copy todir="${build.coverage.src}">
+        <fileset dir="build/scratch/${module}/src" includes="**/*.java"/>
+      </copy>
+    </foreach>
+
     <cobertura-report format="xml"
-                      destdir="${build.coveragereport}"
-		      datafile="${build.coveragereport}/cobertura.ser"
-		      >
-      <fileset dir="${project.root}/common/src/main/java" includes="**/*.java" />
-      <fileset dir="${project.root}/build/scratch/common/src" includes="**/*.java" />
-      <fileset dir="${project.root}/broker/src/main/java" includes="**/*.java" />
-      <fileset dir="${project.root}/build/scratch/broker/src" includes="**/*.java" />
-      <fileset dir="${project.root}/client/src/main/java" includes="**/*.java" />
-      <fileset dir="${project.root}/build/scratch/client/src" includes="**/*.java" />
+                      destdir="${build.coverage.report}"
+		      datafile="${build.coverage.report}/cobertura.ser">
+      <fileset dir="${build.coverage.src}" includes="**/*.java" />
     </cobertura-report>
-	<cobertura-report format="html"
-                      destdir="${build.coveragereport}"
-		      datafile="${build.coveragereport}/cobertura.ser"
-		      >
-      <fileset dir="${project.root}/common/src/main/java" includes="**/*.java" />
-      <fileset dir="${project.root}/build/scratch/common/src" includes="**/*.java" />
-      <fileset dir="${project.root}/broker/src/main/java" includes="**/*.java" />
-      <fileset dir="${project.root}/build/scratch/broker/src" includes="**/*.java" />
-      <fileset dir="${project.root}/client/src/main/java" includes="**/*.java" />
-      <fileset dir="${project.root}/build/scratch/client/src" includes="**/*.java" />
+
+    <cobertura-report format="html"
+                      destdir="${build.coverage.report}"
+		      datafile="${build.coverage.report}/cobertura.ser">
+      <fileset dir="${build.coverage.src}" includes="**/*.java" />
     </cobertura-report>
   </target>
 
@@ -247,7 +259,7 @@
   </target>
 
   <target name="cover-test" description="run tests and generate coverage information" depends="build">
-    <iterate target="cover-test" modules="broker client common"/>
+    <iterate target="cover-test" modules="${coverage.modules}"/>
   </target>
 
   <target name="test-interop" depends="build,compile-tests"
@@ -270,7 +282,7 @@
     </jython>
   </target>
 
-  <target name="findbugs" depends="findbugs-init,build">
+  <target name="findbugs" depends="build,findbugs-init">
 
     <mkdir dir="${build.findbugs}"/>
 
@@ -280,13 +292,15 @@
               stylesheet="fancy-hist.xsl"
               jvmargs="-Xmx512m"
               projectName="Qpid">
-      <auxAnalyzePath>
-        <fileset dir="${build.lib}" includes="qpid*.jar" excludes="*test*.jar *junit*.jar *example*.jar qpid-all.jar"/>
-      </auxAnalyzePath>
+      <!-- The classes for analysis -->
+      <fileset dir="${build.lib}" includes="qpid*.jar" excludes="*test*.jar *-sources*.jar *example*.jar qpid-all.jar"/>
+
+      <!--Additional classes, not for analysis -->
       <auxClassPath>
-        <fileset dir="${build.lib}" includes="**/*.jar" />
-        <fileset dir="${basedir}/lib" includes="org.eclipse*.jar com.ibm.*.jar"/>
+        <fileset dir="${basedir}/lib" includes="**/*.jar"/>
       </auxClassPath>
+
+      <!-- Source, used for improved reporting -->
       <sourcePath>
         <fileset dir="${basedir}" includes="**/src/**/org/.." />
       </sourcePath>
@@ -296,4 +310,22 @@
   <target name="eclipse" description="build eclipse project and classpath files">
     <iterate target="eclipse"/>
   </target>
+
+  <!-- check the following properties which must be specified by the user-->
+  <target name="check-upload-props-exist" description="check that the required properties have been set">
+    <fail unless="nexus.user" message="You must supply the 'nexus.user' property"/>
+    <fail unless="nexus.password" message="You must supply the 'nexus.password' property"/>
+    <fail unless="maven.artifact.dir" message="You must supply the 'maven.artifact.dir' property"/>
+  </target>
+
+  <target name="perform-nexus-upload">
+    <ivy:configure file="ivysettings.nexus.xml"/>
+    <ivy:resolve file="ivy.nexus.xml"/>
+    <ivy:deliver/>
+    <ivy:publish publishivy="false" resolver="nexus"
+             artifactspattern="${maven.artifact.dir}/[organisation]/[module]/[artifact]/[revision]/[artifact]-[revision](-[classifier]).[ext]"/>
+  </target>
+
+  <target name="upload" depends="load-ivy, check-upload-props-exist, perform-nexus-upload"/>
+
 </project>

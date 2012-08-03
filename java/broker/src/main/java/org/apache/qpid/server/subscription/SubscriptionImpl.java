@@ -44,6 +44,7 @@ import org.apache.qpid.server.logging.subjects.SubscriptionLogSubject;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 
@@ -75,7 +76,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
 
     private final AtomicReference<State> _state = new AtomicReference<State>(State.ACTIVE);
-    private AMQQueue.Context _queueContext;
+    private volatile AMQQueue.Context _queueContext;
 
     private final ClientDeliveryMethod _deliveryMethod;
     private final RecordDeliveryMethod _recordMethod;
@@ -90,10 +91,15 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     private final long _subscriptionID;
     private LogSubject _logSubject;
     private LogActor _logActor;
-    private UUID _id;
+    private UUID _qmfId;
     private final AtomicLong _deliveredCount = new AtomicLong(0);
-    private long _createTime = System.currentTimeMillis();
+    private final AtomicLong _deliveredBytes = new AtomicLong(0);
 
+    private final AtomicLong _unacknowledgedCount = new AtomicLong(0);
+    private final AtomicLong _unacknowledgedBytes = new AtomicLong(0);
+
+    private long _createTime = System.currentTimeMillis();
+    
 
     static final class BrowserSubscription extends SubscriptionImpl
     {
@@ -276,22 +282,13 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         public void send(QueueEntry entry, boolean batch) throws AMQException
         {
 
-            // if we do not need to wait for client acknowledgements
-            // we can decrement the reference count immediately.
-
-            // By doing this _before_ the send we ensure that it
-            // doesn't get sent if it can't be dequeued, preventing
-            // duplicate delivery on recovery.
-
-            // The send may of course still fail, in which case, as
-            // the message is unacked, it will be lost.
-
+            
             synchronized (getChannel())
             {
                 getChannel().getProtocolSession().setDeferFlush(batch);
                 long deliveryTag = getChannel().getNextDeliveryTag();
 
-
+                addUnacknowledgedMessage(entry);
                 recordMessageDelivery(entry, deliveryTag);
                 sendToClient(entry, deliveryTag);
 
@@ -371,6 +368,11 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     }
 
+    public AMQSessionModel getSessionModel()
+    {
+        return _channel;
+    }
+
     public ConfigStore getConfigStore()
     {
         return getQueue().getConfigStore();
@@ -389,7 +391,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         }
         _queue = queue;
 
-        _id = getConfigStore().createId();
+        _qmfId = getConfigStore().createId();
         getConfigStore().addConfiguredObject(this);
 
         _logSubject = new SubscriptionLogSubject(this);
@@ -468,11 +470,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         _deleted.set(true);
     }
 
-    public boolean filtersMessages()
-    {
-        return _filters != null || _noLocal;
-    }
-
     public boolean hasInterest(QueueEntry entry)
     {
         //check that the message hasn't been rejected
@@ -506,13 +503,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         }
         return checkFilters(entry);
 
-    }
-
-    private String id = String.valueOf(System.identityHashCode(this));
-
-    private String debugIdentity()
-    {
-        return id;
     }
 
     private boolean checkFilters(QueueEntry msg)
@@ -599,6 +589,11 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         return _consumerTag;
     }
 
+    public String getConsumerName()
+    {
+        return _consumerTag == null ? null : _consumerTag.asString();
+    }
+    
     public long getSubscriptionID()
     {
         return _subscriptionID;
@@ -687,6 +682,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     {
         _deliveryMethod.deliverToClient(this,entry,deliveryTag);
         _deliveredCount.incrementAndGet();
+        _deliveredBytes.addAndGet(entry.getSize());
     }
 
 
@@ -771,9 +767,10 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         return true;
     }
 
-    public UUID getId()
+    @Override
+    public UUID getQMFId()
     {
-        return _id;
+        return _qmfId;
     }
 
     public boolean isDurable()
@@ -831,5 +828,45 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         _channel.getProtocolSession().setDeferFlush(false);
 
         _channel.getProtocolSession().flushBatched();
+    }
+
+    public long getBytesOut()
+    {
+        return _deliveredBytes.longValue();
+    }
+
+    public long getMessagesOut()
+    {
+        return _deliveredCount.longValue();
+    }
+
+
+    protected void addUnacknowledgedMessage(QueueEntry entry)
+    {
+        final long size = entry.getSize();
+        _unacknowledgedBytes.addAndGet(size);
+        _unacknowledgedCount.incrementAndGet();
+        entry.addStateChangeListener(new QueueEntry.StateChangeListener()
+        {
+            public void stateChanged(QueueEntry entry, QueueEntry.State oldState, QueueEntry.State newState)
+            {
+                if(oldState.equals(QueueEntry.State.ACQUIRED) && !newState.equals(QueueEntry.State.ACQUIRED))
+                {
+                    _unacknowledgedBytes.addAndGet(-size);
+                    _unacknowledgedCount.decrementAndGet();
+                    entry.removeStateChangeListener(this);
+                }
+            }
+        });
+    }
+    
+    public long getUnacknowledgedBytes()
+    {
+        return _unacknowledgedBytes.longValue();
+    }
+
+    public long getUnacknowledgedMessages()
+    {
+        return _unacknowledgedCount.longValue();
     }
 }

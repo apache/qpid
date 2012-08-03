@@ -76,18 +76,20 @@ def error_line(filename, n=1):
     except: return ""
     return ":\n" + "".join(result)
 
-def retry(function, timeout=10, delay=.01):
-    """Call function until it returns True or timeout expires.
-    Double the delay for each retry. Return True if function
-    returns true, False if timeout expires."""
+def retry(function, timeout=10, delay=.01, max_delay=1):
+    """Call function until it returns a true value or timeout expires.
+    Double the delay for each retry up to max_delay.
+    Returns what function returns if true, None if timeout expires."""
     deadline = time.time() + timeout
-    while not function():
+    ret = None
+    while True:
+        ret = function()
+        if ret: return ret
         remaining = deadline - time.time()
         if remaining <= 0: return False
         delay = min(delay, remaining)
         time.sleep(delay)
-        delay *= 2
-    return True
+        delay = min(delay*2, max_delay)
 
 class AtomicCounter:
     def __init__(self):
@@ -239,15 +241,13 @@ def find_in_file(str, filename):
 class Broker(Popen):
     "A broker process. Takes care of start, stop and logging."
     _broker_count = 0
+    _log_count = 0
 
-    def __str__(self): return "Broker<%s %s>"%(self.name, self.pname)
+    def __str__(self): return "Broker<%s %s :%d>"%(self.log, self.pname, self.port())
 
     def find_log(self):
-        self.log = "%s.log" % self.name
-        i = 1
-        while (os.path.exists(self.log)):
-            self.log = "%s-%d.log" % (self.name, i)
-            i += 1
+        self.log = "%03d:%s.log" % (Broker._log_count, self.name)
+        Broker._log_count += 1
 
     def get_log(self):
         return os.path.abspath(self.log)
@@ -298,9 +298,9 @@ class Broker(Popen):
         # Read port from broker process stdout if not already read.
         if (self._port == 0):
             try: self._port = int(self.stdout.readline())
-            except ValueError:
-                raise Exception("Can't get port for broker %s (%s)%s" %
-                                (self.name, self.pname, error_line(self.log,5)))
+            except ValueError, e:
+                raise Exception("Can't get port for broker %s (%s)%s: %s" %
+                                (self.name, self.pname, error_line(self.log,5), e))
         return self._port
 
     def unexpected(self,msg):
@@ -572,7 +572,7 @@ class NumberedSender(Thread):
         """
         Thread.__init__(self)
         cmd = ["qpid-send",
-             "--broker", url or broker.host_port(),
+               "--broker", url or broker.host_port(),
                "--address", "%s;{create:always}"%queue,
                "--connection-options", "{%s}"%(connection_options),
                "--content-stdin"
@@ -647,6 +647,7 @@ class NumberedReceiver(Thread):
         self.error = None
         self.sender = sender
         self.received = 0
+        self.queue = queue
 
     def read_message(self):
         n = int(self.receiver.stdout.readline())
@@ -657,7 +658,7 @@ class NumberedReceiver(Thread):
             m = self.read_message()
             while m != -1:
                 self.receiver.assert_running()
-                assert(m <= self.received) # Check for missing messages
+                assert m <= self.received, "%s missing message %s>%s"%(self.queue, m, self.received)
                 if (m == self.received): # Ignore duplicates
                     self.received += 1
                     if self.sender:

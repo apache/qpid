@@ -113,6 +113,7 @@ namespace acl {
 
 namespace broker {
 
+    class Connection;
 
     class AclModule
     {
@@ -138,6 +139,11 @@ namespace broker {
             const std::string&      RoutingKey)=0;
 
         // Add specialized authorise() methods as required.
+
+        /** Approve connection by counting connections total, per-IP, and
+         *  per-user.
+         */
+        virtual bool approveConnection (const Connection& connection)=0;
 
         virtual ~AclModule() {};
     };

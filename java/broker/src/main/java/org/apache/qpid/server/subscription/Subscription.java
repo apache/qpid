@@ -23,6 +23,7 @@ package org.apache.qpid.server.subscription;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 
@@ -31,6 +32,14 @@ public interface Subscription
     LogActor getLogActor();
 
     boolean isTransient();
+
+    long getBytesOut();
+
+    long getMessagesOut();
+
+    long getUnacknowledgedBytes();
+
+    long getUnacknowledgedMessages();
 
     public static enum State
     {
@@ -45,6 +54,7 @@ public interface Subscription
     }
 
     AMQQueue getQueue();
+    AMQSessionModel getSessionModel();
 
     QueueEntry.SubscriptionAcquiredState getOwningState();
     QueueEntry.SubscriptionAssignedState getAssignedState();
@@ -108,4 +118,6 @@ public interface Subscription
     boolean isSessionTransactional();
 
     void queueEmpty() throws AMQException;
+
+    String getConsumerName();
 }

@@ -22,6 +22,7 @@ package org.apache.qpid.server.store.berkeleydb;
 
 import com.sleepycat.bind.tuple.ByteBinding;
 import com.sleepycat.bind.tuple.LongBinding;
+import com.sleepycat.je.CheckpointConfig;
 import com.sleepycat.je.Cursor;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
@@ -29,14 +30,17 @@ import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
+import com.sleepycat.je.ExceptionEvent;
+import com.sleepycat.je.ExceptionListener;
 import com.sleepycat.je.LockConflictException;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
-import com.sleepycat.je.TransactionConfig;
 import java.io.File;
 import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +48,7 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.FieldTable;
@@ -53,28 +58,13 @@ import org.apache.qpid.server.federation.Bridge;
 import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
+import org.apache.qpid.server.store.*;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.BindingRecoveryHandler;
+import org.apache.qpid.server.store.ConfigurationRecoveryHandler.BrokerLinkRecoveryHandler;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.ExchangeRecoveryHandler;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.QueueRecoveryHandler;
-import org.apache.qpid.server.store.ConfiguredObjectHelper;
-import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.Event;
-import org.apache.qpid.server.store.EventListener;
-import org.apache.qpid.server.store.EventManager;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
-import org.apache.qpid.server.store.State;
-import org.apache.qpid.server.store.StateManager;
-import org.apache.qpid.server.store.StorableMessageMetaData;
-import org.apache.qpid.server.store.StoreFuture;
-import org.apache.qpid.server.store.StoredMemoryMessage;
-import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
 import org.apache.qpid.server.store.TransactionLogRecoveryHandler.QueueEntryRecoveryHandler;
-import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.berkeleydb.entry.PreparedTransaction;
 import org.apache.qpid.server.store.berkeleydb.entry.QueueEntryKey;
 import org.apache.qpid.server.store.berkeleydb.entry.Xid;
@@ -96,7 +86,10 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
     public static final int VERSION = 6;
 
-    public static final String ENVIRONMENT_PATH_PROPERTY = "environment-path";
+    private static final Map<String, String> ENVCONFIG_DEFAULTS = Collections.unmodifiableMap(new HashMap<String, String>()
+    {{
+        put(EnvironmentConfig.LOCK_N_LOCK_TABLES, "7");
+    }});
 
     private Environment _environment;
 
@@ -145,36 +138,44 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
     protected final StateManager _stateManager;
 
-    protected TransactionConfig _transactionConfig = new TransactionConfig();
-
     private MessageStoreRecoveryHandler _messageRecoveryHandler;
 
     private TransactionLogRecoveryHandler _tlogRecoveryHandler;
 
     private ConfigurationRecoveryHandler _configRecoveryHandler;
-    
+
+    private long _totalStoreSize;
+    private boolean _limitBusted;
+    private long _persistentSizeLowThreshold;
+    private long _persistentSizeHighThreshold;
+
     private final EventManager _eventManager = new EventManager();
     private String _storeLocation;
 
     private ConfiguredObjectHelper _configuredObjectHelper = new ConfiguredObjectHelper();
+
+    private Map<String, String> _envConfigMap;
 
     public AbstractBDBMessageStore()
     {
         _stateManager = new StateManager(_eventManager);
     }
 
+    @Override
+    public void addEventListener(EventListener eventListener, Event... events)
+    {
+        _eventManager.addEventListener(eventListener, events);
+    }
+
     public void configureConfigStore(String name,
                                      ConfigurationRecoveryHandler recoveryHandler,
                                      Configuration storeConfiguration) throws Exception
     {
-        _stateManager.attainState(State.CONFIGURING);
+        _stateManager.attainState(State.INITIALISING);
 
         _configRecoveryHandler = recoveryHandler;
 
-        configure(name,storeConfiguration);
-
-
-
+        configure(name, storeConfiguration);
     }
 
     public void configureMessageStore(String name,
@@ -185,12 +186,12 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         _messageRecoveryHandler = messageRecoveryHandler;
         _tlogRecoveryHandler = tlogRecoveryHandler;
 
-        _stateManager.attainState(State.CONFIGURED);
+        _stateManager.attainState(State.INITIALISED);
     }
 
-    public void activate() throws Exception
+    public synchronized void activate() throws Exception
     {
-        _stateManager.attainState(State.RECOVERING);
+        _stateManager.attainState(State.ACTIVATING);
 
         recoverConfig(_configRecoveryHandler);
         recoverMessages(_messageRecoveryHandler);
@@ -204,7 +205,6 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         return new BDBTransaction();
     }
 
-
     /**
      * Called after instantiation in order to configure the message store.
      *
@@ -215,8 +215,15 @@ public abstract class AbstractBDBMessageStore implements MessageStore
      */
     public void configure(String name, Configuration storeConfig) throws Exception
     {
-        final String storeLocation = storeConfig.getString(ENVIRONMENT_PATH_PROPERTY,
+        final String storeLocation = storeConfig.getString(MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY,
                 System.getProperty("QPID_WORK") + File.separator + "bdbstore" + File.separator + name);
+
+        _persistentSizeHighThreshold = storeConfig.getLong(MessageStoreConstants.OVERFULL_SIZE_PROPERTY, Long.MAX_VALUE);
+        _persistentSizeLowThreshold = storeConfig.getLong(MessageStoreConstants.UNDERFULL_SIZE_PROPERTY, _persistentSizeHighThreshold);
+        if(_persistentSizeLowThreshold > _persistentSizeHighThreshold || _persistentSizeLowThreshold < 0l)
+        {
+            _persistentSizeLowThreshold = _persistentSizeHighThreshold;
+        }
 
         File environmentPath = new File(storeLocation);
         if (!environmentPath.exists())
@@ -230,9 +237,37 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
         _storeLocation = storeLocation;
 
+        _envConfigMap = getConfigMap(ENVCONFIG_DEFAULTS, storeConfig, "envConfig");
+
         LOGGER.info("Configuring BDB message store");
 
         setupStore(environmentPath, name);
+    }
+
+    protected Map<String,String> getConfigMap(Map<String, String> defaultConfig, Configuration config, String prefix) throws ConfigurationException
+    {
+        final List<Object> argumentNames = config.getList(prefix + ".name");
+        final List<Object> argumentValues = config.getList(prefix + ".value");
+        final int initialSize = argumentNames.size() + defaultConfig.size();
+
+        final Map<String,String> attributes = new HashMap<String,String>(initialSize);
+        attributes.putAll(defaultConfig);
+
+        for (int i = 0; i < argumentNames.size(); i++)
+        {
+            final String argName = argumentNames.get(i).toString();
+            final String argValue = argumentValues.get(i).toString();
+
+            attributes.put(argName, argValue);
+        }
+
+        return Collections.unmodifiableMap(attributes);
+    }
+
+    @Override
+    public String getStoreLocation()
+    {
+        return _storeLocation;
     }
 
     /**
@@ -244,9 +279,9 @@ public abstract class AbstractBDBMessageStore implements MessageStore
      */
     void startWithNoRecover() throws AMQStoreException
     {
-        _stateManager.attainState(State.CONFIGURING);
-        _stateManager.attainState(State.CONFIGURED);
-        _stateManager.attainState(State.RECOVERING);
+        _stateManager.attainState(State.INITIALISING);
+        _stateManager.attainState(State.INITIALISED);
+        _stateManager.attainState(State.ACTIVATING);
         _stateManager.attainState(State.ACTIVE);
     }
 
@@ -257,53 +292,11 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         new Upgrader(_environment, name).upgradeIfNecessary();
 
         openDatabases();
+
+        _totalStoreSize = getSizeOnDisk();
     }
 
-    protected Environment createEnvironment(File environmentPath) throws DatabaseException
-    {
-        LOGGER.info("BDB message store using environment path " + environmentPath.getAbsolutePath());
-        EnvironmentConfig envConfig = new EnvironmentConfig();
-        // This is what allows the creation of the store if it does not already exist.
-        envConfig.setAllowCreate(true);
-        envConfig.setTransactional(true);
-        envConfig.setConfigParam("je.lock.nLockTables", "7");
-
-        // Added to help diagnosis of Deadlock issue
-        // http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#23
-        if (Boolean.getBoolean("qpid.bdb.lock.debug"))
-        {
-            envConfig.setConfigParam("je.txn.deadlockStackTrace", "true");
-            envConfig.setConfigParam("je.txn.dumpLocks", "true");
-        }
-
-        // Set transaction mode
-        _transactionConfig.setReadCommitted(true);
-
-        //This prevents background threads running which will potentially update the store.
-        envConfig.setReadOnly(false);
-        try
-        {
-            return new Environment(environmentPath, envConfig);
-        }
-        catch (DatabaseException de)
-        {
-            if (de.getMessage().contains("Environment.setAllowCreate is false"))
-            {
-                //Allow the creation this time
-                envConfig.setAllowCreate(true);
-                if (_environment != null )
-                {
-                    _environment.cleanLog();
-                    _environment.close();
-                }
-                return new Environment(environmentPath, envConfig);
-            }
-            else
-            {
-                throw de;
-            }
-        }
-    }
+    protected abstract Environment createEnvironment(File environmentPath) throws DatabaseException;
 
     public Environment getEnvironment()
     {
@@ -343,14 +336,9 @@ public abstract class AbstractBDBMessageStore implements MessageStore
      */
     public void close() throws Exception
     {
-        if (_stateManager.isInState(State.ACTIVE) || _stateManager.isInState(State.QUIESCED))
-        {
-            _stateManager.stateTransition(State.ACTIVE, State.CLOSING);
-
-            closeInternal();
-
-            _stateManager.stateTransition(State.CLOSING, State.CLOSED);
-        }
+        _stateManager.attainState(State.CLOSING);
+        closeInternal();
+        _stateManager.attainState(State.CLOSED);
     }
 
     protected void closeInternal() throws Exception
@@ -409,8 +397,14 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             // Clean the log before closing. This makes sure it doesn't contain
             // redundant data. Closing without doing this means the cleaner may not
             // get a chance to finish.
-            _environment.cleanLog();
-            _environment.close();
+            try
+            {
+                _environment.cleanLog();
+            }
+            finally
+            {
+                _environment.close();
+            }
         }
     }
 
@@ -420,16 +414,16 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         try
         {
             List<ConfiguredObjectRecord> configuredObjects = loadConfiguredObjects();
-            QueueRecoveryHandler qrh = recoveryHandler.begin(this);
-            _configuredObjectHelper.recoverQueues(qrh, configuredObjects);
-
-            ExchangeRecoveryHandler erh = qrh.completeQueueRecovery();
+            ExchangeRecoveryHandler erh = recoveryHandler.begin(this);
             _configuredObjectHelper.recoverExchanges(erh, configuredObjects);
 
-            BindingRecoveryHandler brh = erh.completeExchangeRecovery();
+            QueueRecoveryHandler qrh = erh.completeExchangeRecovery();
+            _configuredObjectHelper.recoverQueues(qrh, configuredObjects);
+
+            BindingRecoveryHandler brh = qrh.completeQueueRecovery();
             _configuredObjectHelper.recoverBindings(brh, configuredObjects);
 
-            ConfigurationRecoveryHandler.BrokerLinkRecoveryHandler lrh = brh.completeBindingRecovery();
+            BrokerLinkRecoveryHandler lrh = brh.completeBindingRecovery();
             recoverBrokerLinks(lrh);
         }
         catch (DatabaseException e)
@@ -552,7 +546,8 @@ public abstract class AbstractBDBMessageStore implements MessageStore
                 long messageId = LongBinding.entryToLong(key);
                 StorableMessageMetaData metaData = valueBinding.entryToObject(value);
 
-                StoredBDBMessage message = new StoredBDBMessage(messageId, metaData, false);
+                StoredBDBMessage message = new StoredBDBMessage(messageId, metaData, true);
+
                 mrh.message(message);
 
                 maxId = Math.max(maxId, messageId);
@@ -950,10 +945,10 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         if (_stateManager.isInState(State.ACTIVE))
         {
             DatabaseEntry key = new DatabaseEntry();
-            UUIDTupleBinding.getInstance().objectToEntry(link.getId(), key);
+            UUIDTupleBinding.getInstance().objectToEntry(link.getQMFId(), key);
 
             DatabaseEntry value = new DatabaseEntry();
-            LongBinding.longToEntry(link.getCreateTime(),value);
+            LongBinding.longToEntry(link.getCreateTime(), value);
             StringMapBinding.getInstance().objectToEntry(link.getArguments(), value);
 
             try
@@ -971,7 +966,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     public void deleteBrokerLink(final BrokerLink link) throws AMQStoreException
     {
         DatabaseEntry key = new DatabaseEntry();
-        UUIDTupleBinding.getInstance().objectToEntry(link.getId(), key);
+        UUIDTupleBinding.getInstance().objectToEntry(link.getQMFId(), key);
         try
         {
             OperationStatus status = _linkDb.delete(null, key);
@@ -991,10 +986,10 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         if (_stateManager.isInState(State.ACTIVE))
         {
             DatabaseEntry key = new DatabaseEntry();
-            UUIDTupleBinding.getInstance().objectToEntry(bridge.getId(), key);
+            UUIDTupleBinding.getInstance().objectToEntry(bridge.getQMFId(), key);
 
             DatabaseEntry value = new DatabaseEntry();
-            UUIDTupleBinding.getInstance().objectToEntry(bridge.getLink().getId(),value);
+            UUIDTupleBinding.getInstance().objectToEntry(bridge.getLink().getQMFId(),value);
             LongBinding.longToEntry(bridge.getCreateTime(),value);
             StringMapBinding.getInstance().objectToEntry(bridge.getArguments(), value);
 
@@ -1014,7 +1009,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     public void deleteBridge(final Bridge bridge) throws AMQStoreException
     {
         DatabaseEntry key = new DatabaseEntry();
-        UUIDTupleBinding.getInstance().objectToEntry(bridge.getId(), key);
+        UUIDTupleBinding.getInstance().objectToEntry(bridge.getQMFId(), key);
         try
         {
             OperationStatus status = _bridgeDb.delete(null, key);
@@ -1247,7 +1242,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     /**
      * Primarily for testing purposes.
      *
-     * @param queueName
+     * @param queueId
      *
      * @return a list of message ids for messages enqueued for a particular queue
      */
@@ -1494,6 +1489,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         return true;
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(T metaData)
     {
         if(metaData.isPersistent())
@@ -1580,34 +1576,29 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     {
 
         private final long _messageId;
-        private volatile SoftReference<StorableMessageMetaData> _metaDataRef;
+        private final boolean _isRecovered;
 
         private StorableMessageMetaData _metaData;
-        private volatile SoftReference<byte[]> _dataRef;
+        private volatile SoftReference<StorableMessageMetaData> _metaDataRef;
+
         private byte[] _data;
+        private volatile SoftReference<byte[]> _dataRef;
 
         StoredBDBMessage(long messageId, StorableMessageMetaData metaData)
         {
-            this(messageId, metaData, true);
+            this(messageId, metaData, false);
         }
 
-
-        StoredBDBMessage(long messageId,
-                           StorableMessageMetaData metaData, boolean persist)
+        StoredBDBMessage(long messageId, StorableMessageMetaData metaData, boolean isRecovered)
         {
-            try
+            _messageId = messageId;
+            _isRecovered = isRecovered;
+
+            if(!_isRecovered)
             {
-                _messageId = messageId;
                 _metaData = metaData;
-
-                _metaDataRef = new SoftReference<StorableMessageMetaData>(metaData);
-
             }
-            catch (DatabaseException e)
-            {
-                throw new RuntimeException(e);
-            }
-
+            _metaDataRef = new SoftReference<StorableMessageMetaData>(metaData);
         }
 
         public StorableMessageMetaData getMetaData()
@@ -1697,8 +1688,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
         synchronized void store(com.sleepycat.je.Transaction txn)
         {
-
-            if(_metaData != null)
+            if (!stored())
             {
                 try
                 {
@@ -1730,12 +1720,12 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
         public synchronized StoreFuture flushToStore()
         {
-            if(_metaData != null)
+            if(!stored())
             {
                 com.sleepycat.je.Transaction txn = _environment.beginTransaction(null, null);
                 store(txn);
                 AbstractBDBMessageStore.this.commit(txn,true);
-
+                storedSizeChange(getMetaData().getContentSize());
             }
             return StoreFuture.IMMEDIATE_FUTURE;
         }
@@ -1744,18 +1734,27 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         {
             try
             {
+                int delta = getMetaData().getContentSize();
                 AbstractBDBMessageStore.this.removeMessage(_messageId, false);
+                storedSizeChange(-delta);
+
             }
             catch (AMQStoreException e)
             {
                 throw new RuntimeException(e);
             }
         }
+
+        private boolean stored()
+        {
+            return _metaData == null || _isRecovered;
+        }
     }
 
     private class BDBTransaction implements org.apache.qpid.server.store.Transaction
     {
         private com.sleepycat.je.Transaction _txn;
+        private int _storeSizeIncrease;
 
         private BDBTransaction()
         {
@@ -1765,7 +1764,10 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             }
             catch (DatabaseException e)
             {
-                throw new RuntimeException(e);
+                LOGGER.error("Exception during transaction begin, closing store environment.", e);
+                closeEnvironmentSafely();
+
+                throw new RuntimeException("Exception during transaction begin, store environment closed.", e);
             }
         }
 
@@ -1773,7 +1775,9 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         {
             if(message.getStoredMessage() instanceof StoredBDBMessage)
             {
-                ((StoredBDBMessage)message.getStoredMessage()).store(_txn);
+                final StoredBDBMessage storedMessage = (StoredBDBMessage) message.getStoredMessage();
+                storedMessage.store(_txn);
+                _storeSizeIncrease += storedMessage.getMetaData().getContentSize();
             }
 
             AbstractBDBMessageStore.this.enqueueMessage(_txn, queue, message.getMessageNumber());
@@ -1787,10 +1791,12 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         public void commitTran() throws AMQStoreException
         {
             AbstractBDBMessageStore.this.commitTranImpl(_txn, true);
+            AbstractBDBMessageStore.this.storedSizeChange(_storeSizeIncrease);
         }
 
         public StoreFuture commitTranAsync() throws AMQStoreException
         {
+            AbstractBDBMessageStore.this.storedSizeChange(_storeSizeIncrease);
             return AbstractBDBMessageStore.this.commitTranImpl(_txn, false);
         }
 
@@ -1811,15 +1817,133 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         }
     }
 
-    @Override
-    public void addEventListener(EventListener eventListener, Event... events)
+    private void storedSizeChange(final int delta)
     {
-        _eventManager.addEventListener(eventListener, events);
+        if(getPersistentSizeHighThreshold() > 0)
+        {
+            synchronized (this)
+            {
+                // the delta supplied is an approximation of a store size change. we don;t want to check the statistic every
+                // time, so we do so only when there's been enough change that it is worth looking again. We do this by
+                // assuming the total size will change by less than twice the amount of the message data change.
+                long newSize = _totalStoreSize += 2*delta;
+
+                if(!_limitBusted &&  newSize > getPersistentSizeHighThreshold())
+                {
+                    _totalStoreSize = getSizeOnDisk();
+
+                    if(_totalStoreSize > getPersistentSizeHighThreshold())
+                    {
+                        _limitBusted = true;
+                        _eventManager.notifyEvent(Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
+                    }
+                }
+                else if(_limitBusted && newSize < getPersistentSizeLowThreshold())
+                {
+                    long oldSize = _totalStoreSize;
+                    _totalStoreSize = getSizeOnDisk();
+
+                    if(oldSize <= _totalStoreSize)
+                    {
+
+                        reduceSizeOnDisk();
+
+                        _totalStoreSize = getSizeOnDisk();
+
+                    }
+
+                    if(_totalStoreSize < getPersistentSizeLowThreshold())
+                    {
+                        _limitBusted = false;
+                        _eventManager.notifyEvent(Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
+                    }
+
+
+                }
+            }
+        }
     }
 
-    @Override
-    public String getStoreLocation()
+    private void reduceSizeOnDisk()
     {
-        return _storeLocation;
+        _environment.getConfig().setConfigParam(EnvironmentConfig.ENV_RUN_CLEANER, "false");
+        boolean cleaned = false;
+        while (_environment.cleanLog() > 0)
+        {
+            cleaned = true;
+        }
+        if (cleaned)
+        {
+            CheckpointConfig force = new CheckpointConfig();
+            force.setForce(true);
+            _environment.checkpoint(force);
+        }
+
+
+        _environment.getConfig().setConfigParam(EnvironmentConfig.ENV_RUN_CLEANER, "true");
+    }
+
+    private long getSizeOnDisk()
+    {
+        return _environment.getStats(null).getTotalLogSize();
+    }
+
+    private long getPersistentSizeLowThreshold()
+    {
+        return _persistentSizeLowThreshold;
+    }
+
+    private long getPersistentSizeHighThreshold()
+    {
+        return _persistentSizeHighThreshold;
+    }
+
+    private void setEnvironmentConfigProperties(EnvironmentConfig envConfig)
+    {
+        for (Map.Entry<String, String> configItem : _envConfigMap.entrySet())
+        {
+            LOGGER.debug("Setting EnvironmentConfig key " + configItem.getKey() + " to '" + configItem.getValue() + "'");
+            envConfig.setConfigParam(configItem.getKey(), configItem.getValue());
+        }
+    }
+
+    protected EnvironmentConfig createEnvironmentConfig()
+    {
+        EnvironmentConfig envConfig = new EnvironmentConfig();
+        envConfig.setAllowCreate(true);
+        envConfig.setTransactional(true);
+
+        setEnvironmentConfigProperties(envConfig);
+
+        envConfig.setExceptionListener(new LoggingAsyncExceptionListener());
+
+        return envConfig;
+    }
+
+    protected void closeEnvironmentSafely()
+    {
+        try
+        {
+            _environment.close();
+        }
+        catch (DatabaseException ex)
+        {
+            LOGGER.error("Exception closing store environment", ex);
+        }
+        catch (IllegalStateException ex)
+        {
+            LOGGER.error("Exception closing store environment", ex);
+        }
+    }
+
+
+    private class LoggingAsyncExceptionListener implements ExceptionListener
+    {
+        @Override
+        public void exceptionThrown(ExceptionEvent event)
+        {
+            LOGGER.error("Asynchronous exception thrown by BDB thread '"
+                         + event.getThreadName() + "'", event.getException());
+        }
     }
 }

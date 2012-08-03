@@ -32,6 +32,7 @@ public class ListPropertyValueTest extends TestCase
     private ListPropertyValue _generator;
     private List<PropertyValue> _items;
 
+    @Override
     public void setUp() throws Exception
     {
         super.setUp();

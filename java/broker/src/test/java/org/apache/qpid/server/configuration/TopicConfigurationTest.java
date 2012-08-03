@@ -26,8 +26,8 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
@@ -77,7 +77,7 @@ public class TopicConfigurationTest extends InternalBrokerBaseCase
     public void testSubscriptionWithTopicCreation() throws ConfigurationException, AMQException
     {
 
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString(getName()+":stockSubscription"), false, new AMQShortString("testowner"),
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), getName()+":stockSubscription", false, "testowner",
                                                     false, false, getVirtualHost(), null);
 
         getVirtualHost().getQueueRegistry().registerQueue(queue);
@@ -107,7 +107,7 @@ public class TopicConfigurationTest extends InternalBrokerBaseCase
     public void testSubscriptionCreation() throws ConfigurationException, AMQException
     {
 
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString(getName()+":stockSubscription"), false, new AMQShortString("testowner"),
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID() ,getName()+":stockSubscription", false, "testowner",
                                                     false, false, getVirtualHost(), null);
 
         getVirtualHost().getQueueRegistry().registerQueue(queue);

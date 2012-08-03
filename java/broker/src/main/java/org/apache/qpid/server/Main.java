@@ -85,6 +85,32 @@ public class Main
                     .withDescription("when listening on the specified port do not accept AMQP0-8 connections. The specified port must be one specified on the command line")
                     .withLongOpt("exclude-0-8").create();
 
+    private static final Option OPTION_INCLUDE_1_0 =
+        OptionBuilder.withArgName("port").hasArg()
+                .withDescription("accept AMQP1-0 connections on this port, overriding configuration to the contrary. The specified port must be one specified on the command line")
+                     .withLongOpt("include-1-0").create();
+
+private static final Option OPTION_INCLUDE_0_10 =
+        OptionBuilder.withArgName("port").hasArg()
+                .withDescription("accept AMQP0-10 connections on this port, overriding configuration to the contrary. The specified port must be one specified on the command line")
+                .withLongOpt("include-0-10").create();
+
+private static final Option OPTION_INCLUDE_0_9_1 =
+        OptionBuilder.withArgName("port").hasArg()
+                .withDescription("accept AMQP0-9-1 connections on this port, overriding configuration to the contrary. The specified port must be one specified on the command line")
+                .withLongOpt("include-0-9-1").create();
+
+private static final Option OPTION_INCLUDE_0_9 =
+        OptionBuilder.withArgName("port").hasArg()
+                .withDescription("accept AMQP0-9 connections on this port, overriding configuration to the contrary. The specified port must be one specified on the command line")
+                .withLongOpt("include-0-9").create();
+
+private static final Option OPTION_INCLUDE_0_8 =
+        OptionBuilder.withArgName("port").hasArg()
+                .withDescription("accept AMQP0-8 connections on this port, overriding configuration to the contrary. The specified port must be one specified on the command line")
+                .withLongOpt("include-0-8").create();
+
+
     private static final Option OPTION_JMX_PORT_REGISTRY_SERVER =
             OptionBuilder.withArgName("port").hasArg()
                     .withDescription("listen on the specified management (registry server) port. Overrides any value in the config file")
@@ -127,6 +153,11 @@ public class Main
         OPTIONS.addOption(OPTION_EXCLUDE_0_9_1);
         OPTIONS.addOption(OPTION_EXCLUDE_0_9);
         OPTIONS.addOption(OPTION_EXCLUDE_0_8);
+        OPTIONS.addOption(OPTION_INCLUDE_1_0);
+        OPTIONS.addOption(OPTION_INCLUDE_0_10);
+        OPTIONS.addOption(OPTION_INCLUDE_0_9_1);
+        OPTIONS.addOption(OPTION_INCLUDE_0_9);
+        OPTIONS.addOption(OPTION_INCLUDE_0_8);
         OPTIONS.addOption(OPTION_BIND);
 
         OPTIONS.addOption(OPTION_JMX_PORT_REGISTRY_SERVER);
@@ -256,6 +287,10 @@ public class Main
                 {
                     parsePortArray(options, _commandLine.getOptionValues(pe.getExcludeName()), pe);
                 }
+                for(ProtocolInclusion pe : ProtocolInclusion.values())
+                {
+                    parseProtocolInclusions(options, _commandLine.getOptionValues(pe.getIncludeName()), pe);
+                }
             }
 
             String[] sslPortStr = _commandLine.getOptionValues(OPTION_SSLPORT.getOpt());
@@ -265,6 +300,10 @@ public class Main
                 for(ProtocolExclusion pe : ProtocolExclusion.values())
                 {
                     parsePortArray(options, _commandLine.getOptionValues(pe.getExcludeName()), pe);
+                }
+                for(ProtocolInclusion pe : ProtocolInclusion.values())
+                {
+                    parseProtocolInclusions(options, _commandLine.getOptionValues(pe.getIncludeName()), pe);
                 }
             }
 
@@ -395,6 +434,25 @@ public class Main
                 catch (NumberFormatException e)
                 {
                     throw new InitException("Invalid port for exclusion: " + ports[i], e);
+                }
+            }
+        }
+    }
+
+    private static void parseProtocolInclusions(final BrokerOptions options, final Object[] ports,
+                                       final ProtocolInclusion includedProtocol) throws InitException
+    {
+        if(ports != null)
+        {
+            for(int i = 0; i < ports.length; i++)
+            {
+                try
+                {
+                    options.addIncludedPort(includedProtocol, Integer.parseInt(String.valueOf(ports[i])));
+                }
+                catch (NumberFormatException e)
+                {
+                    throw new InitException("Invalid port for inclusion: " + ports[i], e);
                 }
             }
         }

@@ -94,8 +94,10 @@ public class Session extends SessionInvoker
     private final long timeout = Long.getLong(ClientProperties.QPID_SYNC_OP_TIMEOUT,
                                         Long.getLong(ClientProperties.AMQJ_DEFAULT_SYNCWRITE_TIMEOUT,
                                                      ClientProperties.DEFAULT_SYNC_OPERATION_TIMEOUT));
-    private final long blockedSendTimeout = Long.getLong("qpid.flow_control_wait_failure", timeout);
-    private long blockedSendReportingPeriod = Long.getLong("qpid.flow_control_wait_notify_period",5000L);
+    private final long blockedSendTimeout = Long.getLong(ClientProperties.QPID_FLOW_CONTROL_WAIT_FAILURE,
+                                                         ClientProperties.DEFAULT_FLOW_CONTROL_WAIT_FAILURE);
+    private long blockedSendReportingPeriod = Long.getLong(ClientProperties.QPID_FLOW_CONTROL_WAIT_NOTIFY_PERIOD,
+                                                           ClientProperties.DEFAULT_FLOW_CONTROL_WAIT_NOTIFY_PERIOD);
 
     private boolean autoSync = false;
 
@@ -210,6 +212,11 @@ public class Session extends SessionInvoker
         }
     }
 
+    protected State getState()
+    {
+        return this.state;
+    }
+
     void setFlowControl(boolean value)
     {
         flowControl = value;
@@ -307,7 +314,7 @@ public class Session extends SessionInvoker
                     		xfr.setHeader(new Header(deliveryProps, header.getMessageProperties(),
                                                      header.getNonStandardProperties()));
                 		}
-                		
+
                 	}
                 	else
                 	{
@@ -616,7 +623,7 @@ public class Session extends SessionInvoker
             {
                 acquireCredit();
             }
-            
+
             synchronized (commandsLock)
             {
                 if (state == DETACHED && m.isUnreliable())
@@ -732,11 +739,11 @@ public class Session extends SessionInvoker
                 {
                     sessionCommandPoint(0, 0);
                 }
-                
+
                 boolean replayTransfer = !closing && !transacted &&
                                          m instanceof MessageTransfer &&
                                          ! m.isUnreliable();
-                
+
                 if ((replayTransfer) || m.hasCompletionListener())
                 {
                     setCommand(next, m);
@@ -833,7 +840,7 @@ public class Session extends SessionInvoker
             Waiter w = new Waiter(commandsLock, timeout);
             while (w.hasTime() && state != CLOSED && lt(maxComplete, point))
             {
-                checkFailoverRequired("Session sync was interrupted by failover.");                               
+                checkFailoverRequired("Session sync was interrupted by failover.");
                 if(log.isDebugEnabled())
                 {
                     log.debug("%s   waiting for[%d]: %d, %s", this, point, maxComplete, commands);
@@ -871,7 +878,7 @@ public class Session extends SessionInvoker
         {
             future = results.remove(command);
         }
-        
+
         if (future != null)
         {
             future.set(result);
@@ -1039,7 +1046,7 @@ public class Session extends SessionInvoker
         }
     }
 
-    protected void awaitClose() 
+    protected void awaitClose()
     {
         Waiter w = new Waiter(commandsLock, timeout);
         while (w.hasTime() && state != CLOSED)
@@ -1096,7 +1103,7 @@ public class Session extends SessionInvoker
 
         if(state == CLOSED)
         {
-            connection.removeSession(this);   
+            connection.removeSession(this);
             listener.closed(this);
         }
     }
@@ -1183,5 +1190,13 @@ public class Session extends SessionInvoker
                 }
             }
         }
+    }
+
+    /**
+     * An auxiliary method for test purposes only
+     */
+    public boolean isFlowBlocked()
+    {
+        return flowControl && credit.availablePermits() == 0;
     }
 }

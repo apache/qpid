@@ -20,6 +20,7 @@
  */
 
 #include "qpid/sys/MemStat.h"
+
 #include <malloc.h>
 
 void qpid::sys::MemStat::loadMemInfo(qmf::org::apache::qpid::broker::Memory* object)
@@ -34,5 +35,4 @@ void qpid::sys::MemStat::loadMemInfo(qmf::org::apache::qpid::broker::Memory* obj
     object->set_malloc_fordblks(info.fordblks);
     object->set_malloc_keepcost(info.keepcost);
 }
-
 

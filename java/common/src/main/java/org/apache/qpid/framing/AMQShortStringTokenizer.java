@@ -1,5 +1,3 @@
-package org.apache.qpid.framing;
-
 /*
 *
 * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,6 +18,9 @@ package org.apache.qpid.framing;
 * under the License.
 *
 */
+package org.apache.qpid.framing;
+
+
 public interface AMQShortStringTokenizer
 {
 

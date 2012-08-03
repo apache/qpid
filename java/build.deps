@@ -17,41 +17,54 @@
 # under the License.
 #
 
-commons-beanutils-core=lib/commons-beanutils-core-1.8.0.jar
-commons-cli=lib/commons-cli-1.0.jar
-commons-codec=lib/commons-codec-1.3.jar
-commons-collections=lib/commons-collections-3.2.jar
-commons-configuration=lib/commons-configuration-1.6.jar
-commons-digester=lib/commons-digester-1.8.1.jar
-commons-lang=lib/commons-lang-2.2.jar
-commons-logging=lib/commons-logging-1.0.4.jar
+commons-beanutils-core=lib/required/commons-beanutils-core-1.8.3.jar
+commons-cli=lib/required/commons-cli-1.2.jar
+commons-codec=lib/required/commons-codec-1.6.jar
+commons-collections=lib/required/commons-collections-3.2.1.jar
+commons-configuration=lib/required/commons-configuration-1.8.jar
+commons-digester=lib/required/commons-digester-1.8.1.jar
+commons-lang=lib/required/commons-lang-2.6.jar
+commons-logging=lib/required/commons-logging-1.1.1.jar
 
-derby-db=lib/derby-10.6.1.0.jar
+derby-db=lib/required/derby-10.8.2.2.jar
 
-geronimo-jms=lib/geronimo-jms_1.1_spec-1.0.jar
-geronimo-j2ee=lib/geronimo-j2ee-connector_1.5_spec-2.0.0.jar
-geronimo-jta=lib/geronimo-jta_1.1_spec-1.1.1.jar
-geronimo-kernel=lib/geronimo-kernel-2.2.1.jar
-geronimo-openejb=lib/geronimo-ejb_3.0_spec-1.0.1.jar
+geronimo-jms=lib/required/geronimo-jms_1.1_spec-1.0.jar
+geronimo-j2ee=lib/required/geronimo-j2ee-connector_1.5_spec-2.0.0.jar
+geronimo-jta=lib/required/geronimo-jta_1.1_spec-1.1.1.jar
+geronimo-kernel=lib/required/geronimo-kernel-2.2.1.jar
+geronimo-openejb=lib/required/geronimo-ejb_3.0_spec-1.0.1.jar
+geronimo-servlet=lib/required/geronimo-servlet_2.5_spec-1.2.jar
 
-junit=lib/junit-3.8.1.jar
-mockito-all=lib/mockito-all-1.9.0.jar
+junit=lib/required/junit-3.8.1.jar
+mockito-all=lib/required/mockito-all-1.9.0.jar
 
-gson-all=lib/gson-2.0.jar
+gson-all=lib/required/gson-2.0.jar
 
-log4j=lib/log4j-1.2.12.jar
+log4j=lib/required/log4j-1.2.16.jar
 
-slf4j-api=lib/slf4j-api-1.6.1.jar
-slf4j-log4j=lib/slf4j-log4j12-1.6.1.jar
+slf4j-api=lib/required/slf4j-api-1.6.4.jar
+slf4j-log4j=lib/required/slf4j-log4j12-1.6.4.jar
 
-xalan=lib/xalan-2.7.0.jar
+xalan=lib/required/xalan-2.7.0.jar
 
-felix-main=lib/org.apache.felix.main-2.0.5.jar
+jetty=lib/required/jetty-server-7.6.3.v20120416.jar
+jetty-continuation=lib/required/jetty-continuation-7.6.3.v20120416.jar
+jetty-security=lib/required/jetty-security-7.6.3.v20120416.jar
+jetty-util=lib/required/jetty-util-7.6.3.v20120416.jar
+jetty-io=lib/required/jetty-io-7.6.3.v20120416.jar
+jetty-http=lib/required/jetty-http-7.6.3.v20120416.jar
+jetty-servlet=lib/required/jetty-servlet-7.6.3.v20120416.jar
+jetty-websocket=lib/required/jetty-websocket-7.6.3.v20120416.jar
+servlet-api=${geronimo-servlet}
+
+dojo=lib/required/dojo-war-1.7.2.war
+
+felix-main=lib/required/org.apache.felix.main-2.0.5.jar
 
 felix.libs=${felix-main}
 
-jackson-core=lib/jackson-core-asl-1.9.0.jar
-jackson-mapper=lib/jackson-mapper-asl-1.9.0.jar
+jackson-core=lib/required/jackson-core-asl-1.9.0.jar
+jackson-mapper=lib/required/jackson-mapper-asl-1.9.0.jar
 
 commons-configuration.libs = ${commons-beanutils-core} ${commons-digester} \
   ${commons-codec} ${commons-lang} ${commons-collections} ${commons-configuration}
@@ -64,71 +77,16 @@ amqp-1-0-client-jms.libs=${geronimo-jms}
 tools.libs=${commons-configuration.libs} ${log4j}
 broker.libs=${commons-cli} ${commons-logging} ${log4j} ${slf4j-log4j} \
     ${xalan} ${felix.libs} ${derby-db} ${commons-configuration.libs} \
-    ${jackson-core} ${jackson-mapper}
+    ${jackson-core} ${jackson-mapper} ${jetty} ${jetty-continuation} ${jetty-security} ${jetty-http} ${jetty-io} ${jetty-servlet} ${jetty-util} ${servlet-api} ${jetty-websocket}
 
+broker-plugins-management-http.libs=${jetty} ${jetty-continuation} ${jetty-security} ${jetty-http} ${jetty-io} ${jetty-servlet} ${jetty-util} ${servlet-api}  ${jackson-core} ${jackson-mapper}
 broker-plugins.libs=${felix.libs} ${log4j} ${commons-configuration.libs}
 
 test.libs=${slf4j-log4j} ${log4j} ${junit} ${slf4j-api} ${mockito-all}
 
-perftests.libs=${geronimo-jms} ${slf4j-api} ${commons-collections} ${commons-beanutils-core} ${commons-lang} ${gson-all}
-
-ibm-icu=lib/com.ibm.icu_3.8.1.v20080530.jar
-ecl-core-jface=lib/org.eclipse.jface_3.4.1.M20080827-2000.jar
-ecl-core-jface-databinding=lib/org.eclipse.jface.databinding_1.2.1.M20080827-0800a.jar
-ecl-core-commands=lib/org.eclipse.core.commands_3.4.0.I20080509-2000.jar
-ecl-core-contenttype=lib/org.eclipse.core.contenttype_3.3.0.v20080604-1400.jar
-ecl-core-databinding=lib/org.eclipse.core.databinding_1.1.1.M20080827-0800b.jar
-ecl-core-expressions=lib/org.eclipse.core.expressions_3.4.0.v20080603-2000.jar
-ecl-core-jobs=lib/org.eclipse.core.jobs_3.4.0.v20080512.jar
-ecl-core-runtime=lib/org.eclipse.core.runtime_3.4.0.v20080512.jar
-ecl-core-runtime-compat-registry=lib/org.eclipse.core.runtime.compatibility.registry_3.2.200.v20080610/**
-ecl-equinox-app=lib/org.eclipse.equinox.app_1.1.0.v20080421-2006.jar
-ecl-equinox-common=lib/org.eclipse.equinox.common_3.4.0.v20080421-2006.jar
-ecl-equinox-launcher=lib/org.eclipse.equinox.launcher_1.0.101.R34x_v20080819.jar
-ecl-equinox-prefs=lib/org.eclipse.equinox.preferences_3.2.201.R34x_v20080709.jar
-ecl-equinox-registry=lib/org.eclipse.equinox.registry_3.4.0.v20080516-0950.jar
-ecl-help=lib/org.eclipse.help_3.3.101.v20080702_34x.jar
-ecl-osgi=lib/org.eclipse.osgi_3.4.2.R34x_v20080826-1230.jar
-ecl-swt=lib/org.eclipse.swt_3.4.1.v3449c.jar
-ecl-ui=lib/org.eclipse.ui_3.4.1.M20080910-0800.jar
-ecl-ui-forms=lib/org.eclipse.ui.forms_3.3.101.v20080708_34x.jar
-ecl-ui-workbench=lib/org.eclipse.ui.workbench_3.4.1.M20080827-0800a.jar
-apache-commons-codec=lib/org.apache.commons.codec_1.3.0.v20080530-1600.jar
-
-ecl-swt-win32-win32-x86=lib/org.eclipse.swt.win32.win32.x86_3.4.1.v3449c.jar
-ecl-equinox-launcher-win32-win32-x86=lib/org.eclipse.equinox.launcher.win32.win32.x86_1.0.101.R34x_v20080731/**
-ecl-swt-linux-gtk-x86=lib/org.eclipse.swt.gtk.linux.x86_3.4.1.v3449c.jar
-ecl-equinox-launcher-linux-gtk-x86=lib/org.eclipse.equinox.launcher.gtk.linux.x86_1.0.101.R34x_v20080805/**
-ecl-swt-linux-gtk-x86_64=lib/org.eclipse.swt.gtk.linux.x86_64_3.4.1.v3449c.jar
-ecl-equinox-launcher-linux-gtk-x86_64=lib/org.eclipse.equinox.launcher.gtk.linux.x86_64_1.0.101.R34x_v20080731/**
-ecl-swt-macosx-carbon=lib/org.eclipse.swt.carbon.macosx_3.4.1.v3449c.jar
-ecl-equinox-launcher-macosx-carbon=lib/org.eclipse.equinox.launcher.carbon.macosx_1.0.101.R34x_v20080731/**
-ecl-swt-solaris-gtk-sparc=lib/org.eclipse.swt.gtk.solaris.sparc_3.4.1.v3449c.jar
-ecl-equinox-launcher-solaris-gtk-sparc=lib/org.eclipse.equinox.launcher.gtk.solaris.sparc_1.0.101.R34x_v20080731/**
+perftests.libs=${geronimo-jms} ${slf4j-api} ${log4j} ${slf4j-log4j} ${commons-logging} ${commons-collections} ${commons-beanutils-core} ${commons-lang} ${gson-all}
 
 management-common.libs=
-
-management-eclipse-plugin.core-libs=${ibm-icu} ${ecl-core-jface} ${ecl-core-jface-databinding} \
-    ${ecl-core-commands} ${ecl-core-contenttype} ${ecl-core-databinding} ${ecl-core-expressions} \
-    ${ecl-core-jobs} ${ecl-core-runtime} ${ecl-equinox-app} ${ecl-equinox-common} ${ecl-equinox-launcher} \
-    ${ecl-equinox-prefs} ${ecl-equinox-registry} ${ecl-help} ${ecl-osgi} ${ecl-swt} ${ecl-ui} ${ecl-ui-forms} \
-    ${ecl-ui-workbench} ${apache-commons-codec}
-
-management-eclipse-plugin.swt-libs=${ecl-swt-win32-win32-x86} ${ecl-swt-linux-gtk-x86} ${ecl-swt-macosx-carbon} \
-    ${ecl-swt-linux-gtk-x86_64} ${ecl-swt-solaris-gtk-sparc}
-
-management-eclipse-plugin.libs=${management-eclipse-plugin.core-libs} ${management-eclipse-plugin.swt-libs}
-
-management-eclipse-plugin-win32-win32-x86.libs=${management-eclipse-plugin.core-libs} \
-    ${ecl-swt-win32-win32-x86} ${ecl-equinox-launcher-win32-win32-x86} ${ecl-core-runtime-compat-registry}
-management-eclipse-plugin-linux-gtk-x86.libs=${management-eclipse-plugin.core-libs} \
-    ${ecl-swt-linux-gtk-x86} ${ecl-equinox-launcher-linux-gtk-x86} ${ecl-core-runtime-compat-registry}
-management-eclipse-plugin-linux-gtk-x86_64.libs=${management-eclipse-plugin.core-libs} \
-    ${ecl-swt-linux-gtk-x86_64} ${ecl-equinox-launcher-linux-gtk-x86_64} ${ecl-core-runtime-compat-registry}
-management-eclipse-plugin-macosx.libs=${management-eclipse-plugin.core-libs} \
-    ${ecl-swt-macosx-carbon} ${ecl-equinox-launcher-macosx-carbon} ${ecl-core-runtime-compat-registry}
-management-eclipse-plugin-solaris-gtk-sparc.libs=${management-eclipse-plugin.core-libs} \
-    ${ecl-swt-solaris-gtk-sparc} ${ecl-equinox-launcher-solaris-gtk-sparc} ${ecl-core-runtime-compat-registry}
 
 common.test.libs=${test.libs}
 broker.test.libs=${test.libs}
@@ -139,27 +97,30 @@ testkit.test.libs=${test.libs}
 systests.libs=${test.libs}
 perftests.test.libs=${test.libs}
 
-broker-plugins.test.libs=${test.libs} 
+broker-plugins.test.libs=${test.libs}
 
-management-eclipse-plugin.test.libs=${test.libs}
 management-common.test.libs=${test.libs}
 
 # JCA Resource adapter
-ra.libs=${geronimo-j2ee} ${geronimo-jta} ${geronimo-jms} ${test.libs} ${geronimo-kernel} ${geronimo-openejb}
-ra.test.libs=${test.libs}
-
-#note this is a hack because systests is looking for 'jca' versus 'ra' we need to do this twice
-jca.libs=${geronimo-j2ee} ${geronimo-jta} ${geronimo-jms} ${test.libs} ${geronimo-kernel} ${geronimo-openejb}
+jca.libs=${geronimo-j2ee} ${geronimo-jta} ${geronimo-jms} ${test.libs} ${geronimo-kernel} ${geronimo-openejb} ${geronimo-servlet}
 jca.test.libs=${test.libs}
 
 # optional bdbstore module deps
-bdb-je=lib/bdbstore/je-5.0.34.jar
+bdb-je=lib/bdbstore/je-5.0.55.jar
 bdbstore.libs=${bdb-je}
 bdbstore.test.libs=${test.libs}
 
+bdbstore-jmx.libs=${bdb-je}
+bdbstore-jmx.test.libs=${test.libs}
+
 # optional perftests-visualisation-jfc module deps
 jfreechart.jar=lib/jfree/jfreechart-1.0.13.jar
-jfreecommon.jar=lib/jfree/jfreecommon-1.0.16.jar
+jcommon.jar=lib/jfree/jcommon-1.0.16.jar
 csvjdbc.jar=lib/csvjdbc/csvjdbc-1.0.8.jar
-perftests-visualisation-jfc.libs=${jfreechart.jar} ${jfreecommon.jar} ${csvjdbc.jar}
+perftests-visualisation-jfc.libs=${jfreechart.jar} ${jcommon.jar} ${csvjdbc.jar}
 perftests-visualisation-jfc.test.libs=${test.libs}
+
+# Libraries used only within the build
+bnd=lib/required/bnd-0.0.384.jar
+jython=lib/required/jython-standalone-2.5.2.jar
+maven-ant-tasks=lib/required/maven-ant-tasks-2.1.1.jar

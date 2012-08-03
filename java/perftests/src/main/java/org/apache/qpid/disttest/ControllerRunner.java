@@ -19,13 +19,9 @@
  */
 package org.apache.qpid.disttest;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.naming.Context;
@@ -54,6 +50,7 @@ public class ControllerRunner extends AbstractRunner
 
     private final Aggregator _aggregator = new Aggregator();
 
+    private final ConfigFileHelper _configFileHelper = new ConfigFileHelper();
 
     public ControllerRunner()
     {
@@ -89,7 +86,8 @@ public class ControllerRunner extends AbstractRunner
     {
         Controller controller = new Controller(jmsDelegate, DistributedTestConstants.REGISTRATION_TIMEOUT, DistributedTestConstants.COMMAND_RESPONSE_TIMEOUT);
 
-        final List<String> testConfigFiles = getTestConfigFiles();
+        String testConfigPath = getCliOptions().get(ControllerRunner.TEST_CONFIG_PROP);
+        List<String> testConfigFiles = _configFileHelper.getTestConfigFiles(testConfigPath);
         createClientsIfNotDistributed(testConfigFiles);
 
         try
@@ -105,11 +103,14 @@ public class ControllerRunner extends AbstractRunner
                 runTest(controller, testConfigFile);
             }
         }
+        catch(Exception e)
+        {
+            LOGGER.error("Problem running test", e);
+        }
         finally
         {
             controller.stopAllRegisteredClients();
         }
-
     }
 
     private void runTest(Controller controller, String testConfigFile)
@@ -120,7 +121,8 @@ public class ControllerRunner extends AbstractRunner
         ResultsForAllTests rawResultsForAllTests = controller.runAllTests();
         ResultsForAllTests resultsForAllTests = _aggregator.aggregateResults(rawResultsForAllTests);
 
-        final String outputFile = generateOutputCsvNameFrom(testConfigFile);
+        String outputDir = getCliOptions().get(ControllerRunner.OUTPUT_DIR_PROP);
+        final String outputFile = _configFileHelper.generateOutputCsvNameFrom(testConfigFile, outputDir);
         writeResultsToFile(resultsForAllTests, outputFile);
     }
 
@@ -174,44 +176,6 @@ public class ControllerRunner extends AbstractRunner
                 }
             }
         }
-    }
-
-    private String generateOutputCsvNameFrom(String testConfigFile)
-    {
-        final String filenameOnlyWithExtension = new File(testConfigFile).getName();
-        final String cvsFile = filenameOnlyWithExtension.replaceFirst(".?\\w*$", ".csv");
-        final String outputDir = String.valueOf(getCliOptions().get(ControllerRunner.OUTPUT_DIR_PROP));
-
-        return new File(outputDir, cvsFile).getAbsolutePath();
-    }
-
-    private List<String> getTestConfigFiles()
-    {
-        final List<String> testConfigFile = new ArrayList<String>();
-        final File configFileOrDirectory = new File(getCliOptions().get(ControllerRunner.TEST_CONFIG_PROP));
-
-        if (configFileOrDirectory.isDirectory())
-        {
-            final String[] configFiles = configFileOrDirectory.list(new FilenameFilter()
-            {
-                @Override
-                public boolean accept(File dir, String name)
-                {
-                    return new File(dir, name).isFile() && name.endsWith(".json");
-                }
-            });
-
-            for (String configFile : configFiles)
-            {
-                testConfigFile.add(new File(configFileOrDirectory, configFile).getAbsolutePath());
-            }
-        }
-        else
-        {
-            testConfigFile.add(configFileOrDirectory.getAbsolutePath());
-        }
-
-        return testConfigFile;
     }
 
     private Config buildTestConfigFrom(String testConfigFile)

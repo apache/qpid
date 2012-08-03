@@ -22,7 +22,9 @@
 
   <import file="common.xml"/>
 
-  <path id="maven-ant-tasks.classpath" path="${project.root}/lib/maven-ant-tasks-2.1.1.jar" />
+  <property file="${project.root}/build.deps"/>
+
+  <path id="maven-ant-tasks.classpath" path="${project.root}/${maven-ant-tasks}" />
   <typedef resource="org/apache/maven/artifact/ant/antlib.xml"
            uri="antlib:org.apache.maven.artifact.ant"
            classpathref="maven-ant-tasks.classpath" />
@@ -39,8 +41,6 @@
 	
   <echo message="Running ant for module : ${module}" level="info"/>
 
-  <property file="${project.root}/build.deps"/>
-
   <property name="module.build"        location="${build.scratch}/${module}"/>
   <property name="module.classes"      location="${module.build}/classes"/>
   <property name="module.instrumented" location="${module.build}/classes-instrumented"/>
@@ -55,6 +55,8 @@
   <property name="module.test.src"     location="src/test/java"/>
   <property name="module.bin"          location="bin"/>
   <property name="module.etc"          location="etc"/>
+  <property name="module.src.resources.metainf" location="src/main/resources/META-INF"/>
+  <property name="module.metainf" location="${module.build}/META-INF"/>
     
   <property name="module.namever"      value="${project.name}-${module.name}-${project.version}"/>
   <property name="module.namever.osgi" value="${project.name}-${module.name}_${project.version}.0.osgi"/>
@@ -82,6 +84,7 @@
   <available property="module.test.src.exists" file="${module.test.src}"/>
   <available property="module.etc.exists" file="${module.etc}"/>
   <available property="module.bin.exists" file="${module.bin}"/>
+  <available property="module.src.resources.metainf.exists" file="${module.src.resources.metainf}"/>
 
   <property name="module.source.jar"
             location="${build.lib}/${project.name}-${module.name}-${project.version}-sources.jar"/>
@@ -325,8 +328,42 @@
          <contains substring="${module.name}" string="${exclude.modules}" />
   </condition>
 
+  <!-- JVM args pass to forked Junit JVM -->
   <property name="jvm.args" value=""/>
+  <!-- Following properties are used by the tests -->
+  <property name="test.output" value="${module.results}"/>
+  <property name="QPID_HOME" value="${qpid.home}"/>
+  <property name="QPID_WORK" value="${qpid.work}"/>
   <property name="broker.existing.qpid.work" value=""/>
+  <!-- Used by PluginTest -->
+  <property name="example.plugin.target" value="${project.root}/build/lib/plugins"/>
+
+  <propertyset id="all.test.systemproperties">
+    <propertyref prefix="test"/>
+    <propertyref prefix="profile"/>
+    <propertyref prefix="javax.net.ssl"/>
+    <propertyref prefix="broker"/>
+
+    <propertyref name="amqj.logging.level"/>
+    <propertyref name="amqj.server.logging.level"/>
+    <propertyref name="amqj.protocol.logging.level"/>
+
+    <propertyref name="log4j.debug"/>
+    <propertyref name="log4j.configuration"/>
+
+    <propertyref name="root.logging.level"/>
+    <propertyref name="java.naming.factory.initial"/>
+    <propertyref name="java.naming.provider.url"/>
+    <propertyref name="messagestore.class.name" />
+    <propertyref name="qpid.amqp.version"/>
+    <propertyref name="max_prefetch"/>
+    <propertyref name="qpid.dest_syntax"/>
+
+    <propertyref name="test.output"/>
+    <propertyref name="QPID_HOME"/>
+    <propertyref name="QPID_WORK"/>
+    <propertyref name="example.plugin.target"/>
+  </propertyset>
 
   <target name="test" depends="build,compile-tests" if="module.test.src.exists"
          unless="${dontruntest}" description="execute unit tests">
@@ -341,38 +378,7 @@
 
       <jvmarg line="${jvm.args}" />
 
-      <sysproperty key="amqj.logging.level" value="${amqj.logging.level}"/>
-      <sysproperty key="amqj.server.logging.level" value="${amqj.server.logging.level}"/>
-      <sysproperty key="amqj.protocol.logging.level" value="${amqj.protocol.logging.level}"/>
-      <sysproperty key="log4j.debug" value="${log4j.debug}"/>
-      <sysproperty key="root.logging.level" value="${root.logging.level}"/>
-      <sysproperty key="log4j.configuration" value="${log4j.configuration}"/>
-      <sysproperty key="java.naming.factory.initial" value="${java.naming.factory.initial}"/>
-      <sysproperty key="java.naming.provider.url" value="${java.naming.provider.url}"/>
-      <sysproperty key="messagestorefactory.class.name" value="${messagestorefactory.class.name}" />
-      <sysproperty key="test.output" value="${module.results}"/>
-      <sysproperty key="qpid.amqp.version" value="${qpid.amqp.version}"/>
-
-      <syspropertyset>
-        <propertyref prefix="test"/>
-      </syspropertyset>
-      <syspropertyset>
-        <propertyref prefix="profile"/>
-      </syspropertyset>
-      <syspropertyset>
-        <propertyref prefix="javax.net.ssl"/>
-      </syspropertyset>  
-      <syspropertyset>
-         <propertyref prefix="broker"/>
-      </syspropertyset>
-      
-      <sysproperty key="max_prefetch" value ="${max_prefetch}"/>
-      <sysproperty key="qpid.dest_syntax" value ="${qpid.dest_syntax}"/>
-
-      <sysproperty key="example.plugin.target" value="${project.root}/build/lib/plugins"/>
-      <sysproperty key="QPID_EXAMPLE_HOME" value="${qpid.home}"/>
-      <sysproperty key="QPID_HOME" value="${qpid.home}"/>
-      <sysproperty key="QPID_WORK" value="${qpid.work}"/>
+      <syspropertyset refid="all.test.systemproperties"/>
 
       <formatter type="plain"/>
       <formatter type="xml"/>
@@ -442,14 +448,29 @@
   <target name="postbuild" description="run after a build"/>
 
   <target name="build" depends="jar,jar-tests,jar-sources,libs,copy-bin,copy-etc,postbuild" description="compile and copy resources into build tree"/>
-  <target name="jar.manifest" depends="compile" if="module.manifest">
-    <jar destfile="${module.jar}" basedir="${module.classes}" manifest="${module.manifest}"/>
+
+  <target name="jar.manifest" depends="compile, copy-module-metainf" if="module.manifest">
+    <jar destfile="${module.jar}" basedir="${module.classes}" manifest="${module.manifest}">
+       <metainf dir="${module.metainf}" />
+    </jar>
   </target>
 
-  <target name="jar.nomanifest" depends="compile" unless="module.manifest">
+  <target name="jar.nomanifest" depends="compile, copy-module-metainf" unless="module.manifest">
     <jar destfile="${module.jar}" basedir="${module.classes}">
-       <metainf dir="${project.root}/resources/" />
+       <metainf dir="${module.metainf}" />
     </jar>
+  </target>
+
+  <target name="copy-module-metainf" depends="copy-metainf-resources" if="module.src.resources.metainf.exists">
+    <copy todir="${module.metainf}" failonerror="true">
+        <fileset dir="${module.src.resources.metainf}"/>
+    </copy>
+  </target>
+
+  <target name="copy-metainf-resources">
+    <copy todir="${module.metainf}" failonerror="true">
+        <fileset dir="${project.root}/resources/"/>
+    </copy>
   </target>
 
   <target name="jar" depends="jar.manifest,jar.nomanifest" description="create jar"/>
@@ -599,7 +620,7 @@
   <target name="bundle" description="Build module osgi artifact. Override and depend on bundle-tasks to use"/>
 
   <target name="bundle-tasks" depends="jar">
-   <taskdef resource="aQute/bnd/ant/taskdef.properties" classpath="${project.root}/lib/bnd-0.0.384.jar"/>
+   <taskdef resource="aQute/bnd/ant/taskdef.properties" classpath="${project.root}/${bnd}"/>
    <echo message="Bundling ${build}/lib/${module.namever}.jar with ${module.src}/${module.name}.bnd"/>
    <bnd 
       classpath="${build}/lib/${module.namever}.jar"
@@ -657,41 +678,19 @@
     </cobertura-instrument>
   </target>
 
-  <target name="cover-test" depends="instrument">
+  <target name="cover-test" depends="instrument" if="module.test.src.exists">
 
-    <mkdir dir="${build.coveragereport}" />
     <junit fork="yes" forkmode="once" maxmemory="${test.mem}" reloading="no"
            haltonfailure="${haltonfailure}" haltonerror="${haltonerror}"
            failureproperty="test.failures" printsummary="on" timeout="600000"
            dir="${project.root}" >
+      <jvmarg line="${jvm.args}" />
 
-      <sysproperty key="amqj.logging.level" value="${amqj.logging.level}"/>
-      <sysproperty key="amqj.protocol.logging.level" value="${amqj.protocol.logging.level}"/>
-      <sysproperty key="log4j.debug" value="${log4j.debug}"/>
-      <sysproperty key="root.logging.level" value="${root.logging.level}"/>
-      <sysproperty key="log4j.configuration" value="${log4j.configuration}"/>
-      <sysproperty key="java.naming.factory.initial" value="${java.naming.factory.initial}"/>
-      <sysproperty key="java.naming.provider.url" value="${java.naming.provider.url}"/>
-      <sysproperty key="broker" value="${broker}"/>
-      <sysproperty key="broker.version" value="${broker.version}"/>
-      <sysproperty key="broker.ready" value="${broker.ready}" />
-      <sysproperty key="test.output" value="${module.results}"/>
-
-      <syspropertyset>
-        <propertyref prefix="test"/>
-      </syspropertyset>
-      <syspropertyset>
-          <propertyref prefix="broker"/>
-      </syspropertyset>
-
-      <sysproperty key="max_prefetch" value ="${max_prefetch}"/>
-      <sysproperty key="example.plugin.target" value="${project.root}/build/lib/plugins"/>
-      <sysproperty key="QPID_EXAMPLE_HOME" value="${project.root}/build"/>
-      <sysproperty key="QPID_HOME" value="${project.root}/build"/>
+      <syspropertyset refid="all.test.systemproperties"/>
 
       <sysproperty key="net.sourceforge.cobertura.datafile"
 		file="${cobertura.datafile}" />
-      
+
       <formatter type="plain"/>
       <formatter type="xml"/>
 
@@ -713,14 +712,13 @@
   </target>
 
   <target name="coverage-report" depends="cobertura-init">
-      <echo message="${cobertura.datafile}"/>
       <cobertura-report format="html"
                       destdir="${module.coverage}"
 		      datafile="${cobertura.datafile}">
       <fileset dir="${module.src}" includes="**/*.java" />
     </cobertura-report>
   </target>
-  
+
   <property name="version.file" location="${module.classes}/qpidversion.properties"/>
   <property file="${version.file}" prefix="old."/>
 
@@ -809,7 +807,7 @@ qpid.name=${project.name}
         <classpath>
           <pathelement path="${module.src}"/>
           <pathelement path="${velocity.compile.dir}" />
-          <fileset dir="${project.root}/lib">
+          <fileset dir="${project.root}/lib/required">
             <include name="**/*.jar"/>
           </fileset>
           <pathelement path="${gentools.home}/lib/velocity-1.4.jar" />

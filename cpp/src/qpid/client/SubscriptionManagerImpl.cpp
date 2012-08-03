@@ -39,6 +39,16 @@ SubscriptionManagerImpl::SubscriptionManagerImpl(const Session& s)
   : dispatcher(s), session(s), autoStop(true)
 {}
 
+SubscriptionManagerImpl::~SubscriptionManagerImpl()
+{
+    sys::Mutex::ScopedLock l(lock);
+    for (std::map<std::string, Subscription>::iterator i = subscriptions.begin(); i != subscriptions.end(); ++i) {
+        boost::intrusive_ptr<SubscriptionImpl> s = PrivateImplRef<Subscription>::get(i->second);
+        if (s) s->cancelDiversion();
+    }
+    subscriptions.clear();
+}
+
 Subscription SubscriptionManagerImpl::subscribe(
     MessageListener& listener, const std::string& q, const SubscriptionSettings& ss, const std::string& n)
 {

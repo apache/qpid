@@ -1,5 +1,3 @@
-package org.apache.qpid.server.exchange.topic;
-
 /*
 *
 * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,6 +18,8 @@ package org.apache.qpid.server.exchange.topic;
 * under the License.
 *
 */
+package org.apache.qpid.server.exchange.topic;
+
 public interface TopicMatcherResult
 {
 }

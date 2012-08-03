@@ -67,7 +67,7 @@ tmodule_LTLIBRARIES=
 
 TESTS+=unit_test
 check_PROGRAMS+=unit_test
-unit_test_LDADD=-lboost_unit_test_framework \
+unit_test_LDADD=-lboost_unit_test_framework -lpthread \
 	$(lib_messaging) $(lib_broker) $(lib_console) $(lib_qmf2)
 
 unit_test_SOURCES= unit_test.cpp unit_test.h \
@@ -124,7 +124,8 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	Address.cpp \
 	ClientMessage.cpp \
 	Qmf2.cpp \
-	BrokerOptions.cpp
+	BrokerOptions.cpp \
+	SystemInfo.cpp
 
 if HAVE_XML
 unit_test_SOURCES+= XmlClientSessionTest.cpp
@@ -150,7 +151,7 @@ endif
 # Test programs that are installed and therefore built as part of make, not make check
 
 qpidexectest_SCRIPTS += qpid-cpp-benchmark qpid-cluster-benchmark install_env.sh
-EXTRA_DIST += qpid-cpp-benchmark install_env.sh
+EXTRA_DIST += qpid-cpp-benchmark qpid-cluster-benchmark install_env.sh
 
 qpidexectest_PROGRAMS += receiver
 receiver_SOURCES = \
@@ -305,7 +306,7 @@ TESTS_ENVIRONMENT = \
 system_tests = qpid-client-test quick_perftest quick_topictest run_header_test quick_txtest \
   run_msg_group_tests
 TESTS += start_broker $(system_tests) python_tests stop_broker \
-  ha_tests.py run_federation_tests run_federation_sys_tests \
+  run_ha_tests run_federation_tests run_federation_sys_tests \
   run_acl_tests run_cli_tests replication_test dynamic_log_level_test \
   run_queue_flow_limit_tests ipv6_test
 
@@ -352,7 +353,8 @@ EXTRA_DIST +=								\
   run_queue_flow_limit_tests						\
   run_msg_group_tests							\
   ipv6_test								\
-  ha_tests.py							\
+  run_ha_tests								\
+  ha_tests.py								\
   test_env.ps1.in
 
 check_LTLIBRARIES += libdlclose_noop.la

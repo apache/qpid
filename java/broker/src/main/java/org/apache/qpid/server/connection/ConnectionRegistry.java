@@ -22,13 +22,12 @@ package org.apache.qpid.server.connection;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
-import org.apache.qpid.transport.TransportException;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -37,6 +36,8 @@ public class ConnectionRegistry implements IConnectionRegistry, Closeable
     private List<AMQConnectionModel> _registry = new CopyOnWriteArrayList<AMQConnectionModel>();
 
     private Logger _logger = Logger.getLogger(ConnectionRegistry.class);
+    private final Collection<RegistryChangeListener> _listeners =
+            new ArrayList<RegistryChangeListener>();
 
     public void initialise()
     {
@@ -62,34 +63,77 @@ public class ConnectionRegistry implements IConnectionRegistry, Closeable
         }
     }
 
-    public void closeConnection(AMQConnectionModel connection, AMQConstant cause, String message)
+    private void closeConnection(AMQConnectionModel connection, AMQConstant cause, String message)
     {
         try
         {
             connection.close(cause, message);
         }
-        catch (TransportException e)
+        catch (Exception e)
         {
-            _logger.warn("Error closing connection:" + e.getMessage());
-        }
-        catch (AMQException e)
-        {
-            _logger.warn("Error closing connection:" + e.getMessage());
+            _logger.warn("Exception closing connection", e);
         }
     }
 
     public void registerConnection(AMQConnectionModel connnection)
     {
-        _registry.add(connnection);
+        synchronized (this)
+        {
+            _registry.add(connnection);
+            synchronized (_listeners)
+            {
+                for(RegistryChangeListener listener : _listeners)
+                {
+                    listener.connectionRegistered(connnection);
+                }
+            }
+        }
+        synchronized (_listeners)
+        {
+            for(RegistryChangeListener listener : _listeners)
+            {
+                listener.connectionRegistered(connnection);
+            }
+        }
     }
 
     public void deregisterConnection(AMQConnectionModel connnection)
     {
-        _registry.remove(connnection);
+        synchronized (this)
+        {
+            _registry.remove(connnection);
+
+            synchronized (_listeners)
+            {
+                for(RegistryChangeListener listener : _listeners)
+                {
+                    listener.connectionUnregistered(connnection);
+                }
+            }
+        }
+
+        synchronized (_listeners)
+        {
+            for(RegistryChangeListener listener : _listeners)
+            {
+                listener.connectionUnregistered(connnection);
+            }
+        }
+    }
+
+    public void addRegistryChangeListener(RegistryChangeListener listener)
+    {
+        synchronized (_listeners)
+        {
+            _listeners.add(listener);
+        }
     }
 
     public List<AMQConnectionModel> getConnections()
     {
-        return new ArrayList<AMQConnectionModel>(_registry);
+        synchronized (this)
+        {
+            return new ArrayList<AMQConnectionModel>(_registry);
+        }
     }
 }

@@ -19,8 +19,7 @@
 # under the License.
 #
 
-import qmf.console, optparse, sys, time, os
-from qpid.management import managementChannel, managementClient
+import optparse, sys, time, os
 from qpid.messaging import Connection
 from qpid.messaging import Message as QpidMessage
 from qpidtoollibs.broker import BrokerAgent
@@ -32,29 +31,44 @@ except ImportError:
 # QMF address for the HA broker object.
 HA_BROKER = "org.apache.qpid.ha:habroker:ha-broker"
 
+class ExitStatus(Exception):
+    """Raised if a command want's a non-0 exit status from the script"""
+    def __init__(self, status): self.status = status
+
 class Command:
     commands = {}
 
-    def __init__(self, name, help, args=[]):
+    def __init__(self, name, help, arg_names=[]):
         Command.commands[name] = self
         self.name = name
-        self.args = args
-        usage="%s [options] %s\n\n%s"%(name, " ".join(args), help)
+        self.arg_names = arg_names
+        usage="%s [options] %s\n\n%s"%(name, " ".join(arg_names), help)
         self.help = help
         self.op=optparse.OptionParser(usage)
-        self.op.add_option("-b", "--broker", metavar="<url>", help="Connect to broker at <url>")
+        self.op.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
+        self.op.add_option("--ssl-certificate", action="store", type="string", metavar="<cert>", help="Client SSL certificate (PEM Format)")
+        self.op.add_option("--ssl-key", action="store", type="string", metavar="<key>", help="Client SSL private key (PEM Format)")
+        self.op.add_option("-b", "--broker", action="store", type="string", default="localhost:5672", metavar="<address>", help="Address of qpidd broker with syntax: [username/password@] hostname | ip-address [:<port>]")
 
-    def execute(self):
-        opts, args = self.op.parse_args()
-        if len(args) != len(self.args)+1:
+    def execute(self, args):
+        opts, args = self.op.parse_args(args)
+        if len(args) != len(self.arg_names)+1:
             self.op.print_help()
             raise Exception("Wrong number of arguments")
-        broker = opts.broker or "localhost:5672"
-        connection = Connection.establish(broker, client_properties={"qpid.ha-admin":1})
+        conn_options = {}
+        if opts.sasl_mechanism:
+            conn_options['sasl_mechanisms'] = opts.sasl_mechanism
+        if opts.ssl_certificate:
+            conn_options['ssl_certfile'] = opts.ssl_certificate
+        if opts.ssl_key:
+            conn_options['ssl_key'] = opts.ssl_key
+        conn_options['client_properties'] = {'qpid.ha-admin' : 1}
+
+        connection = Connection.establish(opts.broker, **conn_options)
         qmf_broker = BrokerAgent(connection)
         ha_broker = qmf_broker.getHaBroker()
-        if not ha_broker: raise Exception("HA module is not loaded on broker at %s"%broker)
-        try: return self.do_execute(qmf_broker, ha_broker, opts, args)
+        if not ha_broker: raise Exception("HA module is not loaded on broker at %s" % opts.broker)
+        try: self.do_execute(qmf_broker, ha_broker, opts, args)
         finally: connection.close()
 
     def do_execute(self, qmf_broker, opts, args):
@@ -75,10 +89,10 @@ class StatusCmd(Command):
             help="Don't print status but return 0 if it matches <status>, 1 otherwise")
     def do_execute(self, qmf_broker, ha_broker, opts, args):
         if opts.expect:
-            if opts.expect != ha_broker.status: return 1
+            if opts.expect != ha_broker.status: raise ExitStatus(1)
         else:
             print ha_broker.status
-        return 0
+
 StatusCmd()
 
 class ReplicateCmd(Command):
@@ -93,30 +107,31 @@ class SetCmd(Command):
         Command.__init__(self, "set", "Set HA configuration settings")
         def add(optname, metavar, type, help):
             self.op.add_option(optname, metavar=metavar, type=type, help=help, action="store")
-        add("--brokers", "<url>", "string", "HA brokers use <url> to connect to each other")
-        add("--public-brokers", "<url>", "string", "Clients use <url> to connect to HA brokers")
+        add("--brokers-url", "<url>", "string", "URL with address of each broker in the cluster. Used by brokers to connect to each other.")
+        add("--public-url", "<url>", "string", "URL advertised to clients to connect to the cluster. May be a list or a VIP.")
         add("--backups", "<n>", "int", "Expect <n> backups to be running"),
 
     def do_execute(self, qmf_broker, ha_broker, opts, args):
-        if (opts.brokers): qmf_broker._method("setBrokers", {"url":opts.brokers}, HA_BROKER)
-        if (opts.public_brokers): qmf_broker._method("setPublicBrokers", {"url":opts.public_brokers}, HA_BROKER)
+        if (opts.brokers_url): qmf_broker._method("setBrokersUrl", {"url":opts.brokers_url}, HA_BROKER)
+        if (opts.public_url): qmf_broker._method("setPublicUrl", {"url":opts.public_url}, HA_BROKER)
         if (opts.backups): qmf_broker._method("setExpectedBackups", {"expectedBackups":opts.backups}, HA_BROKER)
 
 SetCmd()
 
 class QueryCmd(Command):
     def __init__(self):
-        Command.__init__(self, "query", "Print HA configuration settings")
+        Command.__init__(self, "query", "Print HA configuration and status")
 
     def do_execute(self, qmf_broker, ha_broker, opts, args):
         hb = ha_broker
         for x in [("Status:", hb.status),
-                  ("Brokers URL:", hb.brokers),
-                  ("Public URL:", hb.publicBrokers),
+                  ("Brokers URL:", hb.brokersUrl),
+                  ("Public URL:", hb.publicUrl),
                   ("Expected Backups:", hb.expectedBackups),
                   ("Replicate: ", hb.replicateDefault)
                   ]:
             print "%-20s %s"%(x[0], x[1])
+
 QueryCmd()
 
 def print_usage(prog):
@@ -133,18 +148,25 @@ def find_command(args):
             return Command.commands[arg]
     return None
 
-def main(argv):
-    try:
-        args=argv[1:]
-        if args and args[0] == "--help-all":
-            for c in Command.commands.itervalues():
-                c.op.print_help(); print
-            return 1
+def main_except(argv):
+    """This version of main raises exceptions"""
+    args=argv[1:]
+    if args and args[0] == "--help-all":
+        for c in Command.commands.itervalues():
+            c.op.print_help(); print
+    else:
         command = find_command(args)
         if not command:
             print_usage(os.path.basename(argv[0]));
-            return 1;
-        if command.execute(): return 1
+            raise Exception("Command not found")
+        command.execute(args)
+
+def main(argv):
+    try:
+        main_except(argv)
+        return 0
+    except ExitStatus, e:
+        return e.status
     except Exception, e:
         print e
         return 1

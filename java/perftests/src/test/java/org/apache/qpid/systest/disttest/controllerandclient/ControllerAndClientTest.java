@@ -23,6 +23,7 @@ import static org.apache.qpid.systest.disttest.SystemTestConstants.COMMAND_RESPO
 import static org.apache.qpid.systest.disttest.SystemTestConstants.REGISTRATION_TIMEOUT;
 import static org.apache.qpid.systest.disttest.SystemTestConstants.TEST_RESULT_TIMEOUT;
 
+import java.util.Collection;
 import java.util.List;
 
 import javax.jms.Message;
@@ -31,7 +32,7 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.naming.NamingException;
 
-import org.apache.qpid.disttest.ConfigFileHelper;
+import org.apache.qpid.disttest.ConfigFileTestHelper;
 import org.apache.qpid.disttest.client.Client;
 import org.apache.qpid.disttest.client.ClientState;
 import org.apache.qpid.disttest.controller.Controller;
@@ -73,6 +74,19 @@ public class ControllerAndClientTest extends DistributedTestSystemTestBase
         List<ParticipantResult> test1ParticipantResults = testResult1.getParticipantResults();
         assertEquals("Unexpected number of participant results for test 1", 2, test1ParticipantResults.size());
         assertParticipantNames(test1ParticipantResults, "participantConsumer1", "participantProducer1");
+        ConsumerParticipantResult result = null;
+        for (ParticipantResult participantResult : test1ParticipantResults)
+        {
+            if (participantResult instanceof ConsumerParticipantResult)
+            {
+                result = (ConsumerParticipantResult)participantResult;
+                break;
+            }
+        }
+        assertNotNull("Consumer results not recived", result);
+        Collection<Long> latencies = result.getMessageLatencies();
+        assertNotNull("Latency results are not collected", latencies);
+        assertEquals("Unexpected latency results", 1, latencies.size());
     }
 
     public void testProducerClient() throws Exception
@@ -86,7 +100,7 @@ public class ControllerAndClientTest extends DistributedTestSystemTestBase
         // cleaning manually
         while(consumer.receive(1000l) != null);
 
-        final Config config = ConfigFileHelper.getConfigFromResource(getClass(), "produceClient.json");
+        final Config config = ConfigFileTestHelper.getConfigFromResource(getClass(), "produceClient.json");
         _controller.setConfig(config);
         final Client client1 = new Client(new ClientJmsDelegate(_context));
         final Thread client1Thread = createBackgroundClientThread(client1);
@@ -151,7 +165,7 @@ public class ControllerAndClientTest extends DistributedTestSystemTestBase
         List<ParticipantResult> test1ParticipantResults = testResult.getParticipantResults();
         assertEquals("Unexpected number of participant results for test", 2, test1ParticipantResults.size());
 
-        ParticipantResult producer1 = (ParticipantResult) test1ParticipantResults.get(1);
+        ParticipantResult producer1 = test1ParticipantResults.get(1);
 
         assertEquals(expectedMessageSize, producer1.getPayloadSize());
         assertEquals(iterationNumber, producer1.getIterationNumber());
@@ -167,7 +181,7 @@ public class ControllerAndClientTest extends DistributedTestSystemTestBase
 
     private List<TestResult> runTestsForTwoClients(String jsonConfigFile, int expectedNumberOfTests) throws NamingException, InterruptedException
     {
-        final Config config = ConfigFileHelper.getConfigFromResource(getClass(), jsonConfigFile);
+        final Config config = ConfigFileTestHelper.getConfigFromResource(getClass(), jsonConfigFile);
         _controller.setConfig(config);
 
         final Client client1 = new Client(new ClientJmsDelegate(_context));

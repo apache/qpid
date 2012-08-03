@@ -125,9 +125,9 @@ public class AMQStateManager implements AMQMethodListener
      */
     public void setProtocolSession(AMQProtocolSession session)
     {
-        if (_logger.isInfoEnabled())
+        if (_logger.isDebugEnabled())
         {
-            _logger.info("Setting ProtocolSession:" + session);
+            _logger.debug("Setting ProtocolSession:" + session);
         }
         _protocolSession = session;
     }

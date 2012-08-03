@@ -82,7 +82,7 @@ class QPID_COMMON_CLASS_EXTERN Array
     // For use in standard algorithms
     template <typename R, typename V>
     static R get(const V& v) {
-        return v->get<R>();
+        return v->template get<R>();
     }
 
   private:

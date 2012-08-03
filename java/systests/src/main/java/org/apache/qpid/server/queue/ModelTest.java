@@ -333,7 +333,7 @@ public class ModelTest extends QpidBrokerTestCase
                                                               queueName));
 
         assertEquals(queueName, managedQueue.getName());
-        assertEquals(String.valueOf(owner), managedQueue.getOwner());
+        assertEquals(owner, managedQueue.getOwner());
         assertEquals(durable, managedQueue.isDurable());
         assertEquals(autoDelete, managedQueue.isAutoDelete());
     }

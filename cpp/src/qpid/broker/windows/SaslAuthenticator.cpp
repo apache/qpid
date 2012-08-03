@@ -32,6 +32,8 @@
 using namespace qpid::framing;
 using qpid::sys::SecurityLayer;
 
+using std::string;
+
 namespace qpid {
 namespace broker {
 
@@ -79,7 +81,7 @@ void SaslAuthenticator::fini(void)
     return;
 }
 
-std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(Connection& c, bool)
+std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(Connection& c)
 {
     if (c.getBroker().getOptions().auth) {
         return std::auto_ptr<SaslAuthenticator>(new SspiAuthenticator(c));

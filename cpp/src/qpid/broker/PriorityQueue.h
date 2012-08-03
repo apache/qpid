@@ -52,6 +52,7 @@ class PriorityQueue : public Messages
     bool consume(QueuedMessage&);
     bool push(const QueuedMessage& added, QueuedMessage& removed);
     void updateAcquired(const QueuedMessage& acquired);
+    void setPosition(const framing::SequenceNumber&);
     void foreach(Functor);
     void removeIf(Predicate);
 

@@ -24,6 +24,7 @@ public class PropertyValueFactoryTest extends TestCase
 {
     private PropertyValueFactory _factory;
 
+    @Override
     public void setUp() throws Exception
     {
         super.setUp();

@@ -36,7 +36,6 @@ class Link;
 
 namespace ha {
 class Settings;
-class ConnectionExcluder;
 class BrokerReplicator;
 class HaBroker;
 
@@ -51,9 +50,13 @@ class Backup
     Backup(HaBroker&, const Settings&);
     ~Backup();
     void setBrokerUrl(const Url&);
+    void setStatus(BrokerStatus);
 
   private:
+    bool isSelf(const Address& a) const;
+    Url removeSelf(const Url&) const;
     void initialize(const Url&);
+    std::string logPrefix;
 
     sys::Mutex lock;
     HaBroker& haBroker;
@@ -61,7 +64,6 @@ class Backup
     Settings settings;
     boost::shared_ptr<broker::Link> link;
     boost::shared_ptr<BrokerReplicator> replicator;
-    boost::shared_ptr<ConnectionExcluder> excluder;
 };
 
 }} // namespace qpid::ha

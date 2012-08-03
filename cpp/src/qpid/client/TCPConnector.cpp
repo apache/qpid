@@ -76,6 +76,7 @@ TCPConnector::TCPConnector(Poller::shared_ptr p,
       initiated(false),
       closed(true),
       shutdownHandler(0),
+      input(0),
       connector(0),
       aio(0),
       poller(p)
@@ -265,7 +266,7 @@ size_t TCPConnector::encode(const char* buffer, size_t size)
     return bytesWritten;
 }
 
-bool TCPConnector::readbuff(AsynchIO& aio, AsynchIO::BufferBase* buff) 
+void TCPConnector::readbuff(AsynchIO& aio, AsynchIO::BufferBase* buff)
 {
     Codec* codec = securityLayer.get() ? (Codec*) securityLayer.get() : (Codec*) this;
     int32_t decoded = codec->decode(buff->bytes+buff->dataStart, buff->dataCount);
@@ -280,10 +281,9 @@ bool TCPConnector::readbuff(AsynchIO& aio, AsynchIO::BufferBase* buff)
         // Give whole buffer back to aio subsystem
         aio.queueReadBuffer(buff);
     }
-    return true;
 }
 
-size_t TCPConnector::decode(const char* buffer, size_t size) 
+size_t TCPConnector::decode(const char* buffer, size_t size)
 {
     framing::Buffer in(const_cast<char*>(buffer), size);
     if (!initiated) {

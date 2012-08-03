@@ -24,7 +24,6 @@
 // These tests requires a broker capable of 0-8/0-9/0-9-1 and 0-10 concurrently
 org.apache.qpid.test.client.message.JMSDestinationTest#testReceiveResend
 org.apache.qpid.server.message.MessageProtocolConversionTest#*
-org.apache.qpid.server.SupportedProtocolVersionsTest#*
 
 // The new addressing based syntax is not supported for AMQP 0-8/0-9 versions
 org.apache.qpid.client.failover.AddressBasedFailoverBehaviourTest#*
@@ -37,6 +36,9 @@ org.apache.qpid.server.queue.AddressBasedSortedQueueTest#*
 // Those tests are written against the 0.10 path
 org.apache.qpid.test.unit.message.UTF8Test#*
 org.apache.qpid.client.SynchReceiveTest#testReceiveNoWait
+
+// Makes explicit use of 0-10 connection object
+org.apache.qpid.client.ssl.SSLTest#testMultipleCertsInSingleStore
 
 // Tests 0.10 client feature
 org.apache.qpid.test.unit.client.connection.ConnectionTest#testUnsupportedSASLMechanism
@@ -66,4 +68,10 @@ org.apache.qpid.test.unit.ct.DurableSubscriberTest#testResubscribeWithChangedSel
 
 // JCA system tests require XA support (should look to see if we can reduce scope of excludes here)
 org.apache.qpid.ra.QpidRAConnectionTest#*
+org.apache.qpid.ra.QpidRAXAResourceTest#*
+
+// These tests rely on new address syntax
+org.apache.qpid.systest.management.jmx.QueueManagementTest#testGetSetAlternateExchange
+org.apache.qpid.systest.management.jmx.QueueManagementTest#testRemoveAlternateExchange
+org.apache.qpid.systest.management.jmx.QueueManagementTest#testAlternateExchangeSurvivesRestart
 

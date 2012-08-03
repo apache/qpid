@@ -22,33 +22,59 @@ package org.apache.qpid.server.model;
 
 import java.util.UUID;
 
-import org.apache.qpid.exchange.ExchangeDefaults;
-
-
 public class UUIDGenerator
 {
-
-    public static UUID generateUUID()
+    //Generates a random UUID. Used primarily by tests.
+    public static UUID generateRandomUUID()
     {
         return UUID.randomUUID();
     }
 
-    public static UUID generateUUID(String objectName, String virtualHostName)
+    private static UUID createUUID(String objectType, String... names)
     {
         StringBuilder sb = new StringBuilder();
-        sb.append(virtualHostName).append(objectName);
+        sb.append(objectType);
+
+        for(String name : names)
+        {
+            sb.append("/").append(name);
+        }
+
         return UUID.nameUUIDFromBytes(sb.toString().getBytes());
     }
 
-    public static UUID generateExchangeUUID(String echangeName, String virtualHostName)
+    public static UUID generateExchangeUUID(String exchangeName, String virtualHostName)
     {
-        if(ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString().equals(echangeName) || echangeName.startsWith("amq.") || echangeName.startsWith("qpid."))
-        {
-            return generateUUID(echangeName, virtualHostName);
-        }
-        else
-        {
-            return generateUUID();
-        }
+        return createUUID(Exchange.class.getName(), virtualHostName, exchangeName);
+    }
+
+    public static UUID generateQueueUUID(String queueName, String virtualHostName)
+    {
+        return createUUID(Queue.class.getName(), virtualHostName, queueName);
+    }
+
+    public static UUID generateBindingUUID(String exchangeName, String queueName, String bindingKey, String virtualHostName)
+    {
+        return createUUID(Binding.class.getName(), virtualHostName, exchangeName, queueName, bindingKey);
+    }
+
+    public static UUID generateUserUUID(String authenticationProviderName, String userName)
+    {
+        return createUUID(User.class.getName(), authenticationProviderName, userName);
+    }
+
+    public static UUID generateVhostUUID(String virtualHostName)
+    {
+        return createUUID(VirtualHost.class.getName(), virtualHostName);
+    }
+
+    public static UUID generateVhostAliasUUID(String virtualHostName, String portName)
+    {
+        return createUUID(VirtualHostAlias.class.getName(), virtualHostName, portName);
+    }
+
+    public static UUID generateConsumerUUID(String virtualHostName, String queueName, String connectionRemoteAddress, String channelNumber, String consumerName)
+    {
+        return createUUID(Consumer.class.getName(), virtualHostName, queueName, connectionRemoteAddress, channelNumber, consumerName);
     }
 }

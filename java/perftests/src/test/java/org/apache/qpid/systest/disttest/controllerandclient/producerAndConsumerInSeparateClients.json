@@ -42,7 +42,8 @@
                     {
                       "_name": "participantConsumer1",
                       "_destinationName": "direct://amq.direct//testQueue",
-                      "_numberOfMessages": 1
+                      "_numberOfMessages": 1,
+                      "_evaluateLatency": true
                     }
                   ]
                 }

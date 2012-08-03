@@ -48,11 +48,13 @@ public class ControllerJmsDelegate
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ControllerJmsDelegate.class);
 
+    private static final String QUEUE_CREATOR_CLASS_NAME_SYSTEM_PROPERTY = "qpid.disttest.queue.creator.class";
+
     private final Map<String, Destination> _clientNameToQueueMap = new ConcurrentHashMap<String, Destination>();
     private final Connection _connection;
     private final Destination _controllerQueue;
     private final Session _session;
-    private final QueueCreator _queueCreator;
+    private QueueCreator _queueCreator;
 
     private List<CommandListener> _commandListeners = new CopyOnWriteArrayList<CommandListener>();
 
@@ -63,7 +65,39 @@ public class ControllerJmsDelegate
         _connection.start();
         _controllerQueue = (Destination) context.lookup("controllerqueue");
         _session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        _queueCreator = new QpidQueueCreator();
+
+        createVendorSpecificQueueCreator();
+    }
+
+    private void createVendorSpecificQueueCreator()
+    {
+        String queueCreatorClassName = System.getProperty(QUEUE_CREATOR_CLASS_NAME_SYSTEM_PROPERTY);
+        if(queueCreatorClassName == null)
+        {
+            queueCreatorClassName = QpidQueueCreator.class.getName();
+        }
+        else
+        {
+            LOGGER.info("Using overridden queue creator class " + queueCreatorClassName);
+        }
+
+        try
+        {
+            Class<? extends QueueCreator> queueCreatorClass = (Class<? extends QueueCreator>) Class.forName(queueCreatorClassName);
+            _queueCreator = queueCreatorClass.newInstance();
+        }
+        catch (ClassNotFoundException e)
+        {
+            throw new DistributedTestException("Unable to instantiate queue creator using class name " + queueCreatorClassName, e);
+        }
+        catch (InstantiationException e)
+        {
+            throw new DistributedTestException("Unable to instantiate queue creator using class name " + queueCreatorClassName, e);
+        }
+        catch (IllegalAccessException e)
+        {
+            throw new DistributedTestException("Unable to instantiate queue creator using class name " + queueCreatorClassName, e);
+        }
     }
 
     public void start()

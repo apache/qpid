@@ -32,7 +32,6 @@ import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.federation.BrokerLink;
-import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
@@ -62,9 +61,9 @@ public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHo
 
     void close();
 
-    ManagedObject getManagedObject();
-
     UUID getBrokerId();
+
+    UUID getId();
 
     void scheduleHouseKeepingTask(long period, HouseKeepingTask task);
 
@@ -74,7 +73,7 @@ public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHo
 
     int getHouseKeepingPoolSize();
 
-    void setHouseKeepingPoolSize(int newSize);    
+    void setHouseKeepingPoolSize(int newSize);
 
     int getHouseKeepingActiveCount();
 
@@ -102,4 +101,8 @@ public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHo
     ScheduledFuture<?> scheduleTask(long delay, Runnable timeoutTask);
 
     State getState();
+
+    public void block();
+
+    public void unblock();
 }

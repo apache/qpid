@@ -17,7 +17,6 @@
    specific language governing permissions and limitations
    under the License.
 -->
-<!DOCTYPE amqp SYSTEM "amqp.dtd">
 <?xml-stylesheet type="text/xsl" href="amqp.xsl"?>
 
 <amqp name="apache-filters" label="Apache Proposed AMQP 1-0 Filters">
@@ -175,9 +174,9 @@ JMSType           | annotation jms-type in message-annotations section
           where <i>field_name</i> is the appropriate AMQP 1.0 field
           named in the table above, with the hyphen replaced by an
           underscore. For example, the selector: "JMSCorrelationID =
-          ’abc’ AND color = ’blue’ AND weight > 2500" would be
-          transferred over the wire as: "amqp.correlation_id = ’abc’
-          AND color = ’blue’ AND weight > 2500"
+          'abc' AND color = 'blue' AND weight > 2500" would be
+          transferred over the wire as: "amqp.correlation_id = 'abc'
+          AND color = 'blue' AND weight > 2500"
         </p>
         <p>
           The "properties" of the JMS message are equivalent to the AMQP application-properties

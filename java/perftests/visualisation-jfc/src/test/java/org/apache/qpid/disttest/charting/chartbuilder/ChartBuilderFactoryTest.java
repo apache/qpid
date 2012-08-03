@@ -19,22 +19,44 @@
  */
 package org.apache.qpid.disttest.charting.chartbuilder;
 
+import static org.mockito.Mockito.*;
+
 import org.apache.qpid.disttest.charting.ChartType;
+import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
 
 import junit.framework.TestCase;
 
 public class ChartBuilderFactoryTest extends TestCase
 {
+    private SeriesBuilder _seriesBuilder = mock(SeriesBuilder.class);
+
     public void testLineChart()
     {
-        ChartBuilder builder = ChartBuilderFactory.createChartBuilder(ChartType.LINE);
+        ChartBuilder builder = ChartBuilderFactory.createChartBuilder(ChartType.LINE, _seriesBuilder);
         assertTrue(builder instanceof LineChartBuilder);
+    }
+
+    public void testLineChart3D()
+    {
+        ChartBuilder builder = ChartBuilderFactory.createChartBuilder(ChartType.LINE3D, _seriesBuilder);
+        assertTrue(builder instanceof LineChart3DBuilder);
     }
 
     public void testBarChart()
     {
-        ChartBuilder builder = ChartBuilderFactory.createChartBuilder(ChartType.BAR);
+        ChartBuilder builder = ChartBuilderFactory.createChartBuilder(ChartType.BAR, _seriesBuilder);
         assertTrue(builder instanceof BarChartBuilder);
     }
 
+    public void testBarChart3D()
+    {
+        ChartBuilder builder = ChartBuilderFactory.createChartBuilder(ChartType.BAR3D, _seriesBuilder);
+        assertTrue(builder instanceof BarChart3DBuilder);
+    }
+
+    public void testXYLineChart()
+    {
+        ChartBuilder builder = ChartBuilderFactory.createChartBuilder(ChartType.XYLINE, _seriesBuilder);
+        assertTrue(builder instanceof XYLineChartBuilder);
+    }
 }

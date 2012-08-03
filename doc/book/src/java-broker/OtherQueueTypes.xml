@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE urls [
+<!ENTITY oracleJeeDocUrl "http://docs.oracle.com/javaee/6/api/">
+]>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<section id="OtherQueueTypes">
+  <title>Other Queue Types</title>
+
+  <section role="h2" id="OtherQueueTypes-Introduction">
+    <title>Introduction</title>
+    <para> In addition to the standard queue type where messages are delivered in the same order
+      that they were sent, the Java Broker supports three additional queue types which allows for
+      alternative delivery behaviours. These are <link linkend="OtherQueueTypes-Priority"
+        >priority-queues</link>, <link linkend="OtherQueueTypes-Sorted">sorted-queues</link>-, and
+        <link linkend="OtherQueueTypes-LVQ">last-value-queues</link> (LVQs). </para>
+    <para> In the following sections, the semantics of each queue type is described, followed by a
+      description of how instances of these queue can be created via <link
+        linkend="OtherQueueTypes-CreateUsingConfig">configuration</link> or <link
+        linkend="OtherQueueTypes-CreateUsingJmsOrJmx">programmatically</link>. </para>
+    <para>The final section discusses the importance of using a <link
+        linkend="OtherQueueTypes-SetLowPrefetch">low client pre-fetch</link> with these queued.
+    </para>
+  </section>
+
+  <section role="h2" id="OtherQueueTypes-Priority">
+    <title>Priority Queues</title>
+    <para>In a priority queue, messages on the queue are delivered in an order determined by the
+        <ulink url="&oracleJeeDocUrl;javax/jms/Message.html#getJMSPriority()">JMS priority message
+        header</ulink> within the message. By default Qpid supports the 10 priority levels mandated
+      by JMS, with priority value 0 as the lowest priority and 9 as the highest. </para>
+    <para>It is possible to reduce the effective number of priorities if desired.</para>
+    <para>JMS defines the <ulink url="&oracleJeeDocUrl;javax/jms/Message.html#DEFAULT_PRIORITY">
+        default message priority</ulink> as 4. Messages sent without a specified priority use this
+      default. </para>
+  </section>
+  <section role="h2" id="OtherQueueTypes-Sorted">
+    <title>Sorted Queues</title>
+    <para>Sorted queues allow the message delivery order to be determined by value of an arbitrary
+        <ulink url="&oracleJeeDocUrl;javax/jms/Message.html#getStringProperty()">JMS message
+        property</ulink>. Sort order is alpha-numeric and the property value must have a type
+      java.lang.String.</para>
+    <para>Messages sent to a sorted queue without the specified JMS message property will be
+      inserted into the 'last' position in the queue.</para>
+  </section>
+  <section role="h2" id="OtherQueueTypes-LVQ">
+    <title>Last Value Queues (LVQ)</title>
+    <para>LVQs (or conflation queues) are special queues that automatically discard any message when
+      a newer message arrives with the same key value. The key is specified by arbitrary <ulink
+        url="&oracleJeeDocUrl;javax/jms/Message.html#getPropertyNames()">JMS message
+        property</ulink>.</para>
+    <para>An example of an LVQ might be where a queue represents prices on a stock exchange: when
+      you first consume from the queue you get the latest quote for each stock, and then as new
+      prices come in you are sent only these updates. </para>
+    <para>Like other queues, LVQs can either be browsed or consumed from. When browsing an
+      individual subscriber does not remove the message from the queue when receiving it. This
+      allows for many subscriptions to browse the same LVQ (i.e. you do not need to create and bind
+      a separate LVQ for each subscriber who wishes to receive the contents of the LVQ).</para>
+    <para>Messages sent to an LVQ without the specified property will be delivered as normal and
+      will never be "replaced".</para>
+  </section>
+  <section role="h2" id="OtherQueueTypes-Create">
+    <title>Creating a Priority, Sorted or LVQ Queue</title>
+    <para>To create a priority, sorted or LVQ queue, it can be defined in the virtualhost
+      configuration file, or the queue can be created programmtically from a client via AMQP (using
+      an extension to JMS), or using JMX. These methods are described below. </para>
+    <para>Once a queue is created you cannot change its type (without deleting it and re-creating).
+      Also note you cannot currently mix the natures of these queue types, for instance, you cannot
+      define a queue which it both an LVQ and a priority-queue.</para>
+    <section role="h2" id="OtherQueueTypes-CreateUsingConfig">
+      <title>Using configuration</title>
+      <para>To create a priority, sorted or LVQ queue within configuration, add the appropriate xml
+        to the virtualhost.xml configuration file within the <varname>queues</varname>
+        element.</para>
+      <section role="h3" id="OtherQueueTypes-CreateUsingConfig-Priority">
+        <title>Priority</title>
+        <para> To defining a priority queue, add a &lt;priority&gt;true&lt;/priority&gt; element. By
+          default the queue will have 10 distinct priorities. </para>
+        <example>
+          <title>Configuring a priority queue</title>
+          <programlisting><![CDATA[<queue>
+    <name>myqueue</name>
+    <myqueue>
+        <exchange>amq.direct</exchange>
+        <priority>true</priority>
+    </myqueue>
+</queue>]]></programlisting>
+        </example>
+        <para> If you require fewer priorities, it is possible to specify a
+            <varname>priorities</varname> element (whose value is a integer value between 2 and 10
+          inclusive) which will give the queue that number of distinct priorities. When messages are
+          sent to that queue, their effective priority will be calculated by partitioning the
+          priority space. If the number of effective priorities is 2, then messages with priority
+          0-4 are treated the same as "lower priority" and messages with priority 5-9 are treated
+          equivalently as "higher priority". </para>
+        <example>
+          <title>Configuring a priority queue with fewer priorities</title>
+          <programlisting><![CDATA[<queue>
+    <name>myqueue</name>
+    <myqueue>
+        <exchange>amq.direct</exchange>
+        <priority>true</priority>
+        <priorities>4</priorities>
+    </myqueue>
+</queue>]]></programlisting>
+        </example>
+      </section>
+      <section role="h3" id="OtherQueueTypes-CreateUsingConfig-Sorted">
+        <title>Sorted</title>
+        <para> To define a sorted queue, add a <varname>sortKey</varname> element. The value of the
+            <varname>sortKey</varname> element defines the message property to use the value of when
+          sorting the messages put onto the queue. </para>
+        <example>
+          <title>Configuring a sorted queue</title>
+          <programlisting><![CDATA[<queue>
+    <name>myqueue</name>
+    <myqueue>
+        <exchange>amq.direct</exchange>
+        <sortKey>message-property-to-sort-by</sortKey>
+    </myqueue>
+</queue>]]></programlisting>
+        </example>
+      </section>
+      <section role="h3" id="OtherQueueTypes-CreateUsingConfig-LVQ">
+        <title>LVQ</title>
+        <para> To define a LVQ, add a <varname>lvq</varname> element with the value
+            <constant>true</constant>. Without any further configuration this will define an LVQ
+          which uses the JMS message property <constant>qpid.LVQ_key</constant> as the key for
+          replacement. </para>
+        <example>
+          <title>Configuring a LVQ queue</title>
+          <programlisting><![CDATA[<queue>
+    <name>myqueue</name>
+    <myqueue>
+        <exchange>amq.direct</exchange>
+        <lvq>true</lvq>
+    </myqueue>
+</queue>]]></programlisting>
+        </example>
+        <para> If you wish to define your own property then you can do so using the
+            <varname>lvqKey</varname> element.</para>
+        <example>
+          <title>Configuring a LVQ queue with custom message property name</title>
+          <programlisting><![CDATA[<queue>
+    <name>myqueue</name>
+    <myqueue>
+        <exchange>amq.direct</exchange>
+        <lvq>true</lvq>
+        <lvqKey>ISIN</lvqKey>
+    </myqueue>
+</queue>]]></programlisting>
+        </example>
+      </section>
+    </section>
+    <section role="h2" id="OtherQueueTypes-CreateUsingJmsOrJmx">
+      <title>Using JMS or AMQP</title>
+      <para>To create a priority, sorted or LVQ queue programmatically from JMX or using a Qpid
+        extension to JMS, pass the appropriate queue-declare arguments.</para>
+      <table>
+        <tgroup cols="4">
+          <thead>
+            <row>
+              <entry>Queue type</entry>
+              <entry>Argument name</entry>
+              <entry>Argument name</entry>
+              <entry>Argument Description</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry>priority</entry>
+              <entry>priorities</entry>
+              <entry>java.lang.Integer</entry>
+              <entry>Specifies a priority queue with given number priorities</entry>
+            </row>
+            <row>
+              <entry>sorted</entry>
+              <entry>qpid.queue_sort_key</entry>
+              <entry>java.lang.String</entry>
+              <entry>Specifies sorted queue with given message property used to sort the
+                entries</entry>
+            </row>
+            <row>
+              <entry>lvq</entry>
+              <entry>qpid.last_value_queue_key</entry>
+              <entry>java.lang.String</entry>
+              <entry>Specifies lvq queue with given message property used to conflate the
+                entries</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+      <para>The following example illustrates the creation of the a LVQ queue from a
+        javax.jms.Session object. Note that this utilises a Qpid specific extension to JMS and
+        involves casting the session object back to its Qpid base-class.</para>
+      <example>
+        <title>Creation of an LVQ using the Qpid extension to JMS</title>
+        <programlisting><![CDATA[Map<String,Object> arguments = new HashMap<String, Object>();
+arguments.put("qpid.last_value_queue_key","ISIN");
+((AMQSession<?,?>) session).createQueue(queueName, autoDelete, durable, exclusive, arguments);]]></programlisting>
+
+      </example>
+      <para> The following example illustrates the creation of the sorted queue from a the JMX
+        interface using the ManagedBroker interface. </para>
+      <example>
+        <title>Creation of a sorted queue using JMX</title>
+        <programlisting><![CDATA[Map<String, Object> environment = new HashMap<String, Object>();
+environment.put(JMXConnector.CREDENTIALS, new String[] {"admin","password"});
+// Connect to service
+JMXServiceURL url =  new JMXServiceURL("service:jmx:rmi:///jndi/rmi://localhost:8999/jmxrmi");
+JMXConnector jmxConnector = JMXConnectorFactory.connect(url, environment);
+MBeanServerConnection mbsc =  jmxConnector.getMBeanServerConnection();
+// Object name for ManagedBroker for virtualhost myvhost
+ObjectName objectName = new ObjectName("org.apache.qpid:type=VirtualHost.VirtualHostManager,VirtualHost=myvhost");
+// Get the ManagedBroker object
+ManagedBroker managedBroker = JMX.newMBeanProxy(mbsc, objectName, ManagedBroker.class);;
+
+// Create the queue passing arguments
+Map<String,Object> arguments = new HashMap<String, Object>();
+arguments.put("qpid.queue_sort_key","myheader");
+managedBroker.createNewQueue("myqueue", null, true, arguments);]]></programlisting>
+      </example>
+    </section>
+  </section>
+
+  <section role="h2" id="OtherQueueTypes-SetLowPrefetch">
+    <title>Low pre-fetch</title>
+    <para>Qpid clients receive buffered messages in batches, sized according to the pre-fetch value.
+      The current default is 500. </para>
+    <para>However, if you use the default value you will probably <emphasis>not</emphasis> see
+      desirable behaviour when using priority, sorted or lvq queues. Once the broker has sent a
+      message to the client its delivery order is then fixed, regardless of the special behaviour of
+      the queue. </para>
+    <para>For example, if using a priority queue and a prefetch of 100, and 100 messages arrive with
+      priority 2, the broker will send these messages to the client. If then a new message arrives
+      will priority 1, the broker cannot leap frog messages of lower priority. The priority 1 will
+      be delivered at the front of the next batch of messages to be sent to the client.</para>
+    <para> So, you need to set the prefetch values for your client (consumer) to make this sensible.
+      To do this set the Java system property <varname>max_prefetch</varname> on the client
+      environment (using -D) before creating your consumer. </para>
+    <para>A default for all client connections can be set via a system property: </para>
+    <programlisting>
+-Dmax_prefetch=1
+</programlisting>
+    <para> The prefetch can be also be adjusted on a per connection basis by adding a
+      <varname>maxprefetch</varname> value to the <ulink url="../../Programming-In-Apache-Qpid/html/QpidJNDI.html#section-jms-connection-url">Connection URLs</ulink>
+    </para>
+    <programlisting>
+amqp://guest:guest@client1/development?maxprefetch='1'&amp;brokerlist='tcp://localhost:5672'
+</programlisting>
+    <para>Setting the Qpid pre-fetch to 1 will give exact queue-type semantics as perceived by the
+      client however, this brings a performance cost. You could test with a slightly higher
+      pre-fetch to trade-off between throughput and exact semantics.</para>
+  </section>
+</section>

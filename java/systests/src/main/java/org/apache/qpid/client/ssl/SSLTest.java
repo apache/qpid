@@ -46,6 +46,7 @@ public class SSLTest extends QpidBrokerTestCase
             setTestClientSystemProperty("profile.use_ssl", "true");
             setConfigurationProperty("connector.ssl.enabled", "true");
             setConfigurationProperty("connector.ssl.sslOnly", "true");
+            setConfigurationProperty("connector.ssl.wantClientAuth", "true");
         }
 
         // set the ssl system properties

@@ -24,13 +24,7 @@ from exceptions import VersionError, Closed
 from logging import getLogger
 from ops import Control
 import sys
-
-_have_sasl = None
-try:
-  import saslwrapper
-  _have_sasl = True
-except:
-  pass
+from qpid import sasl
 
 log = getLogger("qpid.io.ctl")
 
@@ -172,20 +166,19 @@ class Client(Delegate):
     self.username  = username
     self.password  = password
 
-    if _have_sasl:
-      self.sasl = saslwrapper.Client()
-      if username and len(username) > 0:
-        self.sasl.setAttr("username", str(username))
-      if password and len(password) > 0:
-        self.sasl.setAttr("password", str(password))
-      self.sasl.setAttr("service", str(kwargs.get("service", "qpidd")))
-      if "host" in kwargs:
-        self.sasl.setAttr("host", str(kwargs["host"]))
-      if "min_ssf" in kwargs:
-        self.sasl.setAttr("minssf", kwargs["min_ssf"])
-      if "max_ssf" in kwargs:
-        self.sasl.setAttr("maxssf", kwargs["max_ssf"])
-      self.sasl.init()
+    self.sasl = sasl.Client()
+    if username and len(username) > 0:
+      self.sasl.setAttr("username", str(username))
+    if password and len(password) > 0:
+      self.sasl.setAttr("password", str(password))
+    self.sasl.setAttr("service", str(kwargs.get("service", "qpidd")))
+    if "host" in kwargs:
+      self.sasl.setAttr("host", str(kwargs["host"]))
+    if "min_ssf" in kwargs:
+      self.sasl.setAttr("minssf", kwargs["min_ssf"])
+    if "max_ssf" in kwargs:
+      self.sasl.setAttr("maxssf", kwargs["max_ssf"])
+    self.sasl.init()
 
   def start(self):
     # XXX
@@ -204,39 +197,29 @@ class Client(Delegate):
         mech_list += str(mech) + " "
     mech = None
     initial = None
-    if _have_sasl:
-      status, mech, initial = self.sasl.start(mech_list)
-      if status == False:
-        raise Closed("SASL error: %s" % self.sasl.getError())
-    else:
-      if self.username and self.password and ("PLAIN" in mech_list):
-        mech = "PLAIN"
-        initial = "\0%s\0%s" % (self.username, self.password)
-      else:
-        mech = "ANONYMOUS"
-        if not mech in mech_list:
-          raise Closed("No acceptable SASL authentication mechanism available")
+    try:
+      mech, initial = self.sasl.start(mech_list)
+    except Exception, e:
+      raise Closed(str(e))
     ch.connection_start_ok(client_properties=self.client_properties,
                            mechanism=mech, response=initial)
 
   def connection_secure(self, ch, secure):
     resp = None
-    if _have_sasl:
-      status, resp = self.sasl.step(secure.challenge)
-      if status == False:
-        raise Closed("SASL error: %s" % self.sasl.getError())
+    try:
+      resp = self.sasl.step(secure.challenge)
+    except Exception, e:
+      raise Closed(str(e))
     ch.connection_secure_ok(response=resp)
 
   def connection_tune(self, ch, tune):
     ch.connection_tune_ok(heartbeat=self.heartbeat)
     ch.connection_open()
-    if _have_sasl:
-      self.connection.user_id = self.sasl.getUserId()
-      self.connection.security_layer_tx = self.sasl
+    self.connection.user_id = self.sasl.auth_username()
+    self.connection.security_layer_tx = self.sasl
 
   def connection_open_ok(self, ch, open_ok):
-    if _have_sasl:
-      self.connection.security_layer_rx = self.sasl
+    self.connection.security_layer_rx = self.sasl
     self.connection.opened = True
     notify(self.connection.condition)
 

@@ -33,7 +33,6 @@
     <property name="qmf.output.dir" value="${module.precompiled}/org/apache/qpid/qmf/schema"/>
     <property name="qmf.output.file" value="BrokerSchema.java"/>
 
-
     <target name="precompile" depends="gen_logging,gen_qmf"/>
 
   <target name="check_qmf_deps">
@@ -83,7 +82,10 @@
 
     <target name="check-bdbstore-requested">
          <condition property="bdbstore-requested">
-             <contains string="${modules.opt}" substring="bdbstore"/>
+             <or>
+                 <contains string="${modules.opt}" substring="bdbstore"/>
+                 <istrue value="${optional}"/>
+             </or>
          </condition>
     </target>
 

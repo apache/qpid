@@ -17,13 +17,16 @@
 -->
 
   <class name="Acl">
-    <property name="brokerRef"     type="objId"   references="org.apache.qpid.broker:Broker" access="RO" index="y" parentRef="y"/>
-    <property name="policyFile"    type="lstr"    access="RO"    desc="Name of the policy file"/>
-    <property name="enforcingAcl"  type="bool"    access="RO"    desc="Currently Enforcing ACL"/>
-    <property name="transferAcl"   type="bool"    access="RO"    desc="Any transfer ACL rules in force"/>
-    <property name="lastAclLoad"   type="absTime" access="RO"    desc="Timestamp of last successful load of ACL"/>
-    <statistic name="aclDenyCount" type="count64" unit="request" desc="Number of ACL requests denied"/>
-    <statistic name="connectionDenyCount" type="count64" unit="connection" desc="Number of connections denied"/>
+    <property name="brokerRef"             type="objId"   references="org.apache.qpid.broker:Broker" access="RO" index="y" parentRef="y"/>
+    <property name="policyFile"            type="lstr"    access="RO"       desc="Name of the policy file"/>
+    <property name="enforcingAcl"          type="bool"    access="RO"       desc="Currently Enforcing ACL"/>
+    <property name="transferAcl"           type="bool"    access="RO"       desc="Any transfer ACL rules in force"/>
+    <property name="lastAclLoad"           type="absTime" access="RO"       desc="Timestamp of last successful load of ACL"/>
+    <property name="maxConnections"        type="uint16"  access="RO"       desc="Maximum allowed connections"/>
+    <property name="maxConnectionsPerIp"   type="uint16"  access="RO"       desc="Maximum allowed connections"/>
+    <property name="maxConnectionsPerUser" type="uint16"  access="RO"       desc="Maximum allowed connections"/>
+    <statistic name="aclDenyCount"         type="count64" unit="request"    desc="Number of ACL requests denied"/>
+    <statistic name="connectionDenyCount"  type="count64" unit="connection" desc="Number of connections denied"/>
 
     <method name="reloadACLFile" desc="Reload the ACL file"/>
 

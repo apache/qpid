@@ -22,22 +22,42 @@ package org.apache.qpid.disttest.controller.config;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.Reader;
+import java.io.StringReader;
 
 import org.apache.qpid.disttest.client.property.PropertyValue;
 import org.apache.qpid.disttest.json.PropertyValueAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 public class ConfigReader
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigReader.class);
 
     public Config getConfigFromFile(String fileName) throws FileNotFoundException
     {
-        FileReader reader = new FileReader(fileName);
+        Reader reader = getConfigReader(fileName);
 
         Config config = readConfig(reader);
         return config;
+    }
+
+    protected Reader getConfigReader(String fileName) throws FileNotFoundException
+    {
+        Reader reader = null;
+        if (fileName.endsWith(".js"))
+        {
+            LOGGER.info("Evaluating javascript:" + fileName);
+            reader = new StringReader(new JavaScriptConfigEvaluator().evaluateJavaScript(fileName));
+        }
+        else
+        {
+            LOGGER.info("Loading JSON:" + fileName);
+            reader = new FileReader(fileName);
+        }
+        return reader;
     }
 
     public Config readConfig(Reader reader)

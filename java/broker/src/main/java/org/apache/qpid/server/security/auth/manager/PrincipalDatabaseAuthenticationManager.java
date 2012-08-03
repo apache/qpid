@@ -14,12 +14,13 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import java.security.Principal;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
@@ -31,7 +32,6 @@ import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
-import org.apache.qpid.server.security.auth.management.AMQUserManagementMBean;
 import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
 import org.apache.qpid.server.security.auth.sasl.JCAProvider;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
@@ -60,9 +60,9 @@ import java.util.TreeMap;
  * Concrete implementation of the AuthenticationManager that determines if supplied
  * user credentials match those appearing in a PrincipalDatabase.   The implementation
  * of the PrincipalDatabase is determined from the configuration.
- * 
+ *
  * This implementation also registers the JMX UserManagemement MBean.
- * 
+ *
  * This plugin expects configuration such as:
  *
  * <pre>
@@ -97,13 +97,14 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
 
     private PrincipalDatabase _principalDatabase = null;
 
-    private AMQUserManagementMBean _mbean = null;
-
     public static final AuthenticationManagerPluginFactory<PrincipalDatabaseAuthenticationManager> FACTORY = new AuthenticationManagerPluginFactory<PrincipalDatabaseAuthenticationManager>()
     {
         public PrincipalDatabaseAuthenticationManager newInstance(final ConfigurationPlugin config) throws ConfigurationException
         {
-            final PrincipalDatabaseAuthenticationManagerConfiguration configuration = config.getConfiguration(PrincipalDatabaseAuthenticationManagerConfiguration.class.getName());
+            final PrincipalDatabaseAuthenticationManagerConfiguration configuration =
+                    config == null
+                            ? null
+                            : (PrincipalDatabaseAuthenticationManagerConfiguration) config.getConfiguration(PrincipalDatabaseAuthenticationManagerConfiguration.class.getName());
 
             // If there is no configuration for this plugin then don't load it.
             if (configuration == null)
@@ -130,7 +131,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
     };
 
     public static class PrincipalDatabaseAuthenticationManagerConfiguration extends ConfigurationPlugin {
- 
+
         public static final ConfigurationPluginFactory FACTORY = new ConfigurationPluginFactory()
         {
             public List<String> getParentPaths()
@@ -141,7 +142,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
             public ConfigurationPlugin newInstance(final String path, final Configuration config) throws ConfigurationException
             {
                 final ConfigurationPlugin instance = new PrincipalDatabaseAuthenticationManagerConfiguration();
-                
+
                 instance.setConfiguration(path, config);
                 return instance;
             }
@@ -157,16 +158,16 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         public void validateConfiguration() throws ConfigurationException
         {
         }
-  
+
         public String getPrincipalDatabaseClass()
         {
             return getConfig().getString("principal-database.class");
         }
-  
+
         public Map<String,String> getPdClassAttributeMap() throws ConfigurationException
         {
-            final List<String> argumentNames = getConfig().getList("principal-database.attributes.attribute.name");
-            final List<String> argumentValues = getConfig().getList("principal-database.attributes.attribute.value");
+            final List<String> argumentNames = (List) getConfig().getList("principal-database.attributes.attribute.name");
+            final List<String> argumentValues = (List) getConfig().getList("principal-database.attributes.attribute.value");
             final Map<String,String> attributes = new HashMap<String,String>(argumentNames.size());
 
             for (int i = 0; i < argumentNames.size(); i++)
@@ -181,7 +182,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         }
     }
 
-    protected PrincipalDatabaseAuthenticationManager()  
+    protected PrincipalDatabaseAuthenticationManager()
     {
     }
 
@@ -207,11 +208,9 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         {
             _logger.warn("No additional SASL providers registered.");
         }
-
-        registerManagement();
     }
 
-    private void initialiseAuthenticationMechanisms(Map<String, Class<? extends SaslServerFactory>> providerMap, PrincipalDatabase database) 
+    private void initialiseAuthenticationMechanisms(Map<String, Class<? extends SaslServerFactory>> providerMap, PrincipalDatabase database)
     {
         if (database == null || database.getMechanisms().size() == 0)
         {
@@ -259,7 +258,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
 
         _principalDatabase = createPrincipalDatabaseImpl(pdClazz);
 
-        configPrincipalDatabase(_principalDatabase, pdamConfig);        
+        configPrincipalDatabase(_principalDatabase, pdamConfig);
     }
 
     public String getMechanisms()
@@ -267,7 +266,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         return _mechanisms;
     }
 
-    public SaslServer createSaslServer(String mechanism, String localFQDN) throws SaslException
+    public SaslServer createSaslServer(String mechanism, String localFQDN, Principal externalPrincipal) throws SaslException
     {
         return Sasl.createSaslServer(mechanism, "AMQP", localFQDN, _serverCreationProperties.get(mechanism),
                                      _callbackHandlerMap.get(mechanism));
@@ -300,11 +299,6 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         }
     }
 
-    public CallbackHandler getHandler(String mechanism)
-    {
-        return _callbackHandlerMap.get(mechanism);
-    }
-
     /**
      * @see org.apache.qpid.server.security.auth.manager.AuthenticationManager#authenticate(String, String)
      */
@@ -333,8 +327,6 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
     {
         _mechanisms = null;
         Security.removeProvider(PROVIDER_NAME);
-
-        unregisterManagement();
     }
 
     private PrincipalDatabase createPrincipalDatabaseImpl(final String pdClazz) throws ConfigurationException
@@ -408,6 +400,11 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         }
     }
 
+    public PrincipalDatabase getPrincipalDatabase()
+    {
+        return _principalDatabase;
+    }
+
     private String generateSetterName(String argName) throws ConfigurationException
     {
         if ((argName == null) || (argName.length() == 0))
@@ -427,42 +424,5 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
     protected void setPrincipalDatabase(final PrincipalDatabase principalDatabase)
     {
         _principalDatabase = principalDatabase;
-    }
-
-    protected void registerManagement()
-    {
-        try
-        {
-            _logger.info("Registering UserManagementMBean");
-
-            _mbean = new AMQUserManagementMBean();
-            _mbean.setPrincipalDatabase(_principalDatabase);
-            _mbean.register();
-        }
-        catch (Exception e)
-        {
-            _logger.warn("User management disabled as unable to create MBean:", e);
-            _mbean = null;
-        }
-    }
-
-    protected void unregisterManagement()
-    {
-        try
-        {
-            if (_mbean != null)
-            {
-                _logger.info("Unregistering UserManagementMBean");
-                _mbean.unregister();
-            }
-        }
-        catch (Exception e)
-        {
-            _logger.warn("Failed to unregister User management MBean:", e);
-        }
-        finally
-        {
-            _mbean = null;
-        }
     }
 }

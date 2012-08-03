@@ -20,19 +20,30 @@
  */
 package org.apache.qpid.server.store;
 
+import org.apache.qpid.server.configuration.ConfiguredObject;
+
 public enum State
 {
-    
+    /** The initial state of the store.  In practice, the store immediately transitions to the subsequent states. */
     INITIAL,
-    CONFIGURING,
-    CONFIGURED,
-    RECOVERING,
-    ACTIVE,
-    QUIESCING,
-    QUIESCED,
-    CLOSING,
-    CLOSED;
-        
 
+    INITIALISING,
+    /**
+     * The initial set-up of the store has completed.
+     * If the store is persistent, it has not yet loaded configuration for {@link ConfiguredObject}'s from disk.
+     *
+     * From the point of view of the user, the store is essentially stopped.
+     */
+    INITIALISED,
+
+    ACTIVATING,
+    ACTIVE,
+
+    CLOSING,
+    CLOSED,
+
+    QUIESCING,
+    /** The virtual host (and implicitly also the store) has been manually paused by the user to allow configuration changes to take place */
+    QUIESCED;
 
 }

@@ -22,7 +22,7 @@ import static org.apache.qpid.disttest.message.ParticipantAttribute.BATCH_SIZE;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.CONFIGURED_CLIENT_NAME;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.*;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.ERROR_MESSAGE;
-import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_BROWSIING_SUBSCRIPTION;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_BROWSING_SUBSCRIPTION;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_DURABLE_SUBSCRIPTION;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_NO_LOCAL;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_SELECTOR;
@@ -58,7 +58,6 @@ import org.apache.qpid.disttest.controller.ResultsForAllTests;
 import org.apache.qpid.disttest.controller.TestResult;
 import org.apache.qpid.disttest.message.ParticipantAttribute;
 import org.apache.qpid.disttest.message.ParticipantResult;
-import org.apache.qpid.qmf.QMFProperty.AccessCode;
 
 public class CSVFormaterTest extends TestCase
 {
@@ -109,7 +108,7 @@ public class CSVFormaterTest extends TestCase
         participantAttributes.put(PRODUCER_INTERVAL, 9);
         participantAttributes.put(IS_TOPIC, true);
         participantAttributes.put(IS_DURABLE_SUBSCRIPTION, false);
-        participantAttributes.put(IS_BROWSIING_SUBSCRIPTION, true);
+        participantAttributes.put(IS_BROWSING_SUBSCRIPTION, true);
         participantAttributes.put(IS_SELECTOR, false);
         participantAttributes.put(IS_NO_LOCAL, true);
         participantAttributes.put(IS_SYNCHRONOUS_CONSUMER, false);
@@ -119,7 +118,10 @@ public class CSVFormaterTest extends TestCase
         participantAttributes.put(THROUGHPUT, 2048);
         participantAttributes.put(TIME_TAKEN, 1000);
         participantAttributes.put(ERROR_MESSAGE, "error");
-
+        participantAttributes.put(MIN_LATENCY, 2l);
+        participantAttributes.put(MAX_LATENCY, 9l);
+        participantAttributes.put(AVERAGE_LATENCY, 5.0f);
+        participantAttributes.put(LATENCY_STANDARD_DEVIATION, 2.0f);
         return participantAttributes;
     }
 

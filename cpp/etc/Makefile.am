@@ -20,8 +20,8 @@ SASL_CONF = sasl2/qpidd.conf
 
 EXTRA_DIST = \
 	$(SASL_CONF) \
-	qpidd qpidd-primary qpidd.conf qpidc.conf CMakeLists.txt \
-	cluster.conf-example.xml
+	qpidd.in qpidd-primary.in qpidd.conf qpidc.conf CMakeLists.txt \
+	cluster.conf-example.xml.in
 
 confdir = $(sysconfdir)/qpid
 nobase_conf_DATA=\

@@ -20,6 +20,14 @@
  */
 package org.apache.qpid.server.transport;
 
+import java.security.Principal;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import javax.security.auth.Subject;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.configuration.ConnectionConfig;
@@ -28,12 +36,9 @@ import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
-import org.apache.qpid.server.management.Managable;
-import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Connection;
@@ -48,17 +53,7 @@ import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTIO
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SOCKET_FORMAT;
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.USER_FORMAT;
 
-import javax.management.JMException;
-import javax.security.auth.Subject;
-import java.security.Principal;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-
-public class ServerConnection extends Connection implements Managable, AMQConnectionModel, LogSubject, AuthorizationHolder
+public class ServerConnection extends Connection implements AMQConnectionModel, LogSubject, AuthorizationHolder
 {
     private ConnectionConfig _config;
     private Runnable _onOpenTask;
@@ -67,22 +62,17 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
 
     private Subject _authorizedSubject = null;
     private Principal _authorizedPrincipal = null;
-    private boolean _statisticsEnabled = false;
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
     private final long _connectionId;
     private final Object _reference = new Object();
-    private ServerConnectionMBean _mBean;
     private VirtualHost _virtualHost;
     private AtomicLong _lastIoTime = new AtomicLong();
-    
+    private boolean _blocking;
+    private Principal _peerPrincipal;
+
     public ServerConnection(final long connectionId)
     {
         _connectionId = connectionId;
-    }
-
-    public UUID getId()
-    {
-        return _config.getId();
     }
 
     public Object getReference()
@@ -100,12 +90,12 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
     protected void setState(State state)
     {
         super.setState(state);
-        
+
         if (state == State.OPEN)
         {
             if (_onOpenTask != null)
             {
-                _onOpenTask.run();    
+                _onOpenTask.run();
             }
             _actor.message(ConnectionMessages.OPEN(getClientId(), "0-10", getClientVersion(), true, true, true));
 
@@ -118,7 +108,6 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
             {
                 _virtualHost.getConnectionRegistry().deregisterConnection(this);
             }
-            unregisterConnectionMbean();
         }
 
         if (state == State.CLOSED)
@@ -156,8 +145,6 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
         _virtualHost = virtualHost;
 
         initialiseStatistics();
-
-        registerConnectionMbean();
     }
 
     public void setConnectionConfig(final ConnectionConfig config)
@@ -193,7 +180,7 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
 
         ((ServerSession)session).close();
     }
-    
+
     public LogSubject getLogSubject()
     {
         return (LogSubject) this;
@@ -273,7 +260,6 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
     public void close(AMQConstant cause, String message) throws AMQException
     {
         closeSubscriptions();
-        unregisterConnectionMbean();
         ConnectionCloseCode replyCode = ConnectionCloseCode.NORMAL;
         try
         {
@@ -284,6 +270,46 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
             // Ignore
         }
         close(replyCode, message);
+    }
+
+    public synchronized void block()
+    {
+        if(!_blocking)
+        {
+            _blocking = true;
+            for(AMQSessionModel ssn : getSessionModels())
+            {
+                ssn.block();
+            }
+        }
+    }
+
+    public synchronized void unblock()
+    {
+        if(_blocking)
+        {
+            _blocking = false;
+            for(AMQSessionModel ssn : getSessionModels())
+            {
+                ssn.unblock();
+            }
+        }
+    }
+
+    @Override
+    public synchronized void registerSession(final Session ssn)
+    {
+        super.registerSession(ssn);
+        if(_blocking)
+        {
+            ((ServerSession)ssn).block();
+        }
+    }
+
+    @Override
+    public synchronized void removeSession(final Session ssn)
+    {
+        super.removeSession(ssn);
     }
 
     public List<AMQSessionModel> getSessionModels()
@@ -298,44 +324,38 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
 
     public void registerMessageDelivered(long messageSize)
     {
-        if (isStatisticsEnabled())
-        {
-            _messagesDelivered.registerEvent(1L);
-            _dataDelivered.registerEvent(messageSize);
-        }
+        _messagesDelivered.registerEvent(1L);
+        _dataDelivered.registerEvent(messageSize);
         _virtualHost.registerMessageDelivered(messageSize);
     }
 
     public void registerMessageReceived(long messageSize, long timestamp)
     {
-        if (isStatisticsEnabled())
-        {
-            _messagesReceived.registerEvent(1L, timestamp);
-            _dataReceived.registerEvent(messageSize, timestamp);
-        }
+        _messagesReceived.registerEvent(1L, timestamp);
+        _dataReceived.registerEvent(messageSize, timestamp);
         _virtualHost.registerMessageReceived(messageSize, timestamp);
     }
-    
+
     public StatisticsCounter getMessageReceiptStatistics()
     {
         return _messagesReceived;
     }
-    
+
     public StatisticsCounter getDataReceiptStatistics()
     {
         return _dataReceived;
     }
-    
+
     public StatisticsCounter getMessageDeliveryStatistics()
     {
         return _messagesDelivered;
     }
-    
+
     public StatisticsCounter getDataDeliveryStatistics()
     {
         return _dataDelivered;
     }
-    
+
     public void resetStatistics()
     {
         _messagesDelivered.reset();
@@ -346,23 +366,10 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
 
     public void initialiseStatistics()
     {
-        setStatisticsEnabled(!StatisticsCounter.DISABLE_STATISTICS &&
-                _virtualHost.getApplicationRegistry().getConfiguration().isStatisticsGenerationConnectionsEnabled());
-        
         _messagesDelivered = new StatisticsCounter("messages-delivered-" + getConnectionId());
         _dataDelivered = new StatisticsCounter("data-delivered-" + getConnectionId());
         _messagesReceived = new StatisticsCounter("messages-received-" + getConnectionId());
         _dataReceived = new StatisticsCounter("data-received-" + getConnectionId());
-    }
-
-    public boolean isStatisticsEnabled()
-    {
-        return _statisticsEnabled;
-    }
-
-    public void setStatisticsEnabled(boolean enabled)
-    {
-        _statisticsEnabled = enabled;
     }
 
     /**
@@ -389,7 +396,7 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
         else
         {
             _authorizedSubject = authorizedSubject;
-            _authorizedPrincipal = UsernamePrincipal.getUsernamePrincipalFromSubject(_authorizedSubject);
+            _authorizedPrincipal = authorizedSubject.getPrincipals().iterator().next();
         }
     }
 
@@ -406,6 +413,11 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
     public boolean isSessionNameUnique(byte[] name)
     {
         return !super.hasSessionWithName(name);
+    }
+
+    public String getRemoteAddressString()
+    {
+        return getConfig().getAddress();
     }
 
     public String getUserName()
@@ -436,12 +448,6 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
         }
     }
 
-
-    public ManagedObject getManagedObject()
-    {
-        return _mBean;
-    }
-
     @Override
     public void send(ProtocolEvent event)
     {
@@ -449,44 +455,9 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
         super.send(event);
     }
 
-    public AtomicLong getLastIoTime()
+    public long getLastIoTime()
     {
-        return _lastIoTime;
-    }
-
-    void checkForNotification()
-    {
-        int channelsCount = getSessionModels().size();
-        if (_mBean != null && channelsCount >= getConnectionDelegate().getChannelMax())
-        {
-            _mBean.notifyClients("Channel count (" + channelsCount + ") has reached the threshold value");
-        }
-    }
-
-    private void registerConnectionMbean()
-    {
-        try
-        {
-            _mBean = new ServerConnectionMBean(this);
-            _mBean.register();
-        }
-        catch (JMException jme)
-        {
-            log.error("Unable to register mBean for ServerConnection", jme);
-        }
-    }
-
-    private void unregisterConnectionMbean()
-    {
-        if (_mBean != null)
-        {
-            if (log.isDebugEnabled())
-            {
-                log.debug("Unregistering mBean for ServerConnection" + _mBean);
-            }
-            _mBean.unregister();
-            _mBean = null;
-        }
+        return _lastIoTime.longValue();
     }
 
     public String getClientId()
@@ -497,5 +468,25 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
     public String getClientVersion()
     {
         return getConnectionDelegate().getClientVersion();
+    }
+
+    public String getPrincipalAsString()
+    {
+        return getAuthorizedPrincipal().getName();
+    }
+
+    public long getSessionCountLimit()
+    {
+        return getChannelMax();
+    }
+
+    public Principal getPeerPrincipal()
+    {
+        return _peerPrincipal;
+    }
+
+    public void setPeerPrincipal(Principal peerPrincipal)
+    {
+        _peerPrincipal = peerPrincipal;
     }
 }

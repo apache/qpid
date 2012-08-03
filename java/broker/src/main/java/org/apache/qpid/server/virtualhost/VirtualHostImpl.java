@@ -20,12 +20,20 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.AMQBrokerManagerMBean;
 import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.server.configuration.BrokerConfig;
 import org.apache.qpid.server.configuration.ConfigStore;
@@ -45,11 +53,10 @@ import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
-import org.apache.qpid.server.management.AMQManagedObject;
-import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
@@ -59,36 +66,24 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
+import org.apache.qpid.server.store.HAMessageStore;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreFactory;
 import org.apache.qpid.server.store.OperationalLoggingListener;
 import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPlugin;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 
-import javax.management.JMException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-
-public class VirtualHostImpl implements VirtualHost
+public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.RegistryChangeListener, EventListener
 {
     private static final Logger _logger = Logger.getLogger(VirtualHostImpl.class);
 
     private static final int HOUSEKEEPING_SHUTDOWN_TIMEOUT = 5;
 
-    private final UUID _id;
+    private final UUID _qmfId;
 
     private final String _name;
+
+    private final UUID _id;
 
     private final long _createTime = System.currentTimeMillis();
 
@@ -104,10 +99,6 @@ public class VirtualHostImpl implements VirtualHost
 
     private final VirtualHostConfiguration _vhostConfig;
 
-    private final VirtualHostMBean _virtualHostMBean;
-
-    private final AMQBrokerManagerMBean _brokerMBean;
-
     private final QueueRegistry _queueRegistry;
 
     private final ExchangeRegistry _exchangeRegistry;
@@ -122,13 +113,12 @@ public class VirtualHostImpl implements VirtualHost
 
     private final MessageStore _messageStore;
 
-    private State _state = State.INITIALISING;
-
-    private boolean _statisticsEnabled = false;
+    private volatile State _state = State.INITIALISING;
 
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
     private final Map<String, LinkRegistry> _linkRegistry = new HashMap<String, LinkRegistry>();
+    private boolean _blocked;
 
     public VirtualHostImpl(IApplicationRegistry appRegistry, VirtualHostConfiguration hostConfig) throws Exception
     {
@@ -143,20 +133,21 @@ public class VirtualHostImpl implements VirtualHost
         }
 
         _appRegistry = appRegistry;
-        _brokerConfig = _appRegistry.getBroker();
+        _brokerConfig = _appRegistry.getBrokerConfig();
         _vhostConfig = hostConfig;
         _name = _vhostConfig.getName();
         _dtxRegistry = new DtxRegistry();
 
-        _id = _appRegistry.getConfigStore().createId();
+        _qmfId = _appRegistry.getConfigStore().createId();
+        _id = UUIDGenerator.generateVhostUUID(_name);
 
         CurrentActor.get().message(VirtualHostMessages.CREATED(_name));
 
-        _virtualHostMBean = new VirtualHostMBean();
         _securityManager = new SecurityManager(_appRegistry.getSecurityManager());
         _securityManager.configureHostPlugins(_vhostConfig);
 
         _connectionRegistry = new ConnectionRegistry();
+        _connectionRegistry.addRegistryChangeListener(this);
 
         _houseKeepingTasks = new ScheduledThreadPoolExecutor(_vhostConfig.getHouseKeepingThreadCount());
 
@@ -169,15 +160,16 @@ public class VirtualHostImpl implements VirtualHost
 
         _bindingFactory = new BindingFactory(this);
 
-        _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
-
-        _messageStore = initialiseMessageStore(hostConfig.getMessageStoreFactoryClass());
+        _messageStore = initialiseMessageStore(hostConfig.getMessageStoreClass());
 
         configureMessageStore(hostConfig);
 
         activateNonHAMessageStore();
 
         initialiseStatistics();
+
+        _messageStore.addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
+        _messageStore.addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
     }
 
     public IConnectionRegistry getConnectionRegistry()
@@ -193,6 +185,12 @@ public class VirtualHostImpl implements VirtualHost
     public UUID getId()
     {
         return _id;
+    }
+
+    @Override
+    public UUID getQMFId()
+    {
+        return _qmfId;
     }
 
     public VirtualHostConfigType getConfigType()
@@ -324,20 +322,19 @@ public class VirtualHostImpl implements VirtualHost
     }
 
 
-    private MessageStore initialiseMessageStore(final String messageStoreFactoryClass) throws Exception
+    private MessageStore initialiseMessageStore(final String messageStoreClass) throws Exception
     {
-        final Class<?> clazz = Class.forName(messageStoreFactoryClass);
+        final Class<?> clazz = Class.forName(messageStoreClass);
         final Object o = clazz.newInstance();
 
-        if (!(o instanceof MessageStoreFactory))
+        if (!(o instanceof MessageStore))
         {
-            throw new ClassCastException("Message store factory class must implement " + MessageStoreFactory.class +
+            throw new ClassCastException("Message store factory class must implement " + MessageStore.class +
                                         ". Class " + clazz + " does not.");
         }
 
-        final MessageStoreFactory messageStoreFactory = (MessageStoreFactory) o;
-        final MessageStore messageStore = messageStoreFactory.createMessageStore();
-        final MessageStoreLogSubject storeLogSubject = new MessageStoreLogSubject(this, messageStoreFactory.getStoreClassName());
+        final MessageStore messageStore = (MessageStore) o;
+        final MessageStoreLogSubject storeLogSubject = new MessageStoreLogSubject(this, clazz.getSimpleName());
         OperationalLoggingListener.listen(messageStore, storeLogSubject);
 
         messageStore.addEventListener(new BeforeActivationListener(), Event.BEFORE_ACTIVATE);
@@ -361,7 +358,10 @@ public class VirtualHostImpl implements VirtualHost
 
     private void activateNonHAMessageStore() throws Exception
     {
-        _messageStore.activate();
+        if (!(_messageStore instanceof HAMessageStore))
+        {
+            _messageStore.activate();
+        }
     }
 
     private void initialiseModel(VirtualHostConfiguration config) throws ConfigurationException, AMQException
@@ -534,16 +534,6 @@ public class VirtualHostImpl implements VirtualHost
         CurrentActor.get().message(VirtualHostMessages.CLOSED());
     }
 
-    public ManagedObject getBrokerMBean()
-    {
-        return _brokerMBean;
-    }
-
-    public ManagedObject getManagedObject()
-    {
-        return _virtualHostMBean;
-    }
-
     public UUID getBrokerId()
     {
         return _appRegistry.getBrokerId();
@@ -558,54 +548,48 @@ public class VirtualHostImpl implements VirtualHost
     {
         return _bindingFactory;
     }
-    
+
     public void registerMessageDelivered(long messageSize)
     {
-        if (isStatisticsEnabled())
-        {
-            _messagesDelivered.registerEvent(1L);
-            _dataDelivered.registerEvent(messageSize);
-        }
+        _messagesDelivered.registerEvent(1L);
+        _dataDelivered.registerEvent(messageSize);
         _appRegistry.registerMessageDelivered(messageSize);
     }
-    
+
     public void registerMessageReceived(long messageSize, long timestamp)
     {
-        if (isStatisticsEnabled())
-        {
-            _messagesReceived.registerEvent(1L, timestamp);
-            _dataReceived.registerEvent(messageSize, timestamp);
-        }
+        _messagesReceived.registerEvent(1L, timestamp);
+        _dataReceived.registerEvent(messageSize, timestamp);
         _appRegistry.registerMessageReceived(messageSize, timestamp);
     }
-    
+
     public StatisticsCounter getMessageReceiptStatistics()
     {
         return _messagesReceived;
     }
-    
+
     public StatisticsCounter getDataReceiptStatistics()
     {
         return _dataReceived;
     }
-    
+
     public StatisticsCounter getMessageDeliveryStatistics()
     {
         return _messagesDelivered;
     }
-    
+
     public StatisticsCounter getDataDeliveryStatistics()
     {
         return _dataDelivered;
     }
-    
+
     public void resetStatistics()
     {
         _messagesDelivered.reset();
         _dataDelivered.reset();
         _messagesReceived.reset();
         _dataReceived.reset();
-        
+
         for (AMQConnectionModel connection : _connectionRegistry.getConnections())
         {
             connection.resetStatistics();
@@ -614,23 +598,10 @@ public class VirtualHostImpl implements VirtualHost
 
     public void initialiseStatistics()
     {
-        setStatisticsEnabled(!StatisticsCounter.DISABLE_STATISTICS &&
-                _appRegistry.getConfiguration().isStatisticsGenerationVirtualhostsEnabled());
-        
         _messagesDelivered = new StatisticsCounter("messages-delivered-" + getName());
         _dataDelivered = new StatisticsCounter("bytes-delivered-" + getName());
         _messagesReceived = new StatisticsCounter("messages-received-" + getName());
         _dataReceived = new StatisticsCounter("bytes-received-" + getName());
-    }
-
-    public boolean isStatisticsEnabled()
-    {
-        return _statisticsEnabled;
-    }
-
-    public void setStatisticsEnabled(boolean enabled)
-    {
-        _statisticsEnabled = enabled;
     }
 
     public BrokerLink createBrokerConnection(UUID id, long createTime, Map<String,String> arguments)
@@ -699,98 +670,139 @@ public class VirtualHostImpl implements VirtualHost
         return _dtxRegistry;
     }
 
-    @Override
     public String toString()
     {
         return _name;
     }
 
-    @Override
     public State getState()
     {
         return _state;
     }
 
-
-    /**
-     * Virtual host JMX MBean class.
-     *
-     * This has some of the methods implemented from management interface for exchanges. Any
-     * Implementation of an Exchange MBean should extend this class.
-     */
-    public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtualHost
+    public void block()
     {
-        public VirtualHostMBean() throws NotCompliantMBeanException
+        synchronized (_connectionRegistry)
         {
-            super(ManagedVirtualHost.class, ManagedVirtualHost.TYPE);
+            if(!_blocked)
+            {
+                _blocked = true;
+                for(AMQConnectionModel conn : _connectionRegistry.getConnections())
+                {
+                    conn.block();
+                }
+            }
         }
+    }
 
-        public String getObjectInstanceName()
+
+    public void unblock()
+    {
+        synchronized (_connectionRegistry)
         {
-            return ObjectName.quote(_name);
+            if(_blocked)
+            {
+                _blocked = false;
+                for(AMQConnectionModel conn : _connectionRegistry.getConnections())
+                {
+                    conn.unblock();
+                }
+            }
         }
+    }
 
-        public String getName()
+    public void connectionRegistered(final AMQConnectionModel connection)
+    {
+        if(_blocked)
         {
-            return _name;
+            connection.block();
         }
+    }
 
-        public VirtualHostImpl getVirtualHost()
+    public void connectionUnregistered(final AMQConnectionModel connection)
+    {
+    }
+
+    public void event(final Event event)
+    {
+        switch(event)
         {
-            return VirtualHostImpl.this;
+            case PERSISTENT_MESSAGE_SIZE_OVERFULL:
+                block();
+                break;
+            case PERSISTENT_MESSAGE_SIZE_UNDERFULL:
+                unblock();
+                break;
         }
     }
 
     private final class BeforeActivationListener implements EventListener
+   {
+       @Override
+       public void event(Event event)
+       {
+           try
+           {
+               _exchangeRegistry.initialise();
+               initialiseModel(_vhostConfig);
+           }
+           catch (Exception e)
+           {
+               throw new RuntimeException("Failed to initialise virtual host after state change", e);
+           }
+       }
+   }
+
+   private final class AfterActivationListener implements EventListener
+   {
+       @Override
+       public void event(Event event)
+       {
+           State finalState = State.ERRORED;
+
+           try
+           {
+               initialiseHouseKeeping(_vhostConfig.getHousekeepingCheckPeriod());
+               finalState = State.ACTIVE;
+           }
+           finally
+           {
+               _state = finalState;
+               reportIfError(_state);
+           }
+       }
+   }
+
+    private final class BeforePassivationListener implements EventListener
     {
-        @Override
         public void event(Event event)
         {
+            State finalState = State.ERRORED;
+
             try
             {
-                _exchangeRegistry.initialise();
-                initialiseModel(_vhostConfig);
-            } catch (Exception e)
+                /* the approach here is not ideal as there is a race condition where a
+                 * queue etc could be created while the virtual host is on the way to
+                 * the passivated state.  However the store state change from MASTER to UNKNOWN
+                 * is documented as exceptionally rare..
+                 */
+
+                _connectionRegistry.close(IConnectionRegistry.VHOST_PASSIVATE_REPLY_TEXT);
+                removeHouseKeepingTasks();
+
+                _queueRegistry.stopAllAndUnregisterMBeans();
+                _exchangeRegistry.clearAndUnregisterMbeans();
+                _dtxRegistry.close();
+
+                finalState = State.PASSIVE;
+            }
+            finally
             {
-                throw new RuntimeException("Failed to initialise virtual host after state change", e);
+                _state = finalState;
+                reportIfError(_state);
             }
         }
-    }
 
-    private final class AfterActivationListener implements EventListener
-    {
-        @Override
-        public void event(Event event)
-        {
-            initialiseHouseKeeping(_vhostConfig.getHousekeepingCheckPeriod());
-            try
-            {
-                _brokerMBean.register();
-            } catch (JMException e)
-            {
-                throw new RuntimeException("Failed to register virtual host mbean for virtual host " + getName(), e);
-            }
-
-            _state = State.ACTIVE;
-        }
-    }
-
-    public class BeforePassivationListener implements EventListener
-    {
-
-        @Override
-        public void event(Event event)
-        {
-            _connectionRegistry.close(IConnectionRegistry.VHOST_PASSIVATE_REPLY_TEXT);
-            _brokerMBean.unregister();
-            removeHouseKeepingTasks();
-
-            _queueRegistry.stopAllAndUnregisterMBeans();
-            _exchangeRegistry.clearAndUnregisterMbeans();
-            _dtxRegistry.close();
-
-            _state = State.PASSIVE;
-        }
     }
 
     private final class BeforeCloseListener implements EventListener
@@ -798,8 +810,15 @@ public class VirtualHostImpl implements VirtualHost
         @Override
         public void event(Event event)
         {
-            _brokerMBean.unregister();
             shutdownHouseKeeping();
+        }
+    }
+
+    private void reportIfError(State state)
+    {
+        if (state == State.ERRORED)
+        {
+            CurrentActor.get().message(VirtualHostMessages.ERRORED());
         }
     }
 

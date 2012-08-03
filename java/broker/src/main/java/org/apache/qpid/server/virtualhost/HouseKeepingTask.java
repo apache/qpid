@@ -44,9 +44,9 @@ public abstract class HouseKeepingTask implements Runnable
 
     final public void run()
     {
-        // Don't need to undo this as this is a thread pool thread so will
-        // always go through here before we do any real work.
+        String originalThreadName = Thread.currentThread().getName();
         Thread.currentThread().setName(_name);
+
         CurrentActor.set(new AbstractActor(_rootLogger)
         {
             @Override
@@ -67,6 +67,9 @@ public abstract class HouseKeepingTask implements Runnable
         finally
         {
             CurrentActor.remove();
+
+            // eagerly revert the thread name to make thread dumps more meaningful if captured after task has finished
+            Thread.currentThread().setName(originalThreadName);
         }
     }
 

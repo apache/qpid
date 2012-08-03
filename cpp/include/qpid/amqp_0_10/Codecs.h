@@ -69,6 +69,8 @@ class QPID_COMMON_CLASS_EXTERN ListCodec
  */
 QPID_COMMON_EXTERN void translate(const qpid::types::Variant::Map& from,
                                   qpid::framing::FieldTable& to);
+QPID_COMMON_EXTERN void translate(const qpid::types::Variant::Map& from, const std::string& efield, const qpid::types::Variant& evalue,
+                                  qpid::framing::FieldTable& to);
 QPID_COMMON_EXTERN void translate(const qpid::framing::FieldTable& from,
                                   qpid::types::Variant::Map& to);
 

@@ -28,7 +28,19 @@ namespace qpid {
 namespace client {
 
 /** Bring AMQP enum definitions for message class into this namespace. */
-using namespace qpid::framing::message;
+using qpid::framing::message::AcceptMode;
+using qpid::framing::message::AcquireMode;
+using qpid::framing::message::ACCEPT_MODE_EXPLICIT;
+using qpid::framing::message::ACCEPT_MODE_NONE;
+using qpid::framing::message::ACQUIRE_MODE_NOT_ACQUIRED;
+using qpid::framing::message::ACQUIRE_MODE_PRE_ACQUIRED;
+using qpid::framing::message::CREDIT_UNIT_BYTE;
+using qpid::framing::message::CREDIT_UNIT_MESSAGE;
+using qpid::framing::message::DELIVERY_MODE_NON_PERSISTENT;
+using qpid::framing::message::DELIVERY_MODE_PERSISTENT;
+using qpid::framing::message::FLOW_MODE_CREDIT;
+using qpid::framing::message::FLOW_MODE_WINDOW;
+
 
 enum CompletionMode {
     MANUAL_COMPLETION = 0,

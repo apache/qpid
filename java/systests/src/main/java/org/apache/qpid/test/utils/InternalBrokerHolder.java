@@ -20,6 +20,11 @@
  */
 package org.apache.qpid.test.utils;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
+import java.util.Set;
+
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.Broker;
@@ -31,7 +36,9 @@ public class InternalBrokerHolder implements BrokerHolder
     private final Broker _broker;
     private final String _workingDirectory;
 
-    public InternalBrokerHolder(final Broker broker, String workingDirectory)
+    private Set<Integer> _portsUsedByBroker;
+
+    public InternalBrokerHolder(final Broker broker, String workingDirectory, Set<Integer> portsUsedByBroker)
     {
         if(broker == null)
         {
@@ -40,6 +47,7 @@ public class InternalBrokerHolder implements BrokerHolder
 
         _broker = broker;
         _workingDirectory = workingDirectory;
+        _portsUsedByBroker = portsUsedByBroker;
     }
 
     @Override
@@ -53,7 +61,9 @@ public class InternalBrokerHolder implements BrokerHolder
         LOGGER.info("Shutting down Broker instance");
 
         _broker.shutdown();
-        
+
+        waitUntilPortsAreFree();
+
         LOGGER.info("Broker instance shutdown");
     }
 
@@ -64,5 +74,42 @@ public class InternalBrokerHolder implements BrokerHolder
         shutdown();
     }
 
+    private void waitUntilPortsAreFree()
+    {
+        new PortHelper().waitUntilPortsAreFree(_portsUsedByBroker);
+    }
+
+    @Override
+    public String dumpThreads()
+    {
+        ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+        ThreadInfo[] threadInfos = threadMXBean.dumpAllThreads(true, true);
+        StringBuilder dump = new StringBuilder();
+        dump.append(String.format("%n"));
+        for (ThreadInfo threadInfo : threadInfos)
+        {
+            dump.append(threadInfo);
+        }
+
+        long[] deadLocks = threadMXBean.findDeadlockedThreads();
+        if (deadLocks != null && deadLocks.length > 0)
+        {
+            ThreadInfo[] deadlockedThreads = threadMXBean.getThreadInfo(deadLocks);
+            dump.append(String.format("%n"));
+            dump.append("Deadlock is detected!");
+            dump.append(String.format("%n"));
+            for (ThreadInfo threadInfo : deadlockedThreads)
+            {
+                dump.append(threadInfo);
+            }
+        }
+        return dump.toString();
+    }
+
+    @Override
+    public String toString()
+    {
+        return "InternalBrokerHolder [_portsUsedByBroker=" + _portsUsedByBroker + "]";
+    }
 
 }

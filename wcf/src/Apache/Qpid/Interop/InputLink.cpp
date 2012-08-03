@@ -21,6 +21,7 @@
 #include <msclr\lock.h>
 
 #include "qpid/client/AsyncSession.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/framing/FrameSet.h"
 #include "qpid/client/SubscriptionManager.h"
 #include "qpid/client/Connection.h"

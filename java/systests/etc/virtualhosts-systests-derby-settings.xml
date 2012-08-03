@@ -26,7 +26,7 @@
     <virtualhost>
         <localhost>
             <store>
-                <factoryclass>org.apache.qpid.server.store.derby.DerbyMessageStoreFactory</factoryclass>
+                <class>org.apache.qpid.server.store.derby.DerbyMessageStore</class>
                 <environment-path>${QPID_WORK}/derbyDB/localhost-store</environment-path>
             </store>
         </localhost>
@@ -35,7 +35,7 @@
     <virtualhost>
         <development>
             <store>
-                <factoryclass>org.apache.qpid.server.store.derby.DerbyMessageStoreFactory</factoryclass>
+                <class>org.apache.qpid.server.store.derby.DerbyMessageStore</class>
                 <environment-path>${QPID_WORK}/derbyDB/development-store</environment-path>
             </store>
         </development>
@@ -44,7 +44,7 @@
     <virtualhost>
         <test>
             <store>
-                <factoryclass>org.apache.qpid.server.store.derby.DerbyMessageStoreFactory</factoryclass>
+                <class>org.apache.qpid.server.store.derby.DerbyMessageStore</class>
                 <environment-path>${QPID_WORK}/derbyDB/test-store</environment-path>
             </store>
         </test>

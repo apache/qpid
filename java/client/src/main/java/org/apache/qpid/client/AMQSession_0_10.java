@@ -128,7 +128,8 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
      * Used to store the range of in tx messages
      */
     private final RangeSet _txRangeSet = RangeSetFactory.createRangeSet();
-    private int _txSize = 0;    
+    private int _txSize = 0;
+    private boolean _isHardError = Boolean.getBoolean("qpid.session.legacy_exception_behaviour");
     //--- constructors
 
     /**
@@ -390,11 +391,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
      */
     public void sendClose(long timeout) throws AMQException, FailoverException
     {
-        if (flushTask != null)
-        {
-            flushTask.cancel();
-            flushTask = null;
-        }
+        cancelTimerTask();
         flushAcknowledgments();
         try
         {
@@ -1051,8 +1048,21 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             {
                 code = ee.getErrorCode().getValue();
             }
-            AMQException amqe = new AMQException(AMQConstant.getConstant(code), se.getMessage(), se.getCause());
+            AMQException amqe = new AMQException(AMQConstant.getConstant(code), _isHardError, se.getMessage(), se.getCause());
             _currentException = amqe;
+        }
+        if (!_isHardError)
+        {
+            cancelTimerTask();
+            stopDispatcherThread();
+            try
+            {
+                closed(_currentException);
+            }
+            catch(Exception e)
+            {
+                _logger.warn("Error closing session", e);
+            }
         }
         getAMQConnection().exceptionReceived(_currentException);
     }
@@ -1408,5 +1418,19 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
 		sync();
     }
 
+    @Override
+    public boolean isFlowBlocked()
+    {
+        return _qpidSession.isFlowBlocked();
+    }
+
+    private void cancelTimerTask()
+    {
+        if (flushTask != null)
+        {
+            flushTask.cancel();
+            flushTask = null;
+        }
+    }
 }
 

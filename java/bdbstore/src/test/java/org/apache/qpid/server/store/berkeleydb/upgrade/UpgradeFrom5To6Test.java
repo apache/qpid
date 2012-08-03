@@ -29,8 +29,11 @@ import static org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom5To6.OL
 import static org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom5To6.OLD_XID_DB_NAME;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -41,6 +44,7 @@ import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.store.berkeleydb.entry.Xid;
 import org.apache.qpid.server.store.berkeleydb.tuple.XidBinding;
 import org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom5To6.CompoundKey;
@@ -163,11 +167,11 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
         NewRecordImpl[] newDequeues = newTransaction.getDequeues();
         assertEquals("Unxpected new enqueus number", 1, newEnqueues.length);
         NewRecordImpl enqueue = newEnqueues[0];
-        assertEquals("Unxpected queue id", UUIDGenerator.generateUUID("TEST1", getVirtualHostName()), enqueue.getId());
+        assertEquals("Unxpected queue id", UUIDGenerator.generateQueueUUID("TEST1", getVirtualHostName()), enqueue.getId());
         assertEquals("Unxpected message id", 1, enqueue.getMessageNumber());
         assertEquals("Unxpected new dequeues number", 1, newDequeues.length);
         NewRecordImpl dequeue = newDequeues[0];
-        assertEquals("Unxpected queue id", UUIDGenerator.generateUUID("TEST2", getVirtualHostName()), dequeue.getId());
+        assertEquals("Unxpected queue id", UUIDGenerator.generateQueueUUID("TEST2", getVirtualHostName()), dequeue.getId());
         assertEquals("Unxpected message id", 2, dequeue.getMessageNumber());
     }
 
@@ -260,7 +264,7 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
 
     private void assertDatabaseRecordCounts()
     {
-        assertDatabaseRecordCount(CONFIGURED_OBJECTS_DB_NAME, 9);
+        assertDatabaseRecordCount(CONFIGURED_OBJECTS_DB_NAME, 12);
         assertDatabaseRecordCount(NEW_DELIVERY_DB_NAME, 12);
 
         assertDatabaseRecordCount(NEW_METADATA_DB_NAME, 12);
@@ -270,64 +274,27 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
     private void assertConfiguredObjects()
     {
         Map<UUID, UpgradeConfiguredObjectRecord> configuredObjects = loadConfiguredObjects();
-        assertEquals("Unexpected number of configured objects", 9, configuredObjects.size());
+        assertEquals("Unexpected number of configured objects", 12, configuredObjects.size());
 
-        Set<Map<String, Object>> expected = new HashSet<Map<String, Object>>(9);
-        Map<String, Object> queue1 = new HashMap<String, Object>();
-        queue1.put("exclusive", Boolean.FALSE);
-        queue1.put("name", "myUpgradeQueue");
-        queue1.put("owner", null);
-        expected.add(queue1);
-        Map<String, Object> queue2 = new HashMap<String, Object>();
-        queue2.put("exclusive", Boolean.TRUE);
-        queue2.put("name", "clientid:mySelectorDurSubName");
-        queue2.put("owner", "clientid");
-        expected.add(queue2);
-        Map<String, Object> queue3 = new HashMap<String, Object>();
-        queue3.put("exclusive", Boolean.TRUE);
-        queue3.put("name", "clientid:myDurSubName");
-        queue3.put("owner", "clientid");
-        expected.add(queue3);
+        Set<Map<String, Object>> expected = new HashSet<Map<String, Object>>(12);
+        List<UUID> expectedBindingIDs = new ArrayList<UUID>();
 
-        Map<String, Object> queueBinding1 = new HashMap<String, Object>();
-        queueBinding1.put("queue", UUIDGenerator.generateUUID("myUpgradeQueue", getVirtualHostName()).toString());
-        queueBinding1.put("name", "myUpgradeQueue");
-        queueBinding1.put("exchange", UUIDGenerator.generateUUID("<<default>>", getVirtualHostName()).toString());
-        expected.add(queueBinding1);
-        Map<String, Object> queueBinding2 = new HashMap<String, Object>();
-        queueBinding2.put("queue", UUIDGenerator.generateUUID("myUpgradeQueue", getVirtualHostName()).toString());
-        queueBinding2.put("name", "myUpgradeQueue");
-        queueBinding2.put("exchange", UUIDGenerator.generateUUID("amq.direct", getVirtualHostName()).toString());
-        Map<String, Object> arguments2 = new HashMap<String, Object>();
-        arguments2.put("x-filter-jms-selector", "");
-        queueBinding2.put("arguments", arguments2);
-        expected.add(queueBinding2);
-        Map<String, Object> queueBinding3 = new HashMap<String, Object>();
-        queueBinding3.put("queue", UUIDGenerator.generateUUID("clientid:myDurSubName", getVirtualHostName()).toString());
-        queueBinding3.put("name", "myUpgradeTopic");
-        queueBinding3.put("exchange", UUIDGenerator.generateUUID("amq.topic", getVirtualHostName()).toString());
-        Map<String, Object> arguments3 = new HashMap<String, Object>();
-        arguments3.put("x-filter-jms-selector", "");
-        queueBinding3.put("arguments", arguments3);
-        expected.add(queueBinding3);
-        Map<String, Object> queueBinding4 = new HashMap<String, Object>();
-        queueBinding4.put("queue", UUIDGenerator.generateUUID("clientid:mySelectorDurSubName", getVirtualHostName()).toString());
-        queueBinding4.put("name", "mySelectorUpgradeTopic");
-        queueBinding4.put("exchange", UUIDGenerator.generateUUID("amq.topic", getVirtualHostName()).toString());
-        Map<String, Object> arguments4 = new HashMap<String, Object>();
-        arguments4.put("x-filter-jms-selector", "testprop='true'");
-        queueBinding4.put("arguments", arguments4);
-        expected.add(queueBinding4);
-        Map<String, Object> queueBinding5 = new HashMap<String, Object>();
-        queueBinding5.put("queue", UUIDGenerator.generateUUID("clientid:myDurSubName", getVirtualHostName()).toString());
-        queueBinding5.put("name", "clientid:myDurSubName");
-        queueBinding5.put("exchange", UUIDGenerator.generateUUID("<<default>>", getVirtualHostName()).toString());
-        expected.add(queueBinding5);
-        Map<String, Object> queueBinding6 = new HashMap<String, Object>();
-        queueBinding6.put("queue", UUIDGenerator.generateUUID("clientid:mySelectorDurSubName", getVirtualHostName()).toString());
-        queueBinding6.put("name", "clientid:mySelectorDurSubName");
-        queueBinding6.put("exchange", UUIDGenerator.generateUUID("<<default>>", getVirtualHostName()).toString());
-        expected.add(queueBinding6);
+        expected.add(createExpectedQueueMap("myUpgradeQueue", Boolean.FALSE, null, null));
+        expected.add(createExpectedQueueMap("clientid:mySelectorDurSubName", Boolean.TRUE, "clientid", null));
+        expected.add(createExpectedQueueMap("clientid:myDurSubName", Boolean.TRUE, "clientid", null));
+        expected.add(createExpectedQueueMap("nonexclusive-with-erroneous-owner", Boolean.FALSE, null,
+                     Collections.singletonMap(AMQQueueFactory.X_QPID_DESCRIPTION, "misused-owner-as-description")));
+
+        expected.add(createExpectedQueueBindingMapAndID("myUpgradeQueue","myUpgradeQueue", "<<default>>", null, expectedBindingIDs));
+        expected.add(createExpectedQueueBindingMapAndID("myUpgradeQueue", "myUpgradeQueue", "amq.direct", null, expectedBindingIDs));
+        expected.add(createExpectedQueueBindingMapAndID("clientid:myDurSubName", "myUpgradeTopic", "amq.topic",
+                Collections.singletonMap("x-filter-jms-selector", ""), expectedBindingIDs));
+        expected.add(createExpectedQueueBindingMapAndID("clientid:mySelectorDurSubName", "mySelectorUpgradeTopic", "amq.topic",
+                Collections.singletonMap("x-filter-jms-selector", "testprop='true'"), expectedBindingIDs));
+        expected.add(createExpectedQueueBindingMapAndID("clientid:myDurSubName", "clientid:myDurSubName", "<<default>>", null, expectedBindingIDs));
+        expected.add(createExpectedQueueBindingMapAndID("clientid:mySelectorDurSubName", "clientid:mySelectorDurSubName", "<<default>>", null, expectedBindingIDs));
+        expected.add(createExpectedQueueBindingMapAndID("nonexclusive-with-erroneous-owner", "nonexclusive-with-erroneous-owner", "amq.direct", null, expectedBindingIDs));
+        expected.add(createExpectedQueueBindingMapAndID("nonexclusive-with-erroneous-owner","nonexclusive-with-erroneous-owner", "<<default>>", null, expectedBindingIDs));
 
         Set<String> expectedTypes = new HashSet<String>();
         expectedTypes.add(Queue.class.getName());
@@ -337,21 +304,63 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
         for (Entry<UUID, UpgradeConfiguredObjectRecord> entry : configuredObjects.entrySet())
         {
             UpgradeConfiguredObjectRecord object = entry.getValue();
-            UUID key = entry.getKey();
             Map<String, Object> deserialized = jsonSerializer.deserialize(object.getAttributes());
             assertTrue("Unexpected entry:" + object.getAttributes(), expected.remove(deserialized));
             String type = object.getType();
             assertTrue("Unexpected type:" + type, expectedTypes.contains(type));
-            if (type.equals(Exchange.class.getName()) || type.equals(Queue.class.getName()))
+            UUID key = entry.getKey();
+
+            assertNotNull("Key cannot be null", key);
+
+            if (type.equals(Exchange.class.getName()))
             {
-                assertEquals("Unexpected key", key, UUIDGenerator.generateUUID(((String) deserialized.get("name")), getVirtualHostName()));
+                String exchangeName = (String) deserialized.get(Exchange.NAME);
+                assertNotNull(exchangeName);
+                assertEquals("Unexpected key", key, UUIDGenerator.generateExchangeUUID(exchangeName, getVirtualHostName()));
             }
-            else
+            else if (type.equals(Queue.class.getName()))
             {
-                assertNotNull("Key cannot be null", key);
+                String queueName = (String) deserialized.get(Queue.NAME);
+                assertNotNull(queueName);
+                assertEquals("Unexpected key", key, UUIDGenerator.generateQueueUUID(queueName, getVirtualHostName()));
+            }
+            else if (type.equals(Binding.class.getName()))
+            {
+                assertTrue("unexpected binding id", expectedBindingIDs.remove(key));
             }
         }
+
         assertTrue("Not all expected configured objects found:" + expected, expected.isEmpty());
+        assertTrue("Not all expected bindings found:" + expectedBindingIDs, expectedBindingIDs.isEmpty());
+    }
+
+    private Map<String, Object> createExpectedQueueBindingMapAndID(String queue, String bindingName, String exchangeName, Map<String, String> argumentMap, List<UUID> expectedBindingIDs)
+    {
+        Map<String, Object> expectedQueueBinding = new HashMap<String, Object>();
+        expectedQueueBinding.put(Binding.QUEUE, UUIDGenerator.generateQueueUUID(queue, getVirtualHostName()).toString());
+        expectedQueueBinding.put(Binding.NAME, bindingName);
+        expectedQueueBinding.put(Binding.EXCHANGE, UUIDGenerator.generateExchangeUUID(exchangeName, getVirtualHostName()).toString());
+        if (argumentMap != null)
+        {
+            expectedQueueBinding.put(Binding.ARGUMENTS, argumentMap);
+        }
+
+        expectedBindingIDs.add(UUIDGenerator.generateBindingUUID(exchangeName, queue, bindingName, getVirtualHostName()));
+
+        return expectedQueueBinding;
+    }
+
+    private Map<String, Object> createExpectedQueueMap(String name, boolean exclusiveFlag, String owner, Map<String, String> argumentMap)
+    {
+        Map<String, Object> expectedQueueEntry = new HashMap<String, Object>();
+        expectedQueueEntry.put(Queue.NAME, name);
+        expectedQueueEntry.put(Queue.EXCLUSIVE, exclusiveFlag);
+        expectedQueueEntry.put(Queue.OWNER, owner);
+        if (argumentMap != null)
+        {
+            expectedQueueEntry.put(Queue.ARGUMENTS, argumentMap);
+        }
+        return expectedQueueEntry;
     }
 
     private Map<UUID, UpgradeConfiguredObjectRecord> loadConfiguredObjects()

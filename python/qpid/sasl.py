@@ -29,6 +29,9 @@ class WrapperClient:
 
   def setAttr(self, name, value):
     status = self._cli.setAttr(str(name), str(value))
+    if status and name == 'username':
+      status = self._cli.setAttr('externaluser', str(value))
+      
     if not status:
       raise SASLError(self._cli.getError())
 

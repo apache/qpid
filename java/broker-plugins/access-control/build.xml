@@ -17,15 +17,20 @@
  - under the License.
  -->
 <project name="Qpid Broker-Plugins Access Control" default="build">
-    <property name="module.depends" value="common broker broker-plugins" />
+    <property name="module.depends" value="common broker" />
     <property name="module.test.depends" value="test common/test broker/test management/common systests" />
 
     <property name="module.manifest" value="MANIFEST.MF" />
     <property name="module.plugin" value="true" />
+    <property name="module.genpom" value="true"/>
+    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided"/>
+
+    <property name="broker-plugins-access-control.libs" value=""/>
 
     <import file="../../module.xml" />
 
     <target name="bundle" depends="bundle-tasks"/>
 
     <target name="precompile" depends="gen_logging"/>
+
 </project>

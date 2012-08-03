@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#include "qpid/broker/TopicKeyNode.h"
 #include "qpid/broker/TopicExchange.h"
 #include "unit_test.h"
 #include "test_tools.h"
@@ -32,14 +33,15 @@ class TopicExchange::TopicExchangeTester {
 
 public:
     typedef std::vector<std::string> BindingVec;
+    typedef TopicKeyNode<TopicExchange::BindingKey> TestBindingNode;
 
 private:
     // binding node iterator that collects all routes that are bound
-    class TestFinder : public TopicExchange::BindingNode::TreeIterator {
+    class TestFinder : public TestBindingNode::TreeIterator {
     public:
         TestFinder(BindingVec& m) : bv(m) {};
         ~TestFinder() {};
-        bool visit(BindingNode& node) {
+        bool visit(TestBindingNode& node) {
             if (!node.bindings.bindingVector.empty())
                 bv.push_back(node.routePattern);
             return true;
@@ -53,7 +55,7 @@ public:
     ~TopicExchangeTester() {};
     bool addBindingKey(const std::string& bKey) {
         string routingPattern = normalize(bKey);
-        BindingKey *bk = bindingTree.addBindingKey(routingPattern);
+        BindingKey *bk = bindingTree.add(routingPattern);
         if (bk) {
             // push a dummy binding to mark this node as "non-leaf"
             bk->bindingVector.push_back(Binding::shared_ptr());
@@ -64,12 +66,12 @@ public:
 
     bool removeBindingKey(const std::string& bKey){
         string routingPattern = normalize(bKey);
-        BindingKey *bk = bindingTree.getBindingKey(routingPattern);
+        BindingKey *bk = bindingTree.get(routingPattern);
         if (bk) {
             bk->bindingVector.pop_back();
             if (bk->bindingVector.empty()) {
                 // no more bindings - remove this node
-                bindingTree.removeBindingKey(routingPattern);
+                bindingTree.remove(routingPattern);
             }
             return true;
         }
@@ -87,7 +89,7 @@ public:
     }
 
 private:
-    TopicExchange::BindingNode bindingTree;
+    TestBindingNode bindingTree;
 };
 } // namespace broker
 

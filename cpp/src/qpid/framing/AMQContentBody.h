@@ -31,15 +31,15 @@ namespace framing {
 
 class QPID_COMMON_CLASS_EXTERN AMQContentBody :  public AMQBody
 {
-    string data;
+    std::string data;
 
 public:
     QPID_COMMON_EXTERN AMQContentBody();
-    QPID_COMMON_EXTERN AMQContentBody(const string& data);
+    QPID_COMMON_EXTERN AMQContentBody(const std::string& data);
     inline virtual ~AMQContentBody(){}
     inline uint8_t type() const { return CONTENT_BODY; };
-    inline const string& getData() const { return data; }
-    inline string& getData() { return data; }
+    inline const std::string& getData() const { return data; }
+    inline std::string& getData() { return data; }
     QPID_COMMON_EXTERN uint32_t encodedSize() const;
     QPID_COMMON_EXTERN void encode(Buffer& buffer) const;
     QPID_COMMON_EXTERN void decode(Buffer& buffer, uint32_t size);

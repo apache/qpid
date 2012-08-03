@@ -21,34 +21,84 @@
 
 import os
 import optparse
-from optparse import IndentedHelpFormatter
 import sys
-import socket
-from time import time, strftime, gmtime, sleep
-from qmf.console import Console, Session
+from optparse       import IndentedHelpFormatter
+from time           import time, strftime, gmtime, sleep
+from threading      import Lock, Condition, Thread
+from qpid.messaging import Connection
+import qpid.messaging.exceptions
+
+home = os.environ.get("QPID_TOOLS_HOME", os.path.normpath("/usr/share/qpid-tools"))
+sys.path.append(os.path.join(home, "python"))
+
+from qpidtoollibs.broker import EventHelper
 
 
-class EventConsole(Console):
-  def event(self, broker, event):
-    print event
+class Printer(object):
+  """
+  This class serializes printed lines so that events coming from different
+  threads don't overlap each other.
+  """
+  def __init__(self):
+    self.lock = Lock()
+
+  def pr(self, text):
+    self.lock.acquire()
+    try:
+      print text
+    finally:
+      self.lock.release()
     sys.stdout.flush()
+  
 
-  def brokerConnected(self, broker):
-    print strftime("%c", gmtime(time())), "NOTIC qpid-printevents:brokerConnected broker=%s" % broker.getUrl()
-    sys.stdout.flush()
+class EventReceiver(Thread):
+  """
+  One instance of this class is created for each broker that is being monitored.
+  This class does not use the "reconnect" option because it needs to report as
+  events when the connection is established and when it's lost.
+  """
+  def __init__(self, printer, url, options):
+    Thread.__init__(self)
+    self.printer   = printer
+    self.url       = url
+    self.options   = options
+    self.running   = True
+    self.helper    = EventHelper()
 
-  def brokerConnectionFailed(self, broker):
-    print strftime("%c", gmtime(time())), "NOTIC qpid-printevents:brokerConnectionFailed broker=%s %s" % (broker.getUrl(), str(broker.conn_exc))
-    sys.stdout.flush()
+  def cancel(self):
+    self.running = False
 
-  def brokerDisconnected(self, broker):
-    print strftime("%c", gmtime(time())), "NOTIC qpid-printevents:brokerDisconnected broker=%s" % broker.getUrl()
-    sys.stdout.flush()
+  def run(self):
+    isOpen = False
+    while self.running:
+      try:
+        conn = Connection.establish(self.url, **options)
+        isOpen = True
+        self.printer.pr(strftime("%c", gmtime(time())) + " NOTIC qpid-printevents:brokerConnected broker=%s" % self.url)
+
+        sess = conn.session()
+        rx = sess.receiver(self.helper.eventAddress())
+
+        while self.running:
+          try:
+            msg = rx.fetch(1)
+            event = self.helper.event(msg)
+            self.printer.pr(event.__repr__())
+            sess.acknowledge()
+          except qpid.messaging.exceptions.Empty:
+            pass
+        
+      except Exception, e:
+        if isOpen:
+          self.printer.pr(strftime("%c", gmtime(time())) + " NOTIC qpid-printevents:brokerDisconnected broker=%s" % self.url)
+        isOpen = False
+        sleep(1)
+
 
 class JHelpFormatter(IndentedHelpFormatter):
-    """Format usage and description without stripping newlines from usage strings
     """
-
+    Format usage and description without stripping newlines from usage strings
+    """
     def format_usage(self, usage):
         return usage
 
@@ -82,21 +132,42 @@ def main(argv=None):
   p = optparse.OptionParser(usage=_usage, description=_description, formatter=JHelpFormatter())
   p.add_option("--heartbeats", action="store_true", default=False, help="Use heartbeats.")
   p.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
+  p.add_option("--ssl-certificate", action="store", type="string", metavar="<cert>", help="Client SSL certificate (PEM Format)")
+  p.add_option("--ssl-key", action="store", type="string", metavar="<key>", help="Client SSL private key (PEM Format)")
+  p.add_option("--ha-admin", action="store_true", help="Allow connection to a HA backup broker.")
 
   options, arguments = p.parse_args(args=argv)
   if len(arguments) == 0:
     arguments.append("localhost")
 
-  console = EventConsole()
-  session = Session(console, rcvObjects=False, rcvHeartbeats=options.heartbeats, manageConnections=True)
-  brokers = []
+  brokers   = []
+  conn_options = {}
+  props = {}
+  printer   = Printer()
+
+  if options.sasl_mechanism:
+    conn_options['sasl_mechanisms'] = options.sasl_mechanism
+  if options.ssl_certificate:
+    conn_options['ssl_certfile'] = options.ssl_certificate
+  if options.ssl_key:
+    conn_options['ssl_key'] = options.ssl_key
+  if options.ha_admin:
+    props['qpid.ha-admin'] = 1
+  if options.heartbeats:
+    props['heartbeat'] = 5
+
+  if len(props) > 0:
+    conn_options['client_properties'] = props
+
   try:
     try:
       for host in arguments:
-        brokers.append(session.addBroker(host, None, options.sasl_mechanism))
+        er = EventReceiver(printer, host, conn_options)
+        brokers.append(er)
+        er.start()
 
-        while (True):
-          sleep(10)
+      while (True):
+        sleep(10)
 
     except KeyboardInterrupt:
         print
@@ -106,9 +177,10 @@ def main(argv=None):
         print "Failed: %s - %s" % (e.__class__.__name__, e)
         return 1
   finally:
-    while len(brokers):
-      b = brokers.pop()
-      session.delBroker(b)
+    for b in brokers:
+      b.cancel()
+    for b in brokers:
+      b.join()
 
 if __name__ == '__main__':
   sys.exit(main())

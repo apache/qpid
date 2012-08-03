@@ -51,7 +51,7 @@ using qpid::management::Args;
 namespace _qmf = qmf::org::apache::qpid::acl;
 
 Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(false), mgmtObject(0),
-    connectionCounter(new ConnectionCounter(*this, aclValues.aclMaxConnectPerUser, aclValues.aclMaxConnectPerIp))
+    connectionCounter(new ConnectionCounter(*this, aclValues.aclMaxConnectPerUser, aclValues.aclMaxConnectPerIp, aclValues.aclMaxConnectTotal))
 {
 
     agent = broker->getManagementAgent();
@@ -60,11 +60,14 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
         _qmf::Package  packageInit(agent);
         mgmtObject = new _qmf::Acl (agent, this, broker);
         agent->addObject (mgmtObject);
+        mgmtObject->set_maxConnections(aclValues.aclMaxConnectTotal);
+        mgmtObject->set_maxConnectionsPerIp(aclValues.aclMaxConnectPerIp);
+        mgmtObject->set_maxConnectionsPerUser(aclValues.aclMaxConnectPerUser);
     }
     std::string errorString;
     if (!readAclFile(errorString)){
-        throw Exception("Could not read ACL file " + errorString);
         if (mgmtObject!=0) mgmtObject->set_enforcingAcl(0);
+        throw Exception("Could not read ACL file " + errorString);
     }
     broker->getConnectionObservers().add(connectionCounter);
     QPID_LOG(info, "ACL Plugin loaded");
@@ -120,6 +123,11 @@ bool Acl::authorise(
     return result(aclreslt, id, action, objType, ExchangeName);
 }
 
+
+bool Acl::approveConnection(const qpid::broker::Connection& conn)
+{
+    return connectionCounter->approveConnection(conn);
+}
 
 bool Acl::result(
     const AclResult&   aclreslt,

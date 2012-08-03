@@ -302,9 +302,10 @@ class ManagementTest (TestBase010):
 
         twenty = range(1,21)
         props = session.delivery_properties(routing_key="routing_key")
+        mp    = session.message_properties(application_headers={'x-qpid.trace' : 'A,B,C'})
         for count in twenty:
             body = "Reroute Message %d" % count
-            msg = Message(props, body)
+            msg = Message(props, mp, body)
             session.message_transfer(destination="amq.direct", message=msg)
 
         pq = self.qmf.getObjects(_class="queue", name="reroute-queue")[0]
@@ -316,6 +317,16 @@ class ManagementTest (TestBase010):
         aq = self.qmf.getObjects(_class="queue", name="alt-queue1")[0]
         self.assertEqual(pq.msgDepth,19)
         self.assertEqual(aq.msgDepth,1)
+
+        "Verify that the trace was cleared on the rerouted message"
+        url = "%s://%s:%d" % (self.broker.scheme or "amqp", self.broker.host, self.broker.port)
+        conn = qpid.messaging.Connection(url)
+        conn.open()
+        sess = conn.session()
+        rx = sess.receiver("alt-queue1;{mode:browse}")
+        rm = rx.fetch(1)
+        self.assertEqual(rm.properties['x-qpid.trace'], '')
+        conn.close()
 
         "Reroute top 9 messages from reroute-queue to alt.direct2"
         result = pq.reroute(9, False, "alt.direct2", {})

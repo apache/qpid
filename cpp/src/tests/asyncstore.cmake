@@ -45,7 +45,7 @@ if (UNIX)
 	    qpidbroker
 	    rt
     )
-    add_test (Store_Perftools_Smoke_Test ${CMAKE_CURRENT_SOURCE_DIR}/storePerftools/storePerftoolsSmokeTest.sh)
+    add_test (jrnl2Perf_smoke_test ${CMAKE_CURRENT_SOURCE_DIR}/storePerftools/jrnl2Perf_smoke_test.sh)
 endif (UNIX)
 
 # Async store perf test (asyncPerf)
@@ -77,4 +77,5 @@ if (UNIX)
 	    qpidtypes
 	    rt
     )
+    add_test (asyncStorePerf_smoke_test ${CMAKE_CURRENT_SOURCE_DIR}/storePerftools/asyncStorePerf_smoke_test.sh)
 endif (UNIX)

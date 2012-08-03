@@ -68,7 +68,7 @@ class SslConnector : public qpid::client::TCPConnector
     // A number of AsynchIO callbacks go right through to TCPConnector, but
     // we can't boost::bind to a protected ancestor, so these methods redirect
     // to those TCPConnector methods.
-    bool redirectReadbuff(qpid::sys::AsynchIO&, qpid::sys::AsynchIOBufferBase*);
+    void redirectReadbuff(qpid::sys::AsynchIO&, qpid::sys::AsynchIOBufferBase*);
     void redirectWritebuff(qpid::sys::AsynchIO&);
     void redirectEof(qpid::sys::AsynchIO&);
 
@@ -111,9 +111,9 @@ void SslConnector::negotiationDone(SECURITY_STATUS status)
         connectFailed(QPID_MSG(qpid::sys::strError(status)));
 }
 
-bool SslConnector::redirectReadbuff(qpid::sys::AsynchIO& a,
+void SslConnector::redirectReadbuff(qpid::sys::AsynchIO& a,
                                     qpid::sys::AsynchIOBufferBase* b) {
-    return readbuff(a, b);
+    readbuff(a, b);
 }
 
 void SslConnector::redirectWritebuff(qpid::sys::AsynchIO& a) {

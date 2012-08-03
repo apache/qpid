@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-import atexit, time
+import atexit, time, errno
 from compat import select, set, selectable_waiter
 from threading import Thread, Lock
 
@@ -111,12 +111,24 @@ class Selector:
           else:
             wakeup = min(wakeup, t)
 
-      if wakeup is None:
-        timeout = None
-      else:
-        timeout = max(0, wakeup - time.time())
+      rd = []
+      wr = []
+      ex = []
 
-      rd, wr, ex = select(self.reading, self.writing, (), timeout)
+      while True:
+        try:
+          if wakeup is None:
+            timeout = None
+          else:
+            timeout = max(0, wakeup - time.time())
+          rd, wr, ex = select(self.reading, self.writing, (), timeout)
+          break
+        except Exception, (err, strerror):
+          # Repeat the select call if we were interrupted.
+          if err == errno.EINTR:
+            continue
+          else:
+            raise
 
       for sel in wr:
         if sel.writing():

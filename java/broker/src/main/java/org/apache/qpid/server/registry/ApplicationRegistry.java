@@ -22,9 +22,9 @@ package org.apache.qpid.server.registry;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.logging.*;
 import org.osgi.framework.BundleContext;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.qmf.QMFService;
@@ -35,24 +35,18 @@ import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.SystemConfig;
 import org.apache.qpid.server.configuration.SystemConfigImpl;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.logging.CompositeStartupMessageLogger;
-import org.apache.qpid.server.logging.Log4jMessageLogger;
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.AbstractActor;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
-import org.apache.qpid.server.management.ManagedObjectRegistry;
-import org.apache.qpid.server.management.NoopManagedObjectRegistry;
-import org.apache.qpid.server.plugins.Plugin;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.SecurityManager.SecurityConfiguration;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManagerPluginFactory;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManagerRegistry;
+import org.apache.qpid.server.security.auth.manager.IAuthenticationManagerRegistry;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -60,13 +54,8 @@ import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 import java.net.InetSocketAddress;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.UUID;
+import java.net.SocketAddress;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 
@@ -78,19 +67,19 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public abstract class ApplicationRegistry implements IApplicationRegistry
 {
+
     private static final Logger _logger = Logger.getLogger(ApplicationRegistry.class);
 
     private static AtomicReference<IApplicationRegistry> _instance = new AtomicReference<IApplicationRegistry>(null);
 
     private final ServerConfiguration _configuration;
 
-    private final Map<InetSocketAddress, QpidAcceptor> _acceptors = new HashMap<InetSocketAddress, QpidAcceptor>();
+    private final Map<InetSocketAddress, QpidAcceptor> _acceptors =
+            Collections.synchronizedMap(new HashMap<InetSocketAddress, QpidAcceptor>());
 
-    private ManagedObjectRegistry _managedObjectRegistry;
+    private IAuthenticationManagerRegistry _authenticationManagerRegistry;
 
-    private AuthenticationManager _authenticationManager;
-
-    private VirtualHostRegistry _virtualHostRegistry;
+    private final VirtualHostRegistry _virtualHostRegistry = new VirtualHostRegistry(this);
 
     private SecurityManager _securityManager;
 
@@ -106,39 +95,32 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     private QMFService _qmfService;
 
-    private BrokerConfig _broker;
+    private BrokerConfig _brokerConfig;
+
+    private Broker _broker;
 
     private ConfigStore _configStore;
-    
+
     private Timer _reportingTimer;
-    private boolean _statisticsEnabled = false;
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
     private BundleContext _bundleContext;
 
-    protected static Logger get_logger()
-    {
-        return _logger;
-    }
+    private final List<PortBindingListener> _portBindingListeners = new ArrayList<PortBindingListener>();
 
-    protected Map<InetSocketAddress, QpidAcceptor> getAcceptors()
-    {
-        return _acceptors;
-    }
+    private int _httpManagementPort = -1, _httpsManagementPort = -1;
 
-    protected void setManagedObjectRegistry(ManagedObjectRegistry managedObjectRegistry)
-    {
-        _managedObjectRegistry = managedObjectRegistry;
-    }
+    private LogRecorder _logRecorder;
 
-    protected void setAuthenticationManager(AuthenticationManager authenticationManager)
-    {
-        _authenticationManager = authenticationManager;
-    }
+    private List<IAuthenticationManagerRegistry.RegistryChangeListener> _authManagerChangeListeners =
+            new ArrayList<IAuthenticationManagerRegistry.RegistryChangeListener>();
 
-    protected void setVirtualHostRegistry(VirtualHostRegistry virtualHostRegistry)
+    public Map<InetSocketAddress, QpidAcceptor> getAcceptors()
     {
-        _virtualHostRegistry = virtualHostRegistry;
+        synchronized (_acceptors)
+        {
+            return new HashMap<InetSocketAddress, QpidAcceptor>(_acceptors);
+        }
     }
 
     protected void setSecurityManager(SecurityManager securityManager)
@@ -205,11 +187,11 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         store.setRoot(new SystemConfigImpl(store));
         instance.setConfigStore(store);
 
-        BrokerConfig broker = new BrokerConfigAdapter(instance);
+        final BrokerConfig brokerConfig = new BrokerConfigAdapter(instance);
 
-        SystemConfig system = store.getRoot();
-        system.addBroker(broker);
-        instance.setBroker(broker);
+        final SystemConfig system = store.getRoot();
+        system.addBroker(brokerConfig);
+        instance.setBrokerConfig(brokerConfig);
 
         try
         {
@@ -222,7 +204,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             //remove the Broker instance, then re-throw
             try
             {
-                system.removeBroker(broker);
+                system.removeBroker(brokerConfig);
             }
             catch(Throwable t)
             {
@@ -297,18 +279,32 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public void initialise() throws Exception
     {
+        _logRecorder = new LogRecorder();
         //Create the RootLogger to be used during broker operation
         _rootMessageLogger = new Log4jMessageLogger(_configuration);
 
         //Create the composite (log4j+SystemOut MessageLogger to be used during startup
         RootMessageLogger[] messageLoggers = {new SystemOutMessageLogger(), _rootMessageLogger};
         _startupMessageLogger = new CompositeStartupMessageLogger(messageLoggers);
-        
-        CurrentActor.set(new BrokerActor(_startupMessageLogger));
+
+        BrokerActor actor = new BrokerActor(_startupMessageLogger);
+        CurrentActor.setDefault(actor);
+        CurrentActor.set(actor);
 
         try
         {
-            initialiseManagedObjectRegistry();
+            initialiseStatistics();
+
+            if(_configuration.getHTTPManagementEnabled())
+            {
+                _httpManagementPort = _configuration.getHTTPManagementPort();
+            }
+            if (_configuration.getHTTPSManagementEnabled())
+            {
+                _httpsManagementPort = _configuration.getHTTPSManagementPort();
+            }
+
+            _broker = new BrokerAdapter(this);
 
             configure();
 
@@ -316,13 +312,23 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
             logStartupMessages(CurrentActor.get());
 
-            _virtualHostRegistry = new VirtualHostRegistry(this);
-
             _securityManager = new SecurityManager(_configuration, _pluginManager);
 
-            _authenticationManager = createAuthenticationManager();
+            _authenticationManagerRegistry = createAuthenticationManagerRegistry(_configuration, _pluginManager);
 
-            _managedObjectRegistry.start();
+            if(!_authManagerChangeListeners.isEmpty())
+            {
+                for(IAuthenticationManagerRegistry.RegistryChangeListener listener : _authManagerChangeListeners)
+                {
+
+                    _authenticationManagerRegistry.addRegistryChangeListener(listener);
+                    for(AuthenticationManager authMgr : _authenticationManagerRegistry.getAvailableAuthenticationManagers().values())
+                    {
+                        listener.authenticationManagerRegistered(authMgr);
+                    }
+                }
+                _authManagerChangeListeners.clear();
+            }
         }
         finally
         {
@@ -333,7 +339,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         try
         {
             initialiseVirtualHosts();
-            initialiseStatistics();
             initialiseStatisticsReporting();
         }
         finally
@@ -343,52 +348,10 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
     }
 
-
-    /**
-     * Iterates across all discovered authentication manager factories, offering the security configuration to each.
-     * Expects <b>exactly</b> one authentication manager to configure and initialise itself.
-     * 
-     * It is an error to configure more than one authentication manager, or to configure none.
-     *
-     * @return authentication manager
-     * @throws ConfigurationException
-     */
-    protected AuthenticationManager createAuthenticationManager() throws ConfigurationException
+    protected IAuthenticationManagerRegistry createAuthenticationManagerRegistry(ServerConfiguration _configuration, PluginManager _pluginManager)
+            throws ConfigurationException
     {
-        final SecurityConfiguration securityConfiguration = _configuration.getConfiguration(SecurityConfiguration.class.getName());
-        final Collection<AuthenticationManagerPluginFactory<? extends Plugin>> factories = _pluginManager.getAuthenticationManagerPlugins().values();
-        
-        if (factories.size() == 0)
-        {
-            throw new ConfigurationException("No authentication manager factory plugins found.  Check the desired authentication" +
-                    "manager plugin has been placed in the plugins directory.");
-        }
-        
-        AuthenticationManager authMgr = null;
-        
-        for (final Iterator<AuthenticationManagerPluginFactory<? extends Plugin>> iterator = factories.iterator(); iterator.hasNext();)
-        {
-            final AuthenticationManagerPluginFactory<? extends Plugin> factory = (AuthenticationManagerPluginFactory<? extends Plugin>) iterator.next();
-            final AuthenticationManager tmp = factory.newInstance(securityConfiguration);
-            if (tmp != null)
-            {
-                if (authMgr != null)
-                {
-                    throw new ConfigurationException("Cannot configure more than one authentication manager."
-                            + " Both " + tmp.getClass() + " and " + authMgr.getClass() + " are configured."
-                            + " Remove configuration for one of the authentication manager, or remove the plugin JAR"
-                            + " from the classpath.");
-                }
-                authMgr = tmp;
-            }
-        }
-
-        if (authMgr == null)
-        {
-            throw new ConfigurationException("No authentication managers configured within the configure file.");
-        }
-        
-        return authMgr;
+        return new AuthenticationManagerRegistry(_configuration, _pluginManager);
     }
 
     protected void initialiseVirtualHosts() throws Exception
@@ -400,23 +363,18 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         getVirtualHostRegistry().setDefaultVirtualHostName(_configuration.getDefaultVirtualHost());
     }
 
-    protected void initialiseManagedObjectRegistry() throws AMQException
-    {
-        _managedObjectRegistry = new NoopManagedObjectRegistry();
-    }
-    
     public void initialiseStatisticsReporting()
     {
         long report = _configuration.getStatisticsReportingPeriod() * 1000; // convert to ms
         final boolean broker = _configuration.isStatisticsGenerationBrokerEnabled();
         final boolean virtualhost = _configuration.isStatisticsGenerationVirtualhostsEnabled();
         final boolean reset = _configuration.isStatisticsReportResetEnabled();
-        
+
         /* add a timer task to report statistics if generation is enabled for broker or virtualhosts */
         if (report > 0L && (broker || virtualhost))
         {
             _reportingTimer = new Timer("Statistics-Reporting", true);
-            
+
 
 
             _reportingTimer.scheduleAtFixedRate(new StatisticsReportingTask(broker, virtualhost, reset),
@@ -545,15 +503,13 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             //Shutdown virtualhosts
             close(_virtualHostRegistry);
 
-            close(_authenticationManager);
+            close(_authenticationManagerRegistry);
 
             close(_qmfService);
 
             close(_pluginManager);
 
-            close(_managedObjectRegistry);
-
-            BrokerConfig broker = getBroker();
+            BrokerConfig broker = getBrokerConfig();
             if(broker != null)
             {
                 broker.getSystem().removeBroker(broker);
@@ -569,12 +525,14 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     private void unbind()
     {
+        List<QpidAcceptor> removedAcceptors = new ArrayList<QpidAcceptor>();
         synchronized (_acceptors)
         {
             for (InetSocketAddress bindAddress : _acceptors.keySet())
             {
                 QpidAcceptor acceptor = _acceptors.get(bindAddress);
 
+                removedAcceptors.add(acceptor);
                 try
                 {
                     acceptor.getNetworkTransport().close();
@@ -585,6 +543,16 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
                 }
 
                CurrentActor.get().message(BrokerMessages.SHUTTING_DOWN(acceptor.toString(), bindAddress.getPort()));
+            }
+        }
+        synchronized (_portBindingListeners)
+        {
+            for(QpidAcceptor acceptor : removedAcceptors)
+            {
+                for(PortBindingListener listener : _portBindingListeners)
+                {
+                    listener.unbound(acceptor);
+                }
             }
         }
     }
@@ -600,6 +568,13 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         {
             _acceptors.put(bindAddress, acceptor);
         }
+        synchronized (_portBindingListeners)
+        {
+            for(PortBindingListener listener : _portBindingListeners)
+            {
+                listener.bound(acceptor, bindAddress);
+            }
+        }
     }
 
     public VirtualHostRegistry getVirtualHostRegistry()
@@ -612,14 +587,16 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return _securityManager;
     }
 
-    public ManagedObjectRegistry getManagedObjectRegistry()
+    @Override
+    public AuthenticationManager getAuthenticationManager(SocketAddress address)
     {
-        return _managedObjectRegistry;
+        return _authenticationManagerRegistry.getAuthenticationManager(address);
     }
 
-    public AuthenticationManager getAuthenticationManager()
+    @Override
+    public IAuthenticationManagerRegistry getAuthenticationManagerRegistry()
     {
-        return _authenticationManager;
+        return _authenticationManagerRegistry;
     }
 
     public PluginManager getPluginManager()
@@ -636,7 +613,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     {
         return _rootMessageLogger;
     }
-    
+
     public RootMessageLogger getCompositeStartupMessageLogger()
     {
         return _startupMessageLogger;
@@ -652,69 +629,63 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return _qmfService;
     }
 
-    public BrokerConfig getBroker()
+    public BrokerConfig getBrokerConfig()
     {
-        return _broker;
+        return _brokerConfig;
     }
 
-    public void setBroker(final BrokerConfig broker)
+    public void setBrokerConfig(final BrokerConfig broker)
     {
-        _broker = broker;
+        _brokerConfig = broker;
     }
 
     public VirtualHost createVirtualHost(final VirtualHostConfiguration vhostConfig) throws Exception
     {
         VirtualHostImpl virtualHost = new VirtualHostImpl(this, vhostConfig);
         _virtualHostRegistry.registerVirtualHost(virtualHost);
-        getBroker().addVirtualHost(virtualHost);
+        getBrokerConfig().addVirtualHost(virtualHost);
         return virtualHost;
     }
-    
+
     public void registerMessageDelivered(long messageSize)
     {
-        if (isStatisticsEnabled())
-        {
-            _messagesDelivered.registerEvent(1L);
-            _dataDelivered.registerEvent(messageSize);
-        }
+        _messagesDelivered.registerEvent(1L);
+        _dataDelivered.registerEvent(messageSize);
     }
-    
+
     public void registerMessageReceived(long messageSize, long timestamp)
     {
-        if (isStatisticsEnabled())
-        {
-            _messagesReceived.registerEvent(1L, timestamp);
-            _dataReceived.registerEvent(messageSize, timestamp);
-        }
+        _messagesReceived.registerEvent(1L, timestamp);
+        _dataReceived.registerEvent(messageSize, timestamp);
     }
-    
+
     public StatisticsCounter getMessageReceiptStatistics()
     {
         return _messagesReceived;
     }
-    
+
     public StatisticsCounter getDataReceiptStatistics()
     {
         return _dataReceived;
     }
-    
+
     public StatisticsCounter getMessageDeliveryStatistics()
     {
         return _messagesDelivered;
     }
-    
+
     public StatisticsCounter getDataDeliveryStatistics()
     {
         return _dataDelivered;
     }
-    
+
     public void resetStatistics()
     {
         _messagesDelivered.reset();
         _dataDelivered.reset();
         _messagesReceived.reset();
         _dataReceived.reset();
-        
+
         for (VirtualHost vhost : _virtualHostRegistry.getVirtualHosts())
         {
             vhost.resetStatistics();
@@ -723,23 +694,10 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public void initialiseStatistics()
     {
-        setStatisticsEnabled(!StatisticsCounter.DISABLE_STATISTICS &&
-                getConfiguration().isStatisticsGenerationBrokerEnabled());
-        
         _messagesDelivered = new StatisticsCounter("messages-delivered");
         _dataDelivered = new StatisticsCounter("bytes-delivered");
         _messagesReceived = new StatisticsCounter("messages-received");
         _dataReceived = new StatisticsCounter("bytes-received");
-    }
-
-    public boolean isStatisticsEnabled()
-    {
-        return _statisticsEnabled;
-    }
-
-    public void setStatisticsEnabled(boolean enabled)
-    {
-        _statisticsEnabled = enabled;
     }
 
     private void logStartupMessages(LogActor logActor)
@@ -755,4 +713,60 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         logActor.message(BrokerMessages.MAX_MEMORY(Runtime.getRuntime().maxMemory()));
     }
 
+    public Broker getBroker()
+    {
+        return _broker;
+    }
+
+    @Override
+    public void addPortBindingListener(PortBindingListener listener)
+    {
+        synchronized (_portBindingListeners)
+        {
+            _portBindingListeners.add(listener);
+        }
+    }
+
+
+    @Override
+    public boolean useHTTPManagement()
+    {
+        return _httpManagementPort != -1;
+    }
+
+    @Override
+    public int getHTTPManagementPort()
+    {
+        return _httpManagementPort;
+    }
+
+    @Override
+    public boolean useHTTPSManagement()
+    {
+        return _httpsManagementPort != -1;
+    }
+
+    @Override
+    public int getHTTPSManagementPort()
+    {
+        return _httpsManagementPort;
+    }
+
+    public LogRecorder getLogRecorder()
+    {
+        return _logRecorder;
+    }
+
+    @Override
+    public void addRegistryChangeListener(IAuthenticationManagerRegistry.RegistryChangeListener registryChangeListener)
+    {
+        if(_authenticationManagerRegistry == null)
+        {
+            _authManagerChangeListeners.add(registryChangeListener);
+        }
+        else
+        {
+            _authenticationManagerRegistry.addRegistryChangeListener(registryChangeListener);
+        }
+    }
 }

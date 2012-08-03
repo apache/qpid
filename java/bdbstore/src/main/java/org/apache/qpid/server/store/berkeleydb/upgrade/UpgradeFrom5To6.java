@@ -45,6 +45,7 @@ import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.store.berkeleydb.AMQShortStringEncoding;
 import org.apache.qpid.server.store.berkeleydb.FieldTableEncoding;
 import org.apache.qpid.server.util.MapJsonSerializer;
@@ -92,6 +93,8 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
     private static final Set<String> DEFAULT_EXCHANGES_SET = new HashSet<String>(Arrays.asList(DEFAULT_EXCHANGES));
 
     private MapJsonSerializer _serializer = new MapJsonSerializer();
+
+    private static final boolean _moveNonExclusiveQueueOwnerToDescription = Boolean.parseBoolean(System.getProperty("qpid.move_non_exclusive_queue_owner_to_description", Boolean.TRUE.toString()));
 
     /**
      * Upgrades from a v5 database to a v6 database
@@ -380,7 +383,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
                         for (int i = 0; i < newDequeues.length; i++)
                         {
                             OldRecordImpl dequeue = oldDequeues[i];
-                            UUID id = UUIDGenerator.generateUUID(dequeue.getQueueName(), virtualHostName);
+                            UUID id = UUIDGenerator.generateQueueUUID(dequeue.getQueueName(), virtualHostName);
                             newDequeues[i] = new NewRecordImpl(id, dequeue.getMessageNumber());
                         }
                     }
@@ -390,7 +393,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
                         for (int i = 0; i < newEnqueues.length; i++)
                         {
                             OldRecordImpl enqueue = oldEnqueues[i];
-                            UUID id = UUIDGenerator.generateUUID(enqueue.getQueueName(), virtualHostName);
+                            UUID id = UUIDGenerator.generateQueueUUID(enqueue.getQueueName(), virtualHostName);
                             newEnqueues[i] = new NewRecordImpl(id, enqueue.getMessageNumber());
                         }
                     }
@@ -420,7 +423,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
                         Transaction transaction, DatabaseEntry key, DatabaseEntry value)
                 {
                     OldQueueEntryKey oldEntryRecord = oldBinding.entryToObject(key);
-                    UUID queueId = UUIDGenerator.generateUUID(oldEntryRecord.getQueueName().asString(), virtualHostName);
+                    UUID queueId = UUIDGenerator.generateQueueUUID(oldEntryRecord.getQueueName().asString(), virtualHostName);
 
                     NewQueueEntryKey newEntryRecord = new NewQueueEntryKey(queueId, oldEntryRecord.getMessageId());
                     DatabaseEntry newKey = new DatabaseEntry();
@@ -455,7 +458,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
                     String routingKey = bindingRecord.getRoutingKey().asString();
                     FieldTable arguments = bindingRecord.getArguments();
 
-                    UUID bindingId = UUIDGenerator.generateUUID();
+                    UUID bindingId = UUIDGenerator.generateBindingUUID(exchangeName, queueName, routingKey, virtualHostName);
                     UpgradeConfiguredObjectRecord configuredObject = createBindingConfiguredObjectRecord(exchangeName, queueName,
                             routingKey, arguments, virtualHostName);
                     storeConfiguredObjectEntry(configuredObjectsDatabase, bindingId, configuredObject, transaction);
@@ -489,7 +492,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
                         String exchangeType = exchangeRecord.getType().asString();
                         boolean autoDelete = exchangeRecord.isAutoDelete();
 
-                        UUID exchangeId = UUIDGenerator.generateUUID(exchangeName, virtualHostName);
+                        UUID exchangeId = UUIDGenerator.generateExchangeUUID(exchangeName, virtualHostName);
 
                         UpgradeConfiguredObjectRecord configuredObject = createExchangeConfiguredObjectRecord(exchangeName,
                                 exchangeType, autoDelete);
@@ -526,7 +529,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
                     boolean exclusive = queueRecord.isExclusive();
                     FieldTable arguments = queueRecord.getArguments();
 
-                    UUID queueId = UUIDGenerator.generateUUID(queueName, virtualHostName);
+                    UUID queueId = UUIDGenerator.generateQueueUUID(queueName, virtualHostName);
                     UpgradeConfiguredObjectRecord configuredObject = createQueueConfiguredObjectRecord(queueName, owner, exclusive,
                             arguments);
                     storeConfiguredObjectEntry(configuredObjectsDatabase, queueId, configuredObject, transaction);
@@ -554,17 +557,49 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
     private UpgradeConfiguredObjectRecord createQueueConfiguredObjectRecord(String queueName, String owner, boolean exclusive,
             FieldTable arguments)
     {
-        Map<String, Object> attributesMap = new HashMap<String, Object>();
-        attributesMap.put(Queue.NAME, queueName);
-        attributesMap.put(Queue.OWNER, owner);
-        attributesMap.put(Queue.EXCLUSIVE, exclusive);
-        if (arguments != null)
-        {
-            attributesMap.put("ARGUMENTS", FieldTable.convertToMap(arguments));
-        }
+        Map<String, Object> attributesMap = buildQueueArgumentMap(queueName,
+                owner, exclusive, arguments);
         String json = _serializer.serialize(attributesMap);
         UpgradeConfiguredObjectRecord configuredObject = new UpgradeConfiguredObjectRecord(Queue.class.getName(), json);
         return configuredObject;
+    }
+
+    private Map<String, Object> buildQueueArgumentMap(String queueName,
+            String owner, boolean exclusive, FieldTable arguments)
+    {
+
+        Map<String, Object> attributesMap = new HashMap<String, Object>();
+        attributesMap.put(Queue.NAME, queueName);
+        attributesMap.put(Queue.EXCLUSIVE, exclusive);
+
+        FieldTable argumentsCopy = new FieldTable();
+        if (arguments != null)
+        {
+            argumentsCopy.addAll(arguments);
+        }
+
+        if (moveNonExclusiveOwnerToDescription(owner, exclusive))
+        {
+            _logger.info("Non-exclusive owner " + owner + " for queue " + queueName + " moved to " + AMQQueueFactory.X_QPID_DESCRIPTION);
+
+            attributesMap.put(Queue.OWNER, null);
+            argumentsCopy.put(AMQShortString.valueOf(AMQQueueFactory.X_QPID_DESCRIPTION), owner);
+        }
+        else
+        {
+            attributesMap.put(Queue.OWNER, owner);
+        }
+        if (!argumentsCopy.isEmpty())
+        {
+            attributesMap.put(Queue.ARGUMENTS, FieldTable.convertToMap(argumentsCopy));
+        }
+        return attributesMap;
+    }
+
+    private boolean moveNonExclusiveOwnerToDescription(String owner,
+            boolean exclusive)
+    {
+        return exclusive == false && owner != null && _moveNonExclusiveQueueOwnerToDescription;
     }
 
     private UpgradeConfiguredObjectRecord createExchangeConfiguredObjectRecord(String exchangeName, String exchangeType,
@@ -585,8 +620,8 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
     {
         Map<String, Object> attributesMap = new HashMap<String, Object>();
         attributesMap.put(Binding.NAME, routingKey);
-        attributesMap.put(Binding.EXCHANGE, UUIDGenerator.generateUUID(exchangeName, virtualHostName));
-        attributesMap.put(Binding.QUEUE, UUIDGenerator.generateUUID(queueName, virtualHostName));
+        attributesMap.put(Binding.EXCHANGE, UUIDGenerator.generateExchangeUUID(exchangeName, virtualHostName));
+        attributesMap.put(Binding.QUEUE, UUIDGenerator.generateQueueUUID(queueName, virtualHostName));
         if (arguments != null)
         {
             attributesMap.put(Binding.ARGUMENTS, FieldTable.convertToMap(arguments));

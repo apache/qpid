@@ -99,7 +99,8 @@ class SubscriptionManagerImpl : public sys::Runnable, public RefCounted
   public:
     /** Create a new SubscriptionManagerImpl associated with a session */
     SubscriptionManagerImpl(const Session& session);
-    
+    ~SubscriptionManagerImpl();
+
     /**
      * Subscribe a MessagesListener to receive messages from queue.
      *

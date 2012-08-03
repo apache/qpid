@@ -39,7 +39,7 @@ namespace tests {
 
 struct Args : public qpid::TestOptions
 {
-    string workQueue;
+    std::string workQueue;
     size_t workers;
 
     Args() : workQueue("txshift-control"), workers(1)

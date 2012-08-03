@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.qpid.AMQConnectionClosedException;
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.management.jmx.ManagedConnectionMBeanTest;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.transport.ConnectionException;
 

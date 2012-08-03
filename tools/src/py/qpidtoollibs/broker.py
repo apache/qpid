@@ -18,6 +18,7 @@
 #
 
 from qpid.messaging import Message
+from qpidtoollibs.disp import TimeLong
 try:
   from uuid import uuid4
 except ImportError:
@@ -190,9 +191,13 @@ class BrokerAgent(object):
   def getAcl(self):
     return self._getSingleObject(Acl)
 
-  def echo(self, sequence, body):
+  def getMemory(self):
+    return self._getSingleObject(Memory)
+
+  def echo(self, sequence = 1, body = "Body"):
     """Request a response to test the path to the management broker"""
-    pass
+    args = {'sequence' : sequence, 'body' : body}
+    return self._method('echo', args)
 
   def connect(self, host, port, durable, authMechanism, username, password, transport):
     """Establish a connection to another broker"""
@@ -295,6 +300,41 @@ class BrokerAgent(object):
     return self._getBrokerObject(self, _type, oid)
 
 
+class EventHelper(object):
+  def eventAddress(self, pkg='*', cls='*', sev='*'):
+    return "qmf.default.topic/agent.ind.event.%s.%s.%s.#" % (pkg.replace('.', '_'), cls, sev)
+
+  def event(self, msg):
+    return BrokerEvent(msg)
+
+
+class BrokerEvent(object):
+  def __init__(self, msg):
+    self.msg = msg
+    self.content = msg.content[0]
+    self.values = self.content['_values']
+    self.schema_id = self.content['_schema_id']
+    self.name = "%s:%s" % (self.schema_id['_package_name'], self.schema_id['_class_name'])
+
+  def __repr__(self):
+    rep = "%s %s" % (TimeLong(self.getTimestamp()), self.name)
+    for k,v in self.values.items():
+      rep = rep + " %s=%s" % (k, v)
+    return rep
+
+  def __getattr__(self, key):
+    if key not in self.values:
+      return None
+    value = self.values[key]
+    return value
+
+  def getAttributes(self):
+    return self.values
+
+  def getTimestamp(self):
+    return self.content['_timestamp']
+
+
 class BrokerObject(object):
   def __init__(self, broker, content):
     self.broker = broker
@@ -362,7 +402,7 @@ class Connection(BrokerObject):
     BrokerObject.__init__(self, broker, values)
 
   def close(self):
-    pass
+    self.broker._method("close", {}, "org.apache.qpid.broker:connection:%s" % self.address)
 
 class Session(BrokerObject):
   def __init__(self, broker, values):

@@ -62,7 +62,7 @@ qpid::sys::Shlib plugin(getLibPath("REPLICATING_LISTENER_LIB", default_shlib));
 qpid::broker::Broker::Options getBrokerOpts(const std::vector<std::string>& args)
 {
     std::vector<const char*> argv(args.size());
-    transform(args.begin(), args.end(), argv.begin(), boost::bind(&string::c_str, _1));
+    transform(args.begin(), args.end(), argv.begin(), boost::bind(&std::string::c_str, _1));
 
     qpid::broker::Broker::Options opts;
     qpid::Plugin::addOptions(opts);
@@ -72,7 +72,7 @@ qpid::broker::Broker::Options getBrokerOpts(const std::vector<std::string>& args
 
 QPID_AUTO_TEST_CASE(testReplicationExchange)
 {
-    qpid::broker::Broker::Options brokerOpts(getBrokerOpts(list_of<string>("qpidd")
+    qpid::broker::Broker::Options brokerOpts(getBrokerOpts(list_of<std::string>("qpidd")
                                                            ("--replication-exchange-name=qpid.replication")));
     SessionFixture f(brokerOpts);
 

@@ -22,10 +22,13 @@
 #include "qpid/log/OstreamOutput.h"
 #include "qpid/memory.h"
 #include "qpid/Exception.h"
+
 #include <iostream>
 #include <map>
 #include <string>
 #include <syslog.h>
+
+#include <boost/lexical_cast.hpp>
 
 using std::string;
 using qpid::Exception;
@@ -90,7 +93,7 @@ public:
     string name(int value) const {
         ByValue::const_iterator i = byValue.find(value);
         if (i == byValue.end())
-            throw Exception("Not a valid syslog value: " + value);
+            throw Exception("Not a valid syslog value: " + boost::lexical_cast<string>(value));
         return i->second;
     }
 

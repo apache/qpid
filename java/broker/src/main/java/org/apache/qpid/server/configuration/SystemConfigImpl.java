@@ -33,7 +33,7 @@ public class SystemConfigImpl implements SystemConfig
     private static final String OS_ARCH = System.getProperty("os.arch");
     private static final String OS_VERSION = System.getProperty("os.version");
 
-    private final UUID _id;
+    private final UUID _qmfId;
     private String _name;
 
     private final String _host;
@@ -48,9 +48,9 @@ public class SystemConfigImpl implements SystemConfig
         this(store.createId(), store);
     }
 
-    public SystemConfigImpl(UUID id, ConfigStore store)
+    public SystemConfigImpl(UUID qmfId, ConfigStore store)
     {
-        _id = id;
+        _qmfId = qmfId;
         _store = store;
         String host;
         try
@@ -95,9 +95,10 @@ public class SystemConfigImpl implements SystemConfig
         return OS_ARCH;
     }
 
-    public UUID getId()
+    @Override
+    public UUID getQMFId()
     {
-        return _id;
+        return _qmfId;
     }
 
     public SystemConfigType getConfigType()
@@ -119,12 +120,12 @@ public class SystemConfigImpl implements SystemConfig
     {
         broker.setSystem(this);
         _store.addConfiguredObject(broker);
-        _brokers.put(broker.getId(), broker);
+        _brokers.put(broker.getQMFId(), broker);
     }
 
     public void removeBroker(final BrokerConfig broker)
     {
-        _brokers.remove(broker.getId());
+        _brokers.remove(broker.getQMFId());
         _store.removeConfiguredObject(broker);
     }
 

@@ -136,7 +136,7 @@ const ConnectionSettings& Connection::getNegotiatedSettings()
 
 Session Connection::newSession(const std::string& name, uint32_t timeout) {
     if (!isOpen())
-        throw Exception(QPID_MSG("Connection has not yet been opened"));
+        throw TransportFailure("Can't create session, connection is not open");
     Session s;
     SessionBase_0_10Access(s).set(impl->newSession(name, timeout));
     return s;

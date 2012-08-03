@@ -74,6 +74,8 @@
 namespace qpid {
 namespace cluster {
 
+using std::string;
+
 using amqp_0_10::ListCodec;
 using broker::Broker;
 using broker::Exchange;
@@ -86,6 +88,8 @@ using types::Variant;
 using namespace framing;
 namespace arg=client::arg;
 using client::SessionBase_0_10Access;
+
+namespace _qmf = qmf::org::apache::qpid::broker;
 
 // Reserved exchange/queue name for catch-up, avoid clashes with user queues/exchanges.
 const std::string UpdateClient::UPDATE("x-qpid.cluster-update");
@@ -224,14 +228,6 @@ template <class T> std::string encode(const T& t) {
     encoded.resize(t.encodedSize());
     framing::Buffer buf(const_cast<char*>(encoded.data()), encoded.size());
     t.encode(buf);
-    return encoded;
-}
-
-template <class T> std::string encode(const T& t, bool encodeKind) {
-    std::string encoded;
-    encoded.resize(t.encodedSize());
-    framing::Buffer buf(const_cast<char*>(encoded.data()), encoded.size());
-    t.encode(buf, encodeKind);
     return encoded;
 }
 } // namespace
@@ -377,13 +373,14 @@ class MessageUpdater {
 
 void UpdateClient::updateQueue(client::AsyncSession& s, const boost::shared_ptr<Queue>& q) {
     broker::Exchange::shared_ptr alternateExchange = q->getAlternateExchange();
+    _qmf::Queue* mgmtQueue = dynamic_cast<_qmf::Queue*>(q->GetManagementObject());
     s.queueDeclare(
         arg::queue = q->getName(),
         arg::durable = q->isDurable(),
         arg::autoDelete = q->isAutoDelete(),
         arg::alternateExchange = alternateExchange ? alternateExchange->getName() : "",
         arg::arguments = q->getSettings(),
-        arg::exclusive = q->hasExclusiveOwner()
+        arg::exclusive = mgmtQueue && mgmtQueue->get_exclusive()
     );
     MessageUpdater updater(q->getName(), s, expiry);
     q->eachMessage(boost::bind(&MessageUpdater::updateQueuedMessage, &updater, _1));
@@ -545,7 +542,8 @@ void UpdateClient::updateConsumer(
         ci->isNotifyEnabled(),
         ci->getPosition(),
         ci->getCredit().used().messages,
-        ci->getCredit().used().bytes
+        ci->getCredit().used().bytes,
+	ci->getDeliveryCount()
     );
     consumerNumbering.add(ci.get());
 

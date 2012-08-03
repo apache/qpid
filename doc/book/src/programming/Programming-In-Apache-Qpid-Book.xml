@@ -1269,7 +1269,7 @@ spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
 		    unreliable will be used and for durable messages on
 		    durable queues there is the possibility that messages
 		    will be redelivered; if exactly-once is requested,
-		    at-most-once will be used and the application needs to
+		    at-least-once will be used and the application needs to
 		    be able to deal with duplicates.</para></footnote>
 		  </entry>
 		</row>
@@ -3783,6 +3783,16 @@ spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
 		  <para>For compatibility with older clients, the synonym <varname>amqj.receiveBufferSize</varname> is supported.</para>
 		</entry>
 	      </row>
+          <row>
+            <entry>qpid.failover_method_timeout</entry>
+            <entry>long</entry>
+            <entry>60000</entry>
+            <entry>
+              <para>During failover, this is the timeout for each attempt to try to re-establish the connection.
+                    If a reconnection attempt exceeds the timeout, the entire failover process is aborted.</para>
+              <para>It is only applicable for AMQP 0-8/0-9/0-9-1 clients.</para>
+            </entry>
+          </row>
 	    </tbody>
 	  </tgroup>
 	</table>

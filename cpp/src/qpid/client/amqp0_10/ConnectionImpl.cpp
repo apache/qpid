@@ -78,7 +78,7 @@ bool expired(const sys::AbsTime& start, double timeout)
     if (timeout == 0) return true;
     if (timeout == FOREVER) return false;
     sys::Duration used(start, sys::now());
-    sys::Duration allowed(int64_t(timeout*sys::TIME_SEC));
+    sys::Duration allowed((int64_t)(timeout*sys::TIME_SEC));
     return allowed < used;
 }
 

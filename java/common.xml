@@ -18,12 +18,12 @@
  - under the License.
  -
  -->
-<project name="common">
+<project xmlns:ivy="antlib:org.apache.ivy.ant" name="common">
 
   <dirname property="project.root" file="${ant.file.common}"/>
 
   <property name="project.name"          value="qpid"/>
-  <property name="project.version"       value="0.17"/>
+  <property name="project.version"       value="0.19"/>
   <property name="project.url"           value="http://qpid.apache.org"/>
   <property name="project.groupid"       value="org.apache.qpid"/>
   <property name="project.namever"       value="${project.name}-${project.version}"/>
@@ -43,7 +43,8 @@
   <property name="build.release"         location="${build}/release"/>
   <property name="build.release.prepare" location="${build.release}/prepare"/>
   <property name="build.plugins"         location="${build}/lib/plugins"/>
-  <property name="build.coveragereport"  location="${build}/coverage"/>
+  <property name="build.coverage.report" location="${build}/coverage/report"/>
+  <property name="build.coverage.src"    location="${build}/coverage/src"/>
   <property name="build.findbugs"        location="${build}/findbugs"/>
 
   <property name="java.target"           value="1.5"/>
@@ -62,10 +63,12 @@
 
   <property name="cobertura.dir" value="${project.root}/lib/cobertura" />
   <property name="cobertura.version" value="1.9.4.1" />
-  <property name="cobertura.download.url"
-            value="http://downloads.sourceforge.net/project/cobertura/cobertura/${cobertura.version}/cobertura-${cobertura.version}-bin.zip" />
-  <property name="cobertura.zip.filename" value="cobertura-${cobertura.version}-bin.zip" />
-  <property name="cobertura.temp.dir" value="${cobertura.dir}"/>
+
+  <path id="cobertura.classpath">
+    <fileset dir="${cobertura.dir}">
+        <include name="**/*.jar" />
+    </fileset>
+  </path>
 
   <property name="mllib.dir" value="${project.root}/../python" />
   <property name="findbugs.dir" value="${project.root}/lib/findbugs" />
@@ -75,13 +78,7 @@
   <property name="eclipse.compilercompliance" value="5.0"/>
   <property name="eclipse.container" value="JVM 1.5"/>
 
-  <path id="cobertura.classpath">
-    <fileset dir="${cobertura.dir}">
-        <include name="cobertura-${cobertura.version}/*.jar" />
-        <include name="cobertura-${cobertura.version}/**/lib/*.jar" />
-    </fileset>
-  </path>
-
+  <!-- properties for generating the maven artifacts -->
   <property name="maven.local.repo"      value="${build.scratch}/maven-local-repo"/>
   <property name="maven.settings.xml"    value="${project.root}/maven-settings.xml"/>
   <property name="maven.unique.version"  value="false"/>
@@ -89,6 +86,52 @@
   <condition property="maven.version.suffix" value="" else="-SNAPSHOT">
     <isfalse value="${maven.snapshot}"/>
   </condition>
+
+  <!-- properties for uploading our Maven artifacts to Nexus using Ivy -->
+  <property name="ivy.organisation"      value="org/apache"/>
+  <property name="nexus.organisation"    value="org.apache"/>
+  <property name="nexus.host"            value="repository.apache.org"/>
+  <property name="nexus.upload.url"      value="https://${nexus.host}/service/local/staging/deploy/maven2"/>
+
+  <!-- properties for downloading ivy, and then our dependencies -->
+  <property name="ivy.jar.dir"         value="${project.root}/lib/ivy" />
+  <property name="ivy.install.version" value="2.2.0" />
+  <property name="ivy.jar.file"        value="${ivy.jar.dir}/ivy-${ivy.install.version}.jar" />
+  <property name="ivy.repo.url"        value="http://repo1.maven.org/maven2/org/apache/ivy/ivy"/>
+  <property name="ivy.jar.url"         value="${ivy.repo.url}/${ivy.install.version}/ivy-${ivy.install.version}.jar"/>
+
+  <available property="ivy.jar.file.exists" file="${ivy.jar.file}"/>
+  <property name="retrieve.dependencies"    value="true" />
+  <property name="optional.dependencies"    value="false" />
+
+  <condition property="dont.download.ivy">
+    <!-- Set prop to stop Ivy download if asked not to retrieve
+    the dependencies, or the ivy jar is already present -->
+    <or>
+      <isfalse value="${retrieve.dependencies}"/>
+      <and>
+        <isset property="ivy.jar.file.exists"/>
+        <istrue value="${ivy.jar.file.exists}"/>
+      </and>
+    </or>
+  </condition>
+
+  <condition property="ivy.dont.retrieve">
+    <isfalse value="${retrieve.dependencies}"/>
+  </condition>
+  <condition property="ivy.configured">
+    <isfalse value="${retrieve.dependencies}"/>
+  </condition>
+  <condition property="ivy.retrieve.optional">
+    <and>
+      <istrue value="${retrieve.dependencies}"/>
+      <or>
+        <istrue value="${optional.dependencies}"/>
+        <istrue value="${optional}"/>
+      </or>
+    </and>
+  </condition>
+
 
   <macrodef name="indirect">
     <attribute name="name"/>
@@ -141,7 +184,7 @@
     <attribute name="path"/>
     <element name="args"/>
     <sequential>
-      <java jar="${project.root}/lib/jython-2.5.0.jar" fork="true" failonerror="true">
+      <java jar="${project.root}/${jython}" fork="true" failonerror="true">
         <arg value="-Dpython.path=@{path}"/>
         <args/>
       </java>
@@ -175,6 +218,21 @@
     </sequential>
   </macrodef>
 
+  <macrodef name="copytofile">
+    <attribute name="tofile"/>
+    <attribute name="dir"/>
+    <attribute name="include"/>
+    <attribute name="failOnError" default="false"/>
+    <sequential>
+      <copy tofile="@{tofile}" failOnError="@{failOnError}">
+        <fileset dir="@{dir}">
+          <include name="@{include}"/>
+        </fileset>
+      </copy>
+    </sequential>
+  </macrodef>
+
+
   <target name="clean-tasks">
     <delete dir="${tasks.classes}"/>
   </target>
@@ -198,28 +256,68 @@
     <taskdef classpathref="cobertura.classpath" resource="tasks.properties" />
   </target>
 
-  <!--download Cobertura jar and expand-->
-  <target name="download-cobertura" description="download Cobertura if not already present" depends="cobertura-check" unless="cobertura.already.exists">
-      <mkdir dir="${cobertura.dir}"/>
-      <echo>Downloading Cobertura ${cobertura.version}</echo>
-      <get src="${cobertura.download.url}" dest="${cobertura.temp.dir}/${cobertura.zip.filename}" usetimestamp="false" />
-      <echo>Extracting Cobertura JAR and dependencies</echo>
-      <unzip src="${cobertura.temp.dir}/${cobertura.zip.filename}" dest="${cobertura.dir}"/>
-      <echo>Cleanup Cobertura Download</echo>
-      <delete file="${cobertura.temp.dir}/${cobertura.zip.filename}"/>
-      <echo>Done</echo>
-  </target>
-
-  <target name="cobertura-check">
-    <available property="cobertura.already.exists" file="${cobertura.dir}/cobertura-${cobertura.version}" type="dir"/>
-  </target>
-
   <target name="findbugs-init">
+
+    <mkdir dir="${findbugs.dir}"/>
+    <!-- Hack to make the FindBugs jars retrieved using Ivy work with the Ant Task,
+    because it expects certain jar names without versions like in the .zip release -->
+    <copytofile tofile="${findbugs.dir}/findbugs.jar" dir="${findbugs.dir}" include="findbugs-?.*.*.jar"/>
+    <copytofile tofile="${findbugs.dir}/findbugs-ant.jar" dir="${findbugs.dir}" include="findbugs-ant-?.*.*.jar"/>
+    <copytofile tofile="${findbugs.dir}/bcel.jar" dir="${findbugs.dir}" include="bcel-*.jar"/>
+    <copytofile tofile="${findbugs.dir}/annotations.jar" dir="${findbugs.dir}" include="annotations-?.*.*.jar"/>
+    <copytofile tofile="${findbugs.dir}/jsr305.jar" dir="${findbugs.dir}" include="jsr305-*.jar"/>
+    <copytofile tofile="${findbugs.dir}/jFormatString.jar" dir="${findbugs.dir}" include="jFormatString-*.jar"/>
+
     <available file="${findbugs.dir}/findbugs-ant.jar" property="findbugs-ant.jar.present"/>
-    <fail unless="findbugs-ant.jar.present" message="Please follow the instructions at ${findbugs.dir}/README.txt to configure FindBugs"/>
+    <fail unless="findbugs-ant.jar.present" message="FindBugs was not found. Please add -Doptional.dependencies=true to your build command to retrieve FindBugs"/>
 
     <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${findbugs.dir}/findbugs-ant.jar"/>
   </target>
+
+
+  <!-- targets for downloading ivy and retrieving dependencies -->
+  <target name="retrieve-dependencies" depends="load-ivy, configure-ivy, retrieve-optional-dependencies" unless="${ivy.dont.retrieve}">
+    <echo message="Resolving and retrieving dependencies..."/>
+    <ivy:resolve type="jar,bundle,war" file="${project.root}/ivy.retrieve.xml" conf="required"/>
+    <ivy:retrieve type="jar,bundle,war" conf="required" sync="true"
+        pattern="${project.root}/lib/required/[artifact]-[revision].[ext]" />
+  </target>
+
+  <target name="retrieve-optional-dependencies" if="${ivy.retrieve.optional}">
+    <echo message="Resolving and retrieving optional dependencies..."/>
+    <ivy:resolve type="jar" file="${project.root}/ivy.retrieve.xml" conf="findbugs"/>
+    <ivy:retrieve type="jar" conf="findbugs" sync="true"
+        pattern="${findbugs.dir}/[artifact]-[revision].[ext]" />
+
+    <ivy:resolve type="jar" file="${project.root}/ivy.retrieve.xml" conf="cobertura"/>
+    <ivy:retrieve type="jar" conf="cobertura" sync="true"
+        pattern="${cobertura.dir}/[artifact]-[revision].[ext]" />
+  </target>
+
+
+  <target name="configure-ivy" unless="${ivy.configured}">
+    <ivy:configure file="${project.root}/ivysettings.retrieve.xml" override="true"/>
+    <property name="ivy.configured" value="true" />
+  </target>
+
+  <target name="load-ivy" depends="download-ivy" unless="${ivy.dont.retrieve}">
+    <!-- Try to load Ivy from local ivy dir, in case the user has not already dropped it into
+         Ant's lib dir (note that the latter copy will always take precedence). Won't
+         fail so long as Ivy is in at least one of the locations. -->
+    <mkdir dir="${ivy.jar.dir}"/>
+    <path id="ivy.lib.path">
+        <fileset dir="${ivy.jar.dir}" includes="*.jar"/>
+    </path>
+    <taskdef resource="org/apache/ivy/ant/antlib.xml"
+              uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path"/>
+  </target>
+
+  <target name="download-ivy" unless="${dont.download.ivy}">
+    <mkdir dir="${ivy.jar.dir}"/>
+    <echo message="Downloading ivy..."/>
+    <get src="${ivy.jar.url}" dest="${ivy.jar.file}" usetimestamp="true"/>
+  </target>
+
 
   <target name="help" description="display detailed build documentation">
     <echo>

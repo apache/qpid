@@ -24,6 +24,9 @@
 #include <algorithm>
 
 using namespace qpid::broker;
+
+using std::string;
+
 using namespace qpid::framing;
 using namespace qpid::sys;
 namespace _qmf = qmf::org::apache::qpid::broker;

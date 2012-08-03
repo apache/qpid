@@ -36,3 +36,4 @@ from extensions import *
 from msg_groups import *
 from new_api import *
 from stats import *
+from qmf_events import *

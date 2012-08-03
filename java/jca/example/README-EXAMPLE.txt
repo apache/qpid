@@ -232,4 +232,9 @@ While this documentation highlights the major components and steps needed to tak
 the possiblities for modifcation are numerous. You are encouraged to experiment with the example as you work
 to develop your own messaging applications.
 
+***Note***
+Due to the way Ant handle XML escape characters in the Copy task, if you are attempting to deploy the
+examples to a clustered broker configuration, you will need to modify the resultant XML configuration
+file to remove the '&' character and replace it with the &amp; character. This file varies by app
+server. Please see the app server specific documentation for your platform for further details.
 

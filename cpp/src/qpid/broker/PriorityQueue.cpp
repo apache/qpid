@@ -121,6 +121,10 @@ void PriorityQueue::updateAcquired(const QueuedMessage& acquired) {
     fifo.updateAcquired(acquired);
 }
 
+void PriorityQueue::setPosition(const framing::SequenceNumber& n) {
+    fifo.setPosition(n);
+}
+
 void PriorityQueue::foreach(Functor f)
 {
     fifo.foreach(f);

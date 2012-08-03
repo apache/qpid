@@ -81,13 +81,12 @@ po::value_semantic* optValue(T& value, const char* name) {
  */
 template <class T>
 po::value_semantic* optValue(std::vector<T>& value, const char* name) {
-    using namespace std;
-    ostringstream os;
-    copy(value.begin(), value.end(), ostream_iterator<T>(os, " "));
-    string val=os.str();
+    std::ostringstream os;
+    std::copy(value.begin(), value.end(), std::ostream_iterator<T>(os, " "));
+    std::string val=os.str();
     if (!val.empty())
         val.erase(val.end()-1); // Remove trailing " "
-    return (new OptionValue<vector<T> >(value, prettyArg(name, val)));
+    return (new OptionValue<std::vector<T> >(value, prettyArg(name, val)));
 }
 
 /** Create a boolean switch value. Presence of the option sets the value. */

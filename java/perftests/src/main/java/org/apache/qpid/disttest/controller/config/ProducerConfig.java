@@ -37,7 +37,7 @@ public class ProducerConfig extends ParticipantConfig
     public ProducerConfig()
     {
         _deliveryMode = Message.DEFAULT_DELIVERY_MODE;
-        _messageSize = 0;
+        _messageSize = 1024;
         _priority = Message.DEFAULT_PRIORITY;
         _timeToLive = Message.DEFAULT_TIME_TO_LIVE;
         _interval = 0;

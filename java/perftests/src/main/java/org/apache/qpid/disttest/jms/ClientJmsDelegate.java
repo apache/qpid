@@ -35,6 +35,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import javax.jms.Topic;
 import javax.naming.Context;
 import javax.naming.NamingException;
 
@@ -72,6 +73,7 @@ public class ClientJmsDelegate
     private Map<String, Session> _testSessions;
     private Map<String, MessageProducer> _testProducers;
     private Map<String, MessageConsumer> _testConsumers;
+    private Map<String, Session> _testSubscriptions;
     private Map<String, MessageProvider> _testMessageProviders;
 
     private final MessageProvider _defaultMessageProvider;
@@ -92,6 +94,7 @@ public class ClientJmsDelegate
             _testSessions = new HashMap<String, Session>();
             _testProducers = new HashMap<String, MessageProducer>();
             _testConsumers = new HashMap<String, MessageConsumer>();
+            _testSubscriptions = new HashMap<String, Session>();
             _testMessageProviders = new HashMap<String, MessageProvider>();
             _defaultMessageProvider = new MessageProvider(null);
         }
@@ -193,7 +196,7 @@ public class ClientJmsDelegate
             final boolean transacted = command.getAcknowledgeMode() == Session.SESSION_TRANSACTED;
 
             final Session newSession = connection.createSession(transacted, command.getAcknowledgeMode());
-            LOGGER.info("Created session " + command.getSessionName() + " with transacted = " + newSession.getTransacted() + " and acknowledgeMode = " + newSession.getAcknowledgeMode());
+            LOGGER.debug("Created session " + command.getSessionName() + " with transacted = " + newSession.getTransacted() + " and acknowledgeMode = " + newSession.getAcknowledgeMode());
 
             addSession(command.getSessionName(), newSession);
         }
@@ -212,30 +215,35 @@ public class ClientJmsDelegate
             {
                 throw new DistributedTestException("No test session found called: " + command.getSessionName(), command);
             }
-            final Destination destination = session.createQueue(command.getDestinationName());
-            final MessageProducer jmsProducer = session.createProducer(destination);
-            if (command.getPriority() != -1)
-            {
-                jmsProducer.setPriority(command.getPriority());
-            }
-            if (command.getTimeToLive() > 0)
-            {
-                jmsProducer.setTimeToLive(command.getTimeToLive());
-            }
 
-            if (command.getDeliveryMode() == DeliveryMode.NON_PERSISTENT
-                            || command.getDeliveryMode() == DeliveryMode.PERSISTENT)
+            synchronized(session)
             {
-                jmsProducer.setDeliveryMode(command.getDeliveryMode());
-            }
+                final Destination destination = session.createQueue(command.getDestinationName());
 
-            addProducer(command.getParticipantName(), jmsProducer);
+                final MessageProducer jmsProducer = session.createProducer(destination);
+
+                if (command.getPriority() != -1)
+                {
+                    jmsProducer.setPriority(command.getPriority());
+                }
+                if (command.getTimeToLive() > 0)
+                {
+                    jmsProducer.setTimeToLive(command.getTimeToLive());
+                }
+
+                if (command.getDeliveryMode() == DeliveryMode.NON_PERSISTENT
+                        || command.getDeliveryMode() == DeliveryMode.PERSISTENT)
+                {
+                    jmsProducer.setDeliveryMode(command.getDeliveryMode());
+                }
+
+                addProducer(command.getParticipantName(), jmsProducer);
+            }
         }
         catch (final JMSException jmse)
         {
             throw new DistributedTestException("Unable to create new producer: " + command, jmse);
         }
-
     }
 
     public void createConsumer(final CreateConsumerCommand command)
@@ -247,11 +255,37 @@ public class ClientJmsDelegate
             {
                 throw new DistributedTestException("No test session found called: " + command.getSessionName(), command);
             }
-            final Destination destination = command.isTopic() ? session.createTopic(command.getDestinationName())
-                            : session.createQueue(command.getDestinationName());
-            final MessageConsumer jmsConsumer = session.createConsumer(destination, command.getSelector());
 
-            _testConsumers.put(command.getParticipantName(), jmsConsumer);
+            synchronized(session)
+            {
+                Destination destination;
+                MessageConsumer jmsConsumer;
+                if(command.isTopic())
+                {
+                    Topic topic = session.createTopic(command.getDestinationName());
+                    if(command.isDurableSubscription())
+                    {
+                        String subscription = "subscription-" + command.getParticipantName() + System.currentTimeMillis();
+                        jmsConsumer = session.createDurableSubscriber(topic, subscription);
+
+                        _testSubscriptions.put(subscription, session);
+                        LOGGER.debug("created durable suscription " + subscription + " to topic " + topic);
+                    }
+                    else
+                    {
+                        jmsConsumer = session.createConsumer(topic, command.getSelector());
+                    }
+
+                    destination = topic;
+                }
+                else
+                {
+                    destination = session.createQueue(command.getDestinationName());
+                    jmsConsumer = session.createConsumer(destination, command.getSelector());
+                }
+
+                _testConsumers.put(command.getParticipantName(), jmsConsumer);
+            }
         }
         catch (final JMSException jmse)
         {
@@ -346,7 +380,10 @@ public class ClientJmsDelegate
             final Session session = _testSessions.get(sessionName);
             if (session.getTransacted())
             {
-                session.commit();
+                synchronized(session)
+                {
+                    session.commit();
+                }
             }
             else if (message != null && session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
             {
@@ -461,13 +498,16 @@ public class ClientJmsDelegate
         try
         {
             final Session session = _testSessions.get(sessionName);
-            if (session.getTransacted())
+            synchronized(session)
             {
-                session.rollback();
-            }
-            else if (session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
-            {
-                session.recover();
+                if (session.getTransacted())
+                {
+                    session.rollback();
+                }
+                else if (session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
+                {
+                    session.recover();
+                }
             }
         }
         catch (final JMSException jmse)
@@ -482,13 +522,16 @@ public class ClientJmsDelegate
         try
         {
             final Session session = _testSessions.get(sessionName);
-            if (session.getTransacted())
+            synchronized(session)
             {
-                session.rollback();
-            }
-            else
-            {
-                session.recover();
+                if (session.getTransacted())
+                {
+                    session.rollback();
+                }
+                else
+                {
+                    session.recover();
+                }
             }
         }
         catch (final JMSException jmse)
@@ -503,36 +546,60 @@ public class ClientJmsDelegate
         return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE).append("clientName", _clientName).toString();
     }
 
-    public void closeTestConnections()
+    public void tearDownTest()
     {
         StringBuilder jmsErrorMessages = new StringBuilder();
-        int failedCloseCounter = 0;
-        for (final Map.Entry<String, Connection> entry : _testConnections.entrySet())
+        int failureCounter = 0;
+
+        for(String subscription : _testSubscriptions.keySet())
         {
-            final Connection connection = entry.getValue();
+            Session session = _testSubscriptions.get(subscription);
+            try
+            {
+                session.unsubscribe(subscription);
+            }
+            catch (JMSException e)
+            {
+                LOGGER.error("Failed to unsubscribe '" + subscription + "' :" + e.getLocalizedMessage(), e);
+                failureCounter++;
+                appendErrorMessage(jmsErrorMessages, e);
+            }
+        }
+
+        for (Map.Entry<String, Connection> entry : _testConnections.entrySet())
+        {
+            Connection connection = entry.getValue();
             try
             {
                 connection.close();
             }
-            catch (final JMSException e)
+            catch (JMSException e)
             {
                 LOGGER.error("Failed to close connection '" + entry.getKey() + "' :" + e.getLocalizedMessage(), e);
-                failedCloseCounter++;
-                if (jmsErrorMessages.length() > 0)
-                {
-                    jmsErrorMessages.append('\n');
-                }
-                jmsErrorMessages.append(e.getMessage());
+                failureCounter++;
+                appendErrorMessage(jmsErrorMessages, e);
             }
         }
+
         _testConnections.clear();
+        _testSubscriptions.clear();
         _testSessions.clear();
         _testProducers.clear();
         _testConsumers.clear();
-        if (failedCloseCounter > 0)
+
+        if (failureCounter > 0)
         {
-            throw new DistributedTestException("Close failed for " + failedCloseCounter + " connection(s) with the following errors: " + jmsErrorMessages.toString());
+            throw new DistributedTestException("Tear down test encountered " + failureCounter + " failures with the following errors: " + jmsErrorMessages.toString());
         }
+    }
+
+    private void appendErrorMessage(StringBuilder errorMessages, JMSException e)
+    {
+        if (errorMessages.length() > 0)
+        {
+            errorMessages.append('\n');
+        }
+        errorMessages.append(e.getMessage());
     }
 
     public void closeTestConsumer(String consumerName)
@@ -543,7 +610,7 @@ public class ClientJmsDelegate
             try
             {
                 consumer.close();
-                LOGGER.info("Closed test consumer " + consumerName);
+                LOGGER.debug("Closed test consumer " + consumerName);
             }
             catch (JMSException e)
             {
@@ -568,15 +635,16 @@ public class ClientJmsDelegate
         }
     }
 
+    /** only supports text messages - returns 0 for other message types */
     public int calculatePayloadSizeFrom(Message message)
     {
         try
         {
             if (message != null && message instanceof TextMessage)
             {
-                    return ((TextMessage) message).getText().getBytes().length;
+                return ((TextMessage) message).getText().getBytes().length;
             }
-            // TODO support other message types
+
             return 0;
         }
         catch (JMSException e)

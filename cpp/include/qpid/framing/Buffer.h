@@ -1,3 +1,6 @@
+#ifndef QPID_FRAMING_BUFFER_H
+#define QPID_FRAMING_BUFFER_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,13 +21,12 @@
  * under the License.
  *
  */
-#include "qpid/framing/amqp_types.h"
+
 #include "qpid/Exception.h"
 #include "qpid/CommonImportExport.h"
-#include <boost/iterator/iterator_facade.hpp>
+#include "qpid/sys/IntegerTypes.h"
 
-#ifndef _Buffer_
-#define _Buffer_
+#include <string>
 
 namespace qpid {
 namespace framing {
@@ -41,42 +43,18 @@ class QPID_COMMON_CLASS_EXTERN Buffer
     uint32_t size;
     char* data;
     uint32_t position;
-    uint32_t r_position;
 
   public:
     void checkAvailable(uint32_t count) { if (position + count > size) throw OutOfBounds(); }
 
-    /** Buffer input/output iterator.
-     * Supports using an amqp_0_10::Codec with a framing::Buffer.
-     */
-    class Iterator  : public boost::iterator_facade<
-      Iterator, char, boost::random_access_traversal_tag>
-    {
-      public:
-        Iterator(Buffer& b) : buffer(&b) {}
-
-      private:
-      friend class boost::iterator_core_access;
-        char& dereference() const { return buffer->data[buffer->position]; }
-        void increment() { ++buffer->position; }
-        bool equal(const Iterator& x) const { return buffer == x.buffer; }
-
-        Buffer* buffer;
-    };
-
-  friend class Iterator;
-
     QPID_COMMON_EXTERN Buffer(char* data=0, uint32_t size=0);
 
-    QPID_COMMON_EXTERN void record();
-    QPID_COMMON_EXTERN void restore(bool reRecord = false);
     QPID_COMMON_EXTERN void reset();
 
     QPID_COMMON_INLINE_EXTERN uint32_t available() { return size - position; }
     QPID_COMMON_INLINE_EXTERN uint32_t getSize() { return size; }
     QPID_COMMON_INLINE_EXTERN uint32_t getPosition() { return position; }
     QPID_COMMON_INLINE_EXTERN void setPosition(uint32_t p) { position = p; }
-    QPID_COMMON_INLINE_EXTERN Iterator getIterator() { return Iterator(*this); }
     QPID_COMMON_INLINE_EXTERN char* getPointer() { return data; }
 
     QPID_COMMON_EXTERN void putOctet(uint8_t i);
@@ -108,16 +86,16 @@ class QPID_COMMON_CLASS_EXTERN Buffer
     template <int n>
     QPID_COMMON_EXTERN void putUInt(uint64_t);
 
-    QPID_COMMON_EXTERN void putShortString(const string& s);
-    QPID_COMMON_EXTERN void putMediumString(const string& s);
-    QPID_COMMON_EXTERN void putLongString(const string& s);
-    QPID_COMMON_EXTERN void getShortString(string& s);
-    QPID_COMMON_EXTERN void getMediumString(string& s);
-    QPID_COMMON_EXTERN void getLongString(string& s);
+    QPID_COMMON_EXTERN void putShortString(const std::string& s);
+    QPID_COMMON_EXTERN void putMediumString(const std::string& s);
+    QPID_COMMON_EXTERN void putLongString(const std::string& s);
+    QPID_COMMON_EXTERN void getShortString(std::string& s);
+    QPID_COMMON_EXTERN void getMediumString(std::string& s);
+    QPID_COMMON_EXTERN void getLongString(std::string& s);
     QPID_COMMON_EXTERN void getBin128(uint8_t* b);
 
-    QPID_COMMON_EXTERN void putRawData(const string& s);
-    QPID_COMMON_EXTERN void getRawData(string& s, uint32_t size);
+    QPID_COMMON_EXTERN void putRawData(const std::string& s);
+    QPID_COMMON_EXTERN void getRawData(std::string& s, uint32_t size);
 
     QPID_COMMON_EXTERN void putRawData(const uint8_t* data, size_t size);
     QPID_COMMON_EXTERN void getRawData(uint8_t* data, size_t size);

@@ -49,6 +49,7 @@
 #include "qpid/types/Variant.h"
 #include "qmf/org/apache/qpid/broker/ArgsQueuePurge.h"
 #include "qmf/org/apache/qpid/broker/ArgsQueueReroute.h"
+#include "qmf/org/apache/qpid/broker/EventQueueDelete.h"
 
 #include <iostream>
 #include <algorithm>
@@ -67,6 +68,7 @@ using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
+using std::string;
 using std::for_each;
 using std::mem_fun;
 namespace _qmf = qmf::org::apache::qpid::broker;
@@ -176,7 +178,8 @@ Queue::Queue(const string& _name, bool _autodelete,
         ManagementAgent* agent = broker->getManagementAgent();
 
         if (agent != 0) {
-            mgmtObject = new _qmf::Queue(agent, this, parent, _name, _store != 0, _autodelete, _owner != 0);
+            mgmtObject = new _qmf::Queue(agent, this, parent, _name, _store != 0, _autodelete);
+            mgmtObject->set_exclusive(_owner != 0);
             agent->addObject(mgmtObject, 0, store != 0);
             brokerMgmtObject = (qmf::org::apache::qpid::broker::Broker*) broker->GetManagementObject();
             if (brokerMgmtObject)
@@ -587,21 +590,51 @@ QueuedMessage Queue::get(){
     return msg;
 }
 
-bool collect_if_expired(std::deque<QueuedMessage>& expired, QueuedMessage& message)
+namespace {
+bool collectIf(QueuedMessage& qm, Messages::Predicate predicate,
+               std::deque<QueuedMessage>& collection)
 {
-    if (message.payload->hasExpired()) {
-        expired.push_back(message);
+    if (predicate(qm)) {
+        collection.push_back(qm);
         return true;
     } else {
         return false;
     }
 }
 
+bool isExpired(const QueuedMessage& qm) { return qm.payload->hasExpired(); }
+} // namespace
+
+void Queue::dequeueIf(Messages::Predicate predicate,
+                      std::deque<QueuedMessage>& dequeued)
+{
+    {
+        Mutex::ScopedLock locker(messageLock);
+        messages->removeIf(boost::bind(&collectIf, _1, predicate, boost::ref(dequeued)));
+    }
+    if (!dequeued.empty()) {
+        if (mgmtObject) {
+            mgmtObject->inc_acquires(dequeued.size());
+            if (brokerMgmtObject)
+                brokerMgmtObject->inc_acquires(dequeued.size());
+        }
+        for (std::deque<QueuedMessage>::const_iterator i = dequeued.begin();
+             i != dequeued.end(); ++i) {
+            {
+                // KAG: should be safe to retake lock after the removeIf, since
+                // no other thread can touch these messages after the removeIf() call
+                Mutex::ScopedLock locker(messageLock);
+                observeAcquire(*i, locker);
+            }
+            dequeue( 0, *i );
+        }
+    }
+}
+
 /**
  *@param lapse: time since the last purgeExpired
  */
-void Queue::purgeExpired(qpid::sys::Duration lapse)
-{
+void Queue::purgeExpired(sys::Duration lapse) {
     //As expired messages are discarded during dequeue also, only
     //bother explicitly expiring if the rate of dequeues since last
     //attempt is less than one per second.
@@ -609,36 +642,17 @@ void Queue::purgeExpired(qpid::sys::Duration lapse)
     dequeueSincePurge -= count;
     int seconds = int64_t(lapse)/qpid::sys::TIME_SEC;
     if (seconds == 0 || count / seconds < 1) {
-        std::deque<QueuedMessage> expired;
-        {
-            Mutex::ScopedLock locker(messageLock);
-            messages->removeIf(boost::bind(&collect_if_expired, boost::ref(expired), _1));
-        }
-
-        if (!expired.empty()) {
+        std::deque<QueuedMessage> dequeued;
+        dequeueIf(boost::bind(&isExpired, _1), dequeued);
+        if (dequeued.size()) {
             if (mgmtObject) {
-                mgmtObject->inc_acquires(expired.size());
-                mgmtObject->inc_discardsTtl(expired.size());
-                if (brokerMgmtObject) {
-                    brokerMgmtObject->inc_acquires(expired.size());
-                    brokerMgmtObject->inc_discardsTtl(expired.size());
-                }
-            }
-
-            for (std::deque<QueuedMessage>::const_iterator i = expired.begin();
-                 i != expired.end(); ++i) {
-                {
-                    // KAG: should be safe to retake lock after the removeIf, since
-                    // no other thread can touch these messages after the removeIf() call
-                    Mutex::ScopedLock locker(messageLock);
-                    observeAcquire(*i, locker);
-                }
-                dequeue( 0, *i );
+                mgmtObject->inc_discardsTtl(dequeued.size());
+                if (brokerMgmtObject)
+                    brokerMgmtObject->inc_discardsTtl(dequeued.size());
             }
         }
     }
 }
-
 
 namespace {
     // for use with purge/move below - collect messages that match a given filter
@@ -797,6 +811,7 @@ uint32_t Queue::purge(const uint32_t purge_request, boost::shared_ptr<Exchange> 
             // now reroute if necessary
             if (dest.get()) {
                 assert(qmsg->payload);
+                qmsg->payload->clearTrace();
                 DeliverableMessage dmsg(qmsg->payload);
                 dest->routeWithAlternate(dmsg);
             }
@@ -888,9 +903,10 @@ void Queue::push(boost::intrusive_ptr<Message>& msg, bool isRecovery){
         if (mgmtObject) {
             mgmtObject->inc_acquires();
             mgmtObject->inc_discardsLvq();
-            if (brokerMgmtObject)
+            if (brokerMgmtObject) {
                 brokerMgmtObject->inc_acquires();
                 brokerMgmtObject->inc_discardsLvq();
+            }
         }
         if (isRecovery) {
             //can't issue new requests for the store until
@@ -1470,12 +1486,18 @@ boost::shared_ptr<Exchange> Queue::getAlternateExchange()
     return alternateExchange;
 }
 
-void tryAutoDeleteImpl(Broker& broker, Queue::shared_ptr queue)
+void tryAutoDeleteImpl(Broker& broker, Queue::shared_ptr queue, const std::string& connectionId, const std::string& userId)
 {
     if (broker.getQueues().destroyIf(queue->getName(),
                                      boost::bind(boost::mem_fn(&Queue::canAutoDelete), queue))) {
         QPID_LOG(debug, "Auto-deleting " << queue->getName());
         queue->destroyed();
+
+        if (broker.getManagementAgent())
+            broker.getManagementAgent()->raiseEvent(_qmf::EventQueueDelete(connectionId, userId, queue->getName()));
+        QPID_LOG_CAT(debug, model, "Delete queue. name:" << queue->getName()
+            << " user:" << userId
+            << " rhost:" << connectionId );
     }
 }
 
@@ -1483,9 +1505,11 @@ struct AutoDeleteTask : qpid::sys::TimerTask
 {
     Broker& broker;
     Queue::shared_ptr queue;
+    std::string connectionId;
+    std::string userId;
 
-    AutoDeleteTask(Broker& b, Queue::shared_ptr q, AbsTime fireTime)
-        : qpid::sys::TimerTask(fireTime, "DelayedAutoDeletion:"+q->getName()), broker(b), queue(q) {}
+    AutoDeleteTask(Broker& b, Queue::shared_ptr q, const std::string& cId, const std::string& uId, AbsTime fireTime)
+        : qpid::sys::TimerTask(fireTime, "DelayedAutoDeletion:"+q->getName()), broker(b), queue(q), connectionId(cId), userId(uId) {}
 
     void fire()
     {
@@ -1493,19 +1517,19 @@ struct AutoDeleteTask : qpid::sys::TimerTask
         //created, but then became unused again before the task fired;
         //in this case ignore this request as there will have already
         //been a later task added
-        tryAutoDeleteImpl(broker, queue);
+        tryAutoDeleteImpl(broker, queue, connectionId, userId);
     }
 };
 
-void Queue::tryAutoDelete(Broker& broker, Queue::shared_ptr queue)
+void Queue::tryAutoDelete(Broker& broker, Queue::shared_ptr queue, const std::string& connectionId, const std::string& userId)
 {
     if (queue->autoDeleteTimeout && queue->canAutoDelete()) {
         AbsTime time(now(), Duration(queue->autoDeleteTimeout * TIME_SEC));
-        queue->autoDeleteTask = boost::intrusive_ptr<qpid::sys::TimerTask>(new AutoDeleteTask(broker, queue, time));
+        queue->autoDeleteTask = boost::intrusive_ptr<qpid::sys::TimerTask>(new AutoDeleteTask(broker, queue, connectionId, userId, time));
         broker.getClusterTimer().add(queue->autoDeleteTask);
         QPID_LOG(debug, "Timed auto-delete for " << queue->getName() << " initiated");
     } else {
-        tryAutoDeleteImpl(broker, queue);
+        tryAutoDeleteImpl(broker, queue, connectionId, userId);
     }
 }
 
@@ -1659,13 +1683,28 @@ void Queue::query(qpid::types::Variant::Map& results) const
     if (allocator) allocator->query(results);
 }
 
+namespace {
+struct After {
+    framing::SequenceNumber seq;
+    After(framing::SequenceNumber s) : seq(s) {}
+    bool operator()(const QueuedMessage& qm) { return qm.position > seq; }
+};
+} // namespace
+
+
 void Queue::setPosition(SequenceNumber n) {
     Mutex::ScopedLock locker(messageLock);
+    if (n < sequence) {
+        std::deque<QueuedMessage> dequeued;
+        dequeueIf(After(n), dequeued);
+        messages->setPosition(n);
+    }
     sequence = n;
     QPID_LOG(trace, "Set position to " << sequence << " on " << getName());
 }
 
 SequenceNumber Queue::getPosition() {
+    Mutex::ScopedLock locker(messageLock);
     return sequence;
 }
 

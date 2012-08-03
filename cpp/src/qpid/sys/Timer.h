@@ -40,6 +40,7 @@ class Timer;
 
 class TimerTask : public RefCounted {
   friend class Timer;
+  friend class TimerTaskCallbackScope;
   friend bool operator<(const boost::intrusive_ptr<TimerTask>&,
                         const boost::intrusive_ptr<TimerTask>&);
 
@@ -47,9 +48,11 @@ class TimerTask : public RefCounted {
     AbsTime sortTime;
     Duration period;
     AbsTime nextFireTime;
-    Mutex callbackLock;
-    volatile bool cancelled;
+    qpid::sys::Monitor stateMonitor;
+    enum {WAITING, CALLING, CANCELLED} state;
 
+    bool prepareToFire();
+    void finishFiring();
     bool readyToFire() const;
     void fireTask();
 

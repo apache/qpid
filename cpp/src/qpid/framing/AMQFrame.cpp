@@ -85,7 +85,7 @@ bool AMQFrame::decode(Buffer& buffer)
 {    
     if(buffer.available() < frameOverhead())
         return false;
-    buffer.record();
+    uint32_t pos = buffer.getPosition();
 
     uint8_t  flags = buffer.getOctet();
     uint8_t framing_version = (flags & 0xc0) >> 6;
@@ -115,7 +115,7 @@ bool AMQFrame::decode(Buffer& buffer)
     // B,E,b,e flags
     uint16_t body_size = frame_size - frameOverhead(); 
     if (buffer.available() < body_size){
-        buffer.restore();
+        buffer.setPosition(pos);
         return false;
     }
 

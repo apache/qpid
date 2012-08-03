@@ -101,7 +101,7 @@ namespace acl {
                         << AclHelper::getAclResultStr(d->decisionMode));
                     foundmode = true;
             } else {
-                AclData::rule rule(cnt, (*i)->res, (*i)->props);
+                AclData::Rule rule(cnt, (*i)->res, (*i)->props);
 
                 // Action -> Object -> map<user -> set<Rule> >
                 std::ostringstream actionstr;
@@ -110,8 +110,27 @@ namespace acl {
                     (*i)->actionAll ? acnt++ : acnt = acl::ACTIONSIZE) {
 
                     if (acnt == acl::ACT_PUBLISH)
+                    {
                         d->transferAcl = true; // we have transfer ACL
-
+                        // For Publish the only object should be Exchange
+                        // and the only property should be routingkey.
+                        // Go through the rule properties and find the name and the key.
+                        // If found then place them specially for the lookup engine.
+                        for (pmCitr pItr=(*i)->props.begin(); pItr!=(*i)->props.end(); pItr++) {
+                            if (acl::SPECPROP_ROUTINGKEY == pItr->first)
+                            {
+                                rule.pubRoutingKeyInRule = true;
+                                rule.pubRoutingKey = (std::string)pItr->second;
+                                rule.addTopicTest(rule.pubRoutingKey);
+                                break;
+                            }
+                            if (acl::SPECPROP_NAME == pItr->first)
+                            {
+                                rule.pubExchNameInRule = true;
+                                rule.pubExchName = pItr->second;
+                            }
+                        }
+                    }
                     actionstr << AclHelper::getActionStr((Action) acnt) << ",";
 
                     //find the Action, create if not exist
@@ -285,7 +304,7 @@ namespace acl {
             if (ws) {
                 ret = true;
             } else {
-                errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber 
+                errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
                     << ", Non-continuation line must start with \"group\" or \"acl\".";
                 ret = false;
             }
@@ -314,13 +333,23 @@ namespace acl {
         if (contFlag) {
             gmCitr citr = groups.find(groupName);
             for (unsigned i = 0; i < toksSize; i++) {
-                if (!isValidUserName(toks[i])) return false;
+                if (isValidGroupName(toks[i])) {
+                    if (toks[i] == groupName) {
+                        QPID_LOG(debug, "ACL: Line: " << lineNumber
+                            << ", Ignoring recursive sub-group \"" << toks[i] << "\".");
+                        continue;
+                    } else if (groups.find(toks[i]) == groups.end()) {
+                        errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
+                            << ", Sub-group \"" << toks[i] << "\" not defined yet.";
+                        return false;
+                    }
+                } else if (!isValidUserName(toks[i])) return false;
                 addName(toks[i], citr->second);
             }
         } else {
             const unsigned minimumSize = (cont ? 2 : 3);
             if (toksSize < minimumSize) {
-                errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber 
+                errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
                     << ", Insufficient tokens for group definition.";
                 return false;
             }
@@ -332,7 +361,17 @@ namespace acl {
             gmCitr citr = addGroup(toks[1]);
             if (citr == groups.end()) return false;
             for (unsigned i = 2; i < toksSize; i++) {
-                if (!isValidUserName(toks[i])) return false;
+                if (isValidGroupName(toks[i])) {
+                    if (toks[i] == groupName) {
+                        QPID_LOG(debug, "ACL: Line: " << lineNumber
+                            << ", Ignoring recursive sub-group \"" << toks[i] << "\".");
+                        continue;
+                    } else if (groups.find(toks[i]) == groups.end()) {
+                        errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
+                            << ", Sub-group \"" << toks[i] << "\" not defined yet.";
+                        return false;
+                    }
+                } else if (!isValidUserName(toks[i])) return false;
                 addName(toks[i], citr->second);
             }
         }
@@ -356,7 +395,7 @@ namespace acl {
 
     void AclReader::addName(const std::string& name, nameSetPtr groupNameSet) {
         gmCitr citr = groups.find(name);
-        if (citr != groups.end() && citr->first != name){
+        if (citr != groups.end()) {
             // This is a previously defined group: add all the names in that group to this group
             groupNameSet->insert(citr->second->begin(), citr->second->end());
         } else {
@@ -459,7 +498,7 @@ namespace acl {
                 nvPair propNvp = splitNameValuePair(toks[i]);
                 if (propNvp.second.size() == 0) {
                     errorStream << ACL_FORMAT_ERR_LOG_PREFIX <<  "Line : " << lineNumber
-                        <<", Badly formed property name-value pair \"" 
+                        <<", Badly formed property name-value pair \""
                         << propNvp.first << "\". (Must be name=value)";
                     return false;
                 }

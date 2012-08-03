@@ -19,7 +19,6 @@
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/types/Uuid.h"
-#include "qpid/sys/alloca.h"
 
 #include "unit_test.h"
 
@@ -51,6 +50,11 @@ QPID_AUTO_TEST_CASE(testUuidCtor) {
 boost::array<uint8_t, 16>  sample =  {{0x1b, 0x4e, 0x28, 0xba, 0x2f, 0xa1, 0x11, 0xd2, 0x88, 0x3f, 0xb9, 0xa7, 0x61, 0xbd, 0xe3, 0xfb}};
 const string sampleStr("1b4e28ba-2fa1-11d2-883f-b9a761bde3fb");
 const string zeroStr("00000000-0000-0000-0000-000000000000");
+
+QPID_AUTO_TEST_CASE(testUuidStr) {
+    Uuid uuid(sampleStr);
+    BOOST_CHECK(uuid == sample);
+}
 
 QPID_AUTO_TEST_CASE(testUuidIstream) {
     Uuid uuid;
@@ -92,12 +96,12 @@ QPID_AUTO_TEST_CASE(testUuidIOstream) {
 }
 
 QPID_AUTO_TEST_CASE(testUuidEncodeDecode) {
-    char* buff = static_cast<char*>(::alloca(Uuid::size()));
-    Buffer wbuf(buff, Uuid::size());
+    std::vector<char> buff(Uuid::size());
+    Buffer wbuf(&buff[0], Uuid::size());
     Uuid uuid(sample.c_array());
     uuid.encode(wbuf);
 
-    Buffer rbuf(buff, Uuid::size());
+    Buffer rbuf(&buff[0], Uuid::size());
     Uuid decoded;
     decoded.decode(rbuf);
     BOOST_CHECK_EQUAL(string(sample.begin(), sample.end()),

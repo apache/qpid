@@ -61,7 +61,7 @@ class ConnectionHandler : public framing::FrameHandler
         SecureConnection* secured;
         bool isOpen;
 
-        Handler(Connection& connection, bool isClient, bool isShadow=false);
+        Handler(Connection& connection, bool isClient);
         ~Handler();
         void startOk(const qpid::framing::ConnectionStartOkBody& body);
         void startOk(const qpid::framing::FieldTable& clientProperties,
@@ -99,7 +99,7 @@ class ConnectionHandler : public framing::FrameHandler
 
     bool handle(const qpid::framing::AMQMethodBody& method);
   public:
-    ConnectionHandler(Connection& connection, bool isClient, bool isShadow=false );
+    ConnectionHandler(Connection& connection, bool isClient );
     void close(framing::connection::CloseCode code, const std::string& text);
     void heartbeat();
     void handle(framing::AMQFrame& frame);

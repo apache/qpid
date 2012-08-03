@@ -20,6 +20,8 @@
  */
 #include "qpid/framing/ProtocolInitiation.h"
 
+#include <iostream>
+
 namespace qpid {
 namespace framing {
 

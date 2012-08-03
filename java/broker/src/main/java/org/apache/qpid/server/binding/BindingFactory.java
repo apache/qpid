@@ -60,7 +60,7 @@ public class BindingFactory
 
         private BindingImpl(UUID id, String bindingKey, final AMQQueue queue, final Exchange exchange, final Map<String, Object> arguments)
         {
-            super(id, bindingKey, queue, exchange, arguments);
+            super(id, queue.getVirtualHost().getConfigStore().createId(), bindingKey, queue, exchange, arguments);
             _logSubject = new BindingLogSubject(bindingKey,exchange,queue);
 
         }
@@ -166,7 +166,7 @@ public class BindingFactory
 
         if (id == null)
         {
-            id = UUIDGenerator.generateUUID();
+            id = UUIDGenerator.generateBindingUUID(exchange.getName(), queue.getName(), bindingKey, _virtualHost.getName());
         }
         BindingImpl b = new BindingImpl(id, bindingKey, queue, exchange, arguments);
         BindingImpl existingMapping = _bindings.putIfAbsent(b, b);

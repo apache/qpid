@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.util;
 
+import java.net.SocketAddress;
+import java.util.Collections;
+import java.util.Map;
 import org.apache.commons.configuration.ConfigurationException;
 
 import org.apache.qpid.server.configuration.ServerConfiguration;
@@ -28,9 +31,11 @@ import org.apache.qpid.server.logging.NullRootMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
+import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabase;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.IAuthenticationManagerRegistry;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 
 import java.util.Properties;
@@ -51,11 +56,10 @@ public class TestApplicationRegistry extends ApplicationRegistry
         super.initialise();
     }
 
-    /**
-     * @see org.apache.qpid.server.registry.ApplicationRegistry#createAuthenticationManager()
-     */
     @Override
-    protected AuthenticationManager createAuthenticationManager() throws ConfigurationException
+    protected IAuthenticationManagerRegistry createAuthenticationManagerRegistry(
+            ServerConfiguration _configuration, PluginManager _pluginManager)
+            throws ConfigurationException
     {
         final Properties users = new Properties();
         users.put("guest","guest");
@@ -63,7 +67,7 @@ public class TestApplicationRegistry extends ApplicationRegistry
 
         final PropertiesPrincipalDatabase ppd = new PropertiesPrincipalDatabase(users);
 
-        AuthenticationManager pdam =  new PrincipalDatabaseAuthenticationManager()
+        final AuthenticationManager pdam =  new PrincipalDatabaseAuthenticationManager()
         {
 
             /**
@@ -83,12 +87,35 @@ public class TestApplicationRegistry extends ApplicationRegistry
                 super.initialise();
             }
         };
-
         pdam.initialise();
 
-        return pdam;
-    }
+        return new IAuthenticationManagerRegistry()
+        {
+            @Override
+            public void close()
+            {
+                pdam.close();
+            }
 
+            @Override
+            public AuthenticationManager getAuthenticationManager(
+                    SocketAddress address)
+            {
+                return pdam;
+            }
+
+            @Override
+            public Map<String, AuthenticationManager> getAvailableAuthenticationManagers()
+            {
+                return Collections.singletonMap(pdam.getClass().getName(), pdam);
+            }
+
+            @Override
+            public void addRegistryChangeListener(RegistryChangeListener listener)
+            {
+            }
+        };
+    }
 }
 
 

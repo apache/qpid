@@ -55,7 +55,7 @@ import org.apache.qpid.transport.MessageTransfer;
 
 /**
  * Subclass of MessageStoreTest which runs the standard tests from the superclass against
- * the BDB Store as well as additional tests specific to the DBB store-implementation.
+ * the BDB Store as well as additional tests specific to the BDB store-implementation.
  */
 public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageStoreTest
 {
@@ -70,7 +70,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
     {
         MessageStore store = getVirtualHost().getMessageStore();
 
-        BDBMessageStore bdbStore = assertBDBStore(store);
+        AbstractBDBMessageStore bdbStore = assertBDBStore(store);
 
         // Create content ByteBuffers.
         // Split the content into 2 chunks for the 0-8 message, as per broker behaviour.
@@ -220,11 +220,11 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
      * Use this method instead of reloading the virtual host like other tests in order
      * to avoid the recovery handler deleting the message for not being on a queue.
      */
-    private BDBMessageStore reloadStore(BDBMessageStore messageStore) throws Exception
+    private AbstractBDBMessageStore reloadStore(AbstractBDBMessageStore messageStore) throws Exception
     {
         messageStore.close();
 
-        BDBMessageStore newStore = new BDBMessageStore();
+        AbstractBDBMessageStore newStore = new BDBMessageStore();
         newStore.configure("", _config.subset("store"));
 
         newStore.startWithNoRecover();
@@ -282,7 +282,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
     public void testGetContentWithOffset() throws Exception
     {
         MessageStore store = getVirtualHost().getMessageStore();
-        BDBMessageStore bdbStore = assertBDBStore(store);
+        AbstractBDBMessageStore bdbStore = assertBDBStore(store);
         StoredMessage<MessageMetaData> storedMessage_0_8 = createAndStoreSingleChunkMessage_0_8(store);
         long messageid_0_8 = storedMessage_0_8.getMessageNumber();
 
@@ -342,7 +342,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
     public void testMessageCreationAndRemoval() throws Exception
     {
         MessageStore store = getVirtualHost().getMessageStore();
-        BDBMessageStore bdbStore = assertBDBStore(store);
+        AbstractBDBMessageStore bdbStore = assertBDBStore(store);
 
         StoredMessage<MessageMetaData> storedMessage_0_8 = createAndStoreSingleChunkMessage_0_8(store);
         long messageid_0_8 = storedMessage_0_8.getMessageNumber();
@@ -367,12 +367,12 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         assertEquals("Retrieved content when none was expected",
                         0, bdbStore.getContent(messageid_0_8, 0, dst));
     }
-    private BDBMessageStore assertBDBStore(MessageStore store)
+    private AbstractBDBMessageStore assertBDBStore(MessageStore store)
     {
 
         assertEquals("Test requires an instance of BDBMessageStore to proceed", BDBMessageStore.class, store.getClass());
 
-        return (BDBMessageStore) store;
+        return (AbstractBDBMessageStore) store;
     }
 
     private StoredMessage<MessageMetaData> createAndStoreSingleChunkMessage_0_8(MessageStore store)
@@ -405,9 +405,9 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
     {
         MessageStore log = getVirtualHost().getMessageStore();
 
-        BDBMessageStore bdbStore = assertBDBStore(log);
+        AbstractBDBMessageStore bdbStore = assertBDBStore(log);
 
-        final UUID mockQueueId = UUIDGenerator.generateUUID();
+        final UUID mockQueueId = UUIDGenerator.generateRandomUUID();
         TransactionLogResource mockQueue = new TransactionLogResource()
         {
             @Override
@@ -443,9 +443,9 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
     {
         MessageStore log = getVirtualHost().getMessageStore();
 
-        BDBMessageStore bdbStore = assertBDBStore(log);
+        AbstractBDBMessageStore bdbStore = assertBDBStore(log);
 
-        final UUID mockQueueId = UUIDGenerator.generateUUID();
+        final UUID mockQueueId = UUIDGenerator.generateRandomUUID();
         TransactionLogResource mockQueue = new TransactionLogResource()
         {
             @Override
@@ -484,9 +484,9 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
     {
         MessageStore log = getVirtualHost().getMessageStore();
 
-        BDBMessageStore bdbStore = assertBDBStore(log);
+        AbstractBDBMessageStore bdbStore = assertBDBStore(log);
 
-        final UUID mockQueueId = UUIDGenerator.generateUUID();
+        final UUID mockQueueId = UUIDGenerator.generateRandomUUID();
         TransactionLogResource mockQueue = new TransactionLogResource()
         {
             @Override

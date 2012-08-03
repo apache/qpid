@@ -35,7 +35,7 @@ TimerTask::TimerTask(Duration timeout, const std::string&  n) :
     sortTime(AbsTime::FarFuture()),
     period(timeout),
     nextFireTime(AbsTime::now(), timeout),
-    cancelled(false)
+    state(WAITING)
 {}
 
 TimerTask::TimerTask(AbsTime time, const std::string&  n) :
@@ -43,7 +43,7 @@ TimerTask::TimerTask(AbsTime time, const std::string&  n) :
     sortTime(AbsTime::FarFuture()),
     period(0),
     nextFireTime(time),
-    cancelled(false)
+    state(WAITING)
 {}
 
 TimerTask::~TimerTask() {}
@@ -52,27 +52,48 @@ bool TimerTask::readyToFire() const {
     return !(nextFireTime > AbsTime::now());
 }
 
+bool TimerTask::prepareToFire() {
+    Monitor::ScopedLock l(stateMonitor);
+    if (state != CANCELLED) {
+        state = CALLING;
+        return true;
+    } else {
+        return false;
+    }
+}
+
 void TimerTask::fireTask() {
-    cancelled = true;
     fire();
+}
+
+void TimerTask::finishFiring() {
+    Monitor::ScopedLock l(stateMonitor);
+    if (state != CANCELLED) {
+        state = WAITING;
+        stateMonitor.notifyAll();
+    }
 }
 
 // This can only be used to setup the next fire time. After the Timer has already fired
 void TimerTask::setupNextFire() {
     if (period && readyToFire()) {
         nextFireTime = max(AbsTime::now(), AbsTime(nextFireTime, period));
-        cancelled = false;
     } else {
         QPID_LOG(error, name << " couldn't setup next timer firing: " << Duration(nextFireTime, AbsTime::now()) << "[" << period << "]");
     }
 }
 
 // Only allow tasks to be delayed
-void TimerTask::restart() { nextFireTime = max(nextFireTime, AbsTime(AbsTime::now(), period)); }
+void TimerTask::restart() {
+    nextFireTime = max(nextFireTime, AbsTime(AbsTime::now(), period));
+}
 
 void TimerTask::cancel() {
-    ScopedLock<Mutex> l(callbackLock);
-    cancelled = true;
+    Monitor::ScopedLock l(stateMonitor);
+    while (state == CALLING) {
+        stateMonitor.wait();
+    }
+    state = CANCELLED;
 }
 
 void TimerTask::setFired() {
@@ -96,6 +117,22 @@ Timer::~Timer()
     stop();
 }
 
+class TimerTaskCallbackScope {
+    TimerTask& tt;
+public:
+    explicit TimerTaskCallbackScope(TimerTask& t) :
+        tt(t)
+    {}
+
+    operator bool() {
+        return !tt.prepareToFire();
+    }
+
+    ~TimerTaskCallbackScope() {
+        tt.finishFiring();
+    }
+};
+
 // TODO AStitcher 21/08/09 The threshholds for emitting warnings are a little arbitrary
 void Timer::run()
 {
@@ -112,8 +149,8 @@ void Timer::run()
             AbsTime start(AbsTime::now());
             Duration delay(t->sortTime, start);
             {
-            ScopedLock<Mutex> l(t->callbackLock);
-            if (t->cancelled) {
+            TimerTaskCallbackScope s(*t);
+            if (s) {
                 {
                     Monitor::ScopedUnlock u(monitor);
                     drop(t);

@@ -20,6 +20,16 @@
 
 package org.apache.qpid.server.configuration;
 
+import java.io.File;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManagerFactory;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
@@ -28,7 +38,6 @@ import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
@@ -39,17 +48,6 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
-
-import java.io.File;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import javax.net.ssl.KeyManagerFactory;
 
 public class ServerConfiguration extends ConfigurationPlugin
 {
@@ -66,6 +64,9 @@ public class ServerConfiguration extends ConfigurationPlugin
     public static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
     public static final int DEFAULT_JMXPORT_REGISTRYSERVER = 8999;
     public static final int JMXPORT_CONNECTORSERVER_OFFSET = 100;
+    public static final int DEFAULT_HTTP_MANAGEMENT_PORT = 8080;
+    public static final int DEFAULT_HTTPS_MANAGEMENT_PORT = 8443;
+    public static final long DEFAULT_MINIMUM_ALERT_REPEAT_GAP = 30000l;
 
     public static final String QPID_HOME = "QPID_HOME";
     public static final String QPID_WORK = "QPID_WORK";
@@ -77,6 +78,8 @@ public class ServerConfiguration extends ConfigurationPlugin
 
     private File _configFile;
     private File _vhostsFile;
+    private String _qpidWork;
+    private String _qpidHome;
 
     // Map of environment variables to config items
     private static final Map<String, String> envVarMap = new HashMap<String, String>();
@@ -86,6 +89,9 @@ public class ServerConfiguration extends ConfigurationPlugin
     public static final String MGMT_CUSTOM_REGISTRY_SOCKET = "management.custom-registry-socket";
     public static final String MGMT_JMXPORT_REGISTRYSERVER = "management.jmxport.registryServer";
     public static final String MGMT_JMXPORT_CONNECTORSERVER = "management.jmxport.connectorServer";
+    public static final String SECURITY_DEFAULT_AUTH_MANAGER = "security.default-auth-manager";
+    public static final String SECURITY_PORT_MAPPINGS_PORT_MAPPING_AUTH_MANAGER = "security.port-mappings.port-mapping.auth-manager";
+    public static final String SECURITY_PORT_MAPPINGS_PORT_MAPPING_PORT = "security.port-mappings.port-mapping.port";
     public static final String STATUS_UPDATES = "status-updates";
     public static final String ADVANCED_LOCALE = "advanced.locale";
     public static final String CONNECTOR_AMQP10ENABLED = "connector.amqp10enabled";
@@ -94,6 +100,11 @@ public class ServerConfiguration extends ConfigurationPlugin
     public static final String CONNECTOR_AMQP09ENABLED = "connector.amqp09enabled";
     public static final String CONNECTOR_AMQP08ENABLED = "connector.amqp08enabled";
     public static final String CONNECTOR_AMQP_SUPPORTED_REPLY = "connector.amqpDefaultSupportedProtocolReply";
+    public static final String CONNECTOR_INCLUDE_10 = "connector.include10";
+    public static final String CONNECTOR_INCLUDE_010 = "connector.include010";
+    public static final String CONNECTOR_INCLUDE_091 = "connector.include091";
+    public static final String CONNECTOR_INCLUDE_09 = "connector.include09";
+    public static final String CONNECTOR_INCLUDE_08 = "connector.include08";
 
     {
         envVarMap.put("QPID_PORT", "connector.port");
@@ -104,6 +115,8 @@ public class ServerConfiguration extends ConfigurationPlugin
         envVarMap.put("QPID_MSGAUTH", "security.msg-auth");
         envVarMap.put("QPID_AUTOREGISTER", "auto_register");
         envVarMap.put("QPID_MANAGEMENTENABLED", "management.enabled");
+        envVarMap.put("QPID_HTTPMANAGEMENTENABLED", "management.http.enabled");
+        envVarMap.put("QPID_HTTPMANAGEMENTPORT", "management.http.port");
         envVarMap.put("QPID_HEARTBEATDELAY", "heartbeat.delay");
         envVarMap.put("QPID_HEARTBEATTIMEOUTFACTOR", "heartbeat.timeoutFactor");
         envVarMap.put("QPID_MAXIMUMMESSAGEAGE", "maximumMessageAge");
@@ -177,7 +190,7 @@ public class ServerConfiguration extends ConfigurationPlugin
      * This has been made a two step process to allow the Plugin Manager and
      * Configuration Manager to be initialised in the Application Registry.
      * <p>
-     * If using this ServerConfiguration via an ApplicationRegistry there is no 
+     * If using this ServerConfiguration via an ApplicationRegistry there is no
      * need to explicitly call {@link #initialise()} as this is done via the
      * {@link ApplicationRegistry#initialise()} method.
      *
@@ -199,12 +212,12 @@ public class ServerConfiguration extends ConfigurationPlugin
      * Called by {@link ApplicationRegistry#initialise()}.
      * <p>
      * NOTE: A DEFAULT ApplicationRegistry must exist when using this method
-     * or a new ApplicationRegistry will be created. 
+     * or a new ApplicationRegistry will be created.
      *
      * @throws ConfigurationException
      */
     public void initialise() throws ConfigurationException
-    {	
+    {
         setConfiguration("", getConfig());
         setupVirtualHosts(getConfig());
     }
@@ -219,10 +232,10 @@ public class ServerConfiguration extends ConfigurationPlugin
     {
         // Support for security.jmx.access was removed when JMX access rights were incorporated into the main ACL.
         // This ensure that users remove the element from their configuration file.
-        
+
         if (getListValue("security.jmx.access").size() > 0)
         {
-            String message = "Validation error : security/jmx/access is no longer a supported element within the configuration xml." 
+            String message = "Validation error : security/jmx/access is no longer a supported element within the configuration xml."
                     + (_configFile == null ? "" : " Configuration file : " + _configFile);
             throw new ConfigurationException(message);
         }
@@ -236,7 +249,7 @@ public class ServerConfiguration extends ConfigurationPlugin
 
         if (getListValue("security.principal-databases.principal-database(0).class").size() > 0)
         {
-            String message = "Validation error : security/principal-databases is no longer supported within the configuration xml." 
+            String message = "Validation error : security/principal-databases is no longer supported within the configuration xml."
                     + (_configFile == null ? "" : " Configuration file : " + _configFile);
             throw new ConfigurationException(message);
         }
@@ -247,6 +260,13 @@ public class ServerConfiguration extends ConfigurationPlugin
             String message = "Validation error : housekeeping/expiredMessageCheckPeriod must be replaced by housekeeping/checkPeriod."
                     + (_configFile == null ? "" : " Configuration file : " + _configFile);
             throw new ConfigurationException(message);
+        }
+
+        String[] ports = getConfig().getStringArray(SECURITY_PORT_MAPPINGS_PORT_MAPPING_PORT);
+        String[] authManagers = getConfig().getStringArray(SECURITY_PORT_MAPPINGS_PORT_MAPPING_AUTH_MANAGER);
+        if (ports.length != authManagers.length)
+        {
+            throw new ConfigurationException("Validation error: Each port-mapping must have exactly one port and exactly one auth-manager.");
         }
 
         // QPID-3517: Inconsistency in capitalisation in the SSL configuration keys used within the connector and management configuration
@@ -280,7 +300,7 @@ public class ServerConfiguration extends ConfigurationPlugin
     @SuppressWarnings("unchecked")
     protected void setupVirtualHosts(Configuration conf) throws ConfigurationException
     {
-        List<String> vhostFiles = conf.getList("virtualhosts");
+        List<String> vhostFiles = (List) conf.getList("virtualhosts");
         Configuration vhostConfig = conf.subset("virtualhosts");
 
         // Only one configuration mechanism allowed
@@ -470,7 +490,7 @@ public class ServerConfiguration extends ConfigurationPlugin
             Configuration newConfig = parseConfig(_configFile);
             setConfiguration("", newConfig);
             ApplicationRegistry.getInstance().getSecurityManager().configureHostPlugins(this);
-			
+
             // Reload virtualhosts from correct location
             Configuration newVhosts;
             if (_vhostsFile == null)
@@ -495,15 +515,29 @@ public class ServerConfiguration extends ConfigurationPlugin
             _logger.warn(SECURITY_CONFIG_RELOADED);
         }
     }
-    
+
     public String getQpidWork()
     {
-        return System.getProperty(QPID_WORK, System.getProperty("java.io.tmpdir"));
+        if ( _qpidWork == null )
+        {
+            return System.getProperty(QPID_WORK, System.getProperty("java.io.tmpdir"));
+        }
+        else
+        {
+            return _qpidWork;
+        }
     }
-    
+
     public String getQpidHome()
     {
-        return System.getProperty(QPID_HOME);
+        if ( _qpidHome == null )
+        {
+            return System.getProperty(QPID_HOME);
+        }
+        else
+        {
+            return _qpidHome;
+        }
     }
 
     public void setJMXPortRegistryServer(int registryServerPort)
@@ -541,16 +575,36 @@ public class ServerConfiguration extends ConfigurationPlugin
         return getBooleanValue("management.platform-mbeanserver", true);
     }
 
+    public boolean getHTTPManagementEnabled()
+    {
+        return getBooleanValue("management.http.enabled", true);
+    }
+
+    public int getHTTPManagementPort()
+    {
+        return getIntValue("management.http.port", DEFAULT_HTTP_MANAGEMENT_PORT);
+    }
+
+    public boolean getHTTPSManagementEnabled()
+    {
+        return getBooleanValue("management.https.enabled", false);
+    }
+
+    public int getHTTPSManagementPort()
+    {
+        return getIntValue("management.https.port", DEFAULT_HTTPS_MANAGEMENT_PORT);
+    }
+
     public String[] getVirtualHosts()
     {
         return _virtualHosts.keySet().toArray(new String[_virtualHosts.size()]);
     }
-    
+
     public String getPluginDirectory()
     {
         return getStringValue("plugin-directory");
     }
-    
+
     public String getCacheDirectory()
     {
         return getStringValue("cache-directory");
@@ -581,6 +635,26 @@ public class ServerConfiguration extends ConfigurationPlugin
         return getBooleanValue("security.msg-auth");
     }
 
+    public String getDefaultAuthenticationManager()
+    {
+        return getStringValue(SECURITY_DEFAULT_AUTH_MANAGER);
+    }
+
+    public Map<Integer, String> getPortAuthenticationMappings()
+    {
+        String[] ports = getConfig().getStringArray(SECURITY_PORT_MAPPINGS_PORT_MAPPING_PORT);
+        String[] authManagers = getConfig().getStringArray(SECURITY_PORT_MAPPINGS_PORT_MAPPING_AUTH_MANAGER);
+
+        Map<Integer,String> portMappings = new HashMap<Integer, String>();
+        for(int i = 0; i < ports.length; i++)
+        {
+            portMappings.put(Integer.valueOf(ports[i]), authManagers[i]);
+        }
+
+        return portMappings;
+    }
+
+
     public String getManagementKeyStorePath()
     {
         final String fallback = getStringValue("management.ssl.keystorePath");
@@ -589,7 +663,7 @@ public class ServerConfiguration extends ConfigurationPlugin
 
     public boolean getManagementSSLEnabled()
     {
-        return getBooleanValue("management.ssl.enabled", true);
+        return getBooleanValue("management.ssl.enabled", false);
     }
 
     public String getManagementKeyStorePassword()
@@ -603,14 +677,9 @@ public class ServerConfiguration extends ConfigurationPlugin
         return getBooleanValue("queue.auto_register", true);
     }
 
-    public boolean getManagementEnabled()
+    public boolean getJMXManagementEnabled()
     {
         return getBooleanValue("management.enabled", true);
-    }
-
-    public void setManagementEnabled(boolean enabled)
-    {
-        getConfig().setProperty("management.enabled", enabled);
     }
 
     public int getHeartBeatDelay()
@@ -645,7 +714,7 @@ public class ServerConfiguration extends ConfigurationPlugin
 
     public long getMinimumAlertRepeatGap()
     {
-        return getLongValue("minimumAlertRepeatGap");
+        return getLongValue("minimumAlertRepeatGap", DEFAULT_MINIMUM_ALERT_REPEAT_GAP);
     }
 
     public long getCapacity()
@@ -691,6 +760,31 @@ public class ServerConfiguration extends ConfigurationPlugin
     public List getPortExclude08()
     {
         return getListValue("connector.non08port");
+    }
+
+    public List getPortInclude08()
+    {
+        return getListValue(CONNECTOR_INCLUDE_08);
+    }
+
+    public List getPortInclude09()
+    {
+        return getListValue(CONNECTOR_INCLUDE_09);
+    }
+
+    public List getPortInclude091()
+    {
+        return getListValue(CONNECTOR_INCLUDE_091);
+    }
+
+    public List getPortInclude010()
+    {
+        return getListValue(CONNECTOR_INCLUDE_010);
+    }
+
+    public List getPortInclude10()
+    {
+        return getListValue(CONNECTOR_INCLUDE_10);
     }
 
     public String getBind()
@@ -740,12 +834,52 @@ public class ServerConfiguration extends ConfigurationPlugin
         return getStringValue("connector.ssl.keyStorePassword", fallback);
     }
 
+    public String getConnectorKeyStoreType()
+    {
+        return getStringValue("connector.ssl.keyStoreType", "JKS");
+    }
+
     public String getConnectorKeyManagerFactoryAlgorithm()
     {
         final String systemFallback = KeyManagerFactory.getDefaultAlgorithm();
         // deprecated, pre-0.17 brokers supported this name.
         final String fallback = getStringValue("connector.ssl.certType", systemFallback);
         return getStringValue("connector.ssl.keyManagerFactoryAlgorithm", fallback);
+    }
+
+    public String getConnectorTrustStorePath()
+    {
+        return getStringValue("connector.ssl.trustStorePath", null);
+    }
+
+    public String getConnectorTrustStorePassword()
+    {
+        return getStringValue("connector.ssl.trustStorePassword", null);
+    }
+
+    public String getConnectorTrustStoreType()
+    {
+        return getStringValue("connector.ssl.trustStoreType", "JKS");
+    }
+
+    public String getConnectorTrustManagerFactoryAlgorithm()
+    {
+        return getStringValue("connector.ssl.trustManagerFactoryAlgorithm", TrustManagerFactory.getDefaultAlgorithm());
+    }
+
+    public String getCertAlias()
+    {
+        return getStringValue("connector.ssl.certAlias", null);
+    }
+
+    public boolean needClientAuth()
+    {
+        return getConfig().getBoolean("connector.ssl.needClientAuth", false);
+    }
+
+    public boolean wantClientAuth()
+    {
+        return getConfig().getBoolean("connector.ssl.wantClientAuth", false);
     }
 
     public String getDefaultVirtualHost()
@@ -756,7 +890,7 @@ public class ServerConfiguration extends ConfigurationPlugin
     public void setDefaultVirtualHost(String vhost)
     {
          getConfig().setProperty("virtualhosts.default", vhost);
-    }    
+    }
 
     public void setHousekeepingCheckPeriod(long value)
     {
@@ -883,4 +1017,15 @@ public class ServerConfiguration extends ConfigurationPlugin
 
         return reply == null ? null : AmqpProtocolVersion.valueOf(reply);
     }
+
+    public void setQpidWork(String path)
+    {
+        _qpidWork = path;
+    }
+
+    public void setQpidHome(String path)
+    {
+        _qpidHome = path;
+    }
+
 }

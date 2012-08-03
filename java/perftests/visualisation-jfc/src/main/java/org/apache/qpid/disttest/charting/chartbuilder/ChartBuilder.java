@@ -21,10 +21,14 @@ package org.apache.qpid.disttest.charting.chartbuilder;
 
 import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
 
 public interface ChartBuilder
 {
+    public static final boolean SHOW_URLS = false;
+    public static final boolean SHOW_TOOL_TIPS = false;
+    public static final boolean SHOW_LEGEND = true;
+    public static final PlotOrientation PLOT_ORIENTATION = PlotOrientation.VERTICAL;
 
     public JFreeChart buildChart(ChartingDefinition chartingDefinition);
-
 }
