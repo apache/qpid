@@ -39,6 +39,7 @@ import javax.management.MBeanServer;
 import javax.management.Notification;
 import javax.management.NotificationListener;
 import javax.management.ObjectName;
+import javax.management.RuntimeErrorException;
 import javax.management.remote.JMXConnectionNotification;
 import javax.management.remote.JMXPrincipal;
 import javax.management.remote.MBeanServerForwarder;
@@ -49,6 +50,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 
@@ -170,7 +172,30 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
         }
         catch (InvocationTargetException e)
         {
-            throw e.getTargetException();
+            Throwable targetException =  e.getCause();
+            logTargetException(method, args, targetException);
+            throw targetException;
+        }
+    }
+
+    private void logTargetException(Method method, Object[] args, Throwable targetException)
+    {
+        Throwable error = null;
+        if (targetException instanceof RuntimeErrorException)
+        {
+            error = ((RuntimeErrorException)targetException).getCause();
+        }
+        else if (targetException instanceof Error)
+        {
+            error = targetException;
+        }
+        if (error == null)
+        {
+            _logger.debug("Exception was thrown on invoking of " + method + " with arguments " + Arrays.toString(args), targetException);
+        }
+        else
+        {
+            _logger.error("Unexpected error occured on invoking of " + method + " with arguments " + Arrays.toString(args), targetException);
         }
     }
 
