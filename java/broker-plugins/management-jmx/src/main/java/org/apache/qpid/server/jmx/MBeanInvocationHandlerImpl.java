@@ -22,6 +22,7 @@ package org.apache.qpid.server.jmx;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
@@ -366,14 +367,17 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
             user = splitConnectionId[1];
         }
 
+        // use a separate instance of actor as subject is not set on connect/disconnect
+        // we need to pass principal name explicitly into log actor
+        LogActor logActor = new ManagementActor(_appRegistry.getRootMessageLogger(), user);
         if (JMXConnectionNotification.OPENED.equals(type))
         {
-            _logActor.message(ManagementConsoleMessages.OPEN(user));
+            logActor.message(ManagementConsoleMessages.OPEN(user));
         }
         else if (JMXConnectionNotification.CLOSED.equals(type) ||
                  JMXConnectionNotification.FAILED.equals(type))
         {
-            _logActor.message(ManagementConsoleMessages.CLOSE(user));
+            logActor.message(ManagementConsoleMessages.CLOSE(user));
         }
     }
 }
