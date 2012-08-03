@@ -73,7 +73,7 @@ public class StructureServlet extends AbstractServlet
         structure.put("id", object.getId());
         structure.put("name", object.getName());
 
-        for(Class<? extends ConfiguredObject> childClass : Model.getChildTypes(clazz))
+        for(Class<? extends ConfiguredObject> childClass : Model.getInstance().getChildTypes(clazz))
         {
             Collection<? extends ConfiguredObject> children = object.getChildren(childClass);
             if(children != null)
