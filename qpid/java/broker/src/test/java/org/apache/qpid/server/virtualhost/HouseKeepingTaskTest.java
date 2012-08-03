@@ -64,4 +64,50 @@ public class HouseKeepingTaskTest extends QpidTestCase
         //clean up the test actor
         CurrentActor.remove();
     }
+
+    public void testThreadNameIsSetForDurationOfTask() throws Exception
+    {
+        //create and set a test actor
+        LogActor testActor = new TestLogActor(new NullRootMessageLogger());
+        CurrentActor.set(testActor);
+
+        String originalThreadName = Thread.currentThread().getName();
+
+        String vhostName = "HouseKeepingTaskTestVhost";
+
+        String expectedThreadNameDuringExecution = vhostName + ":" + "ThreadNameRememberingTask";
+
+        ThreadNameRememberingTask testTask = new ThreadNameRememberingTask(new MockVirtualHost(vhostName));
+
+        testTask.run();
+
+        assertEquals("Thread name should have been set during execution", expectedThreadNameDuringExecution, testTask.getThreadNameDuringExecution());
+        assertEquals("Thread name should have been reverted after task has run", originalThreadName, Thread.currentThread().getName());
+
+        //clean up the test actor
+        CurrentActor.remove();
+    }
+
+
+    private static final class ThreadNameRememberingTask extends HouseKeepingTask
+    {
+        private String _threadNameDuringExecution;
+
+        private ThreadNameRememberingTask(VirtualHost vhost)
+        {
+            super(vhost);
+        }
+
+        @Override
+        public void execute()
+        {
+            _threadNameDuringExecution = Thread.currentThread().getName(); // store current thread name so we can assert it later
+            throw new RuntimeException("deliberate exception to check that thread name still gets reverted");
+        }
+
+        public String getThreadNameDuringExecution()
+        {
+            return _threadNameDuringExecution;
+        }
+    }
 }
