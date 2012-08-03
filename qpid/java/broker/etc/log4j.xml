@@ -103,6 +103,11 @@
       <level value="off"/>
     </logger>
 
+    <!-- Enable log messages for the queue notifications -->
+    <logger additivity="true" name="org.apache.qpid.server.queue.NotificationCheck">
+      <level value="info"/>
+    </logger>
+
     <!-- Examples of additional logging settings -->
     <!-- Used to generate extra debug. See debug.log4j.xml -->
     
