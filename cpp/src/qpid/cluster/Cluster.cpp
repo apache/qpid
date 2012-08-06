@@ -615,7 +615,6 @@ void Cluster::configChange (
 void Cluster::setReady(Lock&) {
     state = READY;
     mcast.setReady();
-    broker.getQueueEvents().enable();
     enableClusterSafe();    // Enable cluster-safe assertions.
 }
 
@@ -979,6 +978,13 @@ void Cluster::checkUpdateIn(Lock& l) {
         map = *updatedMap;
         mcast.mcastControl(ClusterReadyBody(ProtocolVersion(), myUrl.str()), self);
         state = CATCHUP;
+        /* In CATCHUP mode the update has finished, and we are consuming 
+        ** whatever backlog of messages has built up during the update.  
+        ** We should enable queue events here, or messages that are received 
+        ** during this phase will not be replicated properly. ( If there are 
+        ** relevant replication queues. )
+        */
+        broker.getQueueEvents().enable();
         memberUpdate(l);
         // Must be called *after* memberUpdate() to avoid sending an extra update.
         failoverExchange->setReady();
