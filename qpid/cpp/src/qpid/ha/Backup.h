@@ -53,8 +53,6 @@ class Backup
     void setStatus(BrokerStatus);
 
   private:
-    bool isSelf(const Address& a) const;
-    Url removeSelf(const Url&) const;
     void initialize(const Url&);
     std::string logPrefix;
 
