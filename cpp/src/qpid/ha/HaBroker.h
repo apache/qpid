@@ -97,6 +97,8 @@ class HaBroker : public management::Manageable
     void addBroker(const BrokerInfo& b);       // Add a broker to the membership.
     void removeBroker(const types::Uuid& id);  // Remove a broker from membership.
 
+    types::Uuid getSystemId() const { return systemId; }
+
   private:
     void setClientUrl(const Url&);
     void setBrokerUrl(const Url&);
