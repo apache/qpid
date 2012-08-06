@@ -51,35 +51,15 @@ Backup::Backup(HaBroker& hb, const Settings& s) :
     if (!s.brokerUrl.empty()) initialize(Url(s.brokerUrl));
 }
 
-bool Backup::isSelf(const Address& a) const {
-    return sys::SystemInfo::isLocalHost(a.host) &&
-        a.port == haBroker.getBroker().getPort(a.protocol);
-}
-
-// Remove my own address from the URL if possible.
-// This isn't 100% reliable given the many ways to specify a host,
-// but should work in most cases. We have additional measures to prevent
-// self-connection in ConnectionObserver
-Url Backup::removeSelf(const Url& brokers) const {
-    Url url;
-    for (Url::const_iterator i = brokers.begin(); i != brokers.end(); ++i)
-        if (!isSelf(*i)) url.push_back(*i);
-    if (url.empty())
-        throw Url::Invalid(logPrefix+"Failover URL is empty");
-    QPID_LOG(debug, logPrefix << "Failover URL (excluding self): " << url);
-    return url;
-}
-
 void Backup::initialize(const Url& brokers) {
     if (brokers.empty()) throw Url::Invalid("HA broker URL is empty");
     QPID_LOG(info, logPrefix << "Connecting to cluster, broker URL: " << brokers);
-    Url url = removeSelf(brokers);
-    string protocol = url[0].protocol.empty() ? "tcp" : url[0].protocol;
+    string protocol = brokers[0].protocol.empty() ? "tcp" : brokers[0].protocol;
     types::Uuid uuid(true);
     // Declare the link
     std::pair<Link::shared_ptr, bool> result = broker.getLinks().declare(
         broker::QPID_NAME_PREFIX + string("ha.link.") + uuid.str(),
-        url[0].host, url[0].port, protocol,
+        brokers[0].host, brokers[0].port, protocol,
         false,                  // durable
         settings.mechanism, settings.username, settings.password,
         false);               // no amq.failover - don't want to use client URL.
@@ -90,7 +70,7 @@ void Backup::initialize(const Url& brokers) {
         replicator->initialize();
         broker.getExchanges().registerExchange(replicator);
     }
-    link->setUrl(url);          // Outside the lock, once set link doesn't change.
+    link->setUrl(brokers);          // Outside the lock, once set link doesn't change.
 }
 
 Backup::~Backup() {
@@ -107,10 +87,8 @@ void Backup::setBrokerUrl(const Url& url) {
         sys::Mutex::ScopedLock l(lock);
         linkSet = link;
     }
-    if (linkSet) {
-        QPID_LOG(info, logPrefix << "Broker URL set to: " << url);
-        link->setUrl(removeSelf(url)); // Outside lock, once set link doesn't change
-    }
+    if (linkSet)
+        link->setUrl(url);      // Outside lock, once set link doesn't change
     else
         initialize(url);        // Deferred initialization
 }

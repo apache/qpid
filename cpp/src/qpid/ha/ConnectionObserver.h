@@ -51,7 +51,7 @@ class ConnectionObserver : public broker::ConnectionObserver
     static const std::string ADMIN_TAG;
     static const std::string BACKUP_TAG;
 
-    static bool getBrokerInfo(broker::Connection& connection, BrokerInfo& info);
+    static bool getBrokerInfo(const broker::Connection& connection, BrokerInfo& info);
 
     ConnectionObserver(HaBroker& haBroker, const types::Uuid& self);
 
@@ -62,6 +62,8 @@ class ConnectionObserver : public broker::ConnectionObserver
     void closed(broker::Connection& connection);
 
   private:
+    bool isSelf(const broker::Connection&);
+
     sys::Mutex lock;
     HaBroker& haBroker;
     std::string logPrefix;

@@ -474,7 +474,8 @@ void BrokerReplicator::doResponseExchange(Variant::Map& values) {
     boost::shared_ptr<Exchange> exchange = createExchange(
         name, values[TYPE].asString(), values[DURABLE].asBool(), args,
         getAltExchange(values[ALTEXCHANGE]));
-    QPID_LOG_IF(debug, !exchange, logPrefix << "Exchange already exists: " << name);
+    // It is normal for the exchange to already exist if we are failing over.
+    QPID_LOG_IF(debug, !exchange, logPrefix << "Exchange already replicated: " << name);
 }
 
 namespace {
