@@ -201,6 +201,7 @@ void Primary::opened(broker::Connection& connection) {
         Mutex::ScopedLock l(lock);
         BackupMap::iterator i = backups.find(info.getSystemId());
         if (i == backups.end()) {
+            QPID_LOG(debug, logPrefix << "New backup connected: " << info);
             boost::shared_ptr<RemoteBackup> backup(
                 new RemoteBackup(info, haBroker.getReplicationTest(), true));
             {
@@ -209,7 +210,6 @@ void Primary::opened(broker::Connection& connection) {
                 backup->setInitialQueues(haBroker.getBroker().getQueues(), false);
             }
             backups[info.getSystemId()] = backup;
-            QPID_LOG(debug, logPrefix << "New backup connected: " << info);
         }
         else {
             QPID_LOG(debug, logPrefix << "Known backup connected: " << info);

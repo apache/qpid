@@ -66,7 +66,7 @@ types::Variant::List Membership::asList() const {
 BrokerInfo::Set Membership::otherBackups() const {
     BrokerInfo::Set result;
     for (BrokerInfo::Map::const_iterator i = brokers.begin(); i != brokers.end(); ++i)
-        if (isBackup(i->second.getStatus()) && i->second.getSystemId() != self)
+        if (i->second.getStatus() == READY && i->second.getSystemId() != self)
             result.insert(i->second);
     return result;
 }
