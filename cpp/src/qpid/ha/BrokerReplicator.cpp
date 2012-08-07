@@ -219,7 +219,7 @@ void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionH
     link->getRemoteAddress(primary);
     string queueName = bridge.getQueueName();
 
-    QPID_LOG(info, logPrefix << (initialized ? "Connecting" : "Failing over")
+    QPID_LOG(info, logPrefix << (initialized ? "Failing over" : "Connecting")
              << " to primary " << primary
              << " status:" << printable(haBroker.getStatus()));
     initialized = true;
