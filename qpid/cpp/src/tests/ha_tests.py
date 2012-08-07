@@ -63,7 +63,6 @@ class HaBroker(Broker):
         args = copy(args)
         args += ["--load-module", BrokerTest.ha_lib,
                  "--log-enable=debug+:ha::",
-                 "--log-enable=trace+:ha::", # FIXME aconway 2012-07-12: 
                  # FIXME aconway 2012-02-13: workaround slow link failover.
                  "--link-maintenace-interval=0.1",
                  "--ha-cluster=%s"%ha_cluster]
@@ -112,9 +111,11 @@ class HaBroker(Broker):
     def wait_status(self, status):
         def try_get_status():
             # Ignore ConnectionError, the broker may not be up yet.
-            try: return self.ha_status() == status;
+            try:
+                self._status = self.ha_status()
+                return self._status == status;
             except ConnectionError: return False
-        assert retry(try_get_status, timeout=20), "%s status != %r"%(self, status)
+        assert retry(try_get_status, timeout=20), "%s %r != %r"%(self, self._status, status)
 
     # FIXME aconway 2012-05-01: do direct python call to qpid-config code.
     def qpid_config(self, args):
@@ -761,7 +762,7 @@ acl deny all all
         s1.sender("ex").send("foo");
         self.assertEqual(s1.receiver("q").fetch().content, "foo")
 
-    def test_alterante_exchange(self):
+    def test_alternate_exchange(self):
         """Verify that alternate-exchange on exchanges and queues is propagated
         to new members of a cluster. """
         cluster = HaCluster(self, 2)
@@ -964,7 +965,7 @@ class RecoveryTests(BrokerTest):
         """
         cluster = HaCluster(self, 3, args=["--ha-backup-timeout=0.5"]);
         cluster[0].wait_status("active") # Primary ready
-        for b in cluster[1:4]: b.wait_status("ready") # Backups ready
+        for b in cluster[1:3]: b.wait_status("ready") # Backups ready
         for i in [0,1]: cluster.kill(i, False)
         cluster[2].promote()    # New primary, backups will be 1 and 2
         cluster[2].wait_status("recovering")

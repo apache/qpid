@@ -32,7 +32,7 @@ namespace ha {
 ConnectionObserver::ConnectionObserver(HaBroker& hb, const types::Uuid& uuid)
     : haBroker(hb), logPrefix("Connections: "), self(uuid) {}
 
-bool ConnectionObserver::getBrokerInfo(broker::Connection& connection, BrokerInfo& info) {
+bool ConnectionObserver::getBrokerInfo(const broker::Connection& connection, BrokerInfo& info) {
     framing::FieldTable ft;
     if (connection.getClientProperties().getTable(ConnectionObserver::BACKUP_TAG, ft)) {
         info = BrokerInfo(ft);
@@ -51,29 +51,43 @@ ConnectionObserver::ObserverPtr ConnectionObserver::getObserver() {
     return observer;
 }
 
-void ConnectionObserver::opened(broker::Connection& connection) {
-    if (connection.isLink()) return; // Allow outgoing links.
-    if (connection.getClientProperties().isSet(ADMIN_TAG)) {
-        QPID_LOG(debug, logPrefix << "Allowing admin connection: "
-                 << connection.getMgmtId());
-        return;                 // No need to call observer, always allow admins.
-    }
-    BrokerInfo info;            // Avoid self connections.
-    if (getBrokerInfo(connection, info)) {
-        if (info.getSystemId() == self) {
-            QPID_LOG(debug, "HA broker rejected self connection "+connection.getMgmtId());
-            connection.abort();
-        }
+bool ConnectionObserver::isSelf(const broker::Connection& connection) {
+    BrokerInfo info;
+    return getBrokerInfo(connection, info) && info.getSystemId() == self;
+}
 
+void ConnectionObserver::opened(broker::Connection& connection) {
+    try {
+        if (connection.isLink()) return; // Allow outgoing links.
+        if (connection.getClientProperties().isSet(ADMIN_TAG)) {
+            QPID_LOG(debug, logPrefix << "Accepted admin connection: "
+                     << connection.getMgmtId());
+            return;                 // No need to call observer, always allow admins.
+        }
+        if (isSelf(connection)) { // Reject self connections
+            QPID_LOG(debug, logPrefix << "Rejected self connection "+connection.getMgmtId());
+            connection.abort();
+            return;
+        }
+        ObserverPtr o(getObserver());
+        if (o) o->opened(connection);
     }
-    ObserverPtr o(getObserver());
-    if (o) o->opened(connection);
+    catch (const std::exception& e) {
+        QPID_LOG(error, logPrefix << "Open error: " << e.what());
+        throw;
+    }
 }
 
 void ConnectionObserver::closed(broker::Connection& connection) {
-    BrokerInfo info;
-    ObserverPtr o(getObserver());
-    if (o) o->closed(connection);
+    if (isSelf(connection)) return; // Ignore closing of self connections.
+    try {
+        ObserverPtr o(getObserver());
+        if (o) o->closed(connection);
+    }
+    catch (const std::exception& e) {
+        QPID_LOG(error, logPrefix << "Close error: " << e.what());
+        throw;
+    }
 }
 
 const std::string ConnectionObserver::ADMIN_TAG="qpid.ha-admin";

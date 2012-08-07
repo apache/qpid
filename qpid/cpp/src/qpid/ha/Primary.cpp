@@ -190,11 +190,13 @@ void Primary::queueDestroy(const QueuePtr& q) {
 }
 
 void Primary::opened(broker::Connection& connection) {
+    QPID_LOG(critical, "FIXME opened " << connection.getMgmtId());
     BrokerInfo info;
     if (ha::ConnectionObserver::getBrokerInfo(connection, info)) {
         Mutex::ScopedLock l(lock);
         BackupMap::iterator i = backups.find(info.getSystemId());
         if (i == backups.end()) {
+            QPID_LOG(debug, logPrefix << "New backup connected: " << info);
             boost::shared_ptr<RemoteBackup> backup(
                 new RemoteBackup(info, haBroker.getReplicationTest(), true));
             {
@@ -203,7 +205,6 @@ void Primary::opened(broker::Connection& connection) {
                 backup->setInitialQueues(haBroker.getBroker().getQueues(), false);
             }
             backups[info.getSystemId()] = backup;
-            QPID_LOG(debug, logPrefix << "New backup connected: " << info);
         }
         else {
             QPID_LOG(debug, logPrefix << "Known backup connected: " << info);
@@ -219,6 +220,12 @@ void Primary::opened(broker::Connection& connection) {
 }
 
 void Primary::closed(broker::Connection& connection) {
+    // NOTE: It is possible for a backup connection to be rejected while we are
+    // a backup, but closed() is called after we have become primary.
+    //
+    // For this reason we do not remove from the backups map here, the backups
+    // map holds all the backups we know about whether connected or not.
+    //
     Mutex::ScopedLock l(lock);
     BrokerInfo info;
     if (ha::ConnectionObserver::getBrokerInfo(connection, info)) {
@@ -227,12 +234,6 @@ void Primary::closed(broker::Connection& connection) {
         BackupMap::iterator i = backups.find(info.getSystemId());
         if (i != backups.end()) i->second->setConnected(false);
     }
-    // NOTE: we do not remove from the backups map here, the backups map holds
-    // all the backups we know about whether connected or not.
-    //
-    // It is possible for a backup connection to be rejected while we are a backup,
-    // but the closed is seen after we have become primary. Removing the entry
-    // from backups in this case would be incorrect.
 }
 
 

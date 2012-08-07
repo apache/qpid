@@ -83,7 +83,11 @@ void HaBroker::initialize() {
 
     // FIXME aconway 2012-07-19: assumes there's a TCP transport with a meaningful port.
     brokerInfo = BrokerInfo(
-        broker.getSystem()->getNodeName(), broker.getPort(broker::Broker::TCP_TRANSPORT), systemId);
+        broker.getSystem()->getNodeName(),
+        broker.getPort(broker::Broker::TCP_TRANSPORT),
+        systemId);
+
+    QPID_LOG(notice, logPrefix << "Initializing: " << brokerInfo);
 
     // Set up the management object.
     ManagementAgent* ma = broker.getManagementAgent();
@@ -110,8 +114,6 @@ void HaBroker::initialize() {
     if (!settings.clientUrl.empty()) setClientUrl(Url(settings.clientUrl));
     if (!settings.brokerUrl.empty()) setBrokerUrl(Url(settings.brokerUrl));
 
-
-    QPID_LOG(notice, logPrefix << "Initializing: " << brokerInfo);
 
     // NOTE: lock is not needed in a constructor, but create one
     // to pass to functions that have a ScopedLock parameter.
@@ -226,6 +228,7 @@ void HaBroker::setBrokerUrl(const Url& url) {
     if (url.empty()) throw Url::Invalid("HA broker URL is empty");
     brokerUrl = url;
     mgmtObject->set_brokersUrl(brokerUrl.str());
+    QPID_LOG(info, logPrefix << "Broker URL set to: " << url);
     if (backup.get()) backup->setBrokerUrl(brokerUrl);
     // Updating broker URL also updates defaulted client URL:
     if (clientUrl.empty()) updateClientUrl(l);
@@ -292,6 +295,7 @@ void HaBroker::statusChanged(Mutex::ScopedLock& l) {
 }
 
 void HaBroker::membershipUpdated(Mutex::ScopedLock&) {
+    QPID_LOG(info, logPrefix << "Membership changed: " <<  membership);
     Variant::List brokers = membership.asList();
     mgmtObject->set_members(brokers);
     broker.getManagementAgent()->raiseEvent(_qmf::EventMembersUpdate(brokers));
@@ -321,14 +325,14 @@ void HaBroker::resetMembership(const BrokerInfo& b) {
 void HaBroker::addBroker(const BrokerInfo& b) {
     Mutex::ScopedLock l(lock);
     membership.add(b);
-    QPID_LOG(debug, logPrefix << "Membership add: " <<  b << " now: " << membership);
+    QPID_LOG(debug, logPrefix << "Membership add: " <<  b);
     membershipUpdated(l);
 }
 
 void HaBroker::removeBroker(const Uuid& id) {
     Mutex::ScopedLock l(lock);
     membership.remove(id);
-    QPID_LOG(debug, logPrefix << "Membership remove: " <<  id << " now: " << membership);
+    QPID_LOG(debug, logPrefix << "Membership remove: " <<  id);
     membershipUpdated(l);
 }
 
