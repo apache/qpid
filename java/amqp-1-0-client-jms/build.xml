@@ -22,7 +22,18 @@
 
   <property name="module.genpom" value="true"/>
   <property name="module.depends" value="amqp-1-0-common amqp-1-0-client"/>
+  <property name="module.genpom.args" value="-Sgeronimo-jms_1.1_spec=provided"/>
 
+
+  <target name="release-bin-copy-readme">
+      <copy todir="${module.release}" overwrite="true" failonerror="true">
+          <fileset file="${basedir}/README.txt" />
+      </copy>
+  </target>
+
+  <target name="release-bin-other" depends="release-bin-copy-readme"/>
+
+  <target name="release-bin" depends="release-bin-tasks"/>
 
   <import file="../module.xml"/>
 
