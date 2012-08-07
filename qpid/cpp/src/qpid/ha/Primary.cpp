@@ -190,7 +190,6 @@ void Primary::queueDestroy(const QueuePtr& q) {
 }
 
 void Primary::opened(broker::Connection& connection) {
-    QPID_LOG(critical, "FIXME opened " << connection.getMgmtId());
     BrokerInfo info;
     if (ha::ConnectionObserver::getBrokerInfo(connection, info)) {
         Mutex::ScopedLock l(lock);
