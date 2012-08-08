@@ -119,6 +119,7 @@ pair<Link::shared_ptr, bool> LinkRegistry::declare(const string& name,
                       parent, failover));
         if (durable && store) store->create(*link);
         links[name] = link;
+        pendingLinks[name] = link;
         QPID_LOG(debug, "Creating new link; name=" << name );
         return std::pair<Link::shared_ptr, bool>(link, true);
     }
@@ -229,6 +230,7 @@ void LinkRegistry::linkDestroyed(Link *link)
     QPID_LOG(debug, "LinkRegistry::destroy(); link= " << link->getName());
     Mutex::ScopedLock   locker(lock);
 
+    pendingLinks.erase(link->getName());
     LinkMap::iterator i = links.find(link->getName());
     if (i != links.end())
     {
@@ -322,10 +324,12 @@ void LinkRegistry::notifyConnection(const std::string& key, Connection* c)
     Link::shared_ptr link;
     {
         Mutex::ScopedLock locker(lock);
-        for (LinkMap::iterator l = links.begin(); l != links.end(); ++l) {
+        for (LinkMap::iterator l = pendingLinks.begin(); l != pendingLinks.end(); ++l) {
             if (l->second->pendingConnection(host, port)) {
                 link = l->second;
+                pendingLinks.erase(l);
                 connections[key] = link->getName();
+                QPID_LOG(debug, "LinkRegistry:: found pending =" << link->getName());
                 break;
             }
         }
@@ -347,6 +351,10 @@ void LinkRegistry::notifyClosed(const std::string& key)
 {
     Link::shared_ptr link = findLink(key);
     if (link) {
+        {
+            Mutex::ScopedLock locker(lock);
+            pendingLinks[link->getName()] = link;
+        }
         link->closed(0, "Closed by peer");
     }
 }
@@ -355,6 +363,10 @@ void LinkRegistry::notifyConnectionForced(const std::string& key, const std::str
 {
     Link::shared_ptr link = findLink(key);
     if (link) {
+        {
+            Mutex::ScopedLock locker(lock);
+            pendingLinks[link->getName()] = link;
+        }
         link->notifyConnectionForced(text);
     }
 }
