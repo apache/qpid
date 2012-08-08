@@ -690,10 +690,8 @@ void UpdateClient::updateLink(const boost::shared_ptr<broker::Link>& link) {
     // now push the current state
     framing::FieldTable state;
     link->getState(state);
-    std::ostringstream os;
-    os << qpid::Address(link->getTransport(), link->getHost(), link->getPort());
     ClusterConnectionProxy(session).internalState(std::string("link"),
-                                                  os.str(),
+                                                  link->getName(),
                                                   state);
 }
 
