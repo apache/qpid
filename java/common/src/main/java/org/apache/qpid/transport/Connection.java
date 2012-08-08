@@ -382,7 +382,7 @@ public class Connection extends ConnectionInvoker
         {
             log.debug("SEND: [%s] %s", this, event);
         }
-        Sender s = sender;
+        Sender<ProtocolEvent> s = sender;
         if (s == null)
         {
             throw new ConnectionException("connection closed");
@@ -415,15 +415,23 @@ public class Connection extends ConnectionInvoker
 
     public void dispatch(Method method)
     {
-        Session ssn = getSession(method.getChannel());
+        int channel = method.getChannel();
+        Session ssn = getSession(channel);
         if(ssn != null)
         {
             ssn.received(method);
         }
         else
         {
-            throw new ProtocolViolationException(
-					"Received frames for an already detached session", null);
+            /*
+             * A peer receiving any other control on a detached transport MUST discard it and
+             * send a session.detached with the "not-attached" reason code.
+             */
+            if(log.isDebugEnabled())
+            {
+                log.debug("Control received on unattached channel : %d", channel);
+            }
+            invokeSessionDetached(channel, SessionDetachCode.NOT_ATTACHED);
         }
     }
 
@@ -663,7 +671,7 @@ public class Connection extends ConnectionInvoker
 
     public void setServerProperties(final Map<String, Object> serverProperties)
     {
-        _serverProperties = serverProperties == null ? Collections.EMPTY_MAP : serverProperties;
+        _serverProperties = serverProperties == null ? Collections.<String, Object>emptyMap() : serverProperties;
     }
 
     public Map<String, Object> getServerProperties()
@@ -718,5 +726,13 @@ public class Connection extends ConnectionInvoker
     public SocketAddress getLocalAddress()
     {
         return _localAddress;
+    }
+
+    private void invokeSessionDetached(int channel, SessionDetachCode sessionDetachCode)
+    {
+        SessionDetached sessionDetached = new SessionDetached();
+        sessionDetached.setChannel(channel);
+        sessionDetached.setCode(sessionDetachCode);
+        invoke(sessionDetached);
     }
 }
