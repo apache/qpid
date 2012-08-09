@@ -29,6 +29,7 @@ for(i=0; i < numbersOfTopics.length ; i++)
                         {
                           "_name": "Producer-__INDEX",
                           "_destinationName": topicName,
+                          "_deliveryMode": 1,
                           "_maximumDuration": duration,
                           "_startDelay": 2000 // gives the consumers time to implicitly create the topic
                         }
