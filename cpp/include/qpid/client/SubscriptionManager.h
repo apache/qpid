@@ -280,8 +280,8 @@ class QPID_CLIENT_CLASS_EXTERN SubscriptionManager : public sys::Runnable, publi
 /** AutoCancel cancels a subscription in its destructor */
 class AutoCancel {
   public:
-    AutoCancel(SubscriptionManager& sm_, const std::string& tag_) : sm(sm_), tag(tag_) {}
-    ~AutoCancel() { sm.cancel(tag); }
+    AutoCancel(SubscriptionManager&, const std::string& tag);
+    ~AutoCancel();
   private:
     SubscriptionManager& sm;
     std::string tag;
