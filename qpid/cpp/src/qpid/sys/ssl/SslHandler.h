@@ -60,7 +60,7 @@ class SslHandler : public OutputControl {
   public:
     SslHandler(std::string id, ConnectionCodec::Factory* f, bool nodict);
     ~SslHandler();
-    void init(SslIO* a, Timer& timer, uint32_t maxTime, int numBuffs);
+    void init(SslIO* a, Timer& timer, uint32_t maxTime);
 
     void setClient() { isClient = true; }
 

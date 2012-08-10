@@ -25,6 +25,7 @@
 #include "qpid/sys/SecuritySettings.h"
 
 #include <boost/function.hpp>
+#include <boost/shared_array.hpp>
 #include <deque>
 
 namespace qpid {
@@ -87,8 +88,8 @@ private:
 };
 
 struct SslIOBufferBase {
-    char* const bytes;
-    const int32_t byteCount;
+    char* bytes;
+    int32_t byteCount;
     int32_t dataStart;
     int32_t dataCount;
     
@@ -127,7 +128,9 @@ public:
     typedef boost::function1<void, SslIO&> IdleCallback;
     typedef boost::function1<void, SslIO&> RequestCallback;
 
-
+    SslIO(const SslSocket& s,
+          ReadCallback rCb, EofCallback eofCb, DisconnectCallback disCb,
+          ClosedCallback cCb = 0, BuffersEmptyCallback eCb = 0, IdleCallback iCb = 0);
 private:
     ReadCallback readCallback;
     EofCallback eofCallback;
@@ -138,6 +141,8 @@ private:
     const SslSocket& socket;
     std::deque<BufferBase*> bufferQueue;
     std::deque<BufferBase*> writeQueue;
+    std::vector<BufferBase> buffers;
+    boost::shared_array<char> bufferMemory;
     bool queuedClose;
     /**
      * This flag is used to detect and handle concurrency between
@@ -148,12 +153,21 @@ private:
     volatile bool writePending;
 
 public:
-    SslIO(const SslSocket& s,
-        ReadCallback rCb, EofCallback eofCb, DisconnectCallback disCb,
-        ClosedCallback cCb = 0, BuffersEmptyCallback eCb = 0, IdleCallback iCb = 0);
+    /*
+     * Size of IO buffers - this is the maximum possible frame size + 1
+     */
+    const static uint32_t MaxBufferSize = 65536;
+
+    /*
+     * Number of IO buffers allocated - I think the code can only use 2 -
+     * 1 for reading and 1 for writing, allocate 4 for safety
+     */
+    const static uint32_t BufferCount = 4;
+
     void queueForDeletion();
 
     void start(qpid::sys::Poller::shared_ptr poller);
+    void createBuffers(uint32_t size = MaxBufferSize);
     void queueReadBuffer(BufferBase* buff);
     void unread(BufferBase* buff);
     void queueWrite(BufferBase* buff);
