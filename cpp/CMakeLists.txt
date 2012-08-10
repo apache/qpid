@@ -60,7 +60,6 @@ set (QPIDD_CONF_FILE ${QPID_INSTALL_CONFDIR}/qpidd.conf CACHE STRING
      "Name of the Qpid broker configuration file")
 
 install(FILES  LICENSE NOTICE  DESTINATION ${CMAKE_INSTALL_PREFIX})
-install(FILES  xml/cluster.xml DESTINATION ${QPID_INSTALL_DATADIR})
 
 if (WIN32)
    set (CMAKE_DEBUG_POSTFIX "d")
