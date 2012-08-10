@@ -46,11 +46,6 @@ using namespace qpid::framing;
 using boost::format;
 using boost::str;
 
-struct TCPConnector::Buff : public AsynchIO::BufferBase {
-    Buff(size_t size) : AsynchIO::BufferBase(new char[size], size) {}
-    ~Buff() { delete [] bytes;}
-};
-
 // Static constructor which registers connector here
 namespace {
     Connector* create(Poller::shared_ptr p, framing::ProtocolVersion v, const ConnectionSettings& s, ConnectionImpl* c) {
@@ -118,9 +113,8 @@ void TCPConnector::connected(const Socket&) {
 
 void TCPConnector::start(sys::AsynchIO* aio_) {
     aio = aio_;
-    for (int i = 0; i < 4; i++) {
-        aio->queueReadBuffer(new Buff(maxFrameSize));
-    }
+
+    aio->createBuffers(maxFrameSize);
 
     identifier = str(format("[%1%]") % socket.getFullAddress());
 }
@@ -226,15 +220,19 @@ void TCPConnector::writebuff(AsynchIO& /*aio*/)
         return;
 
     Codec* codec = securityLayer.get() ? (Codec*) securityLayer.get() : (Codec*) this;
-    if (codec->canEncode()) {
-        std::auto_ptr<AsynchIO::BufferBase> buffer = std::auto_ptr<AsynchIO::BufferBase>(aio->getQueuedBuffer());
-        if (!buffer.get()) buffer = std::auto_ptr<AsynchIO::BufferBase>(new Buff(maxFrameSize));
+
+    if (!codec->canEncode()) {
+        return;
+    }
+
+    AsynchIO::BufferBase* buffer = aio->getQueuedBuffer();
+    if (buffer) {
 
         size_t encoded = codec->encode(buffer->bytes, buffer->byteCount);
 
         buffer->dataStart = 0;
         buffer->dataCount = encoded;
-        aio->queueWrite(buffer.release());
+        aio->queueWrite(buffer);
     }
 }
 
@@ -307,6 +305,7 @@ size_t TCPConnector::decode(const char* buffer, size_t size)
 
 void TCPConnector::writeDataBlock(const AMQDataBlock& data) {
     AsynchIO::BufferBase* buff = aio->getQueuedBuffer();
+    assert(buff);
     framing::Buffer out(buff->bytes, buff->byteCount);
     data.encode(out);
     buff->dataCount = data.encodedSize();

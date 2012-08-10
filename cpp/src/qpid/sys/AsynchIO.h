@@ -76,8 +76,8 @@ protected:
 };
 
 struct AsynchIOBufferBase {
-    char* const bytes;
-    const int32_t byteCount;
+    char* bytes;
+    int32_t byteCount;
     int32_t dataStart;
     int32_t dataCount;
     
@@ -134,9 +134,21 @@ public:
                             BuffersEmptyCallback eCb = 0,
                             IdleCallback iCb = 0);
 public:
+    /*
+     * Size of IO buffers - this is the maximum possible frame size + 1
+     */
+    const static uint32_t MaxBufferSize = 65536;
+
+    /*
+     * Number of IO buffers allocated - I think the code can only use 2 -
+     * 1 for reading and 1 for writing, allocate 4 for safety
+     */
+    const static uint32_t BufferCount = 4;
+
     virtual void queueForDeletion() = 0;
 
     virtual void start(boost::shared_ptr<Poller> poller) = 0;
+    virtual void createBuffers(uint32_t size = MaxBufferSize) = 0;
     virtual void queueReadBuffer(BufferBase* buff) = 0;
     virtual void unread(BufferBase* buff) = 0;
     virtual void queueWrite(BufferBase* buff) = 0;

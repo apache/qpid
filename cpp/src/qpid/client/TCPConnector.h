@@ -50,7 +50,6 @@ namespace client {
 class TCPConnector : public Connector, public sys::Codec
 {
     typedef std::deque<framing::AMQFrame> Frames;
-    struct Buff;
 
     const uint16_t maxFrameSize;
 
