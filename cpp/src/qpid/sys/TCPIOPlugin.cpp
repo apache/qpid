@@ -166,7 +166,7 @@ void AsynchIOProtocolFactory::established(Poller::shared_ptr poller, const Socke
        boost::bind(&AsynchIOHandler::nobuffs, async, _1),
        boost::bind(&AsynchIOHandler::idle, async, _1));
 
-    async->init(aio, brokerTimer, maxNegotiateTime, 4);
+    async->init(aio, brokerTimer, maxNegotiateTime);
     aio->start(poller);
 }
 

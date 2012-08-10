@@ -40,6 +40,7 @@
 
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/shared_array.hpp>
 
 namespace qpid {
 namespace sys {
@@ -239,6 +240,7 @@ public:
     virtual void queueForDeletion();
 
     virtual void start(Poller::shared_ptr poller);
+    virtual void createBuffers(uint32_t size);
     virtual void queueReadBuffer(BufferBase* buff);
     virtual void unread(BufferBase* buff);
     virtual void queueWrite(BufferBase* buff);
@@ -270,6 +272,8 @@ private:
     const Socket& socket;
     std::deque<BufferBase*> bufferQueue;
     std::deque<BufferBase*> writeQueue;
+    std::vector<BufferBase> buffers;
+    boost::shared_array<char> bufferMemory;
     bool queuedClose;
     /**
      * This flag is used to detect and handle concurrency between
@@ -309,15 +313,7 @@ AsynchIO::AsynchIO(const Socket& s,
     s.setNonblocking();
 }
 
-struct deleter
-{
-    template <typename T>
-    void operator()(T *ptr){ delete ptr;}
-};
-
 AsynchIO::~AsynchIO() {
-    std::for_each( bufferQueue.begin(), bufferQueue.end(), deleter());
-    std::for_each( writeQueue.begin(), writeQueue.end(), deleter());
 }
 
 void AsynchIO::queueForDeletion() {
@@ -326,6 +322,19 @@ void AsynchIO::queueForDeletion() {
 
 void AsynchIO::start(Poller::shared_ptr poller) {
     DispatchHandle::startWatch(poller);
+}
+
+void AsynchIO::createBuffers(uint32_t size) {
+    // Allocate all the buffer memory at once
+    bufferMemory.reset(new char[size*BufferCount]);
+
+    // Create the Buffer structs in a vector
+    // And push into the buffer queue
+    buffers.reserve(BufferCount);
+    for (uint32_t i = 0; i < BufferCount; i++) {
+        buffers.push_back(BufferBase(&bufferMemory[i*size], size));
+        queueReadBuffer(&buffers[i]);
+    }
 }
 
 void AsynchIO::queueReadBuffer(BufferBase* buff) {
