@@ -197,15 +197,7 @@ SslIO::SslIO(const SslSocket& s,
     s.setNonblocking();
 }
 
-struct deleter
-{
-    template <typename T>
-    void operator()(T *ptr){ delete ptr;}
-};
-
 SslIO::~SslIO() {
-    std::for_each( bufferQueue.begin(), bufferQueue.end(), deleter());
-    std::for_each( writeQueue.begin(), writeQueue.end(), deleter());
 }
 
 void SslIO::queueForDeletion() {
@@ -214,6 +206,19 @@ void SslIO::queueForDeletion() {
 
 void SslIO::start(Poller::shared_ptr poller) {
     DispatchHandle::startWatch(poller);
+}
+
+void SslIO::createBuffers(uint32_t size) {
+    // Allocate all the buffer memory at once
+    bufferMemory.reset(new char[size*BufferCount]);
+
+    // Create the Buffer structs in a vector
+    // And push into the buffer queue
+    buffers.reserve(BufferCount);
+    for (uint32_t i = 0; i < BufferCount; i++) {
+        buffers.push_back(BufferBase(&bufferMemory[i*size], size));
+        queueReadBuffer(&buffers[i]);
+    }
 }
 
 void SslIO::queueReadBuffer(BufferBase* buff) {

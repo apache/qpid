@@ -191,7 +191,7 @@ void SslEstablished(Poller::shared_ptr poller, const qpid::sys::SslSocket& s,
                                  boost::bind(&qpid::sys::ssl::SslHandler::nobuffs, async, _1),
                                  boost::bind(&qpid::sys::ssl::SslHandler::idle, async, _1));
 
-    async->init(aio,timer, maxTime, 4);
+    async->init(aio,timer, maxTime);
     aio->start(poller);
 }
 
