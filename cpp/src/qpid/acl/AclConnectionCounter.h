@@ -94,6 +94,7 @@ public:
 
     // Connection counting
     bool approveConnection(const broker::Connection& conn);
+    void setUserId(const broker::Connection& connection, const std::string& username);
 };
 
 }} // namespace qpid::ha
