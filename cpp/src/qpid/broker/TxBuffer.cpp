@@ -28,7 +28,7 @@ using namespace qpid::broker;
 
 bool TxBuffer::prepare(TransactionContext* const ctxt)
 {
-    for(op_iterator i = ops.begin(); i < ops.end(); i++){
+    for(op_iterator i = ops.begin(); i != ops.end(); i++){
         if(!(*i)->prepare(ctxt)){
             return false;
         }
@@ -73,8 +73,4 @@ bool TxBuffer::commitLocal(TransactionalStore* const store)
         QPID_LOG(error, "Commit failed with unknown exception");
     }
     return false;
-}
-
-void TxBuffer::accept(TxOpConstVisitor& v) const {
-    std::for_each(ops.begin(), ops.end(), boost::bind(&TxOp::accept, _1, boost::ref(v)));
 }

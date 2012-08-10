@@ -21,10 +21,11 @@
 #include "qpid/broker/MessageBuilder.h"
 
 #include "qpid/broker/Message.h"
-#include "qpid/broker/MessageStore.h"
-#include "qpid/broker/NullMessageStore.h"
+#include "qpid/broker/amqp_0_10/MessageTransfer.h"
 #include "qpid/framing/AMQFrame.h"
+#include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/log/Statement.h"
 
 using boost::intrusive_ptr;
 using namespace qpid::broker;
@@ -36,8 +37,7 @@ namespace
     const std::string QPID_MANAGEMENT("qpid.management");
 }
 
-MessageBuilder::MessageBuilder(MessageStore* const _store) :
-    state(DORMANT), store(_store) {}
+MessageBuilder::MessageBuilder() : state(DORMANT) {}
 
 void MessageBuilder::handle(AMQFrame& frame)
 {
@@ -45,6 +45,7 @@ void MessageBuilder::handle(AMQFrame& frame)
     switch(state) {
     case METHOD:
         checkType(METHOD_BODY, type);
+        exchange = frame.castBody<qpid::framing::MessageTransferBody>()->getDestination();
         state = HEADER;
         break;
     case HEADER:
@@ -55,7 +56,9 @@ void MessageBuilder::handle(AMQFrame& frame)
             header.setBof(false);
             header.setEof(false);
             message->getFrames().append(header);
-        } else if (type != HEADER_BODY) {
+        } else if (type == HEADER_BODY) {
+            frame.castBody<AMQHeaderBody>()->get<DeliveryProperties>(true)->setExchange(exchange);
+        } else {
             throw CommandInvalidException(
                 QPID_MSG("Invalid frame sequence for message, expected header or content got "
                          << type_str(type) << ")"));
@@ -73,14 +76,14 @@ void MessageBuilder::handle(AMQFrame& frame)
 
 void MessageBuilder::end()
 {
+    message->computeRequiredCredit();
     message = 0;
     state = DORMANT;
 }
 
 void MessageBuilder::start(const SequenceNumber& id)
 {
-    message = intrusive_ptr<Message>(new Message(id));
-    message->setStore(store);
+    message = intrusive_ptr<qpid::broker::amqp_0_10::MessageTransfer>(new qpid::broker::amqp_0_10::MessageTransfer(id));
     state = METHOD;
 }
 
@@ -112,3 +115,5 @@ void MessageBuilder::checkType(uint8_t expected, uint8_t actual)
                                                << type_str(expected) << " got " << type_str(actual) << ")"));
     }
 }
+
+boost::intrusive_ptr<qpid::broker::amqp_0_10::MessageTransfer> MessageBuilder::getMessage() { return message; }

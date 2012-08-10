@@ -27,7 +27,7 @@ namespace broker {
 
 ExpiryPolicy::~ExpiryPolicy() {}
 
-bool ExpiryPolicy::hasExpired(Message& m) {
+bool ExpiryPolicy::hasExpired(const Message& m) {
     return m.getExpiration() < sys::AbsTime::now();
 }
 

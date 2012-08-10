@@ -43,11 +43,9 @@ ManagementDirectExchange::ManagementDirectExchange(const std::string& _name,
 void ManagementDirectExchange::route(Deliverable&      msg)
 {
     bool routeIt = true;
-    const std::string& routingKey = msg.getMessage().getRoutingKey();
-    const FieldTable* args = msg.getMessage().getApplicationHeaders();
 
     if (managementAgent)
-        routeIt = managementAgent->dispatchCommand(msg, routingKey, args, false, qmfVersion);
+        routeIt = managementAgent->dispatchCommand(msg, msg.getMessage().getRoutingKey(), 0/*args - TODO*/, false, qmfVersion);
 
     if (routeIt)
         DirectExchange::route(msg);

@@ -27,6 +27,7 @@
 
 #include "qpid/log/Statement.h"
 #include "qpid/broker/FedOps.h"
+#include "qpid/broker/MapHandler.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -198,7 +199,52 @@ bool XmlExchange::unbind(Queue::shared_ptr queue, const std::string& bindingKey,
     }
 }
 
-bool XmlExchange::matches(Query& query, Deliverable& msg, const qpid::framing::FieldTable* args, bool parse_message_content) 
+namespace {
+class DefineExternals : public MapHandler
+{
+  public:
+    DefineExternals(DynamicContext* c) : context(c) { assert(context); }
+    void handleUint8(const MapHandler::CharSequence& key, uint8_t value) { process(std::string(key.data, key.size), (int) value); }
+    void handleUint16(const MapHandler::CharSequence& key, uint16_t value) { process(std::string(key.data, key.size), (int) value); }
+    void handleUint32(const MapHandler::CharSequence& key, uint32_t value) { process(std::string(key.data, key.size), (int) value); }
+    void handleUint64(const MapHandler::CharSequence& key, uint64_t value) { process(std::string(key.data, key.size), (int) value); }
+    void handleInt8(const MapHandler::CharSequence& key, int8_t value) { process(std::string(key.data, key.size), (int) value); }
+    void handleInt16(const MapHandler::CharSequence& key, int16_t value) { process(std::string(key.data, key.size), (int) value); }
+    void handleInt32(const MapHandler::CharSequence& key, int32_t value) { process(std::string(key.data, key.size), (int) value); }
+    void handleInt64(const MapHandler::CharSequence& key, int64_t value) { process(std::string(key.data, key.size), (int) value); }
+    void handleFloat(const MapHandler::CharSequence& key, float value) { process(std::string(key.data, key.size), value); }
+    void handleDouble(const MapHandler::CharSequence& key, double value) { process(std::string(key.data, key.size), value); }
+    void handleString(const MapHandler::CharSequence& key, const MapHandler::CharSequence& value, const MapHandler::CharSequence& /*encoding*/)
+    {
+        process(std::string(key.data, key.size), std::string(value.data, value.size));
+    }
+    void handleVoid(const MapHandler::CharSequence&) {}
+  private:
+    void process(const std::string& key, double value)
+    {
+        QPID_LOG(trace, "XmlExchange, external variable (double): " << key << " = " << value);
+        Item::Ptr item = context->getItemFactory()->createDouble(value, context);
+        context->setExternalVariable(X(key.c_str()), item);
+    }
+    void process(const std::string& key, int value)
+    {
+        QPID_LOG(trace, "XmlExchange, external variable (int):" << key << " = " << value);
+        Item::Ptr item = context->getItemFactory()->createInteger(value, context);
+        context->setExternalVariable(X(key.c_str()), item);
+    }
+    void process(const std::string& key, const std::string& value)
+    {
+        QPID_LOG(trace, "XmlExchange, external variable (string):" << key << " = " << value);
+        Item::Ptr item = context->getItemFactory()->createString(X(value.c_str()), context);
+        context->setExternalVariable(X(key.c_str()), item);
+    }
+
+    DynamicContext* context;
+};
+
+}
+
+bool XmlExchange::matches(Query& query, Deliverable& msg, bool parse_message_content) 
 {
     std::string msgContent;
 
@@ -212,7 +258,7 @@ bool XmlExchange::matches(Query& query, Deliverable& msg, const qpid::framing::F
 
         if (parse_message_content) {
 
-            msg.getMessage().getFrames().getContent(msgContent);
+            msgContent = msg.getMessage().getContent();
 
             QPID_LOG(trace, "matches: message content is [" << msgContent << "]");
 
@@ -231,28 +277,8 @@ bool XmlExchange::matches(Query& query, Deliverable& msg, const qpid::framing::F
             }
         }
 
-        if (args) {
-            FieldTable::ValueMap::const_iterator v = args->begin();
-            for(; v != args->end(); ++v) {
-
-                if (v->second->convertsTo<double>()) {
-                    QPID_LOG(trace, "XmlExchange, external variable (double): " << v->first << " = " << v->second->get<double>());
-                    Item::Ptr value = context->getItemFactory()->createDouble(v->second->get<double>(), context.get());
-                    context->setExternalVariable(X(v->first.c_str()), value);
-                }              
-                else if (v->second->convertsTo<int>()) {
-                    QPID_LOG(trace, "XmlExchange, external variable (int):" << v->first << " = " << v->second->getData().getInt());
-                    Item::Ptr value = context->getItemFactory()->createInteger(v->second->get<int>(), context.get());
-                    context->setExternalVariable(X(v->first.c_str()), value);
-                }
-                else if (v->second->convertsTo<std::string>()) {
-                    QPID_LOG(trace, "XmlExchange, external variable (string):" << v->first << " = " << v->second->getData().getString().c_str());
-                    Item::Ptr value = context->getItemFactory()->createString(X(v->second->get<std::string>().c_str()), context.get());
-                    context->setExternalVariable(X(v->first.c_str()), value);
-                }
-
-            }
-        }
+        DefineExternals f(context.get());
+        msg.getMessage().processProperties(f);
 
         Result result = query->execute(context.get());
 #ifdef XQ_EFFECTIVE_BOOLEAN_VALUE_HPP
@@ -286,7 +312,6 @@ bool XmlExchange::matches(Query& query, Deliverable& msg, const qpid::framing::F
 void XmlExchange::route(Deliverable& msg)
 {
     const std::string& routingKey = msg.getMessage().getRoutingKey();
-    const FieldTable* args = msg.getMessage().getApplicationHeaders();
     PreRoute pr(msg, this);
     try {
         XmlBinding::vector::ConstPtr p;
@@ -298,7 +323,7 @@ void XmlExchange::route(Deliverable& msg)
         }
 
         for (std::vector<XmlBinding::shared_ptr>::const_iterator i = p->begin(); i != p->end(); i++) {
-            if (matches((*i)->xquery, msg, args, (*i)->parse_message_content)) { 
+            if (matches((*i)->xquery, msg, (*i)->parse_message_content)) { 
                 b->push_back(*i);
             }
         }

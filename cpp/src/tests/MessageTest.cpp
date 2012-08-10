@@ -24,6 +24,7 @@
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/framing/Uuid.h"
+#include "MessageUtils.h"
 
 #include "unit_test.h"
 
@@ -43,49 +44,29 @@ QPID_AUTO_TEST_CASE(testEncodeDecode)
 {
     string exchange = "MyExchange";
     string routingKey = "MyRoutingKey";
+    uint64_t ttl(60);
     Uuid messageId(true);
-    string data1("abcdefg");
-    string data2("hijklmn");
+    string data("abcdefghijklmn");
 
-    boost::intrusive_ptr<Message> msg(new Message());
+    qpid::types::Variant::Map properties;
+    properties["routing-key"] = routingKey;
+    properties["ttl"] = ttl;
+    properties["durable"] = true;
+    properties["message-id"] = qpid::types::Uuid(messageId.data());
+    properties["abc"] = "xyz";
+    Message msg = MessageUtils::createMessage(properties, data);
 
-    AMQFrame method((MessageTransferBody(ProtocolVersion(), exchange, 0, 0)));
-    AMQFrame header((AMQHeaderBody()));
-    AMQFrame content1((AMQContentBody(data1)));
-    AMQFrame content2((AMQContentBody(data2)));
+    std::string buffer;
+    encode(msg, buffer);
+    msg = Message();
+    decode(buffer, msg);
 
-    msg->getFrames().append(method);
-    msg->getFrames().append(header);
-    msg->getFrames().append(content1);
-    msg->getFrames().append(content2);
-
-    MessageProperties* mProps = msg->getFrames().getHeaders()->get<MessageProperties>(true);
-    mProps->setContentLength(data1.size() + data2.size());
-    mProps->setMessageId(messageId);
-    FieldTable applicationHeaders;
-    applicationHeaders.setString("abc", "xyz");
-    mProps->setApplicationHeaders(applicationHeaders);
-    DeliveryProperties* dProps = msg->getFrames().getHeaders()->get<DeliveryProperties>(true);
-    dProps->setRoutingKey(routingKey);
-    dProps->setDeliveryMode(PERSISTENT);
-    BOOST_CHECK(msg->isPersistent());
-
-    std::vector<char> buff(msg->encodedSize());
-    Buffer wbuffer(&buff[0], msg->encodedSize());
-    msg->encode(wbuffer);
-
-    Buffer rbuffer(&buff[0], msg->encodedSize());
-    msg = new Message();
-    msg->decodeHeader(rbuffer);
-    msg->decodeContent(rbuffer);
-    BOOST_CHECK_EQUAL(exchange, msg->getExchangeName());
-    BOOST_CHECK_EQUAL(routingKey, msg->getRoutingKey());
-    BOOST_CHECK_EQUAL((uint64_t) data1.size() + data2.size(), msg->contentSize());
-    BOOST_CHECK_EQUAL((uint64_t) data1.size() + data2.size(), msg->getProperties<MessageProperties>()->getContentLength());
-    BOOST_CHECK_EQUAL(messageId, msg->getProperties<MessageProperties>()->getMessageId());
-    BOOST_CHECK_EQUAL(string("xyz"), msg->getProperties<MessageProperties>()->getApplicationHeaders().getAsString("abc"));
-    BOOST_CHECK_EQUAL((uint8_t) PERSISTENT, msg->getProperties<DeliveryProperties>()->getDeliveryMode());
-    BOOST_CHECK(msg->isPersistent());
+    BOOST_CHECK_EQUAL(routingKey, msg.getRoutingKey());
+    BOOST_CHECK_EQUAL((uint64_t) data.size(), msg.getContentSize());
+    BOOST_CHECK_EQUAL(data, msg.getContent());
+    //BOOST_CHECK_EQUAL(messageId, msg->getProperties<MessageProperties>()->getMessageId());
+    BOOST_CHECK_EQUAL(string("xyz"), msg.getPropertyAsString("abc"));
+    BOOST_CHECK(msg.isPersistent());
 }
 
 QPID_AUTO_TEST_SUITE_END()

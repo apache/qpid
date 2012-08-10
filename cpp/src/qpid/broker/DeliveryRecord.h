@@ -26,15 +26,17 @@
 #include <deque>
 #include <vector>
 #include <ostream>
+#include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/broker/BrokerImportExport.h"
-#include "qpid/broker/QueuedMessage.h"
+#include "qpid/broker/QueueCursor.h"
 #include "qpid/broker/DeliveryId.h"
 #include "qpid/broker/Message.h"
 
 namespace qpid {
 namespace broker {
 
+class Queue;
 class TransactionContext;
 class SemanticState;
 struct AckRange;
@@ -45,7 +47,7 @@ class Consumer;
  */
 class DeliveryRecord
 {
-    QueuedMessage msg;
+    QueueCursor msg;
     mutable boost::shared_ptr<Queue> queue;
     std::string tag;    // name of consumer
     boost::shared_ptr<Consumer> consumer;
@@ -65,9 +67,10 @@ class DeliveryRecord
      * after that).
      */
     uint32_t credit;
+    framing::SequenceNumber msgId;
 
   public:
-    QPID_BROKER_EXTERN DeliveryRecord(const QueuedMessage& msg,
+    QPID_BROKER_EXTERN DeliveryRecord(const QueueCursor& msgCursor, framing::SequenceNumber msgId,
                                       const boost::shared_ptr<Queue>& queue, 
                                       const std::string& tag,
                                       const boost::shared_ptr<Consumer>& consumer,
@@ -80,11 +83,10 @@ class DeliveryRecord
     bool coveredBy(const framing::SequenceSet* const range) const { return range->contains(id); }
 
     void dequeue(TransactionContext* ctxt = 0) const;
-    void requeue() const;
+    void requeue();
     void release(bool setRedelivered);
     void reject();
     void cancel(const std::string& tag);
-    void redeliver(SemanticState* const);
     void acquire(DeliveryIds& results);
     void complete();
     bool accept(TransactionContext* ctxt); // Returns isRedundant()
@@ -102,13 +104,13 @@ class DeliveryRecord
     uint32_t getCredit() const;
     const std::string& getTag() const { return tag; }
 
-    void deliver(framing::FrameHandler& h, DeliveryId deliveryId, uint16_t framesize);
     void setId(DeliveryId _id) { id = _id; }
 
     typedef std::deque<DeliveryRecord> DeliveryRecords;
     static AckRange findRange(DeliveryRecords& records, DeliveryId first, DeliveryId last);
-    const QueuedMessage& getMessage() const { return msg; }
+    const QueueCursor& getMessage() const { return msg; }
     framing::SequenceNumber getId() const { return id; }
+    framing::SequenceNumber getMessageId() const { return msgId; }
     boost::shared_ptr<Queue> getQueue() const { return queue; }
 
     friend std::ostream& operator<<(std::ostream&, const DeliveryRecord&);

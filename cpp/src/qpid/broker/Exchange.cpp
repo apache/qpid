@@ -25,6 +25,7 @@
 #include "qpid/broker/ExchangeRegistry.h"
 #include "qpid/broker/FedOps.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/broker/amqp_0_10/MessageTransfer.h"
 #include "qpid/framing/MessageProperties.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"
@@ -62,10 +63,10 @@ Exchange::PreRoute::PreRoute(Deliverable& msg, Exchange* _p):parent(_p) {
 
         if (parent->sequence){
             parent->sequenceNo++;
-            msg.getMessage().insertCustomProperty(qpidMsgSequence,parent->sequenceNo);
+            msg.getMessage().addAnnotation(qpidMsgSequence,parent->sequenceNo);
         }
         if (parent->ive) {
-            parent->lastMsg =  &( msg.getMessage());
+            parent->lastMsg = msg.getMessage();
         }
     }
 }
@@ -111,12 +112,6 @@ void Exchange::doRoute(Deliverable& msg, ConstBindingList b)
     int count = 0;
 
     if (b.get()) {
-        // Block the content release if the message is transient AND there is more than one binding
-        if (!msg.getMessage().isPersistent() && b->size() > 1) {
-            msg.getMessage().blockContentRelease();
-        }
-
-
         ExInfo error(getName()); // Save exception to throw at the end.
         for(std::vector<Binding::shared_ptr>::const_iterator i = b->begin(); i != b->end(); i++, count++) {
             try {
@@ -161,8 +156,8 @@ void Exchange::doRoute(Deliverable& msg, ConstBindingList b)
 }
 
 void Exchange::routeIVE(){
-    if (ive && lastMsg.get()){
-        DeliverableMessage dmsg(lastMsg);
+    if (ive && lastMsg){
+        DeliverableMessage dmsg(lastMsg, 0);
         route(dmsg);
     }
 }
@@ -400,9 +395,9 @@ bool Exchange::MatchQueue::operator()(Exchange::Binding::shared_ptr b)
     return b->queue == queue;
 }
 
-void Exchange::setProperties(const boost::intrusive_ptr<Message>& msg) {
-    msg->setExchange(getName());
-}
+//void Exchange::setProperties(Message& msg) {
+//    qpid::broker::amqp_0_10::MessageTransfer::setExchange(msg, getName());
+//}
 
 bool Exchange::routeWithAlternate(Deliverable& msg)
 {

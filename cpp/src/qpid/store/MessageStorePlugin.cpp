@@ -249,7 +249,7 @@ MessageStorePlugin::destroy(const broker::PersistableConfig& config)
 void
 MessageStorePlugin::stage(const boost::intrusive_ptr<broker::PersistableMessage>& msg)
 {
-    if (msg->getPersistenceId() == 0 && !msg->isContentReleased()) {
+    if (msg->getPersistenceId() == 0) {
         provider->second->stage(msg);
     }
 }

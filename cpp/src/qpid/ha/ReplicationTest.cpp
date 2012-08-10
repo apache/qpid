@@ -68,7 +68,7 @@ bool ReplicationTest::isReplicated(
 
 bool ReplicationTest::isReplicated(ReplicateLevel level, const broker::Queue& q)
 {
-    return isReplicated(level, q.getSettings(), q.isAutoDelete(), q.hasExclusiveOwner());
+    return isReplicated(level, q.getSettings().storeSettings, q.isAutoDelete(), q.hasExclusiveOwner());
 }
 
 

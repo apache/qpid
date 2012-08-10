@@ -1,3 +1,6 @@
+#ifndef QPID_BROKER_LVQ_H
+#define QPID_BROKER_LVQ_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -7,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,17 +21,25 @@
  * under the License.
  *
  */
+#include "qpid/broker/Queue.h"
+
 namespace qpid {
-namespace replication {
-namespace constants {
+namespace broker {
+class MessageMap;
 
-const std::string REPLICATION_EVENT_TYPE("qpid.replication.type");
-const std::string REPLICATION_EVENT_SEQNO("qpid.replication.seqno");
-const std::string REPLICATION_TARGET_QUEUE("qpid.replication.target_queue");
-const std::string DEQUEUED_MESSAGE_POSITION("qpid.replication.message");
-const std::string QUEUE_MESSAGE_POSITION("qpid.replication.queue.position");
+/**
+ * Subclass of queue that handles last-value-queue semantics in
+ * conjunction with the MessageMap class. This requires an existing
+ * message to be 'replaced' by a newer message with the same key.
+ */
+class Lvq : public Queue
+{
+  public:
+    Lvq(const std::string&, std::auto_ptr<MessageMap>, const QueueSettings&, MessageStore* const, management::Manageable*, Broker*);
+    void push(Message& msg, bool isRecovery=false);
+  private:
+    MessageMap& messageMap;
+};
+}} // namespace qpid::broker
 
-const int ENQUEUE(1);
-const int DEQUEUE(2);
-
-}}}
+#endif  /*!QPID_BROKER_LVQ_H*/

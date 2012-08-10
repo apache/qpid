@@ -787,7 +787,7 @@ class MultiConsumerMsgGroupTests(Base):
         except Empty:
             pass
         assert count == 3   # non-A's
-        assert a_count == 2 # pending acquired message included in browse results
+        assert a_count == 1 # assumes the acquired message was not the one purged and regular browsers don't get acquired messages
         s1.acknowledge()    # ack the consumed A-0
         self.qmf_session.delBroker(self.qmf_broker)
 

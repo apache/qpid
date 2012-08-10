@@ -40,7 +40,6 @@ class DtxAck : public TxOp{
     virtual void commit() throw();
     virtual void rollback() throw();
     virtual ~DtxAck(){}
-    virtual void accept(TxOpConstVisitor& visitor) const { visitor(*this); }
     const DeliveryRecords& getPending() const { return pending; }
 };
 
