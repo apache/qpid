@@ -145,6 +145,10 @@ namespace broker {
          */
         virtual bool approveConnection (const Connection& connection)=0;
 
+        /** Change connection's counted userId
+         */
+        virtual void setUserId(const Connection& connection, const std::string& username)=0;
+
         virtual ~AclModule() {};
     };
 } // namespace broker
