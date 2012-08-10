@@ -167,7 +167,7 @@ inherit_value ("winver_LEGAL_COPYRIGHT"      "")
 
 
 # check if we generate source as part of the build
-#   - rubygen generates the amqp spec and clustering
+#   - rubygen generates the amqp spec
 #   - managementgen generates the broker management code
 #
 # rubygen subdir is excluded from stable distributions
@@ -186,7 +186,7 @@ if (EXISTS ${AMQP_SPEC})
     message(FATAL_ERROR "Can't locate python, needed to generate source files.")
   endif (NOT PYTHON_EXECUTABLE)
 
-  set(specs ${AMQP_SPEC} ${qpid-cpp_SOURCE_DIR}/xml/cluster.xml)
+  set(specs ${AMQP_SPEC})
   set(regen_amqp OFF)
   set(rgen_dir ${qpid-cpp_SOURCE_DIR}/rubygen)
   file(GLOB_RECURSE rgen_progs ${rgen_dir}/*.rb)
@@ -207,7 +207,6 @@ execute_process(COMMAND ${RUBY_EXECUTABLE} -I ${rgen_dir} ${rgen_dir}/generate $
 
   set(mgmt_specs ${AMQP_SPEC_DIR}/management-schema.xml
                  ${CMAKE_CURRENT_SOURCE_DIR}/qpid/acl/management-schema.xml
-                 ${CMAKE_CURRENT_SOURCE_DIR}/qpid/cluster/management-schema.xml
                  ${CMAKE_CURRENT_SOURCE_DIR}/qpid/ha/management-schema.xml
   )
   set(mgen_dir ${qpid-cpp_SOURCE_DIR}/managementgen)
@@ -671,9 +670,6 @@ if (BUILD_HA)
              DESTINATION ${QPIDD_MODULE_DIR}
              COMPONENT ${QPID_COMPONENT_BROKER})
 endif (BUILD_HA)
-
-# Check for optional cluster support requirements
-include (cluster.cmake)
 
 # Check for optional RDMA support requirements
 include (rdma.cmake)

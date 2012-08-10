@@ -256,54 +256,6 @@ AC_SUBST(DOWNLOAD_URL)
 AC_CHECK_HEADERS([boost/shared_ptr.hpp uuid/uuid.h],,
   AC_MSG_ERROR([Missing required header files.]))
 
-# Check for optional cluster requirements.
-tmp_LIBS=$LIBS
-tmp_LDFLAGS=$LDFLAGS
-LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais -L/usr/lib/corosync -L/usr/lib64/corosync"
-AC_CHECK_LIB([cpg],[cpg_local_get],[have_libcpg=yes],)
-AC_CHECK_HEADERS([openais/cpg.h corosync/cpg.h],[have_cpg_h=yes],)
-AC_ARG_WITH([cpg],
-  [AS_HELP_STRING([--with-cpg], [Build with CPG support for clustering.])],
-  [case "${withval}" in
-    yes)			# yes - require dependencies
-    test x$have_libcpg = xyes || AC_MSG_ERROR([libcpg not found, install openais-devel or corosync-devel])
-    test x$have_cpg_h = xyes || AC_MSG_ERROR([cpg.h not found, install openais-devel or corosync-devel])
-    with_cpg=yes
-    ;;
-    no) with_cpg=no ;;
-    *) AC_MSG_ERROR([Bad value ${withval} for --with-cpg option]) ;;
-   esac],
-   [		   # not specified - use if present
-    test x$have_libcpg = xyes -a x$have_cpg_h = xyes && with_cpg=yes
-   ]
-)
-AM_CONDITIONAL([HAVE_LIBCPG], [test x$with_cpg = xyes])
-AC_SUBST(USE_CPG, [$with_cpg])
-
-# Clean up unnceccassary flags if we don't use clustering
-AS_IF([test ! x$with_cpg = xyes], [LDFLAGS=$tmp_LDFLAGS])
-
-AC_CHECK_LIB([cman],[cman_is_quorate],have_libcman=yes,)
-AC_CHECK_HEADERS([libcman.h],have_libcman_h=yes,)
-AC_ARG_WITH([libcman],
-  [AS_HELP_STRING([--with-libcman], [Integration with libcman quorum service.])],
-  [case "${withval}" in
-    yes)			# yes - require dependencies
-    test x$have_libcman = xyes || AC_MSG_ERROR([libcman not found, install cman-devel or cmanlib-devel])
-    test x$have_libcman_h = xyes || AC_MSG_ERROR([libcman.h not found, install cman-devel or cmanlib-devel])
-    with_libcman=yes
-    ;;
-    no) with_libcman=no ;;
-    *) AC_MSG_ERROR([Bad value ${withval} for --with-libcman option]) ;;
-   esac],
-   [				# not specified - use if present and we're using with_cpg
-    test x$have_libcman = xyes -a x$have_libcman_h = xyes -a x$with_cpg = xyes &&   with_libcman=yes
-   ]
-)
-AM_CONDITIONAL([HAVE_LIBCMAN], [test x$with_libcman = xyes])
-
-LIBS=$tmp_LIBS
-
 # Setup --with-sasl/--without-sasl as arguments to configure
 AC_ARG_WITH([sasl],
   [AS_HELP_STRING([--with-sasl], [Build with SASL authentication support])],

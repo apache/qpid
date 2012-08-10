@@ -85,7 +85,7 @@ if GENERATE
 
 # AMQP_FINAL_XML is defined in ../configure.ac
 amqp_0_10_xml=@AMQP_FINAL_XML@
-specs=$(amqp_0_10_xml) $(top_srcdir)/xml/cluster.xml
+specs=$(amqp_0_10_xml)
 
 # Ruby generator.
 rgen_dir=$(top_srcdir)/rubygen
@@ -104,7 +104,6 @@ $(srcdir)/rubygen.cmake: $(rgen_generator) $(specs)
 mgen_dir=$(top_srcdir)/managementgen
 mgen_xml=$(top_srcdir)/../specs/management-schema.xml \
 	$(srcdir)/qpid/acl/management-schema.xml \
-	$(srcdir)/qpid/cluster/management-schema.xml \
 	$(srcdir)/qpid/ha/management-schema.xml
 mgen_cmd=$(mgen_dir)/qmf-gen -m $(srcdir)/managementgen.mk \
 	-c $(srcdir)/managementgen.cmake -q -b -l -o qmf \
@@ -217,7 +216,6 @@ cmoduleexecdir=$(libdir)/qpid/client
 dmoduleexec_LTLIBRARIES =
 cmoduleexec_LTLIBRARIES =
 
-include cluster.mk
 include ha.mk
 include acl.mk
 include qmf.mk
@@ -292,7 +290,6 @@ endif
 
 EXTRA_DIST +=\
   CMakeLists.txt \
-  cluster.cmake \
   config.h.cmake \
   rdma.cmake \
   ssl.cmake \
