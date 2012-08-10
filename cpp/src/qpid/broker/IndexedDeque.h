@@ -131,7 +131,7 @@ template <typename T> class IndexedDeque
 
     T* next(QueueCursor& cursor)
     {
-        size_t i;
+        size_t i = 0;
         if (reset(cursor)) i = head; //start from head
         else index(cursor, i); //get first message that is greater than position
 
@@ -166,7 +166,7 @@ template <typename T> class IndexedDeque
 
     T* find(const qpid::framing::SequenceNumber& position, QueueCursor* cursor)
     {
-        size_t i;
+        size_t i = 0;
         if (index(position, i)){
             T& m = messages[i];
             if (cursor) cursor->setPosition(position, version);
