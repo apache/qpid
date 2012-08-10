@@ -24,8 +24,8 @@
 namespace qpid {
 namespace broker {
 
-struct QueuedMessage;
 class Consumer;
+class Message;
 
 /**
  * Interface for notifying classes who want to act as 'observers' of a queue of particular
@@ -63,10 +63,10 @@ class QueueObserver
     virtual ~QueueObserver() {}
 
     // note: the Queue will hold the messageLock while calling these methods!
-    virtual void enqueued(const QueuedMessage&) = 0;
-    virtual void dequeued(const QueuedMessage&) = 0;
-    virtual void acquired(const QueuedMessage&) = 0;
-    virtual void requeued(const QueuedMessage&) = 0;
+    virtual void enqueued(const Message&) = 0;
+    virtual void dequeued(const Message&) = 0;
+    virtual void acquired(const Message&) = 0;
+    virtual void requeued(const Message&) = 0;
     virtual void consumerAdded( const Consumer& ) {};
     virtual void consumerRemoved( const Consumer& ) {};
  private:

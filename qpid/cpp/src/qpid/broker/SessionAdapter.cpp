@@ -264,7 +264,7 @@ QueueQueryResult SessionAdapter::QueueHandlerImpl::query(const string& name)
                                 queue->isDurable(),
                                 queue->hasExclusiveOwner(),
                                 queue->isAutoDelete(),
-                                queue->getSettings(),
+                                queue->getEncodableSettings(),
                                 queue->getMessageCount(),
                                 queue->getConsumerCount());
     } else {
@@ -294,19 +294,24 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
         queue = getQueue(name);
         //TODO: check alternate-exchange is as expected
     } else {
+        QueueSettings settings(durable, autoDelete);
+        try {
+            settings.populate(arguments, settings.storeSettings);
+        } catch (const qpid::types::Exception& e) {
+            throw InvalidArgumentException(e.what());
+        }
+
         std::pair<Queue::shared_ptr, bool> queue_created =
-            getBroker().createQueue(name, durable,
-                                    autoDelete,
+            getBroker().createQueue(name, settings,
                                     exclusive ? &session : 0,
                                     alternateExchange,
-                                    arguments,
                                     getConnection().getUserId(),
                                     getConnection().getUrl());
         queue = queue_created.first;
         assert(queue);
         if (queue_created.second) { // This is a new queue
             //handle automatic cleanup:
-            if (exclusive) {
+            if (exclusive && queue->setExclusiveOwner(&session)) {
                 exclusiveQueues.push_back(queue);
             }
         } else {

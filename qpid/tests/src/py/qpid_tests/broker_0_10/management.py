@@ -498,7 +498,7 @@ class ManagementTest (TestBase010):
         session.queue_declare(queue="whatever", exclusive=True, auto_delete=True)
 
     def test_immediate_method(self):
-        url = "%s://%s:%d" % (self.broker.scheme or "amqp", self.broker.host, self.broker.port)
+        url = "%s://%s:%d" % (self.broker.scheme or "amqp", self.broker.host or "localhost", self.broker.port or 5672)
         conn = qpid.messaging.Connection(url)
         conn.open()
         sess = conn.session()
@@ -659,7 +659,7 @@ class ManagementTest (TestBase010):
         self.assertEqual(rc.receive, True)
 
         # setup a connection & session to the broker
-        url = "%s://%s:%d" % (self.broker.scheme or "amqp", self.broker.host, self.broker.port)
+        url = "%s://%s:%d" % (self.broker.scheme or "amqp", self.broker.host or "localhost", self.broker.port or 5672)
         conn = qpid.messaging.Connection(url)
         conn.open()
         sess = conn.session()

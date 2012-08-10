@@ -23,6 +23,7 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueRegistry.h"
+#include "qpid/log/Statement.h"
 #include <boost/bind.hpp>
 
 namespace qpid {

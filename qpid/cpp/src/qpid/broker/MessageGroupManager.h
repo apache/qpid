@@ -24,8 +24,10 @@
 
 /* for managing message grouping on Queues */
 
+#include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/StatefulQueueObserver.h"
 #include "qpid/broker/MessageDistributor.h"
+#include "qpid/framing/SequenceNumber.h"
 #include "qpid/sys/unordered_map.h"
 
 #include <deque>
@@ -34,6 +36,7 @@ namespace qpid {
 namespace broker {
 
 class QueueObserver;
+struct QueueSettings;
 class MessageDistributor;
 class Messages;
 
@@ -76,11 +79,7 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageDistribu
     GroupFifo freeGroups;   // ordered by oldest free msg
     //Consumers consumers;    // index: consumer name
 
-    static const std::string qpidMessageGroupKey;
-    static const std::string qpidSharedGroup;   // if specified, one group can be consumed by multiple receivers
-    static const std::string qpidMessageGroupTimestamp;
-
-    GroupState& findGroup( const QueuedMessage& qm );
+    GroupState& findGroup( const Message& m );
     unsigned long hits, misses; // for debug
     uint32_t lastMsg;
     std::string lastGroup;
@@ -91,11 +90,14 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageDistribu
     void disown( GroupState& state );
 
  public:
+    static const std::string qpidMessageGroupKey;
+    static const std::string qpidSharedGroup;   // if specified, one group can be consumed by multiple receivers
+    static const std::string qpidMessageGroupTimestamp;
 
     static QPID_BROKER_EXTERN void setDefaults(const std::string& groupId);
     static boost::shared_ptr<MessageGroupManager> create( const std::string& qName,
                                                           Messages& messages,
-                                                          const qpid::framing::FieldTable& settings );
+                                                          const QueueSettings& settings );
 
     MessageGroupManager(const std::string& header, const std::string& _qName,
                         Messages& container, unsigned int _timestamp=0 )
@@ -106,22 +108,20 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageDistribu
     virtual ~MessageGroupManager();
 
     // QueueObserver iface
-    void enqueued( const QueuedMessage& qm );
-    void acquired( const QueuedMessage& qm );
-    void requeued( const QueuedMessage& qm );
-    void dequeued( const QueuedMessage& qm );
+    void enqueued( const Message& qm );
+    void acquired( const Message& qm );
+    void requeued( const Message& qm );
+    void dequeued( const Message& qm );
     void consumerAdded( const Consumer& ) {};
     void consumerRemoved( const Consumer& ) {};
     void getState(qpid::framing::FieldTable& state ) const;
     void setState(const qpid::framing::FieldTable&);
 
     // MessageDistributor iface
-    bool nextConsumableMessage(Consumer::shared_ptr& c, QueuedMessage& next);
-    bool allocate(const std::string& c, const QueuedMessage& qm);
-    bool nextBrowsableMessage(Consumer::shared_ptr& c, QueuedMessage& next);
+    bool acquire(const std::string& c, Message& );
     void query(qpid::types::Variant::Map&) const;
 
-    bool match(const qpid::types::Variant::Map*, const QueuedMessage&) const;
+    bool match(const qpid::types::Variant::Map*, const Message&) const;
 };
 
 }}

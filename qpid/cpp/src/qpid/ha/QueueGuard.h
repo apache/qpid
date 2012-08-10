@@ -63,15 +63,15 @@ class QueueGuard {
     /** QueueObserver override. Delay completion of the message.
      * NOTE: Called under the queues message lock.
      */
-    void enqueued(const broker::QueuedMessage&);
+    void enqueued(const broker::Message&);
 
     /** QueueObserver override: Complete a delayed message.
      * NOTE: Called under the queues message lock.
      */
-    void dequeued(const broker::QueuedMessage&);
+    void dequeued(const broker::Message&);
 
     /** Complete a delayed message. */
-    void complete(const broker::QueuedMessage&);
+    void complete(framing::SequenceNumber);
 
     /** Complete all delayed messages. */
     void cancel();
@@ -108,10 +108,13 @@ class QueueGuard {
     sys::Mutex lock;
     std::string logPrefix;
     broker::Queue& queue;
-    framing::SequenceSet delayed;
+    typedef std::map<framing::SequenceNumber, boost::intrusive_ptr<broker::AsyncCompletion> > Delayed;
+    Delayed delayed;
     ReplicatingSubscription* subscription;
     boost::shared_ptr<QueueObserver> observer;
     QueueRange range;
+
+    void completeRange(Delayed::iterator begin, Delayed::iterator end);
 };
 }} // namespace qpid::ha
 

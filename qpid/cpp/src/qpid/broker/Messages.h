@@ -29,7 +29,8 @@ namespace framing {
 class SequenceNumber;
 }
 namespace broker {
-struct QueuedMessage;
+class Message;
+class QueueCursor;
 
 /**
  * This interface abstracts out the access to the messages held for
@@ -39,8 +40,7 @@ struct QueuedMessage;
 class Messages
 {
   public:
-    typedef boost::function1<void, QueuedMessage&> Functor;
-    typedef boost::function1<bool, QueuedMessage&> Predicate;
+    typedef boost::function1<void, Message&> Functor;
 
     virtual ~Messages() {}
     /**
@@ -51,47 +51,44 @@ class Messages
     /**
      * Called when a message is deleted from the queue.
      */
-    virtual bool deleted(const QueuedMessage&) = 0;
+    virtual bool deleted(const QueueCursor&) = 0;
     /**
-     * Releases an acquired message, making it available again.
+     * Makes a message available.
      */
-    virtual void release(const QueuedMessage&) = 0;
+    virtual void publish(const Message& added) = 0;
     /**
-     * Acquire the message at the specified position, returning true
-     * if found, false otherwise. The acquired message is passed back
-     * via the second parameter.
-     */
-    virtual bool acquire(const framing::SequenceNumber&, QueuedMessage&) = 0;
-    /**
-     * Find the message at the specified position, returning true if
-     * found, false otherwise. The matched message is passed back via
-     * the second parameter.
-     */
-    virtual bool find(const framing::SequenceNumber&, QueuedMessage&) = 0;
-    /**
-     * Retrieve the next message to be given to a browsing
-     * subscription that has reached the specified position. The next
-     * message is passed back via the second parameter.
+     * Retrieve the next message for the given cursor. A reference to
+     * the message is passed back via the second parameter.
      *
-     * @param unacquired, if true, will only browse unacquired messages
-     *
-     * @return true if there is another message, false otherwise.
+     * @return a pointer to the message if there is one, in which case
+     * the cursor that points to it is assigned to cursor; null
+     * otherwise.
      */
-    virtual bool browse(const framing::SequenceNumber&, QueuedMessage&, bool unacquired) = 0;
+    virtual Message* next(QueueCursor& cursor) = 0;
+
     /**
-     * Retrieve the next message available for a consuming
-     * subscription.
+     * Release the message i.e. return it to the available state
+     * unless it has already been deleted.
      *
-     * @return true if there is such a message, false otherwise.
+     * @return a pointer to the Message if it is still in acquired state and
+     * hence can be released; null if it has already been deleted
      */
-    virtual bool consume(QueuedMessage&) = 0;
+    virtual Message* release(const QueueCursor& cursor) = 0;
     /**
-     * Pushes a message to the back of the 'queue'. For some types of
-     * queue this may cause another message to be removed; if that is
-     * the case the method will return true and the removed message
-     * will be passed out via the second parameter.
+     * Find the message with the specified sequence number, returning
+     * a pointer if found, null otherwise. A cursor to the matched
+     * message can be passed back via the second parameter, regardless
+     * of whether the message is found, using this cursor to call
+     * next() will give the next message greater than position if one
+     * exists.
      */
-    virtual bool push(const QueuedMessage& added, QueuedMessage& removed) = 0;
+    virtual Message* find(const framing::SequenceNumber&, QueueCursor*) = 0;
+
+    /**
+     * Find the message at the specified position, returning a pointer if
+     * found, null otherwise.
+     */
+    virtual Message* find(const QueueCursor&) = 0;
 
     /**
      * Add an already acquired message to the queue.
@@ -99,25 +96,11 @@ class Messages
      * Only need be implemented by subclasses that keep track of
      * acquired messages.
      */
-    virtual void updateAcquired(const QueuedMessage&) { }
-
-    /**
-     * Set the position of the back of the queue. Next message enqueued will be n+1.
-     *@pre Any messages with seq > n must already be dequeued.
-     */
-    virtual void setPosition(const framing::SequenceNumber& /*n*/) = 0;
-
+    //virtual void updateAcquired(const QueuedMessage&) { }
     /**
      * Apply, the functor to each message held
      */
-
     virtual void foreach(Functor) = 0;
-    /**
-     * Remove every message held that for which the specified
-     * predicate returns true
-     */
-    virtual void removeIf(Predicate) = 0;
-
   private:
 };
 }} // namespace qpid::broker

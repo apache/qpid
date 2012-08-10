@@ -41,7 +41,7 @@ class SessionState;
  * receives incoming frames, handles session controls and manages the
  * association between the channel and a session.
  */
-class SessionHandler : public amqp_0_10::SessionHandler {
+class SessionHandler : public qpid::amqp_0_10::SessionHandler {
   public:
     class ErrorListener {
       public:

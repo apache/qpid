@@ -24,22 +24,20 @@
 
 using namespace qpid::broker;
 
-DeliverableMessage::DeliverableMessage(const boost::intrusive_ptr<Message>& _msg) : msg(_msg)
-{
-}
+DeliverableMessage::DeliverableMessage(const Message& _msg, TxBuffer* _txn) : msg(_msg), txn(_txn) {}
 
 void DeliverableMessage::deliverTo(const boost::shared_ptr<Queue>& queue)
 {
-    queue->deliver(msg);    
+    queue->deliver(msg, txn);
     delivered = true;
 }
 
 Message& DeliverableMessage::getMessage()
 {
-    return *msg;
+    return msg;
 }
 
-uint64_t DeliverableMessage::contentSize ()
+uint64_t DeliverableMessage::contentSize()
 {
-    return msg->contentSize ();
+    return msg.getContentSize();
 }

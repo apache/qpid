@@ -24,13 +24,11 @@
 #include "qpid/broker/PriorityQueue.h"
 
 namespace qpid {
-namespace framing {
-class FieldTable;
-}
 namespace broker {
+struct QueueSettings;
 
 /**
- * Modifies a basic prioirty queue by limiting the number of messages
+ * Modifies a basic priority queue by limiting the number of messages
  * from each priority level that are dispatched before allowing
  * dispatch from the next level.
  */
@@ -42,7 +40,7 @@ class Fairshare : public PriorityQueue
     bool setState(uint priority, uint count);
     void setLimit(size_t level, uint limit);
     bool isNull();
-    static std::auto_ptr<Messages> create(const qpid::framing::FieldTable& settings);
+    static std::auto_ptr<Messages> create(const QueueSettings& settings);
     static bool getState(const Messages&, uint& priority, uint& count);
     static bool setState(Messages&, uint priority, uint count);
   private:
@@ -54,7 +52,8 @@ class Fairshare : public PriorityQueue
     uint currentLevel();
     uint nextLevel();
     bool limitReached();
-    bool findFrontLevel(uint& p, PriorityLevels&);
+    Priority firstLevel();
+    bool nextLevel(Priority& );
 };
 }} // namespace qpid::broker
 

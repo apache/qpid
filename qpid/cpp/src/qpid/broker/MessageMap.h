@@ -6,7 +6,7 @@
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
-o * regarding copyright ownership.  The ASF licenses this file
+ * regarding copyright ownership.  The ASF licenses this file
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
@@ -22,6 +22,7 @@ o * regarding copyright ownership.  The ASF licenses this file
  *
  */
 #include "qpid/broker/Messages.h"
+#include "qpid/broker/Message.h"
 #include "qpid/framing/SequenceNumber.h"
 #include <map>
 #include <string>
@@ -38,32 +39,31 @@ class MessageMap : public Messages
 {
   public:
     MessageMap(const std::string& key);
-    virtual ~MessageMap() {}
 
     size_t size();
     bool empty();
 
-    virtual bool deleted(const QueuedMessage&);
-    void release(const QueuedMessage&);
-    virtual bool acquire(const framing::SequenceNumber&, QueuedMessage&);
-    bool find(const framing::SequenceNumber&, QueuedMessage&);
-    virtual bool browse(const framing::SequenceNumber&, QueuedMessage&, bool);
-    bool consume(QueuedMessage&);
-    virtual bool push(const QueuedMessage& added, QueuedMessage& removed);
-    void setPosition(const framing::SequenceNumber&);
+    bool deleted(const QueueCursor&);
+    void publish(const Message& added);//use update instead to get replaced message
+    Message* next(QueueCursor&);
+    Message* release(const QueueCursor& cursor);
+    Message* find(const QueueCursor&);
+    Message* find(const framing::SequenceNumber&, QueueCursor*);
 
     void foreach(Functor);
-    virtual void removeIf(Predicate);
+
+    bool update(const Message& added, Message& removed);
 
   protected:
-    typedef std::map<std::string, QueuedMessage> Index;
-    typedef std::map<framing::SequenceNumber, QueuedMessage> Ordering;
+    typedef std::map<std::string, Message> Index;
+    typedef std::map<framing::SequenceNumber, Message> Ordering;
     const std::string key;
     Index index;
     Ordering messages;
+    int32_t version;
 
-    std::string getKey(const QueuedMessage&);
-    virtual const QueuedMessage& replace(const QueuedMessage&, const QueuedMessage&);
+    std::string getKey(const Message&);
+    virtual const Message& replace(const Message&, const Message&);
     void erase(Ordering::iterator);
 };
 }} // namespace qpid::broker

@@ -583,15 +583,7 @@ class ReplicationTests(BrokerTest):
         s = primary.connect().session().sender("q; {create:always, node:{x-declare:{arguments:{'qpid.policy_type':ring, 'qpid.max_count':5, 'qpid.priorities':10}}}}")
         priorities = [8,9,5,1,2,2,3,4,9,7,8,9,9,2]
         for p in priorities: s.send(Message(priority=p))
-
-        # FIXME aconway 2012-02-22: there is a bug in priority ring
-        # queues that allows a low priority message to displace a high
-        # one. The following commented-out assert_browse is for the
-        # correct result, the uncommented one is for the actualy buggy
-        # result.  See https://issues.apache.org/jira/browse/QPID-3866
-        #
-        # expect = sorted(priorities,reverse=True)[0:5]
-        expect = [9,9,9,9,2]
+        expect = sorted(priorities,reverse=True)[0:5]
         primary.assert_browse("q", expect, transform=lambda m: m.priority)
         backup.assert_browse_backup("q", expect, transform=lambda m: m.priority)
 

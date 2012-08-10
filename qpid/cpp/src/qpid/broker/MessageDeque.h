@@ -22,8 +22,7 @@
  *
  */
 #include "qpid/broker/Messages.h"
-#include "qpid/broker/QueuedMessage.h"
-#include <deque>
+#include "qpid/broker/IndexedDeque.h"
 
 namespace qpid {
 namespace broker {
@@ -36,31 +35,20 @@ class MessageDeque : public Messages
   public:
     MessageDeque();
     size_t size();
-    bool deleted(const QueuedMessage&);
-    void release(const QueuedMessage&);
-    bool acquire(const framing::SequenceNumber&, QueuedMessage&);
-    bool find(const framing::SequenceNumber&, QueuedMessage&);
-    bool browse(const framing::SequenceNumber&, QueuedMessage&, bool);
-    bool consume(QueuedMessage&);
-    bool push(const QueuedMessage& added, QueuedMessage& removed);
-    void updateAcquired(const QueuedMessage& acquired);
-    void setPosition(const framing::SequenceNumber&);
-    void foreach(Functor);
-    void removeIf(Predicate);
+    bool deleted(const QueueCursor&);
+    void publish(const Message& added);
+    Message* next(QueueCursor&);
+    Message* release(const QueueCursor& cursor);
+    Message* find(const QueueCursor&);
+    Message* find(const framing::SequenceNumber&, QueueCursor*);
 
-    // For use by other Messages implementations that use MessageDeque as a FIFO index
-    // and keep pointers to its elements in their own indexing strctures.
-    void clean();
-    QueuedMessage* releasePtr(const QueuedMessage&);
-    QueuedMessage* pushPtr(const QueuedMessage& added);
+    void foreach(Functor);
+
+    void resetCursors();
 
   private:
-    typedef std::deque<QueuedMessage> Deque;
+    typedef IndexedDeque<Message> Deque;
     Deque messages;
-    size_t available;
-    size_t head;
-
-    size_t index(const framing::SequenceNumber&);
 };
 }} // namespace qpid::broker
 

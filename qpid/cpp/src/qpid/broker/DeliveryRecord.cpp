@@ -24,6 +24,7 @@
 #include "qpid/broker/Consumer.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/broker/amqp_0_10/MessageTransfer.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/MessageTransferBody.h"
@@ -32,77 +33,46 @@ using namespace qpid;
 using namespace qpid::broker;
 using std::string;
 
-DeliveryRecord::DeliveryRecord(const QueuedMessage& _msg,
+DeliveryRecord::DeliveryRecord(const QueueCursor& _msg,
+                               framing::SequenceNumber _msgId,
                                const Queue::shared_ptr& _queue,
                                const std::string& _tag,
                                const boost::shared_ptr<Consumer>& _consumer,
                                bool _acquired,
                                bool accepted,
                                bool _windowing,
-                               uint32_t _credit):
-    msg(_msg),
-    queue(_queue),
-    tag(_tag),
-    consumer(_consumer),
-    acquired(_acquired),
-    acceptExpected(!accepted),
-    cancelled(false),
-    completed(false),
-    ended(accepted && acquired),
-    windowing(_windowing),
-    credit(msg.payload ? msg.payload->getRequiredCredit() : _credit)
+                               uint32_t _credit) : msg(_msg),
+                                                   queue(_queue),
+                                                   tag(_tag),
+                                                   consumer(_consumer),
+                                                   acquired(_acquired),
+                                                   acceptExpected(!accepted),
+                                                   cancelled(false),
+                                                   completed(false),
+                                                   ended(accepted && acquired),
+                                                   windowing(_windowing),
+                                                   credit(_credit),
+                                                   msgId(_msgId)
 {}
 
 bool DeliveryRecord::setEnded()
 {
     ended = true;
-    //reset msg pointer, don't need to hold on to it anymore
-    msg.payload = boost::intrusive_ptr<Message>();
     QPID_LOG(debug, "DeliveryRecord::setEnded() id=" << id);
     return isRedundant();
 }
 
-void DeliveryRecord::redeliver(SemanticState* const session) {
-    if (!ended) {
-        if(cancelled){
-            //if subscription was cancelled, requeue it (waiting for
-            //final confirmation for AMQP WG on this case)
-            requeue();
-        }else{
-            msg.payload->redeliver();//mark as redelivered
-            session->deliver(*this, false);
-        }
-    }
-}
-
-void DeliveryRecord::deliver(framing::FrameHandler& h, DeliveryId deliveryId, uint16_t framesize)
-{
-    id = deliveryId;
-    if (msg.payload->getRedelivered()){
-        msg.payload->setRedelivered();
-    }
-    msg.payload->adjustTtl();
-
-    framing::AMQFrame method((framing::MessageTransferBody(framing::ProtocolVersion(), tag, acceptExpected ? 0 : 1, acquired ? 0 : 1)));
-    method.setEof(false);
-    h.handle(method);
-    msg.payload->sendHeader(h, framesize);
-    msg.payload->sendContent(*queue, h, framesize);
-}
-
-void DeliveryRecord::requeue() const
+void DeliveryRecord::requeue()
 {
     if (acquired && !ended) {
-        msg.payload->redeliver();
-        queue->requeue(msg);
+        queue->release(msg);
     }
 }
 
 void DeliveryRecord::release(bool setRedelivered)
 {
     if (acquired && !ended) {
-        if (setRedelivered) msg.payload->redeliver();
-        queue->requeue(msg);
+        queue->release(msg, setRedelivered);
         acquired = false;
         setEnded();
     } else {
@@ -110,13 +80,14 @@ void DeliveryRecord::release(bool setRedelivered)
     }
 }
 
-void DeliveryRecord::complete()  {
+void DeliveryRecord::complete()
+{
     completed = true;
 }
 
 bool DeliveryRecord::accept(TransactionContext* ctxt) {
     if (!ended) {
-        if (consumer) consumer->acknowledged(getMessage());
+        if (consumer) consumer->acknowledged(*this);
         if (acquired) queue->dequeue(ctxt, msg);
         setEnded();
         QPID_LOG(debug, "Accepted " << id);
@@ -124,31 +95,22 @@ bool DeliveryRecord::accept(TransactionContext* ctxt) {
     return isRedundant();
 }
 
-void DeliveryRecord::dequeue(TransactionContext* ctxt) const{
+void DeliveryRecord::dequeue(TransactionContext* ctxt) const
+{
     if (acquired && !ended) {
         queue->dequeue(ctxt, msg);
     }
 }
 
-void DeliveryRecord::committed() const{
+void DeliveryRecord::committed() const
+{
     queue->dequeueCommitted(msg);
 }
 
 void DeliveryRecord::reject()
 {
     if (acquired && !ended) {
-        Exchange::shared_ptr alternate = queue->getAlternateExchange();
-        if (alternate) {
-            DeliverableMessage delivery(msg.payload);
-            alternate->routeWithAlternate(delivery);
-            QPID_LOG(info, "Routed rejected message from " << queue->getName() << " to "
-                     << alternate->getName());
-        } else {
-            //just drop it
-            QPID_LOG(info, "Dropping rejected message from " << queue->getName());
-        }
-        queue->countRejected();
-        dequeue();
+        queue->reject(msg);
         setEnded();
     }
 }

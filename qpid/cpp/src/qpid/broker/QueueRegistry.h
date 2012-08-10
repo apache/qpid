@@ -22,8 +22,8 @@
 #define _QueueRegistry_
 
 #include "qpid/broker/BrokerImportExport.h"
+#include "qpid/broker/QueueFactory.h"
 #include "qpid/sys/Mutex.h"
-#include "qpid/management/Manageable.h"
 #include "qpid/framing/FieldTable.h"
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
@@ -34,11 +34,8 @@ namespace qpid {
 namespace broker {
 
 class Queue;
-class QueueEvents;
 class Exchange;
 class OwnershipToken;
-class Broker;
-class MessageStore;
 
 /**
  * A registry of queues indexed by queue name.
@@ -47,7 +44,7 @@ class MessageStore;
  * are deleted when and only when they are no longer in use.
  *
  */
-class QueueRegistry {
+class QueueRegistry : QueueFactory {
   public:
     QPID_BROKER_EXTERN QueueRegistry(Broker* b = 0);
     QPID_BROKER_EXTERN ~QueueRegistry();
@@ -60,11 +57,8 @@ class QueueRegistry {
      */
     QPID_BROKER_EXTERN std::pair<boost::shared_ptr<Queue>, bool> declare(
         const std::string& name,
-        bool durable = false,
-        bool autodelete = false,
-        const OwnershipToken* owner = 0,
+        const QueueSettings& settings,
         boost::shared_ptr<Exchange> alternateExchange = boost::shared_ptr<Exchange>(),
-        const qpid::framing::FieldTable& args = framing::FieldTable(),
         bool recovering = false);
 
     /**
@@ -101,11 +95,6 @@ class QueueRegistry {
     QPID_BROKER_EXTERN boost::shared_ptr<Queue> get(const std::string& name);
 
     /**
-     * Generate unique queue name.
-     */
-    std::string generateName();
-
-    /**
      * Set the store to use.  May only be called once.
      */
     void setStore (MessageStore*);
@@ -118,7 +107,7 @@ class QueueRegistry {
     /**
      * Register the manageable parent for declared queues
      */
-    void setParent (management::Manageable* _parent) { parent = _parent; }
+    void setParent (management::Manageable*);
 
     /** Call f for each queue in the registry. */
     template <class F> void eachQueue(F f) const {
@@ -127,22 +116,10 @@ class QueueRegistry {
             f(i->second);
     }
 
-	/**
-	* Change queue mode when cluster size drops to 1 node, expands again
-	* in practice allows flow queue to disk when last name to be exectuted
-	*/
-	void updateQueueClusterState(bool lastNode);
-
 private:
     typedef std::map<std::string, boost::shared_ptr<Queue> > QueueMap;
     QueueMap queues;
     mutable qpid::sys::RWlock lock;
-    int counter;
-    MessageStore* store;
-    QueueEvents* events;
-    management::Manageable* parent;
-    bool lastNode; //used to set mode on queue declare
-    Broker* broker;
 };
 
 

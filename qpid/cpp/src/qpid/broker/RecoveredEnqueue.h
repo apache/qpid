@@ -26,8 +26,6 @@
 #include "qpid/broker/MessageStore.h"
 #include "qpid/broker/TxOp.h"
 
-#include <boost/intrusive_ptr.hpp>
-
 #include <algorithm>
 #include <functional>
 #include <list>
@@ -36,19 +34,17 @@ namespace qpid {
 namespace broker {
 class RecoveredEnqueue : public TxOp{
     boost::shared_ptr<Queue> queue;
-    boost::intrusive_ptr<Message> msg;
+    Message msg;
 
   public:
-    RecoveredEnqueue(boost::shared_ptr<Queue> queue, boost::intrusive_ptr<Message> msg);
+    RecoveredEnqueue(boost::shared_ptr<Queue> queue, Message msg);
     virtual bool prepare(TransactionContext* ctxt) throw();
     virtual void commit() throw();
     virtual void rollback() throw();
     virtual ~RecoveredEnqueue(){}
-    virtual void accept(TxOpConstVisitor& visitor) const { visitor(*this); }
 
     boost::shared_ptr<Queue> getQueue() const { return queue; }
-    boost::intrusive_ptr<Message> getMessage() const { return msg; }
-            
+    Message getMessage() const { return msg; }
 };
 }
 }
