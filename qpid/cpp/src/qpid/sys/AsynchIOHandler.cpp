@@ -33,15 +33,6 @@
 namespace qpid {
 namespace sys {
 
-// Buffer definition
-struct Buff : public AsynchIO::BufferBase {
-    Buff() :
-        AsynchIO::BufferBase(new char[65536], 65536)
-    {}
-    ~Buff()
-    { delete [] bytes;}
-};
-
 struct ProtocolTimeoutTask : public sys::TimerTask {
     AsynchIOHandler& handler;
     std::string id;
@@ -79,7 +70,7 @@ AsynchIOHandler::~AsynchIOHandler() {
     delete codec;
 }
 
-void AsynchIOHandler::init(qpid::sys::AsynchIO* a, qpid::sys::Timer& timer, uint32_t maxTime, int numBuffs) {
+void AsynchIOHandler::init(qpid::sys::AsynchIO* a, qpid::sys::Timer& timer, uint32_t maxTime) {
     aio = a;
 
     // Start timer for this connection
@@ -87,17 +78,14 @@ void AsynchIOHandler::init(qpid::sys::AsynchIO* a, qpid::sys::Timer& timer, uint
     timer.add(timeoutTimerTask);
 
     // Give connection some buffers to use
-    for (int i = 0; i < numBuffs; i++) {
-        aio->queueReadBuffer(new Buff);
-    }
+    aio->createBuffers();
 }
 
 void AsynchIOHandler::write(const framing::ProtocolInitiation& data)
 {
     QPID_LOG(debug, "SENT [" << identifier << "]: INIT(" << data << ")");
     AsynchIO::BufferBase* buff = aio->getQueuedBuffer();
-    if (!buff)
-        buff = new Buff;
+    assert(buff);
     framing::Buffer out(buff->bytes, buff->byteCount);
     data.encode(out);
     buff->dataCount = data.encodedSize();
@@ -244,24 +232,24 @@ void AsynchIOHandler::idle(AsynchIO&){
         return;
     }
     if (codec == 0) return;
-    try {
-        if (codec->canEncode()) {
-            // Try and get a queued buffer if not then construct new one
-            AsynchIO::BufferBase* buff = aio->getQueuedBuffer();
-            if (!buff) buff = new Buff;
+    if (!codec->canEncode()) {
+        return;
+    }
+    AsynchIO::BufferBase* buff = aio->getQueuedBuffer();
+    if (buff) {
+        try {
             size_t encoded=codec->encode(buff->bytes, buff->byteCount);
             buff->dataCount = encoded;
             aio->queueWrite(buff);
+            if (!codec->isClosed()) {
+                return;
+            }
+        } catch (const std::exception& e) {
+            QPID_LOG(error, e.what());
         }
-        if (codec->isClosed()) {
-            readError = true;
-            aio->queueWriteClose();
-        }
-    } catch (const std::exception& e) {
-        QPID_LOG(error, e.what());
-        readError = true;
-        aio->queueWriteClose();
     }
+    readError = true;
+    aio->queueWriteClose();
 }
 
 }} // namespace qpid::sys
