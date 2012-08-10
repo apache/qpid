@@ -223,7 +223,6 @@ include qmfc.mk
 if HAVE_XML
 include xml.mk
 endif
-include replication.mk
 
 if RDMA
 
@@ -334,6 +333,7 @@ libqpidcommon_la_LIBADD = \
   -lboost_program_options \
   -lboost_filesystem \
   -luuid \
+  -lpthread \
   $(LIB_DLOPEN) \
   $(LIB_CLOCK_GETTIME)
 
@@ -553,7 +553,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/Deliverable.h \
   qpid/broker/DeliverableMessage.cpp \
   qpid/broker/DeliverableMessage.h \
-  qpid/broker/DeliveryAdapter.h \
   qpid/broker/DeliveryId.h \
   qpid/broker/DeliveryRecord.cpp \
   qpid/broker/DeliveryRecord.h \
@@ -584,12 +583,14 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/HeadersExchange.cpp \
   qpid/broker/HeadersExchange.h \
   qpid/broker/AsyncCompletion.h \
-  qpid/broker/LegacyLVQ.h \
-  qpid/broker/LegacyLVQ.cpp \
+  qpid/broker/IndexedDeque.h \
   qpid/broker/Link.cpp \
   qpid/broker/Link.h \
   qpid/broker/LinkRegistry.cpp \
   qpid/broker/LinkRegistry.h \
+  qpid/broker/Lvq.h \
+  qpid/broker/Lvq.cpp \
+  qpid/broker/MapHandler.h \
   qpid/broker/Message.cpp \
   qpid/broker/Message.h \
   qpid/broker/MessageAdapter.cpp \
@@ -624,19 +625,25 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/QueueBindings.h \
   qpid/broker/QueueCleaner.cpp \
   qpid/broker/QueueCleaner.h \
-  qpid/broker/QueueEvents.cpp \
-  qpid/broker/QueueEvents.h \
+  qpid/broker/QueueCursor.h \
+  qpid/broker/QueueCursor.cpp \
+  qpid/broker/QueueDepth.h \
+  qpid/broker/QueueDepth.cpp \
+  qpid/broker/QueueFactory.h \
+  qpid/broker/QueueFactory.cpp \
+  qpid/broker/QueueSettings.h \
+  qpid/broker/QueueSettings.cpp \
   qpid/broker/QueueListeners.cpp \
   qpid/broker/QueueListeners.h \
   qpid/broker/QueueObserver.h \
-  qpid/broker/QueuePolicy.cpp \
-  qpid/broker/QueuePolicy.h \
   qpid/broker/QueueRegistry.cpp \
   qpid/broker/QueueRegistry.h \
   qpid/broker/QueuedMessage.cpp \
   qpid/broker/QueuedMessage.h \
   qpid/broker/QueueFlowLimit.h \
   qpid/broker/QueueFlowLimit.cpp \
+  qpid/broker/LossyQueue.h \
+  qpid/broker/LossyQueue.cpp \
   qpid/broker/RecoverableConfig.h \
   qpid/broker/RecoverableExchange.h \
   qpid/broker/RecoverableMessage.h \
@@ -687,9 +694,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/TxBuffer.cpp \
   qpid/broker/TxBuffer.h \
   qpid/broker/TxOp.h \
-  qpid/broker/TxOpVisitor.h \
-  qpid/broker/TxPublish.cpp \
-  qpid/broker/TxPublish.h \
   qpid/broker/Vhost.cpp \
   qpid/broker/Vhost.h \
   qpid/broker/MessageDistributor.h \
@@ -697,6 +701,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/FifoDistributor.cpp \
   qpid/broker/MessageGroupManager.cpp \
   qpid/broker/MessageGroupManager.h \
+  qpid/broker/amqp_0_10/MessageTransfer.h \
+  qpid/broker/amqp_0_10/MessageTransfer.cpp \
   qpid/management/ManagementAgent.cpp \
   qpid/management/ManagementAgent.h \
   qpid/management/ManagementDirectExchange.cpp \

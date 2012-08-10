@@ -24,7 +24,9 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/broker/QueueSettings.h"
 #include "qpid/broker/Link.h"
+#include "qpid/broker/amqp_0_10/MessageTransfer.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/log/Statement.h"
 #include "qpid/amqp_0_10/Codecs.h"
@@ -116,11 +118,6 @@ const string QMF_DEFAULT_DIRECT("qmf.default.direct");
 const string _QUERY_REQUEST("_query_request");
 const string BROKER("broker");
 const string MEMBERS("members");
-
-bool isQMFv2(const Message& message) {
-    const framing::MessageProperties* props = message.getProperties<framing::MessageProperties>();
-    return props && props->getAppId() == QMF2;
-}
 
 template <class T> bool match(Variant::Map& schema) {
     return T::match(schema[CLASS_NAME], schema[PACKAGE_NAME]);
@@ -253,18 +250,15 @@ void BrokerReplicator::route(Deliverable& msg) {
         haBroker.setStatus(CATCHUP);
         QPID_LOG(notice, logPrefix << "Connected to primary " << primary);
     }
-
-    const framing::FieldTable* headers = msg.getMessage().getApplicationHeaders();
-    const MessageProperties* messageProperties = msg.getMessage().getProperties<MessageProperties>();
     Variant::List list;
     try {
-        if (!isQMFv2(msg.getMessage()) || !headers || !messageProperties)
+        if (!qpid::broker::amqp_0_10::MessageTransfer::isQMFv2(msg.getMessage()))
             throw Exception("Unexpected message, not QMF2 event or query response.");
         // decode as list
-        string content = msg.getMessage().getFrames().getContent();
-        amqp_0_10::ListCodec::decode(content, list);
-        QPID_LOG(trace, "Broker replicator received: " << *messageProperties);
-        if (headers->getAsString(QMF_CONTENT) == EVENT) {
+        string content = msg.getMessage().getContent();
+        qpid::amqp_0_10::ListCodec::decode(content, list);
+
+        if (msg.getMessage().getPropertyAsString(QMF_CONTENT) == EVENT) {
             for (Variant::List::iterator i = list.begin(); i != list.end(); ++i) {
                 Variant::Map& map = i->asMap();
                 QPID_LOG(trace, "Broker replicator event: " << map);
@@ -278,20 +272,20 @@ void BrokerReplicator::route(Deliverable& msg) {
                 else if (match<EventUnbind>(schema)) doEventUnbind(values);
                 else if (match<EventMembersUpdate>(schema)) doEventMembersUpdate(values);
             }
-        } else if (headers->getAsString(QMF_OPCODE) == QUERY_RESPONSE) {
+        } else if (msg.getMessage().getPropertyAsString(QMF_OPCODE) == QUERY_RESPONSE) {
             for (Variant::List::iterator i = list.begin(); i != list.end(); ++i) {
                 Variant::Map& map = i->asMap();
                 QPID_LOG(trace, "Broker replicator response: " << map);
                 string type = map[SCHEMA_ID].asMap()[CLASS_NAME].asString();
                 Variant::Map& values = map[VALUES].asMap();
                 framing::FieldTable args;
-                amqp_0_10::translate(asMapVoid(values[ARGUMENTS]), args);
+                qpid::amqp_0_10::translate(asMapVoid(values[ARGUMENTS]), args);
                 if      (type == QUEUE) doResponseQueue(values);
                 else if (type == EXCHANGE) doResponseExchange(values);
                 else if (type == BINDING) doResponseBind(values);
                 else if (type == HA_BROKER) doResponseHaBroker(values);
             }
-            if (messageProperties->getCorrelationId() == EXCHANGE && !headers->isSet(PARTIAL)) {
+            if (qpid::broker::amqp_0_10::MessageTransfer::isLastQMFResponse(msg.getMessage(), EXCHANGE)) {
                 // We have received all of the exchange response.
                 alternates.clear();
             }
@@ -309,13 +303,11 @@ void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
     Variant::Map argsMap = asMapVoid(values[ARGS]);
     bool autoDel = values[AUTODEL].asBool();
     bool excl = values[EXCL].asBool();
-    if (values[DISP] == CREATED &&
-        replicationTest.isReplicated(CONFIGURATION, argsMap, autoDel, excl))
-    {
+    if (values[DISP] == CREATED && replicationTest.isReplicated(CONFIGURATION, argsMap, autoDel, excl)) {
         string name = values[QNAME].asString();
-        QPID_LOG(debug, logPrefix << "Queue declare event: " << name);
+        QueueSettings settings(values[DURABLE].asBool(), values[AUTODEL].asBool());
         framing::FieldTable args;
-        amqp_0_10::translate(argsMap, args);
+        qpid::amqp_0_10::translate(argsMap, args);
         // If we already have a queue with this name, replace it.
         // The queue was definitely created on the primary.
         if (broker.getQueues().find(name)) {
@@ -323,10 +315,17 @@ void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
             broker.getQueues().destroy(name);
             stopQueueReplicator(name);
         }
-        boost::shared_ptr<Queue> queue = createQueue(
-            name, values[DURABLE].asBool(), autoDel, args, values[ALTEX].asString());
-        assert(queue);  // Should be created since we destroed the previous queue above.
-        if (queue) startQueueReplicator(queue);
+        settings.populate(args, settings.storeSettings);
+        std::pair<boost::shared_ptr<Queue>, bool> result =
+            broker.createQueue(
+                name,
+                settings,
+                0 /*i.e. no owner regardless of exclusivity on master*/,
+                values[ALTEX].asString(),
+                userId,
+                remoteHost);
+        assert(result.second);  // Should be true since we destroyed existing queue above
+        startQueueReplicator(result.first);
     }
 }
 
@@ -343,7 +342,7 @@ void BrokerReplicator::doEventQueueDelete(Variant::Map& values) {
     // sessions may be closed by a "queue deleted" exception.
     string name = values[QNAME].asString();
     boost::shared_ptr<Queue> queue = broker.getQueues().find(name);
-    if (queue && replicationTest.replicateLevel(queue->getSettings())) {
+    if (queue && replicationTest.replicateLevel(queue->getSettings().storeSettings)) {
         QPID_LOG(debug, logPrefix << "Queue delete event: " << name);
         stopQueueReplicator(name);
         broker.deleteQueue(name, userId, remoteHost);
@@ -357,7 +356,7 @@ void BrokerReplicator::doEventExchangeDeclare(Variant::Map& values) {
         string name = values[EXNAME].asString();
         QPID_LOG(debug, logPrefix << "Exchange declare event: " << name);
         framing::FieldTable args;
-        amqp_0_10::translate(argsMap, args);
+        qpid::amqp_0_10::translate(argsMap, args);
         // If we already have a exchange with this name, replace it.
         // The exchange was definitely created on the primary.
         if (broker.getExchanges().find(name)) {
@@ -391,10 +390,10 @@ void BrokerReplicator::doEventBind(Variant::Map& values) {
     // We only replicate binds for a replicated queue to replicated
     // exchange that both exist locally.
     if (exchange && replicationTest.replicateLevel(exchange->getArgs()) &&
-        queue && replicationTest.replicateLevel(queue->getSettings()))
+        queue && replicationTest.replicateLevel(queue->getSettings().storeSettings))
     {
         framing::FieldTable args;
-        amqp_0_10::translate(asMapVoid(values[ARGS]), args);
+        qpid::amqp_0_10::translate(asMapVoid(values[ARGS]), args);
         string key = values[KEY].asString();
         QPID_LOG(debug, logPrefix << "Bind event: exchange=" << exchange->getName()
                  << " queue=" << queue->getName()
@@ -411,10 +410,10 @@ void BrokerReplicator::doEventUnbind(Variant::Map& values) {
     // We only replicate unbinds for a replicated queue to replicated
     // exchange that both exist locally.
     if (exchange && replicationTest.replicateLevel(exchange->getArgs()) &&
-        queue && replicationTest.replicateLevel(queue->getSettings()))
+        queue && replicationTest.replicateLevel(queue->getSettings().storeSettings))
     {
         framing::FieldTable args;
-        amqp_0_10::translate(asMapVoid(values[ARGS]), args);
+        qpid::amqp_0_10::translate(asMapVoid(values[ARGS]), args);
         string key = values[KEY].asString();
         QPID_LOG(debug, logPrefix << "Unbind event: exchange=" << exchange->getName()
                  << " queue=" << queue->getName()
@@ -455,7 +454,7 @@ void BrokerReplicator::doResponseQueue(Variant::Map& values) {
     string name(values[NAME].asString());
     QPID_LOG(debug, logPrefix << "Queue response: " << name);
     framing::FieldTable args;
-    amqp_0_10::translate(argsMap, args);
+    qpid::amqp_0_10::translate(argsMap, args);
     boost::shared_ptr<Queue> queue =
         createQueue(name, values[DURABLE].asBool(), values[AUTODELETE].asBool(), args,
                     getAltExchange(values[ALTEXCHANGE]));
@@ -470,7 +469,7 @@ void BrokerReplicator::doResponseExchange(Variant::Map& values) {
     string name = values[NAME].asString();
     QPID_LOG(debug, logPrefix << "Exchange response: " << name);
     framing::FieldTable args;
-    amqp_0_10::translate(argsMap, args);
+    qpid::amqp_0_10::translate(argsMap, args);
     boost::shared_ptr<Exchange> exchange = createExchange(
         name, values[TYPE].asString(), values[DURABLE].asBool(), args,
         getAltExchange(values[ALTEXCHANGE]));
@@ -507,14 +506,14 @@ void BrokerReplicator::doResponseBind(Variant::Map& values) {
 
     // Automatically replicate binding if queue and exchange exist and are replicated
     if (exchange && replicationTest.replicateLevel(exchange->getArgs()) &&
-        queue && replicationTest.replicateLevel(queue->getSettings()))
+        queue && replicationTest.replicateLevel(queue->getSettings().storeSettings))
     {
         string key = values[KEY].asString();
         QPID_LOG(debug, logPrefix << "Bind response: exchange:" << exName
                  << " queue:" << qName
                  << " key:" << key);
         framing::FieldTable args;
-        amqp_0_10::translate(asMapVoid(values[ARGUMENTS]), args);
+        qpid::amqp_0_10::translate(asMapVoid(values[ARGUMENTS]), args);
         exchange->bind(queue, key, &args);
     }
 }
@@ -544,7 +543,7 @@ void BrokerReplicator::doResponseHaBroker(Variant::Map& values) {
 
 void BrokerReplicator::startQueueReplicator(const boost::shared_ptr<Queue>& queue)
 {
-    if (replicationTest.replicateLevel(queue->getSettings()) == ALL) {
+    if (replicationTest.replicateLevel(queue->getSettings().storeSettings) == ALL) {
         boost::shared_ptr<QueueReplicator> qr(
             new QueueReplicator(haBroker, queue, link));
         if (!broker.getExchanges().registerExchange(qr))
@@ -570,14 +569,14 @@ boost::shared_ptr<Queue> BrokerReplicator::createQueue(
     const qpid::framing::FieldTable& arguments,
     const std::string& alternateExchange)
 {
+    QueueSettings settings(durable, autodelete);
+    settings.populate(arguments, settings.storeSettings);
     std::pair<boost::shared_ptr<Queue>, bool> result =
         broker.createQueue(
             name,
-            durable,
-            autodelete,
-            0, // no owner regardless of exclusivity on primary
+            settings,
+            0,// no owner regardless of exclusivity on primary
             string(), // Set alternate exchange below
-            arguments,
             userId,
             remoteHost);
     if (result.second) {

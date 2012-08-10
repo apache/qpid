@@ -29,132 +29,23 @@ using namespace qpid::broker;
 namespace qpid {
 namespace broker {
 
-class MessageStore;
-
 PersistableMessage::~PersistableMessage() {}
-
-PersistableMessage::PersistableMessage() :
-    asyncDequeueCounter(0),
-    store(0)
-{}
+PersistableMessage::PersistableMessage() : persistenceId(0) {}
 
 void PersistableMessage::flush()
 {
-    syncList copy;
-    {
-        sys::ScopedLock<sys::Mutex> l(storeLock);
-	if (store) {
-	    copy = synclist;
-	} else {
-            return;//early exit as nothing to do
-	}
-    }
-    for (syncList::iterator i = copy.begin(); i != copy.end(); ++i) {
-        PersistableQueue::shared_ptr q(i->lock());
-        if (q) {
-            q->flush();
-        }
-    } 
+    //TODO: is this really the right place for this?
 }
 
-void PersistableMessage::setContentReleased()
+
+void PersistableMessage::enqueueAsync(PersistableQueue::shared_ptr, MessageStore*)
 {
-    contentReleaseState.released = true;
-}
-
-bool PersistableMessage::isContentReleased() const
-{ 
-    return contentReleaseState.released;
-}
-       
-
-bool PersistableMessage::isStoredOnQueue(PersistableQueue::shared_ptr queue){
-    if (store && (queue->getPersistenceId()!=0)) {
-        for (syncList::iterator i = synclist.begin(); i != synclist.end(); ++i) {
-            PersistableQueue::shared_ptr q(i->lock());
-            if (q && q->getPersistenceId() == queue->getPersistenceId())  return true;
-        } 
-    }            
-    return false;
-}
-
-
-void PersistableMessage::addToSyncList(PersistableQueue::shared_ptr queue, MessageStore* _store) { 
-    if (_store){
-        sys::ScopedLock<sys::Mutex> l(storeLock);
-        store = _store;
-        boost::weak_ptr<PersistableQueue> q(queue);
-        synclist.push_back(q);
-    }
-}
-
-void PersistableMessage::enqueueAsync(PersistableQueue::shared_ptr queue, MessageStore* _store) { 
-    addToSyncList(queue, _store);
     enqueueStart();
 }
 
-bool PersistableMessage::isDequeueComplete() { 
-    sys::ScopedLock<sys::Mutex> l(asyncDequeueLock);
-    return asyncDequeueCounter == 0;
-}
-    
-void PersistableMessage::dequeueComplete() { 
-    bool notify = false;
-    {
-        sys::ScopedLock<sys::Mutex> l(asyncDequeueLock);
-        if (asyncDequeueCounter > 0) {
-            if (--asyncDequeueCounter == 0) {
-                notify = true;
-            }
-        }
-    }
-    if (notify) allDequeuesComplete();
-}
-
-void PersistableMessage::dequeueAsync(PersistableQueue::shared_ptr queue, MessageStore* _store) { 
-    if (_store){
-        sys::ScopedLock<sys::Mutex> l(storeLock);
-        store = _store;
-        boost::weak_ptr<PersistableQueue> q(queue);
-        synclist.push_back(q);
-    }
-    dequeueAsync();
-}
-
-void PersistableMessage::dequeueAsync() { 
-    sys::ScopedLock<sys::Mutex> l(asyncDequeueLock);
-    asyncDequeueCounter++; 
-}
-
-PersistableMessage::ContentReleaseState::ContentReleaseState() : blocked(false), requested(false), released(false) {}
-
-void PersistableMessage::setStore(MessageStore* s)
-{
-    store = s;
-}
-
-void PersistableMessage::requestContentRelease()
-{
-    contentReleaseState.requested = true;
-}
-void PersistableMessage::blockContentRelease()
-{ 
-    contentReleaseState.blocked = true;
-}
-bool PersistableMessage::checkContentReleasable()
-{ 
-    return contentReleaseState.requested && !contentReleaseState.blocked;
-}
-
-bool PersistableMessage::isContentReleaseBlocked()
-{
-    return contentReleaseState.blocked;
-}
-
-bool PersistableMessage::isContentReleaseRequested()
-{
-    return contentReleaseState.requested;
-}
+bool PersistableMessage::isDequeueComplete() { return false; }
+void PersistableMessage::dequeueComplete() {}
+void PersistableMessage::dequeueAsync(PersistableQueue::shared_ptr, MessageStore*) {}
 
 }}
 

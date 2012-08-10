@@ -308,8 +308,6 @@ class AlternateExchangeTests(TestBase010):
 
         #create a queue using the intermediary as its alternate exchange:
         session.queue_declare(queue="delivery-queue", alternate_exchange="my-exchange", auto_delete=True)
-        #bind that queue to the dlq as well:
-        session.exchange_bind(exchange="dlq", queue="delivery-queue")
         #send it some messages:
         dp=self.session.delivery_properties(routing_key="delivery-queue")
         for m in ["One", "Two", "Three"]:
@@ -349,5 +347,5 @@ class AlternateExchangeTests(TestBase010):
     def assertEmpty(self, queue):
         try:
             msg = queue.get(timeout=1) 
-            self.fail("Queue not empty: " + msg)
+            self.fail("Queue not empty: " + str(msg))
         except Empty: None

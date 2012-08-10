@@ -126,6 +126,7 @@ set(unit_tests_to_build
     ExchangeTest
     HeadersExchangeTest
     MessageTest
+    QueueDepth
     QueueRegistryTest
     QueuePolicyTest
     QueueFlowLimitTest
@@ -135,16 +136,12 @@ set(unit_tests_to_build
     TimerTest
     TopicExchangeTest
     TxBufferTest
-    TxPublishTest
-    MessageBuilderTest
     ManagementTest
     MessageReplayTracker
     ConsoleTest
-    QueueEvents
     ProxyTest
     RetryList
     FrameDecoder
-    ReplicationTest
     ClientMessageTest
     PollableCondition
     Variant

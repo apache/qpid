@@ -96,6 +96,7 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	ExchangeTest.cpp \
 	HeadersExchangeTest.cpp \
 	MessageTest.cpp \
+	QueueDepth.cpp \
 	QueueRegistryTest.cpp \
 	QueuePolicyTest.cpp \
 	QueueFlowLimitTest.cpp \
@@ -105,19 +106,15 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	TimerTest.cpp \
 	TopicExchangeTest.cpp \
 	TxBufferTest.cpp \
-	TxPublishTest.cpp \
-	MessageBuilderTest.cpp \
 	ConnectionOptions.h \
 	ForkedBroker.h \
 	ForkedBroker.cpp \
 	ManagementTest.cpp \
 	MessageReplayTracker.cpp \
 	ConsoleTest.cpp \
-	QueueEvents.cpp \
 	ProxyTest.cpp \
 	RetryList.cpp \
 	FrameDecoder.cpp \
-	ReplicationTest.cpp \
 	ClientMessageTest.cpp \
 	PollableCondition.cpp \
 	Variant.cpp \

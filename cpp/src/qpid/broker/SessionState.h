@@ -23,17 +23,18 @@
  */
 
 #include "qpid/SessionState.h"
+#include "qpid/framing/enum.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/sys/Time.h"
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/broker/Session.h"
 #include "qpid/broker/SessionAdapter.h"
-#include "qpid/broker/DeliveryAdapter.h"
 #include "qpid/broker/AsyncCompletion.h"
 #include "qpid/broker/MessageBuilder.h"
 #include "qpid/broker/SessionContext.h"
 #include "qpid/broker/SemanticState.h"
+#include "qpid/broker/amqp_0_10/MessageTransfer.h"
 #include "qpid/sys/Monitor.h"
 
 #include <boost/noncopyable.hpp>
@@ -58,7 +59,6 @@ namespace broker {
 
 class Broker;
 class ConnectionState;
-class Message;
 class SessionHandler;
 class SessionManager;
 
@@ -68,7 +68,6 @@ class SessionManager;
  */
 class SessionState : public qpid::SessionState,
                      public SessionContext,
-                     public DeliveryAdapter,
                      public management::Manageable,
                      public framing::FrameHandler::InOutHandler
 {
@@ -105,8 +104,10 @@ class SessionState : public qpid::SessionState,
 
     void sendCompletion();
 
-    //delivery adapter methods:
-    void deliver(DeliveryRecord&, bool sync);
+    DeliveryId deliver(const qpid::broker::amqp_0_10::MessageTransfer& message,
+                       const std::string& destination, bool isRedelivered, uint64_t ttl, uint64_t timestamp,
+                       qpid::framing::message::AcceptMode, qpid::framing::message::AcquireMode,
+                       const qpid::types::Variant::Map& annotations, bool sync);
 
     // Manageable entry points
     management::ManagementObject* GetManagementObject (void) const;
@@ -117,7 +118,7 @@ class SessionState : public qpid::SessionState,
 
     // Used by cluster to create replica sessions.
     SemanticState& getSemanticState() { return semanticState; }
-    boost::intrusive_ptr<Message> getMessageInProgress() { return msgBuilder.getMessage(); }
+    boost::intrusive_ptr<qpid::broker::amqp_0_10::MessageTransfer> getMessageInProgress() { return msgBuilder.getMessage(); }
     SessionAdapter& getSessionAdapter() { return adapter; }
 
     const SessionId& getSessionId() const { return getId(); }
@@ -199,7 +200,7 @@ class SessionState : public qpid::SessionState,
         // If an ingress message does not require a Sync, we need to
         // hold a reference to it in case an Execution.Sync command is received and we
         // have to manually flush the message.
-        std::map<SequenceNumber, boost::intrusive_ptr<Message> > pendingMsgs;
+        std::map<SequenceNumber, boost::intrusive_ptr<qpid::broker::amqp_0_10::MessageTransfer> > pendingMsgs;
 
         /** complete all pending commands, runs in IO thread */
         void completeCommands();
@@ -212,7 +213,7 @@ class SessionState : public qpid::SessionState,
         ~AsyncCommandCompleter() {};
 
         /** track a message pending ingress completion */
-        void addPendingMessage(boost::intrusive_ptr<Message> m);
+        void addPendingMessage(boost::intrusive_ptr<qpid::broker::amqp_0_10::MessageTransfer> m);
         void deletePendingMessage(SequenceNumber id);
         void flushPendingMessages();
         /** schedule the processing of a completed ingress message.transfer command */
@@ -246,29 +247,29 @@ class SessionState : public qpid::SessionState,
     {
      public:
         IncompleteIngressMsgXfer( SessionState *ss,
-                                  boost::intrusive_ptr<Message> m )
+                                  boost::intrusive_ptr<qpid::broker::amqp_0_10::MessageTransfer> m)
           : AsyncCommandContext(ss, m->getCommandId()),
-          session(ss),
-          msg(m),
-          requiresAccept(m->requiresAccept()),
-          requiresSync(m->getFrames().getMethod()->isSync()),
-          pending(false) {}
+            session(ss),
+            msg(m),
+            requiresAccept(m->requiresAccept()),
+            requiresSync(m->getFrames().getMethod()->isSync()),
+            pending(false) {}
         IncompleteIngressMsgXfer( const IncompleteIngressMsgXfer& x )
           : AsyncCommandContext(x.session, x.msg->getCommandId()),
-          session(x.session),
-          msg(x.msg),
-          requiresAccept(x.requiresAccept),
-          requiresSync(x.requiresSync),
-          pending(x.pending) {}
+            session(x.session),
+            msg(x.msg),
+            requiresAccept(x.requiresAccept),
+            requiresSync(x.requiresSync),
+            pending(x.pending) {}
 
-  virtual ~IncompleteIngressMsgXfer() {};
+        virtual ~IncompleteIngressMsgXfer() {};
 
         virtual void completed(bool);
         virtual boost::intrusive_ptr<AsyncCompletion::Callback> clone();
 
      private:
         SessionState *session;  // only valid if sync flag in callback is true
-        boost::intrusive_ptr<Message> msg;
+        boost::intrusive_ptr<qpid::broker::amqp_0_10::MessageTransfer> msg;
         bool requiresAccept;
         bool requiresSync;
         bool pending;   // true if msg saved on pending list...

@@ -35,6 +35,7 @@
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/sys/SystemInfo.h"
 #include "qpid/types/Variant.h"
+#include "qpid/log/Statement.h"
 
 namespace qpid {
 namespace ha {

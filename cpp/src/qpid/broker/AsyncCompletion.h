@@ -22,6 +22,7 @@
  *
  */
 
+#include "qpid/RefCounted.h"
 #include <boost/intrusive_ptr.hpp>
 
 #include "qpid/broker/BrokerImportExport.h"
@@ -77,7 +78,7 @@ namespace broker {
  * assuming no need for synchronization with Completer threads.
  */
 
-class AsyncCompletion
+class AsyncCompletion : public virtual RefCounted
 {
  public:
 

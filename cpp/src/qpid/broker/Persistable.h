@@ -32,7 +32,7 @@ namespace broker {
 /**
  * Base class for all persistable objects
  */
-class Persistable : public RefCounted
+class Persistable : public virtual RefCounted
 {
 public:
     /**

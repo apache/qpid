@@ -26,9 +26,9 @@
 #include <iostream>
 #include <memory>
 #include "qpid/broker/BrokerImportExport.h"
-#include "qpid/broker/QueuedMessage.h"
 #include "qpid/broker/StatefulQueueObserver.h"
 #include "qpid/framing/FieldTable.h"
+#include "qpid/framing/SequenceNumber.h"
 #include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/Mutex.h"
 
@@ -45,6 +45,8 @@ namespace qpid {
 namespace broker {
 
 class Broker;
+class Queue;
+struct QueueSettings;
 
 /**
  * Producer flow control: when level is > flowStop*, flow control is ON.
@@ -80,13 +82,13 @@ class Broker;
 
     QPID_BROKER_EXTERN virtual ~QueueFlowLimit();
 
-    /** the queue has added QueuedMessage.  Returns true if flow state changes */
-    QPID_BROKER_EXTERN void enqueued(const QueuedMessage&);
-    /** the queue has removed QueuedMessage.  Returns true if flow state changes */
-    QPID_BROKER_EXTERN void dequeued(const QueuedMessage&);
+    /** the queue has added QueuedMessage */
+    QPID_BROKER_EXTERN void enqueued(const Message&);
+    /** the queue has removed QueuedMessage */
+    QPID_BROKER_EXTERN void dequeued(const Message&);
     /** ignored */
-    QPID_BROKER_EXTERN void acquired(const QueuedMessage&) {};
-    QPID_BROKER_EXTERN void requeued(const QueuedMessage&) {};
+    QPID_BROKER_EXTERN void acquired(const Message&) {};
+    QPID_BROKER_EXTERN void requeued(const Message&) {};
 
     /** for clustering: */
     QPID_BROKER_EXTERN void getState(qpid::framing::FieldTable&) const;
@@ -106,14 +108,14 @@ class Broker;
     void decode(framing::Buffer& buffer);
     uint32_t encodedSize() const;
 
-    static QPID_BROKER_EXTERN void observe(Queue& queue, const qpid::framing::FieldTable& settings);
+    static QPID_BROKER_EXTERN void observe(Queue& queue, const QueueSettings& settings);
     static QPID_BROKER_EXTERN void setDefaults(uint64_t defaultMaxSize, uint defaultFlowStopRatio, uint defaultFlowResumeRatio);
 
     friend QPID_BROKER_EXTERN std::ostream& operator<<(std::ostream&, const QueueFlowLimit&);
 
  protected:
     // msgs waiting for flow to become available.
-    std::map<framing::SequenceNumber, boost::intrusive_ptr<Message> > index;
+    std::map<framing::SequenceNumber, Message > index;
     mutable qpid::sys::Mutex indexLock;
 
     _qmfBroker::Queue *queueMgmtObj;
@@ -123,7 +125,7 @@ class Broker;
     QPID_BROKER_EXTERN QueueFlowLimit(Queue *queue,
                    uint32_t flowStopCount, uint32_t flowResumeCount,
                    uint64_t flowStopSize,  uint64_t flowResumeSize);
-    static QPID_BROKER_EXTERN QueueFlowLimit *createLimit(Queue *queue, const qpid::framing::FieldTable& settings);
+    static QPID_BROKER_EXTERN QueueFlowLimit *createLimit(Queue *queue, const QueueSettings& settings);
 };
 
 }}

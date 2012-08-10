@@ -42,7 +42,7 @@ class QPID_BROKER_CLASS_EXTERN ExpiryPolicy : public RefCounted
 {
   public:
     QPID_BROKER_EXTERN virtual ~ExpiryPolicy();
-    QPID_BROKER_EXTERN virtual bool hasExpired(Message&);
+    QPID_BROKER_EXTERN virtual bool hasExpired(const Message&);
     QPID_BROKER_EXTERN virtual qpid::sys::AbsTime getCurrentTime();
 };
 }} // namespace qpid::broker

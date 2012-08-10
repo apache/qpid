@@ -180,7 +180,7 @@ void Primary::readyReplica(const ReplicatingSubscription& rs) {
 
 void Primary::queueCreate(const QueuePtr& q) {
     // Throw if there is an invalid replication level in the queue settings.
-    haBroker.getReplicationTest().replicateLevel(q->getSettings());
+    haBroker.getReplicationTest().replicateLevel(q->getSettings().storeSettings);
     Mutex::ScopedLock l(lock);
     for (BackupMap::iterator i = backups.begin(); i != backups.end(); ++i) {
         i->second->queueCreate(q);
