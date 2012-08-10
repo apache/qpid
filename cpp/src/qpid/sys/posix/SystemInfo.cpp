@@ -91,7 +91,7 @@ void SystemInfo::getLocalIpAddresses (uint16_t port,
                 // * The scope id is illegal in URL syntax
                 // * Clients won't be able to use a link local address
                 //   without adding their own (potentially different) scope id
-                sockaddr_in6* sa6 = (sockaddr_in6*)(ifap->ifa_addr);
+                sockaddr_in6* sa6 = (sockaddr_in6*)((void*)ifap->ifa_addr);
                 if (IN6_IS_ADDR_LINKLOCAL(&sa6->sin6_addr)) break;
                 // Fallthrough
             }
