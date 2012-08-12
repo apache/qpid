@@ -33,6 +33,8 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
+
+import org.apache.qpid.configuration.CommonProperties;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.transport.ConnectionSettings;
@@ -47,7 +49,8 @@ import org.slf4j.LoggerFactory;
 public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNetworkTransport
 {
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(IoNetworkTransport.class);
-    private static final int TIMEOUT = 60000;
+    private static final int TIMEOUT = Integer.getInteger(CommonProperties.IO_NETWORK_TRANSPORT_TIMEOUT_PROP_NAME,
+                                                              CommonProperties.IO_NETWORK_TRANSPORT_TIMEOUT_DEFAULT);
 
     private Socket _socket;
     private IoNetworkConnection _connection;
