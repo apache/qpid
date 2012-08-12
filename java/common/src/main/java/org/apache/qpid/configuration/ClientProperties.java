@@ -20,10 +20,11 @@ package org.apache.qpid.configuration;
 
 /**
  * This class centralized the Qpid client properties.
+ *
+ * @see CommonProperties
  */
 public class ClientProperties
 {
-
     /**
      * Currently with Qpid it is not possible to change the client ID.
      * If one is not specified upon connection construction, an id is generated automatically.
@@ -118,10 +119,6 @@ public class ClientProperties
      */
     public static final String REJECT_BEHAVIOUR_PROP_NAME = "qpid.reject.behaviour";
 
-    private ClientProperties()
-    {
-    }
-
     /**
      * System property used to set the key manager factory algorithm.
      *
@@ -192,4 +189,10 @@ public class ClientProperties
      * waiting because the client was flow controlled by the broker.
      */
     public static final long DEFAULT_FLOW_CONTROL_WAIT_NOTIFY_PERIOD = 5000L;
+
+
+    private ClientProperties()
+    {
+        //No instances
+    }
 }
