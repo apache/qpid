@@ -63,7 +63,6 @@ public class ConnectionSettings
     private int connectTimeout = 30000;
     private int readBufferSize = QpidProperty.intProperty(65535, RECEIVE_BUFFER_SIZE_PROP_NAME, LEGACY_RECEIVE_BUFFER_SIZE_PROP_NAME).get();
     private int writeBufferSize = QpidProperty.intProperty(65535, SEND_BUFFER_SIZE_PROP_NAME, LEGACY_SEND_BUFFER_SIZE_PROP_NAME).get();;
-    private long transportTimeout = 60000;
 
     // SSL props
     private boolean useSSL;
@@ -374,15 +373,5 @@ public class ConnectionSettings
     public void setWriteBufferSize(int writeBufferSize)
     {
         this.writeBufferSize = writeBufferSize;
-    }
-    
-    public long getTransportTimeout()
-    {
-        return transportTimeout;
-    }
-
-    public void setTransportTimeout(long transportTimeout)
-    {
-        this.transportTimeout = transportTimeout;
     }
 }
