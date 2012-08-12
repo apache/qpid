@@ -60,6 +60,7 @@ public class ConnectionSettings
     private int maxChannelCount = 32767;
     private int maxFrameSize = 65535;
     private int heartbeatInterval;
+    private int connectTimeout = 30000;
     private int readBufferSize = QpidProperty.intProperty(65535, RECEIVE_BUFFER_SIZE_PROP_NAME, LEGACY_RECEIVE_BUFFER_SIZE_PROP_NAME).get();
     private int writeBufferSize = QpidProperty.intProperty(65535, SEND_BUFFER_SIZE_PROP_NAME, LEGACY_SEND_BUFFER_SIZE_PROP_NAME).get();;
     private long transportTimeout = 60000;
@@ -343,6 +344,16 @@ public class ConnectionSettings
     public void setTrustStoreType(String trustStoreType)
     {
         this.trustStoreType = trustStoreType;
+    }
+
+    public int getConnectTimeout()
+    {
+        return connectTimeout;
+    }
+
+    public void setConnectTimeout(int connectTimeout)
+    {
+        this.connectTimeout = connectTimeout;
     }
 
     public int getReadBufferSize()

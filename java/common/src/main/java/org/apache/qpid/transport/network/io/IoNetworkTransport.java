@@ -75,7 +75,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
 
             InetAddress address = InetAddress.getByName(settings.getHost());
 
-            _socket.connect(new InetSocketAddress(address, settings.getPort()), TIMEOUT);
+            _socket.connect(new InetSocketAddress(address, settings.getPort()), settings.getConnectTimeout());
         }
         catch (SocketException e)
         {
