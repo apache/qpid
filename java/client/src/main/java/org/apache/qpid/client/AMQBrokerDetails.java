@@ -245,13 +245,13 @@ public class AMQBrokerDetails implements BrokerDetails
         _options.put(key, value);
     }
 
-    public long getTimeout()
+    private int lookupConnectTimeout()
     {
         if (_options.containsKey(OPTIONS_CONNECT_TIMEOUT))
         {
             try
             {
-                return Long.parseLong(_options.get(OPTIONS_CONNECT_TIMEOUT));
+                return Integer.parseInt(_options.get(OPTIONS_CONNECT_TIMEOUT));
             }
             catch (NumberFormatException nfe)
             {
@@ -289,11 +289,6 @@ public class AMQBrokerDetails implements BrokerDetails
     		return defaultValue;
     	}
     }    
-
-    public void setTimeout(long timeout)
-    {
-        setProperty(OPTIONS_CONNECT_TIMEOUT, Long.toString(timeout));
-    }
 
     public String toString()
     {
@@ -459,6 +454,8 @@ public class AMQBrokerDetails implements BrokerDetails
             conSettings.setTcpNodelay(
                     getBooleanProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY,true));
         }
+
+        conSettings.setConnectTimeout(lookupConnectTimeout());
 
         return conSettings;
     }

@@ -24,6 +24,7 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.client.AMQBrokerDetails;
 import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.url.URLSyntaxException;
 
 public class BrokerDetailsTest extends TestCase
@@ -47,6 +48,29 @@ public class BrokerDetailsTest extends TestCase
         broker = new AMQBrokerDetails(brokerURL);
 
         assertFalse("value should be false", Boolean.valueOf(broker.getProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY)));
+    }
+
+    public void testDefaultConnectTimeout() throws URLSyntaxException
+    {
+        String brokerURL = "tcp://localhost:5672";
+        AMQBrokerDetails broker = new AMQBrokerDetails(brokerURL);
+
+        ConnectionSettings settings = broker.buildConnectionSettings();
+
+        assertEquals("unexpected default connect timeout value", BrokerDetails.DEFAULT_CONNECT_TIMEOUT, settings.getConnectTimeout());
+    }
+
+    public void testOverridingConnectTimeout() throws URLSyntaxException
+    {
+        int timeout = 2 * BrokerDetails.DEFAULT_CONNECT_TIMEOUT;
+        assertTrue(timeout != BrokerDetails.DEFAULT_CONNECT_TIMEOUT);
+
+        String brokerURL = "tcp://localhost:5672?" + BrokerDetails.OPTIONS_CONNECT_TIMEOUT + "='" + timeout + "'";
+        AMQBrokerDetails broker = new AMQBrokerDetails(brokerURL);
+
+        ConnectionSettings settings = broker.buildConnectionSettings();
+
+        assertEquals("unexpected connect timeout value", timeout, settings.getConnectTimeout());
     }
 
     public void testMultiParameters() throws URLSyntaxException
