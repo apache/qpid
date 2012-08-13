@@ -39,8 +39,8 @@ namespace {
 const std::string QMF2("qmf2");
 const std::string PARTIAL("partial");
 }
-MessageTransfer::MessageTransfer() : frames(framing::SequenceNumber()) {}
-MessageTransfer::MessageTransfer(const framing::SequenceNumber& id) : frames(id) {}
+MessageTransfer::MessageTransfer() : frames(framing::SequenceNumber()), requiredCredit(0), cachedRequiredCredit(false) {}
+MessageTransfer::MessageTransfer(const framing::SequenceNumber& id) : frames(id), requiredCredit(0), cachedRequiredCredit(false) {}
 
 uint64_t MessageTransfer::getContentSize() const
 {
@@ -100,7 +100,13 @@ bool MessageTransfer::requiresAccept() const
 }
 uint32_t MessageTransfer::getRequiredCredit() const
 {
-    return requiredCredit;
+    if (cachedRequiredCredit) {
+        return requiredCredit;
+    } else {
+        qpid::framing::SumBodySize sum;
+        frames.map_if(sum, qpid::framing::TypeFilter2<qpid::framing::HEADER_BODY, qpid::framing::CONTENT_BODY>());
+        return sum.getSize();
+    }
 }
 void MessageTransfer::computeRequiredCredit()
 {
@@ -108,6 +114,7 @@ void MessageTransfer::computeRequiredCredit()
     qpid::framing::SumBodySize sum;
     frames.map_if(sum, qpid::framing::TypeFilter2<qpid::framing::HEADER_BODY, qpid::framing::CONTENT_BODY>());
     requiredCredit = sum.getSize();
+    cachedRequiredCredit = true;
 }
 uint32_t MessageTransfer::getRequiredCredit(const qpid::broker::Message& msg)
 {

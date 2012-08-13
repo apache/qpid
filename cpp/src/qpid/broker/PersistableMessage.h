@@ -57,7 +57,8 @@ class PersistableMessage : public Persistable
      * operations have completed, the transfer of this message from the client
      * may be considered complete.
      */
-    boost::intrusive_ptr<AsyncCompletion> ingressCompletion;
+    AsyncCompletion* ingressCompletion;
+    boost::intrusive_ptr<AsyncCompletion> holder;
     mutable uint64_t persistenceId;
 
   public:
@@ -73,7 +74,7 @@ class PersistableMessage : public Persistable
     /** track the progress of a message received by the broker - see ingressCompletion above */
     QPID_BROKER_INLINE_EXTERN bool isIngressComplete() { return ingressCompletion->isDone(); }
     QPID_BROKER_INLINE_EXTERN AsyncCompletion& getIngressCompletion() { return *ingressCompletion; }
-    QPID_BROKER_INLINE_EXTERN void setIngressCompletion(boost::intrusive_ptr<AsyncCompletion> i) { ingressCompletion = i; }
+    QPID_BROKER_EXTERN void setIngressCompletion(boost::intrusive_ptr<AsyncCompletion> i);
 
     QPID_BROKER_INLINE_EXTERN void enqueueStart() { ingressCompletion->startCompleter(); }
     QPID_BROKER_INLINE_EXTERN void enqueueComplete() { ingressCompletion->finishCompleter(); }
