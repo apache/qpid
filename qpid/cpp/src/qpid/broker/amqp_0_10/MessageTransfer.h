@@ -121,6 +121,7 @@ class MessageTransfer : public qpid::broker::Message::Encoding, public qpid::bro
   private:
     qpid::framing::FrameSet frames;
     uint32_t requiredCredit;
+    bool cachedRequiredCredit;
 
     MessageTransfer(const qpid::framing::FrameSet&);
     void encodeHeader(framing::Buffer& buffer) const;

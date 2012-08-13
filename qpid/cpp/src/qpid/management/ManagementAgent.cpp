@@ -605,7 +605,7 @@ void ManagementAgent::sendBufferLH(const string& data,
     }
     if (exchange.get() == 0) return;
 
-    intrusive_ptr<qpid::broker::amqp_0_10::MessageTransfer> transfer(new qpid::broker::amqp_0_10::MessageTransfer());
+    intrusive_ptr<qpid::broker::amqp_0_10::MessageTransfer> transfer(new qpid::broker::amqp_0_10::MessageTransfer);
     AMQFrame method((MessageTransferBody(ProtocolVersion(), exchange->getName (), 0, 0)));
     AMQFrame header((AMQHeaderBody()));
     AMQFrame content((AMQContentBody(data)));
@@ -638,6 +638,7 @@ void ManagementAgent::sendBufferLH(const string& data,
         dp->setTtl(ttl_msec);
     }
     transfer->getFrames().append(content);
+    transfer->computeRequiredCredit();
     Message msg(transfer, transfer);
     msg.setIsManagementMessage(true);
     msg.computeExpiration(broker->getExpiryPolicy());

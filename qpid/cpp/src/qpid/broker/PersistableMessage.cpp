@@ -30,7 +30,33 @@ namespace qpid {
 namespace broker {
 
 PersistableMessage::~PersistableMessage() {}
-PersistableMessage::PersistableMessage() : persistenceId(0) {}
+PersistableMessage::PersistableMessage() : ingressCompletion(0), persistenceId(0) {}
+
+void PersistableMessage::setIngressCompletion(boost::intrusive_ptr<AsyncCompletion> i)
+{
+    ingressCompletion = i.get();
+    /**
+     * What follows is a hack to account for the fact that the
+     * AsyncCompletion to use may be, but is not always, this same
+     * object.
+     *
+     * This is hopefully temporary, and allows the store interface to
+     * remain unchanged without requiring another object to be allocated
+     * for every message.
+     *
+     * The case in question is where a message previously passed to
+     * the store is modified by some other queue onto which it is
+     * pushed, and then again persisted to the store. These will be
+     * two separate PersistableMessage instances (since the latter now
+     * has different content), but need to share the same
+     * AsyncCompletion (since they refer to the same incoming transfer
+     * command).
+     */
+    if (static_cast<RefCounted*>(ingressCompletion) != static_cast<RefCounted*>(this)) {
+        holder = i;
+    }
+}
+
 
 void PersistableMessage::flush()
 {
