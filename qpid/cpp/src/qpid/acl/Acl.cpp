@@ -129,6 +129,13 @@ bool Acl::approveConnection(const qpid::broker::Connection& conn)
     return connectionCounter->approveConnection(conn);
 }
 
+
+void Acl::setUserId(const qpid::broker::Connection& connection, const std::string& username)
+{
+    connectionCounter->setUserId(connection, username);
+}
+
+
 bool Acl::result(
     const AclResult&   aclreslt,
     const std::string& id,

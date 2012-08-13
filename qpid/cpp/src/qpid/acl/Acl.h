@@ -94,6 +94,8 @@ public:
 
     virtual bool approveConnection(const broker::Connection& connection);
 
+    virtual void setUserId(const broker::Connection& connection, const std::string& username);
+
     virtual ~Acl();
 private:
     bool result(
