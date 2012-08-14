@@ -105,8 +105,17 @@ public class ChartWriter
 
             writer = new BufferedWriter(new FileWriter(summaryFile));
             writer.write(htmlHeader);
+
+            writer.write("        <ul>\n");
             for (File chartFile : _chartFiles)
             {
+                writer.write("            <li><a href='#"+ chartFile.getName() +"'>" + chartFile.getName() + "</a></li>\n");
+            }
+            writer.write("        </ul>\n");
+
+            for (File chartFile : _chartFiles)
+            {
+                writer.write("        <a name='" + chartFile.getName() + "'/>\n");
                 writer.write("        <img src='" + chartFile.getName() + "'/>\n");
             }
             writer.write(htmlFooter);
