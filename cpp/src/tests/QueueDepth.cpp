@@ -65,8 +65,8 @@ QPID_AUTO_TEST_CASE(testIncrement)
     QueueDepth c(8, 16);
     a += b;
     BOOST_CHECK(a == c);
-    BOOST_CHECK_EQUAL(8, a.getCount());
-    BOOST_CHECK_EQUAL(16, a.getSize());
+    BOOST_CHECK_EQUAL(8u, a.getCount());
+    BOOST_CHECK_EQUAL(16u, a.getSize());
 }
 
 QPID_AUTO_TEST_CASE(testDecrement)
@@ -76,8 +76,8 @@ QPID_AUTO_TEST_CASE(testDecrement)
     QueueDepth c(2, 4);
     a -= b;
     BOOST_CHECK(a == c);
-    BOOST_CHECK_EQUAL(2, a.getCount());
-    BOOST_CHECK_EQUAL(4, a.getSize());
+    BOOST_CHECK_EQUAL(2u, a.getCount());
+    BOOST_CHECK_EQUAL(4u, a.getSize());
 }
 
 QPID_AUTO_TEST_CASE(testAddition)
@@ -86,8 +86,8 @@ QPID_AUTO_TEST_CASE(testAddition)
     QueueDepth b(3, 6);
 
     QueueDepth c = a + b;
-    BOOST_CHECK_EQUAL(8, c.getCount());
-    BOOST_CHECK_EQUAL(16, c.getSize());
+    BOOST_CHECK_EQUAL(8u, c.getCount());
+    BOOST_CHECK_EQUAL(16u, c.getSize());
 }
 
 QPID_AUTO_TEST_CASE(testSubtraction)
@@ -96,8 +96,8 @@ QPID_AUTO_TEST_CASE(testSubtraction)
     QueueDepth b(3, 6);
 
     QueueDepth c = a - b;
-    BOOST_CHECK_EQUAL(2, c.getCount());
-    BOOST_CHECK_EQUAL(4, c.getSize());
+    BOOST_CHECK_EQUAL(2u, c.getCount());
+    BOOST_CHECK_EQUAL(4u, c.getSize());
 }
 
 QPID_AUTO_TEST_SUITE_END()
