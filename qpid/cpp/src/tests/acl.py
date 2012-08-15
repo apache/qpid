@@ -119,6 +119,7 @@ class ACLTests(TestBase010):
     def LookupPublish(self, userName, exchName, keyName, expectedResult):
         result = self.acl_lookupPublish(userName, exchName, keyName)
         if (result['result'] != expectedResult):
+            suffix = ', [ERROR: Expected= ' + expectedResult
             if (result['result'] is None):
                 suffix = suffix + ', Exception= ' + result['text'] + ']'
             else:
