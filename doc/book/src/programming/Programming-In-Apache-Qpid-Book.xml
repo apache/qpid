@@ -3317,7 +3317,7 @@ spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
 		  integer
 	        </entry>
 	        <entry>
-		  Length of time to wait before attempting to reconnect (in milliseconds). Defaults to 0.
+		  Length of time (in milliseconds) to wait before attempting to reconnect. Defaults to 0.
 	        </entry>
 	      </row>
 	      <row>
@@ -3328,7 +3328,7 @@ spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
 		  integer
 	        </entry>
 	        <entry>
-		  Length of time to wait for the connection to succeed (in milliseconds).  Defaults to 30000.
+		  Length of time (in milliseconds) to wait for the socket connection to succeed. A value of 0 represents an infinite timeout, i.e. the connection attempt will block until established or an error occurs.  Defaults to 30000.
 	        </entry>
 	      </row>
 	      <row>
