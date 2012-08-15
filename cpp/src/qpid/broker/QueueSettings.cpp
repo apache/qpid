@@ -104,7 +104,7 @@ bool QueueSettings::handle(const std::string& key, const qpid::types::Variant& v
             return false;
         }
     } else if (key == NO_LOCAL) {
-        noLocal = true;
+        noLocal = value;
         return true;
     } else if (key == TRACE_ID) {
         traceId = value.asString();
