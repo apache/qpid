@@ -77,7 +77,7 @@ void QueueRegistry::destroy(const string& name) {
         qpid::sys::RWlock::ScopedWlock locker(lock);
         QueueMap::iterator i = queues.find(name);
         if (i != queues.end()) {
-            Queue::shared_ptr q = i->second;
+            q = i->second;
             queues.erase(i);
         }
     }
