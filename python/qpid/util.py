@@ -27,7 +27,7 @@ except ImportError:
 
     def __init__(self, sock, keyfile=None, certfile=None, trustfile=None):
       self.sock = sock
-      self.ssl = wrap_socket(sock, keyfile=keyfile, certfile=certfile, ca_certs=trustfile)
+      self.ssl = wrap_socket(sock, keyfile=keyfile, certfile=certfile)
 
     def recv(self, n):
       return self.ssl.read(n)
