@@ -78,7 +78,9 @@ namespace acl {
         PROP_SCHEMACLASS,
         PROP_POLICYTYPE,
         PROP_MAXQUEUESIZE,
-        PROP_MAXQUEUECOUNT };
+        PROP_MAXQUEUECOUNT,
+        PROPERTYSIZE           // PROPERTYSIZE must be last in list
+    };
 
     // Property used in ACL spec file
     // Note for properties common to file processing/rule storage and to
