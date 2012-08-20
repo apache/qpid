@@ -103,6 +103,15 @@ namespace acl {
             } else {
                 AclData::Rule rule(cnt, (*i)->res, (*i)->props);
 
+                // Record which properties have the user substitution string
+                for (pmCitr pItr=rule.props.begin(); pItr!=rule.props.end(); pItr++) {
+                    if ((pItr->second.find(AclData::USER_SUBSTITUTION_KEYWORD, 0)       != std::string::npos) ||
+                        (pItr->second.find(AclData::DOMAIN_SUBSTITUTION_KEYWORD, 0)     != std::string::npos) ||
+                        (pItr->second.find(AclData::USERDOMAIN_SUBSTITUTION_KEYWORD, 0) != std::string::npos)) {
+                        rule.ruleHasUserSub[pItr->first] = true;
+                    }
+                }
+
                 // Action -> Object -> map<user -> set<Rule> >
                 std::ostringstream actionstr;
                 for (int acnt = ((*i)->actionAll ? 0 : (*i)->action);
