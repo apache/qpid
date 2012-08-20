@@ -1704,6 +1704,546 @@ class ACLTests(TestBase010):
             result = None
 
 
+   #=====================================
+   # User name substitution
+   #=====================================
+
+    def test_user_name_substitution(self):
+        """
+        Test name substitution internals, limits, and edge cases.
+        """
+        aclf = self.get_acl_file()
+        aclf.write('# begin hack alert: allow anonymous to access the lookup debug functions\n')
+        aclf.write('acl allow-log anonymous create  queue\n')
+        aclf.write('acl allow-log anonymous all     exchange name=qmf.*\n')
+        aclf.write('acl allow-log anonymous all     exchange name=amq.direct\n')
+        aclf.write('acl allow-log anonymous all     exchange name=qpid.management\n')
+        aclf.write('acl allow-log anonymous access  method   name=*\n')
+        aclf.write('# end hack alert\n')
+        aclf.write('acl allow all create queue    name=tmp-${userdomain}\n')
+        aclf.write('acl allow all create queue    name=${userdomain}-tmp\n')
+        aclf.write('acl allow all create queue    name=tmp-${userdomain}-tmp\n')
+        aclf.write('acl allow all create queue    name=tmp-${userdomain}-tmp-${userdomain}\n')
+        aclf.write('acl allow all create  queue    name=temp0-${userdomain}\n')
+        aclf.write('acl allow all access  queue    name=temp0-${userdomain}\n')
+        aclf.write('acl allow all purge   queue    name=temp0-${userdomain}\n')
+        aclf.write('acl allow all consume queue    name=temp0-${userdomain}\n')
+        aclf.write('acl allow all delete  queue    name=temp0-${userdomain}\n')
+        aclf.write('acl allow all create  exchange name=temp0-${userdomain}\n')
+        aclf.write('acl allow all access  exchange name=temp0-${userdomain}\n')
+        aclf.write('acl allow all bind    exchange name=temp0-${userdomain}\n')
+        aclf.write('acl allow all unbind  exchange name=temp0-${userdomain}\n')
+        aclf.write('acl allow all delete  exchange name=temp0-${userdomain}\n')
+        aclf.write('acl allow all publish exchange name=temp0-${userdomain}\n')
+
+        aclf.write('acl allow all   publish exchange name=X routingkey=${userdomain}.cd.e\n')
+        aclf.write('acl allow all   publish exchange name=X routingkey=a.*.${userdomain}\n')
+        aclf.write('acl allow all   publish exchange name=X routingkey=b.#.${userdomain}\n')
+        aclf.write('acl allow all   publish exchange name=X routingkey=*.${userdomain}.#.y\n')
+
+        aclf.write('acl allow all   create  queue    name=user-${user}\n')
+        aclf.write('acl allow all   publish exchange name=U routingkey=${user}.cd.e\n')
+        aclf.write('acl allow all   publish exchange name=U routingkey=a.*.${user}\n')
+        aclf.write('acl allow all   publish exchange name=U routingkey=b.#.${user}\n')
+        aclf.write('acl allow all   publish exchange name=U routingkey=*.${user}.#.y\n')
+
+        aclf.write('acl allow all   create  queue    name=domain-${domain}\n')
+        aclf.write('acl allow all   publish exchange name=D routingkey=${domain}.cd.e\n')
+        aclf.write('acl allow all   publish exchange name=D routingkey=a.*.${domain}\n')
+        aclf.write('acl allow all   publish exchange name=D routingkey=b.#.${domain}\n')
+        aclf.write('acl allow all   publish exchange name=D routingkey=*.${domain}.#.y\n')
+
+        # Resolving ${user}_${domain} into ${userdomain} works for everything but routing keys
+        aclf.write('acl allow all   create  queue    name=mixed-OK-${user}_${domain}\n')
+        # For routing keys ${user}_${domain} will be parsed into ${userdomain}.
+        # Routing keys not be found when the rule specifies ${user}_${domain}.
+        aclf.write('acl allow all   publish exchange name=NOGO routingkey=${user}_${domain}.cd.e\n')
+        # This works since it is does not conflict with ${userdomain}
+        aclf.write('acl allow all   publish exchange name=OK   routingkey=${user}___${domain}.cd.e\n')
+
+        aclf.write('acl deny-log all all\n')
+        aclf.close()
+
+        result = self.reload_acl()
+        if (result):
+            self.fail(result)
+
+        self.Lookup("alice@QPID",   "create", "queue", "tmp-alice_QPID",              {}, "allow")
+        self.Lookup("bob@QPID",     "create", "queue", "bob_QPID-tmp",                {}, "allow")
+        self.Lookup("charlie@QPID", "create", "queue", "tmp-charlie_QPID-tmp",        {}, "allow")
+        self.Lookup("dave@QPID",    "create", "queue", "tmp-dave_QPID-tmp-dave_QPID", {}, "allow")
+        self.Lookup("ed@BIG.COM",   "create", "queue", "tmp-ed_BIG_COM",              {}, "allow")
+        self.Lookup("c.e.r@BIG.GER.COM", "create", "queue", "tmp-c_e_r_BIG_GER_COM",  {}, "allow")
+        self.Lookup("c@",           "create", "queue", "tmp-c_",                      {}, "allow")
+        self.Lookup("someuser",     "create", "queue", "tmp-someuser",                {}, "allow")
+
+        self.Lookup("alice@QPID",   "create", "queue", "tmp-${user}",                 {}, "deny-log")
+
+        self.Lookup("bob@QPID",     "create", "exchange", "temp0-bob_QPID", {}, "allow")
+        self.Lookup("bob@QPID",     "access", "exchange", "temp0-bob_QPID", {}, "allow")
+        self.Lookup("bob@QPID",     "bind",   "exchange", "temp0-bob_QPID", {}, "allow")
+        self.Lookup("bob@QPID",     "unbind", "exchange", "temp0-bob_QPID", {}, "allow")
+        self.Lookup("bob@QPID",     "delete", "exchange", "temp0-bob_QPID", {}, "allow")
+        self.LookupPublish("bob@QPID", "temp0-bob_QPID", "x", "allow")
+
+        self.Lookup("bob@QPID",     "create",  "queue", "temp0-bob_QPID", {}, "allow")
+        self.Lookup("bob@QPID",     "access",  "queue", "temp0-bob_QPID", {}, "allow")
+        self.Lookup("bob@QPID",     "purge",   "queue", "temp0-bob_QPID", {}, "allow")
+        self.Lookup("bob@QPID",     "consume", "queue", "temp0-bob_QPID", {}, "allow")
+        self.Lookup("bob@QPID",     "delete",  "queue", "temp0-bob_QPID", {}, "allow")
+
+        self.Lookup("alice@QPID",   "access",  "queue", "temp0-bob_QPID", {}, "deny-log")
+
+        #                                  aclKey: "${userdomain}.cd.e"
+        self.LookupPublish("uPlain1@COMPANY", "X", "uPlain1_COMPANY.cd.e",   "allow")
+        #                                  aclKey: "a.*.${userdomain}"
+        self.LookupPublish("uStar1@COMPANY", "X", "a.xx.uStar1_COMPANY",   "allow")
+        self.LookupPublish("uStar1@COMPANY", "X", "a.b",                   "deny-log")
+        #                                  aclKey: "b.#.${userdomain}"
+        self.LookupPublish("uHash1@COMPANY", "X", "b.uHash1_COMPANY",         "allow")
+        self.LookupPublish("uHash1@COMPANY", "X", "b.x.uHash1_COMPANY",       "allow")
+        self.LookupPublish("uHash1@COMPANY", "X", "b..x.y.zz.uHash1_COMPANY", "allow")
+        self.LookupPublish("uHash1@COMPANY", "X", "b.uHash1_COMPANY.",        "deny-log")
+        self.LookupPublish("uHash1@COMPANY", "X", "q.x.uHash1_COMPANY",       "deny-log")
+        #                                  aclKey: "*.${userdomain}.#.y"
+        self.LookupPublish("uMixed1@COMPANY", "X", "a.uMixed1_COMPANY.y",          "allow")
+        self.LookupPublish("uMixed1@COMPANY", "X", "a.uMixed1_COMPANY.p.qq.y",     "allow")
+        self.LookupPublish("uMixed1@COMPANY", "X", "a.a.uMixed1_COMPANY.y",        "deny-log")
+        self.LookupPublish("uMixed1@COMPANY", "X", "aa.uMixed1_COMPANY.b.c",       "deny-log")
+        self.LookupPublish("uMixed1@COMPANY.COM", "X", "a.uMixed1_COMPANY_COM.y",  "allow")
+
+
+        self.Lookup("bob@QPID",     "create", "queue", "user-bob",                {}, "allow")
+        #                                  aclKey: "${user}.cd.e"
+        self.LookupPublish("uPlain1@COMPANY", "U", "uPlain1.cd.e",   "allow")
+        #                                  aclKey: "a.*.${user}"
+        self.LookupPublish("uStar1@COMPANY", "U", "a.xx.uStar1",   "allow")
+        self.LookupPublish("uStar1@COMPANY", "U", "a.b",                   "deny-log")
+        #                                  aclKey: "b.#.${user}"
+        self.LookupPublish("uHash1@COMPANY", "U", "b.uHash1",         "allow")
+        self.LookupPublish("uHash1@COMPANY", "U", "b.x.uHash1",       "allow")
+        self.LookupPublish("uHash1@COMPANY", "U", "b..x.y.zz.uHash1", "allow")
+        self.LookupPublish("uHash1@COMPANY", "U", "b.uHash1.",        "deny-log")
+        self.LookupPublish("uHash1@COMPANY", "U", "q.x.uHash1",       "deny-log")
+        #                                  aclKey: "*.${user}.#.y"
+        self.LookupPublish("uMixed1@COMPANY",     "U", "a.uMixed1.y",          "allow")
+        self.LookupPublish("uMixed1@COMPANY",     "U", "a.uMixed1.p.qq.y",     "allow")
+        self.LookupPublish("uMixed1@COMPANY",     "U", "a.a.uMixed1.y",        "deny-log")
+        self.LookupPublish("uMixed1@COMPANY",     "U", "aa.uMixed1.b.c",       "deny-log")
+        self.LookupPublish("uMixed1@COMPANY.COM", "U", "a.uMixed1.y",          "allow")
+
+
+        self.Lookup("bob@QPID",     "create", "queue", "domain-QPID",                {}, "allow")
+        #                                  aclKey: "${domain}.cd.e"
+        self.LookupPublish("uPlain1@COMPANY", "D", "COMPANY.cd.e",         "allow")
+        #                                  aclKey: "a.*.${domain}"
+        self.LookupPublish("uStar1@COMPANY", "D", "a.xx.COMPANY",          "allow")
+        self.LookupPublish("uStar1@COMPANY", "D", "a.b",                   "deny-log")
+        #                                  aclKey: "b.#.${domain}"
+        self.LookupPublish("uHash1@COMPANY", "D", "b.COMPANY",             "allow")
+        self.LookupPublish("uHash1@COMPANY", "D", "b.x.COMPANY",           "allow")
+        self.LookupPublish("uHash1@COMPANY", "D", "b..x.y.zz.COMPANY",     "allow")
+        self.LookupPublish("uHash1@COMPANY", "D", "b.COMPANY.",            "deny-log")
+        self.LookupPublish("uHash1@COMPANY", "D", "q.x.COMPANY",           "deny-log")
+        #                                  aclKey: "*.${domain}.#.y"
+        self.LookupPublish("uMixed1@COMPANY", "D", "a.COMPANY.y",          "allow")
+        self.LookupPublish("uMixed1@COMPANY", "D", "a.COMPANY.p.qq.y",     "allow")
+        self.LookupPublish("uMixed1@COMPANY", "D", "a.a.COMPANY.y",        "deny-log")
+        self.LookupPublish("uMixed1@COMPANY", "D", "aa.COMPANY.b.c",       "deny-log")
+        self.LookupPublish("uMixed1@COMPANY.COM", "D", "a.COMPANY_COM.y",  "allow")
+
+        self.Lookup("uPlain1@COMPANY", "create", "queue", "mixed-OK-uPlain1_COMPANY", {}, "allow")
+        self.LookupPublish("uPlain1@COMPANY", "NOGO", "uPlain1_COMPANY.cd.e",             "deny-log")
+        self.LookupPublish("uPlain1@COMPANY", "OK",   "uPlain1___COMPANY.cd.e",           "allow")
+
+
+   #=====================================
+   # User name substitution details
+   #=====================================
+   #  User name substitution allows for three flavors of keyword in the Acl file.
+   #  Given a user name of bob.user@QPID.COM the keywords are normalized and resolve as follows:
+   #   ${userdomain} - bob_user_QPID_COM
+   #   ${user}       - bob_user
+   #   ${domain}     - QPID_COM
+   #
+   # The following substitution tests are very similar but differ in the flavor of keyword used
+   # in the rules. The tests results using the different keywords differ slightly in how permissive
+   # the rules become.
+   #   ${userdomain} limits access to one authenticated user
+   #   ${user}       limits access to a user name regardless of user's domain
+   #   ${domain}     limits access to a domain regardless of user name
+   #
+
+    def test_user_name_substitution_userdomain(self):
+        """
+        Test a setup where users can create, bind, and publish to a main exchange and queue.
+        Allow access to a single alternate exchange and queue.
+        """
+        aclf = self.get_acl_file()
+        aclf.write('# begin hack alert: allow anonymous to access the lookup debug functions\n')
+        aclf.write('acl allow-log anonymous create  queue\n')
+        aclf.write('acl allow-log anonymous all     exchange name=qmf.*\n')
+        aclf.write('acl allow-log anonymous all     exchange name=amq.direct\n')
+        aclf.write('acl allow-log anonymous all     exchange name=qpid.management\n')
+        aclf.write('acl allow-log anonymous access  method   name=*\n')
+        aclf.write('# end hack alert\n')
+        # Create primary queue and exchange:
+        #   allow predefined alternate
+        #   deny  any other alternate
+        #   allow no alternate
+        aclf.write('acl allow all create  queue    name=${userdomain}-work alternate=${userdomain}-work2\n')
+        aclf.write('acl deny  all create  queue    name=${userdomain}-work alternate=*\n')
+        aclf.write('acl allow all create  queue    name=${userdomain}-work\n')
+        aclf.write('acl allow all create  exchange name=${userdomain}-work alternate=${userdomain}-work2\n')
+        aclf.write('acl deny  all create  exchange name=${userdomain}-work alternate=*\n')
+        aclf.write('acl allow all create  exchange name=${userdomain}-work\n')
+        # Create backup queue and exchange
+        #   Deny any alternate
+        aclf.write('acl deny  all create  queue    name=${userdomain}-work2 alternate=*\n')
+        aclf.write('acl allow all create  queue    name=${userdomain}-work2\n')
+        aclf.write('acl deny  all create  exchange name=${userdomain}-work2 alternate=*\n')
+        aclf.write('acl allow all create  exchange name=${userdomain}-work2\n')
+        # Bind/unbind primary exchange
+        #  Use only predefined routingkey and queuename
+        aclf.write('acl allow all bind    exchange name=${userdomain}-work routingkey=${userdomain} queuename=${userdomain}-work\n')
+        aclf.write('acl allow all unbind  exchange name=${userdomain}-work routingkey=${userdomain} queuename=${userdomain}-work\n')
+        # Bind/unbind backup exchange
+        #  Use only predefined routingkey and queuename
+        aclf.write('acl allow all bind    exchange name=${userdomain}-work2 routingkey=${userdomain} queuename=${userdomain}-work2\n')
+        aclf.write('acl allow all unbind  exchange name=${userdomain}-work2 routingkey=${userdomain} queuename=${userdomain}-work2\n')
+        # Access primary exchange
+        #  Use only predefined routingkey and queuename
+        aclf.write('acl allow all access  exchange name=${userdomain}-work routingkey=${userdomain} queuename=${userdomain}-work\n')
+        # Access backup exchange
+        #  Use only predefined routingkey and queuename
+        aclf.write('acl allow all access  exchange name=${userdomain}-work2 routingkey=${userdomain} queuename=${userdomain}-work2\n')
+        # Publish primary exchange
+        #  Use only predefined routingkey
+        aclf.write('acl allow all publish exchange name=${userdomain}-work routingkey=${userdomain}\n')
+        # Publish backup exchange
+        #  Use only predefined routingkey
+        aclf.write('acl allow all publish exchange name=${userdomain}-work2 routingkey=${userdomain}\n')
+        # deny mode
+        aclf.write('acl deny all all\n')
+        aclf.close()
+
+        result = self.reload_acl()
+        if (result):
+            self.fail(result)
+
+        # create queues
+        self.Lookup("bob@QPID",     "create", "queue", "bob_QPID-work",    {},                             "allow")
+        self.Lookup("bob@QPID",     "create", "queue", "bob_QPID-work2",   {},                             "allow")
+        self.Lookup("bob@QPID",     "create", "queue", "joe_QPID-work",    {},                             "deny")
+        self.Lookup("bob@QPID",     "create", "queue", "joe_QPID-work2",   {},                             "deny")
+        self.Lookup("bob@QPID",     "create", "queue", "bob_QPID-work3",   {},                             "deny")
+        self.Lookup("bob@QPID",     "create", "queue", "bob_QPID-work",    {"alternate":"bob_QPID-work2"}, "allow")
+        self.Lookup("bob@QPID",     "create", "queue", "bob_QPID-work",    {"alternate":"joe_QPID-work2"}, "deny")
+        self.Lookup("bob@QPID",     "create", "queue", "bob_QPID-work2",   {"alternate":"someexchange"},   "deny")
+        # create exchanges
+        self.Lookup("bob@QPID",     "create", "exchange", "bob_QPID-work", {},                             "allow")
+        self.Lookup("bob@QPID",     "create", "exchange", "bob_QPID-work2",{},                             "allow")
+        self.Lookup("bob@QPID",     "create", "exchange", "joe_QPID-work", {},                             "deny")
+        self.Lookup("bob@QPID",     "create", "exchange", "joe_QPID-work2",{},                             "deny")
+        self.Lookup("bob@QPID",     "create", "exchange", "bob_QPID-work3",{},                             "deny")
+        self.Lookup("bob@QPID",     "create", "exchange", "bob_QPID-work", {"alternate":"bob_QPID-work2"}, "allow")
+        self.Lookup("bob@QPID",     "create", "exchange", "bob_QPID-work2",{"alternate":"someexchange"},   "deny")
+        # bind/unbind/access
+        self.Lookup("bob@QPID", "bind", "exchange", "bob_QPID-work", {},                                                     "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "bob_QPID-work", {"routingkey":"bob_QPID"},                              "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "bob_QPID-work", {                         "queuename":"bob_QPID-work"}, "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "bob_QPID-work", {"routingkey":"bob_QPID", "queuename":"bob_QPID-work"}, "allow")
+        self.Lookup("bob@QPID", "bind", "exchange", "joe_QPID-work", {"routingkey":"bob_QPID", "queuename":"bob_QPID-work"}, "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "bob_QPID-work", {"routingkey":"joe_QPID", "queuename":"bob_QPID-work"}, "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "bob_QPID-work", {"routingkey":"bob_QPID", "queuename":"joe_QPID-work"}, "deny")
+
+        self.Lookup("bob@QPID", "bind", "exchange", "bob_QPID-work2", {},                                                      "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "bob_QPID-work2", {"routingkey":"bob_QPID"},                               "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "bob_QPID-work2", {                         "queuename":"bob_QPID-work2"}, "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "bob_QPID-work2", {"routingkey":"bob_QPID", "queuename":"bob_QPID-work2"}, "allow")
+        self.Lookup("bob@QPID", "bind", "exchange", "joe_QPID-work2", {"routingkey":"bob_QPID", "queuename":"bob_QPID-work2"}, "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "bob_QPID-work2", {"routingkey":"joe_QPID", "queuename":"bob_QPID-work2"}, "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "bob_QPID-work2", {"routingkey":"bob_QPID", "queuename":"joe_QPID-work2"}, "deny")
+
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob_QPID-work", {},                                                     "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob_QPID-work", {"routingkey":"bob_QPID"},                              "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob_QPID-work", {                         "queuename":"bob_QPID-work"}, "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob_QPID-work", {"routingkey":"bob_QPID", "queuename":"bob_QPID-work"}, "allow")
+        self.Lookup("bob@QPID", "unbind", "exchange", "joe_QPID-work", {"routingkey":"bob_QPID", "queuename":"bob_QPID-work"}, "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob_QPID-work", {"routingkey":"joe_QPID", "queuename":"bob_QPID-work"}, "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob_QPID-work", {"routingkey":"bob_QPID", "queuename":"joe_QPID-work"}, "deny")
+
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob_QPID-work2", {},                                                      "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob_QPID-work2", {"routingkey":"bob_QPID"},                               "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob_QPID-work2", {                         "queuename":"bob_QPID-work2"}, "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob_QPID-work2", {"routingkey":"bob_QPID", "queuename":"bob_QPID-work2"}, "allow")
+        self.Lookup("bob@QPID", "unbind", "exchange", "joe_QPID-work2", {"routingkey":"bob_QPID", "queuename":"bob_QPID-work2"}, "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob_QPID-work2", {"routingkey":"joe_QPID", "queuename":"bob_QPID-work2"}, "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob_QPID-work2", {"routingkey":"bob_QPID", "queuename":"joe_QPID-work2"}, "deny")
+
+        self.Lookup("bob@QPID", "access", "exchange", "bob_QPID-work", {},                                                     "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "bob_QPID-work", {"routingkey":"bob_QPID"},                              "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "bob_QPID-work", {                         "queuename":"bob_QPID-work"}, "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "bob_QPID-work", {"routingkey":"bob_QPID", "queuename":"bob_QPID-work"}, "allow")
+        self.Lookup("bob@QPID", "access", "exchange", "joe_QPID-work", {"routingkey":"bob_QPID", "queuename":"bob_QPID-work"}, "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "bob_QPID-work", {"routingkey":"joe_QPID", "queuename":"bob_QPID-work"}, "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "bob_QPID-work", {"routingkey":"bob_QPID", "queuename":"joe_QPID-work"}, "deny")
+
+        self.Lookup("bob@QPID", "access", "exchange", "bob_QPID-work2", {},                                                      "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "bob_QPID-work2", {"routingkey":"bob_QPID"},                               "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "bob_QPID-work2", {                         "queuename":"bob_QPID-work2"}, "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "bob_QPID-work2", {"routingkey":"bob_QPID", "queuename":"bob_QPID-work2"}, "allow")
+        self.Lookup("bob@QPID", "access", "exchange", "joe_QPID-work2", {"routingkey":"bob_QPID", "queuename":"bob_QPID-work2"}, "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "bob_QPID-work2", {"routingkey":"joe_QPID", "queuename":"bob_QPID-work2"}, "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "bob_QPID-work2", {"routingkey":"bob_QPID", "queuename":"joe_QPID-work2"}, "deny")
+        # publish
+        self.LookupPublish("bob@QPID", "bob_QPID-work",  "bob_QPID",        "allow")
+        self.LookupPublish("bob@QPID", "bob_QPID-work2", "bob_QPID",        "allow")
+        self.LookupPublish("bob@QPID", "joe_QPID-work",  "bob_QPID",        "deny")
+        self.LookupPublish("bob@QPID", "joe_QPID-work2", "bob_QPID",        "deny")
+        self.LookupPublish("bob@QPID", "bob_QPID-work",  "joe_QPID",        "deny")
+        self.LookupPublish("bob@QPID", "bob_QPID-work2", "joe_QPID",        "deny")
+
+
+    def test_user_name_substitution_user(self):
+        """
+        Test a setup where users can create, bind, and publish to a main exchange and queue.
+        Allow access to a single backup exchange and queue.
+        """
+        aclf = self.get_acl_file()
+        aclf.write('# begin hack alert: allow anonymous to access the lookup debug functions\n')
+        aclf.write('acl allow-log anonymous create  queue\n')
+        aclf.write('acl allow-log anonymous all     exchange name=qmf.*\n')
+        aclf.write('acl allow-log anonymous all     exchange name=amq.direct\n')
+        aclf.write('acl allow-log anonymous all     exchange name=qpid.management\n')
+        aclf.write('acl allow-log anonymous access  method   name=*\n')
+        aclf.write('# end hack alert\n')
+        # Create primary queue and exchange
+        #   allow predefined alternate
+        #   deny  any other alternate
+        #   allow no alternate
+        aclf.write('acl allow all create  queue    name=${user}-work alternate=${user}-work2\n')
+        aclf.write('acl deny  all create  queue    name=${user}-work alternate=*\n')
+        aclf.write('acl allow all create  queue    name=${user}-work\n')
+        aclf.write('acl allow all create  exchange name=${user}-work alternate=${user}-work2\n')
+        aclf.write('acl deny  all create  exchange name=${user}-work alternate=*\n')
+        aclf.write('acl allow all create  exchange name=${user}-work\n')
+        # Create backup queue and exchange
+        #   Deny any alternate
+        aclf.write('acl deny  all create  queue    name=${user}-work2 alternate=*\n')
+        aclf.write('acl allow all create  queue    name=${user}-work2\n')
+        aclf.write('acl deny  all create  exchange name=${user}-work2 alternate=*\n')
+        aclf.write('acl allow all create  exchange name=${user}-work2\n')
+        # Bind/unbind primary exchange
+        #  Use only predefined routingkey and queuename
+        aclf.write('acl allow all bind    exchange name=${user}-work routingkey=${user} queuename=${user}-work\n')
+        aclf.write('acl allow all unbind  exchange name=${user}-work routingkey=${user} queuename=${user}-work\n')
+        # Bind/unbind backup exchange
+        #  Use only predefined routingkey and queuename
+        aclf.write('acl allow all bind    exchange name=${user}-work2 routingkey=${user} queuename=${user}-work2\n')
+        aclf.write('acl allow all unbind  exchange name=${user}-work2 routingkey=${user} queuename=${user}-work2\n')
+        # Access primary exchange
+        #  Use only predefined routingkey and queuename
+        aclf.write('acl allow all access  exchange name=${user}-work routingkey=${user} queuename=${user}-work\n')
+        # Access backup exchange
+        #  Use only predefined routingkey and queuename
+        aclf.write('acl allow all access  exchange name=${user}-work2 routingkey=${user} queuename=${user}-work2\n')
+        # Publish primary exchange
+        #  Use only predefined routingkey
+        aclf.write('acl allow all publish exchange name=${user}-work routingkey=${user}\n')
+        # Publish backup exchange
+        #  Use only predefined routingkey
+        aclf.write('acl allow all publish exchange name=${user}-work2 routingkey=${user}\n')
+        # deny mode
+        aclf.write('acl deny all all\n')
+        aclf.close()
+
+        result = self.reload_acl()
+        if (result):
+            self.fail(result)
+
+        # create queues
+        self.Lookup("bob@QPID",     "create", "queue", "bob-work",    {},                          "allow")
+        self.Lookup("bob@QPID",     "create", "queue", "bob-work2",   {},                          "allow")
+        self.Lookup("bob@QPID",     "create", "queue", "joe-work",    {},                          "deny")
+        self.Lookup("bob@QPID",     "create", "queue", "joe-work2",   {},                          "deny")
+        self.Lookup("bob@QPID",     "create", "queue", "bob-work3",   {},                          "deny")
+        self.Lookup("bob@QPID",     "create", "queue", "bob-work",    {"alternate":"bob-work2"},   "allow")
+        self.Lookup("bob@QPID",     "create", "queue", "bob-work",    {"alternate":"joe-work2"},   "deny")
+        self.Lookup("bob@QPID",     "create", "queue", "bob-work2",   {"alternate":"someexchange"},"deny")
+        # create exchanges
+        self.Lookup("bob@QPID",     "create", "exchange", "bob-work", {},                          "allow")
+        self.Lookup("bob@QPID",     "create", "exchange", "bob-work2",{},                          "allow")
+        self.Lookup("bob@QPID",     "create", "exchange", "joe-work", {},                          "deny")
+        self.Lookup("bob@QPID",     "create", "exchange", "joe-work2",{},                          "deny")
+        self.Lookup("bob@QPID",     "create", "exchange", "bob-work3",{},                          "deny")
+        self.Lookup("bob@QPID",     "create", "exchange", "bob-work", {"alternate":"bob-work2"},   "allow")
+        self.Lookup("bob@QPID",     "create", "exchange", "bob-work2",{"alternate":"someexchange"},"deny")
+        # bind/unbind/access
+        self.Lookup("bob@QPID", "bind", "exchange", "bob-work", {},                                           "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "bob-work", {"routingkey":"bob"},                         "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "bob-work", {                    "queuename":"bob-work"}, "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "bob-work", {"routingkey":"bob", "queuename":"bob-work"}, "allow")
+        self.Lookup("bob@QPID", "bind", "exchange", "joe-work", {"routingkey":"bob", "queuename":"bob-work"}, "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "bob-work", {"routingkey":"joe", "queuename":"bob-work"}, "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "bob-work", {"routingkey":"bob", "queuename":"joe-work"}, "deny")
+
+        self.Lookup("bob@QPID", "bind", "exchange", "bob-work2", {},                                            "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "bob-work2", {"routingkey":"bob"},                          "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "bob-work2", {                    "queuename":"bob-work2"}, "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "bob-work2", {"routingkey":"bob", "queuename":"bob-work2"}, "allow")
+        self.Lookup("bob@QPID", "bind", "exchange", "joe-work2", {"routingkey":"bob", "queuename":"bob-work2"}, "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "bob-work2", {"routingkey":"joe", "queuename":"bob-work2"}, "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "bob-work2", {"routingkey":"bob", "queuename":"joe-work2"}, "deny")
+
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob-work", {},                                           "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob-work", {"routingkey":"bob"},                         "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob-work", {                    "queuename":"bob-work"}, "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob-work", {"routingkey":"bob", "queuename":"bob-work"}, "allow")
+        self.Lookup("bob@QPID", "unbind", "exchange", "joe-work", {"routingkey":"bob", "queuename":"bob-work"}, "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob-work", {"routingkey":"joe", "queuename":"bob-work"}, "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob-work", {"routingkey":"bob", "queuename":"joe-work"}, "deny")
+
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob-work2", {},                                            "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob-work2", {"routingkey":"bob"},                          "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob-work2", {                    "queuename":"bob-work2"}, "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob-work2", {"routingkey":"bob", "queuename":"bob-work2"}, "allow")
+        self.Lookup("bob@QPID", "unbind", "exchange", "joe-work2", {"routingkey":"bob", "queuename":"bob-work2"}, "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob-work2", {"routingkey":"joe", "queuename":"bob-work2"}, "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "bob-work2", {"routingkey":"bob", "queuename":"joe-work2"}, "deny")
+
+        self.Lookup("bob@QPID", "access", "exchange", "bob-work", {},                                           "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "bob-work", {"routingkey":"bob"},                         "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "bob-work", {                    "queuename":"bob-work"}, "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "bob-work", {"routingkey":"bob", "queuename":"bob-work"}, "allow")
+        self.Lookup("bob@QPID", "access", "exchange", "joe-work", {"routingkey":"bob", "queuename":"bob-work"}, "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "bob-work", {"routingkey":"joe", "queuename":"bob-work"}, "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "bob-work", {"routingkey":"bob", "queuename":"joe-work"}, "deny")
+
+        self.Lookup("bob@QPID", "access", "exchange", "bob-work2", {},                                            "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "bob-work2", {"routingkey":"bob"},                          "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "bob-work2", {                    "queuename":"bob-work2"}, "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "bob-work2", {"routingkey":"bob", "queuename":"bob-work2"}, "allow")
+        self.Lookup("bob@QPID", "access", "exchange", "joe-work2", {"routingkey":"bob", "queuename":"bob-work2"}, "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "bob-work2", {"routingkey":"joe", "queuename":"bob-work2"}, "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "bob-work2", {"routingkey":"bob", "queuename":"joe-work2"}, "deny")
+        # publish
+        self.LookupPublish("bob@QPID", "bob-work",  "bob",        "allow")
+        self.LookupPublish("bob@QPID", "bob-work2", "bob",        "allow")
+        self.LookupPublish("bob@QPID", "joe-work",  "bob",        "deny")
+        self.LookupPublish("bob@QPID", "joe-work2", "bob",        "deny")
+        self.LookupPublish("bob@QPID", "bob-work",  "joe",        "deny")
+        self.LookupPublish("bob@QPID", "bob-work2", "joe",        "deny")
+
+
+    def test_user_name_substitution_domain(self):
+        """
+        Test a setup where users can create, bind, and publish to a main exchange and queue.
+        Allow access to a single backup exchange and queue.
+        """
+        aclf = self.get_acl_file()
+        aclf.write('# begin hack alert: allow anonymous to access the lookup debug functions\n')
+        aclf.write('acl allow-log anonymous create  queue\n')
+        aclf.write('acl allow-log anonymous all     exchange name=qmf.*\n')
+        aclf.write('acl allow-log anonymous all     exchange name=amq.direct\n')
+        aclf.write('acl allow-log anonymous all     exchange name=qpid.management\n')
+        aclf.write('acl allow-log anonymous access  method   name=*\n')
+        aclf.write('# end hack alert\n')
+        # Create primary queue and exchange
+        #   allow predefined alternate
+        #   deny  any other alternate
+        #   allow no alternate
+        aclf.write('acl allow all create  queue    name=${domain}-work alternate=${domain}-work2\n')
+        aclf.write('acl deny  all create  queue    name=${domain}-work alternate=*\n')
+        aclf.write('acl allow all create  queue    name=${domain}-work\n')
+        aclf.write('acl allow all create  exchange name=${domain}-work alternate=${domain}-work2\n')
+        aclf.write('acl deny  all create  exchange name=${domain}-work alternate=*\n')
+        aclf.write('acl allow all create  exchange name=${domain}-work\n')
+        # Create backup queue and exchange
+        #   Deny any alternate
+        aclf.write('acl deny  all create  queue    name=${domain}-work2 alternate=*\n')
+        aclf.write('acl allow all create  queue    name=${domain}-work2\n')
+        aclf.write('acl deny  all create  exchange name=${domain}-work2 alternate=*\n')
+        aclf.write('acl allow all create  exchange name=${domain}-work2\n')
+        # Bind/unbind primary exchange
+        #  Use only predefined routingkey and queuename
+        aclf.write('acl allow all bind    exchange name=${domain}-work routingkey=${domain} queuename=${domain}-work\n')
+        aclf.write('acl allow all unbind  exchange name=${domain}-work routingkey=${domain} queuename=${domain}-work\n')
+        # Bind/unbind backup exchange
+        #  Use only predefined routingkey and queuename
+        aclf.write('acl allow all bind    exchange name=${domain}-work2 routingkey=${domain} queuename=${domain}-work2\n')
+        aclf.write('acl allow all unbind  exchange name=${domain}-work2 routingkey=${domain} queuename=${domain}-work2\n')
+        # Access primary exchange
+        #  Use only predefined routingkey and queuename
+        aclf.write('acl allow all access  exchange name=${domain}-work routingkey=${domain} queuename=${domain}-work\n')
+        # Access backup exchange
+        #  Use only predefined routingkey and queuename
+        aclf.write('acl allow all access  exchange name=${domain}-work2 routingkey=${domain} queuename=${domain}-work2\n')
+        # Publish primary exchange
+        #  Use only predefined routingkey
+        aclf.write('acl allow all publish exchange name=${domain}-work routingkey=${domain}\n')
+        # Publish backup exchange
+        #  Use only predefined routingkey
+        aclf.write('acl allow all publish exchange name=${domain}-work2 routingkey=${domain}\n')
+        # deny mode
+        aclf.write('acl deny all all\n')
+        aclf.close()
+
+        result = self.reload_acl()
+        if (result):
+            self.fail(result)
+
+        # create queues
+        self.Lookup("bob@QPID",     "create", "queue", "QPID-work",    {},                            "allow")
+        self.Lookup("bob@QPID",     "create", "queue", "QPID-work2",   {},                            "allow")
+        self.Lookup("bob@QPID",     "create", "queue", "QPID-work3",   {},                            "deny")
+        self.Lookup("bob@QPID",     "create", "queue", "QPID-work",    {"alternate":"QPID-work2"},    "allow")
+        self.Lookup("bob@QPID",     "create", "queue", "QPID-work",    {"alternate":"bob_QPID-work2"},"deny")
+        self.Lookup("bob@QPID",     "create", "queue", "QPID-work",    {"alternate":"joe_QPID-work2"},"deny")
+        self.Lookup("bob@QPID",     "create", "queue", "QPID-work2",   {"alternate":"someexchange"},  "deny")
+        # create exchanges
+        self.Lookup("bob@QPID",     "create", "exchange", "QPID-work", {},                           "allow")
+        self.Lookup("bob@QPID",     "create", "exchange", "QPID-work2",{},                           "allow")
+        self.Lookup("bob@QPID",     "create", "exchange", "QPID-work3",{},                           "deny")
+        self.Lookup("bob@QPID",     "create", "exchange", "QPID-work", {"alternate":"QPID-work2"},   "allow")
+        self.Lookup("bob@QPID",     "create", "exchange", "QPID-work2",{"alternate":"someexchange"}, "deny")
+        # bind/unbind/access
+        self.Lookup("bob@QPID", "bind", "exchange", "QPID-work", {},                                             "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "QPID-work", {"routingkey":"QPID"},                          "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "QPID-work", {                     "queuename":"QPID-work"}, "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "QPID-work", {"routingkey":"QPID", "queuename":"QPID-work"}, "allow")
+
+        self.Lookup("bob@QPID", "bind", "exchange", "QPID-work2", {},                                              "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "QPID-work2", {"routingkey":"QPID"},                           "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "QPID-work2", {                     "queuename":"QPID-work2"}, "deny")
+        self.Lookup("bob@QPID", "bind", "exchange", "QPID-work2", {"routingkey":"QPID", "queuename":"QPID-work2"}, "allow")
+
+        self.Lookup("bob@QPID", "unbind", "exchange", "QPID-work", {},                                             "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "QPID-work", {"routingkey":"QPID"},                          "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "QPID-work", {                     "queuename":"QPID-work"}, "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "QPID-work", {"routingkey":"QPID", "queuename":"QPID-work"}, "allow")
+
+        self.Lookup("bob@QPID", "unbind", "exchange", "QPID-work2", {},                                              "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "QPID-work2", {"routingkey":"QPID"},                           "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "QPID-work2", {                     "queuename":"QPID-work2"}, "deny")
+        self.Lookup("bob@QPID", "unbind", "exchange", "QPID-work2", {"routingkey":"QPID", "queuename":"QPID-work2"}, "allow")
+
+        self.Lookup("bob@QPID", "access", "exchange", "QPID-work", {},                                             "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "QPID-work", {"routingkey":"QPID"},                          "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "QPID-work", {                     "queuename":"QPID-work"}, "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "QPID-work", {"routingkey":"QPID", "queuename":"QPID-work"}, "allow")
+
+        self.Lookup("bob@QPID", "access", "exchange", "QPID-work2", {},                                              "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "QPID-work2", {"routingkey":"QPID"},                           "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "QPID-work2", {                     "queuename":"QPID-work2"}, "deny")
+        self.Lookup("bob@QPID", "access", "exchange", "QPID-work2", {"routingkey":"QPID", "queuename":"QPID-work2"}, "allow")
+        # publish
+        self.LookupPublish("bob@QPID", "QPID-work",  "QPID",        "allow")
+        self.LookupPublish("bob@QPID", "QPID-work2", "QPID",        "allow")
+        self.LookupPublish("joe@QPID", "QPID-work",  "QPID",        "allow")
+        self.LookupPublish("joe@QPID", "QPID-work2", "QPID",        "allow")
+
+
 class BrokerAdmin:
     def __init__(self, broker, username=None, password=None):
         self.connection = qpid.messaging.Connection(broker)

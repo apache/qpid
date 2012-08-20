@@ -25,6 +25,13 @@ namespace qpid {
 namespace acl {
 
     //
+    // Instantiate the substitution keyword string
+    //
+    const std::string AclData::USER_SUBSTITUTION_KEYWORD       = "${user}";
+    const std::string AclData::DOMAIN_SUBSTITUTION_KEYWORD     = "${domain}";
+    const std::string AclData::USERDOMAIN_SUBSTITUTION_KEYWORD = "${userdomain}";
+
+    //
     // constructor
     //
     AclData::AclData():
@@ -147,7 +154,17 @@ namespace acl {
                         // the calling args and not in the param map.
                         if (rulePropMapItr->first == acl::SPECPROP_NAME)
                         {
-                            if (matchProp(rulePropMapItr->second, name))
+                            // substitute user name into object name
+                            bool result;
+                            if (rsItr->ruleHasUserSub[PROP_NAME]) {
+                                std::string sName(rulePropMapItr->second);
+                                substituteUserId(sName, id);
+                                result = matchProp(sName, name);
+                            } else {
+                                result = matchProp(rulePropMapItr->second, name);
+                            }
+
+                            if (result)
                             {
                                 QPID_LOG(debug, "ACL: lookup name '" << name
                                     << "' matched with rule name '"
@@ -222,7 +239,20 @@ namespace acl {
                                         break;
 
                                     default:
-                                        if (matchProp(rulePropMapItr->second, lookupParamItr->second))
+                                        bool result;
+                                        if ((SPECPROP_ALTERNATE  == rulePropMapItr->first && rsItr->ruleHasUserSub[PROP_ALTERNATE])  ||
+                                            (SPECPROP_ROUTINGKEY == rulePropMapItr->first && rsItr->ruleHasUserSub[PROP_ROUTINGKEY]) ||
+                                            (SPECPROP_QUEUENAME  == rulePropMapItr->first && rsItr->ruleHasUserSub[PROP_QUEUENAME]))
+                                        {
+                                            // These properties are allowed to have username substitution
+                                            std::string sName(rulePropMapItr->second);
+                                            substituteUserId(sName, id);
+                                            result = matchProp(sName, lookupParamItr->second);
+                                        } else {
+                                            result = matchProp(rulePropMapItr->second, lookupParamItr->second);
+                                        }
+
+                                        if (result)
                                         {
                                             QPID_LOG(debug, "ACL: the pair("
                                                 << AclHelper::getPropertyStr(lookupParamItr->first)
@@ -346,7 +376,18 @@ namespace acl {
                     bool match =true;
                     if (rsItr->pubExchNameInRule)
                     {
-                        if (matchProp(rsItr->pubExchName, name))
+                        // substitute user name into object name
+                        bool result;
+
+                        if (rsItr->ruleHasUserSub[PROP_NAME]) {
+                            std::string sName(rsItr->pubExchName);
+                            substituteUserId(sName, id);
+                            result = matchProp(sName, name);
+                        } else {
+                            result = matchProp(rsItr->pubExchName, name);
+                        }
+
+                        if (result)
                         {
                             QPID_LOG(debug, "ACL: Rule: " << rsItr->rawRuleNum << " lookup exchange name '"
                                 << name << "' matched with rule name '"
@@ -364,18 +405,40 @@ namespace acl {
 
                     if (match && rsItr->pubRoutingKeyInRule)
                     {
-                        if (rsItr->matchRoutingKey(routingKey))
+                        if ((routingKey.find(USER_SUBSTITUTION_KEYWORD, 0)       != std::string::npos) ||
+                            (routingKey.find(DOMAIN_SUBSTITUTION_KEYWORD, 0)     != std::string::npos) ||
+                            (routingKey.find(USERDOMAIN_SUBSTITUTION_KEYWORD, 0) != std::string::npos))
                         {
-                            QPID_LOG(debug, "ACL: Rule: " << rsItr->rawRuleNum << " lookup key name '"
-                                << routingKey << "' matched with rule routing key '"
-                                << rsItr->pubRoutingKey << "'");
+                            // The user is not allowed to present a routing key with the substitution key in it
+                            QPID_LOG(debug, "ACL: Rule: " << rsItr->rawRuleNum <<
+                                " User-specified routing key has substitution wildcard:" << routingKey
+                                << ". Rule match prohibited.");
+                            match = false;
                         }
                         else
                         {
-                            QPID_LOG(debug, "ACL: Rule: " << rsItr->rawRuleNum << " lookup key name '"
-                                << routingKey << "' did not match with rule routing key '"
-                                << rsItr->pubRoutingKey << "'");
-                            match = false;
+                            bool result;
+                            if (rsItr->ruleHasUserSub[PROP_ROUTINGKEY]) {
+                                std::string sKey(routingKey);
+                                substituteKeywords(sKey, id);
+                                result = rsItr->matchRoutingKey(sKey);
+                            } else {
+                                result = rsItr->matchRoutingKey(routingKey);
+                            }
+
+                            if (result)
+                            {
+                                QPID_LOG(debug, "ACL: Rule: " << rsItr->rawRuleNum << " lookup key name '"
+                                    << routingKey << "' matched with rule routing key '"
+                                    << rsItr->pubRoutingKey << "'");
+                            }
+                            else
+                            {
+                                QPID_LOG(debug, "ACL: Rule: " << rsItr->rawRuleNum << " lookup key name '"
+                                    << routingKey << "' did not match with rule routing key '"
+                                    << rsItr->pubRoutingKey << "'");
+                                match = false;
+                            }
                         }
                     }
 
@@ -501,4 +564,102 @@ namespace acl {
         return true;
     }
 
+    const std::string DOMAIN_SEPARATOR("@");
+    const std::string PERIOD(".");
+    const std::string UNDERSCORE("_");
+    //
+    // substituteString
+    //   Given a name string from an Acl rule, substitute the replacement into it
+    //   wherever the placeholder directs.
+    //
+    void AclData::substituteString(std::string& targetString,
+                                   const std::string& placeholder,
+                                   const std::string& replacement)
+    {
+        assert (!placeholder.empty());
+        if (placeholder.empty())
+            return;
+        size_t start_pos(0);
+        while((start_pos = targetString.find(placeholder, start_pos)) != std::string::npos)
+        {
+            targetString.replace(start_pos, placeholder.length(), replacement);
+            start_pos += replacement.length();
+        }
+    }
+
+
+    //
+    // normalizeUserId
+    //   Given a name string return it in a form usable as topic keys:
+    //     change "@" and "." to "_".
+    //
+    std::string AclData::normalizeUserId(const std::string& userId)
+    {
+        std::string normalId(userId);
+        substituteString(normalId, DOMAIN_SEPARATOR, UNDERSCORE);
+        substituteString(normalId, PERIOD,           UNDERSCORE);
+        return normalId;
+    }
+
+
+    //
+    // substituteUserId
+    //   Given an Acl rule and an authenticated userId
+    //   do the keyword substitutions on the rule.
+    //
+    void AclData::AclData::substituteUserId(std::string& ruleString,
+                                            const std::string& userId)
+    {
+        size_t locDomSeparator(0);
+        std::string user("");
+        std::string domain("");
+        std::string userdomain = normalizeUserId(userId);
+
+        locDomSeparator = userId.find(DOMAIN_SEPARATOR);
+        if (std::string::npos == locDomSeparator) {
+            // "@" not found. There's just a user name
+            user   = normalizeUserId(userId);
+        } else {
+            // "@" found, split the names. Domain may be blank.
+            user   = normalizeUserId(userId.substr(0,locDomSeparator));
+            domain = normalizeUserId(userId.substr(locDomSeparator+1));
+        }
+
+        substituteString(ruleString, USER_SUBSTITUTION_KEYWORD,       user);
+        substituteString(ruleString, DOMAIN_SUBSTITUTION_KEYWORD,     domain);
+        substituteString(ruleString, USERDOMAIN_SUBSTITUTION_KEYWORD, userdomain);
+    }
+
+
+    //
+    // substituteKeywords
+    //   Given an Acl rule and an authenticated userId
+    //   do reverse keyword substitutions on the rule.
+    //   That is, replace the normalized name in the rule string with
+    //   the keyword that represents it. This stragegy is used for
+    //   topic key lookups where the keyword string proper is in the
+    //   topic key search tree.
+    //
+    void AclData::AclData::substituteKeywords(std::string& ruleString,
+                                              const std::string& userId)
+    {
+        size_t locDomSeparator(0);
+        std::string user("");
+        std::string domain("");
+        std::string userdomain = normalizeUserId(userId);
+
+        locDomSeparator = userId.find(DOMAIN_SEPARATOR);
+        if (std::string::npos == locDomSeparator) {
+            // "@" not found. There's just a user name
+            user   = normalizeUserId(userId);
+        } else {
+            // "@" found, split the names
+            user   = normalizeUserId(userId.substr(0,locDomSeparator));
+            domain = normalizeUserId(userId.substr(locDomSeparator+1));
+        }
+        std::string oRule(ruleString);
+        substituteString(ruleString, userdomain, USERDOMAIN_SUBSTITUTION_KEYWORD);
+        substituteString(ruleString, user,       USER_SUBSTITUTION_KEYWORD);
+        substituteString(ruleString, domain,     DOMAIN_SUBSTITUTION_KEYWORD);
+    }
 }}
