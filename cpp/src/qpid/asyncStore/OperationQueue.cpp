@@ -50,15 +50,7 @@ OperationQueue::OpQueue::Batch::const_iterator
 OperationQueue::handle(const OperationQueue::OpQueue::Batch& e) {
     try {
         for (OpQueue::Batch::const_iterator i = e.begin(); i != e.end(); ++i) {
-            boost::shared_ptr<qpid::broker::BrokerAsyncContext> bc = (*i)->getBrokerContext();
-            if (bc.get()) {
-                qpid::broker::AsyncResultQueue* const arq = bc->getAsyncResultQueue();
-                if (arq) {
-                    qpid::broker::AsyncResultHandleImpl* arhi = new qpid::broker::AsyncResultHandleImpl(bc);
-                    boost::shared_ptr<qpid::broker::AsyncResultHandle> arh(new qpid::broker::AsyncResultHandle(arhi));
-                    arq->submit(arh);
-                }
-            }
+            (*i)->executeOp(); // Do store work here
         }
     } catch (const std::exception& e) {
         QPID_LOG(error, "qpid::asyncStore::OperationQueue: Exception thrown processing async op: " << e.what());

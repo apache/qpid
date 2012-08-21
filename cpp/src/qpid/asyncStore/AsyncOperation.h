@@ -34,26 +34,30 @@ class AsyncStoreImpl;
 
 class AsyncOperation {
 public:
-    AsyncOperation(boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
+    AsyncOperation(boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt,
+                   qpid::broker::AsyncStore* store);
     virtual ~AsyncOperation();
-    virtual void executeOp(boost::shared_ptr<AsyncStoreImpl> store) = 0;
+    virtual void executeOp() const = 0;
     boost::shared_ptr<qpid::broker::BrokerAsyncContext> getBrokerContext() const;
     virtual const char* getOpStr() const = 0;
 protected:
-    void submitResult();
+    void submitResult() const;
     void submitResult(const int errNo,
-                      const std::string& errMsg);
+                      const std::string& errMsg) const;
 private:
     boost::shared_ptr<qpid::broker::BrokerAsyncContext> const m_brokerCtxt;
+protected:
+    qpid::broker::AsyncStore* m_store;
 };
 
 
 class AsyncOpTxnPrepare: public qpid::asyncStore::AsyncOperation {
 public:
     AsyncOpTxnPrepare(qpid::broker::TxnHandle& txnHandle,
-                      boost::shared_ptr<qpid::broker::TpcTxnAsyncContext> txnCtxt);
+                      boost::shared_ptr<qpid::broker::TpcTxnAsyncContext> txnCtxt,
+                      qpid::broker::AsyncStore* store);
     virtual ~AsyncOpTxnPrepare();
-    virtual void executeOp(boost::shared_ptr<AsyncStoreImpl> store);
+    virtual void executeOp() const;
     virtual const char* getOpStr() const;
 private:
     qpid::broker::TxnHandle& m_txnHandle;
@@ -63,9 +67,10 @@ private:
 class AsyncOpTxnCommit: public qpid::asyncStore::AsyncOperation {
 public:
     AsyncOpTxnCommit(qpid::broker::TxnHandle& txnHandle,
-                     boost::shared_ptr<qpid::broker::TxnAsyncContext> txnCtxt);
+                     boost::shared_ptr<qpid::broker::TxnAsyncContext> txnCtxt,
+                     qpid::broker::AsyncStore* store);
     virtual ~AsyncOpTxnCommit();
-    virtual void executeOp(boost::shared_ptr<AsyncStoreImpl> store);
+    virtual void executeOp() const;
     virtual const char* getOpStr() const;
 private:
     qpid::broker::TxnHandle& m_txnHandle;
@@ -75,9 +80,10 @@ private:
 class AsyncOpTxnAbort: public qpid::asyncStore::AsyncOperation {
 public:
     AsyncOpTxnAbort(qpid::broker::TxnHandle& txnHandle,
-                    boost::shared_ptr<qpid::broker::TxnAsyncContext> txnCtxt);
+                    boost::shared_ptr<qpid::broker::TxnAsyncContext> txnCtxt,
+                    qpid::broker::AsyncStore* store);
     virtual ~AsyncOpTxnAbort();
-    virtual void executeOp(boost::shared_ptr<AsyncStoreImpl> store);
+    virtual void executeOp() const;
     virtual const char* getOpStr() const;
 private:
     qpid::broker::TxnHandle& m_txnHandle;
@@ -88,9 +94,10 @@ class AsyncOpConfigCreate: public qpid::asyncStore::AsyncOperation {
 public:
     AsyncOpConfigCreate(qpid::broker::ConfigHandle& cfgHandle,
                         const qpid::broker::DataSource* const data,
-                        boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
+                        boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt,
+                        qpid::broker::AsyncStore* store);
     virtual ~AsyncOpConfigCreate();
-    virtual void executeOp(boost::shared_ptr<AsyncStoreImpl> store);
+    virtual void executeOp() const;
     virtual const char* getOpStr() const;
 private:
     qpid::broker::ConfigHandle& m_cfgHandle;
@@ -101,9 +108,10 @@ private:
 class AsyncOpConfigDestroy: public qpid::asyncStore::AsyncOperation {
 public:
     AsyncOpConfigDestroy(qpid::broker::ConfigHandle& cfgHandle,
-                         boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
+                         boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt,
+                         qpid::broker::AsyncStore* store);
     virtual ~AsyncOpConfigDestroy();
-    virtual void executeOp(boost::shared_ptr<AsyncStoreImpl> store);
+    virtual void executeOp() const;
     virtual const char* getOpStr() const;
 private:
     qpid::broker::ConfigHandle& m_cfgHandle;
@@ -114,9 +122,10 @@ class AsyncOpQueueCreate: public qpid::asyncStore::AsyncOperation {
 public:
     AsyncOpQueueCreate(qpid::broker::QueueHandle& queueHandle,
                        const qpid::broker::DataSource* const data,
-                       boost::shared_ptr<qpid::broker::QueueAsyncContext> queueCtxt);
+                       boost::shared_ptr<qpid::broker::QueueAsyncContext> queueCtxt,
+                       qpid::broker::AsyncStore* store);
     virtual ~AsyncOpQueueCreate();
-    virtual void executeOp(boost::shared_ptr<AsyncStoreImpl> store);
+    virtual void executeOp() const;
     virtual const char* getOpStr() const;
 private:
     qpid::broker::QueueHandle& m_queueHandle;
@@ -127,9 +136,10 @@ private:
 class AsyncOpQueueFlush: public qpid::asyncStore::AsyncOperation {
 public:
     AsyncOpQueueFlush(qpid::broker::QueueHandle& queueHandle,
-                      boost::shared_ptr<qpid::broker::QueueAsyncContext> queueCtxt);
+                      boost::shared_ptr<qpid::broker::QueueAsyncContext> queueCtxt,
+                      qpid::broker::AsyncStore* store);
     virtual ~AsyncOpQueueFlush();
-    virtual void executeOp(boost::shared_ptr<AsyncStoreImpl> store);
+    virtual void executeOp() const;
     virtual const char* getOpStr() const;
 private:
     qpid::broker::QueueHandle& m_queueHandle;
@@ -139,9 +149,10 @@ private:
 class AsyncOpQueueDestroy: public qpid::asyncStore::AsyncOperation {
 public:
     AsyncOpQueueDestroy(qpid::broker::QueueHandle& queueHandle,
-                      boost::shared_ptr<qpid::broker::QueueAsyncContext> queueCtxt);
+                      boost::shared_ptr<qpid::broker::QueueAsyncContext> queueCtxt,
+                      qpid::broker::AsyncStore* store);
     virtual ~AsyncOpQueueDestroy();
-    virtual void executeOp(boost::shared_ptr<AsyncStoreImpl> store);
+    virtual void executeOp() const;
     virtual const char* getOpStr() const;
 private:
     qpid::broker::QueueHandle& m_queueHandle;
@@ -153,9 +164,10 @@ public:
     AsyncOpEventCreate(qpid::broker::EventHandle& evtHandle,
                        const qpid::broker::DataSource* const data,
                        qpid::broker::TxnHandle& txnHandle,
-                       boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
+                       boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt,
+                       qpid::broker::AsyncStore* store);
     virtual ~AsyncOpEventCreate();
-    virtual void executeOp(boost::shared_ptr<AsyncStoreImpl> store);
+    virtual void executeOp() const;
     virtual const char* getOpStr() const;
 private:
     qpid::broker::EventHandle& m_evtHandle;
@@ -168,9 +180,10 @@ class AsyncOpEventDestroy: public qpid::asyncStore::AsyncOperation {
 public:
     AsyncOpEventDestroy(qpid::broker::EventHandle& evtHandle,
                         qpid::broker::TxnHandle& txnHandle,
-                        boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
+                        boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt,
+                        qpid::broker::AsyncStore* store);
     virtual ~AsyncOpEventDestroy();
-    virtual void executeOp(boost::shared_ptr<AsyncStoreImpl> store);
+    virtual void executeOp() const;
     virtual const char* getOpStr() const;
 private:
     qpid::broker::EventHandle& m_evtHandle;
@@ -182,9 +195,10 @@ class AsyncOpMsgEnqueue: public qpid::asyncStore::AsyncOperation {
 public:
     AsyncOpMsgEnqueue(qpid::broker::EnqueueHandle& enqHandle,
                       qpid::broker::TxnHandle& txnHandle,
-                      boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
+                      boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt,
+                      qpid::broker::AsyncStore* store);
     virtual ~AsyncOpMsgEnqueue();
-    virtual void executeOp(boost::shared_ptr<AsyncStoreImpl> store);
+    virtual void executeOp() const;
     virtual const char* getOpStr() const;
 private:
     qpid::broker::EnqueueHandle& m_enqHandle;
@@ -196,9 +210,10 @@ class AsyncOpMsgDequeue: public qpid::asyncStore::AsyncOperation {
 public:
     AsyncOpMsgDequeue(qpid::broker::EnqueueHandle& enqHandle,
                       qpid::broker::TxnHandle& txnHandle,
-                      boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt);
+                      boost::shared_ptr<qpid::broker::BrokerAsyncContext> brokerCtxt,
+                      qpid::broker::AsyncStore* store);
     virtual ~AsyncOpMsgDequeue();
-    virtual void executeOp(boost::shared_ptr<AsyncStoreImpl> store);
+    virtual void executeOp() const;
     virtual const char* getOpStr() const;
 private:
     qpid::broker::EnqueueHandle& m_enqHandle;

@@ -164,7 +164,6 @@ SimpleTxnBuffer::asyncLocalCommit() {
             boost::shared_ptr<TxnAsyncContext> tac(new TxnAsyncContext(this,
                                                                        &handleAsyncCommitResult,
                                                                        &m_resultQueue));
-            m_store->testOp();
             m_store->submitCommit(m_txnHandle, tac);
             break;
         }

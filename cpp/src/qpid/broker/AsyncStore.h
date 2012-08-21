@@ -90,7 +90,6 @@ public:
                               boost::shared_ptr<TxnAsyncContext>) = 0;
     virtual void submitAbort(TxnHandle&,
                              boost::shared_ptr<TxnAsyncContext>) = 0;
-    void testOp() const {}
 };
 
 // Subclassed by store:
