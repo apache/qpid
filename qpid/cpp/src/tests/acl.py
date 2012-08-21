@@ -53,6 +53,9 @@ class ACLTests(TestBase010):
     def port_u(self):
         return int(self.defines["port-u"])
 
+    def port_q(self):
+        return int(self.defines["port-q"])
+
     def get_session_by_port(self, user, passwd, byPort):
         socket = connect(self.broker.host, byPort)
         connection = Connection (sock=socket, username=user, password=passwd,
@@ -2243,6 +2246,62 @@ class ACLTests(TestBase010):
         self.LookupPublish("joe@QPID", "QPID-work",  "QPID",        "allow")
         self.LookupPublish("joe@QPID", "QPID-work2", "QPID",        "allow")
 
+   #=====================================
+   # Queue per-user quota
+   #=====================================
+
+    def test_queue_per_user_quota(self):
+        """
+        Test ACL queue counting limits.
+        port_q has a limit of 2
+        """
+        # bob should be able to create two queues
+        session = self.get_session_by_port('bob','bob', self.port_q())
+
+        try:
+            session.queue_declare(queue="queue1")
+            session.queue_declare(queue="queue2")
+        except qpid.session.SessionException, e:
+            self.fail("Error during queue create request");
+
+        # third queue should fail
+        try:
+            session.queue_declare(queue="queue3")
+            self.fail("Should not be able to create third queue")
+        except Exception, e:
+            result = None
+            session = self.get_session_by_port('bob','bob', self.port_q())
+
+        # alice should be able to create two queues
+        session2 = self.get_session_by_port('alice','alice', self.port_q())
+
+        try:
+            session2.queue_declare(queue="queuea1")
+            session2.queue_declare(queue="queuea2")
+        except qpid.session.SessionException, e:
+            self.fail("Error during queue create request");
+
+        # third queue should fail
+        try:
+            session2.queue_declare(queue="queuea3")
+            self.fail("Should not be able to create third queue")
+        except Exception, e:
+            result = None
+            session2 = self.get_session_by_port('alice','alice', self.port_q())
+
+        # bob should be able to delete a queue and create another
+        try:
+            session.queue_delete(queue="queue1")
+            session.queue_declare(queue="queue3")
+        except qpid.session.SessionException, e:
+            self.fail("Error during queue create request");
+
+        # alice should be able to delete a queue and create another
+        try:
+            session2.queue_delete(queue="queuea1")
+            session2.queue_declare(queue="queuea3")
+        except qpid.session.SessionException, e:
+            self.fail("Error during queue create request");
 
 class BrokerAdmin:
     def __init__(self, broker, username=None, password=None):

@@ -24,22 +24,26 @@ source ./test_env.sh
 DATA_DIR=`pwd`/data_dir
 DATA_DIRI=`pwd`/data_diri
 DATA_DIRU=`pwd`/data_diru
+DATA_DIRQ=`pwd`/data_dirq
 
 trap stop_brokers INT TERM QUIT
 
 start_brokers() {
-    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIR --load-module $ACL_LIB --acl-file policy.acl --auth no --log-to-file local.log > qpidd.port
+    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIR --load-module $ACL_LIB --acl-file policy.acl --auth no                               --log-to-file local.log > qpidd.port
     LOCAL_PORT=`cat qpidd.port`
-    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIRI --load-module $ACL_LIB --acl-file policy.acl --auth no --max-connections-per-ip 2 --log-to-file locali.log > qpiddi.port
+    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIRI --load-module $ACL_LIB --acl-file policy.acl --auth no --max-connections-per-ip 2   --log-to-file locali.log > qpiddi.port
     LOCAL_PORTI=`cat qpiddi.port`
     ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIRU --load-module $ACL_LIB --acl-file policy.acl --auth no --max-connections-per-user 2 --log-to-file localu.log > qpiddu.port
     LOCAL_PORTU=`cat qpiddu.port`
+    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIRQ --load-module $ACL_LIB --acl-file policy.acl --auth no --max-queues-per-user 2      --log-to-file localq.log > qpiddq.port
+    LOCAL_PORTQ=`cat qpiddq.port`
 }
 
 stop_brokers() {
         $QPIDD_EXEC --no-module-dir -q --port $LOCAL_PORT
         $QPIDD_EXEC --no-module-dir -q --port $LOCAL_PORTI
         $QPIDD_EXEC --no-module-dir -q --port $LOCAL_PORTU
+        $QPIDD_EXEC --no-module-dir -q --port $LOCAL_PORTQ
 }
 
 test_loading_acl_from_absolute_path(){
@@ -59,20 +63,24 @@ if test -d ${PYTHON_DIR} ;  then
     rm -rf $DATA_DIR
     rm -rf $DATA_DIRI
     rm -rf $DATA_DIRU
+    rm -rf $DATA_DIRQ
     mkdir -p $DATA_DIR
     mkdir -p $DATA_DIRI
     mkdir -p $DATA_DIRU
+    mkdir -p $DATA_DIRQ
     cp $srcdir/policy.acl $DATA_DIR
     cp $srcdir/policy.acl $DATA_DIRI
     cp $srcdir/policy.acl $DATA_DIRU
+    cp $srcdir/policy.acl $DATA_DIRQ
     start_brokers
-    echo "Running acl tests using brokers on ports $LOCAL_PORT, $LOCAL_PORTI, and $LOCAL_PORTU"
-    $QPID_PYTHON_TEST -b localhost:$LOCAL_PORT -m acl -Dport-i=$LOCAL_PORTI -Dport-u=$LOCAL_PORTU || EXITCODE=1
+    echo "Running acl tests using brokers on ports $LOCAL_PORT, $LOCAL_PORTI, $LOCAL_PORTU, and $LOCAL_PORTQ"
+    $QPID_PYTHON_TEST -b localhost:$LOCAL_PORT -m acl -Dport-i=$LOCAL_PORTI -Dport-u=$LOCAL_PORTU -Dport-q=$LOCAL_PORTQ || EXITCODE=1
     stop_brokers || EXITCODE=1
     test_loading_acl_from_absolute_path || EXITCODE=1
     rm -rf $DATA_DIR
     rm -rf $DATA_DIRI
     rm -rf $DATA_DIRU
+    rm -rf $DATA_DIRQ
     exit $EXITCODE
 fi
 
