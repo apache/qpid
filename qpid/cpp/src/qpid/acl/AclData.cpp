@@ -607,8 +607,8 @@ namespace acl {
     //   Given an Acl rule and an authenticated userId
     //   do the keyword substitutions on the rule.
     //
-    void AclData::AclData::substituteUserId(std::string& ruleString,
-                                            const std::string& userId)
+    void AclData::substituteUserId(std::string& ruleString,
+                                   const std::string& userId)
     {
         size_t locDomSeparator(0);
         std::string user("");
@@ -640,8 +640,8 @@ namespace acl {
     //   topic key lookups where the keyword string proper is in the
     //   topic key search tree.
     //
-    void AclData::AclData::substituteKeywords(std::string& ruleString,
-                                              const std::string& userId)
+    void AclData::substituteKeywords(std::string& ruleString,
+                                     const std::string& userId)
     {
         size_t locDomSeparator(0);
         std::string user("");
