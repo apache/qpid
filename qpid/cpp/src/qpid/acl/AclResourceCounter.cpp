@@ -41,9 +41,7 @@ namespace acl {
 //
 //
 ResourceCounter::ResourceCounter(Acl& a, uint16_t ql) :
-    acl(a), queueLimit(ql) {
-        QPID_LOG(critical, "ACL RESOURCE_COUNTER queueLimit:" << queueLimit);
-    }
+    acl(a), queueLimit(ql) {}
 
 ResourceCounter::~ResourceCounter() {}
 
@@ -79,9 +77,9 @@ bool ResourceCounter::limitApproveLH(
         }
         if (emitLog) {
             QPID_LOG(trace, theTitle << theName
-            << " limit=" << theLimit
-            << " curValue=" << count
-            << " result=" << (result ? "allow" : "deny"));
+                << " limit=" << theLimit
+                << " curValue=" << count
+                << " result=" << (result ? "allow" : "deny"));
         }
     }
     return result;
@@ -138,6 +136,8 @@ bool ResourceCounter::approveCreateQueue(const std::string& userId, const std::s
         QPID_LOG(error, "Client max queue count limit of " << queueLimit
             << " exceeded by '" << userId << "' creating queue '"
             << queueName << "'. Queue creation denied.");
+
+        acl.reportQueueLimit(userId, queueName);
     }
     return okByQ;
 }
