@@ -20,18 +20,19 @@ package org.apache.qpid.disttest.jms;
 
 import java.util.List;
 
+import javax.jms.Connection;
 import javax.jms.Session;
 
 import org.apache.qpid.disttest.controller.config.QueueConfig;
 public class NoOpQueueCreator implements QueueCreator
 {
     @Override
-    public void createQueues(Session session, List<QueueConfig> configs)
+    public void createQueues(Connection connection, Session session, List<QueueConfig> configs)
     {
     }
 
     @Override
-    public void deleteQueues(Session session, List<QueueConfig> configs)
+    public void deleteQueues(Connection connection, Session session, List<QueueConfig> configs)
     {
     }
 }

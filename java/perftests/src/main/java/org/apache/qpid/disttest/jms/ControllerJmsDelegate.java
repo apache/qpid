@@ -224,12 +224,12 @@ public class ControllerJmsDelegate
 
     public void createQueues(List<QueueConfig> queues)
     {
-        _queueCreator.createQueues(_session, queues);
+        _queueCreator.createQueues(_connection, _session, queues);
     }
 
     public void deleteQueues(List<QueueConfig> queues)
     {
-        _queueCreator.deleteQueues(_session, queues);
+        _queueCreator.deleteQueues(_connection, _session, queues);
     }
 
     public void addCommandListener(CommandListener commandListener)

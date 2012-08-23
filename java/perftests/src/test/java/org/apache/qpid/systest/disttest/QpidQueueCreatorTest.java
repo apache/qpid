@@ -29,7 +29,6 @@ import javax.jms.Session;
 
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.disttest.DistributedTestException;
 import org.apache.qpid.disttest.controller.config.QueueConfig;
 import org.apache.qpid.disttest.jms.QpidQueueCreator;
 
@@ -37,6 +36,9 @@ public class QpidQueueCreatorTest extends DistributedTestSystemTestBase
 {
     private static final Map<String, Object> EMPTY_ATTRIBUTES = Collections.emptyMap();
 
+    private static final boolean QUEUE_DURABILITY = true;
+
+    private Connection _connection;
     private QpidQueueCreator _creator;
     private Session _session;
     private List<QueueConfig> _configs;
@@ -46,20 +48,20 @@ public class QpidQueueCreatorTest extends DistributedTestSystemTestBase
     public void setUp() throws Exception
     {
         super.setUp();
-        Connection connection = getConnection();
-        _session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        _connection = getConnection();
+        _session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         _creator = new QpidQueueCreator();
         _configs = new ArrayList<QueueConfig>();
-        _queueName = "direct://amq.direct//" + getTestQueueName();
+        _queueName = "direct://amq.direct//" + getTestQueueName() + "?durable='" + QUEUE_DURABILITY + "'";
     }
 
     public void testCreateQueueWithoutAttributes() throws Exception
     {
-        _configs.add(new QueueConfig(_queueName, true, EMPTY_ATTRIBUTES));
+        _configs.add(new QueueConfig(_queueName, QUEUE_DURABILITY, EMPTY_ATTRIBUTES));
 
         assertQueueBound(_queueName, false);
 
-        _creator.createQueues(_session, _configs);
+        _creator.createQueues(_connection, _session, _configs);
 
         assertQueueBound(_queueName, true);
     }
@@ -68,44 +70,26 @@ public class QpidQueueCreatorTest extends DistributedTestSystemTestBase
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put("x-qpid-priorities", Integer.valueOf(5));
-        _configs.add(new QueueConfig(_queueName, true, attributes));
+        _configs.add(new QueueConfig(_queueName, QUEUE_DURABILITY, attributes));
 
         assertQueueBound(_queueName, false);
 
-        _creator.createQueues(_session, _configs);
+        _creator.createQueues(_connection, _session, _configs);
 
         assertQueueBound(_queueName, true);
     }
 
     public void testDeleteQueues() throws Exception
     {
-        _configs.add(new QueueConfig(_queueName, true, EMPTY_ATTRIBUTES));
+        _configs.add(new QueueConfig(_queueName, QUEUE_DURABILITY, EMPTY_ATTRIBUTES));
 
         assertQueueBound(_queueName, false);
 
-        _creator.createQueues(_session, _configs);
+        _creator.createQueues(_connection, _session, _configs);
         assertQueueBound(_queueName, true);
 
-        _creator.deleteQueues(_session, _configs);
+        _creator.deleteQueues(_connection, _session, _configs);
         assertQueueBound(_queueName, false);
-    }
-
-    public void testDeleteQueueThatDoesNotExist() throws Exception
-    {
-        String queueThatDoesNotExist = _queueName;
-        List<QueueConfig> configs = new ArrayList<QueueConfig>();
-        Map<String, Object> attributes = Collections.emptyMap();
-        configs.add(new QueueConfig(queueThatDoesNotExist, true, attributes));
-
-        try
-        {
-            _creator.deleteQueues(_session, configs);
-            fail("Exception not thrown");
-        }
-        catch (DistributedTestException e)
-        {
-            // PASS
-        }
     }
 
     private void assertQueueBound(String queueName, boolean isBound) throws Exception
