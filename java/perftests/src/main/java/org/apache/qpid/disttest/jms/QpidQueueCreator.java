@@ -20,11 +20,15 @@ package org.apache.qpid.disttest.jms;
 
 import java.util.List;
 
+import javax.jms.Connection;
+import javax.jms.JMSException;
+import javax.jms.MessageConsumer;
 import javax.jms.Session;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.disttest.DistributedTestException;
 import org.apache.qpid.disttest.controller.config.QueueConfig;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +38,7 @@ public class QpidQueueCreator implements QueueCreator
     private static final FieldTable EMPTY_QUEUE_BIND_ARGUMENTS = new FieldTable();
 
     @Override
-    public void createQueues(Session session, List<QueueConfig> configs)
+    public void createQueues(Connection connection, Session session, List<QueueConfig> configs)
     {
         AMQSession<?, ?> amqSession = (AMQSession<?, ?>)session;
         for (QueueConfig queueConfig : configs)
@@ -44,12 +48,65 @@ public class QpidQueueCreator implements QueueCreator
     }
 
     @Override
-    public void deleteQueues(Session session, List<QueueConfig> configs)
+    public void deleteQueues(Connection connection, Session session, List<QueueConfig> configs)
     {
         AMQSession<?, ?> amqSession = (AMQSession<?, ?>)session;
         for (QueueConfig queueConfig : configs)
         {
-            deleteQueue(amqSession, queueConfig);
+            AMQDestination destination = createAMQDestination(amqSession, queueConfig);
+
+            // drainQueue method is added because deletion of queue with a lot
+            // of messages takes time and might cause the timeout exception
+            drainQueue(connection, destination);
+            deleteQueue(amqSession, destination.getAMQQueueName());
+        }
+    }
+
+    private AMQDestination createAMQDestination(AMQSession<?, ?> amqSession, QueueConfig queueConfig)
+    {
+        try
+        {
+            return (AMQDestination) amqSession.createQueue(queueConfig.getName());
+        }
+        catch (Exception e)
+        {
+            throw new DistributedTestException("Failed to create amq destionation object:" + queueConfig, e);
+        }
+    }
+
+    private void drainQueue(Connection connection, AMQDestination destination)
+    {
+        Session noAckSession = null;
+        try
+        {
+            LOGGER.debug("About to drain the queue " + destination);
+            noAckSession = connection.createSession(false, org.apache.qpid.jms.Session.NO_ACKNOWLEDGE);
+            MessageConsumer messageConsumer = noAckSession.createConsumer(destination);
+            int counter = 0;
+            while(messageConsumer.receive(1000l) != null)
+            {
+                counter++;
+            }
+            LOGGER.debug("Drained " + counter + " messages from queue " + destination);
+            messageConsumer.close();
+        }
+        catch (Exception e)
+        {
+            throw new DistributedTestException("Failed to drain queue:" + destination, e);
+        }
+        finally
+        {
+            if (noAckSession != null)
+            {
+                try
+                {
+                    noAckSession.close();
+                }
+                catch (JMSException e)
+                {
+                    throw new DistributedTestException("Failed to close n/a session:" + noAckSession, e);
+                }
+            }
         }
     }
 
@@ -74,20 +131,19 @@ public class QpidQueueCreator implements QueueCreator
         }
     }
 
-    private void deleteQueue(AMQSession<?, ?> session, QueueConfig queueConfig)
+    private void deleteQueue(AMQSession<?, ?> session, AMQShortString queueName)
     {
         try
         {
             // The Qpid AMQSession API currently makes the #deleteQueue method protected and the
             // raw protocol method public.  This should be changed then we should switch the below to
             // use #deleteQueue.
-            AMQDestination destination = (AMQDestination) session.createQueue(queueConfig.getName());
-            session.sendQueueDelete(destination.getAMQQueueName());
-            LOGGER.debug("Deleted queue " + queueConfig.getName());
+            session.sendQueueDelete(queueName);
+            LOGGER.debug("Deleted queue " + queueName);
         }
         catch (Exception e)
         {
-            throw new DistributedTestException("Failed to delete queue:" + queueConfig.getName(), e);
+            throw new DistributedTestException("Failed to delete queue:" + queueName, e);
         }
     }
 }
