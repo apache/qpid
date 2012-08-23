@@ -65,6 +65,7 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
         mgmtObject->set_maxConnections(aclValues.aclMaxConnectTotal);
         mgmtObject->set_maxConnectionsPerIp(aclValues.aclMaxConnectPerIp);
         mgmtObject->set_maxConnectionsPerUser(aclValues.aclMaxConnectPerUser);
+        mgmtObject->set_maxQueuesPerUser(aclValues.aclMaxQueuesPerUser);
     }
     std::string errorString;
     if (!readAclFile(errorString)){
