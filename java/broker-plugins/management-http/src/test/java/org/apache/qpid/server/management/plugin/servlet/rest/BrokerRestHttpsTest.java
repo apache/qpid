@@ -21,12 +21,7 @@
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.Map;
-
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLSocketFactory;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.model.Broker;
@@ -48,37 +43,16 @@ public class BrokerRestHttpsTest extends QpidRestTestCase
     @Override
     protected void customizeConfiguration() throws ConfigurationException, IOException
     {
+        getRestTestHelper().setUseSsl(true);
         setConfigurationProperty("management.enabled", "true");
         setConfigurationProperty("management.http.enabled", "false");
         setConfigurationProperty("management.https.enabled", "true");
-        setConfigurationProperty("management.https.port", Integer.toString(getHttpPort()));
-    }
-
-    @Override
-    protected String getHostName()
-    {
-        return "localhost";
-    }
-
-    @Override
-    protected String getProtocol()
-    {
-        return "https";
-    }
-
-    @Override
-    protected HttpURLConnection openManagementConection(String path) throws IOException
-    {
-        URL url = getManagementURL(path);
-        HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
-        ((HttpsURLConnection) httpCon).setSSLSocketFactory((SSLSocketFactory) SSLSocketFactory.getDefault());
-        httpCon.setDoOutput(true);
-        return httpCon;
+        setConfigurationProperty("management.https.port", Integer.toString(getRestTestHelper().getHttpPort()));
     }
 
     public void testGetWithHttps() throws Exception
     {
-        Map<String, Object> brokerDetails = getJsonAsSingletonList("/rest/broker");
+        Map<String, Object> brokerDetails = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
 
         Asserts.assertAttributesPresent(brokerDetails, Broker.AVAILABLE_ATTRIBUTES, Broker.BYTES_RETAINED,
                 Broker.PROCESS_PID, Broker.SUPPORTED_STORE_TYPES, Broker.CREATED, Broker.TIME_TO_LIVE, Broker.UPDATED);

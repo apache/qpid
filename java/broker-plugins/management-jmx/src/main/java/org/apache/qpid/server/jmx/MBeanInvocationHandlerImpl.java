@@ -30,6 +30,7 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
+import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 
 import javax.management.Attribute;
 import javax.management.JMException;
@@ -41,7 +42,6 @@ import javax.management.NotificationListener;
 import javax.management.ObjectName;
 import javax.management.RuntimeErrorException;
 import javax.management.remote.JMXConnectionNotification;
-import javax.management.remote.JMXPrincipal;
 import javax.management.remote.MBeanServerForwarder;
 import javax.security.auth.Subject;
 import java.lang.reflect.InvocationHandler;
@@ -52,7 +52,6 @@ import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * This class can be used by the JMXConnectorServer as an InvocationHandler for the mbean operations. It delegates
@@ -101,7 +100,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
         {
             ObjectName mbean = (ObjectName) args[0];
 
-            if(!DefaultManagedObject.DOMAIN.equalsIgnoreCase(mbean.getDomain()))
+            if(!ManagedObject.DOMAIN.equalsIgnoreCase(mbean.getDomain()))
             {
                 return true;
             }
@@ -151,11 +150,13 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
                 return method.invoke(_mbs, args);
             }
 
-            // Retrieve JMXPrincipal from Subject
-            Set<JMXPrincipal> principals = subject.getPrincipals(JMXPrincipal.class);
-            if (principals == null || principals.isEmpty())
+            try
             {
-                throw new SecurityException("Access denied: no JMX principal");
+                AuthenticatedPrincipal.getAuthenticatedPrincipalFromSubject(subject);
+            }
+            catch(Exception e)
+            {
+                throw new SecurityException("Access denied: no authenticated principal", e);
             }
 
             // Save the subject
@@ -381,6 +382,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
         String user = null;
         if (handback instanceof Map)
         {
+            @SuppressWarnings("unchecked")
             final Map<String, String> connectionIdUsernameMap = (Map<String, String>) handback;
             user = connectionIdUsernameMap.get(connectionId);
         }

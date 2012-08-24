@@ -30,8 +30,10 @@ import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.IAuthenticationManagerRegistry;
+import org.apache.qpid.server.security.group.GroupManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -39,6 +41,7 @@ import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -64,17 +67,15 @@ public interface IApplicationRegistry extends StatisticsGatherer
     ServerConfiguration getConfiguration();
 
     /**
-     * Get the AuthenticationManager for the given socket address
-     *
-     * If no AuthenticationManager has been specifically set for the given address, then use the default
-     * AuthenticationManager
+     * Get the SubjectCreator for the given socket address.
      *
      * @param address The (listening) socket address for which the AuthenticationManager is required
-     * @return the AuthenticationManager
      */
-    AuthenticationManager getAuthenticationManager(SocketAddress address);
+    SubjectCreator getSubjectCreator(SocketAddress localAddress);
 
     IAuthenticationManagerRegistry getAuthenticationManagerRegistry();
+
+    List<GroupManager> getGroupManagers();
 
     VirtualHostRegistry getVirtualHostRegistry();
 
@@ -123,7 +124,7 @@ public interface IApplicationRegistry extends StatisticsGatherer
 
     int getHTTPSManagementPort();
 
-    void addRegistryChangeListener(IAuthenticationManagerRegistry.RegistryChangeListener registryChangeListener);
+    void addAuthenticationManagerRegistryChangeListener(IAuthenticationManagerRegistry.RegistryChangeListener registryChangeListener);
 
     public interface PortBindingListener
     {
@@ -132,4 +133,11 @@ public interface IApplicationRegistry extends StatisticsGatherer
 
     }
 
+    void addGroupManagerChangeListener(GroupManagerChangeListener groupManagerChangeListener);
+
+    public static interface GroupManagerChangeListener
+    {
+        void groupManagerRegistered(GroupManager groupManager);
+        void groupManagerUnregistered(GroupManager groupManager);
+    }
 }

@@ -19,7 +19,6 @@
 package org.apache.qpid.server.security.access.config;
 
 import java.security.Principal;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -66,7 +65,6 @@ public class RuleSet
 
     private static final Integer _increment = 10;
 
-    private final Map<String, List<String>> _aclGroups = new HashMap<String, List<String>>();
     private final SortedMap<Integer, Rule> _rules = new TreeMap<Integer, Rule>();
     private final Map<Subject, Map<Operation, Map<ObjectType, List<Rule>>>> _cache =
                         new WeakHashMap<Subject, Map<Operation, Map<ObjectType, List<Rule>>>>();
@@ -79,14 +77,13 @@ public class RuleSet
     }
 
     /**
-     * Clear the contents, including acl groups, rules and configuration.
+     * Clear the contents, including acl rules and configuration.
      */
     public void clear()
     {
         _rules.clear();
         _cache.clear();
         _config.clear();
-        _aclGroups.clear();
     }
 
     public int getRuleCount()
@@ -222,53 +219,6 @@ public class RuleSet
         _rules.get(Integer.valueOf(ruleNumber)).disable();
     }
 
-    public boolean addGroup(String group, List<String> constituents)
-    {
-        _cache.clear();
-
-        if (_aclGroups.containsKey(group))
-        {
-            // cannot redefine
-            return false;
-        }
-        else
-        {
-            _aclGroups.put(group, new ArrayList<String>());
-        }
-
-        for (String name : constituents)
-        {
-            if (name.equalsIgnoreCase(group))
-            {
-                // recursive definition
-                return false;
-            }
-
-            if (!checkName(name))
-            {
-                // invalid name
-                return false;
-            }
-
-            if (_aclGroups.containsKey(name))
-            {
-                // is a group
-                _aclGroups.get(group).addAll(_aclGroups.get(name));
-            }
-            else
-            {
-                // is a user
-                if (!isvalidUserName(name))
-                {
-                    // invalid username
-                    return false;
-                }
-                _aclGroups.get(group).add(name);
-            }
-        }
-        return true;
-    }
-
     /** Return true if the name is well-formed (contains legal characters). */
     protected boolean checkName(String name)
     {
@@ -311,12 +261,6 @@ public class RuleSet
         // otherwise all good
         return true;
     }
-
-    // CPP broker authorise function prototype
-    // virtual bool authorise(const std::string& id, const Action& action, const ObjectType& objType,
-    //        const std::string& name, std::map<Property, std::string>* params=0)
-
-    // Possibly add a String name paramater?
 
     /**
      * Check the authorisation granted to a particular identity for an operation on an object type with
@@ -446,8 +390,7 @@ public class RuleSet
             {
                 final Principal principal = iterator.next();
 
-                if (rule.getIdentity().equalsIgnoreCase(principal.getName())
-                    || (_aclGroups.containsKey(rule.getIdentity()) && _aclGroups.get(rule.getIdentity()).contains(principal.getName())))
+                if (rule.getIdentity().equalsIgnoreCase(principal.getName()))
                 {
                     return true;
                 }

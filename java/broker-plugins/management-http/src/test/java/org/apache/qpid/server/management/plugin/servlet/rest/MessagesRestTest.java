@@ -85,7 +85,7 @@ public class MessagesRestTest extends QpidRestTestCase
     public void testGet() throws Exception
     {
         String queueName = getTestQueueName();
-        List<Map<String, Object>> messages = getJsonAsList("/rest/message/test/" + queueName);
+        List<Map<String, Object>> messages = getRestTestHelper().getJsonAsList("/rest/message/test/" + queueName);
         assertNotNull("Messages are not found", messages);
         assertEquals("Unexpected number of messages", MESSAGE_NUMBER, messages.size());
         int position = 0;
@@ -111,7 +111,7 @@ public class MessagesRestTest extends QpidRestTestCase
         // get message IDs
         List<Long> ids = getMesssageIds(queueName);
 
-        Map<String, Object> message = getJsonAsMap("/rest/message/test/" + queueName + "/" + ids.get(0));
+        Map<String, Object> message = getRestTestHelper().getJsonAsMap("/rest/message/test/" + queueName + "/" + ids.get(0));
         assertMessageAttributes(message);
         assertMessageAttributeValues(message, true);
 
@@ -121,7 +121,7 @@ public class MessagesRestTest extends QpidRestTestCase
         assertEquals("Unexpected message header", 0, headers.get("index"));
 
         Long lastMessageId = ids.get(ids.size() - 1);
-        message = getJsonAsMap("/rest/message/test/" + queueName + "/" + lastMessageId);
+        message = getRestTestHelper().getJsonAsMap("/rest/message/test/" + queueName + "/" + lastMessageId);
         assertMessageAttributes(message);
         assertEquals("Unexpected message attribute mimeType", "application/octet-stream", message.get("mimeType"));
         assertEquals("Unexpected message attribute size", 4, message.get("size"));
@@ -132,10 +132,10 @@ public class MessagesRestTest extends QpidRestTestCase
         assertEquals("Unexpected message header", "value", bytesMessageHeader.get("test"));
 
         // get content
-        HttpURLConnection connection = openManagementConection("/rest/message-content/test/" + queueName + "/"
+        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/rest/message-content/test/" + queueName + "/"
                 + lastMessageId, "GET");
         connection.connect();
-        byte[] data = readConnectionInputStream(connection);
+        byte[] data = getRestTestHelper().readConnectionInputStream(connection);
         assertTrue("Unexpected message", Arrays.equals(messageBytes, data));
 
     }
@@ -159,38 +159,38 @@ public class MessagesRestTest extends QpidRestTestCase
         }
 
         // move messages
-        HttpURLConnection connection = openManagementConection("/rest/message/test/" + queueName, "POST");
+        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/rest/message/test/" + queueName, "POST");
 
         Map<String, Object> messagesData = new HashMap<String, Object>();
         messagesData.put("messages", movedMessageIds);
         messagesData.put("destinationQueue", queueName2);
         messagesData.put("move", Boolean.TRUE);
 
-        writeJsonRequest(connection, messagesData);
+        getRestTestHelper().writeJsonRequest(connection, messagesData);
         assertEquals("Unexpected response code", 200, connection.getResponseCode());
 
         // check messages on target queue
-        List<Map<String, Object>> messages = getJsonAsList("/rest/message/test/" + queueName2);
+        List<Map<String, Object>> messages = getRestTestHelper().getJsonAsList("/rest/message/test/" + queueName2);
         assertNotNull("Messages are not found", messages);
         assertEquals("Unexpected number of messages", movedMessageIds.size(), messages.size());
         for (Long id : movedMessageIds)
         {
-            Map<String, Object> message = find("id", id.intValue(), messages);
+            Map<String, Object> message = getRestTestHelper().find("id", id.intValue(), messages);
             assertMessageAttributes(message);
         }
 
         // check messages on original queue
-        messages = getJsonAsList("/rest/message/test/" + queueName);
+        messages = getRestTestHelper().getJsonAsList("/rest/message/test/" + queueName);
         assertNotNull("Messages are not found", messages);
         assertEquals("Unexpected number of messages", ids.size(), messages.size());
         for (Long id : ids)
         {
-            Map<String, Object> message = find("id", id.intValue(), messages);
+            Map<String, Object> message = getRestTestHelper().find("id", id.intValue(), messages);
             assertMessageAttributes(message);
         }
         for (Long id : movedMessageIds)
         {
-            Map<String, Object> message = find("id", id.intValue(), messages);
+            Map<String, Object> message = getRestTestHelper().find("id", id.intValue(), messages);
             assertNull("Moved message " + id + " is found on original queue", message);
         }
     }
@@ -214,37 +214,37 @@ public class MessagesRestTest extends QpidRestTestCase
         }
 
         // copy messages
-        HttpURLConnection connection = openManagementConection("/rest/message/test/" + queueName, "POST");
+        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/rest/message/test/" + queueName, "POST");
 
         Map<String, Object> messagesData = new HashMap<String, Object>();
         messagesData.put("messages", copyMessageIds);
         messagesData.put("destinationQueue", queueName2);
 
-        writeJsonRequest(connection, messagesData);
+        getRestTestHelper().writeJsonRequest(connection, messagesData);
         assertEquals("Unexpected response code", 200, connection.getResponseCode());
 
         // check messages on target queue
-        List<Map<String, Object>> messages = getJsonAsList("/rest/message/test/" + queueName2);
+        List<Map<String, Object>> messages = getRestTestHelper().getJsonAsList("/rest/message/test/" + queueName2);
         assertNotNull("Messages are not found", messages);
         assertEquals("Unexpected number of messages", copyMessageIds.size(), messages.size());
         for (Long id : copyMessageIds)
         {
-            Map<String, Object> message = find("id", id.intValue(), messages);
+            Map<String, Object> message = getRestTestHelper().find("id", id.intValue(), messages);
             assertMessageAttributes(message);
         }
 
         // check messages on original queue
-        messages = getJsonAsList("/rest/message/test/" + queueName);
+        messages = getRestTestHelper().getJsonAsList("/rest/message/test/" + queueName);
         assertNotNull("Messages are not found", messages);
         assertEquals("Unexpected number of messages", MESSAGE_NUMBER, messages.size());
         for (Long id : ids)
         {
-            Map<String, Object> message = find("id", id.intValue(), messages);
+            Map<String, Object> message = getRestTestHelper().find("id", id.intValue(), messages);
             assertMessageAttributes(message);
         }
         for (Long id : copyMessageIds)
         {
-            Map<String, Object> message = find("id", id.intValue(), messages);
+            Map<String, Object> message = getRestTestHelper().find("id", id.intValue(), messages);
             assertMessageAttributes(message);
         }
     }
@@ -272,30 +272,30 @@ public class MessagesRestTest extends QpidRestTestCase
         }
 
         // delete messages
-        HttpURLConnection connection = openManagementConection(
+        HttpURLConnection connection = getRestTestHelper().openManagementConnection(
                 "/rest/message/test/" + queueName + "?" + queryString.toString(), "DELETE");
         connection.connect();
         assertEquals("Unexpected response code", 200, connection.getResponseCode());
 
         // check messages on queue
-        List<Map<String, Object>> messages = getJsonAsList("/rest/message/test/" + queueName);
+        List<Map<String, Object>> messages = getRestTestHelper().getJsonAsList("/rest/message/test/" + queueName);
         assertNotNull("Messages are not found", messages);
         assertEquals("Unexpected number of messages", ids.size(), messages.size());
         for (Long id : ids)
         {
-            Map<String, Object> message = find("id", id.intValue(), messages);
+            Map<String, Object> message = getRestTestHelper().find("id", id.intValue(), messages);
             assertMessageAttributes(message);
         }
         for (Long id : deleteMessageIds)
         {
-            Map<String, Object> message = find("id", id.intValue(), messages);
+            Map<String, Object> message = getRestTestHelper().find("id", id.intValue(), messages);
             assertNull("Message with id " + id + " was not deleted", message);
         }
     }
 
     private List<Long> getMesssageIds(String queueName) throws IOException, JsonParseException, JsonMappingException
     {
-        List<Map<String, Object>> messages = getJsonAsList("/rest/message/test/" + queueName);
+        List<Map<String, Object>> messages = getRestTestHelper().getJsonAsList("/rest/message/test/" + queueName);
         List<Long> ids = new ArrayList<Long>();
         for (Map<String, Object> message : messages)
         {

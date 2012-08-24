@@ -79,13 +79,24 @@
             </principal-database>
         </pd-auth-manager>
 
-        <!-- By default, all authenticated users have permissions to perform all actions -->
+        <!--
+        <file-group-manager>
+            <attributes>
+              <attribute>
+                <name>groupFile</name>
+                <value>${conf}/groups</value>
+              </attribute>
+            </attributes>
+        </file-group-manager>
+        -->
 
-        <!-- ACL Example
-             This example illustrates securing the both Management (JMX) and Messaging.
+        <!--
+        ACL Example. This example illustrates securing both management and messaging.
+        By default, all authenticated users have permissions to perform all actions
+
         <acl>${conf}/broker_example.acl</acl>
         -->
-        
+
         <msg-auth>false</msg-auth>
     </security>
 

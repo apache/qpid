@@ -29,7 +29,7 @@ import org.apache.qpid.server.security.access.Permission;
 
 /**
  * An access control v2 rule.
- * 
+ *
  * A rule consists of {@link Permission} for a particular identity to perform an {@link Action}. The identity
  * may be either a user or a group.
  */
@@ -37,13 +37,13 @@ public class Rule implements Comparable<Rule>
 {
 	/** String indicating all identitied. */
 	public static final String ALL = "all";
-	
+
     private Integer _number;
     private Boolean _enabled = Boolean.TRUE;
     private String _identity;
     private Action _action;
     private Permission _permission;
-    
+
     public Rule(Integer number, String identity, Action action, Permission permission)
     {
         setNumber(number);
@@ -51,27 +51,27 @@ public class Rule implements Comparable<Rule>
         setAction(action);
         setPermission(permission);
     }
-    
+
     public Rule(String identity, Action action, Permission permission)
     {
         this(null, identity, action, permission);
     }
-    
+
     public boolean isEnabled()
     {
         return _enabled;
     }
-    
+
     public void setEnabled(boolean enabled)
     {
         _enabled = enabled;
     }
-    
+
     public void enable()
     {
         _enabled = Boolean.TRUE;
     }
-    
+
     public void disable()
     {
         _enabled = Boolean.FALSE;
@@ -96,7 +96,7 @@ public class Rule implements Comparable<Rule>
     {
         _identity = identity;
     }
-    
+
     public Action getAction()
     {
         return _action;
@@ -136,7 +136,7 @@ public class Rule implements Comparable<Rule>
             return false;
         }
         Rule r = (Rule) o;
-        
+
         return new EqualsBuilder()
                 .append(getIdentity(), r.getIdentity())
                 .append(getAction(), r.getAction())

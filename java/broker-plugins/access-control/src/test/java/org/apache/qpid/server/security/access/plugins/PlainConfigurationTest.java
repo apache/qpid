@@ -108,19 +108,6 @@ public class PlainConfigurationTest extends TestCase
         }
     }
 
-    public void testACLFileSyntaxNotEnoughGroup() throws Exception
-    {
-        try
-        {
-            writeACLConfig("GROUP blah");
-            fail("fail");
-        }
-        catch (ConfigurationException ce)
-        {
-            assertEquals(String.format(PlainConfiguration.NOT_ENOUGH_GROUP_MSG, 1), ce.getMessage());
-        }
-    }
-
     public void testACLFileSyntaxNotEnoughACL() throws Exception
     {
         try
@@ -391,4 +378,77 @@ public class PlainConfigurationTest extends TestCase
         assertEquals("Rule has unexpected object properties", ObjectProperties.EMPTY, rule.getAction().getProperties());
     }
 
+    public void testUserRuleParsing() throws Exception
+    {
+        validateRule(writeACLConfig("ACL ALLOW user1 CREATE USER"),
+                "user1", Operation.CREATE, ObjectType.USER, ObjectProperties.EMPTY);
+        validateRule(writeACLConfig("ACL ALLOW user1 CREATE USER name=\"otherUser\""),
+                "user1", Operation.CREATE, ObjectType.USER, new ObjectProperties("otherUser"));
+
+        validateRule(writeACLConfig("ACL ALLOW user1 DELETE USER"),
+                "user1", Operation.DELETE, ObjectType.USER, ObjectProperties.EMPTY);
+        validateRule(writeACLConfig("ACL ALLOW user1 DELETE USER name=\"otherUser\""),
+                "user1", Operation.DELETE, ObjectType.USER, new ObjectProperties("otherUser"));
+
+        validateRule(writeACLConfig("ACL ALLOW user1 UPDATE USER"),
+                "user1", Operation.UPDATE, ObjectType.USER, ObjectProperties.EMPTY);
+        validateRule(writeACLConfig("ACL ALLOW user1 UPDATE USER name=\"otherUser\""),
+                "user1", Operation.UPDATE, ObjectType.USER, new ObjectProperties("otherUser"));
+
+        validateRule(writeACLConfig("ACL ALLOW user1 ALL USER"),
+                "user1", Operation.ALL, ObjectType.USER, ObjectProperties.EMPTY);
+        validateRule(writeACLConfig("ACL ALLOW user1 ALL USER name=\"otherUser\""),
+                "user1", Operation.ALL, ObjectType.USER, new ObjectProperties("otherUser"));
+    }
+
+    public void testGroupRuleParsing() throws Exception
+    {
+        validateRule(writeACLConfig("ACL ALLOW user1 CREATE GROUP"),
+                "user1", Operation.CREATE, ObjectType.GROUP, ObjectProperties.EMPTY);
+        validateRule(writeACLConfig("ACL ALLOW user1 CREATE GROUP name=\"groupName\""),
+                "user1", Operation.CREATE, ObjectType.GROUP, new ObjectProperties("groupName"));
+
+        validateRule(writeACLConfig("ACL ALLOW user1 DELETE GROUP"),
+                "user1", Operation.DELETE, ObjectType.GROUP, ObjectProperties.EMPTY);
+        validateRule(writeACLConfig("ACL ALLOW user1 DELETE GROUP name=\"groupName\""),
+                "user1", Operation.DELETE, ObjectType.GROUP, new ObjectProperties("groupName"));
+
+        validateRule(writeACLConfig("ACL ALLOW user1 UPDATE GROUP"),
+                "user1", Operation.UPDATE, ObjectType.GROUP, ObjectProperties.EMPTY);
+        validateRule(writeACLConfig("ACL ALLOW user1 UPDATE GROUP name=\"groupName\""),
+                "user1", Operation.UPDATE, ObjectType.GROUP, new ObjectProperties("groupName"));
+
+        validateRule(writeACLConfig("ACL ALLOW user1 ALL GROUP"),
+                "user1", Operation.ALL, ObjectType.GROUP, ObjectProperties.EMPTY);
+        validateRule(writeACLConfig("ACL ALLOW user1 ALL GROUP name=\"groupName\""),
+                "user1", Operation.ALL, ObjectType.GROUP, new ObjectProperties("groupName"));
+    }
+
+    /** explicitly test for exception indicating that this functionality has been moved to Group Providers */
+    public void testGroupDefinitionThrowsException() throws Exception
+    {
+        try
+        {
+            writeACLConfig("GROUP group1 bob alice");
+            fail("Expected exception not thrown");
+        }
+        catch(ConfigurationException e)
+        {
+            assertTrue(e.getMessage().contains("GROUP keyword not supported"));
+        }
+    }
+
+    private void validateRule(final PlainConfiguration config, String username, Operation operation, ObjectType objectType, ObjectProperties objectProperties)
+    {
+        final RuleSet rs = config.getConfiguration();
+        assertEquals(1, rs.getRuleCount());
+
+        final Map<Integer, Rule> rules = rs.getAllRules();
+        assertEquals(1, rules.size());
+        final Rule rule = rules.get(0);
+        assertEquals("Rule has unexpected identity", username, rule.getIdentity());
+        assertEquals("Rule has unexpected operation", operation, rule.getAction().getOperation());
+        assertEquals("Rule has unexpected operation", objectType, rule.getAction().getObjectType());
+        assertEquals("Rule has unexpected object properties", objectProperties, rule.getAction().getProperties());
+    }
 }

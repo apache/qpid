@@ -68,6 +68,7 @@ import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.output.ProtocolOutputConverterRegistry;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
@@ -367,7 +368,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
             // This sets the protocol version (and hence framing classes) for this session.
             setProtocolVersion(pv);
 
-            String mechanisms = ApplicationRegistry.getInstance().getAuthenticationManager(getLocalAddress()).getMechanisms();
+            String mechanisms = ApplicationRegistry.getInstance().getSubjectCreator(getLocalAddress()).getMechanisms();
 
             String locales = "en_US";
 
@@ -1017,7 +1018,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     public Principal getAuthorizedPrincipal()
     {
-        return _authorizedSubject == null ? null : _authorizedSubject.getPrincipals().iterator().next();
+        return _authorizedSubject == null ? null : _authorizedSubject.getPrincipals(AuthenticatedPrincipal.class).iterator().next();
     }
 
     public SocketAddress getRemoteAddress()

@@ -47,6 +47,7 @@ public class Model
         addRelationship(Broker.class, VirtualHost.class);
         addRelationship(Broker.class, Port.class);
         addRelationship(Broker.class, AuthenticationProvider.class);
+        addRelationship(Broker.class, GroupProvider.class);
 
         addRelationship(VirtualHost.class, Exchange.class);
         addRelationship(VirtualHost.class, Queue.class);
@@ -54,6 +55,10 @@ public class Model
         addRelationship(VirtualHost.class, VirtualHostAlias.class);
 
         addRelationship(AuthenticationProvider.class, User.class);
+        addRelationship(User.class, GroupMember.class);
+
+        addRelationship(GroupProvider.class, Group.class);
+        addRelationship(Group.class, GroupMember.class);
 
         addRelationship(Connection.class, Session.class);
 

@@ -20,10 +20,11 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import javax.management.remote.JMXPrincipal;
 import javax.security.auth.Subject;
+
+import org.apache.qpid.server.security.auth.TestPrincipalUtils;
+
 import java.security.PrivilegedAction;
-import java.util.Collections;
 import java.util.List;
 
 public class ManagementActorTest extends BaseActorTestCase
@@ -94,8 +95,7 @@ public class ManagementActorTest extends BaseActorTestCase
      */
     public void testSubjectPrincipalNameAppearance()
     {
-        Subject subject = new Subject(true, Collections.singleton(new JMXPrincipal("guest")), Collections.EMPTY_SET,
-                Collections.EMPTY_SET);
+        Subject subject = TestPrincipalUtils.createTestSubject("guest");
 
         final String message = Subject.doAs(subject, new PrivilegedAction<String>()
         {
@@ -172,9 +172,7 @@ public class ManagementActorTest extends BaseActorTestCase
     private void assertLogMessageInRMIThreadWithPrincipal(String threadName, String principalName)
     {
         Thread.currentThread().setName(threadName);
-        Subject subject = new Subject(true, Collections.singleton(new JMXPrincipal(principalName)), Collections.EMPTY_SET,
-                Collections.EMPTY_SET);
-
+        Subject subject = TestPrincipalUtils.createTestSubject(principalName);
         final String message = Subject.doAs(subject, new PrivilegedAction<String>()
         {
             public String run()

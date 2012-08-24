@@ -20,20 +20,21 @@
  */
 package org.apache.qpid.server.security.auth.rmi;
 
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.net.InetSocketAddress;
 import java.security.Principal;
+
+import javax.security.auth.Subject;
+
 import junit.framework.TestCase;
 
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-
-import javax.management.remote.JMXPrincipal;
-import javax.security.auth.Subject;
-import javax.security.sasl.SaslException;
-import javax.security.sasl.SaslServer;
-import java.net.InetSocketAddress;
-import java.util.Collections;
+import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 
 /**
  * Tests the RMIPasswordAuthenticator and its collaboration with the AuthenticationManager.
@@ -41,6 +42,7 @@ import java.util.Collections;
  */
 public class RMIPasswordAuthenticatorTest extends TestCase
 {
+    private static final Subject SUBJECT = new Subject();
     private final String USERNAME = "guest";
     private final String PASSWORD = "guest";
     private RMIPasswordAuthenticator _rmipa;
@@ -54,23 +56,14 @@ public class RMIPasswordAuthenticatorTest extends TestCase
     }
 
     /**
-     * Tests a successful authentication.  Ensures that a populated read-only subject it returned.
+     * Tests a successful authentication.  Ensures that the expected subject is returned.
      */
     public void testAuthenticationSuccess()
     {
-        final Subject expectedSubject = new Subject(true,
-                Collections.singleton(new JMXPrincipal(USERNAME)),
-                Collections.EMPTY_SET,
-                Collections.EMPTY_SET);
-
-        _rmipa.setAuthenticationManager(createTestAuthenticationManager(true, null));
-
+        _rmipa.setSubjectCreator(createMockSubjectCreator(true, null));
 
         Subject newSubject = _rmipa.authenticate(_credentials);
-        assertTrue("Subject must be readonly", newSubject.isReadOnly());
-        assertTrue("Returned subject does not equal expected value",
-                newSubject.equals(expectedSubject));
-
+        assertSame("Subject must be unchanged", SUBJECT, newSubject);
     }
 
     /**
@@ -78,7 +71,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
      */
     public void testUsernameOrPasswordInvalid()
     {
-        _rmipa.setAuthenticationManager(createTestAuthenticationManager(false, null));
+        _rmipa.setSubjectCreator(createMockSubjectCreator(false, null));
 
         try
         {
@@ -99,7 +92,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
     public void testAuthenticationFailure()
     {
         final Exception mockAuthException = new Exception("Mock Auth system failure");
-        _rmipa.setAuthenticationManager(createTestAuthenticationManager(false, mockAuthException));
+        _rmipa.setSubjectCreator(createMockSubjectCreator(false, mockAuthException));
 
         try
         {
@@ -118,7 +111,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
      */
     public void testNullAuthenticationManager() throws Exception
     {
-        _rmipa.setAuthenticationManager(null);
+        _rmipa.setSubjectCreator(null);
         try
         {
             _rmipa.authenticate(_credentials);
@@ -209,55 +202,30 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         }
     }
 
-    private AuthenticationManager createTestAuthenticationManager(final boolean successfulAuth, final Exception exception)
+    private SubjectCreator createMockSubjectCreator(final boolean successfulAuth, final Exception exception)
     {
-        return new AuthenticationManager()
+        SubjectCreator subjectCreator = mock(SubjectCreator.class);
+
+        SubjectAuthenticationResult subjectAuthenticationResult;
+
+        if (exception != null) {
+
+            subjectAuthenticationResult = new SubjectAuthenticationResult(
+                    new AuthenticationResult(AuthenticationStatus.ERROR, exception));
+        }
+        else if (successfulAuth)
         {
-            public void configure(ConfigurationPlugin config)
-            {
-                throw new UnsupportedOperationException();
-            }
 
-            public void initialise()
-            {
-                throw new UnsupportedOperationException();
-            }
+            subjectAuthenticationResult = new SubjectAuthenticationResult(
+                    new AuthenticationResult(mock(Principal.class)), SUBJECT);
+        }
+        else
+        {
+            subjectAuthenticationResult = new SubjectAuthenticationResult(new AuthenticationResult(AuthenticationStatus.CONTINUE));
+        }
 
-            public void close()
-            {
-                throw new UnsupportedOperationException();
-            }
+        when(subjectCreator.authenticate(anyString(), anyString())).thenReturn(subjectAuthenticationResult);
 
-            public String getMechanisms()
-            {
-                throw new UnsupportedOperationException();
-            }
-
-            public SaslServer createSaslServer(String mechanism, String localFQDN, Principal externalPrincipal) throws SaslException
-            {
-                throw new UnsupportedOperationException();
-            }
-
-            public AuthenticationResult authenticate(SaslServer server, byte[] response)
-            {
-                throw new UnsupportedOperationException();
-            }
-
-            public AuthenticationResult authenticate(String username, String password)
-            {
-                if (exception != null) {
-                    return new AuthenticationResult(AuthenticationStatus.ERROR, exception);
-                }
-                else if (successfulAuth)
-                {
-                    return new AuthenticationResult(new Subject());
-                }
-                else
-                {
-                    return new AuthenticationResult(AuthenticationStatus.CONTINUE);
-                }
-            }
-
-        };
+        return subjectCreator;
     }
 }

@@ -27,10 +27,10 @@ public class LogRecordsRestTest extends QpidRestTestCase
 {
     public void testGet() throws Exception
     {
-        List<Map<String, Object>> logs = getJsonAsList("/rest/logrecords");
+        List<Map<String, Object>> logs = getRestTestHelper().getJsonAsList("/rest/logrecords");
         assertNotNull("Logs data cannot be null", logs);
         assertTrue("Logs are not found", logs.size() > 0);
-        Map<String, Object> record = find("message", "[Broker] BRK-1004 : Qpid Broker Ready", logs);
+        Map<String, Object> record = getRestTestHelper().find("message", "[Broker] BRK-1004 : Qpid Broker Ready", logs);
 
         assertNotNull("BRK-1004 message is not found", record);
         assertNotNull("Message id cannot be null", record.get("id"));

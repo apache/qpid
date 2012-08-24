@@ -42,11 +42,17 @@ import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.adapter.BrokerAdapter;
+import org.apache.qpid.server.plugins.Plugin;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.security.SecurityManager.SecurityConfiguration;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManagerRegistry;
 import org.apache.qpid.server.security.auth.manager.IAuthenticationManagerRegistry;
+import org.apache.qpid.server.security.group.GroupManager;
+import org.apache.qpid.server.security.group.GroupManagerPluginFactory;
+import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -87,7 +93,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     private ConfigurationManager _configurationManager;
 
-    private RootMessageLogger _rootMessageLogger;
+    private volatile RootMessageLogger _rootMessageLogger;
 
     private CompositeStartupMessageLogger _startupMessageLogger;
 
@@ -114,6 +120,11 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     private List<IAuthenticationManagerRegistry.RegistryChangeListener> _authManagerChangeListeners =
             new ArrayList<IAuthenticationManagerRegistry.RegistryChangeListener>();
+
+    private List<GroupManagerChangeListener> _groupManagerChangeListeners =
+            new ArrayList<GroupManagerChangeListener>();
+
+    private List<GroupManager> _groupManagerList = new ArrayList<GroupManager>();
 
     public Map<InetSocketAddress, QpidAcceptor> getAcceptors()
     {
@@ -314,7 +325,25 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
             _securityManager = new SecurityManager(_configuration, _pluginManager);
 
-            _authenticationManagerRegistry = createAuthenticationManagerRegistry(_configuration, _pluginManager);
+            final Collection<GroupManagerPluginFactory<? extends Plugin>> factories = _pluginManager.getGroupManagerPlugins().values();
+            final SecurityConfiguration securityConfiguration = _configuration.getConfiguration(SecurityConfiguration.class.getName());
+
+            for(GroupManagerPluginFactory<? extends Plugin> factory : factories)
+            {
+                final GroupManager groupManager = factory.newInstance(securityConfiguration);
+                if(groupManager != null)
+                {
+                    _groupManagerList.add(groupManager);
+
+                    for(GroupManagerChangeListener listener : _groupManagerChangeListeners)
+                    {
+                        listener.groupManagerRegistered(groupManager);
+                    }
+                }
+            }
+            _logger.debug("Created " + _groupManagerList.size() + " group manager(s)");
+
+            _authenticationManagerRegistry = createAuthenticationManagerRegistry(_configuration, _pluginManager, new GroupPrincipalAccessor(_groupManagerList));
 
             if(!_authManagerChangeListeners.isEmpty())
             {
@@ -348,10 +377,10 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
     }
 
-    protected IAuthenticationManagerRegistry createAuthenticationManagerRegistry(ServerConfiguration _configuration, PluginManager _pluginManager)
+    protected IAuthenticationManagerRegistry createAuthenticationManagerRegistry(ServerConfiguration configuration, PluginManager pluginManager, GroupPrincipalAccessor groupManagerList)
             throws ConfigurationException
     {
-        return new AuthenticationManagerRegistry(_configuration, _pluginManager);
+        return new AuthenticationManagerRegistry(configuration, pluginManager, groupManagerList);
     }
 
     protected void initialiseVirtualHosts() throws Exception
@@ -588,15 +617,21 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     }
 
     @Override
-    public AuthenticationManager getAuthenticationManager(SocketAddress address)
+    public SubjectCreator getSubjectCreator(SocketAddress localAddress)
     {
-        return _authenticationManagerRegistry.getAuthenticationManager(address);
+        return _authenticationManagerRegistry.getSubjectCreator(localAddress);
     }
 
     @Override
     public IAuthenticationManagerRegistry getAuthenticationManagerRegistry()
     {
         return _authenticationManagerRegistry;
+    }
+
+    @Override
+    public List<GroupManager> getGroupManagers()
+    {
+        return _groupManagerList;
     }
 
     public PluginManager getPluginManager()
@@ -758,7 +793,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     }
 
     @Override
-    public void addRegistryChangeListener(IAuthenticationManagerRegistry.RegistryChangeListener registryChangeListener)
+    public void addAuthenticationManagerRegistryChangeListener(IAuthenticationManagerRegistry.RegistryChangeListener registryChangeListener)
     {
         if(_authenticationManagerRegistry == null)
         {
@@ -768,5 +803,11 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         {
             _authenticationManagerRegistry.addRegistryChangeListener(registryChangeListener);
         }
+    }
+
+    @Override
+    public void addGroupManagerChangeListener(GroupManagerChangeListener groupManagerChangeListener)
+    {
+        _groupManagerChangeListeners.add(groupManagerChangeListener);
     }
 }

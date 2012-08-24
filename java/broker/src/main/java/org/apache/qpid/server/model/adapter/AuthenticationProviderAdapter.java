@@ -38,7 +38,7 @@ import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
 
 public abstract class AuthenticationProviderAdapter<T extends AuthenticationManager> extends AbstractAdapter implements AuthenticationProvider
 {
@@ -147,7 +147,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     {
         if(TYPE.equals(name))
         {
-            return _authManager.getClass().getSimpleName();
+            return getName();
         }
         else if(CREATED.equals(name))
         {
@@ -195,7 +195,8 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                                                       Map<String, Object> attributes,
                                                       ConfiguredObject... otherParents)
     {
-        return null;
+        throw new IllegalArgumentException("This authentication provider does not support" +
+                                           " creating children of type: " + childClass);
     }
 
     private static class SimpleAuthenticationProviderAdapter extends AuthenticationProviderAdapter<AuthenticationManager>
@@ -220,15 +221,20 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         @Override
         public boolean createUser(String username, String password, Map<String, String> attributes)
         {
-            return getPrincipalDatabase().createPrincipal(new UsernamePrincipal(username), password.toCharArray());
+            if(getSecurityManager().authoriseUserOperation(Operation.CREATE, username))
+            {
+                return getPrincipalDatabase().createPrincipal(new UsernamePrincipal(username), password.toCharArray());
+            }
+            else
+            {
+                throw new AccessControlException("Do not have permission to create new user");
+            }
         }
 
         @Override
         public void deleteUser(String username) throws AccountNotFoundException
         {
-            if(getSecurityManager().authoriseMethod(Operation.DELETE,
-                                                    "UserManagement",
-                                                    "deleteUser"))
+            if(getSecurityManager().authoriseUserOperation(Operation.DELETE, username))
             {
 
                 getPrincipalDatabase().deletePrincipal(new UsernamePrincipal(username));
@@ -252,18 +258,13 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         @Override
         public void setPassword(String username, String password) throws AccountNotFoundException
         {
-            getPrincipalDatabase().updatePassword(new UsernamePrincipal(username), password.toCharArray());
-        }
-
-        public void reload() throws IOException
-        {
-            if(getSecurityManager().authoriseMethod(Operation.UPDATE, "UserManagement", "reload"))
+            if(getSecurityManager().authoriseUserOperation(Operation.UPDATE, username))
             {
-                getPrincipalDatabase().reload();
+                getPrincipalDatabase().updatePassword(new UsernamePrincipal(username), password.toCharArray());
             }
             else
             {
-                throw new AccessControlException("Do not have permission to reload principal database");
+                throw new AccessControlException("Do not have permission to set password");
             }
         }
 
@@ -279,6 +280,11 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             return users;
         }
 
+        public void reload() throws IOException
+        {
+            getPrincipalDatabase().reload();
+        }
+
         @Override
         public <C extends ConfiguredObject> C createChild(Class<C> childClass,
                                                           Map<String, Object> attributes,
@@ -286,19 +292,19 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         {
             if(childClass == User.class)
             {
-                Principal p = new UsernamePrincipal((String) attributes.get("name"));
-                if(getSecurityManager().authoriseMethod(Operation.UPDATE, "UserManagement", "createUser"))
+                String username = (String) attributes.get("name");
+                String password = (String) attributes.get("password");
+                Principal p = new UsernamePrincipal(username);
+
+                if(createUser(username, password,null))
                 {
-                    if(getPrincipalDatabase().createPrincipal(p, ((String)attributes.get("password")).toCharArray()))
-                    {
-                        return (C) new PrincipalAdapter(p);
-                    }
+                    return (C) new PrincipalAdapter(p);
                 }
                 else
                 {
-                    throw new AccessControlException("Do not have permission to create a new user");
+                    //TODO? Silly interface on the PrincipalDatabase at fault
+                    throw new RuntimeException("Failed to create user");
                 }
-
             }
 
             return super.createChild(childClass, attributes, otherParents);
@@ -333,12 +339,6 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                 super(UUIDGenerator.generateUserUUID(PrincipalDatabaseAuthenticationManagerAdapter.this.getName(), user.getName()));
                 _user = user;
 
-            }
-
-            @Override
-            public String getPassword()
-            {
-                return null;
             }
 
             @Override
@@ -444,6 +444,10 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                 if(ID.equals(name))
                 {
                     return getId();
+                }
+                else if(PASSWORD.equals(name))
+                {
+                    return null; // for security reasons we don't expose the password
                 }
                 else if(NAME.equals(name))
                 {

@@ -33,13 +33,13 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
 
     public void testGet() throws Exception
     {
-        List<Map<String, Object>> providerDetails = getJsonAsList("/rest/authenticationprovider");
+        List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("/rest/authenticationprovider");
         assertNotNull("Providers details cannot be null", providerDetails);
         assertEquals("Unexpected number of providers", 1, providerDetails.size());
         for (Map<String, Object> provider : providerDetails)
         {
             assertProvider("PrincipalDatabaseAuthenticationManager", provider);
-            Map<String, Object> data = getJsonAsSingletonList("/rest/authenticationprovider/"
+            Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("/rest/authenticationprovider/"
                     + provider.get(AuthenticationProvider.NAME));
             assertNotNull("Cannot load data for " + provider.get(AuthenticationProvider.NAME), data);
             assertProvider("PrincipalDatabaseAuthenticationManager", data);

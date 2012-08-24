@@ -27,7 +27,7 @@ public class SaslRestTest extends QpidRestTestCase
 {
     public void testGet() throws Exception
     {
-        Map<String, Object> saslData = getJsonAsMap("/rest/sasl");
+        Map<String, Object> saslData = getRestTestHelper().getJsonAsMap("/rest/sasl");
         assertNotNull("mechanisms attribute is not found", saslData.get("mechanisms"));
 
         @SuppressWarnings("unchecked")

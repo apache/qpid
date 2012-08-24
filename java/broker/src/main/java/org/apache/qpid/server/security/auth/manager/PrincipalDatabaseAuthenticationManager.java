@@ -34,9 +34,8 @@ import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationS
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
 import org.apache.qpid.server.security.auth.sasl.JCAProvider;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
 
-import javax.security.auth.Subject;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.AccountNotFoundException;
 import javax.security.sasl.Sasl;
@@ -164,6 +163,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
             return getConfig().getString("principal-database.class");
         }
 
+        @SuppressWarnings({ "unchecked", "rawtypes" })
         public Map<String,String> getPdClassAttributeMap() throws ConfigurationException
         {
             final List<String> argumentNames = (List) getConfig().getList("principal-database.attributes.attribute.name");
@@ -284,9 +284,8 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
 
             if (server.isComplete())
             {
-                final Subject subject = new Subject();
-                subject.getPrincipals().add(new UsernamePrincipal(server.getAuthorizationID()));
-                return new AuthenticationResult(subject);
+                final String userId = server.getAuthorizationID();
+                return new AuthenticationResult(new UsernamePrincipal(userId));
             }
             else
             {
@@ -308,9 +307,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         {
             if (_principalDatabase.verifyPassword(username, password.toCharArray()))
             {
-                final Subject subject = new Subject();
-                subject.getPrincipals().add(new UsernamePrincipal(username));
-                return new AuthenticationResult(subject);
+                return new AuthenticationResult(new UsernamePrincipal(username));
             }
             else
             {
@@ -351,6 +348,16 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         {
             throw new ConfigurationException("Expecting a " + PrincipalDatabase.class + " implementation", cce);
         }
+    }
+
+    public PrincipalDatabase getPrincipalDatabase()
+    {
+        return _principalDatabase;
+    }
+
+    protected void setPrincipalDatabase(final PrincipalDatabase principalDatabase)
+    {
+        _principalDatabase = principalDatabase;
     }
 
     private void configPrincipalDatabase(final PrincipalDatabase principalDatabase, final PrincipalDatabaseAuthenticationManagerConfiguration config)
@@ -400,11 +407,6 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         }
     }
 
-    public PrincipalDatabase getPrincipalDatabase()
-    {
-        return _principalDatabase;
-    }
-
     private String generateSetterName(String argName) throws ConfigurationException
     {
         if ((argName == null) || (argName.length() == 0))
@@ -421,8 +423,4 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         return methodName;
     }
 
-    protected void setPrincipalDatabase(final PrincipalDatabase principalDatabase)
-    {
-        _principalDatabase = principalDatabase;
-    }
 }

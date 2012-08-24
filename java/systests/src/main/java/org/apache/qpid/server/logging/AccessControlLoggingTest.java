@@ -31,10 +31,10 @@ import java.util.List;
 
 /**
  * ACL version 2/3 file testing to verify that ACL actor logging works correctly.
- * 
+ *
  * This suite of tests validate that the AccessControl messages occur correctly
  * and according to the following format:
- * 
+ *
  * <pre>
  * ACL-1001 : Allowed Operation Object {PROPERTIES}
  * ACL-1002 : Denied Operation Object {PROPERTIES}
@@ -83,12 +83,12 @@ public class AccessControlLoggingTest extends AbstractTestLogging
         Session sess = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
         conn.start();
         ((AMQSession<?, ?>) sess).createQueue(new AMQShortString("allow"), false, false, false);
-        
+
         List<String> matches = findMatches(ACL_LOG_PREFIX);
-        
+
         assertTrue("Should be no ACL log messages", matches.isEmpty());
     }
-    
+
     /**
      * Test that {@code allow-log} ACL entries log correctly.
      */
@@ -98,25 +98,25 @@ public class AccessControlLoggingTest extends AbstractTestLogging
         Session sess = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
         conn.start();
         ((AMQSession<?, ?>) sess).createQueue(new AMQShortString("allow-log"), false, false, false);
-        
+
         List<String> matches = findMatches(ACL_LOG_PREFIX);
-        
+
         assertEquals("Should only be one ACL log message", 1, matches.size());
-        
+
         String log = getLogMessage(matches, 0);
         String actor = fromActor(log);
         String subject = fromSubject(log);
         String message = getMessageString(fromMessage(log));
-        
+
         validateMessageID(ACL_LOG_PREFIX + 1001, log);
-        
-        assertTrue("Actor should contain the user identity", actor.contains(USER));
+
+        assertTrue("Actor " + actor + " should contain the user identity: " + USER, actor.contains(USER));
         assertTrue("Subject should be empty", subject.length() == 0);
         assertTrue("Message should start with 'Allowed'", message.startsWith("Allowed"));
         assertTrue("Message should contain 'Create Queue'", message.contains("Create Queue"));
         assertTrue("Message should have contained the queue name", message.contains("allow-log"));
     }
-    
+
     /**
      * Test that {@code deny-log} ACL entries log correctly.
      */
@@ -134,25 +134,25 @@ public class AccessControlLoggingTest extends AbstractTestLogging
             // Denied, so exception thrown
             assertEquals("Expected ACCESS_REFUSED error code", AMQConstant.ACCESS_REFUSED, amqe.getErrorCode());
         }
-        
+
         List<String> matches = findMatches(ACL_LOG_PREFIX);
-        
+
         assertEquals("Should only be one ACL log message", 1, matches.size());
-        
+
         String log = getLogMessage(matches, 0);
         String actor = fromActor(log);
         String subject = fromSubject(log);
         String message = getMessageString(fromMessage(log));
-        
+
         validateMessageID(ACL_LOG_PREFIX + 1002, log);
-        
-        assertTrue("Actor should contain the user identity", actor.contains(USER));
+
+        assertTrue("Actor " + actor + " should contain the user identity: " + USER, actor.contains(USER));
         assertTrue("Subject should be empty", subject.length() == 0);
         assertTrue("Message should start with 'Denied'", message.startsWith("Denied"));
         assertTrue("Message should contain 'Create Queue'", message.contains("Create Queue"));
         assertTrue("Message should have contained the queue name", message.contains("deny-log"));
     }
-    
+
     /**
      * Test that {@code deny} ACL entries do not log anything.
      */
@@ -170,9 +170,9 @@ public class AccessControlLoggingTest extends AbstractTestLogging
             // Denied, so exception thrown
             assertEquals("Expected ACCESS_REFUSED error code", AMQConstant.ACCESS_REFUSED, amqe.getErrorCode());
         }
-        
+
         List<String> matches = findMatches(ACL_LOG_PREFIX);
-        
+
         assertTrue("Should be no ACL log messages", matches.isEmpty());
     }
 }

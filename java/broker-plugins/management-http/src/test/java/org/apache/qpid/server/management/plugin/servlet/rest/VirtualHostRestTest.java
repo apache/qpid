@@ -46,12 +46,12 @@ public class VirtualHostRestTest extends QpidRestTestCase
 
     public void testGet() throws Exception
     {
-        List<Map<String, Object>> hosts = getJsonAsList("/rest/virtualhost/");
+        List<Map<String, Object>> hosts = getRestTestHelper().getJsonAsList("/rest/virtualhost/");
         assertNotNull("Hosts data cannot be null", hosts);
         assertEquals("Unexpected number of hosts", 3, hosts.size());
         for (String hostName : EXPECTED_HOSTS)
         {
-            Map<String, Object> host = find("name", hostName, hosts);
+            Map<String, Object> host = getRestTestHelper().find("name", hostName, hosts);
             Asserts.assertVirtualHost(hostName, host);
         }
     }
@@ -62,7 +62,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
         _connection = (AMQConnection) getConnection();
         _connection.createSession(true, Session.SESSION_TRANSACTED);
 
-        Map<String, Object> hostDetails = getJsonAsSingletonList("/rest/virtualhost/test");
+        Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");
         Asserts.assertVirtualHost("test", hostDetails);
 
         @SuppressWarnings("unchecked")
@@ -74,18 +74,18 @@ public class VirtualHostRestTest extends QpidRestTestCase
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> exchanges = (List<Map<String, Object>>) hostDetails.get(VIRTUALHOST_EXCHANGES_ATTRIBUTE);
         assertEquals("Unexpected number of exchanges", 6, exchanges.size());
-        Asserts.assertDurableExchange("amq.fanout", "fanout", find(Exchange.NAME, "amq.fanout", exchanges));
-        Asserts.assertDurableExchange("qpid.management", "management", find(Exchange.NAME, "qpid.management", exchanges));
-        Asserts.assertDurableExchange("amq.topic", "topic", find(Exchange.NAME, "amq.topic", exchanges));
-        Asserts.assertDurableExchange("amq.direct", "direct", find(Exchange.NAME, "amq.direct", exchanges));
-        Asserts.assertDurableExchange("amq.match", "headers", find(Exchange.NAME, "amq.match", exchanges));
-        Asserts.assertDurableExchange("<<default>>", "direct", find(Exchange.NAME, "<<default>>", exchanges));
+        Asserts.assertDurableExchange("amq.fanout", "fanout", getRestTestHelper().find(Exchange.NAME, "amq.fanout", exchanges));
+        Asserts.assertDurableExchange("qpid.management", "management", getRestTestHelper().find(Exchange.NAME, "qpid.management", exchanges));
+        Asserts.assertDurableExchange("amq.topic", "topic", getRestTestHelper().find(Exchange.NAME, "amq.topic", exchanges));
+        Asserts.assertDurableExchange("amq.direct", "direct", getRestTestHelper().find(Exchange.NAME, "amq.direct", exchanges));
+        Asserts.assertDurableExchange("amq.match", "headers", getRestTestHelper().find(Exchange.NAME, "amq.match", exchanges));
+        Asserts.assertDurableExchange("<<default>>", "direct", getRestTestHelper().find(Exchange.NAME, "<<default>>", exchanges));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> queues = (List<Map<String, Object>>) hostDetails.get(VIRTUALHOST_QUEUES_ATTRIBUTE);
         assertEquals("Unexpected number of queues", 2, queues.size());
-        Map<String, Object> queue = find(Queue.NAME,  "queue", queues);
-        Map<String, Object> ping = find(Queue.NAME, "ping", queues);
+        Map<String, Object> queue = getRestTestHelper().find(Queue.NAME,  "queue", queues);
+        Map<String, Object> ping = getRestTestHelper().find(Queue.NAME, "ping", queues);
         Asserts.assertQueue("queue", "standard", queue);
         Asserts.assertQueue("ping", "standard", ping);
         assertEquals("Unexpected value of queue attribute " + Queue.DURABLE, Boolean.FALSE, queue.get(Queue.DURABLE));
@@ -116,14 +116,14 @@ public class VirtualHostRestTest extends QpidRestTestCase
         lvqQueueAttributes.put(Queue.LVQ_KEY, "LVQ");
         createQueue(queueName + "-lvq", "lvq", lvqQueueAttributes);
 
-        Map<String, Object> hostDetails = getJsonAsSingletonList("/rest/virtualhost/test");
+        Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> queues = (List<Map<String, Object>>) hostDetails.get(VirtualHostRestTest.VIRTUALHOST_QUEUES_ATTRIBUTE);
-        Map<String, Object> standardQueue = find(Queue.NAME, queueName + "-standard" , queues);
-        Map<String, Object> sortedQueue = find(Queue.NAME, queueName + "-sorted" , queues);
-        Map<String, Object> priorityQueue = find(Queue.NAME, queueName + "-priority" , queues);
-        Map<String, Object> lvqQueue = find(Queue.NAME, queueName + "-lvq" , queues);
+        Map<String, Object> standardQueue = getRestTestHelper().find(Queue.NAME, queueName + "-standard" , queues);
+        Map<String, Object> sortedQueue = getRestTestHelper().find(Queue.NAME, queueName + "-sorted" , queues);
+        Map<String, Object> priorityQueue = getRestTestHelper().find(Queue.NAME, queueName + "-priority" , queues);
+        Map<String, Object> lvqQueue = getRestTestHelper().find(Queue.NAME, queueName + "-lvq" , queues);
 
         Asserts.assertQueue(queueName + "-standard", "standard", standardQueue);
         Asserts.assertQueue(queueName + "-sorted", "sorted", sortedQueue);
@@ -149,14 +149,14 @@ public class VirtualHostRestTest extends QpidRestTestCase
         createExchange(exchangeName + "-headers", "headers");
         createExchange(exchangeName + "-fanout", "fanout");
 
-        Map<String, Object> hostDetails = getJsonAsSingletonList("/rest/virtualhost/test");
+        Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> exchanges = (List<Map<String, Object>>) hostDetails.get(VirtualHostRestTest.VIRTUALHOST_EXCHANGES_ATTRIBUTE);
-        Map<String, Object> directExchange = find(Queue.NAME, exchangeName + "-direct" , exchanges);
-        Map<String, Object> topicExchange = find(Queue.NAME, exchangeName + "-topic" , exchanges);
-        Map<String, Object> headersExchange = find(Queue.NAME, exchangeName + "-headers" , exchanges);
-        Map<String, Object> fanoutExchange = find(Queue.NAME, exchangeName + "-fanout" , exchanges);
+        Map<String, Object> directExchange = getRestTestHelper().find(Queue.NAME, exchangeName + "-direct" , exchanges);
+        Map<String, Object> topicExchange = getRestTestHelper().find(Queue.NAME, exchangeName + "-topic" , exchanges);
+        Map<String, Object> headersExchange = getRestTestHelper().find(Queue.NAME, exchangeName + "-headers" , exchanges);
+        Map<String, Object> fanoutExchange = getRestTestHelper().find(Queue.NAME, exchangeName + "-fanout" , exchanges);
 
         Asserts.assertDurableExchange(exchangeName + "-direct", "direct", directExchange);
         Asserts.assertDurableExchange(exchangeName + "-topic", "topic", topicExchange);
@@ -175,11 +175,11 @@ public class VirtualHostRestTest extends QpidRestTestCase
         String queueName = getTestQueueName()+ "-lvq";
         createQueue(queueName, "lvq", null);
 
-        Map<String, Object> hostDetails = getJsonAsSingletonList("/rest/virtualhost/test");
+        Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> queues = (List<Map<String, Object>>) hostDetails.get(VirtualHostRestTest.VIRTUALHOST_QUEUES_ATTRIBUTE);
-        Map<String, Object> lvqQueue = find(Queue.NAME, queueName  , queues);
+        Map<String, Object> lvqQueue = getRestTestHelper().find(Queue.NAME, queueName  , queues);
 
         Asserts.assertQueue(queueName , "lvq", lvqQueue);
         assertEquals("Unexpected value of queue attribute " + Queue.DURABLE, Boolean.TRUE, lvqQueue.get(Queue.DURABLE));
@@ -192,11 +192,11 @@ public class VirtualHostRestTest extends QpidRestTestCase
         int responseCode = tryCreateQueue(queueName, "sorted", null);
         assertEquals("Unexpected response code", 409, responseCode);
 
-        Map<String, Object> hostDetails = getJsonAsSingletonList("/rest/virtualhost/test");
+        Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> queues = (List<Map<String, Object>>) hostDetails.get(VirtualHostRestTest.VIRTUALHOST_QUEUES_ATTRIBUTE);
-        Map<String, Object> testQueue = find(Queue.NAME, queueName  , queues);
+        Map<String, Object> testQueue = getRestTestHelper().find(Queue.NAME, queueName  , queues);
 
         assertNull("Sorted queue without a key was created ", testQueue);
     }
@@ -206,11 +206,11 @@ public class VirtualHostRestTest extends QpidRestTestCase
         String queueName = getTestQueueName()+ "-priority";
         createQueue(queueName, "priority", null);
 
-        Map<String, Object> hostDetails = getJsonAsSingletonList("/rest/virtualhost/test");
+        Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> queues = (List<Map<String, Object>>) hostDetails.get(VirtualHostRestTest.VIRTUALHOST_QUEUES_ATTRIBUTE);
-        Map<String, Object> priorityQueue = find(Queue.NAME, queueName  , queues);
+        Map<String, Object> priorityQueue = getRestTestHelper().find(Queue.NAME, queueName  , queues);
 
         Asserts.assertQueue(queueName , "priority", priorityQueue);
         assertEquals("Unexpected value of queue attribute " + Queue.DURABLE, Boolean.TRUE, priorityQueue.get(Queue.DURABLE));
@@ -222,11 +222,11 @@ public class VirtualHostRestTest extends QpidRestTestCase
         String queueName = getTestQueueName();
         createQueue(queueName, null, null);
 
-        Map<String, Object> hostDetails = getJsonAsSingletonList("/rest/virtualhost/test");
+        Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> queues = (List<Map<String, Object>>) hostDetails.get(VirtualHostRestTest.VIRTUALHOST_QUEUES_ATTRIBUTE);
-        Map<String, Object> queue = find(Queue.NAME, queueName  , queues);
+        Map<String, Object> queue = getRestTestHelper().find(Queue.NAME, queueName  , queues);
 
         Asserts.assertQueue(queueName , "standard", queue);
     }
@@ -237,11 +237,11 @@ public class VirtualHostRestTest extends QpidRestTestCase
         int responseCode = tryCreateQueue(queueName, "unsupported", null);
         assertEquals("Unexpected response code", 409, responseCode);
 
-        Map<String, Object> hostDetails = getJsonAsSingletonList("/rest/virtualhost/test");
+        Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> queues = (List<Map<String, Object>>) hostDetails.get(VirtualHostRestTest.VIRTUALHOST_QUEUES_ATTRIBUTE);
-        Map<String, Object> queue = find(Queue.NAME, queueName  , queues);
+        Map<String, Object> queue = getRestTestHelper().find(Queue.NAME, queueName  , queues);
 
         assertNull("Queue of unsupported type was created", queue);
     }
@@ -251,10 +251,10 @@ public class VirtualHostRestTest extends QpidRestTestCase
         String queueName = getTestQueueName();
         createQueue(queueName, null, null);
 
-        HttpURLConnection connection = openManagementConection("/rest/queue/test/" + queueName, "DELETE");
+        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/rest/queue/test/" + queueName, "DELETE");
         connection.connect();
         assertEquals("Unexpected response code", 200, connection.getResponseCode());
-        List<Map<String, Object>> queues = getJsonAsList("/rest/queue/test/" + queueName);
+        List<Map<String, Object>> queues = getRestTestHelper().getJsonAsList("/rest/queue/test/" + queueName);
         assertEquals("Queue should be deleted", 0, queues.size());
     }
 
@@ -262,12 +262,12 @@ public class VirtualHostRestTest extends QpidRestTestCase
     {
         String queueName = getTestQueueName();
         createQueue(queueName, null, null);
-        Map<String, Object> queueDetails = getJsonAsSingletonList("/rest/queue/test/" + queueName);
+        Map<String, Object> queueDetails = getRestTestHelper().getJsonAsSingletonList("/rest/queue/test/" + queueName);
 
-        HttpURLConnection connection = openManagementConection("/rest/queue/test?id=" + queueDetails.get(Queue.ID), "DELETE");
+        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/rest/queue/test?id=" + queueDetails.get(Queue.ID), "DELETE");
         connection.connect();
         assertEquals("Unexpected response code", 200, connection.getResponseCode());
-        List<Map<String, Object>> queues = getJsonAsList("/rest/queue/test/" + queueName);
+        List<Map<String, Object>> queues = getRestTestHelper().getJsonAsList("/rest/queue/test/" + queueName);
         assertEquals("Queue should be deleted", 0, queues.size());
     }
 
@@ -276,10 +276,10 @@ public class VirtualHostRestTest extends QpidRestTestCase
         String exchangeName = getTestName();
         createExchange(exchangeName, "direct");
 
-        HttpURLConnection connection = openManagementConection("/rest/exchange/test/" + exchangeName, "DELETE");
+        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/rest/exchange/test/" + exchangeName, "DELETE");
         connection.connect();
         assertEquals("Unexpected response code", 200, connection.getResponseCode());
-        List<Map<String, Object>> queues = getJsonAsList("/rest/exchange/test/" + exchangeName);
+        List<Map<String, Object>> queues = getRestTestHelper().getJsonAsList("/rest/exchange/test/" + exchangeName);
         assertEquals("Exchange should be deleted", 0, queues.size());
     }
 
@@ -287,12 +287,12 @@ public class VirtualHostRestTest extends QpidRestTestCase
     {
         String exchangeName = getTestName();
         createExchange(exchangeName, "direct");
-        Map<String, Object> echangeDetails = getJsonAsSingletonList("/rest/exchange/test/" + exchangeName);
+        Map<String, Object> echangeDetails = getRestTestHelper().getJsonAsSingletonList("/rest/exchange/test/" + exchangeName);
 
-        HttpURLConnection connection = openManagementConection("/rest/exchange/test?id=" + echangeDetails.get(Exchange.ID), "DELETE");
+        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/rest/exchange/test?id=" + echangeDetails.get(Exchange.ID), "DELETE");
         connection.connect();
         assertEquals("Unexpected response code", 200, connection.getResponseCode());
-        List<Map<String, Object>> queues = getJsonAsList("/rest/exchange/test/" + exchangeName);
+        List<Map<String, Object>> queues = getRestTestHelper().getJsonAsList("/rest/exchange/test/" + exchangeName);
         assertEquals("Exchange should be deleted", 0, queues.size());
     }
 
@@ -326,14 +326,14 @@ public class VirtualHostRestTest extends QpidRestTestCase
         lvqQueueAttributes.put(Queue.LVQ_KEY, "LVQ");
         createQueue(queueName + "-lvq", "lvq", lvqQueueAttributes);
 
-        Map<String, Object> hostDetails = getJsonAsSingletonList("/rest/virtualhost/test");
+        Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> queues = (List<Map<String, Object>>) hostDetails.get(VirtualHostRestTest.VIRTUALHOST_QUEUES_ATTRIBUTE);
-        Map<String, Object> standardQueue = find(Queue.NAME, queueName + "-standard" , queues);
-        Map<String, Object> sortedQueue = find(Queue.NAME, queueName + "-sorted" , queues);
-        Map<String, Object> priorityQueue = find(Queue.NAME, queueName + "-priority" , queues);
-        Map<String, Object> lvqQueue = find(Queue.NAME, queueName + "-lvq" , queues);
+        Map<String, Object> standardQueue = getRestTestHelper().find(Queue.NAME, queueName + "-standard" , queues);
+        Map<String, Object> sortedQueue = getRestTestHelper().find(Queue.NAME, queueName + "-sorted" , queues);
+        Map<String, Object> priorityQueue = getRestTestHelper().find(Queue.NAME, queueName + "-priority" , queues);
+        Map<String, Object> lvqQueue = getRestTestHelper().find(Queue.NAME, queueName + "-lvq" , queues);
 
         attributes.put(Queue.DURABLE, Boolean.TRUE);
         Asserts.assertQueue(queueName + "-standard", "standard", standardQueue, attributes);
@@ -355,25 +355,25 @@ public class VirtualHostRestTest extends QpidRestTestCase
         attributes.put(AMQQueueFactory.X_QPID_DLQ_ENABLED, true);
 
         //verify the starting state
-        Map<String, Object> hostDetails = getJsonAsSingletonList("/rest/virtualhost/test");
+        Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");
         List<Map<String, Object>> queues = (List<Map<String, Object>>) hostDetails.get(VirtualHostRestTest.VIRTUALHOST_QUEUES_ATTRIBUTE);
         List<Map<String, Object>> exchanges = (List<Map<String, Object>>) hostDetails.get(VirtualHostRestTest.VIRTUALHOST_EXCHANGES_ATTRIBUTE);
 
-        assertNull("queue should not have already been present", find(Queue.NAME, queueName , queues));
-        assertNull("queue should not have already been present", find(Queue.NAME, queueName + "_DLQ" , queues));
-        assertNull("exchange should not have already been present", find(Exchange.NAME, queueName + "_DLE" , exchanges));
+        assertNull("queue should not have already been present", getRestTestHelper().find(Queue.NAME, queueName , queues));
+        assertNull("queue should not have already been present", getRestTestHelper().find(Queue.NAME, queueName + "_DLQ" , queues));
+        assertNull("exchange should not have already been present", getRestTestHelper().find(Exchange.NAME, queueName + "_DLE" , exchanges));
 
         //create the queue
         createQueue(queueName, "standard", attributes);
 
         //verify the new queue, as well as the DLQueue and DLExchange have been created
-        hostDetails = getJsonAsSingletonList("/rest/virtualhost/test");
+        hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");
         queues = (List<Map<String, Object>>) hostDetails.get(VirtualHostRestTest.VIRTUALHOST_QUEUES_ATTRIBUTE);
         exchanges = (List<Map<String, Object>>) hostDetails.get(VirtualHostRestTest.VIRTUALHOST_EXCHANGES_ATTRIBUTE);
 
-        Map<String, Object> queue = find(Queue.NAME, queueName , queues);
-        Map<String, Object> dlqQueue = find(Queue.NAME, queueName + "_DLQ" , queues);
-        Map<String, Object> dlExchange = find(Exchange.NAME, queueName + "_DLE" , exchanges);
+        Map<String, Object> queue = getRestTestHelper().find(Queue.NAME, queueName , queues);
+        Map<String, Object> dlqQueue = getRestTestHelper().find(Queue.NAME, queueName + "_DLQ" , queues);
+        Map<String, Object> dlExchange = getRestTestHelper().find(Exchange.NAME, queueName + "_DLE" , exchanges);
         assertNotNull("queue should not have been present", queue);
         assertNotNull("queue should not have been present", dlqQueue);
         assertNotNull("exchange should not have been present", dlExchange);
@@ -388,14 +388,14 @@ public class VirtualHostRestTest extends QpidRestTestCase
 
     private void createExchange(String exchangeName, String exchangeType) throws IOException
     {
-        HttpURLConnection connection = openManagementConection("/rest/exchange/test/" + exchangeName, "PUT");
+        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/rest/exchange/test/" + exchangeName, "PUT");
 
         Map<String, Object> queueData = new HashMap<String, Object>();
         queueData.put(Exchange.NAME, exchangeName);
         queueData.put(Exchange.DURABLE, Boolean.TRUE);
         queueData.put(Exchange.TYPE, exchangeType);
 
-        writeJsonRequest(connection, queueData);
+        getRestTestHelper().writeJsonRequest(connection, queueData);
         assertEquals("Unexpected response code", 201, connection.getResponseCode());
 
         connection.disconnect();
@@ -411,7 +411,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
     private int tryCreateQueue(String queueName, String queueType, Map<String, Object> attributes) throws IOException,
             JsonGenerationException, JsonMappingException
     {
-        HttpURLConnection connection = openManagementConection("/rest/queue/test/" + queueName, "PUT");
+        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/rest/queue/test/" + queueName, "PUT");
 
         Map<String, Object> queueData = new HashMap<String, Object>();
         queueData.put(Queue.NAME, queueName);
@@ -425,7 +425,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
             queueData.putAll(attributes);
         }
 
-        writeJsonRequest(connection, queueData);
+        getRestTestHelper().writeJsonRequest(connection, queueData);
         int responseCode = connection.getResponseCode();
         connection.disconnect();
         return responseCode;

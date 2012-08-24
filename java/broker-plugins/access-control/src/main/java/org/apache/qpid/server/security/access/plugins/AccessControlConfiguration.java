@@ -34,7 +34,7 @@ import org.apache.qpid.server.security.access.config.RuleSet;
 
 public class AccessControlConfiguration extends ConfigurationPlugin
 {
-    public static final ConfigurationPluginFactory FACTORY = new ConfigurationPluginFactory() 
+    public static final ConfigurationPluginFactory FACTORY = new ConfigurationPluginFactory()
     {
         public ConfigurationPlugin newInstance(String path, Configuration config) throws ConfigurationException
         {
@@ -70,7 +70,7 @@ public class AccessControlConfiguration extends ConfigurationPlugin
         }
 
         File aclFile = new File(filename);
-        
+
         ConfigurationFile configFile = new PlainConfiguration(aclFile);
         _ruleSet = configFile.load();
     }

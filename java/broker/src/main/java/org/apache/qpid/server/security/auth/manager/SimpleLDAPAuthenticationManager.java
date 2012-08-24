@@ -32,7 +32,6 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
-import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
@@ -47,7 +46,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainPasswordCallback;
 
 public class SimpleLDAPAuthenticationManager implements AuthenticationManager
@@ -205,10 +204,10 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
 
             if (server.isComplete())
             {
-                final Subject subject = new Subject();
-                _logger.debug("Authenticated as " + server.getAuthorizationID());
-                subject.getPrincipals().add(new UsernamePrincipal(server.getAuthorizationID()));
-                return new AuthenticationResult(subject);
+                String authorizationID = server.getAuthorizationID();
+                _logger.debug("Authenticated as " + authorizationID);
+
+                return new AuthenticationResult(new UsernamePrincipal(authorizationID));
             }
             else
             {
@@ -249,9 +248,8 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
         env.put(Context.SECURITY_CREDENTIALS, password);
         DirContext ctx = new InitialDirContext(env);
         ctx.close();
-        final Subject subject = new Subject();
-        subject.getPrincipals().add(new UsernamePrincipal(username));
-        return new AuthenticationResult(subject);
+
+        return new AuthenticationResult(new UsernamePrincipal(username));
     }
 
     @Override

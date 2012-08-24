@@ -49,6 +49,8 @@ import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManage
 import org.apache.qpid.server.security.auth.manager.KerberosAuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.SimpleLDAPAuthenticationManager;
+import org.apache.qpid.server.security.group.FileGroupManager;
+import org.apache.qpid.server.security.group.GroupManagerPluginFactory;
 import org.apache.qpid.server.virtualhost.plugins.SlowConsumerDetection;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 import org.apache.qpid.server.virtualhost.plugins.policies.TopicDeletePolicy;
@@ -90,6 +92,7 @@ public class PluginManager implements Closeable
     private ServiceTracker _virtualHostTracker = null;
     private ServiceTracker _policyTracker = null;
     private ServiceTracker _authenticationManagerTracker = null;
+    private ServiceTracker _groupManagerTracker = null;
 
     private Activator _activator;
 
@@ -99,6 +102,7 @@ public class PluginManager implements Closeable
     private Map<String, VirtualHostPluginFactory> _vhostPlugins = new HashMap<String, VirtualHostPluginFactory>();
     private Map<String, SlowConsumerPolicyPluginFactory> _policyPlugins = new HashMap<String, SlowConsumerPolicyPluginFactory>();
     private Map<String, AuthenticationManagerPluginFactory<? extends Plugin>> _authenticationManagerPlugins = new HashMap<String, AuthenticationManagerPluginFactory<? extends Plugin>>();
+    private Map<String, GroupManagerPluginFactory<? extends Plugin>> _groupManagerPlugins = new HashMap<String, GroupManagerPluginFactory<? extends Plugin>>();
 
     /** The default name of the OSGI system package list. */
     private static final String DEFAULT_RESOURCE_NAME = "org/apache/qpid/server/plugins/OsgiSystemPackages.properties";
@@ -162,7 +166,8 @@ public class PluginManager implements Closeable
                 AnonymousAuthenticationManager.AnonymousAuthenticationManagerConfiguration.FACTORY,
                 KerberosAuthenticationManager.KerberosAuthenticationManagerConfiguration.FACTORY,
                 SimpleLDAPAuthenticationManager.SimpleLDAPAuthenticationManagerConfiguration.FACTORY,
-                ExternalAuthenticationManager.ExternalAuthenticationManagerConfiguration.FACTORY
+                ExternalAuthenticationManager.ExternalAuthenticationManagerConfiguration.FACTORY,
+                FileGroupManager.FileGroupManagerConfiguration.FACTORY
                 ))
         {
             _configPlugins.put(configFactory.getParentPaths(), configFactory);
@@ -184,6 +189,12 @@ public class PluginManager implements Closeable
                 ExternalAuthenticationManager.FACTORY))
         {
             _authenticationManagerPlugins.put(pluginFactory.getPluginName(), pluginFactory);
+        }
+
+        for (GroupManagerPluginFactory<? extends Plugin> pluginFactory : Arrays.asList(
+                FileGroupManager.FACTORY))
+        {
+            _groupManagerPlugins.put(pluginFactory.getPluginName(), pluginFactory);
         }
 
         if(bundleContext == null)
@@ -283,6 +294,11 @@ public class PluginManager implements Closeable
         _authenticationManagerTracker.open();
         _trackers.add(_authenticationManagerTracker);
 
+        _groupManagerTracker = new ServiceTracker(bundleContext, GroupManagerPluginFactory.class.getName(), null);
+        _groupManagerTracker.open();
+        _trackers.add(_groupManagerTracker);
+
+
         _logger.info("Opened service trackers");
     }
 
@@ -356,6 +372,11 @@ public class PluginManager implements Closeable
     public Map<String, AuthenticationManagerPluginFactory<? extends Plugin>> getAuthenticationManagerPlugins()
     {
         return getServices(_authenticationManagerTracker, _authenticationManagerPlugins);
+    }
+
+    public Map<String, GroupManagerPluginFactory<? extends Plugin>> getGroupManagerPlugins()
+    {
+        return getServices(_groupManagerTracker, _groupManagerPlugins);
     }
 
     public void close()

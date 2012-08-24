@@ -21,7 +21,6 @@ package org.apache.qpid.server.security.auth.manager;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.List;
-import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import org.apache.commons.configuration.Configuration;
@@ -137,15 +136,13 @@ public class ExternalAuthenticationManager implements AuthenticationManager
         // Process response from the client
         try
         {
-            byte[] challenge = server.evaluateResponse(response != null ? response : new byte[0]);
+            server.evaluateResponse(response != null ? response : new byte[0]);
 
             Principal principal = ((ExternalSaslServer)server).getAuthenticatedPrincipal();
 
             if(principal != null)
             {
-                final Subject subject = new Subject();
-                subject.getPrincipals().add(principal);
-                return new AuthenticationResult(subject);
+                return new AuthenticationResult(principal);
             }
             else
             {

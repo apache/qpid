@@ -24,7 +24,6 @@ import java.security.Principal;
 import java.util.Arrays;
 import java.util.List;
 import javax.security.auth.Subject;
-import javax.security.auth.callback.CallbackHandler;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import org.apache.commons.configuration.Configuration;
@@ -33,7 +32,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.anonymous.AnonymousInitialiser;
 import org.apache.qpid.server.security.auth.sasl.anonymous.AnonymousSaslServer;
 
@@ -45,7 +44,9 @@ public class AnonymousAuthenticationManager implements AuthenticationManager
 
     private static final String ANONYMOUS = SASL_INITIALISER.getMechanismName();
 
-    private static final Principal ANONYMOUS_PRINCIPAL = new UsernamePrincipal("ANONYMOUS");
+    public static final String ANONYMOUS_USERNAME = "ANONYMOUS";
+
+    public static final Principal ANONYMOUS_PRINCIPAL = new UsernamePrincipal(ANONYMOUS_USERNAME);
 
     public static final Subject ANONYMOUS_SUBJECT = new Subject();
     static
@@ -53,10 +54,7 @@ public class AnonymousAuthenticationManager implements AuthenticationManager
         ANONYMOUS_SUBJECT.getPrincipals().add(ANONYMOUS_PRINCIPAL);
     }
 
-    private static final AuthenticationResult ANONYMOUS_AUTHENTICATION = new AuthenticationResult(ANONYMOUS_SUBJECT);
-
-
-    private static CallbackHandler _callbackHandler = SASL_INITIALISER.getCallbackHandler();
+    private static final AuthenticationResult ANONYMOUS_AUTHENTICATION = new AuthenticationResult(ANONYMOUS_PRINCIPAL);
 
     static final AnonymousAuthenticationManager INSTANCE = new AnonymousAuthenticationManager();
 

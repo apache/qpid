@@ -32,6 +32,7 @@ import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
@@ -43,12 +44,14 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.IAuthenticationManagerRegistry;
+import org.apache.qpid.server.security.group.GroupManager;
 import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHostRegistry.RegistryChangeListener,
                                                               IApplicationRegistry.PortBindingListener,
-                                                              IAuthenticationManagerRegistry.RegistryChangeListener
+                                                              IAuthenticationManagerRegistry.RegistryChangeListener,
+                                                              IApplicationRegistry.GroupManagerChangeListener
 {
 
 
@@ -62,6 +65,8 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
 
     private final Map<AuthenticationManager, AuthenticationProviderAdapter> _authManagerAdapters =
             new HashMap<AuthenticationManager, AuthenticationProviderAdapter>();
+    private final Map<GroupManager, GroupProviderAdapter> _groupManagerAdapters =
+            new HashMap<GroupManager, GroupProviderAdapter>();
 
 
     public BrokerAdapter(final IApplicationRegistry instance)
@@ -75,8 +80,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
         populateVhosts();
         instance.addPortBindingListener(this);
         populatePorts();
-        instance.addRegistryChangeListener(this);
+        instance.addAuthenticationManagerRegistryChangeListener(this);
         populateAuthenticationManagers();
+        instance.addGroupManagerChangeListener(this);
+        populateGroupManagers();
     }
 
     private void populateVhosts()
@@ -171,6 +178,25 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
         }
     }
 
+    private void populateGroupManagers()
+    {
+        synchronized (_groupManagerAdapters)
+        {
+            List<GroupManager> groupManagers = _applicationRegistry.getGroupManagers();
+            if(groupManagers != null)
+            {
+                for (GroupManager groupManager : groupManagers)
+                {
+                    if(!_groupManagerAdapters.containsKey(groupManager))
+                    {
+                        _groupManagerAdapters.put(groupManager,
+                                                 GroupProviderAdapter.createGroupProviderAdapter(this, groupManager));
+                    }
+                }
+            }
+        }
+    }
+
     public Collection<AuthenticationProvider> getAuthenticationProviders()
     {
         synchronized (_authManagerAdapters)
@@ -179,7 +205,16 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
                     new ArrayList<AuthenticationProvider>(_authManagerAdapters.values());
             return authManagers;
         }
+    }
 
+    public Collection<GroupProvider> getGroupProviders()
+    {
+        synchronized (_groupManagerAdapters)
+        {
+            final ArrayList<GroupProvider> groupManagers =
+                    new ArrayList<GroupProvider>(_groupManagerAdapters.values());
+            return groupManagers;
+        }
     }
 
     public VirtualHost createVirtualHost(final String name,
@@ -276,6 +311,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
         else if(clazz == AuthenticationProvider.class)
         {
             return (Collection<C>) getAuthenticationProviders();
+        }
+        else if(clazz == GroupProvider.class)
+        {
+            return (Collection<C>) getGroupProviders();
         }
 
         return Collections.emptySet();
@@ -490,5 +529,37 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
         return super.setAttribute(name, expected, desired);    //TODO - Implement.
+    }
+
+    @Override
+    public void groupManagerRegistered(GroupManager groupManager)
+    {
+        GroupProviderAdapter adapter = null;
+        synchronized (_groupManagerAdapters)
+        {
+            if(!_groupManagerAdapters.containsKey(groupManager))
+            {
+                adapter = GroupProviderAdapter.createGroupProviderAdapter(this, groupManager);
+                _groupManagerAdapters.put(groupManager, adapter);
+            }
+        }
+        if(adapter != null)
+        {
+            childAdded(adapter);
+        }
+    }
+
+    @Override
+    public void groupManagerUnregistered(GroupManager groupManager)
+    {
+        GroupProviderAdapter adapter;
+        synchronized (_groupManagerAdapters)
+        {
+            adapter = _groupManagerAdapters.remove(groupManager);
+        }
+        if(adapter != null)
+        {
+            childRemoved(adapter);
+        }
     }
 }

@@ -23,12 +23,11 @@ package org.apache.qpid.server.security.auth.rmi;
 import java.net.SocketAddress;
 
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.auth.AuthenticationResult;
+import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 
 import javax.management.remote.JMXAuthenticator;
-import javax.management.remote.JMXPrincipal;
 import javax.security.auth.Subject;
 
 public class RMIPasswordAuthenticator implements JMXAuthenticator
@@ -41,7 +40,7 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
     static final String CREDENTIALS_REQUIRED = "User details are required. " +
     		            "Please ensure you are using an up to date management console to connect.";
 
-    private AuthenticationManager _authenticationManager = null;
+    private SubjectCreator _subjectCreator = null;
     private SocketAddress _socketAddress;
 
     public RMIPasswordAuthenticator(SocketAddress socketAddress)
@@ -49,9 +48,9 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
         _socketAddress = socketAddress;
     }
 
-    public void setAuthenticationManager(final AuthenticationManager authenticationManager)
+    public void setSubjectCreator(final SubjectCreator subjectCreator)
     {
-        _authenticationManager = authenticationManager;
+        _subjectCreator = subjectCreator;
     }
 
     public Subject authenticate(Object credentials) throws SecurityException
@@ -85,14 +84,14 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
             throw new SecurityException(SHOULD_BE_NON_NULL);
         }
 
-        // Verify that an AuthenticationManager has been set.
-        if (_authenticationManager == null)
+        // Verify that an SubjectCreator has been set.
+        if (_subjectCreator == null)
         {
             try
             {
-                if(ApplicationRegistry.getInstance().getAuthenticationManager(_socketAddress) != null)
+                if(ApplicationRegistry.getInstance().getSubjectCreator(_socketAddress) != null)
                 {
-                    _authenticationManager = ApplicationRegistry.getInstance().getAuthenticationManager(_socketAddress);
+                    _subjectCreator = ApplicationRegistry.getInstance().getSubjectCreator(_socketAddress);
                 }
                 else
                 {
@@ -104,7 +103,7 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
                 throw new SecurityException(UNABLE_TO_LOOKUP);
             }
         }
-        final AuthenticationResult result = _authenticationManager.authenticate(username, password);
+        final SubjectAuthenticationResult result = _subjectCreator.authenticate(username, password);
 
         if (AuthenticationStatus.ERROR.equals(result.getStatus()))
         {
@@ -112,10 +111,7 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
         }
         else if (AuthenticationStatus.SUCCESS.equals(result.getStatus()))
         {
-            final Subject subject = result.getSubject();
-            subject.getPrincipals().add(new JMXPrincipal(username));
-            subject.setReadOnly();
-            return subject;
+            return result.getSubject();
         }
         else
         {
