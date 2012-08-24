@@ -112,6 +112,16 @@ namespace acl {
                     }
                 }
 
+                // Find possible routingkey property and cache its pattern
+                for (pmCitr pItr=rule.props.begin(); pItr!=rule.props.end(); pItr++) {
+                    if (acl::SPECPROP_ROUTINGKEY == pItr->first)
+                    {
+                        rule.pubRoutingKeyInRule = true;
+                        rule.pubRoutingKey = (std::string)pItr->second;
+                        rule.addTopicTest(rule.pubRoutingKey);
+                    }
+                }
+
                 // Action -> Object -> map<user -> set<Rule> >
                 std::ostringstream actionstr;
                 for (int acnt = ((*i)->actionAll ? 0 : (*i)->action);
@@ -126,13 +136,6 @@ namespace acl {
                         // Go through the rule properties and find the name and the key.
                         // If found then place them specially for the lookup engine.
                         for (pmCitr pItr=(*i)->props.begin(); pItr!=(*i)->props.end(); pItr++) {
-                            if (acl::SPECPROP_ROUTINGKEY == pItr->first)
-                            {
-                                rule.pubRoutingKeyInRule = true;
-                                rule.pubRoutingKey = (std::string)pItr->second;
-                                rule.addTopicTest(rule.pubRoutingKey);
-                                break;
-                            }
                             if (acl::SPECPROP_NAME == pItr->first)
                             {
                                 rule.pubExchNameInRule = true;
