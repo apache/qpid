@@ -1541,10 +1541,10 @@ class ACLTests(TestBase010):
 
 
    #=====================================
-   # QMF Topic Exchange tests
+   # Routingkey lookup using Topic Exchange tests
    #=====================================
 
-    def test_qmf_topic_exchange_tests(self):
+    def test_topic_exchange_publish_tests(self):
         """
         Test using QMF method hooks into ACL logic
         """
@@ -1657,6 +1657,127 @@ class ACLTests(TestBase010):
         self.LookupPublish("dev@QPID", "X", "M..x.y.zz.N",    "allow-log")
         self.LookupPublish("dev@QPID", "X", "a.M.N",          "allow-log")
         self.LookupPublish("dev@QPID", "X", "a.M.p.qq.N",     "allow-log")
+
+    def test_topic_exchange_other_tests(self):
+        """
+        Test using QMF method hooks into ACL logic
+        """
+        action_list = ['access','bind','unbind']
+
+        aclf = self.get_acl_file()
+        aclf.write('# begin hack alert: allow anonymous to access the lookup debug functions\n')
+        aclf.write('acl allow-log anonymous create  queue\n')
+        aclf.write('acl allow-log anonymous all     exchange name=qmf.*\n')
+        aclf.write('acl allow-log anonymous all     exchange name=amq.direct\n')
+        aclf.write('acl allow-log anonymous all     exchange name=qpid.management\n')
+        aclf.write('acl allow-log anonymous access  method   name=*\n')
+        aclf.write('# end hack alert\n')
+        for action in action_list:
+            aclf.write('acl allow-log uPlain1@COMPANY   ' + action + ' exchange name=X routingkey=ab.cd.e\n')
+            aclf.write('acl allow-log uPlain2@COMPANY   ' + action + ' exchange name=X routingkey=.\n')
+            aclf.write('acl allow-log uStar1@COMPANY    ' + action + ' exchange name=X routingkey=a.*.b\n')
+            aclf.write('acl allow-log uStar2@COMPANY    ' + action + ' exchange name=X routingkey=*.x\n')
+            aclf.write('acl allow-log uStar3@COMPANY    ' + action + ' exchange name=X routingkey=x.x.*\n')
+            aclf.write('acl allow-log uHash1@COMPANY    ' + action + ' exchange name=X routingkey=a.#.b\n')
+            aclf.write('acl allow-log uHash2@COMPANY    ' + action + ' exchange name=X routingkey=a.#\n')
+            aclf.write('acl allow-log uHash3@COMPANY    ' + action + ' exchange name=X routingkey=#.a\n')
+            aclf.write('acl allow-log uHash4@COMPANY    ' + action + ' exchange name=X routingkey=a.#.b.#.c\n')
+            aclf.write('acl allow-log uMixed1@COMPANY   ' + action + ' exchange name=X routingkey=*.x.#.y\n')
+            aclf.write('acl allow-log uMixed2@COMPANY   ' + action + ' exchange name=X routingkey=a.#.b.*\n')
+            aclf.write('acl allow-log uMixed3@COMPANY   ' + action + ' exchange name=X routingkey=*.*.*.#\n')
+
+            aclf.write('acl allow-log all ' + action + ' exchange name=X routingkey=MN.OP.Q\n')
+            aclf.write('acl allow-log all ' + action + ' exchange name=X routingkey=M.*.N\n')
+            aclf.write('acl allow-log all ' + action + ' exchange name=X routingkey=M.#.N\n')
+            aclf.write('acl allow-log all ' + action + ' exchange name=X routingkey=*.M.#.N\n')
+
+        aclf.write('acl deny-log all all\n')
+        aclf.close()
+
+        result = self.reload_acl()
+        if (result):
+            self.fail(result)
+
+        for action in action_list:
+            #                                  aclKey: "ab.cd.e"
+            self.Lookup("uPlain1@COMPANY", action, "exchange", "X", {"routingkey":"ab.cd.e"},        "allow-log")
+            self.Lookup("uPlain1@COMPANY", action, "exchange", "X", {"routingkey":"ab.cd.e"},        "allow-log")
+
+            self.Lookup("uPlain1@COMPANY", action, "exchange", "X", {"routingkey":"ab.cd.e"},        "allow-log")
+            self.Lookup("uPlain1@COMPANY", action, "exchange", "X", {"routingkey":"abx.cd.e"},       "deny-log")
+            self.Lookup("uPlain1@COMPANY", action, "exchange", "X", {"routingkey":"ab.cd"},          "deny-log")
+            self.Lookup("uPlain1@COMPANY", action, "exchange", "X", {"routingkey":"ab.cd..e."},      "deny-log")
+            self.Lookup("uPlain1@COMPANY", action, "exchange", "X", {"routingkey":"ab.cd.e."},       "deny-log")
+            self.Lookup("uPlain1@COMPANY", action, "exchange", "X", {"routingkey":".ab.cd.e"},       "deny-log")
+            #                                  aclKey: "."
+            self.Lookup("uPlain2@COMPANY", action, "exchange", "X", {"routingkey":"."},              "allow-log")
+
+            #                                  aclKey: "a.*.b"
+            self.Lookup("uStar1@COMPANY",  action, "exchange", "X", {"routingkey":"a.xx.b"},         "allow-log")
+            self.Lookup("uStar1@COMPANY",  action, "exchange", "X", {"routingkey":"a.b"},            "deny-log")
+            #                                  aclKey: "*.x"
+            self.Lookup("uStar2@COMPANY",  action, "exchange", "X", {"routingkey":"y.x"},            "allow-log")
+            self.Lookup("uStar2@COMPANY",  action, "exchange", "X", {"routingkey":".x"},             "allow-log")
+            self.Lookup("uStar2@COMPANY",  action, "exchange", "X", {"routingkey":"x"},              "deny-log")
+            #                                  aclKey: "x.x.*"
+            self.Lookup("uStar3@COMPANY",  action, "exchange", "X", {"routingkey":"x.x.y"},          "allow-log")
+            self.Lookup("uStar3@COMPANY",  action, "exchange", "X", {"routingkey":"x.x."},           "allow-log")
+            self.Lookup("uStar3@COMPANY",  action, "exchange", "X", {"routingkey":"x.x"},            "deny-log")
+            self.Lookup("uStar3@COMPANY",  action, "exchange", "X", {"routingkey":"q.x.y"},          "deny-log")
+
+            #                                  aclKey: "a.#.b"
+            self.Lookup("uHash1@COMPANY",  action, "exchange", "X", {"routingkey":"a.b"},            "allow-log")
+            self.Lookup("uHash1@COMPANY",  action, "exchange", "X", {"routingkey":"a.x.b"},          "allow-log")
+            self.Lookup("uHash1@COMPANY",  action, "exchange", "X", {"routingkey":"a..x.y.zz.b"},    "allow-log")
+            self.Lookup("uHash1@COMPANY",  action, "exchange", "X", {"routingkey":"a.b."},           "deny-log")
+            self.Lookup("uHash1@COMPANY",  action, "exchange", "X", {"routingkey":"q.x.b"},          "deny-log")
+
+            #                                  aclKey: "a.#"
+            self.Lookup("uHash2@COMPANY",  action, "exchange", "X", {"routingkey":"a"},              "allow-log")
+            self.Lookup("uHash2@COMPANY",  action, "exchange", "X", {"routingkey":"a.b"},            "allow-log")
+            self.Lookup("uHash2@COMPANY",  action, "exchange", "X", {"routingkey":"a.b.c"},          "allow-log")
+
+            #                                  aclKey: "#.a"
+            self.Lookup("uHash3@COMPANY",  action, "exchange", "X", {"routingkey":"a"},              "allow-log")
+            self.Lookup("uHash3@COMPANY",  action, "exchange", "X", {"routingkey":"x.y.a"},          "allow-log")
+
+            #                                  aclKey: "a.#.b.#.c"
+            self.Lookup("uHash4@COMPANY",  action, "exchange", "X", {"routingkey":"a.b.c"},          "allow-log")
+            self.Lookup("uHash4@COMPANY",  action, "exchange", "X", {"routingkey":"a.x.b.y.c"},      "allow-log")
+            self.Lookup("uHash4@COMPANY",  action, "exchange", "X", {"routingkey":"a.x.x.b.y.y.c"},  "allow-log")
+
+            #                                  aclKey: "*.x.#.y"
+            self.Lookup("uMixed1@COMPANY", action, "exchange", "X", {"routingkey":"a.x.y"},          "allow-log")
+            self.Lookup("uMixed1@COMPANY", action, "exchange", "X", {"routingkey":"a.x.p.qq.y"},     "allow-log")
+            self.Lookup("uMixed1@COMPANY", action, "exchange", "X", {"routingkey":"a.a.x.y"},        "deny-log")
+            self.Lookup("uMixed1@COMPANY", action, "exchange", "X", {"routingkey":"aa.x.b.c"},       "deny-log")
+
+            #                                  aclKey: "a.#.b.*"
+            self.Lookup("uMixed2@COMPANY", action, "exchange", "X", {"routingkey":"a.b.x"},          "allow-log")
+            self.Lookup("uMixed2@COMPANY", action, "exchange", "X", {"routingkey":"a.x.x.x.b.x"},    "allow-log")
+
+            #                                  aclKey: "*.*.*.#"
+            self.Lookup("uMixed3@COMPANY", action, "exchange", "X", {"routingkey":"x.y.z"},          "allow-log")
+            self.Lookup("uMixed3@COMPANY", action, "exchange", "X", {"routingkey":"x.y.z.a.b.c"},    "allow-log")
+            self.Lookup("uMixed3@COMPANY", action, "exchange", "X", {"routingkey":"x.y"},            "deny-log")
+            self.Lookup("uMixed3@COMPANY", action, "exchange", "X", {"routingkey":"x"},              "deny-log")
+
+            # Repeat the keys with wildcard user spec
+            self.Lookup("uPlain1@COMPANY", action, "exchange", "X", {"routingkey":"MN.OP.Q"},        "allow-log")
+            self.Lookup("uStar1@COMPANY" , action, "exchange", "X", {"routingkey":"M.xx.N"},         "allow-log")
+            self.Lookup("uHash1@COMPANY" , action, "exchange", "X", {"routingkey":"M.N"},            "allow-log")
+            self.Lookup("uHash1@COMPANY" , action, "exchange", "X", {"routingkey":"M.x.N"},          "allow-log")
+            self.Lookup("uHash1@COMPANY" , action, "exchange", "X", {"routingkey":"M..x.y.zz.N"},    "allow-log")
+            self.Lookup("uMixed1@COMPANY", action, "exchange", "X", {"routingkey":"a.M.N"},          "allow-log")
+            self.Lookup("uMixed1@COMPANY", action, "exchange", "X", {"routingkey":"a.M.p.qq.N"},     "allow-log")
+
+            self.Lookup("dev@QPID",        action, "exchange", "X", {"routingkey":  "MN.OP.Q"},      "allow-log")
+            self.Lookup("dev@QPID",        action, "exchange", "X", {"routingkey":  "M.xx.N"},       "allow-log")
+            self.Lookup("dev@QPID",        action, "exchange", "X", {"routingkey":  "M.N"},          "allow-log")
+            self.Lookup("dev@QPID",        action, "exchange", "X", {"routingkey":  "M.x.N"},        "allow-log")
+            self.Lookup("dev@QPID",        action, "exchange", "X", {"routingkey":  "M..x.y.zz.N"},  "allow-log")
+            self.Lookup("dev@QPID",        action, "exchange", "X", {"routingkey":  "a.M.N"},        "allow-log")
+            self.Lookup("dev@QPID",        action, "exchange", "X", {"routingkey":  "a.M.p.qq.N"},   "allow-log")
 
    #=====================================
    # Connection limits

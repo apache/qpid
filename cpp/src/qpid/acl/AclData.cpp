@@ -241,14 +241,31 @@ namespace acl {
                                     default:
                                         bool result;
                                         if ((SPECPROP_ALTERNATE  == rulePropMapItr->first && rsItr->ruleHasUserSub[PROP_ALTERNATE])  ||
-                                            (SPECPROP_ROUTINGKEY == rulePropMapItr->first && rsItr->ruleHasUserSub[PROP_ROUTINGKEY]) ||
                                             (SPECPROP_QUEUENAME  == rulePropMapItr->first && rsItr->ruleHasUserSub[PROP_QUEUENAME]))
                                         {
                                             // These properties are allowed to have username substitution
                                             std::string sName(rulePropMapItr->second);
                                             substituteUserId(sName, id);
                                             result = matchProp(sName, lookupParamItr->second);
-                                        } else {
+                                        }
+                                        else if (SPECPROP_ROUTINGKEY == rulePropMapItr->first)
+                                        {
+                                            // Routing key is allowed to have username substitution
+                                            // and it gets topic exchange matching
+                                            if (rsItr->ruleHasUserSub[PROP_ROUTINGKEY])
+                                            {
+                                                std::string sKey(lookupParamItr->second);
+                                                substituteKeywords(sKey, id);
+                                                result = rsItr->matchRoutingKey(sKey);
+                                            }
+                                            else
+                                            {
+                                                result = rsItr->matchRoutingKey(lookupParamItr->second);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            // Rules without substitution
                                             result = matchProp(rulePropMapItr->second, lookupParamItr->second);
                                         }
 
