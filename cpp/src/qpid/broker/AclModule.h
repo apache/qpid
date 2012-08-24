@@ -151,6 +151,11 @@ namespace broker {
          */
         virtual void setUserId(const Connection& connection, const std::string& username)=0;
 
+        /** Approve queue creation by counting per-user.
+         */
+        virtual bool approveCreateQueue(const std::string& userId, const std::string& queueName)=0;
+        virtual void recordDestroyQueue(const std::string& queueName)=0;
+
         virtual ~AclModule() {};
     };
 } // namespace broker

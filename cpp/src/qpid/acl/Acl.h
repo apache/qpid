@@ -43,12 +43,14 @@ class Connection;
 
 namespace acl {
 class ConnectionCounter;
+class ResourceCounter;
 
 struct AclValues {
     std::string aclFile;
     uint16_t    aclMaxConnectPerUser;
     uint16_t    aclMaxConnectPerIp;
     uint16_t    aclMaxConnectTotal;
+    uint16_t    aclMaxQueuesPerUser;
 };
 
 
@@ -64,6 +66,7 @@ private:
     qpid::management::ManagementAgent*   agent;
     mutable qpid::sys::Mutex             dataLock;
     boost::shared_ptr<ConnectionCounter> connectionCounter;
+    boost::shared_ptr<ResourceCounter>   resourceCounter;
 
 public:
     Acl (AclValues& av, broker::Broker& b);
@@ -72,6 +75,7 @@ public:
      * issue management counts and alerts for denied connections
      */
     void reportConnectLimit(const std::string user, const std::string addr);
+    void reportQueueLimit(const std::string user, const std::string queueName);
 
     inline virtual bool doTransferAcl() {
         return transferAcl;
@@ -92,9 +96,11 @@ public:
         const std::string&               ExchangeName,
         const std::string&               RoutingKey);
 
+    // Resource quota tracking
     virtual bool approveConnection(const broker::Connection& connection);
-
     virtual void setUserId(const broker::Connection& connection, const std::string& username);
+    virtual bool approveCreateQueue(const std::string& userId, const std::string& queueName);
+    virtual void recordDestroyQueue(const std::string& queueName);
 
     virtual ~Acl();
 private:

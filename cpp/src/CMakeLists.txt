@@ -600,6 +600,8 @@ if (BUILD_ACL)
        qpid/acl/AclPlugin.cpp
        qpid/acl/AclReader.cpp
        qpid/acl/AclReader.h
+       qpid/acl/AclResourceCounter.cpp
+       qpid/acl/AclResourceCounter.h
        qpid/acl/AclValidator.cpp
        qpid/acl/AclValidator.h
       )
