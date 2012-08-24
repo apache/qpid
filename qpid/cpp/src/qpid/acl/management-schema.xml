@@ -25,8 +25,10 @@
     <property name="maxConnections"        type="uint16"  access="RO"       desc="Maximum allowed connections"/>
     <property name="maxConnectionsPerIp"   type="uint16"  access="RO"       desc="Maximum allowed connections"/>
     <property name="maxConnectionsPerUser" type="uint16"  access="RO"       desc="Maximum allowed connections"/>
+    <property name="maxQueuesPerUser"      type="uint16"  access="RO"       desc="Maximum allowed queues"/>
     <statistic name="aclDenyCount"         type="count64" unit="request"    desc="Number of ACL requests denied"/>
     <statistic name="connectionDenyCount"  type="count64" unit="connection" desc="Number of connections denied"/>
+    <statistic name="queueQuotaDenyCount"  type="count64" unit="connection" desc="Number of queue creations denied"/>
 
     <method name="reloadACLFile" desc="Reload the ACL file"/>
 
@@ -70,11 +72,13 @@
     <arg name="reason"     type="lstr"/>
     <arg name="userId"     type="sstr"/>
     <arg name="clientAddr" type="sstr"/>
+    <arg name="queueName"  type="sstr"/>
   </eventArguments>
 
   <event name="allow"          sev="inform" args="userId, action, objectType, objectName, arguments"/>
   <event name="deny"           sev="notice" args="userId, action, objectType, objectName, arguments"/>
   <event name="connectionDeny" sev="notice" args="userId, clientAddr"/>
+  <event name="queueQuotaDeny" sev="notice" args="userId, queueName"/>
   <event name="fileLoaded"     sev="inform" args="userId"/>
   <event name="fileLoadFailed" sev="error"  args="userId, reason"/>
 

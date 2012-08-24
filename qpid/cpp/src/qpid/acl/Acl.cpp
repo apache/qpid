@@ -18,6 +18,7 @@
 
 #include "qpid/acl/Acl.h"
 #include "qpid/acl/AclConnectionCounter.h"
+#include "qpid/acl/AclResourceCounter.h"
 #include "qpid/acl/AclData.h"
 #include "qpid/acl/AclValidator.h"
 #include "qpid/sys/Mutex.h"
@@ -32,6 +33,7 @@
 #include "qmf/org/apache/qpid/acl/Package.h"
 #include "qmf/org/apache/qpid/acl/EventAllow.h"
 #include "qmf/org/apache/qpid/acl/EventConnectionDeny.h"
+#include "qmf/org/apache/qpid/acl/EventQueueQuotaDeny.h"
 #include "qmf/org/apache/qpid/acl/EventDeny.h"
 #include "qmf/org/apache/qpid/acl/EventFileLoaded.h"
 #include "qmf/org/apache/qpid/acl/EventFileLoadFailed.h"
@@ -51,8 +53,8 @@ using qpid::management::Args;
 namespace _qmf = qmf::org::apache::qpid::acl;
 
 Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(false), mgmtObject(0),
-    connectionCounter(new ConnectionCounter(*this, aclValues.aclMaxConnectPerUser, aclValues.aclMaxConnectPerIp, aclValues.aclMaxConnectTotal))
-{
+    connectionCounter(new ConnectionCounter(*this, aclValues.aclMaxConnectPerUser, aclValues.aclMaxConnectPerIp, aclValues.aclMaxConnectTotal)),
+    resourceCounter(new ResourceCounter(*this, aclValues.aclMaxQueuesPerUser)){
 
     agent = broker->getManagementAgent();
 
@@ -63,6 +65,7 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
         mgmtObject->set_maxConnections(aclValues.aclMaxConnectTotal);
         mgmtObject->set_maxConnectionsPerIp(aclValues.aclMaxConnectPerIp);
         mgmtObject->set_maxConnectionsPerUser(aclValues.aclMaxConnectPerUser);
+        mgmtObject->set_maxQueuesPerUser(aclValues.aclMaxQueuesPerUser);
     }
     std::string errorString;
     if (!readAclFile(errorString)){
@@ -81,6 +84,15 @@ void Acl::reportConnectLimit(const std::string user, const std::string addr)
         mgmtObject->inc_connectionDenyCount();
 
     agent->raiseEvent(_qmf::EventConnectionDeny(user, addr));
+}
+
+
+void Acl::reportQueueLimit(const std::string user, const std::string queueName)
+{
+    if (mgmtObject!=0)
+        mgmtObject->inc_queueQuotaDenyCount();
+
+    agent->raiseEvent(_qmf::EventQueueQuotaDeny(user, queueName));
 }
 
 
@@ -133,6 +145,18 @@ bool Acl::approveConnection(const qpid::broker::Connection& conn)
 void Acl::setUserId(const qpid::broker::Connection& connection, const std::string& username)
 {
     connectionCounter->setUserId(connection, username);
+}
+
+
+bool Acl::approveCreateQueue(const std::string& userId, const std::string& queueName)
+{
+    return resourceCounter->approveCreateQueue(userId, queueName);
+}
+
+
+void Acl::recordDestroyQueue(const std::string& queueName)
+{
+    resourceCounter->recordDestroyQueue(queueName);
 }
 
 
