@@ -45,6 +45,7 @@ struct AclOptions : public Options {
             ("max-connections"         , optValue(values.aclMaxConnectTotal, "N"),   "The maximum combined number of connections allowed. 0 implies no limit.")
             ("max-connections-per-user", optValue(values.aclMaxConnectPerUser, "N"), "The maximum number of connections allowed per user. 0 implies no limit.")
             ("max-connections-per-ip"  , optValue(values.aclMaxConnectPerIp, "N"),   "The maximum number of connections allowed per host IP address. 0 implies no limit.")
+            ("max-queues-per-user",      optValue(values.aclMaxQueuesPerUser, "N"),  "The maximum number of queues allowed per user. 0 implies no limit.")
             ;
     }
 };

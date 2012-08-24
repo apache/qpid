@@ -1072,6 +1072,9 @@ std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
 
         if (!acl->authorise(userId,acl::ACT_CREATE,acl::OBJ_QUEUE,name,&params) )
             throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied queue create request from " << userId));
+
+        if (!acl->approveCreateQueue(userId,name) )
+            throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied queue create request from " << userId));
     }
 
     Exchange::shared_ptr alternate;
@@ -1116,6 +1119,8 @@ void Broker::deleteQueue(const std::string& name, const std::string& userId,
     Queue::shared_ptr queue = queues.find(name);
     if (queue) {
         if (check) check(queue);
+        if (acl)
+            acl->recordDestroyQueue(name);
         queues.destroy(name);
         queue->destroyed();
     } else {
