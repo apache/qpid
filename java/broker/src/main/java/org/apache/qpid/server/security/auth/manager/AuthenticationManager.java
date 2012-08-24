@@ -30,14 +30,15 @@ import org.apache.qpid.server.security.auth.AuthenticationResult;
 /**
  * Implementations of the AuthenticationManager are responsible for determining
  * the authenticity of a user's credentials.
- *
- * If the authentication is successful, the manager is responsible for producing a populated
- * {@link javax.security.auth.Subject} containing the user's identity and zero or more principals representing
- * groups to which the user belongs.
+ * <p>
+ * If the authentication is successful, the manager is responsible for producing an
+ * {@link AuthenticationResult} containing the user's main {@link Principal} and zero or
+ * more other implementation-specific principals.
+ * </p>
  * <p>
  * The {@link #initialise()} method is responsible for registering SASL mechanisms required by
  * the manager.  The {@link #close()} method must reverse this registration.
- *
+ * </p>
  */
 public interface AuthenticationManager extends Closeable, Plugin
 {
@@ -88,5 +89,4 @@ public interface AuthenticationManager extends Closeable, Plugin
      * @return authentication result
      */
     AuthenticationResult authenticate(String username, String password);
-
 }

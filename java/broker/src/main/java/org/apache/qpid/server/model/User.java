@@ -52,8 +52,6 @@ public interface User extends ConfiguredObject
                            PASSWORD
                    ));
 
-    public String getPassword();
-
     public void setPassword(String password);
 
 }

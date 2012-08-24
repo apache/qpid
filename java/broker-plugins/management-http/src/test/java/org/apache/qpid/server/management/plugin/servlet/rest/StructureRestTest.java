@@ -28,7 +28,7 @@ public class StructureRestTest extends QpidRestTestCase
 
     public void testGet() throws Exception
     {
-        Map<String, Object> structure = getJsonAsMap("/rest/structure");
+        Map<String, Object> structure = getRestTestHelper().getJsonAsMap("/rest/structure");
         assertNotNull("Structure data cannot be null", structure);
         assertNode(structure, "Broker");
 
@@ -46,7 +46,7 @@ public class StructureRestTest extends QpidRestTestCase
 
         for (String hostName : EXPECTED_HOSTS)
         {
-            Map<String, Object> host = find("name", hostName, virtualhosts);
+            Map<String, Object> host = getRestTestHelper().find("name", hostName, virtualhosts);
             assertNotNull("Host " + hostName + " is not found ", host);
             assertNode(host, hostName);
 
@@ -55,7 +55,7 @@ public class StructureRestTest extends QpidRestTestCase
             assertNotNull("Host " + hostName + " queues are not found ", queues);
             for (String queueName : EXPECTED_QUEUES)
             {
-                Map<String, Object> queue = find("name", queueName, queues);
+                Map<String, Object> queue = getRestTestHelper().find("name", queueName, queues);
                 assertNotNull(hostName + " queue " + queueName + " is not found ", queue);
                 assertNode(queue, queueName);
 
@@ -73,7 +73,7 @@ public class StructureRestTest extends QpidRestTestCase
             assertNotNull("Host " + hostName + " exchanges are not found ", exchanges);
             for (String exchangeName : EXPECTED_EXCHANGES)
             {
-                Map<String, Object> exchange = find("name", exchangeName, exchanges);
+                Map<String, Object> exchange = getRestTestHelper().find("name", exchangeName, exchanges);
                 assertNotNull("Exchange " + exchangeName + " is not found ", exchange);
                 assertNode(exchange, exchangeName);
                 if ("amq.direct".equalsIgnoreCase(exchangeName) || "<<default>>".equalsIgnoreCase(exchangeName))
@@ -83,7 +83,7 @@ public class StructureRestTest extends QpidRestTestCase
                     assertNotNull(hostName + " exchange " + exchangeName + " bindings are not found ", bindings);
                     for (String queueName : EXPECTED_QUEUES)
                     {
-                        Map<String, Object> binding = find("name", queueName, bindings);
+                        Map<String, Object> binding = getRestTestHelper().find("name", queueName, bindings);
                         assertNotNull(hostName + " exchange " + exchangeName + " binding  " + queueName + " is not found", binding);
                         assertNode(binding, queueName);
                     }
@@ -97,11 +97,11 @@ public class StructureRestTest extends QpidRestTestCase
             assertNode(aliases.get(0), hostName);
         }
 
-        int[] expectedPorts = { getPort(), getHttpPort() };
+        int[] expectedPorts = { getPort(), getRestTestHelper().getHttpPort() };
         for (int port : expectedPorts)
         {
             String portName = "0.0.0.0:" + port;
-            Map<String, Object> portData = find("name", portName, ports);
+            Map<String, Object> portData = getRestTestHelper().find("name", portName, ports);
             assertNotNull("Port " + portName + " is not found ", portData);
             assertNode(portData, portName);
         }

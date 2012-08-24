@@ -32,8 +32,10 @@ import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.Operation;
 
 import static org.apache.qpid.server.security.access.ObjectType.EXCHANGE;
+import static org.apache.qpid.server.security.access.ObjectType.GROUP;
 import static org.apache.qpid.server.security.access.ObjectType.METHOD;
 import static org.apache.qpid.server.security.access.ObjectType.QUEUE;
+import static org.apache.qpid.server.security.access.ObjectType.USER;
 import static org.apache.qpid.server.security.access.ObjectType.VIRTUALHOST;
 import static org.apache.qpid.server.security.access.Operation.BIND;
 import static org.apache.qpid.server.security.access.Operation.CONSUME;
@@ -387,6 +389,27 @@ public class SecurityManager
         });
     }
 
+    public boolean authoriseGroupOperation(final Operation operation, final String groupName)
+    {
+        return checkAllPlugins(new AccessCheck()
+        {
+            Result allowed(SecurityPlugin plugin)
+            {
+                return plugin.authorise(operation, GROUP, new ObjectProperties(groupName));
+            }
+        });
+    }
+
+    public boolean authoriseUserOperation(final Operation operation, final String userName)
+    {
+        return checkAllPlugins(new AccessCheck()
+        {
+            Result allowed(SecurityPlugin plugin)
+            {
+                return plugin.authorise(operation, USER, new ObjectProperties(userName));
+            }
+        });
+    }
 
     private ConcurrentHashMap<String, ConcurrentHashMap<String, PublishAccessCheck>> _immediatePublishPropsCache
             = new ConcurrentHashMap<String, ConcurrentHashMap<String, PublishAccessCheck>>();

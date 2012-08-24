@@ -1,5 +1,5 @@
 /*
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -7,16 +7,16 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- * 
+ *
  */
 package org.apache.qpid.server.security.access.config;
 
@@ -44,43 +44,41 @@ public class PlainConfiguration extends AbstractConfiguration
     public static final Character COMMENT = '#';
     public static final Character CONTINUATION = '\\';
 
-    public static final String GROUP = "group";
     public static final String ACL = "acl";
     public static final String CONFIG = "config";
 
     public static final String UNRECOGNISED_INITIAL_MSG = "Unrecognised initial token '%s' at line %d";
     public static final String NOT_ENOUGH_TOKENS_MSG = "Not enough tokens at line %d";
-    public static final String NUMBER_NOT_ALLOWED_MSG = "Number not allowed before '%s' at line %d";    
+    public static final String NUMBER_NOT_ALLOWED_MSG = "Number not allowed before '%s' at line %d";
     public static final String CANNOT_LOAD_MSG = "Cannot load config file %s";
     public static final String PREMATURE_CONTINUATION_MSG = "Premature continuation character at line %d";
     public static final String PREMATURE_EOF_MSG = "Premature end of file reached at line %d";
     public static final String PARSE_TOKEN_FAILED_MSG = "Failed to parse token at line %d";
     public static final String CONFIG_NOT_FOUND_MSG = "Cannot find config file %s";
-    public static final String NOT_ENOUGH_GROUP_MSG = "Not enough data for a group at line %d";
     public static final String NOT_ENOUGH_ACL_MSG = "Not enough data for an acl at line %d";
     public static final String NOT_ENOUGH_CONFIG_MSG = "Not enough data for config at line %d";
     public static final String BAD_ACL_RULE_NUMBER_MSG = "Invalid rule number at line %d";
     public static final String PROPERTY_KEY_ONLY_MSG = "Incomplete property (key only) at line %d";
     public static final String PROPERTY_NO_EQUALS_MSG = "Incomplete property (no equals) at line %d";
     public static final String PROPERTY_NO_VALUE_MSG = "Incomplete property (no value) at line %d";
-    
+
     private StreamTokenizer _st;
 
     public PlainConfiguration(File file)
     {
         super(file);
     }
-    
+
     @Override
     public RuleSet load() throws ConfigurationException
     {
         RuleSet ruleSet = super.load();
-        
+
         try
         {
             _st = new StreamTokenizer(new BufferedReader(new FileReader(getFile())));
             _st.resetSyntax(); // setup the tokenizer
-                
+
             _st.commentChar(COMMENT); // single line comments
             _st.eolIsSignificant(true); // return EOL as a token
             _st.ordinaryChar('='); // equals is a token
@@ -97,7 +95,7 @@ public class PlainConfiguration extends AbstractConfiguration
             _st.wordChars('*', '*'); // star
             _st.wordChars('@', '@'); // at
             _st.wordChars(':', ':'); // colon
-            
+
             // parse the acl file lines
             Stack<String> stack = new Stack<String>();
             int current;
@@ -111,7 +109,7 @@ public class PlainConfiguration extends AbstractConfiguration
                         {
                             break; // blank line
                         }
-                        
+
                         // pull out the first token from the bottom of the stack and check arguments exist
                         String first = stack.firstElement();
                         stack.removeElementAt(0);
@@ -119,13 +117,13 @@ public class PlainConfiguration extends AbstractConfiguration
                         {
                             throw new ConfigurationException(String.format(NOT_ENOUGH_TOKENS_MSG, getLine()));
                         }
-                        
+
                         // check for and parse optional initial number for ACL lines
                         Integer number = null;
                         if (StringUtils.isNumeric(first))
                         {
                             // set the acl number and get the next element
-                            number = Integer.valueOf(first);                            
+                            number = Integer.valueOf(first);
                             first = stack.firstElement();
                             stack.removeElementAt(0);
                         }
@@ -136,9 +134,9 @@ public class PlainConfiguration extends AbstractConfiguration
                         }
                         else if (number == null)
                         {
-                            if (StringUtils.equalsIgnoreCase(GROUP, first))
+                            if(StringUtils.equalsIgnoreCase("GROUP", first))
                             {
-                                parseGroup(stack);
+                                throw new ConfigurationException(String.format("GROUP keyword not supported. Groups should defined via a Group Provider, not in the ACL file.", getLine()));
                             }
                             else if (StringUtils.equalsIgnoreCase(CONFIG, first))
                             {
@@ -153,7 +151,7 @@ public class PlainConfiguration extends AbstractConfiguration
                         {
                             throw new ConfigurationException(String.format(NUMBER_NOT_ALLOWED_MSG, first, getLine()));
                         }
-                        
+
                         // reset stack, start next line
                         stack.clear();
                         break;
@@ -171,7 +169,7 @@ public class PlainConfiguration extends AbstractConfiguration
                             {
 	                            break; // continue reading next line
                             }
-                            
+
                             // invalid location for continuation character (add one to line beacuse we ate the EOL)
                             throw new ConfigurationException(String.format(PREMATURE_CONTINUATION_MSG, getLine() + 1));
                         }
@@ -185,7 +183,7 @@ public class PlainConfiguration extends AbstractConfiguration
                         }
                 }
             } while (current != StreamTokenizer.TT_EOF);
-        
+
             if (!stack.isEmpty())
             {
                 throw new ConfigurationException(String.format(PREMATURE_EOF_MSG, getLine()));
@@ -203,20 +201,10 @@ public class PlainConfiguration extends AbstractConfiguration
         {
             throw new ConfigurationException(String.format(CANNOT_LOAD_MSG, getFile().getName()), ioe);
         }
-        
+
         return ruleSet;
     }
-    
-    private void parseGroup(List<String> args) throws ConfigurationException
-    {
-        if (args.size() < 2)
-        {
-            throw new ConfigurationException(String.format(NOT_ENOUGH_GROUP_MSG, getLine()));
-        }
-        
-        getConfiguration().addGroup(args.get(0), args.subList(1, args.size()));
-    }
-    
+
     private void parseAcl(Integer number, List<String> args) throws ConfigurationException
     {
         if (args.size() < 3)
@@ -227,12 +215,12 @@ public class PlainConfiguration extends AbstractConfiguration
         Permission permission = Permission.parse(args.get(0));
         String identity = args.get(1);
         Operation operation = Operation.parse(args.get(2));
-        
+
         if (number != null && !getConfiguration().isValidNumber(number))
         {
             throw new ConfigurationException(String.format(BAD_ACL_RULE_NUMBER_MSG, getLine()));
         }
-        
+
         if (args.size() == 3)
         {
             getConfiguration().grant(number, identity, permission, operation);
@@ -245,7 +233,7 @@ public class PlainConfiguration extends AbstractConfiguration
             getConfiguration().grant(number, identity, permission, operation, object, properties);
         }
     }
-    
+
     private void parseConfig(List<String> args) throws ConfigurationException
     {
         if (args.size() < 3)
@@ -254,10 +242,10 @@ public class PlainConfiguration extends AbstractConfiguration
         }
 
         Map<String, Boolean> properties = toPluginProperties(args);
-        
+
         getConfiguration().configure(properties);
     }
-    
+
     /** Converts a {@link List} of "name", "=", "value" tokens into a {@link Map}. */
     protected ObjectProperties toObjectProperties(List<String> args) throws ConfigurationException
     {
@@ -279,14 +267,14 @@ public class PlainConfiguration extends AbstractConfiguration
                 throw new ConfigurationException(String.format(PROPERTY_NO_VALUE_MSG, getLine()));
             }
             String value = i.next();
-            
+
             // parse property key
             ObjectProperties.Property property = ObjectProperties.Property.parse(key);
             properties.put(property, value);
         }
         return properties;
     }
-    
+
     /** Converts a {@link List} of "name", "=", "value" tokens into a {@link Map}. */
     protected Map<String, Boolean> toPluginProperties(List<String> args) throws ConfigurationException
     {
@@ -307,14 +295,14 @@ public class PlainConfiguration extends AbstractConfiguration
             {
                 throw new ConfigurationException(String.format(PROPERTY_NO_VALUE_MSG, getLine()));
             }
-            
+
             // parse property value and save
             Boolean value = Boolean.valueOf(i.next());
             properties.put(key, value);
         }
         return properties;
     }
-    
+
     protected int getLine()
     {
         return _st.lineno() - 1;

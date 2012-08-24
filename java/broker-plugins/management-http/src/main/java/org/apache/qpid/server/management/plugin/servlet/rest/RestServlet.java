@@ -31,7 +31,6 @@ import org.apache.qpid.server.model.*;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 
-
 public class RestServlet extends AbstractServlet
 {
     private static final Logger LOGGER = Logger.getLogger(RestServlet.class);
@@ -285,7 +284,7 @@ public class RestServlet extends AbstractServlet
     }
 
     @Override
-    protected void onGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+    protected void doGetWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);
@@ -319,7 +318,7 @@ public class RestServlet extends AbstractServlet
     }
 
     @Override
-    protected void onPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+    protected void doPutWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
         response.setContentType("application/json");
 
@@ -336,7 +335,8 @@ public class RestServlet extends AbstractServlet
 
             if(names.size() != _hierarchy.length)
             {
-                throw new IllegalArgumentException("Path to object to create must be fully specified");
+                throw new IllegalArgumentException("Path to object to create must be fully specified. "
+                       + "Found " + names.size() + " expecting " + _hierarchy.length);
             }
         }
 
@@ -428,8 +428,11 @@ public class RestServlet extends AbstractServlet
                        || (obj.getName().equals(providedObject.get("name")) && equalParents(obj, otherParents)))
                     {
                         doUpdate(obj, providedObject);
+                        response.setStatus(HttpServletResponse.SC_OK);
+                        return;
                     }
                 }
+
                 theParent.createChild(objClass, providedObject, otherParents);
             }
             catch (RuntimeException e)
@@ -464,11 +467,12 @@ public class RestServlet extends AbstractServlet
     {
         if (e.getCause() instanceof AMQSecurityException)
         {
+            LOGGER.debug("Caught AMQSecurityException", e);
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         }
         else
         {
-            LOGGER.warn("Unexpected exception is caught", e);
+            LOGGER.warn("Caught exception", e);
 
             // TODO
             response.setStatus(HttpServletResponse.SC_CONFLICT);
@@ -476,7 +480,7 @@ public class RestServlet extends AbstractServlet
     }
 
     @Override
-    protected void onDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+    protected void doDeleteWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);

@@ -18,6 +18,8 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import static org.apache.qpid.server.security.auth.AuthenticatedPrincipalTestHelper.assertOnlyContainsWrapped;
+
 import javax.security.auth.x500.X500Principal;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
@@ -25,6 +27,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
@@ -103,12 +106,12 @@ public class ExternalAuthenticationManagerTest extends InternalBrokerBaseCase
         assertEquals("Expected authentication to be successful",
                      AuthenticationResult.AuthenticationStatus.SUCCESS,
                      result.getStatus());
-        assertEquals("Expected principal to be unchanged",
-                             principal,
-                             result.getSubject().getPrincipals().iterator().next());
+
+        assertOnlyContainsWrapped(principal, result.getPrincipals());
 
         saslServer = _manager.createSaslServer("EXTERNAL", "example.example.com", null);
         result = _manager.authenticate(saslServer, new byte[0]);
+
         assertNotNull(result);
                 assertEquals("Expected authentication to be unsuccessful",
                              AuthenticationResult.AuthenticationStatus.ERROR,

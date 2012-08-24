@@ -18,12 +18,9 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.security.auth.sasl;
+package org.apache.qpid.server.security.auth;
 
 import junit.framework.TestCase;
-
-import javax.security.auth.Subject;
-import java.security.Principal;
 
 /**
  * Tests the UsernamePrincipal.
@@ -70,54 +67,4 @@ public class UsernamePrincipalTest extends TestCase
         UsernamePrincipal principal = new UsernamePrincipal("string");
         assertFalse(principal.equals(null));
     }
-
-    public void testGetUsernamePrincipalFromSubject()
-    {
-        final UsernamePrincipal expected = new UsernamePrincipal("name");
-        final Principal other = new Principal()
-        {
-            public String getName()
-            {
-                return "otherprincipal";
-            }
-        };
-
-        final Subject subject = new Subject();
-        subject.getPrincipals().add(expected);
-        subject.getPrincipals().add(other);
-
-        final UsernamePrincipal actual = UsernamePrincipal.getUsernamePrincipalFromSubject(subject);
-        assertSame(expected, actual);
-    }
-
-    public void testUsernamePrincipalNotInSubject()
-    {
-        try
-        {
-            UsernamePrincipal.getUsernamePrincipalFromSubject(new Subject());
-            fail("Exception not thrown");
-        }
-        catch (IllegalArgumentException iae)
-        {
-            // PASS
-        }
-    }
-
-    public void testTooManyUsernamePrincipalInSubject()
-    {
-        final Subject subject = new Subject();
-        subject.getPrincipals().add(new UsernamePrincipal("name1"));
-        subject.getPrincipals().add(new UsernamePrincipal("name2"));
-        try
-        {
-
-            UsernamePrincipal.getUsernamePrincipalFromSubject(subject);
-            fail("Exception not thrown");
-        }
-        catch (IllegalArgumentException iae)
-        {
-            // PASS
-        }
-    }
-
 }

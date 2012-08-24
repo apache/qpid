@@ -23,13 +23,11 @@ import java.net.SocketAddress;
 
 import java.util.Map;
 import org.apache.qpid.common.Closeable;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.security.SubjectCreator;
 
 /**
- * Registry for {@link AuthenticationManager} instances.
- *
- * <p>A lookup method {@link #getAuthenticationManager(SocketAddress)} allows a caller to determine
- * the AuthenticationManager associated with a particular port number.</p>
+ * Registry for {@link AuthenticationManager} instances, also exposing them wrapped in {@link SubjectCreator}'s
+ * as a convenience.
  *
  * <p>It is important to {@link #close()} the registry after use and this allows the AuthenticationManagers
  * to reverse any security registrations they have performed.</p>
@@ -37,14 +35,11 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 public interface IAuthenticationManagerRegistry extends Closeable
 {
     /**
-     * Returns the {@link AuthenticationManager} associated with a particular {@link SocketAddress}.
-     * If no authentication manager is associated with this address, a default authentication manager will be
+     * Returns the {@link SubjectCreator} associated with a particular {@link SocketAddress}.
+     * If no subject creator is associated with this address, a default will be
      * returned.  Null is never returned.
-     *
-     * @param address
-     * @return authentication manager.
      */
-    public AuthenticationManager getAuthenticationManager(SocketAddress address);
+    public SubjectCreator getSubjectCreator(SocketAddress address);
 
     Map<String, AuthenticationManager> getAvailableAuthenticationManagers();
 
@@ -55,5 +50,4 @@ public interface IAuthenticationManagerRegistry extends Closeable
     }
 
     public void addRegistryChangeListener(RegistryChangeListener listener);
-
 }

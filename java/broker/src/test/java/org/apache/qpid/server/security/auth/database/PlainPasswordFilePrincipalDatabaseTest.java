@@ -22,7 +22,7 @@ package org.apache.qpid.server.security.auth.database;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
 
 import javax.security.auth.login.AccountNotFoundException;
 import java.io.BufferedReader;

@@ -44,7 +44,7 @@ public class LogRecordsServlet extends AbstractServlet
     }
 
     @Override
-    protected void onGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
+    protected void doGetWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
     {
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);

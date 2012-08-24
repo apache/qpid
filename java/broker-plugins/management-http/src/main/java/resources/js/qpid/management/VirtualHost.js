@@ -72,7 +72,7 @@ define(["dojo/_base/xhr",
                                     function(evt){
                                         util.deleteGridSelections(
                                                 that.vhostUpdater,
-                                                "queuesGrid",
+                                                that.vhostUpdater.queuesGrid.grid,
                                                 "rest/queue/"+ encodeURIComponent(that.name),
                                                 "Are you sure you want to delete queue");
                                 }
@@ -87,7 +87,7 @@ define(["dojo/_base/xhr",
                                     {
                                         util.deleteGridSelections(
                                                 that.vhostUpdater,
-                                                "exchangesGrid",
+                                                that.vhostUpdater.exchangesGrid.grid,
                                                 "rest/exchange/"+ encodeURIComponent(that.name),
                                                 "Are you sure you want to delete exchange");
                                     }

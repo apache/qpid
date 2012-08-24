@@ -80,7 +80,7 @@ public class QueueRestTest extends QpidRestTestCase
     public void testGetVirtualHostQueues() throws Exception
     {
         String queueName = getTestQueueName();
-        List<Map<String, Object>> queues = getJsonAsList("/rest/queue/test");
+        List<Map<String, Object>> queues = getRestTestHelper().getJsonAsList("/rest/queue/test");
         assertEquals("Unexpected number of queues", EXPECTED_QUEUES.length + 1, queues.size());
         String[] expectedQueues = new String[EXPECTED_QUEUES.length + 1];
         System.arraycopy(EXPECTED_QUEUES, 0, expectedQueues, 0, EXPECTED_QUEUES.length);
@@ -88,7 +88,7 @@ public class QueueRestTest extends QpidRestTestCase
 
         for (String name : expectedQueues)
         {
-            Map<String, Object> queueDetails = find(Queue.NAME, name, queues);
+            Map<String, Object> queueDetails = getRestTestHelper().find(Queue.NAME, name, queues);
             Asserts.assertQueue(name, "standard", queueDetails);
 
             @SuppressWarnings("unchecked")
@@ -96,8 +96,8 @@ public class QueueRestTest extends QpidRestTestCase
             assertNotNull("Queue bindings are not found", bindings);
             assertEquals("Unexpected number of bindings", 2, bindings.size());
 
-            Map<String, Object> defaultExchangeBinding = find(Binding.EXCHANGE, "<<default>>", bindings);
-            Map<String, Object> directExchangeBinding = find(Binding.EXCHANGE, "amq.direct", bindings);
+            Map<String, Object> defaultExchangeBinding = getRestTestHelper().find(Binding.EXCHANGE, "<<default>>", bindings);
+            Map<String, Object> directExchangeBinding = getRestTestHelper().find(Binding.EXCHANGE, "amq.direct", bindings);
             Asserts.assertBinding(name, "<<default>>", defaultExchangeBinding);
             Asserts.assertBinding(name, "amq.direct", directExchangeBinding);
         }
@@ -106,7 +106,7 @@ public class QueueRestTest extends QpidRestTestCase
     public void testGetByName() throws Exception
     {
         String queueName = getTestQueueName();
-        Map<String, Object> queueDetails = getJsonAsSingletonList("/rest/queue/test/" + queueName);
+        Map<String, Object> queueDetails = getRestTestHelper().getJsonAsSingletonList("/rest/queue/test/" + queueName);
         Asserts.assertQueue(queueName, "standard", queueDetails);
         assertStatistics(queueDetails);
 
@@ -115,8 +115,8 @@ public class QueueRestTest extends QpidRestTestCase
         assertNotNull("Queue bindings are not found", bindings);
         assertEquals("Unexpected number of bindings", 2, bindings.size());
 
-        Map<String, Object> defaultExchangeBinding = find(Binding.EXCHANGE, "<<default>>", bindings);
-        Map<String, Object> directExchangeBinding = find(Binding.EXCHANGE, "amq.direct", bindings);
+        Map<String, Object> defaultExchangeBinding = getRestTestHelper().find(Binding.EXCHANGE, "<<default>>", bindings);
+        Map<String, Object> directExchangeBinding = getRestTestHelper().find(Binding.EXCHANGE, "amq.direct", bindings);
         Asserts.assertBinding(queueName, "<<default>>", defaultExchangeBinding);
         Asserts.assertBinding(queueName, "amq.direct", directExchangeBinding);
 
@@ -138,7 +138,7 @@ public class QueueRestTest extends QpidRestTestCase
             createBinding(bindingName, exchanges[i], queueName);
         }
 
-        Map<String, Object> queueDetails = getJsonAsSingletonList("/rest/queue/test/" + queueName);
+        Map<String, Object> queueDetails = getRestTestHelper().getJsonAsSingletonList("/rest/queue/test/" + queueName);
         Asserts.assertQueue(queueName, "standard", queueDetails);
 
         @SuppressWarnings("unchecked")
@@ -152,14 +152,14 @@ public class QueueRestTest extends QpidRestTestCase
         for (int i = 0; i < exchanges.length; i++)
         {
             searchAttributes.put(Binding.EXCHANGE, exchanges[i]);
-            Map<String, Object> binding = find(searchAttributes, bindings);
+            Map<String, Object> binding = getRestTestHelper().find(searchAttributes, bindings);
             Asserts.assertBinding(bindingName, queueName, exchanges[i], binding);
         }
     }
 
     private void createBinding(String bindingName, String exchangeName, String queueName) throws IOException
     {
-        HttpURLConnection connection = openManagementConection(
+        HttpURLConnection connection = getRestTestHelper().openManagementConnection(
                 "/rest/binding/test/" + URLDecoder.decode(exchangeName, "UTF-8") + "/" + queueName + "/" + bindingName,
                 "PUT");
 
@@ -168,7 +168,7 @@ public class QueueRestTest extends QpidRestTestCase
         bindingData.put(Binding.EXCHANGE, exchangeName);
         bindingData.put(Binding.QUEUE, queueName);
 
-        writeJsonRequest(connection, bindingData);
+        getRestTestHelper().writeJsonRequest(connection, bindingData);
         assertEquals("Unexpected response code", 201, connection.getResponseCode());
 
         connection.disconnect();

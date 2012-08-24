@@ -63,6 +63,11 @@ public class UUIDGenerator
         return createUUID(User.class.getName(), authenticationProviderName, userName);
     }
 
+    public static UUID generateGroupUUID(String groupProviderName, String groupName)
+    {
+        return createUUID(Group.class.getName(), groupProviderName, groupName);
+    }
+
     public static UUID generateVhostUUID(String virtualHostName)
     {
         return createUUID(VirtualHost.class.getName(), virtualHostName);
@@ -76,5 +81,10 @@ public class UUIDGenerator
     public static UUID generateConsumerUUID(String virtualHostName, String queueName, String connectionRemoteAddress, String channelNumber, String consumerName)
     {
         return createUUID(Consumer.class.getName(), virtualHostName, queueName, connectionRemoteAddress, channelNumber, consumerName);
+    }
+
+    public static UUID generateGroupMemberUUID(String groupProviderName, String groupName, String groupMemberName)
+    {
+        return createUUID(GroupMember.class.getName(), groupProviderName, groupName, groupMemberName);
     }
 }
