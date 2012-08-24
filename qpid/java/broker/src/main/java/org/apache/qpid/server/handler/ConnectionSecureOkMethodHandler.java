@@ -32,9 +32,8 @@ import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.auth.AuthenticationResult;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
@@ -61,7 +60,7 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
 
-        AuthenticationManager authMgr = stateManager.getAuthenticationManager();
+        SubjectCreator subjectCreator = stateManager.getSubjectCreator();
 
         SaslServer ss = session.getSaslServer();
         if (ss == null)
@@ -69,7 +68,7 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
             throw new AMQException("No SASL context set up in session");
         }
         MethodRegistry methodRegistry = session.getMethodRegistry();
-        AuthenticationResult authResult = authMgr.authenticate(ss, body.getResponse());
+        SubjectAuthenticationResult authResult = subjectCreator.authenticate(ss, body.getResponse());
         switch (authResult.getStatus())
         {
             case ERROR:

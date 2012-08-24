@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -35,6 +34,8 @@ import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.plugins.Plugin;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.SecurityManager.SecurityConfiguration;
+import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 
 /**
  * A concrete implementation of {@link IAuthenticationManagerRegistry} that registers all {@link AuthenticationManager}
@@ -50,12 +51,12 @@ import org.apache.qpid.server.security.SecurityManager.SecurityConfiguration;
 public class AuthenticationManagerRegistry implements Closeable, IAuthenticationManagerRegistry
 {
     private final Map<String,AuthenticationManager> _classToAuthManagerMap = new HashMap<String,AuthenticationManager>();
-    private final AuthenticationManager _defaultAuthenticationManager;
-    private final Map<Integer,AuthenticationManager> _portToAuthenticationManagerMap;
+    private final SubjectCreator _defaultSubjectCreator;
+    private final Map<Integer, SubjectCreator> _portToSubjectCreatorMap;
     private final List<RegistryChangeListener> _listeners =
             Collections.synchronizedList(new ArrayList<RegistryChangeListener>());
 
-    public AuthenticationManagerRegistry(ServerConfiguration serverConfiguration, PluginManager _pluginManager)
+    public AuthenticationManagerRegistry(ServerConfiguration serverConfiguration, PluginManager _pluginManager, GroupPrincipalAccessor groupPrincipalAccessor)
     throws ConfigurationException
     {
         final Collection<AuthenticationManagerPluginFactory<? extends Plugin>> factories = _pluginManager.getAuthenticationManagerPlugins().values();
@@ -78,9 +79,9 @@ public class AuthenticationManagerRegistry implements Closeable, IAuthentication
                 throw new ConfigurationException("No authentication managers configured within the configuration file.");
             }
 
-            _defaultAuthenticationManager = getDefaultAuthenticationManager(serverConfiguration);
+            _defaultSubjectCreator = createDefaultSubectCreator(serverConfiguration, groupPrincipalAccessor);
 
-            _portToAuthenticationManagerMap = getPortToAuthenticationManagerMap(serverConfiguration);
+            _portToSubjectCreatorMap = createPortToSubjectCreatorMap(serverConfiguration, groupPrincipalAccessor);
             willClose = false;
         }
         finally
@@ -95,14 +96,14 @@ public class AuthenticationManagerRegistry implements Closeable, IAuthentication
     }
 
     @Override
-    public AuthenticationManager getAuthenticationManager(SocketAddress address)
+    public SubjectCreator getSubjectCreator(SocketAddress address)
     {
-        AuthenticationManager authManager =
+        SubjectCreator subjectCreator =
                 address instanceof InetSocketAddress
-                        ? _portToAuthenticationManagerMap.get(((InetSocketAddress)address).getPort())
+                        ? _portToSubjectCreatorMap.get(((InetSocketAddress)address).getPort())
                         : null;
 
-        return authManager == null ? _defaultAuthenticationManager : authManager;
+        return subjectCreator == null ? _defaultSubjectCreator : subjectCreator;
     }
 
     @Override
@@ -140,8 +141,8 @@ public class AuthenticationManagerRegistry implements Closeable, IAuthentication
         }
     }
 
-    private AuthenticationManager getDefaultAuthenticationManager(
-            ServerConfiguration serverConfiguration)
+    private SubjectCreator createDefaultSubectCreator(
+            ServerConfiguration serverConfiguration, GroupPrincipalAccessor groupAccessor)
             throws ConfigurationException
     {
         final AuthenticationManager defaultAuthenticationManager;
@@ -164,14 +165,14 @@ public class AuthenticationManagerRegistry implements Closeable, IAuthentication
         {
             throw new ConfigurationException("If more than one authentication manager is configured a default MUST be specified.");
         }
-        return defaultAuthenticationManager;
+        return new SubjectCreator(defaultAuthenticationManager, groupAccessor);
     }
 
-    private Map<Integer,AuthenticationManager> getPortToAuthenticationManagerMap(
-            ServerConfiguration serverConfiguration)
+    private Map<Integer, SubjectCreator> createPortToSubjectCreatorMap(
+            ServerConfiguration serverConfiguration, GroupPrincipalAccessor groupPrincipalAccessor)
             throws ConfigurationException
     {
-        Map<Integer,AuthenticationManager> portToAuthenticationManagerMap = new HashMap<Integer, AuthenticationManager>();
+        Map<Integer,SubjectCreator> portToSubjectCreatorMap = new HashMap<Integer, SubjectCreator>();
 
         for(Map.Entry<Integer,String> portMapping : serverConfiguration.getPortAuthenticationMappings().entrySet())
         {
@@ -182,10 +183,12 @@ public class AuthenticationManagerRegistry implements Closeable, IAuthentication
                 throw new ConfigurationException("Unknown authentication manager class " + portMapping.getValue() +
                                                 " configured for port " + portMapping.getKey());
             }
-            portToAuthenticationManagerMap.put(portMapping.getKey(), authenticationManager);
+
+            SubjectCreator subjectCreator = new SubjectCreator(authenticationManager, groupPrincipalAccessor);
+            portToSubjectCreatorMap.put(portMapping.getKey(), subjectCreator);
         }
 
-        return portToAuthenticationManagerMap;
+        return portToSubjectCreatorMap;
     }
 
     @Override

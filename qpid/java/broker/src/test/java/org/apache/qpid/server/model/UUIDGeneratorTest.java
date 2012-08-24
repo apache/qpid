@@ -70,8 +70,12 @@ public class UUIDGeneratorTest extends QpidTestCase
         idSet.add(id6);
         UUID id7 = UUIDGenerator.generateVhostAliasUUID(value, value);
         idSet.add(id7);
+        UUID id8 = UUIDGenerator.generateGroupUUID(value, value);
+        idSet.add(id8);
+        UUID id9 = UUIDGenerator.generateGroupMemberUUID(value, value, value);
+        idSet.add(id9);
 
-        assertEquals("The produced UUIDs were not all unique", 7, idSet.size());
+        assertEquals("The produced UUIDs were not all unique", 9, idSet.size());
     }
 
     public void testQueueIdGeneration() throws Exception

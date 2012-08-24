@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import static org.apache.qpid.server.security.auth.AuthenticatedPrincipalTestHelper.assertOnlyContainsWrapped;
+
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -102,7 +104,8 @@ public class AnonymousAuthenticationManagerTest extends InternalBrokerBaseCase
         assertEquals("Expected authentication to be successful",
                      AuthenticationResult.AuthenticationStatus.SUCCESS,
                      result.getStatus());
-        assertNotNull("Subject should not be null", result.getSubject());
+
+        assertOnlyContainsWrapped(AnonymousAuthenticationManager.ANONYMOUS_PRINCIPAL, result.getPrincipals());
     }
 
 

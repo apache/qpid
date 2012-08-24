@@ -23,6 +23,8 @@ package org.apache.qpid.server.security.auth.sasl.anonymous;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
+import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
+
 
 public class AnonymousSaslServer implements SaslServer
 {
@@ -52,7 +54,7 @@ public class AnonymousSaslServer implements SaslServer
 
     public String getAuthorizationID()
     {
-        return null;
+        return AnonymousAuthenticationManager.ANONYMOUS_PRINCIPAL.getName();
     }
 
     public byte[] unwrap(byte[] incoming, int offset, int len) throws SaslException

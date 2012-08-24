@@ -32,9 +32,8 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.auth.AuthenticationResult;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
@@ -65,11 +64,11 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
         _logger.info("SASL Mechanism selected: " + body.getMechanism());
         _logger.info("Locale selected: " + body.getLocale());
 
-        AuthenticationManager authMgr = stateManager.getAuthenticationManager();
+        SubjectCreator subjectCreator = stateManager.getSubjectCreator();
         SaslServer ss = null;
         try
         {
-            ss = authMgr.createSaslServer(String.valueOf(body.getMechanism()), session.getLocalFQDN(), session.getPeerPrincipal());
+            ss = subjectCreator.createSaslServer(String.valueOf(body.getMechanism()), session.getLocalFQDN(), session.getPeerPrincipal());
 
             if (ss == null)
             {
@@ -78,7 +77,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
             session.setSaslServer(ss);
 
-            final AuthenticationResult authResult = authMgr.authenticate(ss, body.getResponse());
+            final SubjectAuthenticationResult authResult = subjectCreator.authenticate(ss, body.getResponse());
             //save clientProperties
             session.setClientProperties(body.getClientProperties());
 

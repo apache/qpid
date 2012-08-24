@@ -23,7 +23,6 @@ import java.security.Principal;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.UnsupportedCallbackException;
@@ -37,7 +36,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
 
 public class KerberosAuthenticationManager implements AuthenticationManager
 {
@@ -158,10 +157,7 @@ public class KerberosAuthenticationManager implements AuthenticationManager
 
             if (server.isComplete())
             {
-                final Subject subject = new Subject();
-                _logger.debug("Authenticated as " + server.getAuthorizationID());
-                subject.getPrincipals().add(new UsernamePrincipal(server.getAuthorizationID()));
-                return new AuthenticationResult(subject);
+                return new AuthenticationResult(new UsernamePrincipal(server.getAuthorizationID()));
             }
             else
             {

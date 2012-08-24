@@ -23,7 +23,7 @@ package org.apache.qpid.server.security.auth.database;
 import junit.framework.TestCase;
 import org.apache.commons.codec.binary.Base64;
 
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
 
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;

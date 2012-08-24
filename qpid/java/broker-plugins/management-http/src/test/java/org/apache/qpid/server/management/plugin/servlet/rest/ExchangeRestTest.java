@@ -31,7 +31,7 @@ public class ExchangeRestTest extends QpidRestTestCase
 {
     public void testGet() throws Exception
     {
-        List<Map<String, Object>> exchanges = getJsonAsList("/rest/exchange");
+        List<Map<String, Object>> exchanges = getRestTestHelper().getJsonAsList("/rest/exchange");
         assertNotNull("Exchanges cannot be null", exchanges);
         assertTrue("Unexpected number of exchanges", exchanges.size() >= EXPECTED_HOSTS.length * EXPECTED_EXCHANGES.length);
         for (Map<String, Object> exchange : exchanges)
@@ -42,12 +42,12 @@ public class ExchangeRestTest extends QpidRestTestCase
 
     public void testGetHostExchanges() throws Exception
     {
-        List<Map<String, Object>> exchanges = getJsonAsList("/rest/exchange/test");
+        List<Map<String, Object>> exchanges = getRestTestHelper().getJsonAsList("/rest/exchange/test");
         assertNotNull("Users cannot be null", exchanges);
         assertEquals("Unexpected number of exchanges", 6, EXPECTED_EXCHANGES.length);
         for (String exchangeName : EXPECTED_EXCHANGES)
         {
-            Map<String, Object> exchange = find(Exchange.NAME, exchangeName, exchanges);
+            Map<String, Object> exchange = getRestTestHelper().find(Exchange.NAME, exchangeName, exchanges);
             assertExchange(exchangeName, exchange);
         }
     }
@@ -56,7 +56,7 @@ public class ExchangeRestTest extends QpidRestTestCase
     {
         for (String exchangeName : EXPECTED_EXCHANGES)
         {
-            Map<String, Object> exchange = getJsonAsSingletonList("/rest/exchange/test/"
+            Map<String, Object> exchange = getRestTestHelper().getJsonAsSingletonList("/rest/exchange/test/"
                     + URLDecoder.decode(exchangeName, "UTF-8"));
             assertExchange(exchangeName, exchange);
         }
@@ -79,7 +79,7 @@ public class ExchangeRestTest extends QpidRestTestCase
         List<Map<String, Object>> bindings = (List<Map<String, Object>>) exchange.get("bindings");
         for (String queueName : EXPECTED_QUEUES)
         {
-            Map<String, Object> binding = find(Binding.NAME, queueName, bindings);
+            Map<String, Object> binding = getRestTestHelper().find(Binding.NAME, queueName, bindings);
             Asserts.assertBinding(queueName, (String) exchange.get(Exchange.NAME), binding);
         }
     }

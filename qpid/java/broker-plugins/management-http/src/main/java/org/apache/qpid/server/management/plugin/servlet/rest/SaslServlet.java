@@ -27,8 +27,8 @@ import org.codehaus.jackson.map.SerializationConfig;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 
 import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
@@ -67,7 +67,7 @@ public class SaslServlet extends AbstractServlet
         super(broker);
     }
 
-    protected void onGet(HttpServletRequest request, HttpServletResponse response) throws
+    protected void doGetWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws
                                                                                    ServletException,
                                                                                    IOException
     {
@@ -79,15 +79,16 @@ public class SaslServlet extends AbstractServlet
         response.setDateHeader ("Expires", 0);
 
         HttpSession session = request.getSession();
-        Random rand = getRandom(session);
+        getRandom(session);
 
-        AuthenticationManager authManager = ApplicationRegistry.getInstance().getAuthenticationManager(getSocketAddress(request));
-        String[] mechanisms = authManager.getMechanisms().split(" ");
+        SubjectCreator subjectCreator = ApplicationRegistry.getInstance().getSubjectCreator(getSocketAddress(request));
+        String[] mechanisms = subjectCreator.getMechanisms().split(" ");
         Map<String, Object> outputObject = new LinkedHashMap<String, Object>();
-        final Subject subject = (Subject) session.getAttribute("subject");
+
+        final Subject subject = getSubjectFromSession(session);
         if(subject != null)
         {
-            final Principal principal = subject.getPrincipals().iterator().next();
+            Principal principal = AuthenticatedPrincipal.getAuthenticatedPrincipalFromSubject(subject);
             outputObject.put("user", principal.getName());
         }
         else if (request.getRemoteUser() != null)
@@ -121,8 +122,7 @@ public class SaslServlet extends AbstractServlet
 
 
     @Override
-    protected void onPost(final HttpServletRequest request, final HttpServletResponse response)
-            throws ServletException, IOException
+    protected void doPostWithSubjectAndActor(final HttpServletRequest request, final HttpServletResponse response) throws IOException
     {
         try
         {
@@ -137,14 +137,14 @@ public class SaslServlet extends AbstractServlet
             String id = request.getParameter("id");
             String saslResponse = request.getParameter("response");
 
-            AuthenticationManager authManager = ApplicationRegistry.getInstance().getAuthenticationManager(getSocketAddress(request));
+            SubjectCreator subjectCreator = ApplicationRegistry.getInstance().getSubjectCreator(getSocketAddress(request));
 
             if(mechanism != null)
             {
                 if(id == null)
                 {
-                    SaslServer saslServer = authManager.createSaslServer(mechanism, request.getServerName(), null/*TODO*/);
-                    evaluateSaslResponse(response, session, saslResponse, saslServer);
+                    SaslServer saslServer = subjectCreator.createSaslServer(mechanism, request.getServerName(), null/*TODO*/);
+                    evaluateSaslResponse(response, session, saslResponse, saslServer, subjectCreator);
                 }
                 else
                 {
@@ -152,9 +152,7 @@ public class SaslServlet extends AbstractServlet
                     session.removeAttribute(ATTR_ID);
                     session.removeAttribute(ATTR_SASL_SERVER);
                     session.removeAttribute(ATTR_EXPIRY);
-
                 }
-
             }
             else
             {
@@ -163,8 +161,7 @@ public class SaslServlet extends AbstractServlet
                     if(id.equals(session.getAttribute(ATTR_ID)) && System.currentTimeMillis() < (Long) session.getAttribute(ATTR_EXPIRY))
                     {
                         SaslServer saslServer = (SaslServer) session.getAttribute(ATTR_SASL_SERVER);
-                        evaluateSaslResponse(response, session, saslResponse, saslServer);
-
+                        evaluateSaslResponse(response, session, saslResponse, saslServer, subjectCreator);
                     }
                     else
                     {
@@ -180,7 +177,6 @@ public class SaslServlet extends AbstractServlet
                     session.removeAttribute(ATTR_ID);
                     session.removeAttribute(ATTR_SASL_SERVER);
                     session.removeAttribute(ATTR_EXPIRY);
-
                 }
             }
         }
@@ -199,7 +195,7 @@ public class SaslServlet extends AbstractServlet
 
     private void evaluateSaslResponse(final HttpServletResponse response,
                                       final HttpSession session,
-                                      final String saslResponse, final SaslServer saslServer) throws IOException
+                                      final String saslResponse, final SaslServer saslServer, SubjectCreator subjectCreator) throws IOException
     {
         final String id;
         byte[] challenge;
@@ -209,7 +205,6 @@ public class SaslServlet extends AbstractServlet
         }
         catch(SaslException e)
         {
-
             session.removeAttribute(ATTR_ID);
             session.removeAttribute(ATTR_SASL_SERVER);
             session.removeAttribute(ATTR_EXPIRY);
@@ -220,16 +215,14 @@ public class SaslServlet extends AbstractServlet
 
         if(saslServer.isComplete())
         {
-            final Subject subject = new Subject();
-            subject.getPrincipals().add(new UsernamePrincipal(saslServer.getAuthorizationID()));
-            session.setAttribute("subject", subject);
+            Subject subject = subjectCreator.createSubjectWithGroups(saslServer.getAuthorizationID());
+
+            setSubjectInSession(subject, session);
             session.removeAttribute(ATTR_ID);
             session.removeAttribute(ATTR_SASL_SERVER);
             session.removeAttribute(ATTR_EXPIRY);
 
             response.setStatus(HttpServletResponse.SC_OK);
-
-
         }
         else
         {
@@ -250,7 +243,6 @@ public class SaslServlet extends AbstractServlet
             ObjectMapper mapper = new ObjectMapper();
             mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
             mapper.writeValue(writer, outputObject);
-
         }
     }
 }

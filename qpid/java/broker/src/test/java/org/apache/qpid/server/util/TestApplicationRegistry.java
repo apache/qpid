@@ -33,10 +33,12 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabase;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.IAuthenticationManagerRegistry;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
+import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 
 import java.util.Properties;
 
@@ -58,7 +60,7 @@ public class TestApplicationRegistry extends ApplicationRegistry
 
     @Override
     protected IAuthenticationManagerRegistry createAuthenticationManagerRegistry(
-            ServerConfiguration _configuration, PluginManager _pluginManager)
+            ServerConfiguration configuration, PluginManager pluginManager, final GroupPrincipalAccessor groupPrincipalAccessor)
             throws ConfigurationException
     {
         final Properties users = new Properties();
@@ -98,10 +100,9 @@ public class TestApplicationRegistry extends ApplicationRegistry
             }
 
             @Override
-            public AuthenticationManager getAuthenticationManager(
-                    SocketAddress address)
+            public SubjectCreator getSubjectCreator(SocketAddress address)
             {
-                return pdam;
+                return new SubjectCreator(pdam, groupPrincipalAccessor);
             }
 
             @Override

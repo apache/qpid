@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,31 +17,26 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.security.auth.sasl;
+package org.apache.qpid.server.security.group;
 
-import javax.security.auth.Subject;
 import java.security.Principal;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
-public class TestPrincipalUtils
+import org.apache.qpid.server.plugins.Plugin;
+
+public interface GroupManager extends Plugin
 {
+    Set<Principal> getGroupPrincipalsForUser(String user);
 
-    /**
-     * Creates a test subject, with exactly one UsernamePrincipal and zero or more GroupPrincipals.
-     */
-    public static Subject createTestSubject(final String username, final String... groups)
-    {
-        final Set<Principal> principals = new HashSet<Principal>(1 + groups.length);
-        principals.add(new UsernamePrincipal(username));
-        for (String group : groups)
-        {
-            principals.add(new GroupPrincipal(group));
-        }
-        
-        final Subject subject = new Subject(true, principals, Collections.EMPTY_SET, Collections.EMPTY_SET);
-        return subject;
-    }
+    Set<Principal> getGroupPrincipals();
 
+    Set<Principal> getUserPrincipalsForGroup(String group);
+
+    void createGroup(String group);
+
+    void removeGroup(String group);
+
+    void addUserToGroup(String user, String group);
+
+    void removeUserFromGroup(String user, String group);
 }

@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.security.access.plugins;
 
-import java.util.Arrays;
-
 import junit.framework.TestCase;
 
 import org.apache.commons.configuration.ConfigurationException;
@@ -37,19 +35,22 @@ import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.security.access.config.Rule;
 import org.apache.qpid.server.security.access.config.RuleSet;
-import org.apache.qpid.server.security.auth.sasl.TestPrincipalUtils;
+import org.apache.qpid.server.security.auth.TestPrincipalUtils;
 
 /**
- * Unit test for ACL V2 plugin.  
- * 
+ * Unit test for ACL V2 plugin.
+ *
  * This unit test tests the AccessControl class and it collaboration with {@link RuleSet},
  * {@link SecurityManager} and {@link CurrentActor}.   The ruleset is configured programmatically,
  * rather than from an external file.
- * 
+ *
  * @see RuleSetTest
  */
 public class AccessControlTest extends TestCase
 {
+    private static final String ALLOWED_GROUP = "allowed_group";
+    private static final String DENIED_GROUP = "denied_group";
+
     private AccessControl _plugin = null;  // Class under test
     private final UnitTestMessageLogger messageLogger = new UnitTestMessageLogger();
 
@@ -68,14 +69,12 @@ public class AccessControlTest extends TestCase
     private RuleSet createGroupRuleSet()
     {
         final RuleSet rs = new RuleSet();
-        rs.addGroup("aclGroup1", Arrays.asList(new String[] {"member1", "Member2"}));
 
         // Rule expressed with username
         rs.grant(0, "user1", Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
-        // Rule expressed with a acl group
-        rs.grant(1, "aclGroup1", Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
-        // Rule expressed with an external group
-        rs.grant(2, "extGroup1", Permission.DENY, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+        // Rules expressed with groups
+        rs.grant(1, ALLOWED_GROUP, Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+        rs.grant(2, DENIED_GROUP, Permission.DENY, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
         // Catch all rule
         rs.grant(3, Rule.ALL, Permission.DENY_LOG, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
 
@@ -117,31 +116,23 @@ public class AccessControlTest extends TestCase
      * Tests that an allow rule expressed with an <b>ACL groupname</b> allows an operation performed by a thread running
      * by a user who belongs to the same group..
      */
-    public void testAclGroupMembershipAllowsOperation() throws ConfigurationException
+    public void testGroupMembershipAllowsOperation() throws ConfigurationException
     {
         setUpGroupAccessControl();
-        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("member1"));
 
-        Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
-        assertEquals(Result.ALLOWED, result);
-
-        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("Member2"));
-
-        result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
-        assertEquals(Result.ALLOWED, result);
+        authoriseAndAssertResult(Result.ALLOWED, "member of allowed group", ALLOWED_GROUP);
+        authoriseAndAssertResult(Result.DENIED, "member of denied group", DENIED_GROUP);
+        authoriseAndAssertResult(Result.ALLOWED, "another member of allowed group", ALLOWED_GROUP);
     }
 
     /**
-     * Tests that a deny rule expressed with an <b>External groupname</b> denies an operation performed by a thread running
+     * Tests that a deny rule expressed with a <b>groupname</b> denies an operation performed by a thread running
      * by a user who belongs to the same group.
      */
-    public void testExternalGroupMembershipDeniesOperation() throws ConfigurationException
+    public void testGroupMembershipDeniesOperation() throws ConfigurationException
     {
         setUpGroupAccessControl();
-        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("user3", "extGroup1"));
-
-        final Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
-        assertEquals(Result.DENIED, result);
+        authoriseAndAssertResult(Result.DENIED, "user3", DENIED_GROUP);
     }
 
     /**
@@ -323,6 +314,14 @@ public class AccessControlTest extends TestCase
         properties.put(ObjectProperties.Property.COMPONENT, "Test");
         result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
         assertEquals(Result.DEFER, result);
+    }
+
+    private void authoriseAndAssertResult(Result expectedResult, String userName, String... groups)
+    {
+        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject(userName, groups));
+
+        Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+        assertEquals(expectedResult, result);
     }
 
     /**

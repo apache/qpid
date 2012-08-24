@@ -24,14 +24,14 @@ import javax.security.auth.Subject;
 import java.security.Principal;
 
 /**
- * Represents the authorization of the logged on user. 
- * 
+ * Represents the authorization of the logged on user.
+ *
  */
 public interface AuthorizationHolder
 {
-    /** 
+    /**
      * Returns the {@link Subject} of the authorized user.  This is guaranteed to
-     * contain at least one {@link org.apache.qpid.server.security.auth.sasl.UsernamePrincipal}, representing the the identity
+     * contain at least one {@link org.apache.qpid.server.security.auth.UsernamePrincipal}, representing the the identity
      * used when the user logged on to the application, and zero or more {@link org.apache.qpid.server.security.auth.sasl.GroupPrincipal}
      * representing the group(s) to which the user belongs.
      *
@@ -39,10 +39,10 @@ public interface AuthorizationHolder
      */
     Subject getAuthorizedSubject();
 
-    /** 
+    /**
      * Returns the {@link Principal} representing the the identity
      * used when the user logged on to the application.
-     * 
+     *
      * @return a Principal
      */
     Principal getAuthorizedPrincipal();

@@ -24,8 +24,10 @@ package org.apache.qpid.server.management.plugin.servlet.rest;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.security.Principal;
-import java.util.Collections;
+import java.security.AccessControlException;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+
 import javax.security.auth.Subject;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -33,168 +35,293 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.HttpManagementActor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.auth.AuthenticationResult;
+import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
+import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 
 public abstract class AbstractServlet extends HttpServlet
 {
+    private static final Logger LOGGER = Logger.getLogger(AbstractServlet.class);
+
+    protected static final String ATTR_SUBJECT = "subject";
+    private static final String ATTR_LOG_ACTOR = "AbstractServlet.logActor";
+
     private final Broker _broker;
+
+    private RootMessageLogger _rootLogger;
 
     protected AbstractServlet()
     {
         super();
         _broker = ApplicationRegistry.getInstance().getBroker();
+        _rootLogger = ApplicationRegistry.getInstance().getRootMessageLogger();
     }
 
     protected AbstractServlet(Broker broker)
     {
         _broker = broker;
+        _rootLogger = ApplicationRegistry.getInstance().getRootMessageLogger();
     }
 
     @Override
-    protected final void doGet(HttpServletRequest request, HttpServletResponse resp) throws ServletException, IOException
+    protected final void doGet(final HttpServletRequest request, final HttpServletResponse resp)
     {
-        setAuthorizedSubject(request);
+        doWithSubjectAndActor(
+            new PrivilegedExceptionAction<Void>()
+            {
+                @Override
+                public Void run() throws Exception
+                {
+                    doGetWithSubjectAndActor(request, resp);
+                    return null;
+                }
+            },
+            request,
+            resp
+        );
+    }
+
+    /**
+     * Performs the GET action as the logged-in {@link Subject}.
+     * The {@link LogActor} is set before this method is called.
+     * Subclasses commonly override this method
+     */
+    protected void doGetWithSubjectAndActor(HttpServletRequest request, HttpServletResponse resp) throws ServletException, IOException
+    {
+        throw new UnsupportedOperationException("GET not supported by this servlet");
+    }
+
+
+    @Override
+    protected final void doPost(final HttpServletRequest request, final HttpServletResponse resp)
+    {
+        doWithSubjectAndActor(
+            new PrivilegedExceptionAction<Void>()
+            {
+                @Override
+                public Void run()  throws Exception
+                {
+                    doPostWithSubjectAndActor(request, resp);
+                    return null;
+                }
+            },
+            request,
+            resp
+        );
+    }
+
+    /**
+     * Performs the POST action as the logged-in {@link Subject}.
+     * The {@link LogActor} is set before this method is called.
+     * Subclasses commonly override this method
+     */
+    protected void doPostWithSubjectAndActor(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
+    {
+        throw new UnsupportedOperationException("POST not supported by this servlet");
+    }
+
+    @Override
+    protected final void doPut(final HttpServletRequest request, final HttpServletResponse resp)
+    {
+        doWithSubjectAndActor(
+            new PrivilegedExceptionAction<Void>()
+            {
+                @Override
+                public Void run() throws Exception
+                {
+                    doPutWithSubjectAndActor(request, resp);
+                    return null;
+                }
+            },
+            request,
+            resp
+        );
+    }
+
+    /**
+     * Performs the PUT action as the logged-in {@link Subject}.
+     * The {@link LogActor} is set before this method is called.
+     * Subclasses commonly override this method
+     */
+    protected void doPutWithSubjectAndActor(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
+    {
+        throw new UnsupportedOperationException("PUT not supported by this servlet");
+    }
+
+    @Override
+    protected final void doDelete(final HttpServletRequest request, final HttpServletResponse resp)
+            throws ServletException, IOException
+    {
+        doWithSubjectAndActor(
+            new PrivilegedExceptionAction<Void>()
+            {
+                @Override
+                public Void run() throws Exception
+                {
+                    doDeleteWithSubjectAndActor(request, resp);
+                    return null;
+                }
+            },
+            request,
+            resp
+        );
+    }
+
+    /**
+     * Performs the PUT action as the logged-in {@link Subject}.
+     * The {@link LogActor} is set before this method is called.
+     * Subclasses commonly override this method
+     */
+    protected void doDeleteWithSubjectAndActor(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
+    {
+        throw new UnsupportedOperationException("DELETE not supported by this servlet");
+    }
+
+    private void doWithSubjectAndActor(
+                    PrivilegedExceptionAction<Void> privilegedExceptionAction,
+                    final HttpServletRequest request,
+                    final HttpServletResponse resp)
+    {
+        Subject subject = getAndCacheAuthorizedSubject(request);
+        org.apache.qpid.server.security.SecurityManager.setThreadSubject(subject);
+
         try
         {
-            onGet(request, resp);
+            HttpManagementActor logActor = getLogActorAndCacheInSession(request);
+            CurrentActor.set(logActor);
+            try
+            {
+                Subject.doAs(subject, privilegedExceptionAction);
+            }
+            catch(RuntimeException e)
+            {
+                LOGGER.error("Unable to perform action", e);
+                throw e;
+            }
+            catch (PrivilegedActionException e)
+            {
+                LOGGER.error("Unable to perform action", e);
+                throw new RuntimeException(e.getCause());
+            }
+            finally
+            {
+                CurrentActor.remove();
+            }
         }
         finally
         {
-            clearAuthorizedSubject();
+            org.apache.qpid.server.security.SecurityManager.setThreadSubject(null);
         }
     }
 
-    protected void onGet(HttpServletRequest request, HttpServletResponse resp) throws IOException, ServletException
+    /**
+     * Gets the logged-in {@link Subject} by trying the following:
+     *
+     * <ul>
+     * <li>Get it from the session</li>
+     * <li>Get it from the request</li>
+     * <li>Log in using the username and password in the Authorization HTTP header</li>
+     * <li>Create a Subject representing the anonymous user.</li>
+     * </ul>
+     *
+     * If an authenticated subject is found it is cached in the http session.
+     */
+    private Subject getAndCacheAuthorizedSubject(HttpServletRequest request)
     {
-        super.doGet(request, resp);
-    }
+        HttpSession session = request.getSession();
+        Subject subject = getSubjectFromSession(session);
 
-    private void clearAuthorizedSubject()
-    {
-        org.apache.qpid.server.security.SecurityManager.setThreadSubject(null);
-    }
-
-
-    private void setAuthorizedSubject(HttpServletRequest request)
-    {
-        HttpSession session = request.getSession(true);
-        Subject subject = (Subject) session.getAttribute("subject");
-
-        if(subject == null)
+        if(subject != null)
         {
-            Principal principal = request.getUserPrincipal();
-            if(principal != null)
-            {
-                subject = new Subject(false, Collections.singleton(principal),Collections.emptySet(),
-                                      Collections.emptySet());
-            }
-            else
-            {
-                String header = request.getHeader("Authorization");
+            return subject;
+        }
 
-                /*
-                 * TODO - Should configure whether basic authentication is allowed... and in particular whether it
-                 * should be allowed over non-ssl connections
-                 * */
+        SubjectCreator subjectCreator = ApplicationRegistry.getInstance().getSubjectCreator(getSocketAddress(request));
 
-                if (header != null)
+        String remoteUser = request.getRemoteUser();
+        if(remoteUser != null)
+        {
+            subject = subjectCreator.createSubjectWithGroups(remoteUser);
+        }
+        else
+        {
+            String header = request.getHeader("Authorization");
+
+            /*
+             * TODO - Should configure whether basic authentication is allowed... and in particular whether it
+             * should be allowed over non-ssl connections
+             * */
+
+            if (header != null)
+            {
+                String[] tokens = header.split("\\s");
+                if(tokens.length >= 2
+                        && "BASIC".equalsIgnoreCase(tokens[0]))
                 {
-                    String[] tokens = header.split("\\s");
-                    if(tokens.length >= 2
-                       && "BASIC".equalsIgnoreCase(tokens[0]))
+                    String[] credentials = (new String(Base64.decodeBase64(tokens[1].getBytes()))).split(":",2);
+                    if(credentials.length == 2)
                     {
-                        String[] credentials = (new String(Base64.decodeBase64(tokens[1].getBytes()))).split(":",2);
-                        if(credentials.length == 2)
+                        SubjectAuthenticationResult authResult = subjectCreator.authenticate(credentials[0], credentials[1]);
+                        if( authResult.getStatus() != AuthenticationStatus.SUCCESS)
                         {
-                            SocketAddress address = getSocketAddress(request);
-                            AuthenticationManager authenticationManager =
-                                    ApplicationRegistry.getInstance().getAuthenticationManager(address);
-                            AuthenticationResult authResult =
-                                    authenticationManager.authenticate(credentials[0], credentials[1]);
-                            subject = authResult.getSubject();
-
+                            //TODO: write a return response indicating failure?
+                            throw new AccessControlException("Incorrect username or password");
                         }
+                        subject = authResult.getSubject();
+                    }
+                    else
+                    {
+                        //TODO: write a return response indicating failure?
+                        throw new AccessControlException("Invalid number of credentials supplied: "
+                                                        + credentials.length);
                     }
                 }
             }
         }
-        if (subject == null)
+
+        if (subject != null)
         {
-            subject = AnonymousAuthenticationManager.ANONYMOUS_SUBJECT;
+            setSubjectInSession(subject, session);
         }
-        org.apache.qpid.server.security.SecurityManager.setThreadSubject(subject);
-
-    }
-
-    protected Subject getSubject(HttpSession session)
-    {
-        return (Subject)session.getAttribute("subject");
-    }
-
-    @Override
-    protected final void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
-    {
-        setAuthorizedSubject(req);
-        try
+        else
         {
-            onPost(req, resp);
-        }
-        finally
-        {
-            clearAuthorizedSubject();
+            subject = subjectCreator.createSubjectWithGroups(AnonymousAuthenticationManager.ANONYMOUS_USERNAME);
         }
 
+        return subject;
     }
 
-    protected void onPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
+    private HttpManagementActor getLogActorAndCacheInSession(HttpServletRequest req)
     {
-        super.doPost(req, resp);
-    }
+        HttpSession session = req.getSession();
 
-    @Override
-    protected final void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
-    {
-        setAuthorizedSubject(req);
-        try
+        HttpManagementActor actor = (HttpManagementActor) session.getAttribute(ATTR_LOG_ACTOR);
+        if(actor == null)
         {
-            onPut(req, resp);
+            actor = new HttpManagementActor(_rootLogger, req.getRemoteAddr(), req.getRemotePort());
+            session.setAttribute(ATTR_LOG_ACTOR, actor);
+        }
 
-        }
-        finally
-        {
-            clearAuthorizedSubject();
-        }
+        return actor;
     }
 
-    protected void onPut(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException
+    protected Subject getSubjectFromSession(HttpSession session)
     {
-        super.doPut(req,resp);
+        return (Subject)session.getAttribute(ATTR_SUBJECT);
     }
 
-    @Override
-    protected final void doDelete(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException
+    protected void setSubjectInSession(Subject subject, final HttpSession session)
     {
-        setAuthorizedSubject(req);
-        try
-        {
-            onDelete(req, resp);
-        }
-        finally
-        {
-            clearAuthorizedSubject();
-        }
+        session.setAttribute(ATTR_SUBJECT, subject);
     }
-
-    protected void onDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
-    {
-        super.doDelete(req, resp);
-    }
-
 
     protected Broker getBroker()
     {

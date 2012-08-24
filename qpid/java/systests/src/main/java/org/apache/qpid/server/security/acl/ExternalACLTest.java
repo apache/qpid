@@ -319,8 +319,12 @@ public class ExternalACLTest extends AbstractACLTestCase
 
     public void setUpRequestResponseSuccess() throws Exception
     {
-        writeACLFile("test", "GROUP messaging-users client server",
-                             "ACL ALLOW-LOG messaging-users ACCESS VIRTUALHOST",
+        // The group "messaging-users", referenced in the ACL below, is currently defined
+        // in broker/etc/groups-systests.
+        // We tolerate a dependency from this test to that file because its
+        // contents are expected to change rarely.
+
+        writeACLFile("test", "ACL ALLOW-LOG messaging-users ACCESS VIRTUALHOST",
                              "# Server side",
                              "ACL ALLOW-LOG server CREATE QUEUE name=\"example.RequestQueue\"" ,
                              "ACL ALLOW-LOG server BIND EXCHANGE",
@@ -389,11 +393,12 @@ public class ExternalACLTest extends AbstractACLTestCase
         conn.start();
 
         // create kipper
-        Topic kipper = sess.createTopic("kipper");
-        TopicSubscriber subscriber = sess.createDurableSubscriber(kipper, "kipper");
+        String topicName = "kipper";
+        Topic topic = sess.createTopic(topicName);
+        TopicSubscriber subscriber = sess.createDurableSubscriber(topic, topicName);
 
         subscriber.close();
-        sess.unsubscribe("kipper");
+        sess.unsubscribe(topicName);
 
         //Do something to show connection is active.
         sess.rollback();

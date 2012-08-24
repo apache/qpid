@@ -43,7 +43,7 @@ public class BrokerRestTest extends QpidRestTestCase
 
     public void testGet() throws Exception
     {
-        Map<String, Object> brokerDetails = getJsonAsSingletonList("/rest/broker");
+        Map<String, Object> brokerDetails = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
 
         assertBrokerAttributes(brokerDetails);
 
@@ -55,9 +55,9 @@ public class BrokerRestTest extends QpidRestTestCase
         List<Map<String, Object>> virtualhosts = (List<Map<String, Object>>) brokerDetails.get(BROKER_VIRTUALHOSTS_ATTRIBUTE);
         assertEquals("Unexpected number of virtual hosts", 3, virtualhosts.size());
 
-        Asserts.assertVirtualHost("development", find(VirtualHost.NAME, "development", virtualhosts));
-        Asserts.assertVirtualHost("localhost", find(VirtualHost.NAME, "localhost", virtualhosts));
-        Asserts.assertVirtualHost("test", find(VirtualHost.NAME, "test", virtualhosts));
+        Asserts.assertVirtualHost("development", getRestTestHelper().find(VirtualHost.NAME, "development", virtualhosts));
+        Asserts.assertVirtualHost("localhost", getRestTestHelper().find(VirtualHost.NAME, "localhost", virtualhosts));
+        Asserts.assertVirtualHost("test", getRestTestHelper().find(VirtualHost.NAME, "test", virtualhosts));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> ports = (List<Map<String, Object>>) brokerDetails.get(BROKER_PORTS_ATTRIBUTE);
@@ -70,8 +70,8 @@ public class BrokerRestTest extends QpidRestTestCase
 
         String bindingAddress = (String)ports.get(0).get(Port.BINDING_ADDRESS);
 
-        Map<String, Object> amqpPort = find(Port.NAME, bindingAddress + ":" + getPort(), ports);
-        Map<String, Object> httpPort = find(Port.NAME, bindingAddress + ":" + getHttpPort(), ports);
+        Map<String, Object> amqpPort = getRestTestHelper().find(Port.NAME, bindingAddress + ":" + getPort(), ports);
+        Map<String, Object> httpPort = getRestTestHelper().find(Port.NAME, bindingAddress + ":" + getRestTestHelper().getHttpPort(), ports);
 
         assertNotNull("Cannot find AMQP port", amqpPort);
         assertNotNull("Cannot find HTTP port", httpPort);

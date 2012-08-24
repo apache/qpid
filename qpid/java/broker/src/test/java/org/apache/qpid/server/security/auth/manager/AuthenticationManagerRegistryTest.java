@@ -35,6 +35,8 @@ import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.plugins.Plugin;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.SecurityManager.SecurityConfiguration;
+import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 import org.mockito.Mockito;
 
 import junit.framework.TestCase;
@@ -48,6 +50,8 @@ public class AuthenticationManagerRegistryTest extends TestCase
     private SecurityConfiguration _securityConfiguration = Mockito.mock(SecurityConfiguration.class);
 
     private List<AuthenticationManager> _allCreatedAuthManagers = new ArrayList<AuthenticationManager>();
+
+    private GroupPrincipalAccessor _groupPrincipalAccessor = mock(GroupPrincipalAccessor.class);;
 
     @Override
     protected void setUp() throws Exception
@@ -76,7 +80,7 @@ public class AuthenticationManagerRegistryTest extends TestCase
         when(_pluginManager.getAuthenticationManagerPlugins()).thenReturn(EMPTY_PLUGINMAP);
         try
         {
-            new AuthenticationManagerRegistry(_serverConfiguration, _pluginManager);
+            new AuthenticationManagerRegistry(_serverConfiguration, _pluginManager, _groupPrincipalAccessor);
             fail("Exception not thrown");
         }
         catch (ConfigurationException ce)
@@ -97,7 +101,7 @@ public class AuthenticationManagerRegistryTest extends TestCase
 
         try
         {
-            new AuthenticationManagerRegistry(_serverConfiguration, _pluginManager);
+            new AuthenticationManagerRegistry(_serverConfiguration, _pluginManager, _groupPrincipalAccessor);
             fail("Exception not thrown");
         }
         catch (ConfigurationException ce)
@@ -120,7 +124,7 @@ public class AuthenticationManagerRegistryTest extends TestCase
 
         try
         {
-            new AuthenticationManagerRegistry(_serverConfiguration, _pluginManager);
+            new AuthenticationManagerRegistry(_serverConfiguration, _pluginManager, _groupPrincipalAccessor);
             fail("Exception not thrown");
         }
         catch (ConfigurationException ce)
@@ -145,7 +149,7 @@ public class AuthenticationManagerRegistryTest extends TestCase
 
         try
         {
-            new AuthenticationManagerRegistry(_serverConfiguration, _pluginManager);
+            new AuthenticationManagerRegistry(_serverConfiguration, _pluginManager, _groupPrincipalAccessor);
             fail("Exception not thrown");
         }
         catch (ConfigurationException ce)
@@ -170,7 +174,7 @@ public class AuthenticationManagerRegistryTest extends TestCase
 
         try
         {
-            new AuthenticationManagerRegistry(_serverConfiguration, _pluginManager);
+            new AuthenticationManagerRegistry(_serverConfiguration, _pluginManager, _groupPrincipalAccessor);
             fail("Exception not thrown");
         }
         catch (ConfigurationException ce)
@@ -187,10 +191,10 @@ public class AuthenticationManagerRegistryTest extends TestCase
 
         when(_pluginManager.getAuthenticationManagerPlugins()).thenReturn(pluginMap);
 
-        AuthenticationManagerRegistry registry = new AuthenticationManagerRegistry(_serverConfiguration, _pluginManager);
+        AuthenticationManagerRegistry registry = new AuthenticationManagerRegistry(_serverConfiguration, _pluginManager, _groupPrincipalAccessor);
 
-        AuthenticationManager authenticationManager = registry.getAuthenticationManager(new InetSocketAddress(1234));
-        assertEquals("TestAuthenticationManager1", authenticationManager.getMechanisms());
+        SubjectCreator subjectCreator = registry.getSubjectCreator(new InetSocketAddress(1234));
+        assertEquals("TestAuthenticationManager1", subjectCreator.getMechanisms());
 
         registry.close();
     }
@@ -202,10 +206,10 @@ public class AuthenticationManagerRegistryTest extends TestCase
 
         when(_pluginManager.getAuthenticationManagerPlugins()).thenReturn(pluginMap);
 
-        AuthenticationManagerRegistry registry = new AuthenticationManagerRegistry(_serverConfiguration, _pluginManager);
+        AuthenticationManagerRegistry registry = new AuthenticationManagerRegistry(_serverConfiguration, _pluginManager, _groupPrincipalAccessor);
 
-        AuthenticationManager authenticationManager = registry.getAuthenticationManager(mock(SocketAddress.class));
-        assertEquals("TestAuthenticationManager1", authenticationManager.getMechanisms());
+        SubjectCreator subjectCreator = registry.getSubjectCreator(mock(SocketAddress.class));
+        assertEquals("TestAuthenticationManager1", subjectCreator.getMechanisms());
 
         registry.close();
     }
@@ -225,13 +229,13 @@ public class AuthenticationManagerRegistryTest extends TestCase
         when(_serverConfiguration.getDefaultAuthenticationManager()).thenReturn(defaultAuthManger);
         when(_serverConfiguration.getPortAuthenticationMappings()).thenReturn(Collections.singletonMap(mappedPortNumber, mappedAuthManager));
 
-        AuthenticationManagerRegistry registry = new AuthenticationManagerRegistry(_serverConfiguration, _pluginManager);
+        AuthenticationManagerRegistry registry = new AuthenticationManagerRegistry(_serverConfiguration, _pluginManager, _groupPrincipalAccessor);
 
-        AuthenticationManager authenticationManager1 = registry.getAuthenticationManager(new InetSocketAddress(unmappedPortNumber));
-        assertEquals("TestAuthenticationManager1", authenticationManager1.getMechanisms());
+        SubjectCreator subjectCreator = registry.getSubjectCreator(new InetSocketAddress(unmappedPortNumber));
+        assertEquals("TestAuthenticationManager1", subjectCreator.getMechanisms());
 
-        AuthenticationManager authenticationManager2 = registry.getAuthenticationManager(new InetSocketAddress(mappedPortNumber));
-        assertEquals("TestAuthenticationManager2", authenticationManager2.getMechanisms());
+        SubjectCreator subjectCreator2 = registry.getSubjectCreator(new InetSocketAddress(mappedPortNumber));
+        assertEquals("TestAuthenticationManager2", subjectCreator2.getMechanisms());
 
         registry.close();
     }
@@ -246,7 +250,7 @@ public class AuthenticationManagerRegistryTest extends TestCase
         when(_pluginManager.getAuthenticationManagerPlugins()).thenReturn(pluginMap);
         when(_serverConfiguration.getDefaultAuthenticationManager()).thenReturn(defaultAuthManger);
 
-        AuthenticationManagerRegistry registry = new AuthenticationManagerRegistry(_serverConfiguration, _pluginManager);
+        AuthenticationManagerRegistry registry = new AuthenticationManagerRegistry(_serverConfiguration, _pluginManager, _groupPrincipalAccessor);
 
         registry.close();
     }

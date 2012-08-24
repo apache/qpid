@@ -62,7 +62,7 @@ public class MessageServlet extends AbstractServlet
     }
 
     @Override
-    protected void onGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
+    protected void doGetWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
     {
 
         if(request.getPathInfo() != null && request.getPathInfo().length()>0 && request.getPathInfo().substring(1).split("/").length > 2)
@@ -400,7 +400,7 @@ public class MessageServlet extends AbstractServlet
      * POST moves or copies messages to the given queue from a queue specified in the posted JSON data
      */
     @Override
-    protected void onPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+    protected void doPostWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
 
         try
@@ -450,7 +450,7 @@ public class MessageServlet extends AbstractServlet
      * DELETE removes messages from the queue
      */
     @Override
-    protected void onDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+    protected void doDeleteWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response)
     {
 
         final Queue sourceQueue = getQueueFromRequest(request);

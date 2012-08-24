@@ -23,6 +23,7 @@ package org.apache.qpid.server.security.auth.sasl;
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 
 import javax.security.auth.callback.Callback;

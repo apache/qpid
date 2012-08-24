@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Abstract test case for ACLs.
  * 
- * This base class contains convenience methods to mange ACL files and implements a mechanism that allows each
+ * This base class contains convenience methods to manage ACL files and implements a mechanism that allows each
  * test method to run its own setup code before the broker starts.
  * 
  * TODO move the pre broker-startup setup method invocation code to {@link QpidBrokerTestCase}

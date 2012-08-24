@@ -45,7 +45,7 @@ import org.apache.qpid.server.configuration.ConnectionConfigType;
 import org.apache.qpid.server.protocol.v1_0.Connection_1_0;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
 
@@ -165,7 +165,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         Container container = new Container(_appRegistry.getBrokerId().toString());
 
         _conn = new ConnectionEndpoint(container, asSaslServerProvider(ApplicationRegistry.getInstance()
-                .getAuthenticationManager(getLocalAddress())));
+                .getSubjectCreator(getLocalAddress())));
         _conn.setConnectionEventListener(new Connection_1_0(_appRegistry, _conn, _connectionId));
         _conn.setRemoteAddress(getRemoteAddress());
 
@@ -175,8 +175,6 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
         _conn.setOnSaslComplete(new Runnable()
         {
-
-
             public void run()
             {
                 if(_conn.isAuthenticated())
@@ -201,14 +199,14 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
     }
 
-    private SaslServerProvider asSaslServerProvider(final AuthenticationManager authenticationManager)
+    private SaslServerProvider asSaslServerProvider(final SubjectCreator subjectCreator)
     {
         return new SaslServerProvider()
         {
             @Override
             public SaslServer getSaslServer(String mechanism, String fqdn) throws SaslException
             {
-                return authenticationManager.createSaslServer(mechanism, fqdn, null);
+                return subjectCreator.createSaslServer(mechanism, fqdn, null);
             }
         };
     }

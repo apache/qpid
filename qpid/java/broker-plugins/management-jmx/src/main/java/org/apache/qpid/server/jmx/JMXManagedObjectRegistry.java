@@ -29,9 +29,8 @@ import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 
+import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.security.auth.rmi.RMIPasswordAuthenticator;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
-
 import javax.management.JMException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
@@ -73,7 +72,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * This class starts up an MBeanserver. If out of the box agent has been enabled then there are no 
+ * This class starts up an MBeanserver. If out of the box agent has been enabled then there are no
  * security features implemented like user authentication and authorisation.
  */
 public class JMXManagedObjectRegistry implements ManagedObjectRegistry
@@ -244,8 +243,8 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             protected RMIConnection makeClient(String connectionId, Subject subject) throws IOException
             {
                 final RMIConnection makeClient = super.makeClient(connectionId, subject);
-                final UsernamePrincipal usernamePrincipalFromSubject = UsernamePrincipal.getUsernamePrincipalFromSubject(subject);
-                connectionIdUsernameMap.put(connectionId, usernamePrincipalFromSubject.getName());
+                final AuthenticatedPrincipal authenticatedPrincipalFromSubject = AuthenticatedPrincipal.getAuthenticatedPrincipalFromSubject(subject);
+                connectionIdUsernameMap.put(connectionId, authenticatedPrincipalFromSubject.getName());
                 return makeClient;
             }
         };
@@ -451,7 +450,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 _log.error("Exception while closing the JMX ConnectorServer: ",  e);
             }
         }
-        
+
         if (_rmiRegistry != null)
         {
             // Stopping the RMI registry
@@ -469,7 +468,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 _log.error("Exception while closing the RMI Registry: ", e);
             }
         }
-        
+
         //ObjectName query to gather all Qpid related MBeans
         ObjectName mbeanNameQuery = null;
         try

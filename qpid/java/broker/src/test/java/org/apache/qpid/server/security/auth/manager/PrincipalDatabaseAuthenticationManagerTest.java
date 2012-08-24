@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import static org.apache.qpid.server.security.auth.AuthenticatedPrincipalTestHelper.assertOnlyContainsWrapped;
+
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
@@ -28,10 +30,9 @@ import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
-import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import java.io.BufferedWriter;
@@ -48,6 +49,7 @@ import java.security.Security;
  */
 public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBaseCase
 {
+    private static final UsernamePrincipal PRINCIPAL = new UsernamePrincipal("guest");
     private AuthenticationManager _manager = null; // Class under test
     private String TEST_USERNAME = "guest";
     private String TEST_PASSWORD = "guest";
@@ -72,7 +74,7 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
     public void setUp() throws Exception
     {
         super.setUp();
-        
+
         final String passwdFilename = createPasswordFile().getCanonicalPath();
         final ConfigurationPlugin config = getConfig(PlainPasswordFilePrincipalDatabase.class.getName(),
                 "passwordFile", passwdFilename);
@@ -121,7 +123,7 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
     {
         try
         {
-            _manager = PrincipalDatabaseAuthenticationManager.FACTORY.newInstance(getConfig(PlainPasswordFilePrincipalDatabase.class.getName(), "noMethod", "test")); 
+            _manager = PrincipalDatabaseAuthenticationManager.FACTORY.newInstance(getConfig(PlainPasswordFilePrincipalDatabase.class.getName(), "noMethod", "test"));
             fail("Exception not thrown");
         }
         catch (ConfigurationException ce)
@@ -137,7 +139,7 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
     {
         try
         {
-            _manager = PrincipalDatabaseAuthenticationManager.FACTORY.newInstance(getConfig(PlainPasswordFilePrincipalDatabase.class.getName(), "passwordFile", "/not/found")); 
+            _manager = PrincipalDatabaseAuthenticationManager.FACTORY.newInstance(getConfig(PlainPasswordFilePrincipalDatabase.class.getName(), "passwordFile", "/not/found"));
             fail("Exception not thrown");
         }
         catch (ConfigurationException ce)
@@ -157,7 +159,7 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
         // relies on those mechanisms attached to PropertiesPrincipalDatabaseManager
         assertEquals("AMQPLAIN PLAIN CRAM-MD5", _manager.getMechanisms());
 
-        Provider qpidProvider = Security.getProvider(PrincipalDatabaseAuthenticationManager.PROVIDER_NAME);
+        Provider qpidProvider = Security.getProvider(AuthenticationManager.PROVIDER_NAME);
         assertNotNull(qpidProvider);
     }
 
@@ -172,49 +174,51 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
         // Merely tests the creation of the mechanism. Mechanisms themselves are tested
         // by their own tests.
     }
-    
+
     /**
      * Tests that the authenticate method correctly interprets an
      * authentication success.
-     * 
+     *
      */
     public void testSaslAuthenticationSuccess() throws Exception
     {
+
         SaslServer testServer = createTestSaslServer(true, false);
-        
+
         AuthenticationResult result = _manager.authenticate(testServer, "12345".getBytes());
-        final Subject subject = result.getSubject();
-        assertTrue(subject.getPrincipals().contains(new UsernamePrincipal("guest")));
+
+        assertOnlyContainsWrapped(PRINCIPAL, result.getPrincipals());
         assertEquals(AuthenticationStatus.SUCCESS, result.getStatus());
     }
 
     /**
-     * 
+     *
      * Tests that the authenticate method correctly interprets an
      * authentication not complete.
-     * 
+     *
      */
     public void testSaslAuthenticationNotCompleted() throws Exception
     {
         SaslServer testServer = createTestSaslServer(false, false);
-        
+
         AuthenticationResult result = _manager.authenticate(testServer, "12345".getBytes());
-        assertNull(result.getSubject());
+        assertEquals("Principals was not expected size", 0, result.getPrincipals().size());
+
         assertEquals(AuthenticationStatus.CONTINUE, result.getStatus());
     }
 
     /**
-     * 
+     *
      * Tests that the authenticate method correctly interprets an
      * authentication error.
-     * 
+     *
      */
     public void testSaslAuthenticationError() throws Exception
     {
         SaslServer testServer = createTestSaslServer(false, true);
-        
+
         AuthenticationResult result = _manager.authenticate(testServer, "12345".getBytes());
-        assertNull(result.getSubject());
+        assertEquals("Principals was not expected size", 0, result.getPrincipals().size());
         assertEquals(AuthenticationStatus.ERROR, result.getStatus());
     }
 
@@ -226,9 +230,7 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
     public void testNonSaslAuthenticationSuccess() throws Exception
     {
         AuthenticationResult result = _manager.authenticate("guest", "guest");
-        final Subject subject = result.getSubject();
-        assertFalse("Subject should not be set read-only", subject.isReadOnly());
-        assertTrue(subject.getPrincipals().contains(new UsernamePrincipal("guest")));
+        assertOnlyContainsWrapped(PRINCIPAL, result.getPrincipals());
         assertEquals(AuthenticationStatus.SUCCESS, result.getStatus());
     }
 
@@ -240,23 +242,23 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
     public void testNonSaslAuthenticationNotCompleted() throws Exception
     {
         AuthenticationResult result = _manager.authenticate("guest", "wrongpassword");
-        assertNull(result.getSubject());
+        assertEquals("Principals was not expected size", 0, result.getPrincipals().size());
         assertEquals(AuthenticationStatus.CONTINUE, result.getStatus());
     }
-    
+
     /**
      * Tests the ability to de-register the provider.
      */
     public void testClose() throws Exception
     {
         assertEquals("AMQPLAIN PLAIN CRAM-MD5", _manager.getMechanisms());
-        assertNotNull(Security.getProvider(PrincipalDatabaseAuthenticationManager.PROVIDER_NAME));
+        assertNotNull(Security.getProvider(AuthenticationManager.PROVIDER_NAME));
 
         _manager.close();
 
         // Check provider has been removed.
         assertNull(_manager.getMechanisms());
-        assertNull(Security.getProvider(PrincipalDatabaseAuthenticationManager.PROVIDER_NAME));
+        assertNull(Security.getProvider(AuthenticationManager.PROVIDER_NAME));
         _manager = null;
     }
 
@@ -343,7 +345,7 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
             writer = new BufferedWriter(new FileWriter(testFile));
             writer.write(TEST_USERNAME + ":" + TEST_PASSWORD);
             writer.newLine();
- 
+
             return testFile;
 
         }

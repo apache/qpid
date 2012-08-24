@@ -34,6 +34,7 @@ import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
@@ -157,13 +158,9 @@ public class AMQStateManager implements AMQMethodListener
         return _protocolSession;
     }
 
-    /**
-     * Get the AuthenticationManager associated with the ProtocolSession of the AMQStateManager
-     *
-     * @return the AuthenticationManager
-     */
-    public AuthenticationManager getAuthenticationManager()
+    
+    public SubjectCreator getSubjectCreator()
     {
-        return getApplicationRegistry().getAuthenticationManager(getProtocolSession().getLocalAddress());
+        return getApplicationRegistry().getSubjectCreator(getProtocolSession().getLocalAddress());
     }
 }

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,15 +20,20 @@
  */
 package org.apache.qpid.server.security.auth;
 
-import javax.security.auth.Subject;
+import java.security.Principal;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 
 /**
- * Encapsulates the result of an attempt to authenticate.
+ * Encapsulates the result of an attempt to authenticate using an {@link AuthenticationManager}.
  * <p>
  * The authentication status describes the overall outcome.
  * <p>
  * <ol>
- *  <li>If authentication status is SUCCESS, the subject will be populated.
+ *  <li>If authentication status is SUCCESS, at least one {@link Principal} will be populated.
  *  </li>
  *  <li>If authentication status is CONTINUE, the authentication has failed because the user
  *      supplied incorrect credentials (etc).  If the authentication requires it, the next challenge
@@ -40,6 +45,8 @@ import javax.security.auth.Subject;
  *  </li>
  * </ol>
  *
+ * The main principal provided to the constructor is wrapped in an {@link AuthenticatedPrincipal}
+ * to make it easier for the rest of the application to identify it among the set of other principals.
  */
 public class AuthenticationResult
 {
@@ -56,37 +63,54 @@ public class AuthenticationResult
     private final AuthenticationStatus _status;
     private final byte[] _challenge;
     private final Exception _cause;
-    private final Subject _subject;
+    private final Set<Principal> _principals = new HashSet<Principal>();
 
     public AuthenticationResult(final AuthenticationStatus status)
     {
         this(null, status, null);
     }
 
+    public AuthenticationResult(Principal mainPrincipal)
+    {
+        this(mainPrincipal, Collections.<Principal>emptySet());
+    }
+
+    public AuthenticationResult(Principal mainPrincipal, Set<Principal> otherPrincipals)
+    {
+        AuthenticatedPrincipal specialQpidAuthenticatedPrincipal = new AuthenticatedPrincipal(mainPrincipal);
+        _principals.addAll(otherPrincipals);
+        _principals.remove(mainPrincipal);
+        _principals.add(specialQpidAuthenticatedPrincipal);
+
+        _status = AuthenticationStatus.SUCCESS;
+        _challenge = null;
+        _cause = null;
+    }
+
     public AuthenticationResult(final byte[] challenge, final AuthenticationStatus status)
     {
-        this(challenge, status, null);
+        _challenge = challenge;
+        _status = status;
+        _cause = null;
     }
 
     public AuthenticationResult(final AuthenticationStatus error, final Exception cause)
     {
-        this(null, error, cause);
+        _status = error;
+        _challenge = null;
+        _cause = cause;
     }
 
     public AuthenticationResult(final byte[] challenge, final AuthenticationStatus status, final Exception cause)
     {
+        if(status == AuthenticationStatus.SUCCESS)
+        {
+            throw new IllegalArgumentException("Successful authentication requires at least one principal");
+        }
+
         this._status = status;
         this._challenge = challenge;
         this._cause = cause;
-        this._subject = null;
-    }
-
-    public AuthenticationResult(final Subject subject)
-    {
-        this._status = AuthenticationStatus.SUCCESS;
-        this._challenge = null;
-        this._cause = null;
-        this._subject = subject;
     }
 
     public Exception getCause()
@@ -104,9 +128,8 @@ public class AuthenticationResult
         return _challenge;
     }
 
-    public Subject getSubject()
+    public Set<Principal> getPrincipals()
     {
-        return _subject;
+        return _principals;
     }
-
 }

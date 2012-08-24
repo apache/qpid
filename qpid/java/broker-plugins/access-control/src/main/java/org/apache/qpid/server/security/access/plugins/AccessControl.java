@@ -40,9 +40,9 @@ import org.apache.qpid.server.security.access.config.RuleSet;
 public class AccessControl extends AbstractPlugin
 {
     public static final Logger _logger = Logger.getLogger(AccessControl.class);
-    
+
     private RuleSet _ruleSet;
-    
+
     public static final SecurityPluginFactory<AccessControl> FACTORY = new SecurityPluginFactory<AccessControl>()
     {
         public Class<AccessControl> getPluginClass()
@@ -86,7 +86,7 @@ public class AccessControl extends AbstractPlugin
     {
         return authorise(Operation.ACCESS, objectType, ObjectProperties.EMPTY);
     }
-    
+
     /**
      * Check if an operation is authorised by asking the  configuration object about the access
      * control rules granted to the current thread's {@link Subject}. If there is no current
@@ -100,7 +100,7 @@ public class AccessControl extends AbstractPlugin
         {
             return Result.ABSTAIN;
         }
- 
+
         _logger.debug("Checking " + operation + " " + objectType);
         return  _ruleSet.check(subject, operation, objectType, properties);
     }

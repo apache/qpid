@@ -32,9 +32,17 @@ package org.apache.qpid.server.logging.subjects;
 
 public class LogSubjectFormat
 {
+
     private LogSubjectFormat()
     {
     }
+
+    /**
+     * LOG FORMAT for the ManagementActors,
+     * 0 - User ID
+     * 1 - IP[:Port]
+     */
+    public static final String MANAGEMENT_FORMAT = "mng:{0}({1})";
 
     /**
      * LOG FORMAT for the Subscription Log Subject
