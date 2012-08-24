@@ -183,3 +183,4 @@ org.apache.qpid.disttest.*
 
 // Exclude java broker REST API tests
 org.apache.qpid.server.management.plugin.servlet.rest.*
+org.apache.qpid.systest.rest.acl.*
