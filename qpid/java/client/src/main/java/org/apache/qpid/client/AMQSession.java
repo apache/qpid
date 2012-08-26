@@ -136,10 +136,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                                                                   DEFAULT_FLOW_CONTROL_WAIT_FAILURE);
 
     private final boolean _delareQueues =
-        Boolean.parseBoolean(System.getProperty("qpid.declare_queues", "true"));
+        Boolean.parseBoolean(System.getProperty(ClientProperties.QPID_DECLARE_QUEUES_PROP_NAME, "true"));
 
     private final boolean _declareExchanges =
-        Boolean.parseBoolean(System.getProperty("qpid.declare_exchanges", "true"));
+        Boolean.parseBoolean(System.getProperty(ClientProperties.QPID_DECLARE_EXCHANGES_PROP_NAME, "true"));
 
     private final boolean _useAMQPEncodedMapMessage;
 

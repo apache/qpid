@@ -55,9 +55,10 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
 
     void declareDestination(AMQDestination destination)
     {
-
-        final MethodRegistry methodRegistry = getSession().getMethodRegistry();
-        ExchangeDeclareBody body =
+        if(getSession().isDeclareExchanges())
+        {
+            final MethodRegistry methodRegistry = getSession().getMethodRegistry();
+            ExchangeDeclareBody body =
                 methodRegistry.createExchangeDeclareBody(getSession().getTicket(),
                                                          destination.getExchangeName(),
                                                          destination.getExchangeClass(),
@@ -67,12 +68,10 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
                                                          false,
                                                          true,
                                                          null);
-        // Declare the exchange
-        // Note that the durable and internal arguments are ignored since passive is set to false
+            AMQFrame declare = body.generateFrame(getChannelId());
 
-        AMQFrame declare = body.generateFrame(getChannelId());
-
-        getProtocolHandler().writeFrame(declare);
+            getProtocolHandler().writeFrame(declare);
+        }
     }
 
     void sendMessage(AMQDestination destination, Message origMessage, AbstractJMSMessage message,
