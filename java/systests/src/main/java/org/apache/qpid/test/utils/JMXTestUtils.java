@@ -303,31 +303,13 @@ public class JMXTestUtils
     }
 
     /**
-     * Retrive the ObjectName for the given Exchange on a VirtualHost.
-     *
-     * This is then used to create a proxy to the ManagedExchange MBean.
-     *
-     * @param virtualHostName the VirtualHost the Exchange is on
-     * @param exchange the Exchange to retireve e.g. 'direct'
-     * @return the ObjectName for the given Exchange on the VirtualHost
+     * Generate the ObjectName for the given Exchange on a VirtualHost.
      */
-    @SuppressWarnings("static-access")
-    public ObjectName getExchangeObjectName(String virtualHostName, String exchange)
+    public String getExchangeObjectName(String virtualHostName, String exchange)
     {
-        // Get the name of the test manager
-        String query = "org.apache.qpid:type=VirtualHost.Exchange,VirtualHost="
+        return "org.apache.qpid:type=VirtualHost.Exchange,VirtualHost="
                        + ObjectName.quote(virtualHostName) + ",name="
                        + ObjectName.quote(exchange) + ",*";
-
-        Set<ObjectName> objectNames = queryObjects(query);
-
-        _test.assertNotNull("Null ObjectName Set returned", objectNames);
-        _test.assertEquals("Incorrect number of exchange with name '" + exchange + "' returned", 1, objectNames.size());
-
-        // We have verified we have only one value in objectNames so return it
-        ObjectName objectName = objectNames.iterator().next();
-        _test.getLogger().info("Loading: " + objectName);
-        return objectName;
     }
 
     @SuppressWarnings("static-access")
@@ -343,7 +325,7 @@ public class JMXTestUtils
         return getManagedObject(managedClass, objectName);
     }
 
-    public boolean isManagedObjectExist(String query)
+    public boolean doesManagedObjectExist(String query)
     {
         return !queryObjects(query).isEmpty();
     }
@@ -373,9 +355,20 @@ public class JMXTestUtils
         return getManagedObject(ManagedBroker.class, getVirtualHostManagerObjectName(virtualHost));
     }
 
+    @SuppressWarnings("static-access")
     public ManagedExchange getManagedExchange(String exchangeName)
     {
-        ObjectName objectName = getExchangeObjectName("test", exchangeName);
+        String query = getExchangeObjectName("test", exchangeName);
+
+        Set<ObjectName> objectNames = queryObjects(query);
+
+        _test.assertNotNull("Null ObjectName Set returned", objectNames);
+        _test.assertEquals("Incorrect number of exchange with name '" + exchangeName + "' returned", 1, objectNames.size());
+
+        // We have verified we have only one value in objectNames so return an mbean proxy for it
+        ObjectName objectName = objectNames.iterator().next();
+        _test.getLogger().info("Loading: " + objectName);
+
         return MBeanServerInvocationHandler.newProxyInstance(_mbsc, objectName, ManagedExchange.class, false);
     }
 
