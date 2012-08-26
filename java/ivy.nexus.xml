@@ -39,6 +39,48 @@
     <artifact name="qpid-broker" type="jar.asc" ext="jar.asc"/>
     <artifact name="qpid-broker" type="source" ext="jar" e:classifier="sources"/>
     <artifact name="qpid-broker" type="source.asc" ext="jar.asc" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-access-control" type="pom" ext="pom"/>
+    <artifact name="qpid-broker-plugins-access-control" type="pom.asc" ext="pom.asc"/>
+    <artifact name="qpid-broker-plugins-access-control" type="jar" ext="jar"/>
+    <artifact name="qpid-broker-plugins-access-control" type="jar.asc" ext="jar.asc"/>
+    <artifact name="qpid-broker-plugins-access-control" type="source" ext="jar" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-access-control" type="source.asc" ext="jar.asc" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-firewall" type="pom" ext="pom"/>
+    <artifact name="qpid-broker-plugins-firewall" type="pom.asc" ext="pom.asc"/>
+    <artifact name="qpid-broker-plugins-firewall" type="jar" ext="jar"/>
+    <artifact name="qpid-broker-plugins-firewall" type="jar.asc" ext="jar.asc"/>
+    <artifact name="qpid-broker-plugins-firewall" type="source" ext="jar" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-firewall" type="source.asc" ext="jar.asc" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-management-http" type="pom" ext="pom"/>
+    <artifact name="qpid-broker-plugins-management-http" type="pom.asc" ext="pom.asc"/>
+    <artifact name="qpid-broker-plugins-management-http" type="jar" ext="jar"/>
+    <artifact name="qpid-broker-plugins-management-http" type="jar.asc" ext="jar.asc"/>
+    <artifact name="qpid-broker-plugins-management-http" type="source" ext="jar" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-management-http" type="source.asc" ext="jar.asc" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-management-jmx" type="pom" ext="pom"/>
+    <artifact name="qpid-broker-plugins-management-jmx" type="pom.asc" ext="pom.asc"/>
+    <artifact name="qpid-broker-plugins-management-jmx" type="jar" ext="jar"/>
+    <artifact name="qpid-broker-plugins-management-jmx" type="jar.asc" ext="jar.asc"/>
+    <artifact name="qpid-broker-plugins-management-jmx" type="source" ext="jar" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-management-jmx" type="source.asc" ext="jar.asc" e:classifier="sources"/>
+    <artifact name="qpid-amqp-1-0-common" type="pom" ext="pom"/>
+    <artifact name="qpid-amqp-1-0-common" type="pom.asc" ext="pom.asc"/>
+    <artifact name="qpid-amqp-1-0-common" type="jar" ext="jar"/>
+    <artifact name="qpid-amqp-1-0-common" type="jar.asc" ext="jar.asc"/>
+    <artifact name="qpid-amqp-1-0-common" type="source" ext="jar" e:classifier="sources"/>
+    <artifact name="qpid-amqp-1-0-common" type="source.asc" ext="jar.asc" e:classifier="sources"/>
+    <artifact name="qpid-amqp-1-0-client" type="pom" ext="pom"/>
+    <artifact name="qpid-amqp-1-0-client" type="pom.asc" ext="pom.asc"/>
+    <artifact name="qpid-amqp-1-0-client" type="jar" ext="jar"/>
+    <artifact name="qpid-amqp-1-0-client" type="jar.asc" ext="jar.asc"/>
+    <artifact name="qpid-amqp-1-0-client" type="source" ext="jar" e:classifier="sources"/>
+    <artifact name="qpid-amqp-1-0-client" type="source.asc" ext="jar.asc" e:classifier="sources"/>
+    <artifact name="qpid-amqp-1-0-client-jms" type="pom" ext="pom"/>
+    <artifact name="qpid-amqp-1-0-client-jms" type="pom.asc" ext="pom.asc"/>
+    <artifact name="qpid-amqp-1-0-client-jms" type="jar" ext="jar"/>
+    <artifact name="qpid-amqp-1-0-client-jms" type="jar.asc" ext="jar.asc"/>
+    <artifact name="qpid-amqp-1-0-client-jms" type="source" ext="jar" e:classifier="sources"/>
+    <artifact name="qpid-amqp-1-0-client-jms" type="source.asc" ext="jar.asc" e:classifier="sources"/>
     <artifact name="qpid-management-common" type="pom" ext="pom"/>
     <artifact name="qpid-management-common" type="pom.asc" ext="pom.asc"/>
     <artifact name="qpid-management-common" type="jar" ext="jar"/>
@@ -51,6 +93,12 @@
     <artifact name="qpid-bdbstore" type="jar.asc" ext="jar.asc"/>
     <artifact name="qpid-bdbstore" type="source" ext="jar" e:classifier="sources"/>
     <artifact name="qpid-bdbstore" type="source.asc" ext="jar.asc" e:classifier="sources"/>
+    <artifact name="qpid-bdbstore-jmx" type="pom" ext="pom"/>
+    <artifact name="qpid-bdbstore-jmx" type="pom.asc" ext="pom.asc"/>
+    <artifact name="qpid-bdbstore-jmx" type="jar" ext="jar"/>
+    <artifact name="qpid-bdbstore-jmx" type="jar.asc" ext="jar.asc"/>
+    <artifact name="qpid-bdbstore-jmx" type="source" ext="jar" e:classifier="sources"/>
+    <artifact name="qpid-bdbstore-jmx" type="source.asc" ext="jar.asc" e:classifier="sources"/>
   </publications>
 
   <dependencies/>
