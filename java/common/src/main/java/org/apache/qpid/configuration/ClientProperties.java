@@ -190,6 +190,18 @@ public class ClientProperties
      */
     public static final long DEFAULT_FLOW_CONTROL_WAIT_NOTIFY_PERIOD = 5000L;
 
+    /**
+     * System property to control whether the client will declare queues during
+     * consumer creation when using BindingURLs.
+     */
+    public static final String QPID_DECLARE_QUEUES_PROP_NAME = "qpid.declare_queues";
+
+    /**
+     * System property to control whether the client will declare exchanges during
+     * producer/consumer creation when using BindingURLs.
+     */
+    public static final String QPID_DECLARE_EXCHANGES_PROP_NAME = "qpid.declare_exchanges";
+
 
     private ClientProperties()
     {

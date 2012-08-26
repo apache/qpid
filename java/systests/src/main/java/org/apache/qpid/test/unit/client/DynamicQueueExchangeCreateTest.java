@@ -21,8 +21,11 @@
 package org.apache.qpid.test.unit.client;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.url.BindingURL;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -37,9 +40,37 @@ import javax.jms.Session;
  */
 public class DynamicQueueExchangeCreateTest extends QpidBrokerTestCase
 {
-    public void testQueueDeclare() throws Exception
+    private JMXTestUtils _jmxUtils;
+
+    @Override
+    public void setUp() throws Exception
     {
-        setSystemProperty("qpid.declare_queues", "false");
+        _jmxUtils = new JMXTestUtils(this);
+        _jmxUtils.setUp();
+
+        super.setUp();
+        _jmxUtils.open();
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        try
+        {
+            if (_jmxUtils != null)
+            {
+                _jmxUtils.close();
+            }
+        }
+        finally
+        {
+            super.tearDown();
+        }
+    }
+
+    public void testQueueNotDeclaredDuringConsumerCreation() throws Exception
+    {
+        setSystemProperty(ClientProperties.QPID_DECLARE_QUEUES_PROP_NAME, "false");
 
         Connection connection = getConnection();
 
@@ -58,16 +89,16 @@ public class DynamicQueueExchangeCreateTest extends QpidBrokerTestCase
         }
     }
 
-    public void testExchangeDeclare() throws Exception
+    public void testExchangeNotDeclaredDuringConsumerCreation() throws Exception
     {
-        setSystemProperty("qpid.declare_exchanges", "false");
+        setSystemProperty(ClientProperties.QPID_DECLARE_EXCHANGES_PROP_NAME, "false");
 
         Connection connection = getConnection();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-        String EXCHANGE_TYPE = "test.direct";
-        Queue queue = session.createQueue("direct://" + EXCHANGE_TYPE + "/queue/queue");
+        String exchangeName = getTestQueueName();
+        Queue queue = session.createQueue("direct://" + exchangeName + "/queue/queue");
 
         try
         {
@@ -78,6 +109,50 @@ public class DynamicQueueExchangeCreateTest extends QpidBrokerTestCase
         {
             checkExceptionErrorCode(e, AMQConstant.NOT_FOUND);
         }
+
+        //verify the exchange was not declared
+        String exchangeObjectName = _jmxUtils.getExchangeObjectName("test", exchangeName);
+        assertFalse("exchange should not exist", _jmxUtils.doesManagedObjectExist(exchangeObjectName));
+    }
+
+    /**
+     * Checks that setting {@value ClientProperties#QPID_DECLARE_EXCHANGES_PROP_NAME} false results in
+     * disabling implicit ExchangeDeclares during producer creation when using a {@link BindingURL}
+     */
+    public void testExchangeNotDeclaredDuringProducerCreation() throws Exception
+    {
+        Connection connection = getConnection();
+        Session session1 = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        String exchangeName1 = getTestQueueName() + "1";
+
+
+        Queue queue = session1.createQueue("direct://" + exchangeName1 + "/queue/queue");
+        session1.createProducer(queue);
+
+        //close the session to ensure any previous commands were fully processed by
+        //the broker before observing their effect
+        session1.close();
+
+        //verify the exchange was declared
+        String exchangeObjectName = _jmxUtils.getExchangeObjectName("test", exchangeName1);
+        assertTrue("exchange should exist", _jmxUtils.doesManagedObjectExist(exchangeObjectName));
+
+        //Now disable the implicit exchange declares and try again
+        setSystemProperty(ClientProperties.QPID_DECLARE_EXCHANGES_PROP_NAME, "false");
+
+        Session session2 = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        String exchangeName2 = getTestQueueName() + "2";
+
+        Queue queue2 = session2.createQueue("direct://" + exchangeName2 + "/queue/queue");
+        session2.createProducer(queue2);
+
+        //close the session to ensure any previous commands were fully processed by
+        //the broker before observing their effect
+        session2.close();
+
+        //verify the exchange was not declared
+        String exchangeObjectName2 = _jmxUtils.getExchangeObjectName("test", exchangeName2);
+        assertFalse("exchange should not exist", _jmxUtils.doesManagedObjectExist(exchangeObjectName2));
     }
 
     private void checkExceptionErrorCode(JMSException original, AMQConstant code)
